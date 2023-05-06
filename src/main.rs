@@ -410,7 +410,7 @@ impl App {
                             write_color_buffer(
                                 &BufferWriter::stdout(ColorChoice::Always),
                                 Some(Color::Red),
-                                "No keywords found\n\n",
+                                "No keywords found\n",
                                 true,
                             )
                             .ok();
