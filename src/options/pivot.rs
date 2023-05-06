@@ -1,9 +1,11 @@
 use indexmap::{IndexMap, IndexSet};
 use lazy_static::lazy_static;
 use serde_json::Value;
+use std::fmt::Write as _;
 use std::sync::RwLock;
+use termcolor::{BufferWriter, Color, ColorChoice};
 
-use crate::detections::utils::get_serde_number_to_string;
+use crate::detections::utils::{get_serde_number_to_string, write_color_buffer};
 
 use crate::detections::configs::EventKeyAliasConfig;
 
@@ -83,6 +85,62 @@ pub fn insert_pivot_keyword(event_record: &Value, eventkey_alias: &EventKeyAlias
             }
         }
     });
+}
+
+//pivot_keywordsの標準出力などに関する関数たち
+pub fn create_output(
+    mut output: String,
+    key: &String,
+    pivot_keyword: &PivotKeyword,
+    place: &str,
+) -> String {
+    if place == "standard" {
+        //headers
+        let output = String::default();
+        write_color_buffer(
+            &BufferWriter::stdout(ColorChoice::Always),
+            Some(Color::Green),
+            &fmt_headers(output, key, pivot_keyword),
+            false,
+        )
+        .ok();
+
+        //keywords_results
+        let output = String::default();
+        write_color_buffer(
+            &BufferWriter::stdout(ColorChoice::Always),
+            None,
+            &fmt_keywords_results(output, pivot_keyword),
+            true,
+        )
+        .ok();
+        "".to_string()
+    } else {
+        output = fmt_headers(output, key, pivot_keyword);
+        fmt_keywords_results(output, pivot_keyword)
+    }
+}
+
+pub fn fmt_headers(mut output: String, key: &String, pivot_keyword: &PivotKeyword) -> String {
+    write!(output, "{key}: ( ").ok();
+    for i in pivot_keyword.fields.iter() {
+        write!(output, "%{i}% ").ok();
+    }
+
+    if pivot_keyword.keywords.is_empty() {
+        write!(output, "):").ok();
+    } else {
+        writeln!(output, "):").ok();
+    }
+
+    output
+}
+
+pub fn fmt_keywords_results(mut output: String, pivot_keyword: &PivotKeyword) -> String {
+    for i in pivot_keyword.keywords.iter() {
+        writeln!(output, "{i}").ok();
+    }
+    output
 }
 
 #[cfg(test)]
