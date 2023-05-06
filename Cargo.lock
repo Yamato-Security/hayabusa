@@ -875,6 +875,7 @@ dependencies = [
  "hex",
  "hhmmss",
  "horrorshow",
+ "indexmap",
  "is_elevated",
  "itertools",
  "krapslog",

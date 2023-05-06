@@ -20,7 +20,7 @@ use hayabusa::detections::rule::{get_detection_keys, RuleNode};
 use hayabusa::detections::utils::{check_setting_path, output_and_data_stack_for_html};
 use hayabusa::options;
 use hayabusa::options::htmlreport::{self, HTML_REPORTER};
-use hayabusa::options::pivot::PivotKeyword;
+use hayabusa::options::pivot::create_output;
 use hayabusa::options::pivot::PIVOT_KEYWORD;
 use hayabusa::options::profile::set_default_profile;
 use hayabusa::options::{level_tuning::LevelTuning, update::Update};
@@ -349,7 +349,7 @@ impl App {
                 load_pivot_keywords(
                     utils::check_setting_path(
                         &CURRENT_EXE_PATH.to_path_buf(),
-                        "config/pivot_keywords.txt",
+                        "rules/config/pivot_keywords.txt",
                         true,
                     )
                     .unwrap()
@@ -359,24 +359,9 @@ impl App {
 
                 self.analysis_start(&target_extensions, &time_filter, stored_static);
 
-                // pivotのファイルの作成。pivot.rsに投げたい
                 let pivot_key_unions = PIVOT_KEYWORD.read().unwrap();
-                let create_output =
-                    |mut output: String, key: &String, pivot_keyword: &PivotKeyword| {
-                        write!(output, "{key}: ( ").ok();
-                        for i in pivot_keyword.fields.iter() {
-                            write!(output, "%{i}% ").ok();
-                        }
-                        writeln!(output, "):").ok();
-
-                        for i in pivot_keyword.keywords.iter() {
-                            writeln!(output, "{i}").ok();
-                        }
-                        writeln!(output).ok();
-
-                        output
-                    };
                 if let Some(pivot_file) = &stored_static.output_path {
+                    //ファイル出力の場合
                     pivot_key_unions.iter().for_each(|(key, pivot_keyword)| {
                         let mut f = BufWriter::new(
                             fs::File::create(
@@ -385,11 +370,10 @@ impl App {
                             .unwrap(),
                         );
                         f.write_all(
-                            create_output(String::default(), key, pivot_keyword).as_bytes(),
+                            create_output(String::default(), key, pivot_keyword, "file").as_bytes(),
                         )
                         .unwrap();
                     });
-                    //output to stdout
                     let mut output =
                         "Pivot keyword results saved to the following files:\n".to_string();
 
@@ -410,7 +394,7 @@ impl App {
                     .ok();
                 } else {
                     //標準出力の場合
-                    let output = "The following pivot keywords were found:";
+                    let output = "\nThe following pivot keywords were found:\n";
                     write_color_buffer(
                         &BufferWriter::stdout(ColorChoice::Always),
                         None,
@@ -420,13 +404,17 @@ impl App {
                     .ok();
 
                     pivot_key_unions.iter().for_each(|(key, pivot_keyword)| {
-                        write_color_buffer(
-                            &BufferWriter::stdout(ColorChoice::Always),
-                            None,
-                            &create_output(String::default(), key, pivot_keyword),
-                            true,
-                        )
-                        .ok();
+                        create_output(String::default(), key, pivot_keyword, "standard");
+
+                        if pivot_keyword.keywords.is_empty() {
+                            write_color_buffer(
+                                &BufferWriter::stdout(ColorChoice::Always),
+                                Some(Color::Red),
+                                "No keywords found\n",
+                                true,
+                            )
+                            .ok();
+                        }
                     });
                 }
             }
