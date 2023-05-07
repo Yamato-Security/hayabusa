@@ -12,7 +12,7 @@
 
 **バグ修正:**
 
-- XXX
+- AccessMask フィールド内の情報が空白で区切られていなかった状態を修正した。 (#1035) (@hitenkoku)
 
 ## 2.5.0 [2023/05/12] "Security Mini Camp in Tokyo Release"
 
