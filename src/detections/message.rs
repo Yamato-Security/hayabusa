@@ -191,7 +191,7 @@ pub fn parse_message(
     let mut hash_map: HashMap<CompactString, CompactString> = HashMap::new();
     for caps in ALIASREGEX.captures_iter(&return_message) {
         let full_target_str = &caps[0];
-        let target_length = full_target_str.chars().count() - 2; // The meaning of 2 is two percent
+        let target_length = full_target_str.chars().count() - 2; // 最後の文字は%であるので、エイリアスのキー情報はcount()-2まで。
         let target_str = full_target_str
             .chars()
             .skip(1)
