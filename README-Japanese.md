@@ -156,23 +156,23 @@ Hayabusaは従来のWindowsイベントログ分析解析と比較して、分�
 
 ## 起動
 
-![Hayabusa 起動画面](screenshots/Hayabusa-Startup.png)
+![Hayabusa 起動画面](screenshots/Startup.png)
 
 ## DFIRタイムラインのターミナル出力
 
-![Hayabusa ターミナル出力画面](screenshots/Hayabusa-Results.png)
+![Hayabusa ターミナル出力画面](screenshots/Results.png)
 
 ## キーワード検索結果
 
-![Hayabusa search results](screenshots/HayabusaSearchResults.png)
+![Hayabusa search results](screenshots/SearchResults.png)
 
 ## 検知頻度タイムライン出力 (`-T`オプション)
 
-![Hayabusa 検知頻度タイムライン出力画面](screenshots/HayabusaEventFrequencyTimeline.png)
+![Hayabusa 検知頻度タイムライン出力画面](screenshots/DetectionFrequencyTimeline.png)
 
 ## 結果サマリ (Results Summary)
 
-![Hayabusa 結果サマリ画面](screenshots/HayabusaResultsSummary.png)
+![Hayabusa 結果サマリ画面](screenshots/ResultsSummary.png)
 
 ## HTMLの結果サマリ (`-H`オプション)
 
@@ -184,7 +184,7 @@ Hayabusaは従来のWindowsイベントログ分析解析と比較して、分�
 
 ## LibreOfficeでのDFIRタイムライン解析 (`-M` マルチライン出力)
 
-![Hayabusa analysis in LibreOffice](screenshots/HayabusaDFIR-TimelineLibreOfficeMultiline.jpeg)
+![Hayabusa analysis in LibreOffice](screenshots/DFIR-TimelineLibreOfficeMultiline.jpeg)
 
 ## Timeline ExplorerでのDFIRタイムライン解析
 

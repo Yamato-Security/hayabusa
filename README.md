@@ -156,23 +156,23 @@ Hayabusa hopes to let analysts get 80% of their work done in 20% of the time whe
 
 ## Startup
 
-![Hayabusa Startup](screenshots/Hayabusa-Startup.png)
+![Hayabusa Startup](screenshots/Startup.png)
 
 ## DFIR Timeline Terminal Output
 
-![Hayabusa DFIR terminal output](screenshots/Hayabusa-Results.png)
+![Hayabusa DFIR terminal output](screenshots/Results.png)
 
 ## Keyword Search Results
 
-![Hayabusa search results](screenshots/HayabusaSearchResults.png)
+![Hayabusa search results](screenshots/SearchResults.png)
 
 ## Detection Fequency Timeline (`-T` option)
 
-![Hayabusa Event Frequency Timeline](screenshots/HayabusaEventFrequencyTimeline.png)
+![Hayabusa Detection Frequency Timeline](screenshots/DetectionFrequencyTimeline.png)
 
 ## Results Summary
 
-![Hayabusa results summary](screenshots/HayabusaResultsSummary.png)
+![Hayabusa results summary](screenshots/ResultsSummary.png)
 
 ## HTML Results Summary (`-H` option)
 
@@ -184,7 +184,7 @@ Hayabusa hopes to let analysts get 80% of their work done in 20% of the time whe
 
 ## DFIR Timeline Analysis in LibreOffice with `-M` Multiline Output 
 
-![Hayabusa analysis in LibreOffice](screenshots/HayabusaDFIR-TimelineLibreOfficeMultiline.jpeg)
+![Hayabusa analysis in LibreOffice](screenshots/DFIR-TimelineLibreOfficeMultiline.jpeg)
 
 ## DFIR Timeline Analysis in Timeline Explorer
 
