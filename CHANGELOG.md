@@ -14,25 +14,21 @@
 
 - Fixed data in AccessMask field are not separated by spaces in the details field. (#1035) (@hitenkoku)
 
-## 2.5.0 [2023/05/12] "Security Mini Camp in Tokyo Release"
-
-**New Features:**
-
-- XXX
+## 2.5.0 [2023/05/07] "Golden Week Release"
 
 **Enhancements:**
 
 - Added `-M, --multiline` option to search command. (#1017) (@hitenkoku)
 - Deleted return characters in the output of the `search` command. (#1003) (@hitenkoku)
 - `regex` crate updated to 1.8 which allows unnecessary escapes in regular expressions reducing parsing errors. (#1018) (@YamatoSecurity)
-- Deleted return characters in output of `csv-timeline` command. (#1019) (@hitenkoku)
+- Deleted return characters in output of the `csv-timeline` command. (#1019) (@hitenkoku)
 - Don't show new version information with the `update-rules` command when building a newer dev build. (#1028) (@hitenkoku)
 - Sorted `search` timeline order. (#1033) (@hitenkoku)
 
 **Bug Fixes:**
 
 - Unconverted sigma rules that search for a string that end in a backslash would not be detected. Also `|contains` conditions would not match if the string was located in the beginning. (#1025) (@fukusuket)
-- In versions 2.3.3-2.4.0, informational level alerts in the Results Summary would show the top 5 twice instead of the top 10 events. (#1031) (@hitenkoku)
+- In versions 2.3.3-2.4.0, informational level alerts in the Results Summary would show the top 5 events twice instead of the top 10 events. (#1031) (@hitenkoku)
 
 ## 2.4.0 [2023/04/19] "SANS Secure Korea Release"
 

@@ -23,7 +23,7 @@
 
 # About Hayabusa
 
-Hayabusa is a **Windows event log fast forensics timeline generator** and **threat hunting tool** created by the [Yamato Security](https://yamatosecurity.connpass.com/) group in Japan. Hayabusa means ["peregrine falcon"](https://en.wikipedia.org/wiki/Peregrine_falcon) in Japanese and was chosen as peregrine falcons are the fastest animal in the world, great at hunting and highly trainable. It is written in [Rust](https://www.rust-lang.org/) and supports multi-threading in order to be as fast as possible. We have provided a [tool](https://github.com/Yamato-Security/hayabusa-rules/tree/main/tools/sigmac) to convert [Sigma](https://github.com/SigmaHQ/sigma) rules into Hayabusa rule format. The Sigma-compatible Hayabusa detection rules are written in YML in order to be as easily customizable and extensible as possible. Hayabusa can be run either on single running systems for live analysis, by gathering logs from single or multiple systems for offline analysis, or by running the [Hayabusa artifact](https://docs.velociraptor.app/exchange/artifacts/pages/windows.eventlogs.hayabusa/) with [Velociraptor](https://docs.velociraptor.app/) for enterprise-wide threat hunting and incident response. The output will be consolidated into a single CSV timeline for easy analysis in Excel, [Timeline Explorer](https://ericzimmerman.github.io/#!index.md), [Elastic Stack](doc/ElasticStackImport/ElasticStackImport-English.md), [Timesketch](https://timesketch.org/), etc...
+Hayabusa is a **Windows event log fast forensics timeline generator** and **threat hunting tool** created by the [Yamato Security](https://yamatosecurity.connpass.com/) group in Japan. Hayabusa means ["peregrine falcon"](https://en.wikipedia.org/wiki/Peregrine_falcon) in Japanese and was chosen as peregrine falcons are the fastest animal in the world, great at hunting and highly trainable. It is written in [Rust](https://www.rust-lang.org/) and supports multi-threading in order to be as fast as possible. We have provided a [tool](https://github.com/Yamato-Security/hayabusa-rules/tree/main/tools/sigmac) to convert [Sigma](https://github.com/SigmaHQ/sigma) rules into Hayabusa rule format. The Sigma-compatible Hayabusa detection rules are written in YML in order to be as easily customizable and extensible as possible. Hayabusa can be run either on single running systems for live analysis, by gathering logs from single or multiple systems for offline analysis, or by running the [Hayabusa artifact](https://docs.velociraptor.app/exchange/artifacts/pages/windows.eventlogs.hayabusa/) with [Velociraptor](https://docs.velociraptor.app/) for enterprise-wide threat hunting and incident response. The output will be consolidated into a single CSV timeline for easy analysis in [LibreOffice](https://www.libreoffice.org/), [Timeline Explorer](https://ericzimmerman.github.io/#!index.md), [Elastic Stack](doc/ElasticStackImport/ElasticStackImport-English.md), [Timesketch](https://timesketch.org/), etc...
 
 # Companion Projects
 
@@ -43,12 +43,13 @@ Hayabusa is a **Windows event log fast forensics timeline generator** and **thre
     - [Fast Forensics Timeline Generation](#fast-forensics-timeline-generation)
 - [Screenshots](#screenshots)
   - [Startup](#startup)
-  - [Terminal Output](#terminal-output)
+  - [DFIR Timeline Terminal Output](#dfir-timeline-terminal-output)
+  - [Keyword Search Results](#keyword-search-results)
   - [Detection Fequency Timeline (`-T` option)](#detection-fequency-timeline--t-option)
   - [Results Summary](#results-summary)
   - [HTML Results Summary (`-H` option)](#html-results-summary--h-option)
-  - [Analysis in Excel](#analysis-in-excel)
-  - [Analysis in Timeline Explorer](#analysis-in-timeline-explorer)
+  - [DFIR Timeline Analysis in LibreOffice (`-M` Multiline Output)](#dfir-timeline-analysis-in-libreoffice--m-multiline-output)
+  - [DFIR Timeline Analysis in Timeline Explorer](#dfir-timeline-analysis-in-timeline-explorer)
   - [Critical Alert Filtering and Computer Grouping in Timeline Explorer](#critical-alert-filtering-and-computer-grouping-in-timeline-explorer)
   - [Analysis with the Elastic Stack Dashboard](#analysis-with-the-elastic-stack-dashboard)
   - [Analysis in Timesketch](#analysis-in-timesketch)
@@ -155,19 +156,23 @@ Hayabusa hopes to let analysts get 80% of their work done in 20% of the time whe
 
 ## Startup
 
-![Hayabusa Startup](screenshots/Hayabusa-Startup.png)
+![Hayabusa Startup](screenshots/Startup.png)
 
-## Terminal Output
+## DFIR Timeline Terminal Output
 
-![Hayabusa terminal output](screenshots/Hayabusa-Results.png)
+![Hayabusa DFIR terminal output](screenshots/Results.png)
+
+## Keyword Search Results
+
+![Hayabusa search results](screenshots/SearchResults.png)
 
 ## Detection Fequency Timeline (`-T` option)
 
-![Hayabusa Event Frequency Timeline](screenshots/HayabusaEventFrequencyTimeline.png)
+![Hayabusa Detection Frequency Timeline](screenshots/DetectionFrequencyTimeline.png)
 
 ## Results Summary
 
-![Hayabusa results summary](screenshots/HayabusaResultsSummary.png)
+![Hayabusa results summary](screenshots/ResultsSummary.png)
 
 ## HTML Results Summary (`-H` option)
 
@@ -177,11 +182,11 @@ Hayabusa hopes to let analysts get 80% of their work done in 20% of the time whe
 
 ![Hayabusa results summary](screenshots/HTML-ResultsSummary-3.png)
 
-## Analysis in Excel
+## DFIR Timeline Analysis in LibreOffice (`-M` Multiline Output)
 
-![Hayabusa analysis in Excel](screenshots/ExcelScreenshot.png)
+![Hayabusa analysis in LibreOffice](screenshots/DFIR-TimelineLibreOfficeMultiline.jpeg)
 
-## Analysis in Timeline Explorer
+## DFIR Timeline Analysis in Timeline Explorer
 
 ![Hayabusa analysis in Timeline Explorer](screenshots/TimelineExplorer-ColoredTimeline.png)
 
@@ -268,7 +273,7 @@ If the update fails, you may need to rename the `rules` folder and try again.
 
 If you have Rust installed, you can compile from source with the following command:
 
-Note: To compile, you need a Rust(rustc) version of `1.66.0` or higher.
+Note: To compile, you usually need the latest version of Rust.
 
 ```bash
 cargo build --release
@@ -607,6 +612,7 @@ Filtering:
   -r, --regex <REGEX>        Search by regular expression
 
 Output:
+  -M, --multiline      Output event field information in multiple rows
   -o, --output <FILE>  Save the search results in CSV format (ex: search.csv)
 
 General Options:
@@ -727,7 +733,7 @@ hayabusa.exe csv-timeline -f eventlog.evtx
 hayabusa.exe csv-timeline -d .\hayabusa-sample-evtx -p verbose
 ```
 
-* Export to a single CSV file for further analysis with Excel, Timeline Explorer, Elastic Stack, etc... and include all field information (Warning: your file output size will become much larger with the `super-verbose` profile!):
+* Export to a single CSV file for further analysis with LibreOffice, Timeline Explorer, Elastic Stack, etc... and include all field information (Warning: your file output size will become much larger with the `super-verbose` profile!):
 
 ```
 hayabusa.exe csv-timeline -d .\hayabusa-sample-evtx -o results.csv -p super-verbose
@@ -889,7 +895,7 @@ This usually results in a 10~25% speed improvement.
 The `json-timeline` command will create a forensics timeline of events in JSON or JSONL format.
 Outputting to JSONL will be faster and smaller file size than JSON so is good if you are going to just import the results into another tool like Elastic Stack.
 JSON is better if you are going to manually analyze the results with a text editor.
-CSV output is good for importing smaller timelines (usually less than 2GB) into tools like Excel or Timeline Explorer.
+CSV output is good for importing smaller timelines (usually less than 2GB) into tools like LibreOffice or Timeline Explorer.
 JSON is best for more detailed analysis of data (including large results files) with tools like `jq` as the `Details` fields are separated for easier analysis.
 (In the CSV output, all of the event log fields are in one big `Details` column making sorting of data, etc... more difficult.)
 
