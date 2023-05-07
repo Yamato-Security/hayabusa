@@ -11,6 +11,7 @@
 - `search`コマンドに`-M, --multiline`オプションを追加した。 (#1017) (@hitenkoku)
 - `search`コマンドの出力での不要な改行やタブを削除した。 (#1003) (@hitenkoku)
 - 正規表現の不要なエスケープを許容し、パースエラーを減らす`regex`クレートを1.8に更新した。(#1018) (@YamatoSecurity)
+- `csv-timeline`コマンドの出力で不要な空白文字の削除を行った。 (#1019) (@hitenkoku)
 - `update-rules`コマンド使用時にハヤブサのバージョン番号の詳細を確認するようにした (#1028) (@hitenkoku)
 - `search`コマンドの結果を時刻順にソートした。 (#1033) (@hitenkoku)
 

@@ -11,6 +11,7 @@
 - Added `-M, --multiline` option to search command. (#1017) (@hitenkoku)
 - Deleted return characters in the output of the `search` command. (#1003) (@hitenkoku)
 - `regex` crate updated to 1.8 which allows unnecessary escapes in regular expressions reducing parsing errors. (#1018) (@YamatoSecurity)
+- Deleted return characters in output of `csv-timeline` command. (#1019) (@hitenkoku)
 - Don't show new version information with the `update-rules` command when building a newer dev build. (#1028) (@hitenkoku)
 - Sorted `search` timeline order. (#1033) (@hitenkoku)
 

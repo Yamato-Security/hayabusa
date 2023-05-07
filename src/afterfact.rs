@@ -373,8 +373,10 @@ fn emit_csv<W: std::io::Write>(
                         ),
                         stored_static.common_options.no_color,
                     ),
-                    &_get_serialized_disp_output(&detect_info.ext_field, false),
-                    false,
+                    &_get_serialized_disp_output(&detect_info.ext_field, false)
+                        .split_whitespace()
+                        .join(" "),
+                    true,
                 )
                 .ok();
             } else if jsonl_output_flag {
@@ -404,10 +406,13 @@ fn emit_csv<W: std::io::Write>(
                 }
                 wtr.write_record(detect_info.ext_field.iter().map(|x| {
                     output_remover.replace_all(
-                        &output_replacer.replace_all(
-                            &x.1.to_value(),
-                            &output_replaced_maps.values().collect_vec(),
-                        ),
+                        &output_replacer
+                            .replace_all(
+                                &x.1.to_value(),
+                                &output_replaced_maps.values().collect_vec(),
+                            )
+                            .split_whitespace()
+                            .join(" "),
                         &removed_replaced_maps.values().collect_vec(),
                     )
                 }))?;
