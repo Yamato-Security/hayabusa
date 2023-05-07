@@ -1,5 +1,19 @@
 # 変更点
 
+## 2.X.X [2023/XX/XX] "XXX"
+
+**新機能:**
+
+- XXX
+
+**改善:**
+
+- XXX
+
+**バグ修正:**
+
+- XXX
+
 ## 2.5.0 [2023/05/12] "Security Mini Camp in Tokyo Release"
 
 **新機能:**
