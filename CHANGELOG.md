@@ -12,7 +12,7 @@
 
 **Bug Fixes:**
 
-- Data in AccessMask field are not separated by spaces in the details field. (#1035) (@hitenkoku)
+- Fixed data in AccessMask field are not separated by spaces in the details field. (#1035) (@hitenkoku)
 
 ## 2.5.0 [2023/05/12] "Security Mini Camp in Tokyo Release"
 
