@@ -48,7 +48,7 @@ Hayabusa is a **Windows event log fast forensics timeline generator** and **thre
   - [Detection Fequency Timeline (`-T` option)](#detection-fequency-timeline--t-option)
   - [Results Summary](#results-summary)
   - [HTML Results Summary (`-H` option)](#html-results-summary--h-option)
-  - [DFIR Timeline Analysis in LibreOffice with `-M` Multiline Output](#dfir-timeline-analysis-in-libreoffice-with--m-multiline-output)
+  - [DFIR Timeline Analysis in LibreOffice (`-M` Multiline Output)](#dfir-timeline-analysis-in-libreoffice--m-multiline-output)
   - [DFIR Timeline Analysis in Timeline Explorer](#dfir-timeline-analysis-in-timeline-explorer)
   - [Critical Alert Filtering and Computer Grouping in Timeline Explorer](#critical-alert-filtering-and-computer-grouping-in-timeline-explorer)
   - [Analysis with the Elastic Stack Dashboard](#analysis-with-the-elastic-stack-dashboard)
@@ -182,7 +182,7 @@ Hayabusa hopes to let analysts get 80% of their work done in 20% of the time whe
 
 ![Hayabusa results summary](screenshots/HTML-ResultsSummary-3.png)
 
-## DFIR Timeline Analysis in LibreOffice with `-M` Multiline Output 
+## DFIR Timeline Analysis in LibreOffice (`-M` Multiline Output)
 
 ![Hayabusa analysis in LibreOffice](screenshots/DFIR-TimelineLibreOfficeMultiline.jpeg)
 
