@@ -225,7 +225,12 @@ pub fn parse_message(
         let hash_value = get_serde_number_to_string(tmp_event_record, false);
         if hash_value.is_some() {
             if let Some(hash_value) = hash_value {
-                hash_map.insert(CompactString::from(full_target_str), hash_value);
+                let alias_replace_value = if target_str == "AccessMask" {
+                    hash_value.split_ascii_whitespace().join(" ").into()
+                } else {
+                    hash_value
+                };
+                hash_map.insert(CompactString::from(full_target_str), alias_replace_value);
             }
         } else {
             hash_map.insert(CompactString::from(full_target_str), "n/a".into());
