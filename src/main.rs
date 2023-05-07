@@ -375,7 +375,7 @@ impl App {
                                 key,
                                 pivot_keyword,
                                 "file",
-                                &stored_static,
+                                stored_static,
                             )
                             .as_bytes(),
                         )
@@ -416,7 +416,7 @@ impl App {
                             key,
                             pivot_keyword,
                             "standard",
-                            &stored_static,
+                            stored_static,
                         );
 
                         if pivot_keyword.keywords.is_empty() {
