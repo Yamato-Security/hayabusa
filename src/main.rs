@@ -370,7 +370,14 @@ impl App {
                             .unwrap(),
                         );
                         f.write_all(
-                            create_output(String::default(), key, pivot_keyword, "file", &stored_static).as_bytes(),
+                            create_output(
+                                String::default(),
+                                key,
+                                pivot_keyword,
+                                "file",
+                                &stored_static,
+                            )
+                            .as_bytes(),
                         )
                         .unwrap();
                     });
@@ -404,7 +411,13 @@ impl App {
                     .ok();
 
                     pivot_key_unions.iter().for_each(|(key, pivot_keyword)| {
-                        create_output(String::default(), key, pivot_keyword, "standard", &stored_static);
+                        create_output(
+                            String::default(),
+                            key,
+                            pivot_keyword,
+                            "standard",
+                            &stored_static,
+                        );
 
                         if pivot_keyword.keywords.is_empty() {
                             write_color_buffer(
