@@ -17,7 +17,9 @@ use hayabusa::detections::configs::{
 use hayabusa::detections::detection::{self, EvtxRecordInfo};
 use hayabusa::detections::message::{AlertMessage, ERROR_LOG_STACK};
 use hayabusa::detections::rule::{get_detection_keys, RuleNode};
-use hayabusa::detections::utils::{check_setting_path, output_and_data_stack_for_html};
+use hayabusa::detections::utils::{
+    check_setting_path, get_writable_color, output_and_data_stack_for_html,
+};
 use hayabusa::options;
 use hayabusa::options::htmlreport::{self, HTML_REPORTER};
 use hayabusa::options::pivot::create_output;
@@ -422,7 +424,10 @@ impl App {
                         if pivot_keyword.keywords.is_empty() {
                             write_color_buffer(
                                 &BufferWriter::stdout(ColorChoice::Always),
-                                Some(Color::Red),
+                                get_writable_color(
+                                    Some(Color::Red),
+                                    stored_static.common_options.no_color,
+                                ),
                                 "No keywords found\n",
                                 true,
                             )
