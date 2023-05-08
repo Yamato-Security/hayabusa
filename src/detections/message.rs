@@ -117,23 +117,22 @@ pub fn insert(
 ) {
     if !is_agg {
         let mut prev = 'a';
-        let mut removed_sp_parsed_detail = parse_message(event_record, output, eventkey_alias)
+        let mut removed_sp_parsed_detail = parse_message(event_record, output, eventkey_alias);
+        removed_sp_parsed_detail.retain(|ch| {
+            let retain_flag = prev == ' ' && ch == ' ' && ch.is_control();
+            if !retain_flag {
+                prev = ch;
+            }
+            !retain_flag
+        });
+        let parsed_detail = removed_sp_parsed_detail
             .replace('\n', "🛂n")
             .replace('\r', "🛂r")
             .replace('\t', "🛂t");
-        removed_sp_parsed_detail.retain(|ch| {
-            let continuous_space = prev == ' ' && ch == ' ';
-            prev = ch;
-            !continuous_space
-        });
-        let parsed_detail = removed_sp_parsed_detail
-            .chars()
-            .filter(|&c| !c.is_control())
-            .collect::<CompactString>();
         detect_info.detail = if parsed_detail.is_empty() {
             CompactString::from("-")
         } else {
-            parsed_detail
+            parsed_detail.into()
         };
     }
     let mut replaced_profiles: Vec<(CompactString, Profile)> = vec![];
@@ -225,12 +224,10 @@ pub fn parse_message(
         let hash_value = get_serde_number_to_string(tmp_event_record, false);
         if hash_value.is_some() {
             if let Some(hash_value) = hash_value {
-                let alias_replace_value = if target_str == "AccessMask" {
-                    hash_value.split_ascii_whitespace().join(" ").into()
-                } else {
-                    hash_value
-                };
-                hash_map.insert(CompactString::from(full_target_str), alias_replace_value);
+                hash_map.insert(
+                    CompactString::from(full_target_str),
+                    hash_value.split_ascii_whitespace().join(" ").into(),
+                );
             }
         } else {
             hash_map.insert(CompactString::from(full_target_str), "n/a".into());
