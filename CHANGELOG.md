@@ -1,5 +1,19 @@
 # Changes
 
+## 2.6.0 [2023/XX/XX] "XXX"
+
+**New Features:**
+
+- XXX
+
+**Enhancements:**
+
+- XXX
+
+**Bug Fixes:**
+
+- Output would be in color even if `--no-color` was used in the `pivot-keywords-list` command. (#1044) (@kazuminn)
+
 ## 2.5.0 [2023/05/07] "Golden Week Release"
 
 **Enhancements:**
@@ -10,6 +24,7 @@
 - Deleted return characters in output of the `csv-timeline` command. (#1019) (@hitenkoku)
 - Don't show new version information with the `update-rules` command when building a newer dev build. (#1028) (@hitenkoku)
 - Sorted `search` timeline order. (#1033) (@hitenkoku)
+- Enhanced `pivot-keywords-list` terminal output. (#1022) (@kazuminn)
 
 **Bug Fixes:**
 

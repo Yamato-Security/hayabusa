@@ -1,5 +1,19 @@
 # 変更点
 
+## 2.6.0 [2023/XX/XX] "XXX"
+
+**新機能:**
+
+- XXX
+
+**改善:**
+
+- XXX
+
+**バグ修正:**
+
+- `pivot-keywords-list`コマンドで`--no-color`を使用した場合でも、結果がカラーで出力された。 (#1044) (@kazuminn)
+
 ## 2.5.0 [2023/05/07] "Golden Week Release"
 
 **改善:**
@@ -10,6 +24,7 @@
 - `csv-timeline`コマンドの出力で不要な空白文字の削除を行った。 (#1019) (@hitenkoku)
 - `update-rules`コマンド使用時にハヤブサのバージョン番号の詳細を確認するようにした (#1028) (@hitenkoku)
 - `search`コマンドの結果を時刻順にソートした。 (#1033) (@hitenkoku)
+- `pivot-keywords-list`のターミナル出力の改善。 (#1022) (@kazuminn)
 
 **バグ修正:**
 
