@@ -5,9 +5,11 @@ use std::fmt::Write as _;
 use std::sync::RwLock;
 use termcolor::{BufferWriter, Color, ColorChoice};
 
-use crate::detections::utils::{get_serde_number_to_string, write_color_buffer};
+use crate::detections::utils::{
+    get_serde_number_to_string, get_writable_color, write_color_buffer,
+};
 
-use crate::detections::configs::EventKeyAliasConfig;
+use crate::detections::configs::{EventKeyAliasConfig, StoredStatic};
 
 #[derive(Debug)]
 pub struct PivotKeyword {
@@ -93,13 +95,14 @@ pub fn create_output(
     key: &String,
     pivot_keyword: &PivotKeyword,
     place: &str,
+    stored_static: &StoredStatic,
 ) -> String {
     if place == "standard" {
         //headers
         let output = String::default();
         write_color_buffer(
             &BufferWriter::stdout(ColorChoice::Always),
-            Some(Color::Green),
+            get_writable_color(Some(Color::Green), stored_static.common_options.no_color),
             &fmt_headers(output, key, pivot_keyword),
             false,
         )
