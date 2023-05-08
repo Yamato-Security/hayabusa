@@ -1,6 +1,6 @@
 # Changes
 
-## 2.X.X [2023/XX/XX] "XXX"
+## 2.6.0 [2023/XX/XX] "XXX"
 
 **New Features:**
 
@@ -12,7 +12,7 @@
 
 **Bug Fixes:**
 
-- Fixed data in AccessMask field are not separated by spaces in the details field. (#1035) (@hitenkoku)
+- Data in certain fields such as `AccessMask` would not be separated by spaces when outputted from the `details` field. (#1035) (@hitenkoku)
 
 ## 2.5.0 [2023/05/07] "Golden Week Release"
 
