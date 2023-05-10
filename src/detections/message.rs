@@ -112,12 +112,13 @@ pub fn insert(
     mut detect_info: DetectInfo,
     time: DateTime<Utc>,
     profile_converter: &mut HashMap<&str, Profile>,
-    is_agg: bool,
+    (is_agg, is_csv_timeline): (bool, bool),
     eventkey_alias: &EventKeyAliasConfig,
 ) {
     if !is_agg {
         let mut prev = 'a';
-        let mut removed_sp_parsed_detail = parse_message(event_record, output, eventkey_alias);
+        let mut removed_sp_parsed_detail =
+            parse_message(event_record, output, eventkey_alias, is_csv_timeline);
         removed_sp_parsed_detail.retain(|ch| {
             let retain_flag = prev == ' ' && ch == ' ' && ch.is_control();
             if !retain_flag {
@@ -170,6 +171,7 @@ pub fn insert(
                             event_record,
                             CompactString::new(p.to_value()),
                             eventkey_alias,
+                            is_csv_timeline,
                         )),
                     ))
                 }
@@ -185,6 +187,7 @@ pub fn parse_message(
     event_record: &Value,
     output: CompactString,
     eventkey_alias: &EventKeyAliasConfig,
+    csv_timeline_flag: bool,
 ) -> CompactString {
     let mut return_message = output;
     let mut hash_map: HashMap<CompactString, CompactString> = HashMap::new();
@@ -224,10 +227,14 @@ pub fn parse_message(
         let hash_value = get_serde_number_to_string(tmp_event_record, false);
         if hash_value.is_some() {
             if let Some(hash_value) = hash_value {
-                hash_map.insert(
-                    CompactString::from(full_target_str),
-                    hash_value.split_ascii_whitespace().join(" ").into(),
-                );
+                if csv_timeline_flag {
+                    hash_map.insert(
+                        CompactString::from(full_target_str),
+                        hash_value.split_ascii_whitespace().join(" ").into(),
+                    );
+                } else {
+                    hash_map.insert(CompactString::from(full_target_str), hash_value);
+                }
             }
         } else {
             hash_map.insert(CompactString::from(full_target_str), "n/a".into());
@@ -376,6 +383,7 @@ mod tests {
                     .to_str()
                     .unwrap(),
                 ),
+                true,
             ),
             expected,
         );
@@ -409,6 +417,7 @@ mod tests {
                     .to_str()
                     .unwrap(),
                 ),
+                true,
             ),
             expected,
         );
@@ -448,6 +457,7 @@ mod tests {
                     .to_str()
                     .unwrap(),
                 ),
+                true,
             ),
             expected,
         );
@@ -486,6 +496,7 @@ mod tests {
                     .to_str()
                     .unwrap(),
                 ),
+                true,
             ),
             expected,
         );
@@ -529,6 +540,7 @@ mod tests {
                     .to_str()
                     .unwrap(),
                 ),
+                true,
             ),
             expected,
         );
@@ -572,6 +584,7 @@ mod tests {
                     .to_str()
                     .unwrap(),
                 ),
+                true,
             ),
             expected,
         );
@@ -615,6 +628,7 @@ mod tests {
                     .to_str()
                     .unwrap(),
                 ),
+                true,
             ),
             expected,
         );

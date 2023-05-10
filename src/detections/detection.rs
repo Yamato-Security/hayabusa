@@ -1,5 +1,6 @@
 extern crate csv;
 
+use crate::detections::configs::Action;
 use crate::detections::utils::{create_recordinfos, format_time, write_color_buffer};
 use crate::options::profile::Profile::{
     self, Channel, Computer, EventID, EvtxFile, Level, MitreTactics, MitreTags, OtherTags,
@@ -265,6 +266,7 @@ impl Detection {
         let tags_config_values: Vec<&CompactString> = TAGS_CONFIG.values().collect();
         let binding = STORED_EKEY_ALIAS.read().unwrap();
         let eventkey_alias = binding.as_ref().unwrap();
+        let is_csv_timeline = matches!(stored_static.config.action, Some(Action::CsvTimeline(_)));
 
         for (key, profile) in stored_static.profiles.as_ref().unwrap().iter() {
             match profile {
@@ -532,6 +534,7 @@ impl Detection {
                             .collect(),
                         &record_info.record,
                         eventkey_alias,
+                        is_csv_timeline,
                     );
                     let geo_data = GEOIP_DB_PARSER
                         .read()
@@ -605,6 +608,7 @@ impl Detection {
                             .collect(),
                         &record_info.record,
                         eventkey_alias,
+                        is_csv_timeline,
                     );
 
                     let geo_data = GEOIP_DB_PARSER
@@ -670,7 +674,7 @@ impl Detection {
             detect_info,
             time,
             &mut profile_converter,
-            false,
+            (false, is_csv_timeline),
             eventkey_alias,
         );
     }
@@ -684,6 +688,7 @@ impl Detection {
         let level = rule.yaml["level"].as_str().unwrap_or("-").to_string();
         let tags_config_values: Vec<&CompactString> = TAGS_CONFIG.values().collect();
 
+        let is_csv_timeline = matches!(stored_static.config.action, Some(Action::CsvTimeline(_)));
         for (key, profile) in stored_static.profiles.as_ref().unwrap().iter() {
             match profile {
                 Timestamp(_) => {
@@ -881,7 +886,7 @@ impl Detection {
             detect_info,
             agg_result.start_timedate,
             &mut profile_converter,
-            true,
+            (true, is_csv_timeline),
             eventkey_alias,
         )
     }
@@ -1098,10 +1103,15 @@ impl Detection {
         target_alias: Vec<&str>,
         record: &Value,
         eventkey_alias: &EventKeyAliasConfig,
+        is_csv_output: bool,
     ) -> CompactString {
         for alias in target_alias {
-            let search_data =
-                message::parse_message(record, CompactString::from(alias), eventkey_alias);
+            let search_data = message::parse_message(
+                record,
+                CompactString::from(alias),
+                eventkey_alias,
+                is_csv_output,
+            );
             if search_data != "n/a" {
                 return search_data;
             }
