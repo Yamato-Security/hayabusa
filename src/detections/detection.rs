@@ -266,7 +266,7 @@ impl Detection {
         let tags_config_values: Vec<&CompactString> = TAGS_CONFIG.values().collect();
         let binding = STORED_EKEY_ALIAS.read().unwrap();
         let eventkey_alias = binding.as_ref().unwrap();
-        let is_csv_timeline = matches!(stored_static.config.action, Some(Action::CsvTimeline(_)));
+        let is_json_timeline = matches!(stored_static.config.action, Some(Action::JsonTimeline(_)));
 
         for (key, profile) in stored_static.profiles.as_ref().unwrap().iter() {
             match profile {
@@ -534,7 +534,7 @@ impl Detection {
                             .collect(),
                         &record_info.record,
                         eventkey_alias,
-                        is_csv_timeline,
+                        is_json_timeline,
                     );
                     let geo_data = GEOIP_DB_PARSER
                         .read()
@@ -608,7 +608,7 @@ impl Detection {
                             .collect(),
                         &record_info.record,
                         eventkey_alias,
-                        is_csv_timeline,
+                        is_json_timeline,
                     );
 
                     let geo_data = GEOIP_DB_PARSER
@@ -674,7 +674,7 @@ impl Detection {
             detect_info,
             time,
             &mut profile_converter,
-            (false, is_csv_timeline),
+            (false, is_json_timeline),
             eventkey_alias,
         );
     }
@@ -688,7 +688,7 @@ impl Detection {
         let level = rule.yaml["level"].as_str().unwrap_or("-").to_string();
         let tags_config_values: Vec<&CompactString> = TAGS_CONFIG.values().collect();
 
-        let is_csv_timeline = matches!(stored_static.config.action, Some(Action::CsvTimeline(_)));
+        let is_json_timeline = matches!(stored_static.config.action, Some(Action::JsonTimeline(_)));
         for (key, profile) in stored_static.profiles.as_ref().unwrap().iter() {
             match profile {
                 Timestamp(_) => {
@@ -886,7 +886,7 @@ impl Detection {
             detect_info,
             agg_result.start_timedate,
             &mut profile_converter,
-            (true, is_csv_timeline),
+            (true, is_json_timeline),
             eventkey_alias,
         )
     }

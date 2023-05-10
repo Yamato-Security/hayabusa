@@ -1808,7 +1808,7 @@ mod tests {
                 },
                 expect_time,
                 &mut profile_converter,
-                (false, true),
+                (false, false),
                 &eventkey_alias,
             );
             *profile_converter.get_mut("Computer").unwrap() =
@@ -1829,7 +1829,7 @@ mod tests {
                 },
                 expect_time,
                 &mut profile_converter,
-                (false, true),
+                (false, false),
                 &eventkey_alias,
             );
             let multi = message::MESSAGES.get(&expect_time).unwrap();
@@ -2098,7 +2098,7 @@ mod tests {
                 },
                 expect_time,
                 &mut profile_converter,
-                (false, true),
+                (false, false),
                 &eventkey_alias,
             );
             *profile_converter.get_mut("Computer").unwrap() =
@@ -2119,7 +2119,7 @@ mod tests {
                 },
                 expect_time,
                 &mut profile_converter,
-                (false, true),
+                (false, false),
                 &eventkey_alias,
             );
             let multi = message::MESSAGES.get(&expect_time).unwrap();
