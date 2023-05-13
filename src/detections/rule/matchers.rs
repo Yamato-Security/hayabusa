@@ -363,16 +363,6 @@ impl LeafMatcher for DefaultMatcher {
         if n == 0 {
             // パイプがないケース
             self.fast_match = Self::convert_to_fast_match(&pattern, true);
-            if self.fast_match.is_some()
-                && matches!(
-                    &self.fast_match.as_ref().unwrap()[0],
-                    FastMatch::Exact(_) | FastMatch::Contains(_)
-                )
-                && !self.key_list.is_empty()
-            {
-                // FastMatch::Exact/Contains検索に置き換えられたときは正規表現は不要
-                return Result::Ok(());
-            }
         } else if n == 1 {
             // パイプがあるケース
             self.fast_match = match &self.pipes[0] {
@@ -461,7 +451,16 @@ impl LeafMatcher for DefaultMatcher {
             );
             return Result::Err(vec![errmsg]);
         }
-
+        if self.fast_match.is_some()
+            && matches!(
+                &self.fast_match.as_ref().unwrap()[0],
+                FastMatch::Exact(_) | FastMatch::Contains(_)
+            )
+            && !self.key_list.is_empty()
+        {
+            // FastMatch::Exact/Contains検索に置き換えられたときは正規表現は不要
+            return Result::Ok(());
+        }
         let is_eqfield = self.pipes.iter().any(|pipe_element| {
             matches!(
                 pipe_element,
@@ -2337,6 +2336,7 @@ mod tests {
         assert!(!DefaultMatcher::ends_with_ignore_case("bc", "bcd").unwrap());
         assert!(!DefaultMatcher::ends_with_ignore_case("bcd", "abc").unwrap());
     }
+
     #[test]
     fn test_convert_to_fast_match() {
         assert_eq!(DefaultMatcher::convert_to_fast_match("ab?", true), None);
