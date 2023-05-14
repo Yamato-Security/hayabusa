@@ -270,3 +270,102 @@ impl EventMetrics {
         }
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use std::path::Path;
+
+    use compact_str::CompactString;
+    use hashbrown::HashMap;
+    use nested::Nested;
+
+    use crate::{
+        detections::{
+            configs::{
+                Action, CommonOptions, Config, DetectCommonOption, InputOption, MetricsOption,
+                StoredStatic,
+            },
+            utils::create_rec_info,
+        },
+        timeline::timelines::Timeline,
+    };
+
+    fn create_dummy_stored_static(action: Action) -> StoredStatic {
+        StoredStatic::create_static_data(Some(Config {
+            action: Some(action),
+            debug: false,
+        }))
+    }
+
+    /// メトリクスコマンドの統計情報集計のテスト。 Testing of statistics aggregation for metrics commands.
+    #[test]
+    pub fn test_evt_logon_stats() {
+        let dummy_stored_static = create_dummy_stored_static(Action::Metrics(MetricsOption {
+            input_args: InputOption {
+                directory: None,
+                filepath: None,
+                live_analysis: false,
+            },
+            common_options: CommonOptions {
+                no_color: false,
+                quiet: false,
+            },
+            detect_common_options: DetectCommonOption {
+                json_input: false,
+                evtx_file_ext: None,
+                thread_number: None,
+                quiet_errors: false,
+                config: Path::new("./rules/config").to_path_buf(),
+                verbose: false,
+            },
+            european_time: false,
+            iso_8601: false,
+            rfc_2822: false,
+            rfc_3339: false,
+            us_military_time: false,
+            us_time: false,
+            utc: false,
+            output: None,
+        }));
+
+        let mut timeline = Timeline::new();
+        // テスト1: レコードのチャンネルがaliasに含まれている場合
+        let alias_ch_record_str = r#"{
+            "Event": {"System": {"EventID": 4103, "Channel": "Security", "Computer":"HAYABUSA-DESKTOP"}},
+            "Event_attributes": {"xmlns": "http://schemas.microsoft.com/win/2004/08/events/event"}
+        }"#;
+        let mut input_datas = vec![];
+        let alias_ch_record = serde_json::from_str(alias_ch_record_str).unwrap();
+        input_datas.push(create_rec_info(
+            alias_ch_record,
+            "testpath".to_string(),
+            &Nested::<String>::new(),
+        ));
+
+        // テスト2: レコードのチャンネル名がaliasに含まれていない場合
+        let no_alias_ch_record_str = r#"{
+            "Event": {"System": {"EventID": 4104, "Channel": "NotExistInAlias", "Computer":"HAYABUSA-DESKTOP"}},
+            "Event_attributes": {"xmlns": "http://schemas.microsoft.com/win/2004/08/events/event"}
+        }"#;
+
+        let mut expect: HashMap<(CompactString, CompactString), usize> = HashMap::new();
+        expect.insert(("4103".into(), "security".into()), 1);
+        expect.insert(("4104".into(), "notexistinalias".into()), 1);
+        let no_alias_ch_record = serde_json::from_str(no_alias_ch_record_str).unwrap();
+        input_datas.push(create_rec_info(
+            no_alias_ch_record,
+            "testpath2".to_string(),
+            &Nested::<String>::new(),
+        ));
+
+        timeline
+            .stats
+            .evt_stats_start(&input_datas, &dummy_stored_static);
+        assert_eq!(timeline.stats.stats_list.len(), expect.len());
+
+        for (k, v) in timeline.stats.stats_list {
+            assert!(expect.contains_key(&k));
+            assert_eq!(expect.get(&k).unwrap(), &v);
+        }
+    }
+}
