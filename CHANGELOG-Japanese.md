@@ -1,6 +1,6 @@
 # 変更点
 
-## 2.5.1 [2023/05/04] "Mothers Day Release"
+## 2.5.1 [2023/05/14] "Mothers Day Release"
 
 **改善:**
 
