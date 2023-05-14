@@ -8,7 +8,7 @@
 
 **Enhancements:**
 
-- XXX
+- Reduced memory usage by half when using newly converted rules. (#1047) (@fukusuket)
 
 **Bug Fixes:**
 
