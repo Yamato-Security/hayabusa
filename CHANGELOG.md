@@ -8,7 +8,7 @@
 
 **Enhancements:**
 
-- XXX
+- Added `%AllFieldInfo%` alias in output profiles. (#900) (@hitenkoku)
 
 **Bug Fixes:**
 
