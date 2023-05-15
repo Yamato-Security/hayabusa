@@ -890,7 +890,7 @@ impl Detection {
             detect_info,
             agg_result.start_timedate,
             &mut profile_converter,
-            (true, is_json_timeline , false),
+            (true, is_json_timeline, false),
             eventkey_alias,
         )
     }

@@ -142,7 +142,9 @@ pub fn insert(
     for (key, profile) in detect_info.ext_field.iter() {
         match profile {
             Details(_) => {
-                let existed_flag = replaced_profiles.iter().any(|(_, y)| matches!(y, Details(_)));
+                let existed_flag = replaced_profiles
+                    .iter()
+                    .any(|(_, y)| matches!(y, Details(_)));
                 if existed_flag {
                     continue;
                 }
@@ -155,7 +157,9 @@ pub fn insert(
                 }
             }
             AllFieldInfo(_) => {
-                let existed_flag = replaced_profiles.iter().any(|(_, y)| matches!(y, AllFieldInfo(_)));
+                let existed_flag = replaced_profiles
+                    .iter()
+                    .any(|(_, y)| matches!(y, AllFieldInfo(_)));
                 if existed_flag {
                     continue;
                 }
@@ -195,9 +199,12 @@ pub fn insert(
                     rec
                 };
                 println!("profile details dbg: {profile_details:?}");
-                let mut details_splits = profile_details.split(" ¦ ").map(|x| x.split_ascii_whitespace().join(" "));
+                let mut details_splits = profile_details
+                    .split(" ¦ ")
+                    .map(|x| x.split_ascii_whitespace().join(" "));
                 let extra_field_val = profile_all_field_info
-                    .split(" ¦ ").map(|x| x.split_ascii_whitespace().join(" "))
+                    .split(" ¦ ")
+                    .map(|x| x.split_ascii_whitespace().join(" "))
                     .filter(|x| {
                         println!("dbg x: {x} -> {:?}", details_splits.contains(x));
                         !details_splits.contains(x)
