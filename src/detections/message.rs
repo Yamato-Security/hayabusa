@@ -187,8 +187,10 @@ pub fn insert(
                 {
                     all_field_info_val
                 } else if is_agg {
-                    // AllFieldInfoがまだ読み込まれていない場合は、AllFieldInfoを追加する
-                    replaced_profiles.push((key.to_owned(), AllFieldInfo("-".into())));
+                    if included_all_field_info {
+                        // AllFieldInfoがまだ読み込まれていない場合は、AllFieldInfoを追加する
+                        replaced_profiles.push((key.to_owned(), AllFieldInfo("-".into())));
+                    }
                     "-".to_string()
                 } else {
                     let rec = utils::create_recordinfos(event_record);
@@ -198,16 +200,16 @@ pub fn insert(
                     }
                     rec
                 };
-                println!("profile details dbg: {profile_details:?}");
-                let mut details_splits = profile_details
-                    .split(" ¦ ")
-                    .map(|x| x.split_ascii_whitespace().join(" "));
+                let details_splits: HashSet<&str> = HashSet::from_iter(
+                    profile_details
+                        .split(" ¦ ")
+                        .map(|x| x.split_once(": ").unwrap().1),
+                );
                 let extra_field_val = profile_all_field_info
                     .split(" ¦ ")
-                    .map(|x| x.split_ascii_whitespace().join(" "))
                     .filter(|x| {
-                        println!("dbg x: {x} -> {:?}", details_splits.contains(x));
-                        !details_splits.contains(x)
+                        let value = x.split_once(": ").unwrap().1;
+                        !details_splits.contains(value)
                     })
                     .join(" ¦ ");
                 replaced_profiles.push((key.to_owned(), ExtraFieldInfo(extra_field_val.into())));
