@@ -23,6 +23,7 @@
 **バグ修正:**
 
 - `AccessMask`等のフィールド内の情報が空白で区切られていなかった状態を修正した。 (#1035) (@hitenkoku)
+- JSON形式に出力時に複数の空白が一つの空白に変換されていた。 (#1048) (@hitenkoku)
 - `pivot-keywords-list`コマンドで`--no-color`を使用した場合でも、結果がカラーで出力された。 (#1044) (@kazuminn)
 
 ## 2.5.0 [2023/05/07] "Golden Week Release"
