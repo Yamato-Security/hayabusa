@@ -8,7 +8,7 @@
 
 **Enhancements:**
 
-- Added `%AllFieldInfo%` alias in output profiles. (#900) (@hitenkoku)
+- Added `%ExtraFieldInfo%` alias to output profiles which will output all of the other fields that do not get outputted in `Details`. (#900) (@hitenkoku)
 
 **Bug Fixes:**
 
