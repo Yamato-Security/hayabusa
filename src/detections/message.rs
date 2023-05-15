@@ -203,12 +203,12 @@ pub fn insert(
                 let details_splits: HashSet<&str> = HashSet::from_iter(
                     profile_details
                         .split(" ¦ ")
-                        .map(|x| x.split_once(": ").unwrap().1),
+                        .map(|x| x.split_once(": ").unwrap_or_default().1),
                 );
                 let extra_field_val = profile_all_field_info
                     .split(" ¦ ")
                     .filter(|x| {
-                        let value = x.split_once(": ").unwrap().1;
+                        let value = x.split_once(": ").unwrap_or_default().1;
                         !details_splits.contains(value)
                     })
                     .join(" ¦ ");
