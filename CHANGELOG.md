@@ -1,10 +1,6 @@
 # Changes
 
-## 2.6.0 [2023/XX/XX] "XXX"
-
-**New Features:**
-
-- XXX
+## 2.5.1 [2023/05/14] "Mothers Day Release"
 
 **Enhancements:**
 
