@@ -1,8 +1,8 @@
 use crate::detections::message::AlertMessage;
-use crate::detections::pivot::{PivotKeyword, PIVOT_KEYWORD};
 use crate::detections::utils;
 use crate::options::geoip_search::GeoIPSearch;
 use crate::options::htmlreport;
+use crate::options::pivot::{PivotKeyword, PIVOT_KEYWORD};
 use crate::options::profile::{load_profile, Profile};
 use aho_corasick::{AhoCorasick, AhoCorasickBuilder, MatchKind};
 use chrono::{DateTime, Utc};
@@ -286,6 +286,7 @@ impl StoredStatic {
         );
         let multiline_flag = match &input_config.as_ref().unwrap().action {
             Some(Action::CsvTimeline(opt)) => opt.multiline,
+            Some(Action::Search(opt)) => opt.multiline,
             _ => false,
         };
         let mut ret = StoredStatic {
@@ -486,8 +487,8 @@ fn check_thread_number(config: &Config) -> Option<usize> {
 #[derive(Subcommand, Clone, Debug)]
 pub enum Action {
     #[clap(
-        author = "Yamato Security (https://github.com/Yamato-Security/hayabusa) @SecurityYamato)",
-        help_template = "\nHayabusa v2.4.0\n{author-with-newline}\n{usage-heading}\n  hayabusa.exe csv-timeline <INPUT> [OPTIONS]\n\n{all-args}",
+        author = "Yamato Security (https://github.com/Yamato-Security/hayabusa - @SecurityYamato)",
+        help_template = "\nHayabusa v2.5.1 - Mothers Day Release\n{author-with-newline}\n{usage-heading}\n  hayabusa.exe csv-timeline <INPUT> [OPTIONS]\n\n{all-args}",
         term_width = 400,
         disable_help_flag = true,
         display_order = 290
@@ -496,8 +497,8 @@ pub enum Action {
     CsvTimeline(CsvOutputOption),
 
     #[clap(
-        author = "Yamato Security (https://github.com/Yamato-Security/hayabusa) @SecurityYamato)",
-        help_template = "\nHayabusa v2.4.0\n{author-with-newline}\n{usage-heading}\n  hayabusa.exe json-timeline <INPUT> [OPTIONS]\n\n{all-args}",
+        author = "Yamato Security (https://github.com/Yamato-Security/hayabusa - @SecurityYamato)",
+        help_template = "\nHayabusa v2.5.1 - Mothers Day Release\n{author-with-newline}\n{usage-heading}\n  hayabusa.exe json-timeline <INPUT> [OPTIONS]\n\n{all-args}",
         term_width = 400,
         disable_help_flag = true,
         display_order = 360
@@ -506,8 +507,8 @@ pub enum Action {
     JsonTimeline(JSONOutputOption),
 
     #[clap(
-        author = "Yamato Security (https://github.com/Yamato-Security/hayabusa) @SecurityYamato)",
-        help_template = "\nHayabusa v2.4.0\n{author-with-newline}\n{usage-heading}\n  hayabusa.exe logon-summary <INPUT> [OPTIONS]\n\n{all-args}",
+        author = "Yamato Security (https://github.com/Yamato-Security/hayabusa - @SecurityYamato)",
+        help_template = "\nHayabusa v2.5.1 - Mothers Day Release\n{author-with-newline}\n{usage-heading}\n  hayabusa.exe logon-summary <INPUT> [OPTIONS]\n\n{all-args}",
         term_width = 400,
         disable_help_flag = true,
         display_order = 383
@@ -516,8 +517,8 @@ pub enum Action {
     LogonSummary(LogonSummaryOption),
 
     #[clap(
-        author = "Yamato Security (https://github.com/Yamato-Security/hayabusa) @SecurityYamato)",
-        help_template = "\nHayabusa v2.4.0\n{author-with-newline}\n{usage-heading}\n  hayabusa.exe metrics <INPUT> [OPTIONS]\n\n{all-args}",
+        author = "Yamato Security (https://github.com/Yamato-Security/hayabusa - @SecurityYamato)",
+        help_template = "\nHayabusa v2.5.1 - Mothers Day Release\n{author-with-newline}\n{usage-heading}\n  hayabusa.exe metrics <INPUT> [OPTIONS]\n\n{all-args}",
         term_width = 400,
         disable_help_flag = true,
         display_order = 390
@@ -526,8 +527,8 @@ pub enum Action {
     Metrics(MetricsOption),
 
     #[clap(
-        author = "Yamato Security (https://github.com/Yamato-Security/hayabusa) @SecurityYamato)",
-        help_template = "\nHayabusa v2.4.0\n{author-with-newline}\n{usage-heading}\n  hayabusa.exe pivot-keywords-list <INPUT> [OPTIONS]\n\n{all-args}",
+        author = "Yamato Security (https://github.com/Yamato-Security/hayabusa - @SecurityYamato)",
+        help_template = "\nHayabusa v2.5.1 - Mothers Day Release\n{author-with-newline}\n{usage-heading}\n  hayabusa.exe pivot-keywords-list <INPUT> [OPTIONS]\n\n{all-args}",
         term_width = 400,
         disable_help_flag = true,
         display_order = 420
@@ -536,8 +537,8 @@ pub enum Action {
     PivotKeywordsList(PivotKeywordOption),
 
     #[clap(
-        author = "Yamato Security (https://github.com/Yamato-Security/hayabusa) @SecurityYamato)",
-        help_template = "\nHayabusa v2.4.0\n{author-with-newline}\n{usage-heading}\n  hayabusa.exe search <INPUT> <--keywords \"<KEYWORDS>\" OR --regex \"<REGEX>\"> [OPTIONS]\n\n{all-args}",
+        author = "Yamato Security (https://github.com/Yamato-Security/hayabusa - @SecurityYamato)",
+        help_template = "\nHayabusa v2.5.1 - Mothers Day Release\n{author-with-newline}\n{usage-heading}\n  hayabusa.exe search <INPUT> <--keywords \"<KEYWORDS>\" OR --regex \"<REGEX>\"> [OPTIONS]\n\n{all-args}",
         term_width = 400,
         disable_help_flag = true,
         display_order = 450
@@ -546,8 +547,8 @@ pub enum Action {
     Search(SearchOption),
 
     #[clap(
-        author = "Yamato Security (https://github.com/Yamato-Security/hayabusa) @SecurityYamato)",
-        help_template = "\nHayabusa v2.4.0\n{author-with-newline}\n{usage-heading}\n  {usage}\n\n{all-args}",
+        author = "Yamato Security (https://github.com/Yamato-Security/hayabusa - @SecurityYamato)",
+        help_template = "\nHayabusa v2.5.1 - Mothers Day Release\n{author-with-newline}\n{usage-heading}\n  {usage}\n\n{all-args}",
         term_width = 400,
         disable_help_flag = true,
         display_order = 470
@@ -556,8 +557,8 @@ pub enum Action {
     UpdateRules(UpdateOption),
 
     #[clap(
-        author = "Yamato Security (https://github.com/Yamato-Security/hayabusa) @SecurityYamato)",
-        help_template = "\nHayabusa v2.4.0\n{author-with-newline}\n{usage-heading}\n  {usage}\n\n{all-args}",
+        author = "Yamato Security (https://github.com/Yamato-Security/hayabusa - @SecurityYamato)",
+        help_template = "\nHayabusa v2.5.1 - Mothers Day Release\n{author-with-newline}\n{usage-heading}\n  {usage}\n\n{all-args}",
         term_width = 400,
         disable_help_flag = true,
         display_order = 380
@@ -566,8 +567,8 @@ pub enum Action {
     LevelTuning(LevelTuningOption),
 
     #[clap(
-        author = "Yamato Security (https://github.com/Yamato-Security/hayabusa) @SecurityYamato)",
-        help_template = "\nHayabusa v2.4.0\n{author-with-newline}\n{usage-heading}\n  {usage}\n\n{all-args}",
+        author = "Yamato Security (https://github.com/Yamato-Security/hayabusa - @SecurityYamato)",
+        help_template = "\nHayabusa v2.5.1 - Mothers Day Release\n{author-with-newline}\n{usage-heading}\n  {usage}\n\n{all-args}",
         term_width = 400,
         disable_help_flag = true,
         display_order = 451
@@ -726,7 +727,12 @@ pub struct SearchOption {
     pub filter: Vec<String>,
 
     /// Save the search results in CSV format (ex: search.csv)
-    #[arg(help_heading = Some("Output"), short = 'o', long, value_name = "FILE")]
+    #[arg(
+        help_heading = Some("Output"),
+        short = 'o',
+        long, value_name = "FILE",
+        display_order = 410
+    )]
     pub output: Option<PathBuf>,
 
     /// Specify additional file extensions (ex: evtx_data) (ex: evtx1,evtx2)
@@ -762,6 +768,10 @@ pub struct SearchOption {
     /// Output verbose information
     #[arg(help_heading = Some("Display Settings"), short = 'v', long, display_order = 480)]
     pub verbose: bool,
+
+    /// Output event field information in multiple rows
+    #[arg(help_heading = Some("Output"), short = 'M', long="multiline", display_order = 390)]
+    pub multiline: bool,
 }
 
 #[derive(Args, Clone, Debug)]
@@ -1152,8 +1162,8 @@ pub struct JSONOutputOption {
 
 #[derive(Parser, Clone, Debug)]
 #[clap(
-    author = "Yamato Security (https://github.com/Yamato-Security/hayabusa) @SecurityYamato)",
-    help_template = "\nHayabusa v2.4.0\n{author-with-newline}\n{usage-heading}\n  hayabusa.exe <COMMAND> [OPTIONS]\n  hayabusa.exe help <COMMAND>\n\n{all-args}{options}",
+    author = "Yamato Security (https://github.com/Yamato-Security/hayabusa - @SecurityYamato)",
+    help_template = "\nHayabusa v2.5.1 - Mothers Day Release\n{author-with-newline}\n{usage-heading}\n  hayabusa.exe <COMMAND> [OPTIONS]\n  hayabusa.exe help <COMMAND>\n\n{all-args}{options}",
     term_width = 400,
     disable_help_flag = true
 )]
@@ -1449,6 +1459,7 @@ fn extract_search_options(config: &Config) -> Option<SearchOption> {
             quiet_errors: option.quiet_errors,
             config: option.config.clone(),
             verbose: option.verbose,
+            multiline: option.multiline,
         }),
         _ => None,
     }

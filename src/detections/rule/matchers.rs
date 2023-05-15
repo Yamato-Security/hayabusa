@@ -363,16 +363,6 @@ impl LeafMatcher for DefaultMatcher {
         if n == 0 {
             // パイプがないケース
             self.fast_match = Self::convert_to_fast_match(&pattern, true);
-            if self.fast_match.is_some()
-                && matches!(
-                    &self.fast_match.as_ref().unwrap()[0],
-                    FastMatch::Exact(_) | FastMatch::Contains(_)
-                )
-                && !self.key_list.is_empty()
-            {
-                // FastMatch::Exact/Contains検索に置き換えられたときは正規表現は不要
-                return Result::Ok(());
-            }
         } else if n == 1 {
             // パイプがあるケース
             self.fast_match = match &self.pipes[0] {
@@ -461,7 +451,16 @@ impl LeafMatcher for DefaultMatcher {
             );
             return Result::Err(vec![errmsg]);
         }
-
+        if self.fast_match.is_some()
+            && matches!(
+                &self.fast_match.as_ref().unwrap()[0],
+                FastMatch::Exact(_) | FastMatch::Contains(_)
+            )
+            && !self.key_list.is_empty()
+        {
+            // FastMatch::Exact/Contains検索に置き換えられたときは正規表現は不要
+            return Result::Ok(());
+        }
         let is_eqfield = self.pipes.iter().any(|pipe_element| {
             matches!(
                 pipe_element,
@@ -655,6 +654,10 @@ impl PipeElement {
                 patt + "*"
             } else if patt.ends_with('*') {
                 patt
+            } else if patt.ends_with('\\') {
+                // 末尾が\(バックスラッシュ1つ)の場合は、末尾を\\* (バックスラッシュ2つとアスタリスク)に変換する
+                // 末尾が\\*は、バックスラッシュ1文字とそれに続けてワイルドカードパターンであることを表す
+                patt + "\\*"
             } else {
                 patt + "*"
             }
@@ -2333,6 +2336,7 @@ mod tests {
         assert!(!DefaultMatcher::ends_with_ignore_case("bc", "bcd").unwrap());
         assert!(!DefaultMatcher::ends_with_ignore_case("bcd", "abc").unwrap());
     }
+
     #[test]
     fn test_convert_to_fast_match() {
         assert_eq!(DefaultMatcher::convert_to_fast_match("ab?", true), None);
@@ -2504,5 +2508,190 @@ mod tests {
         }"#;
 
         check_select(rule_str, record_json_str, false);
+    }
+
+    #[test]
+    fn test_detect_backslash_exact_match() {
+        let rule_str = r#"
+        enabled: true
+        detection:
+            selection:
+                Channel: 'Microsoft-Windows-Sysmon/Operational'
+                EventID: 1
+                CurrentDirectory: 'C:\Windows\'
+        "#;
+
+        let record_json_str = r#"
+        {
+          "Event": {
+            "System": {
+              "EventID": 1,
+              "Channel": "Microsoft-Windows-Sysmon/Operational"
+            },
+            "EventData": {
+              "CurrentDirectory": "C:\\Windows\\"
+            }
+          }
+        }"#;
+
+        check_select(rule_str, record_json_str, true);
+    }
+
+    #[test]
+    fn test_detect_startswith_backslash1() {
+        let rule_str = r#"
+        enabled: true
+        detection:
+            selection:
+                EventID: 1040
+                Data|startswith: C:\Windows\
+        "#;
+
+        let record_json_str = r#"
+        {
+          "Event": {
+            "System": {
+              "EventID": 1040,
+              "Channel": "Application"
+            },
+            "EventData": {
+              "Data": "C:\\Windows\\hoge.exe"
+            }
+          }
+        }"#;
+
+        check_select(rule_str, record_json_str, true);
+    }
+
+    #[test]
+    fn test_detect_startswith_backslash2() {
+        let rule_str = r#"
+        enabled: true
+        detection:
+            selection:
+                EventID: 1040
+                Data|startswith: C:\Windows\
+        "#;
+
+        let record_json_str = r#"
+        {
+          "Event": {
+            "System": {
+              "EventID": 1040,
+              "Channel": "Application"
+            },
+            "EventData": {
+              "Data": "C:\\Windows_\\hoge.exe"
+            }
+          }
+        }"#;
+
+        check_select(rule_str, record_json_str, false); //★ expect false
+    }
+
+    #[test]
+    fn test_detect_contains_backslash1() {
+        let rule_str = r#"
+        enabled: true
+        detection:
+            selection:
+                EventID: 1040
+                Data|contains: \Windows\
+        "#;
+
+        let record_json_str = r#"
+        {
+          "Event": {
+            "System": {
+              "EventID": 1040,
+              "Channel": "Application"
+            },
+            "EventData": {
+              "Data": "C:\\Windows\\hoge.exe"
+            }
+          }
+        }"#;
+
+        check_select(rule_str, record_json_str, true);
+    }
+
+    #[test]
+    fn test_detect_contains_backslash2() {
+        let rule_str = r#"
+        enabled: true
+        detection:
+            selection:
+                EventID: 1040
+                Data|contains: \Windows\
+        "#;
+
+        let record_json_str = r#"
+        {
+          "Event": {
+            "System": {
+              "EventID": 1040,
+              "Channel": "Application"
+            },
+            "EventData": {
+              "Data": "C:\\Windows_\\hoge.exe"
+            }
+          }
+        }"#;
+
+        check_select(rule_str, record_json_str, false);
+    }
+
+    #[test]
+    fn test_detect_backslash_endswith() {
+        let rule_str = r#"
+        enabled: true
+        detection:
+            selection:
+                Channel: 'Microsoft-Windows-Sysmon/Operational'
+                EventID: 1
+                CurrentDirectory|endswith: 'C:\Windows\system32\'
+        "#;
+
+        let record_json_str = r#"
+        {
+          "Event": {
+            "System": {
+              "EventID": 1,
+              "Channel": "Microsoft-Windows-Sysmon/Operational"
+            },
+            "EventData": {
+              "CurrentDirectory": "C:\\Windows\\system32\\"
+            }
+          }
+        }"#;
+
+        check_select(rule_str, record_json_str, true);
+    }
+
+    #[test]
+    fn test_detect_backslash_regex() {
+        let rule_str = r#"
+        enabled: true
+        detection:
+            selection:
+                Channel: 'Microsoft-Windows-Sysmon/Operational'
+                EventID: 1
+                CurrentDirectory|re: '.*system32\\'
+        "#;
+
+        let record_json_str = r#"
+        {
+          "Event": {
+            "System": {
+              "EventID": 1,
+              "Channel": "Microsoft-Windows-Sysmon/Operational"
+            },
+            "EventData": {
+              "CurrentDirectory": "C:\\Windows\\system32\\"
+            }
+          }
+        }"#;
+
+        check_select(rule_str, record_json_str, true);
     }
 }

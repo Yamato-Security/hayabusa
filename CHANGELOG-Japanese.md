@@ -1,6 +1,34 @@
 # 変更点
 
-## 2.4.x [2023/04/xx] "xxx"
+## 2.5.1 [2023/05/14] "Mothers Day Release"
+
+**改善:**
+
+- 新たに変換されたルールを使用する際のメモリ使用量を半分に削減した。(#1047) (@fukusuket)
+
+**バグ修正:**
+
+- `AccessMask`等のフィールド内の情報が空白で区切られていなかった状態を修正した。 (#1035) (@hitenkoku)
+- `pivot-keywords-list`コマンドで`--no-color`を使用した場合でも、結果がカラーで出力された。 (#1044) (@kazuminn)
+
+## 2.5.0 [2023/05/07] "Golden Week Release"
+
+**改善:**
+
+- `search`コマンドに`-M, --multiline`オプションを追加した。 (#1017) (@hitenkoku)
+- `search`コマンドの出力での不要な改行やタブを削除した。 (#1003) (@hitenkoku)
+- 正規表現の不要なエスケープを許容し、パースエラーを減らす`regex`クレートを1.8に更新した。(#1018) (@YamatoSecurity)
+- `csv-timeline`コマンドの出力で不要な空白文字の削除を行った。 (#1019) (@hitenkoku)
+- `update-rules`コマンド使用時にハヤブサのバージョン番号の詳細を確認するようにした (#1028) (@hitenkoku)
+- `search`コマンドの結果を時刻順にソートした。 (#1033) (@hitenkoku)
+- `pivot-keywords-list`のターミナル出力の改善。 (#1022) (@kazuminn)
+
+**バグ修正:**
+
+- ruleで指定された値で`\`が最後の文字のときに、検知ができない問題を修正した。 (#1025) (@fukusuket)
+- results summary内のInformationalレベルアラートの結果が同じ内容が2つ表示されている状態を修正した。 (#1031) (@hitenkoku)
+
+## 2.4.0 [2023/04/19] "SANS Secure Korea Release"
 
 **新機能:**
 

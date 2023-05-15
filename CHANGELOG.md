@@ -1,6 +1,34 @@
 # Changes
 
-## 2.4.x [2023/04/xx] "xxx"
+## 2.5.1 [2023/05/14] "Mothers Day Release"
+
+**Enhancements:**
+
+- Reduced memory usage by half when using newly converted rules. (#1047) (@fukusuket)
+
+**Bug Fixes:**
+
+- Data in certain fields such as `AccessMask` would not be separated by spaces when outputted from the `details` field. (#1035) (@hitenkoku)
+- Output would be in color even if `--no-color` was used in the `pivot-keywords-list` command. (#1044) (@kazuminn)
+
+## 2.5.0 [2023/05/07] "Golden Week Release"
+
+**Enhancements:**
+
+- Added `-M, --multiline` option to search command. (#1017) (@hitenkoku)
+- Deleted return characters in the output of the `search` command. (#1003) (@hitenkoku)
+- `regex` crate updated to 1.8 which allows unnecessary escapes in regular expressions reducing parsing errors. (#1018) (@YamatoSecurity)
+- Deleted return characters in output of the `csv-timeline` command. (#1019) (@hitenkoku)
+- Don't show new version information with the `update-rules` command when building a newer dev build. (#1028) (@hitenkoku)
+- Sorted `search` timeline order. (#1033) (@hitenkoku)
+- Enhanced `pivot-keywords-list` terminal output. (#1022) (@kazuminn)
+
+**Bug Fixes:**
+
+- Unconverted sigma rules that search for a string that end in a backslash would not be detected. Also `|contains` conditions would not match if the string was located in the beginning. (#1025) (@fukusuket)
+- In versions 2.3.3-2.4.0, informational level alerts in the Results Summary would show the top 5 events twice instead of the top 10 events. (#1031) (@hitenkoku)
+
+## 2.4.0 [2023/04/19] "SANS Secure Korea Release"
 
 **New Features:**
 

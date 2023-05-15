@@ -373,8 +373,10 @@ fn emit_csv<W: std::io::Write>(
                         ),
                         stored_static.common_options.no_color,
                     ),
-                    &_get_serialized_disp_output(&detect_info.ext_field, false),
-                    false,
+                    &_get_serialized_disp_output(&detect_info.ext_field, false)
+                        .split_whitespace()
+                        .join(" "),
+                    true,
                 )
                 .ok();
             } else if jsonl_output_flag {
@@ -404,10 +406,13 @@ fn emit_csv<W: std::io::Write>(
                 }
                 wtr.write_record(detect_info.ext_field.iter().map(|x| {
                     output_remover.replace_all(
-                        &output_replacer.replace_all(
-                            &x.1.to_value(),
-                            &output_replaced_maps.values().collect_vec(),
-                        ),
+                        &output_replacer
+                            .replace_all(
+                                &x.1.to_value(),
+                                &output_replaced_maps.values().collect_vec(),
+                            )
+                            .split_whitespace()
+                            .join(" "),
                         &removed_replaced_maps.values().collect_vec(),
                     )
                 }))?;
@@ -773,9 +778,6 @@ fn _get_serialized_disp_output(data: &Vec<(CompactString, Profile)>, header: boo
                             .replace("🛂r", "")
                             .replace("🛂n", "")
                             .replace("🛂t", ""),
-                        // .replace(['\n', '\r', '\t'], " ")
-                        // .split_whitespace()
-                        // .join(" "),
                         ColPos::First,
                     )
                     .replace('|', "🦅"),
@@ -787,9 +789,6 @@ fn _get_serialized_disp_output(data: &Vec<(CompactString, Profile)>, header: boo
                             .replace("🛂r", "")
                             .replace("🛂n", "")
                             .replace("🛂t", ""),
-                        // .replace(['\n', '\r', '\t'], " ")
-                        // .split_whitespace()
-                        // .join(" "),
                         ColPos::Last,
                     )
                     .replace('|', "🦅"),
@@ -801,9 +800,6 @@ fn _get_serialized_disp_output(data: &Vec<(CompactString, Profile)>, header: boo
                             .replace("🛂r", "")
                             .replace("🛂n", "")
                             .replace("🛂t", ""),
-                        // .replace(['\n', '\r', '\t'], " ")
-                        // .split_whitespace()
-                        // .join(" "),
                         ColPos::Other,
                     )
                     .replace('|', "🦅"),
@@ -1149,15 +1145,15 @@ fn _print_detection_summary_tables(
         ]);
     }
 
-    let odd_row = &mut output[4].iter().skip(1).take(5);
-    let even_row = &mut output[4].iter().skip(1).take(5);
+    let odd_col = &mut output[4].iter().skip(1).take(5);
+    let even_col = &mut output[4].iter().skip(6).take(5);
     tb.add_row(vec![
         Cell::new(&output[4][0]).fg(col_color[4].unwrap_or(comfy_table::Color::Reset)),
         Cell::new(""),
     ]);
     tb.add_row(vec![
-        Cell::new(odd_row.join("\n")).fg(col_color[4].unwrap_or(comfy_table::Color::Reset)),
-        Cell::new(even_row.join("\n")).fg(col_color[4].unwrap_or(comfy_table::Color::Reset)),
+        Cell::new(odd_col.join("\n")).fg(col_color[4].unwrap_or(comfy_table::Color::Reset)),
+        Cell::new(even_col.join("\n")).fg(col_color[4].unwrap_or(comfy_table::Color::Reset)),
     ]);
     println!("{tb}");
 }
@@ -1525,10 +1521,11 @@ fn output_detected_rule_authors(rule_author_counter: HashMap<CompactString, i128
         let mut tmp = Vec::new();
         for y in 0..div {
             if y * 4 + x < sorted_authors.len() {
-                let filter_author = if sorted_authors[y * 4 + x].0.len() <= 40 {
+                // Limit length to 27 to prevent the table from wrapping
+                let filter_author = if sorted_authors[y * 4 + x].0.len() <= 27 {
                     sorted_authors[y * 4 + x].0.to_string()
                 } else {
-                    format!("{}...", &sorted_authors[y * 4 + x].0[0..37])
+                    format!("{}...", &sorted_authors[y * 4 + x].0[0..24])
                 };
                 tmp.push(format!(
                     "{} ({})",
@@ -1812,7 +1809,7 @@ mod tests {
                 },
                 expect_time,
                 &mut profile_converter,
-                (false, false),
+                (false, false, false),
                 &eventkey_alias,
             );
             *profile_converter.get_mut("Computer").unwrap() =
@@ -1833,7 +1830,7 @@ mod tests {
                 },
                 expect_time,
                 &mut profile_converter,
-                (false, false),
+                (false, false, false),
                 &eventkey_alias,
             );
             let multi = message::MESSAGES.get(&expect_time).unwrap();
@@ -2102,7 +2099,7 @@ mod tests {
                 },
                 expect_time,
                 &mut profile_converter,
-                (false, true),
+                (false, false, true),
                 &eventkey_alias,
             );
             *profile_converter.get_mut("Computer").unwrap() =
@@ -2123,7 +2120,7 @@ mod tests {
                 },
                 expect_time,
                 &mut profile_converter,
-                (false, true),
+                (false, false, true),
                 &eventkey_alias,
             );
             let multi = message::MESSAGES.get(&expect_time).unwrap();

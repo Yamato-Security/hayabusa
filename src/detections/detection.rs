@@ -1,5 +1,6 @@
 extern crate csv;
 
+use crate::detections::configs::Action;
 use crate::detections::utils::{create_recordinfos, format_time, write_color_buffer};
 use crate::options::profile::Profile::{
     self, AllFieldInfo, Channel, Computer, EventID, EvtxFile, Level, MitreTactics, MitreTags,
@@ -16,11 +17,11 @@ use termcolor::{BufferWriter, Color, ColorChoice};
 use yaml_rust::Yaml;
 
 use crate::detections::message::{AlertMessage, DetectInfo, ERROR_LOG_STACK, TAGS_CONFIG};
-use crate::detections::pivot::insert_pivot_keyword;
 use crate::detections::rule::{self, AggResult, RuleNode};
 use crate::detections::utils::{get_serde_number_to_string, make_ascii_titlecase};
 use crate::filter;
 use crate::options::htmlreport;
+use crate::options::pivot::insert_pivot_keyword;
 use crate::yaml::ParseYaml;
 use hashbrown::HashMap;
 use serde_json::Value;
@@ -266,6 +267,7 @@ impl Detection {
         let binding = STORED_EKEY_ALIAS.read().unwrap();
         let eventkey_alias = binding.as_ref().unwrap();
         let mut included_all_field_info_flag = false;
+        let is_json_timeline = matches!(stored_static.config.action, Some(Action::JsonTimeline(_)));
 
         for (key, profile) in stored_static.profiles.as_ref().unwrap().iter() {
             match profile {
@@ -533,6 +535,7 @@ impl Detection {
                             .collect(),
                         &record_info.record,
                         eventkey_alias,
+                        is_json_timeline,
                     );
                     let geo_data = GEOIP_DB_PARSER
                         .read()
@@ -606,6 +609,7 @@ impl Detection {
                             .collect(),
                         &record_info.record,
                         eventkey_alias,
+                        is_json_timeline,
                     );
 
                     let geo_data = GEOIP_DB_PARSER
@@ -674,7 +678,7 @@ impl Detection {
             detect_info,
             time,
             &mut profile_converter,
-            (false, included_all_field_info_flag),
+            (false, is_json_timeline, included_all_field_info_flag),
             eventkey_alias,
         );
     }
@@ -688,6 +692,7 @@ impl Detection {
         let level = rule.yaml["level"].as_str().unwrap_or("-").to_string();
         let tags_config_values: Vec<&CompactString> = TAGS_CONFIG.values().collect();
 
+        let is_json_timeline = matches!(stored_static.config.action, Some(Action::JsonTimeline(_)));
         for (key, profile) in stored_static.profiles.as_ref().unwrap().iter() {
             match profile {
                 Timestamp(_) => {
@@ -885,7 +890,7 @@ impl Detection {
             detect_info,
             agg_result.start_timedate,
             &mut profile_converter,
-            (true, false),
+            (true, is_json_timeline , false),
             eventkey_alias,
         )
     }
@@ -1102,10 +1107,15 @@ impl Detection {
         target_alias: Vec<&str>,
         record: &Value,
         eventkey_alias: &EventKeyAliasConfig,
+        is_csv_output: bool,
     ) -> CompactString {
         for alias in target_alias {
-            let search_data =
-                message::parse_message(record, CompactString::from(alias), eventkey_alias);
+            let search_data = message::parse_message(
+                record,
+                CompactString::from(alias),
+                eventkey_alias,
+                is_csv_output,
+            );
             if search_data != "n/a" {
                 return search_data;
             }

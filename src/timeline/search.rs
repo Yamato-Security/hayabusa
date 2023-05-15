@@ -304,7 +304,7 @@ fn extract_search_event_info(
 
 /// 検索結果を標準出力もしくはcsvファイルに出力する関数
 pub fn search_result_dsp_msg(
-    result_list: &HashSet<(
+    result_list: &mut HashSet<(
         CompactString,
         CompactString,
         CompactString,
@@ -357,7 +357,9 @@ pub fn search_result_dsp_msg(
 
     // Write contents
     for (timestamp, hostname, channel, event_id, record_id, all_field_info, evtx_file) in
-        result_list.iter()
+        result_list
+            .iter()
+            .sorted_unstable_by(|a, b| Ord::cmp(&a.0, &b.0))
     {
         let event_title = if let Some(event_info) =
             event_timeline_config.get_event_id(&channel.to_ascii_lowercase(), event_id)
@@ -374,6 +376,13 @@ pub fn search_result_dsp_msg(
                 .as_str(),
             &stored_static.disp_abbr_general_values,
         );
+
+        let fmted_all_field_info = all_field_info.split_whitespace().join(" ");
+        let all_field_info = if output.is_some() && stored_static.multiline_flag {
+            fmted_all_field_info.replace(" ¦ ", "\r\n")
+        } else {
+            fmted_all_field_info
+        };
         let record_data = vec![
             timestamp.as_str(),
             hostname.as_str(),
@@ -393,7 +402,8 @@ pub fn search_result_dsp_msg(
                     //AllFieldInfoの列の出力
                     let all_field_sep_info = all_field_info.split('¦').collect::<Vec<&str>>();
                     for (field_idx, fields) in all_field_sep_info.iter().enumerate() {
-                        let mut separated_fields_data = fields.split(':');
+                        let mut separated_fields_data =
+                            fields.split(':').map(|x| x.split_whitespace().join(" "));
                         write_color_buffer(
                             disp_wtr.as_mut().unwrap(),
                             Some(Color::Rgb(255, 158, 61)),

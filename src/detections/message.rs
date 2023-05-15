@@ -114,28 +114,28 @@ pub fn insert(
     mut detect_info: DetectInfo,
     time: DateTime<Utc>,
     profile_converter: &mut HashMap<&str, Profile>,
-    is_agg_and_included_all_field_info: (bool, bool),
+    (is_agg, is_json_timeline, included_all_field_info): (bool, bool, bool),
     eventkey_alias: &EventKeyAliasConfig,
 ) {
-    if !is_agg_and_included_all_field_info.0 {
+    if !is_agg {
         let mut prev = 'a';
-        let mut removed_sp_parsed_detail = parse_message(event_record, output, eventkey_alias)
+        let mut removed_sp_parsed_detail =
+            parse_message(event_record, output, eventkey_alias, is_json_timeline);
+        removed_sp_parsed_detail.retain(|ch| {
+            let retain_flag = prev == ' ' && ch == ' ' && ch.is_control();
+            if !retain_flag {
+                prev = ch;
+            }
+            !retain_flag
+        });
+        let parsed_detail = removed_sp_parsed_detail
             .replace('\n', "🛂n")
             .replace('\r', "🛂r")
             .replace('\t', "🛂t");
-        removed_sp_parsed_detail.retain(|ch| {
-            let continuous_space = prev == ' ' && ch == ' ';
-            prev = ch;
-            !continuous_space
-        });
-        let parsed_detail = removed_sp_parsed_detail
-            .chars()
-            .filter(|&c| !c.is_control())
-            .collect::<CompactString>();
         detect_info.detail = if parsed_detail.is_empty() {
             CompactString::from("-")
         } else {
-            parsed_detail
+            parsed_detail.into()
         };
     }
     let mut replaced_profiles: Vec<(CompactString, Profile)> = vec![];
@@ -159,7 +159,7 @@ pub fn insert(
                 if existed_flag {
                     continue;
                 }
-                if is_agg_and_included_all_field_info.0 {
+                if is_agg {
                     replaced_profiles.push((key.to_owned(), AllFieldInfo("-".into())));
                 } else {
                     let rec = utils::create_recordinfos(event_record);
@@ -182,14 +182,14 @@ pub fn insert(
                     profile_all_field_info_prof
                 {
                     all_field_info_val
-                } else if is_agg_and_included_all_field_info.0 {
+                } else if is_agg {
                     // AllFieldInfoがまだ読み込まれていない場合は、AllFieldInfoを追加する
                     replaced_profiles.push((key.to_owned(), AllFieldInfo("-".into())));
                     "-".to_string()
                 } else {
                     let rec = utils::create_recordinfos(event_record);
                     let rec = if rec.is_empty() { "-".to_string() } else { rec };
-                    if is_agg_and_included_all_field_info.1 {
+                    if included_all_field_info {
                         replaced_profiles.push((key.to_owned(), AllFieldInfo(rec.clone().into())));
                     }
                     rec
@@ -219,6 +219,7 @@ pub fn insert(
                             event_record,
                             CompactString::new(p.to_value()),
                             eventkey_alias,
+                            is_json_timeline,
                         )),
                     ))
                 }
@@ -234,12 +235,13 @@ pub fn parse_message(
     event_record: &Value,
     output: CompactString,
     eventkey_alias: &EventKeyAliasConfig,
+    json_timeline_flag: bool,
 ) -> CompactString {
     let mut return_message = output;
     let mut hash_map: HashMap<CompactString, CompactString> = HashMap::new();
     for caps in ALIASREGEX.captures_iter(&return_message) {
         let full_target_str = &caps[0];
-        let target_length = full_target_str.chars().count() - 2; // The meaning of 2 is two percent
+        let target_length = full_target_str.chars().count() - 2; // 最後の文字は%であるので、エイリアスのキー情報はcount()-2まで。
         let target_str = full_target_str
             .chars()
             .skip(1)
@@ -273,7 +275,14 @@ pub fn parse_message(
         let hash_value = get_serde_number_to_string(tmp_event_record, false);
         if hash_value.is_some() {
             if let Some(hash_value) = hash_value {
-                hash_map.insert(CompactString::from(full_target_str), hash_value);
+                if json_timeline_flag {
+                    hash_map.insert(CompactString::from(full_target_str), hash_value);
+                } else {
+                    hash_map.insert(
+                        CompactString::from(full_target_str),
+                        hash_value.split_ascii_whitespace().join(" ").into(),
+                    );
+                }
             }
         } else {
             hash_map.insert(CompactString::from(full_target_str), "n/a".into());
@@ -422,6 +431,7 @@ mod tests {
                     .to_str()
                     .unwrap(),
                 ),
+                true,
             ),
             expected,
         );
@@ -455,6 +465,7 @@ mod tests {
                     .to_str()
                     .unwrap(),
                 ),
+                true,
             ),
             expected,
         );
@@ -494,6 +505,7 @@ mod tests {
                     .to_str()
                     .unwrap(),
                 ),
+                true,
             ),
             expected,
         );
@@ -532,6 +544,7 @@ mod tests {
                     .to_str()
                     .unwrap(),
                 ),
+                true,
             ),
             expected,
         );
@@ -575,6 +588,7 @@ mod tests {
                     .to_str()
                     .unwrap(),
                 ),
+                true,
             ),
             expected,
         );
@@ -618,6 +632,7 @@ mod tests {
                     .to_str()
                     .unwrap(),
                 ),
+                true,
             ),
             expected,
         );
@@ -661,6 +676,7 @@ mod tests {
                     .to_str()
                     .unwrap(),
                 ),
+                true,
             ),
             expected,
         );
