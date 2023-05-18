@@ -1099,15 +1099,15 @@ pub struct CommonOptions {
 #[derive(Args, Clone, Debug)]
 pub struct InputOption {
     /// Directory of multiple .evtx files
-    #[arg(help_heading = Some("Input"), short = 'd', long, value_name = "DIR", display_order = 300)]
+    #[arg(help_heading = Some("Input"), short = 'd', long, value_name = "DIR", conflicts_with_all = ["file", "liveanalysis"], display_order = 300)]
     pub directory: Option<PathBuf>,
 
     /// File path to one .evtx file
-    #[arg(help_heading = Some("Input"), short = 'f', long = "file", value_name = "FILE", display_order = 320)]
+    #[arg(help_heading = Some("Input"), short = 'f', long = "file", value_name = "FILE", conflicts_with_all = ["directory", "liveanalysis"], display_order = 320)]
     pub filepath: Option<PathBuf>,
 
     /// Analyze the local C:\Windows\System32\winevt\Logs folder
-    #[arg(help_heading = Some("Input"), short = 'l', long = "live-analysis", display_order = 380)]
+    #[arg(help_heading = Some("Input"), short = 'l', long = "live-analysis", conflicts_with_all = ["file", "directory"], display_order = 380)]
     pub live_analysis: bool,
 }
 
