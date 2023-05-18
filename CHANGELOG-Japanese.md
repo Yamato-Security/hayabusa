@@ -1,10 +1,21 @@
 # 変更点
 
-## 2.6.0 [2023/XX/XX] "XXX"
+## 2.6.0 [2023/XX/XX] "XXX Release"
 
 **新機能:**
 
 - XXX
+
+**改善:**
+
+- プロファイルに`%ExtraFieldInfo%`エイリアスを追加した。(#900) (@hitenkoku)
+- 互換性のない引数に対するエラーメッセージを追加した。 (#1054) (@YamatoSecurity)
+
+**バグ修正:**
+
+- XXX
+
+## 2.5.1 [2023/05/14] "Mothers Day Release"
 
 **改善:**
 
@@ -13,6 +24,7 @@
 **バグ修正:**
 
 - `AccessMask`等のフィールド内の情報が空白で区切られていなかった状態を修正した。 (#1035) (@hitenkoku)
+- JSON形式に出力時に複数の空白が一つの空白に変換されていた。 (#1048) (@hitenkoku)
 - `pivot-keywords-list`コマンドで`--no-color`を使用した場合でも、結果がカラーで出力された。 (#1044) (@kazuminn)
 
 ## 2.5.0 [2023/05/07] "Golden Week Release"

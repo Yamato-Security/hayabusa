@@ -3,8 +3,8 @@ extern crate csv;
 use crate::detections::configs::Action;
 use crate::detections::utils::{create_recordinfos, format_time, write_color_buffer};
 use crate::options::profile::Profile::{
-    self, Channel, Computer, EventID, EvtxFile, Level, MitreTactics, MitreTags, OtherTags,
-    Provider, RecordID, RenderedMessage, RuleAuthor, RuleCreationDate, RuleFile, RuleID,
+    self, AllFieldInfo, Channel, Computer, EventID, EvtxFile, Level, MitreTactics, MitreTags,
+    OtherTags, Provider, RecordID, RenderedMessage, RuleAuthor, RuleCreationDate, RuleFile, RuleID,
     RuleModifiedDate, RuleTitle, SrcASN, SrcCity, SrcCountry, Status, TgtASN, TgtCity, TgtCountry,
     Timestamp,
 };
@@ -266,6 +266,7 @@ impl Detection {
         let tags_config_values: Vec<&CompactString> = TAGS_CONFIG.values().collect();
         let binding = STORED_EKEY_ALIAS.read().unwrap();
         let eventkey_alias = binding.as_ref().unwrap();
+        let mut included_all_field_info_flag = false;
         let is_json_timeline = matches!(stored_static.config.action, Some(Action::JsonTimeline(_)));
 
         for (key, profile) in stored_static.profiles.as_ref().unwrap().iter() {
@@ -634,6 +635,9 @@ impl Detection {
                         .entry("SrcCity")
                         .and_modify(|p| *p = SrcCity(src_data.next().unwrap().to_owned().into()));
                 }
+                AllFieldInfo(_) => {
+                    included_all_field_info_flag = true;
+                }
                 _ => {}
             }
         }
@@ -674,7 +678,7 @@ impl Detection {
             detect_info,
             time,
             &mut profile_converter,
-            (false, is_json_timeline),
+            (false, is_json_timeline, included_all_field_info_flag),
             eventkey_alias,
         );
     }
@@ -886,7 +890,7 @@ impl Detection {
             detect_info,
             agg_result.start_timedate,
             &mut profile_converter,
-            (true, is_json_timeline),
+            (true, is_json_timeline, false),
             eventkey_alias,
         )
     }
@@ -1618,6 +1622,133 @@ mod tests {
             ];
             let ext_field = detect_infos[0].ext_field.clone();
             for expect in expect_geo_ip_data.iter() {
+                assert!(ext_field.contains(expect));
+            }
+        }
+    }
+
+    #[test]
+    fn test_insert_message_extra_field_info() {
+        let test_filepath: &str = "test.evtx";
+        let expect_time = Utc
+            .datetime_from_str("1996-02-27T01:05:01Z", "%Y-%m-%dT%H:%M:%SZ")
+            .unwrap();
+        let dummy_action = Action::CsvTimeline(CsvOutputOption {
+            output_options: OutputOption {
+                input_args: InputOption {
+                    directory: None,
+                    filepath: None,
+                    live_analysis: false,
+                },
+                profile: None,
+                enable_deprecated_rules: false,
+                exclude_status: None,
+                min_level: "informational".to_string(),
+                exact_level: None,
+                enable_noisy_rules: false,
+                end_timeline: None,
+                start_timeline: None,
+                eid_filter: false,
+                european_time: false,
+                iso_8601: false,
+                rfc_2822: false,
+                rfc_3339: false,
+                us_military_time: false,
+                us_time: false,
+                utc: false,
+                visualize_timeline: false,
+                rules: Path::new("./rules").to_path_buf(),
+                html_report: None,
+                no_summary: true,
+                common_options: CommonOptions {
+                    no_color: false,
+                    quiet: false,
+                },
+                detect_common_options: DetectCommonOption {
+                    evtx_file_ext: None,
+                    thread_number: None,
+                    quiet_errors: false,
+                    config: Path::new("./rules/config").to_path_buf(),
+                    verbose: false,
+                    json_input: false,
+                },
+                enable_unsupported_rules: false,
+            },
+            geo_ip: None,
+            output: Some(Path::new("./test_emit_csv.csv").to_path_buf()),
+            multiline: true,
+        });
+        let dummy_config = Some(Config {
+            action: Some(dummy_action),
+            debug: false,
+        });
+        let mut stored_static = StoredStatic::create_static_data(dummy_config);
+        stored_static.profiles.as_mut().unwrap().push((
+            "ExtraFieldInfo".into(),
+            Profile::ExtraFieldInfo(Default::default()),
+        ));
+        {
+            let eventkey_alias = load_eventkey_alias(
+                utils::check_setting_path(
+                    &CURRENT_EXE_PATH.to_path_buf(),
+                    "rules/config/eventkey_alias.txt",
+                    true,
+                )
+                .unwrap()
+                .to_str()
+                .unwrap(),
+            );
+            *STORED_EKEY_ALIAS.write().unwrap() = Some(eventkey_alias);
+
+            let messages = &message::MESSAGES;
+            messages.clear();
+            let val = r##"
+            {
+                "Event": {
+                    "EventData": {
+                        "CommandRLine": "hoge",
+                        "IpAddress": "89.160.20.128",
+                        "DestAddress": "2.125.160.216"
+                    },
+                    "System": {
+                        "TimeCreated_attributes": {
+                            "SystemTime": "1996-02-27T01:05:01Z"
+                        },
+                        "EventRecordID": "11111",
+                        "Channel": "Dummy",
+                        "EventID": "4624"
+                    }
+                }
+            }
+        "##;
+            let rule_str = r#"
+        enabled: true
+        author: "Test, Test2/Test3; Test4 "
+        detection:
+            selection:
+                Channel: 'Dummy'
+        details: 'Channel: %Channel% ¦ EventID: %EventID% ¦ EventRecordID: %EventRecordID% ¦ TimeCreated: %TimeCreated% ¦ IpAddress: %IpAddress%'
+        "#;
+            let event: Value = serde_json::from_str(val).unwrap();
+            let rule_yaml = YamlLoader::load_from_str(rule_str);
+            assert!(rule_yaml.is_ok());
+            let rule_yamls = rule_yaml.unwrap();
+            let mut rule_yaml = rule_yamls.into_iter();
+            let mut rule_node = create_rule(test_filepath.to_string(), rule_yaml.next().unwrap());
+            assert!(rule_node.init(&create_dummy_stored_static()).is_ok());
+
+            let keys = detections::rule::get_detection_keys(&rule_node);
+            let input_evtxrecord = utils::create_rec_info(event, test_filepath.to_owned(), &keys);
+            Detection::insert_message(&rule_node, &input_evtxrecord, &stored_static.clone());
+            let multi = message::MESSAGES.get(&expect_time).unwrap();
+            let (_, detect_infos) = multi.pair();
+            assert!(detect_infos.len() == 1);
+            let expect_extra_field_data: Vec<(CompactString, Profile)> = vec![(
+                "ExtraFieldInfo".into(),
+                Profile::ExtraFieldInfo("CommandRLine: hoge ¦ DestAddress: 2.125.160.216".into()),
+            )];
+            let ext_field = detect_infos[0].ext_field.clone();
+            for expect in expect_extra_field_data.iter() {
                 assert!(ext_field.contains(expect));
             }
         }
