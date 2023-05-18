@@ -2,7 +2,8 @@ extern crate lazy_static;
 use crate::detections::configs::CURRENT_EXE_PATH;
 use crate::detections::utils::{self, get_serde_number_to_string, write_color_buffer};
 use crate::options::profile::Profile::{
-    self, AllFieldInfo, Details, Literal, SrcASN, SrcCity, SrcCountry, TgtASN, TgtCity, TgtCountry,
+    self, AllFieldInfo, Details, ExtraFieldInfo, Literal, SrcASN, SrcCity, SrcCountry, TgtASN,
+    TgtCity, TgtCountry,
 };
 use chrono::{DateTime, Local, Utc};
 use compact_str::CompactString;
@@ -14,6 +15,7 @@ use lazy_static::lazy_static;
 use nested::Nested;
 use regex::Regex;
 use serde_json::Value;
+use std::borrow::Borrow;
 use std::env;
 use std::fs::{create_dir, File};
 use std::io::{self, BufWriter, Write};
@@ -112,7 +114,7 @@ pub fn insert(
     mut detect_info: DetectInfo,
     time: DateTime<Utc>,
     profile_converter: &mut HashMap<&str, Profile>,
-    (is_agg, is_json_timeline): (bool, bool),
+    (is_agg, is_json_timeline, included_all_field_info): (bool, bool, bool),
     eventkey_alias: &EventKeyAliasConfig,
 ) {
     if !is_agg {
@@ -140,14 +142,27 @@ pub fn insert(
     for (key, profile) in detect_info.ext_field.iter() {
         match profile {
             Details(_) => {
-                if detect_info.detail.is_empty() {
+                let existed_flag = replaced_profiles
+                    .iter()
+                    .any(|(_, y)| matches!(y, Details(_)));
+                if existed_flag {
+                    continue;
+                }
+                if detect_info.borrow().detail.is_empty() {
                     replaced_profiles.push((key.to_owned(), profile.to_owned()));
                 } else {
-                    replaced_profiles.push((key.to_owned(), Details(detect_info.detail.into())));
+                    replaced_profiles
+                        .push((key.to_owned(), Details(detect_info.detail.clone().into())));
                     detect_info.detail = CompactString::default();
                 }
             }
             AllFieldInfo(_) => {
+                let existed_flag = replaced_profiles
+                    .iter()
+                    .any(|(_, y)| matches!(y, AllFieldInfo(_)));
+                if existed_flag {
+                    continue;
+                }
                 if is_agg {
                     replaced_profiles.push((key.to_owned(), AllFieldInfo("-".into())));
                 } else {
@@ -157,6 +172,48 @@ pub fn insert(
                 }
             }
             Literal(_) => replaced_profiles.push((key.to_owned(), profile.to_owned())),
+            ExtraFieldInfo(_) => {
+                let mut profile_all_field_info_prof = None;
+                let mut profile_details_prof = None;
+                replaced_profiles.iter().for_each(|(_, y)| match y {
+                    AllFieldInfo(_) => profile_all_field_info_prof = Some(y.to_value()),
+                    Details(_) => profile_details_prof = Some(y.to_value()),
+                    _ => {}
+                });
+                let profile_details =
+                    profile_details_prof.unwrap_or(detect_info.detail.clone().into());
+                let profile_all_field_info = if let Some(all_field_info_val) =
+                    profile_all_field_info_prof
+                {
+                    all_field_info_val
+                } else if is_agg {
+                    if included_all_field_info {
+                        // AllFieldInfoがまだ読み込まれていない場合は、AllFieldInfoを追加する
+                        replaced_profiles.push((key.to_owned(), AllFieldInfo("-".into())));
+                    }
+                    "-".to_string()
+                } else {
+                    let rec = utils::create_recordinfos(event_record);
+                    let rec = if rec.is_empty() { "-".to_string() } else { rec };
+                    if included_all_field_info {
+                        replaced_profiles.push((key.to_owned(), AllFieldInfo(rec.clone().into())));
+                    }
+                    rec
+                };
+                let details_splits: HashSet<&str> = HashSet::from_iter(
+                    profile_details
+                        .split(" ¦ ")
+                        .map(|x| x.split_once(": ").unwrap_or_default().1),
+                );
+                let extra_field_val = profile_all_field_info
+                    .split(" ¦ ")
+                    .filter(|x| {
+                        let value = x.split_once(": ").unwrap_or_default().1;
+                        !details_splits.contains(value)
+                    })
+                    .join(" ¦ ");
+                replaced_profiles.push((key.to_owned(), ExtraFieldInfo(extra_field_val.into())));
+            }
             SrcASN(_) | SrcCountry(_) | SrcCity(_) | TgtASN(_) | TgtCountry(_) | TgtCity(_) => {
                 replaced_profiles.push((
                     key.to_owned(),

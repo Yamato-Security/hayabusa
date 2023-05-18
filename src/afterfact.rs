@@ -1178,7 +1178,7 @@ fn _get_json_vec(profile: &Profile, target_data: &String) -> Vec<String> {
         Profile::MitreTactics(_) | Profile::MitreTags(_) | Profile::OtherTags(_) => {
             target_data.split(": ").map(|x| x.to_string()).collect()
         }
-        Profile::Details(_) | Profile::AllFieldInfo(_) => {
+        Profile::Details(_) | Profile::AllFieldInfo(_) | Profile::ExtraFieldInfo(_) => {
             let ret: Vec<String> = target_data.split(" ¦ ").map(|x| x.to_string()).collect();
             if target_data == &ret[0] && !utils::contains_str(target_data, ": ") {
                 vec![]
@@ -1300,7 +1300,7 @@ fn output_json_str(
                 | Profile::TgtASN(_)
                 | Profile::TgtCountry(_)
                 | Profile::TgtCity(_) => continue,
-                Profile::AllFieldInfo(_) | Profile::Details(_) => {
+                Profile::Details(_) | Profile::AllFieldInfo(_) | Profile::ExtraFieldInfo(_) => {
                     let mut output_stock: Vec<String> = vec![];
                     output_stock.push(format!("    \"{key}\": {{"));
                     let mut stocked_value: Vec<Vec<String>> = vec![];
@@ -1809,7 +1809,7 @@ mod tests {
                 },
                 expect_time,
                 &mut profile_converter,
-                (false, false),
+                (false, false, false),
                 &eventkey_alias,
             );
             *profile_converter.get_mut("Computer").unwrap() =
@@ -1830,7 +1830,7 @@ mod tests {
                 },
                 expect_time,
                 &mut profile_converter,
-                (false, false),
+                (false, false, false),
                 &eventkey_alias,
             );
             let multi = message::MESSAGES.get(&expect_time).unwrap();
@@ -2099,7 +2099,7 @@ mod tests {
                 },
                 expect_time,
                 &mut profile_converter,
-                (false, false),
+                (false, false, true),
                 &eventkey_alias,
             );
             *profile_converter.get_mut("Computer").unwrap() =
@@ -2120,7 +2120,7 @@ mod tests {
                 },
                 expect_time,
                 &mut profile_converter,
-                (false, false),
+                (false, false, true),
                 &eventkey_alias,
             );
             let multi = message::MESSAGES.get(&expect_time).unwrap();
