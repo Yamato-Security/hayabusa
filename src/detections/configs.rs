@@ -629,7 +629,7 @@ impl Action {
 #[derive(Args, Clone, Debug)]
 pub struct DetectCommonOption {
     /// Scan JSON formatted logs instead of .evtx (.json or .jsonl)
-    #[arg(help_heading = Some("Input"), short = 'J', long = "JSON-input", display_order = 390)]
+    #[arg(help_heading = Some("Input"), short = 'J', long = "JSON-input", conflicts_with = "live_analysis", display_order = 390)]
     pub json_input: bool,
 
     /// Specify additional file extensions (ex: evtx_data) (ex: evtx1,evtx2)
@@ -887,6 +887,7 @@ pub struct PivotKeywordOption {
         default_value = "informational",
         hide_default_value = true,
         value_name = "LEVEL",
+        conflicts_with = "exact_level",
         display_order = 390
     )]
     pub min_level: String,
@@ -897,6 +898,7 @@ pub struct PivotKeywordOption {
         short = 'e',
         long = "exact-level",
         value_name = "LEVEL",
+        conflicts_with = "min_level",
         display_order = 313
     )]
     pub exact_level: Option<String>,
@@ -1009,6 +1011,7 @@ pub struct OutputOption {
         short = 'e',
         long = "exact-level",
         value_name = "LEVEL",
+        conflicts_with = "min-level",
         display_order = 313
     )]
     pub exact_level: Option<String>,
@@ -1099,15 +1102,15 @@ pub struct CommonOptions {
 #[derive(Args, Clone, Debug)]
 pub struct InputOption {
     /// Directory of multiple .evtx files
-    #[arg(help_heading = Some("Input"), short = 'd', long, value_name = "DIR", conflicts_with_all = ["file", "live-analysis"], display_order = 300)]
+    #[arg(help_heading = Some("Input"), short = 'd', long, value_name = "DIR", conflicts_with_all = ["filepath", "live_analysis"], display_order = 300)]
     pub directory: Option<PathBuf>,
 
     /// File path to one .evtx file
-    #[arg(help_heading = Some("Input"), short = 'f', long = "file", value_name = "FILE", conflicts_with_all = ["directory", "live-analysis"], display_order = 320)]
+    #[arg(help_heading = Some("Input"), short = 'f', long = "file", value_name = "FILE", conflicts_with_all = ["directory", "live_analysis"], display_order = 320)]
     pub filepath: Option<PathBuf>,
 
     /// Analyze the local C:\Windows\System32\winevt\Logs folder
-    #[arg(help_heading = Some("Input"), short = 'l', long = "live-analysis", conflicts_with_all = ["file", "directory"], display_order = 380)]
+    #[arg(help_heading = Some("Input"), short = 'l', long = "live_analysis", conflicts_with_all = ["filepath", "directory", "JSON_input"], display_order = 380)]
     pub live_analysis: bool,
 }
 
