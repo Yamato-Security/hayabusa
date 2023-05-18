@@ -1,5 +1,20 @@
 # Changes
 
+## 2.6.0 [2023/XX/XX] "XXX Release"
+
+**New Features:**
+
+- XXX
+
+**Enhancements:**
+
+- Added `%ExtraFieldInfo%` alias to output profiles which will output all of the other fields that do not get outputted in `Details`. (#900) (@hitenkoku)
+- Added error messages for incompatible arguments. (#1053) (@YamatoSecurity)
+
+**Bug Fixes:**
+
+- XXX
+
 ## 2.5.1 [2023/05/14] "Mothers Day Release"
 
 **Enhancements:**
@@ -9,6 +24,7 @@
 **Bug Fixes:**
 
 - Data in certain fields such as `AccessMask` would not be separated by spaces when outputted from the `details` field. (#1035) (@hitenkoku)
+- Multiple spaces would be condensed to a single space when outputting to JSON. (#1048) (@hitenkoku)
 - Output would be in color even if `--no-color` was used in the `pivot-keywords-list` command. (#1044) (@kazuminn)
 
 ## 2.5.0 [2023/05/07] "Golden Week Release"
