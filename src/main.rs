@@ -36,7 +36,6 @@ use mimalloc::MiMalloc;
 use nested::Nested;
 use pbr::ProgressBar;
 use serde_json::{Map, Value};
-use std::borrow::Borrow;
 use std::ffi::{OsStr, OsString};
 use std::fmt::Display;
 use std::fmt::Write as _;
@@ -1097,7 +1096,7 @@ impl App {
                     continue;
                 }
 
-                let data = record_result.as_ref().unwrap().data.borrow();
+                let data = &record_result.as_ref().unwrap().data;
                 // Searchならすべてのフィルタを無視
                 if !stored_static.search_flag {
                     // channelがnullである場合とEventID Filter optionが指定されていない場合は、target_eventids.txtでイベントIDベースでフィルタする。
