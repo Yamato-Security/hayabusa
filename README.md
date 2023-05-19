@@ -801,16 +801,16 @@ hayabusa.exe csv-timeline -d .\hayabusa-sample-evtx -v
 * Verbose output example:
 
 ```
-Checking target evtx FilePath: "./hayabusa-sample-evtx/YamatoSecurity/T1027.004_Obfuscated Files or Information\u{a0}Compile After Delivery/sysmon.evtx"
-1 / 509 [>-------------------------------------------------------------------------------------------------------------] 0.20 % 1s
-Checking target evtx FilePath: "./hayabusa-sample-evtx/YamatoSecurity/T1558.004_Steal or Forge Kerberos Tickets AS-REP Roasting/Security.evtx"
-2 / 509 [>-------------------------------------------------------------------------------------------------------------] 0.39 % 1s
-Checking target evtx FilePath: "./hayabusa-sample-evtx/YamatoSecurity/T1558.003_Steal or Forge Kerberos Tickets\u{a0}Kerberoasting/Security.evtx"
-3 / 509 [>-------------------------------------------------------------------------------------------------------------] 0.59 % 1s
-Checking target evtx FilePath: "./hayabusa-sample-evtx/YamatoSecurity/T1197_BITS Jobs/Windows-BitsClient.evtx"
-4 / 509 [=>------------------------------------------------------------------------------------------------------------] 0.79 % 1s
-Checking target evtx FilePath: "./hayabusa-sample-evtx/YamatoSecurity/T1218.004_Signed Binary Proxy Execution\u{a0}InstallUtil/sysmon.evtx"
-5 / 509 [=>------------------------------------------------------------------------------------------------------------] 0.98 % 1s
+Checking target evtx FilePath: "./hayabusa-sample-evtx/sample1.evtx"
+1 / 509 [>---------------------------------------------------------------] 0.20 % 1s
+Checking target evtx FilePath: "./hayabusa-sample-evtx/sample2.evtx"
+2 / 509 [=>--------------------------------------------------------------] 0.39 % 1s
+Checking target evtx FilePath: "./hayabusa-sample-evtx/sample3.evtx"
+3 / 509 [==>-------------------------------------------------------------] 0.59 % 1s
+Checking target evtx FilePath: "./hayabusa-sample-evtx/sample4.evtx"
+4 / 509 [===>------------------------------------------------------------] 0.79 % 1s
+Checking target evtx FilePath: "./hayabusa-sample-evtx/sample5.evtx"
+5 / 509 [====>-----------------------------------------------------------] 0.98 % 1s
 ```
 
 * Output to a CSV format compatible to import into [Timesketch](https://timesketch.org/):
@@ -1057,60 +1057,54 @@ Use the `list-profiles` command to show the available profiles and their field i
 
 ### 1. `minimal` profile output
 
-`%Timestamp%`, `%Computer%`, `%Channel%`, `%EventID%`, `%Level%`, `%RuleTitle%`, `%Details%`
+`%Timestamp%, %Computer%, %Channel%, %EventID%, %Level%, %RecordID%, %RuleTitle%, %Details%`
 
 ### 2. `standard` profile output
 
-`%Timestamp%`, `%Computer%`, `%Channel%`, `%EventID%`, `%Level%`, `%RecordID%`, `%RuleTitle%`, `%Details%`
+`%Timestamp%, %Computer%, %Channel%, %EventID%, %Level%, %RecordID%, %RuleTitle%, %Details%, %ExtraFieldInfo%`
 
 ### 3. `verbose` profile output
 
-`%Timestamp%`, `%Computer%`, `%Channel%`, `%EventID%`, `%Level%`, `%MitreTactics%`, `%MitreTags%`, `%OtherTags%`, `%RecordID%`, `%RuleTitle%`, `%Details%`, `%RuleFile%`, `%EvtxFile%`
+`%Timestamp%, %Computer%, %Channel%, %EventID%, %Level%, %MitreTactics%, %MitreTags%, %OtherTags%, %RecordID%, %RuleTitle%, %Details%, %ExtraFieldInfo%, %RuleFile%, %EvtxFile%`
 
 ### 4. `all-field-info` profile output
 
-Instead of outputting the minimal `details` information, all field information in the `EventData` section will be outputted.
+Instead of outputting the minimal `details` information, all field information in the `EventData` section will be outputted along with their original field names.
 
-`%Timestamp%`, `%Computer%`, `%Channel%`, `%EventID%`, `%Level%`, `%RecordID%`, `%RuleTitle%`, `%AllFieldInfo%`, `%RuleFile%`, `%EvtxFile%`
+`%Timestamp%, %Computer%, %Channel%, %EventID%, %Level%, %RecordID%, %RuleTitle%, %AllFieldInfo%, %RuleFile%, %EvtxFile%`
 
 ### 5. `all-field-info-verbose` profile output
 
-`all-field-info` profile plus tag information.
-
-`%Timestamp%`, `%Computer%`, `%Channel%`, `%EventID%`, `%Level%`, `%MitreTactics%`, `%MitreTags%`, `%OtherTags%`, `%RecordID%`, `%RuleTitle%`, `%AllFieldInfo%`, `%RuleFile%`, `%EvtxFile%`
+`%Timestamp%, %Computer%, %Channel%, %EventID%, %Level%, %MitreTactics%, %MitreTags%, %OtherTags%, %RecordID%, %RuleTitle%, %AllFieldInfo%, %RuleFile%, %EvtxFile%`
 
 ### 6. `super-verbose` profile output
 
-`verbose` profile plus all field information (`%AllFieldInfo%`).
-**(Warning: this will usually double the output file size!)**
-
-`%Timestamp%`, `%Computer%`, `%Channel%`, `%Provider%`, `%EventID%`, `%Level%`, `%MitreTactics%`, `%MitreTags%`, `%OtherTags%`, `%RecordID%`, `%RuleTitle%`, `%RuleAuthor%`, `%RuleCreationDate%`, `%RuleModifiedDate%`, `%Status%`, `%Details%`, `%RuleFile%`, `%EvtxFile%`, `%AllFieldInfo%`
+`%Timestamp%, %Computer%, %Channel%, %EventID%, %Level%, %RuleTitle%, %RuleAuthor%, %RuleModifiedDate%, %Status%, %RecordID%, %Details%, %ExtraFieldInfo%, %MitreTactics%, %MitreTags%, %OtherTags%, %Provider%, %RuleCreationDate%, %RuleFile%, %EvtxFile%`
 
 ### 7. `timesketch-minimal` profile output
 
-The `verbose` profile that is compatible with importing into [Timesketch](https://timesketch.org/).
+Output to a format compatible with importing into [Timesketch](https://timesketch.org/).
 
-`%Timestamp%`, `hayabusa`, `%RuleTitle%`, `%Computer%`, `%Channel%`, `%EventID%`, `%Level%`, `%MitreTactics%`, `%MitreTags%`, `%OtherTags%`, `%RecordID%`, `%Details%`, `%RuleFile%`, `%EvtxFile%`
+`%Timestamp%, hayabusa, %RuleTitle%, %Computer%, %Channel%, %EventID%, %Level%, %MitreTactics%, %MitreTags%, %OtherTags%, %RecordID%, %Details%, %RuleFile%, %EvtxFile%`
 
 ### 8. `timesketch-verbose` profile output
 
-The `super-verbose` profile that is compatible with importing into [Timesketch](https://timesketch.org/).
-**(Warning: this will usually double the output file size!)**
-
-`%Timestamp%`, `hayabusa`, `%RuleTitle%`, `%Computer%`, `%Channel%`, `%EventID%`, `%Level%`, `%MitreTactics%`, `%MitreTags%`, `%OtherTags%`, `%RecordID%`, `%Details%`, `%RuleFile%`, `%EvtxFile%`, `%AllFieldInfo%`
+`%Timestamp%, hayabusa, %RuleTitle%, %Computer%, %Channel%, %EventID%, %Level%, %MitreTactics%, %MitreTags%, %OtherTags%, %RecordID%, %Details%, %ExtraFieldInfo%, %RuleFile%, %EvtxFile%`
 
 ### Profile Comparison
 
-The following benchmarks were conducted on a 2018 MBP with 7.5GB of evtx data.
+The following benchmarks were conducted on a 2018 Lenovo P51 (Xeon 4 Core CPU / 64GB RAM) with 32GB of evtx data and 3839 rules enabled. (2023/05/20)
 
-| Profile | Processing Time | Output Filesize |
-| :---: | :---: | :---: |
-| minimal | 16 minutes 18 seconds | 690 MB |
-| standard | 16 minutes 23 seconds | 710 MB |
-| verbose | 17 minutes | 990 MB |
-| timesketch-minimal | 17 minutes | 1015 MB |
-| all-field-info-verbose | 16 minutes 50 seconds | 1.6 GB |
-| super-verbose | 17 minutes 12 seconds | 2.1 GB |
+| Profile | Processing Time | Output Filesize | Filesize Increase |
+| :---: | :---: | :---: | :---: |
+| minimal | 1 hour 18 minutes | 8.5 GB | 1x |
+| standard | 1 hour 19 minutes 45 seconds | 13.1 GB | 1.5x |
+| verbose | x minutes | 990 MB |
+| all-field-info | 1 hour 20 minutes 10 seconds | 18.7 GB | 2.2x |
+| all-field-info-verbose | x minutes 50 seconds | 1.6 GB |
+| super-verbose | 1 hour 25 minutes 10 seconds | 19.6 GB |
+| timesketch-minimal | x minutes | 1015 MB |
+| timesketch-verbose | x minutes | 1015 MB |
 
 ### Profile Field Aliases
 
@@ -1127,6 +1121,7 @@ The following benchmarks were conducted on a 2018 MBP with 7.5GB of evtx data.
 |%RecordID% | The Event Record ID from `<Event><System><EventRecordID>` field. |
 |%RuleTitle% | The `title` field in the YML detection rule. |
 |%Details% | The `details` field in the YML detection rule, however, only hayabusa rules have this field. This field gives extra information about the alert or event and can extract useful data from the fields in event logs. For example, usernames, command line information, process information, etc... When a placeholder points to a field that does not exist or there is an incorrect alias mapping, it will be outputted as `n/a` (not available). If the `details` field is not specified (i.e. sigma rules), default `details` messages to extract fields defined in `./rules/config/default_details.txt` will be outputted. You can add more default `details` messages by adding the `Provider Name`, `EventID` and `details` message you want to output in `default_details.txt`. When no `details` field is defined in a rule nor in `default_details.txt`, all fields will be outputted to the `details` column. |
+|%ExtraFieldInfo% | Print the field information that was not outputted in %Details%. |
 |%AllFieldInfo% | All field information. |
 |%RuleFile% | The filename of the detection rule that generated the alert or event. |
 |%EvtxFile% | The evtx filename that caused the alert or event. |

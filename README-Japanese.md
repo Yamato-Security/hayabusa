@@ -802,16 +802,16 @@ hayabusa.exe csv-timeline -d .\hayabusa-sample-evtx -v
 * Verbose出力の例:
 
 ```
-Checking target evtx FilePath: "./hayabusa-sample-evtx/YamatoSecurity/T1027.004_Obfuscated Files or Information\u{a0}Compile After Delivery/sysmon.evtx"
-1 / 509 [>-------------------------------------------------------------------------------------------------------------] 0.20 % 1s
-Checking target evtx FilePath: "./hayabusa-sample-evtx/YamatoSecurity/T1558.004_Steal or Forge Kerberos Tickets AS-REP Roasting/Security.evtx"
-2 / 509 [>-------------------------------------------------------------------------------------------------------------] 0.39 % 1s
-Checking target evtx FilePath: "./hayabusa-sample-evtx/YamatoSecurity/T1558.003_Steal or Forge Kerberos Tickets\u{a0}Kerberoasting/Security.evtx"
-3 / 509 [>-------------------------------------------------------------------------------------------------------------] 0.59 % 1s
-Checking target evtx FilePath: "./hayabusa-sample-evtx/YamatoSecurity/T1197_BITS Jobs/Windows-BitsClient.evtx"
-4 / 509 [=>------------------------------------------------------------------------------------------------------------] 0.79 % 1s
-Checking target evtx FilePath: "./hayabusa-sample-evtx/YamatoSecurity/T1218.004_Signed Binary Proxy Execution\u{a0}InstallUtil/sysmon.evtx"
-5 / 509 [=>------------------------------------------------------------------------------------------------------------] 0.98 % 1s
+Checking target evtx FilePath: "./hayabusa-sample-evtx/sample1.evtx"
+1 / 509 [>---------------------------------------------------------------] 0.20 % 1s
+Checking target evtx FilePath: "./hayabusa-sample-evtx/sample2.evtx"
+2 / 509 [=>--------------------------------------------------------------] 0.39 % 1s
+Checking target evtx FilePath: "./hayabusa-sample-evtx/sample3.evtx"
+3 / 509 [==>-------------------------------------------------------------] 0.59 % 1s
+Checking target evtx FilePath: "./hayabusa-sample-evtx/sample4.evtx"
+4 / 509 [===>------------------------------------------------------------] 0.79 % 1s
+Checking target evtx FilePath: "./hayabusa-sample-evtx/sample5.evtx"
+5 / 509 [====>-----------------------------------------------------------] 0.98 % 1s
 ```
 
 * 結果を[Timesketch](https://timesketch.org/)にインポートできるCSV形式に保存する:
@@ -1054,57 +1054,49 @@ Hayabusaの`config/profiles.yaml`設定ファイルでは、５つのプロフ�
 
 このファイルを編集することで、簡単に独自のプロファイルをカスタマイズしたり、追加したりすることができます。
 `set-default-profile --profile <profile>`コマンドでデフォルトのプロファイルを変更することもできます。
-利用可能なプロファイルとそのフィールド情報を表示するには、`csv-timeline --list-profiles`コマンドを使用してください。
+利用可能なプロファイルとそのフィールド情報を表示するには、`list-profiles`コマンドを使用してください。
 
 ### 1. `minimal`プロファイルの出力
 
-`%Timestamp%`, `%Computer%`, `%Channel%`, `%EventID%`, `%Level%`, `%RuleTitle%`, `%Details%`
+`%Timestamp%, %Computer%, %Channel%, %EventID%, %Level%, %RecordID%, %RuleTitle%, %Details%`
 
 ### 2. `standard`プロファイルの出力
 
-`%Timestamp%`, `%Computer%`, `%Channel%`, `%EventID%`, `%Level%`, `%RecordID%`, `%RuleTitle%`, `%Details%`
+`%Timestamp%, %Computer%, %Channel%, %EventID%, %Level%, %RecordID%, %RuleTitle%, %Details%, %ExtraFieldInfo%`
 
 ### 3. `verbose`プロファイルの出力
 
-`%Timestamp%`, `%Computer%`, `%Channel%`, `%EventID%`, `%Level%`, `%MitreTactics%`, `%MitreTags%`, `%OtherTags%`, `%RecordID%`, `%RuleTitle%`, `%Details%`, `%RuleFile%`, `%EvtxFile%`
+`%Timestamp%, %Computer%, %Channel%, %EventID%, %Level%, %MitreTactics%, %MitreTags%, %OtherTags%, %RecordID%, %RuleTitle%, %Details%, %ExtraFieldInfo%, %RuleFile%, %EvtxFile%`
 
 ### 4. `all-field-info`プロファイルの出力
 
-最小限の`details`情報を出力する代わりに、イベントにあるすべての`EventData`フィールド情報(`%AllFieldInfo%`)が出力されます。
+最小限の`details`情報を出力する代わりに、イベントにあるすべての`EventData`フィールド情報(`%AllFieldInfo%`)が出力されます。フィールド名は元々のフィールド名になります。
 
-`%Timestamp%`, `%Computer%`, `%Channel%`, `%EventID%`, `%Level%`, `%RecordID%`, `%RuleTitle%`, `%AllFieldInfo%`, `%RuleFile%`, `%EvtxFile%`
+`%Timestamp%, %Computer%, %Channel%, %EventID%, %Level%, %RecordID%, %RuleTitle%, %AllFieldInfo%, %RuleFile%, %EvtxFile%`
 
 ### 5. `all-field-info-verbose`プロファイルの出力
 
-`all-field-info`とタグ情報が出力されます。
-
-`%Timestamp%`, `%Computer%`, `%Channel%`, `%EventID%`, `%Level%`, `%MitreTactics%`, `%MitreTags%`, `%OtherTags%`, `%RecordID%`, `%RuleTitle%`, `%AllFieldInfo%`, `%RuleFile%`, `%EvtxFile%`
+`%Timestamp%, %Computer%, %Channel%, %EventID%, %Level%, %MitreTactics%, %MitreTags%, %OtherTags%, %RecordID%, %RuleTitle%, %AllFieldInfo%, %RuleFile%, %EvtxFile%`
 
 ### 6. `super-verbose`プロファイルの出力
 
-`verbose`プロファイルで出力される情報とイベントにあるすべての`EventData`フィールド情報(`%AllFieldInfo%`)の**両方**が出力されます。
-**(注意: 出力ファイルサイズは約2倍になります！)**
-
-`%Timestamp%`, `%Computer%`, `%Channel%`, `%Provider%`, `%EventID%`, `%Level%`, `%MitreTactics%`, `%MitreTags%`, `%OtherTags%`, `%RecordID%`, `%RuleTitle%`, `%RuleAuthor%`, `%RuleCreationDate%`, `%RuleModifiedDate%`, `%Status%`, `%Details%`, `%RuleFile%`, `%EvtxFile%`, `%AllFieldInfo%`
+`%Timestamp%, %Computer%, %Channel%, %EventID%, %Level%, %RuleTitle%, %RuleAuthor%, %RuleModifiedDate%, %Status%, %RecordID%, %Details%, %ExtraFieldInfo%, %MitreTactics%, %MitreTags%, %OtherTags%, %Provider%, %RuleCreationDate%, %RuleFile%, %EvtxFile%`
 
 ### 7. `timesketch-minimal`プロファイルの出力
 
-[Timesketch](https://timesketch.org/)にインポートできる`verbose`プロファイル。
+[Timesketch](https://timesketch.org/)にインポートできるプロファイル。
 
-`%Timestamp%`, `hayabusa`, `%RuleTitle%`, `%Computer%`, `%Channel%`, `%EventID%`, `%Level%`, `%MitreTactics%`, `%MitreTags%`, `%OtherTags%`, `%RecordID%`, `%Details%`, `%RuleFile%`, `%EvtxFile%`
+`%Timestamp%, hayabusa, %RuleTitle%, %Computer%, %Channel%, %EventID%, %Level%, %MitreTactics%, %MitreTags%, %OtherTags%, %RecordID%, %Details%, %RuleFile%, %EvtxFile%`
 
 ### 8. `timesketch-verbose`プロファイルの出力
 
-[Timesketch](https://timesketch.org/)にインポートできる`verbose`プロファイル。
-**(注意: 出力ファイルサイズは約2倍になります！)**
-
-`%Timestamp%`, `hayabusa`, `%RuleTitle%`, `%Computer%`, `%Channel%`, `%EventID%`, `%Level%`, `%MitreTactics%`, `%MitreTags%`, `%OtherTags%`, `%RecordID%`, `%Details%`, `%RuleFile%`, `%EvtxFile%`, `%AllFieldInfo%`
+`%Timestamp%, hayabusa, %RuleTitle%, %Computer%, %Channel%, %EventID%, %Level%, %MitreTactics%, %MitreTags%, %OtherTags%, %RecordID%, %Details%, %ExtraFieldInfo%, %RuleFile%, %EvtxFile%`
 
 ### プロファイルの比較
 
-以下のベンチマークは、2018年製のマックブックプロ上で7.5GBのEVTXデータに対して実施されました。
+以下のベンチマークは、Lenovo P51上で32GBのEVTXデータに対して3829件のルールを有効にして実施されました。(2023/05/20)
 
-| プロファイル | 処理時間 | 結果のファイルサイズ |
+| プロファイル | 処理時間 | 結果のファイルサイズ | ファイルサイズの
 | :---: | :---: | :---: |
 | minimal | 16分18秒 | 690 MB |
 | standard | 16分23秒 | 710 MB |
@@ -1128,6 +1120,7 @@ Hayabusaの`config/profiles.yaml`設定ファイルでは、５つのプロフ�
 |%RecordID% | `<Event><System><EventRecordID>`フィールドのイベントレコードID。 |
 |%RuleTitle% | YML検知ルールの`title`フィールド。 |
 |%Details% | YML検知ルールの`details`フィールドから来ていますが、このフィールドはHayabusaルールにしかありません。このフィールドはアラートとイベントに関する追加情報を提供し、ログのフィールドから有用なデータを抽出することができます。イベントキーのマッピングが間違っている場合、もしくはフィールドが存在しない場合で抽出ができなかった箇所は`n/a` (not available)と記載されます。YML検知ルールに`details`フィールドが存在しない時のdetailsのメッセージを`./rules/config/default_details.txt`で設定できます。`default_details.txt`では`Provider Name`、`EventID`、`details`の組み合わせで設定することができます。default_details.txt`やYML検知ルールに対応するルールが記載されていない場合はすべてのフィールド情報を出力します。 |
+|%ExtraFieldInfo% | %Details%で出力されなかったフィールドデータを出力する。 |
 |%AllFieldInfo% | すべてのフィールド情報。 |
 |%RuleFile% | アラートまたはイベントを生成した検知ルールのファイル名。 |
 |%EvtxFile% | アラートまたはイベントを起こしたevtxファイルへのパス。 |
