@@ -397,3 +397,200 @@ impl Timeline {
         }
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use std::path::Path;
+
+    use chrono::{DateTime, NaiveDateTime, Utc};
+    use compact_str::CompactString;
+    use hashbrown::HashMap;
+    use nested::Nested;
+
+    use crate::{
+        detections::{
+            configs::{
+                Action, CommonOptions, Config, DetectCommonOption, InputOption, LogonSummaryOption,
+                StoredStatic, STORED_EKEY_ALIAS,
+            },
+            utils::create_rec_info,
+        },
+        timeline::timelines::Timeline,
+    };
+
+    fn create_dummy_stored_static(action: Action) -> StoredStatic {
+        StoredStatic::create_static_data(Some(Config {
+            action: Some(action),
+            debug: false,
+        }))
+    }
+
+    /// メトリクスコマンドの統計情報集計のテスト。 Testing of statistics aggregation for metrics commands.
+    #[test]
+    pub fn test_evt_logon_stats() {
+        let dummy_stored_static =
+            create_dummy_stored_static(Action::LogonSummary(LogonSummaryOption {
+                input_args: InputOption {
+                    directory: None,
+                    filepath: None,
+                    live_analysis: false,
+                },
+                common_options: CommonOptions {
+                    no_color: false,
+                    quiet: false,
+                },
+                detect_common_options: DetectCommonOption {
+                    json_input: false,
+                    evtx_file_ext: None,
+                    thread_number: None,
+                    quiet_errors: false,
+                    config: Path::new("./rules/config").to_path_buf(),
+                    verbose: false,
+                },
+                european_time: false,
+                iso_8601: false,
+                rfc_2822: false,
+                rfc_3339: false,
+                us_military_time: false,
+                us_time: false,
+                utc: false,
+                output: None,
+            }));
+        *STORED_EKEY_ALIAS.write().unwrap() = Some(dummy_stored_static.eventkey_alias.clone());
+        let mut timeline = Timeline::default();
+        // テスト1: 対象となるTimestamp情報がない場合
+        let no_timestamp_record_str = r#"{
+            "Event": {
+                "System": {
+                    "EventID": 4624,
+                    "Channel": "Dummy",
+                    "Computer":"HAYABUSA-DESKTOP"
+                }
+            },
+            "Event_attributes": {"xmlns": "http://schemas.microsoft.com/win/2004/08/events/event"}
+        }"#;
+        let mut input_datas = vec![];
+        let alias_ch_record = serde_json::from_str(no_timestamp_record_str).unwrap();
+        input_datas.push(create_rec_info(
+            alias_ch_record,
+            "testpath".to_string(),
+            &Nested::<String>::new(),
+        ));
+        timeline
+            .stats
+            .logon_stats_start(&input_datas, false, &dummy_stored_static.eventkey_alias);
+        assert!(timeline.stats.start_time.is_none());
+        assert!(timeline.stats.end_time.is_none());
+
+        // テスト2: Event.System.TimeCreated_attributes.SystemTimeにタイムスタンプが含まれる場合
+        let tcreated_attribe_record_str = r#"{
+            "Event": {
+                "System": {
+                    "EventID": "4624",
+                    "Channel": "Security",
+                    "Computer":"HAYABUSA-DESKTOP",
+                    "TimeCreated_attributes": {
+                        "SystemTime": "2021-12-23T00:00:00.000Z"
+                    }
+                },
+                "EventData": {
+                    "WorkstationName": "HAYABUSA",
+                    "IpAddress": "192.168.100.200",
+                    "TargetUserName": "testuser",
+                    "LogonType": "3"
+                }
+            },
+            "Event_attributes": {"xmlns": "http://schemas.microsoft.com/win/2004/08/events/event"}
+        }"#;
+
+        let include_tcreated_attribe_record =
+            serde_json::from_str(tcreated_attribe_record_str).unwrap();
+        input_datas.clear();
+        input_datas.push(create_rec_info(
+            include_tcreated_attribe_record,
+            "testpath2".to_string(),
+            &Nested::<String>::new(),
+        ));
+
+        // テスト3: Event.System.@timestampにタイムスタンプが含まれる場合
+        let timestamp_attribe_record_str = r#"{
+            "Event": {
+                "System": {
+                    "EventID": 4625,
+                    "Channel": "Security",
+                    "Computer":"HAYABUSA-DESKTOP",
+                    "@timestamp": "2022-12-23T00:00:00.000Z"
+                },
+                "EventData": {
+                    "TargetUserName": "testuser",
+                    "LogonType": "0"
+                }
+            },
+            "Event_attributes": {"xmlns": "http://schemas.microsoft.com/win/2004/08/events/event"}
+        }"#;
+        let include_timestamp_record = serde_json::from_str(timestamp_attribe_record_str).unwrap();
+        input_datas.push(create_rec_info(
+            include_timestamp_record,
+            "testpath2".to_string(),
+            &Nested::<String>::new(),
+        ));
+
+        let mut expect: HashMap<
+            (
+                CompactString,
+                CompactString,
+                CompactString,
+                CompactString,
+                CompactString,
+            ),
+            [usize; 2],
+        > = HashMap::new();
+        expect.insert(
+            (
+                "testuser".into(),
+                "HAYABUSA-DESKTOP".into(),
+                "3 - Network".into(),
+                "HAYABUSA".into(),
+                "192.168.100.200".into(),
+            ),
+            [1, 0],
+        );
+        expect.insert(
+            (
+                "testuser".into(),
+                "HAYABUSA-DESKTOP".into(),
+                "0 - System".into(),
+                "n/a".into(),
+                "n/a".into(),
+            ),
+            [0, 1],
+        );
+
+        timeline
+            .stats
+            .logon_stats_start(&input_datas, true, &dummy_stored_static.eventkey_alias);
+        assert_eq!(
+            timeline.stats.start_time,
+            Some(DateTime::<Utc>::from_utc(
+                NaiveDateTime::parse_from_str("2021-12-23T00:00:00.000Z", "%Y-%m-%dT%H:%M:%S%.3fZ")
+                    .unwrap(),
+                Utc
+            ))
+        );
+        assert_eq!(
+            timeline.stats.end_time,
+            Some(DateTime::<Utc>::from_utc(
+                NaiveDateTime::parse_from_str("2022-12-23T00:00:00.000Z", "%Y-%m-%dT%H:%M:%S%.3fZ")
+                    .unwrap(),
+                Utc
+            ))
+        );
+
+        assert_eq!(timeline.stats.total, input_datas.len());
+
+        for (k, v) in timeline.stats.stats_login_list.iter() {
+            assert!(expect.contains_key(k));
+            assert_eq!(expect.get(k).unwrap(), v);
+        }
+    }
+}
