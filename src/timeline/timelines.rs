@@ -249,11 +249,10 @@ impl Timeline {
                     ch.trim().into(),
                     event_id.to_owned(),
                     CompactString::from(
-                        event_timeline_config
+                        &event_timeline_config
                             .get_event_id(fmted_channel, event_id)
                             .unwrap()
-                            .evttitle
-                            .as_str(),
+                            .evttitle,
                     ),
                 ]);
             } else {
