@@ -458,6 +458,12 @@ mod tests {
             }));
         *STORED_EKEY_ALIAS.write().unwrap() = Some(dummy_stored_static.eventkey_alias.clone());
         let mut timeline = Timeline::default();
+
+        // レコード情報がないときにはstats_time_cntは何も行わないことをテスト
+        timeline
+            .stats
+            .logon_stats_start(&[], true, &dummy_stored_static.eventkey_alias);
+
         // テスト1: 対象となるTimestamp情報がない場合
         let no_timestamp_record_str = r#"{
             "Event": {
@@ -478,7 +484,7 @@ mod tests {
         ));
         timeline
             .stats
-            .logon_stats_start(&input_datas, false, &dummy_stored_static.eventkey_alias);
+            .logon_stats_start(&input_datas, true, &dummy_stored_static.eventkey_alias);
         assert!(timeline.stats.start_time.is_none());
         assert!(timeline.stats.end_time.is_none());
 
@@ -586,7 +592,7 @@ mod tests {
             ))
         );
 
-        assert_eq!(timeline.stats.total, input_datas.len());
+        assert_eq!(timeline.stats.total, 3);
 
         for (k, v) in timeline.stats.stats_login_list.iter() {
             assert!(expect.contains_key(k));
