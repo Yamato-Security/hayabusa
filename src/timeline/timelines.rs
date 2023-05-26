@@ -671,7 +671,6 @@ mod tests {
         let expect = "Count,Percent,Channel,ID,Event\n".to_owned()
             + &expect_records.join(&"\n").join(",").replace(",\n,", "\n")
             + "\n";
-        println!("dbg-> {:?}", timeline.stats.stats_list);
         match read_to_string("./test_tm_stats.csv") {
             Err(_) => panic!("Failed to open file."),
             Ok(s) => {
