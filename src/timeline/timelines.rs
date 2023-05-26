@@ -401,7 +401,10 @@ impl Timeline {
 
 #[cfg(test)]
 mod tests {
-    use std::path::Path;
+    use std::{
+        fs::{read_to_string, remove_file},
+        path::Path,
+    };
 
     use chrono::{DateTime, NaiveDateTime, Utc};
     use compact_str::CompactString;
@@ -412,7 +415,7 @@ mod tests {
         detections::{
             configs::{
                 Action, CommonOptions, Config, DetectCommonOption, InputOption, LogonSummaryOption,
-                StoredStatic, STORED_EKEY_ALIAS,
+                MetricsOption, StoredStatic, STORED_EKEY_ALIAS,
             },
             utils::create_rec_info,
         },
@@ -599,5 +602,148 @@ mod tests {
             assert!(expect.contains_key(k));
             assert_eq!(expect.get(k).unwrap(), v);
         }
+    }
+
+    #[test]
+    pub fn test_tm_stats_dsp_msg() {
+        let dummy_stored_static = create_dummy_stored_static(Action::Metrics(MetricsOption {
+            input_args: InputOption {
+                directory: None,
+                filepath: None,
+                live_analysis: false,
+            },
+            common_options: CommonOptions {
+                no_color: false,
+                quiet: false,
+            },
+            detect_common_options: DetectCommonOption {
+                json_input: false,
+                evtx_file_ext: None,
+                thread_number: None,
+                quiet_errors: false,
+                config: Path::new("./rules/config").to_path_buf(),
+                verbose: false,
+            },
+            european_time: false,
+            iso_8601: false,
+            rfc_2822: false,
+            rfc_3339: false,
+            us_military_time: false,
+            us_time: false,
+            utc: false,
+            output: Some(Path::new("./test_tm_stats.csv").to_path_buf()),
+        }));
+        *STORED_EKEY_ALIAS.write().unwrap() = Some(dummy_stored_static.eventkey_alias.clone());
+        let mut timeline = Timeline::default();
+
+        //
+        let tcreated_attribe_record_str = r#"{
+            "Event": {
+                "System": {
+                    "EventID": "4624",
+                    "Channel": "Security",
+                    "Computer":"HAYABUSA-DESKTOP",
+                    "TimeCreated_attributes": {
+                        "SystemTime": "2021-12-23T00:00:00.000Z"
+                    }
+                },
+                "EventData": {
+                    "WorkstationName": "HAYABUSA",
+                    "IpAddress": "192.168.100.200",
+                    "TargetUserName": "testuser",
+                    "LogonType": "3"
+                }
+            },
+            "Event_attributes": {"xmlns": "http://schemas.microsoft.com/win/2004/08/events/event"}
+        }"#;
+
+        let mut input_datas = vec![];
+        let include_tcreated_attribe_record =
+            serde_json::from_str(tcreated_attribe_record_str).unwrap();
+        input_datas.clear();
+        input_datas.push(create_rec_info(
+            include_tcreated_attribe_record,
+            "testpath2".to_string(),
+            &Nested::<String>::new(),
+        ));
+
+        let timestamp_attribe_record_str = r#"{
+            "Event": {
+                "System": {
+                    "EventID": 4625,
+                    "Channel": "Security",
+                    "Computer":"HAYABUSA-DESKTOP",
+                    "@timestamp": "2022-12-23T00:00:00.000Z"
+                },
+                "EventData": {
+                    "TargetUserName": "testuser",
+                    "LogonType": "0"
+                }
+            },
+            "Event_attributes": {"xmlns": "http://schemas.microsoft.com/win/2004/08/events/event"}
+        }"#;
+        let include_timestamp_record = serde_json::from_str(timestamp_attribe_record_str).unwrap();
+        input_datas.push(create_rec_info(
+            include_timestamp_record,
+            "testpath2".to_string(),
+            &Nested::<String>::new(),
+        ));
+
+        let mut expect: HashMap<
+            (
+                CompactString,
+                CompactString,
+                CompactString,
+                CompactString,
+                CompactString,
+            ),
+            [usize; 2],
+        > = HashMap::new();
+        expect.insert(
+            (
+                "testuser".into(),
+                "HAYABUSA-DESKTOP".into(),
+                "3 - Network".into(),
+                "HAYABUSA".into(),
+                "192.168.100.200".into(),
+            ),
+            [1, 0],
+        );
+        expect.insert(
+            (
+                "testuser".into(),
+                "HAYABUSA-DESKTOP".into(),
+                "0 - System".into(),
+                "n/a".into(),
+                "n/a".into(),
+            ),
+            [0, 1],
+        );
+
+        timeline
+            .stats
+            .evt_stats_start(&input_datas, &dummy_stored_static);
+
+        timeline.tm_stats_dsp_msg(
+            &dummy_stored_static.event_timeline_config,
+            &dummy_stored_static,
+        );
+        // Event column is defined in rules/config/channel_eid_info.txt
+        let expect_records = vec![
+            vec!["1", "50.0%", "Sec", "4624", "Logon success"],
+            vec!["1", "50.0%", "Sec", "4625", "Logon failure"],
+        ];
+        let expect = "Count,Percent,Channel,ID,Event\n".to_owned()
+            + &expect_records.join(&"\n").join(",").replace(",\n,", "\n")
+            + "\n";
+        println!("dbg-> {:?}", timeline.stats.stats_list);
+        match read_to_string("./test_tm_stats.csv") {
+            Err(_) => panic!("Failed to open file."),
+            Ok(s) => {
+                assert_eq!(s, expect);
+            }
+        };
+        //テスト終了後にファイルを削除する
+        assert!(remove_file("./test_tm_stats.csv").is_ok());
     }
 }
