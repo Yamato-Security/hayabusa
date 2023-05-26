@@ -768,7 +768,7 @@ mod tests {
             .stats
             .logon_stats_start(&input_datas, true, &dummy_stored_static.eventkey_alias);
 
-        timeline.tm_loginstats_tb_set_msg(&dummy_stored_static.output_path);
+        timeline.tm_logon_stats_dsp_msg(&dummy_stored_static);
         let mut header = vec![
             "Successful",
             "Target Account",
