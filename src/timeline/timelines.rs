@@ -81,6 +81,7 @@ impl Timeline {
         }
     }
 
+    /// メトリクスコマンドの統計情報のメッセージ出力関数
     pub fn tm_stats_dsp_msg(
         &mut self,
         event_timeline_config: &EventInfoConfig,
@@ -172,6 +173,7 @@ impl Timeline {
         println!("{stats_tb}");
     }
 
+    /// ログオン統計情報のメッセージ出力関数
     pub fn tm_logon_stats_dsp_msg(&mut self, stored_static: &StoredStatic) {
         // 出力メッセージ作成
         let mut sammsges: Vec<String> = Vec::new();
