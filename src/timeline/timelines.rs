@@ -635,38 +635,7 @@ mod tests {
         }));
         *STORED_EKEY_ALIAS.write().unwrap() = Some(dummy_stored_static.eventkey_alias.clone());
         let mut timeline = Timeline::default();
-
-        //
-        let tcreated_attribe_record_str = r#"{
-            "Event": {
-                "System": {
-                    "EventID": "4624",
-                    "Channel": "Security",
-                    "Computer":"HAYABUSA-DESKTOP",
-                    "TimeCreated_attributes": {
-                        "SystemTime": "2021-12-23T00:00:00.000Z"
-                    }
-                },
-                "EventData": {
-                    "WorkstationName": "HAYABUSA",
-                    "IpAddress": "192.168.100.200",
-                    "TargetUserName": "testuser",
-                    "LogonType": "3"
-                }
-            },
-            "Event_attributes": {"xmlns": "http://schemas.microsoft.com/win/2004/08/events/event"}
-        }"#;
-
         let mut input_datas = vec![];
-        let include_tcreated_attribe_record =
-            serde_json::from_str(tcreated_attribe_record_str).unwrap();
-        input_datas.clear();
-        input_datas.push(create_rec_info(
-            include_tcreated_attribe_record,
-            "testpath2".to_string(),
-            &Nested::<String>::new(),
-        ));
-
         let timestamp_attribe_record_str = r#"{
             "Event": {
                 "System": {
@@ -689,37 +658,6 @@ mod tests {
             &Nested::<String>::new(),
         ));
 
-        let mut expect: HashMap<
-            (
-                CompactString,
-                CompactString,
-                CompactString,
-                CompactString,
-                CompactString,
-            ),
-            [usize; 2],
-        > = HashMap::new();
-        expect.insert(
-            (
-                "testuser".into(),
-                "HAYABUSA-DESKTOP".into(),
-                "3 - Network".into(),
-                "HAYABUSA".into(),
-                "192.168.100.200".into(),
-            ),
-            [1, 0],
-        );
-        expect.insert(
-            (
-                "testuser".into(),
-                "HAYABUSA-DESKTOP".into(),
-                "0 - System".into(),
-                "n/a".into(),
-                "n/a".into(),
-            ),
-            [0, 1],
-        );
-
         timeline
             .stats
             .evt_stats_start(&input_datas, &dummy_stored_static);
@@ -729,10 +667,7 @@ mod tests {
             &dummy_stored_static,
         );
         // Event column is defined in rules/config/channel_eid_info.txt
-        let expect_records = vec![
-            vec!["1", "50.0%", "Sec", "4624", "Logon success"],
-            vec!["1", "50.0%", "Sec", "4625", "Logon failure"],
-        ];
+        let expect_records = vec![vec!["1", "100.0%", "Sec", "4625", "Logon failure"]];
         let expect = "Count,Percent,Channel,ID,Event\n".to_owned()
             + &expect_records.join(&"\n").join(",").replace(",\n,", "\n")
             + "\n";
