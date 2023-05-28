@@ -2716,4 +2716,26 @@ mod tests {
 
         check_select(rule_str, record_json_str, true);
     }
+
+    #[test]
+    fn test_all_only() {
+        // all_only()が正しく検知できることを確認
+        let rule_str = r#"
+        enabled: true
+        detection:
+            selection1:
+                '|all':
+                   - '4103'
+                   - 'Security10'
+            condition: selection1
+        "#;
+
+        let record_json_str = r#"
+        {
+            "Event": {"System": {"EventID": 4103, "Channel": "Security10", "Computer":"DESKTOP-ICHIICHI"}},
+            "Event_attributes": {"xmlns": "http://schemas.microsoft.com/win/2004/08/events/event"}
+        }"#;
+
+        check_select(rule_str, record_json_str, true);
+    }
 }
