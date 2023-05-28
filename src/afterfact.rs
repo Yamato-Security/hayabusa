@@ -2393,7 +2393,7 @@ mod tests {
                 enable_unsupported_rules: false,
             },
             geo_ip: None,
-            output: Some(Path::new("./test_emit_csv.csv").to_path_buf()),
+            output: Some(Path::new("./test_emit_csv_json.json").to_path_buf()),
             jsonl_timeline: false,
         });
 
