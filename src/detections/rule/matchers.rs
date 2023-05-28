@@ -572,9 +572,7 @@ impl LeafMatcher for DefaultMatcher {
                     FastMatch::Contains(s) => {
                         Some(utils::contains_str(&event_value_str.to_lowercase(), s))
                     }
-                    FastMatch::AllOnly(s) => {
-                        Some(utils::contains_str(&event_value_str.to_lowercase(), s))
-                    }
+                    FastMatch::AllOnly(s) => Some(utils::all_only(recinfo.clone(), s)),
                 }
             } else {
                 Some(fast_matcher.iter().any(|fm| match fm {

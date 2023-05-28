@@ -609,6 +609,10 @@ pub fn contains_str(input: &str, check: &str) -> bool {
     memmem::find(input.as_bytes(), check.as_bytes()).is_some()
 }
 
+pub fn all_only(input: EvtxRecordInfo, check: &str) -> bool {
+    memmem::find(input.data_string.as_bytes(), check.as_bytes()).is_some()
+}
+
 #[cfg(test)]
 mod tests {
     use std::path::Path;
