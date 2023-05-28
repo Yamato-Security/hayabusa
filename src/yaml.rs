@@ -304,14 +304,6 @@ impl ParseYaml {
                 }
             }
 
-            self.rulecounter.insert(
-                yaml_doc["ruletype"].as_str().unwrap_or("Other").into(),
-                self.rulecounter
-                    .get(yaml_doc["ruletype"].as_str().unwrap_or("Other"))
-                    .unwrap_or(&0)
-                    + 1,
-            );
-
             up_rule_status_cnt(status.unwrap_or("undefined"));
 
             if stored_static.verbose_flag {
@@ -331,6 +323,14 @@ impl ParseYaml {
             {
                 return Option::None;
             }
+
+            self.rulecounter.insert(
+                yaml_doc["ruletype"].as_str().unwrap_or("Other").into(),
+                self.rulecounter
+                    .get(yaml_doc["ruletype"].as_str().unwrap_or("Other"))
+                    .unwrap_or(&0)
+                    + 1,
+            );
 
             Option::Some((filepath, yaml_doc))
         });
