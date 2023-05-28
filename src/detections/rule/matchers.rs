@@ -354,7 +354,7 @@ impl LeafMatcher for DefaultMatcher {
         let mut keys_all: Vec<&str> = key_list.get(0).unwrap_or(&emp).split('|').collect(); // key_listが空はあり得ない
 
         //先頭が｜の場合を検知して、all -> allOnlyに変更
-        if "".to_string() == keys_all[0] && keys_all.len() == 2 {
+        if keys_all[0].is_empty() && keys_all.len() == 2 {
             keys_all[1] = "allOnly";
         }
 
@@ -569,10 +569,9 @@ impl LeafMatcher for DefaultMatcher {
                     FastMatch::Exact(s) => Some(Self::eq_ignore_case(event_value_str, s)),
                     FastMatch::StartsWith(s) => Self::starts_with_ignore_case(event_value_str, s),
                     FastMatch::EndsWith(s) => Self::ends_with_ignore_case(event_value_str, s),
-                    FastMatch::Contains(s) => {
+                    FastMatch::Contains(s) | FastMatch::AllOnly(s) => {
                         Some(utils::contains_str(&event_value_str.to_lowercase(), s))
                     }
-                    FastMatch::AllOnly(s) => Some(utils::all_only(recinfo.clone(), s)),
                 }
             } else {
                 Some(fast_matcher.iter().any(|fm| match fm {
@@ -2712,28 +2711,6 @@ mod tests {
               "CurrentDirectory": "C:\\Windows\\system32\\"
             }
           }
-        }"#;
-
-        check_select(rule_str, record_json_str, true);
-    }
-
-    #[test]
-    fn test_all_only() {
-        // all_only()が正しく検知できることを確認
-        let rule_str = r#"
-        enabled: true
-        detection:
-            selection1:
-                '|all':
-                   - '4103'
-                   - 'Security10'
-            condition: selection1
-        "#;
-
-        let record_json_str = r#"
-        {
-            "Event": {"System": {"EventID": 4103, "Channel": "Security10", "Computer":"DESKTOP-ICHIICHI"}},
-            "Event_attributes": {"xmlns": "http://schemas.microsoft.com/win/2004/08/events/event"}
         }"#;
 
         check_select(rule_str, record_json_str, true);

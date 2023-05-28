@@ -114,7 +114,7 @@ impl SelectionNode for AllSelectionNode {
     fn select(&self, event_record: &EvtxRecordInfo, eventkey_alias: &EventKeyAliasConfig) -> bool {
         self.child_nodes
             .iter()
-            .any(|child_node| child_node.select(event_record, eventkey_alias))
+            .all(|child_node| child_node.select(event_record, eventkey_alias))
     }
 
     fn init(&mut self) -> Result<(), Vec<String>> {
@@ -446,12 +446,15 @@ impl SelectionNode for LeafSelectionNode {
             }
         }
 
-        let event_value = self.get_event_value(event_record);
+        let mut event_value = self.get_event_value(event_record);
         if self.get_key() == "EventID" && !self.select_value.is_null() {
             if let Some(event_id) = self.select_value.as_i64() {
                 // 正規表現は重いので、数値のEventIDのみ文字列完全一致で判定
                 return event_value.unwrap() == &event_id.to_string();
             }
+        }
+        if self.key_list[0].eq("|all") {
+            event_value = Some(&event_record.data_string);
         }
         return self
             .matcher

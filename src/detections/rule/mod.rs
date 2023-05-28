@@ -308,7 +308,11 @@ impl DetectionNode {
                 and_node.child_nodes.push(child_node);
             });
             Box::new(and_node)
-        } else if yaml.as_vec().is_some() && !key_list.is_empty() && key_list[0].ends_with("|all") && !key_list[0].eq("|all") {
+        } else if yaml.as_vec().is_some()
+            && !key_list.is_empty()
+            && key_list[0].ends_with("|all")
+            && !key_list[0].eq("|all")
+        {
             //key_listにallが入っていた場合は子要素の配列はAND条件と解釈する。
             let mut and_node = selectionnodes::AndSelectionNode::new();
             yaml.as_vec().unwrap().iter().for_each(|child_yaml| {
