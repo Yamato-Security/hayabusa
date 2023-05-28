@@ -1455,7 +1455,7 @@ fn output_json_str(
                 Profile::MitreTags(_) | Profile::MitreTactics(_) | Profile::OtherTags(_) => {
                     let key = _convert_valid_json_str(&[key.as_str()], false);
                     let values = val.split(": ").filter(|x| x.trim() != "");
-                    let values_len = values.size_hint().0;
+                    let values_len = values.clone().count();
                     if values_len == 0 {
                         continue;
                     }
