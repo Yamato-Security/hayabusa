@@ -1,7 +1,10 @@
 extern crate csv;
 
-use crate::detections::configs::Action;
-use crate::detections::utils::{create_recordinfos, format_time, write_color_buffer};
+use crate::detections::configs::{Action, CURRENT_EXE_PATH};
+use crate::detections::utils::{
+    check_setting_path, create_recordinfos, format_time, output_and_data_stack_for_html,
+    write_color_buffer,
+};
 use crate::options::profile::Profile::{
     self, AllFieldInfo, Channel, Computer, EventID, EvtxFile, Level, MitreTactics, MitreTags,
     OtherTags, Provider, RecordID, RenderedMessage, RuleAuthor, RuleCreationDate, RuleFile, RuleID,
@@ -13,6 +16,7 @@ use compact_str::CompactString;
 use itertools::Itertools;
 use nested::Nested;
 use std::default::Default;
+use std::fs::read_to_string;
 use termcolor::{BufferWriter, Color, ColorChoice};
 use yaml_rust::Yaml;
 
@@ -1091,6 +1095,36 @@ impl Detection {
         let tmp_total_detect_output =
             format!("Total enabled detection rules: {total_loaded_rule_cnt}");
         println!("{tmp_total_detect_output}");
+        println!();
+        println!();
+        // output profile name
+        if let Some(profile_opt) = &stored_static.output_option {
+            // default profile name check
+            let default_profile_name = read_to_string(
+                check_setting_path(
+                    &CURRENT_EXE_PATH.to_path_buf(),
+                    "config/default_profile_name.txt",
+                    true,
+                )
+                .unwrap()
+                .to_str()
+                .unwrap(),
+            )
+            .unwrap_or("n/a".into());
+
+            // user input profile option
+            let profile_name = profile_opt
+                .profile
+                .as_ref()
+                .unwrap_or(&default_profile_name);
+            let output_saved_str = format!("Output profile: {profile_name}");
+            output_and_data_stack_for_html(
+                &output_saved_str,
+                "General Overview {#general_overview}",
+                stored_static.html_report_flag,
+            );
+        }
+        println!();
         println!();
         println!("Scanning in progress. Please wait.");
         println!();
