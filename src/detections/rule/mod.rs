@@ -320,17 +320,17 @@ impl DetectionNode {
                 and_node.child_nodes.push(child_node);
             });
             Box::new(and_node)
-        } else if yaml.as_vec().is_some() && !key_list[0].eq("|all") {
-            // 配列はOR条件と解釈する。
-            let mut or_node = selectionnodes::OrSelectionNode::new();
+        } else if yaml.as_vec().is_some() && !key_list.is_empty() && key_list[0].eq("|all") {
+            // 配列はALL条件と解釈する。
+            let mut or_node = selectionnodes::AllSelectionNode::new();
             yaml.as_vec().unwrap().iter().for_each(|child_yaml| {
                 let child_node = Self::parse_selection_recursively(key_list, child_yaml);
                 or_node.child_nodes.push(child_node);
             });
             Box::new(or_node)
-        } else if yaml.as_vec().is_some() && key_list[0].eq("|all") {
+        } else if yaml.as_vec().is_some() {
             // 配列はOR条件と解釈する。
-            let mut or_node = selectionnodes::AllSelectionNode::new();
+            let mut or_node = selectionnodes::OrSelectionNode::new();
             yaml.as_vec().unwrap().iter().for_each(|child_yaml| {
                 let child_node = Self::parse_selection_recursively(key_list, child_yaml);
                 or_node.child_nodes.push(child_node);

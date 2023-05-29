@@ -453,7 +453,7 @@ impl SelectionNode for LeafSelectionNode {
                 return event_value.unwrap() == &event_id.to_string();
             }
         }
-        if self.key_list[0].eq("|all") {
+        if !self.key_list.is_empty() && self.key_list[0].eq("|all") {
             event_value = Some(&event_record.data_string);
         }
         return self
