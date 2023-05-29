@@ -2,9 +2,9 @@ use base64::{engine::general_purpose, Engine as _};
 use cidr_utils::cidr::{IpCidr, IpCidrError};
 use nested::Nested;
 use regex::Regex;
-use std::cmp::Ordering;
 use std::net::IpAddr;
 use std::str::FromStr;
+use std::{cmp::Ordering, collections::HashMap};
 use yaml_rust::Yaml;
 
 use crate::detections::{detection::EvtxRecordInfo, utils};
@@ -353,9 +353,17 @@ impl LeafMatcher for DefaultMatcher {
 
         let mut keys_all: Vec<&str> = key_list.get(0).unwrap_or(&emp).split('|').collect(); // key_listが空はあり得ない
 
+        //all -> allOnlyの対応関係
+        let mut change_map: HashMap<&str, &str> = HashMap::new();
+        change_map.insert("all", "allOnly");
+
         //先頭が｜の場合を検知して、all -> allOnlyに変更
         if keys_all[0].is_empty() && keys_all.len() == 2 {
-            keys_all[1] = "allOnly";
+            for key in keys_all.iter_mut().skip(1) {
+                if change_map.contains_key(key) {
+                    *key = *change_map.get(key).unwrap();
+                }
+            }
         }
 
         let keys_without_head = &keys_all[1..];
