@@ -1364,7 +1364,7 @@ fn output_json_str(
                         }
                         output_value_stock.push_str(&value.join(" "));
                         //1つまえのキーの段階で以降にvalueの配列で区切りとなる空の配列が存在しているかを確認する
-                        let is_remain_split_stock = key_index_stock.len() > 2
+                        let is_remain_split_stock = key_index_stock.len() > 1
                             && key_idx == key_index_stock.len() - 2
                             && value_idx < stocked_value.len() - 1
                             && !output_value_stock.is_empty()
