@@ -648,10 +648,23 @@ pub fn output_profile_name(output_option: &Option<OutputOption>, stdout: bool) {
 mod tests {
     use std::path::Path;
 
-    use crate::detections::utils::{self, check_setting_path, make_ascii_titlecase};
+    use crate::{
+        detections::{
+            configs::{
+                Action, CommonOptions, Config, CsvOutputOption, DetectCommonOption, InputOption,
+                OutputOption, StoredStatic,
+            },
+            utils::{self, check_setting_path, make_ascii_titlecase},
+        },
+        options::htmlreport::HTML_REPORTER,
+    };
     use compact_str::CompactString;
+    use hashbrown::HashMap;
+    use nested::Nested;
     use regex::Regex;
     use serde_json::Value;
+
+    use super::output_profile_name;
 
     #[test]
     fn test_create_recordinfos() {
@@ -916,5 +929,71 @@ mod tests {
             records[1]["Event"]["EventData"]["@timestamp"],
             "2020-05-02T02:55:30.540Z"
         );
+    }
+
+    #[test]
+    fn test_output_profile() {
+        HTML_REPORTER.write().unwrap().md_datas.clear();
+        let stored_static = StoredStatic::create_static_data(Some(Config {
+            action: Some(Action::CsvTimeline(CsvOutputOption {
+                output_options: OutputOption {
+                    input_args: InputOption {
+                        directory: None,
+                        filepath: None,
+                        live_analysis: false,
+                    },
+                    profile: Some("super-verbose".to_string()),
+                    enable_deprecated_rules: false,
+                    exclude_status: None,
+                    min_level: "informational".to_string(),
+                    exact_level: None,
+                    enable_noisy_rules: false,
+                    end_timeline: None,
+                    start_timeline: None,
+                    eid_filter: false,
+                    european_time: false,
+                    iso_8601: false,
+                    rfc_2822: false,
+                    rfc_3339: false,
+                    us_military_time: false,
+                    us_time: false,
+                    utc: false,
+                    visualize_timeline: false,
+                    rules: Path::new("./rules").to_path_buf(),
+                    html_report: Some(Path::new("dummy.html").to_path_buf()),
+                    no_summary: false,
+                    common_options: CommonOptions {
+                        no_color: false,
+                        quiet: false,
+                    },
+                    detect_common_options: DetectCommonOption {
+                        evtx_file_ext: None,
+                        thread_number: None,
+                        quiet_errors: false,
+                        config: Path::new("./rules/config").to_path_buf(),
+                        verbose: false,
+                        json_input: false,
+                    },
+                    enable_unsupported_rules: false,
+                },
+                geo_ip: None,
+                output: None,
+                multiline: false,
+            })),
+            debug: false,
+        }));
+        output_profile_name(&stored_static.output_option, true);
+        output_profile_name(&stored_static.output_option, false);
+        let expect: HashMap<&str, Nested<String>> = HashMap::from_iter(vec![
+            ("Results Summary {#results_summary}", Nested::new()),
+            (
+                "General Overview {#general_overview}",
+                Nested::from_iter(vec!["\n- Output profile: super-verbose"]),
+            ),
+        ]);
+        for (k, v) in HTML_REPORTER.read().unwrap().md_datas.iter() {
+            assert!(expect.keys().any(|x| x == k));
+            assert!(expect.values().any(|y| y == v));
+        }
     }
 }
