@@ -2777,4 +2777,35 @@ mod tests {
 
         check_select(rule_str, record_json_str, false);
     }
+
+    #[test]
+    fn test_all_only_or_false() {
+        let rule_str = r#"
+        enabled: true
+        detection:
+            selection1:
+                '|all':
+                    - 'Sysmon/Operational'
+                    - 'false'
+            selection2: 
+                - 3 
+                - 2 
+            condition: selection1 and selection2
+        "#;
+
+        let record_json_str = r#"
+        {
+          "Event": {
+            "System": {
+              "EventID": 1,
+              "Channel": "Microsoft-Windows-Sysmon/Operational"
+            },
+            "EventData": {
+              "CurrentDirectory": "C:\\Windows\\system32\\"
+            }
+          }
+        }"#;
+
+        check_select(rule_str, record_json_str, false);
+    }
 }
