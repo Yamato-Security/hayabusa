@@ -20,7 +20,7 @@ use chrono::{DateTime, TimeZone, Utc};
 use regex::Regex;
 use serde_json::{json, Error, Map, Value};
 use std::cmp::Ordering;
-use std::fs::File;
+use std::fs::{read_to_string, File};
 use std::io::prelude::*;
 use std::io::{BufRead, BufReader};
 use std::str;
@@ -607,6 +607,41 @@ pub fn output_and_data_stack_for_html(
 
 pub fn contains_str(input: &str, check: &str) -> bool {
     memmem::find(input.as_bytes(), check.as_bytes()).is_some()
+}
+
+pub fn output_profile_name(output_option: &Option<OutputOption>, stdout: bool) {
+    // output profile name
+    if let Some(profile_opt) = output_option {
+        // default profile name check
+        let default_profile_name = read_to_string(
+            check_setting_path(
+                &CURRENT_EXE_PATH.to_path_buf(),
+                "config/default_profile_name.txt",
+                true,
+            )
+            .unwrap()
+            .to_str()
+            .unwrap(),
+        )
+        .unwrap_or("n/a".into());
+
+        // user input profile option
+        let profile_name = profile_opt
+            .profile
+            .as_ref()
+            .unwrap_or(&default_profile_name);
+        let output_saved_str = format!("Output profile: {profile_name}");
+        if stdout {
+            println!("{output_saved_str}");
+        }
+        // profileの表示位置とHTMLの出力順が異なるため引数で管理をした
+        if !stdout && profile_opt.html_report.is_some() {
+            htmlreport::add_md_data(
+                "General Overview {#general_overview}",
+                Nested::from_iter(vec![format!("\n- {output_saved_str}")]),
+            );
+        }
+    }
 }
 
 #[cfg(test)]

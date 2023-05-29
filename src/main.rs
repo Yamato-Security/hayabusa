@@ -18,7 +18,7 @@ use hayabusa::detections::detection::{self, EvtxRecordInfo};
 use hayabusa::detections::message::{AlertMessage, ERROR_LOG_STACK};
 use hayabusa::detections::rule::{get_detection_keys, RuleNode};
 use hayabusa::detections::utils::{
-    check_setting_path, get_writable_color, output_and_data_stack_for_html,
+    check_setting_path, get_writable_color, output_and_data_stack_for_html, output_profile_name,
 };
 use hayabusa::options;
 use hayabusa::options::htmlreport::{self, HTML_REPORTER};
@@ -274,6 +274,7 @@ impl App {
                 }
                 self.analysis_start(&target_extensions, &time_filter, stored_static);
 
+                output_profile_name(&stored_static.output_option, false);
                 if let Some(path) = &stored_static.output_path {
                     if let Ok(metadata) = fs::metadata(path) {
                         let output_saved_str = format!(
