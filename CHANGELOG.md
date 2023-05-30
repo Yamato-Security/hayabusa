@@ -10,7 +10,7 @@
 
 - Added `%ExtraFieldInfo%` alias to output profiles which will output all of the other fields that do not get outputted in `Details`. (#900) (@hitenkoku)
 - Added error messages for incompatible arguments. (#1054) (@YamatoSecurity)
-- Added profile name on stdout and HTML output. (#1055) (@hitenkoku)
+- The output profile name is now outputted to standard output and in the HTML report. (#1055) (@hitenkoku)
 
 **Bug Fixes:**
 
