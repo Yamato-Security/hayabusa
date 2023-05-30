@@ -13,7 +13,7 @@
 
 **バグ修正:**
 
-- `json-timeline` コマンドを利用した出力で、`MitreTactics`, `MitreTags`, `OtherTags` フィールドが出力されていない問題を修正した。 (#1062) (@hitenkoku)
+- `json-timeline`コマンドを利用した出力で、`MitreTactics`、`MitreTags`、`OtherTags`フィールドが出力されていない問題を修正した。 (#1062) (@hitenkoku)
 
 ## 2.5.1 [2023/05/14] "Mothers Day Release"
 
