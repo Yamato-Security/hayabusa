@@ -13,7 +13,7 @@
 
 **Bug Fixes:**
 
-- XXX
+- `MitreTactics`, `MitreTags`, `OtherTags` fields were not being outputed in the `json-timeline` command. (#1062) (@hitenkoku)
 
 ## 2.5.1 [2023/05/14] "Mothers Day Release"
 
