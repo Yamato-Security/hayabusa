@@ -638,7 +638,7 @@ pub fn output_profile_name(output_option: &Option<OutputOption>, stdout: bool) {
         if !stdout && profile_opt.html_report.is_some() {
             htmlreport::add_md_data(
                 "General Overview {#general_overview}",
-                Nested::from_iter(vec![format!("\n- {output_saved_str}")]),
+                Nested::from_iter(vec![format!("- {output_saved_str}")]),
             );
         }
     }
