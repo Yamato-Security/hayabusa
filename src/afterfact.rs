@@ -1080,7 +1080,7 @@ fn _print_detection_summary_tables(
         // html出力の場合はすべての内容を出力するようにする
         if stored_static.html_report_flag {
             html_output_stock.push(format!(
-                "### Top {} alerts: {{#top_{}_alerts}}",
+                "### All {} alerts: {{#all_{}_alerts}}",
                 LEVEL_FULL.get(level[1].as_str()).unwrap(),
                 LEVEL_FULL.get(level[1].as_str()).unwrap()
             ));
