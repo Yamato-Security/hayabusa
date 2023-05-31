@@ -452,6 +452,7 @@ mod tests {
 
     #[test]
     fn test_add_md_data() {
+        HTML_REPORTER.write().unwrap().md_datas.clear();
         let mut html_reporter = HtmlReporter::default();
         let mut general_data = Nested::<String>::new();
         general_data.extend(vec![

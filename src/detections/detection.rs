@@ -1,7 +1,9 @@
 extern crate csv;
 
 use crate::detections::configs::Action;
-use crate::detections::utils::{create_recordinfos, format_time, write_color_buffer};
+use crate::detections::utils::{
+    create_recordinfos, format_time, output_profile_name, write_color_buffer,
+};
 use crate::options::profile::Profile::{
     self, AllFieldInfo, Channel, Computer, EventID, EvtxFile, Level, MitreTactics, MitreTags,
     OtherTags, Provider, RecordID, RenderedMessage, RuleAuthor, RuleCreationDate, RuleFile, RuleID,
@@ -1091,6 +1093,8 @@ impl Detection {
         let tmp_total_detect_output =
             format!("Total enabled detection rules: {total_loaded_rule_cnt}");
         println!("{tmp_total_detect_output}");
+        println!();
+        output_profile_name(&stored_static.output_option, true);
         println!();
         println!("Scanning in progress. Please wait.");
         println!();

@@ -32,7 +32,7 @@ h3 {
   border-bottom: solid 3px #ff0000;
 }
 
-#top_critical_alerts {
+#all_critical_alerts {
   color: #ff0000;
   border-bottom: solid 3px #ff0000;
 }
@@ -42,7 +42,7 @@ h3 {
   border-bottom: solid 3px #ffff00;
 }
 
-#top_high_alerts {
+#all_high_alerts {
   color: #ffff00;
   border-bottom: solid 3px #ffff00;
 }
@@ -52,7 +52,7 @@ h3 {
   border-bottom: solid 3px #00ffff;
 }
 
-#top_medium_alerts {
+#all_medium_alerts {
   color: #00ffff;
   border-bottom: solid 3px #00ffff;
 }
@@ -62,7 +62,7 @@ h3 {
   border-bottom: solid 3px #00ff00;
 }
 
-#top_low_alerts {
+#all_low_alerts {
   color: #00ff00;
   border-bottom: solid 3px #00ff00;
 }
@@ -72,7 +72,7 @@ h3 {
   border-bottom: solid 3px #ffffff;
 }
 
-#top_informational_alerts {
+#all_informational_alerts {
   color: #ffffff;
   border-bottom: solid 3px #ffffff;
 }

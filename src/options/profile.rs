@@ -267,6 +267,11 @@ pub fn set_default_profile(
         Action::SetDefaultProfile(s) => Some(s),
         _ => None,
     };
+
+    let default_profile_name_path = Path::new(default_profile_path)
+        .to_path_buf()
+        .with_file_name("default_profile_name.txt");
+
     if set_default_profile.is_some() && set_default_profile.unwrap().profile.is_some() {
         let profile_name = set_default_profile
             .as_ref()
@@ -293,6 +298,14 @@ pub fn set_default_profile(
                         )),
                         _ => {
                             buf_wtr.flush().ok();
+                            if let Ok(mut default_name_buf_wtr) = OpenOptions::new()
+                                .write(true)
+                                .truncate(true)
+                                .open(default_profile_name_path)
+                                .map(BufWriter::new)
+                            {
+                                default_name_buf_wtr.write_all(profile_name.as_bytes()).ok();
+                            }
                             Ok(())
                         }
                     },
