@@ -280,7 +280,7 @@ impl DefaultMatcher {
         {
             // 高速なマッチに変換できないパターンは、正規表現マッチのみ
             return None;
-        } else if s.starts_with("allOnly") {
+        } else if s.starts_with("allOnly*") && s.ends_with('*') && wildcard_count == 2 {
             let removed_asterisk = s[8..(s.len() - 1)].replace(r"\\", r"\");
             if ignore_case {
                 return Some(vec![FastMatch::AllOnly(removed_asterisk.to_lowercase())]);
@@ -358,12 +358,8 @@ impl LeafMatcher for DefaultMatcher {
         change_map.insert("all", "allOnly");
 
         //先頭が｜の場合を検知して、all -> allOnlyに変更
-        if keys_all[0].is_empty() && keys_all.len() == 2 {
-            for key in keys_all.iter_mut().skip(1) {
-                if change_map.contains_key(key) {
-                    *key = *change_map.get(key).unwrap();
-                }
-            }
+        if keys_all[0].is_empty() && keys_all.len() == 2 && keys_all[1] == "all" {
+            keys_all[1] = change_map["all"];
         }
 
         let keys_without_head = &keys_all[1..];
