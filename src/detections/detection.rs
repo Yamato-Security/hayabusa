@@ -1094,9 +1094,7 @@ impl Detection {
             format!("Total enabled detection rules: {total_loaded_rule_cnt}");
         println!("{tmp_total_detect_output}");
         println!();
-        println!();
         output_profile_name(&stored_static.output_option, true);
-        println!();
         println!();
         println!("Scanning in progress. Please wait.");
         println!();
