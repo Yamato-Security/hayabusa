@@ -988,7 +988,7 @@ mod tests {
             ("Results Summary {#results_summary}", Nested::new()),
             (
                 "General Overview {#general_overview}",
-                Nested::from_iter(vec!["\n- Output profile: super-verbose"]),
+                Nested::from_iter(vec!["- Output profile: super-verbose"]),
             ),
         ]);
         for (k, v) in HTML_REPORTER.read().unwrap().md_datas.iter() {
