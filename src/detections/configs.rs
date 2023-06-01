@@ -1084,7 +1084,7 @@ pub struct OutputOption {
     pub html_report: Option<PathBuf>,
 
     /// Do not display Results Summary (slightly faster speed)
-    #[arg(help_heading = Some("Display Settings"), long = "no-summary", display_order = 400)]
+    #[arg(help_heading = Some("Display Settings"), short = 'N', long = "no-summary", display_order = 400)]
     pub no_summary: bool,
 }
 
