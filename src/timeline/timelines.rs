@@ -459,6 +459,7 @@ mod tests {
                 us_time: false,
                 utc: false,
                 output: None,
+                clobber: false,
             }));
         *STORED_EKEY_ALIAS.write().unwrap() = Some(dummy_stored_static.eventkey_alias.clone());
         let mut timeline = Timeline::default();
@@ -632,6 +633,7 @@ mod tests {
             us_time: false,
             utc: false,
             output: Some(Path::new("./test_tm_stats.csv").to_path_buf()),
+            clobber: false,
         }));
         *STORED_EKEY_ALIAS.write().unwrap() = Some(dummy_stored_static.eventkey_alias.clone());
         let mut timeline = Timeline::default();
@@ -710,6 +712,7 @@ mod tests {
                 us_time: false,
                 utc: false,
                 output: Some(Path::new("./test_tm_logon_stats").to_path_buf()),
+                clobber: false,
             }));
         *STORED_EKEY_ALIAS.write().unwrap() = Some(dummy_stored_static.eventkey_alias.clone());
         let mut timeline = Timeline::default();

@@ -617,6 +617,7 @@ mod tests {
                         json_input: false,
                     },
                     enable_unsupported_rules: false,
+                    clobber: false,
                 },
                 geo_ip: None,
                 output: None,

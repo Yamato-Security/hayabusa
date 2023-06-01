@@ -856,6 +856,7 @@ mod tests {
                         json_input: false,
                     },
                     enable_unsupported_rules: false,
+                    clobber: false,
                 },
                 geo_ip: None,
                 output: None,
@@ -2729,9 +2730,9 @@ mod tests {
                 '|all':
                     - 'Sysmon/Operational'
                     - 'indows\'
-            selection2: 
-                - 1 
-                - 2 
+            selection2:
+                - 1
+                - 2
             condition: selection1 and selection2
         "#;
 
@@ -2760,9 +2761,9 @@ mod tests {
                 '|all':
                     - 'Sysmon/Operational'
                     - 'false'
-            selection2: 
-                - 1 
-                - 2 
+            selection2:
+                - 1
+                - 2
             condition: selection1 and selection2
         "#;
 
@@ -2791,9 +2792,9 @@ mod tests {
                 '|all':
                     - 'Sysmon/Operational'
                     - 'false'
-            selection2: 
-                - 3 
-                - 2 
+            selection2:
+                - 3
+                - 2
             condition: selection1 and selection2
         "#;
 
