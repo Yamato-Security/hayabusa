@@ -81,6 +81,7 @@ impl Timeline {
         }
     }
 
+    /// メトリクスコマンドの統計情報のメッセージ出力関数
     pub fn tm_stats_dsp_msg(
         &mut self,
         event_timeline_config: &EventInfoConfig,
@@ -172,6 +173,7 @@ impl Timeline {
         println!("{stats_tb}");
     }
 
+    /// ログオン統計情報のメッセージ出力関数
     pub fn tm_logon_stats_dsp_msg(&mut self, stored_static: &StoredStatic) {
         // 出力メッセージ作成
         let mut sammsges: Vec<String> = Vec::new();
@@ -249,11 +251,10 @@ impl Timeline {
                     ch.trim().into(),
                     event_id.to_owned(),
                     CompactString::from(
-                        event_timeline_config
+                        &event_timeline_config
                             .get_event_id(fmted_channel, event_id)
                             .unwrap()
-                            .evttitle
-                            .as_str(),
+                            .evttitle,
                     ),
                 ]);
             } else {
@@ -395,5 +396,444 @@ impl Timeline {
                 println!("{}", msgprint);
             }
         }
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use std::{
+        fs::{read_to_string, remove_file},
+        path::Path,
+    };
+
+    use chrono::{DateTime, NaiveDateTime, Utc};
+    use compact_str::CompactString;
+    use hashbrown::HashMap;
+    use nested::Nested;
+
+    use crate::{
+        detections::{
+            configs::{
+                Action, CommonOptions, Config, DetectCommonOption, InputOption, LogonSummaryOption,
+                MetricsOption, StoredStatic, STORED_EKEY_ALIAS,
+            },
+            utils::create_rec_info,
+        },
+        timeline::timelines::Timeline,
+    };
+
+    fn create_dummy_stored_static(action: Action) -> StoredStatic {
+        StoredStatic::create_static_data(Some(Config {
+            action: Some(action),
+            debug: false,
+        }))
+    }
+
+    /// メトリクスコマンドの統計情報集計のテスト。 Testing of statistics aggregation for metrics commands.
+    #[test]
+    pub fn test_evt_logon_stats() {
+        let dummy_stored_static =
+            create_dummy_stored_static(Action::LogonSummary(LogonSummaryOption {
+                input_args: InputOption {
+                    directory: None,
+                    filepath: None,
+                    live_analysis: false,
+                },
+                common_options: CommonOptions {
+                    no_color: false,
+                    quiet: false,
+                },
+                detect_common_options: DetectCommonOption {
+                    json_input: false,
+                    evtx_file_ext: None,
+                    thread_number: None,
+                    quiet_errors: false,
+                    config: Path::new("./rules/config").to_path_buf(),
+                    verbose: false,
+                },
+                european_time: false,
+                iso_8601: false,
+                rfc_2822: false,
+                rfc_3339: false,
+                us_military_time: false,
+                us_time: false,
+                utc: false,
+                output: None,
+            }));
+        *STORED_EKEY_ALIAS.write().unwrap() = Some(dummy_stored_static.eventkey_alias.clone());
+        let mut timeline = Timeline::default();
+
+        // レコード情報がないときにはstats_time_cntは何も行わないことをテスト
+        timeline
+            .stats
+            .logon_stats_start(&[], true, &dummy_stored_static.eventkey_alias);
+
+        // テスト1: 対象となるTimestamp情報がない場合
+        let no_timestamp_record_str = r#"{
+            "Event": {
+                "System": {
+                    "EventID": 4624,
+                    "Channel": "Dummy",
+                    "Computer":"HAYABUSA-DESKTOP"
+                }
+            },
+            "Event_attributes": {"xmlns": "http://schemas.microsoft.com/win/2004/08/events/event"}
+        }"#;
+        let mut input_datas = vec![];
+        let alias_ch_record = serde_json::from_str(no_timestamp_record_str).unwrap();
+        input_datas.push(create_rec_info(
+            alias_ch_record,
+            "testpath".to_string(),
+            &Nested::<String>::new(),
+        ));
+        timeline
+            .stats
+            .logon_stats_start(&input_datas, true, &dummy_stored_static.eventkey_alias);
+        assert!(timeline.stats.start_time.is_none());
+        assert!(timeline.stats.end_time.is_none());
+
+        // テスト2: Event.System.TimeCreated_attributes.SystemTimeにタイムスタンプが含まれる場合
+        let tcreated_attribe_record_str = r#"{
+            "Event": {
+                "System": {
+                    "EventID": "4624",
+                    "Channel": "Security",
+                    "Computer":"HAYABUSA-DESKTOP",
+                    "TimeCreated_attributes": {
+                        "SystemTime": "2021-12-23T00:00:00.000Z"
+                    }
+                },
+                "EventData": {
+                    "WorkstationName": "HAYABUSA",
+                    "IpAddress": "192.168.100.200",
+                    "TargetUserName": "testuser",
+                    "LogonType": "3"
+                }
+            },
+            "Event_attributes": {"xmlns": "http://schemas.microsoft.com/win/2004/08/events/event"}
+        }"#;
+
+        let include_tcreated_attribe_record =
+            serde_json::from_str(tcreated_attribe_record_str).unwrap();
+        input_datas.clear();
+        input_datas.push(create_rec_info(
+            include_tcreated_attribe_record,
+            "testpath2".to_string(),
+            &Nested::<String>::new(),
+        ));
+
+        // テスト3: Event.System.@timestampにタイムスタンプが含まれる場合
+        let timestamp_attribe_record_str = r#"{
+            "Event": {
+                "System": {
+                    "EventID": 4625,
+                    "Channel": "Security",
+                    "Computer":"HAYABUSA-DESKTOP",
+                    "@timestamp": "2022-12-23T00:00:00.000Z"
+                },
+                "EventData": {
+                    "TargetUserName": "testuser",
+                    "LogonType": "0"
+                }
+            },
+            "Event_attributes": {"xmlns": "http://schemas.microsoft.com/win/2004/08/events/event"}
+        }"#;
+        let include_timestamp_record = serde_json::from_str(timestamp_attribe_record_str).unwrap();
+        input_datas.push(create_rec_info(
+            include_timestamp_record,
+            "testpath2".to_string(),
+            &Nested::<String>::new(),
+        ));
+
+        let mut expect: HashMap<
+            (
+                CompactString,
+                CompactString,
+                CompactString,
+                CompactString,
+                CompactString,
+            ),
+            [usize; 2],
+        > = HashMap::new();
+        expect.insert(
+            (
+                "testuser".into(),
+                "HAYABUSA-DESKTOP".into(),
+                "3 - Network".into(),
+                "HAYABUSA".into(),
+                "192.168.100.200".into(),
+            ),
+            [1, 0],
+        );
+        expect.insert(
+            (
+                "testuser".into(),
+                "HAYABUSA-DESKTOP".into(),
+                "0 - System".into(),
+                "n/a".into(),
+                "n/a".into(),
+            ),
+            [0, 1],
+        );
+
+        timeline
+            .stats
+            .logon_stats_start(&input_datas, true, &dummy_stored_static.eventkey_alias);
+        assert_eq!(
+            timeline.stats.start_time,
+            Some(DateTime::<Utc>::from_utc(
+                NaiveDateTime::parse_from_str("2021-12-23T00:00:00.000Z", "%Y-%m-%dT%H:%M:%S%.3fZ")
+                    .unwrap(),
+                Utc
+            ))
+        );
+        assert_eq!(
+            timeline.stats.end_time,
+            Some(DateTime::<Utc>::from_utc(
+                NaiveDateTime::parse_from_str("2022-12-23T00:00:00.000Z", "%Y-%m-%dT%H:%M:%S%.3fZ")
+                    .unwrap(),
+                Utc
+            ))
+        );
+
+        assert_eq!(timeline.stats.total, 3);
+
+        for (k, v) in timeline.stats.stats_login_list.iter() {
+            assert!(expect.contains_key(k));
+            assert_eq!(expect.get(k).unwrap(), v);
+        }
+    }
+
+    #[test]
+    pub fn test_tm_stats_dsp_msg() {
+        let dummy_stored_static = create_dummy_stored_static(Action::Metrics(MetricsOption {
+            input_args: InputOption {
+                directory: None,
+                filepath: None,
+                live_analysis: false,
+            },
+            common_options: CommonOptions {
+                no_color: false,
+                quiet: false,
+            },
+            detect_common_options: DetectCommonOption {
+                json_input: false,
+                evtx_file_ext: None,
+                thread_number: None,
+                quiet_errors: false,
+                config: Path::new("./rules/config").to_path_buf(),
+                verbose: false,
+            },
+            european_time: false,
+            iso_8601: false,
+            rfc_2822: false,
+            rfc_3339: false,
+            us_military_time: false,
+            us_time: false,
+            utc: false,
+            output: Some(Path::new("./test_tm_stats.csv").to_path_buf()),
+        }));
+        *STORED_EKEY_ALIAS.write().unwrap() = Some(dummy_stored_static.eventkey_alias.clone());
+        let mut timeline = Timeline::default();
+        let mut input_datas = vec![];
+        let timestamp_attribe_record_str = r#"{
+            "Event": {
+                "System": {
+                    "EventID": 4625,
+                    "Channel": "Security",
+                    "Computer":"HAYABUSA-DESKTOP",
+                    "@timestamp": "2022-12-23T00:00:00.000Z"
+                },
+                "EventData": {
+                    "TargetUserName": "testuser",
+                    "LogonType": "0"
+                }
+            },
+            "Event_attributes": {"xmlns": "http://schemas.microsoft.com/win/2004/08/events/event"}
+        }"#;
+        let include_timestamp_record = serde_json::from_str(timestamp_attribe_record_str).unwrap();
+        input_datas.push(create_rec_info(
+            include_timestamp_record,
+            "testpath2".to_string(),
+            &Nested::<String>::new(),
+        ));
+
+        timeline
+            .stats
+            .evt_stats_start(&input_datas, &dummy_stored_static);
+
+        timeline.tm_stats_dsp_msg(
+            &dummy_stored_static.event_timeline_config,
+            &dummy_stored_static,
+        );
+        // Event column is defined in rules/config/channel_eid_info.txt
+        let expect_records = vec![vec!["1", "100.0%", "Sec", "4625", "Logon failure"]];
+        let expect = "Count,Percent,Channel,ID,Event\n".to_owned()
+            + &expect_records.join(&"\n").join(",").replace(",\n,", "\n")
+            + "\n";
+        match read_to_string("./test_tm_stats.csv") {
+            Err(_) => panic!("Failed to open file."),
+            Ok(s) => {
+                assert_eq!(s, expect);
+            }
+        };
+        //テスト終了後にファイルを削除する
+        assert!(remove_file("./test_tm_stats.csv").is_ok());
+    }
+
+    #[test]
+    pub fn test_tm_logon_stats_dsp_msg() {
+        let dummy_stored_static =
+            create_dummy_stored_static(Action::LogonSummary(LogonSummaryOption {
+                input_args: InputOption {
+                    directory: None,
+                    filepath: Some(Path::new("./dummy.evtx").to_path_buf()),
+                    live_analysis: false,
+                },
+                common_options: CommonOptions {
+                    no_color: false,
+                    quiet: false,
+                },
+                detect_common_options: DetectCommonOption {
+                    json_input: false,
+                    evtx_file_ext: None,
+                    thread_number: None,
+                    quiet_errors: false,
+                    config: Path::new("./rules/config").to_path_buf(),
+                    verbose: false,
+                },
+                european_time: false,
+                iso_8601: false,
+                rfc_2822: false,
+                rfc_3339: false,
+                us_military_time: false,
+                us_time: false,
+                utc: false,
+                output: Some(Path::new("./test_tm_logon_stats").to_path_buf()),
+            }));
+        *STORED_EKEY_ALIAS.write().unwrap() = Some(dummy_stored_static.eventkey_alias.clone());
+        let mut timeline = Timeline::default();
+        let mut input_datas = vec![];
+        let tcreated_attribe_record_str = r#"{
+            "Event": {
+                "System": {
+                    "EventID": "4624",
+                    "Channel": "Security",
+                    "Computer":"HAYABUSA-DESKTOP",
+                    "TimeCreated_attributes": {
+                        "SystemTime": "2021-12-23T00:00:00.000Z"
+                    }
+                },
+                "EventData": {
+                    "WorkstationName": "HAYABUSA",
+                    "IpAddress": "192.168.100.200",
+                    "TargetUserName": "testuser",
+                    "LogonType": "3"
+                }
+            },
+            "Event_attributes": {"xmlns": "http://schemas.microsoft.com/win/2004/08/events/event"}
+        }"#;
+        let include_tcreated_attribe_record =
+            serde_json::from_str(tcreated_attribe_record_str).unwrap();
+        input_datas.clear();
+        input_datas.push(create_rec_info(
+            include_tcreated_attribe_record,
+            "testpath2".to_string(),
+            &Nested::<String>::new(),
+        ));
+
+        let timestamp_attribe_record_str = r#"{
+            "Event": {
+                "System": {
+                    "EventID": 4625,
+                    "Channel": "Security",
+                    "Computer":"HAYABUSA-DESKTOP",
+                    "@timestamp": "2022-12-23T00:00:00.000Z"
+                },
+                "EventData": {
+                    "TargetUserName": "testuser",
+                    "LogonType": "0"
+                }
+            },
+            "Event_attributes": {"xmlns": "http://schemas.microsoft.com/win/2004/08/events/event"}
+        }"#;
+        let include_timestamp_record = serde_json::from_str(timestamp_attribe_record_str).unwrap();
+        input_datas.push(create_rec_info(
+            include_timestamp_record,
+            "testpath2".to_string(),
+            &Nested::<String>::new(),
+        ));
+
+        timeline
+            .stats
+            .logon_stats_start(&input_datas, true, &dummy_stored_static.eventkey_alias);
+
+        timeline.tm_logon_stats_dsp_msg(&dummy_stored_static);
+        let mut header = vec![
+            "Successful",
+            "Target Account",
+            "Target Computer",
+            "Logon Type",
+            "Source Computer",
+            "Source IP Address",
+        ];
+
+        // Login Successful csv output test
+        let expect_success_records = vec![vec![
+            "1",
+            "testuser",
+            "HAYABUSA-DESKTOP",
+            "3 - Network",
+            "HAYABUSA",
+            "192.168.100.200",
+        ]];
+        let expect_success = header.join(",")
+            + "\n"
+            + &expect_success_records
+                .join(&"\n")
+                .join(",")
+                .replace(",\n,", "\n")
+            + "\n";
+        match read_to_string("./test_tm_logon_stats-Successful.csv") {
+            Err(_) => panic!("Failed to open file."),
+            Ok(s) => {
+                assert_eq!(s, expect_success);
+            }
+        };
+
+        // Login Failed csv output test
+        header[0] = "Failed";
+        let expect_failed_records = vec![vec![
+            "1",
+            "testuser",
+            "HAYABUSA-DESKTOP",
+            "0 - System",
+            "n/a",
+            "n/a",
+        ]];
+        let expect_failed = header.join(",")
+            + "\n"
+            + &expect_failed_records
+                .join(&"\n")
+                .join(",")
+                .replace(",\n,", "\n")
+            + "\n";
+
+        match read_to_string("./test_tm_logon_stats-Successful.csv") {
+            Err(_) => panic!("Failed to open file."),
+            Ok(s) => {
+                assert_eq!(s, expect_success);
+            }
+        };
+
+        match read_to_string("./test_tm_logon_stats-Failed.csv") {
+            Err(_) => panic!("Failed to open file."),
+            Ok(s) => {
+                assert_eq!(s, expect_failed);
+            }
+        };
+        //テスト終了後にファイルを削除する
+        assert!(remove_file("./test_tm_logon_stats-Successful.csv").is_ok());
+        assert!(remove_file("./test_tm_logon_stats-Failed.csv").is_ok());
     }
 }

@@ -44,8 +44,8 @@ use super::message::{self, LEVEL_ABBR_MAP};
 pub struct EvtxRecordInfo {
     pub evtx_filepath: String, // イベントファイルのファイルパス ログで出力するときに使う
     pub record: Value,         // 1レコード分のデータをJSON形式にシリアライズしたもの
-    pub data_string: String,
-    pub key_2_value: HashMap<String, String>,
+    pub data_string: String,   //1レコード内のデータを文字列にしたもの
+    pub key_2_value: HashMap<String, String>, // 階層化されたキーを.でつないだデータとその値のマップ
 }
 
 impl EvtxRecordInfo {
