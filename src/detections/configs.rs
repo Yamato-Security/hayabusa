@@ -772,6 +772,10 @@ pub struct SearchOption {
     /// Output event field information in multiple rows
     #[arg(help_heading = Some("Output"), short = 'M', long="multiline", display_order = 390)]
     pub multiline: bool,
+
+    /// Overwrite results files
+    #[arg(help_heading = Some("General Options"), short='C', long = "clobber", display_order = 290, required_unless_present = "output")]
+    pub clobber: bool,
 }
 
 #[derive(Args, Clone, Debug)]
@@ -852,6 +856,10 @@ pub struct MetricsOption {
     /// Output time in UTC format (default: local time)
     #[arg(help_heading = Some("Time Format"), short = 'U', long = "UTC", display_order = 210)]
     pub utc: bool,
+
+    /// Overwrite results files
+    #[arg(help_heading = Some("General Options"), short='C', long = "clobber", display_order = 290, required_unless_present = "output")]
+    pub clobber: bool,
 }
 
 #[derive(Args, Clone, Debug)]
@@ -921,6 +929,10 @@ pub struct PivotKeywordOption {
 
     #[clap(flatten)]
     pub detect_common_options: DetectCommonOption,
+
+    /// Overwrite results files
+    #[arg(help_heading = Some("General Options"), short='C', long = "clobber", display_order = 290, required_unless_present = "output")]
+    pub clobber: bool,
 }
 
 #[derive(Args, Clone, Debug)]
@@ -965,6 +977,10 @@ pub struct LogonSummaryOption {
     /// Output time in UTC format (default: local time)
     #[arg(help_heading = Some("Time Format"), short = 'U', long = "UTC", display_order = 210)]
     pub utc: bool,
+
+    /// Overwrite results files
+    #[arg(help_heading = Some("General Options"), short='C', long = "clobber", display_order = 290, required_unless_present = "output")]
+    pub clobber: bool,
 }
 
 /// Options can be set when outputting
@@ -1086,6 +1102,10 @@ pub struct OutputOption {
     /// Do not display Results Summary (slightly faster speed)
     #[arg(help_heading = Some("Display Settings"), long = "no-summary", display_order = 400)]
     pub no_summary: bool,
+
+    /// Overwrite results files
+    #[arg(help_heading = Some("General Options"), short='C', long = "clobber", display_order = 290, required_unless_present_any = ["output", "html_report"])]
+    pub clobber: bool,
 }
 
 #[derive(Copy, Args, Clone, Debug)]
@@ -1463,6 +1483,7 @@ fn extract_search_options(config: &Config) -> Option<SearchOption> {
             config: option.config.clone(),
             verbose: option.verbose,
             multiline: option.multiline,
+            clobber: option.clobber,
         }),
         _ => None,
     }
@@ -1498,6 +1519,7 @@ fn extract_output_options(config: &Config) -> Option<OutputOption> {
             common_options: option.common_options,
             detect_common_options: option.detect_common_options.clone(),
             enable_unsupported_rules: option.enable_unsupported_rules,
+            clobber: option.clobber,
         }),
         Action::Metrics(option) => Some(OutputOption {
             input_args: option.input_args.clone(),
@@ -1524,6 +1546,7 @@ fn extract_output_options(config: &Config) -> Option<OutputOption> {
             common_options: option.common_options,
             detect_common_options: option.detect_common_options.clone(),
             enable_unsupported_rules: false,
+            clobber: option.clobber,
         }),
         Action::LogonSummary(option) => Some(OutputOption {
             input_args: option.input_args.clone(),
@@ -1550,6 +1573,7 @@ fn extract_output_options(config: &Config) -> Option<OutputOption> {
             common_options: option.common_options,
             detect_common_options: option.detect_common_options.clone(),
             enable_unsupported_rules: false,
+            clobber: option.clobber,
         }),
         Action::Search(option) => Some(OutputOption {
             input_args: option.input_args.clone(),
@@ -1583,6 +1607,7 @@ fn extract_output_options(config: &Config) -> Option<OutputOption> {
             },
             exact_level: None,
             enable_unsupported_rules: false,
+            clobber: option.clobber,
         }),
         Action::SetDefaultProfile(option) => Some(OutputOption {
             input_args: InputOption {
@@ -1620,6 +1645,7 @@ fn extract_output_options(config: &Config) -> Option<OutputOption> {
                 json_input: false,
             },
             enable_unsupported_rules: false,
+            clobber: false,
         }),
         Action::UpdateRules(option) => Some(OutputOption {
             input_args: InputOption {
@@ -1657,6 +1683,7 @@ fn extract_output_options(config: &Config) -> Option<OutputOption> {
                 json_input: false,
             },
             enable_unsupported_rules: true,
+            clobber: false,
         }),
         _ => None,
     }

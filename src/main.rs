@@ -251,24 +251,28 @@ impl App {
                 if let Some(html_path) = &stored_static.output_option.as_ref().unwrap().html_report
                 {
                     // if already exists same html report file. output alert message and exit
-                    if utils::check_file_expect_not_exist(
-                        html_path.as_path(),
-                        format!(
-                            " The file {} already exists. Please specify a different filename.",
-                            html_path.to_str().unwrap()
-                        ),
-                    ) {
+                    if !(stored_static.output_option.as_ref().unwrap().clobber)
+                        && utils::check_file_expect_not_exist(
+                            html_path.as_path(),
+                            format!(
+                                " The file {} already exists. Please specify a different filename.",
+                                html_path.to_str().unwrap()
+                            ),
+                        )
+                    {
                         return;
                     }
                 }
                 if let Some(path) = &stored_static.output_path {
-                    if utils::check_file_expect_not_exist(
-                        path.as_path(),
-                        format!(
-                            " The file {} already exists. Please specify a different filename.",
-                            path.as_os_str().to_str().unwrap()
-                        ),
-                    ) {
+                    if !(stored_static.output_option.as_ref().unwrap().clobber)
+                        && utils::check_file_expect_not_exist(
+                            path.as_path(),
+                            format!(
+                                " The file {} already exists. Please specify a different filename.",
+                                path.as_os_str().to_str().unwrap()
+                            ),
+                        )
+                    {
                         return;
                     }
                 }
@@ -331,19 +335,21 @@ impl App {
                 if let Some(csv_path) = &stored_static.output_path {
                     let mut error_flag = false;
                     let pivot_key_unions = PIVOT_KEYWORD.read().unwrap();
-                    pivot_key_unions.iter().for_each(|(key, _)| {
-                        let keywords_file_name =
-                            csv_path.as_path().display().to_string() + "-" + key + ".txt";
-                        if utils::check_file_expect_not_exist(
-                            Path::new(&keywords_file_name),
-                            format!(
-                                " The file {} already exists. Please specify a different filename.",
-                                &keywords_file_name
-                            ),
-                        ) {
-                            error_flag = true
-                        };
-                    });
+                    if !stored_static.output_option.as_ref().unwrap().clobber {
+                        pivot_key_unions.iter().for_each(|(key, _)| {
+                            let keywords_file_name =
+                                csv_path.as_path().display().to_string() + "-" + key + ".txt";
+                            if utils::check_file_expect_not_exist(
+                                Path::new(&keywords_file_name),
+                                format!(
+                                    " The file {} already exists. Please specify a different filename.",
+                                    &keywords_file_name
+                                ),
+                            ) {
+                                error_flag = true
+                            };
+                        });
+                    }
                     if error_flag {
                         return;
                     }
