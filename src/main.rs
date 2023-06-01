@@ -314,6 +314,19 @@ impl App {
                 return;
             }
             Action::LogonSummary(_) | Action::Metrics(_) | Action::Search(_) => {
+                if let Some(path) = &stored_static.output_path {
+                    if !(stored_static.output_option.as_ref().unwrap().clobber)
+                        && utils::check_file_expect_not_exist(
+                            path.as_path(),
+                            format!(
+                                " The file {} already exists. Please specify a different filename.",
+                                path.as_os_str().to_str().unwrap()
+                            ),
+                        )
+                    {
+                        return;
+                    }
+                }
                 self.analysis_start(&target_extensions, &time_filter, stored_static);
                 if let Some(path) = &stored_static.output_path {
                     if let Ok(metadata) = fs::metadata(path) {
