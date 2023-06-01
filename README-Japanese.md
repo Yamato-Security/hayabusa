@@ -688,7 +688,7 @@ Output:
 
 Display Settings:
       --no-color            カラーで出力しない
-      --no-summary          結果概要を出力しない (多少速くなる)
+  -N, --no-summary          結果概要を出力しない (多少速くなる)
   -q, --quiet               Quietモード: 起動バナーを表示しない
   -v, --verbose             詳細な情報を出力する
   -T, --visualize-timeline  検知頻度タイムラインを出力する（ターミナルはUnicodeに対応する必要がある）
@@ -919,7 +919,7 @@ Output:
 
 Display Settings:
       --no-color            カラーで出力しない
-      --no-summary          結果概要を出力しない (多少速くなる)
+  -N, --no-summary          結果概要を出力しない (多少速くなる)
   -q, --quiet               Quietモード: 起動バナーを表示しない
   -v, --verbose             詳細な情報を出力する
   -T, --visualize-timeline  検知頻度タイムラインを出力する（ターミナルはUnicodeに対応する必要がある）

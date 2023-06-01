@@ -687,7 +687,7 @@ Output:
 
 Display Settings:
       --no-color            Disable color output
-      --no-summary          Do not display Results Summary (slightly faster speed)
+  -N, --no-summary          Do not display Results Summary (slightly faster speed)
   -q, --quiet               Quiet mode: do not display the launch banner
   -v, --verbose             Output verbose information
   -T, --visualize-timeline  Output event frequency timeline (terminal needs to support unicode)
@@ -918,7 +918,7 @@ Output:
 
 Display Settings:
       --no-color            Disable color output
-      --no-summary          Do not display Results Summary (slightly faster speed)
+  -N, --no-summary          Do not display Results Summary (slightly faster speed)
   -q, --quiet               Quiet mode: do not display the launch banner
   -v, --verbose             Output verbose information
   -T, --visualize-timeline  Output event frequency timeline (terminal needs to support unicode)
