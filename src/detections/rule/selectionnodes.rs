@@ -97,6 +97,76 @@ impl SelectionNode for AndSelectionNode {
     }
 }
 
+/// detection - selection配下でAll条件を表すノード
+pub struct AllSelectionNode {
+    pub child_nodes: Vec<Box<dyn SelectionNode>>,
+}
+
+impl AllSelectionNode {
+    pub fn new() -> AllSelectionNode {
+        AllSelectionNode {
+            child_nodes: vec![],
+        }
+    }
+}
+
+impl SelectionNode for AllSelectionNode {
+    fn select(&self, event_record: &EvtxRecordInfo, eventkey_alias: &EventKeyAliasConfig) -> bool {
+        self.child_nodes
+            .iter()
+            .all(|child_node| child_node.select(event_record, eventkey_alias))
+    }
+
+    fn init(&mut self) -> Result<(), Vec<String>> {
+        let err_msgs = self
+            .child_nodes
+            .iter_mut()
+            .map(|child_node| {
+                let res = child_node.init();
+                if let Err(err) = res {
+                    err
+                } else {
+                    vec![]
+                }
+            })
+            .fold(
+                vec![],
+                |mut acc: Vec<String>, cur: Vec<String>| -> Vec<String> {
+                    acc.extend(cur.into_iter());
+                    acc
+                },
+            );
+
+        if err_msgs.is_empty() {
+            Result::Ok(())
+        } else {
+            Result::Err(err_msgs)
+        }
+    }
+
+    fn get_childs(&self) -> Vec<&dyn SelectionNode> {
+        let mut ret = vec![];
+        self.child_nodes.iter().for_each(|child_node| {
+            ret.push(child_node.as_ref());
+        });
+
+        ret
+    }
+
+    fn get_descendants(&self) -> Vec<&dyn SelectionNode> {
+        let mut ret = self.get_childs();
+
+        self.child_nodes
+            .iter()
+            .flat_map(|child_node| child_node.get_descendants())
+            .for_each(|descendant_node| {
+                ret.push(descendant_node);
+            });
+
+        ret
+    }
+}
+
 /// detection - selection配下でOr条件を表すノード
 pub struct OrSelectionNode {
     pub child_nodes: Vec<Box<dyn SelectionNode>>,
@@ -376,12 +446,15 @@ impl SelectionNode for LeafSelectionNode {
             }
         }
 
-        let event_value = self.get_event_value(event_record);
+        let mut event_value = self.get_event_value(event_record);
         if self.get_key() == "EventID" && !self.select_value.is_null() {
             if let Some(event_id) = self.select_value.as_i64() {
                 // 正規表現は重いので、数値のEventIDのみ文字列完全一致で判定
                 return event_value.unwrap() == &event_id.to_string();
             }
+        }
+        if !self.key_list.is_empty() && self.key_list[0].eq("|all") {
+            event_value = Some(&event_record.data_string);
         }
         return self
             .matcher

@@ -2,9 +2,9 @@ use base64::{engine::general_purpose, Engine as _};
 use cidr_utils::cidr::{IpCidr, IpCidrError};
 use nested::Nested;
 use regex::Regex;
-use std::cmp::Ordering;
 use std::net::IpAddr;
 use std::str::FromStr;
+use std::{cmp::Ordering, collections::HashMap};
 use yaml_rust::Yaml;
 
 use crate::detections::{detection::EvtxRecordInfo, utils};
@@ -191,6 +191,7 @@ enum FastMatch {
     StartsWith(String),
     EndsWith(String),
     Contains(String),
+    AllOnly(String),
 }
 
 /// デフォルトのマッチクラス
@@ -279,6 +280,12 @@ impl DefaultMatcher {
         {
             // 高速なマッチに変換できないパターンは、正規表現マッチのみ
             return None;
+        } else if s.starts_with("allOnly*") && s.ends_with('*') && wildcard_count == 2 {
+            let removed_asterisk = s[8..(s.len() - 1)].replace(r"\\", r"\");
+            if ignore_case {
+                return Some(vec![FastMatch::AllOnly(removed_asterisk.to_lowercase())]);
+            }
+            return Some(vec![FastMatch::AllOnly(removed_asterisk)]);
         } else if s.starts_with('*')
             && s.ends_with('*')
             && wildcard_count == 2
@@ -342,10 +349,23 @@ impl LeafMatcher for DefaultMatcher {
         let pattern = yaml_value.unwrap();
         // Pipeが指定されていればパースする
         let emp = String::default();
-        // 一つ目はただのキーで、2つめ以降がpipe
-        let keys = key_list.get(0).unwrap_or(&emp).split('|').skip(1); // key_listが空はあり得ない
+        // 一つ目はただのキーで、2つめ以jj降がpipe
+
+        let mut keys_all: Vec<&str> = key_list.get(0).unwrap_or(&emp).split('|').collect(); // key_listが空はあり得ない
+
+        //all -> allOnlyの対応関係
+        let mut change_map: HashMap<&str, &str> = HashMap::new();
+        change_map.insert("all", "allOnly");
+
+        //先頭が｜の場合を検知して、all -> allOnlyに変更
+        if keys_all[0].is_empty() && keys_all.len() == 2 && keys_all[1] == "all" {
+            keys_all[1] = change_map["all"];
+        }
+
+        let keys_without_head = &keys_all[1..];
+
         let mut err_msges = vec![];
-        keys.for_each(|key| {
+        for key in keys_without_head.iter() {
             let pipe_element = PipeElement::new(key, &pattern, key_list);
             match pipe_element {
                 Ok(element) => {
@@ -355,7 +375,7 @@ impl LeafMatcher for DefaultMatcher {
                     err_msges.push(e);
                 }
             }
-        });
+        }
         if !err_msges.is_empty() {
             return Err(err_msges);
         }
@@ -374,6 +394,9 @@ impl LeafMatcher for DefaultMatcher {
                 }
                 PipeElement::Contains => {
                     Self::convert_to_fast_match(format!("*{pattern}*").as_str(), true)
+                }
+                PipeElement::AllOnly => {
+                    Self::convert_to_fast_match(format!("allOnly*{pattern}*").as_str(), true)
                 }
                 _ => None,
             };
@@ -550,7 +573,7 @@ impl LeafMatcher for DefaultMatcher {
                     FastMatch::Exact(s) => Some(Self::eq_ignore_case(event_value_str, s)),
                     FastMatch::StartsWith(s) => Self::starts_with_ignore_case(event_value_str, s),
                     FastMatch::EndsWith(s) => Self::ends_with_ignore_case(event_value_str, s),
-                    FastMatch::Contains(s) => {
+                    FastMatch::Contains(s) | FastMatch::AllOnly(s) => {
                         Some(utils::contains_str(&event_value_str.to_lowercase(), s))
                     }
                 }
@@ -583,6 +606,7 @@ enum PipeElement {
     Base64offset,
     Cidr(Result<IpCidr, IpCidrError>),
     All,
+    AllOnly,
 }
 
 impl PipeElement {
@@ -597,6 +621,7 @@ impl PipeElement {
             "base64offset" => Option::Some(PipeElement::Base64offset),
             "cidr" => Option::Some(PipeElement::Cidr(IpCidr::from_str(pattern))),
             "all" => Option::Some(PipeElement::All),
+            "allOnly" => Option::Some(PipeElement::AllOnly),
             _ => Option::None,
         };
 
@@ -2693,5 +2718,98 @@ mod tests {
         }"#;
 
         check_select(rule_str, record_json_str, true);
+    }
+
+    #[test]
+    fn test_all_only_true() {
+        let rule_str = r#"
+        enabled: true
+        detection:
+            selection1:
+                '|all':
+                    - 'Sysmon/Operational'
+                    - 'indows\'
+            selection2: 
+                - 1 
+                - 2 
+            condition: selection1 and selection2
+        "#;
+
+        let record_json_str = r#"
+        {
+          "Event": {
+            "System": {
+              "EventID": 1,
+              "Channel": "Microsoft-Windows-Sysmon/Operational"
+            },
+            "EventData": {
+              "CurrentDirectory": "C:\\Windows\\system32\\"
+            }
+          }
+        }"#;
+
+        check_select(rule_str, record_json_str, true);
+    }
+
+    #[test]
+    fn test_all_only_false() {
+        let rule_str = r#"
+        enabled: true
+        detection:
+            selection1:
+                '|all':
+                    - 'Sysmon/Operational'
+                    - 'false'
+            selection2: 
+                - 1 
+                - 2 
+            condition: selection1 and selection2
+        "#;
+
+        let record_json_str = r#"
+        {
+          "Event": {
+            "System": {
+              "EventID": 1,
+              "Channel": "Microsoft-Windows-Sysmon/Operational"
+            },
+            "EventData": {
+              "CurrentDirectory": "C:\\Windows\\system32\\"
+            }
+          }
+        }"#;
+
+        check_select(rule_str, record_json_str, false);
+    }
+
+    #[test]
+    fn test_all_only_or_false() {
+        let rule_str = r#"
+        enabled: true
+        detection:
+            selection1:
+                '|all':
+                    - 'Sysmon/Operational'
+                    - 'false'
+            selection2: 
+                - 3 
+                - 2 
+            condition: selection1 and selection2
+        "#;
+
+        let record_json_str = r#"
+        {
+          "Event": {
+            "System": {
+              "EventID": 1,
+              "Channel": "Microsoft-Windows-Sysmon/Operational"
+            },
+            "EventData": {
+              "CurrentDirectory": "C:\\Windows\\system32\\"
+            }
+          }
+        }"#;
+
+        check_select(rule_str, record_json_str, false);
     }
 }

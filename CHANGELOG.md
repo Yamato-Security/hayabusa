@@ -4,7 +4,7 @@
 
 **New Features:**
 
-- XXX
+- Added support for `'|all':`  keyword in sigma rules. (#1038) (@kazuminn)
 
 **Enhancements:**
 
