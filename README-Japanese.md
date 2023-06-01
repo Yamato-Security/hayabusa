@@ -15,6 +15,7 @@
     <a href="https://www.blackhat.com/asia-22/arsenal/schedule/#hayabusa-26211"><img src="https://raw.githubusercontent.com/toolswatch/badges/master/arsenal/asia/2022.svg"></a>
     <a href="https://codeblue.jp/2022/en/talks/?content=talks_24"><img src="https://img.shields.io/badge/CODE%20BLUE%20Bluebox-2022-blue"></a>
     <a href="https://www.seccon.jp/2022/seccon_workshop/windows.html"><img src="https://img.shields.io/badge/SECCON-2023-blue"></a>
+    <a href="https://www.sans.org/cyber-security-training-events/digital-forensics-summit-2023/"><img src="https://img.shields.io/badge/SANS%20DFIR%20Summit-2023-blue"></a>
     <a href=""><img src="https://img.shields.io/badge/Maintenance%20Level-Actively%20Developed-brightgreen.svg" /></a>
     <a href="https://rust-reportcard.xuri.me/report/github.com/Yamato-Security/hayabusa"><img src="https://rust-reportcard.xuri.me/badge/github.com/Yamato-Security/hayabusa" /></a>
     <a href="https://codecov.io/gh/Yamato-Security/hayabusa" ><img src="https://codecov.io/gh/Yamato-Security/hayabusa/branch/main/graph/badge.svg?token=WFN5XO9W8C"/></a>
@@ -123,7 +124,7 @@ Hayabusaは、日本の[Yamato Security](https://yamatosecurity.connpass.com/)�
   - [結果のサマリ (Results Summary)](#結果のサマリ-results-summary)
     - [検知頻度タイムライン](#検知頻度タイムライン)
 - [Hayabusaルール](#hayabusaルール)
-  - [Hayabusa v.s. 変換されたSigmaルール](#hayabusa-vs-変換されたsigmaルール)
+  - [Sigma v.s. Hayabusa(ビルトインSigmaとの互換性のある)ルール](#sigma-vs-hayabusaビルトインsigmaとの互換性のあるルール)
 - [その他のWindowsイベントログ解析ツールおよび関連リソース](#その他のwindowsイベントログ解析ツールおよび関連リソース)
 - [Windowsイベントログ設定のススメ](#windowsイベントログ設定のススメ)
 - [Sysmon関係のプロジェクト](#sysmon関係のプロジェクト)
@@ -1094,16 +1095,16 @@ Hayabusaの`config/profiles.yaml`設定ファイルでは、５つのプロフ�
 
 ### プロファイルの比較
 
-以下のベンチマークは、Lenovo P51上で32GBのEVTXデータに対して3829件のルールを有効にして実施されました。(2023/05/20)
+以下のベンチマークは、2018年製のLenovo P51 (CPU: Xeon 4コア / メモリ: 64GB)上で3GBのEVTXデータに対して3891件のルールを有効にして実施されました。(2023/06/01)
 
-| プロファイル | 処理時間 | 結果のファイルサイズ | ファイルサイズの
-| :---: | :---: | :---: |
-| minimal | 16分18秒 | 690 MB |
-| standard | 16分23秒 | 710 MB |
-| verbose | 17分 | 990 MB |
-| timesketch-minimal | 17分 | 1015 MB |
-| all-field-info-verbose | 16分50秒 | 1.6 GB |
-| super-verbose | 17分12秒 | 2.1 GB |
+| プロファイル | 処理時間 | 結果のファイルサイズ | ファイルサイズ増加 |
+| :---: | :---: | :---: | :---: |
+| minimal | 8分50秒 | 770 MB | 1倍 |
+| standard (デフォルト) | 9分00秒 | 1.1 GB | 1.5倍 |
+| verbose | 9分10秒 | 1.3 GB | 1.7倍 |
+| all-field-info | 9分3秒 | 1.2 GB | 1.6倍 |
+| all-field-info-verbose | 9分10秒 | 1.3 GB | 1.7倍 |
+| super-verbose | 9分12秒 | 1.5 GB | 2倍 |
 
 ### Profile Field Aliases
 
@@ -1294,26 +1295,24 @@ Hayabusaルールのディレクトリ構造は、2つのディレクトリに�
 
 現在のルールをご確認いただき、新規作成時のテンプレートとして、また検知ロジックの確認用としてご利用ください。
 
-## Hayabusa v.s. 変換されたSigmaルール
+## Sigma v.s. Hayabusa(ビルトインSigmaとの互換性のある)ルール
 
-Sigmaルールは、最初にHayabusaルール形式に変換する必要があります。変換のやり方は[ここ](https://github.com/Yamato-Security/hayabusa-rules/tree/main/tools/sigmac/README-Japanese.md)で説明されています。
+Hayabusaは、`logsource`フィールドを内部で処理することを唯一の例外として、Sigmaルールをネイティブにサポートしています。
+過検知を減らすため、コンバータで変換した方が良いです。変換のやり方は[ここ](https://github.com/Yamato-Security/hayabusa-rules/tree/main/tools/sigmac/README-Japanese.md)で説明されています。
+これにより、適切な`Channel`と`EventID`が追加され、`process_creation`のような特定のカテゴリに対してフィールドマッピングが行われます。
+
 殆どのルールはSigmaルールと互換性があるので、Sigmaルールのようにその他のSIEM形式に変換できます。
 Hayabusaルールは、Windowsのイベントログ解析専用に設計されており、以下のような利点があります:
 
-1. ログの有用なフィールドのみから抽出された追加情報を表示するための `details`フィールドを追加しています。
+1. ログの有用なフィールドのみから抽出された追加情報を表示するための`details`フィールドを追加しています。
 2. Hayabusaルールはすべてサンプルログに対してテストされ、検知することが確認されています。
-   > 変換処理のバグ、サポートされていない機能、実装の違い(正規表現など)により、一部のSigmaルールは意図したとおりに動作しない可能性があります。
 3. Sigmaルール仕様にない集計式(例：`|equalsfield`、`|endswithfield`)の利用。
 
-**制限事項**: 私たちの知る限り、Hayabusa はオープンソースの Windows イベントログ解析ツールの中でSigmaルールを最も多くサポートしていますが、まだサポートされていないルールもあります。
-
-1. [Sigmaルール仕様](https://github.com/SigmaHQ/sigma-specification)の`count`以外の集計式。
-2. `|near`を使用するルール。
+私たちの知る限り、HayabusaはオープンソースのWindowsイベントログ解析ツールの中でSigmaルールを最も多くサポートしています。
 
 # その他のWindowsイベントログ解析ツールおよび関連リソース
 
-「すべてを統治する1つのツール」というものはなく、それぞれにメリットがあるため、これらの他の優れたツールやプロジェクトをチェックして、どれが気に入ったかを確認することをお勧めします。
-
+* [AllthingsTimesketch](https://github.com/blueteam0ps/AllthingsTimesketch) - PlasoとHayabusaの結果をTimesketchにインポートするNodeREDワークフロー。
 * [APT-Hunter](https://github.com/ahmedkhlief/APT-Hunter) - Pythonで開発された攻撃検知ツール。
 * [Awesome Event IDs](https://github.com/stuhli/awesome-event-ids) -  フォレンジック調査とインシデント対応に役立つイベントIDのリソース。
 * [Chainsaw](https://github.com/countercept/chainsaw) - Rustで開発されたSigmaベースの攻撃検知ツール。

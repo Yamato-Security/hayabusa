@@ -15,6 +15,7 @@
     <a href="https://www.blackhat.com/asia-22/arsenal/schedule/#hayabusa-26211"><img src="https://raw.githubusercontent.com/toolswatch/badges/master/arsenal/asia/2022.svg"></a>
     <a href="https://codeblue.jp/2022/en/talks/?content=talks_24"><img src="https://img.shields.io/badge/CODE%20BLUE%20Bluebox-2022-blue"></a>
     <a href="https://www.seccon.jp/2022/seccon_workshop/windows.html"><img src="https://img.shields.io/badge/SECCON-2023-blue"></a>
+    <a href="https://www.sans.org/cyber-security-training-events/digital-forensics-summit-2023/"><img src="https://img.shields.io/badge/SANS%20DFIR%20Summit-2023-blue"></a>
     <a href=""><img src="https://img.shields.io/badge/Maintenance%20Level-Actively%20Developed-brightgreen.svg" /></a>
     <a href="https://rust-reportcard.xuri.me/report/github.com/Yamato-Security/hayabusa"><img src="https://rust-reportcard.xuri.me/badge/github.com/Yamato-Security/hayabusa" /></a>
     <a href="https://codecov.io/gh/Yamato-Security/hayabusa" ><img src="https://codecov.io/gh/Yamato-Security/hayabusa/branch/main/graph/badge.svg?token=WFN5XO9W8C"/></a>
@@ -123,7 +124,7 @@ Hayabusa is a **Windows event log fast forensics timeline generator** and **thre
   - [Results Summary](#results-summary-1)
     - [Detection Fequency Timeline](#detection-fequency-timeline)
 - [Hayabusa Rules](#hayabusa-rules)
-  - [Hayabusa v.s. Converted Sigma Rules](#hayabusa-vs-converted-sigma-rules)
+  - [Sigma v.s. Hayabusa (Built-in Sigma Compatible) Rules](#sigma-vs-hayabusa-built-in-sigma-compatible-rules)
 - [Other Windows Event Log Analyzers and Related Resources](#other-windows-event-log-analyzers-and-related-resources)
 - [Windows Logging Recommendations](#windows-logging-recommendations)
 - [Sysmon Related Projects](#sysmon-related-projects)
@@ -1069,7 +1070,7 @@ Use the `list-profiles` command to show the available profiles and their field i
 
 ### 4. `all-field-info` profile output
 
-Instead of outputting the minimal `details` information, all field information in the `EventData` section will be outputted along with their original field names.
+Instead of outputting the minimal `details` information, all field information in the `EventData` and `UserData` sections will be outputted along with their original field names.
 
 `%Timestamp%, %Computer%, %Channel%, %EventID%, %Level%, %RecordID%, %RuleTitle%, %AllFieldInfo%, %RuleFile%, %EvtxFile%`
 
@@ -1093,18 +1094,16 @@ Output to a format compatible with importing into [Timesketch](https://timesketc
 
 ### Profile Comparison
 
-The following benchmarks were conducted on a 2018 Lenovo P51 (Xeon 4 Core CPU / 64GB RAM) with 32GB of evtx data and 3839 rules enabled. (2023/05/20)
+The following benchmarks were conducted on a 2018 Lenovo P51 (Xeon 4 Core CPU / 64GB RAM) with 3GB of evtx data and 3891 rules enabled. (2023/06/01)
 
 | Profile | Processing Time | Output Filesize | Filesize Increase |
 | :---: | :---: | :---: | :---: |
-| minimal | 1 hour 18 minutes | 8.5 GB | 1x |
-| standard | 1 hour 19 minutes 45 seconds | 13.1 GB | 1.5x |
-| verbose | x minutes | 990 MB |
-| all-field-info | 1 hour 20 minutes 10 seconds | 18.7 GB | 2.2x |
-| all-field-info-verbose | x minutes 50 seconds | 1.6 GB |
-| super-verbose | 1 hour 25 minutes 10 seconds | 19.6 GB |
-| timesketch-minimal | x minutes | 1015 MB |
-| timesketch-verbose | x minutes | 1015 MB |
+| minimal | 8 minutes 50 seconds | 770 MB | 1x |
+| standard (default) | 9 minutes 00 seconds | 1.1 GB | 1.5x |
+| verbose | 9 minutes 10 seconds | 1.3 GB | 1.7x |
+| all-field-info | 9 minutes 3 seconds | 1.2 GB | 1.6x |
+| all-field-info-verbose | 9 minutes 10 seconds | 1.3 GB | 1.7x |
+| super-verbose | 9 minutes 12 seconds | 1.5 GB | 2x |
 
 ### Profile Field Aliases
 
@@ -1279,7 +1278,7 @@ Note: There needs to be more than 5 events. Also, the characters will not render
 # Hayabusa Rules
 
 Hayabusa detection rules are written in a sigma-like YML format and are located in the `rules` folder.
-The rules are hosted at [https://github.com/Yamato-Security/hayabusa-rules](https://github.com/Yamato-Security/hayabusa-rules) so please send any issues and pull requests for rules there instead of the main hayabusa repository.
+The rules are hosted at [https://github.com/Yamato-Security/hayabusa-rules](https://github.com/Yamato-Security/hayabusa-rules) so please send any issues and pull requests for rules there instead of the main Hayabusa repository.
 
 Please read [the hayabusa-rules repository README](https://github.com/Yamato-Security/hayabusa-rules/blob/main/README.md) to understand about the rule format and how to create rules.
 
@@ -1295,26 +1294,24 @@ Rules are further seperated into directories by log type (Example: Security, Sys
 
 Please check out the current rules to use as a template in creating new ones or for checking the detection logic.
 
-## Hayabusa v.s. Converted Sigma Rules
+## Sigma v.s. Hayabusa (Built-in Sigma Compatible) Rules
 
-Sigma rules need to first be converted to hayabusa rule format explained [here](https://github.com/Yamato-Security/hayabusa-rules/blob/main/tools/sigmac/README.md).
-However, almost all hayabusa rules are compatible with the sigma format so you can use them just like sigma rules to convert to other SIEM formats.
+Hayabusa supports Sigma rules natively with a single exception of handling the `logsource` fields internally.
+In order to reduce false positives, , Sigma rules should be run through our convertor explained [here](https://github.com/Yamato-Security/hayabusa-rules/blob/main/tools/sigmac/README.md).
+This will add the proper `Channel` and `EventID`, and perform field mapping for certain categories like `process_creation`.
+
+Almost all Hayabusa rules are compatible with the Sigma format so you can use them just like Sigma rules to convert to other SIEM formats.
 Hayabusa rules are designed solely for Windows event log analysis and have the following benefits:
 
 1. An extra `details` field to display additional information taken from only the useful fields in the log.
 2. They are all tested against sample logs and are known to work.
-   > Some sigma rules may not work as intended due to bugs in the conversion process, unsupported features, or differences in implementation (such as in regular expressions).
 3. Extra aggregators not found in sigma, such as `|equalsfield` and `|endswithfield`.
 
-**Limitations**: To our knowledge, hayabusa provides the greatest support for sigma rules out of any open source Windows event log analysis tool, however, there are still rules that are not supported:
-
-1. Aggregation expressions besides `count` in the [sigma rule specification](https://github.com/SigmaHQ/sigma-specification/blob/main/Sigma_specification.md).
-2. Rules that use `|near`.
+To our knowledge, hayabusa provides the greatest native support for sigma rules out of any open source Windows event log analysis tool.
 
 # Other Windows Event Log Analyzers and Related Resources
 
-There is no "one tool to rule them all" and we have found that each has its own merits so we recommend checking out these other great tools and projects and seeing which ones you like.
-
+* [AllthingsTimesketch](https://github.com/blueteam0ps/AllthingsTimesketch) - A NodeRED workflow that imports Plaso and Hayabusa results into Timesketch.
 * [APT-Hunter](https://github.com/ahmedkhlief/APT-Hunter) - Attack detection tool written in Python.
 * [Awesome Event IDs](https://github.com/stuhli/awesome-event-ids) -  Collection of Event ID resources useful for Digital Forensics and Incident Response
 * [Chainsaw](https://github.com/countercept/chainsaw) - Another sigma-based attack detection tool written in Rust.
@@ -1366,6 +1363,7 @@ To create the most forensic evidence and detect with the highest accuracy, you n
 
 ## English
 
+* 2023/03/21 [Find Threats in Event Logs with Hayabusa](https://blog.ecapuano.com/p/find-threats-in-event-logs-with-hayabusa) by [Eric Capuano](https://twitter.com/eric_capuano)
 * 2023/03/14 [Rust Performance Guide for Hayabusa Developers](doc/RustPerformance-English.md) by Fukusuke Takahashi
 * 2022/06/19 [Velociraptor Walkthrough and Hayabusa Integration](https://www.youtube.com/watch?v=Q1IoGX--814) by [Eric Capuano](https://twitter.com/eric_capuano)
 * 2022/01/24 [Graphing Hayabusa results in neo4j](https://www.youtube.com/watch?v=7sQqz2ek-ko) by Matthew Seyer ([@forensic_matt](https://twitter.com/forensic_matt))
