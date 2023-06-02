@@ -937,7 +937,7 @@ pub struct LogonSummaryOption {
     #[clap(flatten)]
     pub input_args: InputOption,
 
-    /// Save the Logon summary in CSV format (ex: logon-summary.csv)
+    /// Save the logon summary to 2 CSV files. Specify the base filename. (ex: -o logon-summary)
     #[arg(help_heading = Some("Output"), short = 'o', long, value_name = "FILE", display_order = 410)]
     pub output: Option<PathBuf>,
 
