@@ -313,7 +313,40 @@ impl App {
                 self.print_contributors();
                 return;
             }
-            Action::LogonSummary(_) | Action::Metrics(_) | Action::Search(_) => {
+            Action::LogonSummary(_) => {
+                if let Some(path) = &stored_static.output_path {
+                    for suffix in &["-Successful.csv", "-Failed.csv"] {
+                        let output_file = format!("{}{}", path.to_str().unwrap(), suffix);
+                        if !(stored_static.output_option.as_ref().unwrap().clobber)
+                            && utils::check_file_expect_not_exist(
+                                Path::new(output_file.as_str()),
+                                format!(
+                                " The file {} already exists. Please specify a different filename.",
+                                path.as_os_str().to_str().unwrap()
+                            ),
+                            )
+                        {
+                            return;
+                        }
+                    }
+                }
+                self.analysis_start(&target_extensions, &time_filter, stored_static);
+                if let Some(path) = &stored_static.output_path {
+                    if let Ok(metadata) = fs::metadata(path) {
+                        let output_saved_str = format!(
+                            "Saved file: {} ({})",
+                            path.display(),
+                            ByteSize::b(metadata.len()).to_string_as(false)
+                        );
+                        output_and_data_stack_for_html(
+                            &output_saved_str,
+                            "General Overview {#general_overview}",
+                            stored_static.html_report_flag,
+                        );
+                    }
+                }
+            }
+            Action::Metrics(_) | Action::Search(_) => {
                 if let Some(path) = &stored_static.output_path {
                     if !(stored_static.output_option.as_ref().unwrap().clobber)
                         && utils::check_file_expect_not_exist(
@@ -1499,7 +1532,8 @@ mod tests {
             configs::{
                 Action, CommonOptions, Config, ConfigReader, CsvOutputOption, DetectCommonOption,
                 InputOption, JSONOutputOption, LogonSummaryOption, MetricsOption, OutputOption,
-                StoredStatic, TargetEventIds, TargetEventTime, STORED_EKEY_ALIAS, STORED_STATIC,
+                PivotKeywordOption, StoredStatic, TargetEventIds, TargetEventTime,
+                STORED_EKEY_ALIAS, STORED_STATIC,
             },
             detection,
             message::{MESSAGEKEYS, MESSAGES},
