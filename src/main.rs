@@ -1531,8 +1531,8 @@ mod tests {
         detections::{
             configs::{
                 Action, CommonOptions, Config, ConfigReader, CsvOutputOption, DetectCommonOption,
-                InputOption, JSONOutputOption, LogonSummaryOption, MetricsOption, OutputOption, StoredStatic, TargetEventIds, TargetEventTime,
-                STORED_EKEY_ALIAS, STORED_STATIC,
+                InputOption, JSONOutputOption, LogonSummaryOption, MetricsOption, OutputOption,
+                StoredStatic, TargetEventIds, TargetEventTime, STORED_EKEY_ALIAS, STORED_STATIC,
             },
             detection,
             message::{MESSAGEKEYS, MESSAGES},
