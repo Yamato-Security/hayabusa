@@ -1520,7 +1520,6 @@ impl App {
 mod tests {
     use std::{
         fs::{self, remove_file, File},
-        os::windows::prelude::MetadataExt,
         path::Path,
     };
 
@@ -1999,7 +1998,7 @@ mod tests {
         let mut config_reader = ConfigReader::new();
         app.exec(&mut config_reader.app, &mut stored_static);
         let meta = fs::metadata("overwrite-metric.csv").unwrap();
-        assert_eq!(meta.file_size(), 0);
+        assert_eq!(meta.len(), 0);
 
         // テストファイルの削除
         remove_file("overwrite-metric.csv").ok();
@@ -2050,7 +2049,7 @@ mod tests {
         let mut config_reader = ConfigReader::new();
         app.exec(&mut config_reader.app, &mut stored_static);
         let meta = fs::metadata("overwrite-metric.csv").unwrap();
-        assert_ne!(meta.file_size(), 0);
+        assert_ne!(meta.len(), 0);
         // テストファイルの削除
         remove_file("overwrite-metric.csv").ok();
     }
@@ -2099,7 +2098,7 @@ mod tests {
         let mut config_reader = ConfigReader::new();
         app.exec(&mut config_reader.app, &mut stored_static);
         let meta = fs::metadata("overwrite-metric-Successful.csv").unwrap();
-        assert_eq!(meta.file_size(), 0);
+        assert_eq!(meta.len(), 0);
 
         // テストファイルの削除
         remove_file("overwrite-metric-Successful.csv").ok();
@@ -2150,7 +2149,7 @@ mod tests {
         let mut config_reader = ConfigReader::new();
         app.exec(&mut config_reader.app, &mut stored_static);
         let meta = fs::metadata("overwrite-metric-Successful.csv").unwrap();
-        assert_ne!(meta.file_size(), 0);
+        assert_ne!(meta.len(), 0);
         // テストファイルの削除
         remove_file("overwrite-metric-Successful.csv").ok();
     }
