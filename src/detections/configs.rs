@@ -929,10 +929,6 @@ pub struct PivotKeywordOption {
 
     #[clap(flatten)]
     pub detect_common_options: DetectCommonOption,
-
-    /// Overwrite results files
-    #[arg(help_heading = Some("General Options"), short='C', long = "clobber", display_order = 290, requires = "output")]
-    pub clobber: bool,
 }
 
 #[derive(Args, Clone, Debug)]
@@ -1519,7 +1515,7 @@ fn extract_output_options(config: &Config) -> Option<OutputOption> {
             common_options: option.common_options,
             detect_common_options: option.detect_common_options.clone(),
             enable_unsupported_rules: option.enable_unsupported_rules,
-            clobber: option.clobber,
+            clobber: false,
         }),
         Action::Metrics(option) => Some(OutputOption {
             input_args: option.input_args.clone(),

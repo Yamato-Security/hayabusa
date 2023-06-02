@@ -381,21 +381,19 @@ impl App {
                 if let Some(csv_path) = &stored_static.output_path {
                     let mut error_flag = false;
                     let pivot_key_unions = PIVOT_KEYWORD.read().unwrap();
-                    if !stored_static.output_option.as_ref().unwrap().clobber {
-                        pivot_key_unions.iter().for_each(|(key, _)| {
-                            let keywords_file_name =
-                                csv_path.as_path().display().to_string() + "-" + key + ".txt";
-                            if utils::check_file_expect_not_exist(
-                                Path::new(&keywords_file_name),
-                                format!(
-                                    " The file {} already exists. Please specify a different filename.",
-                                    &keywords_file_name
-                                ),
-                            ) {
-                                error_flag = true
-                            };
-                        });
-                    }
+                    pivot_key_unions.iter().for_each(|(key, _)| {
+                        let keywords_file_name =
+                            csv_path.as_path().display().to_string() + "-" + key + ".txt";
+                        if utils::check_file_expect_not_exist(
+                            Path::new(&keywords_file_name),
+                            format!(
+                                " The file {} already exists. Please specify a different filename.",
+                                &keywords_file_name
+                            ),
+                        ) {
+                            error_flag = true
+                        };
+                    });
                     if error_flag {
                         return;
                     }

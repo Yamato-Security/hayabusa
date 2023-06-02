@@ -12,7 +12,7 @@
 - 互換性のない引数に対するエラーメッセージを追加した。 (#1054) (@YamatoSecurity)
 - 標準出力とHTML出力にプロファイル名を出力する機能を追加した。 (#1055) (@hitenkoku)
 - HTML出力のルールアラートにルール作者名を表示するように修正した。 (#1065) (@hitenkoku)
-- `csv-timeline`、`json-timeline`、`metrics`、`logon-summary`、`search`、`pivot-keywords-list`コマンドに対して、出力ファイルを上書きするための`-C, --clobber`オプションを追加した。 (#1063) (@hitenkoku)
+- `csv-timeline`、`json-timeline`、`metrics`、`logon-summary`、`search`コマンドに対して、出力ファイルを上書きするための`-C, --clobber`オプションを追加した。 (#1063) (@hitenkoku)
 
 **バグ修正:**
 
