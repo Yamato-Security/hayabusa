@@ -774,7 +774,7 @@ pub struct SearchOption {
     pub multiline: bool,
 
     /// Overwrite results files
-    #[arg(help_heading = Some("General Options"), short='C', long = "clobber", display_order = 290, required_unless_present = "output")]
+    #[arg(help_heading = Some("General Options"), short='C', long = "clobber", display_order = 290, requires = "output")]
     pub clobber: bool,
 }
 
@@ -858,7 +858,7 @@ pub struct MetricsOption {
     pub utc: bool,
 
     /// Overwrite results files
-    #[arg(help_heading = Some("General Options"), short='C', long = "clobber", display_order = 290, required_unless_present = "output")]
+    #[arg(help_heading = Some("General Options"), short='C', long = "clobber", display_order = 290, requires = "output")]
     pub clobber: bool,
 }
 
@@ -931,7 +931,7 @@ pub struct PivotKeywordOption {
     pub detect_common_options: DetectCommonOption,
 
     /// Overwrite results files
-    #[arg(help_heading = Some("General Options"), short='C', long = "clobber", display_order = 290, required_unless_present = "output")]
+    #[arg(help_heading = Some("General Options"), short='C', long = "clobber", display_order = 290, requires = "output")]
     pub clobber: bool,
 }
 
@@ -979,7 +979,7 @@ pub struct LogonSummaryOption {
     pub utc: bool,
 
     /// Overwrite results files
-    #[arg(help_heading = Some("General Options"), short='C', long = "clobber", display_order = 290, required_unless_present = "output")]
+    #[arg(help_heading = Some("General Options"), short='C', long = "clobber", display_order = 290, requires = "output")]
     pub clobber: bool,
 }
 
@@ -1096,7 +1096,7 @@ pub struct OutputOption {
     pub rules: PathBuf,
 
     /// Save Results Summary details to an HTML report (ex: results.html)
-    #[arg(help_heading = Some("Output"), short = 'H', long="HTML-report", value_name = "FILE", display_order = 80)]
+    #[arg(help_heading = Some("Output"), short = 'H', long="HTML-report", value_name = "FILE", display_order = 80, requires = "output")]
     pub html_report: Option<PathBuf>,
 
     /// Do not display Results Summary (slightly faster speed)
@@ -1104,7 +1104,7 @@ pub struct OutputOption {
     pub no_summary: bool,
 
     /// Overwrite results files
-    #[arg(help_heading = Some("General Options"), short='C', long = "clobber", display_order = 290, required_unless_present_any = ["output", "html_report"])]
+    #[arg(help_heading = Some("General Options"), short='C', long = "clobber", display_order = 290, requires = "output")]
     pub clobber: bool,
 }
 
