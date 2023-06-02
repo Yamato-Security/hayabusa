@@ -11,6 +11,7 @@
 - Added `%ExtraFieldInfo%` alias to output profiles which will output all of the other fields that do not get outputted in `Details`. (#900) (@hitenkoku)
 - Added error messages for incompatible arguments. (#1054) (@YamatoSecurity)
 - The output profile name is now outputted to standard output and in the HTML report. (#1055) (@hitenkoku)
+- Added rule author names next to rule alerts in the HTML report. (#1065) (@hitenkoku)
 
 **Bug Fixes:**
 
