@@ -321,13 +321,13 @@ impl App {
             Action::LogonSummary(_) => {
                 let mut target_output_path = Nested::<String>::new();
                 if let Some(path) = &stored_static.output_path {
-                    for suffix in &["-Successful.csv", "-Failed.csv"] {
+                    for suffix in &["-successful.csv", "-failed.csv"] {
                         let output_file = format!("{}{suffix}", path.to_str().unwrap());
                         if !(stored_static.output_option.as_ref().unwrap().clobber)
                             && utils::check_file_expect_not_exist(
                                 Path::new(output_file.as_str()),
                                 format!(
-                                " The file {} already exists. Please specify a different filename.",
+                                " The files with a base name of {} already exist. Please specify a different base filename.",
                                 path.as_os_str().to_str().unwrap()
                             ),
                             )
@@ -340,11 +340,11 @@ impl App {
                 self.analysis_start(&target_extensions, &time_filter, stored_static);
                 for target_path in target_output_path.iter() {
                     let mut msg = "";
-                    if target_path.ends_with("-Successful.csv") {
-                        msg = "Successful logon results saved to"
+                    if target_path.ends_with("-successful.csv") {
+                        msg = "Successful logon results:"
                     }
-                    if target_path.ends_with("-Failed.csv") {
-                        msg = "Failed logon results saved to"
+                    if target_path.ends_with("-failed.csv") {
+                        msg = "Failed logon results:"
                     }
                     output_saved_file(&Some(Path::new(target_path).to_path_buf()), msg);
                 }
@@ -365,7 +365,7 @@ impl App {
                     }
                 }
                 self.analysis_start(&target_extensions, &time_filter, stored_static);
-                output_saved_file(&stored_static.output_path, "Metrics results saved to");
+                output_saved_file(&stored_static.output_path, "Metrics results:");
                 println!();
             }
             Action::PivotKeywordsList(_) => {
@@ -426,7 +426,7 @@ impl App {
                         .unwrap();
                     });
                     let mut output =
-                        "Pivot keyword results saved to the following files:\n".to_string();
+                        "Pivot keyword results were saved to the following files:\n".to_string();
 
                     pivot_key_unions.iter().for_each(|(key, _)| {
                         writeln!(
@@ -1061,8 +1061,6 @@ impl App {
             tl.search_dsp_msg(event_timeline_config, stored_static);
         }
         if stored_static.output_path.is_some() {
-            println!();
-            println!();
             println!("Scanning finished. Please wait while the results are being saved.");
         }
         println!();
