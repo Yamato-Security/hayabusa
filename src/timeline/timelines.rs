@@ -294,8 +294,9 @@ impl Timeline {
 
     /// ユーザ毎のログイン統計情報出力
     fn tm_loginstats_tb_dsp_msg(&self, logon_res: &str, output: &Option<PathBuf>) {
+        let header_column = make_ascii_titlecase(logon_res);
         let header = vec![
-            logon_res,
+            header_column.as_str(),
             "Target Account",
             "Target Computer",
             "Logon Type",
