@@ -281,7 +281,7 @@ impl Timeline {
             for msgprint in loginmsges.iter() {
                 println!("{msgprint}");
             }
-        } else {
+        } else if output.is_none() {
             println!("Successful Logons:");
             self.tm_loginstats_tb_dsp_msg("Successful", output);
             println!("\n\nFailed Logons:");
@@ -357,7 +357,7 @@ impl Timeline {
         // rowデータがない場合は、検出なしのメッセージを表示する
         if logins_stats_tb.row_iter().len() == 0 {
             println!(" No logon {logon_res} events were detected.");
-        } else {
+        } else if output.is_none() {
             println!("{logins_stats_tb}");
         }
     }
