@@ -272,7 +272,7 @@ impl App {
                         && utils::check_file_expect_not_exist(
                             html_path.as_path(),
                             format!(
-                                " The file {} already exists. Please specify a different filename.",
+                                " The file {} already exists. Please specify a different filename.\n",
                                 html_path.to_str().unwrap()
                             ),
                         )
@@ -285,7 +285,7 @@ impl App {
                         && utils::check_file_expect_not_exist(
                             path.as_path(),
                             format!(
-                                " The file {} already exists. Please specify a different filename.",
+                                " The file {} already exists. Please specify a different filename.\n",
                                 path.as_os_str().to_str().unwrap()
                             ),
                         )
@@ -327,7 +327,7 @@ impl App {
                             && utils::check_file_expect_not_exist(
                                 Path::new(output_file.as_str()),
                                 format!(
-                                " The files with a base name of {} already exist. Please specify a different base filename.",
+                                " The files with a base name of {} already exist. Please specify a different base filename.\n",
                                 path.as_os_str().to_str().unwrap()
                             ),
                             )
@@ -356,7 +356,7 @@ impl App {
                         && utils::check_file_expect_not_exist(
                             path.as_path(),
                             format!(
-                                " The file {} already exists. Please specify a different filename.",
+                                " The file {} already exists. Please specify a different filename.\n",
                                 path.as_os_str().to_str().unwrap()
                             ),
                         )
@@ -379,7 +379,7 @@ impl App {
                         if utils::check_file_expect_not_exist(
                             Path::new(&keywords_file_name),
                             format!(
-                                " The file {} already exists. Please specify a different filename.",
+                                " The file {} already exists. Please specify a different filename.\n",
                                 &keywords_file_name
                             ),
                         ) {

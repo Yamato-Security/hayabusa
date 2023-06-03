@@ -5,7 +5,7 @@ use std::path::PathBuf;
 use crate::detections::configs::{Action, EventInfoConfig, StoredStatic};
 use crate::detections::detection::EvtxRecordInfo;
 use crate::detections::message::AlertMessage;
-use crate::detections::utils::{self, write_color_buffer};
+use crate::detections::utils::{self, make_ascii_titlecase, write_color_buffer};
 use crate::timeline::search::search_result_dsp_msg;
 use comfy_table::modifiers::UTF8_ROUND_CORNERS;
 use comfy_table::presets::UTF8_FULL;
@@ -284,11 +284,11 @@ impl Timeline {
                 println!("{msgprint}");
             }
         } else {
-            self.tm_loginstats_tb_dsp_msg("Successful", output);
+            self.tm_loginstats_tb_dsp_msg("successful", output);
             if output.is_none() {
                 println!("\n\n");
             }
-            self.tm_loginstats_tb_dsp_msg("Failed", output);
+            self.tm_loginstats_tb_dsp_msg("failed", output);
         }
     }
 
@@ -304,7 +304,7 @@ impl Timeline {
         ];
         let target;
         if output.is_none() {
-            println!("{logon_res} Logons:");
+            println!("{} Logons:", make_ascii_titlecase(logon_res));
         }
         let mut wtr = if let Some(csv_path) = output {
             let file_name = csv_path.as_path().display().to_string() + "-" + logon_res + ".csv";
