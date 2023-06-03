@@ -804,7 +804,7 @@ mod tests {
                 .join(",")
                 .replace(",\n,", "\n")
             + "\n";
-        match read_to_string("./test_tm_logon_stats-Successful.csv") {
+        match read_to_string("./test_tm_logon_stats-successful.csv") {
             Err(_) => panic!("Failed to open file."),
             Ok(s) => {
                 assert_eq!(s, expect_success);
@@ -829,21 +829,21 @@ mod tests {
                 .replace(",\n,", "\n")
             + "\n";
 
-        match read_to_string("./test_tm_logon_stats-Successful.csv") {
+        match read_to_string("./test_tm_logon_stats-successful.csv") {
             Err(_) => panic!("Failed to open file."),
             Ok(s) => {
                 assert_eq!(s, expect_success);
             }
         };
 
-        match read_to_string("./test_tm_logon_stats-Failed.csv") {
+        match read_to_string("./test_tm_logon_stats-failed.csv") {
             Err(_) => panic!("Failed to open file."),
             Ok(s) => {
                 assert_eq!(s, expect_failed);
             }
         };
         //テスト終了後にファイルを削除する
-        assert!(remove_file("./test_tm_logon_stats-Successful.csv").is_ok());
-        assert!(remove_file("./test_tm_logon_stats-Failed.csv").is_ok());
+        assert!(remove_file("./test_tm_logon_stats-successful.csv").is_ok());
+        assert!(remove_file("./test_tm_logon_stats-failed.csv").is_ok());
     }
 }

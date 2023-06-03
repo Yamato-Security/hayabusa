@@ -2047,7 +2047,7 @@ mod tests {
         MESSAGES.clear();
         // 先に空ファイルを作成する
         let mut app = App::new(None);
-        File::create("overwrite-metric-Successful.csv").ok();
+        File::create("overwrite-metric-successful.csv").ok();
         let action = Action::LogonSummary(LogonSummaryOption {
             output: Some(Path::new("overwrite-metric").to_path_buf()),
             input_args: InputOption {
@@ -2085,11 +2085,11 @@ mod tests {
         *STORED_STATIC.write().unwrap() = Some(stored_static.clone());
         let mut config_reader = ConfigReader::new();
         app.exec(&mut config_reader.app, &mut stored_static);
-        let meta = fs::metadata("overwrite-metric-Successful.csv").unwrap();
+        let meta = fs::metadata("overwrite-metric-successful.csv").unwrap();
         assert_eq!(meta.len(), 0);
 
         // テストファイルの削除
-        remove_file("overwrite-metric-Successful.csv").ok();
+        remove_file("overwrite-metric-successful.csv").ok();
     }
 
     #[test]
@@ -2098,7 +2098,7 @@ mod tests {
         MESSAGEKEYS.clear();
         // 先に空ファイルを作成する
         let mut app = App::new(None);
-        File::create("overwrite-metric-Successful.csv").ok();
+        File::create("overwrite-metric-successful.csv").ok();
         let action = Action::LogonSummary(LogonSummaryOption {
             output: Some(Path::new("overwrite-metric").to_path_buf()),
             input_args: InputOption {
@@ -2136,9 +2136,9 @@ mod tests {
         *STORED_STATIC.write().unwrap() = Some(stored_static.clone());
         let mut config_reader = ConfigReader::new();
         app.exec(&mut config_reader.app, &mut stored_static);
-        let meta = fs::metadata("overwrite-metric-Successful.csv").unwrap();
+        let meta = fs::metadata("overwrite-metric-successful.csv").unwrap();
         assert_ne!(meta.len(), 0);
         // テストファイルの削除
-        remove_file("overwrite-metric-Successful.csv").ok();
+        remove_file("overwrite-metric-successful.csv").ok();
     }
 }
