@@ -1,10 +1,11 @@
 use hashbrown::HashMap;
 use horrorshow::helper::doctype;
 use horrorshow::prelude::*;
+use image_base64::to_base64;
 use lazy_static::lazy_static;
 use nested::Nested;
 use pulldown_cmark::{html, Options, Parser};
-use std::fs::{create_dir, File};
+use std::fs::{create_dir, read_to_string, File};
 use std::io::{BufWriter, Write};
 use std::path::Path;
 use std::sync::RwLock;
@@ -108,6 +109,9 @@ pub fn create_html_file(input_html: String, path_str: &str) {
     }
 
     let mut html_writer = BufWriter::new(File::create(path).unwrap());
+    let img_b64 = to_base64("./config/html_report/logo.png");
+    let favicon_b64 = to_base64("./config/html_report/favicon.png");
+    let css_data = read_to_string("./config/html_report/hayabusa_report.css").unwrap_or_default();
 
     let html_data = format!(
         "{}",
@@ -116,12 +120,15 @@ pub fn create_html_file(input_html: String, path_str: &str) {
             html {
                 head {
                     meta(charset="UTF-8");
-                    link(rel="stylesheet", type="text/css", href="./config/html_report/hayabusa_report.css");
-                    link(rel="icon", type="image/png", href="./config/html_report/favicon.png");
+                    style(type="text/css") {
+                        : Raw(css_data.as_str());
+                    }
+                    link(rel="icon", type="image/png", href=&favicon_b64);
                 }
+
                 body {
                     section {
-                        img(id="logo", src = "./config/html_report/logo.png");
+                        img(id="logo", src = &img_b64);
                         : Raw(input_html.as_str());
                     }
                 }
