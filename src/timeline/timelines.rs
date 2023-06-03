@@ -334,8 +334,8 @@ impl Timeline {
         logins_stats_tb.set_header(&header);
         // 集計するログオン結果を設定
         let vnum = match logon_res {
-            "Successful" => 0,
-            "Failed" => 1,
+            "successful" => 0,
+            "failed" => 1,
             &_ => 0,
         };
         // 集計件数でソート
