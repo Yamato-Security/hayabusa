@@ -513,7 +513,7 @@ fn emit_csv<W: std::io::Write>(
         .ok();
 
         println!();
-        output_detected_rule_authors(rule_author_counter);
+        output_detected_rule_authors(rule_author_counter, 3);
         println!();
     }
 
@@ -1518,14 +1518,17 @@ fn output_json_str(
 }
 
 /// output detected rule author name function.
-fn output_detected_rule_authors(rule_author_counter: HashMap<CompactString, i128>) {
+fn output_detected_rule_authors(
+    rule_author_counter: HashMap<CompactString, i128>,
+    table_column_num: usize,
+) {
     let mut sorted_authors: Vec<(&CompactString, &i128)> = rule_author_counter.iter().collect();
 
     sorted_authors.sort_by(|a, b| (-a.1).cmp(&(-b.1)));
     let div = if sorted_authors.len() % 4 != 0 {
-        sorted_authors.len() / 4 + 1
+        sorted_authors.len() / table_column_num + 1
     } else {
-        sorted_authors.len() / 4
+        sorted_authors.len() / table_column_num
     };
 
     let mut tb = Table::new();
@@ -1535,20 +1538,20 @@ fn output_detected_rule_authors(rule_author_counter: HashMap<CompactString, i128
     let mut stored_by_column = vec![];
     let hlch = tb.style(TableComponent::HorizontalLines).unwrap();
     let tbch = tb.style(TableComponent::TopBorder).unwrap();
-    for x in 0..4 {
+    for x in 0..table_column_num {
         let mut tmp = Vec::new();
         for y in 0..div {
-            if y * 4 + x < sorted_authors.len() {
+            if y * table_column_num + x < sorted_authors.len() {
                 // Limit length to 27 to prevent the table from wrapping
-                let filter_author = if sorted_authors[y * 4 + x].0.len() <= 27 {
-                    sorted_authors[y * 4 + x].0.to_string()
+                let filter_author = if sorted_authors[y * table_column_num + x].0.len() <= 27 {
+                    sorted_authors[y * table_column_num + x].0.to_string()
                 } else {
-                    format!("{}...", &sorted_authors[y * 4 + x].0[0..24])
+                    format!("{}...", &sorted_authors[y * table_column_num + x].0[0..24])
                 };
                 tmp.push(format!(
                     "{} ({})",
                     filter_author,
-                    sorted_authors[y * 4 + x].1
+                    sorted_authors[y * table_column_num + x].1
                 ));
             }
         }
