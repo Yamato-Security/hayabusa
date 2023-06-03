@@ -12,6 +12,7 @@
 - Added error messages for incompatible arguments. (#1054) (@YamatoSecurity)
 - The output profile name is now outputted to standard output and in the HTML report. (#1055) (@hitenkoku)
 - Added rule author names next to rule alerts in the HTML report. (#1065) (@hitenkoku)
+- Embedded image and CSS in html report. (#1078) (@hitenkoku, thanks for suggest by @joswr1ght)
 
 **Bug Fixes:**
 
