@@ -1121,9 +1121,13 @@ fn _print_detection_summary_tables(
             5
         };
         for x in sorted_detections.iter().take(take_cnt) {
+            let output_title = if x.0 .0.len() > 47 {
+                format!("{}...", &x.0 .0[..47])
+            } else {
+                x.0 .0.to_string()
+            };
             col_output.push(format!(
-                "{} ({})",
-                x.0 .0,
+                "{output_title} ({})",
                 x.1.to_formatted_string(&Locale::en)
             ));
         }
