@@ -12,6 +12,7 @@
 - Added error messages for incompatible arguments. (#1054) (@YamatoSecurity)
 - The output profile name is now outputted to standard output and in the HTML report. (#1055) (@hitenkoku)
 - Added rule author names next to rule alerts in the HTML report. (#1065) (@hitenkoku)
+- Made the table width shorter to prevent tables breaking in smaller terminal sizes. (#1071) (@hitenkoku)
 
 **Bug Fixes:**
 
