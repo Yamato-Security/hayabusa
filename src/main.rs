@@ -231,6 +231,23 @@ impl App {
             HashSet::default()
         };
 
+        let output_saved_file = |output_path: &Option<PathBuf>, message: &str| {
+            if let Some(path) = output_path {
+                if let Ok(metadata) = fs::metadata(path) {
+                    let output_saved_str = format!(
+                        "{message}: {} ({})",
+                        path.display(),
+                        ByteSize::b(metadata.len()).to_string_as(false)
+                    );
+                    output_and_data_stack_for_html(
+                        &output_saved_str,
+                        "General Overview {#general_overview}",
+                        stored_static.html_report_flag,
+                    );
+                }
+            }
+        };
+
         match &stored_static.config.action.as_ref().unwrap() {
             Action::CsvTimeline(_) | Action::JsonTimeline(_) => {
                 // カレントディレクトリ以外からの実行の際にrulesオプションの指定がないとエラーが発生することを防ぐための処理
@@ -251,44 +268,36 @@ impl App {
                 if let Some(html_path) = &stored_static.output_option.as_ref().unwrap().html_report
                 {
                     // if already exists same html report file. output alert message and exit
-                    if utils::check_file_expect_not_exist(
-                        html_path.as_path(),
-                        format!(
-                            " The file {} already exists. Please specify a different filename.",
-                            html_path.to_str().unwrap()
-                        ),
-                    ) {
+                    if !(stored_static.output_option.as_ref().unwrap().clobber)
+                        && utils::check_file_expect_not_exist(
+                            html_path.as_path(),
+                            format!(
+                                " The file {} already exists. Please specify a different filename.\n",
+                                html_path.to_str().unwrap()
+                            ),
+                        )
+                    {
                         return;
                     }
                 }
                 if let Some(path) = &stored_static.output_path {
-                    if utils::check_file_expect_not_exist(
-                        path.as_path(),
-                        format!(
-                            " The file {} already exists. Please specify a different filename.",
-                            path.as_os_str().to_str().unwrap()
-                        ),
-                    ) {
+                    if !(stored_static.output_option.as_ref().unwrap().clobber)
+                        && utils::check_file_expect_not_exist(
+                            path.as_path(),
+                            format!(
+                                " The file {} already exists. Please specify a different filename.\n",
+                                path.as_os_str().to_str().unwrap()
+                            ),
+                        )
+                    {
                         return;
                     }
                 }
                 self.analysis_start(&target_extensions, &time_filter, stored_static);
 
                 output_profile_name(&stored_static.output_option, false);
-                if let Some(path) = &stored_static.output_path {
-                    if let Ok(metadata) = fs::metadata(path) {
-                        let output_saved_str = format!(
-                            "Saved file: {} ({})",
-                            path.display(),
-                            ByteSize::b(metadata.len()).to_string_as(false)
-                        );
-                        output_and_data_stack_for_html(
-                            &output_saved_str,
-                            "General Overview {#general_overview}",
-                            stored_static.html_report_flag,
-                        );
-                    }
-                }
+                output_saved_file(&stored_static.output_path, "Saved file");
+                println!();
                 if stored_static.html_report_flag {
                     let html_str = HTML_REPORTER.read().unwrap().to_owned().create_html();
                     htmlreport::create_html_file(
@@ -309,22 +318,55 @@ impl App {
                 self.print_contributors();
                 return;
             }
-            Action::LogonSummary(_) | Action::Metrics(_) | Action::Search(_) => {
-                self.analysis_start(&target_extensions, &time_filter, stored_static);
+            Action::LogonSummary(_) => {
+                let mut target_output_path = Nested::<String>::new();
                 if let Some(path) = &stored_static.output_path {
-                    if let Ok(metadata) = fs::metadata(path) {
-                        let output_saved_str = format!(
-                            "Saved file: {} ({})",
-                            path.display(),
-                            ByteSize::b(metadata.len()).to_string_as(false)
-                        );
-                        output_and_data_stack_for_html(
-                            &output_saved_str,
-                            "General Overview {#general_overview}",
-                            stored_static.html_report_flag,
-                        );
+                    for suffix in &["-successful.csv", "-failed.csv"] {
+                        let output_file = format!("{}{suffix}", path.to_str().unwrap());
+                        if !(stored_static.output_option.as_ref().unwrap().clobber)
+                            && utils::check_file_expect_not_exist(
+                                Path::new(output_file.as_str()),
+                                format!(
+                                " The files with a base name of {} already exist. Please specify a different base filename.\n",
+                                path.as_os_str().to_str().unwrap()
+                            ),
+                            )
+                        {
+                            return;
+                        }
+                        target_output_path.push(output_file);
                     }
                 }
+                self.analysis_start(&target_extensions, &time_filter, stored_static);
+                for target_path in target_output_path.iter() {
+                    let mut msg = "";
+                    if target_path.ends_with("-successful.csv") {
+                        msg = "Successful logon results:"
+                    }
+                    if target_path.ends_with("-failed.csv") {
+                        msg = "Failed logon results:"
+                    }
+                    output_saved_file(&Some(Path::new(target_path).to_path_buf()), msg);
+                }
+                println!();
+            }
+            Action::Metrics(_) | Action::Search(_) => {
+                if let Some(path) = &stored_static.output_path {
+                    if !(stored_static.output_option.as_ref().unwrap().clobber)
+                        && utils::check_file_expect_not_exist(
+                            path.as_path(),
+                            format!(
+                                " The file {} already exists. Please specify a different filename.\n",
+                                path.as_os_str().to_str().unwrap()
+                            ),
+                        )
+                    {
+                        return;
+                    }
+                }
+                self.analysis_start(&target_extensions, &time_filter, stored_static);
+                output_saved_file(&stored_static.output_path, "Metrics results:");
+                println!();
             }
             Action::PivotKeywordsList(_) => {
                 // pivot 機能でファイルを出力する際に同名ファイルが既に存在していた場合はエラー文を出して終了する。
@@ -337,7 +379,7 @@ impl App {
                         if utils::check_file_expect_not_exist(
                             Path::new(&keywords_file_name),
                             format!(
-                                " The file {} already exists. Please specify a different filename.",
+                                " The file {} already exists. Please specify a different filename.\n",
                                 &keywords_file_name
                             ),
                         ) {
@@ -384,7 +426,7 @@ impl App {
                         .unwrap();
                     });
                     let mut output =
-                        "Pivot keyword results saved to the following files:\n".to_string();
+                        "Pivot keyword results were saved to the following files:\n".to_string();
 
                     pivot_key_unions.iter().for_each(|(key, _)| {
                         writeln!(
@@ -1019,8 +1061,6 @@ impl App {
             tl.search_dsp_msg(event_timeline_config, stored_static);
         }
         if stored_static.output_path.is_some() {
-            println!();
-            println!();
             println!("Scanning finished. Please wait while the results are being saved.");
         }
         println!();
@@ -1466,7 +1506,10 @@ impl App {
 
 #[cfg(test)]
 mod tests {
-    use std::path::Path;
+    use std::{
+        fs::{self, remove_file, File},
+        path::Path,
+    };
 
     use crate::App;
     use chrono::Local;
@@ -1475,11 +1518,11 @@ mod tests {
         detections::{
             configs::{
                 Action, CommonOptions, Config, ConfigReader, CsvOutputOption, DetectCommonOption,
-                InputOption, OutputOption, StoredStatic, TargetEventIds, TargetEventTime,
-                STORED_EKEY_ALIAS, STORED_STATIC,
+                InputOption, JSONOutputOption, LogonSummaryOption, MetricsOption, OutputOption,
+                StoredStatic, TargetEventIds, TargetEventTime, STORED_EKEY_ALIAS, STORED_STATIC,
             },
             detection,
-            message::MESSAGES,
+            message::{MESSAGEKEYS, MESSAGES},
             rule::create_rule,
         },
         options::htmlreport::HTML_REPORTER,
@@ -1530,6 +1573,7 @@ mod tests {
                         json_input: true,
                     },
                     enable_unsupported_rules: false,
+                    clobber: false,
                 },
                 geo_ip: None,
                 output: None,
@@ -1628,5 +1672,473 @@ mod tests {
         );
         assert_eq!(actual.1, 2);
         assert_eq!(MESSAGES.len(), 2);
+    }
+
+    #[test]
+    fn test_same_file_output_csv_exit() {
+        MESSAGES.clear();
+        // 先に空ファイルを作成する
+        let mut app = App::new(None);
+        File::create("overwrite.csv").ok();
+        let action = Action::CsvTimeline(CsvOutputOption {
+            output_options: OutputOption {
+                input_args: InputOption {
+                    directory: None,
+                    filepath: Some(Path::new("test_files/evtx/test.json").to_path_buf()),
+                    live_analysis: false,
+                },
+                profile: None,
+                enable_deprecated_rules: false,
+                exclude_status: None,
+                min_level: "informational".to_string(),
+                exact_level: None,
+                enable_noisy_rules: false,
+                end_timeline: None,
+                start_timeline: None,
+                eid_filter: false,
+                european_time: false,
+                iso_8601: false,
+                rfc_2822: false,
+                rfc_3339: false,
+                us_military_time: false,
+                us_time: false,
+                utc: false,
+                visualize_timeline: false,
+                rules: Path::new("./test_files/rules/yaml/test_json_detect.yml").to_path_buf(),
+                html_report: None,
+                no_summary: true,
+                common_options: CommonOptions {
+                    no_color: false,
+                    quiet: false,
+                },
+                detect_common_options: DetectCommonOption {
+                    evtx_file_ext: None,
+                    thread_number: None,
+                    quiet_errors: false,
+                    config: Path::new("./rules/config").to_path_buf(),
+                    verbose: false,
+                    json_input: true,
+                },
+                enable_unsupported_rules: false,
+                clobber: false,
+            },
+            geo_ip: None,
+            output: Some(Path::new("overwrite.csv").to_path_buf()),
+            multiline: false,
+        });
+        let config = Some(Config {
+            action: Some(action),
+            debug: false,
+        });
+        let mut stored_static = StoredStatic::create_static_data(config);
+        *STORED_EKEY_ALIAS.write().unwrap() = Some(stored_static.eventkey_alias.clone());
+        *STORED_STATIC.write().unwrap() = Some(stored_static.clone());
+        let mut config_reader = ConfigReader::new();
+        app.exec(&mut config_reader.app, &mut stored_static);
+        assert_eq!(MESSAGES.len(), 0);
+
+        // テストファイルの作成
+        remove_file("overwrite.csv").ok();
+    }
+
+    #[test]
+    fn test_overwrite_csv() {
+        MESSAGES.clear();
+        MESSAGEKEYS.clear();
+        // 先に空ファイルを作成する
+        let mut app = App::new(None);
+        File::create("overwrite.csv").ok();
+        let action = Action::CsvTimeline(CsvOutputOption {
+            output_options: OutputOption {
+                input_args: InputOption {
+                    directory: None,
+                    filepath: Some(Path::new("test_files/evtx/test.json").to_path_buf()),
+                    live_analysis: false,
+                },
+                profile: None,
+                enable_deprecated_rules: false,
+                exclude_status: None,
+                min_level: "informational".to_string(),
+                exact_level: None,
+                enable_noisy_rules: false,
+                end_timeline: None,
+                start_timeline: None,
+                eid_filter: false,
+                european_time: false,
+                iso_8601: false,
+                rfc_2822: false,
+                rfc_3339: false,
+                us_military_time: false,
+                us_time: false,
+                utc: false,
+                visualize_timeline: false,
+                rules: Path::new("test_files/rules/yaml/test_json_detect.yml").to_path_buf(),
+                html_report: None,
+                no_summary: true,
+                common_options: CommonOptions {
+                    no_color: false,
+                    quiet: false,
+                },
+                detect_common_options: DetectCommonOption {
+                    evtx_file_ext: None,
+                    thread_number: None,
+                    quiet_errors: false,
+                    config: Path::new("./rules/config").to_path_buf(),
+                    verbose: false,
+                    json_input: true,
+                },
+                enable_unsupported_rules: false,
+                clobber: true,
+            },
+            geo_ip: None,
+            output: Some(Path::new("overwrite.csv").to_path_buf()),
+            multiline: false,
+        });
+        let config = Some(Config {
+            action: Some(action),
+            debug: false,
+        });
+        let mut stored_static = StoredStatic::create_static_data(config);
+        *STORED_EKEY_ALIAS.write().unwrap() = Some(stored_static.eventkey_alias.clone());
+        *STORED_STATIC.write().unwrap() = Some(stored_static.clone());
+        let mut config_reader = ConfigReader::new();
+        app.exec(&mut config_reader.app, &mut stored_static);
+        assert_ne!(MESSAGES.len(), 0);
+        // テストファイルの作成
+        remove_file("overwrite.csv").ok();
+    }
+
+    #[test]
+    fn test_same_file_output_json_exit() {
+        MESSAGES.clear();
+        // 先に空ファイルを作成する
+        let mut app = App::new(None);
+        File::create("overwrite.json").ok();
+        let action = Action::JsonTimeline(JSONOutputOption {
+            output_options: OutputOption {
+                input_args: InputOption {
+                    directory: None,
+                    filepath: Some(Path::new("test_files/evtx/test.json").to_path_buf()),
+                    live_analysis: false,
+                },
+                profile: None,
+                enable_deprecated_rules: false,
+                exclude_status: None,
+                min_level: "informational".to_string(),
+                exact_level: None,
+                enable_noisy_rules: false,
+                end_timeline: None,
+                start_timeline: None,
+                eid_filter: false,
+                european_time: false,
+                iso_8601: false,
+                rfc_2822: false,
+                rfc_3339: false,
+                us_military_time: false,
+                us_time: false,
+                utc: false,
+                visualize_timeline: false,
+                rules: Path::new("./test_files/rules/yaml/test_json_detect.yml").to_path_buf(),
+                html_report: None,
+                no_summary: true,
+                common_options: CommonOptions {
+                    no_color: false,
+                    quiet: false,
+                },
+                detect_common_options: DetectCommonOption {
+                    evtx_file_ext: None,
+                    thread_number: None,
+                    quiet_errors: false,
+                    config: Path::new("./rules/config").to_path_buf(),
+                    verbose: false,
+                    json_input: true,
+                },
+                enable_unsupported_rules: false,
+                clobber: false,
+            },
+            geo_ip: None,
+            output: Some(Path::new("overwrite.json").to_path_buf()),
+            jsonl_timeline: false,
+        });
+        let config = Some(Config {
+            action: Some(action),
+            debug: false,
+        });
+        let mut stored_static = StoredStatic::create_static_data(config);
+        *STORED_EKEY_ALIAS.write().unwrap() = Some(stored_static.eventkey_alias.clone());
+        *STORED_STATIC.write().unwrap() = Some(stored_static.clone());
+        let mut config_reader = ConfigReader::new();
+        app.exec(&mut config_reader.app, &mut stored_static);
+        assert_eq!(MESSAGES.len(), 0);
+
+        // テストファイルの作成
+        remove_file("overwrite.json").ok();
+    }
+
+    #[test]
+    fn test_overwrite_json() {
+        MESSAGES.clear();
+        MESSAGEKEYS.clear();
+        // 先に空ファイルを作成する
+        let mut app = App::new(None);
+        File::create("overwrite.csv").ok();
+        let action = Action::JsonTimeline(JSONOutputOption {
+            output_options: OutputOption {
+                input_args: InputOption {
+                    directory: None,
+                    filepath: Some(Path::new("test_files/evtx/test.json").to_path_buf()),
+                    live_analysis: false,
+                },
+                profile: None,
+                enable_deprecated_rules: false,
+                exclude_status: None,
+                min_level: "informational".to_string(),
+                exact_level: None,
+                enable_noisy_rules: false,
+                end_timeline: None,
+                start_timeline: None,
+                eid_filter: false,
+                european_time: false,
+                iso_8601: false,
+                rfc_2822: false,
+                rfc_3339: false,
+                us_military_time: false,
+                us_time: false,
+                utc: false,
+                visualize_timeline: false,
+                rules: Path::new("test_files/rules/yaml/test_json_detect.yml").to_path_buf(),
+                html_report: None,
+                no_summary: true,
+                common_options: CommonOptions {
+                    no_color: false,
+                    quiet: false,
+                },
+                detect_common_options: DetectCommonOption {
+                    evtx_file_ext: None,
+                    thread_number: None,
+                    quiet_errors: false,
+                    config: Path::new("./rules/config").to_path_buf(),
+                    verbose: false,
+                    json_input: true,
+                },
+                enable_unsupported_rules: false,
+                clobber: true,
+            },
+            geo_ip: None,
+            output: Some(Path::new("overwrite.json").to_path_buf()),
+            jsonl_timeline: false,
+        });
+        let config = Some(Config {
+            action: Some(action),
+            debug: false,
+        });
+        let mut stored_static = StoredStatic::create_static_data(config);
+        *STORED_EKEY_ALIAS.write().unwrap() = Some(stored_static.eventkey_alias.clone());
+        *STORED_STATIC.write().unwrap() = Some(stored_static.clone());
+        let mut config_reader = ConfigReader::new();
+        app.exec(&mut config_reader.app, &mut stored_static);
+        assert_ne!(MESSAGES.len(), 0);
+        // テストファイルの削除
+        remove_file("overwrite.json").ok();
+    }
+
+    #[test]
+    fn test_same_file_output_metric_csv_exit() {
+        MESSAGES.clear();
+        // 先に空ファイルを作成する
+        let mut app = App::new(None);
+        File::create("overwrite-metric.csv").ok();
+        let action = Action::Metrics(MetricsOption {
+            output: Some(Path::new("overwrite-metric.csv").to_path_buf()),
+            input_args: InputOption {
+                directory: None,
+                filepath: Some(Path::new("test_files/evtx/test_metrics.json").to_path_buf()),
+                live_analysis: false,
+            },
+            common_options: CommonOptions {
+                no_color: false,
+                quiet: false,
+            },
+            detect_common_options: DetectCommonOption {
+                evtx_file_ext: None,
+                thread_number: None,
+                quiet_errors: false,
+                config: Path::new("./rules/config").to_path_buf(),
+                verbose: false,
+                json_input: true,
+            },
+            european_time: false,
+            iso_8601: false,
+            rfc_2822: false,
+            rfc_3339: false,
+            us_military_time: false,
+            us_time: false,
+            utc: false,
+            clobber: false,
+        });
+        let config = Some(Config {
+            action: Some(action),
+            debug: false,
+        });
+        let mut stored_static = StoredStatic::create_static_data(config);
+        *STORED_EKEY_ALIAS.write().unwrap() = Some(stored_static.eventkey_alias.clone());
+        *STORED_STATIC.write().unwrap() = Some(stored_static.clone());
+        let mut config_reader = ConfigReader::new();
+        app.exec(&mut config_reader.app, &mut stored_static);
+        let meta = fs::metadata("overwrite-metric.csv").unwrap();
+        assert_eq!(meta.len(), 0);
+
+        // テストファイルの削除
+        remove_file("overwrite-metric.csv").ok();
+    }
+
+    #[test]
+    fn test_same_file_output_metric_csv() {
+        MESSAGES.clear();
+        MESSAGEKEYS.clear();
+        // 先に空ファイルを作成する
+        let mut app = App::new(None);
+        File::create("overwrite-metric.csv").ok();
+        let action = Action::Metrics(MetricsOption {
+            output: Some(Path::new("overwrite-metric.csv").to_path_buf()),
+            input_args: InputOption {
+                directory: None,
+                filepath: Some(Path::new("test_files/evtx/test_metrics.json").to_path_buf()),
+                live_analysis: false,
+            },
+            common_options: CommonOptions {
+                no_color: false,
+                quiet: false,
+            },
+            detect_common_options: DetectCommonOption {
+                evtx_file_ext: None,
+                thread_number: None,
+                quiet_errors: false,
+                config: Path::new("./rules/config").to_path_buf(),
+                verbose: false,
+                json_input: true,
+            },
+            european_time: false,
+            iso_8601: false,
+            rfc_2822: false,
+            rfc_3339: false,
+            us_military_time: false,
+            us_time: false,
+            utc: false,
+            clobber: true,
+        });
+        let config = Some(Config {
+            action: Some(action),
+            debug: false,
+        });
+        let mut stored_static = StoredStatic::create_static_data(config);
+        *STORED_EKEY_ALIAS.write().unwrap() = Some(stored_static.eventkey_alias.clone());
+        *STORED_STATIC.write().unwrap() = Some(stored_static.clone());
+        let mut config_reader = ConfigReader::new();
+        app.exec(&mut config_reader.app, &mut stored_static);
+        let meta = fs::metadata("overwrite-metric.csv").unwrap();
+        assert_ne!(meta.len(), 0);
+        // テストファイルの削除
+        remove_file("overwrite-metric.csv").ok();
+    }
+
+    #[test]
+    fn test_same_file_output_logon_summary_csv_exit() {
+        MESSAGES.clear();
+        // 先に空ファイルを作成する
+        let mut app = App::new(None);
+        File::create("overwrite-metric-successful.csv").ok();
+        let action = Action::LogonSummary(LogonSummaryOption {
+            output: Some(Path::new("overwrite-metric").to_path_buf()),
+            input_args: InputOption {
+                directory: None,
+                filepath: Some(Path::new("test_files/evtx/test_metrics.json").to_path_buf()),
+                live_analysis: false,
+            },
+            common_options: CommonOptions {
+                no_color: false,
+                quiet: false,
+            },
+            detect_common_options: DetectCommonOption {
+                evtx_file_ext: None,
+                thread_number: None,
+                quiet_errors: false,
+                config: Path::new("./rules/config").to_path_buf(),
+                verbose: false,
+                json_input: true,
+            },
+            european_time: false,
+            iso_8601: false,
+            rfc_2822: false,
+            rfc_3339: false,
+            us_military_time: false,
+            us_time: false,
+            utc: false,
+            clobber: false,
+        });
+        let config = Some(Config {
+            action: Some(action),
+            debug: false,
+        });
+        let mut stored_static = StoredStatic::create_static_data(config);
+        *STORED_EKEY_ALIAS.write().unwrap() = Some(stored_static.eventkey_alias.clone());
+        *STORED_STATIC.write().unwrap() = Some(stored_static.clone());
+        let mut config_reader = ConfigReader::new();
+        app.exec(&mut config_reader.app, &mut stored_static);
+        let meta = fs::metadata("overwrite-metric-successful.csv").unwrap();
+        assert_eq!(meta.len(), 0);
+
+        // テストファイルの削除
+        remove_file("overwrite-metric-successful.csv").ok();
+    }
+
+    #[test]
+    fn test_same_file_output_logon_summary_csv() {
+        MESSAGES.clear();
+        MESSAGEKEYS.clear();
+        // 先に空ファイルを作成する
+        let mut app = App::new(None);
+        File::create("overwrite-metric-successful.csv").ok();
+        let action = Action::LogonSummary(LogonSummaryOption {
+            output: Some(Path::new("overwrite-metric").to_path_buf()),
+            input_args: InputOption {
+                directory: None,
+                filepath: Some(Path::new("test_files/evtx/test_metrics.json").to_path_buf()),
+                live_analysis: false,
+            },
+            common_options: CommonOptions {
+                no_color: false,
+                quiet: false,
+            },
+            detect_common_options: DetectCommonOption {
+                evtx_file_ext: None,
+                thread_number: None,
+                quiet_errors: false,
+                config: Path::new("./rules/config").to_path_buf(),
+                verbose: false,
+                json_input: true,
+            },
+            european_time: false,
+            iso_8601: false,
+            rfc_2822: false,
+            rfc_3339: false,
+            us_military_time: false,
+            us_time: false,
+            utc: false,
+            clobber: true,
+        });
+        let config = Some(Config {
+            action: Some(action),
+            debug: false,
+        });
+        let mut stored_static = StoredStatic::create_static_data(config);
+        *STORED_EKEY_ALIAS.write().unwrap() = Some(stored_static.eventkey_alias.clone());
+        *STORED_STATIC.write().unwrap() = Some(stored_static.clone());
+        let mut config_reader = ConfigReader::new();
+        app.exec(&mut config_reader.app, &mut stored_static);
+        let meta = fs::metadata("overwrite-metric-successful.csv").unwrap();
+        assert_ne!(meta.len(), 0);
+        // テストファイルの削除
+        remove_file("overwrite-metric-successful.csv").ok();
     }
 }

@@ -268,6 +268,7 @@ impl StoredStatic {
             Some(Action::Metrics(opt)) => opt.output.as_ref(),
             Some(Action::PivotKeywordsList(opt)) => opt.output.as_ref(),
             Some(Action::LogonSummary(opt)) => opt.output.as_ref(),
+            Some(Action::Search(opt)) => opt.output.as_ref(),
             _ => None,
         };
         let general_ch_abbr = create_output_filter_config(
@@ -772,6 +773,10 @@ pub struct SearchOption {
     /// Output event field information in multiple rows
     #[arg(help_heading = Some("Output"), short = 'M', long="multiline", display_order = 390)]
     pub multiline: bool,
+
+    /// Overwrite results files
+    #[arg(help_heading = Some("General Options"), short='C', long = "clobber", display_order = 290, requires = "output")]
+    pub clobber: bool,
 }
 
 #[derive(Args, Clone, Debug)]
@@ -852,6 +857,10 @@ pub struct MetricsOption {
     /// Output time in UTC format (default: local time)
     #[arg(help_heading = Some("Time Format"), short = 'U', long = "UTC", display_order = 210)]
     pub utc: bool,
+
+    /// Overwrite results files
+    #[arg(help_heading = Some("General Options"), short='C', long = "clobber", display_order = 290, requires = "output")]
+    pub clobber: bool,
 }
 
 #[derive(Args, Clone, Debug)]
@@ -928,7 +937,7 @@ pub struct LogonSummaryOption {
     #[clap(flatten)]
     pub input_args: InputOption,
 
-    /// Save the Logon summary in CSV format (ex: logon-summary.csv)
+    /// Save the logon summary to 2 CSV files. Specify the base filename. (ex: -o logon-summary)
     #[arg(help_heading = Some("Output"), short = 'o', long, value_name = "FILE", display_order = 410)]
     pub output: Option<PathBuf>,
 
@@ -965,6 +974,10 @@ pub struct LogonSummaryOption {
     /// Output time in UTC format (default: local time)
     #[arg(help_heading = Some("Time Format"), short = 'U', long = "UTC", display_order = 210)]
     pub utc: bool,
+
+    /// Overwrite results files
+    #[arg(help_heading = Some("General Options"), short='C', long = "clobber", display_order = 290, requires = "output")]
+    pub clobber: bool,
 }
 
 /// Options can be set when outputting
@@ -1080,12 +1093,16 @@ pub struct OutputOption {
     pub rules: PathBuf,
 
     /// Save Results Summary details to an HTML report (ex: results.html)
-    #[arg(help_heading = Some("Output"), short = 'H', long="HTML-report", value_name = "FILE", display_order = 80)]
+    #[arg(help_heading = Some("Output"), short = 'H', long="HTML-report", value_name = "FILE", display_order = 80, requires = "output")]
     pub html_report: Option<PathBuf>,
 
     /// Do not display Results Summary (slightly faster speed)
     #[arg(help_heading = Some("Display Settings"), short = 'N', long = "no-summary", display_order = 401)]
     pub no_summary: bool,
+
+    /// Overwrite results files
+    #[arg(help_heading = Some("General Options"), short='C', long = "clobber", display_order = 290, requires = "output")]
+    pub clobber: bool,
 }
 
 #[derive(Copy, Args, Clone, Debug)]
@@ -1463,6 +1480,7 @@ fn extract_search_options(config: &Config) -> Option<SearchOption> {
             config: option.config.clone(),
             verbose: option.verbose,
             multiline: option.multiline,
+            clobber: option.clobber,
         }),
         _ => None,
     }
@@ -1498,6 +1516,7 @@ fn extract_output_options(config: &Config) -> Option<OutputOption> {
             common_options: option.common_options,
             detect_common_options: option.detect_common_options.clone(),
             enable_unsupported_rules: option.enable_unsupported_rules,
+            clobber: false,
         }),
         Action::Metrics(option) => Some(OutputOption {
             input_args: option.input_args.clone(),
@@ -1524,6 +1543,7 @@ fn extract_output_options(config: &Config) -> Option<OutputOption> {
             common_options: option.common_options,
             detect_common_options: option.detect_common_options.clone(),
             enable_unsupported_rules: false,
+            clobber: option.clobber,
         }),
         Action::LogonSummary(option) => Some(OutputOption {
             input_args: option.input_args.clone(),
@@ -1550,6 +1570,7 @@ fn extract_output_options(config: &Config) -> Option<OutputOption> {
             common_options: option.common_options,
             detect_common_options: option.detect_common_options.clone(),
             enable_unsupported_rules: false,
+            clobber: option.clobber,
         }),
         Action::Search(option) => Some(OutputOption {
             input_args: option.input_args.clone(),
@@ -1583,6 +1604,7 @@ fn extract_output_options(config: &Config) -> Option<OutputOption> {
             },
             exact_level: None,
             enable_unsupported_rules: false,
+            clobber: option.clobber,
         }),
         Action::SetDefaultProfile(option) => Some(OutputOption {
             input_args: InputOption {
@@ -1620,6 +1642,7 @@ fn extract_output_options(config: &Config) -> Option<OutputOption> {
                 json_input: false,
             },
             enable_unsupported_rules: false,
+            clobber: false,
         }),
         Action::UpdateRules(option) => Some(OutputOption {
             input_args: InputOption {
@@ -1657,6 +1680,7 @@ fn extract_output_options(config: &Config) -> Option<OutputOption> {
                 json_input: false,
             },
             enable_unsupported_rules: true,
+            clobber: false,
         }),
         _ => None,
     }

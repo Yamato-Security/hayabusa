@@ -1705,6 +1705,7 @@ mod tests {
                     json_input: false,
                 },
                 enable_unsupported_rules: false,
+                clobber: false,
             },
             geo_ip: None,
             output: Some(Path::new("./test_emit_csv.csv").to_path_buf()),
@@ -1778,6 +1779,7 @@ mod tests {
                     json_input: false,
                 },
                 enable_unsupported_rules: false,
+                clobber: false,
             };
             let ch = mock_ch_filter
                 .get(&CompactString::from("security"))
@@ -1996,6 +1998,7 @@ mod tests {
                     json_input: false,
                 },
                 enable_unsupported_rules: false,
+                clobber: false,
             },
             geo_ip: None,
             output: Some(Path::new("./test_emit_csv_multiline.csv").to_path_buf()),
@@ -2071,6 +2074,7 @@ mod tests {
                     json_input: false,
                 },
                 enable_unsupported_rules: false,
+                clobber: false,
             };
             let ch = mock_ch_filter
                 .get(&CompactString::from("security"))
@@ -2287,6 +2291,7 @@ mod tests {
                 json_input: false,
             },
             enable_unsupported_rules: false,
+            clobber: false,
         };
         let data: Vec<(CompactString, Profile)> = vec![
             (
@@ -2409,6 +2414,7 @@ mod tests {
                     json_input: false,
                 },
                 enable_unsupported_rules: false,
+                clobber: false,
             },
             geo_ip: None,
             output: Some(Path::new("./test_emit_csv_json.json").to_path_buf()),
@@ -2481,6 +2487,7 @@ mod tests {
                     json_input: false,
                 },
                 enable_unsupported_rules: false,
+                clobber: false,
             };
             let ch = mock_ch_filter
                 .get(&CompactString::from("security"))
@@ -2637,6 +2644,7 @@ mod tests {
                     json_input: false,
                 },
                 enable_unsupported_rules: false,
+                clobber: false,
             },
             geo_ip: None,
             output: Some(Path::new("./test_emit_csv_jsonl.jsonl").to_path_buf()),
@@ -2709,6 +2717,7 @@ mod tests {
                     json_input: false,
                 },
                 enable_unsupported_rules: false,
+                clobber: false,
             };
             let ch = mock_ch_filter
                 .get(&CompactString::from("security"))

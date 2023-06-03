@@ -1,0 +1,16 @@
+title: EID10check
+description: hogehoge
+enabled: true
+author: Yea
+logsource:
+  product: windows
+detection:
+  selection:
+    EventID: 10
+  condition: selection
+falsepositives:
+  - unknown
+level: medium
+output: "detect test"
+creation_date: 2023/6/1
+updated_date: 2023/6/1

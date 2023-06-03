@@ -12,6 +12,7 @@
 - 互換性のない引数に対するエラーメッセージを追加した。 (#1054) (@YamatoSecurity)
 - 標準出力とHTML出力にプロファイル名を出力する機能を追加した。 (#1055) (@hitenkoku)
 - HTML出力のルールアラートにルール作者名を表示するように修正した。 (#1065) (@hitenkoku)
+- `csv-timeline`、`json-timeline`、`metrics`、`logon-summary`、`search`コマンドに対して、出力ファイルを上書きするための`-C, --clobber`オプションを追加した。 (#1063) (@YamatoSecurity, @hitenkoku)
 - HTML内にCSSと画像を組み込んだ。 (#1078) (@hitenkoku, 提案者: @joswr1ght)
 
 **バグ修正:**
