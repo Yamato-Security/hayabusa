@@ -52,7 +52,6 @@ cidr-utils = "0.*"
 aho-corasick = "*"
 memchr = "2.*"
 indexmap = "1.9.*"
-image-base64 = "*"
 
 [profile.dev]
 debug = 0

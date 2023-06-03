@@ -1,12 +1,13 @@
+use base64::engine::general_purpose;
+use base64::Engine;
 use hashbrown::HashMap;
 use horrorshow::helper::doctype;
 use horrorshow::prelude::*;
-use image_base64::to_base64;
 use lazy_static::lazy_static;
 use nested::Nested;
 use pulldown_cmark::{html, Options, Parser};
 use std::fs::{create_dir, read_to_string, File};
-use std::io::{BufWriter, Write};
+use std::io::{BufWriter, Read, Write};
 use std::path::Path;
 use std::sync::RwLock;
 
@@ -109,8 +110,8 @@ pub fn create_html_file(input_html: String, path_str: &str) {
     }
 
     let mut html_writer = BufWriter::new(File::create(path).unwrap());
-    let img_b64 = to_base64("./config/html_report/logo.png");
-    let favicon_b64 = to_base64("./config/html_report/favicon.png");
+    let img_b64 = img_to_base64("./config/html_report/logo.png");
+    let favicon_b64 = img_to_base64("./config/html_report/favicon.png");
     let css_data = read_to_string("./config/html_report/hayabusa_report.css").unwrap_or_default();
 
     let html_data = format!(
@@ -139,6 +140,35 @@ pub fn create_html_file(input_html: String, path_str: &str) {
 
     writeln!(html_writer, "{html_data}").ok();
     println!("HTML report: {path_str}");
+}
+
+fn get_file_type(hex: &str) -> &str {
+    if hex.starts_with("ffd8ffe0") {
+        return "jpeg";
+    } else if hex.starts_with("89504e47") {
+        return "png";
+    } else if hex.starts_with("47494638") {
+        return "gif";
+    }
+    ""
+}
+
+fn img_to_base64(path: &str) -> String {
+    let open_result = File::open(path);
+    if open_result.is_err() {
+        return String::default();
+    }
+    let mut file = open_result.unwrap();
+    let mut vec = Vec::new();
+    let _ = file.read_to_end(&mut vec);
+    let hex = hex::encode(&vec);
+    let file_type = get_file_type(&hex);
+    if file_type.is_empty() {
+        String::default()
+    } else {
+        let file = general_purpose::STANDARD.encode(&vec).replace("\r\n", "");
+        format!("data:image/{file_type};base64,{file}",)
+    }
 }
 
 #[cfg(test)]
