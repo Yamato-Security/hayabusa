@@ -478,44 +478,56 @@ fn emit_csv<W: std::io::Write>(
     }
 
     disp_wtr_buf.clear();
-    if !output_option.no_summary {
-        let level_abbr: Nested<Vec<CompactString>> = Nested::from_iter(
-            vec![
-                [CompactString::from("critical"), CompactString::from("crit")].to_vec(),
-                [CompactString::from("high"), CompactString::from("high")].to_vec(),
-                [CompactString::from("medium"), CompactString::from("med ")].to_vec(),
-                [CompactString::from("low"), CompactString::from("low ")].to_vec(),
-                [
-                    CompactString::from("informational"),
-                    CompactString::from("info"),
-                ]
-                .to_vec(),
+    let level_abbr: Nested<Vec<CompactString>> = Nested::from_iter(
+        vec![
+            [CompactString::from("critical"), CompactString::from("crit")].to_vec(),
+            [CompactString::from("high"), CompactString::from("high")].to_vec(),
+            [CompactString::from("medium"), CompactString::from("med ")].to_vec(),
+            [CompactString::from("low"), CompactString::from("low ")].to_vec(),
+            [
+                CompactString::from("informational"),
+                CompactString::from("info"),
             ]
-            .iter(),
-        );
-        if !rule_author_counter.is_empty() {
-            write_color_buffer(
-                &disp_wtr,
-                get_writable_color(
-                    Some(Color::Rgb(0, 255, 0)),
-                    stored_static.common_options.no_color,
-                ),
-                "Rule Authors:",
-                false,
-            )
-            .ok();
-            write_color_buffer(
-                &disp_wtr,
-                get_writable_color(None, stored_static.common_options.no_color),
-                " ",
-                true,
-            )
-            .ok();
+            .to_vec(),
+        ]
+        .iter(),
+    );
 
-            println!();
-            output_detected_rule_authors(rule_author_counter);
-            println!();
-        }
+    if !output_option.no_summary && !rule_author_counter.is_empty() {
+        write_color_buffer(
+            &disp_wtr,
+            get_writable_color(
+                Some(Color::Rgb(0, 255, 0)),
+                stored_static.common_options.no_color,
+            ),
+            "Rule Authors:",
+            false,
+        )
+        .ok();
+        write_color_buffer(
+            &disp_wtr,
+            get_writable_color(None, stored_static.common_options.no_color),
+            " ",
+            true,
+        )
+        .ok();
+
+        println!();
+        output_detected_rule_authors(rule_author_counter);
+        println!();
+    }
+
+    let terminal_width = match terminal_size() {
+        Some((Width(w), _)) => w as usize,
+        None => 100,
+    };
+    println!();
+    if output_option.visualize_timeline {
+        _print_timeline_hist(timestamps, terminal_width, 3);
+        println!();
+    }
+
+    if !output_option.no_summary {
         disp_wtr_buf.clear();
         write_color_buffer(
             &disp_wtr,
@@ -527,17 +539,6 @@ fn emit_csv<W: std::io::Write>(
             true,
         )
         .ok();
-
-        let terminal_width = match terminal_size() {
-            Some((Width(w), _)) => w as usize,
-            None => 100,
-        };
-
-        println!();
-        if output_option.visualize_timeline {
-            _print_timeline_hist(timestamps, terminal_width, 3);
-            println!();
-        }
 
         if tl_start_end_time.0.is_some() {
             output_and_data_stack_for_html(

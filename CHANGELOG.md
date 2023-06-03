@@ -13,10 +13,12 @@
 - The output profile name is now outputted to standard output and in the HTML report. (#1055) (@hitenkoku)
 - Added rule author names next to rule alerts in the HTML report. (#1065) (@hitenkoku)
 - Added the `-C, --clobber` option to overwrite existing output files in `csv-timeline`, `json-timeline`, `metrics`, `logon-summary`, and `search` commands. (#1063) (@YamatoSecurity, @hitenkoku)
+- Made the HTML report portable by embedding the images and inlining CSS. (#1078) (@hitenkoku, thanks for the suggestion from @joswr1ght)
 
 **Bug Fixes:**
 
 - `MitreTactics`, `MitreTags`, `OtherTags` fields were not being outputed in the `json-timeline` command. (#1062) (@hitenkoku)
+- The detection frequency timeline (`-T`) would not output when the `no-summary` option was also enabled. (#1072) (@hitenkoku)
 
 ## 2.5.1 [2023/05/14] "Mothers Day Release"
 
