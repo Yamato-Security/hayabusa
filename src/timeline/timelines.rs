@@ -5,7 +5,7 @@ use std::path::PathBuf;
 use crate::detections::configs::{Action, EventInfoConfig, StoredStatic};
 use crate::detections::detection::EvtxRecordInfo;
 use crate::detections::message::AlertMessage;
-use crate::detections::utils::{self, write_color_buffer};
+use crate::detections::utils::{self, make_ascii_titlecase, write_color_buffer};
 use crate::timeline::search::search_result_dsp_msg;
 use comfy_table::modifiers::UTF8_ROUND_CORNERS;
 use comfy_table::presets::UTF8_FULL;
@@ -272,7 +272,9 @@ impl Timeline {
 
     /// ユーザ毎のログイン統計情報出力メッセージ生成
     fn tm_loginstats_tb_set_msg(&self, output: &Option<PathBuf>) {
-        println!("Logon Summary:\n");
+        if output.is_none() {
+            println!("Logon Summary:\n");
+        }
         if self.stats.stats_login_list.is_empty() {
             let mut loginmsges: Vec<String> = Vec::new();
             loginmsges.push("-----------------------------------------".to_string());
@@ -282,17 +284,19 @@ impl Timeline {
                 println!("{msgprint}");
             }
         } else {
-            println!("Successful Logons:");
-            self.tm_loginstats_tb_dsp_msg("Successful", output);
-            println!("\n\nFailed Logons:");
-            self.tm_loginstats_tb_dsp_msg("Failed", output);
+            self.tm_loginstats_tb_dsp_msg("successful", output);
+            if output.is_none() {
+                println!("\n\n");
+            }
+            self.tm_loginstats_tb_dsp_msg("failed", output);
         }
     }
 
     /// ユーザ毎のログイン統計情報出力
     fn tm_loginstats_tb_dsp_msg(&self, logon_res: &str, output: &Option<PathBuf>) {
+        let header_column = make_ascii_titlecase(logon_res);
         let header = vec![
-            logon_res,
+            header_column.as_str(),
             "Target Account",
             "Target Computer",
             "Logon Type",
@@ -300,6 +304,9 @@ impl Timeline {
             "Source IP Address",
         ];
         let target;
+        if output.is_none() {
+            println!("{} Logons:", make_ascii_titlecase(logon_res));
+        }
         let mut wtr = if let Some(csv_path) = output {
             let file_name = csv_path.as_path().display().to_string() + "-" + logon_res + ".csv";
             // output to file
@@ -327,8 +334,8 @@ impl Timeline {
         logins_stats_tb.set_header(&header);
         // 集計するログオン結果を設定
         let vnum = match logon_res {
-            "Successful" => 0,
-            "Failed" => 1,
+            "successful" => 0,
+            "failed" => 1,
             &_ => 0,
         };
         // 集計件数でソート
@@ -357,7 +364,7 @@ impl Timeline {
         // rowデータがない場合は、検出なしのメッセージを表示する
         if logins_stats_tb.row_iter().len() == 0 {
             println!(" No logon {logon_res} events were detected.");
-        } else {
+        } else if output.is_none() {
             println!("{logins_stats_tb}");
         }
     }
@@ -459,6 +466,7 @@ mod tests {
                 us_time: false,
                 utc: false,
                 output: None,
+                clobber: false,
             }));
         *STORED_EKEY_ALIAS.write().unwrap() = Some(dummy_stored_static.eventkey_alias.clone());
         let mut timeline = Timeline::default();
@@ -632,6 +640,7 @@ mod tests {
             us_time: false,
             utc: false,
             output: Some(Path::new("./test_tm_stats.csv").to_path_buf()),
+            clobber: false,
         }));
         *STORED_EKEY_ALIAS.write().unwrap() = Some(dummy_stored_static.eventkey_alias.clone());
         let mut timeline = Timeline::default();
@@ -710,6 +719,7 @@ mod tests {
                 us_time: false,
                 utc: false,
                 output: Some(Path::new("./test_tm_logon_stats").to_path_buf()),
+                clobber: false,
             }));
         *STORED_EKEY_ALIAS.write().unwrap() = Some(dummy_stored_static.eventkey_alias.clone());
         let mut timeline = Timeline::default();
@@ -794,7 +804,7 @@ mod tests {
                 .join(",")
                 .replace(",\n,", "\n")
             + "\n";
-        match read_to_string("./test_tm_logon_stats-Successful.csv") {
+        match read_to_string("./test_tm_logon_stats-successful.csv") {
             Err(_) => panic!("Failed to open file."),
             Ok(s) => {
                 assert_eq!(s, expect_success);
@@ -819,21 +829,21 @@ mod tests {
                 .replace(",\n,", "\n")
             + "\n";
 
-        match read_to_string("./test_tm_logon_stats-Successful.csv") {
+        match read_to_string("./test_tm_logon_stats-successful.csv") {
             Err(_) => panic!("Failed to open file."),
             Ok(s) => {
                 assert_eq!(s, expect_success);
             }
         };
 
-        match read_to_string("./test_tm_logon_stats-Failed.csv") {
+        match read_to_string("./test_tm_logon_stats-failed.csv") {
             Err(_) => panic!("Failed to open file."),
             Ok(s) => {
                 assert_eq!(s, expect_failed);
             }
         };
         //テスト終了後にファイルを削除する
-        assert!(remove_file("./test_tm_logon_stats-Successful.csv").is_ok());
-        assert!(remove_file("./test_tm_logon_stats-Failed.csv").is_ok());
+        assert!(remove_file("./test_tm_logon_stats-successful.csv").is_ok());
+        assert!(remove_file("./test_tm_logon_stats-failed.csv").is_ok());
     }
 }

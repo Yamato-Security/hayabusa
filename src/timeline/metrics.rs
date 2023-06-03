@@ -326,6 +326,7 @@ mod tests {
             us_time: false,
             utc: false,
             output: None,
+            clobber: false,
         }));
 
         let mut timeline = Timeline::new();
