@@ -493,6 +493,11 @@ fn emit_csv<W: std::io::Write>(
         .iter(),
     );
 
+    let terminal_width = match terminal_size() {
+        Some((Width(w), _)) => w as usize,
+        None => 100,
+    };
+
     if !output_option.no_summary && !rule_author_counter.is_empty() {
         write_color_buffer(
             &disp_wtr,
@@ -513,14 +518,19 @@ fn emit_csv<W: std::io::Write>(
         .ok();
 
         println!();
-        output_detected_rule_authors(rule_author_counter, 3);
+        let table_column_num = if terminal_width < 130 {
+            3
+        } else if terminal_width < 170 {
+            4
+        } else if terminal_width <= 190 {
+            5
+        } else {
+            6
+        };
+        output_detected_rule_authors(rule_author_counter, table_column_num);
         println!();
     }
 
-    let terminal_width = match terminal_size() {
-        Some((Width(w), _)) => w as usize,
-        None => 100,
-    };
     println!();
     if output_option.visualize_timeline {
         _print_timeline_hist(timestamps, terminal_width, 3);

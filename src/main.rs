@@ -1061,7 +1061,7 @@ impl App {
             tl.search_dsp_msg(event_timeline_config, stored_static);
         }
         if stored_static.output_path.is_some() {
-            println!("Scanning finished. Please wait while the results are being saved.");
+            println!("\nScanning finished. Please wait while the results are being saved.");
         }
         println!();
         detection.add_aggcondition_msges(&self.rt, stored_static);
