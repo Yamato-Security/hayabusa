@@ -272,7 +272,9 @@ impl Timeline {
 
     /// ユーザ毎のログイン統計情報出力メッセージ生成
     fn tm_loginstats_tb_set_msg(&self, output: &Option<PathBuf>) {
-        println!("Logon Summary:\n");
+        if output.is_none() {
+            println!("Logon Summary:\n");
+        }
         if self.stats.stats_login_list.is_empty() {
             let mut loginmsges: Vec<String> = Vec::new();
             loginmsges.push("-----------------------------------------".to_string());
@@ -281,10 +283,11 @@ impl Timeline {
             for msgprint in loginmsges.iter() {
                 println!("{msgprint}");
             }
-        } else if output.is_none() {
-            println!("Successful Logons:");
+        } else {
             self.tm_loginstats_tb_dsp_msg("Successful", output);
-            println!("\n\nFailed Logons:");
+            if output.is_none() {
+                println!("\n\n");
+            }
             self.tm_loginstats_tb_dsp_msg("Failed", output);
         }
     }
@@ -300,6 +303,9 @@ impl Timeline {
             "Source IP Address",
         ];
         let target;
+        if output.is_none() {
+            println!("{logon_res} Logons:");
+        }
         let mut wtr = if let Some(csv_path) = output {
             let file_name = csv_path.as_path().display().to_string() + "-" + logon_res + ".csv";
             // output to file

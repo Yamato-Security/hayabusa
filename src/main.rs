@@ -231,6 +231,23 @@ impl App {
             HashSet::default()
         };
 
+        let output_saved_file = |output_path: &Option<PathBuf>, message: &str| {
+            if let Some(path) = output_path {
+                if let Ok(metadata) = fs::metadata(path) {
+                    let output_saved_str = format!(
+                        "{message}: {} ({})",
+                        path.display(),
+                        ByteSize::b(metadata.len()).to_string_as(false)
+                    );
+                    output_and_data_stack_for_html(
+                        &output_saved_str,
+                        "General Overview {#general_overview}",
+                        stored_static.html_report_flag,
+                    );
+                }
+            }
+        };
+
         match &stored_static.config.action.as_ref().unwrap() {
             Action::CsvTimeline(_) | Action::JsonTimeline(_) => {
                 // カレントディレクトリ以外からの実行の際にrulesオプションの指定がないとエラーが発生することを防ぐための処理
@@ -279,20 +296,8 @@ impl App {
                 self.analysis_start(&target_extensions, &time_filter, stored_static);
 
                 output_profile_name(&stored_static.output_option, false);
-                if let Some(path) = &stored_static.output_path {
-                    if let Ok(metadata) = fs::metadata(path) {
-                        let output_saved_str = format!(
-                            "Saved file: {} ({})",
-                            path.display(),
-                            ByteSize::b(metadata.len()).to_string_as(false)
-                        );
-                        output_and_data_stack_for_html(
-                            &output_saved_str,
-                            "General Overview {#general_overview}",
-                            stored_static.html_report_flag,
-                        );
-                    }
-                }
+                output_saved_file(&stored_static.output_path, "Saved file");
+                println!();
                 if stored_static.html_report_flag {
                     let html_str = HTML_REPORTER.read().unwrap().to_owned().create_html();
                     htmlreport::create_html_file(
@@ -314,9 +319,10 @@ impl App {
                 return;
             }
             Action::LogonSummary(_) => {
+                let mut target_output_path = Nested::<String>::new();
                 if let Some(path) = &stored_static.output_path {
                     for suffix in &["-Successful.csv", "-Failed.csv"] {
-                        let output_file = format!("{}{}", path.to_str().unwrap(), suffix);
+                        let output_file = format!("{}{suffix}", path.to_str().unwrap());
                         if !(stored_static.output_option.as_ref().unwrap().clobber)
                             && utils::check_file_expect_not_exist(
                                 Path::new(output_file.as_str()),
@@ -328,23 +334,21 @@ impl App {
                         {
                             return;
                         }
+                        target_output_path.push(output_file);
                     }
                 }
                 self.analysis_start(&target_extensions, &time_filter, stored_static);
-                if let Some(path) = &stored_static.output_path {
-                    if let Ok(metadata) = fs::metadata(path) {
-                        let output_saved_str = format!(
-                            "Saved file: {} ({})",
-                            path.display(),
-                            ByteSize::b(metadata.len()).to_string_as(false)
-                        );
-                        output_and_data_stack_for_html(
-                            &output_saved_str,
-                            "General Overview {#general_overview}",
-                            stored_static.html_report_flag,
-                        );
+                for target_path in target_output_path.iter() {
+                    let mut msg = "";
+                    if target_path.ends_with("-Successful.csv") {
+                        msg = "Successful logon results saved to"
                     }
+                    if target_path.ends_with("-Failed.csv") {
+                        msg = "Failed logon results saved to"
+                    }
+                    output_saved_file(&Some(Path::new(target_path).to_path_buf()), msg);
                 }
+                println!();
             }
             Action::Metrics(_) | Action::Search(_) => {
                 if let Some(path) = &stored_static.output_path {
@@ -361,20 +365,8 @@ impl App {
                     }
                 }
                 self.analysis_start(&target_extensions, &time_filter, stored_static);
-                if let Some(path) = &stored_static.output_path {
-                    if let Ok(metadata) = fs::metadata(path) {
-                        let output_saved_str = format!(
-                            "Saved file: {} ({})",
-                            path.display(),
-                            ByteSize::b(metadata.len()).to_string_as(false)
-                        );
-                        output_and_data_stack_for_html(
-                            &output_saved_str,
-                            "General Overview {#general_overview}",
-                            stored_static.html_report_flag,
-                        );
-                    }
-                }
+                output_saved_file(&stored_static.output_path, "Metrics results saved to");
+                println!();
             }
             Action::PivotKeywordsList(_) => {
                 // pivot 機能でファイルを出力する際に同名ファイルが既に存在していた場合はエラー文を出して終了する。
