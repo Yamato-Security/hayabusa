@@ -1233,9 +1233,14 @@ fn _create_json_output_format(
     space_cnt: usize,
 ) -> String {
     let head = if key_quote_exclude_flag {
-        key.to_string()
+        key.chars()
+            .filter(|x| !x.is_ascii_control())
+            .collect::<CompactString>()
     } else {
         format!("\"{key}\"")
+            .chars()
+            .filter(|x| !x.is_ascii_control())
+            .collect::<CompactString>()
     };
     // 4 space is json indent.
     if let Ok(i) = i64::from_str(value) {
@@ -1243,9 +1248,25 @@ fn _create_json_output_format(
     } else if let Ok(b) = bool::from_str(value) {
         format!("{}{}: {}", " ".repeat(space_cnt), head, b)
     } else if concat_flag {
-        format!("{}{}: {}", " ".repeat(space_cnt), head, value)
+        format!(
+            "{}{}: {}",
+            " ".repeat(space_cnt),
+            head,
+            value
+                .chars()
+                .filter(|x| !x.is_ascii_control())
+                .collect::<CompactString>()
+        )
     } else {
-        format!("{}{}: \"{}\"", " ".repeat(space_cnt), head, value)
+        format!(
+            "{}{}: \"{}\"",
+            " ".repeat(space_cnt),
+            head,
+            value
+                .chars()
+                .filter(|x| !x.is_ascii_control())
+                .collect::<CompactString>()
+        )
     }
 }
 
