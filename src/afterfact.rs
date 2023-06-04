@@ -27,7 +27,7 @@ use yaml_rust::YamlLoader;
 use comfy_table::*;
 use hashbrown::{HashMap, HashSet};
 use num_format::{Locale, ToFormattedString};
-use std::cmp::min;
+use std::cmp::{self, min};
 use std::error::Error;
 
 use std::io::{self, BufWriter, Write};
@@ -737,6 +737,7 @@ fn emit_csv<W: std::io::Write>(
             &level_abbr,
             &mut html_output_stock,
             stored_static,
+            cmp::min((terminal_width / 2) - 10, 50),
         );
         println!();
         if html_output_flag {
@@ -1079,6 +1080,7 @@ fn _print_detection_summary_tables(
     level_abbr: &Nested<Vec<CompactString>>,
     html_output_stock: &mut Nested<String>,
     stored_static: &StoredStatic,
+    limit_num: usize,
 ) {
     let buf_wtr = BufferWriter::stdout(ColorChoice::Always);
     let mut wtr = buf_wtr.buffer();
@@ -1132,8 +1134,8 @@ fn _print_detection_summary_tables(
             5
         };
         for x in sorted_detections.iter().take(take_cnt) {
-            let output_title = if x.0 .0.len() > 47 {
-                format!("{}...", &x.0 .0[..47])
+            let output_title = if x.0 .0.len() > limit_num - 3 {
+                format!("{}...", &x.0 .0[..(limit_num - 3)])
             } else {
                 x.0 .0.to_string()
             };
