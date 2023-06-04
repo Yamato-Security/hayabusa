@@ -468,6 +468,7 @@ Display Settings:
   -v, --verbose   Output verbose information
 
 General Options:
+  -C, --clobber                          Overwrite results files
   -Q, --quiet-errors                     Quiet errors mode: do not save error logs
   -c, --rules-config <DIR>               Specify custom rule config directory (default: ./rules/config)
       --target-file-ext <EVTX_FILE_EXT>  Specify additional file extensions (ex: evtx_data) (ex: evtx1,evtx2)
@@ -501,6 +502,7 @@ Display Settings:
   -v, --verbose   Output verbose information
 
 General Options:
+  -C, --clobber                          Overwrite results files
   -Q, --quiet-errors                     Quiet errors mode: do not save error logs
   -c, --rules-config <DIR>               Specify custom rule config directory (default: ./rules/config)
       --target-file-ext <EVTX_FILE_EXT>  Specify additional file extensions (ex: evtx_data) (ex: evtx1,evtx2)
@@ -617,6 +619,7 @@ Output:
   -o, --output <FILE>  Save the search results in CSV format (ex: search.csv)
 
 General Options:
+  -C, --clobber                          Overwrite results files
   -Q, --quiet-errors                     Quiet errors mode: do not save error logs
   -c, --rules-config <DIR>               Specify custom rule config directory (default: ./rules/config)
       --target-file-ext <EVTX_FILE_EXT>  Specify additional file extensions (ex: evtx_data) (ex: evtx1,evtx2)
@@ -704,6 +707,7 @@ Filtering:
       --timeline-start <DATE>     Start time of the event logs to load (ex: "2020-02-22 00:00:00 +09:00")
 
 General Options:
+  -C, --clobber                          Overwrite results files
   -Q, --quiet-errors                     Quiet errors mode: do not save error logs
   -r, --rules <DIR/FILE>                 Specify a custom rule directory or file (default: ./rules)
   -c, --rules-config <DIR>               Specify custom rule config directory (default: ./rules/config)
@@ -935,6 +939,7 @@ Filtering:
       --timeline-start <DATE>     Start time of the event logs to load (ex: "2020-02-22 00:00:00 +09:00")
 
 General Options:
+  -C, --clobber                          Overwrite results files
   -Q, --quiet-errors                     Quiet errors mode: do not save error logs
   -r, --rules <DIR/FILE>                 Specify a custom rule directory or file (default: ./rules)
   -c, --rules-config <DIR>               Specify custom rule config directory (default: ./rules/config)

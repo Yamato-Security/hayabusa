@@ -469,6 +469,7 @@ Display Settings:
   -v, --verbose             詳細な情報を出力する
 
 General Options:
+  -C, --clobber                          結果ファイルを上書きする
   -Q, --quiet-errors                     Quiet errorsモード: エラーログを保存しない
   -c, --rules-config <DIR>               ルールフォルダのコンフィグディレクトリ (デフォルト: ./rules/config)
       --target-file-ext <EVTX_FILE_EXT>  evtx以外の拡張子を解析対象に追加する (例１: evtx_data 例２:evtx1,evtx2)
@@ -502,6 +503,7 @@ Display Settings:
   -v, --verbose        詳細な情報を出力する
 
 General Options:
+  -C, --clobber                          結果ファイルを上書きする
   -Q, --quiet-errors                     Quiet errorsモード: エラーログを保存しない
   -c, --rules-config <DIR>               ルールフォルダのコンフィグディレクトリ (デフォルト: ./rules/config)
       --target-file-ext <EVTX_FILE_EXT>  evtx以外の拡張子を解析対象に追加する。 (例１: evtx_data 例２: evtx1,evtx2)
@@ -618,6 +620,7 @@ Output:
   -o, --output <FILE>  ログオンサマリをCSV形式で保存する (例: search.csv)
 
 General Options:
+  -C, --clobber                          結果ファイルを上書きする
   -Q, --quiet-errors                     Quiet errorsモード: エラーログを保存しない
   -c, --rules-config <DIR>               ルールフォルダのコンフィグディレクトリ (デフォルト: ./rules/config)
       --target-file-ext <EVTX_FILE_EXT>  evtx以外の拡張子を解析対象に追加する (例１: evtx_data 例２:evtx1,evtx2)
@@ -705,6 +708,7 @@ Filtering:
       --timeline-start <DATE>     解析対象とするイベントログの開始時刻 (例: "2020-02-22 00:00:00 +09:00")
 
 General Options:
+  -C, --clobber                          結果ファイルを上書きする
   -Q, --quiet-errors                     Quiet errorsモード: エラーログを保存しない
   -r, --rules <DIR/FILE>                 ルールファイルまたはルールファイルを持つディレクトリ (デフォルト: ./rules)
   -c, --rules-config <DIR>               ルールフォルダのコンフィグディレクトリ (デフォルト: ./rules/config)
@@ -936,6 +940,7 @@ Filtering:
       --timeline-start <DATE>     解析対象とするイベントログの開始時刻 (例: "2020-02-22 00:00:00 +09:00")
 
 General Options:
+  -C, --clobber                          結果ファイルを上書きする
   -Q, --quiet-errors                     Quiet errorsモード: エラーログを保存しない
   -r, --rules <DIR/FILE>                 ルールファイルまたはルールファイルを持つディレクトリ (デフォルト: ./rules)
   -c, --rules-config <DIR>               ルールフォルダのコンフィグディレクトリ (デフォルト: ./rules/config)
