@@ -20,6 +20,7 @@
 
 - `MitreTactics`, `MitreTags`, `OtherTags` fields were not being outputed in the `json-timeline` command. (#1062) (@hitenkoku)
 - The detection frequency timeline (`-T`) would not output when the `no-summary` option was also enabled. (#1072) (@hitenkoku)
+- Escaped control character output in the `json-timeline` command. (#1068) (@hitenkoku)
 
 ## 2.5.1 [2023/05/14] "Mothers Day Release"
 
