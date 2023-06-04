@@ -27,7 +27,7 @@ use yaml_rust::YamlLoader;
 use comfy_table::*;
 use hashbrown::{HashMap, HashSet};
 use num_format::{Locale, ToFormattedString};
-use std::cmp::min;
+use std::cmp::{self, min};
 use std::error::Error;
 
 use std::io::{self, BufWriter, Write};
@@ -493,6 +493,11 @@ fn emit_csv<W: std::io::Write>(
         .iter(),
     );
 
+    let terminal_width = match terminal_size() {
+        Some((Width(w), _)) => w as usize,
+        None => 100,
+    };
+
     if !output_option.no_summary && !rule_author_counter.is_empty() {
         write_color_buffer(
             &disp_wtr,
@@ -513,14 +518,20 @@ fn emit_csv<W: std::io::Write>(
         .ok();
 
         println!();
-        output_detected_rule_authors(rule_author_counter);
-        println!();
+        let table_column_num = if terminal_width <= 105 {
+            2
+        } else if terminal_width < 140 {
+            3
+        } else if terminal_width < 175 {
+            4
+        } else if terminal_width <= 210 {
+            5
+        } else {
+            6
+        };
+        output_detected_rule_authors(rule_author_counter, table_column_num);
     }
 
-    let terminal_width = match terminal_size() {
-        Some((Width(w), _)) => w as usize,
-        None => 100,
-    };
     println!();
     if output_option.visualize_timeline {
         _print_timeline_hist(timestamps, terminal_width, 3);
@@ -726,6 +737,7 @@ fn emit_csv<W: std::io::Write>(
             &level_abbr,
             &mut html_output_stock,
             stored_static,
+            cmp::min((terminal_width / 2) - 10, 200),
         );
         println!();
         if html_output_flag {
@@ -1068,6 +1080,7 @@ fn _print_detection_summary_tables(
     level_abbr: &Nested<Vec<CompactString>>,
     html_output_stock: &mut Nested<String>,
     stored_static: &StoredStatic,
+    limit_num: usize,
 ) {
     let buf_wtr = BufferWriter::stdout(ColorChoice::Always);
     let mut wtr = buf_wtr.buffer();
@@ -1121,9 +1134,13 @@ fn _print_detection_summary_tables(
             5
         };
         for x in sorted_detections.iter().take(take_cnt) {
+            let output_title = if x.0 .0.len() > limit_num - 3 {
+                format!("{}...", &x.0 .0[..(limit_num - 3)])
+            } else {
+                x.0 .0.to_string()
+            };
             col_output.push(format!(
-                "{} ({})",
-                x.0 .0,
+                "{output_title} ({})",
                 x.1.to_formatted_string(&Locale::en)
             ));
         }
@@ -1518,14 +1535,17 @@ fn output_json_str(
 }
 
 /// output detected rule author name function.
-fn output_detected_rule_authors(rule_author_counter: HashMap<CompactString, i128>) {
+fn output_detected_rule_authors(
+    rule_author_counter: HashMap<CompactString, i128>,
+    table_column_num: usize,
+) {
     let mut sorted_authors: Vec<(&CompactString, &i128)> = rule_author_counter.iter().collect();
 
     sorted_authors.sort_by(|a, b| (-a.1).cmp(&(-b.1)));
     let div = if sorted_authors.len() % 4 != 0 {
-        sorted_authors.len() / 4 + 1
+        sorted_authors.len() / table_column_num + 1
     } else {
-        sorted_authors.len() / 4
+        sorted_authors.len() / table_column_num
     };
 
     let mut tb = Table::new();
@@ -1535,20 +1555,20 @@ fn output_detected_rule_authors(rule_author_counter: HashMap<CompactString, i128
     let mut stored_by_column = vec![];
     let hlch = tb.style(TableComponent::HorizontalLines).unwrap();
     let tbch = tb.style(TableComponent::TopBorder).unwrap();
-    for x in 0..4 {
+    for x in 0..table_column_num {
         let mut tmp = Vec::new();
         for y in 0..div {
-            if y * 4 + x < sorted_authors.len() {
+            if y * table_column_num + x < sorted_authors.len() {
                 // Limit length to 27 to prevent the table from wrapping
-                let filter_author = if sorted_authors[y * 4 + x].0.len() <= 27 {
-                    sorted_authors[y * 4 + x].0.to_string()
+                let filter_author = if sorted_authors[y * table_column_num + x].0.len() <= 27 {
+                    sorted_authors[y * table_column_num + x].0.to_string()
                 } else {
-                    format!("{}...", &sorted_authors[y * 4 + x].0[0..24])
+                    format!("{}...", &sorted_authors[y * table_column_num + x].0[0..24])
                 };
                 tmp.push(format!(
                     "{} ({})",
                     filter_author,
-                    sorted_authors[y * 4 + x].1
+                    sorted_authors[y * table_column_num + x].1
                 ));
             }
         }
