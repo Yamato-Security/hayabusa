@@ -518,17 +518,18 @@ fn emit_csv<W: std::io::Write>(
         .ok();
 
         println!();
-        let table_column_num = if terminal_width < 130 {
+        let table_column_num = if terminal_width <= 105 {
+            2
+        } else if terminal_width < 140 {
             3
-        } else if terminal_width < 170 {
+        } else if terminal_width < 175 {
             4
-        } else if terminal_width <= 190 {
+        } else if terminal_width <= 210 {
             5
         } else {
             6
         };
         output_detected_rule_authors(rule_author_counter, table_column_num);
-        println!();
     }
 
     println!();
