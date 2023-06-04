@@ -1234,12 +1234,12 @@ fn _create_json_output_format(
 ) -> String {
     let head = if key_quote_exclude_flag {
         key.chars()
-            .filter(|x| !x.is_ascii_control())
+            .filter(|x| !x.is_ascii_control() || x == &'\n')
             .collect::<CompactString>()
     } else {
         format!("\"{key}\"")
             .chars()
-            .filter(|x| !x.is_ascii_control())
+            .filter(|x| !x.is_ascii_control() || x == &'\n')
             .collect::<CompactString>()
     };
     // 4 space is json indent.
@@ -1254,7 +1254,7 @@ fn _create_json_output_format(
             head,
             value
                 .chars()
-                .filter(|x| !x.is_ascii_control())
+                .filter(|x| !x.is_ascii_control() || x == &'\n')
                 .collect::<CompactString>()
         )
     } else {
@@ -1264,7 +1264,7 @@ fn _create_json_output_format(
             head,
             value
                 .chars()
-                .filter(|x| !x.is_ascii_control())
+                .filter(|x| !x.is_ascii_control() || x == &'\n')
                 .collect::<CompactString>()
         )
     }
