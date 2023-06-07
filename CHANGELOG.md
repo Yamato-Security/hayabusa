@@ -21,6 +21,7 @@
 - `MitreTactics`, `MitreTags`, `OtherTags` fields were not being outputted in the `json-timeline` command. (#1062) (@hitenkoku)
 - The detection frequency timeline (`-T`) would not output when the `no-summary` option was also enabled. (#1072) (@hitenkoku)
 - Control characters would not be escaped in the `json-timeline` command causing a JSON parsing error. (#1068) (@hitenkoku)
+- In the `metrics` command, channels would not be abbreviated if they were lowercase. (#1066) (@garigariganzy)
 
 ## 2.5.1 [2023/05/14] "Mothers Day Release"
 

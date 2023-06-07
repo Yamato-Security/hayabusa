@@ -53,7 +53,9 @@ docker-composeコマンドで作成したユーザの認証情報でログイン
 
 `Upload timeline`をクリックし、以下のコマンドで作成したCSVファイルをアップロードします:
 
-`hayabusa-1.5.1-win-x64.exe -d ../hayabusa-sample-evtx --RFC-3339 -o timesketch-import.csv -P timesketch -U`
+```shell
+hayabusa-2.5.1-win-x64.exe csv-timeline -d ../hayabusa-sample-evtx --RFC-3339 -o timesketch-import.csv -p timesketch-verbose -U
+```
 
 Windowsのイベントを含めず、アラートだけでよい場合は、`-m low`を追加することができます。
 

@@ -308,6 +308,7 @@ impl StoredStatic {
                 true,
             ),
             disp_abbr_generic: AhoCorasickBuilder::new()
+                .ascii_case_insensitive(true)
                 .match_kind(MatchKind::LeftmostLongest)
                 .build(general_ch_abbr.keys().map(|x| x.as_str()))
                 .unwrap(),
