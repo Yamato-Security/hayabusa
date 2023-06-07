@@ -458,7 +458,7 @@ fn emit_csv<W: std::io::Write>(
                 countup_aggregation(
                     &mut detect_counts_by_date_and_level,
                     &detect_info.level,
-                    &format_time(&time, true, output_option),
+                    &format_time(time, true, output_option),
                     &author_str,
                 );
                 countup_aggregation(
