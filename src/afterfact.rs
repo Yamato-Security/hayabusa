@@ -298,7 +298,7 @@ fn emit_csv<W: std::io::Write>(
     if displayflag {
         println!();
     }
-    let mut timestamps: Vec<i64> = vec![0; MESSAGEKEYS.len()];
+    let mut timestamps: Vec<i64> = vec![0; MESSAGEKEYS.lock().unwrap().len()];
     let mut plus_header = true;
     let mut detected_record_idset: HashSet<CompactString> = HashSet::new();
 
@@ -323,14 +323,15 @@ fn emit_csv<W: std::io::Write>(
     };
 
     for (message_idx, time) in MESSAGEKEYS
+        .lock()
+        .unwrap()
         .iter()
-        .map(|x| x.key().to_owned())
         .sorted_unstable()
         .enumerate()
     {
-        let multi = message::MESSAGES.get(&time).unwrap();
+        let multi = message::MESSAGES.get(time).unwrap();
         let (_, detect_infos) = multi.pair();
-        timestamps[message_idx] = _get_timestamp(output_option, &time);
+        timestamps[message_idx] = _get_timestamp(output_option, time);
         for detect_info in detect_infos.iter().sorted_by(|a, b| {
             Ord::cmp(
                 &format!(

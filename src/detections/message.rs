@@ -7,7 +7,7 @@ use crate::options::profile::Profile::{
 };
 use chrono::{DateTime, Local, Utc};
 use compact_str::CompactString;
-use dashmap::{DashMap, DashSet};
+use dashmap::DashMap;
 use hashbrown::HashMap;
 use hashbrown::HashSet;
 use itertools::Itertools;
@@ -42,7 +42,7 @@ pub struct AlertMessage {}
 lazy_static! {
     #[derive(Debug,PartialEq, Eq, Ord, PartialOrd)]
     pub static ref MESSAGES: DashMap<DateTime<Utc>, Vec<DetectInfo>> = DashMap::new();
-    pub static ref MESSAGEKEYS: DashSet<DateTime<Utc>> = DashSet::new();
+    pub static ref MESSAGEKEYS: Mutex<HashSet<DateTime<Utc>>> = Mutex::new(HashSet::new());
     pub static ref ALIASREGEX: Regex = Regex::new(r"%[a-zA-Z0-9-_\[\]]+%").unwrap();
     pub static ref SUFFIXREGEX: Regex = Regex::new(r"\[([0-9]+)\]").unwrap();
     pub static ref ERROR_LOG_STACK: Mutex<Nested<String>> = Mutex::new(Nested::<String>::new());
@@ -101,7 +101,7 @@ pub fn create_output_filter_config(
 
 /// メッセージの設定を行う関数。aggcondition対応のためrecordではなく出力をする対象時間がDatetime形式での入力としている
 pub fn insert_message(detect_info: DetectInfo, event_time: DateTime<Utc>) {
-    MESSAGEKEYS.insert(event_time);
+    MESSAGEKEYS.lock().unwrap().insert(event_time);
     let mut v = MESSAGES.entry(event_time).or_default();
     let (_, info) = v.pair_mut();
     info.push(detect_info);
