@@ -321,7 +321,7 @@ fn emit_csv<W: std::io::Write>(
             )
             .unwrap_or(&0) as usize
     };
-
+    let mut author_list_cache: HashMap<CompactString, Nested<String>> = HashMap::new();
     for (message_idx, time) in MESSAGEKEYS
         .iter()
         .map(|x| x.key().to_owned())
@@ -423,8 +423,14 @@ fn emit_csv<W: std::io::Write>(
             // 各種集計作業
             if !output_option.no_summary {
                 let level_suffix = get_level_suffix(detect_info.level.as_str());
-
-                let author_list = extract_author_name(&detect_info.rulepath, stored_static);
+                let author_list = match author_list_cache.get(&detect_info.rulepath) {
+                    None => {
+                        let x = extract_author_name(&detect_info.rulepath, stored_static);
+                        author_list_cache.insert(detect_info.rulepath.clone(), x.clone());
+                        x
+                    }
+                    Some(x) => x.clone(),
+                };
                 let author_str = author_list.iter().join(", ");
                 if !detected_rule_files.contains(&detect_info.rulepath) {
                     detected_rule_files.insert(detect_info.rulepath.to_owned());
