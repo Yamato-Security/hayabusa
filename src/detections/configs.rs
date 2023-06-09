@@ -1761,7 +1761,8 @@ fn load_eventcode_info(path: &str) -> EventInfoConfig {
 
 fn create_control_chat_replace_map() -> HashMap<char, CompactString> {
     let mut ret = HashMap::new();
-    for c in '\0'..='\x1F' {
+    let replace_char = '\0'..='\x1F';
+    for c in replace_char.into_iter().filter(|x| x != &'\x0A') {
         ret.insert(
             c,
             CompactString::from(format!(
@@ -1849,15 +1850,17 @@ mod tests {
 
     #[test]
     fn test_create_control_char_replace_map() {
-        let expect: HashMap<char, CompactString> = HashMap::from_iter(('\0'..='\x1F').map(|c| {
-            (
-                c as u8 as char,
-                CompactString::from(format!(
-                    "\\u00{}",
-                    format!("{:02x}", c as u8).to_uppercase()
-                )),
-            )
-        }));
+        let mut expect: HashMap<char, CompactString> =
+            HashMap::from_iter(('\0'..='\x1F').map(|c| {
+                (
+                    c as u8 as char,
+                    CompactString::from(format!(
+                        "\\u00{}",
+                        format!("{:02x}", c as u8).to_uppercase()
+                    )),
+                )
+            }));
+        expect.remove(&'\x0A');
         let actual = create_control_chat_replace_map();
         assert_eq!(expect, actual);
     }
