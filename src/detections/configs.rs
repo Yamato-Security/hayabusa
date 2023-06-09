@@ -33,6 +33,8 @@ lazy_static! {
         current_exe().unwrap().parent().unwrap().to_path_buf();
     pub static ref IDS_REGEX: Regex =
         Regex::new(r"^[0-9a-z]{8}-[0-9a-z]{4}-[0-9a-z]{4}-[0-9a-z]{4}-[0-9a-z]{12}$").unwrap();
+    pub static ref CONTROL_CHAT_REPLACE_MAP: HashMap<char, CompactString> =
+        create_control_chat_replace_map();
 }
 
 pub struct ConfigReader {
@@ -1755,6 +1757,20 @@ fn load_eventcode_info(path: &str) -> EventInfoConfig {
         );
     });
     config
+}
+
+fn create_control_chat_replace_map() -> HashMap<char, CompactString> {
+    let mut ret = HashMap::new();
+    for c in '\0'..='\x1F' {
+        ret.insert(
+            c,
+            CompactString::from(format!(
+                "\\u00{}",
+                format!("{:02x}", c as u8).to_uppercase()
+            )),
+        );
+    }
+    ret
 }
 
 #[cfg(test)]

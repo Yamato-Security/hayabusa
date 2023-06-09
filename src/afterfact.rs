@@ -1,5 +1,5 @@
 use crate::detections::configs::{
-    Action, OutputOption, StoredStatic, CURRENT_EXE_PATH, GEOIP_DB_PARSER,
+    Action, OutputOption, StoredStatic, CONTROL_CHAT_REPLACE_MAP, CURRENT_EXE_PATH, GEOIP_DB_PARSER,
 };
 use crate::detections::message::{self, AlertMessage, LEVEL_FULL, MESSAGEKEYS};
 use crate::detections::utils::{
@@ -1234,12 +1234,24 @@ fn _create_json_output_format(
 ) -> String {
     let head = if key_quote_exclude_flag {
         key.chars()
-            .filter(|x| !x.is_ascii_control() || x == &'\n')
+            .map(|x| {
+                if let Some(c) = CONTROL_CHAT_REPLACE_MAP.get(&x) {
+                    c.to_string()
+                } else {
+                    String::from(x)
+                }
+            })
             .collect::<CompactString>()
     } else {
         format!("\"{key}\"")
             .chars()
-            .filter(|x| !x.is_ascii_control() || x == &'\n')
+            .map(|x| {
+                if let Some(c) = CONTROL_CHAT_REPLACE_MAP.get(&x) {
+                    c.to_string()
+                } else {
+                    String::from(x)
+                }
+            })
             .collect::<CompactString>()
     };
     // 4 space is json indent.
