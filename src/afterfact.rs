@@ -1266,7 +1266,13 @@ fn _create_json_output_format(
             head,
             value
                 .chars()
-                .filter(|x| !x.is_ascii_control() || x == &'\n')
+                .map(|x| {
+                    if let Some(c) = CONTROL_CHAT_REPLACE_MAP.get(&x) {
+                        c.to_string()
+                    } else {
+                        String::from(x)
+                    }
+                })
                 .collect::<CompactString>()
         )
     } else {
@@ -1276,7 +1282,13 @@ fn _create_json_output_format(
             head,
             value
                 .chars()
-                .filter(|x| !x.is_ascii_control() || x == &'\n')
+                .map(|x| {
+                    if let Some(c) = CONTROL_CHAT_REPLACE_MAP.get(&x) {
+                        c.to_string()
+                    } else {
+                        String::from(x)
+                    }
+                })
                 .collect::<CompactString>()
         )
     }
