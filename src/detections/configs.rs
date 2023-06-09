@@ -1777,7 +1777,10 @@ fn create_control_chat_replace_map() -> HashMap<char, CompactString> {
 mod tests {
     use crate::detections::configs;
     use chrono::{DateTime, Utc};
-    use hashbrown::HashSet;
+    use compact_str::CompactString;
+    use hashbrown::{HashMap, HashSet};
+
+    use super::create_control_chat_replace_map;
 
     //     #[test]
     //     #[ignore]
@@ -1842,5 +1845,20 @@ mod tests {
         for contents in expect.iter() {
             assert!(ret.contains(&contents.to_string()));
         }
+    }
+
+    #[test]
+    fn test_create_control_char_replace_map() {
+        let expect: HashMap<char, CompactString> = HashMap::from_iter(('\0'..='\x1F').map(|c| {
+            (
+                c as u8 as char,
+                CompactString::from(format!(
+                    "\\u00{}",
+                    format!("{:02x}", c as u8).to_uppercase()
+                )),
+            )
+        }));
+        let actual = create_control_chat_replace_map();
+        assert_eq!(expect, actual);
     }
 }
