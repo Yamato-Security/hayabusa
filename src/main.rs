@@ -1744,7 +1744,7 @@ mod tests {
     #[test]
     fn test_overwrite_csv() {
         MESSAGES.clear();
-        MESSAGEKEYS.clear();
+        MESSAGEKEYS.lock().unwrap().clear();
         // 先に空ファイルを作成する
         let mut app = App::new(None);
         File::create("overwrite.csv").ok();
@@ -1878,7 +1878,7 @@ mod tests {
     #[test]
     fn test_overwrite_json() {
         MESSAGES.clear();
-        MESSAGEKEYS.clear();
+        MESSAGEKEYS.lock().unwrap().clear();
         // 先に空ファイルを作成する
         let mut app = App::new(None);
         File::create("overwrite.csv").ok();
@@ -1995,7 +1995,7 @@ mod tests {
     #[test]
     fn test_same_file_output_metric_csv() {
         MESSAGES.clear();
-        MESSAGEKEYS.clear();
+        MESSAGEKEYS.lock().unwrap().clear();
         // 先に空ファイルを作成する
         let mut app = App::new(None);
         File::create("overwrite-metric.csv").ok();
@@ -2095,7 +2095,7 @@ mod tests {
     #[test]
     fn test_same_file_output_logon_summary_csv() {
         MESSAGES.clear();
-        MESSAGEKEYS.clear();
+        MESSAGEKEYS.lock().unwrap().clear();
         // 先に空ファイルを作成する
         let mut app = App::new(None);
         File::create("overwrite-metric-successful.csv").ok();
