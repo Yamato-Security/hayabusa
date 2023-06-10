@@ -273,19 +273,16 @@ fn emit_csv<W: std::io::Write>(
     let mut unique_detect_counts_by_level: Vec<u128> = vec![0; 6];
     let mut detected_rule_files: HashSet<CompactString> = HashSet::new();
     let mut detected_computer_and_rule_names: HashSet<CompactString> = HashSet::new();
-    let mut detect_counts_by_date_and_level: HashMap<
-        CompactString,
-        HashMap<(CompactString, CompactString), i128>,
-    > = HashMap::new();
+    let mut detect_counts_by_date_and_level: HashMap<CompactString, HashMap<CompactString, i128>> =
+        HashMap::new();
     let mut detect_counts_by_computer_and_level: HashMap<
         CompactString,
-        HashMap<(CompactString, CompactString), i128>,
+        HashMap<CompactString, i128>,
     > = HashMap::new();
-    let mut detect_counts_by_rule_and_level: HashMap<
-        CompactString,
-        HashMap<(CompactString, CompactString), i128>,
-    > = HashMap::new();
+    let mut detect_counts_by_rule_and_level: HashMap<CompactString, HashMap<CompactString, i128>> =
+        HashMap::new();
     let mut rule_title_path_map: HashMap<CompactString, CompactString> = HashMap::new();
+    let mut detect_rule_authors: HashMap<CompactString, CompactString> = HashMap::new();
     let mut rule_author_counter: HashMap<CompactString, i128> = HashMap::new();
 
     let levels = ["crit", "high", "med ", "low ", "info", "undefined"];
@@ -429,6 +426,11 @@ fn emit_csv<W: std::io::Write>(
                     .or_insert_with(|| extract_author_name(&detect_info.rulepath, stored_static))
                     .clone();
                 let author_str = author_list.iter().join(", ");
+                detect_rule_authors.insert(
+                    detect_info.rulepath.to_owned(),
+                    author_str.to_owned().into(),
+                );
+
                 if !detected_rule_files.contains(&detect_info.rulepath) {
                     detected_rule_files.insert(detect_info.rulepath.to_owned());
                     for author in author_list.iter() {
@@ -449,7 +451,6 @@ fn emit_csv<W: std::io::Write>(
                         &mut detect_counts_by_computer_and_level,
                         &detect_info.level,
                         &detect_info.computername,
-                        &author_str,
                     );
                 }
                 rule_title_path_map.insert(
@@ -461,13 +462,11 @@ fn emit_csv<W: std::io::Write>(
                     &mut detect_counts_by_date_and_level,
                     &detect_info.level,
                     &format_time(time, true, output_option),
-                    &author_str,
                 );
                 countup_aggregation(
                     &mut detect_counts_by_rule_and_level,
                     &detect_info.level,
                     &detect_info.ruletitle,
-                    &author_str,
                 );
                 total_detect_counts_by_level[level_suffix] += 1;
             }
@@ -736,7 +735,7 @@ fn emit_csv<W: std::io::Write>(
         _print_detection_summary_tables(
             detect_counts_by_rule_and_level,
             &color_map,
-            rule_title_path_map,
+            (rule_title_path_map, detect_rule_authors),
             &level_abbr,
             &mut html_output_stock,
             stored_static,
@@ -754,19 +753,16 @@ fn emit_csv<W: std::io::Write>(
 }
 
 fn countup_aggregation(
-    count_map: &mut HashMap<CompactString, HashMap<(CompactString, CompactString), i128>>,
+    count_map: &mut HashMap<CompactString, HashMap<CompactString, i128>>,
     key: &str,
     entry_key: &str,
-    rule_author_name: &str,
 ) {
     let compact_lowercase_key = CompactString::from(key.to_lowercase());
     let mut detect_counts_by_rules = count_map
         .get(&compact_lowercase_key)
         .unwrap_or_else(|| count_map.get("undefined").unwrap())
         .to_owned();
-    *detect_counts_by_rules
-        .entry((entry_key.into(), rule_author_name.into()))
-        .or_insert(0) += 1;
+    *detect_counts_by_rules.entry(entry_key.into()).or_insert(0) += 1;
     count_map.insert(compact_lowercase_key, detect_counts_by_rules);
 }
 
@@ -944,7 +940,7 @@ fn _print_unique_results(
 
 /// 各レベル毎で最も高い検知数を出した日付を出力する
 fn _print_detection_summary_by_date(
-    detect_counts_by_date: HashMap<CompactString, HashMap<(CompactString, CompactString), i128>>,
+    detect_counts_by_date: HashMap<CompactString, HashMap<CompactString, i128>>,
     color_map: &HashMap<CompactString, Colors>,
     level_abbr: &Nested<Vec<CompactString>>,
     html_output_stock: &mut Nested<String>,
@@ -969,7 +965,7 @@ fn _print_detection_summary_by_date(
             if cnt > &tmp_cnt {
                 exist_max_data = true;
                 max_detect_str =
-                    format!("{} ({})", date.0, cnt.to_formatted_string(&Locale::en)).into();
+                    format!("{} ({})", date, cnt.to_formatted_string(&Locale::en)).into();
                 tmp_cnt = *cnt;
             }
         }
@@ -1000,10 +996,7 @@ fn _print_detection_summary_by_date(
 
 /// 各レベル毎で最も高い検知数を出したコンピュータ名を出力する
 fn _print_detection_summary_by_computer(
-    detect_counts_by_computer: HashMap<
-        CompactString,
-        HashMap<(CompactString, CompactString), i128>,
-    >,
+    detect_counts_by_computer: HashMap<CompactString, HashMap<CompactString, i128>>,
     color_map: &HashMap<CompactString, Colors>,
     level_abbr: &Nested<Vec<CompactString>>,
     html_output_stock: &mut Nested<String>,
@@ -1019,11 +1012,10 @@ fn _print_detection_summary_by_computer(
         let detections_by_computer = detect_counts_by_computer.get(&level[1]).unwrap();
         let mut result_vec = Nested::<String>::new();
         //computer nameで-となっているものは除外して集計する
-        let mut sorted_detections: Vec<(&(CompactString, CompactString), &i128)> =
-            detections_by_computer
-                .iter()
-                .filter(|a| a.0 .0.as_str() != "-")
-                .collect();
+        let mut sorted_detections: Vec<(&CompactString, &i128)> = detections_by_computer
+            .iter()
+            .filter(|a| a.0.as_str() != "-")
+            .collect();
 
         sorted_detections.sort_by(|a, b| (-a.1).cmp(&(-b.1)));
 
@@ -1037,7 +1029,7 @@ fn _print_detection_summary_by_computer(
             for x in sorted_detections.iter() {
                 html_output_stock.push(format!(
                     "- {} ({})",
-                    x.0 .0,
+                    x.0,
                     x.1.to_formatted_string(&Locale::en)
                 ));
             }
@@ -1046,7 +1038,7 @@ fn _print_detection_summary_by_computer(
         for x in sorted_detections.iter().take(5) {
             result_vec.push(format!(
                 "{} ({})",
-                x.0 .0,
+                x.0,
                 x.1.to_formatted_string(&Locale::en)
             ));
         }
@@ -1074,12 +1066,12 @@ fn _print_detection_summary_by_computer(
 
 /// 各レベルごとで検出数が多かったルールを表形式で出力する関数
 fn _print_detection_summary_tables(
-    detect_counts_by_rule_and_level: HashMap<
-        CompactString,
-        HashMap<(CompactString, CompactString), i128>,
-    >,
+    detect_counts_by_rule_and_level: HashMap<CompactString, HashMap<CompactString, i128>>,
     color_map: &HashMap<CompactString, Colors>,
-    rule_title_path_map: HashMap<CompactString, CompactString>,
+    (rule_title_path_map, rule_detect_author_map): (
+        HashMap<CompactString, CompactString>,
+        HashMap<CompactString, CompactString>,
+    ),
     level_abbr: &Nested<Vec<CompactString>>,
     html_output_stock: &mut Nested<String>,
     stored_static: &StoredStatic,
@@ -1104,7 +1096,7 @@ fn _print_detection_summary_tables(
 
         // output_levelsはlevelsからundefinedを除外した配列であり、各要素は必ず初期化されているのでSomeであることが保証されているのでunwrapをそのまま実施
         let detections_by_computer = detect_counts_by_rule_and_level.get(&level[1]).unwrap();
-        let mut sorted_detections: Vec<(&(CompactString, CompactString), &i128)> =
+        let mut sorted_detections: Vec<(&CompactString, &i128)> =
             detections_by_computer.iter().collect();
 
         sorted_detections.sort_by(|a, b| (-a.1).cmp(&(-b.1)));
@@ -1117,15 +1109,16 @@ fn _print_detection_summary_tables(
                 LEVEL_FULL.get(level[1].as_str()).unwrap()
             ));
             for x in sorted_detections.iter() {
+                let not_found_str = CompactString::from_str("<Not Found Path>").unwrap();
+                let rule_path = rule_title_path_map.get(x.0).unwrap_or(&not_found_str);
                 html_output_stock.push(format!(
                     "- [{}]({}) ({}) - {}",
-                    x.0 .0,
-                    rule_title_path_map
-                        .get(&x.0 .0)
-                        .unwrap_or(&CompactString::from("<Not Found Path>"))
-                        .replace('\\', "/"),
+                    x.0,
+                    &rule_path.replace('\\', "/"),
                     x.1.to_formatted_string(&Locale::en),
-                    x.0 .1
+                    rule_detect_author_map
+                        .get(rule_path)
+                        .unwrap_or(&not_found_str)
                 ));
             }
             html_output_stock.push("");
@@ -1137,10 +1130,10 @@ fn _print_detection_summary_tables(
             5
         };
         for x in sorted_detections.iter().take(take_cnt) {
-            let output_title = if x.0 .0.len() > limit_num - 3 {
-                format!("{}...", &x.0 .0[..(limit_num - 3)])
+            let output_title = if x.0.len() > limit_num - 3 {
+                format!("{}...", &x.0[..(limit_num - 3)])
             } else {
-                x.0 .0.to_string()
+                x.0.to_string()
             };
             col_output.push(format!(
                 "{output_title} ({})",
