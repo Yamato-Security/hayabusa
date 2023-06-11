@@ -21,6 +21,7 @@
 
 - `json-timeline`コマンドを利用した出力で、`MitreTactics`、`MitreTags`、`OtherTags`フィールドが出力されていない問題を修正した。 (#1062) (@hitenkoku)
 - `no-summary`オプションを使用した時にイベント頻度のタイムラインが出力されない問題を修正した。 (#1072) (@hitenkoku)
+- `json-timline`コマンドの出力に制御文字が含まれる問題を修正した。 (#1068) (@hitenkoku)
 - `metrics`コマンドでは、チャンネル名が小文字の場合、省略されなかった。 (#1066) (@garigariganzy)
 - JSON出力内でいくつかのフィールドがずれてしまっていた問題を修正した。 (#1086) (@hitenkoku)
 
