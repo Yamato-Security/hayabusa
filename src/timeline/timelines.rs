@@ -393,11 +393,16 @@ impl Timeline {
                     self.event_search.search_result.len()
                 ));
             }
+            let search_result = self.event_search.search_result.clone();
             search_result_dsp_msg(
-                &mut self.event_search.search_result,
+                search_result,
                 event_timeline_config,
                 &search_summary_option.output,
                 stored_static,
+                (
+                    search_summary_option.json_output,
+                    search_summary_option.jsonl_output,
+                ),
             );
             for msgprint in sammsges.iter() {
                 println!("{}", msgprint);
