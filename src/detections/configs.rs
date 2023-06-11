@@ -778,6 +778,14 @@ pub struct SearchOption {
     /// Overwrite results files
     #[arg(help_heading = Some("General Options"), short='C', long = "clobber", display_order = 290, requires = "output")]
     pub clobber: bool,
+
+    /// Save the search results in JSON format (ex: -J -o results.json)
+    #[arg(help_heading = Some("Output"), short = 'J', long = "JSON-output", conflicts_with = "jsonl_output", requires = "output", display_order = 100)]
+    pub json_output: bool,
+
+    /// Save the timeline in JSONL format (ex: -L -o results.jsonl)
+    #[arg(help_heading = Some("Output"), short = 'L', long = "JSONL-output", conflicts_with = "jsonl_output", requires = "output", display_order = 100)]
+    pub jsonl_output: bool,
 }
 
 #[derive(Args, Clone, Debug)]
@@ -1482,6 +1490,8 @@ fn extract_search_options(config: &Config) -> Option<SearchOption> {
             verbose: option.verbose,
             multiline: option.multiline,
             clobber: option.clobber,
+            json_output: option.json_output,
+            jsonl_output: option.jsonl_output,
         }),
         _ => None,
     }
