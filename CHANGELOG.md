@@ -16,6 +16,7 @@
 - Added the `-C, --clobber` option to overwrite existing output files in `csv-timeline`, `json-timeline`, `metrics`, `logon-summary`, and `search` commands. (#1063) (@YamatoSecurity, @hitenkoku)
 - Made the HTML report portable by embedding the images and inlining CSS. (#1078) (@hitenkoku, thanks for the suggestion from @joswr1ght)
 - Speed improvements in the output. (#1088) (@hitenkoku, @fukusuket)
+- Added output `search` command results to JSON/JSONL. (#1041) (@hitenkoku)
 
 **Bug Fixes:**
 
