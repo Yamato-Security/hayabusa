@@ -8,7 +8,7 @@
 
 **Enhancements:**
 
-- Added `%ExtraFieldInfo%` alias to output profiles which will output all of the other fields that do not get outputted in `Details`. (#900) (@hitenkoku)
+- Added `%ExtraFieldInfo%` alias to output profiles which will output all of the other fields that do not get outputted in `Details`. This is now included in the default `standard` output profile. (#900) (@hitenkoku)
 - Added error messages for incompatible arguments. (#1054) (@YamatoSecurity)
 - The output profile name is now outputted to standard output and in the HTML report. (#1055) (@hitenkoku)
 - Added rule author names next to rule alerts in the HTML report. (#1065) (@hitenkoku)
@@ -16,7 +16,7 @@
 - Added the `-C, --clobber` option to overwrite existing output files in `csv-timeline`, `json-timeline`, `metrics`, `logon-summary`, and `search` commands. (#1063) (@YamatoSecurity, @hitenkoku)
 - Made the HTML report portable by embedding the images and inlining CSS. (#1078) (@hitenkoku, thanks for the suggestion from @joswr1ght)
 - Speed improvements in the output. (#1088) (@hitenkoku, @fukusuket)
-- Added output `search` command results to JSON/JSONL. (#1041) (@hitenkoku)
+- `search` command results can now be outputted to JSON/JSONL. (#1041) (@hitenkoku)
 
 **Bug Fixes:**
 
