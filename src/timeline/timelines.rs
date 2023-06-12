@@ -332,8 +332,6 @@ impl Timeline {
         let mut logins_stats_tb = Table::new();
         logins_stats_tb
             .load_preset(UTF8_FULL)
-            .set_content_arrangement(ContentArrangement::Dynamic)
-            .set_width(100)
             .apply_modifier(UTF8_ROUND_CORNERS);
         logins_stats_tb.set_header(&header);
         // 集計するログオン結果を設定
