@@ -1,5 +1,5 @@
 use crate::detections::configs::{
-    Action, OutputOption, StoredStatic, CURRENT_EXE_PATH, GEOIP_DB_PARSER,
+    Action, OutputOption, StoredStatic, CONTROL_CHAT_REPLACE_MAP, CURRENT_EXE_PATH, GEOIP_DB_PARSER,
 };
 use crate::detections::message::{self, AlertMessage, LEVEL_FULL, MESSAGEKEYS};
 use crate::detections::utils::{
@@ -1229,9 +1229,26 @@ fn _create_json_output_format(
     space_cnt: usize,
 ) -> String {
     let head = if key_quote_exclude_flag {
-        key.to_string()
+        key.chars()
+            .map(|x| {
+                if let Some(c) = CONTROL_CHAT_REPLACE_MAP.get(&x) {
+                    c.to_string()
+                } else {
+                    String::from(x)
+                }
+            })
+            .collect::<CompactString>()
     } else {
         format!("\"{key}\"")
+            .chars()
+            .map(|x| {
+                if let Some(c) = CONTROL_CHAT_REPLACE_MAP.get(&x) {
+                    c.to_string()
+                } else {
+                    String::from(x)
+                }
+            })
+            .collect::<CompactString>()
     };
     // 4 space is json indent.
     if let Ok(i) = i64::from_str(value) {
@@ -1239,9 +1256,37 @@ fn _create_json_output_format(
     } else if let Ok(b) = bool::from_str(value) {
         format!("{}{}: {}", " ".repeat(space_cnt), head, b)
     } else if concat_flag {
-        format!("{}{}: {}", " ".repeat(space_cnt), head, value)
+        format!(
+            "{}{}: {}",
+            " ".repeat(space_cnt),
+            head,
+            value
+                .chars()
+                .map(|x| {
+                    if let Some(c) = CONTROL_CHAT_REPLACE_MAP.get(&x) {
+                        c.to_string()
+                    } else {
+                        String::from(x)
+                    }
+                })
+                .collect::<CompactString>()
+        )
     } else {
-        format!("{}{}: \"{}\"", " ".repeat(space_cnt), head, value)
+        format!(
+            "{}{}: \"{}\"",
+            " ".repeat(space_cnt),
+            head,
+            value
+                .chars()
+                .map(|x| {
+                    if let Some(c) = CONTROL_CHAT_REPLACE_MAP.get(&x) {
+                        c.to_string()
+                    } else {
+                        String::from(x)
+                    }
+                })
+                .collect::<CompactString>()
+        )
     }
 }
 
@@ -1284,7 +1329,7 @@ fn _convert_valid_json_str(input: &[&str], concat_flag: bool) -> String {
 }
 
 /// JSONに出力する1検知分のオブジェクトの文字列を出力する関数
-fn output_json_str(
+pub fn output_json_str(
     ext_field: &[(CompactString, Profile)],
     jsonl_output_flag: bool,
     is_included_geo_ip: bool,

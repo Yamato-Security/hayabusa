@@ -8,7 +8,7 @@
 
 **Enhancements:**
 
-- Added `%ExtraFieldInfo%` alias to output profiles which will output all of the other fields that do not get outputted in `Details`. (#900) (@hitenkoku)
+- Added `%ExtraFieldInfo%` alias to output profiles which will output all of the other fields that do not get outputted in `Details`. This is now included in the default `standard` output profile. (#900) (@hitenkoku)
 - Added error messages for incompatible arguments. (#1054) (@YamatoSecurity)
 - The output profile name is now outputted to standard output and in the HTML report. (#1055) (@hitenkoku)
 - Added rule author names next to rule alerts in the HTML report. (#1065) (@hitenkoku)
@@ -17,11 +17,13 @@
 - Made the HTML report portable by embedding the images and inlining CSS. (#1078) (@hitenkoku, thanks for the suggestion from @joswr1ght)
 - Speed improvements in the output. (#1088) (@hitenkoku, @fukusuket)
 - The `metrics` command now performs word wrapping to make sure the table gets rendered correctly. (#1067) (@garigariganzy)
+- `search` command results can now be outputted to JSON/JSONL. (#1041) (@hitenkoku)
 
 **Bug Fixes:**
 
-- `MitreTactics`, `MitreTags`, `OtherTags` fields were not being outputed in the `json-timeline` command. (#1062) (@hitenkoku)
+- `MitreTactics`, `MitreTags`, `OtherTags` fields were not being outputted in the `json-timeline` command. (#1062) (@hitenkoku)
 - The detection frequency timeline (`-T`) would not output when the `no-summary` option was also enabled. (#1072) (@hitenkoku)
+- Control characters would not be escaped in the `json-timeline` command causing a JSON parsing error. (#1068) (@hitenkoku)
 - In the `metrics` command, channels would not be abbreviated if they were lowercase. (#1066) (@garigariganzy)
 - Fixed an issue where some fields were misaligned in the JSON output. (#1086) (@hitenkoku)
 

@@ -8,7 +8,7 @@
 
 **改善:**
 
-- プロファイルに`%ExtraFieldInfo%`エイリアスを追加した。(#900) (@hitenkoku)
+- プロファイルに`%ExtraFieldInfo%`エイリアスを追加した。デフォルトの`standard`出力プロファイルに含まれるようになった。(#900) (@hitenkoku)
 - 互換性のない引数に対するエラーメッセージを追加した。 (#1054) (@YamatoSecurity)
 - 標準出力とHTML出力にプロファイル名を出力する機能を追加した。 (#1055) (@hitenkoku)
 - HTML出力のルールアラートにルール作者名を表示するように修正した。 (#1065) (@hitenkoku)
@@ -17,11 +17,13 @@
 - HTML内にCSSと画像を組み込んだ。 (#1078) (@hitenkoku, 提案者: @joswr1ght)
 - 出力時の速度向上。 (#1088) (@hitenkoku, @fukusuket)
 - `metrics`コマンドは、テーブルが正しくレンダリングされるように、ワードラップを行うようになった。 (#1067) (@garigariganzy)
+- `search`コマンドでJSON/JSONLの出力できるようにした。 (#1041) (@hitenkoku)
 
 **バグ修正:**
 
 - `json-timeline`コマンドを利用した出力で、`MitreTactics`、`MitreTags`、`OtherTags`フィールドが出力されていない問題を修正した。 (#1062) (@hitenkoku)
 - `no-summary`オプションを使用した時にイベント頻度のタイムラインが出力されない問題を修正した。 (#1072) (@hitenkoku)
+- `json-timline`コマンドの出力に制御文字が含まれる問題を修正した。 (#1068) (@hitenkoku)
 - `metrics`コマンドでは、チャンネル名が小文字の場合、省略されなかった。 (#1066) (@garigariganzy)
 - JSON出力内でいくつかのフィールドがずれてしまっていた問題を修正した。 (#1086) (@hitenkoku)
 

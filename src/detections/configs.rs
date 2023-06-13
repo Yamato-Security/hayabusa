@@ -33,6 +33,8 @@ lazy_static! {
         current_exe().unwrap().parent().unwrap().to_path_buf();
     pub static ref IDS_REGEX: Regex =
         Regex::new(r"^[0-9a-z]{8}-[0-9a-z]{4}-[0-9a-z]{4}-[0-9a-z]{4}-[0-9a-z]{12}$").unwrap();
+    pub static ref CONTROL_CHAT_REPLACE_MAP: HashMap<char, CompactString> =
+        create_control_chat_replace_map();
 }
 
 pub struct ConfigReader {
@@ -778,6 +780,14 @@ pub struct SearchOption {
     /// Overwrite results files
     #[arg(help_heading = Some("General Options"), short='C', long = "clobber", display_order = 290, requires = "output")]
     pub clobber: bool,
+
+    /// Save the search results in JSON format (ex: -J -o results.json)
+    #[arg(help_heading = Some("Output"), short = 'J', long = "JSON-output", conflicts_with = "jsonl_output", requires = "output", display_order = 100)]
+    pub json_output: bool,
+
+    /// Save the timeline in JSONL format (ex: -L -o results.jsonl)
+    #[arg(help_heading = Some("Output"), short = 'L', long = "JSONL-output", conflicts_with = "jsonl_output", requires = "output", display_order = 100)]
+    pub jsonl_output: bool,
 }
 
 #[derive(Args, Clone, Debug)]
@@ -1482,6 +1492,8 @@ fn extract_search_options(config: &Config) -> Option<SearchOption> {
             verbose: option.verbose,
             multiline: option.multiline,
             clobber: option.clobber,
+            json_output: option.json_output,
+            jsonl_output: option.jsonl_output,
         }),
         _ => None,
     }
@@ -1757,11 +1769,29 @@ fn load_eventcode_info(path: &str) -> EventInfoConfig {
     config
 }
 
+fn create_control_chat_replace_map() -> HashMap<char, CompactString> {
+    let mut ret = HashMap::new();
+    let replace_char = '\0'..='\x1F';
+    for c in replace_char.into_iter().filter(|x| x != &'\x0A') {
+        ret.insert(
+            c,
+            CompactString::from(format!(
+                "\\u00{}",
+                format!("{:02x}", c as u8).to_uppercase()
+            )),
+        );
+    }
+    ret
+}
+
 #[cfg(test)]
 mod tests {
     use crate::detections::configs;
     use chrono::{DateTime, Utc};
-    use hashbrown::HashSet;
+    use compact_str::CompactString;
+    use hashbrown::{HashMap, HashSet};
+
+    use super::create_control_chat_replace_map;
 
     //     #[test]
     //     #[ignore]
@@ -1826,5 +1856,22 @@ mod tests {
         for contents in expect.iter() {
             assert!(ret.contains(&contents.to_string()));
         }
+    }
+
+    #[test]
+    fn test_create_control_char_replace_map() {
+        let mut expect: HashMap<char, CompactString> =
+            HashMap::from_iter(('\0'..='\x1F').map(|c| {
+                (
+                    c as u8 as char,
+                    CompactString::from(format!(
+                        "\\u00{}",
+                        format!("{:02x}", c as u8).to_uppercase()
+                    )),
+                )
+            }));
+        expect.remove(&'\x0A');
+        let actual = create_control_chat_replace_map();
+        assert_eq!(expect, actual);
     }
 }
