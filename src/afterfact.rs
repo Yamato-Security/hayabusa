@@ -1329,7 +1329,7 @@ fn _convert_valid_json_str(input: &[&str], concat_flag: bool) -> String {
 }
 
 /// JSONに出力する1検知分のオブジェクトの文字列を出力する関数
-fn output_json_str(
+pub fn output_json_str(
     ext_field: &[(CompactString, Profile)],
     jsonl_output_flag: bool,
     is_included_geo_ip: bool,
