@@ -9,12 +9,17 @@ use crate::detections::utils::{self, make_ascii_titlecase, write_color_buffer};
 use crate::timeline::search::search_result_dsp_msg;
 use comfy_table::modifiers::UTF8_ROUND_CORNERS;
 use comfy_table::presets::UTF8_FULL;
+use comfy_table::ColumnConstraint::LowerBoundary;
+use comfy_table::ColumnConstraint::UpperBoundary;
+use comfy_table::Width::Fixed;
 use comfy_table::*;
 use compact_str::CompactString;
 use csv::WriterBuilder;
 use downcast_rs::__std::process;
 use nested::Nested;
 use termcolor::{BufferWriter, Color, ColorChoice};
+use terminal_size::terminal_size;
+use terminal_size::Width;
 
 use super::metrics::EventMetrics;
 use super::search::EventSearch;
@@ -140,7 +145,7 @@ impl Timeline {
             }
         }
 
-        let header = vec!["Count", "Percent", "Channel", "ID", "Event"];
+        let header = vec!["Total", "%", "Channel", "ID", "Event"];
         if let Some(ref mut w) = wtr {
             w.write_record(&header).ok();
         }
@@ -148,8 +153,6 @@ impl Timeline {
         let mut stats_tb = Table::new();
         stats_tb
             .load_preset(UTF8_FULL)
-            .set_content_arrangement(ContentArrangement::Dynamic)
-            .set_width(100)
             .apply_modifier(UTF8_ROUND_CORNERS);
         stats_tb.set_header(header);
 
@@ -172,6 +175,22 @@ impl Timeline {
             }
         }
         stats_tb.add_rows(stats_msges.iter());
+        let terminal_width = match terminal_size() {
+            Some((Width(w), _)) => w as u16,
+            None => 100,
+        };
+
+        let constraints = vec![
+            LowerBoundary(Fixed(7)),  // Minimum number of characters for "Total"
+            UpperBoundary(Fixed(9)),  // Maximum number of characters for "percent"
+            UpperBoundary(Fixed(20)), // Maximum number of characters for "Channel"
+            UpperBoundary(Fixed(12)), // Maximum number of characters for "ID"
+            UpperBoundary(Fixed(terminal_width - 55)), // Maximum number of characters for "Event"
+        ];
+        for (column_index, column) in stats_tb.column_iter_mut().enumerate() {
+            let constraint = constraints.get(column_index).unwrap();
+            column.set_constraint(*constraint);
+        }
         println!("{stats_tb}");
     }
 
