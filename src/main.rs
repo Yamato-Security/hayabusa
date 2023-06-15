@@ -365,16 +365,7 @@ impl App {
                     }
                 }
                 self.analysis_start(&target_extensions, &time_filter, stored_static);
-                match &stored_static.config.action.as_ref().unwrap() {
-                    Action::Search(_) => {
-                        output_saved_file(&stored_static.output_path, "Saved file");
-                    }
-                    _ => {
-                        // SearchでなければMetricsの結果となるため
-                        output_saved_file(&stored_static.output_path, "Metrics results");
-                    }
-                }
-
+                output_saved_file(&stored_static.output_path, "Saved file");
                 println!();
             }
             Action::PivotKeywordsList(_) => {
