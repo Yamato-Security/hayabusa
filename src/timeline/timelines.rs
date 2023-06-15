@@ -709,7 +709,7 @@ mod tests {
         );
         // Event column is defined in rules/config/channel_eid_info.txt
         let expect_records = vec![vec!["1", "100.0%", "Sec", "4625", "Logon failure"]];
-        let expect = "Count,Percent,Channel,ID,Event\n".to_owned()
+        let expect = "Total,%,Channel,ID,Event\n".to_owned()
             + &expect_records.join(&"\n").join(",").replace(",\n,", "\n")
             + "\n";
         match read_to_string("./test_tm_stats.csv") {
