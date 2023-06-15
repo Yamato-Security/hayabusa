@@ -1,3 +1,4 @@
+use std::cmp;
 use std::fs::File;
 use std::io::BufWriter;
 use std::path::PathBuf;
@@ -185,7 +186,7 @@ impl Timeline {
             UpperBoundary(Fixed(9)),  // Maximum number of characters for "percent"
             UpperBoundary(Fixed(20)), // Maximum number of characters for "Channel"
             UpperBoundary(Fixed(12)), // Maximum number of characters for "ID"
-            UpperBoundary(Fixed(terminal_width - 55)), // Maximum number of characters for "Event"
+            UpperBoundary(Fixed(cmp::max(terminal_width - 55, 45))), // Maximum number of characters for "Event"
         ];
         for (column_index, column) in stats_tb.column_iter_mut().enumerate() {
             let constraint = constraints.get(column_index).unwrap();
