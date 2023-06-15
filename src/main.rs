@@ -756,19 +756,19 @@ impl App {
                 .unwrap()
                 .input_args
                 .filepath
+                .as_deref()
             {
-                let mut replaced_filepath = filepath.display().to_string();
-                if replaced_filepath.starts_with('"') {
-                    replaced_filepath.remove(0);
-                }
-                if replaced_filepath.ends_with('"') {
-                    replaced_filepath.remove(replaced_filepath.len() - 1);
-                }
-                let check_path = Path::new(&replaced_filepath);
+                let filepath_str = filepath.to_str().unwrap();
+                let check_path = Path::new(
+                    filepath_str
+                        .strip_prefix('\"')
+                        .and_then(|p| p.strip_suffix('\"'))
+                        .unwrap_or(filepath_str),
+                );
                 if !check_path.exists() {
                     AlertMessage::alert(&format!(
                         " The file {} does not exist. Please specify a valid file path.",
-                        filepath.as_os_str().to_str().unwrap()
+                        filepath_str
                     ))
                     .ok();
                     return;
@@ -776,17 +776,9 @@ impl App {
                 if !target_extensions.contains(
                     check_path
                         .extension()
-                        .unwrap_or_else(|| OsStr::new("."))
-                        .to_str()
-                        .unwrap(),
-                ) || check_path
-                    .file_stem()
-                    .unwrap_or_else(|| OsStr::new("."))
-                    .to_str()
-                    .unwrap()
-                    .trim()
-                    .starts_with('.')
-                {
+                        .and_then(OsStr::to_str)
+                        .unwrap_or(".")
+                ) {
                     AlertMessage::alert(
                         "--filepath only accepts .evtx files. Hidden files are ignored.",
                     )
