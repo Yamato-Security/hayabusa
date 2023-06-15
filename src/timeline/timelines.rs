@@ -147,6 +147,10 @@ impl Timeline {
         }
 
         let header = vec!["Total", "%", "Channel", "ID", "Event"];
+        let mut header_cells = vec![];
+        for header_str in &header {
+            header_cells.push(Cell::new(header_str).set_alignment(CellAlignment::Center));
+        }
         if let Some(ref mut w) = wtr {
             w.write_record(&header).ok();
         }
@@ -155,7 +159,8 @@ impl Timeline {
         stats_tb
             .load_preset(UTF8_FULL)
             .apply_modifier(UTF8_ROUND_CORNERS);
-        stats_tb.set_header(header);
+
+        stats_tb.set_header(header_cells);
 
         // 集計件数でソート
         let mut mapsorted: Vec<_> = self.stats.stats_list.iter().collect();
