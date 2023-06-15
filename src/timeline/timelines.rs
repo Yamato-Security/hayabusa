@@ -1,3 +1,4 @@
+use std::cmp;
 use std::fs::File;
 use std::io::BufWriter;
 use std::path::PathBuf;
@@ -9,12 +10,17 @@ use crate::detections::utils::{self, make_ascii_titlecase, write_color_buffer};
 use crate::timeline::search::search_result_dsp_msg;
 use comfy_table::modifiers::UTF8_ROUND_CORNERS;
 use comfy_table::presets::UTF8_FULL;
+use comfy_table::ColumnConstraint::LowerBoundary;
+use comfy_table::ColumnConstraint::UpperBoundary;
+use comfy_table::Width::Fixed;
 use comfy_table::*;
 use compact_str::CompactString;
 use csv::WriterBuilder;
 use downcast_rs::__std::process;
 use nested::Nested;
 use termcolor::{BufferWriter, Color, ColorChoice};
+use terminal_size::terminal_size;
+use terminal_size::Width;
 
 use super::metrics::EventMetrics;
 use super::search::EventSearch;
@@ -140,7 +146,11 @@ impl Timeline {
             }
         }
 
-        let header = vec!["Count", "Percent", "Channel", "ID", "Event"];
+        let header = vec!["Total", "%", "Channel", "ID", "Event"];
+        let mut header_cells = vec![];
+        for header_str in &header {
+            header_cells.push(Cell::new(header_str).set_alignment(CellAlignment::Center));
+        }
         if let Some(ref mut w) = wtr {
             w.write_record(&header).ok();
         }
@@ -149,7 +159,8 @@ impl Timeline {
         stats_tb
             .load_preset(UTF8_FULL)
             .apply_modifier(UTF8_ROUND_CORNERS);
-        stats_tb.set_header(header);
+
+        stats_tb.set_header(header_cells);
 
         // 集計件数でソート
         let mut mapsorted: Vec<_> = self.stats.stats_list.iter().collect();
@@ -170,6 +181,22 @@ impl Timeline {
             }
         }
         stats_tb.add_rows(stats_msges.iter());
+        let terminal_width = match terminal_size() {
+            Some((Width(w), _)) => w,
+            None => 100,
+        };
+
+        let constraints = vec![
+            LowerBoundary(Fixed(7)),  // Minimum number of characters for "Total"
+            UpperBoundary(Fixed(9)),  // Maximum number of characters for "percent"
+            UpperBoundary(Fixed(20)), // Maximum number of characters for "Channel"
+            UpperBoundary(Fixed(12)), // Maximum number of characters for "ID"
+            UpperBoundary(Fixed(cmp::max(terminal_width - 55, 45))), // Maximum number of characters for "Event"
+        ];
+        for (column_index, column) in stats_tb.column_iter_mut().enumerate() {
+            let constraint = constraints.get(column_index).unwrap();
+            column.set_constraint(*constraint);
+        }
         println!("{stats_tb}");
     }
 
@@ -682,7 +709,7 @@ mod tests {
         );
         // Event column is defined in rules/config/channel_eid_info.txt
         let expect_records = vec![vec!["1", "100.0%", "Sec", "4625", "Logon failure"]];
-        let expect = "Count,Percent,Channel,ID,Event\n".to_owned()
+        let expect = "Total,%,Channel,ID,Event\n".to_owned()
             + &expect_records.join(&"\n").join(",").replace(",\n,", "\n")
             + "\n";
         match read_to_string("./test_tm_stats.csv") {

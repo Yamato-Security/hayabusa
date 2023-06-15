@@ -1,6 +1,6 @@
 # 変更点
 
-## 2.6.0 [2023/XX/XX] "XXX Release"
+## 2.6.0 [2023/06/16] "Ajisai Release"
 
 **新機能:**
 
@@ -16,6 +16,7 @@
 - `csv-timeline`、`json-timeline`、`metrics`、`logon-summary`、`search`コマンドに対して、出力ファイルを上書きするための`-C, --clobber`オプションを追加した。 (#1063) (@YamatoSecurity, @hitenkoku)
 - HTML内にCSSと画像を組み込んだ。 (#1078) (@hitenkoku, 提案者: @joswr1ght)
 - 出力時の速度向上。 (#1088) (@hitenkoku, @fukusuket)
+- `metrics`コマンドは、テーブルが正しくレンダリングされるように、ワードラップを行うようになった。 (#1067) (@garigariganzy)
 - `search`コマンドでJSON/JSONLの出力できるようにした。 (#1041) (@hitenkoku)
 
 **バグ修正:**
