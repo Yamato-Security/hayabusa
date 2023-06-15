@@ -176,7 +176,7 @@ impl Timeline {
         }
         stats_tb.add_rows(stats_msges.iter());
         let terminal_width = match terminal_size() {
-            Some((Width(w), _)) => w as u16,
+            Some((Width(w), _)) => w,
             None => 100,
         };
 
