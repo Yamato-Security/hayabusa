@@ -591,7 +591,7 @@ The format is `KeywordName.FieldName`. For example, when creating the list of `U
 
 ### `search` command
 
-The `search` command will let you keyword search on all events. 
+The `search` command will let you keyword search on all events.
 (Not just Hayabusa detection results.)
 This is useful to determine if there is any evidence in events that are not detected by Hayabusa.
 
@@ -1103,12 +1103,12 @@ The following benchmarks were conducted on a 2018 Lenovo P51 (Xeon 4 Core CPU / 
 
 | Profile | Processing Time | Output Filesize | Filesize Increase |
 | :---: | :---: | :---: | :---: |
-| minimal | 8 minutes 50 seconds | 770 MB | 1x |
-| standard (default) | 9 minutes 00 seconds | 1.1 GB | 1.5x |
-| verbose | 9 minutes 10 seconds | 1.3 GB | 1.7x |
-| all-field-info | 9 minutes 3 seconds | 1.2 GB | 1.6x |
-| all-field-info-verbose | 9 minutes 10 seconds | 1.3 GB | 1.7x |
-| super-verbose | 9 minutes 12 seconds | 1.5 GB | 2x |
+| minimal | 8 minutes 50 seconds | 770 MB | -30% |
+| standard (default) | 9 minutes 00 seconds | 1.1 GB | None |
+| verbose | 9 minutes 10 seconds | 1.3 GB | +20% |
+| all-field-info | 9 minutes 3 seconds | 1.2 GB | +10% |
+| all-field-info-verbose | 9 minutes 10 seconds | 1.3 GB | +20% |
+| super-verbose | 9 minutes 12 seconds | 1.5 GB | +35% |
 
 ### Profile Field Aliases
 
