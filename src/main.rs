@@ -365,7 +365,7 @@ impl App {
                     }
                 }
                 self.analysis_start(&target_extensions, &time_filter, stored_static);
-                output_saved_file(&stored_static.output_path, "Saved results:");
+                output_saved_file(&stored_static.output_path, "Saved results");
                 println!();
             }
             Action::PivotKeywordsList(_) => {
