@@ -124,7 +124,7 @@ Hayabusa is a **Windows event log fast forensics timeline generator** and **thre
   - [Results Summary](#results-summary-1)
     - [Detection Fequency Timeline](#detection-fequency-timeline)
 - [Hayabusa Rules](#hayabusa-rules)
-  - [Hayabusa v.s. Converted Sigma Rules](#hayabusa-vs-converted-sigma-rules)
+  - [Sigma v.s. Hayabusa (Built-in Sigma Compatible) Rules](#sigma-vs-hayabusa-built-in-sigma-compatible-rules)
 - [Other Windows Event Log Analyzers and Related Resources](#other-windows-event-log-analyzers-and-related-resources)
 - [Windows Logging Recommendations](#windows-logging-recommendations)
 - [Sysmon Related Projects](#sysmon-related-projects)
@@ -468,6 +468,7 @@ Display Settings:
   -v, --verbose   Output verbose information
 
 General Options:
+  -C, --clobber                          Overwrite results files
   -Q, --quiet-errors                     Quiet errors mode: do not save error logs
   -c, --rules-config <DIR>               Specify custom rule config directory (default: ./rules/config)
       --target-file-ext <EVTX_FILE_EXT>  Specify additional file extensions (ex: evtx_data) (ex: evtx1,evtx2)
@@ -501,6 +502,7 @@ Display Settings:
   -v, --verbose   Output verbose information
 
 General Options:
+  -C, --clobber                          Overwrite results files
   -Q, --quiet-errors                     Quiet errors mode: do not save error logs
   -c, --rules-config <DIR>               Specify custom rule config directory (default: ./rules/config)
       --target-file-ext <EVTX_FILE_EXT>  Specify additional file extensions (ex: evtx_data) (ex: evtx1,evtx2)
@@ -617,6 +619,7 @@ Output:
   -o, --output <FILE>  Save the search results in CSV format (ex: search.csv)
 
 General Options:
+  -C, --clobber                          Overwrite results files
   -Q, --quiet-errors                     Quiet errors mode: do not save error logs
   -c, --rules-config <DIR>               Specify custom rule config directory (default: ./rules/config)
       --target-file-ext <EVTX_FILE_EXT>  Specify additional file extensions (ex: evtx_data) (ex: evtx1,evtx2)
@@ -687,7 +690,7 @@ Output:
 
 Display Settings:
       --no-color            Disable color output
-      --no-summary          Do not display Results Summary (slightly faster speed)
+  -N, --no-summary          Do not display Results Summary (slightly faster speed)
   -q, --quiet               Quiet mode: do not display the launch banner
   -v, --verbose             Output verbose information
   -T, --visualize-timeline  Output event frequency timeline (terminal needs to support unicode)
@@ -704,6 +707,7 @@ Filtering:
       --timeline-start <DATE>     Start time of the event logs to load (ex: "2020-02-22 00:00:00 +09:00")
 
 General Options:
+  -C, --clobber                          Overwrite results files
   -Q, --quiet-errors                     Quiet errors mode: do not save error logs
   -r, --rules <DIR/FILE>                 Specify a custom rule directory or file (default: ./rules)
   -c, --rules-config <DIR>               Specify custom rule config directory (default: ./rules/config)
@@ -802,16 +806,16 @@ hayabusa.exe csv-timeline -d .\hayabusa-sample-evtx -v
 * Verbose output example:
 
 ```
-Checking target evtx FilePath: "./hayabusa-sample-evtx/YamatoSecurity/T1027.004_Obfuscated Files or Information\u{a0}Compile After Delivery/sysmon.evtx"
-1 / 509 [>-------------------------------------------------------------------------------------------------------------] 0.20 % 1s
-Checking target evtx FilePath: "./hayabusa-sample-evtx/YamatoSecurity/T1558.004_Steal or Forge Kerberos Tickets AS-REP Roasting/Security.evtx"
-2 / 509 [>-------------------------------------------------------------------------------------------------------------] 0.39 % 1s
-Checking target evtx FilePath: "./hayabusa-sample-evtx/YamatoSecurity/T1558.003_Steal or Forge Kerberos Tickets\u{a0}Kerberoasting/Security.evtx"
-3 / 509 [>-------------------------------------------------------------------------------------------------------------] 0.59 % 1s
-Checking target evtx FilePath: "./hayabusa-sample-evtx/YamatoSecurity/T1197_BITS Jobs/Windows-BitsClient.evtx"
-4 / 509 [=>------------------------------------------------------------------------------------------------------------] 0.79 % 1s
-Checking target evtx FilePath: "./hayabusa-sample-evtx/YamatoSecurity/T1218.004_Signed Binary Proxy Execution\u{a0}InstallUtil/sysmon.evtx"
-5 / 509 [=>------------------------------------------------------------------------------------------------------------] 0.98 % 1s
+Checking target evtx FilePath: "./hayabusa-sample-evtx/sample1.evtx"
+1 / 509 [>---------------------------------------------------------------] 0.20 % 1s
+Checking target evtx FilePath: "./hayabusa-sample-evtx/sample2.evtx"
+2 / 509 [=>--------------------------------------------------------------] 0.39 % 1s
+Checking target evtx FilePath: "./hayabusa-sample-evtx/sample3.evtx"
+3 / 509 [==>-------------------------------------------------------------] 0.59 % 1s
+Checking target evtx FilePath: "./hayabusa-sample-evtx/sample4.evtx"
+4 / 509 [===>------------------------------------------------------------] 0.79 % 1s
+Checking target evtx FilePath: "./hayabusa-sample-evtx/sample5.evtx"
+5 / 509 [====>-----------------------------------------------------------] 0.98 % 1s
 ```
 
 * Output to a CSV format compatible to import into [Timesketch](https://timesketch.org/):
@@ -918,7 +922,7 @@ Output:
 
 Display Settings:
       --no-color            Disable color output
-      --no-summary          Do not display Results Summary (slightly faster speed)
+  -N, --no-summary          Do not display Results Summary (slightly faster speed)
   -q, --quiet               Quiet mode: do not display the launch banner
   -v, --verbose             Output verbose information
   -T, --visualize-timeline  Output event frequency timeline (terminal needs to support unicode)
@@ -935,6 +939,7 @@ Filtering:
       --timeline-start <DATE>     Start time of the event logs to load (ex: "2020-02-22 00:00:00 +09:00")
 
 General Options:
+  -C, --clobber                          Overwrite results files
   -Q, --quiet-errors                     Quiet errors mode: do not save error logs
   -r, --rules <DIR/FILE>                 Specify a custom rule directory or file (default: ./rules)
   -c, --rules-config <DIR>               Specify custom rule config directory (default: ./rules/config)
@@ -1058,60 +1063,52 @@ Use the `list-profiles` command to show the available profiles and their field i
 
 ### 1. `minimal` profile output
 
-`%Timestamp%`, `%Computer%`, `%Channel%`, `%EventID%`, `%Level%`, `%RuleTitle%`, `%Details%`
+`%Timestamp%, %Computer%, %Channel%, %EventID%, %Level%, %RecordID%, %RuleTitle%, %Details%`
 
 ### 2. `standard` profile output
 
-`%Timestamp%`, `%Computer%`, `%Channel%`, `%EventID%`, `%Level%`, `%RecordID%`, `%RuleTitle%`, `%Details%`
+`%Timestamp%, %Computer%, %Channel%, %EventID%, %Level%, %RecordID%, %RuleTitle%, %Details%, %ExtraFieldInfo%`
 
 ### 3. `verbose` profile output
 
-`%Timestamp%`, `%Computer%`, `%Channel%`, `%EventID%`, `%Level%`, `%MitreTactics%`, `%MitreTags%`, `%OtherTags%`, `%RecordID%`, `%RuleTitle%`, `%Details%`, `%RuleFile%`, `%EvtxFile%`
+`%Timestamp%, %Computer%, %Channel%, %EventID%, %Level%, %MitreTactics%, %MitreTags%, %OtherTags%, %RecordID%, %RuleTitle%, %Details%, %ExtraFieldInfo%, %RuleFile%, %EvtxFile%`
 
 ### 4. `all-field-info` profile output
 
-Instead of outputting the minimal `details` information, all field information in the `EventData` section will be outputted.
+Instead of outputting the minimal `details` information, all field information in the `EventData` and `UserData` sections will be outputted along with their original field names.
 
-`%Timestamp%`, `%Computer%`, `%Channel%`, `%EventID%`, `%Level%`, `%RecordID%`, `%RuleTitle%`, `%AllFieldInfo%`, `%RuleFile%`, `%EvtxFile%`
+`%Timestamp%, %Computer%, %Channel%, %EventID%, %Level%, %RecordID%, %RuleTitle%, %AllFieldInfo%, %RuleFile%, %EvtxFile%`
 
 ### 5. `all-field-info-verbose` profile output
 
-`all-field-info` profile plus tag information.
-
-`%Timestamp%`, `%Computer%`, `%Channel%`, `%EventID%`, `%Level%`, `%MitreTactics%`, `%MitreTags%`, `%OtherTags%`, `%RecordID%`, `%RuleTitle%`, `%AllFieldInfo%`, `%RuleFile%`, `%EvtxFile%`
+`%Timestamp%, %Computer%, %Channel%, %EventID%, %Level%, %MitreTactics%, %MitreTags%, %OtherTags%, %RecordID%, %RuleTitle%, %AllFieldInfo%, %RuleFile%, %EvtxFile%`
 
 ### 6. `super-verbose` profile output
 
-`verbose` profile plus all field information (`%AllFieldInfo%`).
-**(Warning: this will usually double the output file size!)**
-
-`%Timestamp%`, `%Computer%`, `%Channel%`, `%Provider%`, `%EventID%`, `%Level%`, `%MitreTactics%`, `%MitreTags%`, `%OtherTags%`, `%RecordID%`, `%RuleTitle%`, `%RuleAuthor%`, `%RuleCreationDate%`, `%RuleModifiedDate%`, `%Status%`, `%Details%`, `%RuleFile%`, `%EvtxFile%`, `%AllFieldInfo%`
+`%Timestamp%, %Computer%, %Channel%, %EventID%, %Level%, %RuleTitle%, %RuleAuthor%, %RuleModifiedDate%, %Status%, %RecordID%, %Details%, %ExtraFieldInfo%, %MitreTactics%, %MitreTags%, %OtherTags%, %Provider%, %RuleCreationDate%, %RuleFile%, %EvtxFile%`
 
 ### 7. `timesketch-minimal` profile output
 
-The `verbose` profile that is compatible with importing into [Timesketch](https://timesketch.org/).
+Output to a format compatible with importing into [Timesketch](https://timesketch.org/).
 
-`%Timestamp%`, `hayabusa`, `%RuleTitle%`, `%Computer%`, `%Channel%`, `%EventID%`, `%Level%`, `%MitreTactics%`, `%MitreTags%`, `%OtherTags%`, `%RecordID%`, `%Details%`, `%RuleFile%`, `%EvtxFile%`
+`%Timestamp%, hayabusa, %RuleTitle%, %Computer%, %Channel%, %EventID%, %Level%, %MitreTactics%, %MitreTags%, %OtherTags%, %RecordID%, %Details%, %RuleFile%, %EvtxFile%`
 
 ### 8. `timesketch-verbose` profile output
 
-The `super-verbose` profile that is compatible with importing into [Timesketch](https://timesketch.org/).
-**(Warning: this will usually double the output file size!)**
-
-`%Timestamp%`, `hayabusa`, `%RuleTitle%`, `%Computer%`, `%Channel%`, `%EventID%`, `%Level%`, `%MitreTactics%`, `%MitreTags%`, `%OtherTags%`, `%RecordID%`, `%Details%`, `%RuleFile%`, `%EvtxFile%`, `%AllFieldInfo%`
+`%Timestamp%, hayabusa, %RuleTitle%, %Computer%, %Channel%, %EventID%, %Level%, %MitreTactics%, %MitreTags%, %OtherTags%, %RecordID%, %Details%, %ExtraFieldInfo%, %RuleFile%, %EvtxFile%`
 
 ### Profile Comparison
 
-The following benchmarks were conducted on a 2018 MBP with 7.5GB of evtx data.
+The following benchmarks were conducted on a 2018 Lenovo P51 (Xeon 4 Core CPU / 64GB RAM) with 3GB of evtx data and 3891 rules enabled. (2023/06/01)
 
-| Profile | Processing Time | Output Filesize |
-| :---: | :---: | :---: |
-| minimal | 16 minutes 18 seconds | 690 MB |
-| standard | 16 minutes 23 seconds | 710 MB |
-| verbose | 17 minutes | 990 MB |
-| timesketch-minimal | 17 minutes | 1015 MB |
-| all-field-info-verbose | 16 minutes 50 seconds | 1.6 GB |
-| super-verbose | 17 minutes 12 seconds | 2.1 GB |
+| Profile | Processing Time | Output Filesize | Filesize Increase |
+| :---: | :---: | :---: | :---: |
+| minimal | 8 minutes 50 seconds | 770 MB | -30% |
+| standard (default) | 9 minutes 00 seconds | 1.1 GB | None |
+| verbose | 9 minutes 10 seconds | 1.3 GB | +20% |
+| all-field-info | 9 minutes 3 seconds | 1.2 GB | +10% |
+| all-field-info-verbose | 9 minutes 10 seconds | 1.3 GB | +20% |
+| super-verbose | 9 minutes 12 seconds | 1.5 GB | +35% |
 
 ### Profile Field Aliases
 
@@ -1128,6 +1125,7 @@ The following benchmarks were conducted on a 2018 MBP with 7.5GB of evtx data.
 |%RecordID% | The Event Record ID from `<Event><System><EventRecordID>` field. |
 |%RuleTitle% | The `title` field in the YML detection rule. |
 |%Details% | The `details` field in the YML detection rule, however, only hayabusa rules have this field. This field gives extra information about the alert or event and can extract useful data from the fields in event logs. For example, usernames, command line information, process information, etc... When a placeholder points to a field that does not exist or there is an incorrect alias mapping, it will be outputted as `n/a` (not available). If the `details` field is not specified (i.e. sigma rules), default `details` messages to extract fields defined in `./rules/config/default_details.txt` will be outputted. You can add more default `details` messages by adding the `Provider Name`, `EventID` and `details` message you want to output in `default_details.txt`. When no `details` field is defined in a rule nor in `default_details.txt`, all fields will be outputted to the `details` column. |
+|%ExtraFieldInfo% | Print the field information that was not outputted in %Details%. |
 |%AllFieldInfo% | All field information. |
 |%RuleFile% | The filename of the detection rule that generated the alert or event. |
 |%EvtxFile% | The evtx filename that caused the alert or event. |
@@ -1285,7 +1283,7 @@ Note: There needs to be more than 5 events. Also, the characters will not render
 # Hayabusa Rules
 
 Hayabusa detection rules are written in a sigma-like YML format and are located in the `rules` folder.
-The rules are hosted at [https://github.com/Yamato-Security/hayabusa-rules](https://github.com/Yamato-Security/hayabusa-rules) so please send any issues and pull requests for rules there instead of the main hayabusa repository.
+The rules are hosted at [https://github.com/Yamato-Security/hayabusa-rules](https://github.com/Yamato-Security/hayabusa-rules) so please send any issues and pull requests for rules there instead of the main Hayabusa repository.
 
 Please read [the hayabusa-rules repository README](https://github.com/Yamato-Security/hayabusa-rules/blob/main/README.md) to understand about the rule format and how to create rules.
 
@@ -1301,26 +1299,24 @@ Rules are further seperated into directories by log type (Example: Security, Sys
 
 Please check out the current rules to use as a template in creating new ones or for checking the detection logic.
 
-## Hayabusa v.s. Converted Sigma Rules
+## Sigma v.s. Hayabusa (Built-in Sigma Compatible) Rules
 
-Sigma rules need to first be converted to hayabusa rule format explained [here](https://github.com/Yamato-Security/hayabusa-rules/blob/main/tools/sigmac/README.md).
-However, almost all hayabusa rules are compatible with the sigma format so you can use them just like sigma rules to convert to other SIEM formats.
+Hayabusa supports Sigma rules natively with a single exception of handling the `logsource` fields internally.
+In order to reduce false positives, , Sigma rules should be run through our convertor explained [here](https://github.com/Yamato-Security/hayabusa-rules/blob/main/tools/sigmac/README.md).
+This will add the proper `Channel` and `EventID`, and perform field mapping for certain categories like `process_creation`.
+
+Almost all Hayabusa rules are compatible with the Sigma format so you can use them just like Sigma rules to convert to other SIEM formats.
 Hayabusa rules are designed solely for Windows event log analysis and have the following benefits:
 
 1. An extra `details` field to display additional information taken from only the useful fields in the log.
 2. They are all tested against sample logs and are known to work.
-   > Some sigma rules may not work as intended due to bugs in the conversion process, unsupported features, or differences in implementation (such as in regular expressions).
 3. Extra aggregators not found in sigma, such as `|equalsfield` and `|endswithfield`.
 
-**Limitations**: To our knowledge, hayabusa provides the greatest support for sigma rules out of any open source Windows event log analysis tool, however, there are still rules that are not supported:
-
-1. Aggregation expressions besides `count` in the [sigma rule specification](https://github.com/SigmaHQ/sigma-specification/blob/main/Sigma_specification.md).
-2. Rules that use `|near`.
+To our knowledge, hayabusa provides the greatest native support for sigma rules out of any open source Windows event log analysis tool.
 
 # Other Windows Event Log Analyzers and Related Resources
 
-There is no "one tool to rule them all" and we have found that each has its own merits so we recommend checking out these other great tools and projects and seeing which ones you like.
-
+* [AllthingsTimesketch](https://github.com/blueteam0ps/AllthingsTimesketch) - A NodeRED workflow that imports Plaso and Hayabusa results into Timesketch.
 * [APT-Hunter](https://github.com/ahmedkhlief/APT-Hunter) - Attack detection tool written in Python.
 * [Awesome Event IDs](https://github.com/stuhli/awesome-event-ids) -  Collection of Event ID resources useful for Digital Forensics and Incident Response
 * [Chainsaw](https://github.com/countercept/chainsaw) - Another sigma-based attack detection tool written in Rust.
@@ -1372,6 +1368,7 @@ To create the most forensic evidence and detect with the highest accuracy, you n
 
 ## English
 
+* 2023/03/21 [Find Threats in Event Logs with Hayabusa](https://blog.ecapuano.com/p/find-threats-in-event-logs-with-hayabusa) by [Eric Capuano](https://twitter.com/eric_capuano)
 * 2023/03/14 [Rust Performance Guide for Hayabusa Developers](doc/RustPerformance-English.md) by Fukusuke Takahashi
 * 2022/06/19 [Velociraptor Walkthrough and Hayabusa Integration](https://www.youtube.com/watch?v=Q1IoGX--814) by [Eric Capuano](https://twitter.com/eric_capuano)
 * 2022/01/24 [Graphing Hayabusa results in neo4j](https://www.youtube.com/watch?v=7sQqz2ek-ko) by Matthew Seyer ([@forensic_matt](https://twitter.com/forensic_matt))

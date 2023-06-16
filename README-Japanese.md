@@ -124,7 +124,7 @@ Hayabusaは、日本の[Yamato Security](https://yamatosecurity.connpass.com/)�
   - [結果のサマリ (Results Summary)](#結果のサマリ-results-summary)
     - [検知頻度タイムライン](#検知頻度タイムライン)
 - [Hayabusaルール](#hayabusaルール)
-  - [Hayabusa v.s. 変換されたSigmaルール](#hayabusa-vs-変換されたsigmaルール)
+  - [Sigma v.s. Hayabusa(ビルトインSigmaとの互換性のある)ルール](#sigma-vs-hayabusaビルトインsigmaとの互換性のあるルール)
 - [その他のWindowsイベントログ解析ツールおよび関連リソース](#その他のwindowsイベントログ解析ツールおよび関連リソース)
 - [Windowsイベントログ設定のススメ](#windowsイベントログ設定のススメ)
 - [Sysmon関係のプロジェクト](#sysmon関係のプロジェクト)
@@ -469,6 +469,7 @@ Display Settings:
   -v, --verbose             詳細な情報を出力する
 
 General Options:
+  -C, --clobber                          結果ファイルを上書きする
   -Q, --quiet-errors                     Quiet errorsモード: エラーログを保存しない
   -c, --rules-config <DIR>               ルールフォルダのコンフィグディレクトリ (デフォルト: ./rules/config)
       --target-file-ext <EVTX_FILE_EXT>  evtx以外の拡張子を解析対象に追加する (例１: evtx_data 例２:evtx1,evtx2)
@@ -502,6 +503,7 @@ Display Settings:
   -v, --verbose        詳細な情報を出力する
 
 General Options:
+  -C, --clobber                          結果ファイルを上書きする
   -Q, --quiet-errors                     Quiet errorsモード: エラーログを保存しない
   -c, --rules-config <DIR>               ルールフォルダのコンフィグディレクトリ (デフォルト: ./rules/config)
       --target-file-ext <EVTX_FILE_EXT>  evtx以外の拡張子を解析対象に追加する。 (例１: evtx_data 例２: evtx1,evtx2)
@@ -618,6 +620,7 @@ Output:
   -o, --output <FILE>  ログオンサマリをCSV形式で保存する (例: search.csv)
 
 General Options:
+  -C, --clobber                          結果ファイルを上書きする
   -Q, --quiet-errors                     Quiet errorsモード: エラーログを保存しない
   -c, --rules-config <DIR>               ルールフォルダのコンフィグディレクトリ (デフォルト: ./rules/config)
       --target-file-ext <EVTX_FILE_EXT>  evtx以外の拡張子を解析対象に追加する (例１: evtx_data 例２:evtx1,evtx2)
@@ -688,7 +691,7 @@ Output:
 
 Display Settings:
       --no-color            カラーで出力しない
-      --no-summary          結果概要を出力しない (多少速くなる)
+  -N, --no-summary          結果概要を出力しない (多少速くなる)
   -q, --quiet               Quietモード: 起動バナーを表示しない
   -v, --verbose             詳細な情報を出力する
   -T, --visualize-timeline  検知頻度タイムラインを出力する（ターミナルはUnicodeに対応する必要がある）
@@ -705,6 +708,7 @@ Filtering:
       --timeline-start <DATE>     解析対象とするイベントログの開始時刻 (例: "2020-02-22 00:00:00 +09:00")
 
 General Options:
+  -C, --clobber                          結果ファイルを上書きする
   -Q, --quiet-errors                     Quiet errorsモード: エラーログを保存しない
   -r, --rules <DIR/FILE>                 ルールファイルまたはルールファイルを持つディレクトリ (デフォルト: ./rules)
   -c, --rules-config <DIR>               ルールフォルダのコンフィグディレクトリ (デフォルト: ./rules/config)
@@ -803,16 +807,16 @@ hayabusa.exe csv-timeline -d .\hayabusa-sample-evtx -v
 * Verbose出力の例:
 
 ```
-Checking target evtx FilePath: "./hayabusa-sample-evtx/YamatoSecurity/T1027.004_Obfuscated Files or Information\u{a0}Compile After Delivery/sysmon.evtx"
-1 / 509 [>-------------------------------------------------------------------------------------------------------------] 0.20 % 1s
-Checking target evtx FilePath: "./hayabusa-sample-evtx/YamatoSecurity/T1558.004_Steal or Forge Kerberos Tickets AS-REP Roasting/Security.evtx"
-2 / 509 [>-------------------------------------------------------------------------------------------------------------] 0.39 % 1s
-Checking target evtx FilePath: "./hayabusa-sample-evtx/YamatoSecurity/T1558.003_Steal or Forge Kerberos Tickets\u{a0}Kerberoasting/Security.evtx"
-3 / 509 [>-------------------------------------------------------------------------------------------------------------] 0.59 % 1s
-Checking target evtx FilePath: "./hayabusa-sample-evtx/YamatoSecurity/T1197_BITS Jobs/Windows-BitsClient.evtx"
-4 / 509 [=>------------------------------------------------------------------------------------------------------------] 0.79 % 1s
-Checking target evtx FilePath: "./hayabusa-sample-evtx/YamatoSecurity/T1218.004_Signed Binary Proxy Execution\u{a0}InstallUtil/sysmon.evtx"
-5 / 509 [=>------------------------------------------------------------------------------------------------------------] 0.98 % 1s
+Checking target evtx FilePath: "./hayabusa-sample-evtx/sample1.evtx"
+1 / 509 [>---------------------------------------------------------------] 0.20 % 1s
+Checking target evtx FilePath: "./hayabusa-sample-evtx/sample2.evtx"
+2 / 509 [=>--------------------------------------------------------------] 0.39 % 1s
+Checking target evtx FilePath: "./hayabusa-sample-evtx/sample3.evtx"
+3 / 509 [==>-------------------------------------------------------------] 0.59 % 1s
+Checking target evtx FilePath: "./hayabusa-sample-evtx/sample4.evtx"
+4 / 509 [===>------------------------------------------------------------] 0.79 % 1s
+Checking target evtx FilePath: "./hayabusa-sample-evtx/sample5.evtx"
+5 / 509 [====>-----------------------------------------------------------] 0.98 % 1s
 ```
 
 * 結果を[Timesketch](https://timesketch.org/)にインポートできるCSV形式に保存する:
@@ -919,7 +923,7 @@ Output:
 
 Display Settings:
       --no-color            カラーで出力しない
-      --no-summary          結果概要を出力しない (多少速くなる)
+  -N, --no-summary          結果概要を出力しない (多少速くなる)
   -q, --quiet               Quietモード: 起動バナーを表示しない
   -v, --verbose             詳細な情報を出力する
   -T, --visualize-timeline  検知頻度タイムラインを出力する（ターミナルはUnicodeに対応する必要がある）
@@ -936,6 +940,7 @@ Filtering:
       --timeline-start <DATE>     解析対象とするイベントログの開始時刻 (例: "2020-02-22 00:00:00 +09:00")
 
 General Options:
+  -C, --clobber                          結果ファイルを上書きする
   -Q, --quiet-errors                     Quiet errorsモード: エラーログを保存しない
   -r, --rules <DIR/FILE>                 ルールファイルまたはルールファイルを持つディレクトリ (デフォルト: ./rules)
   -c, --rules-config <DIR>               ルールフォルダのコンフィグディレクトリ (デフォルト: ./rules/config)
@@ -1055,64 +1060,56 @@ Hayabusaの`config/profiles.yaml`設定ファイルでは、５つのプロフ�
 
 このファイルを編集することで、簡単に独自のプロファイルをカスタマイズしたり、追加したりすることができます。
 `set-default-profile --profile <profile>`コマンドでデフォルトのプロファイルを変更することもできます。
-利用可能なプロファイルとそのフィールド情報を表示するには、`csv-timeline --list-profiles`コマンドを使用してください。
+利用可能なプロファイルとそのフィールド情報を表示するには、`list-profiles`コマンドを使用してください。
 
 ### 1. `minimal`プロファイルの出力
 
-`%Timestamp%`, `%Computer%`, `%Channel%`, `%EventID%`, `%Level%`, `%RuleTitle%`, `%Details%`
+`%Timestamp%, %Computer%, %Channel%, %EventID%, %Level%, %RecordID%, %RuleTitle%, %Details%`
 
 ### 2. `standard`プロファイルの出力
 
-`%Timestamp%`, `%Computer%`, `%Channel%`, `%EventID%`, `%Level%`, `%RecordID%`, `%RuleTitle%`, `%Details%`
+`%Timestamp%, %Computer%, %Channel%, %EventID%, %Level%, %RecordID%, %RuleTitle%, %Details%, %ExtraFieldInfo%`
 
 ### 3. `verbose`プロファイルの出力
 
-`%Timestamp%`, `%Computer%`, `%Channel%`, `%EventID%`, `%Level%`, `%MitreTactics%`, `%MitreTags%`, `%OtherTags%`, `%RecordID%`, `%RuleTitle%`, `%Details%`, `%RuleFile%`, `%EvtxFile%`
+`%Timestamp%, %Computer%, %Channel%, %EventID%, %Level%, %MitreTactics%, %MitreTags%, %OtherTags%, %RecordID%, %RuleTitle%, %Details%, %ExtraFieldInfo%, %RuleFile%, %EvtxFile%`
 
 ### 4. `all-field-info`プロファイルの出力
 
-最小限の`details`情報を出力する代わりに、イベントにあるすべての`EventData`フィールド情報(`%AllFieldInfo%`)が出力されます。
+最小限の`details`情報を出力する代わりに、イベントにあるすべての`EventData`フィールド情報(`%AllFieldInfo%`)が出力されます。フィールド名は元々のフィールド名になります。
 
-`%Timestamp%`, `%Computer%`, `%Channel%`, `%EventID%`, `%Level%`, `%RecordID%`, `%RuleTitle%`, `%AllFieldInfo%`, `%RuleFile%`, `%EvtxFile%`
+`%Timestamp%, %Computer%, %Channel%, %EventID%, %Level%, %RecordID%, %RuleTitle%, %AllFieldInfo%, %RuleFile%, %EvtxFile%`
 
 ### 5. `all-field-info-verbose`プロファイルの出力
 
-`all-field-info`とタグ情報が出力されます。
-
-`%Timestamp%`, `%Computer%`, `%Channel%`, `%EventID%`, `%Level%`, `%MitreTactics%`, `%MitreTags%`, `%OtherTags%`, `%RecordID%`, `%RuleTitle%`, `%AllFieldInfo%`, `%RuleFile%`, `%EvtxFile%`
+`%Timestamp%, %Computer%, %Channel%, %EventID%, %Level%, %MitreTactics%, %MitreTags%, %OtherTags%, %RecordID%, %RuleTitle%, %AllFieldInfo%, %RuleFile%, %EvtxFile%`
 
 ### 6. `super-verbose`プロファイルの出力
 
-`verbose`プロファイルで出力される情報とイベントにあるすべての`EventData`フィールド情報(`%AllFieldInfo%`)の**両方**が出力されます。
-**(注意: 出力ファイルサイズは約2倍になります！)**
-
-`%Timestamp%`, `%Computer%`, `%Channel%`, `%Provider%`, `%EventID%`, `%Level%`, `%MitreTactics%`, `%MitreTags%`, `%OtherTags%`, `%RecordID%`, `%RuleTitle%`, `%RuleAuthor%`, `%RuleCreationDate%`, `%RuleModifiedDate%`, `%Status%`, `%Details%`, `%RuleFile%`, `%EvtxFile%`, `%AllFieldInfo%`
+`%Timestamp%, %Computer%, %Channel%, %EventID%, %Level%, %RuleTitle%, %RuleAuthor%, %RuleModifiedDate%, %Status%, %RecordID%, %Details%, %ExtraFieldInfo%, %MitreTactics%, %MitreTags%, %OtherTags%, %Provider%, %RuleCreationDate%, %RuleFile%, %EvtxFile%`
 
 ### 7. `timesketch-minimal`プロファイルの出力
 
-[Timesketch](https://timesketch.org/)にインポートできる`verbose`プロファイル。
+[Timesketch](https://timesketch.org/)にインポートできるプロファイル。
 
-`%Timestamp%`, `hayabusa`, `%RuleTitle%`, `%Computer%`, `%Channel%`, `%EventID%`, `%Level%`, `%MitreTactics%`, `%MitreTags%`, `%OtherTags%`, `%RecordID%`, `%Details%`, `%RuleFile%`, `%EvtxFile%`
+`%Timestamp%, hayabusa, %RuleTitle%, %Computer%, %Channel%, %EventID%, %Level%, %MitreTactics%, %MitreTags%, %OtherTags%, %RecordID%, %Details%, %RuleFile%, %EvtxFile%`
 
 ### 8. `timesketch-verbose`プロファイルの出力
 
-[Timesketch](https://timesketch.org/)にインポートできる`verbose`プロファイル。
-**(注意: 出力ファイルサイズは約2倍になります！)**
-
-`%Timestamp%`, `hayabusa`, `%RuleTitle%`, `%Computer%`, `%Channel%`, `%EventID%`, `%Level%`, `%MitreTactics%`, `%MitreTags%`, `%OtherTags%`, `%RecordID%`, `%Details%`, `%RuleFile%`, `%EvtxFile%`, `%AllFieldInfo%`
+`%Timestamp%, hayabusa, %RuleTitle%, %Computer%, %Channel%, %EventID%, %Level%, %MitreTactics%, %MitreTags%, %OtherTags%, %RecordID%, %Details%, %ExtraFieldInfo%, %RuleFile%, %EvtxFile%`
 
 ### プロファイルの比較
 
-以下のベンチマークは、2018年製のマックブックプロ上で7.5GBのEVTXデータに対して実施されました。
+以下のベンチマークは、2018年製のLenovo P51 (CPU: Xeon 4コア / メモリ: 64GB)上で3GBのEVTXデータに対して3891件のルールを有効にして実施されました。(2023/06/01)
 
-| プロファイル | 処理時間 | 結果のファイルサイズ |
-| :---: | :---: | :---: |
-| minimal | 16分18秒 | 690 MB |
-| standard | 16分23秒 | 710 MB |
-| verbose | 17分 | 990 MB |
-| timesketch-minimal | 17分 | 1015 MB |
-| all-field-info-verbose | 16分50秒 | 1.6 GB |
-| super-verbose | 17分12秒 | 2.1 GB |
+| プロファイル | 処理時間 | 結果のファイルサイズ | ファイルサイズ増加 |
+| :---: | :---: | :---: | :---: |
+| minimal | 8分50秒 | 770 MB | -30% |
+| standard (デフォルト) | 9分00秒 | 1.1 GB | 無し |
+| verbose | 9分10秒 | 1.3 GB | +20% |
+| all-field-info | 9分3秒 | 1.2 GB | +10% |
+| all-field-info-verbose | 9分10秒 | 1.3 GB | +20% |
+| super-verbose | 9分12秒 | 1.5 GB | +35% |
 
 ### Profile Field Aliases
 
@@ -1129,6 +1126,7 @@ Hayabusaの`config/profiles.yaml`設定ファイルでは、５つのプロフ�
 |%RecordID% | `<Event><System><EventRecordID>`フィールドのイベントレコードID。 |
 |%RuleTitle% | YML検知ルールの`title`フィールド。 |
 |%Details% | YML検知ルールの`details`フィールドから来ていますが、このフィールドはHayabusaルールにしかありません。このフィールドはアラートとイベントに関する追加情報を提供し、ログのフィールドから有用なデータを抽出することができます。イベントキーのマッピングが間違っている場合、もしくはフィールドが存在しない場合で抽出ができなかった箇所は`n/a` (not available)と記載されます。YML検知ルールに`details`フィールドが存在しない時のdetailsのメッセージを`./rules/config/default_details.txt`で設定できます。`default_details.txt`では`Provider Name`、`EventID`、`details`の組み合わせで設定することができます。default_details.txt`やYML検知ルールに対応するルールが記載されていない場合はすべてのフィールド情報を出力します。 |
+|%ExtraFieldInfo% | %Details%で出力されなかったフィールドデータを出力する。 |
 |%AllFieldInfo% | すべてのフィールド情報。 |
 |%RuleFile% | アラートまたはイベントを生成した検知ルールのファイル名。 |
 |%EvtxFile% | アラートまたはイベントを起こしたevtxファイルへのパス。 |
@@ -1302,26 +1300,24 @@ Hayabusaルールのディレクトリ構造は、2つのディレクトリに�
 
 現在のルールをご確認いただき、新規作成時のテンプレートとして、また検知ロジックの確認用としてご利用ください。
 
-## Hayabusa v.s. 変換されたSigmaルール
+## Sigma v.s. Hayabusa(ビルトインSigmaとの互換性のある)ルール
 
-Sigmaルールは、最初にHayabusaルール形式に変換する必要があります。変換のやり方は[ここ](https://github.com/Yamato-Security/hayabusa-rules/tree/main/tools/sigmac/README-Japanese.md)で説明されています。
+Hayabusaは、`logsource`フィールドを内部で処理することを唯一の例外として、Sigmaルールをネイティブにサポートしています。
+過検知を減らすため、コンバータで変換した方が良いです。変換のやり方は[ここ](https://github.com/Yamato-Security/hayabusa-rules/tree/main/tools/sigmac/README-Japanese.md)で説明されています。
+これにより、適切な`Channel`と`EventID`が追加され、`process_creation`のような特定のカテゴリに対してフィールドマッピングが行われます。
+
 殆どのルールはSigmaルールと互換性があるので、Sigmaルールのようにその他のSIEM形式に変換できます。
 Hayabusaルールは、Windowsのイベントログ解析専用に設計されており、以下のような利点があります:
 
-1. ログの有用なフィールドのみから抽出された追加情報を表示するための `details`フィールドを追加しています。
+1. ログの有用なフィールドのみから抽出された追加情報を表示するための`details`フィールドを追加しています。
 2. Hayabusaルールはすべてサンプルログに対してテストされ、検知することが確認されています。
-   > 変換処理のバグ、サポートされていない機能、実装の違い(正規表現など)により、一部のSigmaルールは意図したとおりに動作しない可能性があります。
 3. Sigmaルール仕様にない集計式(例：`|equalsfield`、`|endswithfield`)の利用。
 
-**制限事項**: 私たちの知る限り、Hayabusa はオープンソースの Windows イベントログ解析ツールの中でSigmaルールを最も多くサポートしていますが、まだサポートされていないルールもあります。
-
-1. [Sigmaルール仕様](https://github.com/SigmaHQ/sigma-specification)の`count`以外の集計式。
-2. `|near`を使用するルール。
+私たちの知る限り、HayabusaはオープンソースのWindowsイベントログ解析ツールの中でSigmaルールを最も多くサポートしています。
 
 # その他のWindowsイベントログ解析ツールおよび関連リソース
 
-「すべてを統治する1つのツール」というものはなく、それぞれにメリットがあるため、これらの他の優れたツールやプロジェクトをチェックして、どれが気に入ったかを確認することをお勧めします。
-
+* [AllthingsTimesketch](https://github.com/blueteam0ps/AllthingsTimesketch) - PlasoとHayabusaの結果をTimesketchにインポートするNodeREDワークフロー。
 * [APT-Hunter](https://github.com/ahmedkhlief/APT-Hunter) - Pythonで開発された攻撃検知ツール。
 * [Awesome Event IDs](https://github.com/stuhli/awesome-event-ids) -  フォレンジック調査とインシデント対応に役立つイベントIDのリソース。
 * [Chainsaw](https://github.com/countercept/chainsaw) - Rustで開発されたSigmaベースの攻撃検知ツール。
