@@ -1,18 +1,18 @@
 [package]
 name = "hayabusa"
-version = "2.6.0-dev"
+version = "2.6.0"
 repository = "https://github.com/Yamato-Security/hayabusa"
 authors = ["Yamato Security @SecurityYamato"]
 edition = "2021"
-rust-version = "1.69.0"
+rust-version = "1.70.0"
 include = ["src/**/*", "LICENSE.txt", "README.md", "CHANGELOG.md"]
 
 [dependencies]
 itertools = "*"
 dashmap = "*"
 clap = { version = "4.*", features = ["derive", "cargo", "color"]}
-evtx = { git = "https://github.com/Yamato-Security/hayabusa-evtx.git" , features = ["fast-alloc"] , rev = "3e1ab2d" } # 0.8.5 2023/04/29 update
-quick-xml = {version = "0.28.*", features = ["serialize"] }
+evtx = { git = "https://github.com/Yamato-Security/hayabusa-evtx.git" , features = ["fast-alloc"] , rev = "128a425" } # 0.8.6 2023/06/15 update
+quick-xml = {version = "0.*", features = ["serialize"] }
 serde = { version = "1.*", features = ["derive"] }
 serde_json = { version = "1.0"}
 serde_derive = "1.*"
@@ -28,7 +28,7 @@ num_cpus = "1.*"
 downcast-rs = "1.*"
 hhmmss = "*"
 pbr = "*"
-hashbrown = "0.13.*"
+hashbrown = "0.14.*"
 hex = "0.4.*"
 git2 = "0.*"
 termcolor = "*"
@@ -38,7 +38,7 @@ bytesize = "1.*"
 lock_api = "0.4.*"
 crossbeam-utils = "0.8.*"
 num-format = "*"
-comfy-table = "6.*"
+comfy-table = "7.*"
 pulldown-cmark = { version = "0.9.*", default-features = false, features = ["simd"] }
 horrorshow = "0.8.*"
 mimalloc = { version = "*", default-features = false }

@@ -1,6 +1,6 @@
 # Changes
 
-## 2.6.0 [2023/XX/XX] "XXX Release"
+## 2.6.0 [2023/06/16] "Ajisai Release"
 
 **New Features:**
 

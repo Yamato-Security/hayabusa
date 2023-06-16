@@ -589,7 +589,7 @@ The format is `KeywordName.FieldName`. For example, when creating the list of `U
 
 ### `search` command
 
-The `search` command will let you keyword search on all events. 
+The `search` command will let you keyword search on all events.
 (Not just Hayabusa detection results.)
 This is useful to determine if there is any evidence in events that are not detected by Hayabusa.
 

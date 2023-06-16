@@ -272,7 +272,7 @@ impl App {
                         && utils::check_file_expect_not_exist(
                             html_path.as_path(),
                             format!(
-                                " The file {} already exists. Please specify a different filename.\n",
+                                " The file {} already exists. Please specify a different filename or add the -C, --clobber option to overwrite.\n",
                                 html_path.to_str().unwrap()
                             ),
                         )
@@ -285,7 +285,7 @@ impl App {
                         && utils::check_file_expect_not_exist(
                             path.as_path(),
                             format!(
-                                " The file {} already exists. Please specify a different filename.\n",
+                                " The file {} already exists. Please specify a different filename or add the -C, --clobber option to overwrite.\n",
                                 path.as_os_str().to_str().unwrap()
                             ),
                         )
@@ -356,7 +356,7 @@ impl App {
                         && utils::check_file_expect_not_exist(
                             path.as_path(),
                             format!(
-                                " The file {} already exists. Please specify a different filename.\n",
+                                " The file {} already exists. Please specify a different filename or add the -C, --clobber option to overwrite.\n",
                                 path.as_os_str().to_str().unwrap()
                             ),
                         )
@@ -365,7 +365,7 @@ impl App {
                     }
                 }
                 self.analysis_start(&target_extensions, &time_filter, stored_static);
-                output_saved_file(&stored_static.output_path, "Metrics results:");
+                output_saved_file(&stored_static.output_path, "Saved results");
                 println!();
             }
             Action::PivotKeywordsList(_) => {
@@ -379,7 +379,7 @@ impl App {
                         if utils::check_file_expect_not_exist(
                             Path::new(&keywords_file_name),
                             format!(
-                                " The file {} already exists. Please specify a different filename.\n",
+                                " The file {} already exists. Please specify a different filename or add the -C, --clobber option to overwrite.\n",
                                 &keywords_file_name
                             ),
                         ) {
