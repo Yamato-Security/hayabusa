@@ -341,10 +341,10 @@ impl App {
                 for target_path in target_output_path.iter() {
                     let mut msg = "";
                     if target_path.ends_with("-successful.csv") {
-                        msg = "Successful logon results:"
+                        msg = "Successful logon results"
                     }
                     if target_path.ends_with("-failed.csv") {
-                        msg = "Failed logon results:"
+                        msg = "Failed logon results"
                     }
                     output_saved_file(&Some(Path::new(target_path).to_path_buf()), msg);
                 }
