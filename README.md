@@ -515,7 +515,7 @@ General Options:
 
 * Print Event ID metrics from a directory: `hayabusa.exe metrics -d ../logs`
 
-* Save results to a CSV file: `hayabusa.exe metrics -f metrics.csv`
+* Save results to a CSV file: `hayabusa.exe metrics -f Security.evtx -o metrics.csv`
 
 #### `metrics` command config file
 

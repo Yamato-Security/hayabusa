@@ -516,7 +516,7 @@ General Options:
 
 * ディレクトリに対してイベントIDの統計情報を出力する: `hayabusa.exe metrics -d ../logs`
 
-* 結果をCSVファイルに保存する: `hayabusa.exe metrics -f metrics.csv`
+* 結果をCSVファイルに保存する: `hayabusa.exe metrics -f Security.evtx -o metrics.csv`
 
 #### `metrics`コマンドの設定ファイル
 
