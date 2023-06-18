@@ -1,10 +1,11 @@
+use crate::detections::message::ERROR_LOG_STACK;
 use crate::detections::{
     configs::{EventKeyAliasConfig, StoredStatic},
     detection::EvtxRecordInfo,
     message::AlertMessage,
     utils,
 };
-use chrono::{DateTime, NaiveDateTime, Utc};
+use chrono::{DateTime, NaiveDate, NaiveDateTime, Utc};
 use compact_str::CompactString;
 use hashbrown::HashMap;
 
@@ -91,7 +92,11 @@ impl EventMetrics {
             return;
         }
         self.filepath = CompactString::from(records[0].evtx_filepath.as_str());
-
+        let dt: NaiveDateTime = NaiveDate::from_ymd_opt(2007, 1, 30)
+            .unwrap()
+            .and_hms_opt(0, 0, 0)
+            .unwrap();
+        let evtx_service_released_date = Some(DateTime::<Utc>::from_utc(dt, Utc));
         let mut check_start_end_time = |evttime: &str| {
             let timestamp = match NaiveDateTime::parse_from_str(evttime, "%Y-%m-%dT%H:%M:%S%.3fZ") {
                 Ok(without_timezone_datetime) => {
@@ -107,7 +112,15 @@ impl EventMetrics {
                 return;
             }
             if self.start_time.is_none() || timestamp < self.start_time {
-                self.start_time = timestamp;
+                if timestamp >= evtx_service_released_date {
+                    self.start_time = timestamp;
+                } else {
+                    // evtxがリリースされた2007/1/30以前の日付データは不正な形式データ扱いとする
+                    ERROR_LOG_STACK.lock().unwrap().push(format!(
+                        "[ERROR] Invalid timestamp({:?}) was found.",
+                        timestamp.unwrap()
+                    ));
+                }
             }
             if self.end_time.is_none() || timestamp > self.end_time {
                 self.end_time = timestamp;
