@@ -1,5 +1,15 @@
 # Changes
 
+## 2.7.0 [2023/xx/xx]
+
+**New Features:**
+
+**Enhancements:**
+
+- Ignore corrupted event records with timestamps before 2007/1/31 when Windows Vista was released with the new `.evtx` log format. (#1102) (@fukusuket)
+
+**Bug Fixes:**
+
 ## 2.6.0 [2023/06/16] "Ajisai Release"
 
 **New Features:**
