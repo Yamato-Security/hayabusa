@@ -117,7 +117,8 @@ impl EventMetrics {
                 } else {
                     // evtxがリリースされた2007/1/30以前の日付データは不正な形式データ扱いとする
                     ERROR_LOG_STACK.lock().unwrap().push(format!(
-                        "[ERROR] Invalid timestamp({:?}) was found.",
+                        "[ERROR] Invalid record found. EventFile:{} Timestamp:{}",
+                        self.filepath,
                         timestamp.unwrap()
                     ));
                 }
