@@ -4,10 +4,11 @@
 
 **New Features:**
 
+- Added the `-R, --remove-duplicate-data` option in the `csv-timeline` command to replace duplicate field data with the string `DUP` in the `%Details%`, `%AllFieldInfo%`, `%ExtraFieldInfo%` columns to reduce file size. (#1056) (@hitenkoku)
+
 **Enhancements:**
 
 - Ignore corrupted event records with timestamps before 2007/1/31 when Windows Vista was released with the new `.evtx` log format. (#1102) (@fukusuket)
-- Added `-R, --remove-duplicate-data` option in `csv-timeline` command, for remove duplicate `Details` field (`%Details%`, `%AllFieldInfo%`, `%ExtraFieldInfo%`) output. (#1056) (@hitenkoku)
 
 **Bug Fixes:**
 
