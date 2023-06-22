@@ -1165,6 +1165,15 @@ pub struct CsvOutputOption {
     /// Save the timeline in CSV format (ex: results.csv)
     #[arg(help_heading = Some("Output"), short = 'o', long, value_name = "FILE", display_order = 410)]
     pub output: Option<PathBuf>,
+
+    /// remove duplicate Details data (ex: Details, ExtraFieldInfo, AllFieldInfo)
+    #[arg(
+        help_heading = Some("Output"),
+        short = 'R',
+        long = "remove-duplicate-data",
+        display_order = 440
+    )]
+    pub remove_duplicate_data: bool,
 }
 
 #[derive(Args, Clone, Debug)]

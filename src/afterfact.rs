@@ -240,6 +240,7 @@ fn emit_csv<W: std::io::Write>(
     let mut disp_wtr_buf = disp_wtr.buffer();
     let mut json_output_flag = false;
     let mut jsonl_output_flag = false;
+    let mut remove_duplicate_data_flag = false;
 
     let tmp_wtr = match &stored_static.config.action.as_ref().unwrap() {
         Action::JsonTimeline(option) => {
@@ -253,11 +254,14 @@ fn emit_csv<W: std::io::Write>(
                     .from_writer(writer),
             )
         }
-        Action::CsvTimeline(_) => Some(
-            WriterBuilder::new()
-                .quote_style(QuoteStyle::NonNumeric)
-                .from_writer(writer),
-        ),
+        Action::CsvTimeline(option) => {
+            remove_duplicate_data_flag = option.remove_duplicate_data;
+            Some(
+                WriterBuilder::new()
+                    .quote_style(QuoteStyle::NonNumeric)
+                    .from_writer(writer),
+            )
+        }
         _ => None,
     };
     //CsvTimeLineとJsonTimeLine以外はこの関数は呼ばれないが、matchをつかうためにこの処理を追加した。
@@ -326,6 +330,8 @@ fn emit_csv<W: std::io::Write>(
         .sorted_unstable()
         .enumerate()
     {
+        // remove duplicate dataのための前レコード分の情報を保持する変数
+        let mut prev_message: HashMap<CompactString, Profile> = HashMap::new();
         let multi = message::MESSAGES.get(time).unwrap();
         let (_, detect_infos) = multi.pair();
         timestamps[message_idx] = _get_timestamp(output_option, time);
@@ -354,8 +360,9 @@ fn emit_csv<W: std::io::Write>(
                 )));
             }
             if displayflag {
-                //ヘッダーのみを出力
+                // 標準出力の場合
                 if plus_header {
+                    // ヘッダーのみを出力
                     write_color_buffer(
                         &disp_wtr,
                         get_writable_color(None, stored_static.common_options.no_color),
@@ -406,16 +413,44 @@ fn emit_csv<W: std::io::Write>(
                     plus_header = false;
                 }
                 wtr.write_record(detect_info.ext_field.iter().map(|x| {
-                    output_remover.replace_all(
-                        &output_replacer
-                            .replace_all(
-                                &x.1.to_value(),
-                                &output_replaced_maps.values().collect_vec(),
-                            )
-                            .split_whitespace()
-                            .join(" "),
-                        &removed_replaced_maps.values().collect_vec(),
-                    )
+                    match x.1 {
+                        Profile::Details(_)
+                        | Profile::AllFieldInfo(_)
+                        | Profile::ExtraFieldInfo(_) => {
+                            let ret = if remove_duplicate_data_flag
+                                && x.1.to_value()
+                                    == prev_message
+                                        .get(&x.0)
+                                        .unwrap_or(&Profile::Literal("-".into()))
+                                        .to_value()
+                            {
+                                "DUP".to_string()
+                            } else {
+                                output_remover.replace_all(
+                                    &output_replacer
+                                        .replace_all(
+                                            &x.1.to_value(),
+                                            &output_replaced_maps.values().collect_vec(),
+                                        )
+                                        .split_whitespace()
+                                        .join(" "),
+                                    &removed_replaced_maps.values().collect_vec(),
+                                )
+                            };
+                            prev_message.insert(x.0.clone(), x.1.clone());
+                            ret
+                        }
+                        _ => output_remover.replace_all(
+                            &output_replacer
+                                .replace_all(
+                                    &x.1.to_value(),
+                                    &output_replaced_maps.values().collect_vec(),
+                                )
+                                .split_whitespace()
+                                .join(" "),
+                            &removed_replaced_maps.values().collect_vec(),
+                        ),
+                    }
                 }))?;
             }
             // 各種集計作業
