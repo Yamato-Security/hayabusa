@@ -2584,7 +2584,8 @@ mod tests {
                 + "\",\""
                 + test_attack
                 + "\"\n";
-        let mut file: Box<dyn io::Write> = Box::new(File::create("./test_emit_csv_remove_duplicate.csv").unwrap());
+        let mut file: Box<dyn io::Write> =
+            Box::new(File::create("./test_emit_csv_remove_duplicate.csv").unwrap());
 
         assert!(emit_csv(
             &mut file,
@@ -2604,7 +2605,6 @@ mod tests {
         };
         assert!(remove_file("./test_emit_csv_remove_duplicate.csv").is_ok());
     }
-
 
     #[test]
     fn test_emit_csv_display() {
