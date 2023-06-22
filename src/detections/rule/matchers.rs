@@ -861,6 +861,7 @@ mod tests {
                 geo_ip: None,
                 output: None,
                 multiline: false,
+                remove_duplicate_data: false,
             })),
             debug: false,
         }));

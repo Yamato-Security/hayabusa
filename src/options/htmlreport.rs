@@ -288,6 +288,7 @@ mod tests {
             geo_ip: None,
             output: None,
             multiline: false,
+            remove_duplicate_data: false,
         });
         let csv_html_flag_enable = create_dummy_stored_static(Some(enable_csv_action));
         assert!(htmlreport::check_html_flag(&csv_html_flag_enable.config));
@@ -337,6 +338,7 @@ mod tests {
             geo_ip: None,
             output: None,
             multiline: false,
+            remove_duplicate_data: false,
         });
         let csv_html_flag_disable = create_dummy_stored_static(Some(disable_csv_action));
         assert!(!htmlreport::check_html_flag(&csv_html_flag_disable.config));
