@@ -7,6 +7,7 @@
 **改善:**
 
 - 新しいログ形式の`.evtx`を使用するWindows Vistaがリリースされた2007年1月31日以前のタイムスタンプを持つ破損されたイベントレコードを無視するようにした。(#1102) (@fukusuket)
+- `csv-timeline`コマンドに `-R, --remove-duplicate-data` オプションを追加し、重複する `Details` フィールド (`%Details%`, `%AllFieldInfo%`, `%ExtraFieldInfo%`) を削除するようにした。(#1056) (@hitenkoku)
 
 **バグ修正:**
 

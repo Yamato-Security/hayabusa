@@ -7,6 +7,7 @@
 **Enhancements:**
 
 - Ignore corrupted event records with timestamps before 2007/1/31 when Windows Vista was released with the new `.evtx` log format. (#1102) (@fukusuket)
+- Added `-R, --remove-duplicate-data` option in `csv-timeline` command, for remove duplicate `Details` field (`%Details%`, ``, `%ExtraFieldInfo%` ) output. (#1056) (@hitenkoku)
 
 **Bug Fixes:**
 
