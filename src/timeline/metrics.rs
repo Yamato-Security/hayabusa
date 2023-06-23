@@ -145,7 +145,6 @@ impl EventMetrics {
                 check_start_end_time(&evttime);
             };
         }
-        self.total += records.len();
     }
 
     /// EventIDで集計
