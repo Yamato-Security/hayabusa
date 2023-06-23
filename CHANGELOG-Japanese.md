@@ -10,6 +10,8 @@
 
 **バグ修正:**
 
+- `metrics`と`logon-summary`コマンドのレコード数の表示が`csv-timeline`のコマンドでのレコード数の表示と異なっている状態を修正した (#1105) (@hitenkoku)
+
 ## 2.6.0 [2023/06/16] "Ajisai Release"
 
 **新機能:**
