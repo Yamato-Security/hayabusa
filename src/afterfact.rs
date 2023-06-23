@@ -323,6 +323,8 @@ fn emit_csv<W: std::io::Write>(
             .unwrap_or(&0) as usize
     };
     let mut author_list_cache: HashMap<CompactString, Nested<String>> = HashMap::new();
+
+    // remove duplicate dataのための前レコード分の情報を保持する変数
     let mut prev_message: HashMap<CompactString, Profile> = HashMap::new();
     for (message_idx, time) in MESSAGEKEYS
         .lock()
@@ -331,7 +333,6 @@ fn emit_csv<W: std::io::Write>(
         .sorted_unstable()
         .enumerate()
     {
-        // remove duplicate dataのための前レコード分の情報を保持する変数
         let multi = message::MESSAGES.get(time).unwrap();
         let (_, detect_infos) = multi.pair();
         timestamps[message_idx] = _get_timestamp(output_option, time);
