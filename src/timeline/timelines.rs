@@ -29,6 +29,7 @@ use hashbrown::{HashMap, HashSet};
 
 #[derive(Debug, Clone)]
 pub struct Timeline {
+    pub total_record_cnt: usize,
     pub stats: EventMetrics,
     pub event_search: EventSearch,
 }
@@ -57,6 +58,7 @@ impl Timeline {
         );
         let search = EventSearch::new(filepath, search_result);
         Timeline {
+            total_record_cnt: 0,
             stats: statistic,
             event_search: search,
         }
@@ -99,7 +101,7 @@ impl Timeline {
         let mut sammsges: Nested<String> = Nested::new();
         let total_event_record = format!(
             "\n\nTotal Event Records: {}\n",
-            self.stats.total.to_formatted_string(&Locale::en)
+            self.total_record_cnt.to_formatted_string(&Locale::en)
         );
         let mut wtr;
         let target;
@@ -213,7 +215,7 @@ impl Timeline {
         let mut sammsges: Vec<String> = Vec::new();
         let total_event_record = format!(
             "\n\nTotal Event Records: {}\n",
-            self.stats.total.to_formatted_string(&Locale::en)
+            self.total_record_cnt.to_formatted_string(&Locale::en)
         );
         if let Action::LogonSummary(logon_summary_option) =
             &stored_static.config.action.as_ref().unwrap()

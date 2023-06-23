@@ -1184,7 +1184,7 @@ impl App {
                 detection = detection.start(&self.rt, records_per_detect);
             }
         }
-        tl.stats.total += record_cnt;
+        tl.total_record_cnt += record_cnt;
         (detection, record_cnt, tl)
     }
 
@@ -1329,7 +1329,7 @@ impl App {
                 detection = detection.start(&self.rt, records_per_detect);
             }
         }
-        tl.stats.total += record_cnt;
+        tl.total_record_cnt += record_cnt;
         (detection, record_cnt, tl)
     }
 
