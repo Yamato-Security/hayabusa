@@ -202,7 +202,9 @@ impl Timeline {
             let constraint = constraints.get(column_index).unwrap();
             column.set_constraint(*constraint);
         }
-        println!("{stats_tb}");
+        if wtr.is_none() {
+            println!("{stats_tb}");
+        }
     }
 
     /// ログオン統計情報のメッセージ出力関数
