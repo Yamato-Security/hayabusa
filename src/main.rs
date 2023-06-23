@@ -1578,6 +1578,7 @@ mod tests {
                 geo_ip: None,
                 output: None,
                 multiline: false,
+                remove_duplicate_data: false,
             })),
             debug: false,
         }))
@@ -1725,6 +1726,7 @@ mod tests {
             geo_ip: None,
             output: Some(Path::new("overwrite.csv").to_path_buf()),
             multiline: false,
+            remove_duplicate_data: false,
         });
         let config = Some(Config {
             action: Some(action),
@@ -1793,6 +1795,7 @@ mod tests {
             geo_ip: None,
             output: Some(Path::new("overwrite.csv").to_path_buf()),
             multiline: false,
+            remove_duplicate_data: false,
         });
         let config = Some(Config {
             action: Some(action),
