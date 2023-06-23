@@ -18,6 +18,7 @@ use compact_str::CompactString;
 use csv::WriterBuilder;
 use downcast_rs::__std::process;
 use nested::Nested;
+use num_format::{Locale, ToFormattedString};
 use termcolor::{BufferWriter, Color, ColorChoice};
 use terminal_size::terminal_size;
 use terminal_size::Width;
@@ -95,7 +96,10 @@ impl Timeline {
     ) {
         // 出力メッセージ作成
         let mut sammsges: Nested<String> = Nested::new();
-        let total_event_record = format!("\n\nTotal Event Records: {}\n", self.stats.total);
+        let total_event_record = format!(
+            "\n\nTotal Event Records: {}\n",
+            self.stats.total.to_formatted_string(&Locale::en)
+        );
         let mut wtr;
         let target;
 
@@ -204,7 +208,10 @@ impl Timeline {
     pub fn tm_logon_stats_dsp_msg(&mut self, stored_static: &StoredStatic) {
         // 出力メッセージ作成
         let mut sammsges: Vec<String> = Vec::new();
-        let total_event_record = format!("\n\nTotal Event Records: {}\n", self.stats.total);
+        let total_event_record = format!(
+            "\n\nTotal Event Records: {}\n",
+            self.stats.total.to_formatted_string(&Locale::en)
+        );
         if let Action::LogonSummary(logon_summary_option) =
             &stored_static.config.action.as_ref().unwrap()
         {
