@@ -13,7 +13,6 @@ use hashbrown::HashSet;
 use itertools::Itertools;
 use lazy_static::lazy_static;
 use nested::Nested;
-use regex::Regex;
 use serde_json::Value;
 use std::borrow::Borrow;
 use std::env;
@@ -43,8 +42,6 @@ lazy_static! {
     #[derive(Debug,PartialEq, Eq, Ord, PartialOrd)]
     pub static ref MESSAGES: DashMap<DateTime<Utc>, Vec<DetectInfo>> = DashMap::new();
     pub static ref MESSAGEKEYS: Mutex<HashSet<DateTime<Utc>>> = Mutex::new(HashSet::new());
-    pub static ref ALIASREGEX: Regex = Regex::new(r"%[a-zA-Z0-9-_\[\]]+%").unwrap();
-    pub static ref SUFFIXREGEX: Regex = Regex::new(r"\[([0-9]+)\]").unwrap();
     pub static ref ERROR_LOG_STACK: Mutex<Nested<String>> = Mutex::new(Nested::<String>::new());
     pub static ref TAGS_CONFIG: HashMap<CompactString, CompactString> = create_output_filter_config(
         utils::check_setting_path(&CURRENT_EXE_PATH.to_path_buf(), "config/mitre_tactics.txt", true)
@@ -248,16 +245,12 @@ pub fn parse_message(
 ) -> CompactString {
     let mut return_message = output;
     let mut hash_map: HashMap<CompactString, CompactString> = HashMap::new();
-    for caps in ALIASREGEX.captures_iter(&return_message) {
-        let full_target_str = &caps[0];
-        let target_length = full_target_str.chars().count() - 2; // 最後の文字は%であるので、エイリアスのキー情報はcount()-2まで。
-        let target_str = full_target_str
-            .chars()
-            .skip(1)
-            .take(target_length)
-            .collect::<String>();
-
-        let array_str = if let Some(_array_str) = eventkey_alias.get_event_key(&target_str) {
+    for (i, caps) in return_message.split('%').enumerate() {
+        if i % 2 == 0 {
+            continue;
+        }
+        let target_str = caps;
+        let array_str = if let Some(_array_str) = eventkey_alias.get_event_key(target_str) {
             _array_str.to_string()
         } else {
             format!("Event.EventData.{target_str}")
@@ -269,9 +262,13 @@ pub fn parse_message(
                 tmp_event_record = record;
             }
         }
-        let suffix_match = SUFFIXREGEX.captures(&target_str);
-        let suffix: i64 = match suffix_match {
-            Some(cap) => cap.get(1).map_or(-1, |a| a.as_str().parse().unwrap_or(-1)),
+        let suffix: i64 = match target_str.find('[') {
+            Some(bracket_start) => {
+                let end = target_str.find(']');
+                target_str[bracket_start + 1..end.unwrap()]
+                    .parse()
+                    .unwrap_or(-1)
+            }
             None => -1,
         };
         if suffix >= 1 {
@@ -282,6 +279,7 @@ pub fn parse_message(
                 .unwrap_or(tmp_event_record);
         }
         let hash_value = get_serde_number_to_string(tmp_event_record, false);
+        let full_target_str = format!("%{}%", target_str);
         if hash_value.is_some() {
             if let Some(hash_value) = hash_value {
                 if json_timeline_flag {
@@ -293,7 +291,7 @@ pub fn parse_message(
                     );
                 }
             }
-        } else {
+        } else if !target_str.is_empty() {
             hash_map.insert(CompactString::from(full_target_str), "n/a".into());
         }
     }
