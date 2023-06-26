@@ -1176,7 +1176,6 @@ impl App {
 
             // timeline機能の実行
             tl.start(&records_per_detect, stored_static);
-
             if !(stored_static.metrics_flag
                 || stored_static.logon_summary_flag
                 || stored_static.search_flag)
@@ -1185,7 +1184,7 @@ impl App {
                 detection = detection.start(&self.rt, records_per_detect);
             }
         }
-
+        tl.total_record_cnt += record_cnt;
         (detection, record_cnt, tl)
     }
 
@@ -1330,7 +1329,7 @@ impl App {
                 detection = detection.start(&self.rt, records_per_detect);
             }
         }
-
+        tl.total_record_cnt += record_cnt;
         (detection, record_cnt, tl)
     }
 

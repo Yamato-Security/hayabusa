@@ -10,8 +10,11 @@
 
 - Ignore corrupted event records with timestamps before 2007/1/31 when Windows Vista was released with the new `.evtx` log format. (#1102) (@fukusuket)
 - Reduced analysis time and memory usage. (#1107) (@fukusuket)
+- Modified don't output to terminal when `--output` is set in `metrics` command. (#1099) (@hitenkoku)
 
 **Bug Fixes:**
+
+- The total number of records being displayed in the `metrics` and `logon-summary` commands differed from the `csv-timeline` command. (#1105) (@hitenkoku)
 
 ## 2.6.0 [2023/06/16] "Ajisai Release"
 
