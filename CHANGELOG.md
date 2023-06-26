@@ -11,7 +11,7 @@
 
 **Bug Fixes:**
 
-- Fixed `metrics` and `logon-summary` commands differed from the number of records in the `csv-timeline` command. (#1105) (@hitenkoku)
+- The total number of records being displayed in the `metrics` and `logon-summary` commands differed from the `csv-timeline` command. (#1105) (@hitenkoku)
 
 ## 2.6.0 [2023/06/16] "Ajisai Release"
 
