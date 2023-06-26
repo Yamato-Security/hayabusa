@@ -18,6 +18,7 @@ use compact_str::CompactString;
 use csv::WriterBuilder;
 use downcast_rs::__std::process;
 use nested::Nested;
+use num_format::{Locale, ToFormattedString};
 use termcolor::{BufferWriter, Color, ColorChoice};
 use terminal_size::terminal_size;
 use terminal_size::Width;
@@ -28,6 +29,7 @@ use hashbrown::{HashMap, HashSet};
 
 #[derive(Debug, Clone)]
 pub struct Timeline {
+    pub total_record_cnt: usize,
     pub stats: EventMetrics,
     pub event_search: EventSearch,
 }
@@ -56,20 +58,22 @@ impl Timeline {
         );
         let search = EventSearch::new(filepath, search_result);
         Timeline {
+            total_record_cnt: 0,
             stats: statistic,
             event_search: search,
         }
     }
 
     pub fn start(&mut self, records: &[EvtxRecordInfo], stored_static: &StoredStatic) {
-        self.stats.evt_stats_start(records, stored_static);
-        self.stats.logon_stats_start(
-            records,
-            stored_static.logon_summary_flag,
-            &stored_static.eventkey_alias,
-        );
-
-        if stored_static.search_flag {
+        if stored_static.metrics_flag {
+            self.stats.evt_stats_start(records, stored_static);
+        } else if stored_static.logon_summary_flag {
+            self.stats.logon_stats_start(
+                records,
+                stored_static.logon_summary_flag,
+                &stored_static.eventkey_alias,
+            );
+        } else if stored_static.search_flag {
             self.event_search.search_start(
                 records,
                 stored_static
@@ -95,7 +99,10 @@ impl Timeline {
     ) {
         // 出力メッセージ作成
         let mut sammsges: Nested<String> = Nested::new();
-        let total_event_record = format!("\n\nTotal Event Records: {}\n", self.stats.total);
+        let total_event_record = format!(
+            "\n\nTotal Event Records: {}\n",
+            self.total_record_cnt.to_formatted_string(&Locale::en)
+        );
         let mut wtr;
         let target;
 
@@ -197,14 +204,19 @@ impl Timeline {
             let constraint = constraints.get(column_index).unwrap();
             column.set_constraint(*constraint);
         }
-        println!("{stats_tb}");
+        if wtr.is_none() {
+            println!("{stats_tb}");
+        }
     }
 
     /// ログオン統計情報のメッセージ出力関数
     pub fn tm_logon_stats_dsp_msg(&mut self, stored_static: &StoredStatic) {
         // 出力メッセージ作成
         let mut sammsges: Vec<String> = Vec::new();
-        let total_event_record = format!("\n\nTotal Event Records: {}\n", self.stats.total);
+        let total_event_record = format!(
+            "\n\nTotal Event Records: {}\n",
+            self.total_record_cnt.to_formatted_string(&Locale::en)
+        );
         if let Action::LogonSummary(logon_summary_option) =
             &stored_static.config.action.as_ref().unwrap()
         {
