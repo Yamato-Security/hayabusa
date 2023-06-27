@@ -10,6 +10,7 @@
 
 - Ignore corrupted event records with timestamps before 2007/1/31 when Windows Vista was released with the new `.evtx` log format. (#1102) (@fukusuket)
 - Modified don't output to terminal when `--output` is set in `metrics` command. (#1099) (@hitenkoku)
+- Added `--tags` option to `csv-timeline` and `json-timeline` commands to allow scanning only for rules with the specified `tags` field. (#1108) (@hitenkoku)
 
 **Bug Fixes:**
 
