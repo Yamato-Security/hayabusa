@@ -1017,7 +1017,7 @@ pub struct OutputOption {
     #[arg(help_heading = Some("Filtering"), long = "exclude-status", value_name = "STATUS", use_value_delimiter = true, value_delimiter = ',', display_order = 314)]
     pub exclude_status: Option<Vec<String>>,
 
-    /// Scan for only specific tags (ex: WMI) (ex: attack.lateral_movement,attack.defense_evasion)
+    /// Only load rules with specific tags (ex: attack.execution,attack.discovery)
     #[arg(help_heading = Some("Filtering"), long = "tags", value_name = "TAGS", use_value_delimiter = true, value_delimiter = ',', display_order = 460)]
     pub tags: Option<Vec<String>>,
 
