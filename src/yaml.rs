@@ -736,4 +736,22 @@ mod tests {
         .unwrap();
         assert_eq!(yaml.files.len(), 1);
     }
+
+    #[test]
+    fn test_specified_tags_option() {
+        let path = Path::new("test_files/rules/level_yaml");
+        let mut dummy_stored_static = create_dummy_stored_static();
+        dummy_stored_static.output_option.as_mut().unwrap().tags =
+            Some(vec!["tag1".to_string(), "tag2".to_string()]);
+        let mut yaml = yaml::ParseYaml::new(&dummy_stored_static);
+        yaml.read_dir(
+            path,
+            "",
+            "",
+            &filter::exclude_ids(&dummy_stored_static),
+            &dummy_stored_static,
+        )
+        .unwrap();
+        assert_eq!(yaml.files.len(), 3);
+    }
 }
