@@ -428,6 +428,7 @@ mod tests {
                     },
                     enable_unsupported_rules: false,
                     clobber: false,
+                    tags: None,
                 },
                 geo_ip: None,
                 output: None,
