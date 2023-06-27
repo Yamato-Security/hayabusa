@@ -562,7 +562,7 @@ Filtering:
   -n, --enable-noisy-rules        Noisyルールを有効にする
   -u, --enable-unsupported-rules  ステータスがunsupportedのルールを有効にする
   -e, --exact-level <LEVEL>       特定のレベルだけスキャンする (informational, low, medium, high, critical)
-      --exclude-status <STATUS>   読み込み対象外とするルール内でのステータス (ex: experimental) (ex: stable,test)
+      --exclude-status <STATUS>   読み込み対象外とするルール内でのステータス (例１: experimental) (例２: stable,test)
   -m, --min-level <LEVEL>         結果出力をするルールの最低レベル (デフォルト: informational)
       --timeline-end <DATE>       解析対象とするイベントログの終了時刻 (例: "2022-02-22 23:59:59 +09:00")
       --timeline-start <DATE>     解析対象とするイベントログの開始時刻 (例: "2020-02-22 00:00:00 +09:00")
@@ -688,6 +688,7 @@ Output:
   -M, --multiline                 イベントフィールド情報を複数の行に出力する
   -o, --output <FILE>             タイムラインを保存する (例: results.csv)
   -p, --profile <PROFILE>         利用する出力プロファイル名を指定する
+  -R, --remove-duplicate-data     重複したフィールドデータは「DUP」に置き換えられる。 (これにより、私たちのテストではファイルサイズが約10〜15％削減される。)
 
 Display Settings:
       --no-color            カラーで出力しない
@@ -702,8 +703,9 @@ Filtering:
   -n, --enable-noisy-rules        Noisyルールを有効にする
   -u, --enable-unsupported-rules  ステータスがunsupportedのルールを有効にする
   -e, --exact-level <LEVEL>       特定のレベルだけスキャンする (informational, low, medium, high, critical)
-      --exclude-status <STATUS>   読み込み対象外とするルール内でのステータス (ex: experimental) (ex: stable,test)
+      --exclude-status <STATUS>   読み込み対象外とするルール内でのステータス (例１: experimental) (例２: stable,test)
   -m, --min-level <LEVEL>         結果出力をするルールの最低レベル (デフォルト: informational)
+      --tags <TAGS>               特定のタグを持つルールのみをロードする (例１: attack.execution,attack.discovery) (例２: WMI)
       --timeline-end <DATE>       解析対象とするイベントログの終了時刻 (例: "2022-02-22 23:59:59 +09:00")
       --timeline-start <DATE>     解析対象とするイベントログの開始時刻 (例: "2020-02-22 00:00:00 +09:00")
 
@@ -712,12 +714,12 @@ General Options:
   -Q, --quiet-errors                     Quiet errorsモード: エラーログを保存しない
   -r, --rules <DIR/FILE>                 ルールファイルまたはルールファイルを持つディレクトリ (デフォルト: ./rules)
   -c, --rules-config <DIR>               ルールフォルダのコンフィグディレクトリ (デフォルト: ./rules/config)
-      --target-file-ext <EVTX_FILE_EXT>  evtx以外の拡張子を解析対象に追加する。 (例１: evtx_data 例２：evtx1,evtx2)
+      --target-file-ext <EVTX_FILE_EXT>  evtx以外の拡張子を解析対象に追加する。 (例１: evtx_data 例２: evtx1,evtx2)
   -t, --threads <NUMBER>                 スレッド数 (デフォルト: パフォーマンスに最適な数値)
 
 Time Format:
       --European-time     ヨーロッパ形式で日付と時刻を出力する (例: 22-02-2022 22:00:00.123 +02:00)
-      --ISO-8601          ISO-8601形式で日付と時刻を出力する (ex: 2022-02-22T10:10:10.1234567Z) (いつもUTC)
+      --ISO-8601          ISO-8601形式で日付と時刻を出力する (例: 2022-02-22T10:10:10.1234567Z) (UTC時刻)
       --RFC-2822          RFC 2822形式で日付と時刻を出力する (例: Fri, 22 Feb 2022 22:00:00 -0600)
       --RFC-3339          RFC 3339形式で日付と時刻を出力する (例: 2022-02-22 22:00:00.123456-06:00)
       --US-military-time  24時間制(ミリタリータイム)のアメリカ形式で日付と時刻を出力する (例: 02-22-2022 22:00:00.123 -06:00)
@@ -934,8 +936,9 @@ Filtering:
   -n, --enable-noisy-rules        Noisyルールを有効にする
   -u, --enable-unsupported-rules  ステータスがunsupportedのルールを有効にする
   -e, --exact-level <LEVEL>       特定のレベルだけスキャンする (informational, low, medium, high, critical)
-      --exclude-status <STATUS>   読み込み対象外とするルール内でのステータス (ex: experimental) (ex: stable,test)
+      --exclude-status <STATUS>   読み込み対象外とするルール内でのステータス (例１: experimental) (例２: stable,test)
   -m, --min-level <LEVEL>         結果出力をするルールの最低レベル (デフォルト: informational)
+      --tags <TAGS>               特定のタグを持つルールのみをロードする (例１: attack.execution,attack.discovery) (例２: WMI)
       --timeline-end <DATE>       解析対象とするイベントログの終了時刻 (例: "2022-02-22 23:59:59 +09:00")
       --timeline-start <DATE>     解析対象とするイベントログの開始時刻 (例: "2020-02-22 00:00:00 +09:00")
 
@@ -949,7 +952,7 @@ General Options:
 
 Time Format:
       --European-time     ヨーロッパ形式で日付と時刻を出力する (例: 22-02-2022 22:00:00.123 +02:00)
-      --ISO-8601          ISO-8601形式で日付と時刻を出力する (ex: 2022-02-22T10:10:10.1234567Z) (いつもUTC)
+      --ISO-8601          ISO-8601形式で日付と時刻を出力する (例: 2022-02-22T10:10:10.1234567Z) (UTC時刻)
       --RFC-2822          RFC 2822形式で日付と時刻を出力する (例: Fri, 22 Feb 2022 22:00:00 -0600)
       --RFC-3339          RFC 3339形式で日付と時刻を出力する (例: 2022-02-22 22:00:00.123456-06:00)
       --US-military-time  24時間制(ミリタリータイム)のアメリカ形式で日付と時刻を出力する (例: 02-22-2022 22:00:00.123 -06:00)

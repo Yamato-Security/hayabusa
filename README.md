@@ -687,6 +687,7 @@ Output:
   -M, --multiline               Output event field information in multiple rows
   -o, --output <FILE>           Save the timeline in CSV format (ex: results.csv)
   -p, --profile <PROFILE>       Specify output profile
+  -R, --remove-duplicate-data   Duplicate field data will be replaced with "DUP" (This reduces filesize by about 10-15% in our tests.)
 
 Display Settings:
       --no-color            Disable color output
@@ -703,6 +704,7 @@ Filtering:
   -e, --exact-level <LEVEL>       Scan for only specific levels (informational, low, medium, high, critical)
       --exclude-status <STATUS>   Ignore rules according to status (ex: experimental) (ex: stable,test)
   -m, --min-level <LEVEL>         Minimum level for rules (default: informational)
+      --tags <TAGS>               Only load rules with specific tags (ex: attack.execution,attack.discovery) (ex: WMI)
       --timeline-end <DATE>       End time of the event logs to load (ex: "2022-02-22 23:59:59 +09:00")
       --timeline-start <DATE>     Start time of the event logs to load (ex: "2020-02-22 00:00:00 +09:00")
 
@@ -935,6 +937,7 @@ Filtering:
   -e, --exact-level <LEVEL>       Scan for only specific levels (informational, low, medium, high, critical)
       --exclude-status <STATUS>   Ignore rules according to status (ex: experimental) (ex: stable,test)
   -m, --min-level <LEVEL>         Minimum level for rules (default: informational)
+      --tags <TAGS>               Only load rules with specific tags (ex: attack.execution,attack.discovery) (ex: WMI)
       --timeline-end <DATE>       End time of the event logs to load (ex: "2022-02-22 23:59:59 +09:00")
       --timeline-start <DATE>     Start time of the event logs to load (ex: "2020-02-22 00:00:00 +09:00")
 
