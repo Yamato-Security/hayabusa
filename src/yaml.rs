@@ -304,6 +304,34 @@ impl ParseYaml {
                 }
             }
 
+            // tags optionで指定されたtagsを持たないルールは除外する
+            if stored_static.output_option.is_some()
+                && stored_static.output_option.as_ref().unwrap().tags.is_some()
+            {
+                let target_tags = stored_static
+                    .output_option
+                    .as_ref()
+                    .unwrap()
+                    .tags
+                    .as_ref()
+                    .unwrap();
+                let rule_tags_vec = yaml_doc["tags"].as_vec();
+                if let Some(rule_tags) = rule_tags_vec {
+                    let is_match = rule_tags.iter().any(|tag| {
+                        target_tags.contains(&tag.as_str().unwrap_or_default().to_string())
+                    });
+                    if !is_match {
+                        let entry = self.rule_load_cnt.entry("excluded".into()).or_insert(0);
+                        *entry += 1;
+                        return Option::None;
+                    }
+                } else {
+                    let entry = self.rule_load_cnt.entry("excluded".into()).or_insert(0);
+                    *entry += 1;
+                    return Option::None;
+                }
+            }
+
             self.rulecounter.insert(
                 yaml_doc["ruletype"].as_str().unwrap_or("Other").into(),
                 self.rulecounter
@@ -400,6 +428,7 @@ mod tests {
                     },
                     enable_unsupported_rules: false,
                     clobber: false,
+                    tags: None,
                 },
                 geo_ip: None,
                 output: None,
@@ -706,5 +735,23 @@ mod tests {
         )
         .unwrap();
         assert_eq!(yaml.files.len(), 1);
+    }
+
+    #[test]
+    fn test_specified_tags_option() {
+        let path = Path::new("test_files/rules/level_yaml");
+        let mut dummy_stored_static = create_dummy_stored_static();
+        dummy_stored_static.output_option.as_mut().unwrap().tags =
+            Some(vec!["tag1".to_string(), "tag2".to_string()]);
+        let mut yaml = yaml::ParseYaml::new(&dummy_stored_static);
+        yaml.read_dir(
+            path,
+            "",
+            "",
+            &filter::exclude_ids(&dummy_stored_static),
+            &dummy_stored_static,
+        )
+        .unwrap();
+        assert_eq!(yaml.files.len(), 3);
     }
 }

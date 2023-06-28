@@ -1017,6 +1017,10 @@ pub struct OutputOption {
     #[arg(help_heading = Some("Filtering"), long = "exclude-status", value_name = "STATUS", use_value_delimiter = true, value_delimiter = ',', display_order = 314)]
     pub exclude_status: Option<Vec<String>>,
 
+    /// Only load rules with specific tags (ex: attack.execution,attack.discovery)
+    #[arg(help_heading = Some("Filtering"), long = "tags", value_name = "TAGS", use_value_delimiter = true, value_delimiter = ',', display_order = 460)]
+    pub tags: Option<Vec<String>>,
+
     /// Minimum level for rules (default: informational)
     #[arg(
         help_heading = Some("Filtering"),
@@ -1045,11 +1049,11 @@ pub struct OutputOption {
     pub enable_noisy_rules: bool,
 
     /// End time of the event logs to load (ex: "2022-02-22 23:59:59 +09:00")
-    #[arg(help_heading = Some("Filtering"), long = "timeline-end", value_name = "DATE", display_order = 460)]
+    #[arg(help_heading = Some("Filtering"), long = "timeline-end", value_name = "DATE", display_order = 461)]
     pub end_timeline: Option<String>,
 
     /// Start time of the event logs to load (ex: "2020-02-22 00:00:00 +09:00")
-    #[arg(help_heading = Some("Filtering"), long = "timeline-start", value_name = "DATE", display_order = 460)]
+    #[arg(help_heading = Some("Filtering"), long = "timeline-start", value_name = "DATE", display_order = 461)]
     pub start_timeline: Option<String>,
 
     /// Scan only common EIDs for faster speed (./rules/config/target_event_IDs.txt)
@@ -1539,6 +1543,7 @@ fn extract_output_options(config: &Config) -> Option<OutputOption> {
             detect_common_options: option.detect_common_options.clone(),
             enable_unsupported_rules: option.enable_unsupported_rules,
             clobber: false,
+            tags: None,
         }),
         Action::Metrics(option) => Some(OutputOption {
             input_args: option.input_args.clone(),
@@ -1566,6 +1571,7 @@ fn extract_output_options(config: &Config) -> Option<OutputOption> {
             detect_common_options: option.detect_common_options.clone(),
             enable_unsupported_rules: false,
             clobber: option.clobber,
+            tags: None,
         }),
         Action::LogonSummary(option) => Some(OutputOption {
             input_args: option.input_args.clone(),
@@ -1593,6 +1599,7 @@ fn extract_output_options(config: &Config) -> Option<OutputOption> {
             detect_common_options: option.detect_common_options.clone(),
             enable_unsupported_rules: false,
             clobber: option.clobber,
+            tags: None,
         }),
         Action::Search(option) => Some(OutputOption {
             input_args: option.input_args.clone(),
@@ -1627,6 +1634,7 @@ fn extract_output_options(config: &Config) -> Option<OutputOption> {
             exact_level: None,
             enable_unsupported_rules: false,
             clobber: option.clobber,
+            tags: None,
         }),
         Action::SetDefaultProfile(option) => Some(OutputOption {
             input_args: InputOption {
@@ -1665,6 +1673,7 @@ fn extract_output_options(config: &Config) -> Option<OutputOption> {
             },
             enable_unsupported_rules: false,
             clobber: false,
+            tags: None,
         }),
         Action::UpdateRules(option) => Some(OutputOption {
             input_args: InputOption {
@@ -1703,6 +1712,7 @@ fn extract_output_options(config: &Config) -> Option<OutputOption> {
             },
             enable_unsupported_rules: true,
             clobber: false,
+            tags: None,
         }),
         _ => None,
     }
