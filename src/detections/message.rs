@@ -750,6 +750,7 @@ mod tests {
         for i in 1..2001 {
             let detect_info = DetectInfo {
                 rulepath: CompactString::default(),
+                ruleid: CompactString::default(),
                 ruletitle: CompactString::default(),
                 level: CompactString::default(),
                 computername: CompactString::default(),

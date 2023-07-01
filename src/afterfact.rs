@@ -1752,6 +1752,7 @@ mod tests {
         );
         let test_filepath: &str = "test.evtx";
         let test_rulepath: &str = "test-rule.yml";
+        let test_rule_id: &str = "00000000-0000-0000-0000-000000000000";
         let test_title = "test_title";
         let test_level = "high";
         let test_computername = "testcomputer";
@@ -1924,6 +1925,7 @@ mod tests {
                 CompactString::new(output),
                 DetectInfo {
                     rulepath: CompactString::from(test_rulepath),
+                    ruleid: test_rule_id.into(),
                     ruletitle: CompactString::from(test_title),
                     level: CompactString::from(test_level),
                     computername: CompactString::from(test_computername2),
@@ -1945,6 +1947,7 @@ mod tests {
                 CompactString::new(output),
                 DetectInfo {
                     rulepath: CompactString::from(test_rulepath),
+                    ruleid: test_rule_id.into(),
                     ruletitle: CompactString::from(test_title),
                     level: CompactString::from(test_level),
                     computername: CompactString::from(test_computername),
@@ -2048,6 +2051,7 @@ mod tests {
         );
         let test_filepath: &str = "test.evtx";
         let test_rulepath: &str = "test-rule.yml";
+        let test_rule_id: &str = "00000000-0000-0000-0000-000000000000";
         let test_title = "test_title";
         let test_level = "high";
         let test_computername = "testcomputer";
@@ -2219,6 +2223,7 @@ mod tests {
                 CompactString::new(output),
                 DetectInfo {
                     rulepath: CompactString::from(test_rulepath),
+                    ruleid: test_rule_id.into(),
                     ruletitle: CompactString::from(test_title),
                     level: CompactString::from(test_level),
                     computername: CompactString::from(test_computername2),
@@ -2240,6 +2245,7 @@ mod tests {
                 CompactString::new(output),
                 DetectInfo {
                     rulepath: CompactString::from(test_rulepath),
+                    ruleid: test_rule_id.into(),
                     ruletitle: CompactString::from(test_title),
                     level: CompactString::from(test_level),
                     computername: CompactString::from(test_computername),
@@ -2332,6 +2338,7 @@ mod tests {
         );
         let test_filepath: &str = "test.evtx";
         let test_rulepath: &str = "test-rule.yml";
+        let test_rule_id: &str = "00000000-0000-0000-0000-000000000000";
         let test_title = "test_title";
         let test_level = "high";
         let test_computername = "testcomputer";
@@ -2504,6 +2511,7 @@ mod tests {
                 CompactString::new(output),
                 DetectInfo {
                     rulepath: CompactString::from(test_rulepath),
+                    ruleid: test_rule_id.into(),
                     ruletitle: CompactString::from(test_title),
                     level: CompactString::from(test_level),
                     computername: CompactString::from(test_computername2),
@@ -2525,6 +2533,7 @@ mod tests {
                 CompactString::new(output),
                 DetectInfo {
                     rulepath: CompactString::from(test_rulepath),
+                    ruleid: test_rule_id.into(),
                     ruletitle: CompactString::from(test_title),
                     level: CompactString::from(test_level),
                     computername: CompactString::from(test_computername),
@@ -2762,6 +2771,7 @@ mod tests {
         );
         let test_filepath: &str = "test.evtx";
         let test_rulepath: &str = "test-rule.yml";
+        let test_rule_id: &str = "00000000-0000-0000-0000-000000000000";
         let test_title = "test_title";
         let test_level = "high";
         let test_computername = "testcomputer";
@@ -2933,6 +2943,7 @@ mod tests {
                 CompactString::new(output),
                 DetectInfo {
                     rulepath: CompactString::from(test_rulepath),
+                    ruleid: test_rule_id.into(),
                     ruletitle: CompactString::from(test_title),
                     level: CompactString::from(test_level),
                     computername: CompactString::from(test_computername2),
@@ -2994,6 +3005,7 @@ mod tests {
         );
         let test_filepath: &str = "test.evtx";
         let test_rulepath: &str = "test-rule.yml";
+        let test_rule_id: &str = "00000000-0000-0000-0000-000000000000";
         let test_title = "test_title";
         let test_level = "high";
         let test_computername = "testcomputer";
@@ -3165,6 +3177,7 @@ mod tests {
                 CompactString::new(output),
                 DetectInfo {
                     rulepath: CompactString::from(test_rulepath),
+                    ruleid: test_rule_id.into(),
                     ruletitle: CompactString::from(test_title),
                     level: CompactString::from(test_level),
                     computername: CompactString::from(test_computername2),
