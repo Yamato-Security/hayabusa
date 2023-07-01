@@ -115,6 +115,7 @@ Hayabusa is a **Windows event log fast forensics timeline generator** and **thre
     - [8. `timesketch-verbose` profile output](#8-timesketch-verbose-profile-output)
     - [Profile Comparison](#profile-comparison)
     - [Profile Field Aliases](#profile-field-aliases)
+      - [Extra Profile Field Aliases](#extra-profile-field-aliases)
   - [Level Abbrevations](#level-abbrevations)
   - [MITRE ATT\&CK Tactics Abbreviations](#mitre-attck-tactics-abbreviations)
   - [Channel Abbreviations](#channel-abbreviations)
@@ -1115,32 +1116,48 @@ The following benchmarks were conducted on a 2018 Lenovo P51 (Xeon 4 Core CPU / 
 
 ### Profile Field Aliases
 
+The following information can be outputted with built-in output profiles:
+
 | Alias name | Hayabusa output information|
 | :--- | :--- |
-|%Timestamp% | Default is `YYYY-MM-DD HH:mm:ss.sss +hh:mm` format. `<Event><System><TimeCreated SystemTime>` field in the event log. The default timezone will be the local timezone but you can change the timezone to UTC with the `--UTC` option. |
-|%Computer% | The `<Event><System><Computer>` field. |
+|%AllFieldInfo% | All field information. |
 |%Channel% | The name of log. `<Event><System><Channel>` field. |
+|%Computer% | The `<Event><System><Computer>` field. |
+|%Details% | The `details` field in the YML detection rule, however, only hayabusa rules have this field. This field gives extra information about the alert or event and can extract useful data from the fields in event logs. For example, usernames, command line information, process information, etc... When a placeholder points to a field that does not exist or there is an incorrect alias mapping, it will be outputted as `n/a` (not available). If the `details` field is not specified (i.e. sigma rules), default `details` messages to extract fields defined in `./rules/config/default_details.txt` will be outputted. You can add more default `details` messages by adding the `Provider Name`, `EventID` and `details` message you want to output in `default_details.txt`. When no `details` field is defined in a rule nor in `default_details.txt`, all fields will be outputted to the `details` column. |
+|%ExtraFieldInfo% | Print the field information that was not outputted in %Details%. |
 |%EventID% | The `<Event><System><EventID>` field. |
+|%EvtxFile% | The evtx filename that caused the alert or event. |
 |%Level% | The `level` field in the YML detection rule. (`informational`, `low`, `medium`, `high`, `critical`) |
 |%MitreTactics% | MITRE ATT&CK [tactics](https://attack.mitre.org/tactics/enterprise/) (Ex: Initial Access, Lateral Movement, etc...). |
 |%MitreTags% | MITRE ATT&CK Group ID, Technique ID and Software ID. |
 |%OtherTags% | Any keyword in the `tags` field in a YML detection rule which is not included in `MitreTactics` or `MitreTags`. |
+|%Provider% | The `Name` attribute in `<Event><System><Provider>` field. |
 |%RecordID% | The Event Record ID from `<Event><System><EventRecordID>` field. |
-|%RuleTitle% | The `title` field in the YML detection rule. |
-|%Details% | The `details` field in the YML detection rule, however, only hayabusa rules have this field. This field gives extra information about the alert or event and can extract useful data from the fields in event logs. For example, usernames, command line information, process information, etc... When a placeholder points to a field that does not exist or there is an incorrect alias mapping, it will be outputted as `n/a` (not available). If the `details` field is not specified (i.e. sigma rules), default `details` messages to extract fields defined in `./rules/config/default_details.txt` will be outputted. You can add more default `details` messages by adding the `Provider Name`, `EventID` and `details` message you want to output in `default_details.txt`. When no `details` field is defined in a rule nor in `default_details.txt`, all fields will be outputted to the `details` column. |
-|%ExtraFieldInfo% | Print the field information that was not outputted in %Details%. |
-|%AllFieldInfo% | All field information. |
-|%RuleFile% | The filename of the detection rule that generated the alert or event. |
-|%EvtxFile% | The evtx filename that caused the alert or event. |
 |%RuleAuthor% | The `author` field in the YML detection rule. |
 |%RuleCreationDate% | The `date` field in the YML detection rule. |
+|%RuleFile% | The filename of the detection rule that generated the alert or event. |
 |%RuleModifiedDate% | The `modified` field in the YML detection rule. |
+|%RuleTitle% | The `title` field in the YML detection rule. |
 |%Status% | The `status` field in the YML detection rule. |
-|%RuleID% | The `id` field in the YML detection rule. |
-|%Provider% | The `Name` attribute in `<Event><System><Provider>` field. |
-|%RenderedMessage% | The `<Event><RenderingInfo><Message>` field in WEC forwarded logs. |
+|%Timestamp% | Default is `YYYY-MM-DD HH:mm:ss.sss +hh:mm` format. `<Event><System><TimeCreated SystemTime>` field in the event log. The default timezone will be the local timezone but you can change the timezone to UTC with the `--UTC` option. |
 
-You can use these aliases in your output profiles, as well as define other [event key alises](https://github.com/Yamato-Security/hayabusa-rules/blob/main/README.md#eventkey-aliases) to output other fields.
+#### Extra Profile Field Aliases
+
+You can also add these extra aliases to your output profile if you need them:
+
+| Alias name | Hayabusa output information|
+| :--- | :--- |
+|%RenderedMessage% | The `<Event><RenderingInfo><Message>` field in WEC forwarded logs. |
+|%RuleID% | The `id` field in the YML detection rule. |
+
+Note: these are **not** included in any built in profiles so you will need to manually edit the `config/default_profile.yaml` file and add the following lines:
+
+```
+Message: "%RenderedMessage%"
+RuleID: "%RuleID%"
+```
+
+You can also define [event key aliases](https://github.com/Yamato-Security/hayabusa-rules/blob/main/README.md#eventkey-aliases) to output other fields.
 
 ## Level Abbrevations
 

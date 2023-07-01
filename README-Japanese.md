@@ -114,7 +114,8 @@ Hayabusaは、日本の[Yamato Security](https://yamatosecurity.connpass.com/)�
     - [7. `timesketch-minimal`プロファイルの出力](#7-timesketch-minimalプロファイルの出力)
     - [8. `timesketch-verbose`プロファイルの出力](#8-timesketch-verboseプロファイルの出力)
     - [プロファイルの比較](#プロファイルの比較)
-    - [Profile Field Aliases](#profile-field-aliases)
+    - [プロファイルのフィールドエイリアス](#プロファイルのフィールドエイリアス)
+      - [その他のプロファイルのフィールドエイリアス](#その他のプロファイルのフィールドエイリアス)
   - [Levelの省略](#levelの省略)
   - [MITRE ATT\&CK戦術の省略](#mitre-attck戦術の省略)
   - [Channel情報の省略](#channel情報の省略)
@@ -440,7 +441,6 @@ macOSの環境設定から「セキュリティとプライバシー」を開き
 ## 汎用コマンド:
 * `help`: このメッセージまたは指定されたコマンドのヘルプを表示する。
 * `list-contributors`: コントリビュータ一覧の表示
-
 
 # コマンド使用方法
 
@@ -1114,34 +1114,50 @@ Hayabusaの`config/profiles.yaml`設定ファイルでは、５つのプロフ�
 | all-field-info-verbose | 9分10秒 | 1.3 GB | +20% |
 | super-verbose | 9分12秒 | 1.5 GB | +35% |
 
-### Profile Field Aliases
+### プロファイルのフィールドエイリアス
+
+ビルトインの出力プロファイルで出力できる情報は以下の通り:
 
 | エイリアス名 | Hayabusaの出力情報 |
 | :--- | :--- |
-|%Timestamp% | デフォルトでは`YYYY-MM-DD HH:mm:ss.sss +hh:mm`形式になっている。イベントログの`<Event><System><TimeCreated SystemTime>`フィールドから来ている。デフォルトのタイムゾーンはローカルのタイムゾーンになるが、`--UTC`オプションでUTCに変更することができる。 |
-|%Computer% | イベントログの`<Event><System><Computer>`フィールド。 |
+|%AllFieldInfo% | すべてのフィールド情報。 |
 |%Channel% |  ログ名。イベントログの`<Event><System><EventID>`フィールド。 |
+|%Computer% | イベントログの`<Event><System><Computer>`フィールド。 |
+|%Details% | YML検知ルールの`details`フィールドから来ていますが、このフィールドはHayabusaルールにしかありません。このフィールドはアラートとイベントに関する追加情報を提供し、ログのフィールドから有用なデータを抽出することができます。イベントキーのマッピングが間違っている場合、もしくはフィールドが存在しない場合で抽出ができなかった箇所は`n/a` (not available)と記載されます。YML検知ルールに`details`フィールドが存在しない時のdetailsのメッセージを`./rules/config/default_details.txt`で設定できます。`default_details.txt`では`Provider Name`、`EventID`、`details`の組み合わせで設定することができます。default_details.txt`やYML検知ルールに対応するルールが記載されていない場合はすべてのフィールド情報を出力します。 |
+|%ExtraFieldInfo% | %Details%で出力されなかったフィールドデータを出力する。 |
 |%EventID% | イベントログの`<Event><System><EventID>`フィールド。 |
+|%EvtxFile% | アラートまたはイベントを起こしたevtxファイルへのパス。 |
 |%Level% | YML検知ルールの`level`フィールド。(例：`informational`、`low`、`medium`、`high`、`critical`) |
 |%MitreTactics% | MITRE ATT&CKの[戦術](https://attack.mitre.org/tactics/enterprise/) (例: Initial Access、Lateral Movement等々） |
 |%MitreTags% | MITRE ATT&CKの戦術以外の情報。attack.g(グループ)、attack.t(技術)、attack.s(ソフトウェア)の情報を出力する。 |
 |%OtherTags% | YML検知ルールの`tags`フィールドから`MitreTactics`、`MitreTags`以外のキーワードを出力する。|
+|%Provider% | `<Event><System><Provider>` フィールド内の`Name`属性。 |
 |%RecordID% | `<Event><System><EventRecordID>`フィールドのイベントレコードID。 |
-|%RuleTitle% | YML検知ルールの`title`フィールド。 |
-|%Details% | YML検知ルールの`details`フィールドから来ていますが、このフィールドはHayabusaルールにしかありません。このフィールドはアラートとイベントに関する追加情報を提供し、ログのフィールドから有用なデータを抽出することができます。イベントキーのマッピングが間違っている場合、もしくはフィールドが存在しない場合で抽出ができなかった箇所は`n/a` (not available)と記載されます。YML検知ルールに`details`フィールドが存在しない時のdetailsのメッセージを`./rules/config/default_details.txt`で設定できます。`default_details.txt`では`Provider Name`、`EventID`、`details`の組み合わせで設定することができます。default_details.txt`やYML検知ルールに対応するルールが記載されていない場合はすべてのフィールド情報を出力します。 |
-|%ExtraFieldInfo% | %Details%で出力されなかったフィールドデータを出力する。 |
-|%AllFieldInfo% | すべてのフィールド情報。 |
-|%RuleFile% | アラートまたはイベントを生成した検知ルールのファイル名。 |
-|%EvtxFile% | アラートまたはイベントを起こしたevtxファイルへのパス。 |
 |%RuleAuthor% | YML検知ルールの `author` フィールド。 |
 |%RuleCreationDate% | YML検知ルールの `date` フィールド。 |
+|%RuleFile% | アラートまたはイベントを生成した検知ルールのファイル名。 |
 |%RuleModifiedDate% | YML検知ルールの `modified` フィールド。 |
+|%RuleTitle% | YML検知ルールの`title`フィールド。 |
 |%Status% | YML検知ルールの `status` フィールド。 |
-|%RuleID% | YML検知ルールの `id` フィールド。 |
-|%Provider% | `<Event><System><Provider>` フィールド内の`Name`属性。 |
-|%RenderedMessage% | WEC機能で転送されたイベントログの`<Event><RenderingInfo><Message>`フィールド。 |
+|%Timestamp% | デフォルトでは`YYYY-MM-DD HH:mm:ss.sss +hh:mm`形式になっている。イベントログの`<Event><System><TimeCreated SystemTime>`フィールドから来ている。デフォルトのタイムゾーンはローカルのタイムゾーンになるが、`--UTC`オプションでUTCに変更することができる。 |
 
-これらのエイリアスは、出力プロファイルで使用することができます。また、他の[イベントキーエイリアス](https://github.com/Yamato-Security/hayabusa-rules/blob/main/README-Japanese.md#%E3%82%A4%E3%83%99%E3%83%B3%E3%83%88%E3%82%AD%E3%83%BC%E3%82%A8%E3%82%A4%E3%83%AA%E3%82%A2%E3%82%B9)を定義し、他のフィールドを出力することもできます。
+#### その他のプロファイルのフィールドエイリアス
+
+必要であれば、これらのエイリアスを出力プロファイルに追加することもできます:
+
+| エイリアス名 | Hayabusaの出力情報 |
+| :--- | :--- |
+|%RenderedMessage% | WEC機能で転送されたイベントログの`<Event><RenderingInfo><Message>`フィールド。 |
+|%RuleID% | YML検知ルールの`id`フィールド。 |
+
+注意: これらはビルトインプロファイルには**含まれていない**ので、手動で`config/default_profile.yaml`ファイルを編集し、以下の行を追加する必要があります:
+
+```
+Message: "%RenderedMessage%"
+RuleID: "%RuleID%"
+```
+
+また、[イベントキーエイリアス](https://github.com/Yamato-Security/hayabusa-rules/blob/main/README-Japanese.md#%E3%82%A4%E3%83%99%E3%83%B3%E3%83%88%E3%82%AD%E3%83%BC%E3%82%A8%E3%82%A4%E3%83%AA%E3%82%A2%E3%82%B9)を定義し、出力することもできます。
 
 ## Levelの省略
 
