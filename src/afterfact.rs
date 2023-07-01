@@ -924,7 +924,7 @@ fn _print_unique_results(
     .ok();
 
     let mut total_detect_md = vec!["- Total detections:".to_string()];
-    let mut unique_detect_md = vec!["- Unique detecions:".to_string()];
+    let mut unique_detect_md = vec!["- Unique detections:".to_string()];
 
     for (i, level_name) in level_abbr.iter().enumerate() {
         if "undefined" == level_name[0] {
