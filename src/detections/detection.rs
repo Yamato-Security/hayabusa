@@ -656,6 +656,7 @@ impl Detection {
 
         let detect_info = DetectInfo {
             rulepath: CompactString::from(&rule.rulepath),
+            ruleid: CompactString::from(rule.yaml["id"].as_str().unwrap_or("-")),
             ruletitle: CompactString::from(rule.yaml["title"].as_str().unwrap_or("-")),
             level: CompactString::from(
                 LEVEL_ABBR_MAP
@@ -871,6 +872,7 @@ impl Detection {
         let str_level = level.as_str();
         let detect_info = DetectInfo {
             rulepath: CompactString::from(&rule.rulepath),
+            ruleid: CompactString::from(rule.yaml["id"].as_str().unwrap_or("-")),
             ruletitle: CompactString::from(rule.yaml["title"].as_str().unwrap_or("-")),
             level: CompactString::from(
                 LEVEL_ABBR_MAP

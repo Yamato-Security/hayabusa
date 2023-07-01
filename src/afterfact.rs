@@ -276,6 +276,7 @@ fn emit_csv<W: std::io::Write>(
     let mut total_detect_counts_by_level: Vec<u128> = vec![0; 6];
     let mut unique_detect_counts_by_level: Vec<u128> = vec![0; 6];
     let mut detected_rule_files: HashSet<CompactString> = HashSet::new();
+    let mut detected_rule_ids: HashSet<CompactString> = HashSet::new();
     let mut detected_computer_and_rule_names: HashSet<CompactString> = HashSet::new();
     let mut detect_counts_by_date_and_level: HashMap<CompactString, HashMap<CompactString, i128>> =
         HashMap::new();
@@ -474,6 +475,9 @@ fn emit_csv<W: std::io::Write>(
                             .entry(CompactString::from(author))
                             .or_insert(0) += 1;
                     }
+                }
+                if !detected_rule_ids.contains(&detect_info.ruleid) {
+                    detected_rule_ids.insert(detect_info.ruleid.to_owned());
                     unique_detect_counts_by_level[level_suffix] += 1;
                 }
 

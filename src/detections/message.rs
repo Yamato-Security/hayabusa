@@ -28,6 +28,7 @@ use super::configs::EventKeyAliasConfig;
 #[derive(Debug, Clone)]
 pub struct DetectInfo {
     pub rulepath: CompactString,
+    pub ruleid: CompactString,
     pub ruletitle: CompactString,
     pub level: CompactString,
     pub computername: CompactString,
