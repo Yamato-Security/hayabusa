@@ -15,6 +15,9 @@
 **Bug Fixes:**
 
 - The total number of records being displayed in the `metrics` and `logon-summary` commands differed from the `csv-timeline` command. (#1105) (@hitenkoku)
+
+**Other:**
+
 - The total counts of unique detections are now based on rule ID instead of rule file paths. (#1111) (@hitenkoku)
 
 ## 2.6.0 [2023/06/16] "Ajisai Release"
