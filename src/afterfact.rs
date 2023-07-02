@@ -276,6 +276,7 @@ fn emit_csv<W: std::io::Write>(
     let mut total_detect_counts_by_level: Vec<u128> = vec![0; 6];
     let mut unique_detect_counts_by_level: Vec<u128> = vec![0; 6];
     let mut detected_rule_files: HashSet<CompactString> = HashSet::new();
+    let mut detected_rule_ids: HashSet<CompactString> = HashSet::new();
     let mut detected_computer_and_rule_names: HashSet<CompactString> = HashSet::new();
     let mut detect_counts_by_date_and_level: HashMap<CompactString, HashMap<CompactString, i128>> =
         HashMap::new();
@@ -474,6 +475,9 @@ fn emit_csv<W: std::io::Write>(
                             .entry(CompactString::from(author))
                             .or_insert(0) += 1;
                     }
+                }
+                if !detected_rule_ids.contains(&detect_info.ruleid) {
+                    detected_rule_ids.insert(detect_info.ruleid.to_owned());
                     unique_detect_counts_by_level[level_suffix] += 1;
                 }
 
@@ -920,7 +924,7 @@ fn _print_unique_results(
     .ok();
 
     let mut total_detect_md = vec!["- Total detections:".to_string()];
-    let mut unique_detect_md = vec!["- Unique detecions:".to_string()];
+    let mut unique_detect_md = vec!["- Unique detections:".to_string()];
 
     for (i, level_name) in level_abbr.iter().enumerate() {
         if "undefined" == level_name[0] {
@@ -1748,6 +1752,7 @@ mod tests {
         );
         let test_filepath: &str = "test.evtx";
         let test_rulepath: &str = "test-rule.yml";
+        let test_rule_id: &str = "00000000-0000-0000-0000-000000000000";
         let test_title = "test_title";
         let test_level = "high";
         let test_computername = "testcomputer";
@@ -1920,6 +1925,7 @@ mod tests {
                 CompactString::new(output),
                 DetectInfo {
                     rulepath: CompactString::from(test_rulepath),
+                    ruleid: test_rule_id.into(),
                     ruletitle: CompactString::from(test_title),
                     level: CompactString::from(test_level),
                     computername: CompactString::from(test_computername2),
@@ -1941,6 +1947,7 @@ mod tests {
                 CompactString::new(output),
                 DetectInfo {
                     rulepath: CompactString::from(test_rulepath),
+                    ruleid: test_rule_id.into(),
                     ruletitle: CompactString::from(test_title),
                     level: CompactString::from(test_level),
                     computername: CompactString::from(test_computername),
@@ -2044,6 +2051,7 @@ mod tests {
         );
         let test_filepath: &str = "test.evtx";
         let test_rulepath: &str = "test-rule.yml";
+        let test_rule_id: &str = "00000000-0000-0000-0000-000000000000";
         let test_title = "test_title";
         let test_level = "high";
         let test_computername = "testcomputer";
@@ -2215,6 +2223,7 @@ mod tests {
                 CompactString::new(output),
                 DetectInfo {
                     rulepath: CompactString::from(test_rulepath),
+                    ruleid: test_rule_id.into(),
                     ruletitle: CompactString::from(test_title),
                     level: CompactString::from(test_level),
                     computername: CompactString::from(test_computername2),
@@ -2236,6 +2245,7 @@ mod tests {
                 CompactString::new(output),
                 DetectInfo {
                     rulepath: CompactString::from(test_rulepath),
+                    ruleid: test_rule_id.into(),
                     ruletitle: CompactString::from(test_title),
                     level: CompactString::from(test_level),
                     computername: CompactString::from(test_computername),
@@ -2328,6 +2338,7 @@ mod tests {
         );
         let test_filepath: &str = "test.evtx";
         let test_rulepath: &str = "test-rule.yml";
+        let test_rule_id: &str = "00000000-0000-0000-0000-000000000000";
         let test_title = "test_title";
         let test_level = "high";
         let test_computername = "testcomputer";
@@ -2500,6 +2511,7 @@ mod tests {
                 CompactString::new(output),
                 DetectInfo {
                     rulepath: CompactString::from(test_rulepath),
+                    ruleid: test_rule_id.into(),
                     ruletitle: CompactString::from(test_title),
                     level: CompactString::from(test_level),
                     computername: CompactString::from(test_computername2),
@@ -2521,6 +2533,7 @@ mod tests {
                 CompactString::new(output),
                 DetectInfo {
                     rulepath: CompactString::from(test_rulepath),
+                    ruleid: test_rule_id.into(),
                     ruletitle: CompactString::from(test_title),
                     level: CompactString::from(test_level),
                     computername: CompactString::from(test_computername),
@@ -2758,6 +2771,7 @@ mod tests {
         );
         let test_filepath: &str = "test.evtx";
         let test_rulepath: &str = "test-rule.yml";
+        let test_rule_id: &str = "00000000-0000-0000-0000-000000000000";
         let test_title = "test_title";
         let test_level = "high";
         let test_computername = "testcomputer";
@@ -2929,6 +2943,7 @@ mod tests {
                 CompactString::new(output),
                 DetectInfo {
                     rulepath: CompactString::from(test_rulepath),
+                    ruleid: test_rule_id.into(),
                     ruletitle: CompactString::from(test_title),
                     level: CompactString::from(test_level),
                     computername: CompactString::from(test_computername2),
@@ -2990,6 +3005,7 @@ mod tests {
         );
         let test_filepath: &str = "test.evtx";
         let test_rulepath: &str = "test-rule.yml";
+        let test_rule_id: &str = "00000000-0000-0000-0000-000000000000";
         let test_title = "test_title";
         let test_level = "high";
         let test_computername = "testcomputer";
@@ -3161,6 +3177,7 @@ mod tests {
                 CompactString::new(output),
                 DetectInfo {
                     rulepath: CompactString::from(test_rulepath),
+                    ruleid: test_rule_id.into(),
                     ruletitle: CompactString::from(test_title),
                     level: CompactString::from(test_level),
                     computername: CompactString::from(test_computername2),

@@ -28,6 +28,7 @@ use super::configs::EventKeyAliasConfig;
 #[derive(Debug, Clone)]
 pub struct DetectInfo {
     pub rulepath: CompactString,
+    pub ruleid: CompactString,
     pub ruletitle: CompactString,
     pub level: CompactString,
     pub computername: CompactString,
@@ -749,6 +750,7 @@ mod tests {
         for i in 1..2001 {
             let detect_info = DetectInfo {
                 rulepath: CompactString::default(),
+                ruleid: CompactString::default(),
                 ruletitle: CompactString::default(),
                 level: CompactString::default(),
                 computername: CompactString::default(),
