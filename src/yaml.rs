@@ -240,7 +240,7 @@ impl ParseYaml {
                 io::Result::Ok(ret)
             })?;
         }
-
+        let exist_output_opt = stored_static.output_option.is_some();
         let files = yaml_docs.into_iter().filter_map(|(filepath, yaml_doc)| {
             //除外されたルールは無視する
             let rule_id = &yaml_doc["id"].as_str();
@@ -284,7 +284,7 @@ impl ParseYaml {
                     *entry += 1;
                     return Option::None;
                 }
-                if stored_static.output_option.is_some()
+                if exist_output_opt
                     && ((s == "deprecated"
                         && !stored_static
                             .output_option
@@ -304,9 +304,33 @@ impl ParseYaml {
                 }
             }
 
+            if exist_output_opt {
+                let category_in_rule = yaml_doc["logsource"]["category"].as_str().unwrap_or_default();
+                let mut include_category = &Vec::default();
+                let mut exclude_category = &Vec::default();
+
+                if let Some(tmp) = &stored_static.output_option.as_ref().unwrap().include_category {
+                    include_category = tmp;
+                }
+
+                if let Some(tmp) = &stored_static.output_option.as_ref().unwrap().exclude_category {
+                    exclude_category = tmp;
+                }
+
+                if !include_category.is_empty() && !include_category.contains(&category_in_rule.to_string()) {
+                    let entry = self.rule_load_cnt.entry("excluded".into()).or_insert(0);
+                    *entry += 1;
+                    return Option::None;
+                }
+                if !exclude_category.is_empty() && exclude_category.contains(&category_in_rule.to_string()) {
+                    let entry = self.rule_load_cnt.entry("excluded".into()).or_insert(0);
+                    *entry += 1;
+                    return Option::None;
+                }
+            }
+
             // tags optionで指定されたtagsを持たないルールは除外する
-            if stored_static.output_option.is_some()
-                && stored_static.output_option.as_ref().unwrap().tags.is_some()
+            if exist_output_opt && stored_static.output_option.as_ref().unwrap().tags.is_some()
             {
                 let target_tags = stored_static
                     .output_option
