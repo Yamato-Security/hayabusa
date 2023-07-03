@@ -10,7 +10,8 @@
 
 - 新しいログ形式の`.evtx`を使用するWindows Vistaがリリースされた2007年1月31日以前のタイムスタンプを持つ破損されたイベントレコードを無視するようにした。(#1102) (@fukusuket)
 - `metrics`コマンドで`--output`オプションを指定した時に標準出力に結果を表示しないように変更した。 (#1099) (@hitenkoku)
-- `csv-timeline` コマンドと `json-timeline` コマンドに `--tags` オプションを追加し、指定した `tags` フィールドを持つルールのみでスキャンできるようにした。()
+- `csv-timeline` コマンドと `json-timeline` コマンドに `--tags` オプションを追加し、指定した `tags` フィールドを持つルールのみでスキャンできるようにした。(#1108) (@hitenkoku)
+- `csv-timeline` コマンドと `json-timeline` コマンドに `--exclude-tags` オプションを追加し、指定した `tags` フィールドを持たないルールでスキャンできるようにした。(#1118) (@hitenkoku)
 
 **バグ修正:**
 
