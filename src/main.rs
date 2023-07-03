@@ -1574,6 +1574,7 @@ mod tests {
                     enable_unsupported_rules: false,
                     clobber: false,
                     tags: None,
+                    proven_rules: false,
                 },
                 geo_ip: None,
                 output: None,
@@ -1661,7 +1662,7 @@ mod tests {
         let detection = detection::Detection::new(rule_files);
         let target_time_filter = TargetEventTime::new(&stored_static);
         let tl = Timeline::default();
-        let target_event_ids = TargetEventIds::default();
+        let target_event_ids = TargetIds::default();
 
         let actual = app.analysis_json_file(
             Path::new("test_files/evtx/test.jsonl").to_path_buf(),
@@ -1723,6 +1724,7 @@ mod tests {
                 enable_unsupported_rules: false,
                 clobber: false,
                 tags: None,
+                proven_rules: false,
             },
             geo_ip: None,
             output: Some(Path::new("overwrite.csv").to_path_buf()),
@@ -1793,6 +1795,7 @@ mod tests {
                 enable_unsupported_rules: false,
                 clobber: true,
                 tags: None,
+                proven_rules: false,
             },
             geo_ip: None,
             output: Some(Path::new("overwrite.csv").to_path_buf()),
@@ -1861,6 +1864,7 @@ mod tests {
                 enable_unsupported_rules: false,
                 clobber: false,
                 tags: None,
+                proven_rules: false,
             },
             geo_ip: None,
             output: Some(Path::new("overwrite.json").to_path_buf()),
@@ -1930,6 +1934,7 @@ mod tests {
                 enable_unsupported_rules: false,
                 clobber: true,
                 tags: None,
+                proven_rules: false,
             },
             geo_ip: None,
             output: Some(Path::new("overwrite.json").to_path_buf()),
