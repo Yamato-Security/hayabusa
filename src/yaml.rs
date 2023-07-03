@@ -780,4 +780,113 @@ mod tests {
         .unwrap();
         assert_eq!(yaml.files.len(), 3);
     }
+
+    #[test]
+    fn test_include_category_option_1opt() {
+        let path = Path::new("test_files/rules/level_yaml");
+        let mut dummy_stored_static = create_dummy_stored_static();
+        dummy_stored_static.output_option.as_mut().unwrap().include_category =
+            Some(vec!["test_category1".to_string()]);
+        let mut yaml = yaml::ParseYaml::new(&dummy_stored_static);
+        yaml.read_dir(
+            path,
+            "",
+            "",
+            &filter::exclude_ids(&dummy_stored_static),
+            &dummy_stored_static,
+        )
+        .unwrap();
+        assert_eq!(yaml.files.len(), 1);
+    }
+
+    #[test]
+    fn test_include_category_option_multi_opt() {
+        let path = Path::new("test_files/rules/level_yaml");
+        let mut dummy_stored_static = create_dummy_stored_static();
+        dummy_stored_static.output_option.as_mut().unwrap().include_category =
+            Some(vec!["test_category1".to_string(), "test_category2".to_string()]);
+        let mut yaml = yaml::ParseYaml::new(&dummy_stored_static);
+        yaml.read_dir(
+            path,
+            "",
+            "",
+            &filter::exclude_ids(&dummy_stored_static),
+            &dummy_stored_static,
+        )
+        .unwrap();
+        assert_eq!(yaml.files.len(), 2);
+    }
+
+    #[test]
+    fn test_include_category_option_not_found() {
+        let path = Path::new("test_files/rules/level_yaml");
+        let mut dummy_stored_static = create_dummy_stored_static();
+        dummy_stored_static.output_option.as_mut().unwrap().include_category =
+            Some(vec!["not found".to_string()]);
+        let mut yaml = yaml::ParseYaml::new(&dummy_stored_static);
+        yaml.read_dir(
+            path,
+            "",
+            "",
+            &filter::exclude_ids(&dummy_stored_static),
+            &dummy_stored_static,
+        )
+        .unwrap();
+        assert_eq!(yaml.files.len(), 0);
+    }
+
+    #[test]
+    fn test_exclude_category_option_1opt() {
+        let path = Path::new("test_files/rules/level_yaml");
+        let mut dummy_stored_static = create_dummy_stored_static();
+        dummy_stored_static.output_option.as_mut().unwrap().exclude_category =
+            Some(vec!["test_category1".to_string()]);
+        let mut yaml = yaml::ParseYaml::new(&dummy_stored_static);
+        yaml.read_dir(
+            path,
+            "",
+            "",
+            &filter::exclude_ids(&dummy_stored_static),
+            &dummy_stored_static,
+        )
+        .unwrap();
+        assert_eq!(yaml.files.len(), 4);
+    }
+
+    #[test]
+    fn test_exclude_category_option_multi_opt() {
+        let path = Path::new("test_files/rules/level_yaml");
+        let mut dummy_stored_static = create_dummy_stored_static();
+        dummy_stored_static.output_option.as_mut().unwrap().exclude_category =
+            Some(vec!["test_category1".to_string(), "test_category2".to_string()]);
+        let mut yaml = yaml::ParseYaml::new(&dummy_stored_static);
+        yaml.read_dir(
+            path,
+            "",
+            "",
+            &filter::exclude_ids(&dummy_stored_static),
+            &dummy_stored_static,
+        )
+        .unwrap();
+        assert_eq!(yaml.files.len(), 3);
+    }
+
+    #[test]
+    fn test_exclude_category_option_notfound() {
+        let path = Path::new("test_files/rules/level_yaml");
+        let mut dummy_stored_static = create_dummy_stored_static();
+        dummy_stored_static.output_option.as_mut().unwrap().exclude_category =
+            Some(vec!["not found".to_string()]);
+        let mut yaml = yaml::ParseYaml::new(&dummy_stored_static);
+        yaml.read_dir(
+            path,
+            "",
+            "",
+            &filter::exclude_ids(&dummy_stored_static),
+            &dummy_stored_static,
+        )
+        .unwrap();
+        assert_eq!(yaml.files.len(), 5);
+    }
+
 }

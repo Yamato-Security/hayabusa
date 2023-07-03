@@ -3,6 +3,7 @@ description: hogehoge
 enabled: true
 author: Yea
 logsource:
+    category: test_category2
     product: windows
 detection:
     selection:
