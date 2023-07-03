@@ -12,7 +12,7 @@ use hashbrown::{HashMap, HashSet};
 use hayabusa::debug::checkpoint_process_timer::CHECKPOINT;
 use hayabusa::detections::configs::{
     load_pivot_keywords, Action, ConfigReader, EventInfoConfig, EventKeyAliasConfig, StoredStatic,
-    TargetEventIds, TargetEventTime, CURRENT_EXE_PATH, STORED_EKEY_ALIAS, STORED_STATIC,
+    TargetEventTime, TargetIds, CURRENT_EXE_PATH, STORED_EKEY_ALIAS, STORED_STATIC,
 };
 use hayabusa::detections::detection::{self, EvtxRecordInfo};
 use hayabusa::detections::message::{AlertMessage, ERROR_LOG_STACK};
@@ -927,7 +927,7 @@ impl App {
         evtx_files: Vec<PathBuf>,
         time_filter: &TargetEventTime,
         event_timeline_config: &EventInfoConfig,
-        target_event_ids: &TargetEventIds,
+        target_event_ids: &TargetIds,
         stored_static: &StoredStatic,
     ) {
         let level = stored_static
@@ -1092,7 +1092,7 @@ impl App {
         mut detection: detection::Detection,
         time_filter: &TargetEventTime,
         mut tl: Timeline,
-        target_event_ids: &TargetEventIds,
+        target_event_ids: &TargetIds,
         stored_static: &StoredStatic,
     ) -> (detection::Detection, usize, Timeline) {
         let path = evtx_filepath.display();
@@ -1195,7 +1195,7 @@ impl App {
         mut detection: detection::Detection,
         time_filter: &TargetEventTime,
         mut tl: Timeline,
-        target_event_ids: &TargetEventIds,
+        target_event_ids: &TargetIds,
         stored_static: &StoredStatic,
     ) -> (detection::Detection, usize, Timeline) {
         let path = filepath.display();
@@ -1375,7 +1375,7 @@ impl App {
     fn _is_target_event_id(
         &self,
         data: &Value,
-        target_event_ids: &TargetEventIds,
+        target_event_ids: &TargetIds,
         eventkey_alias: &EventKeyAliasConfig,
     ) -> bool {
         let eventid = utils::get_event_value(&utils::get_event_id_key(), data, eventkey_alias);
@@ -1518,7 +1518,7 @@ mod tests {
             configs::{
                 Action, CommonOptions, Config, ConfigReader, CsvOutputOption, DetectCommonOption,
                 InputOption, JSONOutputOption, LogonSummaryOption, MetricsOption, OutputOption,
-                StoredStatic, TargetEventIds, TargetEventTime, STORED_EKEY_ALIAS, STORED_STATIC,
+                StoredStatic, TargetEventTime, TargetIds, STORED_EKEY_ALIAS, STORED_STATIC,
             },
             detection,
             message::{MESSAGEKEYS, MESSAGES},

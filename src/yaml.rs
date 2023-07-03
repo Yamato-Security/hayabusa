@@ -269,6 +269,13 @@ impl ParseYaml {
                         return Option::None;
                     }
                 }
+                if let Some(id) = rule_id {
+                    if !stored_static.target_ruleids.is_target(id) {
+                        let entry = self.rule_load_cnt.entry("excluded".into()).or_insert(0);
+                        *entry += 1;
+                        return Option::None;
+                    }
+                }
             }
 
             let mut up_rule_status_cnt = |status: &str| {
