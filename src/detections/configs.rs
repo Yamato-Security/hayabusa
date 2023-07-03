@@ -1285,10 +1285,10 @@ impl TargetIds {
         }
     }
 
-    pub fn is_target(&self, id: &str) -> bool {
-        // 中身が空の場合は全EventIdを対象とする。
+    pub fn is_target(&self, id: &str, flag_in_case_empty: bool) -> bool {
+        // 中身が空の場合はEventIdの場合は全EventIdを対象とする。RuleIdの場合は全部のRuleIdはフィルタリングの対象にならないものとする
         if self.ids.is_empty() {
-            return true;
+            return flag_in_case_empty;
         }
         self.ids.contains(id)
     }

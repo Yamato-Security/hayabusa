@@ -1384,8 +1384,8 @@ impl App {
         }
 
         match eventid.unwrap() {
-            Value::String(s) => target_event_ids.is_target(&s.replace('\"', "")),
-            Value::Number(n) => target_event_ids.is_target(&n.to_string().replace('\"', "")),
+            Value::String(s) => target_event_ids.is_target(&s.replace('\"', ""), true),
+            Value::Number(n) => target_event_ids.is_target(&n.to_string().replace('\"', ""), true),
             _ => true, // レコードからEventIdが取得できない場合は、特にフィルタしない
         }
     }
