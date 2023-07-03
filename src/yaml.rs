@@ -332,6 +332,35 @@ impl ParseYaml {
                 }
             }
 
+            // exclude-tags optionで指定されたtagsを持つルールは除外する
+            if stored_static.output_option.is_some()
+                && stored_static
+                    .output_option
+                    .as_ref()
+                    .unwrap()
+                    .exclude_tags
+                    .is_some()
+            {
+                let exclude_target_tags = stored_static
+                    .output_option
+                    .as_ref()
+                    .unwrap()
+                    .exclude_tags
+                    .as_ref()
+                    .unwrap();
+                let rule_tags_vec = yaml_doc["tags"].as_vec();
+                if let Some(rule_tags) = rule_tags_vec {
+                    let is_match = rule_tags.iter().any(|tag| {
+                        exclude_target_tags.contains(&tag.as_str().unwrap_or_default().to_string())
+                    });
+                    if is_match {
+                        let entry = self.rule_load_cnt.entry("excluded".into()).or_insert(0);
+                        *entry += 1;
+                        return Option::None;
+                    }
+                }
+            }
+
             self.rulecounter.insert(
                 yaml_doc["ruletype"].as_str().unwrap_or("Other").into(),
                 self.rulecounter
