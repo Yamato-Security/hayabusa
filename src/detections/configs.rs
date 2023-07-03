@@ -1018,7 +1018,7 @@ pub struct OutputOption {
     pub exclude_status: Option<Vec<String>>,
 
     /// Only load rules with specific tags (ex: attack.execution,attack.discovery)
-    #[arg(help_heading = Some("Filtering"), long = "tags", value_name = "TAGS", use_value_delimiter = true, value_delimiter = ',', display_order = 460)]
+    #[arg(help_heading = Some("Filtering"), long = "tags", value_name = "TAGS", conflicts_with = "exclude_tags", use_value_delimiter = true, value_delimiter = ',', display_order = 460)]
     pub tags: Option<Vec<String>>,
 
     /// Minimum level for rules (default: informational)
@@ -1059,6 +1059,10 @@ pub struct OutputOption {
     /// Scan only common EIDs for faster speed (./rules/config/target_event_IDs.txt)
     #[arg(help_heading = Some("Filtering"), short = 'E', long = "EID-filter", display_order = 50)]
     pub eid_filter: bool,
+
+    /// Exclude load rules with specific tags (ex: sysmon)
+    #[arg(help_heading = Some("Filtering"), long = "exclude-tags", value_name = "TAGS", conflicts_with = "tags", use_value_delimiter = true, value_delimiter = ',', display_order = 315)]
+    pub exclude_tags: Option<Vec<String>>,
 
     #[clap(flatten)]
     pub detect_common_options: DetectCommonOption,
@@ -1544,6 +1548,7 @@ fn extract_output_options(config: &Config) -> Option<OutputOption> {
             enable_unsupported_rules: option.enable_unsupported_rules,
             clobber: false,
             tags: None,
+            exclude_tags: None,
         }),
         Action::Metrics(option) => Some(OutputOption {
             input_args: option.input_args.clone(),
@@ -1572,6 +1577,7 @@ fn extract_output_options(config: &Config) -> Option<OutputOption> {
             enable_unsupported_rules: false,
             clobber: option.clobber,
             tags: None,
+            exclude_tags: None,
         }),
         Action::LogonSummary(option) => Some(OutputOption {
             input_args: option.input_args.clone(),
@@ -1600,6 +1606,7 @@ fn extract_output_options(config: &Config) -> Option<OutputOption> {
             enable_unsupported_rules: false,
             clobber: option.clobber,
             tags: None,
+            exclude_tags: None,
         }),
         Action::Search(option) => Some(OutputOption {
             input_args: option.input_args.clone(),
@@ -1635,6 +1642,7 @@ fn extract_output_options(config: &Config) -> Option<OutputOption> {
             enable_unsupported_rules: false,
             clobber: option.clobber,
             tags: None,
+            exclude_tags: None,
         }),
         Action::SetDefaultProfile(option) => Some(OutputOption {
             input_args: InputOption {
@@ -1674,6 +1682,7 @@ fn extract_output_options(config: &Config) -> Option<OutputOption> {
             enable_unsupported_rules: false,
             clobber: false,
             tags: None,
+            exclude_tags: None,
         }),
         Action::UpdateRules(option) => Some(OutputOption {
             input_args: InputOption {
@@ -1713,6 +1722,7 @@ fn extract_output_options(config: &Config) -> Option<OutputOption> {
             enable_unsupported_rules: true,
             clobber: false,
             tags: None,
+            exclude_tags: None,
         }),
         _ => None,
     }
