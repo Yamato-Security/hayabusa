@@ -305,24 +305,40 @@ impl ParseYaml {
             }
 
             if exist_output_opt {
-                let category_in_rule = yaml_doc["logsource"]["category"].as_str().unwrap_or_default();
+                let category_in_rule = yaml_doc["logsource"]["category"]
+                    .as_str()
+                    .unwrap_or_default();
                 let mut include_category = &Vec::default();
                 let mut exclude_category = &Vec::default();
 
-                if let Some(tmp) = &stored_static.output_option.as_ref().unwrap().include_category {
+                if let Some(tmp) = &stored_static
+                    .output_option
+                    .as_ref()
+                    .unwrap()
+                    .include_category
+                {
                     include_category = tmp;
                 }
 
-                if let Some(tmp) = &stored_static.output_option.as_ref().unwrap().exclude_category {
+                if let Some(tmp) = &stored_static
+                    .output_option
+                    .as_ref()
+                    .unwrap()
+                    .exclude_category
+                {
                     exclude_category = tmp;
                 }
 
-                if !include_category.is_empty() && !include_category.contains(&category_in_rule.to_string()) {
+                if !include_category.is_empty()
+                    && !include_category.contains(&category_in_rule.to_string())
+                {
                     let entry = self.rule_load_cnt.entry("excluded".into()).or_insert(0);
                     *entry += 1;
                     return Option::None;
                 }
-                if !exclude_category.is_empty() && exclude_category.contains(&category_in_rule.to_string()) {
+                if !exclude_category.is_empty()
+                    && exclude_category.contains(&category_in_rule.to_string())
+                {
                     let entry = self.rule_load_cnt.entry("excluded".into()).or_insert(0);
                     *entry += 1;
                     return Option::None;
@@ -330,8 +346,7 @@ impl ParseYaml {
             }
 
             // tags optionで指定されたtagsを持たないルールは除外する
-            if exist_output_opt && stored_static.output_option.as_ref().unwrap().tags.is_some()
-            {
+            if exist_output_opt && stored_static.output_option.as_ref().unwrap().tags.is_some() {
                 let target_tags = stored_static
                     .output_option
                     .as_ref()
@@ -785,8 +800,11 @@ mod tests {
     fn test_include_category_option_1opt() {
         let path = Path::new("test_files/rules/level_yaml");
         let mut dummy_stored_static = create_dummy_stored_static();
-        dummy_stored_static.output_option.as_mut().unwrap().include_category =
-            Some(vec!["test_category1".to_string()]);
+        dummy_stored_static
+            .output_option
+            .as_mut()
+            .unwrap()
+            .include_category = Some(vec!["test_category1".to_string()]);
         let mut yaml = yaml::ParseYaml::new(&dummy_stored_static);
         yaml.read_dir(
             path,
@@ -803,8 +821,14 @@ mod tests {
     fn test_include_category_option_multi_opt() {
         let path = Path::new("test_files/rules/level_yaml");
         let mut dummy_stored_static = create_dummy_stored_static();
-        dummy_stored_static.output_option.as_mut().unwrap().include_category =
-            Some(vec!["test_category1".to_string(), "test_category2".to_string()]);
+        dummy_stored_static
+            .output_option
+            .as_mut()
+            .unwrap()
+            .include_category = Some(vec![
+            "test_category1".to_string(),
+            "test_category2".to_string(),
+        ]);
         let mut yaml = yaml::ParseYaml::new(&dummy_stored_static);
         yaml.read_dir(
             path,
@@ -821,8 +845,11 @@ mod tests {
     fn test_include_category_option_not_found() {
         let path = Path::new("test_files/rules/level_yaml");
         let mut dummy_stored_static = create_dummy_stored_static();
-        dummy_stored_static.output_option.as_mut().unwrap().include_category =
-            Some(vec!["not found".to_string()]);
+        dummy_stored_static
+            .output_option
+            .as_mut()
+            .unwrap()
+            .include_category = Some(vec!["not found".to_string()]);
         let mut yaml = yaml::ParseYaml::new(&dummy_stored_static);
         yaml.read_dir(
             path,
@@ -839,8 +866,11 @@ mod tests {
     fn test_exclude_category_option_1opt() {
         let path = Path::new("test_files/rules/level_yaml");
         let mut dummy_stored_static = create_dummy_stored_static();
-        dummy_stored_static.output_option.as_mut().unwrap().exclude_category =
-            Some(vec!["test_category1".to_string()]);
+        dummy_stored_static
+            .output_option
+            .as_mut()
+            .unwrap()
+            .exclude_category = Some(vec!["test_category1".to_string()]);
         let mut yaml = yaml::ParseYaml::new(&dummy_stored_static);
         yaml.read_dir(
             path,
@@ -857,8 +887,14 @@ mod tests {
     fn test_exclude_category_option_multi_opt() {
         let path = Path::new("test_files/rules/level_yaml");
         let mut dummy_stored_static = create_dummy_stored_static();
-        dummy_stored_static.output_option.as_mut().unwrap().exclude_category =
-            Some(vec!["test_category1".to_string(), "test_category2".to_string()]);
+        dummy_stored_static
+            .output_option
+            .as_mut()
+            .unwrap()
+            .exclude_category = Some(vec![
+            "test_category1".to_string(),
+            "test_category2".to_string(),
+        ]);
         let mut yaml = yaml::ParseYaml::new(&dummy_stored_static);
         yaml.read_dir(
             path,
@@ -875,8 +911,11 @@ mod tests {
     fn test_exclude_category_option_notfound() {
         let path = Path::new("test_files/rules/level_yaml");
         let mut dummy_stored_static = create_dummy_stored_static();
-        dummy_stored_static.output_option.as_mut().unwrap().exclude_category =
-            Some(vec!["not found".to_string()]);
+        dummy_stored_static
+            .output_option
+            .as_mut()
+            .unwrap()
+            .exclude_category = Some(vec!["not found".to_string()]);
         let mut yaml = yaml::ParseYaml::new(&dummy_stored_static);
         yaml.read_dir(
             path,
@@ -888,5 +927,4 @@ mod tests {
         .unwrap();
         assert_eq!(yaml.files.len(), 5);
     }
-
 }
