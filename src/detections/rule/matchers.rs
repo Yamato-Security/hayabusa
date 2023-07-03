@@ -858,6 +858,8 @@ mod tests {
                     enable_unsupported_rules: false,
                     clobber: false,
                     tags: None,
+                    include_category: None,
+                    exclude_category: None,
                 },
                 geo_ip: None,
                 output: None,
