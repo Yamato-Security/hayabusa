@@ -779,7 +779,7 @@ fn emit_csv<W: std::io::Write>(
             &level_abbr,
             &mut html_output_stock,
             stored_static,
-            cmp::min((terminal_width / 2) - 10, 200),
+            cmp::min((terminal_width / 2) - 15, 200),
         );
         println!();
         if html_output_flag {
