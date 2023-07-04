@@ -859,6 +859,8 @@ mod tests {
                     clobber: false,
                     tags: None,
                     proven_rules: false,
+                    include_category: None,
+                    exclude_category: None,
                 },
                 geo_ip: None,
                 output: None,

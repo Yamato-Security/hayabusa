@@ -779,7 +779,7 @@ fn emit_csv<W: std::io::Write>(
             &level_abbr,
             &mut html_output_stock,
             stored_static,
-            cmp::min((terminal_width / 2) - 10, 200),
+            cmp::min((terminal_width / 2) - 15, 200),
         );
         println!();
         if html_output_flag {
@@ -1810,6 +1810,8 @@ mod tests {
                 clobber: false,
                 tags: None,
                 proven_rules: false,
+                include_category: None,
+                exclude_category: None,
             },
             geo_ip: None,
             output: Some(Path::new("./test_emit_csv.csv").to_path_buf()),
@@ -1887,6 +1889,8 @@ mod tests {
                 clobber: false,
                 tags: None,
                 proven_rules: false,
+                include_category: None,
+                exclude_category: None,
             };
             let ch = mock_ch_filter
                 .get(&CompactString::from("security"))
@@ -2111,6 +2115,8 @@ mod tests {
                 clobber: false,
                 tags: None,
                 proven_rules: false,
+                include_category: None,
+                exclude_category: None,
             },
             geo_ip: None,
             output: Some(Path::new("./test_emit_csv_multiline.csv").to_path_buf()),
@@ -2190,6 +2196,8 @@ mod tests {
                 clobber: false,
                 tags: None,
                 proven_rules: false,
+                include_category: None,
+                exclude_category: None,
             };
             let ch = mock_ch_filter
                 .get(&CompactString::from("security"))
@@ -2400,6 +2408,8 @@ mod tests {
                 clobber: false,
                 tags: None,
                 proven_rules: false,
+                include_category: None,
+                exclude_category: None,
             },
             geo_ip: None,
             output: Some(Path::new("./test_emit_csv_remove_duplicate.csv").to_path_buf()),
@@ -2477,6 +2487,8 @@ mod tests {
                 clobber: false,
                 tags: None,
                 proven_rules: false,
+                include_category: None,
+                exclude_category: None,
             };
             let ch = mock_ch_filter
                 .get(&CompactString::from("security"))
@@ -2709,6 +2721,8 @@ mod tests {
             clobber: false,
             tags: None,
             proven_rules: false,
+            include_category: None,
+            exclude_category: None,
         };
         let data: Vec<(CompactString, Profile)> = vec![
             (
@@ -2835,6 +2849,8 @@ mod tests {
                 clobber: false,
                 tags: None,
                 proven_rules: false,
+                include_category: None,
+                exclude_category: None,
             },
             geo_ip: None,
             output: Some(Path::new("./test_emit_csv_json.json").to_path_buf()),
@@ -2910,6 +2926,8 @@ mod tests {
                 clobber: false,
                 tags: None,
                 proven_rules: false,
+                include_category: None,
+                exclude_category: None,
             };
             let ch = mock_ch_filter
                 .get(&CompactString::from("security"))
@@ -3071,6 +3089,8 @@ mod tests {
                 clobber: false,
                 tags: None,
                 proven_rules: false,
+                include_category: None,
+                exclude_category: None,
             },
             geo_ip: None,
             output: Some(Path::new("./test_emit_csv_jsonl.jsonl").to_path_buf()),
@@ -3146,6 +3166,8 @@ mod tests {
                 clobber: false,
                 tags: None,
                 proven_rules: false,
+                include_category: None,
+                exclude_category: None,
             };
             let ch = mock_ch_filter
                 .get(&CompactString::from("security"))
