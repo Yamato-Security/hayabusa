@@ -5,13 +5,13 @@
 **New Features:**
 
 - Added the `-R, --remove-duplicate-data` option in the `csv-timeline` command to replace duplicate field data with the string `DUP` in the `%Details%`, `%AllFieldInfo%`, `%ExtraFieldInfo%` columns to reduce file size. (#1056) (@hitenkoku)
-- Added the `--exclude-tags` option to `csv-timeline` and `json-timeline` commands to exclude rules with specific `tags`. (#1118) (@hitenkoku)
+- Added the `--include-tags` option to `csv-timeline` and `json-timeline` commands to only load rules with the specified `tags` field. (#1108) (@hitenkoku)
+- Added the `--exclude-tags` option to `csv-timeline` and `json-timeline` commands to exclude rules with specific `tags` from being loaded. (#1118) (@hitenkoku)
 
 **Enhancements:**
 
 - Ignore corrupted event records with timestamps before 2007/1/31 when Windows Vista was released with the new `.evtx` log format. (#1102) (@fukusuket)
-- Modified don't output to terminal when `--output` is set in `metrics` command. (#1099) (@hitenkoku)
-- Added `--tags` option to `csv-timeline` and `json-timeline` commands to allow scanning only for rules with the specified `tags` field. (#1108) (@hitenkoku)
+- When `--output` is set in the `metrics` command, the results will not be displayed to screen. (#1099) (@hitenkoku)
 
 **Bug Fixes:**
 
