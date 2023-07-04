@@ -5,13 +5,13 @@
 **新機能:**
 
 - `csv-timeline`コマンドに`-R, --remove-duplicate-data`オプションを追加し、`%Details%`、`%AllFieldInfo%`、`%ExtraFieldInfo%`列の重複フィールドデータを`DUP`という文字列に変換し、ファイルサイズの削減を行う。(#1056) (@hitenkoku)
+- `csv-timeline`と`json-timeline`コマンドに`-P, --proven-rules`オプションを追加した。有効にすると、検知が証明されたルールしかロードされない。ロードされるルールは、`./rules/config/proven_rules.txt`の設定ファイルにルールIDで定義されている。 (#1115) (@hitenkoku)
 
 **改善:**
 
 - 新しいログ形式の`.evtx`を使用するWindows Vistaがリリースされた2007年1月31日以前のタイムスタンプを持つ破損されたイベントレコードを無視するようにした。(#1102) (@fukusuket)
 - `metrics`コマンドで`--output`オプションを指定した時に標準出力に結果を表示しないように変更した。 (#1099) (@hitenkoku)
 - `csv-timeline` コマンドと `json-timeline` コマンドに `--tags` オプションを追加し、指定した `tags` フィールドを持つルールのみでスキャンできるようにした。(#1108) (@hitenkoku)
-- csv-timeline` と `json-timeline` コマンドに `-P, --proven-rules` オプションを追加した。./rules/config/proven_rules.txt` に定義された検出ルールが存在する対象ルール ID だけをスキャンするようにした。 (#1115) (@hitenkoku)
 
 **バグ修正:**
 

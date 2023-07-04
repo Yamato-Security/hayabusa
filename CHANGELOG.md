@@ -5,13 +5,13 @@
 **New Features:**
 
 - Added the `-R, --remove-duplicate-data` option in the `csv-timeline` command to replace duplicate field data with the string `DUP` in the `%Details%`, `%AllFieldInfo%`, `%ExtraFieldInfo%` columns to reduce file size. (#1056) (@hitenkoku)
+- Added the `-P, --proven-rules` option in `csv-timeline` and `json-timeline` commands. When used, Hayabusa will only load rules that have been proven to work. These are defined by rule ID in the `./rules/config/proven_rules.txt` config file. (#1115) (@hitenkoku)
 
 **Enhancements:**
 
 - Ignore corrupted event records with timestamps before 2007/1/31 when Windows Vista was released with the new `.evtx` log format. (#1102) (@fukusuket)
 - Modified don't output to terminal when `--output` is set in `metrics` command. (#1099) (@hitenkoku)
 - Added `--tags` option to `csv-timeline` and `json-timeline` commands to allow scanning only for rules with the specified `tags` field. (#1108) (@hitenkoku)
-- Added `-P, --proven-rules` option in `csv-timeline` and `json-timeline` command. To scan only target rule ids that there are detection rules for defined in `./rules/config/proven_rules.txt`. (#1115) (@hitenkoku)
 
 **Bug Fixes:**
 
