@@ -1018,7 +1018,7 @@ pub struct OutputOption {
     pub exclude_status: Option<Vec<String>>,
 
     /// Only load rules with specific tags (ex: attack.execution,attack.discovery)
-    #[arg(help_heading = Some("Filtering"), long = "include_tags", value_name = "TAGS", conflicts_with = "exclude_tags", use_value_delimiter = true, value_delimiter = ',', display_order = 351)]
+    #[arg(help_heading = Some("Filtering"), long = "include-tags", value_name = "TAGS", conflicts_with = "exclude_tags", use_value_delimiter = true, value_delimiter = ',', display_order = 351)]
     pub include_tags: Option<Vec<String>>,
 
     /// Only load rules with certain logsource categories (ex: process_creation,pipe_created)
