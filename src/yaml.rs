@@ -306,13 +306,18 @@ impl ParseYaml {
 
             // tags optionで指定されたtagsを持たないルールは除外する
             if stored_static.output_option.is_some()
-                && stored_static.output_option.as_ref().unwrap().tags.is_some()
+                && stored_static
+                    .output_option
+                    .as_ref()
+                    .unwrap()
+                    .include_tags
+                    .is_some()
             {
                 let target_tags = stored_static
                     .output_option
                     .as_ref()
                     .unwrap()
-                    .tags
+                    .include_tags
                     .as_ref()
                     .unwrap();
                 let rule_tags_vec = yaml_doc["tags"].as_vec();
@@ -457,7 +462,7 @@ mod tests {
                     },
                     enable_unsupported_rules: false,
                     clobber: false,
-                    tags: None,
+                    include_tags: None,
                     exclude_tags: None,
                 },
                 geo_ip: None,
@@ -771,8 +776,11 @@ mod tests {
     fn test_specified_tags_option() {
         let path = Path::new("test_files/rules/level_yaml");
         let mut dummy_stored_static = create_dummy_stored_static();
-        dummy_stored_static.output_option.as_mut().unwrap().tags =
-            Some(vec!["tag1".to_string(), "tag2".to_string()]);
+        dummy_stored_static
+            .output_option
+            .as_mut()
+            .unwrap()
+            .include_tags = Some(vec!["tag1".to_string(), "tag2".to_string()]);
         let mut yaml = yaml::ParseYaml::new(&dummy_stored_static);
         yaml.read_dir(
             path,

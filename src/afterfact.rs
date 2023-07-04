@@ -1808,7 +1808,7 @@ mod tests {
                 },
                 enable_unsupported_rules: false,
                 clobber: false,
-                tags: None,
+                include_tags: None,
                 exclude_tags: None,
             },
             geo_ip: None,
@@ -1885,7 +1885,7 @@ mod tests {
                 },
                 enable_unsupported_rules: false,
                 clobber: false,
-                tags: None,
+                include_tags: None,
                 exclude_tags: None,
             };
             let ch = mock_ch_filter
@@ -2109,7 +2109,7 @@ mod tests {
                 },
                 enable_unsupported_rules: false,
                 clobber: false,
-                tags: None,
+                include_tags: None,
                 exclude_tags: None,
             },
             geo_ip: None,
@@ -2188,7 +2188,7 @@ mod tests {
                 },
                 enable_unsupported_rules: false,
                 clobber: false,
-                tags: None,
+                include_tags: None,
                 exclude_tags: None,
             };
             let ch = mock_ch_filter
@@ -2398,7 +2398,7 @@ mod tests {
                 },
                 enable_unsupported_rules: false,
                 clobber: false,
-                tags: None,
+                include_tags: None,
                 exclude_tags: None,
             },
             geo_ip: None,
@@ -2475,7 +2475,7 @@ mod tests {
                 },
                 enable_unsupported_rules: false,
                 clobber: false,
-                tags: None,
+                include_tags: None,
                 exclude_tags: None,
             };
             let ch = mock_ch_filter
@@ -2707,7 +2707,7 @@ mod tests {
             },
             enable_unsupported_rules: false,
             clobber: false,
-            tags: None,
+            include_tags: None,
             exclude_tags: None,
         };
         let data: Vec<(CompactString, Profile)> = vec![
@@ -2833,7 +2833,7 @@ mod tests {
                 },
                 enable_unsupported_rules: false,
                 clobber: false,
-                tags: None,
+                include_tags: None,
                 exclude_tags: None,
             },
             geo_ip: None,
@@ -2908,7 +2908,7 @@ mod tests {
                 },
                 enable_unsupported_rules: false,
                 clobber: false,
-                tags: None,
+                include_tags: None,
                 exclude_tags: None,
             };
             let ch = mock_ch_filter
@@ -3069,7 +3069,7 @@ mod tests {
                 },
                 enable_unsupported_rules: false,
                 clobber: false,
-                tags: None,
+                include_tags: None,
                 exclude_tags: None,
             },
             geo_ip: None,
@@ -3144,7 +3144,7 @@ mod tests {
                 },
                 enable_unsupported_rules: false,
                 clobber: false,
-                tags: None,
+                include_tags: None,
                 exclude_tags: None,
             };
             let ch = mock_ch_filter
