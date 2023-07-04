@@ -66,7 +66,8 @@ lazy_static! {
         ("high", "high"),
         ("med ", "medium"),
         ("low ", "low"),
-        ("info", "informational")
+        ("info", "informational"),
+        ("undefined ", "undefined"),
     ]);
 }
 

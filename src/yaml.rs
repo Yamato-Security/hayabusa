@@ -276,32 +276,30 @@ impl ParseYaml {
                 *status_cnt += 1;
             };
 
-            let status = yaml_doc["status"].as_str();
-            if let Some(s) = yaml_doc["status"].as_str() {
-                // excluded status optionで指定されたstatusを除外する
-                if self.exclude_status.contains(&s.to_string()) {
-                    let entry = self.rule_load_cnt.entry("excluded".into()).or_insert(0);
-                    *entry += 1;
-                    return Option::None;
-                }
-                if exist_output_opt
-                    && ((s == "deprecated"
+            let status = yaml_doc["status"].as_str().unwrap_or("undefined");
+            // excluded status optionで指定されたstatusを除外する
+            if self.exclude_status.contains(&status.to_string()) {
+                let entry = self.rule_load_cnt.entry("excluded".into()).or_insert(0);
+                *entry += 1;
+                return Option::None;
+            }
+            if exist_output_opt
+                && ((status == "deprecated"
+                    && !stored_static
+                        .output_option
+                        .as_ref()
+                        .unwrap()
+                        .enable_deprecated_rules)
+                    || (status == "unsupported"
                         && !stored_static
                             .output_option
                             .as_ref()
                             .unwrap()
-                            .enable_deprecated_rules)
-                        || (s == "unsupported"
-                            && !stored_static
-                                .output_option
-                                .as_ref()
-                                .unwrap()
-                                .enable_unsupported_rules))
-                {
-                    // deprecated or unsupported statusで対応するenable-xxx-rules optionが指定されていない場合はステータスのカウントのみ行ったうえで除外する
-                    up_rule_status_cnt(s);
-                    return Option::None;
-                }
+                            .enable_unsupported_rules))
+            {
+                // deprecated or unsupported statusで対応するenable-xxx-rules optionが指定されていない場合はステータスのカウントのみ行ったうえで除外する
+                up_rule_status_cnt(status);
+                return Option::None;
             }
 
             if exist_output_opt {
@@ -379,7 +377,7 @@ impl ParseYaml {
                     + 1,
             );
 
-            up_rule_status_cnt(status.unwrap_or("undefined"));
+            up_rule_status_cnt(status);
 
             if stored_static.verbose_flag {
                 println!("Loaded yml file path: {filepath}");
@@ -388,9 +386,9 @@ impl ParseYaml {
             // 指定されたレベルより低いルールは無視する
             let doc_level = &yaml_doc["level"]
                 .as_str()
-                .unwrap_or("informational")
+                .unwrap_or("undefined")
                 .to_uppercase();
-            let doc_level_num = self.level_map.get(doc_level).unwrap_or(&1);
+            let doc_level_num = self.level_map.get(doc_level).unwrap_or(&0);
             let args_level_num = self.level_map.get(min_level).unwrap_or(&1);
             let target_level_num = self.level_map.get(target_level).unwrap_or(&0);
             if doc_level_num < args_level_num

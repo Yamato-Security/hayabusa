@@ -305,6 +305,7 @@ fn emit_csv<W: std::io::Write>(
     let mut detected_record_idset: HashSet<CompactString> = HashSet::new();
 
     let level_map: HashMap<&str, u128> = HashMap::from([
+        ("UNDEFINED", 0),
         ("INFORMATIONAL", 1),
         ("LOW", 2),
         ("MEDIUM", 3),
@@ -522,6 +523,7 @@ fn emit_csv<W: std::io::Write>(
     disp_wtr_buf.clear();
     let level_abbr: Nested<Vec<CompactString>> = Nested::from_iter(
         vec![
+            [CompactString::from("undefined"), CompactString::from("undefined")].to_vec(),
             [CompactString::from("critical"), CompactString::from("crit")].to_vec(),
             [CompactString::from("high"), CompactString::from("high")].to_vec(),
             [CompactString::from("medium"), CompactString::from("med ")].to_vec(),
@@ -927,9 +929,6 @@ fn _print_unique_results(
     let mut unique_detect_md = vec!["- Unique detections:".to_string()];
 
     for (i, level_name) in level_abbr.iter().enumerate() {
-        if "undefined" == level_name[0] {
-            continue;
-        }
         let percent = if total_count == 0 {
             0 as f64
         } else {
@@ -998,6 +997,7 @@ fn _print_detection_summary_by_date(
     for (idx, level) in level_abbr.iter().enumerate() {
         // output_levelsはlevelsからundefinedを除外した配列であり、各要素は必ず初期化されているのでSomeであることが保証されているのでunwrapをそのまま実施
         let detections_by_day = detect_counts_by_date.get(&level[1]).unwrap();
+        println!("dbg: {}{detections_by_day:?}", level[1]);
         let mut max_detect_str = CompactString::default();
         let mut tmp_cnt: i128 = 0;
         let mut exist_max_data = false;
@@ -1011,7 +1011,7 @@ fn _print_detection_summary_by_date(
         }
         wtr.set_color(ColorSpec::new().set_fg(_get_output_color(
             color_map,
-            LEVEL_FULL.get(level[1].as_str()).unwrap(),
+            LEVEL_FULL.get(level[1].as_str()).unwrap_or(&"undefined"),
         )))
         .ok();
         if !exist_max_data {
@@ -1019,7 +1019,7 @@ fn _print_detection_summary_by_date(
         }
         let output_str = format!(
             "{}: {}",
-            LEVEL_FULL.get(level[1].as_str()).unwrap(),
+            LEVEL_FULL.get(level[1].as_str()).unwrap_or(&"undefined"),
             &max_detect_str
         );
         write!(wtr, "{output_str}").ok();
@@ -1063,8 +1063,8 @@ fn _print_detection_summary_by_computer(
         if stored_static.html_report_flag {
             html_output_stock.push(format!(
                 "### Computers with most unique {} detections: {{#computers_with_most_unique_{}_detections}}",
-                LEVEL_FULL.get(level[1].as_str()).unwrap(),
-                LEVEL_FULL.get(level[1].as_str()).unwrap()
+                LEVEL_FULL.get(level[1].as_str()).unwrap_or(&"undefined"),
+                LEVEL_FULL.get(level[1].as_str()).unwrap_or(&"undefined")
             ));
             for x in sorted_detections.iter() {
                 html_output_stock.push(format!(
@@ -1090,13 +1090,13 @@ fn _print_detection_summary_by_computer(
 
         wtr.set_color(ColorSpec::new().set_fg(_get_output_color(
             color_map,
-            LEVEL_FULL.get(level[1].as_str()).unwrap(),
+            LEVEL_FULL.get(level[1].as_str()).unwrap_or(&"undefined"),
         )))
         .ok();
         writeln!(
             wtr,
             "{}: {}",
-            LEVEL_FULL.get(level[1].as_str()).unwrap(),
+            LEVEL_FULL.get(level[1].as_str()).unwrap_or(&"undefined"),
             &result_str
         )
         .ok();
@@ -1123,6 +1123,11 @@ fn _print_detection_summary_tables(
     let mut output = vec![];
     let mut col_color = vec![];
     for level in level_abbr.iter() {
+        // undefinedはHTML出力は行うが画面上への出力は行わないため
+        if level[1] == "undefined" {
+            continue;
+        }
+
         let mut col_output: Nested<String> = Nested::<String>::new();
         col_output.push(format!(
             "Top {} alerts:",
@@ -1134,7 +1139,6 @@ fn _print_detection_summary_tables(
             LEVEL_FULL.get(level[1].as_str()).unwrap(),
         ));
 
-        // output_levelsはlevelsからundefinedを除外した配列であり、各要素は必ず初期化されているのでSomeであることが保証されているのでunwrapをそのまま実施
         let detections_by_computer = detect_counts_by_rule_and_level.get(&level[1]).unwrap();
         let mut sorted_detections: Vec<(&CompactString, &i128)> =
             detections_by_computer.iter().collect();
