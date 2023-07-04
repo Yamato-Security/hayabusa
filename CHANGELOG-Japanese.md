@@ -7,6 +7,7 @@
 - `csv-timeline`コマンドに`-R, --remove-duplicate-data`オプションを追加し、`%Details%`、`%AllFieldInfo%`、`%ExtraFieldInfo%`列の重複フィールドデータを`DUP`という文字列に変換し、ファイルサイズの削減を行う。(#1056) (@hitenkoku)
 - `csv-timeline`コマンドと`json-timeline`コマンドに`--include-tags`オプションを追加し、指定した`tags`フィールドを持つルールのみをロードするようにした。(#1108) (@hitenkoku)
 - `csv-timeline`と`json-timeline`コマンドに`--exclude-tags`オプションを追加し、指定した`tags`フィールドを持つルールをロードしないようにした。(#1118) (@hitenkoku)
+- `csv-timeline`と`json-timeline`コマンドに`--include-category`と`--exclude-category`オプションを追加した。`include-category`は、指定された`category`フィールドのルールのみをロードする。`--exclude-category`は、指定された`category`フィールドを持つルールをロードしない。 (#1119) (@hitenkoku)
 
 **改善:**
 

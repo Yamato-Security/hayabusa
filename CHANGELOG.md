@@ -7,6 +7,7 @@
 - Added the `-R, --remove-duplicate-data` option in the `csv-timeline` command to replace duplicate field data with the string `DUP` in the `%Details%`, `%AllFieldInfo%`, `%ExtraFieldInfo%` columns to reduce file size. (#1056) (@hitenkoku)
 - Added the `--include-tags` option to `csv-timeline` and `json-timeline` commands to only load rules with the specified `tags` field. (#1108) (@hitenkoku)
 - Added the `--exclude-tags` option to `csv-timeline` and `json-timeline` commands to exclude rules with specific `tags` from being loaded. (#1118) (@hitenkoku)
+- Added `--include-category` and `--exclude-category` options to `csv-timeline` and `json-timeline` commands. When using `--include-category`, only rules with the specified `category` field will be loaded. `--exclude-category` will exclude rules from being loaded based on `category`. (#1119) (@hitenkoku)
 
 **Enhancements:**
 

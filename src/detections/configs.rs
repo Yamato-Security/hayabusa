@@ -896,7 +896,7 @@ pub struct PivotKeywordOption {
     pub enable_unsupported_rules: bool,
 
     /// Ignore rules according to status (ex: experimental) (ex: stable,test)
-    #[arg(help_heading = Some("Filtering"), long = "exclude-status", value_name = "STATUS", use_value_delimiter = true, value_delimiter = ',', display_order = 314)]
+    #[arg(help_heading = Some("Filtering"), long = "exclude-status", value_name = "STATUS", use_value_delimiter = true, value_delimiter = ',', display_order = 315)]
     pub exclude_status: Option<Vec<String>>,
 
     /// Minimum level for rules (default: informational)
@@ -1014,12 +1014,20 @@ pub struct OutputOption {
     pub enable_unsupported_rules: bool,
 
     /// Ignore rules according to status (ex: experimental) (ex: stable,test)
-    #[arg(help_heading = Some("Filtering"), long = "exclude-status", value_name = "STATUS", use_value_delimiter = true, value_delimiter = ',', display_order = 314)]
+    #[arg(help_heading = Some("Filtering"), long = "exclude-status", value_name = "STATUS", use_value_delimiter = true, value_delimiter = ',', display_order = 315)]
     pub exclude_status: Option<Vec<String>>,
 
     /// Only load rules with specific tags (ex: attack.execution,attack.discovery)
     #[arg(help_heading = Some("Filtering"), long = "include_tags", value_name = "TAGS", conflicts_with = "exclude_tags", use_value_delimiter = true, value_delimiter = ',', display_order = 351)]
     pub include_tags: Option<Vec<String>>,
+
+    /// Only load rules with certain logsource categories (ex: process_creation,pipe_created)
+    #[arg(help_heading = Some("Filtering"), long = "include-category", value_name = "CATEGORY", conflicts_with = "exclude-category", use_value_delimiter = true, value_delimiter = ',', display_order = 351)]
+    pub include_category: Option<Vec<String>>,
+
+    /// Do not load rules with certain logsource categories (ex: process_creation,pipe_created)
+    #[arg(help_heading = Some("Filtering"), long = "exclude-category", value_name = "CATEGORY", conflicts_with = "include_category",use_value_delimiter = true, value_delimiter = ',', display_order = 314)]
+    pub exclude_category: Option<Vec<String>>,
 
     /// Minimum level for rules (default: informational)
     #[arg(
@@ -1549,6 +1557,8 @@ fn extract_output_options(config: &Config) -> Option<OutputOption> {
             clobber: false,
             include_tags: None,
             exclude_tags: None,
+            include_category: None,
+            exclude_category: None,
         }),
         Action::Metrics(option) => Some(OutputOption {
             input_args: option.input_args.clone(),
@@ -1578,6 +1588,8 @@ fn extract_output_options(config: &Config) -> Option<OutputOption> {
             clobber: option.clobber,
             include_tags: None,
             exclude_tags: None,
+            include_category: None,
+            exclude_category: None,
         }),
         Action::LogonSummary(option) => Some(OutputOption {
             input_args: option.input_args.clone(),
@@ -1607,6 +1619,8 @@ fn extract_output_options(config: &Config) -> Option<OutputOption> {
             clobber: option.clobber,
             include_tags: None,
             exclude_tags: None,
+            include_category: None,
+            exclude_category: None,
         }),
         Action::Search(option) => Some(OutputOption {
             input_args: option.input_args.clone(),
@@ -1643,6 +1657,8 @@ fn extract_output_options(config: &Config) -> Option<OutputOption> {
             clobber: option.clobber,
             include_tags: None,
             exclude_tags: None,
+            include_category: None,
+            exclude_category: None,
         }),
         Action::SetDefaultProfile(option) => Some(OutputOption {
             input_args: InputOption {
@@ -1683,6 +1699,8 @@ fn extract_output_options(config: &Config) -> Option<OutputOption> {
             clobber: false,
             include_tags: None,
             exclude_tags: None,
+            include_category: None,
+            exclude_category: None,
         }),
         Action::UpdateRules(option) => Some(OutputOption {
             input_args: InputOption {
@@ -1723,6 +1741,8 @@ fn extract_output_options(config: &Config) -> Option<OutputOption> {
             clobber: false,
             include_tags: None,
             exclude_tags: None,
+            include_category: None,
+            exclude_category: None,
         }),
         _ => None,
     }

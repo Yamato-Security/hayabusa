@@ -620,6 +620,8 @@ mod tests {
                     clobber: false,
                     include_tags: None,
                     exclude_tags: None,
+                    include_category: None,
+                    exclude_category: None,
                 },
                 geo_ip: None,
                 output: None,
