@@ -69,7 +69,8 @@ pub struct StoredStatic {
     pub html_report_flag: bool,
     pub profiles: Option<Vec<(CompactString, Profile)>>,
     pub event_timeline_config: EventInfoConfig,
-    pub target_eventids: TargetEventIds,
+    pub target_eventids: TargetIds,
+    pub target_ruleids: TargetIds,
     pub thread_number: Option<usize>,
     pub json_input_flag: bool,
     pub output_path: Option<PathBuf>,
@@ -292,6 +293,28 @@ impl StoredStatic {
             Some(Action::Search(opt)) => opt.multiline,
             _ => false,
         };
+        let proven_rule_flag = match &input_config.as_ref().unwrap().action {
+            Some(Action::CsvTimeline(opt)) => opt.output_options.proven_rules,
+            Some(Action::JsonTimeline(opt)) => opt.output_options.proven_rules,
+            _ => false,
+        };
+        let target_ruleids = if proven_rule_flag {
+            load_target_ids(
+                utils::check_setting_path(config_path, "proven_rules.txt", false)
+                    .unwrap_or_else(|| {
+                        utils::check_setting_path(
+                            &CURRENT_EXE_PATH.to_path_buf(),
+                            "rules/config/proven_rules.txt",
+                            true,
+                        )
+                        .unwrap()
+                    })
+                    .to_str()
+                    .unwrap(),
+            )
+        } else {
+            TargetIds::default()
+        };
         let mut ret = StoredStatic {
             config: input_config.as_ref().unwrap().to_owned(),
             config_path: config_path.to_path_buf(),
@@ -392,6 +415,7 @@ impl StoredStatic {
                     .to_str()
                     .unwrap(),
             ),
+            target_ruleids,
             json_input_flag,
             output_path: output_path.cloned(),
             common_options,
@@ -1068,6 +1092,10 @@ pub struct OutputOption {
     #[arg(help_heading = Some("Filtering"), short = 'E', long = "EID-filter", display_order = 50)]
     pub eid_filter: bool,
 
+    /// Scan only proven rule for faster speed (./rules/config/proven_rules.txt)
+    #[arg(help_heading = Some("Filtering"), short = 'P', long = "proven-rules", display_order = 420)]
+    pub proven_rules: bool,
+
     /// Exclude load rules with specific tags (ex: sysmon)
     #[arg(help_heading = Some("Filtering"), long = "exclude-tags", value_name = "TAGS", conflicts_with = "include_tags", use_value_delimiter = true, value_delimiter = ',', display_order = 315)]
     pub exclude_tags: Option<Vec<String>>,
@@ -1252,34 +1280,34 @@ impl ConfigReader {
 }
 
 #[derive(Debug, Clone)]
-pub struct TargetEventIds {
+pub struct TargetIds {
     ids: HashSet<String>,
 }
 
-impl Default for TargetEventIds {
+impl Default for TargetIds {
     fn default() -> Self {
         Self::new()
     }
 }
 
-impl TargetEventIds {
-    pub fn new() -> TargetEventIds {
-        TargetEventIds {
+impl TargetIds {
+    pub fn new() -> TargetIds {
+        TargetIds {
             ids: HashSet::new(),
         }
     }
 
-    pub fn is_target(&self, id: &str) -> bool {
-        // 中身が空の場合は全EventIdを対象とする。
+    pub fn is_target(&self, id: &str, flag_in_case_empty: bool) -> bool {
+        // 中身が空の場合はEventIdの場合は全EventIdを対象とする。RuleIdの場合は全部のRuleIdはフィルタリングの対象にならないものとする
         if self.ids.is_empty() {
-            return true;
+            return flag_in_case_empty;
         }
         self.ids.contains(id)
     }
 }
 
-fn load_target_ids(path: &str) -> TargetEventIds {
-    let mut ret = TargetEventIds::default();
+fn load_target_ids(path: &str) -> TargetIds {
+    let mut ret = TargetIds::default();
     let lines = utils::read_txt(path); // ファイルが存在しなければエラーとする
     if lines.is_err() {
         AlertMessage::alert(lines.as_ref().unwrap_err()).ok();
@@ -1555,6 +1583,7 @@ fn extract_output_options(config: &Config) -> Option<OutputOption> {
             detect_common_options: option.detect_common_options.clone(),
             enable_unsupported_rules: option.enable_unsupported_rules,
             clobber: false,
+            proven_rules: false,
             include_tags: None,
             exclude_tags: None,
             include_category: None,
@@ -1586,6 +1615,7 @@ fn extract_output_options(config: &Config) -> Option<OutputOption> {
             detect_common_options: option.detect_common_options.clone(),
             enable_unsupported_rules: false,
             clobber: option.clobber,
+            proven_rules: false,
             include_tags: None,
             exclude_tags: None,
             include_category: None,
@@ -1617,6 +1647,7 @@ fn extract_output_options(config: &Config) -> Option<OutputOption> {
             detect_common_options: option.detect_common_options.clone(),
             enable_unsupported_rules: false,
             clobber: option.clobber,
+            proven_rules: false,
             include_tags: None,
             exclude_tags: None,
             include_category: None,
@@ -1655,6 +1686,7 @@ fn extract_output_options(config: &Config) -> Option<OutputOption> {
             exact_level: None,
             enable_unsupported_rules: false,
             clobber: option.clobber,
+            proven_rules: false,
             include_tags: None,
             exclude_tags: None,
             include_category: None,
@@ -1697,6 +1729,7 @@ fn extract_output_options(config: &Config) -> Option<OutputOption> {
             },
             enable_unsupported_rules: false,
             clobber: false,
+            proven_rules: false,
             include_tags: None,
             exclude_tags: None,
             include_category: None,
@@ -1739,6 +1772,7 @@ fn extract_output_options(config: &Config) -> Option<OutputOption> {
             },
             enable_unsupported_rules: true,
             clobber: false,
+            proven_rules: false,
             include_tags: None,
             exclude_tags: None,
             include_category: None,

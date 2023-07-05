@@ -976,6 +976,7 @@ mod tests {
                     },
                     enable_unsupported_rules: false,
                     clobber: false,
+                    proven_rules: false,
                     include_tags: None,
                     exclude_tags: None,
                     include_category: None,
