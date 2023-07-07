@@ -470,7 +470,7 @@ mod tests {
 
     use chrono::{DateTime, NaiveDateTime, Utc};
     use compact_str::CompactString;
-    use hashbrown::HashMap;
+    use hashbrown::{HashMap, HashSet};
     use nested::Nested;
 
     use crate::{
@@ -512,6 +512,8 @@ mod tests {
                     quiet_errors: false,
                     config: Path::new("./rules/config").to_path_buf(),
                     verbose: false,
+                    include_computer: None,
+                    exclude_computer: None,
                 },
                 european_time: false,
                 iso_8601: false,
@@ -526,10 +528,16 @@ mod tests {
         *STORED_EKEY_ALIAS.write().unwrap() = Some(dummy_stored_static.eventkey_alias.clone());
         let mut timeline = Timeline::default();
 
+        let include_computer: HashSet<CompactString> = HashSet::new();
+        let exclude_computer: HashSet<CompactString> = HashSet::new();
+
         // レコード情報がないときにはstats_time_cntは何も行わないことをテスト
-        timeline
-            .stats
-            .logon_stats_start(&[], true, &dummy_stored_static.eventkey_alias);
+        timeline.stats.logon_stats_start(
+            &[],
+            true,
+            &dummy_stored_static.eventkey_alias,
+            (&include_computer, &exclude_computer),
+        );
 
         // テスト1: 対象となるTimestamp情報がない場合
         let no_timestamp_record_str = r#"{
@@ -549,9 +557,12 @@ mod tests {
             "testpath".to_string(),
             &Nested::<String>::new(),
         ));
-        timeline
-            .stats
-            .logon_stats_start(&input_datas, true, &dummy_stored_static.eventkey_alias);
+        timeline.stats.logon_stats_start(
+            &input_datas,
+            true,
+            &dummy_stored_static.eventkey_alias,
+            (&include_computer, &exclude_computer),
+        );
         assert!(timeline.stats.start_time.is_none());
         assert!(timeline.stats.end_time.is_none());
 
@@ -639,9 +650,12 @@ mod tests {
             [0, 1],
         );
 
-        timeline
-            .stats
-            .logon_stats_start(&input_datas, true, &dummy_stored_static.eventkey_alias);
+        timeline.stats.logon_stats_start(
+            &input_datas,
+            true,
+            &dummy_stored_static.eventkey_alias,
+            (&include_computer, &exclude_computer),
+        );
         assert_eq!(
             timeline.stats.start_time,
             Some(DateTime::<Utc>::from_utc(
@@ -686,6 +700,8 @@ mod tests {
                 quiet_errors: false,
                 config: Path::new("./rules/config").to_path_buf(),
                 verbose: false,
+                include_computer: None,
+                exclude_computer: None,
             },
             european_time: false,
             iso_8601: false,
@@ -722,9 +738,14 @@ mod tests {
             &Nested::<String>::new(),
         ));
 
-        timeline
-            .stats
-            .evt_stats_start(&input_datas, &dummy_stored_static);
+        let include_computer: HashSet<CompactString> = HashSet::new();
+        let exclude_computer: HashSet<CompactString> = HashSet::new();
+
+        timeline.stats.evt_stats_start(
+            &input_datas,
+            &dummy_stored_static,
+            (&include_computer, &exclude_computer),
+        );
 
         timeline.tm_stats_dsp_msg(
             &dummy_stored_static.event_timeline_config,
@@ -765,6 +786,8 @@ mod tests {
                     quiet_errors: false,
                     config: Path::new("./rules/config").to_path_buf(),
                     verbose: false,
+                    include_computer: None,
+                    exclude_computer: None,
                 },
                 european_time: false,
                 iso_8601: false,
@@ -829,9 +852,14 @@ mod tests {
             &Nested::<String>::new(),
         ));
 
-        timeline
-            .stats
-            .logon_stats_start(&input_datas, true, &dummy_stored_static.eventkey_alias);
+        let include_computer: HashSet<CompactString> = HashSet::new();
+        let exclude_computer: HashSet<CompactString> = HashSet::new();
+        timeline.stats.logon_stats_start(
+            &input_datas,
+            true,
+            &dummy_stored_static.eventkey_alias,
+            (&include_computer, &exclude_computer),
+        );
 
         timeline.tm_logon_stats_dsp_msg(&dummy_stored_static);
         let mut header = vec![

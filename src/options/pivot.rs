@@ -166,6 +166,7 @@ mod tests {
     use crate::detections::utils;
     use crate::options::pivot::insert_pivot_keyword;
     use crate::options::pivot::PIVOT_KEYWORD;
+    use hashbrown::HashSet;
     use serde_json;
 
     #[test]
@@ -195,6 +196,7 @@ mod tests {
                 .to_str()
                 .unwrap(),
             ),
+            (&HashSet::new(), &HashSet::new()),
         );
 
         assert!(!PIVOT_KEYWORD
@@ -233,6 +235,7 @@ mod tests {
                 .to_str()
                 .unwrap(),
             ),
+            (&HashSet::new(), &HashSet::new()),
         );
 
         assert!(PIVOT_KEYWORD
@@ -271,6 +274,7 @@ mod tests {
                 .to_str()
                 .unwrap(),
             ),
+            (&HashSet::new(), &HashSet::new()),
         );
 
         assert!(!PIVOT_KEYWORD
@@ -309,6 +313,7 @@ mod tests {
                 .to_str()
                 .unwrap(),
             ),
+            (&HashSet::new(), &HashSet::new()),
         );
 
         assert!(!PIVOT_KEYWORD
@@ -347,6 +352,7 @@ mod tests {
                 .to_str()
                 .unwrap(),
             ),
+            (&HashSet::new(), &HashSet::new()),
         );
 
         assert!(!PIVOT_KEYWORD
@@ -385,6 +391,7 @@ mod tests {
                 .to_str()
                 .unwrap(),
             ),
+            (&HashSet::new(), &HashSet::new()),
         );
 
         assert!(PIVOT_KEYWORD
@@ -423,6 +430,7 @@ mod tests {
                 .to_str()
                 .unwrap(),
             ),
+            (&HashSet::new(), &HashSet::new()),
         );
 
         assert!(!PIVOT_KEYWORD

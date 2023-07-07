@@ -323,7 +323,7 @@ mod tests {
     use std::path::Path;
 
     use compact_str::CompactString;
-    use hashbrown::HashMap;
+    use hashbrown::{HashMap, HashSet};
     use nested::Nested;
 
     use crate::{
@@ -364,6 +364,8 @@ mod tests {
                 quiet_errors: false,
                 config: Path::new("./rules/config").to_path_buf(),
                 verbose: false,
+                include_computer: None,
+                exclude_computer: None,
             },
             european_time: false,
             iso_8601: false,
@@ -408,11 +410,6 @@ mod tests {
 
         let include_computer: HashSet<CompactString> = HashSet::new();
         let exclude_computer: HashSet<CompactString> = HashSet::new();
-        timeline.stats.evt_stats_start(
-            &input_datas,
-            &dummy_stored_static,
-            (&include_computer, &exclude_computer),
-        );
         timeline.stats.evt_stats_start(
             &input_datas,
             &dummy_stored_static,
