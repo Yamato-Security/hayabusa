@@ -25,7 +25,7 @@ use crate::filter;
 use crate::options::htmlreport;
 use crate::options::pivot::insert_pivot_keyword;
 use crate::yaml::ParseYaml;
-use hashbrown::{HashMap, HashSet};
+use hashbrown::HashMap;
 use serde_json::Value;
 use std::fmt::Write;
 use std::path::Path;
@@ -217,7 +217,14 @@ impl Detection {
             }
 
             if stored_static.pivot_keyword_list_flag {
-                insert_pivot_keyword(&record_info.record, &stored_static.eventkey_alias);
+                insert_pivot_keyword(
+                    &record_info.record,
+                    &stored_static.eventkey_alias,
+                    (
+                        &stored_static.include_computer,
+                        &stored_static.exclude_computer,
+                    ),
+                );
                 continue;
             }
 

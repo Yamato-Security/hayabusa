@@ -1,3 +1,5 @@
+use compact_str::CompactString;
+use hashbrown::HashSet;
 use indexmap::{IndexMap, IndexSet};
 use lazy_static::lazy_static;
 use serde_json::Value;
@@ -6,7 +8,7 @@ use std::sync::RwLock;
 use termcolor::{BufferWriter, Color, ColorChoice};
 
 use crate::detections::utils::{
-    get_serde_number_to_string, get_writable_color, write_color_buffer,
+    get_serde_number_to_string, get_writable_color, write_color_buffer, is_filtered_by_computer_name, get_event_value,
 };
 
 use crate::detections::configs::{EventKeyAliasConfig, StoredStatic};
@@ -39,8 +41,11 @@ impl PivotKeyword {
 
 ///levelがlowより大きいレコードの場合、keywordがrecord内にみつかれば、
 ///それをPIVOT_KEYWORD.keywordsに入れる。
-pub fn insert_pivot_keyword(event_record: &Value, eventkey_alias: &EventKeyAliasConfig) {
-    //levelがlow以上なら続ける
+pub fn insert_pivot_keyword(
+    event_record: &Value,
+    eventkey_alias: &EventKeyAliasConfig,
+    (include_computer, exclude_computer): (&HashSet<CompactString>, &HashSet<CompactString>),
+) {
     let mut is_exist_event_key = false;
     let mut tmp_event_record: &Value = event_record;
     for s in ["Event", "System", "Level"] {
@@ -58,6 +63,13 @@ pub fn insert_pivot_keyword(event_record: &Value, eventkey_alias: &EventKeyAlias
             {
                 return;
             }
+        }
+        if is_filtered_by_computer_name(
+            get_event_value("Event.System.Computer", event_record, eventkey_alias),
+            (include_computer, exclude_computer),
+        ) {
+            // include_computerで指定されたものに合致しないまたはexclude_computerで指定されたものに合致した場合は、検知対象外とする
+            return;
         }
     } else {
         return;
