@@ -693,6 +693,14 @@ pub struct DetectCommonOption {
     /// Output verbose information
     #[arg(help_heading = Some("Display Settings"), short = 'v', long, display_order = 480)]
     pub verbose: bool,
+
+    /// Scan only these computer names (ex: ComputerA) (ex: ComputerA,ComputerB)
+    #[arg(help_heading = Some("Filtering"), long = "include-computer", value_name = "COMPUTER", conflicts_with = "exclude-computer", use_value_delimiter = true, value_delimiter = ',', display_order = 351)]
+    pub include_computer: Option<Vec<String>>,
+
+    /// Do not load rules with certain logsource categories (ex: process_creation,pipe_created)
+    #[arg(help_heading = Some("Filtering"), long = "exclude-computer", value_name = "COMPUTER", conflicts_with = "include_computer",use_value_delimiter = true, value_delimiter = ',', display_order = 314)]
+    pub exclude_computer: Option<Vec<String>>,
 }
 
 #[derive(Args, Clone, Debug)]
@@ -1682,6 +1690,8 @@ fn extract_output_options(config: &Config) -> Option<OutputOption> {
                 quiet_errors: option.quiet_errors,
                 config: option.config.clone(),
                 verbose: option.verbose,
+                include_computer: None,
+                exclude_computer: None,
             },
             exact_level: None,
             enable_unsupported_rules: false,
@@ -1726,6 +1736,8 @@ fn extract_output_options(config: &Config) -> Option<OutputOption> {
                 config: Path::new("./rules/config").to_path_buf(),
                 verbose: false,
                 json_input: false,
+                include_computer: None,
+                exclude_computer: None,
             },
             enable_unsupported_rules: false,
             clobber: false,
@@ -1769,6 +1781,8 @@ fn extract_output_options(config: &Config) -> Option<OutputOption> {
                 config: Path::new("./rules/config").to_path_buf(),
                 verbose: false,
                 json_input: false,
+                include_computer: None,
+                exclude_computer: None,
             },
             enable_unsupported_rules: true,
             clobber: false,
