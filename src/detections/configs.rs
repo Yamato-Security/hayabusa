@@ -76,6 +76,8 @@ pub struct StoredStatic {
     pub output_path: Option<PathBuf>,
     pub common_options: CommonOptions,
     pub multiline_flag: bool,
+    pub include_computer: HashSet<CompactString>,
+    pub exclude_computer: HashSet<CompactString>,
 }
 impl StoredStatic {
     /// main.rsでパースした情報からデータを格納する関数
@@ -315,6 +317,98 @@ impl StoredStatic {
         } else {
             TargetIds::default()
         };
+        let include_computer: HashSet<CompactString> = match &input_config.as_ref().unwrap().action
+        {
+            Some(Action::CsvTimeline(opt)) => opt
+                .output_options
+                .detect_common_options
+                .include_computer
+                .as_ref()
+                .unwrap_or(&vec![])
+                .iter()
+                .map(CompactString::from)
+                .collect(),
+            Some(Action::JsonTimeline(opt)) => opt
+                .output_options
+                .detect_common_options
+                .include_computer
+                .as_ref()
+                .unwrap_or(&vec![])
+                .iter()
+                .map(CompactString::from)
+                .collect(),
+            Some(Action::Metrics(opt)) => opt
+                .detect_common_options
+                .include_computer
+                .as_ref()
+                .unwrap_or(&vec![])
+                .iter()
+                .map(CompactString::from)
+                .collect(),
+            Some(Action::PivotKeywordsList(opt)) => opt
+                .detect_common_options
+                .include_computer
+                .as_ref()
+                .unwrap_or(&vec![])
+                .iter()
+                .map(CompactString::from)
+                .collect(),
+            Some(Action::LogonSummary(opt)) => opt
+                .detect_common_options
+                .include_computer
+                .as_ref()
+                .unwrap_or(&vec![])
+                .iter()
+                .map(CompactString::from)
+                .collect(),
+            _ => HashSet::default(),
+        };
+        let exclude_computer: HashSet<CompactString> = match &input_config.as_ref().unwrap().action
+        {
+            Some(Action::CsvTimeline(opt)) => opt
+                .output_options
+                .detect_common_options
+                .include_computer
+                .as_ref()
+                .unwrap_or(&vec![])
+                .iter()
+                .map(CompactString::from)
+                .collect(),
+            Some(Action::JsonTimeline(opt)) => opt
+                .output_options
+                .detect_common_options
+                .include_computer
+                .as_ref()
+                .unwrap_or(&vec![])
+                .iter()
+                .map(CompactString::from)
+                .collect(),
+            Some(Action::Metrics(opt)) => opt
+                .detect_common_options
+                .include_computer
+                .as_ref()
+                .unwrap_or(&vec![])
+                .iter()
+                .map(CompactString::from)
+                .collect(),
+            Some(Action::PivotKeywordsList(opt)) => opt
+                .detect_common_options
+                .include_computer
+                .as_ref()
+                .unwrap_or(&vec![])
+                .iter()
+                .map(CompactString::from)
+                .collect(),
+            Some(Action::LogonSummary(opt)) => opt
+                .detect_common_options
+                .include_computer
+                .as_ref()
+                .unwrap_or(&vec![])
+                .iter()
+                .map(CompactString::from)
+                .collect(),
+            _ => HashSet::default(),
+        };
         let mut ret = StoredStatic {
             config: input_config.as_ref().unwrap().to_owned(),
             config_path: config_path.to_path_buf(),
@@ -420,6 +514,8 @@ impl StoredStatic {
             output_path: output_path.cloned(),
             common_options,
             multiline_flag,
+            include_computer,
+            exclude_computer,
         };
         ret.profiles = load_profile(
             check_setting_path(
