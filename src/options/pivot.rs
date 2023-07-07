@@ -8,7 +8,8 @@ use std::sync::RwLock;
 use termcolor::{BufferWriter, Color, ColorChoice};
 
 use crate::detections::utils::{
-    get_serde_number_to_string, get_writable_color, write_color_buffer, is_filtered_by_computer_name, get_event_value,
+    get_event_value, get_serde_number_to_string, get_writable_color, is_filtered_by_computer_name,
+    write_color_buffer,
 };
 
 use crate::detections::configs::{EventKeyAliasConfig, StoredStatic};
@@ -46,17 +47,11 @@ pub fn insert_pivot_keyword(
     eventkey_alias: &EventKeyAliasConfig,
     (include_computer, exclude_computer): (&HashSet<CompactString>, &HashSet<CompactString>),
 ) {
-    let mut is_exist_event_key = false;
-    let mut tmp_event_record: &Value = event_record;
-    for s in ["Event", "System", "Level"] {
-        if let Some(record) = tmp_event_record.get(s) {
-            is_exist_event_key = true;
-            tmp_event_record = record;
-        }
-    }
-    if is_exist_event_key {
-        if let Some(event_record_str) = get_serde_number_to_string(tmp_event_record, false) {
+    if let Some(record_level) = get_event_value("Event.System.Level", event_record, eventkey_alias)
+    {
+        if let Some(event_record_str) = get_serde_number_to_string(record_level, false) {
             let exclude_check_str = event_record_str.as_str();
+            //levelがlow以上なら続ける
             if exclude_check_str == "infomational"
                 || exclude_check_str == "undefined"
                 || exclude_check_str == "-"
@@ -64,16 +59,18 @@ pub fn insert_pivot_keyword(
                 return;
             }
         }
-        if is_filtered_by_computer_name(
-            get_event_value("Event.System.Computer", event_record, eventkey_alias),
-            (include_computer, exclude_computer),
-        ) {
-            // include_computerで指定されたものに合致しないまたはexclude_computerで指定されたものに合致した場合は、検知対象外とする
-            return;
-        }
     } else {
         return;
     }
+
+    if is_filtered_by_computer_name(
+        get_event_value("Event.System.Computer", event_record, eventkey_alias),
+        (include_computer, exclude_computer),
+    ) {
+        // include_computerで指定されたものに合致しないまたはexclude_computerで指定されたものに合致した場合は、検知対象外とする
+        return;
+    }
+
     let mut pivots = PIVOT_KEYWORD.write().unwrap();
     pivots.iter_mut().for_each(|(_, pivot)| {
         for field in &pivot.fields {
