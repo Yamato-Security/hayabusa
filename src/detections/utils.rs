@@ -644,6 +644,22 @@ pub fn output_profile_name(output_option: &Option<OutputOption>, stdout: bool) {
     }
 }
 
+/// コンピュータ名がフィルタリング対象であるかを判定する関数
+pub fn is_filtered_by_computer_name(
+    record: Option<&Value>,
+    (include_computer, exclude_computer): (&HashSet<CompactString>, &HashSet<CompactString>),
+) -> bool {
+    if let Some(computer_name) = record {
+        let computer_str = computer_name.as_str().unwrap_or_default().replace('\"', "");
+        if (!include_computer.is_empty() && !include_computer.contains(computer_str.as_str()))
+            || (!exclude_computer.is_empty() && exclude_computer.contains(computer_str.as_str()))
+        {
+            return true;
+        }
+    }
+    false
+}
+
 #[cfg(test)]
 mod tests {
     use std::path::Path;

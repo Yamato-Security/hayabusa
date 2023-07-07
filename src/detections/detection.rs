@@ -25,7 +25,7 @@ use crate::filter;
 use crate::options::htmlreport;
 use crate::options::pivot::insert_pivot_keyword;
 use crate::yaml::ParseYaml;
-use hashbrown::HashMap;
+use hashbrown::{HashMap, HashSet};
 use serde_json::Value;
 use std::fmt::Write;
 use std::path::Path;
@@ -38,6 +38,7 @@ use super::configs::{
     EventKeyAliasConfig, StoredStatic, GEOIP_DB_PARSER, GEOIP_DB_YAML, GEOIP_FILTER, STORED_STATIC,
 };
 use super::message::{self, LEVEL_ABBR_MAP};
+use super::utils;
 
 // イベントファイルの1レコード分の情報を保持する構造体
 #[derive(Clone, Debug)]
@@ -287,6 +288,21 @@ impl Detection {
                     );
                 }
                 Computer(_) => {
+                    if utils::is_filtered_by_computer_name(
+                        utils::get_event_value(
+                            "Event.System.Computer",
+                            &record_info.record,
+                            eventkey_alias,
+                        ),
+                        (
+                            &stored_static.include_computer,
+                            &stored_static.exclude_computer,
+                        ),
+                    ) {
+                        // include_computerで指定されたものに合致しないまたはexclude_computerで指定されたものに合致した場合は、検知対象外とする
+                        return;
+                    }
+
                     profile_converter.insert(
                         key.as_str(),
                         Computer(
