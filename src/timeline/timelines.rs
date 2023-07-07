@@ -66,12 +66,23 @@ impl Timeline {
 
     pub fn start(&mut self, records: &[EvtxRecordInfo], stored_static: &StoredStatic) {
         if stored_static.metrics_flag {
-            self.stats.evt_stats_start(records, stored_static);
+            self.stats.evt_stats_start(
+                records,
+                stored_static,
+                (
+                    &stored_static.include_computer,
+                    &stored_static.exclude_computer,
+                ),
+            );
         } else if stored_static.logon_summary_flag {
             self.stats.logon_stats_start(
                 records,
                 stored_static.logon_summary_flag,
                 &stored_static.eventkey_alias,
+                (
+                    &stored_static.include_computer,
+                    &stored_static.exclude_computer,
+                ),
             );
         } else if stored_static.search_flag {
             self.event_search.search_start(

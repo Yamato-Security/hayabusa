@@ -7,7 +7,7 @@ use crate::detections::{
 };
 use chrono::{DateTime, NaiveDate, NaiveDateTime, Utc};
 use compact_str::CompactString;
-use hashbrown::HashMap;
+use hashbrown::{HashMap, HashSet};
 
 #[derive(Debug, Clone)]
 pub struct EventMetrics {
@@ -58,8 +58,13 @@ impl EventMetrics {
         }
     }
 
-    pub fn evt_stats_start(&mut self, records: &[EvtxRecordInfo], stored_static: &StoredStatic) {
-        // _recordsから、EventIDを取り出す。
+    pub fn evt_stats_start(
+        &mut self,
+        records: &[EvtxRecordInfo],
+        stored_static: &StoredStatic,
+        (include_computer, exclude_computer): (&HashSet<CompactString>, &HashSet<CompactString>),
+    ) {
+        // recordsから、 最初のレコードの時刻と最後のレコードの時刻、レコードの総数を取得する
         self.stats_time_cnt(records, &stored_static.eventkey_alias);
 
         // 引数でmetricsオプションが指定されている時だけ、統計情報を出力する。
@@ -68,7 +73,7 @@ impl EventMetrics {
         }
 
         // EventIDで集計
-        self.stats_eventid(records, stored_static);
+        self.stats_eventid(records, stored_static, (include_computer, exclude_computer));
     }
 
     pub fn logon_stats_start(
@@ -76,6 +81,7 @@ impl EventMetrics {
         records: &[EvtxRecordInfo],
         logon_summary_flag: bool,
         eventkey_alias: &EventKeyAliasConfig,
+        (include_computer, exclude_computer): (&HashSet<CompactString>, &HashSet<CompactString>),
     ) {
         // 引数でlogon-summaryオプションが指定されている時だけ、統計情報を出力する。
         if !logon_summary_flag {
@@ -84,7 +90,11 @@ impl EventMetrics {
 
         self.stats_time_cnt(records, eventkey_alias);
 
-        self.stats_login_eventid(records, eventkey_alias);
+        self.stats_login_eventid(
+            records,
+            eventkey_alias,
+            (include_computer, exclude_computer),
+        );
     }
 
     fn stats_time_cnt(&mut self, records: &[EvtxRecordInfo], eventkey_alias: &EventKeyAliasConfig) {
@@ -149,8 +159,23 @@ impl EventMetrics {
     }
 
     /// EventIDで集計
-    fn stats_eventid(&mut self, records: &[EvtxRecordInfo], stored_static: &StoredStatic) {
+    fn stats_eventid(
+        &mut self,
+        records: &[EvtxRecordInfo],
+        stored_static: &StoredStatic,
+        (include_computer, exclude_computer): (&HashSet<CompactString>, &HashSet<CompactString>),
+    ) {
         for record in records.iter() {
+            if utils::is_filtered_by_computer_name(
+                utils::get_event_value(
+                    "Event.System.Computer",
+                    &record.record,
+                    &stored_static.eventkey_alias,
+                ),
+                (include_computer, exclude_computer),
+            ) {
+                continue;
+            }
             let channel = if let Some(ch) =
                 utils::get_event_value("Channel", &record.record, &stored_static.eventkey_alias)
             {
@@ -177,6 +202,7 @@ impl EventMetrics {
         &mut self,
         records: &[EvtxRecordInfo],
         eventkey_alias: &EventKeyAliasConfig,
+        (include_computer, exclude_computer): (&HashSet<CompactString>, &HashSet<CompactString>),
     ) {
         let logontype_map: HashMap<&str, &str> = HashMap::from([
             ("0", "0 - System"),
@@ -193,6 +219,13 @@ impl EventMetrics {
             ("13", "13 - CachedUnlock"),
         ]);
         for record in records.iter() {
+            if utils::is_filtered_by_computer_name(
+                utils::get_event_value("Event.System.Computer", &record.record, eventkey_alias),
+                (include_computer, exclude_computer),
+            ) {
+                continue;
+            }
+
             if let Some(evtid) = utils::get_event_value("EventID", &record.record, eventkey_alias) {
                 let idnum: i64 = if evtid.is_number() {
                     evtid.as_i64().unwrap()
@@ -373,9 +406,18 @@ mod tests {
             &Nested::<String>::new(),
         ));
 
-        timeline
-            .stats
-            .evt_stats_start(&input_datas, &dummy_stored_static);
+        let include_computer: HashSet<CompactString> = HashSet::new();
+        let exclude_computer: HashSet<CompactString> = HashSet::new();
+        timeline.stats.evt_stats_start(
+            &input_datas,
+            &dummy_stored_static,
+            (&include_computer, &exclude_computer),
+        );
+        timeline.stats.evt_stats_start(
+            &input_datas,
+            &dummy_stored_static,
+            (&include_computer, &exclude_computer),
+        );
         assert_eq!(timeline.stats.stats_list.len(), expect.len());
 
         for (k, v) in timeline.stats.stats_list {
