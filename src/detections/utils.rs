@@ -675,7 +675,7 @@ mod tests {
         options::htmlreport::HTML_REPORTER,
     };
     use compact_str::CompactString;
-    use hashbrown::HashMap;
+    use hashbrown::{HashMap, HashSet};
     use nested::Nested;
     use regex::Regex;
     use serde_json::Value;
@@ -1020,5 +1020,59 @@ mod tests {
             assert!(expect.keys().any(|x| x == k));
             assert!(expect.values().any(|y| y == v));
         }
+    }
+
+    #[test]
+    /// Computerの値をもとにフィルタリングされることを確認するテスト
+    fn test_is_filtered_by_computer_name() {
+        let json_str = r##"
+        {
+            "Event": {
+                "System": {
+                    "Computer": "HayabusaComputer1"
+                }
+            }
+        }
+        "##;
+        let event_record: Value = serde_json::from_str(json_str).unwrap();
+
+        // include_computer, exclude_computerが指定されていない場合はフィルタリングされない
+        assert!(!utils::is_filtered_by_computer_name(
+            Some(&event_record["Event"]["System"]["Computer"]),
+            (&HashSet::new(), &HashSet::new()),
+        ));
+
+        // recordのコンピュータ名の情報がない場合はフィルタリングされない
+        assert!(!utils::is_filtered_by_computer_name(
+            None,
+            (&HashSet::new(), &HashSet::new()),
+        ));
+
+        // include_computerで合致しない場合フィルタリングされる
+        assert!(utils::is_filtered_by_computer_name(
+            Some(&event_record["Event"]["System"]["Computer"]),
+            (
+                &HashSet::from_iter(vec!["Hayabusa".into()]),
+                &HashSet::new()
+            ),
+        ));
+
+        // include_computerで合致する場合フィルタリングされない
+        assert!(!utils::is_filtered_by_computer_name(
+            Some(&event_record["Event"]["System"]["Computer"]),
+            (
+                &HashSet::from_iter(vec!["HayabusaComputer1".into()]),
+                &HashSet::new()
+            ),
+        ));
+
+        // exclude_computerで合致する場合フィルタリングされる
+        assert!(utils::is_filtered_by_computer_name(
+            Some(&event_record["Event"]["System"]["Computer"]),
+            (
+                &HashSet::new(),
+                &HashSet::from_iter(vec!["HayabusaComputer1".into()]),
+            ),
+        ));
     }
 }
