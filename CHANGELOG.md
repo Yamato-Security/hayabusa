@@ -14,6 +14,7 @@
 
 - Ignore corrupted event records with timestamps before 2007/1/31 when Windows Vista was released with the new `.evtx` log format. (#1102) (@fukusuket)
 - When `--output` is set in the `metrics` command, the results will not be displayed to screen. (#1099) (@hitenkoku)
+- Added `--include-category` and `--include-computer` options to `csv-timeline`, `json-timeline`, `metrics`, `logon-summary` and `pivot-keywords-list` commands were added. The `--include-computer` option outputs only the detection of the specified `computer`. `--exclude-computer` excludes detection of the specified `computer`. (#1117) (@hitenkoku)
 
 **Bug Fixes:**
 
