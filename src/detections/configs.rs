@@ -368,7 +368,7 @@ impl StoredStatic {
             Some(Action::CsvTimeline(opt)) => opt
                 .output_options
                 .detect_common_options
-                .include_computer
+                .exclude_computer
                 .as_ref()
                 .unwrap_or(&vec![])
                 .iter()
@@ -377,7 +377,7 @@ impl StoredStatic {
             Some(Action::JsonTimeline(opt)) => opt
                 .output_options
                 .detect_common_options
-                .include_computer
+                .exclude_computer
                 .as_ref()
                 .unwrap_or(&vec![])
                 .iter()
@@ -385,7 +385,7 @@ impl StoredStatic {
                 .collect(),
             Some(Action::Metrics(opt)) => opt
                 .detect_common_options
-                .include_computer
+                .exclude_computer
                 .as_ref()
                 .unwrap_or(&vec![])
                 .iter()
@@ -393,7 +393,7 @@ impl StoredStatic {
                 .collect(),
             Some(Action::PivotKeywordsList(opt)) => opt
                 .detect_common_options
-                .include_computer
+                .exclude_computer
                 .as_ref()
                 .unwrap_or(&vec![])
                 .iter()
@@ -401,7 +401,7 @@ impl StoredStatic {
                 .collect(),
             Some(Action::LogonSummary(opt)) => opt
                 .detect_common_options
-                .include_computer
+                .exclude_computer
                 .as_ref()
                 .unwrap_or(&vec![])
                 .iter()
