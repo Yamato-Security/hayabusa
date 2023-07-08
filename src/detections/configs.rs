@@ -794,7 +794,7 @@ pub struct DetectCommonOption {
     #[arg(help_heading = Some("Filtering"), long = "include-computer", value_name = "COMPUTER", conflicts_with = "exclude-computer", use_value_delimiter = true, value_delimiter = ',', display_order = 351)]
     pub include_computer: Option<Vec<String>>,
 
-    /// Do not load rules with certain logsource categories (ex: process_creation,pipe_created)
+    /// Do not scan these computer names (ex: ComputerA) (ex: ComputerA,ComputerB)
     #[arg(help_heading = Some("Filtering"), long = "exclude-computer", value_name = "COMPUTER", conflicts_with = "include_computer",use_value_delimiter = true, value_delimiter = ',', display_order = 314)]
     pub exclude_computer: Option<Vec<String>>,
 }
