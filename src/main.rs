@@ -369,27 +369,6 @@ impl App {
                 println!();
             }
             Action::PivotKeywordsList(_) => {
-                // pivot 機能でファイルを出力する際に同名ファイルが既に存在していた場合はエラー文を出して終了する。
-                if let Some(csv_path) = &stored_static.output_path {
-                    let mut error_flag = false;
-                    let pivot_key_unions = PIVOT_KEYWORD.read().unwrap();
-                    pivot_key_unions.iter().for_each(|(key, _)| {
-                        let keywords_file_name =
-                            csv_path.as_path().display().to_string() + "-" + key + ".txt";
-                        if utils::check_file_expect_not_exist(
-                            Path::new(&keywords_file_name),
-                            format!(
-                                " The file {} already exists. Please specify a different filename or add the -C, --clobber option to overwrite.\n",
-                                &keywords_file_name
-                            ),
-                        ) {
-                            error_flag = true
-                        };
-                    });
-                    if error_flag {
-                        return;
-                    }
-                }
                 load_pivot_keywords(
                     utils::check_setting_path(
                         &CURRENT_EXE_PATH.to_path_buf(),
@@ -400,6 +379,29 @@ impl App {
                     .to_str()
                     .unwrap(),
                 );
+
+                // pivot 機能でファイルを出力する際に同名ファイルが既に存在していた場合はエラー文を出して終了する。
+                let mut error_flag = false;
+                if let Some(csv_path) = &stored_static.output_path {
+                    let pivot_key_unions = PIVOT_KEYWORD.read().unwrap();
+                    pivot_key_unions.iter().for_each(|(key, _)| {
+                        let keywords_file_name =
+                            csv_path.as_path().display().to_string() + "-" + key + ".txt";
+                        if !(stored_static.output_option.as_ref().unwrap().clobber) && utils::check_file_expect_not_exist(
+                            Path::new(&keywords_file_name),
+                            format!(
+                                " The file {} already exists. Please specify a different filename or add the -C, --clobber option to overwrite.",
+                                &keywords_file_name
+                            ),
+                        ) {
+                            error_flag = true
+                        };
+                    });
+                }
+                if error_flag {
+                    println!();
+                    return;
+                }
 
                 self.analysis_start(&target_extensions, &time_filter, stored_static);
 
