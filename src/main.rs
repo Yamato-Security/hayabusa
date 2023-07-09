@@ -1140,6 +1140,21 @@ impl App {
                 let data = &record_result.as_ref().unwrap().data;
                 // Searchならすべてのフィルタを無視
                 if !stored_static.search_flag {
+                    // Computer名がinclude_computerで指定されたものに合致しないまたはexclude_computerで指定されたものに合致した場合はフィルタリングする。
+                    if utils::is_filtered_by_computer_name(
+                        utils::get_event_value(
+                            "Event.System.Computer",
+                            data,
+                            &stored_static.eventkey_alias,
+                        ),
+                        (
+                            &stored_static.include_computer,
+                            &stored_static.exclude_computer,
+                        ),
+                    ) {
+                        continue;
+                    }
+
                     // channelがnullである場合とEventID Filter optionが指定されていない場合は、target_eventids.txtでイベントIDベースでフィルタする。
                     if !self._is_valid_channel(
                         data,

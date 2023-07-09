@@ -81,7 +81,6 @@ impl EventMetrics {
         records: &[EvtxRecordInfo],
         logon_summary_flag: bool,
         eventkey_alias: &EventKeyAliasConfig,
-        (include_computer, exclude_computer): (&HashSet<CompactString>, &HashSet<CompactString>),
     ) {
         // 引数でlogon-summaryオプションが指定されている時だけ、統計情報を出力する。
         if !logon_summary_flag {
@@ -90,11 +89,7 @@ impl EventMetrics {
 
         self.stats_time_cnt(records, eventkey_alias);
 
-        self.stats_login_eventid(
-            records,
-            eventkey_alias,
-            (include_computer, exclude_computer),
-        );
+        self.stats_login_eventid(records, eventkey_alias);
     }
 
     fn stats_time_cnt(&mut self, records: &[EvtxRecordInfo], eventkey_alias: &EventKeyAliasConfig) {
@@ -202,7 +197,6 @@ impl EventMetrics {
         &mut self,
         records: &[EvtxRecordInfo],
         eventkey_alias: &EventKeyAliasConfig,
-        (include_computer, exclude_computer): (&HashSet<CompactString>, &HashSet<CompactString>),
     ) {
         let logontype_map: HashMap<&str, &str> = HashMap::from([
             ("0", "0 - System"),
@@ -219,13 +213,6 @@ impl EventMetrics {
             ("13", "13 - CachedUnlock"),
         ]);
         for record in records.iter() {
-            if utils::is_filtered_by_computer_name(
-                utils::get_event_value("Event.System.Computer", &record.record, eventkey_alias),
-                (include_computer, exclude_computer),
-            ) {
-                continue;
-            }
-
             if let Some(evtid) = utils::get_event_value("EventID", &record.record, eventkey_alias) {
                 let idnum: i64 = if evtid.is_number() {
                     evtid.as_i64().unwrap()

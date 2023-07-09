@@ -38,7 +38,6 @@ use super::configs::{
     EventKeyAliasConfig, StoredStatic, GEOIP_DB_PARSER, GEOIP_DB_YAML, GEOIP_FILTER, STORED_STATIC,
 };
 use super::message::{self, LEVEL_ABBR_MAP};
-use super::utils;
 
 // イベントファイルの1レコード分の情報を保持する構造体
 #[derive(Clone, Debug)]
@@ -217,14 +216,7 @@ impl Detection {
             }
 
             if stored_static.pivot_keyword_list_flag {
-                insert_pivot_keyword(
-                    &record_info.record,
-                    &stored_static.eventkey_alias,
-                    (
-                        &stored_static.include_computer,
-                        &stored_static.exclude_computer,
-                    ),
-                );
+                insert_pivot_keyword(&record_info.record, &stored_static.eventkey_alias);
                 continue;
             }
 
@@ -295,21 +287,6 @@ impl Detection {
                     );
                 }
                 Computer(_) => {
-                    if utils::is_filtered_by_computer_name(
-                        utils::get_event_value(
-                            "Event.System.Computer",
-                            &record_info.record,
-                            eventkey_alias,
-                        ),
-                        (
-                            &stored_static.include_computer,
-                            &stored_static.exclude_computer,
-                        ),
-                    ) {
-                        // include_computerで指定されたものに合致しないまたはexclude_computerで指定されたものに合致した場合は、検知対象外とする
-                        return;
-                    }
-
                     profile_converter.insert(
                         key.as_str(),
                         Computer(

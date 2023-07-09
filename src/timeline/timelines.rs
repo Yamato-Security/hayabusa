@@ -79,10 +79,6 @@ impl Timeline {
                 records,
                 stored_static.logon_summary_flag,
                 &stored_static.eventkey_alias,
-                (
-                    &stored_static.include_computer,
-                    &stored_static.exclude_computer,
-                ),
             );
         } else if stored_static.search_flag {
             self.event_search.search_start(
@@ -528,16 +524,10 @@ mod tests {
         *STORED_EKEY_ALIAS.write().unwrap() = Some(dummy_stored_static.eventkey_alias.clone());
         let mut timeline = Timeline::default();
 
-        let include_computer: HashSet<CompactString> = HashSet::new();
-        let exclude_computer: HashSet<CompactString> = HashSet::new();
-
         // レコード情報がないときにはstats_time_cntは何も行わないことをテスト
-        timeline.stats.logon_stats_start(
-            &[],
-            true,
-            &dummy_stored_static.eventkey_alias,
-            (&include_computer, &exclude_computer),
-        );
+        timeline
+            .stats
+            .logon_stats_start(&[], true, &dummy_stored_static.eventkey_alias);
 
         // テスト1: 対象となるTimestamp情報がない場合
         let no_timestamp_record_str = r#"{
@@ -557,12 +547,9 @@ mod tests {
             "testpath".to_string(),
             &Nested::<String>::new(),
         ));
-        timeline.stats.logon_stats_start(
-            &input_datas,
-            true,
-            &dummy_stored_static.eventkey_alias,
-            (&include_computer, &exclude_computer),
-        );
+        timeline
+            .stats
+            .logon_stats_start(&input_datas, true, &dummy_stored_static.eventkey_alias);
         assert!(timeline.stats.start_time.is_none());
         assert!(timeline.stats.end_time.is_none());
 
@@ -650,12 +637,9 @@ mod tests {
             [0, 1],
         );
 
-        timeline.stats.logon_stats_start(
-            &input_datas,
-            true,
-            &dummy_stored_static.eventkey_alias,
-            (&include_computer, &exclude_computer),
-        );
+        timeline
+            .stats
+            .logon_stats_start(&input_datas, true, &dummy_stored_static.eventkey_alias);
         assert_eq!(
             timeline.stats.start_time,
             Some(DateTime::<Utc>::from_utc(
@@ -852,14 +836,9 @@ mod tests {
             &Nested::<String>::new(),
         ));
 
-        let include_computer: HashSet<CompactString> = HashSet::new();
-        let exclude_computer: HashSet<CompactString> = HashSet::new();
-        timeline.stats.logon_stats_start(
-            &input_datas,
-            true,
-            &dummy_stored_static.eventkey_alias,
-            (&include_computer, &exclude_computer),
-        );
+        timeline
+            .stats
+            .logon_stats_start(&input_datas, true, &dummy_stored_static.eventkey_alias);
 
         timeline.tm_logon_stats_dsp_msg(&dummy_stored_static);
         let mut header = vec![

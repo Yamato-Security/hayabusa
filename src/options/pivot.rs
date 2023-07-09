@@ -1,5 +1,3 @@
-use compact_str::CompactString;
-use hashbrown::HashSet;
 use indexmap::{IndexMap, IndexSet};
 use lazy_static::lazy_static;
 use serde_json::Value;
@@ -8,8 +6,7 @@ use std::sync::RwLock;
 use termcolor::{BufferWriter, Color, ColorChoice};
 
 use crate::detections::utils::{
-    get_event_value, get_serde_number_to_string, get_writable_color, is_filtered_by_computer_name,
-    write_color_buffer,
+    get_event_value, get_serde_number_to_string, get_writable_color, write_color_buffer,
 };
 
 use crate::detections::configs::{EventKeyAliasConfig, StoredStatic};
@@ -42,11 +39,7 @@ impl PivotKeyword {
 
 ///levelがlowより大きいレコードの場合、keywordがrecord内にみつかれば、
 ///それをPIVOT_KEYWORD.keywordsに入れる。
-pub fn insert_pivot_keyword(
-    event_record: &Value,
-    eventkey_alias: &EventKeyAliasConfig,
-    (include_computer, exclude_computer): (&HashSet<CompactString>, &HashSet<CompactString>),
-) {
+pub fn insert_pivot_keyword(event_record: &Value, eventkey_alias: &EventKeyAliasConfig) {
     if let Some(record_level) = get_event_value("Event.System.Level", event_record, eventkey_alias)
     {
         if let Some(event_record_str) = get_serde_number_to_string(record_level, false) {
@@ -60,14 +53,6 @@ pub fn insert_pivot_keyword(
             }
         }
     } else {
-        return;
-    }
-
-    if is_filtered_by_computer_name(
-        get_event_value("Event.System.Computer", event_record, eventkey_alias),
-        (include_computer, exclude_computer),
-    ) {
-        // include_computerで指定されたものに合致しないまたはexclude_computerで指定されたものに合致した場合は、検知対象外とする
         return;
     }
 
@@ -163,7 +148,6 @@ mod tests {
     use crate::detections::utils;
     use crate::options::pivot::insert_pivot_keyword;
     use crate::options::pivot::PIVOT_KEYWORD;
-    use hashbrown::HashSet;
     use serde_json;
 
     #[test]
@@ -193,7 +177,6 @@ mod tests {
                 .to_str()
                 .unwrap(),
             ),
-            (&HashSet::new(), &HashSet::new()),
         );
 
         assert!(!PIVOT_KEYWORD
@@ -232,7 +215,6 @@ mod tests {
                 .to_str()
                 .unwrap(),
             ),
-            (&HashSet::new(), &HashSet::new()),
         );
 
         assert!(PIVOT_KEYWORD
@@ -271,7 +253,6 @@ mod tests {
                 .to_str()
                 .unwrap(),
             ),
-            (&HashSet::new(), &HashSet::new()),
         );
 
         assert!(!PIVOT_KEYWORD
@@ -310,7 +291,6 @@ mod tests {
                 .to_str()
                 .unwrap(),
             ),
-            (&HashSet::new(), &HashSet::new()),
         );
 
         assert!(!PIVOT_KEYWORD
@@ -349,7 +329,6 @@ mod tests {
                 .to_str()
                 .unwrap(),
             ),
-            (&HashSet::new(), &HashSet::new()),
         );
 
         assert!(!PIVOT_KEYWORD
@@ -388,7 +367,6 @@ mod tests {
                 .to_str()
                 .unwrap(),
             ),
-            (&HashSet::new(), &HashSet::new()),
         );
 
         assert!(PIVOT_KEYWORD
@@ -427,7 +405,6 @@ mod tests {
                 .to_str()
                 .unwrap(),
             ),
-            (&HashSet::new(), &HashSet::new()),
         );
 
         assert!(!PIVOT_KEYWORD
