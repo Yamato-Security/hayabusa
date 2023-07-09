@@ -1553,9 +1553,10 @@ mod tests {
     use hayabusa::{
         detections::{
             configs::{
-                Action, CommonOptions, Config, ConfigReader, CsvOutputOption, DetectCommonOption,
-                InputOption, JSONOutputOption, LogonSummaryOption, MetricsOption, OutputOption,
-                StoredStatic, TargetEventTime, TargetIds, STORED_EKEY_ALIAS, STORED_STATIC,
+                Action, CommonOptions, ComputerMetricsOption, Config, ConfigReader,
+                CsvOutputOption, DetectCommonOption, InputOption, JSONOutputOption,
+                LogonSummaryOption, MetricsOption, OutputOption, StoredStatic, TargetEventTime,
+                TargetIds, STORED_EKEY_ALIAS, STORED_STATIC,
             },
             detection,
             message::{MESSAGEKEYS, MESSAGES},
@@ -2204,5 +2205,91 @@ mod tests {
         assert_ne!(meta.len(), 0);
         // テストファイルの削除
         remove_file("overwrite-metric-successful.csv").ok();
+    }
+
+    #[test]
+    fn test_same_file_output_computer_metrics_exit() {
+        MESSAGES.clear();
+        MESSAGEKEYS.lock().unwrap().clear();
+        // 先に空ファイルを作成する
+        let mut app = App::new(None);
+        File::create("overwrite-computer-metrics.csv").ok();
+        let action = Action::ComputerMetrics(ComputerMetricsOption {
+            output: Some(Path::new("overwrite-computer-metrics.csv").to_path_buf()),
+            input_args: InputOption {
+                directory: None,
+                filepath: Some(Path::new("test_files/evtx/test_metrics.json").to_path_buf()),
+                live_analysis: false,
+            },
+            common_options: CommonOptions {
+                no_color: false,
+                quiet: false,
+            },
+            detect_common_options: DetectCommonOption {
+                evtx_file_ext: None,
+                thread_number: None,
+                quiet_errors: false,
+                config: Path::new("./rules/config").to_path_buf(),
+                verbose: false,
+                json_input: true,
+            },
+            clobber: false,
+        });
+        let config = Some(Config {
+            action: Some(action),
+            debug: false,
+        });
+        let mut stored_static = StoredStatic::create_static_data(config);
+        *STORED_EKEY_ALIAS.write().unwrap() = Some(stored_static.eventkey_alias.clone());
+        *STORED_STATIC.write().unwrap() = Some(stored_static.clone());
+        let mut config_reader = ConfigReader::new();
+        app.exec(&mut config_reader.app, &mut stored_static);
+        let meta = fs::metadata("overwrite-computer-metrics.csv").unwrap();
+        assert_eq!(meta.len(), 0);
+        // テストファイルの削除
+        remove_file("overwrite-computer-metrics.csv").ok();
+    }
+
+    #[test]
+    fn test_same_file_output_computer_metrics_csv() {
+        MESSAGES.clear();
+        MESSAGEKEYS.lock().unwrap().clear();
+        // 先に空ファイルを作成する
+        let mut app = App::new(None);
+        File::create("overwrite-computer-metrics.csv").ok();
+        let action = Action::ComputerMetrics(ComputerMetricsOption {
+            output: Some(Path::new("overwrite-computer-metrics.csv").to_path_buf()),
+            input_args: InputOption {
+                directory: None,
+                filepath: Some(Path::new("test_files/evtx/test_metrics.json").to_path_buf()),
+                live_analysis: false,
+            },
+            common_options: CommonOptions {
+                no_color: false,
+                quiet: false,
+            },
+            detect_common_options: DetectCommonOption {
+                evtx_file_ext: None,
+                thread_number: None,
+                quiet_errors: false,
+                config: Path::new("./rules/config").to_path_buf(),
+                verbose: false,
+                json_input: true,
+            },
+            clobber: true,
+        });
+        let config = Some(Config {
+            action: Some(action),
+            debug: false,
+        });
+        let mut stored_static = StoredStatic::create_static_data(config);
+        *STORED_EKEY_ALIAS.write().unwrap() = Some(stored_static.eventkey_alias.clone());
+        *STORED_STATIC.write().unwrap() = Some(stored_static.clone());
+        let mut config_reader = ConfigReader::new();
+        app.exec(&mut config_reader.app, &mut stored_static);
+        let meta = fs::metadata("overwrite-computer-metrics.csv").unwrap();
+        assert_ne!(meta.len(), 0);
+        // テストファイルの削除
+        remove_file("overwrite-computer-metrics.csv").ok();
     }
 }
