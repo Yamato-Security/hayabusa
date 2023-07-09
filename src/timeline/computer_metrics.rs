@@ -1,13 +1,37 @@
+use crate::detections::configs::EventKeyAliasConfig;
 use crate::detections::message::AlertMessage;
+use crate::detections::utils;
+use crate::timeline::timelines::Timeline;
 use comfy_table::{modifiers::UTF8_ROUND_CORNERS, presets::UTF8_FULL, Table};
 use compact_str::CompactString;
 use csv::{QuoteStyle, WriterBuilder};
 use downcast_rs::__std::process;
 use hashbrown::HashMap;
 use itertools::Itertools;
+use serde_json::Value;
 use std::fs::File;
 use std::io::BufWriter;
 use std::path::PathBuf;
+
+pub fn countup_event_by_computer(
+    record: &Value,
+    eventkey_alias: &EventKeyAliasConfig,
+    tl: &mut Timeline,
+) {
+    if let Some(computer_name) =
+        utils::get_event_value("Event.System.Computer", record, eventkey_alias)
+    {
+        let count = tl
+            .stats
+            .stats_list
+            .entry((
+                computer_name.to_string().replace('\"', "").into(),
+                CompactString::default(),
+            ))
+            .or_insert(0);
+        *count += 1;
+    }
+}
 
 /// レコード内のコンピュータ名を降順で画面出力もしくはcsvに出力する関数
 pub fn computer_metrics_dsp_msg(

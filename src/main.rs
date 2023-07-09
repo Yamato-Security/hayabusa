@@ -7,7 +7,6 @@ extern crate serde_derive;
 use bytesize::ByteSize;
 use chrono::{DateTime, Datelike, Local, NaiveDateTime, Utc};
 use clap::Command;
-use compact_str::CompactString;
 use evtx::{EvtxParser, ParserSettings};
 use hashbrown::{HashMap, HashSet};
 use hayabusa::debug::checkpoint_process_timer::CHECKPOINT;
@@ -27,6 +26,7 @@ use hayabusa::options::pivot::create_output;
 use hayabusa::options::pivot::PIVOT_KEYWORD;
 use hayabusa::options::profile::set_default_profile;
 use hayabusa::options::{level_tuning::LevelTuning, update::Update};
+use hayabusa::timeline::computer_metrics::countup_event_by_computer;
 use hayabusa::{afterfact::after_fact, detections::utils};
 use hayabusa::{detections::configs, timeline::timelines::Timeline};
 use hayabusa::{detections::utils::write_color_buffer, filter};
@@ -1163,18 +1163,7 @@ impl App {
 
                 let data = &record_result.as_ref().unwrap().data;
                 if stored_static.computer_metrics_flag {
-                    if let Some(computer_name) = utils::get_event_value(
-                        "Event.System.Computer",
-                        data,
-                        &stored_static.eventkey_alias,
-                    ) {
-                        let count = tl
-                            .stats
-                            .stats_list
-                            .entry((computer_name.to_string().into(), CompactString::default()))
-                            .or_insert(0);
-                        *count += 1;
-                    }
+                    countup_event_by_computer(data, &stored_static.eventkey_alias, &mut tl);
                     // computer-metricsコマンドでは検知は行わないためカウントのみ行い次のレコードを確認する
                     continue;
                 }
@@ -1298,6 +1287,13 @@ impl App {
                 // Computer名に対応する内容はHostnameであることがわかったためデータをクローンして投入
                 data["Event"]["System"]["Computer"] =
                     data["Event"]["EventData"]["Hostname"].clone();
+
+                if stored_static.computer_metrics_flag {
+                    countup_event_by_computer(&data, &stored_static.eventkey_alias, &mut tl);
+                    // computer-metricsコマンドでは検知は行わないためカウントのみ行い次のレコードを確認する
+                    continue;
+                }
+
                 // channelがnullである場合とEventID Filter optionが指定されていない場合は、target_eventids.txtでイベントIDベースでフィルタする。
                 if !self._is_valid_channel(
                     &data,
