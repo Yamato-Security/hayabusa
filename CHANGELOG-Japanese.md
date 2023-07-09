@@ -9,12 +9,12 @@
 - `csv-timeline`コマンドと`json-timeline`コマンドに`--include-tags`オプションを追加し、指定した`tags`フィールドを持つルールのみをロードするようにした。(#1108) (@hitenkoku)
 - `csv-timeline`と`json-timeline`コマンドに`--exclude-tags`オプションを追加し、指定した`tags`フィールドを持つルールをロードしないようにした。(#1118) (@hitenkoku)
 - `csv-timeline`と`json-timeline`コマンドに`--include-category`と`--exclude-category`オプションを追加した。`include-category`は、指定された`category`フィールドのルールのみをロードする。`--exclude-category`は、指定された`category`フィールドを持つルールをロードしない。 (#1119) (@hitenkoku)
+- `csv-timeline`、`json-timeline`、`metrics`、`logon-summary`、`pivot-keywords-list`コマンドに`--include-computer`と`--exclude-computer`オプションを追加した。`include-computer`は、指定された`computer`の検知のみを出力する。`--exclude-computer`は、指定された`computer`の検知を除外する。 (#1117) (@hitenkoku)
 
 **改善:**
 
 - 新しいログ形式の`.evtx`を使用するWindows Vistaがリリースされた2007年1月31日以前のタイムスタンプを持つ破損されたイベントレコードを無視するようにした。(#1102) (@fukusuket)
 - `metrics`コマンドで`--output`オプションを指定した時に標準出力に結果を表示しないように変更した。 (#1099) (@hitenkoku)
-- `csv-timeline`、`json-timeline`、`metrics`、`logon-summary`、`pivot-keywords-list`コマンドに`--include-category`と`--include-computer`オプションを追加した。`include-computer`は、指定された`computer`の検知のみを出力する。`--exclude-computer`は、指定された`computer`の検知を除外する。 (#1117) (@hitenkoku)
 
 **バグ修正:**
 

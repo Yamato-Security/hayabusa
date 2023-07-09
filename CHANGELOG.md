@@ -9,12 +9,12 @@
 - Added the `--include-tags` option to `csv-timeline` and `json-timeline` commands to only load rules with the specified `tags` field. (#1108) (@hitenkoku)
 - Added the `--exclude-tags` option to `csv-timeline` and `json-timeline` commands to exclude rules with specific `tags` from being loaded. (#1118) (@hitenkoku)
 - Added `--include-category` and `--exclude-category` options to `csv-timeline` and `json-timeline` commands. When using `--include-category`, only rules with the specified `category` field will be loaded. `--exclude-category` will exclude rules from being loaded based on `category`. (#1119) (@hitenkoku)
+- Added `--include-computer` and `--exclude-computer` options to `csv-timeline`, `json-timeline`, `metrics`, `logon-summary` and `pivot-keywords-list` commands. The `--include-computer` option outputs only the detection of the specified computer(s). `--exclude-computer` excludes them. (#1117) (@hitenkoku)
 
 **Enhancements:**
 
 - Ignore corrupted event records with timestamps before 2007/1/31 when Windows Vista was released with the new `.evtx` log format. (#1102) (@fukusuket)
 - When `--output` is set in the `metrics` command, the results will not be displayed to screen. (#1099) (@hitenkoku)
-- Added `--include-category` and `--include-computer` options to `csv-timeline`, `json-timeline`, `metrics`, `logon-summary` and `pivot-keywords-list` commands were added. The `--include-computer` option outputs only the detection of the specified `computer`. `--exclude-computer` excludes detection of the specified `computer`. (#1117) (@hitenkoku)
 
 **Bug Fixes:**
 
