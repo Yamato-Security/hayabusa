@@ -7,6 +7,7 @@ extern crate serde_derive;
 use bytesize::ByteSize;
 use chrono::{DateTime, Datelike, Local, NaiveDateTime, Utc};
 use clap::Command;
+use compact_str::CompactString;
 use evtx::{EvtxParser, ParserSettings};
 use hashbrown::{HashMap, HashSet};
 use hayabusa::debug::checkpoint_process_timer::CHECKPOINT;
@@ -351,6 +352,24 @@ impl App {
                 println!();
             }
             Action::Metrics(_) | Action::Search(_) => {
+                if let Some(path) = &stored_static.output_path {
+                    if !(stored_static.output_option.as_ref().unwrap().clobber)
+                        && utils::check_file_expect_not_exist(
+                            path.as_path(),
+                            format!(
+                                " The file {} already exists. Please specify a different filename or add the -C, --clobber option to overwrite.\n",
+                                path.as_os_str().to_str().unwrap()
+                            ),
+                        )
+                    {
+                        return;
+                    }
+                }
+                self.analysis_start(&target_extensions, &time_filter, stored_static);
+                output_saved_file(&stored_static.output_path, "Saved results");
+                println!();
+            }
+            Action::ComputerMetrics(_) => {
                 if let Some(path) = &stored_static.output_path {
                     if !(stored_static.output_option.as_ref().unwrap().clobber)
                         && utils::check_file_expect_not_exist(
@@ -1061,6 +1080,8 @@ impl App {
             tl.tm_logon_stats_dsp_msg(stored_static);
         } else if stored_static.search_flag {
             tl.search_dsp_msg(event_timeline_config, stored_static);
+        } else if stored_static.computer_metrics_flag {
+            tl.computer_metrics_dsp_msg(stored_static)
         }
         if stored_static.output_path.is_some() {
             println!("\n\nScanning finished. Please wait while the results are being saved.");
@@ -1070,7 +1091,8 @@ impl App {
         if !(stored_static.metrics_flag
             || stored_static.logon_summary_flag
             || stored_static.search_flag
-            || stored_static.pivot_keyword_list_flag)
+            || stored_static.pivot_keyword_list_flag
+            || stored_static.computer_metrics_flag)
         {
             after_fact(
                 total_records,
@@ -1140,6 +1162,23 @@ impl App {
                 }
 
                 let data = &record_result.as_ref().unwrap().data;
+                if stored_static.computer_metrics_flag {
+                    if let Some(computer_name) = utils::get_event_value(
+                        "Event.System.Computer",
+                        data,
+                        &stored_static.eventkey_alias,
+                    ) {
+                        let count = tl
+                            .stats
+                            .stats_list
+                            .entry((computer_name.to_string().into(), CompactString::default()))
+                            .or_insert(0);
+                        *count += 1;
+                    }
+                    // computer-metricsコマンドでは検知は行わないためカウントのみ行い次のレコードを確認する
+                    continue;
+                }
+
                 // Searchならすべてのフィルタを無視
                 if !stored_static.search_flag {
                     // channelがnullである場合とEventID Filter optionが指定されていない場合は、target_eventids.txtでイベントIDベースでフィルタする。

@@ -62,6 +62,7 @@ pub struct StoredStatic {
     pub metrics_flag: bool,
     pub logon_summary_flag: bool,
     pub search_flag: bool,
+    pub computer_metrics_flag: bool,
     pub search_option: Option<SearchOption>,
     pub output_option: Option<OutputOption>,
     pub pivot_keyword_list_flag: bool,
@@ -90,6 +91,7 @@ impl StoredStatic {
             Some(Action::Metrics(opt)) => opt.detect_common_options.quiet_errors,
             Some(Action::PivotKeywordsList(opt)) => opt.detect_common_options.quiet_errors,
             Some(Action::Search(opt)) => opt.quiet_errors,
+            Some(Action::ComputerMetrics(opt)) => opt.detect_common_options.quiet_errors,
             _ => false,
         };
         let common_options = match &input_config.as_ref().unwrap().action {
@@ -103,6 +105,7 @@ impl StoredStatic {
             Some(Action::ListContributors(opt)) | Some(Action::ListProfiles(opt)) => *opt,
             Some(Action::UpdateRules(opt)) => opt.common_options,
             Some(Action::Search(opt)) => opt.common_options,
+            Some(Action::ComputerMetrics(opt)) => opt.common_options,
             None => CommonOptions {
                 no_color: false,
                 quiet: false,
@@ -116,6 +119,7 @@ impl StoredStatic {
             Some(Action::Metrics(opt)) => &opt.detect_common_options.config,
             Some(Action::PivotKeywordsList(opt)) => &opt.detect_common_options.config,
             Some(Action::Search(opt)) => &opt.config,
+            Some(Action::ComputerMetrics(opt)) => &opt.detect_common_options.config,
             _ => &binding,
         };
         let verbose_flag = match &input_config.as_ref().unwrap().action {
@@ -125,6 +129,7 @@ impl StoredStatic {
             Some(Action::Metrics(opt)) => opt.detect_common_options.verbose,
             Some(Action::PivotKeywordsList(opt)) => opt.detect_common_options.verbose,
             Some(Action::Search(opt)) => opt.verbose,
+            Some(Action::ComputerMetrics(opt)) => opt.detect_common_options.verbose,
             _ => false,
         };
         let json_input_flag = match &input_config.as_ref().unwrap().action {
@@ -133,6 +138,7 @@ impl StoredStatic {
             Some(Action::LogonSummary(opt)) => opt.detect_common_options.json_input,
             Some(Action::Metrics(opt)) => opt.detect_common_options.json_input,
             Some(Action::PivotKeywordsList(opt)) => opt.detect_common_options.json_input,
+            Some(Action::ComputerMetrics(opt)) => opt.detect_common_options.json_input,
             _ => false,
         };
         let is_valid_min_level = match &input_config.as_ref().unwrap().action {
@@ -381,6 +387,7 @@ impl StoredStatic {
             logon_summary_flag: action_id == 2,
             metrics_flag: action_id == 3,
             search_flag: action_id == 10,
+            computer_metrics_flag: action_id == 11,
             search_option: extract_search_options(input_config.as_ref().unwrap()),
             output_option: extract_output_options(input_config.as_ref().unwrap()),
             pivot_keyword_list_flag: action_id == 4,
@@ -611,6 +618,16 @@ pub enum Action {
     #[clap(display_order = 382)]
     /// List the output profiles
     ListProfiles(CommonOptions),
+
+    #[clap(
+        author = "Yamato Security (https://github.com/Yamato-Security/hayabusa - @SecurityYamato)",
+        help_template = "\nHayabusa v2.7.0 - Dev Build \n{author-with-newline}\n{usage-heading}\n  {usage}\n\n{all-args}",
+        term_width = 400,
+        disable_help_flag = true,
+        display_order = 290
+    )]
+    /// Print computer name list
+    ComputerMetrics(ComputerMetricsOption),
 }
 
 impl Action {
@@ -628,6 +645,7 @@ impl Action {
                 Action::ListContributors(_) => 8,
                 Action::ListProfiles(_) => 9,
                 Action::Search(_) => 10,
+                Action::ComputerMetrics(_) => 11,
             }
         } else {
             100
@@ -647,6 +665,7 @@ impl Action {
                 Action::ListContributors(_) => "list-contributors",
                 Action::ListProfiles(_) => "list-profiles",
                 Action::Search(_) => "search",
+                Action::ComputerMetrics(_) => "computer-metrics",
             }
         } else {
             ""
@@ -1246,6 +1265,26 @@ pub struct JSONOutputOption {
         display_order = 70
     )]
     pub geo_ip: Option<PathBuf>,
+}
+
+#[derive(Args, Clone, Debug)]
+pub struct ComputerMetricsOption {
+    #[clap(flatten)]
+    pub input_args: InputOption,
+
+    /// Save the results in CSV format (ex: computer-metrics.csv)
+    #[arg(help_heading = Some("Output"), short = 'o', long, value_name = "FILE", display_order = 410)]
+    pub output: Option<PathBuf>,
+
+    #[clap(flatten)]
+    pub common_options: CommonOptions,
+
+    #[clap(flatten)]
+    pub detect_common_options: DetectCommonOption,
+
+    /// Overwrite results files
+    #[arg(help_heading = Some("General Options"), short='C', long = "clobber", display_order = 290, requires = "output")]
+    pub clobber: bool,
 }
 
 #[derive(Parser, Clone, Debug)]
