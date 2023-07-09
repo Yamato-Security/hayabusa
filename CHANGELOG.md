@@ -9,6 +9,7 @@
 - Added the `--include-tags` option to `csv-timeline` and `json-timeline` commands to only load rules with the specified `tags` field. (#1108) (@hitenkoku)
 - Added the `--exclude-tags` option to `csv-timeline` and `json-timeline` commands to exclude rules with specific `tags` from being loaded. (#1118) (@hitenkoku)
 - Added `--include-category` and `--exclude-category` options to `csv-timeline` and `json-timeline` commands. When using `--include-category`, only rules with the specified `category` field will be loaded. `--exclude-category` will exclude rules from being loaded based on `category`. (#1119) (@hitenkoku)
+- Added `computer-metrics` command to list up how many event there are based on `%Computer%` name. (#1116) (@hitenkoku)
 
 **Enhancements:**
 
