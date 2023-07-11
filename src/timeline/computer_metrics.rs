@@ -8,6 +8,7 @@ use csv::{QuoteStyle, WriterBuilder};
 use downcast_rs::__std::process;
 use hashbrown::HashMap;
 use itertools::Itertools;
+use num::FromPrimitive;
 use serde_json::Value;
 use std::fs::File;
 use std::io::BufWriter;
@@ -69,10 +70,12 @@ pub fn computer_metrics_dsp_msg(
     }
 
     // Write contents
-    for ((computer_name, _), count) in result_list
-        .into_iter()
-        .sorted_unstable_by(|a, b| Ord::cmp(&a.1, &b.1))
-    {
+    for ((computer_name, _), count) in result_list.into_iter().sorted_unstable_by(|a, b| {
+        Ord::cmp(
+            &-i64::from_usize(*a.1).unwrap_or_default(),
+            &-i64::from_usize(*b.1).unwrap_or_default(),
+        )
+    }) {
         let count_str = &format!("{count}");
         let record_data = vec![computer_name.as_str(), count_str];
         if output.is_some() {
