@@ -9,7 +9,7 @@
 - `csv-timeline`コマンドと`json-timeline`コマンドに`--include-tags`オプションを追加し、指定した`tags`フィールドを持つルールのみをロードするようにした。(#1108) (@hitenkoku)
 - `csv-timeline`と`json-timeline`コマンドに`--exclude-tags`オプションを追加し、指定した`tags`フィールドを持つルールをロードしないようにした。(#1118) (@hitenkoku)
 - `csv-timeline`と`json-timeline`コマンドに`--include-category`と`--exclude-category`オプションを追加した。`include-category`は、指定された`category`フィールドのルールのみをロードする。`--exclude-category`は、指定された`category`フィールドを持つルールをロードしない。 (#1119) (@hitenkoku)
-- コンピュータ名 に基づくイベント数をリストアップする `computer-metrics` コマンドを追加した。(#1116) (@hitenkoku)
+- コンピュータ名に基づくイベント数をリストアップする`computer-metrics`コマンドを追加した。(#1116) (@hitenkoku)
 
 **改善:**
 
