@@ -7,7 +7,7 @@ use crate::detections::{
 };
 use chrono::{DateTime, NaiveDate, NaiveDateTime, Utc};
 use compact_str::CompactString;
-use hashbrown::HashMap;
+use hashbrown::{HashMap, HashSet};
 
 #[derive(Debug, Clone)]
 pub struct EventMetrics {
@@ -58,8 +58,13 @@ impl EventMetrics {
         }
     }
 
-    pub fn evt_stats_start(&mut self, records: &[EvtxRecordInfo], stored_static: &StoredStatic) {
-        // _recordsから、EventIDを取り出す。
+    pub fn evt_stats_start(
+        &mut self,
+        records: &[EvtxRecordInfo],
+        stored_static: &StoredStatic,
+        (include_computer, exclude_computer): (&HashSet<CompactString>, &HashSet<CompactString>),
+    ) {
+        // recordsから、 最初のレコードの時刻と最後のレコードの時刻、レコードの総数を取得する
         self.stats_time_cnt(records, &stored_static.eventkey_alias);
 
         // 引数でmetricsオプションが指定されている時だけ、統計情報を出力する。
@@ -68,7 +73,7 @@ impl EventMetrics {
         }
 
         // EventIDで集計
-        self.stats_eventid(records, stored_static);
+        self.stats_eventid(records, stored_static, (include_computer, exclude_computer));
     }
 
     pub fn logon_stats_start(
@@ -149,8 +154,23 @@ impl EventMetrics {
     }
 
     /// EventIDで集計
-    fn stats_eventid(&mut self, records: &[EvtxRecordInfo], stored_static: &StoredStatic) {
+    fn stats_eventid(
+        &mut self,
+        records: &[EvtxRecordInfo],
+        stored_static: &StoredStatic,
+        (include_computer, exclude_computer): (&HashSet<CompactString>, &HashSet<CompactString>),
+    ) {
         for record in records.iter() {
+            if utils::is_filtered_by_computer_name(
+                utils::get_event_value(
+                    "Event.System.Computer",
+                    &record.record,
+                    &stored_static.eventkey_alias,
+                ),
+                (include_computer, exclude_computer),
+            ) {
+                continue;
+            }
             let channel = if let Some(ch) =
                 utils::get_event_value("Channel", &record.record, &stored_static.eventkey_alias)
             {
@@ -290,7 +310,7 @@ mod tests {
     use std::path::Path;
 
     use compact_str::CompactString;
-    use hashbrown::HashMap;
+    use hashbrown::{HashMap, HashSet};
     use nested::Nested;
 
     use crate::{
@@ -331,6 +351,8 @@ mod tests {
                 quiet_errors: false,
                 config: Path::new("./rules/config").to_path_buf(),
                 verbose: false,
+                include_computer: None,
+                exclude_computer: None,
             },
             european_time: false,
             iso_8601: false,
@@ -373,9 +395,13 @@ mod tests {
             &Nested::<String>::new(),
         ));
 
-        timeline
-            .stats
-            .evt_stats_start(&input_datas, &dummy_stored_static);
+        let include_computer: HashSet<CompactString> = HashSet::new();
+        let exclude_computer: HashSet<CompactString> = HashSet::new();
+        timeline.stats.evt_stats_start(
+            &input_datas,
+            &dummy_stored_static,
+            (&include_computer, &exclude_computer),
+        );
         assert_eq!(timeline.stats.stats_list.len(), expect.len());
 
         for (k, v) in timeline.stats.stats_list {

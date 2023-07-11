@@ -51,8 +51,8 @@ maxminddb = "0.*"
 cidr-utils = "0.*"
 aho-corasick = "*"
 memchr = "2.*"
-indexmap = "1.9.*"
 num = "0.4.0"
+indexmap = "2.*"
 
 [profile.dev]
 debug = 0
