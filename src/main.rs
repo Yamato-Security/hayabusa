@@ -1087,13 +1087,14 @@ impl App {
         if stored_static.output_path.is_some() {
             println!("\nScanning finished. Please wait while the results are being saved.\n");
         }
-        detection.add_aggcondition_msges(&self.rt, stored_static);
         if !(stored_static.metrics_flag
             || stored_static.logon_summary_flag
             || stored_static.search_flag
             || stored_static.pivot_keyword_list_flag
             || stored_static.computer_metrics_flag)
         {
+            println!();
+            detection.add_aggcondition_msges(&self.rt, stored_static);
             after_fact(
                 total_records,
                 &stored_static.output_path,

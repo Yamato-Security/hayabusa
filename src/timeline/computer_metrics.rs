@@ -82,6 +82,7 @@ pub fn computer_metrics_dsp_msg(
         }
     }
     if output.is_none() {
+        println!();
         println!("{stats_tb}");
     }
 }

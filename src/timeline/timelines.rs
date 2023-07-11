@@ -470,6 +470,7 @@ impl Timeline {
                     self.stats.stats_list.len().to_formatted_string(&Locale::en)
                 ));
             }
+            println!();
             computer_metrics::computer_metrics_dsp_msg(
                 &self.stats.stats_list,
                 &computer_metrics_option.output,
