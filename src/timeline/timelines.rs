@@ -465,10 +465,7 @@ impl Timeline {
                 )
                 .ok();
             } else {
-                sammsges.push(format!(
-                    "\n\nTotal findings: {}\n",
-                    self.stats.stats_list.len()
-                ));
+                sammsges.push(format!("\nTotal findings: {}", self.stats.stats_list.len()));
             }
             computer_metrics::computer_metrics_dsp_msg(
                 &self.stats.stats_list,

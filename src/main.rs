@@ -997,7 +997,8 @@ impl App {
         println!();
         if !(stored_static.metrics_flag
             || stored_static.logon_summary_flag
-            || stored_static.search_flag)
+            || stored_static.search_flag
+            || stored_static.computer_metrics_flag)
         {
             println!("Loading detections rules. Please wait.");
             println!();
@@ -1084,9 +1085,8 @@ impl App {
             tl.computer_metrics_dsp_msg(stored_static)
         }
         if stored_static.output_path.is_some() {
-            println!("\n\nScanning finished. Please wait while the results are being saved.");
+            println!("\n\nScanning finished. Please wait while the results are being saved.\n");
         }
-        println!();
         detection.add_aggcondition_msges(&self.rt, stored_static);
         if !(stored_static.metrics_flag
             || stored_static.logon_summary_flag
