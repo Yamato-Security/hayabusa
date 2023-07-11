@@ -1085,7 +1085,7 @@ impl App {
             tl.computer_metrics_dsp_msg(stored_static)
         }
         if stored_static.output_path.is_some() {
-            println!("\n\nScanning finished. Please wait while the results are being saved.\n");
+            println!("\nScanning finished. Please wait while the results are being saved.\n");
         }
         detection.add_aggcondition_msges(&self.rt, stored_static);
         if !(stored_static.metrics_flag

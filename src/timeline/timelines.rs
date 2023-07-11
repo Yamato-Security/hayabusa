@@ -465,7 +465,10 @@ impl Timeline {
                 )
                 .ok();
             } else {
-                sammsges.push(format!("\nTotal findings: {}", self.stats.stats_list.len()));
+                sammsges.push(format!(
+                    "\nTotal computers: {}",
+                    self.stats.stats_list.len().to_formatted_string(&Locale::en)
+                ));
             }
             computer_metrics::computer_metrics_dsp_msg(
                 &self.stats.stats_list,
