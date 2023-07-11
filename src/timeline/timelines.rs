@@ -66,7 +66,14 @@ impl Timeline {
 
     pub fn start(&mut self, records: &[EvtxRecordInfo], stored_static: &StoredStatic) {
         if stored_static.metrics_flag {
-            self.stats.evt_stats_start(records, stored_static);
+            self.stats.evt_stats_start(
+                records,
+                stored_static,
+                (
+                    &stored_static.include_computer,
+                    &stored_static.exclude_computer,
+                ),
+            );
         } else if stored_static.logon_summary_flag {
             self.stats.logon_stats_start(
                 records,
@@ -459,7 +466,7 @@ mod tests {
 
     use chrono::{DateTime, NaiveDateTime, Utc};
     use compact_str::CompactString;
-    use hashbrown::HashMap;
+    use hashbrown::{HashMap, HashSet};
     use nested::Nested;
 
     use crate::{
@@ -501,6 +508,8 @@ mod tests {
                     quiet_errors: false,
                     config: Path::new("./rules/config").to_path_buf(),
                     verbose: false,
+                    include_computer: None,
+                    exclude_computer: None,
                 },
                 european_time: false,
                 iso_8601: false,
@@ -675,6 +684,8 @@ mod tests {
                 quiet_errors: false,
                 config: Path::new("./rules/config").to_path_buf(),
                 verbose: false,
+                include_computer: None,
+                exclude_computer: None,
             },
             european_time: false,
             iso_8601: false,
@@ -711,9 +722,14 @@ mod tests {
             &Nested::<String>::new(),
         ));
 
-        timeline
-            .stats
-            .evt_stats_start(&input_datas, &dummy_stored_static);
+        let include_computer: HashSet<CompactString> = HashSet::new();
+        let exclude_computer: HashSet<CompactString> = HashSet::new();
+
+        timeline.stats.evt_stats_start(
+            &input_datas,
+            &dummy_stored_static,
+            (&include_computer, &exclude_computer),
+        );
 
         timeline.tm_stats_dsp_msg(
             &dummy_stored_static.event_timeline_config,
@@ -754,6 +770,8 @@ mod tests {
                     quiet_errors: false,
                     config: Path::new("./rules/config").to_path_buf(),
                     verbose: false,
+                    include_computer: None,
+                    exclude_computer: None,
                 },
                 european_time: false,
                 iso_8601: false,

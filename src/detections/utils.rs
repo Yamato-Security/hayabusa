@@ -644,6 +644,22 @@ pub fn output_profile_name(output_option: &Option<OutputOption>, stdout: bool) {
     }
 }
 
+/// コンピュータ名がフィルタリング対象であるかを判定する関数
+pub fn is_filtered_by_computer_name(
+    record: Option<&Value>,
+    (include_computer, exclude_computer): (&HashSet<CompactString>, &HashSet<CompactString>),
+) -> bool {
+    if let Some(computer_name) = record {
+        let computer_str = computer_name.as_str().unwrap_or_default().replace('\"', "");
+        if (!include_computer.is_empty() && !include_computer.contains(computer_str.as_str()))
+            || (!exclude_computer.is_empty() && exclude_computer.contains(computer_str.as_str()))
+        {
+            return true;
+        }
+    }
+    false
+}
+
 #[cfg(test)]
 mod tests {
     use std::path::Path;
@@ -659,7 +675,7 @@ mod tests {
         options::htmlreport::HTML_REPORTER,
     };
     use compact_str::CompactString;
-    use hashbrown::HashMap;
+    use hashbrown::{HashMap, HashSet};
     use nested::Nested;
     use regex::Regex;
     use serde_json::Value;
@@ -973,6 +989,8 @@ mod tests {
                         config: Path::new("./rules/config").to_path_buf(),
                         verbose: false,
                         json_input: false,
+                        include_computer: None,
+                        exclude_computer: None,
                     },
                     enable_unsupported_rules: false,
                     clobber: false,
@@ -1002,5 +1020,59 @@ mod tests {
             assert!(expect.keys().any(|x| x == k));
             assert!(expect.values().any(|y| y == v));
         }
+    }
+
+    #[test]
+    /// Computerの値をもとにフィルタリングされることを確認するテスト
+    fn test_is_filtered_by_computer_name() {
+        let json_str = r##"
+        {
+            "Event": {
+                "System": {
+                    "Computer": "HayabusaComputer1"
+                }
+            }
+        }
+        "##;
+        let event_record: Value = serde_json::from_str(json_str).unwrap();
+
+        // include_computer, exclude_computerが指定されていない場合はフィルタリングされない
+        assert!(!utils::is_filtered_by_computer_name(
+            Some(&event_record["Event"]["System"]["Computer"]),
+            (&HashSet::new(), &HashSet::new()),
+        ));
+
+        // recordのコンピュータ名の情報がない場合はフィルタリングされない
+        assert!(!utils::is_filtered_by_computer_name(
+            None,
+            (&HashSet::new(), &HashSet::new()),
+        ));
+
+        // include_computerで合致しない場合フィルタリングされる
+        assert!(utils::is_filtered_by_computer_name(
+            Some(&event_record["Event"]["System"]["Computer"]),
+            (
+                &HashSet::from_iter(vec!["Hayabusa".into()]),
+                &HashSet::new()
+            ),
+        ));
+
+        // include_computerで合致する場合フィルタリングされない
+        assert!(!utils::is_filtered_by_computer_name(
+            Some(&event_record["Event"]["System"]["Computer"]),
+            (
+                &HashSet::from_iter(vec!["HayabusaComputer1".into()]),
+                &HashSet::new()
+            ),
+        ));
+
+        // exclude_computerで合致する場合フィルタリングされる
+        assert!(utils::is_filtered_by_computer_name(
+            Some(&event_record["Event"]["System"]["Computer"]),
+            (
+                &HashSet::new(),
+                &HashSet::from_iter(vec!["HayabusaComputer1".into()]),
+            ),
+        ));
     }
 }

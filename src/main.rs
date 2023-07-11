@@ -1142,6 +1142,21 @@ impl App {
                 let data = &record_result.as_ref().unwrap().data;
                 // Searchならすべてのフィルタを無視
                 if !stored_static.search_flag {
+                    // Computer名がinclude_computerで指定されたものに合致しないまたはexclude_computerで指定されたものに合致した場合はフィルタリングする。
+                    if utils::is_filtered_by_computer_name(
+                        utils::get_event_value(
+                            "Event.System.Computer",
+                            data,
+                            &stored_static.eventkey_alias,
+                        ),
+                        (
+                            &stored_static.include_computer,
+                            &stored_static.exclude_computer,
+                        ),
+                    ) {
+                        continue;
+                    }
+
                     // channelがnullである場合とEventID Filter optionが指定されていない場合は、target_eventids.txtでイベントIDベースでフィルタする。
                     if !self._is_valid_channel(
                         data,
@@ -1259,6 +1274,22 @@ impl App {
                 // Computer名に対応する内容はHostnameであることがわかったためデータをクローンして投入
                 data["Event"]["System"]["Computer"] =
                     data["Event"]["EventData"]["Hostname"].clone();
+
+                // Computer名がinclude_computerで指定されたものに合致しないまたはexclude_computerで指定されたものに合致した場合はフィルタリングする。
+                if utils::is_filtered_by_computer_name(
+                    utils::get_event_value(
+                        "Event.System.Computer",
+                        &data,
+                        &stored_static.eventkey_alias,
+                    ),
+                    (
+                        &stored_static.include_computer,
+                        &stored_static.exclude_computer,
+                    ),
+                ) {
+                    continue;
+                }
+
                 // channelがnullである場合とEventID Filter optionが指定されていない場合は、target_eventids.txtでイベントIDベースでフィルタする。
                 if !self._is_valid_channel(
                     &data,
@@ -1572,6 +1603,8 @@ mod tests {
                         config: Path::new("./rules/config").to_path_buf(),
                         verbose: false,
                         json_input: true,
+                        include_computer: None,
+                        exclude_computer: None,
                     },
                     enable_unsupported_rules: false,
                     clobber: false,
@@ -1725,6 +1758,8 @@ mod tests {
                     config: Path::new("./rules/config").to_path_buf(),
                     verbose: false,
                     json_input: true,
+                    include_computer: None,
+                    exclude_computer: None,
                 },
                 enable_unsupported_rules: false,
                 clobber: false,
@@ -1799,6 +1834,8 @@ mod tests {
                     config: Path::new("./rules/config").to_path_buf(),
                     verbose: false,
                     json_input: true,
+                    include_computer: None,
+                    exclude_computer: None,
                 },
                 enable_unsupported_rules: false,
                 clobber: true,
@@ -1871,6 +1908,8 @@ mod tests {
                     config: Path::new("./rules/config").to_path_buf(),
                     verbose: false,
                     json_input: true,
+                    include_computer: None,
+                    exclude_computer: None,
                 },
                 enable_unsupported_rules: false,
                 clobber: false,
@@ -1944,6 +1983,8 @@ mod tests {
                     config: Path::new("./rules/config").to_path_buf(),
                     verbose: false,
                     json_input: true,
+                    include_computer: None,
+                    exclude_computer: None,
                 },
                 enable_unsupported_rules: false,
                 clobber: true,
@@ -1995,6 +2036,8 @@ mod tests {
                 config: Path::new("./rules/config").to_path_buf(),
                 verbose: false,
                 json_input: true,
+                include_computer: None,
+                exclude_computer: None,
             },
             european_time: false,
             iso_8601: false,
@@ -2046,6 +2089,8 @@ mod tests {
                 config: Path::new("./rules/config").to_path_buf(),
                 verbose: false,
                 json_input: true,
+                include_computer: None,
+                exclude_computer: None,
             },
             european_time: false,
             iso_8601: false,
@@ -2095,6 +2140,8 @@ mod tests {
                 config: Path::new("./rules/config").to_path_buf(),
                 verbose: false,
                 json_input: true,
+                include_computer: None,
+                exclude_computer: None,
             },
             european_time: false,
             iso_8601: false,
@@ -2146,6 +2193,8 @@ mod tests {
                 config: Path::new("./rules/config").to_path_buf(),
                 verbose: false,
                 json_input: true,
+                include_computer: None,
+                exclude_computer: None,
             },
             european_time: false,
             iso_8601: false,
