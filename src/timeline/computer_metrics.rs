@@ -135,6 +135,8 @@ mod tests {
                     quiet_errors: false,
                     config: Path::new("./rules/config").to_path_buf(),
                     verbose: false,
+                    include_computer: None,
+                    exclude_computer: None,
                 },
                 output: output.clone(),
                 clobber: true,
