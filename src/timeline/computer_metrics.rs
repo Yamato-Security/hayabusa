@@ -104,8 +104,8 @@ mod tests {
 
     use crate::{
         detections::configs::{
-            Action, CommonOptions, ComputerMetricsOption, Config, DetectCommonOption, InputOption,
-            StoredStatic, STORED_EKEY_ALIAS, STORED_STATIC,
+            Action, CommonOptions, ComputerMetricsOption, Config, InputOption, StoredStatic,
+            STORED_EKEY_ALIAS, STORED_STATIC,
         },
         timeline::{
             computer_metrics::{computer_metrics_dsp_msg, countup_event_by_computer},
@@ -133,16 +133,12 @@ mod tests {
                     no_color: false,
                     quiet: false,
                 },
-                detect_common_options: DetectCommonOption {
-                    json_input: false,
-                    evtx_file_ext: None,
-                    thread_number: None,
-                    quiet_errors: false,
-                    config: Path::new("./rules/config").to_path_buf(),
-                    verbose: false,
-                    include_computer: None,
-                    exclude_computer: None,
-                },
+                json_input: false,
+                evtx_file_ext: None,
+                thread_number: None,
+                quiet_errors: false,
+                config: Path::new("./rules/config").to_path_buf(),
+                verbose: false,
                 output: output.clone(),
                 clobber: true,
             }));

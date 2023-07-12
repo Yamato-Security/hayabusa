@@ -93,7 +93,7 @@ impl StoredStatic {
             Some(Action::Metrics(opt)) => opt.detect_common_options.quiet_errors,
             Some(Action::PivotKeywordsList(opt)) => opt.detect_common_options.quiet_errors,
             Some(Action::Search(opt)) => opt.quiet_errors,
-            Some(Action::ComputerMetrics(opt)) => opt.detect_common_options.quiet_errors,
+            Some(Action::ComputerMetrics(opt)) => opt.quiet_errors,
             _ => false,
         };
         let common_options = match &input_config.as_ref().unwrap().action {
@@ -121,7 +121,7 @@ impl StoredStatic {
             Some(Action::Metrics(opt)) => &opt.detect_common_options.config,
             Some(Action::PivotKeywordsList(opt)) => &opt.detect_common_options.config,
             Some(Action::Search(opt)) => &opt.config,
-            Some(Action::ComputerMetrics(opt)) => &opt.detect_common_options.config,
+            Some(Action::ComputerMetrics(opt)) => &opt.config,
             _ => &binding,
         };
         let verbose_flag = match &input_config.as_ref().unwrap().action {
@@ -131,7 +131,7 @@ impl StoredStatic {
             Some(Action::Metrics(opt)) => opt.detect_common_options.verbose,
             Some(Action::PivotKeywordsList(opt)) => opt.detect_common_options.verbose,
             Some(Action::Search(opt)) => opt.verbose,
-            Some(Action::ComputerMetrics(opt)) => opt.detect_common_options.verbose,
+            Some(Action::ComputerMetrics(opt)) => opt.verbose,
             _ => false,
         };
         let json_input_flag = match &input_config.as_ref().unwrap().action {
@@ -140,7 +140,7 @@ impl StoredStatic {
             Some(Action::LogonSummary(opt)) => opt.detect_common_options.json_input,
             Some(Action::Metrics(opt)) => opt.detect_common_options.json_input,
             Some(Action::PivotKeywordsList(opt)) => opt.detect_common_options.json_input,
-            Some(Action::ComputerMetrics(opt)) => opt.detect_common_options.json_input,
+            Some(Action::ComputerMetrics(opt)) => opt.json_input,
             _ => false,
         };
         let is_valid_min_level = match &input_config.as_ref().unwrap().action {
@@ -1384,8 +1384,43 @@ pub struct ComputerMetricsOption {
     #[clap(flatten)]
     pub common_options: CommonOptions,
 
-    #[clap(flatten)]
-    pub detect_common_options: DetectCommonOption,
+    /// Scan JSON formatted logs instead of .evtx (.json or .jsonl)
+    #[arg(help_heading = Some("Input"), short = 'J', long = "JSON-input", conflicts_with = "live_analysis", display_order = 390)]
+    pub json_input: bool,
+
+    /// Specify additional file extensions (ex: evtx_data) (ex: evtx1,evtx2)
+    #[arg(help_heading = Some("General Options"), long = "target-file-ext", use_value_delimiter = true, value_delimiter = ',', display_order = 450)]
+    pub evtx_file_ext: Option<Vec<String>>,
+
+    /// Number of threads (default: optimal number for performance)
+    #[arg(
+        help_heading = Some("General Options"),
+        short = 't',
+        long = "threads",
+        value_name = "NUMBER",
+        display_order = 460
+    )]
+    pub thread_number: Option<usize>,
+
+    /// Quiet errors mode: do not save error logs
+    #[arg(help_heading = Some("General Options"), short = 'Q', long = "quiet-errors", display_order = 430)]
+    pub quiet_errors: bool,
+
+    /// Specify custom rule config directory (default: ./rules/config)
+    #[arg(
+        help_heading = Some("General Options"),
+        short = 'c',
+        long = "rules-config",
+        default_value = "./rules/config",
+        hide_default_value = true,
+        value_name = "DIR",
+        display_order = 441
+    )]
+    pub config: PathBuf,
+
+    /// Output verbose information
+    #[arg(help_heading = Some("Display Settings"), short = 'v', long, display_order = 480)]
+    pub verbose: bool,
 
     /// Overwrite results files
     #[arg(help_heading = Some("General Options"), short='C', long = "clobber", display_order = 290, requires = "output")]
@@ -1819,7 +1854,16 @@ fn extract_output_options(config: &Config) -> Option<OutputOption> {
             eid_filter: false,
             proven_rules: false,
             exclude_tags: None,
-            detect_common_options: option.detect_common_options.clone(),
+            detect_common_options: DetectCommonOption {
+                json_input: option.json_input,
+                evtx_file_ext: option.evtx_file_ext.clone(),
+                thread_number: option.thread_number,
+                quiet_errors: option.quiet_errors,
+                config: option.config.clone(),
+                verbose: option.verbose,
+                include_computer: None,
+                exclude_computer: None,
+            },
             european_time: false,
             iso_8601: false,
             rfc_2822: false,
