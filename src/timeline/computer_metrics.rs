@@ -9,6 +9,7 @@ use downcast_rs::__std::process;
 use hashbrown::HashMap;
 use itertools::Itertools;
 use num::FromPrimitive;
+use num_format::{Locale, ToFormattedString};
 use serde_json::Value;
 use std::fs::File;
 use std::io::BufWriter;
@@ -76,8 +77,12 @@ pub fn computer_metrics_dsp_msg(
             &-i64::from_usize(*b.1).unwrap_or_default(),
         )
     }) {
-        let count_str = &format!("{count}");
-        let record_data = vec![computer_name.as_str(), count_str];
+        let count_str = if output.is_some() {
+            format!("{count}")
+        } else {
+            count.to_formatted_string(&Locale::en)
+        };
+        let record_data = vec![computer_name.as_str(), &count_str];
         if output.is_some() {
             file_wtr.as_mut().unwrap().write_record(&record_data).ok();
         } else {
