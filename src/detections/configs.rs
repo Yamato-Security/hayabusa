@@ -723,7 +723,7 @@ pub enum Action {
         disable_help_flag = true,
         display_order = 290
     )]
-    /// Print computer name list
+    /// Print computer name metrics
     ComputerMetrics(ComputerMetricsOption),
 }
 
