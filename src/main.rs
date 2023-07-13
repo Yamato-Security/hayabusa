@@ -351,7 +351,7 @@ impl App {
                 }
                 println!();
             }
-            Action::Metrics(_) | Action::Search(_) => {
+            Action::EidMetrics(_) | Action::Search(_) => {
                 if let Some(path) = &stored_static.output_path {
                     if !(stored_static.output_option.as_ref().unwrap().clobber)
                         && utils::check_file_expect_not_exist(
@@ -1559,7 +1559,7 @@ impl App {
             Action::CsvTimeline(_)
             | Action::JsonTimeline(_)
             | Action::LogonSummary(_)
-            | Action::Metrics(_)
+            | Action::EidMetrics(_)
             | Action::PivotKeywordsList(_)
             | Action::SetDefaultProfile(_)
             | Action::Search(_)
@@ -1583,8 +1583,8 @@ mod tests {
         detections::{
             configs::{
                 Action, CommonOptions, ComputerMetricsOption, Config, ConfigReader,
-                CsvOutputOption, DetectCommonOption, InputOption, JSONOutputOption,
-                LogonSummaryOption, MetricsOption, OutputOption, StoredStatic, TargetEventTime,
+                CsvOutputOption, DetectCommonOption, EidMetricsOption, InputOption,
+                JSONOutputOption, LogonSummaryOption, OutputOption, StoredStatic, TargetEventTime,
                 TargetIds, STORED_EKEY_ALIAS, STORED_STATIC,
             },
             detection,
@@ -2052,7 +2052,7 @@ mod tests {
         // 先に空ファイルを作成する
         let mut app = App::new(None);
         File::create("overwrite-metric.csv").ok();
-        let action = Action::Metrics(MetricsOption {
+        let action = Action::EidMetrics(EidMetricsOption {
             output: Some(Path::new("overwrite-metric.csv").to_path_buf()),
             input_args: InputOption {
                 directory: None,
@@ -2105,7 +2105,7 @@ mod tests {
         // 先に空ファイルを作成する
         let mut app = App::new(None);
         File::create("overwrite-metric.csv").ok();
-        let action = Action::Metrics(MetricsOption {
+        let action = Action::EidMetrics(EidMetricsOption {
             output: Some(Path::new("overwrite-metric.csv").to_path_buf()),
             input_args: InputOption {
                 directory: None,
