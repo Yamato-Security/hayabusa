@@ -17,6 +17,7 @@
 - Ignore corrupted event records with timestamps before 2007/1/31 when Windows Vista was released with the new `.evtx` log format. (#1102) (@fukusuket)
 - When `--output` is set in the `metrics` command, the results will not be displayed to screen. (#1099) (@hitenkoku)
 - Added the `-C, --clobber` option to overwrite existing output files in the `pivot-keywords-list` command. (#1125) (@hitenkoku)
+- Renamed the `metrics` command to `eid-metrics`. (#1128) (@hitenkoku)
 
 **Bug Fixes:**
 
