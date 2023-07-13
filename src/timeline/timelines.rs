@@ -23,6 +23,7 @@ use termcolor::{BufferWriter, Color, ColorChoice};
 use terminal_size::terminal_size;
 use terminal_size::Width;
 
+use super::computer_metrics;
 use super::metrics::EventMetrics;
 use super::search::EventSearch;
 use hashbrown::{HashMap, HashSet};
@@ -449,6 +450,37 @@ impl Timeline {
                     search_summary_option.json_output,
                     search_summary_option.jsonl_output,
                 ),
+            );
+            for msgprint in sammsges.iter() {
+                println!("{}", msgprint);
+            }
+        }
+    }
+
+    /// ComputeMetrics結果出力
+    pub fn computer_metrics_dsp_msg(&mut self, stored_static: &StoredStatic) {
+        if let Action::ComputerMetrics(computer_metrics_option) =
+            &stored_static.config.action.as_ref().unwrap()
+        {
+            let mut sammsges: Nested<String> = Nested::new();
+            if self.stats.stats_list.is_empty() {
+                write_color_buffer(
+                    &BufferWriter::stdout(ColorChoice::Always),
+                    Some(Color::Rgb(238, 102, 97)),
+                    "\n\nNo matches found.",
+                    true,
+                )
+                .ok();
+            } else {
+                sammsges.push(format!(
+                    "\nTotal computers: {}",
+                    self.stats.stats_list.len().to_formatted_string(&Locale::en)
+                ));
+            }
+            println!();
+            computer_metrics::computer_metrics_dsp_msg(
+                &self.stats.stats_list,
+                &computer_metrics_option.output,
             );
             for msgprint in sammsges.iter() {
                 println!("{}", msgprint);

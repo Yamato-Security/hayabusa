@@ -141,7 +141,8 @@ impl Detection {
             .collect();
         if !(stored_static.logon_summary_flag
             || stored_static.search_flag
-            || stored_static.metrics_flag)
+            || stored_static.metrics_flag
+            || stored_static.computer_metrics_flag)
         {
             Detection::print_rule_load_info(
                 &rulefile_loader.rulecounter,

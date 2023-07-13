@@ -62,6 +62,7 @@ pub struct StoredStatic {
     pub metrics_flag: bool,
     pub logon_summary_flag: bool,
     pub search_flag: bool,
+    pub computer_metrics_flag: bool,
     pub search_option: Option<SearchOption>,
     pub output_option: Option<OutputOption>,
     pub pivot_keyword_list_flag: bool,
@@ -92,6 +93,7 @@ impl StoredStatic {
             Some(Action::Metrics(opt)) => opt.detect_common_options.quiet_errors,
             Some(Action::PivotKeywordsList(opt)) => opt.detect_common_options.quiet_errors,
             Some(Action::Search(opt)) => opt.quiet_errors,
+            Some(Action::ComputerMetrics(opt)) => opt.quiet_errors,
             _ => false,
         };
         let common_options = match &input_config.as_ref().unwrap().action {
@@ -105,6 +107,7 @@ impl StoredStatic {
             Some(Action::ListContributors(opt)) | Some(Action::ListProfiles(opt)) => *opt,
             Some(Action::UpdateRules(opt)) => opt.common_options,
             Some(Action::Search(opt)) => opt.common_options,
+            Some(Action::ComputerMetrics(opt)) => opt.common_options,
             None => CommonOptions {
                 no_color: false,
                 quiet: false,
@@ -118,6 +121,7 @@ impl StoredStatic {
             Some(Action::Metrics(opt)) => &opt.detect_common_options.config,
             Some(Action::PivotKeywordsList(opt)) => &opt.detect_common_options.config,
             Some(Action::Search(opt)) => &opt.config,
+            Some(Action::ComputerMetrics(opt)) => &opt.config,
             _ => &binding,
         };
         let verbose_flag = match &input_config.as_ref().unwrap().action {
@@ -127,6 +131,7 @@ impl StoredStatic {
             Some(Action::Metrics(opt)) => opt.detect_common_options.verbose,
             Some(Action::PivotKeywordsList(opt)) => opt.detect_common_options.verbose,
             Some(Action::Search(opt)) => opt.verbose,
+            Some(Action::ComputerMetrics(opt)) => opt.verbose,
             _ => false,
         };
         let json_input_flag = match &input_config.as_ref().unwrap().action {
@@ -135,6 +140,7 @@ impl StoredStatic {
             Some(Action::LogonSummary(opt)) => opt.detect_common_options.json_input,
             Some(Action::Metrics(opt)) => opt.detect_common_options.json_input,
             Some(Action::PivotKeywordsList(opt)) => opt.detect_common_options.json_input,
+            Some(Action::ComputerMetrics(opt)) => opt.json_input,
             _ => false,
         };
         let is_valid_min_level = match &input_config.as_ref().unwrap().action {
@@ -274,6 +280,7 @@ impl StoredStatic {
             Some(Action::PivotKeywordsList(opt)) => opt.output.as_ref(),
             Some(Action::LogonSummary(opt)) => opt.output.as_ref(),
             Some(Action::Search(opt)) => opt.output.as_ref(),
+            Some(Action::ComputerMetrics(opt)) => opt.output.as_ref(),
             _ => None,
         };
         let general_ch_abbr = create_output_filter_config(
@@ -475,6 +482,7 @@ impl StoredStatic {
             logon_summary_flag: action_id == 2,
             metrics_flag: action_id == 3,
             search_flag: action_id == 10,
+            computer_metrics_flag: action_id == 11,
             search_option: extract_search_options(input_config.as_ref().unwrap()),
             output_option: extract_output_options(input_config.as_ref().unwrap()),
             pivot_keyword_list_flag: action_id == 4,
@@ -707,6 +715,16 @@ pub enum Action {
     #[clap(display_order = 382)]
     /// List the output profiles
     ListProfiles(CommonOptions),
+
+    #[clap(
+        author = "Yamato Security (https://github.com/Yamato-Security/hayabusa - @SecurityYamato)",
+        help_template = "\nHayabusa v2.7.0 - Dev Build \n{author-with-newline}\n{usage-heading}\n  {usage}\n\n{all-args}",
+        term_width = 400,
+        disable_help_flag = true,
+        display_order = 290
+    )]
+    /// Print computer name metrics
+    ComputerMetrics(ComputerMetricsOption),
 }
 
 impl Action {
@@ -724,6 +742,7 @@ impl Action {
                 Action::ListContributors(_) => 8,
                 Action::ListProfiles(_) => 9,
                 Action::Search(_) => 10,
+                Action::ComputerMetrics(_) => 11,
             }
         } else {
             100
@@ -743,6 +762,7 @@ impl Action {
                 Action::ListContributors(_) => "list-contributors",
                 Action::ListProfiles(_) => "list-profiles",
                 Action::Search(_) => "search",
+                Action::ComputerMetrics(_) => "computer-metrics",
             }
         } else {
             ""
@@ -1352,6 +1372,61 @@ pub struct JSONOutputOption {
     pub geo_ip: Option<PathBuf>,
 }
 
+#[derive(Args, Clone, Debug)]
+pub struct ComputerMetricsOption {
+    #[clap(flatten)]
+    pub input_args: InputOption,
+
+    /// Save the results in CSV format (ex: computer-metrics.csv)
+    #[arg(help_heading = Some("Output"), short = 'o', long, value_name = "FILE", display_order = 410)]
+    pub output: Option<PathBuf>,
+
+    #[clap(flatten)]
+    pub common_options: CommonOptions,
+
+    /// Scan JSON formatted logs instead of .evtx (.json or .jsonl)
+    #[arg(help_heading = Some("Input"), short = 'J', long = "JSON-input", conflicts_with = "live_analysis", display_order = 390)]
+    pub json_input: bool,
+
+    /// Specify additional file extensions (ex: evtx_data) (ex: evtx1,evtx2)
+    #[arg(help_heading = Some("General Options"), long = "target-file-ext", use_value_delimiter = true, value_delimiter = ',', display_order = 450)]
+    pub evtx_file_ext: Option<Vec<String>>,
+
+    /// Number of threads (default: optimal number for performance)
+    #[arg(
+        help_heading = Some("General Options"),
+        short = 't',
+        long = "threads",
+        value_name = "NUMBER",
+        display_order = 460
+    )]
+    pub thread_number: Option<usize>,
+
+    /// Quiet errors mode: do not save error logs
+    #[arg(help_heading = Some("General Options"), short = 'Q', long = "quiet-errors", display_order = 430)]
+    pub quiet_errors: bool,
+
+    /// Specify custom rule config directory (default: ./rules/config)
+    #[arg(
+        help_heading = Some("General Options"),
+        short = 'c',
+        long = "rules-config",
+        default_value = "./rules/config",
+        hide_default_value = true,
+        value_name = "DIR",
+        display_order = 441
+    )]
+    pub config: PathBuf,
+
+    /// Output verbose information
+    #[arg(help_heading = Some("Display Settings"), short = 'v', long, display_order = 480)]
+    pub verbose: bool,
+
+    /// Overwrite results files
+    #[arg(help_heading = Some("General Options"), short='C', long = "clobber", display_order = 290, requires = "output")]
+    pub clobber: bool,
+}
+
 #[derive(Parser, Clone, Debug)]
 #[clap(
     author = "Yamato Security (https://github.com/Yamato-Security/hayabusa - @SecurityYamato)",
@@ -1760,6 +1835,47 @@ fn extract_output_options(config: &Config) -> Option<OutputOption> {
             exclude_tags: None,
             include_category: None,
             exclude_category: None,
+        }),
+        Action::ComputerMetrics(option) => Some(OutputOption {
+            input_args: option.input_args.clone(),
+            profile: None,
+            common_options: option.common_options,
+            enable_deprecated_rules: false,
+            enable_unsupported_rules: false,
+            exclude_status: None,
+            include_tags: None,
+            include_category: None,
+            exclude_category: None,
+            min_level: String::default(),
+            exact_level: None,
+            enable_noisy_rules: false,
+            end_timeline: None,
+            start_timeline: None,
+            eid_filter: false,
+            proven_rules: false,
+            exclude_tags: None,
+            detect_common_options: DetectCommonOption {
+                json_input: option.json_input,
+                evtx_file_ext: option.evtx_file_ext.clone(),
+                thread_number: option.thread_number,
+                quiet_errors: option.quiet_errors,
+                config: option.config.clone(),
+                verbose: option.verbose,
+                include_computer: None,
+                exclude_computer: None,
+            },
+            european_time: false,
+            iso_8601: false,
+            rfc_2822: false,
+            rfc_3339: false,
+            us_military_time: false,
+            us_time: false,
+            utc: false,
+            visualize_timeline: false,
+            rules: Path::new("./rules").to_path_buf(),
+            html_report: None,
+            no_summary: false,
+            clobber: option.clobber,
         }),
         Action::Search(option) => Some(OutputOption {
             input_args: option.input_args.clone(),

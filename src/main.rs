@@ -26,6 +26,7 @@ use hayabusa::options::pivot::create_output;
 use hayabusa::options::pivot::PIVOT_KEYWORD;
 use hayabusa::options::profile::set_default_profile;
 use hayabusa::options::{level_tuning::LevelTuning, update::Update};
+use hayabusa::timeline::computer_metrics::countup_event_by_computer;
 use hayabusa::{afterfact::after_fact, detections::utils};
 use hayabusa::{detections::configs, timeline::timelines::Timeline};
 use hayabusa::{detections::utils::write_color_buffer, filter};
@@ -351,6 +352,24 @@ impl App {
                 println!();
             }
             Action::Metrics(_) | Action::Search(_) => {
+                if let Some(path) = &stored_static.output_path {
+                    if !(stored_static.output_option.as_ref().unwrap().clobber)
+                        && utils::check_file_expect_not_exist(
+                            path.as_path(),
+                            format!(
+                                " The file {} already exists. Please specify a different filename or add the -C, --clobber option to overwrite.\n",
+                                path.as_os_str().to_str().unwrap()
+                            ),
+                        )
+                    {
+                        return;
+                    }
+                }
+                self.analysis_start(&target_extensions, &time_filter, stored_static);
+                output_saved_file(&stored_static.output_path, "Saved results");
+                println!();
+            }
+            Action::ComputerMetrics(_) => {
                 if let Some(path) = &stored_static.output_path {
                     if !(stored_static.output_option.as_ref().unwrap().clobber)
                         && utils::check_file_expect_not_exist(
@@ -978,7 +997,8 @@ impl App {
         println!();
         if !(stored_static.metrics_flag
             || stored_static.logon_summary_flag
-            || stored_static.search_flag)
+            || stored_static.search_flag
+            || stored_static.computer_metrics_flag)
         {
             println!("Loading detections rules. Please wait.");
             println!();
@@ -1061,17 +1081,20 @@ impl App {
             tl.tm_logon_stats_dsp_msg(stored_static);
         } else if stored_static.search_flag {
             tl.search_dsp_msg(event_timeline_config, stored_static);
+        } else if stored_static.computer_metrics_flag {
+            tl.computer_metrics_dsp_msg(stored_static)
         }
         if stored_static.output_path.is_some() {
-            println!("\n\nScanning finished. Please wait while the results are being saved.");
+            println!("\nScanning finished. Please wait while the results are being saved.\n");
         }
-        println!();
-        detection.add_aggcondition_msges(&self.rt, stored_static);
         if !(stored_static.metrics_flag
             || stored_static.logon_summary_flag
             || stored_static.search_flag
-            || stored_static.pivot_keyword_list_flag)
+            || stored_static.pivot_keyword_list_flag
+            || stored_static.computer_metrics_flag)
         {
+            println!();
+            detection.add_aggcondition_msges(&self.rt, stored_static);
             after_fact(
                 total_records,
                 &stored_static.output_path,
@@ -1140,6 +1163,12 @@ impl App {
                 }
 
                 let data = &record_result.as_ref().unwrap().data;
+                if stored_static.computer_metrics_flag {
+                    countup_event_by_computer(data, &stored_static.eventkey_alias, &mut tl);
+                    // computer-metricsコマンドでは検知は行わないためカウントのみ行い次のレコードを確認する
+                    continue;
+                }
+
                 // Searchならすべてのフィルタを無視
                 if !stored_static.search_flag {
                     // Computer名がinclude_computerで指定されたものに合致しないまたはexclude_computerで指定されたものに合致した場合はフィルタリングする。
@@ -1274,6 +1303,12 @@ impl App {
                 // Computer名に対応する内容はHostnameであることがわかったためデータをクローンして投入
                 data["Event"]["System"]["Computer"] =
                     data["Event"]["EventData"]["Hostname"].clone();
+
+                if stored_static.computer_metrics_flag {
+                    countup_event_by_computer(&data, &stored_static.eventkey_alias, &mut tl);
+                    // computer-metricsコマンドでは検知は行わないためカウントのみ行い次のレコードを確認する
+                    continue;
+                }
 
                 // Computer名がinclude_computerで指定されたものに合致しないまたはexclude_computerで指定されたものに合致した場合はフィルタリングする。
                 if utils::is_filtered_by_computer_name(
@@ -1526,11 +1561,9 @@ impl App {
             | Action::LogonSummary(_)
             | Action::Metrics(_)
             | Action::PivotKeywordsList(_)
-            | Action::SetDefaultProfile(_) => std::env::args().len() != 2,
-            Action::Search(opt) => {
-                std::env::args().len() != 2 && (opt.keywords.is_some() ^ opt.regex.is_some())
-                // key word and regex are conflict
-            }
+            | Action::SetDefaultProfile(_)
+            | Action::Search(_)
+            | Action::ComputerMetrics(_) => std::env::args().len() != 2,
             _ => true,
         }
     }
@@ -1549,9 +1582,10 @@ mod tests {
     use hayabusa::{
         detections::{
             configs::{
-                Action, CommonOptions, Config, ConfigReader, CsvOutputOption, DetectCommonOption,
-                InputOption, JSONOutputOption, LogonSummaryOption, MetricsOption, OutputOption,
-                StoredStatic, TargetEventTime, TargetIds, STORED_EKEY_ALIAS, STORED_STATIC,
+                Action, CommonOptions, ComputerMetricsOption, Config, ConfigReader,
+                CsvOutputOption, DetectCommonOption, InputOption, JSONOutputOption,
+                LogonSummaryOption, MetricsOption, OutputOption, StoredStatic, TargetEventTime,
+                TargetIds, STORED_EKEY_ALIAS, STORED_STATIC,
             },
             detection,
             message::{MESSAGEKEYS, MESSAGES},
@@ -2218,5 +2252,87 @@ mod tests {
         assert_ne!(meta.len(), 0);
         // テストファイルの削除
         remove_file("overwrite-metric-successful.csv").ok();
+    }
+
+    #[test]
+    fn test_same_file_output_computer_metrics_exit() {
+        MESSAGES.clear();
+        MESSAGEKEYS.lock().unwrap().clear();
+        // 先に空ファイルを作成する
+        let mut app = App::new(None);
+        File::create("overwrite-computer-metrics.csv").ok();
+        let action = Action::ComputerMetrics(ComputerMetricsOption {
+            output: Some(Path::new("overwrite-computer-metrics.csv").to_path_buf()),
+            input_args: InputOption {
+                directory: None,
+                filepath: Some(Path::new("test_files/evtx/test_metrics.json").to_path_buf()),
+                live_analysis: false,
+            },
+            common_options: CommonOptions {
+                no_color: false,
+                quiet: false,
+            },
+            evtx_file_ext: None,
+            thread_number: None,
+            quiet_errors: false,
+            config: Path::new("./rules/config").to_path_buf(),
+            verbose: false,
+            json_input: true,
+            clobber: false,
+        });
+        let config = Some(Config {
+            action: Some(action),
+            debug: false,
+        });
+        let mut stored_static = StoredStatic::create_static_data(config);
+        *STORED_EKEY_ALIAS.write().unwrap() = Some(stored_static.eventkey_alias.clone());
+        *STORED_STATIC.write().unwrap() = Some(stored_static.clone());
+        let mut config_reader = ConfigReader::new();
+        app.exec(&mut config_reader.app, &mut stored_static);
+        let meta = fs::metadata("overwrite-computer-metrics.csv").unwrap();
+        assert_eq!(meta.len(), 0);
+        // テストファイルの削除
+        remove_file("overwrite-computer-metrics.csv").ok();
+    }
+
+    #[test]
+    fn test_same_file_output_computer_metrics_csv() {
+        MESSAGES.clear();
+        MESSAGEKEYS.lock().unwrap().clear();
+        // 先に空ファイルを作成する
+        let mut app = App::new(None);
+        File::create("overwrite-computer-metrics.csv").ok();
+        let action = Action::ComputerMetrics(ComputerMetricsOption {
+            output: Some(Path::new("overwrite-computer-metrics.csv").to_path_buf()),
+            input_args: InputOption {
+                directory: None,
+                filepath: Some(Path::new("test_files/evtx/test_metrics.json").to_path_buf()),
+                live_analysis: false,
+            },
+            common_options: CommonOptions {
+                no_color: false,
+                quiet: false,
+            },
+            evtx_file_ext: None,
+            thread_number: None,
+            quiet_errors: false,
+            config: Path::new("./rules/config").to_path_buf(),
+            verbose: false,
+            json_input: true,
+            clobber: true,
+        });
+        let config = Some(Config {
+            action: Some(action),
+            debug: false,
+        });
+        let mut stored_static = StoredStatic::create_static_data(config);
+        *STORED_EKEY_ALIAS.write().unwrap() = Some(stored_static.eventkey_alias.clone());
+        *STORED_STATIC.write().unwrap() = Some(stored_static.clone());
+        let mut config_reader = ConfigReader::new();
+        app.exec(&mut config_reader.app, &mut stored_static);
+        let meta = fs::metadata("overwrite-computer-metrics.csv").unwrap();
+        assert_ne!(meta.len(), 0);
+        // テストファイルの削除
+        remove_file("overwrite-computer-metrics.csv").ok();
     }
 }
