@@ -316,7 +316,7 @@ mod tests {
     use crate::{
         detections::{
             configs::{
-                Action, CommonOptions, Config, DetectCommonOption, InputOption, MetricsOption,
+                Action, CommonOptions, Config, DetectCommonOption, EidMetricsOption, InputOption,
                 StoredStatic,
             },
             utils::create_rec_info,
@@ -334,36 +334,37 @@ mod tests {
     /// メトリクスコマンドの統計情報集計のテスト。 Testing of statistics aggregation for metrics commands.
     #[test]
     pub fn test_evt_logon_stats() {
-        let dummy_stored_static = create_dummy_stored_static(Action::Metrics(MetricsOption {
-            input_args: InputOption {
-                directory: None,
-                filepath: None,
-                live_analysis: false,
-            },
-            common_options: CommonOptions {
-                no_color: false,
-                quiet: false,
-            },
-            detect_common_options: DetectCommonOption {
-                json_input: false,
-                evtx_file_ext: None,
-                thread_number: None,
-                quiet_errors: false,
-                config: Path::new("./rules/config").to_path_buf(),
-                verbose: false,
-                include_computer: None,
-                exclude_computer: None,
-            },
-            european_time: false,
-            iso_8601: false,
-            rfc_2822: false,
-            rfc_3339: false,
-            us_military_time: false,
-            us_time: false,
-            utc: false,
-            output: None,
-            clobber: false,
-        }));
+        let dummy_stored_static =
+            create_dummy_stored_static(Action::EidMetrics(EidMetricsOption {
+                input_args: InputOption {
+                    directory: None,
+                    filepath: None,
+                    live_analysis: false,
+                },
+                common_options: CommonOptions {
+                    no_color: false,
+                    quiet: false,
+                },
+                detect_common_options: DetectCommonOption {
+                    json_input: false,
+                    evtx_file_ext: None,
+                    thread_number: None,
+                    quiet_errors: false,
+                    config: Path::new("./rules/config").to_path_buf(),
+                    verbose: false,
+                    include_computer: None,
+                    exclude_computer: None,
+                },
+                european_time: false,
+                iso_8601: false,
+                rfc_2822: false,
+                rfc_3339: false,
+                us_military_time: false,
+                us_time: false,
+                utc: false,
+                output: None,
+                clobber: false,
+            }));
 
         let mut timeline = Timeline::new();
         // テスト1: レコードのチャンネルがaliasに含まれている場合

@@ -90,7 +90,7 @@ impl StoredStatic {
                 opt.output_options.detect_common_options.quiet_errors
             }
             Some(Action::LogonSummary(opt)) => opt.detect_common_options.quiet_errors,
-            Some(Action::Metrics(opt)) => opt.detect_common_options.quiet_errors,
+            Some(Action::EidMetrics(opt)) => opt.detect_common_options.quiet_errors,
             Some(Action::PivotKeywordsList(opt)) => opt.detect_common_options.quiet_errors,
             Some(Action::Search(opt)) => opt.quiet_errors,
             Some(Action::ComputerMetrics(opt)) => opt.quiet_errors,
@@ -101,7 +101,7 @@ impl StoredStatic {
             Some(Action::JsonTimeline(opt)) => opt.output_options.common_options,
             Some(Action::LevelTuning(opt)) => opt.common_options,
             Some(Action::LogonSummary(opt)) => opt.common_options,
-            Some(Action::Metrics(opt)) => opt.common_options,
+            Some(Action::EidMetrics(opt)) => opt.common_options,
             Some(Action::PivotKeywordsList(opt)) => opt.common_options,
             Some(Action::SetDefaultProfile(opt)) => opt.common_options,
             Some(Action::ListContributors(opt)) | Some(Action::ListProfiles(opt)) => *opt,
@@ -118,7 +118,7 @@ impl StoredStatic {
             Some(Action::CsvTimeline(opt)) => &opt.output_options.detect_common_options.config,
             Some(Action::JsonTimeline(opt)) => &opt.output_options.detect_common_options.config,
             Some(Action::LogonSummary(opt)) => &opt.detect_common_options.config,
-            Some(Action::Metrics(opt)) => &opt.detect_common_options.config,
+            Some(Action::EidMetrics(opt)) => &opt.detect_common_options.config,
             Some(Action::PivotKeywordsList(opt)) => &opt.detect_common_options.config,
             Some(Action::Search(opt)) => &opt.config,
             Some(Action::ComputerMetrics(opt)) => &opt.config,
@@ -128,7 +128,7 @@ impl StoredStatic {
             Some(Action::CsvTimeline(opt)) => opt.output_options.detect_common_options.verbose,
             Some(Action::JsonTimeline(opt)) => opt.output_options.detect_common_options.verbose,
             Some(Action::LogonSummary(opt)) => opt.detect_common_options.verbose,
-            Some(Action::Metrics(opt)) => opt.detect_common_options.verbose,
+            Some(Action::EidMetrics(opt)) => opt.detect_common_options.verbose,
             Some(Action::PivotKeywordsList(opt)) => opt.detect_common_options.verbose,
             Some(Action::Search(opt)) => opt.verbose,
             Some(Action::ComputerMetrics(opt)) => opt.verbose,
@@ -138,7 +138,7 @@ impl StoredStatic {
             Some(Action::CsvTimeline(opt)) => opt.output_options.detect_common_options.json_input,
             Some(Action::JsonTimeline(opt)) => opt.output_options.detect_common_options.json_input,
             Some(Action::LogonSummary(opt)) => opt.detect_common_options.json_input,
-            Some(Action::Metrics(opt)) => opt.detect_common_options.json_input,
+            Some(Action::EidMetrics(opt)) => opt.detect_common_options.json_input,
             Some(Action::PivotKeywordsList(opt)) => opt.detect_common_options.json_input,
             Some(Action::ComputerMetrics(opt)) => opt.json_input,
             _ => false,
@@ -276,7 +276,7 @@ impl StoredStatic {
         let output_path = match &input_config.as_ref().unwrap().action {
             Some(Action::CsvTimeline(opt)) => opt.output.as_ref(),
             Some(Action::JsonTimeline(opt)) => opt.output.as_ref(),
-            Some(Action::Metrics(opt)) => opt.output.as_ref(),
+            Some(Action::EidMetrics(opt)) => opt.output.as_ref(),
             Some(Action::PivotKeywordsList(opt)) => opt.output.as_ref(),
             Some(Action::LogonSummary(opt)) => opt.output.as_ref(),
             Some(Action::Search(opt)) => opt.output.as_ref(),
@@ -344,7 +344,7 @@ impl StoredStatic {
                 .iter()
                 .map(CompactString::from)
                 .collect(),
-            Some(Action::Metrics(opt)) => opt
+            Some(Action::EidMetrics(opt)) => opt
                 .detect_common_options
                 .include_computer
                 .as_ref()
@@ -390,7 +390,7 @@ impl StoredStatic {
                 .iter()
                 .map(CompactString::from)
                 .collect(),
-            Some(Action::Metrics(opt)) => opt
+            Some(Action::EidMetrics(opt)) => opt
                 .detect_common_options
                 .exclude_computer
                 .as_ref()
@@ -609,7 +609,7 @@ fn check_thread_number(config: &Config) -> Option<usize> {
         Action::CsvTimeline(opt) => opt.output_options.detect_common_options.thread_number,
         Action::JsonTimeline(opt) => opt.output_options.detect_common_options.thread_number,
         Action::LogonSummary(opt) => opt.detect_common_options.thread_number,
-        Action::Metrics(opt) => opt.detect_common_options.thread_number,
+        Action::EidMetrics(opt) => opt.detect_common_options.thread_number,
         Action::PivotKeywordsList(opt) => opt.detect_common_options.thread_number,
         _ => None,
     }
@@ -650,13 +650,13 @@ pub enum Action {
 
     #[clap(
         author = "Yamato Security (https://github.com/Yamato-Security/hayabusa - @SecurityYamato)",
-        help_template = "\nHayabusa v2.7.0 - Dev Build \n{author-with-newline}\n{usage-heading}\n  hayabusa.exe metrics <INPUT> [OPTIONS]\n\n{all-args}",
+        help_template = "\nHayabusa v2.7.0 - Dev Build \n{author-with-newline}\n{usage-heading}\n  hayabusa.exe eid-metrics <INPUT> [OPTIONS]\n\n{all-args}",
         term_width = 400,
         disable_help_flag = true,
-        display_order = 390
+        display_order = 310
     )]
     /// Print event ID metrics
-    Metrics(MetricsOption),
+    EidMetrics(EidMetricsOption),
 
     #[clap(
         author = "Yamato Security (https://github.com/Yamato-Security/hayabusa - @SecurityYamato)",
@@ -734,7 +734,7 @@ impl Action {
                 Action::CsvTimeline(_) => 0,
                 Action::JsonTimeline(_) => 1,
                 Action::LogonSummary(_) => 2,
-                Action::Metrics(_) => 3,
+                Action::EidMetrics(_) => 3,
                 Action::PivotKeywordsList(_) => 4,
                 Action::UpdateRules(_) => 5,
                 Action::LevelTuning(_) => 6,
@@ -754,7 +754,7 @@ impl Action {
                 Action::CsvTimeline(_) => "csv-timeline",
                 Action::JsonTimeline(_) => "json-timeline",
                 Action::LogonSummary(_) => "logon-summary",
-                Action::Metrics(_) => "metrics",
+                Action::EidMetrics(_) => "eid-metrics",
                 Action::PivotKeywordsList(_) => "pivot-keywords-list",
                 Action::UpdateRules(_) => "update-rules",
                 Action::LevelTuning(_) => "level-tuning",
@@ -975,7 +975,7 @@ pub struct LevelTuningOption {
 }
 
 #[derive(Args, Clone, Debug)]
-pub struct MetricsOption {
+pub struct EidMetricsOption {
     #[clap(flatten)]
     pub input_args: InputOption,
 
@@ -1772,7 +1772,7 @@ fn extract_output_options(config: &Config) -> Option<OutputOption> {
             include_category: None,
             exclude_category: None,
         }),
-        Action::Metrics(option) => Some(OutputOption {
+        Action::EidMetrics(option) => Some(OutputOption {
             input_args: option.input_args.clone(),
             enable_deprecated_rules: false,
             enable_noisy_rules: false,
