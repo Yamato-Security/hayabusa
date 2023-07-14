@@ -1815,6 +1815,8 @@ mod tests {
                 exclude_tags: None,
                 include_category: None,
                 exclude_category: None,
+                include_eid: None,
+                exclude_eid: None,
             },
             geo_ip: None,
             output: Some(Path::new("./test_emit_csv.csv").to_path_buf()),
@@ -1897,6 +1899,8 @@ mod tests {
                 exclude_tags: None,
                 include_category: None,
                 exclude_category: None,
+                include_eid: None,
+                exclude_eid: None,
             };
             let ch = mock_ch_filter
                 .get(&CompactString::from("security"))
@@ -2126,6 +2130,8 @@ mod tests {
                 exclude_tags: None,
                 include_category: None,
                 exclude_category: None,
+                include_eid: None,
+                exclude_eid: None,
             },
             geo_ip: None,
             output: Some(Path::new("./test_emit_csv_multiline.csv").to_path_buf()),
@@ -2210,6 +2216,8 @@ mod tests {
                 exclude_tags: None,
                 include_category: None,
                 exclude_category: None,
+                include_eid: None,
+                exclude_eid: None,
             };
             let ch = mock_ch_filter
                 .get(&CompactString::from("security"))
@@ -2425,6 +2433,8 @@ mod tests {
                 exclude_tags: None,
                 include_category: None,
                 exclude_category: None,
+                include_eid: None,
+                exclude_eid: None,
             },
             geo_ip: None,
             output: Some(Path::new("./test_emit_csv_remove_duplicate.csv").to_path_buf()),
@@ -2507,6 +2517,8 @@ mod tests {
                 exclude_tags: None,
                 include_category: None,
                 exclude_category: None,
+                include_eid: None,
+                exclude_eid: None,
             };
             let ch = mock_ch_filter
                 .get(&CompactString::from("security"))
@@ -2744,6 +2756,8 @@ mod tests {
             exclude_tags: None,
             include_category: None,
             exclude_category: None,
+            include_eid: None,
+            exclude_eid: None,
         };
         let data: Vec<(CompactString, Profile)> = vec![
             (
@@ -2875,6 +2889,8 @@ mod tests {
                 exclude_tags: None,
                 include_category: None,
                 exclude_category: None,
+                include_eid: None,
+                exclude_eid: None,
             },
             geo_ip: None,
             output: Some(Path::new("./test_emit_csv_json.json").to_path_buf()),
@@ -2955,6 +2971,8 @@ mod tests {
                 exclude_tags: None,
                 include_category: None,
                 exclude_category: None,
+                include_eid: None,
+                exclude_eid: None,
             };
             let ch = mock_ch_filter
                 .get(&CompactString::from("security"))
@@ -3121,6 +3139,8 @@ mod tests {
                 exclude_tags: None,
                 include_category: None,
                 exclude_category: None,
+                include_eid: None,
+                exclude_eid: None,
             },
             geo_ip: None,
             output: Some(Path::new("./test_emit_csv_jsonl.jsonl").to_path_buf()),
@@ -3201,6 +3221,8 @@ mod tests {
                 exclude_tags: None,
                 include_category: None,
                 exclude_category: None,
+                include_eid: None,
+                exclude_eid: None,
             };
             let ch = mock_ch_filter
                 .get(&CompactString::from("security"))
