@@ -2384,4 +2384,86 @@ mod tests {
         // テストファイルの削除
         remove_file("overwrite-computer-metrics.csv").ok();
     }
+
+    #[test]
+    fn test_analysis_json_file_include_eid() {
+        MESSAGES.clear();
+        let mut app = App::new(None);
+        let mut stored_static = create_dummy_stored_static();
+        *STORED_EKEY_ALIAS.write().unwrap() = Some(stored_static.eventkey_alias.clone());
+        stored_static.include_eid = HashSet::from_iter(vec!["10".into()]);
+        *STORED_STATIC.write().unwrap() = Some(stored_static.clone());
+
+        let rule_str = r#"
+        enabled: true
+        detection:
+            selection1:
+                Channel: 'Microsoft-Windows-Sysmon/Operational'
+            condition: selection1
+        details: testdata
+        "#;
+        let mut rule_yaml = YamlLoader::load_from_str(rule_str).unwrap().into_iter();
+        let test_yaml_data = rule_yaml.next().unwrap();
+        let mut rule = create_rule("testpath".to_string(), test_yaml_data);
+        let rule_init = rule.init(&stored_static);
+        assert!(rule_init.is_ok());
+        let rule_files = vec![rule];
+        app.rule_keys = app.get_all_keys(&rule_files);
+        let detection = detection::Detection::new(rule_files);
+        let target_time_filter = TargetEventTime::new(&stored_static);
+        let tl = Timeline::default();
+        let target_event_ids = TargetIds::default();
+
+        let actual = app.analysis_json_file(
+            Path::new("test_files/evtx/test.jsonl").to_path_buf(),
+            detection,
+            &target_time_filter,
+            tl,
+            &target_event_ids,
+            &stored_static,
+        );
+        assert_eq!(actual.1, 2);
+        assert_eq!(MESSAGES.len(), 1);
+    }
+
+    #[test]
+    fn test_analysis_json_file_exclude_eid() {
+        MESSAGES.clear();
+        let mut app = App::new(None);
+        let mut stored_static = create_dummy_stored_static();
+        *STORED_EKEY_ALIAS.write().unwrap() = Some(stored_static.eventkey_alias.clone());
+        stored_static.exclude_eid = HashSet::from_iter(vec!["10".into(), "11".into()]);
+        *STORED_STATIC.write().unwrap() = Some(stored_static.clone());
+
+        let rule_str = r#"
+        enabled: true
+        detection:
+            selection1:
+                Channel: 'Microsoft-Windows-Sysmon/Operational'
+            condition: selection1
+        details: testdata
+        "#;
+        let mut rule_yaml = YamlLoader::load_from_str(rule_str).unwrap().into_iter();
+        let test_yaml_data = rule_yaml.next().unwrap();
+        let mut rule = create_rule("testpath".to_string(), test_yaml_data);
+        let rule_init = rule.init(&stored_static);
+        assert!(rule_init.is_ok());
+        let rule_files = vec![rule];
+        app.rule_keys = app.get_all_keys(&rule_files);
+        let detection = detection::Detection::new(rule_files);
+        let target_time_filter = TargetEventTime::new(&stored_static);
+        let tl = Timeline::default();
+        let target_event_ids = TargetIds::default();
+
+        let actual = app.analysis_json_file(
+            Path::new("test_files/evtx/test.jsonl").to_path_buf(),
+            detection,
+            &target_time_filter,
+            tl,
+            &target_event_ids,
+            &stored_static,
+        );
+        assert_eq!(actual.1, 2);
+        assert_eq!(MESSAGES.len(), 0);
+    }
 }
