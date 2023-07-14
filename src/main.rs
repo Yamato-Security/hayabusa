@@ -7,6 +7,7 @@ extern crate serde_derive;
 use bytesize::ByteSize;
 use chrono::{DateTime, Datelike, Local, NaiveDateTime, Utc};
 use clap::Command;
+use compact_str::CompactString;
 use evtx::{EvtxParser, ParserSettings};
 use hashbrown::{HashMap, HashSet};
 use hayabusa::debug::checkpoint_process_timer::CHECKPOINT;
@@ -1186,18 +1187,23 @@ impl App {
                         continue;
                     }
 
-                    // channelがnullである場合とEventID Filter optionが指定されていない場合は、target_eventids.txtでイベントIDベースでフィルタする。
+                    // EventIDがinclude_eidで指定されたものに合致しないまたはexclude_eidで指定されたものに合致した場合、target_eventids.txtで指定されたEventIDではない場合はフィルタリングする。
+                    if self.is_filtered_by_eid(
+                        data,
+                        &stored_static.eventkey_alias,
+                        (&stored_static.include_eid, &stored_static.exclude_eid),
+                        stored_static.output_option.as_ref().unwrap().eid_filter,
+                        target_event_ids,
+                    ) {
+                        continue;
+                    }
+
+                    // channelがnullである場合はフィルタリングする。
                     if !self._is_valid_channel(
                         data,
                         &stored_static.eventkey_alias,
                         "Event.System.Channel",
-                    ) || (stored_static.output_option.as_ref().unwrap().eid_filter
-                        && !self._is_target_event_id(
-                            data,
-                            target_event_ids,
-                            &stored_static.eventkey_alias,
-                        ))
-                    {
+                    ) {
                         continue;
                     }
 
@@ -1325,18 +1331,23 @@ impl App {
                     continue;
                 }
 
-                // channelがnullである場合とEventID Filter optionが指定されていない場合は、target_eventids.txtでイベントIDベースでフィルタする。
+                // EventIDがinclude_eidで指定されたものに合致しないまたはexclude_eidで指定されたものに合致した場合、EventID Filter optionが指定されていないかつtarget_eventids.txtで指定されたEventIDではない場合はフィルタリングする。
+                if self.is_filtered_by_eid(
+                    &data,
+                    &stored_static.eventkey_alias,
+                    (&stored_static.include_eid, &stored_static.exclude_eid),
+                    stored_static.output_option.as_ref().unwrap().eid_filter,
+                    target_event_ids,
+                ) {
+                    continue;
+                }
+
+                // channelがnullである場合はフィルタリングする。
                 if !self._is_valid_channel(
                     &data,
                     &stored_static.eventkey_alias,
                     "Event.EventData.Channel",
-                ) || (stored_static.output_option.as_ref().unwrap().eid_filter
-                    && !self._is_target_event_id(
-                        &data,
-                        target_event_ids,
-                        &stored_static.eventkey_alias,
-                    ))
-                {
+                ) {
                     continue;
                 }
                 let target_timestamp = if data["Event"]["EventData"]["@timestamp"].is_null() {
@@ -1473,6 +1484,34 @@ impl App {
             Value::String(s) => s != "null",
             _ => false, // channelの値は文字列を想定しているため、それ以外のデータが来た場合はfalseを返す
         }
+    }
+
+    fn is_filtered_by_eid(
+        &self,
+        data: &Value,
+        eventkey_alias: &EventKeyAliasConfig,
+        (include_eid, exclude_eid): (&HashSet<CompactString>, &HashSet<CompactString>),
+        eid_filter: bool,
+        target_event_ids: &TargetIds,
+    ) -> bool {
+        let target_eid = if !include_eid.is_empty() || !exclude_eid.is_empty() {
+            if let Some(eid_record) =
+                utils::get_event_value(&utils::get_event_id_key(), data, eventkey_alias)
+            {
+                utils::get_serde_number_to_string(eid_record, false).unwrap_or_default()
+            } else {
+                CompactString::default()
+            }
+        } else {
+            CompactString::default()
+        };
+        // 以下の場合はフィルタリングする。
+        // 1. include_eidが指定されているが、include_eidに含まれていない場合
+        // 2. exclude_eidが指定されていて、exclude_eidに含まれている場合
+        // 3. eid_filterが指定されていて、target_eventids.txtで指定されたEventIDでない場合
+        (!include_eid.is_empty() && !include_eid.contains(&target_eid))
+            || (!exclude_eid.is_empty() && exclude_eid.contains(&target_eid))
+            || (eid_filter && !self._is_target_event_id(data, target_event_ids, eventkey_alias))
     }
 
     fn evtx_to_jsons(&self, evtx_filepath: &PathBuf) -> Option<EvtxParser<File>> {

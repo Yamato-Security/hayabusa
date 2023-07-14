@@ -79,6 +79,8 @@ pub struct StoredStatic {
     pub multiline_flag: bool,
     pub include_computer: HashSet<CompactString>,
     pub exclude_computer: HashSet<CompactString>,
+    pub include_eid: HashSet<CompactString>,
+    pub exclude_eid: HashSet<CompactString>,
 }
 impl StoredStatic {
     /// main.rsでパースした情報からデータを格納する関数
@@ -416,6 +418,59 @@ impl StoredStatic {
                 .collect(),
             _ => HashSet::default(),
         };
+        let include_eid: HashSet<CompactString> = match &input_config.as_ref().unwrap().action {
+            Some(Action::CsvTimeline(opt)) => opt
+                .output_options
+                .include_eid
+                .as_ref()
+                .unwrap_or(&vec![])
+                .iter()
+                .map(CompactString::from)
+                .collect(),
+            Some(Action::JsonTimeline(opt)) => opt
+                .output_options
+                .include_eid
+                .as_ref()
+                .unwrap_or(&vec![])
+                .iter()
+                .map(CompactString::from)
+                .collect(),
+            Some(Action::PivotKeywordsList(opt)) => opt
+                .include_eid
+                .as_ref()
+                .unwrap_or(&vec![])
+                .iter()
+                .map(CompactString::from)
+                .collect(),
+            _ => HashSet::default(),
+        };
+        let exclude_eid: HashSet<CompactString> = match &input_config.as_ref().unwrap().action {
+            Some(Action::CsvTimeline(opt)) => opt
+                .output_options
+                .exclude_eid
+                .as_ref()
+                .unwrap_or(&vec![])
+                .iter()
+                .map(CompactString::from)
+                .collect(),
+            Some(Action::JsonTimeline(opt)) => opt
+                .output_options
+                .exclude_eid
+                .as_ref()
+                .unwrap_or(&vec![])
+                .iter()
+                .map(CompactString::from)
+                .collect(),
+            Some(Action::PivotKeywordsList(opt)) => opt
+                .exclude_eid
+                .as_ref()
+                .unwrap_or(&vec![])
+                .iter()
+                .map(CompactString::from)
+                .collect(),
+            _ => HashSet::default(),
+        };
+
         let mut ret = StoredStatic {
             config: input_config.as_ref().unwrap().to_owned(),
             config_path: config_path.to_path_buf(),
@@ -524,6 +579,8 @@ impl StoredStatic {
             multiline_flag,
             include_computer,
             exclude_computer,
+            include_eid,
+            exclude_eid,
         };
         ret.profiles = load_profile(
             check_setting_path(
