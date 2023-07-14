@@ -11,6 +11,7 @@
 - Added `--include-category` and `--exclude-category` options to `csv-timeline` and `json-timeline` commands. When using `--include-category`, only rules with the specified `category` field will be loaded. `--exclude-category` will exclude rules from being loaded based on `category`. (#1119) (@hitenkoku)
 - Added the `computer-metrics` command to list up how many events there are based on computer name. (#1116) (@hitenkoku)
 - Added `--include-computer` and `--exclude-computer` options to `csv-timeline`, `json-timeline`, `metrics`, `logon-summary` and `pivot-keywords-list` commands. The `--include-computer` option only scans the specified computer(s). `--exclude-computer` excludes them. (#1117) (@hitenkoku)
+- Added `--include-eid` and `--exclude-eid` options to `csv-timeline`, `json-timeline`, and `pivot-keywords-list` commands. The `--include-eid` option only scans the specified EventID(s). `--exclude-eid` excludes them. (#1130) (@hitenkoku)
 
 **Enhancements:**
 
