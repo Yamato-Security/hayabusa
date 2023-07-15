@@ -517,6 +517,8 @@ mod tests {
                     exclude_tags: None,
                     include_category: None,
                     exclude_category: None,
+                    include_eid: None,
+                    exclude_eid: None,
                 },
                 geo_ip: None,
                 output: None,

@@ -79,6 +79,8 @@ pub struct StoredStatic {
     pub multiline_flag: bool,
     pub include_computer: HashSet<CompactString>,
     pub exclude_computer: HashSet<CompactString>,
+    pub include_eid: HashSet<CompactString>,
+    pub exclude_eid: HashSet<CompactString>,
 }
 impl StoredStatic {
     /// main.rsでパースした情報からデータを格納する関数
@@ -416,6 +418,59 @@ impl StoredStatic {
                 .collect(),
             _ => HashSet::default(),
         };
+        let include_eid: HashSet<CompactString> = match &input_config.as_ref().unwrap().action {
+            Some(Action::CsvTimeline(opt)) => opt
+                .output_options
+                .include_eid
+                .as_ref()
+                .unwrap_or(&vec![])
+                .iter()
+                .map(CompactString::from)
+                .collect(),
+            Some(Action::JsonTimeline(opt)) => opt
+                .output_options
+                .include_eid
+                .as_ref()
+                .unwrap_or(&vec![])
+                .iter()
+                .map(CompactString::from)
+                .collect(),
+            Some(Action::PivotKeywordsList(opt)) => opt
+                .include_eid
+                .as_ref()
+                .unwrap_or(&vec![])
+                .iter()
+                .map(CompactString::from)
+                .collect(),
+            _ => HashSet::default(),
+        };
+        let exclude_eid: HashSet<CompactString> = match &input_config.as_ref().unwrap().action {
+            Some(Action::CsvTimeline(opt)) => opt
+                .output_options
+                .exclude_eid
+                .as_ref()
+                .unwrap_or(&vec![])
+                .iter()
+                .map(CompactString::from)
+                .collect(),
+            Some(Action::JsonTimeline(opt)) => opt
+                .output_options
+                .exclude_eid
+                .as_ref()
+                .unwrap_or(&vec![])
+                .iter()
+                .map(CompactString::from)
+                .collect(),
+            Some(Action::PivotKeywordsList(opt)) => opt
+                .exclude_eid
+                .as_ref()
+                .unwrap_or(&vec![])
+                .iter()
+                .map(CompactString::from)
+                .collect(),
+            _ => HashSet::default(),
+        };
+
         let mut ret = StoredStatic {
             config: input_config.as_ref().unwrap().to_owned(),
             config_path: config_path.to_path_buf(),
@@ -524,6 +579,8 @@ impl StoredStatic {
             multiline_flag,
             include_computer,
             exclude_computer,
+            include_eid,
+            exclude_eid,
         };
         ret.profiles = load_profile(
             check_setting_path(
@@ -811,7 +868,7 @@ pub struct DetectCommonOption {
     pub verbose: bool,
 
     /// Scan only these computer names (ex: ComputerA) (ex: ComputerA,ComputerB)
-    #[arg(help_heading = Some("Filtering"), long = "include-computer", value_name = "COMPUTER", conflicts_with = "exclude-computer", use_value_delimiter = true, value_delimiter = ',', display_order = 351)]
+    #[arg(help_heading = Some("Filtering"), long = "include-computer", value_name = "COMPUTER", conflicts_with = "exclude-computer", use_value_delimiter = true, value_delimiter = ',', display_order = 352)]
     pub include_computer: Option<Vec<String>>,
 
     /// Do not scan these computer names (ex: ComputerA) (ex: ComputerA,ComputerB)
@@ -1044,7 +1101,7 @@ pub struct PivotKeywordOption {
     pub enable_unsupported_rules: bool,
 
     /// Ignore rules according to status (ex: experimental) (ex: stable,test)
-    #[arg(help_heading = Some("Filtering"), long = "exclude-status", value_name = "STATUS", use_value_delimiter = true, value_delimiter = ',', display_order = 315)]
+    #[arg(help_heading = Some("Filtering"), long = "exclude-status", value_name = "STATUS", use_value_delimiter = true, value_delimiter = ',', display_order = 316)]
     pub exclude_status: Option<Vec<String>>,
 
     /// Minimum level for rules (default: informational)
@@ -1086,6 +1143,14 @@ pub struct PivotKeywordOption {
     /// Scan only common EIDs for faster speed (./rules/config/target_event_IDs.txt)
     #[arg(help_heading = Some("Filtering"), short = 'E', long = "EID-filter", display_order = 50)]
     pub eid_filter: bool,
+
+    /// Scan only specified EIDs for faster speed (ex: 1) (ex: 1,4688)
+    #[arg(help_heading = Some("Filtering"), long = "include-eid", value_name = "EIDS", conflicts_with_all = ["eid_filter", "exclude_eid"], use_value_delimiter = true, value_delimiter = ',', display_order = 352)]
+    pub include_eid: Option<Vec<String>>,
+
+    /// Exclude specified EIDs for faster speed (ex: 1) (ex: 1,4688)
+    #[arg(help_heading = Some("Filtering"), long = "exclude-eid", value_name = "EIDS", conflicts_with_all = ["eid_filter", "include_eid"], use_value_delimiter = true, value_delimiter = ',', display_order = 315)]
+    pub exclude_eid: Option<Vec<String>>,
 
     #[clap(flatten)]
     pub detect_common_options: DetectCommonOption,
@@ -1166,11 +1231,11 @@ pub struct OutputOption {
     pub enable_unsupported_rules: bool,
 
     /// Ignore rules according to status (ex: experimental) (ex: stable,test)
-    #[arg(help_heading = Some("Filtering"), long = "exclude-status", value_name = "STATUS", use_value_delimiter = true, value_delimiter = ',', display_order = 315)]
+    #[arg(help_heading = Some("Filtering"), long = "exclude-status", value_name = "STATUS", use_value_delimiter = true, value_delimiter = ',', display_order = 316)]
     pub exclude_status: Option<Vec<String>>,
 
     /// Only load rules with specific tags (ex: attack.execution,attack.discovery)
-    #[arg(help_heading = Some("Filtering"), long = "include-tags", value_name = "TAGS", conflicts_with = "exclude_tags", use_value_delimiter = true, value_delimiter = ',', display_order = 351)]
+    #[arg(help_heading = Some("Filtering"), long = "include-tags", value_name = "TAGS", conflicts_with = "exclude_tags", use_value_delimiter = true, value_delimiter = ',', display_order = 353)]
     pub include_tags: Option<Vec<String>>,
 
     /// Only load rules with certain logsource categories (ex: process_creation,pipe_created)
@@ -1217,7 +1282,7 @@ pub struct OutputOption {
     pub start_timeline: Option<String>,
 
     /// Scan only common EIDs for faster speed (./rules/config/target_event_IDs.txt)
-    #[arg(help_heading = Some("Filtering"), short = 'E', long = "EID-filter", display_order = 50)]
+    #[arg(help_heading = Some("Filtering"), short = 'E', long = "EID-filter", conflicts_with_all=["include_eid","exclude_eid"], display_order = 50)]
     pub eid_filter: bool,
 
     /// Scan only proven rule for faster speed (./rules/config/proven_rules.txt)
@@ -1225,8 +1290,16 @@ pub struct OutputOption {
     pub proven_rules: bool,
 
     /// Exclude load rules with specific tags (ex: sysmon)
-    #[arg(help_heading = Some("Filtering"), long = "exclude-tags", value_name = "TAGS", conflicts_with = "include_tags", use_value_delimiter = true, value_delimiter = ',', display_order = 315)]
+    #[arg(help_heading = Some("Filtering"), long = "exclude-tags", value_name = "TAGS", conflicts_with = "include_tags", use_value_delimiter = true, value_delimiter = ',', display_order = 316)]
     pub exclude_tags: Option<Vec<String>>,
+
+    /// Scan only specified EIDs for faster speed (ex: 1) (ex: 1,4688)
+    #[arg(help_heading = Some("Filtering"), long = "include-eid", value_name = "EIDS", conflicts_with_all = ["eid_filter", "exclude_eid"], use_value_delimiter = true, value_delimiter = ',', display_order = 352)]
+    pub include_eid: Option<Vec<String>>,
+
+    /// Exclude specified EIDs for faster speed (ex: 1) (ex: 1,4688)
+    #[arg(help_heading = Some("Filtering"), long = "exclude-eid", value_name = "EIDS", conflicts_with_all = ["eid_filter", "include_eid"], use_value_delimiter = true, value_delimiter = ',', display_order = 315)]
+    pub exclude_eid: Option<Vec<String>>,
 
     #[clap(flatten)]
     pub detect_common_options: DetectCommonOption,
@@ -1771,6 +1844,8 @@ fn extract_output_options(config: &Config) -> Option<OutputOption> {
             exclude_tags: None,
             include_category: None,
             exclude_category: None,
+            include_eid: option.include_eid.clone(),
+            exclude_eid: option.exclude_eid.clone(),
         }),
         Action::EidMetrics(option) => Some(OutputOption {
             input_args: option.input_args.clone(),
@@ -1803,6 +1878,8 @@ fn extract_output_options(config: &Config) -> Option<OutputOption> {
             exclude_tags: None,
             include_category: None,
             exclude_category: None,
+            include_eid: None,
+            exclude_eid: None,
         }),
         Action::LogonSummary(option) => Some(OutputOption {
             input_args: option.input_args.clone(),
@@ -1835,6 +1912,8 @@ fn extract_output_options(config: &Config) -> Option<OutputOption> {
             exclude_tags: None,
             include_category: None,
             exclude_category: None,
+            include_eid: None,
+            exclude_eid: None,
         }),
         Action::ComputerMetrics(option) => Some(OutputOption {
             input_args: option.input_args.clone(),
@@ -1876,6 +1955,8 @@ fn extract_output_options(config: &Config) -> Option<OutputOption> {
             html_report: None,
             no_summary: false,
             clobber: option.clobber,
+            include_eid: None,
+            exclude_eid: None,
         }),
         Action::Search(option) => Some(OutputOption {
             input_args: option.input_args.clone(),
@@ -1917,6 +1998,8 @@ fn extract_output_options(config: &Config) -> Option<OutputOption> {
             exclude_tags: None,
             include_category: None,
             exclude_category: None,
+            include_eid: None,
+            exclude_eid: None,
         }),
         Action::SetDefaultProfile(option) => Some(OutputOption {
             input_args: InputOption {
@@ -1962,6 +2045,8 @@ fn extract_output_options(config: &Config) -> Option<OutputOption> {
             exclude_tags: None,
             include_category: None,
             exclude_category: None,
+            include_eid: None,
+            exclude_eid: None,
         }),
         Action::UpdateRules(option) => Some(OutputOption {
             input_args: InputOption {
@@ -2007,6 +2092,8 @@ fn extract_output_options(config: &Config) -> Option<OutputOption> {
             exclude_tags: None,
             include_category: None,
             exclude_category: None,
+            include_eid: None,
+            exclude_eid: None,
         }),
         _ => None,
     }
