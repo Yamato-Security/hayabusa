@@ -1359,6 +1359,10 @@ pub struct OutputOption {
     /// Overwrite results files
     #[arg(help_heading = Some("General Options"), short='C', long = "clobber", display_order = 290, requires = "output")]
     pub clobber: bool,
+
+    /// Disable field data mapping output
+    #[arg(help_heading = Some("Output"), short = 'F', long = "no-field-data-mapping", display_order = 400)]
+    pub no_field: bool,
 }
 
 #[derive(Copy, Args, Clone, Debug)]
@@ -1846,6 +1850,7 @@ fn extract_output_options(config: &Config) -> Option<OutputOption> {
             exclude_category: None,
             include_eid: option.include_eid.clone(),
             exclude_eid: option.exclude_eid.clone(),
+            no_field: false,
         }),
         Action::EidMetrics(option) => Some(OutputOption {
             input_args: option.input_args.clone(),
@@ -1880,6 +1885,7 @@ fn extract_output_options(config: &Config) -> Option<OutputOption> {
             exclude_category: None,
             include_eid: None,
             exclude_eid: None,
+            no_field: false,
         }),
         Action::LogonSummary(option) => Some(OutputOption {
             input_args: option.input_args.clone(),
@@ -1914,6 +1920,7 @@ fn extract_output_options(config: &Config) -> Option<OutputOption> {
             exclude_category: None,
             include_eid: None,
             exclude_eid: None,
+            no_field: false,
         }),
         Action::ComputerMetrics(option) => Some(OutputOption {
             input_args: option.input_args.clone(),
@@ -1957,6 +1964,7 @@ fn extract_output_options(config: &Config) -> Option<OutputOption> {
             clobber: option.clobber,
             include_eid: None,
             exclude_eid: None,
+            no_field: false,
         }),
         Action::Search(option) => Some(OutputOption {
             input_args: option.input_args.clone(),
@@ -2000,6 +2008,7 @@ fn extract_output_options(config: &Config) -> Option<OutputOption> {
             exclude_category: None,
             include_eid: None,
             exclude_eid: None,
+            no_field: false,
         }),
         Action::SetDefaultProfile(option) => Some(OutputOption {
             input_args: InputOption {
@@ -2047,6 +2056,7 @@ fn extract_output_options(config: &Config) -> Option<OutputOption> {
             exclude_category: None,
             include_eid: None,
             exclude_eid: None,
+            no_field: false,
         }),
         Action::UpdateRules(option) => Some(OutputOption {
             input_args: InputOption {
@@ -2094,6 +2104,7 @@ fn extract_output_options(config: &Config) -> Option<OutputOption> {
             exclude_category: None,
             include_eid: None,
             exclude_eid: None,
+            no_field: false,
         }),
         _ => None,
     }

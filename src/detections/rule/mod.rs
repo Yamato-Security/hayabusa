@@ -447,6 +447,7 @@ mod tests {
                     exclude_category: None,
                     include_eid: None,
                     exclude_eid: None,
+                    no_field: false,
                 },
                 geo_ip: None,
                 output: None,
