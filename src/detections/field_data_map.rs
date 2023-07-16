@@ -15,7 +15,7 @@ pub struct FieldDataMapKey {
 }
 
 impl FieldDataMapKey {
-    pub fn new(yaml_data: Yaml) -> FieldDataMapKey {
+    fn new(yaml_data: Yaml) -> FieldDataMapKey {
         FieldDataMapKey {
             channel: yaml_data["Channel"]
                 .as_str()
@@ -29,7 +29,7 @@ impl FieldDataMapKey {
     }
 }
 
-pub fn build_field_data_map(yaml_data: Yaml) -> (FieldDataMapKey, FieldDataMapEntry) {
+fn build_field_data_map(yaml_data: Yaml) -> (FieldDataMapKey, FieldDataMapEntry) {
     let rewrite_field_data = yaml_data["RewriteFieldData"].as_hash();
     if rewrite_field_data.is_none() {
         return (FieldDataMapKey::default(), FieldDataMapEntry::default());
@@ -62,7 +62,7 @@ pub fn build_field_data_map(yaml_data: Yaml) -> (FieldDataMapKey, FieldDataMapEn
     (FieldDataMapKey::new(yaml_data), mapping)
 }
 
-pub fn convert_field_data(
+fn convert_field_data(
     map: HashMap<FieldDataMapKey, FieldDataMapEntry>,
     data_map_key: FieldDataMapKey,
     field: &str,
@@ -81,7 +81,7 @@ pub fn convert_field_data(
     }
 }
 
-pub fn load_yaml_files(dir_path: &Path) -> Result<Vec<Yaml>, String> {
+fn load_yaml_files(dir_path: &Path) -> Result<Vec<Yaml>, String> {
     if !dir_path.exists() || !dir_path.is_dir() {
         return Err("".to_string());
     }
@@ -102,6 +102,7 @@ mod tests {
     use crate::detections::field_data_map::{
         build_field_data_map, convert_field_data, load_yaml_files, FieldDataMapKey,
     };
+    use aho_corasick::AhoCorasick;
     use hashbrown::HashMap;
     use std::path::Path;
     use yaml_rust::{Yaml, YamlLoader};
@@ -127,7 +128,7 @@ mod tests {
     }
 
     #[test]
-    fn test_convert_field_empty_data2() {
+    fn test_convert_field_data_empty_data2() {
         let mut map = HashMap::new();
         let key = FieldDataMapKey {
             channel: "Security".to_lowercase(),
@@ -136,6 +137,24 @@ mod tests {
         map.insert(key.clone(), HashMap::new());
         let r = convert_field_data(map, key, "", "");
         assert_eq!(r.is_none(), true);
+    }
+
+    #[test]
+    fn test_convert_field_data() {
+        let s = r##"
+            Channel: Security
+            EventID: 4624
+            RewriteFieldData:
+                LogonType:
+                    - '0': '0 - SYSTEM'
+                    - '2': '2 - INTERACTIVE'
+        "##;
+        let y = build_yaml(s);
+        let (key, entry) = build_field_data_map(y);
+        let mut map = HashMap::new();
+        map.insert(key.clone(), entry);
+        let r = convert_field_data(map, key, "logontype", "Foo 0");
+        assert_eq!(r.unwrap(), "Foo 0 - SYSTEM");
     }
 
     #[test]
