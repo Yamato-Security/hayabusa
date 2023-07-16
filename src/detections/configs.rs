@@ -1,3 +1,4 @@
+use crate::detections::field_data_map::FieldDataMap;
 use crate::detections::message::AlertMessage;
 use crate::detections::utils;
 use crate::options::geoip_search::GeoIPSearch;
@@ -81,6 +82,7 @@ pub struct StoredStatic {
     pub exclude_computer: HashSet<CompactString>,
     pub include_eid: HashSet<CompactString>,
     pub exclude_eid: HashSet<CompactString>,
+    pub field_data_map: Option<FieldDataMap>,
 }
 impl StoredStatic {
     /// main.rsでパースした情報からデータを格納する関数
@@ -581,6 +583,7 @@ impl StoredStatic {
             exclude_computer,
             include_eid,
             exclude_eid,
+            field_data_map: None,
         };
         ret.profiles = load_profile(
             check_setting_path(

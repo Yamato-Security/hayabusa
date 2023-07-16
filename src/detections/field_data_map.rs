@@ -5,16 +5,16 @@ use std::path::Path;
 use std::string::String;
 use yaml_rust::{Yaml, YamlLoader};
 
-type FieldDataMap = HashMap<String, (AhoCorasick, Vec<String>)>;
+pub type FieldDataMap = HashMap<String, (AhoCorasick, Vec<String>)>;
 
 #[derive(Debug, Eq, Hash, PartialEq, Default, Clone)]
-struct FieldDataMapKey {
+pub struct FieldDataMapKey {
     channel: String,
     event_id: String,
 }
 
 impl FieldDataMapKey {
-    fn new(yaml_data: Yaml) -> FieldDataMapKey {
+    pub fn new(yaml_data: Yaml) -> FieldDataMapKey {
         FieldDataMapKey {
             channel: yaml_data["Channel"]
                 .as_str()
@@ -28,7 +28,7 @@ impl FieldDataMapKey {
     }
 }
 
-fn build_field_data_map(yaml_data: Yaml) -> (FieldDataMapKey, FieldDataMap) {
+pub fn build_field_data_map(yaml_data: Yaml) -> (FieldDataMapKey, FieldDataMap) {
     let rewrite_field_data = yaml_data["RewriteFieldData"].as_hash();
     if rewrite_field_data.is_none() {
         return (FieldDataMapKey::default(), FieldDataMap::default());
@@ -61,7 +61,7 @@ fn build_field_data_map(yaml_data: Yaml) -> (FieldDataMapKey, FieldDataMap) {
     (FieldDataMapKey::new(yaml_data), mapping)
 }
 
-fn convert_field_data(
+pub fn convert_field_data(
     map: HashMap<FieldDataMapKey, FieldDataMap>,
     data_map_key: FieldDataMapKey,
     field: &str,
@@ -80,7 +80,7 @@ fn convert_field_data(
     }
 }
 
-fn load_yaml_files(dir_path: &Path) -> Result<Vec<Yaml>, String> {
+pub fn load_yaml_files(dir_path: &Path) -> Result<Vec<Yaml>, String> {
     if !dir_path.exists() || !dir_path.is_dir() {
         return Err("".to_string());
     }
