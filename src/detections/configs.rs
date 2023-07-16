@@ -1,4 +1,4 @@
-use crate::detections::field_data_map::FieldDataMap;
+use crate::detections::field_data_map::{create_field_data_map, FieldDataMap};
 use crate::detections::message::AlertMessage;
 use crate::detections::utils;
 use crate::options::geoip_search::GeoIPSearch;
@@ -583,7 +583,19 @@ impl StoredStatic {
             exclude_computer,
             include_eid,
             exclude_eid,
-            field_data_map: None,
+            field_data_map: create_field_data_map(Path::new(
+                check_setting_path(config_path, "data_mapping", false)
+                    .unwrap_or_else(|| {
+                        check_setting_path(
+                            &CURRENT_EXE_PATH.to_path_buf(),
+                            "rules/config/data_mapping",
+                            true,
+                        )
+                        .unwrap()
+                    })
+                    .to_str()
+                    .unwrap(),
+            )),
         };
         ret.profiles = load_profile(
             check_setting_path(

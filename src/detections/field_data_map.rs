@@ -62,7 +62,7 @@ fn build_field_data_map(yaml_data: Yaml) -> (FieldDataMapKey, FieldDataMapEntry)
     (FieldDataMapKey::new(yaml_data), mapping)
 }
 
-fn convert_field_data(
+pub fn convert_field_data(
     map: HashMap<FieldDataMapKey, FieldDataMapEntry>,
     data_map_key: FieldDataMapKey,
     field: &str,
@@ -93,16 +93,24 @@ fn load_yaml_files(dir_path: &Path) -> Result<Vec<Yaml>, String> {
             .filter_map(|y| y.ok())
             .flatten()
             .collect()),
-        Err(_) => Err("".to_string()),
+        Err(e) => Err(e.to_string()),
+    }
+}
+
+pub fn create_field_data_map(dir_path: &Path) -> Option<FieldDataMap> {
+    let yaml_data = load_yaml_files(dir_path);
+    match yaml_data {
+        Ok(y) => Some(y.into_iter().map(build_field_data_map).collect()),
+        Err(_) => None,
     }
 }
 
 #[cfg(test)]
 mod tests {
     use crate::detections::field_data_map::{
-        build_field_data_map, convert_field_data, load_yaml_files, FieldDataMapKey,
+        build_field_data_map, convert_field_data, create_field_data_map, load_yaml_files,
+        FieldDataMapKey,
     };
-    use aho_corasick::AhoCorasick;
     use hashbrown::HashMap;
     use std::path::Path;
     use yaml_rust::{Yaml, YamlLoader};
@@ -231,5 +239,11 @@ mod tests {
         let rp = r.1.get("impersonationlevel").unwrap().1.clone();
         let _ = ac.try_stream_replace_all("foo, %%1832, %%1833".as_bytes(), &mut wtr, &rp);
         assert_eq!(b"foo, A, B".to_vec(), wtr);
+    }
+
+    #[test]
+    fn test_create_field_data_map() {
+        let r = create_field_data_map(Path::new("notexists"));
+        assert_eq!(r.is_none(), true);
     }
 }
