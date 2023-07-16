@@ -472,6 +472,28 @@ impl StoredStatic {
                 .collect(),
             _ => HashSet::default(),
         };
+        let no_field_data_mapping_flag = match &input_config.as_ref().unwrap().action {
+            Some(Action::CsvTimeline(opt)) => opt.output_options.no_field,
+            Some(Action::JsonTimeline(opt)) => opt.output_options.no_field,
+            _ => false,
+        };
+        let field_data_map = if no_field_data_mapping_flag {
+            None
+        } else {
+            create_field_data_map(Path::new(
+                check_setting_path(config_path, "data_mapping", false)
+                    .unwrap_or_else(|| {
+                        check_setting_path(
+                            &CURRENT_EXE_PATH.to_path_buf(),
+                            "rules/config/data_mapping",
+                            true,
+                        )
+                        .unwrap()
+                    })
+                    .to_str()
+                    .unwrap(),
+            ))
+        };
 
         let mut ret = StoredStatic {
             config: input_config.as_ref().unwrap().to_owned(),
@@ -583,19 +605,7 @@ impl StoredStatic {
             exclude_computer,
             include_eid,
             exclude_eid,
-            field_data_map: create_field_data_map(Path::new(
-                check_setting_path(config_path, "data_mapping", false)
-                    .unwrap_or_else(|| {
-                        check_setting_path(
-                            &CURRENT_EXE_PATH.to_path_buf(),
-                            "rules/config/data_mapping",
-                            true,
-                        )
-                        .unwrap()
-                    })
-                    .to_str()
-                    .unwrap(),
-            )),
+            field_data_map,
         };
         ret.profiles = load_profile(
             check_setting_path(
