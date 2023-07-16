@@ -63,14 +63,14 @@ fn build_field_data_map(yaml_data: Yaml) -> (FieldDataMapKey, FieldDataMapEntry)
 }
 
 pub fn convert_field_data(
-    map: HashMap<FieldDataMapKey, FieldDataMapEntry>,
+    data_map: FieldDataMap,
     data_map_key: FieldDataMapKey,
     field: &str,
     field_data_str: &str,
 ) -> Option<String> {
-    match map.get(&data_map_key) {
+    match data_map.get(&data_map_key) {
         None => None,
-        Some(data_map) => match data_map.get(field) {
+        Some(data_map_entry) => match data_map_entry.get(field) {
             None => None,
             Some((ac, rep)) => {
                 let mut wtr = vec![];
