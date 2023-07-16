@@ -5,7 +5,8 @@ use std::path::Path;
 use std::string::String;
 use yaml_rust::{Yaml, YamlLoader};
 
-pub type FieldDataMap = HashMap<String, (AhoCorasick, Vec<String>)>;
+pub type FieldDataMap = HashMap<FieldDataMapKey, FieldDataMapEntry>;
+pub type FieldDataMapEntry = HashMap<String, (AhoCorasick, Vec<String>)>;
 
 #[derive(Debug, Eq, Hash, PartialEq, Default, Clone)]
 pub struct FieldDataMapKey {
@@ -28,10 +29,10 @@ impl FieldDataMapKey {
     }
 }
 
-pub fn build_field_data_map(yaml_data: Yaml) -> (FieldDataMapKey, FieldDataMap) {
+pub fn build_field_data_map(yaml_data: Yaml) -> (FieldDataMapKey, FieldDataMapEntry) {
     let rewrite_field_data = yaml_data["RewriteFieldData"].as_hash();
     if rewrite_field_data.is_none() {
-        return (FieldDataMapKey::default(), FieldDataMap::default());
+        return (FieldDataMapKey::default(), FieldDataMapEntry::default());
     }
     let mut mapping = HashMap::new();
     for (key_yaml, val_yaml) in rewrite_field_data.unwrap().iter() {
@@ -62,7 +63,7 @@ pub fn build_field_data_map(yaml_data: Yaml) -> (FieldDataMapKey, FieldDataMap) 
 }
 
 pub fn convert_field_data(
-    map: HashMap<FieldDataMapKey, FieldDataMap>,
+    map: HashMap<FieldDataMapKey, FieldDataMapEntry>,
     data_map_key: FieldDataMapKey,
     field: &str,
     field_data_str: &str,
