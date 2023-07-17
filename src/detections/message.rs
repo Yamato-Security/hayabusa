@@ -110,6 +110,7 @@ pub fn insert_message(detect_info: DetectInfo, event_time: DateTime<Utc>) {
 }
 
 /// メッセージを設定
+#[allow(clippy::too_many_arguments)] // TODO 要リファクタリング
 pub fn insert(
     event_record: &Value,
     output: CompactString,
