@@ -267,14 +267,12 @@ pub fn parse_message(
     let mut hash_map: HashMap<CompactString, CompactString> = HashMap::new();
     for caps in ALIASREGEX.captures_iter(&return_message) {
         let full_target_str = &caps[0];
-        let target_length = full_target_str.chars().count() - 2; // 最後の文字は%であるので、エイリアスのキー情報はcount()-2まで。
         let target_str = full_target_str
-            .chars()
-            .skip(1)
-            .take(target_length)
-            .collect::<String>();
-
-        let array_str = if let Some(_array_str) = eventkey_alias.get_event_key(&target_str) {
+            .strip_suffix('%')
+            .unwrap()
+            .strip_prefix('%')
+            .unwrap();
+        let array_str = if let Some(_array_str) = eventkey_alias.get_event_key(target_str) {
             _array_str.to_string()
         } else {
             format!("Event.EventData.{target_str}")
@@ -288,7 +286,7 @@ pub fn parse_message(
                 field = s;
             }
         }
-        let suffix_match = SUFFIXREGEX.captures(&target_str);
+        let suffix_match = SUFFIXREGEX.captures(target_str);
         let suffix: i64 = match suffix_match {
             Some(cap) => cap.get(1).map_or(-1, |a| a.as_str().parse().unwrap_or(-1)),
             None => -1,
@@ -306,16 +304,13 @@ pub fn parse_message(
                 let field_data = if field_data_map.is_none() || field.is_empty() {
                     hash_value
                 } else {
-                    let data = convert_field_data(
+                    let converted_str = convert_field_data(
                         field_data_map.as_ref().unwrap(),
                         field_data_map_key,
                         field.to_lowercase().as_str(),
                         hash_value.as_str(),
                     );
-                    match data {
-                        None => hash_value,
-                        Some(s) => s,
-                    }
+                    converted_str.unwrap_or(hash_value)
                 };
                 if json_timeline_flag {
                     hash_map.insert(CompactString::from(full_target_str), field_data);

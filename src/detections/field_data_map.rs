@@ -1,3 +1,4 @@
+use crate::detections::message::AlertMessage;
 use aho_corasick::AhoCorasick;
 use compact_str::CompactString;
 use hashbrown::HashMap;
@@ -87,8 +88,11 @@ pub fn convert_field_data(
 }
 
 fn load_yaml_files(dir_path: &Path) -> Result<Vec<Yaml>, String> {
+    let path = dir_path.as_os_str().to_str().unwrap_or_default();
     if !dir_path.exists() || !dir_path.is_dir() {
-        return Err("".to_string());
+        let msg = format!("Field mapping dir[{path}] does not exist.");
+        AlertMessage::warn(&msg).ok();
+        return Err(msg);
     }
     match fs::read_dir(dir_path) {
         Ok(files) => Ok(files
@@ -98,7 +102,11 @@ fn load_yaml_files(dir_path: &Path) -> Result<Vec<Yaml>, String> {
             .filter_map(|y| y.ok())
             .flatten()
             .collect()),
-        Err(e) => Err(e.to_string()),
+        Err(e) => {
+            let msg = format!("Failed to open field mapping dir[{path}].");
+            AlertMessage::warn(&msg).ok();
+            Err(e.to_string())
+        }
     }
 }
 

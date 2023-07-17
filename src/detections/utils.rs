@@ -387,20 +387,16 @@ pub fn create_recordinfos(
     output_vec
         .iter()
         .map(|(key, value)| {
-            let val = if let Some(map) = field_data_map.as_ref() {
-                match convert_field_data(map, field_data_map_key, &key.to_lowercase(), value) {
-                    Some(s) => s.to_string(),
-                    None => value.to_string(),
+            if let Some(map) = field_data_map.as_ref() {
+                if let Some(converted_str) =
+                    convert_field_data(map, field_data_map_key, &key.to_lowercase(), value)
+                {
+                    let val = converted_str.strip_suffix(',').unwrap_or(&converted_str);
+                    return format!("{key}: {val}");
                 }
-            } else {
-                value.to_string()
-            };
-
-            if val.ends_with(',') {
-                format!("{}: {}", key, &val[..val.len() - 1])
-            } else {
-                format!("{key}: {val}")
             }
+            let val = value.strip_suffix(',').unwrap_or(value);
+            format!("{key}: {val}")
         })
         .join(" ¦ ")
 }
