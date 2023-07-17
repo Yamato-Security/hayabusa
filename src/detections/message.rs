@@ -109,8 +109,7 @@ pub fn insert_message(detect_info: DetectInfo, event_time: DateTime<Utc>) {
     info.push(detect_info);
 }
 
-/// メッセージを設定
-#[allow(clippy::too_many_arguments)] // TODO 要リファクタリング
+/// メッセージを設定 TODO 要リファクタリング
 pub fn insert(
     event_record: &Value,
     output: CompactString,
@@ -118,9 +117,11 @@ pub fn insert(
     time: DateTime<Utc>,
     profile_converter: &mut HashMap<&str, Profile>,
     (is_agg, is_json_timeline, included_all_field_info): (bool, bool, bool),
-    eventkey_alias: &EventKeyAliasConfig,
-    field_data_map_key: &FieldDataMapKey,
-    field_data_map: &Option<FieldDataMap>,
+    (eventkey_alias, field_data_map_key, field_data_map): (
+        &EventKeyAliasConfig,
+        &FieldDataMapKey,
+        &Option<FieldDataMap>,
+    ),
 ) {
     if !is_agg {
         let mut prev = 'a';

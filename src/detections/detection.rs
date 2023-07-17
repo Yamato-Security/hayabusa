@@ -691,9 +691,11 @@ impl Detection {
             time,
             &mut profile_converter,
             (false, is_json_timeline, included_all_field_info_flag),
-            eventkey_alias,
-            &field_data_map_key,
-            &stored_static.field_data_map,
+            (
+                eventkey_alias,
+                &field_data_map_key,
+                &stored_static.field_data_map,
+            ),
         );
     }
 
@@ -908,9 +910,7 @@ impl Detection {
             agg_result.start_timedate,
             &mut profile_converter,
             (true, is_json_timeline, false),
-            eventkey_alias,
-            &field_data_map_key,
-            &None,
+            (eventkey_alias, &field_data_map_key, &None),
         )
     }
 
