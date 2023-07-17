@@ -31,6 +31,7 @@ use std::fmt::Write;
 use std::path::Path;
 
 use crate::detections::configs::STORED_EKEY_ALIAS;
+use crate::detections::field_data_map::FieldDataMapKey;
 use std::sync::Arc;
 use tokio::{runtime::Runtime, spawn, task::JoinHandle};
 
@@ -654,7 +655,14 @@ impl Detection {
                 None => create_recordinfos(&record_info.record),
             },
         };
-
+        let field_data_map_key = if stored_static.field_data_map.is_none() {
+            FieldDataMapKey::default()
+        } else {
+            FieldDataMapKey {
+                channel: CompactString::from(ch_str.clone().to_lowercase()),
+                event_id: eid.clone(),
+            }
+        };
         let detect_info = DetectInfo {
             rulepath: CompactString::from(&rule.rulepath),
             ruleid: CompactString::from(rule.yaml["id"].as_str().unwrap_or("-")),
@@ -684,6 +692,8 @@ impl Detection {
             &mut profile_converter,
             (false, is_json_timeline, included_all_field_info_flag),
             eventkey_alias,
+            &field_data_map_key,
+            &stored_static.field_data_map,
         );
     }
 
@@ -889,6 +899,8 @@ impl Detection {
         };
         let binding = STORED_EKEY_ALIAS.read().unwrap();
         let eventkey_alias = binding.as_ref().unwrap();
+
+        let field_data_map_key = FieldDataMapKey::default();
         message::insert(
             &Value::default(),
             CompactString::new(rule.yaml["details"].as_str().unwrap_or("-")),
@@ -897,6 +909,8 @@ impl Detection {
             &mut profile_converter,
             (true, is_json_timeline, false),
             eventkey_alias,
+            &field_data_map_key,
+            &None,
         )
     }
 
@@ -1122,6 +1136,8 @@ impl Detection {
                 CompactString::from(alias),
                 eventkey_alias,
                 is_csv_output,
+                &FieldDataMapKey::default(),
+                &None,
             );
             if search_data != "n/a" {
                 return search_data;

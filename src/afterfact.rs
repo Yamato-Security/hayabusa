@@ -1729,6 +1729,7 @@ mod tests {
     use crate::detections::configs::OutputOption;
     use crate::detections::configs::StoredStatic;
     use crate::detections::configs::CURRENT_EXE_PATH;
+    use crate::detections::field_data_map::FieldDataMapKey;
     use crate::detections::message;
     use crate::detections::message::DetectInfo;
     use crate::detections::utils;
@@ -1956,6 +1957,8 @@ mod tests {
                 &mut profile_converter,
                 (false, false, false),
                 &eventkey_alias,
+                &FieldDataMapKey::default(),
+                &None,
             );
             *profile_converter.get_mut("Computer").unwrap() =
                 Profile::Computer(test_computername.into());
@@ -1978,6 +1981,8 @@ mod tests {
                 &mut profile_converter,
                 (false, false, false),
                 &eventkey_alias,
+                &FieldDataMapKey::default(),
+                &None,
             );
             let multi = message::MESSAGES.get(&expect_time).unwrap();
             let (_, detect_infos) = multi.pair();
@@ -2272,6 +2277,8 @@ mod tests {
                 &mut profile_converter,
                 (false, false, true),
                 &eventkey_alias,
+                &FieldDataMapKey::default(),
+                &None,
             );
             *profile_converter.get_mut("Computer").unwrap() =
                 Profile::Computer(test_computername.into());
@@ -2294,6 +2301,8 @@ mod tests {
                 &mut profile_converter,
                 (false, false, true),
                 &eventkey_alias,
+                &FieldDataMapKey::default(),
+                &None,
             );
             let multi = message::MESSAGES.get(&expect_time).unwrap();
             let (_, detect_infos) = multi.pair();
@@ -2578,6 +2587,8 @@ mod tests {
                 &mut profile_converter,
                 (false, false, false),
                 &eventkey_alias,
+                &FieldDataMapKey::default(),
+                &None,
             );
             *profile_converter.get_mut("Computer").unwrap() =
                 Profile::Computer(test_computername.into());
@@ -2600,6 +2611,8 @@ mod tests {
                 &mut profile_converter,
                 (false, false, false),
                 &eventkey_alias,
+                &FieldDataMapKey::default(),
+                &None,
             );
             let multi = message::MESSAGES.get(&expect_time).unwrap();
             let (_, detect_infos) = multi.pair();
@@ -3037,6 +3050,8 @@ mod tests {
                 &mut profile_converter,
                 (false, false, false),
                 &eventkey_alias,
+                &FieldDataMapKey::default(),
+                &None,
             );
             *profile_converter.get_mut("Computer").unwrap() =
                 Profile::Computer(test_computername.into());
@@ -3289,6 +3304,8 @@ mod tests {
                 &mut profile_converter,
                 (false, false, false),
                 &eventkey_alias,
+                &FieldDataMapKey::default(),
+                &None,
             );
             *profile_converter.get_mut("Computer").unwrap() =
                 Profile::Computer(test_computername.into());

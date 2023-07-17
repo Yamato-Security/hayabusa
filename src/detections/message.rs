@@ -1,5 +1,6 @@
 extern crate lazy_static;
 use crate::detections::configs::CURRENT_EXE_PATH;
+use crate::detections::field_data_map::{convert_field_data, FieldDataMap, FieldDataMapKey};
 use crate::detections::utils::{self, get_serde_number_to_string, write_color_buffer};
 use crate::options::profile::Profile::{
     self, AllFieldInfo, Details, ExtraFieldInfo, Literal, SrcASN, SrcCity, SrcCountry, TgtASN,
@@ -117,11 +118,19 @@ pub fn insert(
     profile_converter: &mut HashMap<&str, Profile>,
     (is_agg, is_json_timeline, included_all_field_info): (bool, bool, bool),
     eventkey_alias: &EventKeyAliasConfig,
+    field_data_map_key: &FieldDataMapKey,
+    field_data_map: &Option<FieldDataMap>,
 ) {
     if !is_agg {
         let mut prev = 'a';
-        let mut removed_sp_parsed_detail =
-            parse_message(event_record, output, eventkey_alias, is_json_timeline);
+        let mut removed_sp_parsed_detail = parse_message(
+            event_record,
+            output,
+            eventkey_alias,
+            is_json_timeline,
+            field_data_map_key,
+            field_data_map,
+        );
         removed_sp_parsed_detail.retain(|ch| {
             let retain_flag = prev == ' ' && ch == ' ' && ch.is_control();
             if !retain_flag {
@@ -230,6 +239,8 @@ pub fn insert(
                             CompactString::new(p.to_value()),
                             eventkey_alias,
                             is_json_timeline,
+                            field_data_map_key,
+                            field_data_map,
                         )),
                     ))
                 }
@@ -246,6 +257,8 @@ pub fn parse_message(
     output: CompactString,
     eventkey_alias: &EventKeyAliasConfig,
     json_timeline_flag: bool,
+    field_data_map_key: &FieldDataMapKey,
+    field_data_map: &Option<FieldDataMap>,
 ) -> CompactString {
     let mut return_message = output;
     let mut hash_map: HashMap<CompactString, CompactString> = HashMap::new();
@@ -265,9 +278,11 @@ pub fn parse_message(
         };
 
         let mut tmp_event_record: &Value = event_record;
+        let mut field = "";
         for s in array_str.split('.') {
             if let Some(record) = tmp_event_record.get(s) {
                 tmp_event_record = record;
+                field = s;
             }
         }
         let suffix_match = SUFFIXREGEX.captures(&target_str);
@@ -285,12 +300,26 @@ pub fn parse_message(
         let hash_value = get_serde_number_to_string(tmp_event_record, false);
         if hash_value.is_some() {
             if let Some(hash_value) = hash_value {
+                let field_data = if field_data_map.is_none() || field.is_empty() {
+                    hash_value
+                } else {
+                    let data = convert_field_data(
+                        field_data_map.as_ref().unwrap(),
+                        field_data_map_key,
+                        field.to_lowercase().as_str(),
+                        hash_value.as_str(),
+                    );
+                    match data {
+                        None => hash_value,
+                        Some(s) => s,
+                    }
+                };
                 if json_timeline_flag {
-                    hash_map.insert(CompactString::from(full_target_str), hash_value);
+                    hash_map.insert(CompactString::from(full_target_str), field_data);
                 } else {
                     hash_map.insert(
                         CompactString::from(full_target_str),
-                        hash_value.split_ascii_whitespace().join(" ").into(),
+                        field_data.split_ascii_whitespace().join(" ").into(),
                     );
                 }
             }
@@ -381,6 +410,7 @@ impl AlertMessage {
 #[cfg(test)]
 mod tests {
     use crate::detections::configs::{load_eventkey_alias, StoredStatic, CURRENT_EXE_PATH};
+    use crate::detections::field_data_map::FieldDataMapKey;
     use crate::detections::message::{get, insert_message, AlertMessage, DetectInfo};
     use crate::detections::message::{parse_message, MESSAGES};
     use crate::detections::utils;
@@ -442,6 +472,8 @@ mod tests {
                     .unwrap(),
                 ),
                 true,
+                &FieldDataMapKey::default(),
+                &None
             ),
             expected,
         );
@@ -476,6 +508,8 @@ mod tests {
                     .unwrap(),
                 ),
                 true,
+                &FieldDataMapKey::default(),
+                &None
             ),
             expected,
         );
@@ -516,6 +550,8 @@ mod tests {
                     .unwrap(),
                 ),
                 true,
+                &FieldDataMapKey::default(),
+                &None
             ),
             expected,
         );
@@ -555,6 +591,8 @@ mod tests {
                     .unwrap(),
                 ),
                 true,
+                &FieldDataMapKey::default(),
+                &None
             ),
             expected,
         );
@@ -599,6 +637,8 @@ mod tests {
                     .unwrap(),
                 ),
                 true,
+                &FieldDataMapKey::default(),
+                &None
             ),
             expected,
         );
@@ -643,6 +683,8 @@ mod tests {
                     .unwrap(),
                 ),
                 true,
+                &FieldDataMapKey::default(),
+                &None
             ),
             expected,
         );
@@ -687,6 +729,8 @@ mod tests {
                     .unwrap(),
                 ),
                 true,
+                &FieldDataMapKey::default(),
+                &None
             ),
             expected,
         );

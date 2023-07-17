@@ -1,4 +1,5 @@
 use aho_corasick::AhoCorasick;
+use compact_str::CompactString;
 use hashbrown::HashMap;
 use std::fs;
 use std::path::Path;
@@ -10,21 +11,25 @@ pub type FieldDataMapEntry = HashMap<String, (AhoCorasick, Vec<String>)>;
 
 #[derive(Debug, Eq, Hash, PartialEq, Default, Clone)]
 pub struct FieldDataMapKey {
-    channel: String,
-    event_id: String,
+    pub channel: CompactString,
+    pub event_id: CompactString,
 }
 
 impl FieldDataMapKey {
     fn new(yaml_data: Yaml) -> FieldDataMapKey {
         FieldDataMapKey {
-            channel: yaml_data["Channel"]
-                .as_str()
-                .unwrap_or_default()
-                .to_lowercase(),
-            event_id: yaml_data["EventID"]
-                .as_i64()
-                .unwrap_or_default()
-                .to_string(),
+            channel: CompactString::from(
+                yaml_data["Channel"]
+                    .as_str()
+                    .unwrap_or_default()
+                    .to_lowercase(),
+            ),
+            event_id: CompactString::from(
+                yaml_data["EventID"]
+                    .as_i64()
+                    .unwrap_or_default()
+                    .to_string(),
+            ),
         }
     }
 }
@@ -63,19 +68,19 @@ fn build_field_data_map(yaml_data: Yaml) -> (FieldDataMapKey, FieldDataMapEntry)
 }
 
 pub fn convert_field_data(
-    data_map: FieldDataMap,
-    data_map_key: FieldDataMapKey,
+    data_map: &FieldDataMap,
+    data_map_key: &FieldDataMapKey,
     field: &str,
     field_data_str: &str,
-) -> Option<String> {
-    match data_map.get(&data_map_key) {
+) -> Option<CompactString> {
+    match data_map.get(data_map_key) {
         None => None,
         Some(data_map_entry) => match data_map_entry.get(field) {
             None => None,
             Some((ac, rep)) => {
                 let mut wtr = vec![];
                 let _ = ac.try_stream_replace_all(field_data_str.as_bytes(), &mut wtr, rep);
-                Some(std::str::from_utf8(&wtr).unwrap().to_string())
+                Some(CompactString::from(std::str::from_utf8(&wtr).unwrap()))
             }
         },
     }
@@ -111,6 +116,7 @@ mod tests {
         build_field_data_map, convert_field_data, create_field_data_map, load_yaml_files,
         FieldDataMapKey,
     };
+    use compact_str::CompactString;
     use hashbrown::HashMap;
     use std::path::Path;
     use yaml_rust::{Yaml, YamlLoader};
@@ -125,26 +131,26 @@ mod tests {
 
     #[test]
     fn test_load_yaml_files_not_exists_dir() {
-        assert_eq!(load_yaml_files(Path::new("notexists")).is_err(), true);
-        assert_eq!(load_yaml_files(Path::new("./")).unwrap().is_empty(), true)
+        assert!(load_yaml_files(Path::new("notexists")).is_err());
+        assert!(load_yaml_files(Path::new("./")).unwrap().is_empty())
     }
 
     #[test]
     fn test_convert_field_data_empty_data1() {
-        let r = convert_field_data(HashMap::new(), FieldDataMapKey::default(), "", "");
-        assert_eq!(r.is_none(), true);
+        let r = convert_field_data(&HashMap::new(), &FieldDataMapKey::default(), "", "");
+        assert!(r.is_none());
     }
 
     #[test]
     fn test_convert_field_data_empty_data2() {
         let mut map = HashMap::new();
         let key = FieldDataMapKey {
-            channel: "Security".to_lowercase(),
-            event_id: "4625".to_string(),
+            channel: CompactString::from("Security".to_lowercase()),
+            event_id: CompactString::from("4625".to_string()),
         };
         map.insert(key.clone(), HashMap::new());
-        let r = convert_field_data(map, key, "", "");
-        assert_eq!(r.is_none(), true);
+        let r = convert_field_data(&map, &key, "", "");
+        assert!(r.is_none());
     }
 
     #[test]
@@ -161,7 +167,7 @@ mod tests {
         let (key, entry) = build_field_data_map(y);
         let mut map = HashMap::new();
         map.insert(key.clone(), entry);
-        let r = convert_field_data(map, key, "logontype", "Foo 0");
+        let r = convert_field_data(&map, &key, "logontype", "Foo 0");
         assert_eq!(r.unwrap(), "Foo 0 - SYSTEM");
     }
 
@@ -197,7 +203,7 @@ mod tests {
         let y = build_yaml(s);
         let r = build_field_data_map(y);
         assert_eq!(r.0, FieldDataMapKey::default());
-        assert_eq!(r.1.is_empty(), true);
+        assert!(r.1.is_empty());
     }
 
     #[test]
@@ -210,7 +216,7 @@ mod tests {
         let y = build_yaml(s);
         let r = build_field_data_map(y);
         assert_eq!(r.0, FieldDataMapKey::default());
-        assert_eq!(r.1.is_empty(), true);
+        assert!(r.1.is_empty());
     }
 
     #[test]
@@ -244,6 +250,6 @@ mod tests {
     #[test]
     fn test_create_field_data_map() {
         let r = create_field_data_map(Path::new("notexists"));
-        assert_eq!(r.is_none(), true);
+        assert!(r.is_none());
     }
 }
