@@ -652,7 +652,7 @@ impl Detection {
                 .get(&CompactString::from(format!("{provider}_{eid}")))
             {
                 Some(str) => str.to_string(),
-                None => create_recordinfos(&record_info.record),
+                None => create_recordinfos(&record_info.record, &FieldDataMapKey::default(), &None),
             },
         };
         let field_data_map_key = if stored_static.field_data_map.is_none() {

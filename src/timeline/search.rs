@@ -1,3 +1,4 @@
+use crate::detections::field_data_map::FieldDataMapKey;
 use crate::{
     afterfact::output_json_str,
     detections::{
@@ -289,7 +290,7 @@ fn extract_search_event_info(
         _ => CompactString::new("-"),
     };
 
-    let datainfo = utils::create_recordinfos(&record.record);
+    let datainfo = utils::create_recordinfos(&record.record, &FieldDataMapKey::default(), &None);
     let allfieldinfo = if !datainfo.is_empty() {
         datainfo.into()
     } else {

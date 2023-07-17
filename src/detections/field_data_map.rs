@@ -114,8 +114,9 @@ pub fn create_field_data_map(dir_path: &Path) -> Option<FieldDataMap> {
 mod tests {
     use crate::detections::field_data_map::{
         build_field_data_map, convert_field_data, create_field_data_map, load_yaml_files,
-        FieldDataMapKey,
+        FieldDataMap, FieldDataMapKey,
     };
+    use crate::detections::utils;
     use compact_str::CompactString;
     use hashbrown::HashMap;
     use std::path::Path;
@@ -163,8 +164,7 @@ mod tests {
                     - '0': '0 - SYSTEM'
                     - '2': '2 - INTERACTIVE'
         "##;
-        let y = build_yaml(s);
-        let (key, entry) = build_field_data_map(y);
+        let (key, entry) = build_field_data_map(build_yaml(s));
         let mut map = HashMap::new();
         map.insert(key.clone(), entry);
         let r = convert_field_data(&map, &key, "logontype", "Foo 0");
@@ -176,8 +176,7 @@ mod tests {
         let s = r##"
             INVALID
         "##;
-        let y = build_yaml(s);
-        let r = build_field_data_map(y);
+        let r = build_field_data_map(build_yaml(s));
         assert_eq!(r.0, FieldDataMapKey::default());
     }
 
@@ -188,8 +187,7 @@ mod tests {
                 Bar:
                     - 'A': '1'
         "##;
-        let y = build_yaml(s);
-        let r = build_field_data_map(y);
+        let r = build_field_data_map(build_yaml(s));
         assert_eq!(r.0, FieldDataMapKey::default());
     }
 
@@ -200,8 +198,7 @@ mod tests {
             EventID: 4624
             INVALID: 1
         "##;
-        let y = build_yaml(s);
-        let r = build_field_data_map(y);
+        let r = build_field_data_map(build_yaml(s));
         assert_eq!(r.0, FieldDataMapKey::default());
         assert!(r.1.is_empty());
     }
@@ -213,8 +210,7 @@ mod tests {
             EventID: 4624
             RewriteFieldData: 'INVALID'
         "##;
-        let y = build_yaml(s);
-        let r = build_field_data_map(y);
+        let r = build_field_data_map(build_yaml(s));
         assert_eq!(r.0, FieldDataMapKey::default());
         assert!(r.1.is_empty());
     }
@@ -232,8 +228,7 @@ mod tests {
                     - '%%1832': 'A'
                     - '%%1833': 'B'
         "##;
-        let y = build_yaml(s);
-        let r = build_field_data_map(y);
+        let r = build_field_data_map(build_yaml(s));
         let mut wtr = vec![];
         let ac = r.1.get("elevatedtoken").unwrap().0.clone();
         let rp = r.1.get("elevatedtoken").unwrap().1.clone();
@@ -251,5 +246,45 @@ mod tests {
     fn test_create_field_data_map() {
         let r = create_field_data_map(Path::new("notexists"));
         assert!(r.is_none());
+    }
+
+    #[test]
+    fn test_create_recordinfos_with_field_data_map() {
+        let record_json_str = r#"
+        {
+            "Event": {
+                "System": {"EventID": 4624, "Channel": "Security", "Computer":"DESKTOP"},
+                "EventData": {
+                    "ElevatedToken": "%%1843",
+                    "ImpersonationLevel": "%%1832"
+                },
+                "EventData_attributes": {"xmlns": "http://schemas.microsoft.com/win/2004/08/events/event"}
+            },
+            "Event_attributes": {"xmlns": "http://schemas.microsoft.com/win/2004/08/events/event"}
+        }"#;
+        let s = r##"
+            Channel: Security
+            EventID: 4624
+            RewriteFieldData:
+                ElevatedToken:
+                    - '%%1842': 'YES'
+                    - '%%1843': 'NO'
+                ImpersonationLevel:
+                    - '%%1832': 'A'
+                    - '%%1833': 'B'
+        "##;
+        let (key, entry) = build_field_data_map(build_yaml(s));
+        let mut map: FieldDataMap = HashMap::new();
+        map.insert(key.clone(), entry);
+        match serde_json::from_str(record_json_str) {
+            Ok(record) => {
+                let ret = utils::create_recordinfos(&record, &key, &Some(map));
+                let expected = "ElevatedToken: NO ¦ ImpersonationLevel: A".to_string();
+                assert_eq!(ret, expected);
+            }
+            Err(_) => {
+                panic!("Failed to parse json record.");
+            }
+        }
     }
 }

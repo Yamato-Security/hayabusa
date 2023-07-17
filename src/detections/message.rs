@@ -176,7 +176,8 @@ pub fn insert(
                 if is_agg {
                     replaced_profiles.push((key.to_owned(), AllFieldInfo("-".into())));
                 } else {
-                    let rec = utils::create_recordinfos(event_record);
+                    let rec =
+                        utils::create_recordinfos(event_record, field_data_map_key, field_data_map);
                     let rec = if rec.is_empty() { "-".to_string() } else { rec };
                     replaced_profiles.push((key.to_owned(), AllFieldInfo(rec.into())));
                 }
@@ -203,7 +204,8 @@ pub fn insert(
                     }
                     "-".to_string()
                 } else {
-                    let rec = utils::create_recordinfos(event_record);
+                    let rec =
+                        utils::create_recordinfos(event_record, field_data_map_key, field_data_map);
                     let rec = if rec.is_empty() { "-".to_string() } else { rec };
                     if included_all_field_info {
                         replaced_profiles.push((key.to_owned(), AllFieldInfo(rec.clone().into())));
