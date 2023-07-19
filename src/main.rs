@@ -1086,7 +1086,8 @@ impl App {
             tl.computer_metrics_dsp_msg(stored_static)
         }
         if stored_static.output_path.is_some() {
-            println!("\nScanning finished. Please wait while the results are being saved.\n");
+            println!("\n");
+            println!("Scanning finished. Please wait while the results are being saved.");
         }
         if !(stored_static.metrics_flag
             || stored_static.logon_summary_flag
