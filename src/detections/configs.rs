@@ -892,11 +892,11 @@ pub struct DetectCommonOption {
     #[arg(help_heading = Some("Display Settings"), short = 'v', long, display_order = 480)]
     pub verbose: bool,
 
-    /// Scan only these computer names (ex: ComputerA) (ex: ComputerA,ComputerB)
+    /// Scan only certain computer names (ex: ComputerA) (ex: ComputerA,ComputerB)
     #[arg(help_heading = Some("Filtering"), long = "include-computer", value_name = "COMPUTER", conflicts_with = "exclude-computer", use_value_delimiter = true, value_delimiter = ',', display_order = 352)]
     pub include_computer: Option<Vec<String>>,
 
-    /// Do not scan these computer names (ex: ComputerA) (ex: ComputerA,ComputerB)
+    /// Do not scan certain computer names (ex: ComputerA) (ex: ComputerA,ComputerB)
     #[arg(help_heading = Some("Filtering"), long = "exclude-computer", value_name = "COMPUTER", conflicts_with = "include_computer",use_value_delimiter = true, value_delimiter = ',', display_order = 314)]
     pub exclude_computer: Option<Vec<String>>,
 }
@@ -1007,7 +1007,7 @@ pub struct SearchOption {
     #[arg(help_heading = Some("Output"), short = 'M', long="multiline", display_order = 390)]
     pub multiline: bool,
 
-    /// Overwrite results files
+    /// Overwrite files when saving
     #[arg(help_heading = Some("General Options"), short='C', long = "clobber", display_order = 290, requires = "output")]
     pub clobber: bool,
 
@@ -1099,7 +1099,7 @@ pub struct EidMetricsOption {
     #[arg(help_heading = Some("Time Format"), short = 'U', long = "UTC", display_order = 210)]
     pub utc: bool,
 
-    /// Overwrite results files
+    /// Overwrite files when saving
     #[arg(help_heading = Some("General Options"), short='C', long = "clobber", display_order = 290, requires = "output")]
     pub clobber: bool,
 }
@@ -1117,19 +1117,19 @@ pub struct PivotKeywordOption {
     #[clap(flatten)]
     pub common_options: CommonOptions,
 
-    /// Enable rules with status of deprecated
+    /// Enable rules with a status of deprecated
     #[arg(help_heading = Some("Filtering"), short = 'D', long = "enable-deprecated-rules", display_order = 310)]
     pub enable_deprecated_rules: bool,
 
-    /// Enable rules with status of unsupported
+    /// Enable rules with a status of unsupported
     #[arg(help_heading = Some("Filtering"), short = 'u', long = "enable-unsupported-rules", display_order = 312)]
     pub enable_unsupported_rules: bool,
 
-    /// Ignore rules according to status (ex: experimental) (ex: stable,test)
+    /// Do not load rules according to status (ex: experimental) (ex: stable,test)
     #[arg(help_heading = Some("Filtering"), long = "exclude-status", value_name = "STATUS", use_value_delimiter = true, value_delimiter = ',', display_order = 316)]
     pub exclude_status: Option<Vec<String>>,
 
-    /// Minimum level for rules (default: informational)
+    /// Minimum level for rules to load (default: informational)
     #[arg(
         help_heading = Some("Filtering"),
         short = 'm',
@@ -1142,7 +1142,7 @@ pub struct PivotKeywordOption {
     )]
     pub min_level: String,
 
-    /// Scan for only specific levels (informational, low, medium, high, critical)
+    /// Only load rules with a specific level (informational, low, medium, high, critical)
     #[arg(
         help_heading = Some("Filtering"),
         short = 'e',
@@ -1173,14 +1173,14 @@ pub struct PivotKeywordOption {
     #[arg(help_heading = Some("Filtering"), long = "include-eid", value_name = "EIDS", conflicts_with_all = ["eid_filter", "exclude_eid"], use_value_delimiter = true, value_delimiter = ',', display_order = 352)]
     pub include_eid: Option<Vec<String>>,
 
-    /// Exclude specified EIDs for faster speed (ex: 1) (ex: 1,4688)
+    /// Do not scan specific EIDs for faster speed (ex: 1) (ex: 1,4688)
     #[arg(help_heading = Some("Filtering"), long = "exclude-eid", value_name = "EIDS", conflicts_with_all = ["eid_filter", "include_eid"], use_value_delimiter = true, value_delimiter = ',', display_order = 315)]
     pub exclude_eid: Option<Vec<String>>,
 
     #[clap(flatten)]
     pub detect_common_options: DetectCommonOption,
 
-    /// Overwrite results files
+    /// Overwrite files when saving
     #[arg(help_heading = Some("General Options"), short='C', long = "clobber", display_order = 290, requires = "output")]
     pub clobber: bool,
 }
@@ -1228,7 +1228,7 @@ pub struct LogonSummaryOption {
     #[arg(help_heading = Some("Time Format"), short = 'U', long = "UTC", display_order = 210)]
     pub utc: bool,
 
-    /// Overwrite results files
+    /// Overwrite files when saving
     #[arg(help_heading = Some("General Options"), short='C', long = "clobber", display_order = 290, requires = "output")]
     pub clobber: bool,
 }
@@ -1247,15 +1247,15 @@ pub struct OutputOption {
     #[clap(flatten)]
     pub common_options: CommonOptions,
 
-    /// Enable rules with status of deprecated
+    /// Enable rules with a status of deprecated
     #[arg(help_heading = Some("Filtering"), short = 'D', long = "enable-deprecated-rules", display_order = 310)]
     pub enable_deprecated_rules: bool,
 
-    /// Enable rules with status of unsupported
+    /// Enable rules with a status of unsupported
     #[arg(help_heading = Some("Filtering"), short = 'u', long = "enable-unsupported-rules", display_order = 312)]
     pub enable_unsupported_rules: bool,
 
-    /// Ignore rules according to status (ex: experimental) (ex: stable,test)
+    /// Do not load rules according to status (ex: experimental) (ex: stable,test)
     #[arg(help_heading = Some("Filtering"), long = "exclude-status", value_name = "STATUS", use_value_delimiter = true, value_delimiter = ',', display_order = 316)]
     pub exclude_status: Option<Vec<String>>,
 
@@ -1271,7 +1271,7 @@ pub struct OutputOption {
     #[arg(help_heading = Some("Filtering"), long = "exclude-category", value_name = "CATEGORY", conflicts_with = "include_category",use_value_delimiter = true, value_delimiter = ',', display_order = 314)]
     pub exclude_category: Option<Vec<String>>,
 
-    /// Minimum level for rules (default: informational)
+    /// Minimum level for rules to load (default: informational)
     #[arg(
         help_heading = Some("Filtering"),
         short = 'm',
@@ -1283,7 +1283,7 @@ pub struct OutputOption {
     )]
     pub min_level: String,
 
-    /// Scan for only specific levels (informational, low, medium, high, critical)
+    /// Only load rules with a specific level (informational, low, medium, high, critical)
     #[arg(
         help_heading = Some("Filtering"),
         short = 'e',
@@ -1310,11 +1310,11 @@ pub struct OutputOption {
     #[arg(help_heading = Some("Filtering"), short = 'E', long = "EID-filter", conflicts_with_all=["include_eid","exclude_eid"], display_order = 50)]
     pub eid_filter: bool,
 
-    /// Scan only proven rule for faster speed (./rules/config/proven_rules.txt)
+    /// Scan with only proven rules for faster speed (./rules/config/proven_rules.txt)
     #[arg(help_heading = Some("Filtering"), short = 'P', long = "proven-rules", display_order = 420)]
     pub proven_rules: bool,
 
-    /// Exclude load rules with specific tags (ex: sysmon)
+    /// Do not load rules with specific tags (ex: sysmon)
     #[arg(help_heading = Some("Filtering"), long = "exclude-tags", value_name = "TAGS", conflicts_with = "include_tags", use_value_delimiter = true, value_delimiter = ',', display_order = 316)]
     pub exclude_tags: Option<Vec<String>>,
 
@@ -1322,7 +1322,7 @@ pub struct OutputOption {
     #[arg(help_heading = Some("Filtering"), long = "include-eid", value_name = "EIDS", conflicts_with_all = ["eid_filter", "exclude_eid"], use_value_delimiter = true, value_delimiter = ',', display_order = 352)]
     pub include_eid: Option<Vec<String>>,
 
-    /// Exclude specified EIDs for faster speed (ex: 1) (ex: 1,4688)
+    /// Do not scan specific EIDs for faster speed (ex: 1) (ex: 1,4688)
     #[arg(help_heading = Some("Filtering"), long = "exclude-eid", value_name = "EIDS", conflicts_with_all = ["eid_filter", "include_eid"], use_value_delimiter = true, value_delimiter = ',', display_order = 315)]
     pub exclude_eid: Option<Vec<String>>,
 
@@ -1377,15 +1377,15 @@ pub struct OutputOption {
     #[arg(help_heading = Some("Output"), short = 'H', long="HTML-report", conflicts_with = "no_summary", value_name = "FILE", display_order = 80, requires = "output")]
     pub html_report: Option<PathBuf>,
 
-    /// Do not display Results Summary (slightly faster speed)
+    /// Do not display Results Summary for faster speed
     #[arg(help_heading = Some("Display Settings"), short = 'N', long = "no-summary", conflicts_with = "html_report", display_order = 401)]
     pub no_summary: bool,
 
-    /// Overwrite results files
+    /// Overwrite files when saving
     #[arg(help_heading = Some("General Options"), short='C', long = "clobber", display_order = 290, requires = "output")]
     pub clobber: bool,
 
-    /// Disable field data mapping output
+    /// Disable field data mapping
     #[arg(help_heading = Some("Output"), short = 'F', long = "no-field-data-mapping", display_order = 400)]
     pub no_field: bool,
 }
@@ -1524,7 +1524,7 @@ pub struct ComputerMetricsOption {
     #[arg(help_heading = Some("Display Settings"), short = 'v', long, display_order = 480)]
     pub verbose: bool,
 
-    /// Overwrite results files
+    /// Overwrite files when saving
     #[arg(help_heading = Some("General Options"), short='C', long = "clobber", display_order = 290, requires = "output")]
     pub clobber: bool,
 }
