@@ -1086,7 +1086,8 @@ impl App {
             tl.computer_metrics_dsp_msg(stored_static)
         }
         if stored_static.output_path.is_some() {
-            println!("\nScanning finished. Please wait while the results are being saved.\n");
+            println!("\n");
+            println!("Scanning finished. Please wait while the results are being saved.");
         }
         if !(stored_static.metrics_flag
             || stored_static.logon_summary_flag
@@ -1688,6 +1689,7 @@ mod tests {
                     exclude_category: None,
                     include_eid: None,
                     exclude_eid: None,
+                    no_field: false,
                 },
                 geo_ip: None,
                 output: None,
@@ -1845,6 +1847,7 @@ mod tests {
                 exclude_category: None,
                 include_eid: None,
                 exclude_eid: None,
+                no_field: false,
             },
             geo_ip: None,
             output: Some(Path::new("overwrite.csv").to_path_buf()),
@@ -1923,6 +1926,7 @@ mod tests {
                 exclude_category: None,
                 include_eid: None,
                 exclude_eid: None,
+                no_field: false,
             },
             geo_ip: None,
             output: Some(Path::new("overwrite.csv").to_path_buf()),
@@ -1999,6 +2003,7 @@ mod tests {
                 exclude_category: None,
                 include_eid: None,
                 exclude_eid: None,
+                no_field: false,
             },
             geo_ip: None,
             output: Some(Path::new("overwrite.json").to_path_buf()),
@@ -2076,6 +2081,7 @@ mod tests {
                 exclude_category: None,
                 include_eid: None,
                 exclude_eid: None,
+                no_field: false,
             },
             geo_ip: None,
             output: Some(Path::new("overwrite.json").to_path_buf()),

@@ -33,6 +33,7 @@ use super::configs::{EventKeyAliasConfig, OutputOption, STORED_EKEY_ALIAS};
 use super::detection::EvtxRecordInfo;
 use super::message::AlertMessage;
 
+use crate::detections::field_data_map::{convert_field_data, FieldDataMap, FieldDataMapKey};
 use memchr::memmem;
 
 pub fn concat_selection_key(key_list: &Nested<String>) -> String {
@@ -364,7 +365,11 @@ pub fn get_writable_color(color: Option<Color>, no_color: bool) -> Option<Color>
 /**
  * CSVのrecord infoカラムに出力する文字列を作る
  */
-pub fn create_recordinfos(record: &Value) -> String {
+pub fn create_recordinfos(
+    record: &Value,
+    field_data_map_key: &FieldDataMapKey,
+    field_data_map: &Option<FieldDataMap>,
+) -> String {
     let mut output = HashSet::new();
     _collect_recordinfo(&mut vec![], "", record, &mut output);
 
@@ -382,11 +387,16 @@ pub fn create_recordinfos(record: &Value) -> String {
     output_vec
         .iter()
         .map(|(key, value)| {
-            if value.ends_with(',') {
-                format!("{}: {}", key, &value[..value.len() - 1])
-            } else {
-                format!("{key}: {value}")
+            if let Some(map) = field_data_map.as_ref() {
+                if let Some(converted_str) =
+                    convert_field_data(map, field_data_map_key, &key.to_lowercase(), value)
+                {
+                    let val = converted_str.strip_suffix(',').unwrap_or(&converted_str);
+                    return format!("{key}: {val}");
+                }
             }
+            let val = value.strip_suffix(',').unwrap_or(value);
+            format!("{key}: {val}")
         })
         .join(" ¦ ")
 }
@@ -664,6 +674,7 @@ pub fn is_filtered_by_computer_name(
 mod tests {
     use std::path::Path;
 
+    use crate::detections::field_data_map::FieldDataMapKey;
     use crate::{
         detections::{
             configs::{
@@ -696,7 +707,7 @@ mod tests {
 
         match serde_json::from_str(record_json_str) {
             Ok(record) => {
-                let ret = utils::create_recordinfos(&record);
+                let ret = utils::create_recordinfos(&record, &FieldDataMapKey::default(), &None);
                 // Systemは除外される/属性(_attributesも除外される)/key順に並ぶ
                 let expected = "AccessMask: %%1369 ¦ Process: lsass.exe ¦ User: u1".to_string();
                 assert_eq!(ret, expected);
@@ -730,7 +741,7 @@ mod tests {
 
         match serde_json::from_str(record_json_str) {
             Ok(record) => {
-                let ret = utils::create_recordinfos(&record);
+                let ret = utils::create_recordinfos(&record, &FieldDataMapKey::default(), &None);
                 // Systemは除外される/属性(_attributesも除外される)/key順に並ぶ
                 let expected = "Binary: hogehoge ¦ Data:  ¦ Data: Data1 ¦ Data: DataData2 ¦ Data: DataDataData3"
                     .to_string();
@@ -1001,6 +1012,7 @@ mod tests {
                     exclude_category: None,
                     include_eid: None,
                     exclude_eid: None,
+                    no_field: false,
                 },
                 geo_ip: None,
                 output: None,

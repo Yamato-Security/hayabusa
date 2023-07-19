@@ -588,7 +588,7 @@ fn emit_csv<W: std::io::Write>(
                 Some(Color::Rgb(0, 255, 0)),
                 stored_static.common_options.no_color,
             ),
-            "Results Summary:",
+            "Results Summary:\n",
             true,
         )
         .ok();
@@ -1729,6 +1729,7 @@ mod tests {
     use crate::detections::configs::OutputOption;
     use crate::detections::configs::StoredStatic;
     use crate::detections::configs::CURRENT_EXE_PATH;
+    use crate::detections::field_data_map::FieldDataMapKey;
     use crate::detections::message;
     use crate::detections::message::DetectInfo;
     use crate::detections::utils;
@@ -1817,6 +1818,7 @@ mod tests {
                 exclude_category: None,
                 include_eid: None,
                 exclude_eid: None,
+                no_field: false,
             },
             geo_ip: None,
             output: Some(Path::new("./test_emit_csv.csv").to_path_buf()),
@@ -1901,6 +1903,7 @@ mod tests {
                 exclude_category: None,
                 include_eid: None,
                 exclude_eid: None,
+                no_field: false,
             };
             let ch = mock_ch_filter
                 .get(&CompactString::from("security"))
@@ -1953,7 +1956,7 @@ mod tests {
                 expect_time,
                 &mut profile_converter,
                 (false, false, false),
-                &eventkey_alias,
+                (&eventkey_alias, &FieldDataMapKey::default(), &None),
             );
             *profile_converter.get_mut("Computer").unwrap() =
                 Profile::Computer(test_computername.into());
@@ -1975,7 +1978,7 @@ mod tests {
                 expect_time,
                 &mut profile_converter,
                 (false, false, false),
-                &eventkey_alias,
+                (&eventkey_alias, &FieldDataMapKey::default(), &None),
             );
             let multi = message::MESSAGES.get(&expect_time).unwrap();
             let (_, detect_infos) = multi.pair();
@@ -2132,6 +2135,7 @@ mod tests {
                 exclude_category: None,
                 include_eid: None,
                 exclude_eid: None,
+                no_field: false,
             },
             geo_ip: None,
             output: Some(Path::new("./test_emit_csv_multiline.csv").to_path_buf()),
@@ -2218,6 +2222,7 @@ mod tests {
                 exclude_category: None,
                 include_eid: None,
                 exclude_eid: None,
+                no_field: false,
             };
             let ch = mock_ch_filter
                 .get(&CompactString::from("security"))
@@ -2267,7 +2272,7 @@ mod tests {
                 expect_time,
                 &mut profile_converter,
                 (false, false, true),
-                &eventkey_alias,
+                (&eventkey_alias, &FieldDataMapKey::default(), &None),
             );
             *profile_converter.get_mut("Computer").unwrap() =
                 Profile::Computer(test_computername.into());
@@ -2289,7 +2294,7 @@ mod tests {
                 expect_time,
                 &mut profile_converter,
                 (false, false, true),
-                &eventkey_alias,
+                (&eventkey_alias, &FieldDataMapKey::default(), &None),
             );
             let multi = message::MESSAGES.get(&expect_time).unwrap();
             let (_, detect_infos) = multi.pair();
@@ -2435,6 +2440,7 @@ mod tests {
                 exclude_category: None,
                 include_eid: None,
                 exclude_eid: None,
+                no_field: false,
             },
             geo_ip: None,
             output: Some(Path::new("./test_emit_csv_remove_duplicate.csv").to_path_buf()),
@@ -2519,6 +2525,7 @@ mod tests {
                 exclude_category: None,
                 include_eid: None,
                 exclude_eid: None,
+                no_field: false,
             };
             let ch = mock_ch_filter
                 .get(&CompactString::from("security"))
@@ -2571,7 +2578,7 @@ mod tests {
                 expect_time,
                 &mut profile_converter,
                 (false, false, false),
-                &eventkey_alias,
+                (&eventkey_alias, &FieldDataMapKey::default(), &None),
             );
             *profile_converter.get_mut("Computer").unwrap() =
                 Profile::Computer(test_computername.into());
@@ -2593,7 +2600,7 @@ mod tests {
                 expect_time,
                 &mut profile_converter,
                 (false, false, false),
-                &eventkey_alias,
+                (&eventkey_alias, &FieldDataMapKey::default(), &None),
             );
             let multi = message::MESSAGES.get(&expect_time).unwrap();
             let (_, detect_infos) = multi.pair();
@@ -2758,6 +2765,7 @@ mod tests {
             exclude_category: None,
             include_eid: None,
             exclude_eid: None,
+            no_field: false,
         };
         let data: Vec<(CompactString, Profile)> = vec![
             (
@@ -2891,6 +2899,7 @@ mod tests {
                 exclude_category: None,
                 include_eid: None,
                 exclude_eid: None,
+                no_field: false,
             },
             geo_ip: None,
             output: Some(Path::new("./test_emit_csv_json.json").to_path_buf()),
@@ -2973,6 +2982,7 @@ mod tests {
                 exclude_category: None,
                 include_eid: None,
                 exclude_eid: None,
+                no_field: false,
             };
             let ch = mock_ch_filter
                 .get(&CompactString::from("security"))
@@ -3027,7 +3037,7 @@ mod tests {
                 expect_time,
                 &mut profile_converter,
                 (false, false, false),
-                &eventkey_alias,
+                (&eventkey_alias, &FieldDataMapKey::default(), &None),
             );
             *profile_converter.get_mut("Computer").unwrap() =
                 Profile::Computer(test_computername.into());
@@ -3141,6 +3151,7 @@ mod tests {
                 exclude_category: None,
                 include_eid: None,
                 exclude_eid: None,
+                no_field: false,
             },
             geo_ip: None,
             output: Some(Path::new("./test_emit_csv_jsonl.jsonl").to_path_buf()),
@@ -3223,6 +3234,7 @@ mod tests {
                 exclude_category: None,
                 include_eid: None,
                 exclude_eid: None,
+                no_field: false,
             };
             let ch = mock_ch_filter
                 .get(&CompactString::from("security"))
@@ -3277,7 +3289,7 @@ mod tests {
                 expect_time,
                 &mut profile_converter,
                 (false, false, false),
-                &eventkey_alias,
+                (&eventkey_alias, &FieldDataMapKey::default(), &None),
             );
             *profile_converter.get_mut("Computer").unwrap() =
                 Profile::Computer(test_computername.into());

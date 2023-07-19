@@ -1,5 +1,6 @@
 extern crate lazy_static;
 use crate::detections::configs::CURRENT_EXE_PATH;
+use crate::detections::field_data_map::{convert_field_data, FieldDataMap, FieldDataMapKey};
 use crate::detections::utils::{self, get_serde_number_to_string, write_color_buffer};
 use crate::options::profile::Profile::{
     self, AllFieldInfo, Details, ExtraFieldInfo, Literal, SrcASN, SrcCity, SrcCountry, TgtASN,
@@ -108,7 +109,7 @@ pub fn insert_message(detect_info: DetectInfo, event_time: DateTime<Utc>) {
     info.push(detect_info);
 }
 
-/// メッセージを設定
+/// メッセージを設定 TODO 要リファクタリング
 pub fn insert(
     event_record: &Value,
     output: CompactString,
@@ -116,12 +117,22 @@ pub fn insert(
     time: DateTime<Utc>,
     profile_converter: &mut HashMap<&str, Profile>,
     (is_agg, is_json_timeline, included_all_field_info): (bool, bool, bool),
-    eventkey_alias: &EventKeyAliasConfig,
+    (eventkey_alias, field_data_map_key, field_data_map): (
+        &EventKeyAliasConfig,
+        &FieldDataMapKey,
+        &Option<FieldDataMap>,
+    ),
 ) {
     if !is_agg {
         let mut prev = 'a';
-        let mut removed_sp_parsed_detail =
-            parse_message(event_record, output, eventkey_alias, is_json_timeline);
+        let mut removed_sp_parsed_detail = parse_message(
+            event_record,
+            output,
+            eventkey_alias,
+            is_json_timeline,
+            field_data_map_key,
+            field_data_map,
+        );
         removed_sp_parsed_detail.retain(|ch| {
             let retain_flag = prev == ' ' && ch == ' ' && ch.is_control();
             if !retain_flag {
@@ -167,7 +178,8 @@ pub fn insert(
                 if is_agg {
                     replaced_profiles.push((key.to_owned(), AllFieldInfo("-".into())));
                 } else {
-                    let rec = utils::create_recordinfos(event_record);
+                    let rec =
+                        utils::create_recordinfos(event_record, field_data_map_key, field_data_map);
                     let rec = if rec.is_empty() { "-".to_string() } else { rec };
                     replaced_profiles.push((key.to_owned(), AllFieldInfo(rec.into())));
                 }
@@ -194,7 +206,8 @@ pub fn insert(
                     }
                     "-".to_string()
                 } else {
-                    let rec = utils::create_recordinfos(event_record);
+                    let rec =
+                        utils::create_recordinfos(event_record, field_data_map_key, field_data_map);
                     let rec = if rec.is_empty() { "-".to_string() } else { rec };
                     if included_all_field_info {
                         replaced_profiles.push((key.to_owned(), AllFieldInfo(rec.clone().into())));
@@ -230,6 +243,8 @@ pub fn insert(
                             CompactString::new(p.to_value()),
                             eventkey_alias,
                             is_json_timeline,
+                            field_data_map_key,
+                            field_data_map,
                         )),
                     ))
                 }
@@ -246,31 +261,33 @@ pub fn parse_message(
     output: CompactString,
     eventkey_alias: &EventKeyAliasConfig,
     json_timeline_flag: bool,
+    field_data_map_key: &FieldDataMapKey,
+    field_data_map: &Option<FieldDataMap>,
 ) -> CompactString {
     let mut return_message = output;
     let mut hash_map: HashMap<CompactString, CompactString> = HashMap::new();
     for caps in ALIASREGEX.captures_iter(&return_message) {
         let full_target_str = &caps[0];
-        let target_length = full_target_str.chars().count() - 2; // 最後の文字は%であるので、エイリアスのキー情報はcount()-2まで。
         let target_str = full_target_str
-            .chars()
-            .skip(1)
-            .take(target_length)
-            .collect::<String>();
-
-        let array_str = if let Some(_array_str) = eventkey_alias.get_event_key(&target_str) {
+            .strip_suffix('%')
+            .unwrap()
+            .strip_prefix('%')
+            .unwrap();
+        let array_str = if let Some(_array_str) = eventkey_alias.get_event_key(target_str) {
             _array_str.to_string()
         } else {
             format!("Event.EventData.{target_str}")
         };
 
         let mut tmp_event_record: &Value = event_record;
+        let mut field = "";
         for s in array_str.split('.') {
             if let Some(record) = tmp_event_record.get(s) {
                 tmp_event_record = record;
+                field = s;
             }
         }
-        let suffix_match = SUFFIXREGEX.captures(&target_str);
+        let suffix_match = SUFFIXREGEX.captures(target_str);
         let suffix: i64 = match suffix_match {
             Some(cap) => cap.get(1).map_or(-1, |a| a.as_str().parse().unwrap_or(-1)),
             None => -1,
@@ -285,12 +302,23 @@ pub fn parse_message(
         let hash_value = get_serde_number_to_string(tmp_event_record, false);
         if hash_value.is_some() {
             if let Some(hash_value) = hash_value {
+                let field_data = if field_data_map.is_none() || field.is_empty() {
+                    hash_value
+                } else {
+                    let converted_str = convert_field_data(
+                        field_data_map.as_ref().unwrap(),
+                        field_data_map_key,
+                        field.to_lowercase().as_str(),
+                        hash_value.as_str(),
+                    );
+                    converted_str.unwrap_or(hash_value)
+                };
                 if json_timeline_flag {
-                    hash_map.insert(CompactString::from(full_target_str), hash_value);
+                    hash_map.insert(CompactString::from(full_target_str), field_data);
                 } else {
                     hash_map.insert(
                         CompactString::from(full_target_str),
-                        hash_value.split_ascii_whitespace().join(" ").into(),
+                        field_data.split_ascii_whitespace().join(" ").into(),
                     );
                 }
             }
@@ -381,6 +409,7 @@ impl AlertMessage {
 #[cfg(test)]
 mod tests {
     use crate::detections::configs::{load_eventkey_alias, StoredStatic, CURRENT_EXE_PATH};
+    use crate::detections::field_data_map::FieldDataMapKey;
     use crate::detections::message::{get, insert_message, AlertMessage, DetectInfo};
     use crate::detections::message::{parse_message, MESSAGES};
     use crate::detections::utils;
@@ -442,6 +471,8 @@ mod tests {
                     .unwrap(),
                 ),
                 true,
+                &FieldDataMapKey::default(),
+                &None
             ),
             expected,
         );
@@ -476,6 +507,8 @@ mod tests {
                     .unwrap(),
                 ),
                 true,
+                &FieldDataMapKey::default(),
+                &None
             ),
             expected,
         );
@@ -516,6 +549,8 @@ mod tests {
                     .unwrap(),
                 ),
                 true,
+                &FieldDataMapKey::default(),
+                &None
             ),
             expected,
         );
@@ -555,6 +590,8 @@ mod tests {
                     .unwrap(),
                 ),
                 true,
+                &FieldDataMapKey::default(),
+                &None
             ),
             expected,
         );
@@ -599,6 +636,8 @@ mod tests {
                     .unwrap(),
                 ),
                 true,
+                &FieldDataMapKey::default(),
+                &None
             ),
             expected,
         );
@@ -643,6 +682,8 @@ mod tests {
                     .unwrap(),
                 ),
                 true,
+                &FieldDataMapKey::default(),
+                &None
             ),
             expected,
         );
@@ -687,6 +728,8 @@ mod tests {
                     .unwrap(),
                 ),
                 true,
+                &FieldDataMapKey::default(),
+                &None
             ),
             expected,
         );
