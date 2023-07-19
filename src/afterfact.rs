@@ -588,7 +588,7 @@ fn emit_csv<W: std::io::Write>(
                 Some(Color::Rgb(0, 255, 0)),
                 stored_static.common_options.no_color,
             ),
-            "Results Summary:",
+            "Results Summary:\n",
             true,
         )
         .ok();
