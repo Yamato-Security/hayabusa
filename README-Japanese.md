@@ -76,11 +76,13 @@ Hayabusaは、日本の[Yamato Security](https://yamatosecurity.connpass.com/)�
   - [汎用コマンド:](#汎用コマンド)
 - [コマンド使用方法](#コマンド使用方法)
   - [分析コマンド](#分析コマンド-1)
+    - [`computer-metrics`コマンド](#computer-metricsコマンド)
+      - [`computer-metrics`コマンドの使用例](#computer-metricsコマンドの使用例)
+    - [`eid-metrics`コマンド](#eid-metricsコマンド)
+      - [`eid-metrics`コマンドの使用例](#eid-metricsコマンドの使用例)
+      - [`eid-metrics`コマンドの設定ファイル](#eid-metricsコマンドの設定ファイル)
     - [`logon-summary`コマンド](#logon-summaryコマンド)
       - [`logon-summary`コマンドの使用例](#logon-summaryコマンドの使用例)
-    - [`metrics`コマンド](#metricsコマンド)
-      - [`metrics`コマンドの使用例](#metricsコマンドの使用例)
-      - [`metrics`コマンドの設定ファイル](#metricsコマンドの設定ファイル)
     - [`pivot-keywords-list`コマンド](#pivot-keywords-listコマンド)
       - [`pivot-keywords-list`コマンドの使用例](#pivot-keywords-listコマンドの使用例)
       - [`pivot-keywords-list`の設定ファイル](#pivot-keywords-listの設定ファイル)
@@ -101,6 +103,7 @@ Hayabusaは、日本の[Yamato Security](https://yamatosecurity.connpass.com/)�
       - [`level-tuning`の設定ファイル](#level-tuningの設定ファイル)
     - [`list-profiles`コマンド](#list-profilesコマンド)
     - [`set-default-profile`コマンド](#set-default-profileコマンド)
+      - [`set-default-profile`コマンドの使用例](#set-default-profileコマンドの使用例)
   - [`update-rules`コマンド](#update-rulesコマンド)
     - [`update-rules`コマンドの使用例](#update-rulesコマンドの使用例)
 - [タイムライン出力](#タイムライン出力)
@@ -227,6 +230,7 @@ JSON形式の結果を`jq`で解析する方法については、[こちら](/do
 * 読みやすい/作成/編集可能なYMLベースのHayabusaルールで作成されたIoCシグネチャに基づくスレット。
 * SigmaルールをHayabusaルールに変換するためのSigmaルールのサポートがされています。
 * 現在、他の類似ツールに比べ最も多くのSigmaルールをサポートしており、カウントルール、新しい機能の`|equalsfield`や`|endswithfield`等にも対応しています。
+* コンピュータ名の統計。(イベントの多い特定のコンピュータをフィルタリングするのに便利です。)
 * イベントログの統計。(どのような種類のイベントがあるのかを把握し、ログ設定のチューニングに有効です。)
 * 不良ルールやノイズの多いルールを除外するルールチューニング設定が可能です。
 * MITRE ATT&CKとのマッピング (CSVの出力ファイルのみ)。
@@ -241,6 +245,7 @@ JSON形式の結果を`jq`で解析する方法については、[こちら](/do
 * ログフィールドの正規化
 * IPアドレスにGeoIP（ASN、都市、国）情報を付加することによるログエンリッチメント。
 * キーワードや正規表現で全イベントの検索。
+* フィールドデータのマッピング (例: `0xc0000234` -> `ACCOUNT LOCKED`)
 
 # ダウンロード
 
@@ -425,8 +430,9 @@ macOSの環境設定から「セキュリティとプライバシー」を開き
 # コマンド一覧
 
 ## 分析コマンド:
+* `computer-metrics`: コンピュータ名に基づくイベントの合計を出力する。
+* `eid-metrics`: イベントIDに基づくイベントの合計と割合の集計を出力する。
 * `logon-summary`: ログオンイベントのサマリを出力する。
-* `metrics`: イベントIDに基づくイベントの合計と割合の集計を出力する。
 * `pivot-keywords-list`: ピボットする不審なキーワードのリストを作成する。
 * `search`: キーワードや正規表現で全イベントの検索。
 
@@ -445,6 +451,102 @@ macOSの環境設定から「セキュリティとプライバシー」を開き
 # コマンド使用方法
 
 ## 分析コマンド
+
+### `computer-metrics`コマンド
+
+`computer-metrics`コマンドを使用すると、イベントIDの総数や割合をチャンネルごとに分けて表示することができます。
+
+```
+Usage: computer-metrics <INPUT> [OPTIONS]
+
+Input:
+  -d, --directory <DIR>        .evtxファイルを持つディレクトリのパス
+  -f, --file <FILE>            1つの.evtxファイルに対して解析を行う
+  -l, --live-analysis          ローカル端末のC:\Windows\System32\winevt\Logsフォルダを解析する
+  -J, --JSON-input             .evtxファイルの代わりにJSON形式のログファイル(.jsonまたは.jsonl)をスキャンする
+
+Output:
+  -o, --output <FILE>       イベントIDに基づくイベントの合計と割合の集計を出力する (例: computer-metrics.csv)
+
+Display Settings:
+      --no-color       カラーで出力しない
+  -q, --quiet          Quietモード: 起動バナーを表示しない
+  -v, --verbose        詳細な情報を出力する
+
+General Options:
+  -C, --clobber                          結果ファイルを上書きする
+  -Q, --quiet-errors                     Quiet errorsモード: エラーログを保存しない
+  -c, --rules-config <DIR>               ルールフォルダのコンフィグディレクトリ (デフォルト: ./rules/config)
+      --target-file-ext <EVTX_FILE_EXT>  evtx以外の拡張子を解析対象に追加する。 (例１: evtx_data 例２: evtx1,evtx2)
+  -t, --threads <NUMBER>                 スレッド数 (デフォルト: パフォーマンスに最適な数値)
+```
+
+#### `computer-metrics`コマンドの使用例
+
+* ディレクトリに対してイベントIDの統計情報を出力する: `hayabusa.exe computer-metrics -d ../logs`
+* 結果をCSVファイルに保存する: `hayabusa.exe computer-metrics -d ../logs -o computer-metrics.csv`
+
+
+### `eid-metrics`コマンド
+
+`eid-metrics`コマンドを使用すると、イベントIDの総数や割合をチャンネルごとに分けて表示することができます。
+
+```
+Usage: eid-metrics <INPUT> [OPTIONS]
+
+Input:
+  -d, --directory <DIR>        .evtxファイルを持つディレクトリのパス
+  -f, --file <FILE>            1つの.evtxファイルに対して解析を行う
+  -l, --live-analysis          ローカル端末のC:\Windows\System32\winevt\Logsフォルダを解析する
+  -J, --JSON-input             .evtxファイルの代わりにJSON形式のログファイル(.jsonまたは.jsonl)をスキャンする
+
+Output:
+  -o, --output <FILE>       イベントIDに基づくイベントの合計と割合の集計を出力する (例: eid-metrics.csv)
+
+Display Settings:
+      --no-color       カラーで出力しない
+  -q, --quiet          Quietモード: 起動バナーを表示しない
+  -v, --verbose        詳細な情報を出力する
+
+General Options:
+  -C, --clobber                          結果ファイルを上書きする
+  -Q, --quiet-errors                     Quiet errorsモード: エラーログを保存しない
+  -c, --rules-config <DIR>               ルールフォルダのコンフィグディレクトリ (デフォルト: ./rules/config)
+      --target-file-ext <EVTX_FILE_EXT>  evtx以外の拡張子を解析対象に追加する。 (例１: evtx_data 例２: evtx1,evtx2)
+  -t, --threads <NUMBER>                 スレッド数 (デフォルト: パフォーマンスに最適な数値)
+
+Filtering:
+      --exclude-computer <COMPUTER>  特定のコンピュータ名をスキャンしない (例: ComputerA) (例: ComputerA,ComputerB)
+      --include-computer <COMPUTER>  特定のコンピュータ名のみをスキャンする (例: ComputerA) (例: ComputerA,ComputerB)
+
+Time Format:
+      --European-time     ヨーロッパ形式で日付と時刻を出力する (例: 22-02-2022 22:00:00.123 +02:00)
+      --ISO-8601          ISO-8601形式で日付と時刻を出力する (例: 2022-02-22T10:10:10.1234567Z) (UTC時刻)
+      --RFC-2822          RFC 2822形式で日付と時刻を出力する (例: Fri, 22 Feb 2022 22:00:00 -0600)
+      --RFC-3339          RFC 3339形式で日付と時刻を出力する (例: 2022-02-22 22:00:00.123456-06:00)
+      --US-military-time  24時間制(ミリタリータイム)のアメリカ形式で日付と時刻を出力する (例: 02-22-2022 22:00:00.123 -06:00)
+      --US-time           アメリカ形式で日付と時刻を出力する (例: 02-22-2022 10:00:00.123 PM -06:00)
+  -U, --UTC               UTC形式で日付と時刻を出力する (デフォルト: 現地時間)
+```
+
+#### `eid-metrics`コマンドの使用例
+
+* 一つのファイルに対してイベントIDの統計情報を出力する: `hayabusa.exe eid-metrics -f Security.evtx`
+* ディレクトリに対してイベントIDの統計情報を出力する: `hayabusa.exe eid-metrics -d ../logs`
+* 結果をCSVファイルに保存する: `hayabusa.exe eid-metrics -f Security.evtx -o eid-metrics.csv`
+
+#### `eid-metrics`コマンドの設定ファイル
+
+チャンネル名、イベントID、イベントのタイトルは、`rules/config/channel_eid_info.txt`で定義されています。
+
+例:
+```
+Channel,EventID,EventTitle
+Microsoft-Windows-Sysmon/Operational,1,Process Creation.
+Microsoft-Windows-Sysmon/Operational,2,File Creation Timestamp Changed. (Possible Timestomping)
+Microsoft-Windows-Sysmon/Operational,3,Network Connection.
+Microsoft-Windows-Sysmon/Operational,4,Sysmon Service State Changed.
+```
 
 ### `logon-summary`コマンド
 
@@ -474,6 +576,19 @@ General Options:
   -c, --rules-config <DIR>               ルールフォルダのコンフィグディレクトリ (デフォルト: ./rules/config)
       --target-file-ext <EVTX_FILE_EXT>  evtx以外の拡張子を解析対象に追加する (例１: evtx_data 例２:evtx1,evtx2)
   -t, --threads <NUMBER>                 スレッド数 (デフォルト: パフォーマンスに最適な数値)
+
+Filtering:
+      --exclude-computer <COMPUTER>  特定のコンピュータ名をスキャンしない (例: ComputerA) (例: ComputerA,ComputerB)
+      --include-computer <COMPUTER>  特定のコンピュータ名のみをスキャンする (例: ComputerA) (例: ComputerA,ComputerB)
+
+Time Format:
+      --European-time     ヨーロッパ形式で日付と時刻を出力する (例: 22-02-2022 22:00:00.123 +02:00)
+      --ISO-8601          ISO-8601形式で日付と時刻を出力する (例: 2022-02-22T10:10:10.1234567Z) (UTC時刻)
+      --RFC-2822          RFC 2822形式で日付と時刻を出力する (例: Fri, 22 Feb 2022 22:00:00 -0600)
+      --RFC-3339          RFC 3339形式で日付と時刻を出力する (例: 2022-02-22 22:00:00.123456-06:00)
+      --US-military-time  24時間制(ミリタリータイム)のアメリカ形式で日付と時刻を出力する (例: 02-22-2022 22:00:00.123 -06:00)
+      --US-time           アメリカ形式で日付と時刻を出力する (例: 02-22-2022 10:00:00.123 PM -06:00)
+  -U, --UTC               UTC形式で日付と時刻を出力する (デフォルト: 現地時間)
 ```
 
 #### `logon-summary`コマンドの使用例
@@ -481,55 +596,6 @@ General Options:
 * ログオンサマリの出力: `hayabusa.exe logon-summary -f Security.evtx`
 * ログオンサマリ結果を保存する: `hayabusa.exe logon-summary -d ../logs -o logon-summary.csv`
 
-### `metrics`コマンド
-
-`metrics`コマンドを使用すると、イベントIDの総数や割合をチャンネルごとに分けて表示することができます。
-
-```
-Usage: metrics <INPUT> [OPTIONS]
-
-Input:
-  -d, --directory <DIR>        .evtxファイルを持つディレクトリのパス
-  -f, --file <FILE>            1つの.evtxファイルに対して解析を行う
-  -l, --live-analysis          ローカル端末のC:\Windows\System32\winevt\Logsフォルダを解析する
-  -J, --JSON-input             .evtxファイルの代わりにJSON形式のログファイル(.jsonまたは.jsonl)をスキャンする
-
-Output:
-  -o, --output <FILE>       イベントIDに基づくイベントの合計と割合の集計を出力する (例: metrics.csv)
-
-Display Settings:
-      --no-color       カラーで出力しない
-  -q, --quiet          Quietモード: 起動バナーを表示しない
-  -v, --verbose        詳細な情報を出力する
-
-General Options:
-  -C, --clobber                          結果ファイルを上書きする
-  -Q, --quiet-errors                     Quiet errorsモード: エラーログを保存しない
-  -c, --rules-config <DIR>               ルールフォルダのコンフィグディレクトリ (デフォルト: ./rules/config)
-      --target-file-ext <EVTX_FILE_EXT>  evtx以外の拡張子を解析対象に追加する。 (例１: evtx_data 例２: evtx1,evtx2)
-  -t, --threads <NUMBER>                 スレッド数 (デフォルト: パフォーマンスに最適な数値)
-```
-
-#### `metrics`コマンドの使用例
-
-* 一つのファイルに対してイベントIDの統計情報を出力する: `hayabusa.exe metrics -f Security.evtx`
-
-* ディレクトリに対してイベントIDの統計情報を出力する: `hayabusa.exe metrics -d ../logs`
-
-* 結果をCSVファイルに保存する: `hayabusa.exe metrics -f Security.evtx -o metrics.csv`
-
-#### `metrics`コマンドの設定ファイル
-
-チャンネル名、イベントID、イベントのタイトルは、`rules/config/channel_eid_info.txt`で定義されています。
-
-例:
-```
-Channel,EventID,EventTitle
-Microsoft-Windows-Sysmon/Operational,1,Process Creation.
-Microsoft-Windows-Sysmon/Operational,2,File Creation Timestamp Changed. (Possible Timestomping)
-Microsoft-Windows-Sysmon/Operational,3,Network Connection.
-Microsoft-Windows-Sysmon/Operational,4,Sysmon Service State Changed.
-```
 
 ### `pivot-keywords-list`コマンド
 
@@ -557,25 +623,31 @@ Display Settings:
   -v, --verbose        詳細な情報を出力する
 
 Filtering:
-  -E, --EID-filter                速度を上げるため主なEIDだけスキャンする (コンフィグファイル: ./rules/config/target_event_IDs.txt)
-  -D, --enable-deprecated-rules   ステータスがdeprecatedのルールを有効にする
-  -n, --enable-noisy-rules        Noisyルールを有効にする
-  -u, --enable-unsupported-rules  ステータスがunsupportedのルールを有効にする
-  -e, --exact-level <LEVEL>       特定のレベルだけスキャンする (informational, low, medium, high, critical)
-      --exclude-status <STATUS>   読み込み対象外とするルール内でのステータス (例１: experimental) (例２: stable,test)
-  -m, --min-level <LEVEL>         結果出力をするルールの最低レベル (デフォルト: informational)
-      --timeline-end <DATE>       解析対象とするイベントログの終了時刻 (例: "2022-02-22 23:59:59 +09:00")
-      --timeline-start <DATE>     解析対象とするイベントログの開始時刻 (例: "2020-02-22 00:00:00 +09:00")
+  -E, --EID-filter                   速度を上げるため主なEIDだけスキャンする (コンフィグファイル: ./rules/config/target_event_IDs.txt)
+  -D, --enable-deprecated-rules      ステータスがdeprecatedのルールを有効にする
+  -n, --enable-noisy-rules           Noisyルールを有効にする
+  -u, --enable-unsupported-rules     ステータスがunsupportedのルールを有効にする
+  -e, --exact-level <LEVEL>          特定のレベルだけスキャンする (informational, low, medium, high, critical)
+      --exclude-computer <COMPUTER>  特定のコンピュータ名をスキャンしない (例: ComputerA) (例: ComputerA,ComputerB)
+      --exclude-eid <EIDS>           高速化のために特定のEIDをスキャンしない (例: 1) (例: 1,4688)
+      --exclude-status <STATUS>      読み込み対象外とするルール内でのステータス (例１: experimental) (例２: stable,test)
+      --include-computer <COMPUTER>  特定のコンピュータ名のみをスキャンする (例: ComputerA) (例: ComputerA,ComputerB)
+      --include-eid <EIDS>           指定したEIDのみをスキャンして高速化する (例 1) (例: 1,4688)
+  -m, --min-level <LEVEL>            結果出力をするルールの最低レベル (デフォルト: informational)
+      --timeline-end <DATE>          解析対象とするイベントログの終了時刻 (例: "2022-02-22 23:59:59 +09:00")
+      --timeline-start <DATE>        解析対象とするイベントログの開始時刻 (例: "2020-02-22 00:00:00 +09:00")
 
 General Options:
+  -C, --clobber                          結果ファイルを上書きする
   -Q, --quiet-errors                     Quiet errorsモード: エラーログを保存しない
   -c, --rules-config <DIR>               ルールフォルダのコンフィグディレクトリ (デフォルト: ./rules/config)
-  -t, --threads <NUMBER>                 スレッド数 (デフォルト: パフォーマンスに最適な数値)
       --target-file-ext <EVTX_FILE_EXT>  evtx以外の拡張子を解析対象に追加する。 (例１: evtx_data 例２: evtx1,evtx2)
+  -t, --threads <NUMBER>                 スレッド数 (デフォルト: パフォーマンスに最適な数値)
 ```
 
 #### `pivot-keywords-list`コマンドの使用例
 
+* ピボットキーワードを画面に出力します: `hayabusa.exe pivot-keywords-list -d ../logs -m critical`
 * 重要なアラートからピボットキーワードのリストを作成し、その結果を保存します。(結果は、`keywords-Ip Addresses.txt`、`keywords-Users.txt`等に保存されます):
 
 ```
@@ -613,9 +685,11 @@ Filtering:
   -F, --filter <FILTER>       特定のフィールドでフィルタする
   -i, --ignore-case           大文字と小文字を区別しない
   -k, --keywords <KEYWORDS>   キーワードでの検索
-  -r, --regex <REGEX>        正規表現での検索
+  -r, --regex <REGEX>         正規表現での検索
 
 Output:
+  -J, --JSON-output    JSON形式で検索結果を保存する (例: -J -o results.json)
+  -L, --JSONL-output   JSONL形式で検索結果を保存 (例: -L -o results.jsonl)
   -M, --multiline      イベントフィールド情報を複数の行に出力する
   -o, --output <FILE>  ログオンサマリをCSV形式で保存する (例: search.csv)
 
@@ -667,6 +741,7 @@ hayabusa.exe search -d ../hayabusa-sample-evtx -r ".*" -F WorkstationName:"kali"
 
 `./rules/config/channel_abbreviations.txt`: チャンネル名とその略称のマッピング。
 
+
 ## DFIRタイムラインコマンド
 
 ### `csv-timeline`コマンド
@@ -686,6 +761,7 @@ Output:
   -G, --GeoIP <MAXMIND-DB-DIR>    IPアドレスのGeoIP(ASN、都市、国)情報を追加する
   -H, --HTML-report <FILE>        HTML形式で詳細な結果を出力する (例: results.html)
   -M, --multiline                 イベントフィールド情報を複数の行に出力する
+  -F, --no-field-data-mapping     フィールドデータのマッピングを無効にする
   -o, --output <FILE>             タイムラインを保存する (例: results.csv)
   -p, --profile <PROFILE>         利用する出力プロファイル名を指定する
   -R, --remove-duplicate-data     重複したフィールドデータは「DUP」に置き換えられる。 (これにより、私たちのテストではファイルサイズが約10〜15％削減される。)
@@ -698,16 +774,24 @@ Display Settings:
   -T, --visualize-timeline  検知頻度タイムラインを出力する（ターミナルはUnicodeに対応する必要がある）
 
 Filtering:
-  -E, --EID-filter                速度を上げるため主なEIDだけスキャンする (コンフィグファイル: ./rules/config/target_event_IDs.txt)
-  -D, --enable-deprecated-rules   ステータスがdeprecatedのルールを有効にする
-  -n, --enable-noisy-rules        Noisyルールを有効にする
-  -u, --enable-unsupported-rules  ステータスがunsupportedのルールを有効にする
-  -e, --exact-level <LEVEL>       特定のレベルだけスキャンする (informational, low, medium, high, critical)
-      --exclude-status <STATUS>   読み込み対象外とするルール内でのステータス (例１: experimental) (例２: stable,test)
-  -m, --min-level <LEVEL>         結果出力をするルールの最低レベル (デフォルト: informational)
-      --tags <TAGS>               特定のタグを持つルールのみをロードする (例１: attack.execution,attack.discovery) (例２: WMI)
-      --timeline-end <DATE>       解析対象とするイベントログの終了時刻 (例: "2022-02-22 23:59:59 +09:00")
-      --timeline-start <DATE>     解析対象とするイベントログの開始時刻 (例: "2020-02-22 00:00:00 +09:00")
+  -E, --EID-filter                   速度を上げるため主なEIDだけスキャンする (コンフィグファイル: ./rules/config/target_event_IDs.txt)
+  -D, --enable-deprecated-rules      ステータスがdeprecatedのルールを有効にする
+  -n, --enable-noisy-rules           Noisyルールを有効にする
+  -u, --enable-unsupported-rules     ステータスがunsupportedのルールを有効にする
+  -e, --exact-level <LEVEL>          特定のレベルだけスキャンする (informational, low, medium, high, critical)
+      --exclude-category <CATEGORY>  特定のlogsourceカテゴリを持つルールをロードしない (例: process_creation,pipe_created)
+      --exclude-computer <COMPUTER>  特定のコンピュータ名をスキャンしない (例: ComputerA) (例: ComputerA,ComputerB)
+      --exclude-eid <EIDS>           高速化のために特定のEIDをスキャンしない (例: 1) (例: 1,4688)
+      --exclude-status <STATUS>      読み込み対象外とするルール内でのステータス (例１: experimental) (例２: stable,test)
+      --exclude-tags <TAGS>          特定のタグを持つルールをロードしない (例: sysmon)
+      --include-category <CATEGORY>  特定のlogsourceカテゴリを持つルールのみをロードする (例: process_creation,pipe_created)
+      --include-computer <COMPUTER>  特定のコンピュータ名のみをスキャンする (例: ComputerA) (例: ComputerA,ComputerB)
+      --include-eid <EIDS>           指定したEIDのみをスキャンして高速化する (例: 1) (例: 1,4688)
+      --include-tags <TAGS>          特定のタグを持つルールのみをロードする (例１: attack.execution,attack.discovery) (例２: wmi)
+  -m, --min-level <LEVEL>            結果出力をするルールの最低レベル (デフォルト: informational)
+  -P, --proven-rules                 実績のあるルールだけでスキャンし、高速化する (./rules/config/proven_rules.txt)
+      --timeline-end <DATE>          解析対象とするイベントログの終了時刻 (例: "2022-02-22 23:59:59 +09:00")
+      --timeline-start <DATE>        解析対象とするイベントログの開始時刻 (例: "2020-02-22 00:00:00 +09:00")
 
 General Options:
   -C, --clobber                          結果ファイルを上書きする
@@ -898,6 +982,7 @@ IpAddress,Event.EventData.IpAddress
 デフォルトでは、Hayabusaはすべてのイベントをスキャンしますが、パフォーマンスを向上させたい場合は、`-E, --EID-filter`オプションを使用してください。
 これにより、通常10〜25％の速度向上があります。
 
+
 ### `json-timeline`コマンド
 
 `json-timeline`コマンドは、JSONまたはJSONL形式でイベントのフォレンジックタイムラインを作成します。
@@ -920,6 +1005,7 @@ Output:
   -G, --GeoIP <MAXMIND-DB-DIR>    IPアドレスのGeoIP(ASN、都市、国)情報を追加する
   -H, --HTML-report <FILE>        HTML形式で詳細な結果を出力する (例: results.html)
   -L, --JSONL-output              タイムラインをJSONL形式で保存する (例: -L -o results.jsonl)
+  -F, --no-field-data-mapping     フィールドデータのマッピングを無効にする
   -o, --output <FILE>             タイムラインを保存する (例: results.csv)
   -p, --profile <PROFILE>         利用する出力プロファイル名を指定する
 
@@ -931,16 +1017,24 @@ Display Settings:
   -T, --visualize-timeline  検知頻度タイムラインを出力する（ターミナルはUnicodeに対応する必要がある）
 
 Filtering:
-  -E, --EID-filter                速度を上げるため主なEIDだけスキャンする (コンフィグファイル: ./rules/config/target_event_IDs.txt)
-  -D, --enable-deprecated-rules   ステータスがdeprecatedのルールを有効にする
-  -n, --enable-noisy-rules        Noisyルールを有効にする
-  -u, --enable-unsupported-rules  ステータスがunsupportedのルールを有効にする
-  -e, --exact-level <LEVEL>       特定のレベルだけスキャンする (informational, low, medium, high, critical)
-      --exclude-status <STATUS>   読み込み対象外とするルール内でのステータス (例１: experimental) (例２: stable,test)
-  -m, --min-level <LEVEL>         結果出力をするルールの最低レベル (デフォルト: informational)
-      --tags <TAGS>               特定のタグを持つルールのみをロードする (例１: attack.execution,attack.discovery) (例２: WMI)
-      --timeline-end <DATE>       解析対象とするイベントログの終了時刻 (例: "2022-02-22 23:59:59 +09:00")
-      --timeline-start <DATE>     解析対象とするイベントログの開始時刻 (例: "2020-02-22 00:00:00 +09:00")
+  -E, --EID-filter                   速度を上げるため主なEIDだけスキャンする (コンフィグファイル: ./rules/config/target_event_IDs.txt)
+  -D, --enable-deprecated-rules      ステータスがdeprecatedのルールを有効にする
+  -n, --enable-noisy-rules           Noisyルールを有効にする
+  -u, --enable-unsupported-rules     ステータスがunsupportedのルールを有効にする
+  -e, --exact-level <LEVEL>          特定のレベルだけスキャンする (informational, low, medium, high, critical)
+      --exclude-category <CATEGORY>  特定のlogsourceカテゴリを持つルールをロードしない (例: process_creation,pipe_created)
+      --exclude-computer <COMPUTER>  特定のコンピュータ名をスキャンしない (例: ComputerA) (例: ComputerA,ComputerB)
+      --exclude-eid <EIDS>           高速化のために特定のEIDをスキャンしない (例: 1) (例: 1,4688)
+      --exclude-status <STATUS>      読み込み対象外とするルール内でのステータス (例１: experimental) (例２: stable,test)
+      --exclude-tags <TAGS>          特定のタグを持つルールをロードしない (例: sysmon)
+      --include-category <CATEGORY>  特定のlogsourceカテゴリを持つルールのみをロードする (例: process_creation,pipe_created)
+      --include-computer <COMPUTER>  特定のコンピュータ名のみをスキャンする (例: ComputerA) (例: ComputerA,ComputerB)
+      --include-eid <EIDS>           指定したEIDのみをスキャンして高速化する (例: 1) (例: 1,4688)
+      --include-tags <TAGS>          特定のタグを持つルールのみをロードする (例１: attack.execution,attack.discovery) (例２: wmi)
+  -m, --min-level <LEVEL>            結果出力をするルールの最低レベル (デフォルト: informational)
+  -P, --proven-rules                 実績のあるルールだけでスキャンし、高速化する (./rules/config/proven_rules.txt)
+      --timeline-end <DATE>          解析対象とするイベントログの終了時刻 (例: "2022-02-22 23:59:59 +09:00")
+      --timeline-start <DATE>        解析対象とするイベントログの開始時刻 (例: "2020-02-22 00:00:00 +09:00")
 
 General Options:
   -C, --clobber                          結果ファイルを上書きする
@@ -982,7 +1076,6 @@ General Options:
 #### `level-tuning`コマンドの使用例
 
 * 通常使用: `hayabusa.exe level-tuning`
-
 * カスタム設定ファイルに基づくルールのアラートレベルの調整: `hayabusa.exe level-tuning -f my_level_tuning.txt`
 
 #### `level-tuning`の設定ファイル
@@ -1026,6 +1119,11 @@ Display Settings:
 General Options:
   -p, --profile <PROFILE>  利用する出力プロファイル名を指定する
 ```
+
+#### `set-default-profile`コマンドの使用例
+
+* デフォルトプロファイルを`minimal`に設定する: `hayabusa.exe set-default-profile minimal`
+* デフォルトプロファイルを`super-verbose`に設定する: `hayabusa.exe set-default-profile super-verbose`
 
 ## `update-rules`コマンド
 
@@ -1388,16 +1486,17 @@ Windows機での悪性な活動を検知する為には、デフォルトのロ�
 
 ## 英語
 
-* 2023/03/14 [Hayabusa開発者向けRustパフォーマンスガイド](doc/RustPerformance-English.md) by Fukusuke Takahashi
-* 2022/06/19 [VelociraptorチュートリアルとHayabusaの統合方法](https://www.youtube.com/watch?v=Q1IoGX--814) by [Eric Capuano](https://twitter.com/eric_capuano)
-* 2022/01/24 [Hayabusa結果をneo4jで可視化する方法](https://www.youtube.com/watch?v=7sQqz2ek-ko) by Matthew Seyer ([@forensic_matt](https://twitter.com/forensic_matt))
+* 2023/03/21 [Eric Capuano](https://twitter.com/eric_capuano)氏による[Find Threats in Event Logs with Hayabusa](https://blog.ecapuano.com/p/find-threats-in-event-logs-with-hayabusa)
+* 2023/03/14 Fukusuke Takahashi氏による[Hayabusa開発者向けRustパフォーマンスガイド](doc/RustPerformance-English.md)
+* 2022/06/19 [Eric Capuano](https://twitter.com/eric_capuano)氏による[VelociraptorチュートリアルとHayabusaの統合方法](https://www.youtube.com/watch?v=Q1IoGX--814)
+* 2022/01/24 Matthew Seyer ([@forensic_matt](https://twitter.com/forensic_matt))氏による[Hayabusa結果をneo4jで可視化する方法](https://www.youtube.com/watch?v=7sQqz2ek-ko)
 
 ## 日本語
 
-* 2023/03/14 [Hayabusa開発者向けRustパフォーマンスガイド](doc/RustPerformance-Japanese.md) by Fukusuke Takahashi
-* 2022/01/22 [Hayabusa結果をElastic Stackで可視化する方法](https://qiita.com/kzzzzo2/items/ead8ccc77b7609143749) by [@kzzzzo2](https://qiita.com/kzzzzo2)
-* 2021/12/31 [Windowsイベントログ解析ツール「Hayabusa」を使ってみる](https://itib.hatenablog.com/entry/2021/12/31/222946) by itiB ([@itiB_S144](https://twitter.com/itiB_S144))
-* 2021/12/27 [Hayabusaの中身](https://kazuminkun.hatenablog.com/entry/2021/12/27/190535) by Kazuminn ([@k47_um1n](https://twitter.com/k47_um1n))
+* 2023/03/14 Fukusuke Takahashi氏による[Hayabusa開発者向けRustパフォーマンスガイド](doc/RustPerformance-Japanese.md)
+* 2022/01/22 [@kzzzzo2](https://qiita.com/kzzzzo2)氏による[Hayabusa結果をElastic Stackで可視化する方法](https://qiita.com/kzzzzo2/items/ead8ccc77b7609143749)
+* 2021/12/31 itiB ([@itiB_S144](https://twitter.com/itiB_S144))氏による[Windowsイベントログ解析ツール「Hayabusa」を使ってみる](https://itib.hatenablog.com/entry/2021/12/31/222946)
+* 2021/12/27 Kazuminn ([@k47_um1n](https://twitter.com/k47_um1n))氏による[Hayabusaの中身](https://kazuminkun.hatenablog.com/entry/2021/12/27/190535)
 
 # 貢献
 
