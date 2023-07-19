@@ -4,6 +4,7 @@
 
 **New Features:**
 
+- Certain code numbers are now mapped to human-readable messages based on the `.yaml` config files in `./rules/config/data_mapping`. (Example: `%%2307` will be converted to `ACCOUNT LOCKOUT`). You can turn off this behavior with the `-F, --no-field-data-mapping` option. (#177) (@fukusuket)
 - Added the `-R, --remove-duplicate-data` option in the `csv-timeline` command to replace duplicate field data with the string `DUP` in the `%Details%`, `%AllFieldInfo%`, `%ExtraFieldInfo%` columns to reduce file size. (#1056) (@hitenkoku)
 - Added the `-P, --proven-rules` option in `csv-timeline` and `json-timeline` commands. When used, Hayabusa will only load rules that have been proven to work. These are defined by rule ID in the `./rules/config/proven_rules.txt` config file. (#1115) (@hitenkoku)
 - Added the `--include-tags` option to `csv-timeline` and `json-timeline` commands to only load rules with the specified `tags` field. (#1108) (@hitenkoku)
