@@ -1015,7 +1015,7 @@ pub struct SearchOption {
     #[arg(help_heading = Some("Output"), short = 'J', long = "JSON-output", conflicts_with = "jsonl_output", requires = "output", display_order = 100)]
     pub json_output: bool,
 
-    /// Save the timeline in JSONL format (ex: -L -o results.jsonl)
+    /// Save the search results in JSONL format (ex: -L -o results.jsonl)
     #[arg(help_heading = Some("Output"), short = 'L', long = "JSONL-output", conflicts_with = "jsonl_output", requires = "output", display_order = 100)]
     pub jsonl_output: bool,
 }
