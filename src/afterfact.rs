@@ -246,6 +246,7 @@ fn emit_csv<W: std::io::Write>(
         Action::JsonTimeline(option) => {
             json_output_flag = true;
             jsonl_output_flag = option.jsonl_timeline;
+            remove_duplicate_data_flag = option.output_options.remove_duplicate_data;
             Some(
                 WriterBuilder::new()
                     .delimiter(b'\n')
@@ -255,7 +256,7 @@ fn emit_csv<W: std::io::Write>(
             )
         }
         Action::CsvTimeline(option) => {
-            remove_duplicate_data_flag = option.remove_duplicate_data;
+            remove_duplicate_data_flag = option.output_options.remove_duplicate_data;
             Some(
                 WriterBuilder::new()
                     .quote_style(QuoteStyle::NonNumeric)

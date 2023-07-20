@@ -1388,6 +1388,15 @@ pub struct OutputOption {
     /// Disable field data mapping
     #[arg(help_heading = Some("Output"), short = 'F', long = "no-field-data-mapping", display_order = 400)]
     pub no_field: bool,
+
+    /// Duplicate field data will be replaced with "DUP"
+    #[arg(
+            help_heading = Some("Output"),
+            short = 'R',
+            long = "remove-duplicate-data",
+            display_order = 440
+        )]
+    pub remove_duplicate_data: bool,
 }
 
 #[derive(Copy, Args, Clone, Debug)]
@@ -1439,15 +1448,6 @@ pub struct CsvOutputOption {
     /// Save the timeline in CSV format (ex: results.csv)
     #[arg(help_heading = Some("Output"), short = 'o', long, value_name = "FILE", display_order = 410)]
     pub output: Option<PathBuf>,
-
-    /// Duplicate field data will be replaced with "DUP"
-    #[arg(
-        help_heading = Some("Output"),
-        short = 'R',
-        long = "remove-duplicate-data",
-        display_order = 440
-    )]
-    pub remove_duplicate_data: bool,
 }
 
 #[derive(Args, Clone, Debug)]
@@ -1876,6 +1876,7 @@ fn extract_output_options(config: &Config) -> Option<OutputOption> {
             include_eid: option.include_eid.clone(),
             exclude_eid: option.exclude_eid.clone(),
             no_field: false,
+            remove_duplicate_data: false,
         }),
         Action::EidMetrics(option) => Some(OutputOption {
             input_args: option.input_args.clone(),
@@ -1911,6 +1912,7 @@ fn extract_output_options(config: &Config) -> Option<OutputOption> {
             include_eid: None,
             exclude_eid: None,
             no_field: false,
+            remove_duplicate_data: false,
         }),
         Action::LogonSummary(option) => Some(OutputOption {
             input_args: option.input_args.clone(),
@@ -1946,6 +1948,7 @@ fn extract_output_options(config: &Config) -> Option<OutputOption> {
             include_eid: None,
             exclude_eid: None,
             no_field: false,
+            remove_duplicate_data: false,
         }),
         Action::ComputerMetrics(option) => Some(OutputOption {
             input_args: option.input_args.clone(),
@@ -1990,6 +1993,7 @@ fn extract_output_options(config: &Config) -> Option<OutputOption> {
             include_eid: None,
             exclude_eid: None,
             no_field: false,
+            remove_duplicate_data: false,
         }),
         Action::Search(option) => Some(OutputOption {
             input_args: option.input_args.clone(),
@@ -2034,6 +2038,7 @@ fn extract_output_options(config: &Config) -> Option<OutputOption> {
             include_eid: None,
             exclude_eid: None,
             no_field: false,
+            remove_duplicate_data: false,
         }),
         Action::SetDefaultProfile(option) => Some(OutputOption {
             input_args: InputOption {
@@ -2082,6 +2087,7 @@ fn extract_output_options(config: &Config) -> Option<OutputOption> {
             include_eid: None,
             exclude_eid: None,
             no_field: false,
+            remove_duplicate_data: false,
         }),
         Action::UpdateRules(option) => Some(OutputOption {
             input_args: InputOption {
@@ -2130,6 +2136,7 @@ fn extract_output_options(config: &Config) -> Option<OutputOption> {
             include_eid: None,
             exclude_eid: None,
             no_field: false,
+            remove_duplicate_data: false,
         }),
         _ => None,
     }
