@@ -392,22 +392,27 @@ fn emit_csv<W: std::io::Write>(
                 .ok();
             } else if jsonl_output_flag {
                 // JSONL output format
-                wtr.write_field(format!(
-                    "{{ {} }}",
-                    &output_json_str(
-                        &detect_info.ext_field,
-                        jsonl_output_flag,
-                        GEOIP_DB_PARSER.read().unwrap().is_some()
-                    )
-                ))?;
+                let result = output_json_str(
+                    &detect_info.ext_field,
+                    prev_message,
+                    jsonl_output_flag,
+                    GEOIP_DB_PARSER.read().unwrap().is_some(),
+                    remove_duplicate_data_flag,
+                );
+                prev_message = result.1;
+                wtr.write_field(format!("{{ {} }}", &result.0))?;
             } else if json_output_flag {
                 // JSON output
                 wtr.write_field("{")?;
-                wtr.write_field(&output_json_str(
+                let result = output_json_str(
                     &detect_info.ext_field,
+                    prev_message,
                     jsonl_output_flag,
                     GEOIP_DB_PARSER.read().unwrap().is_some(),
-                ))?;
+                    remove_duplicate_data_flag,
+                );
+                prev_message = result.1;
+                wtr.write_field(&result.0)?;
                 wtr.write_field("}")?;
             } else {
                 // csv output format
@@ -1372,11 +1377,42 @@ fn _convert_valid_json_str(input: &[&str], concat_flag: bool) -> String {
 /// JSONに出力する1検知分のオブジェクトの文字列を出力する関数
 pub fn output_json_str(
     ext_field: &[(CompactString, Profile)],
+    prev_message: HashMap<CompactString, Profile>,
     jsonl_output_flag: bool,
     is_included_geo_ip: bool,
-) -> String {
+    remove_duplicate_flag: bool,
+) -> (String, HashMap<CompactString, Profile>) {
     let mut target: Vec<String> = vec![];
+    let mut target_ext_field = Vec::new();
     let ext_field_map: HashMap<CompactString, Profile> = HashMap::from_iter(ext_field.to_owned());
+    let mut next_prev_message = prev_message.clone();
+    if remove_duplicate_flag {
+        for (field_name, profile) in ext_field.iter() {
+            match profile {
+                Profile::Details(_) | Profile::AllFieldInfo(_) | Profile::ExtraFieldInfo(_) => {
+                    if prev_message
+                        .get(field_name)
+                        .unwrap_or(&Profile::Literal("-".into()))
+                        .to_value()
+                        == profile.to_value()
+                    {
+                        // 合致する場合は前回レコード分のメッセージを更新する合致している場合は出力用のフィールドマップの内容を変更する。
+                        // 合致しているので前回分のメッセージは更新しない
+                        target_ext_field.push((field_name.clone(), profile.convert(&"DUP".into())));
+                    } else {
+                        // 合致しない場合は前回レコード分のメッセージを更新する
+                        next_prev_message.insert(field_name.clone(), profile.clone());
+                        target_ext_field.push((field_name.clone(), profile.clone()));
+                    }
+                }
+                _ => {
+                    target_ext_field.push((field_name.clone(), profile.clone()));
+                }
+            }
+        }
+    } else {
+        target_ext_field = ext_field.to_owned();
+    }
     let key_add_to_details = vec![
         "SrcASN",
         "SrcCountry",
@@ -1393,7 +1429,7 @@ pub fn output_json_str(
         })
         .copied()
         .collect();
-    for (key, profile) in ext_field.iter() {
+    for (key, profile) in target_ext_field.iter() {
         let val = profile.to_value();
         let vec_data = _get_json_vec(profile, &val.to_string());
         if !key_add_to_details.contains(&key.as_str()) && vec_data.is_empty() {
@@ -1609,10 +1645,13 @@ pub fn output_json_str(
     }
     if jsonl_output_flag {
         // JSONL output
-        target.into_iter().map(|x| x.replace("  ", "")).join(",")
+        (
+            target.into_iter().map(|x| x.replace("  ", "")).join(","),
+            next_prev_message,
+        )
     } else {
         // JSON format output
-        target.join(",\n")
+        (target.join(",\n"), next_prev_message)
     }
 }
 

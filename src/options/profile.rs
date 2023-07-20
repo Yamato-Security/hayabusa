@@ -90,6 +90,8 @@ impl Profile {
             TgtCountry(_) => TgtCountry(converted_string.to_owned().into()),
             TgtCity(_) => TgtCity(converted_string.to_owned().into()),
             ExtraFieldInfo(_) => ExtraFieldInfo(converted_string.to_owned().into()),
+            Details(_) => Details(converted_string.to_owned().into()),
+            AllFieldInfo(_) => AllFieldInfo(converted_string.to_owned().into()),
             p => p.to_owned(),
         }
     }
