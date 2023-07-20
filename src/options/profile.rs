@@ -458,11 +458,11 @@ mod tests {
                     include_eid: None,
                     exclude_eid: None,
                     no_field: false,
+                    remove_duplicate_data: false,
                 },
                 geo_ip: None,
                 output: None,
                 multiline: false,
-                remove_duplicate_data: false,
             }));
         assert_eq!(
             Nested::<Vec<String>>::new(),
@@ -579,11 +579,11 @@ mod tests {
                     include_eid: None,
                     exclude_eid: None,
                     no_field: false,
+                    remove_duplicate_data: false,
                 },
                 geo_ip: None,
                 output: None,
                 multiline: false,
-                remove_duplicate_data: false,
             }));
         *GEOIP_DB_PARSER.write().unwrap() = None;
         assert_eq!(
@@ -650,11 +650,11 @@ mod tests {
                     include_eid: None,
                     exclude_eid: None,
                     no_field: false,
+                    remove_duplicate_data: false,
                 },
                 geo_ip: None,
                 output: None,
                 multiline: false,
-                remove_duplicate_data: false,
             }));
 
         let expect: Vec<(CompactString, Profile)> = vec![
@@ -751,11 +751,11 @@ mod tests {
                     include_eid: None,
                     exclude_eid: None,
                     no_field: false,
+                    remove_duplicate_data: false,
                 },
                 geo_ip: None,
                 output: None,
                 multiline: false,
-                remove_duplicate_data: false,
             }));
         //両方のファイルが存在しない場合
         assert_eq!(

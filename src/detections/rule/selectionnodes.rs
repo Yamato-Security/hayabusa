@@ -568,11 +568,11 @@ mod tests {
                     include_eid: None,
                     exclude_eid: None,
                     no_field: false,
+                    remove_duplicate_data: false,
                 },
                 geo_ip: None,
                 output: None,
                 multiline: false,
-                remove_duplicate_data: false,
             })),
             debug: false,
         }))
