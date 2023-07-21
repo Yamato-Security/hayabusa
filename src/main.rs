@@ -52,6 +52,7 @@ use std::{
     vec,
 };
 use termcolor::{BufferWriter, Color, ColorChoice};
+use terminal_size::{terminal_size, Width};
 use tokio::runtime::Runtime;
 use tokio::spawn;
 use tokio::task::JoinHandle;
@@ -1037,6 +1038,12 @@ impl App {
 
         let mut pb = ProgressBar::new(evtx_files.len() as u64);
         pb.show_speed = false;
+        let terminal_width = match terminal_size() {
+            Some((Width(w), _)) => w as usize,
+            None => 100,
+        };
+
+        pb.set_width(Some(8 * terminal_width / 10));
         self.rule_keys = self.get_all_keys(&rule_files);
         let mut detection = detection::Detection::new(rule_files);
         let mut total_records: usize = 0;
