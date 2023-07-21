@@ -1018,6 +1018,34 @@ pub struct SearchOption {
     /// Save the search results in JSONL format (ex: -L -o results.jsonl)
     #[arg(help_heading = Some("Output"), short = 'L', long = "JSONL-output", conflicts_with = "jsonl_output", requires = "output", display_order = 100)]
     pub jsonl_output: bool,
+
+    /// Output timestamp in European time format (ex: 22-02-2022 22:00:00.123 +02:00)
+    #[arg(help_heading = Some("Time Format"), long = "European-time", display_order = 50)]
+    pub european_time: bool,
+
+    /// Output timestamp in ISO-8601 format (ex: 2022-02-22T10:10:10.1234567Z) (Always UTC)
+    #[arg(help_heading = Some("Time Format"), long = "ISO-8601", display_order = 90)]
+    pub iso_8601: bool,
+
+    /// Output timestamp in RFC 2822 format (ex: Fri, 22 Feb 2022 22:00:00 -0600)
+    #[arg(help_heading = Some("Time Format"), long = "RFC-2822", display_order = 180)]
+    pub rfc_2822: bool,
+
+    /// Output timestamp in RFC 3339 format (ex: 2022-02-22 22:00:00.123456-06:00)
+    #[arg(help_heading = Some("Time Format"), long = "RFC-3339", display_order = 180)]
+    pub rfc_3339: bool,
+
+    /// Output timestamp in US military time format (ex: 02-22-2022 22:00:00.123 -06:00)
+    #[arg(help_heading = Some("Time Format"), long = "US-military-time", display_order = 210)]
+    pub us_military_time: bool,
+
+    /// Output timestamp in US time format (ex: 02-22-2022 10:00:00.123 PM -06:00)
+    #[arg(help_heading = Some("Time Format"), long = "US-time", display_order = 210)]
+    pub us_time: bool,
+
+    /// Output time in UTC format (default: local time)
+    #[arg(help_heading = Some("Time Format"), short = 'U', long = "UTC", display_order = 210)]
+    pub utc: bool,
 }
 
 #[derive(Args, Clone, Debug)]
@@ -1832,6 +1860,13 @@ fn extract_search_options(config: &Config) -> Option<SearchOption> {
             clobber: option.clobber,
             json_output: option.json_output,
             jsonl_output: option.jsonl_output,
+            european_time: option.european_time,
+            iso_8601: option.iso_8601,
+            rfc_2822: option.rfc_2822,
+            rfc_3339: option.rfc_3339,
+            us_military_time: option.us_military_time,
+            us_time: option.us_time,
+            utc: option.utc,
         }),
         _ => None,
     }
@@ -2005,13 +2040,13 @@ fn extract_output_options(config: &Config) -> Option<OutputOption> {
             end_timeline: None,
             start_timeline: None,
             eid_filter: false,
-            european_time: false,
-            iso_8601: false,
-            rfc_2822: false,
-            rfc_3339: false,
-            us_military_time: false,
-            us_time: false,
-            utc: false,
+            european_time: option.european_time,
+            iso_8601: option.iso_8601,
+            rfc_2822: option.rfc_2822,
+            rfc_3339: option.rfc_3339,
+            us_military_time: option.us_military_time,
+            us_time: option.us_time,
+            utc: option.utc,
             visualize_timeline: false,
             rules: Path::new("./rules").to_path_buf(),
             html_report: None,

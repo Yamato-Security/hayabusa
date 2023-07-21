@@ -22,6 +22,7 @@
 - Added the `-C, --clobber` option to overwrite existing output files in the `pivot-keywords-list` command. (#1125) (@hitenkoku)
 - Renamed the `metrics` command to `eid-metrics`. (#1128) (@hitenkoku)
 - Renamed the `--live_analysis` option to `--live-analysis` option. (#1139) (@hitenkoku)
+- Added support for outputing timestamps in the following formats in the `search` command: `--European-time`, `--ISO-8601`, `--RFC-2822`, `--RFC-3339`, `--US-time`, `--US-military-time`, `-U, --UTC` (#1040) (@hitenkoku)
 
 **Bug Fixes:**
 

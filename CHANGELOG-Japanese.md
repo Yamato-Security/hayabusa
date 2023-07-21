@@ -23,6 +23,7 @@
 - `pivot-keywords-list`コマンドに対して、出力ファイルを上書きするための`-C, --clobber`オプションを追加した。 (#1125) (@hitenkoku)
 - `metrics`コマンドを`eid-metrics`に変更した。 (#1128) (@hitenkoku)
 - `--live_analysis` オプションを`--live-analysis`に変更した (#1139) (@hitenkoku)
+- `search`コマンドで出力時間フォーマットのオプションをサポートした。(`--European-time`, `--ISO-8601`, `--RFC-2822`, `--RFC-3339`, `--US-time`, `--US-military-time`, `-U, --UTC`) (#1040) (@hitenkoku)
 
 **バグ修正:**
 
