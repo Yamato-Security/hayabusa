@@ -13,6 +13,7 @@
 - Added the `computer-metrics` command to list up how many events there are based on computer name. (#1116) (@hitenkoku)
 - Added `--include-computer` and `--exclude-computer` options to `csv-timeline`, `json-timeline`, `metrics`, `logon-summary` and `pivot-keywords-list` commands. The `--include-computer` option only scans the specified computer(s). `--exclude-computer` excludes them. (#1117) (@hitenkoku)
 - Added `--include-eid` and `--exclude-eid` options to `csv-timeline`, `json-timeline`, and `pivot-keywords-list` commands. The `--include-eid` option only scans the specified EventID(s). `--exclude-eid` excludes them. (#1130) (@hitenkoku)
+- Added the `-R, --remove-duplicate-data` option to the `json-timeline` command to replace duplicate field data with the string `DUP` in the `%Details%`, `%AllFieldInfo%`, `%ExtraFieldInfo%` fields to reduce file size. (#1134) (@hitenkoku)
 
 **Enhancements:**
 
@@ -21,6 +22,7 @@
 - Added the `-C, --clobber` option to overwrite existing output files in the `pivot-keywords-list` command. (#1125) (@hitenkoku)
 - Renamed the `metrics` command to `eid-metrics`. (#1128) (@hitenkoku)
 - Changed progress bar width to 80% to leave room for adjustment of the terminal. (#1135) (@hitenkoku)
+- Added support for outputing timestamps in the following formats in the `search` command: `--European-time`, `--ISO-8601`, `--RFC-2822`, `--RFC-3339`, `--US-time`, `--US-military-time`, `-U, --UTC` (#1040) (@hitenkoku)
 
 **Bug Fixes:**
 
@@ -28,7 +30,9 @@
 
 **Other:**
 
-- The total counts of unique detections are now based on rule ID instead of rule file paths. (#1111) (@hitenkoku)
+- The total count of unique detections are now based on rule IDs instead of rule file paths. (#1111) (@hitenkoku)
+- Renamed the `--live_analysis` option to `--live-analysis`. (#1139) (@hitenkoku)
+- Renamed the `metrics` command to `eid-metrics`. (#1128) (@hitenkoku)
 
 ## 2.6.0 [2023/06/16] "Ajisai Release"
 

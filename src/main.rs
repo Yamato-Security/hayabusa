@@ -833,7 +833,7 @@ impl App {
         _target_extensions: &HashSet<String>,
         _stored_static: &StoredStatic,
     ) -> Option<Vec<PathBuf>> {
-        AlertMessage::alert("-l / --liveanalysis needs to be run as Administrator on Windows.")
+        AlertMessage::alert("-l, --live-analysis needs to be run as Administrator on Windows.")
             .ok();
         println!();
         None
@@ -858,7 +858,7 @@ impl App {
             }
             Some(evtx_files)
         } else {
-            AlertMessage::alert("-l / --liveanalysis needs to be run as Administrator on Windows.")
+            AlertMessage::alert("-l, --live-analysis needs to be run as Administrator on Windows.")
                 .ok();
             println!();
             None
@@ -1697,11 +1697,11 @@ mod tests {
                     include_eid: None,
                     exclude_eid: None,
                     no_field: false,
+                    remove_duplicate_data: false,
                 },
                 geo_ip: None,
                 output: None,
                 multiline: false,
-                remove_duplicate_data: false,
             })),
             debug: false,
         }))
@@ -1855,11 +1855,11 @@ mod tests {
                 include_eid: None,
                 exclude_eid: None,
                 no_field: false,
+                remove_duplicate_data: false,
             },
             geo_ip: None,
             output: Some(Path::new("overwrite.csv").to_path_buf()),
             multiline: false,
-            remove_duplicate_data: false,
         });
         let config = Some(Config {
             action: Some(action),
@@ -1934,11 +1934,11 @@ mod tests {
                 include_eid: None,
                 exclude_eid: None,
                 no_field: false,
+                remove_duplicate_data: false,
             },
             geo_ip: None,
             output: Some(Path::new("overwrite.csv").to_path_buf()),
             multiline: false,
-            remove_duplicate_data: false,
         });
         let config = Some(Config {
             action: Some(action),
@@ -2011,6 +2011,7 @@ mod tests {
                 include_eid: None,
                 exclude_eid: None,
                 no_field: false,
+                remove_duplicate_data: false,
             },
             geo_ip: None,
             output: Some(Path::new("overwrite.json").to_path_buf()),
@@ -2089,6 +2090,7 @@ mod tests {
                 include_eid: None,
                 exclude_eid: None,
                 no_field: false,
+                remove_duplicate_data: false,
             },
             geo_ip: None,
             output: Some(Path::new("overwrite.json").to_path_buf()),
