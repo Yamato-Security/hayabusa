@@ -4,7 +4,7 @@
 
 **新機能:**
 
-- ``./rules/config/data_mapping`にある`.yaml`設定ファイルに基づいて、特定のコード番号が人間が読めるメッセージにマッピングされるようになった。(例: `%%2307`は、`ACCOUNT LOCKOUT`に変換される)。この動作は`-F, --no-field-data-mapping`オプションで無効にできる。(#177) (@fukusuket)
+- ``./rules/config/data_mapping`にある`.yaml`設定ファイルに基づいて、特定のコード番号が人間が読めるメッセージにマッピングされるようになった。(例:`%%2307`は、`ACCOUNT LOCKOUT`に変換される)。この動作は`-F, --no-field-data-mapping`オプションで無効にできる。(#177) (@fukusuket)
 - `csv-timeline`コマンドに`-R, --remove-duplicate-data`オプションを追加し、`%Details%`、`%AllFieldInfo%`、`%ExtraFieldInfo%`列の重複フィールドデータを`DUP`という文字列に変換し、ファイルサイズの削減を行う。(#1056) (@hitenkoku)
 - `csv-timeline`と`json-timeline`コマンドに`-P, --proven-rules`オプションを追加した。有効にすると、検知が証明されたルールしかロードされない。ロードされるルールは、`./rules/config/proven_rules.txt`の設定ファイルにルールIDで定義されている。 (#1115) (@hitenkoku)
 - `csv-timeline`コマンドと`json-timeline`コマンドに`--include-tags`オプションを追加し、指定した`tags`フィールドを持つルールのみをロードするようにした。(#1108) (@hitenkoku)
@@ -13,6 +13,7 @@
 - コンピュータ名に基づくイベント数をリストアップする`computer-metrics`コマンドを追加した。(#1116) (@hitenkoku)
 - `csv-timeline`、`json-timeline`、`metrics`、`logon-summary`、`pivot-keywords-list`コマンドに`--include-computer`と`--exclude-computer`オプションを追加した。`include-computer`は、指定された`computer`の検知のみを出力する。`--exclude-computer`は、指定された`computer`の検知を除外する。 (#1117) (@hitenkoku)
 - `csv-timeline`、`json-timeline`、`pivot-keywords-list`コマンドに`--include-eid`と`--exclude-eid`オプションを追加した。`include-eid`は、指定された`EventID`のみを検知対象とする。`--exclude-eid`は、指定された`EventID`を検知対象から除外する。 (#1130) (@hitenkoku)
+- `json-timeline`コマンドに`-R, --remove-duplicate-data`オプションを追加し、`%Details%`、`%AllFieldInfo%`、`%ExtraFieldInfo%`フィールドの重複フィールドデータを`DUP`という文字列に変換し、ファイルサイズの削減を行う。(#1134) (@hitenkoku)
 
 **改善:**
 

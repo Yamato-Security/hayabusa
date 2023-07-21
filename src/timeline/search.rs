@@ -414,41 +414,45 @@ pub fn search_result_dsp_msg(
             file_wtr.as_mut().unwrap().write_record(&record_data).ok();
         } else if output.is_some() && (json_output || jsonl_output) {
             file_wtr.as_mut().unwrap().write_field("{").ok();
+            let (output_json_str_ret, _) = output_json_str(
+                &vec![
+                    (
+                        "Timestamp".into(),
+                        Profile::Timestamp(timestamp.clone().into()),
+                    ),
+                    (
+                        "Hostname".into(),
+                        Profile::Computer(hostname.clone().into()),
+                    ),
+                    (
+                        "Channel".into(),
+                        Profile::Channel(abbr_channel.clone().into()),
+                    ),
+                    ("Event ID".into(), Profile::EventID(event_id.clone().into())),
+                    (
+                        "Record ID".into(),
+                        Profile::RecordID(record_id.clone().into()),
+                    ),
+                    (
+                        "EventTitle".into(),
+                        Profile::Literal(event_title.clone().into()),
+                    ),
+                    (
+                        "AllFieldInfo".into(),
+                        Profile::AllFieldInfo(all_field_info.into()),
+                    ),
+                    ("EvtxFile".into(), Profile::EvtxFile(evtx_file.into())),
+                ],
+                HashMap::new(),
+                jsonl_output,
+                false,
+                false,
+            );
+
             file_wtr
                 .as_mut()
                 .unwrap()
-                .write_field(output_json_str(
-                    &vec![
-                        (
-                            "Timestamp".into(),
-                            Profile::Timestamp(timestamp.clone().into()),
-                        ),
-                        (
-                            "Hostname".into(),
-                            Profile::Computer(hostname.clone().into()),
-                        ),
-                        (
-                            "Channel".into(),
-                            Profile::Channel(abbr_channel.clone().into()),
-                        ),
-                        ("Event ID".into(), Profile::EventID(event_id.clone().into())),
-                        (
-                            "Record ID".into(),
-                            Profile::RecordID(record_id.clone().into()),
-                        ),
-                        (
-                            "EventTitle".into(),
-                            Profile::Literal(event_title.clone().into()),
-                        ),
-                        (
-                            "AllFieldInfo".into(),
-                            Profile::AllFieldInfo(all_field_info.into()),
-                        ),
-                        ("EvtxFile".into(), Profile::EvtxFile(evtx_file.into())),
-                    ],
-                    jsonl_output,
-                    false,
-                ))
+                .write_field(output_json_str_ret)
                 .ok();
             file_wtr.as_mut().unwrap().write_field("}").ok();
         } else {
