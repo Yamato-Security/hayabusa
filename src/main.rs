@@ -832,7 +832,7 @@ impl App {
         _target_extensions: &HashSet<String>,
         _stored_static: &StoredStatic,
     ) -> Option<Vec<PathBuf>> {
-        AlertMessage::alert("-l / --liveanalysis needs to be run as Administrator on Windows.")
+        AlertMessage::alert("-l, --live-analysis needs to be run as Administrator on Windows.")
             .ok();
         println!();
         None
@@ -857,7 +857,7 @@ impl App {
             }
             Some(evtx_files)
         } else {
-            AlertMessage::alert("-l / --liveanalysis needs to be run as Administrator on Windows.")
+            AlertMessage::alert("-l, --live-analysis needs to be run as Administrator on Windows.")
                 .ok();
             println!();
             None

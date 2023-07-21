@@ -4,10 +4,10 @@
 
 **新機能:**
 
-- ``./rules/config/data_mapping`にある`.yaml`設定ファイルに基づいて、特定のコード番号が人間が読めるメッセージにマッピングされるようになった。(例:`%%2307`は、`ACCOUNT LOCKOUT`に変換される)。この動作は`-F, --no-field-data-mapping`オプションで無効にできる。(#177) (@fukusuket)
+- `./rules/config/data_mapping`にある`.yaml`設定ファイルに基づいて、特定のコード番号が人間が読めるメッセージにマッピングされるようになった。(例:`%%2307`は、`ACCOUNT LOCKOUT`に変換される)。この動作は`-F, --no-field-data-mapping`オプションで無効にできる。(#177) (@fukusuket)
 - `csv-timeline`コマンドに`-R, --remove-duplicate-data`オプションを追加し、`%Details%`、`%AllFieldInfo%`、`%ExtraFieldInfo%`列の重複フィールドデータを`DUP`という文字列に変換し、ファイルサイズの削減を行う。(#1056) (@hitenkoku)
 - `csv-timeline`と`json-timeline`コマンドに`-P, --proven-rules`オプションを追加した。有効にすると、検知が証明されたルールしかロードされない。ロードされるルールは、`./rules/config/proven_rules.txt`の設定ファイルにルールIDで定義されている。 (#1115) (@hitenkoku)
-- `csv-timeline`コマンドと`json-timeline`コマンドに`--include-tags`オプションを追加し、指定した`tags`フィールドを持つルールのみをロードするようにした。(#1108) (@hitenkoku)
+- `csv-timeline`と`json-timeline`コマンドに`--include-tags`オプションを追加し、指定した`tags`フィールドを持つルールのみをロードするようにした。(#1108) (@hitenkoku)
 - `csv-timeline`と`json-timeline`コマンドに`--exclude-tags`オプションを追加し、指定した`tags`フィールドを持つルールをロードしないようにした。(#1118) (@hitenkoku)
 - `csv-timeline`と`json-timeline`コマンドに`--include-category`と`--exclude-category`オプションを追加した。`include-category`は、指定された`category`フィールドのルールのみをロードする。`--exclude-category`は、指定された`category`フィールドを持つルールをロードしない。 (#1119) (@hitenkoku)
 - コンピュータ名に基づくイベント数をリストアップする`computer-metrics`コマンドを追加した。(#1116) (@hitenkoku)
@@ -21,7 +21,6 @@
 - `metrics`コマンドで`--output`オプションを指定した時に標準出力に結果を表示しないように変更した。 (#1099) (@hitenkoku)
 - `csv-timeline` コマンドと `json-timeline` コマンドに `--tags` オプションを追加し、指定した `tags` フィールドを持つルールのみでスキャンできるようにした。(#1108) (@hitenkoku)
 - `pivot-keywords-list`コマンドに対して、出力ファイルを上書きするための`-C, --clobber`オプションを追加した。 (#1125) (@hitenkoku)
-- `metrics`コマンドを`eid-metrics`に変更した。 (#1128) (@hitenkoku)
 - `search`コマンドで出力時間フォーマットのオプションをサポートした。(`--European-time`, `--ISO-8601`, `--RFC-2822`, `--RFC-3339`, `--US-time`, `--US-military-time`, `-U, --UTC`) (#1040) (@hitenkoku)
 
 **バグ修正:**
@@ -31,6 +30,8 @@
 **その他:**
 
 - ルールのIDベースでユニークな検出数をカウントするように修正した。 (#1111) (@hitenkoku)
+- `--live_analysis`オプションを`--live-analysis`に変更した。 (#1139) (@hitenkoku)
+- `metrics`コマンドを`eid-metrics`に変更した。 (#1128) (@hitenkoku)
 
 ## 2.6.0 [2023/06/16] "Ajisai Release"
 
