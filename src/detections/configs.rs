@@ -1421,7 +1421,7 @@ pub struct InputOption {
     pub filepath: Option<PathBuf>,
 
     /// Analyze the local C:\Windows\System32\winevt\Logs folder
-    #[arg(help_heading = Some("Input"), short = 'l', long = "live_analysis", conflicts_with_all = ["filepath", "directory", "JSON_input"], display_order = 380)]
+    #[arg(help_heading = Some("Input"), short = 'l', long = "live-analysis", conflicts_with_all = ["filepath", "directory", "json_input"], display_order = 380)]
     pub live_analysis: bool,
 }
 
