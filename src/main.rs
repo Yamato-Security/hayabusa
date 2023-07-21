@@ -52,10 +52,10 @@ use std::{
     vec,
 };
 use termcolor::{BufferWriter, Color, ColorChoice};
-use terminal_size::{terminal_size, Width};
 use tokio::runtime::Runtime;
 use tokio::spawn;
 use tokio::task::JoinHandle;
+use std::time::Duration;
 
 #[cfg(target_os = "windows")]
 use is_elevated::is_elevated;
@@ -1038,12 +1038,9 @@ impl App {
 
         let mut pb = ProgressBar::new(evtx_files.len() as u64);
         pb.show_speed = false;
-        let terminal_width = match terminal_size() {
-            Some((Width(w), _)) => w as usize,
-            None => 100,
-        };
-
-        pb.set_width(Some(8 * terminal_width / 10));
+        pb.set_width(Some(55));
+        pb.format("[=> ]");
+        pb.set_max_refresh_rate(Some(Duration::from_millis(100)));
         self.rule_keys = self.get_all_keys(&rule_files);
         let mut detection = detection::Detection::new(rule_files);
         let mut total_records: usize = 0;
