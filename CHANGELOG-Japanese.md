@@ -22,6 +22,7 @@
 - `csv-timeline` コマンドと `json-timeline` コマンドに `--tags` オプションを追加し、指定した `tags` フィールドを持つルールのみでスキャンできるようにした。(#1108) (@hitenkoku)
 - `pivot-keywords-list`コマンドに対して、出力ファイルを上書きするための`-C, --clobber`オプションを追加した。 (#1125) (@hitenkoku)
 - `metrics`コマンドを`eid-metrics`に変更した。 (#1128) (@hitenkoku)
+- `--live_analysis` オプションを`--live-analysis`に変更した (#1139) (@hitenkoku)
 
 **バグ修正:**
 

@@ -21,6 +21,7 @@
 - When `--output` is set in the `metrics` command, the results will not be displayed to screen. (#1099) (@hitenkoku)
 - Added the `-C, --clobber` option to overwrite existing output files in the `pivot-keywords-list` command. (#1125) (@hitenkoku)
 - Renamed the `metrics` command to `eid-metrics`. (#1128) (@hitenkoku)
+- Renamed the `--live_analysis` option to `--live-analysis` option. (#1139) (@hitenkoku)
 
 **Bug Fixes:**
 
