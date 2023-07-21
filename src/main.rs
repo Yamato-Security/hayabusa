@@ -45,6 +45,7 @@ use std::io::{BufWriter, Write};
 use std::path::Path;
 use std::ptr::null_mut;
 use std::sync::Arc;
+use std::time::Duration;
 use std::{
     env,
     fs::{self, File},
@@ -55,7 +56,6 @@ use termcolor::{BufferWriter, Color, ColorChoice};
 use tokio::runtime::Runtime;
 use tokio::spawn;
 use tokio::task::JoinHandle;
-use std::time::Duration;
 
 #[cfg(target_os = "windows")]
 use is_elevated::is_elevated;
