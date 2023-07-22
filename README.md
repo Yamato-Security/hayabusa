@@ -611,7 +611,7 @@ Usage: pivot-keywords-list <INPUT> [OPTIONS]
 Input:
   -d, --directory <DIR>  Directory of multiple .evtx files
   -f, --file <FILE>      File path to one .evtx file
-  -l, --live_analysis    Analyze the local C:\Windows\System32\winevt\Logs folder
+  -l, --live-analysis    Analyze the local C:\Windows\System32\winevt\Logs folder
   -J, --JSON-input       Scan JSON formatted logs instead of .evtx (.json or .jsonl)
 
 Output:
@@ -754,7 +754,7 @@ Usage: csv-timeline <INPUT> [OPTIONS]
 Input:
   -d, --directory <DIR>  Directory of multiple .evtx files
   -f, --file <FILE>      File path to one .evtx file
-  -l, --live_analysis    Analyze the local C:\Windows\System32\winevt\Logs folder
+  -l, --live-analysis    Analyze the local C:\Windows\System32\winevt\Logs folder
   -J, --JSON-input       Scan JSON formatted logs instead of .evtx (.json or .jsonl)
 
 Output:
@@ -764,7 +764,7 @@ Output:
   -F, --no-field-data-mapping   Disable field data mapping
   -o, --output <FILE>           Save the timeline in CSV format (ex: results.csv)
   -p, --profile <PROFILE>       Specify output profile
-  -R, --remove-duplicate-data   Duplicate field data will be replaced with "DUP"
+  -R, --remove-duplicate-data   Duplicate field data will be replaced with "DUP" (Reduces file size by about 10~15%)
 
 Display Settings:
       --no-color            Disable color output
@@ -998,7 +998,7 @@ Usage: json-timeline <INPUT> [OPTIONS]
 Input:
   -d, --directory <DIR>  Directory of multiple .evtx files
   -f, --file <FILE>      File path to one .evtx file
-  -l, --live_analysis    Analyze the local C:\Windows\System32\winevt\Logs folder
+  -l, --live-analysis    Analyze the local C:\Windows\System32\winevt\Logs folder
   -J, --JSON-input       Scan JSON formatted logs instead of .evtx (.json or .jsonl)
 
 Output:
@@ -1008,6 +1008,7 @@ Output:
   -F, --no-field-data-mapping   Disable field data mapping
   -o, --output <FILE>           Save the timeline in JSON format (ex: results.json)
   -p, --profile <PROFILE>       Specify output profile
+  -R, --remove-duplicate-data   Duplicate field data will be replaced with "DUP"
 
 Display Settings:
       --no-color            Disable color output

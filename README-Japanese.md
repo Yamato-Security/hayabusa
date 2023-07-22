@@ -764,7 +764,7 @@ Output:
   -F, --no-field-data-mapping     フィールドデータのマッピングを無効にする
   -o, --output <FILE>             タイムラインを保存する (例: results.csv)
   -p, --profile <PROFILE>         利用する出力プロファイル名を指定する
-  -R, --remove-duplicate-data     重複したフィールドデータは「DUP」に置き換えられる。 (これにより、私たちのテストではファイルサイズが約10〜15％削減される。)
+  -R, --remove-duplicate-data     重複したフィールドデータは「DUP」に置き換えられる (ファイルサイズが約10〜15％削減される)
 
 Display Settings:
       --no-color            カラーで出力しない
@@ -1008,6 +1008,7 @@ Output:
   -F, --no-field-data-mapping     フィールドデータのマッピングを無効にする
   -o, --output <FILE>             タイムラインを保存する (例: results.csv)
   -p, --profile <PROFILE>         利用する出力プロファイル名を指定する
+  -R, --remove-duplicate-data     重複したフィールドデータは「DUP」に置き換えられる (ファイルサイズが約10〜15％削減される)
 
 Display Settings:
       --no-color            カラーで出力しない
