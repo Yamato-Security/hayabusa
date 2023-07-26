@@ -1057,10 +1057,9 @@ impl App {
         *STORED_EKEY_ALIAS.write().unwrap() = Some(stored_static.eventkey_alias.clone());
         *STORED_STATIC.write().unwrap() = Some(stored_static.clone());
         for evtx_file in evtx_files {
-            if stored_static.verbose_flag {
-                let pb_msg = format!("{:?}", &evtx_file);
-                pb.set_message(pb_msg);
-            }
+            let pb_msg = format!("{:?}", &evtx_file);
+            pb.set_message(pb_msg);
+
             let cnt_tmp: usize;
             (detection, cnt_tmp, tl) = if evtx_file.extension().unwrap() == "json" {
                 self.analysis_json_file(
