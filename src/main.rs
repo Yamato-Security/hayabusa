@@ -1038,18 +1038,17 @@ impl App {
         }
 
         let template =
-            "{spinner} {human_pos}/{human_len} [{bar:40.green}] {percent}% {eta_precise} ({msg})";
+            "{human_pos} / {human_len} {spinner} [{bar:40.green}] {percent}% {eta} \r\n\r\n{msg}";
         let progress_style = ProgressStyle::with_template(template)
             .unwrap()
-            .progress_chars("=> ")
-            .tick_chars("├┬┤┴");
+            .progress_chars("=> ");
         let pb = ProgressBar::with_draw_target(
             Some(evtx_files.len() as u64),
             ProgressDrawTarget::stdout_with_hz(10),
         )
         .with_tab_width(55);
         pb.set_style(progress_style);
-        pb.enable_steady_tick(Duration::from_millis(100));
+        pb.enable_steady_tick(Duration::from_millis(300));
         self.rule_keys = self.get_all_keys(&rule_files);
         let mut detection = detection::Detection::new(rule_files);
         let mut total_records: usize = 0;
