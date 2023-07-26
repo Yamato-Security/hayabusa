@@ -369,14 +369,14 @@ impl ParseYaml {
                     .output_option
                     .as_ref()
                     .unwrap()
-                    .include_tags
+                    .include_tag
                     .is_some()
             {
                 let target_tags = stored_static
                     .output_option
                     .as_ref()
                     .unwrap()
-                    .include_tags
+                    .include_tag
                     .as_ref()
                     .unwrap();
                 let rule_tags_vec = yaml_doc["tags"].as_vec();
@@ -394,20 +394,20 @@ impl ParseYaml {
                 }
             }
 
-            // exclude-tags optionで指定されたtagsを持つルールは除外する
+            // exclude-tag optionで指定されたtagを持つルールは除外する
             if stored_static.output_option.is_some()
                 && stored_static
                     .output_option
                     .as_ref()
                     .unwrap()
-                    .exclude_tags
+                    .exclude_tag
                     .is_some()
             {
                 let exclude_target_tags = stored_static
                     .output_option
                     .as_ref()
                     .unwrap()
-                    .exclude_tags
+                    .exclude_tag
                     .as_ref()
                     .unwrap();
                 let rule_tags_vec = yaml_doc["tags"].as_vec();
@@ -529,8 +529,8 @@ mod tests {
                     enable_unsupported_rules: false,
                     clobber: false,
                     proven_rules: false,
-                    include_tags: None,
-                    exclude_tags: None,
+                    include_tag: None,
+                    exclude_tag: None,
                     include_category: None,
                     exclude_category: None,
                     include_eid: None,
@@ -852,7 +852,7 @@ mod tests {
             .output_option
             .as_mut()
             .unwrap()
-            .include_tags = Some(vec!["tag1".to_string(), "tag2".to_string()]);
+            .include_tag = Some(vec!["tag1".to_string(), "tag2".to_string()]);
         let mut yaml = yaml::ParseYaml::new(&dummy_stored_static);
         yaml.read_dir(
             path,
