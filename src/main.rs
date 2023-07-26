@@ -1037,11 +1037,8 @@ impl App {
             return;
         }
 
-        let template = if stored_static.verbose_flag {
-            "{spinner} {human_pos}/{human_len} [{bar:40.green}] {percent}% {eta_precise} ({msg})"
-        } else {
-            "{spinner} {human_pos}/{human_len} [{bar:40.green}] {percent}% {eta_precise}"
-        };
+        let template =
+            "{spinner} {human_pos}/{human_len} [{bar:40.green}] {percent}% {eta_precise} ({msg})";
         let progress_style = ProgressStyle::with_template(template)
             .unwrap()
             .progress_chars("=> ")
