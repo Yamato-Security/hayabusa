@@ -858,7 +858,7 @@ pub struct DetectCommonOption {
     #[arg(help_heading = Some("Input"), short = 'J', long = "JSON-input", conflicts_with = "live_analysis", display_order = 390)]
     pub json_input: bool,
 
-    /// Specify additional evtx file extensions (ex: evtx_data) (ex: evtx1,evtx2)
+    /// Specify additional evtx file extensions (ex: evtx_data)
     #[arg(help_heading = Some("General Options"), long = "target-file-ext", value_name = "FILE-EXT...", use_value_delimiter = true, value_delimiter = ',', display_order = 450)]
     pub evtx_file_ext: Option<Vec<String>>,
 
@@ -970,7 +970,7 @@ pub struct SearchOption {
     )]
     pub output: Option<PathBuf>,
 
-    /// Specify additional evtx file extensions (ex: evtx_data) (ex: evtx1,evtx2)
+    /// Specify additional evtx file extensions (ex: evtx_data)
     #[arg(help_heading = Some("General Options"), long = "target-file-ext", value_name = "FILE-EXT...", use_value_delimiter = true, value_delimiter = ',', display_order = 450)]
     pub evtx_file_ext: Option<Vec<String>>,
 
@@ -1519,7 +1519,7 @@ pub struct ComputerMetricsOption {
     #[arg(help_heading = Some("Input"), short = 'J', long = "JSON-input", conflicts_with = "live_analysis", display_order = 390)]
     pub json_input: bool,
 
-    /// Specify additional evtx file extensions (ex: evtx_data) (ex: evtx1,evtx2)
+    /// Specify additional evtx file extensions (ex: evtx_data)
     #[arg(help_heading = Some("General Options"), long = "target-file-ext", value_name = "FILE-EXT...", use_value_delimiter = true, value_delimiter = ',', display_order = 450)]
     pub evtx_file_ext: Option<Vec<String>>,
 
