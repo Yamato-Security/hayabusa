@@ -257,9 +257,7 @@ impl ParseYaml {
                         "noisy"
                     };
                     // テスト用のルール(ID:000...0)の場合はexcluded ruleのカウントから除外するようにする
-                    if v != "00000000-0000-0000-0000-000000000000"
-                        && !self.loaded_rule_ids.contains(&CompactString::from(v))
-                    {
+                    if v != "00000000-0000-0000-0000-000000000000" {
                         let entry = self.rule_load_cnt.entry(entry_key.into()).or_insert(0);
                         self.loaded_rule_ids.insert(v.into());
                         *entry += 1;
@@ -291,16 +289,12 @@ impl ParseYaml {
                 *status_cnt += 1;
             };
 
-            let mut up_rule_load_cnt = | status: &str, rule_id: &str| {
-                if !self
-                        .loaded_rule_ids
-                        .contains(rule_id)
-                    {
-                        let entry = self.rule_load_cnt.entry(status.into()).or_insert(0);
-                        *entry += 1;
-                        self.loaded_rule_ids
-                            .insert(rule_id.into());
-                    }
+            let mut up_rule_load_cnt = |status: &str, rule_id: &str| {
+                if !self.loaded_rule_ids.contains(rule_id) {
+                    let entry = self.rule_load_cnt.entry(status.into()).or_insert(0);
+                    *entry += 1;
+                    self.loaded_rule_ids.insert(rule_id.into());
+                }
             };
 
             let status = yaml_doc["status"].as_str();
