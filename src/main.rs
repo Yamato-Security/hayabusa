@@ -32,11 +32,12 @@ use hayabusa::{afterfact::after_fact, detections::utils};
 use hayabusa::{detections::configs, timeline::timelines::Timeline};
 use hayabusa::{detections::utils::write_color_buffer, filter};
 use hhmmss::Hhmmss;
+use indicatif::ProgressBar;
+use indicatif::{ProgressDrawTarget, ProgressStyle};
 use itertools::Itertools;
 use libmimalloc_sys::mi_stats_print_out;
 use mimalloc::MiMalloc;
 use nested::Nested;
-use pbr::ProgressBar;
 use serde_json::{Map, Value};
 use std::ffi::{OsStr, OsString};
 use std::fmt::Display;
@@ -45,6 +46,7 @@ use std::io::{BufWriter, Write};
 use std::path::Path;
 use std::ptr::null_mut;
 use std::sync::Arc;
+use std::time::Duration;
 use std::{
     env,
     fs::{self, File},
@@ -1035,8 +1037,18 @@ impl App {
             return;
         }
 
-        let mut pb = ProgressBar::new(evtx_files.len() as u64);
-        pb.show_speed = false;
+        let template =
+            "{human_pos} / {human_len} {spinner} [{bar:40.green}] {percent}% {eta} \r\n\r\n{msg}";
+        let progress_style = ProgressStyle::with_template(template)
+            .unwrap()
+            .progress_chars("=> ");
+        let pb = ProgressBar::with_draw_target(
+            Some(evtx_files.len() as u64),
+            ProgressDrawTarget::stdout_with_hz(10),
+        )
+        .with_tab_width(55);
+        pb.set_style(progress_style);
+        pb.enable_steady_tick(Duration::from_millis(300));
         self.rule_keys = self.get_all_keys(&rule_files);
         let mut detection = detection::Detection::new(rule_files);
         let mut total_records: usize = 0;
@@ -1045,9 +1057,9 @@ impl App {
         *STORED_EKEY_ALIAS.write().unwrap() = Some(stored_static.eventkey_alias.clone());
         *STORED_STATIC.write().unwrap() = Some(stored_static.clone());
         for evtx_file in evtx_files {
-            if stored_static.verbose_flag {
-                println!("Checking target evtx FilePath: {:?}", &evtx_file);
-            }
+            let pb_msg = format!("{:?}", &evtx_file);
+            pb.set_message(pb_msg);
+
             let cnt_tmp: usize;
             (detection, cnt_tmp, tl) = if evtx_file.extension().unwrap() == "json" {
                 self.analysis_json_file(
@@ -1069,8 +1081,9 @@ impl App {
                 )
             };
             total_records += cnt_tmp;
-            pb.inc();
+            pb.inc(1);
         }
+        pb.finish();
         CHECKPOINT
             .lock()
             .as_mut()

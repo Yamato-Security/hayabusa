@@ -20,6 +20,8 @@
 - Ignore corrupted event records with timestamps before 2007/1/31 when Windows Vista was released with the new `.evtx` log format. (#1102) (@fukusuket)
 - When `--output` is set in the `metrics` command, the results will not be displayed to screen. (#1099) (@hitenkoku)
 - Added the `-C, --clobber` option to overwrite existing output files in the `pivot-keywords-list` command. (#1125) (@hitenkoku)
+- Renamed the `metrics` command to `eid-metrics`. (#1128) (@hitenkoku)
+- Reduced progress bar width to leave room for adjustment of the terminal. (#1135) (@hitenkoku)
 - Added support for outputing timestamps in the following formats in the `search` command: `--European-time`, `--ISO-8601`, `--RFC-2822`, `--RFC-3339`, `--US-time`, `--US-military-time`, `-U, --UTC` (#1040) (@hitenkoku)
 
 **Bug Fixes:**
