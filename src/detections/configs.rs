@@ -702,7 +702,7 @@ fn check_thread_number(config: &Config) -> Option<usize> {
 pub enum Action {
     #[clap(
         author = "Yamato Security (https://github.com/Yamato-Security/hayabusa - @SecurityYamato)",
-        help_template = "\nHayabusa v2.7.0 - Dev Build \n{author-with-newline}\n{usage-heading}\n  hayabusa.exe csv-timeline <INPUT> [OPTIONS]\n\n{all-args}",
+        help_template = "\nHayabusa v2.7.0 - SANS DFIR Summit Release \n{author-with-newline}\n{usage-heading}\n  hayabusa.exe csv-timeline <INPUT> [OPTIONS]\n\n{all-args}",
         term_width = 400,
         disable_help_flag = true,
         display_order = 290
@@ -712,7 +712,7 @@ pub enum Action {
 
     #[clap(
         author = "Yamato Security (https://github.com/Yamato-Security/hayabusa - @SecurityYamato)",
-        help_template = "\nHayabusa v2.7.0 - Dev Build \n{author-with-newline}\n{usage-heading}\n  hayabusa.exe json-timeline <INPUT> [OPTIONS]\n\n{all-args}",
+        help_template = "\nHayabusa v2.7.0 - SANS DFIR Summit Release \n{author-with-newline}\n{usage-heading}\n  hayabusa.exe json-timeline <INPUT> [OPTIONS]\n\n{all-args}",
         term_width = 400,
         disable_help_flag = true,
         display_order = 360
@@ -722,7 +722,7 @@ pub enum Action {
 
     #[clap(
         author = "Yamato Security (https://github.com/Yamato-Security/hayabusa - @SecurityYamato)",
-        help_template = "\nHayabusa v2.7.0 - Dev Build \n{author-with-newline}\n{usage-heading}\n  hayabusa.exe logon-summary <INPUT> [OPTIONS]\n\n{all-args}",
+        help_template = "\nHayabusa v2.7.0 - SANS DFIR Summit Release \n{author-with-newline}\n{usage-heading}\n  hayabusa.exe logon-summary <INPUT> [OPTIONS]\n\n{all-args}",
         term_width = 400,
         disable_help_flag = true,
         display_order = 383
@@ -732,7 +732,7 @@ pub enum Action {
 
     #[clap(
         author = "Yamato Security (https://github.com/Yamato-Security/hayabusa - @SecurityYamato)",
-        help_template = "\nHayabusa v2.7.0 - Dev Build \n{author-with-newline}\n{usage-heading}\n  hayabusa.exe eid-metrics <INPUT> [OPTIONS]\n\n{all-args}",
+        help_template = "\nHayabusa v2.7.0 - SANS DFIR Summit Release \n{author-with-newline}\n{usage-heading}\n  hayabusa.exe eid-metrics <INPUT> [OPTIONS]\n\n{all-args}",
         term_width = 400,
         disable_help_flag = true,
         display_order = 310
@@ -742,7 +742,7 @@ pub enum Action {
 
     #[clap(
         author = "Yamato Security (https://github.com/Yamato-Security/hayabusa - @SecurityYamato)",
-        help_template = "\nHayabusa v2.7.0 - Dev Build \n{author-with-newline}\n{usage-heading}\n  hayabusa.exe pivot-keywords-list <INPUT> [OPTIONS]\n\n{all-args}",
+        help_template = "\nHayabusa v2.7.0 - SANS DFIR Summit Release \n{author-with-newline}\n{usage-heading}\n  hayabusa.exe pivot-keywords-list <INPUT> [OPTIONS]\n\n{all-args}",
         term_width = 400,
         disable_help_flag = true,
         display_order = 420
@@ -752,7 +752,7 @@ pub enum Action {
 
     #[clap(
         author = "Yamato Security (https://github.com/Yamato-Security/hayabusa - @SecurityYamato)",
-        help_template = "\nHayabusa v2.7.0 - Dev Build \n{author-with-newline}\n{usage-heading}\n  hayabusa.exe search <INPUT> <--keywords \"<KEYWORDS>\" OR --regex \"<REGEX>\"> [OPTIONS]\n\n{all-args}",
+        help_template = "\nHayabusa v2.7.0 - SANS DFIR Summit Release \n{author-with-newline}\n{usage-heading}\n  hayabusa.exe search <INPUT> <--keywords \"<KEYWORDS>\" OR --regex \"<REGEX>\"> [OPTIONS]\n\n{all-args}",
         term_width = 400,
         disable_help_flag = true,
         display_order = 450
@@ -762,7 +762,7 @@ pub enum Action {
 
     #[clap(
         author = "Yamato Security (https://github.com/Yamato-Security/hayabusa - @SecurityYamato)",
-        help_template = "\nHayabusa v2.7.0 - Dev Build \n{author-with-newline}\n{usage-heading}\n  {usage}\n\n{all-args}",
+        help_template = "\nHayabusa v2.7.0 - SANS DFIR Summit Release \n{author-with-newline}\n{usage-heading}\n  {usage}\n\n{all-args}",
         term_width = 400,
         disable_help_flag = true,
         display_order = 470
@@ -772,7 +772,7 @@ pub enum Action {
 
     #[clap(
         author = "Yamato Security (https://github.com/Yamato-Security/hayabusa - @SecurityYamato)",
-        help_template = "\nHayabusa v2.7.0 - Dev Build \n{author-with-newline}\n{usage-heading}\n  {usage}\n\n{all-args}",
+        help_template = "\nHayabusa v2.7.0 - SANS DFIR Summit Release \n{author-with-newline}\n{usage-heading}\n  {usage}\n\n{all-args}",
         term_width = 400,
         disable_help_flag = true,
         display_order = 380
@@ -782,7 +782,7 @@ pub enum Action {
 
     #[clap(
         author = "Yamato Security (https://github.com/Yamato-Security/hayabusa - @SecurityYamato)",
-        help_template = "\nHayabusa v2.7.0 - Dev Build \n{author-with-newline}\n{usage-heading}\n  {usage}\n\n{all-args}",
+        help_template = "\nHayabusa v2.7.0 - SANS DFIR Summit Release \n{author-with-newline}\n{usage-heading}\n  {usage}\n\n{all-args}",
         term_width = 400,
         disable_help_flag = true,
         display_order = 451
@@ -800,7 +800,7 @@ pub enum Action {
 
     #[clap(
         author = "Yamato Security (https://github.com/Yamato-Security/hayabusa - @SecurityYamato)",
-        help_template = "\nHayabusa v2.7.0 - Dev Build \n{author-with-newline}\n{usage-heading}\n  {usage}\n\n{all-args}",
+        help_template = "\nHayabusa v2.7.0 - SANS DFIR Summit Release \n{author-with-newline}\n{usage-heading}\n  {usage}\n\n{all-args}",
         term_width = 400,
         disable_help_flag = true,
         display_order = 290
@@ -858,8 +858,8 @@ pub struct DetectCommonOption {
     #[arg(help_heading = Some("Input"), short = 'J', long = "JSON-input", conflicts_with = "live_analysis", display_order = 390)]
     pub json_input: bool,
 
-    /// Specify additional file extensions (ex: evtx_data) (ex: evtx1,evtx2)
-    #[arg(help_heading = Some("General Options"), long = "target-file-ext", use_value_delimiter = true, value_delimiter = ',', display_order = 450)]
+    /// Specify additional evtx file extensions (ex: evtx_data)
+    #[arg(help_heading = Some("General Options"), long = "target-file-ext", value_name = "FILE-EXT...", use_value_delimiter = true, value_delimiter = ',', display_order = 450)]
     pub evtx_file_ext: Option<Vec<String>>,
 
     /// Number of threads (default: optimal number for performance)
@@ -892,12 +892,12 @@ pub struct DetectCommonOption {
     #[arg(help_heading = Some("Display Settings"), short = 'v', long, display_order = 480)]
     pub verbose: bool,
 
-    /// Scan only certain computer names (ex: ComputerA) (ex: ComputerA,ComputerB)
-    #[arg(help_heading = Some("Filtering"), long = "include-computer", value_name = "COMPUTER", conflicts_with = "exclude-computer", use_value_delimiter = true, value_delimiter = ',', display_order = 352)]
+    /// Scan only specified computer names (ex: ComputerA) (ex: ComputerA,ComputerB)
+    #[arg(help_heading = Some("Filtering"), long = "include-computer", value_name = "COMPUTER...", conflicts_with = "exclude-computer", use_value_delimiter = true, value_delimiter = ',', display_order = 352)]
     pub include_computer: Option<Vec<String>>,
 
-    /// Do not scan certain computer names (ex: ComputerA) (ex: ComputerA,ComputerB)
-    #[arg(help_heading = Some("Filtering"), long = "exclude-computer", value_name = "COMPUTER", conflicts_with = "include_computer",use_value_delimiter = true, value_delimiter = ',', display_order = 314)]
+    /// Do not scan specified computer names (ex: ComputerA) (ex: ComputerA,ComputerB)
+    #[arg(help_heading = Some("Filtering"), long = "exclude-computer", value_name = "COMPUTER...", conflicts_with = "include_computer",use_value_delimiter = true, value_delimiter = ',', display_order = 314)]
     pub exclude_computer: Option<Vec<String>>,
 }
 
@@ -923,8 +923,8 @@ pub struct SearchOption {
     #[arg(
         help_heading = Some("Filtering"),
         short = 'k',
-        long,
-        value_name = "KEYWORDS",
+        long = "keyword",
+        value_name = "KEYWORD...",
         display_order = 370,
         conflicts_with = "regex",
     )]
@@ -956,6 +956,7 @@ pub struct SearchOption {
         help_heading = Some("Filtering"),
         short = 'F',
         long = "filter",
+        value_name = "FILTER...",
         display_order = 320
     )]
     pub filter: Vec<String>,
@@ -969,8 +970,8 @@ pub struct SearchOption {
     )]
     pub output: Option<PathBuf>,
 
-    /// Specify additional file extensions (ex: evtx_data) (ex: evtx1,evtx2)
-    #[arg(help_heading = Some("General Options"), long = "target-file-ext", use_value_delimiter = true, value_delimiter = ',', display_order = 450)]
+    /// Specify additional evtx file extensions (ex: evtx_data)
+    #[arg(help_heading = Some("General Options"), long = "target-file-ext", value_name = "FILE-EXT...", use_value_delimiter = true, value_delimiter = ',', display_order = 450)]
     pub evtx_file_ext: Option<Vec<String>>,
 
     /// Number of threads (default: optimal number for performance)
@@ -1154,7 +1155,7 @@ pub struct PivotKeywordOption {
     pub enable_unsupported_rules: bool,
 
     /// Do not load rules according to status (ex: experimental) (ex: stable,test)
-    #[arg(help_heading = Some("Filtering"), long = "exclude-status", value_name = "STATUS", use_value_delimiter = true, value_delimiter = ',', display_order = 316)]
+    #[arg(help_heading = Some("Filtering"), long = "exclude-status", value_name = "STATUS...", use_value_delimiter = true, value_delimiter = ',', display_order = 316)]
     pub exclude_status: Option<Vec<String>>,
 
     /// Minimum level for rules to load (default: informational)
@@ -1198,11 +1199,11 @@ pub struct PivotKeywordOption {
     pub eid_filter: bool,
 
     /// Scan only specified EIDs for faster speed (ex: 1) (ex: 1,4688)
-    #[arg(help_heading = Some("Filtering"), long = "include-eid", value_name = "EIDS", conflicts_with_all = ["eid_filter", "exclude_eid"], use_value_delimiter = true, value_delimiter = ',', display_order = 352)]
+    #[arg(help_heading = Some("Filtering"), long = "include-eid", value_name = "EID...", conflicts_with_all = ["eid_filter", "exclude_eid"], use_value_delimiter = true, value_delimiter = ',', display_order = 352)]
     pub include_eid: Option<Vec<String>>,
 
     /// Do not scan specific EIDs for faster speed (ex: 1) (ex: 1,4688)
-    #[arg(help_heading = Some("Filtering"), long = "exclude-eid", value_name = "EIDS", conflicts_with_all = ["eid_filter", "include_eid"], use_value_delimiter = true, value_delimiter = ',', display_order = 315)]
+    #[arg(help_heading = Some("Filtering"), long = "exclude-eid", value_name = "EID...", conflicts_with_all = ["eid_filter", "include_eid"], use_value_delimiter = true, value_delimiter = ',', display_order = 315)]
     pub exclude_eid: Option<Vec<String>>,
 
     #[clap(flatten)]
@@ -1284,19 +1285,19 @@ pub struct OutputOption {
     pub enable_unsupported_rules: bool,
 
     /// Do not load rules according to status (ex: experimental) (ex: stable,test)
-    #[arg(help_heading = Some("Filtering"), long = "exclude-status", value_name = "STATUS", use_value_delimiter = true, value_delimiter = ',', display_order = 316)]
+    #[arg(help_heading = Some("Filtering"), long = "exclude-status", value_name = "STATUS...", use_value_delimiter = true, value_delimiter = ',', display_order = 316)]
     pub exclude_status: Option<Vec<String>>,
 
     /// Only load rules with specific tags (ex: attack.execution,attack.discovery)
-    #[arg(help_heading = Some("Filtering"), long = "include-tags", value_name = "TAGS", conflicts_with = "exclude_tags", use_value_delimiter = true, value_delimiter = ',', display_order = 353)]
-    pub include_tags: Option<Vec<String>>,
+    #[arg(help_heading = Some("Filtering"), long = "include-tag", value_name = "TAG...", conflicts_with = "exclude_tag", use_value_delimiter = true, value_delimiter = ',', display_order = 353)]
+    pub include_tag: Option<Vec<String>>,
 
-    /// Only load rules with certain logsource categories (ex: process_creation,pipe_created)
-    #[arg(help_heading = Some("Filtering"), long = "include-category", value_name = "CATEGORY", conflicts_with = "exclude-category", use_value_delimiter = true, value_delimiter = ',', display_order = 351)]
+    /// Only load rules with specified logsource categories (ex: process_creation,pipe_created)
+    #[arg(help_heading = Some("Filtering"), long = "include-category", value_name = "CATEGORY...", conflicts_with = "exclude-category", use_value_delimiter = true, value_delimiter = ',', display_order = 351)]
     pub include_category: Option<Vec<String>>,
 
-    /// Do not load rules with certain logsource categories (ex: process_creation,pipe_created)
-    #[arg(help_heading = Some("Filtering"), long = "exclude-category", value_name = "CATEGORY", conflicts_with = "include_category",use_value_delimiter = true, value_delimiter = ',', display_order = 314)]
+    /// Do not load rules with specified logsource categories (ex: process_creation,pipe_created)
+    #[arg(help_heading = Some("Filtering"), long = "exclude-category", value_name = "CATEGORY...", conflicts_with = "include_category",use_value_delimiter = true, value_delimiter = ',', display_order = 314)]
     pub exclude_category: Option<Vec<String>>,
 
     /// Minimum level for rules to load (default: informational)
@@ -1343,15 +1344,15 @@ pub struct OutputOption {
     pub proven_rules: bool,
 
     /// Do not load rules with specific tags (ex: sysmon)
-    #[arg(help_heading = Some("Filtering"), long = "exclude-tags", value_name = "TAGS", conflicts_with = "include_tags", use_value_delimiter = true, value_delimiter = ',', display_order = 316)]
-    pub exclude_tags: Option<Vec<String>>,
+    #[arg(help_heading = Some("Filtering"), long = "exclude-tag", value_name = "TAG...", conflicts_with = "include_tag", use_value_delimiter = true, value_delimiter = ',', display_order = 316)]
+    pub exclude_tag: Option<Vec<String>>,
 
     /// Scan only specified EIDs for faster speed (ex: 1) (ex: 1,4688)
-    #[arg(help_heading = Some("Filtering"), long = "include-eid", value_name = "EIDS", conflicts_with_all = ["eid_filter", "exclude_eid"], use_value_delimiter = true, value_delimiter = ',', display_order = 352)]
+    #[arg(help_heading = Some("Filtering"), long = "include-eid", value_name = "EID...", conflicts_with_all = ["eid_filter", "exclude_eid"], use_value_delimiter = true, value_delimiter = ',', display_order = 352)]
     pub include_eid: Option<Vec<String>>,
 
     /// Do not scan specific EIDs for faster speed (ex: 1) (ex: 1,4688)
-    #[arg(help_heading = Some("Filtering"), long = "exclude-eid", value_name = "EIDS", conflicts_with_all = ["eid_filter", "include_eid"], use_value_delimiter = true, value_delimiter = ',', display_order = 315)]
+    #[arg(help_heading = Some("Filtering"), long = "exclude-eid", value_name = "EID...", conflicts_with_all = ["eid_filter", "include_eid"], use_value_delimiter = true, value_delimiter = ',', display_order = 315)]
     pub exclude_eid: Option<Vec<String>>,
 
     #[clap(flatten)]
@@ -1518,8 +1519,8 @@ pub struct ComputerMetricsOption {
     #[arg(help_heading = Some("Input"), short = 'J', long = "JSON-input", conflicts_with = "live_analysis", display_order = 390)]
     pub json_input: bool,
 
-    /// Specify additional file extensions (ex: evtx_data) (ex: evtx1,evtx2)
-    #[arg(help_heading = Some("General Options"), long = "target-file-ext", use_value_delimiter = true, value_delimiter = ',', display_order = 450)]
+    /// Specify additional evtx file extensions (ex: evtx_data)
+    #[arg(help_heading = Some("General Options"), long = "target-file-ext", value_name = "FILE-EXT...", use_value_delimiter = true, value_delimiter = ',', display_order = 450)]
     pub evtx_file_ext: Option<Vec<String>>,
 
     /// Number of threads (default: optimal number for performance)
@@ -1560,7 +1561,7 @@ pub struct ComputerMetricsOption {
 #[derive(Parser, Clone, Debug)]
 #[clap(
     author = "Yamato Security (https://github.com/Yamato-Security/hayabusa - @SecurityYamato)",
-    help_template = "\nHayabusa v2.7.0 - Dev Build \n{author-with-newline}\n{usage-heading}\n  hayabusa.exe <COMMAND> [OPTIONS]\n  hayabusa.exe help <COMMAND>\n\n{all-args}{options}",
+    help_template = "\nHayabusa v2.7.0 - SANS DFIR Summit Release \n{author-with-newline}\n{usage-heading}\n  hayabusa.exe <COMMAND> [OPTIONS]\n  hayabusa.exe help <COMMAND>\n\n{all-args}{options}",
     term_width = 400,
     disable_help_flag = true
 )]
@@ -1904,8 +1905,8 @@ fn extract_output_options(config: &Config) -> Option<OutputOption> {
             enable_unsupported_rules: option.enable_unsupported_rules,
             clobber: option.clobber,
             proven_rules: false,
-            include_tags: None,
-            exclude_tags: None,
+            include_tag: None,
+            exclude_tag: None,
             include_category: None,
             exclude_category: None,
             include_eid: option.include_eid.clone(),
@@ -1940,8 +1941,8 @@ fn extract_output_options(config: &Config) -> Option<OutputOption> {
             enable_unsupported_rules: false,
             clobber: option.clobber,
             proven_rules: false,
-            include_tags: None,
-            exclude_tags: None,
+            include_tag: None,
+            exclude_tag: None,
             include_category: None,
             exclude_category: None,
             include_eid: None,
@@ -1976,8 +1977,8 @@ fn extract_output_options(config: &Config) -> Option<OutputOption> {
             enable_unsupported_rules: false,
             clobber: option.clobber,
             proven_rules: false,
-            include_tags: None,
-            exclude_tags: None,
+            include_tag: None,
+            exclude_tag: None,
             include_category: None,
             exclude_category: None,
             include_eid: None,
@@ -1992,7 +1993,7 @@ fn extract_output_options(config: &Config) -> Option<OutputOption> {
             enable_deprecated_rules: false,
             enable_unsupported_rules: false,
             exclude_status: None,
-            include_tags: None,
+            include_tag: None,
             include_category: None,
             exclude_category: None,
             min_level: String::default(),
@@ -2002,7 +2003,7 @@ fn extract_output_options(config: &Config) -> Option<OutputOption> {
             start_timeline: None,
             eid_filter: false,
             proven_rules: false,
-            exclude_tags: None,
+            exclude_tag: None,
             detect_common_options: DetectCommonOption {
                 json_input: option.json_input,
                 evtx_file_ext: option.evtx_file_ext.clone(),
@@ -2066,8 +2067,8 @@ fn extract_output_options(config: &Config) -> Option<OutputOption> {
             enable_unsupported_rules: false,
             clobber: option.clobber,
             proven_rules: false,
-            include_tags: None,
-            exclude_tags: None,
+            include_tag: None,
+            exclude_tag: None,
             include_category: None,
             exclude_category: None,
             include_eid: None,
@@ -2115,8 +2116,8 @@ fn extract_output_options(config: &Config) -> Option<OutputOption> {
             enable_unsupported_rules: false,
             clobber: false,
             proven_rules: false,
-            include_tags: None,
-            exclude_tags: None,
+            include_tag: None,
+            exclude_tag: None,
             include_category: None,
             exclude_category: None,
             include_eid: None,
@@ -2164,8 +2165,8 @@ fn extract_output_options(config: &Config) -> Option<OutputOption> {
             enable_unsupported_rules: true,
             clobber: false,
             proven_rules: false,
-            include_tags: None,
-            exclude_tags: None,
+            include_tag: None,
+            exclude_tag: None,
             include_category: None,
             exclude_category: None,
             include_eid: None,
