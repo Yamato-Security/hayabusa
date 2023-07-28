@@ -1083,7 +1083,9 @@ impl App {
             total_records += cnt_tmp;
             pb.inc(1);
         }
-        pb.finish_with_message("Scanning finished. Please wait while the results are being saved.\r\n");
+        pb.finish_with_message(
+            "Scanning finished. Please wait while the results are being saved.\r\n",
+        );
         CHECKPOINT
             .lock()
             .as_mut()
