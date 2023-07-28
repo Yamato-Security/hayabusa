@@ -1038,7 +1038,7 @@ impl App {
         }
 
         let template =
-            "{human_pos} / {human_len} {spinner} [{bar:40.green}] {percent}% {eta} \r\n\r\n{msg}";
+            "[{elapsed_precise}] {human_pos} / {human_len} {spinner:.green} [{bar:40.green}] {percent}%\r\n\r\n{msg}";
         let progress_style = ProgressStyle::with_template(template)
             .unwrap()
             .progress_chars("=> ");
@@ -1083,7 +1083,7 @@ impl App {
             total_records += cnt_tmp;
             pb.inc(1);
         }
-        pb.finish();
+        pb.finish_with_message("Scanning finished. Please wait while the results are being saved.\r\n");
         CHECKPOINT
             .lock()
             .as_mut()
@@ -1097,10 +1097,6 @@ impl App {
             tl.search_dsp_msg(event_timeline_config, stored_static);
         } else if stored_static.computer_metrics_flag {
             tl.computer_metrics_dsp_msg(stored_static)
-        }
-        if stored_static.output_path.is_some() {
-            println!("\n");
-            println!("Scanning finished. Please wait while the results are being saved.");
         }
         if !(stored_static.metrics_flag
             || stored_static.logon_summary_flag
