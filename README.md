@@ -144,7 +144,7 @@ Hayabusa is a **Windows event log fast forensics timeline generator** and **thre
 
 ### Threat Hunting and Enterprise-wide DFIR
 
-Hayabusa currently has over 3250 Sigma rules and around 150 Hayabusa built-in detection rules with more rules being added regularly.
+Hayabusa currently has over 2500 Sigma rules and over 150 Hayabusa built-in detection rules with more rules being added regularly.
 It can be used for enterprise-wide proactive threat hunting as well as DFIR (Digital Forensics and Incident Response) for free with [Velociraptor](https://docs.velociraptor.app/)'s [Hayabusa artifact](https://docs.velociraptor.app/exchange/artifacts/pages/windows.eventlogs.hayabusa/).
 By combining these two open-source tools, you can essentially retroactively reproduce a SIEM when there is no SIEM setup in the environment.
 You can learn about how to do this by watching [Eric Capuano](https://twitter.com/eric_capuano)'s Velociraptor walkthrough [here](https://www.youtube.com/watch?v=Q1IoGX--814).
@@ -466,7 +466,7 @@ Input:
   -J, --JSON-input       Scan JSON formatted logs instead of .evtx (.json or .jsonl)
 
 Output:
-  -o, --output <FILE>  Save the Metrics in CSV format (ex: computer-metrics.csv)
+  -o, --output <FILE>  Save the results in CSV format (ex: computer-metrics.csv)
 
 Display Settings:
       --no-color  Disable color output
@@ -474,11 +474,11 @@ Display Settings:
   -v, --verbose   Output verbose information
 
 General Options:
-  -C, --clobber                          Overwrite files when saving
-  -Q, --quiet-errors                     Quiet errors mode: do not save error logs
-  -c, --rules-config <DIR>               Specify custom rule config directory (default: ./rules/config)
-      --target-file-ext <EVTX_FILE_EXT>  Specify additional file extensions (ex: evtx_data) (ex: evtx1,evtx2)
-  -t, --threads <NUMBER>                 Number of threads (default: optimal number for performance)
+  -C, --clobber                        Overwrite files when saving
+  -Q, --quiet-errors                   Quiet errors mode: do not save error logs
+  -c, --rules-config <DIR>             Specify custom rule config directory (default: ./rules/config)
+      --target-file-ext <FILE-EXT...>  Specify additional evtx file extensions (ex: evtx_data)
+  -t, --threads <NUMBER>               Number of threads (default: optimal number for performance)
 ```
 
 #### `computer-metrics` command examples
@@ -501,7 +501,7 @@ Input:
   -J, --JSON-input       Scan JSON formatted logs instead of .evtx (.json or .jsonl)
 
 Output:
-  -o, --output <FILE>  Save the Metrics in CSV format (ex: eid-metrics.csv)
+  -o, --output <FILE>  Save the Metrics in CSV format (ex: metrics.csv)
 
 Display Settings:
       --no-color  Disable color output
@@ -509,15 +509,15 @@ Display Settings:
   -v, --verbose   Output verbose information
 
 General Options:
-  -C, --clobber                          Overwrite files when saving
-  -Q, --quiet-errors                     Quiet errors mode: do not save error logs
-  -c, --rules-config <DIR>               Specify custom rule config directory (default: ./rules/config)
-      --target-file-ext <EVTX_FILE_EXT>  Specify additional file extensions (ex: evtx_data) (ex: evtx1,evtx2)
-  -t, --threads <NUMBER>                 Number of threads (default: optimal number for performance)
+  -C, --clobber                        Overwrite files when saving
+  -Q, --quiet-errors                   Quiet errors mode: do not save error logs
+  -c, --rules-config <DIR>             Specify custom rule config directory (default: ./rules/config)
+      --target-file-ext <FILE-EXT...>  Specify additional evtx file extensions (ex: evtx_data)
+  -t, --threads <NUMBER>               Number of threads (default: optimal number for performance)
 
 Filtering:
-      --exclude-computer <COMPUTER>  Do not scan certain computer names (ex: ComputerA) (ex: ComputerA,ComputerB)
-      --include-computer <COMPUTER>  Scan only certain computer names (ex: ComputerA) (ex: ComputerA,ComputerB)
+      --exclude-computer <COMPUTER...>  Do not scan specified computer names (ex: ComputerA) (ex: ComputerA,ComputerB)
+      --include-computer <COMPUTER...>  Scan only specified computer names (ex: ComputerA) (ex: ComputerA,ComputerB)
 
 Time Format:
       --European-time     Output timestamp in European time format (ex: 22-02-2022 22:00:00.123 +02:00)
@@ -564,7 +564,7 @@ Input:
   -J, --JSON-input       Scan JSON formatted logs instead of .evtx (.json or .jsonl)
 
 Output:
-  -o, --output <FILE>  Save the Logon summary in CSV format (ex: logon-summary.csv)
+  -o, --output <FILE>  Save the logon summary to 2 CSV files. Specify the base filename. (ex: -o logon-summary)
 
 Display Settings:
       --no-color  Disable color output
@@ -572,15 +572,15 @@ Display Settings:
   -v, --verbose   Output verbose information
 
 General Options:
-  -C, --clobber                          Overwrite files when saving
-  -Q, --quiet-errors                     Quiet errors mode: do not save error logs
-  -c, --rules-config <DIR>               Specify custom rule config directory (default: ./rules/config)
-      --target-file-ext <EVTX_FILE_EXT>  Specify additional file extensions (ex: evtx_data) (ex: evtx1,evtx2)
-  -t, --threads <NUMBER>                 Number of threads (default: optimal number for performance)
+  -C, --clobber                        Overwrite files when saving
+  -Q, --quiet-errors                   Quiet errors mode: do not save error logs
+  -c, --rules-config <DIR>             Specify custom rule config directory (default: ./rules/config)
+      --target-file-ext <FILE-EXT...>  Specify additional evtx file extensions (ex: evtx_data)
+  -t, --threads <NUMBER>               Number of threads (default: optimal number for performance)
 
 Filtering:
-      --exclude-computer <COMPUTER>  Do not scan certain computer names (ex: ComputerA) (ex: ComputerA,ComputerB)
-      --include-computer <COMPUTER>  Scan only certain computer names (ex: ComputerA) (ex: ComputerA,ComputerB)
+      --exclude-computer <COMPUTER...>  Do not scan specified computer names (ex: ComputerA) (ex: ComputerA,ComputerB)
+      --include-computer <COMPUTER...>  Scan only specified computer names (ex: ComputerA) (ex: ComputerA,ComputerB)
 
 Time Format:
       --European-time     Output timestamp in European time format (ex: 22-02-2022 22:00:00.123 +02:00)
@@ -623,26 +623,26 @@ Display Settings:
   -v, --verbose   Output verbose information
 
 Filtering:
-  -E, --EID-filter                   Scan only common EIDs for faster speed (./rules/config/target_event_IDs.txt)
-  -D, --enable-deprecated-rules      Enable rules with a status of deprecated
-  -n, --enable-noisy-rules           Enable rules set to noisy (./rules/config/noisy_rules.txt)
-  -u, --enable-unsupported-rules     Enable rules with a status of unsupported
-  -e, --exact-level <LEVEL>          Only load rules with a specific level (informational, low, medium, high, critical)
-      --exclude-computer <COMPUTER>  Do not scan certain computer names (ex: ComputerA) (ex: ComputerA,ComputerB)
-      --exclude-eid <EIDS>           Do not scan specific EIDs for faster speed (ex: 1) (ex: 1,4688)
-      --exclude-status <STATUS>      Do not load rules according to status (ex: experimental) (ex: stable,test)
-      --include-computer <COMPUTER>  Scan only certain computer names (ex: ComputerA) (ex: ComputerA,ComputerB)
-      --include-eid <EIDS>           Scan only specified EIDs for faster speed (ex: 1) (ex: 1,4688)
-  -m, --min-level <LEVEL>            Minimum level for rules (default: informational)
-      --timeline-end <DATE>          End time of the event logs to load (ex: "2022-02-22 23:59:59 +09:00")
-      --timeline-start <DATE>        Start time of the event logs to load (ex: "2020-02-22 00:00:00 +09:00")
+  -E, --EID-filter                      Scan only common EIDs for faster speed (./rules/config/target_event_IDs.txt)
+  -D, --enable-deprecated-rules         Enable rules with a status of deprecated
+  -n, --enable-noisy-rules              Enable rules set to noisy (./rules/config/noisy_rules.txt)
+  -u, --enable-unsupported-rules        Enable rules with a status of unsupported
+  -e, --exact-level <LEVEL>             Only load rules with a specific level (informational, low, medium, high, critical)
+      --exclude-computer <COMPUTER...>  Do not scan specified computer names (ex: ComputerA) (ex: ComputerA,ComputerB)
+      --exclude-eid <EID...>            Do not scan specific EIDs for faster speed (ex: 1) (ex: 1,4688)
+      --exclude-status <STATUS...>      Do not load rules according to status (ex: experimental) (ex: stable,test)
+      --include-computer <COMPUTER...>  Scan only specified computer names (ex: ComputerA) (ex: ComputerA,ComputerB)
+      --include-eid <EID...>            Scan only specified EIDs for faster speed (ex: 1) (ex: 1,4688)
+  -m, --min-level <LEVEL>               Minimum level for rules to load (default: informational)
+      --timeline-end <DATE>             End time of the event logs to load (ex: "2022-02-22 23:59:59 +09:00")
+      --timeline-start <DATE>           Start time of the event logs to load (ex: "2020-02-22 00:00:00 +09:00")
 
 General Options:
-  -C, --clobber                          Overwrite files when saving
-  -Q, --quiet-errors                     Quiet errors mode: do not save error logs
-  -c, --rules-config <DIR>               Specify custom rule config directory (default: ./rules/config)
-      --target-file-ext <EVTX_FILE_EXT>  Specify additional file extensions (ex: evtx_data) (ex: evtx1,evtx2)
-  -t, --threads <NUMBER>                 Number of threads (default: optimal number for performance)
+  -C, --clobber                        Overwrite files when saving
+  -Q, --quiet-errors                   Quiet errors mode: do not save error logs
+  -c, --rules-config <DIR>             Specify custom rule config directory (default: ./rules/config)
+      --target-file-ext <FILE-EXT...>  Specify additional evtx file extensions (ex: evtx_data)
+  -t, --threads <NUMBER>               Number of threads (default: optimal number for performance)
 ```
 
 #### `pivot-keywords-list` command examples
@@ -682,10 +682,10 @@ Input:
   -l, --live-analysis    Analyze the local C:\Windows\System32\winevt\Logs folder
 
 Filtering:
-  -F, --filter <FILTER>      Filter by specific field(s)
-  -i, --ignore-case          Ignore case
-  -k, --keywords <KEYWORDS>  Search by keyword(s)
-  -r, --regex <REGEX>        Search by regular expression
+  -F, --filter <FILTER...>    Filter by specific field(s)
+  -i, --ignore-case           Case-insensitive keyword search
+  -k, --keyword <KEYWORD...>  Search by keyword(s)
+  -r, --regex <REGEX>         Search by regular expression
 
 Output:
   -J, --JSON-output    Save the search results in JSON format (ex: -J -o results.json)
@@ -694,11 +694,20 @@ Output:
   -o, --output <FILE>  Save the search results in CSV format (ex: search.csv)
 
 General Options:
-  -C, --clobber                          Overwrite files when saving
-  -Q, --quiet-errors                     Quiet errors mode: do not save error logs
-  -c, --rules-config <DIR>               Specify custom rule config directory (default: ./rules/config)
-      --target-file-ext <EVTX_FILE_EXT>  Specify additional file extensions (ex: evtx_data) (ex: evtx1,evtx2)
-  -t, --threads <NUMBER>                 Number of threads (default: optimal number for performance)
+  -C, --clobber                        Overwrite files when saving
+  -Q, --quiet-errors                   Quiet errors mode: do not save error logs
+  -c, --rules-config <DIR>             Specify custom rule config directory (default: ./rules/config)
+      --target-file-ext <FILE-EXT...>  Specify additional evtx file extensions (ex: evtx_data)
+  -t, --threads <NUMBER>               Number of threads (default: optimal number for performance)
+
+Time Format:
+      --European-time     Output timestamp in European time format (ex: 22-02-2022 22:00:00.123 +02:00)
+      --ISO-8601          Output timestamp in ISO-8601 format (ex: 2022-02-22T10:10:10.1234567Z) (Always UTC)
+      --RFC-2822          Output timestamp in RFC 2822 format (ex: Fri, 22 Feb 2022 22:00:00 -0600)
+      --RFC-3339          Output timestamp in RFC 3339 format (ex: 2022-02-22 22:00:00.123456-06:00)
+      --US-military-time  Output timestamp in US military time format (ex: 02-22-2022 22:00:00.123 -06:00)
+      --US-time           Output timestamp in US time format (ex: 02-22-2022 10:00:00.123 PM -06:00)
+  -U, --UTC               Output time in UTC format (default: local time)
 ```
 
 #### `search` command examples
@@ -764,7 +773,7 @@ Output:
   -F, --no-field-data-mapping   Disable field data mapping
   -o, --output <FILE>           Save the timeline in CSV format (ex: results.csv)
   -p, --profile <PROFILE>       Specify output profile
-  -R, --remove-duplicate-data   Duplicate field data will be replaced with "DUP" (Reduces file size by about 10~15%)
+  -R, --remove-duplicate-data   Duplicate field data will be replaced with "DUP"
 
 Display Settings:
       --no-color            Disable color output
@@ -774,32 +783,32 @@ Display Settings:
   -T, --visualize-timeline  Output event frequency timeline (terminal needs to support unicode)
 
 Filtering:
-  -E, --EID-filter                   Scan only common EIDs for faster speed (./rules/config/target_event_IDs.txt)
-  -D, --enable-deprecated-rules      Enable rules with a status of deprecated
-  -n, --enable-noisy-rules           Enable rules set to noisy (./rules/config/noisy_rules.txt)
-  -u, --enable-unsupported-rules     Enable rules with a status of unsupported
-  -e, --exact-level <LEVEL>          Only load rules with a specific level (informational, low, medium, high, critical)
-      --exclude-category <CATEGORY>  Do not load rules with certain logsource categories (ex: process_creation,pipe_created)
-      --exclude-computer <COMPUTER>  Do not scan certain computer names (ex: ComputerA) (ex: ComputerA,ComputerB)
-      --exclude-eid <EIDS>           Do not scan specific EIDs for faster speed (ex: 1) (ex: 1,4688)
-      --exclude-status <STATUS>      Do not load rules according to status (ex: experimental) (ex: stable,test)
-      --exclude-tags <TAGS>          Do not load rules with specific tags (ex: sysmon)
-      --include-category <CATEGORY>  Only load rules with certain logsource categories (ex: process_creation,pipe_created)
-      --include-computer <COMPUTER>  Scan only certain computer names (ex: ComputerA) (ex: ComputerA,ComputerB)
-      --include-eid <EIDS>           Scan only specified EIDs for faster speed (ex: 1) (ex: 1,4688)
-      --include-tags <TAGS>          Only load rules with specific tags (ex: attack.execution,attack.discovery) (ex: wmi)
-  -m, --min-level <LEVEL>            Minimum level for rules (default: informational)
-  -P, --proven-rules                 Scan with only proven rules for faster speed (./rules/config/proven_rules.txt)
-      --timeline-end <DATE>          End time of the event logs to load (ex: "2022-02-22 23:59:59 +09:00")
-      --timeline-start <DATE>        Start time of the event logs to load (ex: "2020-02-22 00:00:00 +09:00")
+  -E, --EID-filter                      Scan only common EIDs for faster speed (./rules/config/target_event_IDs.txt)
+  -D, --enable-deprecated-rules         Enable rules with a status of deprecated
+  -n, --enable-noisy-rules              Enable rules set to noisy (./rules/config/noisy_rules.txt)
+  -u, --enable-unsupported-rules        Enable rules with a status of unsupported
+  -e, --exact-level <LEVEL>             Only load rules with a specific level (informational, low, medium, high, critical)
+      --exclude-category <CATEGORY...>  Do not load rules with specified logsource categories (ex: process_creation,pipe_created)
+      --exclude-computer <COMPUTER...>  Do not scan specified computer names (ex: ComputerA) (ex: ComputerA,ComputerB)
+      --exclude-eid <EID...>            Do not scan specific EIDs for faster speed (ex: 1) (ex: 1,4688)
+      --exclude-status <STATUS...>      Do not load rules according to status (ex: experimental) (ex: stable,test)
+      --exclude-tag <TAG...>            Do not load rules with specific tags (ex: sysmon)
+      --include-category <CATEGORY...>  Only load rules with specified logsource categories (ex: process_creation,pipe_created)
+      --include-computer <COMPUTER...>  Scan only specified computer names (ex: ComputerA) (ex: ComputerA,ComputerB)
+      --include-eid <EID...>            Scan only specified EIDs for faster speed (ex: 1) (ex: 1,4688)
+      --include-tag <TAG...>            Only load rules with specific tags (ex: attack.execution,attack.discovery)
+  -m, --min-level <LEVEL>               Minimum level for rules to load (default: informational)
+  -P, --proven-rules                    Scan with only proven rules for faster speed (./rules/config/proven_rules.txt)
+      --timeline-end <DATE>             End time of the event logs to load (ex: "2022-02-22 23:59:59 +09:00")
+      --timeline-start <DATE>           Start time of the event logs to load (ex: "2020-02-22 00:00:00 +09:00")
 
 General Options:
-  -C, --clobber                          Overwrite files when saving
-  -Q, --quiet-errors                     Quiet errors mode: do not save error logs
-  -r, --rules <DIR/FILE>                 Specify a custom rule directory or file (default: ./rules)
-  -c, --rules-config <DIR>               Specify custom rule config directory (default: ./rules/config)
-      --target-file-ext <EVTX_FILE_EXT>  Specify additional file extensions (ex: evtx_data) (ex: evtx1,evtx2)
-  -t, --threads <NUMBER>                 Number of threads (default: optimal number for performance)
+  -C, --clobber                        Overwrite files when saving
+  -Q, --quiet-errors                   Quiet errors mode: do not save error logs
+  -r, --rules <DIR/FILE>               Specify a custom rule directory or file (default: ./rules)
+  -c, --rules-config <DIR>             Specify custom rule config directory (default: ./rules/config)
+      --target-file-ext <FILE-EXT...>  Specify additional evtx file extensions (ex: evtx_data)
+  -t, --threads <NUMBER>               Number of threads (default: optimal number for performance)
 
 Time Format:
       --European-time     Output timestamp in European time format (ex: 22-02-2022 22:00:00.123 +02:00)
@@ -1018,32 +1027,32 @@ Display Settings:
   -T, --visualize-timeline  Output event frequency timeline (terminal needs to support unicode)
 
 Filtering:
-  -E, --EID-filter                   Scan only common EIDs for faster speed (./rules/config/target_event_IDs.txt)
-  -D, --enable-deprecated-rules      Enable rules with a status of deprecated
-  -n, --enable-noisy-rules           Enable rules set to noisy (./rules/config/noisy_rules.txt)
-  -u, --enable-unsupported-rules     Enable rules with a status of unsupported
-  -e, --exact-level <LEVEL>          Only load rules with a specific level (informational, low, medium, high, critical)
-      --exclude-category <CATEGORY>  Do not load rules with certain logsource categories (ex: process_creation,pipe_created)
-      --exclude-computer <COMPUTER>  Do not scan certain computer names (ex: ComputerA) (ex: ComputerA,ComputerB)
-      --exclude-eid <EIDS>           Do not scan specific EIDs for faster speed (ex: 1) (ex: 1,4688)
-      --exclude-status <STATUS>      Do not load rules according to status (ex: experimental) (ex: stable,test)
-      --exclude-tags <TAGS>          Do not load rules with specific tags (ex: sysmon)
-      --include-category <CATEGORY>  Only load rules with certain logsource categories (ex: process_creation,pipe_created)
-      --include-computer <COMPUTER>  Scan only certain computer names (ex: ComputerA) (ex: ComputerA,ComputerB)
-      --include-eid <EIDS>           Scan only specified EIDs for faster speed (ex: 1) (ex: 1,4688)
-      --include-tags <TAGS>          Only load rules with specific tags (ex: attack.execution,attack.discovery)
-  -m, --min-level <LEVEL>            Minimum level for rules (default: informational)
-  -P, --proven-rules                 Scan with only proven rules for faster speed (./rules/config/proven_rules.txt)
-      --timeline-end <DATE>          End time of the event logs to load (ex: "2022-02-22 23:59:59 +09:00")
-      --timeline-start <DATE>        Start time of the event logs to load (ex: "2020-02-22 00:00:00 +09:00")
+  -E, --EID-filter                      Scan only common EIDs for faster speed (./rules/config/target_event_IDs.txt)
+  -D, --enable-deprecated-rules         Enable rules with a status of deprecated
+  -n, --enable-noisy-rules              Enable rules set to noisy (./rules/config/noisy_rules.txt)
+  -u, --enable-unsupported-rules        Enable rules with a status of unsupported
+  -e, --exact-level <LEVEL>             Only load rules with a specific level (informational, low, medium, high, critical)
+      --exclude-category <CATEGORY...>  Do not load rules with specified logsource categories (ex: process_creation,pipe_created)
+      --exclude-computer <COMPUTER...>  Do not scan specified computer names (ex: ComputerA) (ex: ComputerA,ComputerB)
+      --exclude-eid <EID...>            Do not scan specific EIDs for faster speed (ex: 1) (ex: 1,4688)
+      --exclude-status <STATUS...>      Do not load rules according to status (ex: experimental) (ex: stable,test)
+      --exclude-tag <TAG...>            Do not load rules with specific tags (ex: sysmon)
+      --include-category <CATEGORY...>  Only load rules with specified logsource categories (ex: process_creation,pipe_created)
+      --include-computer <COMPUTER...>  Scan only specified computer names (ex: ComputerA) (ex: ComputerA,ComputerB)
+      --include-eid <EID...>            Scan only specified EIDs for faster speed (ex: 1) (ex: 1,4688)
+      --include-tag <TAG...>            Only load rules with specific tags (ex: attack.execution,attack.discovery)
+  -m, --min-level <LEVEL>               Minimum level for rules to load (default: informational)
+  -P, --proven-rules                    Scan with only proven rules for faster speed (./rules/config/proven_rules.txt)
+      --timeline-end <DATE>             End time of the event logs to load (ex: "2022-02-22 23:59:59 +09:00")
+      --timeline-start <DATE>           Start time of the event logs to load (ex: "2020-02-22 00:00:00 +09:00")
 
 General Options:
-  -C, --clobber                          Overwrite files when saving
-  -Q, --quiet-errors                     Quiet errors mode: do not save error logs
-  -r, --rules <DIR/FILE>                 Specify a custom rule directory or file (default: ./rules)
-  -c, --rules-config <DIR>               Specify custom rule config directory (default: ./rules/config)
-      --target-file-ext <EVTX_FILE_EXT>  Specify additional file extensions (ex: evtx_data) (ex: evtx1,evtx2)
-  -t, --threads <NUMBER>                 Number of threads (default: optimal number for performance)
+  -C, --clobber                        Overwrite files when saving
+  -Q, --quiet-errors                   Quiet errors mode: do not save error logs
+  -r, --rules <DIR/FILE>               Specify a custom rule directory or file (default: ./rules)
+  -c, --rules-config <DIR>             Specify custom rule config directory (default: ./rules/config)
+      --target-file-ext <FILE-EXT...>  Specify additional evtx file extensions (ex: evtx_data)
+  -t, --threads <NUMBER>               Number of threads (default: optimal number for performance)
 
 Time Format:
       --European-time     Output timestamp in European time format (ex: 22-02-2022 22:00:00.123 +02:00)

@@ -144,7 +144,7 @@ Hayabusaは、日本の[Yamato Security](https://yamatosecurity.connpass.com/)�
 
 ### スレット(脅威)ハンティングと企業向けの広範囲なDFIR
 
-Hayabusaには現在、3250以上のSigmaルールと約150のHayabusa検知ルールがあり、定期的にルールが追加されています。
+Hayabusaには現在、2500以上のSigmaルールと150以上のHayabusa検知ルールがあり、定期的にルールが追加されています。
 [Velociraptor](https://docs.velociraptor.app/)の[Hayabusa artifact](https://docs.velociraptor.app/exchange/artifacts/pages/windows.eventlogs.hayabusa/)を用いることで企業向けの広範囲なスレットハンティングだけでなくDFIR(デジタルフォレンジックとインシデントレスポンス)にも無料で利用することが可能です。
 この2つのオープンソースを組み合わせることで、SIEMが設定されていない環境でも実質的に遡及してSIEMを再現することができます。
 具体的な方法は[Eric Capuano](https://twitter.com/eric_capuano)の[こちら](https://www.youtube.com/watch?v=Q1IoGX--814)の動画で学ぶことができます。
@@ -477,7 +477,7 @@ General Options:
   -C, --clobber                          結果ファイルを上書きする
   -Q, --quiet-errors                     Quiet errorsモード: エラーログを保存しない
   -c, --rules-config <DIR>               ルールフォルダのコンフィグディレクトリ (デフォルト: ./rules/config)
-      --target-file-ext <EVTX_FILE_EXT>  evtx以外の拡張子を解析対象に追加する。 (例１: evtx_data 例２: evtx1,evtx2)
+      --target-file-ext <FILE-EXT...>  evtx以外の拡張子を解析対象に追加する。 (例１: evtx_data 例２: evtx1,evtx2)
   -t, --threads <NUMBER>                 スレッド数 (デフォルト: パフォーマンスに最適な数値)
 ```
 
@@ -512,12 +512,12 @@ General Options:
   -C, --clobber                          結果ファイルを上書きする
   -Q, --quiet-errors                     Quiet errorsモード: エラーログを保存しない
   -c, --rules-config <DIR>               ルールフォルダのコンフィグディレクトリ (デフォルト: ./rules/config)
-      --target-file-ext <EVTX_FILE_EXT>  evtx以外の拡張子を解析対象に追加する。 (例１: evtx_data 例２: evtx1,evtx2)
+      --target-file-ext <FILE-EXT...>    evtx以外の拡張子を解析対象に追加する。 (例１: evtx_data 例２: evtx1,evtx2)
   -t, --threads <NUMBER>                 スレッド数 (デフォルト: パフォーマンスに最適な数値)
 
 Filtering:
-      --exclude-computer <COMPUTER>  特定のコンピュータ名をスキャンしない (例: ComputerA) (例: ComputerA,ComputerB)
-      --include-computer <COMPUTER>  特定のコンピュータ名のみをスキャンする (例: ComputerA) (例: ComputerA,ComputerB)
+      --exclude-computer <COMPUTER...>  特定のコンピュータ名をスキャンしない (例: ComputerA) (例: ComputerA,ComputerB)
+      --include-computer <COMPUTER...>  特定のコンピュータ名のみをスキャンする (例: ComputerA) (例: ComputerA,ComputerB)
 
 Time Format:
       --European-time     ヨーロッパ形式で日付と時刻を出力する (例: 22-02-2022 22:00:00.123 +02:00)
@@ -574,12 +574,12 @@ General Options:
   -C, --clobber                          結果ファイルを上書きする
   -Q, --quiet-errors                     Quiet errorsモード: エラーログを保存しない
   -c, --rules-config <DIR>               ルールフォルダのコンフィグディレクトリ (デフォルト: ./rules/config)
-      --target-file-ext <EVTX_FILE_EXT>  evtx以外の拡張子を解析対象に追加する (例１: evtx_data 例２:evtx1,evtx2)
+      --target-file-ext <FILE-EXT...>    evtx以外の拡張子を解析対象に追加する (例１: evtx_data 例２:evtx1,evtx2)
   -t, --threads <NUMBER>                 スレッド数 (デフォルト: パフォーマンスに最適な数値)
 
 Filtering:
-      --exclude-computer <COMPUTER>  特定のコンピュータ名をスキャンしない (例: ComputerA) (例: ComputerA,ComputerB)
-      --include-computer <COMPUTER>  特定のコンピュータ名のみをスキャンする (例: ComputerA) (例: ComputerA,ComputerB)
+      --exclude-computer <COMPUTER...>  特定のコンピュータ名をスキャンしない (例: ComputerA) (例: ComputerA,ComputerB)
+      --include-computer <COMPUTER...>  特定のコンピュータ名のみをスキャンする (例: ComputerA) (例: ComputerA,ComputerB)
 
 Time Format:
       --European-time     ヨーロッパ形式で日付と時刻を出力する (例: 22-02-2022 22:00:00.123 +02:00)
@@ -623,25 +623,25 @@ Display Settings:
   -v, --verbose        詳細な情報を出力する
 
 Filtering:
-  -E, --EID-filter                   速度を上げるため主なEIDだけスキャンする (コンフィグファイル: ./rules/config/target_event_IDs.txt)
-  -D, --enable-deprecated-rules      ステータスがdeprecatedのルールを有効にする
-  -n, --enable-noisy-rules           Noisyルールを有効にする
-  -u, --enable-unsupported-rules     ステータスがunsupportedのルールを有効にする
-  -e, --exact-level <LEVEL>          特定のレベルだけスキャンする (informational, low, medium, high, critical)
-      --exclude-computer <COMPUTER>  特定のコンピュータ名をスキャンしない (例: ComputerA) (例: ComputerA,ComputerB)
-      --exclude-eid <EIDS>           高速化のために特定のEIDをスキャンしない (例: 1) (例: 1,4688)
-      --exclude-status <STATUS>      読み込み対象外とするルール内でのステータス (例１: experimental) (例２: stable,test)
-      --include-computer <COMPUTER>  特定のコンピュータ名のみをスキャンする (例: ComputerA) (例: ComputerA,ComputerB)
-      --include-eid <EIDS>           指定したEIDのみをスキャンして高速化する (例 1) (例: 1,4688)
-  -m, --min-level <LEVEL>            結果出力をするルールの最低レベル (デフォルト: informational)
-      --timeline-end <DATE>          解析対象とするイベントログの終了時刻 (例: "2022-02-22 23:59:59 +09:00")
-      --timeline-start <DATE>        解析対象とするイベントログの開始時刻 (例: "2020-02-22 00:00:00 +09:00")
+  -E, --EID-filter                      速度を上げるため主なEIDだけスキャンする (コンフィグファイル: ./rules/config/target_event_IDs.txt)
+  -D, --enable-deprecated-rules         ステータスがdeprecatedのルールを有効にする
+  -n, --enable-noisy-rules              Noisyルールを有効にする
+  -u, --enable-unsupported-rules        ステータスがunsupportedのルールを有効にする
+  -e, --exact-level <LEVEL>             特定のレベルだけスキャンする (informational, low, medium, high, critical)
+      --exclude-computer <COMPUTER...>  特定のコンピュータ名をスキャンしない (例: ComputerA) (例: ComputerA,ComputerB)
+      --exclude-eid <EID...>            高速化のために特定のEIDをスキャンしない (例: 1) (例: 1,4688)
+      --exclude-status <STATUS...>      読み込み対象外とするルール内でのステータス (例１: experimental) (例２: stable,test)
+      --include-computer <COMPUTER...>  特定のコンピュータ名のみをスキャンする (例: ComputerA) (例: ComputerA,ComputerB)
+      --include-eid <EID...>            指定したEIDのみをスキャンして高速化する (例 1) (例: 1,4688)
+  -m, --min-level <LEVEL>               結果出力をするルールの最低レベル (デフォルト: informational)
+      --timeline-end <DATE>             解析対象とするイベントログの終了時刻 (例: "2022-02-22 23:59:59 +09:00")
+      --timeline-start <DATE>           解析対象とするイベントログの開始時刻 (例: "2020-02-22 00:00:00 +09:00")
 
 General Options:
   -C, --clobber                          結果ファイルを上書きする
   -Q, --quiet-errors                     Quiet errorsモード: エラーログを保存しない
   -c, --rules-config <DIR>               ルールフォルダのコンフィグディレクトリ (デフォルト: ./rules/config)
-      --target-file-ext <EVTX_FILE_EXT>  evtx以外の拡張子を解析対象に追加する。 (例１: evtx_data 例２: evtx1,evtx2)
+      --target-file-ext <FILE-EXT...>    evtx以外の拡張子を解析対象に追加する。 (例１: evtx_data 例２: evtx1,evtx2)
   -t, --threads <NUMBER>                 スレッド数 (デフォルト: パフォーマンスに最適な数値)
 ```
 
@@ -682,10 +682,10 @@ Input:
   -l, --live-analysis    ローカル端末のC:\Windows\System32\winevt\Logsフォルダを解析する
 
 Filtering:
-  -F, --filter <FILTER>       特定のフィールドでフィルタする
-  -i, --ignore-case           大文字と小文字を区別しない
-  -k, --keywords <KEYWORDS>   キーワードでの検索
-  -r, --regex <REGEX>         正規表現での検索
+  -F, --filter <FILTER...>       特定のフィールドでフィルタする
+  -i, --ignore-case              大文字と小文字を区別しない
+  -k, --keywords <KEYWORD...>    キーワードでの検索
+  -r, --regex <REGEX>            正規表現での検索
 
 Output:
   -J, --JSON-output    JSON形式で検索結果を保存する (例: -J -o results.json)
@@ -697,7 +697,7 @@ General Options:
   -C, --clobber                          結果ファイルを上書きする
   -Q, --quiet-errors                     Quiet errorsモード: エラーログを保存しない
   -c, --rules-config <DIR>               ルールフォルダのコンフィグディレクトリ (デフォルト: ./rules/config)
-      --target-file-ext <EVTX_FILE_EXT>  evtx以外の拡張子を解析対象に追加する (例１: evtx_data 例２:evtx1,evtx2)
+      --target-file-ext <FILE-EXT...>    evtx以外の拡張子を解析対象に追加する (例１: evtx_data 例２:evtx1,evtx2)
   -t, --threads <NUMBER>                 スレッド数 (デフォルト: パフォーマンスに最適な数値)
 ```
 
@@ -774,31 +774,31 @@ Display Settings:
   -T, --visualize-timeline  検知頻度タイムラインを出力する（ターミナルはUnicodeに対応する必要がある）
 
 Filtering:
-  -E, --EID-filter                   速度を上げるため主なEIDだけスキャンする (コンフィグファイル: ./rules/config/target_event_IDs.txt)
-  -D, --enable-deprecated-rules      ステータスがdeprecatedのルールを有効にする
-  -n, --enable-noisy-rules           Noisyルールを有効にする
-  -u, --enable-unsupported-rules     ステータスがunsupportedのルールを有効にする
-  -e, --exact-level <LEVEL>          特定のレベルだけスキャンする (informational, low, medium, high, critical)
-      --exclude-category <CATEGORY>  特定のlogsourceカテゴリを持つルールをロードしない (例: process_creation,pipe_created)
-      --exclude-computer <COMPUTER>  特定のコンピュータ名をスキャンしない (例: ComputerA) (例: ComputerA,ComputerB)
-      --exclude-eid <EIDS>           高速化のために特定のEIDをスキャンしない (例: 1) (例: 1,4688)
-      --exclude-status <STATUS>      読み込み対象外とするルール内でのステータス (例１: experimental) (例２: stable,test)
-      --exclude-tags <TAGS>          特定のタグを持つルールをロードしない (例: sysmon)
-      --include-category <CATEGORY>  特定のlogsourceカテゴリを持つルールのみをロードする (例: process_creation,pipe_created)
-      --include-computer <COMPUTER>  特定のコンピュータ名のみをスキャンする (例: ComputerA) (例: ComputerA,ComputerB)
-      --include-eid <EIDS>           指定したEIDのみをスキャンして高速化する (例: 1) (例: 1,4688)
-      --include-tags <TAGS>          特定のタグを持つルールのみをロードする (例１: attack.execution,attack.discovery) (例２: wmi)
-  -m, --min-level <LEVEL>            結果出力をするルールの最低レベル (デフォルト: informational)
-  -P, --proven-rules                 実績のあるルールだけでスキャンし、高速化する (./rules/config/proven_rules.txt)
-      --timeline-end <DATE>          解析対象とするイベントログの終了時刻 (例: "2022-02-22 23:59:59 +09:00")
-      --timeline-start <DATE>        解析対象とするイベントログの開始時刻 (例: "2020-02-22 00:00:00 +09:00")
+  -E, --EID-filter                      速度を上げるため主なEIDだけスキャンする (コンフィグファイル: ./rules/config/target_event_IDs.txt)
+  -D, --enable-deprecated-rules         ステータスがdeprecatedのルールを有効にする
+  -n, --enable-noisy-rules              Noisyルールを有効にする
+  -u, --enable-unsupported-rules        ステータスがunsupportedのルールを有効にする
+  -e, --exact-level <LEVEL>             特定のレベルだけスキャンする (informational, low, medium, high, critical)
+      --exclude-category <CATEGORY...>  特定のlogsourceカテゴリを持つルールをロードしない (例: process_creation,pipe_created)
+      --exclude-computer <COMPUTER...>  特定のコンピュータ名をスキャンしない (例: ComputerA) (例: ComputerA,ComputerB)
+      --exclude-eid <EID...>            高速化のために特定のEIDをスキャンしない (例: 1) (例: 1,4688)
+      --exclude-status <STATUS...>      読み込み対象外とするルール内でのステータス (例１: experimental) (例２: stable,test)
+      --exclude-tag <TAG...>            特定のタグを持つルールをロードしない (例: sysmon)
+      --include-category <CATEGORY...>  特定のlogsourceカテゴリを持つルールのみをロードする (例: process_creation,pipe_created)
+      --include-computer <COMPUTER...>  特定のコンピュータ名のみをスキャンする (例: ComputerA) (例: ComputerA,ComputerB)
+      --include-eid <EID...>            指定したEIDのみをスキャンして高速化する (例: 1) (例: 1,4688)
+      --include-tag <TAG...>            特定のタグを持つルールのみをロードする (例１: attack.execution,attack.discovery) (例２: wmi)
+  -m, --min-level <LEVEL>               結果出力をするルールの最低レベル (デフォルト: informational)
+  -P, --proven-rules                    実績のあるルールだけでスキャンし、高速化する (./rules/config/proven_rules.txt)
+      --timeline-end <DATE>             解析対象とするイベントログの終了時刻 (例: "2022-02-22 23:59:59 +09:00")
+      --timeline-start <DATE>           解析対象とするイベントログの開始時刻 (例: "2020-02-22 00:00:00 +09:00")
 
 General Options:
   -C, --clobber                          結果ファイルを上書きする
   -Q, --quiet-errors                     Quiet errorsモード: エラーログを保存しない
   -r, --rules <DIR/FILE>                 ルールファイルまたはルールファイルを持つディレクトリ (デフォルト: ./rules)
   -c, --rules-config <DIR>               ルールフォルダのコンフィグディレクトリ (デフォルト: ./rules/config)
-      --target-file-ext <EVTX_FILE_EXT>  evtx以外の拡張子を解析対象に追加する。 (例１: evtx_data 例２: evtx1,evtx2)
+      --target-file-ext <FILE-EXT...>    evtx以外の拡張子を解析対象に追加する。 (例１: evtx_data 例２: evtx1,evtx2)
   -t, --threads <NUMBER>                 スレッド数 (デフォルト: パフォーマンスに最適な数値)
 
 Time Format:
@@ -1018,31 +1018,31 @@ Display Settings:
   -T, --visualize-timeline  検知頻度タイムラインを出力する（ターミナルはUnicodeに対応する必要がある）
 
 Filtering:
-  -E, --EID-filter                   速度を上げるため主なEIDだけスキャンする (コンフィグファイル: ./rules/config/target_event_IDs.txt)
-  -D, --enable-deprecated-rules      ステータスがdeprecatedのルールを有効にする
-  -n, --enable-noisy-rules           Noisyルールを有効にする
-  -u, --enable-unsupported-rules     ステータスがunsupportedのルールを有効にする
-  -e, --exact-level <LEVEL>          特定のレベルだけスキャンする (informational, low, medium, high, critical)
-      --exclude-category <CATEGORY>  特定のlogsourceカテゴリを持つルールをロードしない (例: process_creation,pipe_created)
-      --exclude-computer <COMPUTER>  特定のコンピュータ名をスキャンしない (例: ComputerA) (例: ComputerA,ComputerB)
-      --exclude-eid <EIDS>           高速化のために特定のEIDをスキャンしない (例: 1) (例: 1,4688)
-      --exclude-status <STATUS>      読み込み対象外とするルール内でのステータス (例１: experimental) (例２: stable,test)
-      --exclude-tags <TAGS>          特定のタグを持つルールをロードしない (例: sysmon)
-      --include-category <CATEGORY>  特定のlogsourceカテゴリを持つルールのみをロードする (例: process_creation,pipe_created)
-      --include-computer <COMPUTER>  特定のコンピュータ名のみをスキャンする (例: ComputerA) (例: ComputerA,ComputerB)
-      --include-eid <EIDS>           指定したEIDのみをスキャンして高速化する (例: 1) (例: 1,4688)
-      --include-tags <TAGS>          特定のタグを持つルールのみをロードする (例１: attack.execution,attack.discovery) (例２: wmi)
-  -m, --min-level <LEVEL>            結果出力をするルールの最低レベル (デフォルト: informational)
-  -P, --proven-rules                 実績のあるルールだけでスキャンし、高速化する (./rules/config/proven_rules.txt)
-      --timeline-end <DATE>          解析対象とするイベントログの終了時刻 (例: "2022-02-22 23:59:59 +09:00")
-      --timeline-start <DATE>        解析対象とするイベントログの開始時刻 (例: "2020-02-22 00:00:00 +09:00")
+  -E, --EID-filter                      速度を上げるため主なEIDだけスキャンする (コンフィグファイル: ./rules/config/target_event_IDs.txt)
+  -D, --enable-deprecated-rules         ステータスがdeprecatedのルールを有効にする
+  -n, --enable-noisy-rules              Noisyルールを有効にする
+  -u, --enable-unsupported-rules        ステータスがunsupportedのルールを有効にする
+  -e, --exact-level <LEVEL>             特定のレベルだけスキャンする (informational, low, medium, high, critical)
+      --exclude-category <CATEGORY...>  特定のlogsourceカテゴリを持つルールをロードしない (例: process_creation,pipe_created)
+      --exclude-computer <COMPUTER...>  特定のコンピュータ名をスキャンしない (例: ComputerA) (例: ComputerA,ComputerB)
+      --exclude-eid <EID...>            高速化のために特定のEIDをスキャンしない (例: 1) (例: 1,4688)
+      --exclude-status <STATUS...>      読み込み対象外とするルール内でのステータス (例１: experimental) (例２: stable,test)
+      --exclude-tag <TAG...>            特定のタグを持つルールをロードしない (例: sysmon)
+      --include-category <CATEGORY...>  特定のlogsourceカテゴリを持つルールのみをロードする (例: process_creation,pipe_created)
+      --include-computer <COMPUTER...>  特定のコンピュータ名のみをスキャンする (例: ComputerA) (例: ComputerA,ComputerB)
+      --include-eid <EID...>            指定したEIDのみをスキャンして高速化する (例: 1) (例: 1,4688)
+      --include-tag <TAG...>            特定のタグを持つルールのみをロードする (例１: attack.execution,attack.discovery) (例２: wmi)
+  -m, --min-level <LEVEL>               結果出力をするルールの最低レベル (デフォルト: informational)
+  -P, --proven-rules                    実績のあるルールだけでスキャンし、高速化する (./rules/config/proven_rules.txt)
+      --timeline-end <DATE>             解析対象とするイベントログの終了時刻 (例: "2022-02-22 23:59:59 +09:00")
+      --timeline-start <DATE>           解析対象とするイベントログの開始時刻 (例: "2020-02-22 00:00:00 +09:00")
 
 General Options:
   -C, --clobber                          結果ファイルを上書きする
   -Q, --quiet-errors                     Quiet errorsモード: エラーログを保存しない
   -r, --rules <DIR/FILE>                 ルールファイルまたはルールファイルを持つディレクトリ (デフォルト: ./rules)
   -c, --rules-config <DIR>               ルールフォルダのコンフィグディレクトリ (デフォルト: ./rules/config)
-      --target-file-ext <EVTX_FILE_EXT>  evtx以外の拡張子を解析対象に追加する。 (例１: evtx_data 例２：evtx1,evtx2)
+      --target-file-ext <FILE-EXT...>    evtx以外の拡張子を解析対象に追加する。 (例１: evtx_data 例２：evtx1,evtx2)
   -t, --threads <NUMBER>                 スレッド数 (デフォルト: パフォーマンスに最適な数値)
 
 Time Format:
