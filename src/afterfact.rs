@@ -1462,7 +1462,11 @@ pub fn output_json_str(
                         let mut tmp_stock = vec![];
                         let mut space_split_contents = detail_contents.split(' ');
                         while let Some(sp) = space_split_contents.next() {
-                            if !sp.contains('\\') && sp.ends_with(':') && sp.len() > 2 {
+                            if !sp.contains('\\')
+                                && !sp.starts_with('-')
+                                && sp.ends_with(':')
+                                && sp.len() > 2
+                            {
                                 key_index_stock.push(sp.replace(':', ""));
                                 if sp == "Payload:" {
                                     stocked_value.push(vec![]);
