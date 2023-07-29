@@ -1530,7 +1530,7 @@ impl App {
         match EvtxParser::from_path(evtx_filepath) {
             Ok(evtx_parser) => {
                 // parserのデフォルト設定を変更
-                let mut parse_config = ParserSettings::default();
+                let mut parse_config = ParserSettings::default().parse_empty_chunks(true);
                 parse_config = parse_config.separate_json_attributes(true); // XMLのattributeをJSONに変換する時のルールを設定
                 parse_config = parse_config.num_threads(0); // 設定しないと遅かったので、設定しておく。
 
