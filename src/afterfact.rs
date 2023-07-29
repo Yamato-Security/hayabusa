@@ -1478,6 +1478,12 @@ pub fn output_json_str(
                                     stocked_value.push(tmp_stock);
                                     tmp_stock = vec![];
                                 }
+                            } else if sp.ends_with(';') && sp.len() < 5 {
+                                let last_key = key_index_stock.pop().unwrap_or_default();
+                                let mut last_stocked_value =
+                                    stocked_value.pop().unwrap_or_default();
+                                last_stocked_value.push(format!("{last_key}: {sp}"));
+                                stocked_value.push(last_stocked_value);
                             } else {
                                 tmp_stock.push(sp.to_owned());
                             }
