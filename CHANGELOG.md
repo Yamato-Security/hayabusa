@@ -22,7 +22,8 @@
 - Added the `-C, --clobber` option to overwrite existing output files in the `pivot-keywords-list` command. (#1125) (@hitenkoku)
 - Renamed the `metrics` command to `eid-metrics`. (#1128) (@hitenkoku)
 - Reduced progress bar width to leave room for adjustment of the terminal. (#1135) (@hitenkoku)
-- Added support for outputing timestamps in the following formats in the `search` command: `--European-time`, `--ISO-8601`, `--RFC-2822`, `--RFC-3339`, `--US-time`, `--US-military-time`, `-U, --UTC` (#1040) (@hitenkoku)
+- Added support for outputing timestamps in the following formats in the `search` command: `--European-time`, `--ISO-8601`, `--RFC-2822`, `--RFC-3339`, `--US-time`, `--US-military-time`, `-U, --UTC`. (#1040) (@hitenkoku)
+- Replaced the ETA time in the progress bar with elapsed time as the ETA time was not accurate. (#1143) (@YamatoSecurity)
 
 **Bug Fixes:**
 
