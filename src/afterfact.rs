@@ -1517,7 +1517,13 @@ pub fn output_json_str(
                             key_index_stock[key_idx].as_str()
                         };
                         if !output_value_stock.is_empty() {
-                            output_value_stock.push_str(" | ");
+                            let separate_chr =
+                                if key_index_stock[key_idx].starts_with("ScriptBlock") {
+                                    " | "
+                                } else {
+                                    ": "
+                                };
+                            output_value_stock.push_str(separate_chr);
                         }
                         output_value_stock.push_str(&value.join(" "));
                         //1つまえのキーの段階で以降にvalueの配列で区切りとなる空の配列が存在しているかを確認する
