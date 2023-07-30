@@ -1478,7 +1478,8 @@ pub fn output_json_str(
                                     stocked_value.push(tmp_stock);
                                     tmp_stock = vec![];
                                 }
-                            } else if sp.ends_with(';') && sp.len() < 5 {
+                            } else if sp.ends_with(';') && sp.len() < 5 && key_index_stock.len() > 1
+                            {
                                 let last_key = key_index_stock.pop().unwrap_or_default();
                                 let mut last_stocked_value =
                                     stocked_value.pop().unwrap_or_default();
@@ -1541,7 +1542,8 @@ pub fn output_json_str(
                                 .iter()
                                 .any(|remain_value| remain_value.is_empty());
                         if (value_idx < stocked_value.len() - 1
-                            && stocked_value[value_idx + 1].is_empty())
+                            && stocked_value[value_idx + 1].is_empty()
+                            && key_idx != key_index_stock.len() - 1)
                             || is_remain_split_stock
                         {
                             // 次の要素を確認して、存在しないもしくは、キーが入っているとなった場合現在ストックしている内容が出力していいことが確定するので出力処理を行う
