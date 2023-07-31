@@ -29,6 +29,7 @@
 
 - The total number of records being displayed in the `metrics` and `logon-summary` commands differed from the `csv-timeline` command. (#1105) (@hitenkoku)
 - Changed rule count by rule ID instead of path. (#1113) (@hitenkoku)
+- `--timeline-start` and `--timeline-end` were not working correctly with the `json-timeline` command. (#1148) (@hitenkoku)
 
 **Other:**
 
