@@ -30,6 +30,7 @@
 
 - `metrics`と`logon-summary`コマンドのレコード数の表示が`csv-timeline`のコマンドでのレコード数の表示と異なっている状態を修正した。 (#1105) (@hitenkoku)
 - パスの代わりにルールIDでルール数を数えるように変更した。 (#1113) (@hitenkoku)
+- `json-timeline`コマンドで`--timeline-start`と`--timeline-end`オプションが動作しなかったのを修正した。 (#1148) (@hitenkoku)
 - `pivot-keywords-list`コマンドで`--timeline-start`と`--timeline-end`オプションが動作しなかったのを修正した。 (#1150) (@hitenkoku)
 
 **その他:**

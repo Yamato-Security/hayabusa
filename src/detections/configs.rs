@@ -1683,7 +1683,7 @@ impl TargetEventTime {
                     "start-timeline field: the timestamp format is not correct.",
                 );
                 let end_time = get_time(
-                    option.output_options.start_timeline.as_ref(),
+                    option.output_options.end_timeline.as_ref(),
                     "end-timeline field: the timestamp format is not correct.",
                 );
                 Self::set(parse_success_flag, start_time, end_time)
