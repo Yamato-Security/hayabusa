@@ -1688,6 +1688,17 @@ impl TargetEventTime {
                 );
                 Self::set(parse_success_flag, start_time, end_time)
             }
+            Action::PivotKeywordsList(option) => {
+                let start_time = get_time(
+                    option.start_timeline.as_ref(),
+                    "start-timeline field: the timestamp format is not correct.",
+                );
+                let end_time = get_time(
+                    option.end_timeline.as_ref(),
+                    "end-timeline field: the timestamp format is not correct.",
+                );
+                Self::set(parse_success_flag, start_time, end_time)
+            }
             _ => Self::set(parse_success_flag, None, None),
         }
     }
