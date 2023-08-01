@@ -22,13 +22,17 @@
 - Added the `-C, --clobber` option to overwrite existing output files in the `pivot-keywords-list` command. (#1125) (@hitenkoku)
 - Renamed the `metrics` command to `eid-metrics`. (#1128) (@hitenkoku)
 - Reduced progress bar width to leave room for adjustment of the terminal. (#1135) (@hitenkoku)
-- Added support for outputing timestamps in the following formats in the `search` command: `--European-time`, `--ISO-8601`, `--RFC-2822`, `--RFC-3339`, `--US-time`, `--US-military-time`, `-U, --UTC` (#1040) (@hitenkoku)
+- Added support for outputing timestamps in the following formats in the `search` command: `--European-time`, `--ISO-8601`, `--RFC-2822`, `--RFC-3339`, `--US-time`, `--US-military-time`, `-U, --UTC`. (#1040) (@hitenkoku)
+- Replaced the ETA time in the progress bar with elapsed time as the ETA time was not accurate. (#1143) (@YamatoSecurity)
+- Added `--timeline-start` and `--timeline-end` to the `logon-summary` command. (#1152) (@hitenkoku)
 
 **Bug Fixes:**
 
 - The total number of records being displayed in the `metrics` and `logon-summary` commands differed from the `csv-timeline` command. (#1105) (@hitenkoku)
 - Changed rule count by rule ID instead of path. (#1113) (@hitenkoku)
 - Fixed a problem with incorrect field splitting in the `CommandLine` field in JSON output. (#1145) (@hitenkoku)
+- `--timeline-start` and `--timeline-end` were not working correctly with the `json-timeline` command. (#1148) (@hitenkoku)
+- `--timeline-start` and `--timeline-end` were not working correctly with the `pivot-keywords-list` command. (#1150) (@hitenkoku)
 
 **Other:**
 

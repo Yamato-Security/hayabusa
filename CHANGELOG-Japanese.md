@@ -24,12 +24,16 @@
 - `metrics`コマンドを`eid-metrics`に変更した。 (#1128) (@hitenkoku)
 - 端末の調整に余裕を持たせるため、プログレスバーの幅を減らした。 (#1135) (@hitenkoku)
 - `search`コマンドで出力時間フォーマットのオプションをサポートした。(`--European-time`, `--ISO-8601`, `--RFC-2822`, `--RFC-3339`, `--US-time`, `--US-military-time`, `-U, --UTC`) (#1040) (@hitenkoku)
+- プログレスバーのETA時間が正確でなかったため、経過時間に置き換えた。 (#1143) (@YamatoSecurity)
+- `logon-summary`コマンドで`--timeline-start`と`--timeline-end`オプションを追加した。 (#1152) (@hitenkoku)
 
 **バグ修正:**
 
 - `metrics`と`logon-summary`コマンドのレコード数の表示が`csv-timeline`のコマンドでのレコード数の表示と異なっている状態を修正した。 (#1105) (@hitenkoku)
 - パスの代わりにルールIDでルール数を数えるように変更した。 (#1113) (@hitenkoku)
 - JSON出力で`CommandLine`フィールド内で誤ったフィールドの分割が行われてしまう問題を修正した。 (#1145) (@hitenkoku)
+- `json-timeline`コマンドで`--timeline-start`と`--timeline-end`オプションが動作しなかったのを修正した。 (#1148) (@hitenkoku)
+- `pivot-keywords-list`コマンドで`--timeline-start`と`--timeline-end`オプションが動作しなかったのを修正した。 (#1150) (@hitenkoku)
 
 **その他:**
 
