@@ -24,6 +24,7 @@
 - Reduced progress bar width to leave room for adjustment of the terminal. (#1135) (@hitenkoku)
 - Added support for outputing timestamps in the following formats in the `search` command: `--European-time`, `--ISO-8601`, `--RFC-2822`, `--RFC-3339`, `--US-time`, `--US-military-time`, `-U, --UTC`. (#1040) (@hitenkoku)
 - Replaced the ETA time in the progress bar with elapsed time as the ETA time was not accurate. (#1143) (@YamatoSecurity)
+- Added `--timeline-start` and `--timeline-end` to the `logon-summary` command. (#1152) (@hitenkoku)
 
 **Bug Fixes:**
 

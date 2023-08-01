@@ -1260,6 +1260,14 @@ pub struct LogonSummaryOption {
     /// Overwrite files when saving
     #[arg(help_heading = Some("General Options"), short='C', long = "clobber", display_order = 290, requires = "output")]
     pub clobber: bool,
+
+    /// End time of the event logs to load (ex: "2022-02-22 23:59:59 +09:00")
+    #[arg(help_heading = Some("Filtering"), long = "timeline-end", value_name = "DATE", display_order = 460)]
+    pub end_timeline: Option<String>,
+
+    /// Start time of the event logs to load (ex: "2020-02-22 00:00:00 +09:00")
+    #[arg(help_heading = Some("Filtering"), long = "timeline-start", value_name = "DATE", display_order = 460)]
+    pub start_timeline: Option<String>,
 }
 
 /// Options can be set when outputting
@@ -1689,6 +1697,17 @@ impl TargetEventTime {
                 Self::set(parse_success_flag, start_time, end_time)
             }
             Action::PivotKeywordsList(option) => {
+                let start_time = get_time(
+                    option.start_timeline.as_ref(),
+                    "start-timeline field: the timestamp format is not correct.",
+                );
+                let end_time = get_time(
+                    option.end_timeline.as_ref(),
+                    "end-timeline field: the timestamp format is not correct.",
+                );
+                Self::set(parse_success_flag, start_time, end_time)
+            }
+            Action::LogonSummary(option) => {
                 let start_time = get_time(
                     option.start_timeline.as_ref(),
                     "start-timeline field: the timestamp format is not correct.",

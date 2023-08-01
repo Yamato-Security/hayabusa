@@ -2253,6 +2253,8 @@ mod tests {
             us_time: false,
             utc: false,
             clobber: false,
+            end_timeline: None,
+            start_timeline: None,
         });
         let config = Some(Config {
             action: Some(action),
@@ -2306,6 +2308,8 @@ mod tests {
             us_time: false,
             utc: false,
             clobber: true,
+            end_timeline: None,
+            start_timeline: None,
         });
         let config = Some(Config {
             action: Some(action),
