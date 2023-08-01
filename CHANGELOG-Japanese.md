@@ -25,6 +25,7 @@
 - 端末の調整に余裕を持たせるため、プログレスバーの幅を減らした。 (#1135) (@hitenkoku)
 - `search`コマンドで出力時間フォーマットのオプションをサポートした。(`--European-time`, `--ISO-8601`, `--RFC-2822`, `--RFC-3339`, `--US-time`, `--US-military-time`, `-U, --UTC`) (#1040) (@hitenkoku)
 - プログレスバーのETA時間が正確でなかったため、経過時間に置き換えた。 (#1143) (@YamatoSecurity)
+- `logon-summary`コマンドで`--timeline-start`と`--timeline-end`オプションを追加した。 (#1152) (@hitenkoku)
 
 **バグ修正:**
 
