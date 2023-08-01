@@ -1478,7 +1478,12 @@ pub fn output_json_str(
                                     stocked_value.push(tmp_stock);
                                     tmp_stock = vec![];
                                 }
-                            } else if sp.ends_with(';') && sp.len() < 5 && key_index_stock.len() > 1
+                            } else if char::from_str(&sp.chars().next().unwrap_or('a').to_string())
+                                .unwrap_or_default()
+                                .is_lowercase()
+                                && sp.ends_with(';')
+                                && sp.len() < 5
+                                && key_index_stock.len() > 1
                             {
                                 let last_key = key_index_stock.pop().unwrap_or_default();
                                 let mut last_stocked_value =
