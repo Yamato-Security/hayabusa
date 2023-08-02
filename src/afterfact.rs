@@ -1462,10 +1462,14 @@ pub fn output_json_str(
                         let mut tmp_stock = vec![];
                         let mut space_split_contents = detail_contents.split(' ');
                         while let Some(sp) = space_split_contents.next() {
+                            let first_character =
+                                char::from_str(&sp.chars().next().unwrap_or('-').to_string())
+                                    .unwrap_or_default();
                             if !sp.contains('\\')
+                                && first_character.is_uppercase()
                                 && !sp.starts_with(['-', '/'])
                                 && sp.ends_with(':')
-                                && sp.len() > 2
+                                && sp.len() > 6
                             {
                                 key_index_stock.push(sp.replace(':', ""));
                                 if sp == "Payload:" {
@@ -1478,14 +1482,8 @@ pub fn output_json_str(
                                     stocked_value.push(tmp_stock);
                                     tmp_stock = vec![];
                                 }
-                            } else if (char::from_str(
-                                &sp.chars().next().unwrap_or('a').to_string(),
-                            )
-                            .unwrap_or_default()
-                            .is_lowercase()
-                                || char::from_str(&sp.chars().next().unwrap_or('a').to_string())
-                                    .unwrap_or_default()
-                                    .is_numeric())
+                            } else if (first_character.is_lowercase()
+                                || first_character.is_numeric())
                                 && sp.ends_with(';')
                                 && sp.len() < 5
                                 && key_index_stock.len() > 1
