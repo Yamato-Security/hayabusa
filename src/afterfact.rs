@@ -1478,9 +1478,14 @@ pub fn output_json_str(
                                     stocked_value.push(tmp_stock);
                                     tmp_stock = vec![];
                                 }
-                            } else if char::from_str(&sp.chars().next().unwrap_or('a').to_string())
-                                .unwrap_or_default()
-                                .is_lowercase()
+                            } else if (char::from_str(
+                                &sp.chars().next().unwrap_or('a').to_string(),
+                            )
+                            .unwrap_or_default()
+                            .is_lowercase()
+                                || char::from_str(&sp.chars().next().unwrap_or('a').to_string())
+                                    .unwrap_or_default()
+                                    .is_numeric())
                                 && sp.ends_with(';')
                                 && sp.len() < 5
                                 && key_index_stock.len() > 1
