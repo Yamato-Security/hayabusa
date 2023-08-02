@@ -1463,7 +1463,7 @@ pub fn output_json_str(
                         let mut space_split_contents = detail_contents.split(' ');
                         while let Some(sp) = space_split_contents.next() {
                             if !sp.contains('\\')
-                                && !sp.starts_with('-')
+                                && !sp.starts_with(['-', '/'])
                                 && sp.ends_with(':')
                                 && sp.len() > 2
                             {
