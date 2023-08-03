@@ -1465,7 +1465,7 @@ pub fn output_json_str(
                             let first_character =
                                 char::from_str(&sp.chars().next().unwrap_or('-').to_string())
                                     .unwrap_or_default();
-                            if !sp.contains(['\\', '"', '\r', '\n'])
+                            if !sp.contains(['\\', '"', '🛂'])
                                 && first_character.is_uppercase()
                                 && !sp.starts_with(['-', '/'])
                                 && sp.ends_with(':')
