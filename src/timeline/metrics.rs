@@ -340,6 +340,7 @@ mod tests {
                     directory: None,
                     filepath: None,
                     live_analysis: false,
+                    recover_record: false,
                 },
                 common_options: CommonOptions {
                     no_color: false,

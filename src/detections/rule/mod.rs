@@ -403,6 +403,7 @@ mod tests {
                         directory: None,
                         filepath: None,
                         live_analysis: false,
+                        recover_record: false,
                     },
                     profile: None,
                     enable_deprecated_rules: false,
