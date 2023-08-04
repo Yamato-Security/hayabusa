@@ -269,19 +269,19 @@ mod tests {
         let r = build_field_data_map(build_yaml(s));
         let mut wtr = vec![];
         match r.1.get("elevatedtoken").unwrap() {
-            FieldDataConverter::HexToDecimal => assert!(false),
+            FieldDataConverter::HexToDecimal => panic!(),
             FieldDataConverter::ReplaceStr(x) => {
                 let (ac, rp) = x;
-                let _ = ac.try_stream_replace_all("foo, %%1842, %%1843".as_bytes(), &mut wtr, &rp);
+                let _ = ac.try_stream_replace_all("foo, %%1842, %%1843".as_bytes(), &mut wtr, rp);
                 assert_eq!(b"foo, YES, NO".to_vec(), wtr);
             }
         }
         match r.1.get("impersonationlevel").unwrap() {
-            FieldDataConverter::HexToDecimal => assert!(false),
+            FieldDataConverter::HexToDecimal => panic!(),
             FieldDataConverter::ReplaceStr(x) => {
                 let mut wtr = vec![];
                 let (ac, rp) = x;
-                let _ = ac.try_stream_replace_all("foo, %%1832, %%1833".as_bytes(), &mut wtr, &rp);
+                let _ = ac.try_stream_replace_all("foo, %%1832, %%1833".as_bytes(), &mut wtr, rp);
                 assert_eq!(b"foo, A, B".to_vec(), wtr);
             }
         }
