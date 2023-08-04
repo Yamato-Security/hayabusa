@@ -83,7 +83,7 @@ pub struct StoredStatic {
     pub include_eid: HashSet<CompactString>,
     pub exclude_eid: HashSet<CompactString>,
     pub field_data_map: Option<FieldDataMap>,
-    pub enable_recover_record: bool,
+    pub enable_recover_records: bool,
 }
 impl StoredStatic {
     /// main.rsでパースした情報からデータを格納する関数
@@ -495,13 +495,13 @@ impl StoredStatic {
                     .unwrap(),
             ))
         };
-        let enable_recover_record = match &input_config.as_ref().unwrap().action {
-            Some(Action::CsvTimeline(opt)) => opt.output_options.input_args.recover_record,
-            Some(Action::JsonTimeline(opt)) => opt.output_options.input_args.recover_record,
-            Some(Action::EidMetrics(opt)) => opt.input_args.recover_record,
-            Some(Action::LogonSummary(opt)) => opt.input_args.recover_record,
-            Some(Action::PivotKeywordsList(opt)) => opt.input_args.recover_record,
-            Some(Action::Search(opt)) => opt.input_args.recover_record,
+        let enable_recover_records = match &input_config.as_ref().unwrap().action {
+            Some(Action::CsvTimeline(opt)) => opt.output_options.input_args.recover_records,
+            Some(Action::JsonTimeline(opt)) => opt.output_options.input_args.recover_records,
+            Some(Action::EidMetrics(opt)) => opt.input_args.recover_records,
+            Some(Action::LogonSummary(opt)) => opt.input_args.recover_records,
+            Some(Action::PivotKeywordsList(opt)) => opt.input_args.recover_records,
+            Some(Action::Search(opt)) => opt.input_args.recover_records,
             _ => false,
         };
 
@@ -616,7 +616,7 @@ impl StoredStatic {
             include_eid,
             exclude_eid,
             field_data_map,
-            enable_recover_record,
+            enable_recover_records,
         };
         ret.profiles = load_profile(
             check_setting_path(
@@ -1465,8 +1465,8 @@ pub struct InputOption {
     pub live_analysis: bool,
 
     /// enabled read the empty page of the evtx file(default: disabled)
-    #[arg(help_heading = Some("Input"), long = "recover-record", display_order = 440)]
-    pub recover_record: bool,
+    #[arg(help_heading = Some("Input"), long = "recover-records", display_order = 440)]
+    pub recover_records: bool,
 }
 
 #[derive(Args, Clone, Debug)]
@@ -2096,7 +2096,7 @@ fn extract_output_options(config: &Config) -> Option<OutputOption> {
                 directory: None,
                 filepath: None,
                 live_analysis: false,
-                recover_record: false,
+                recover_records: false,
             },
             enable_deprecated_rules: false,
             enable_noisy_rules: false,
@@ -2146,7 +2146,7 @@ fn extract_output_options(config: &Config) -> Option<OutputOption> {
                 directory: None,
                 filepath: None,
                 live_analysis: false,
-                recover_record: false,
+                recover_records: false,
             },
             enable_deprecated_rules: true,
             enable_noisy_rules: true,

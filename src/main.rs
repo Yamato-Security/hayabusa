@@ -1052,7 +1052,7 @@ impl App {
         self.rule_keys = self.get_all_keys(&rule_files);
         let mut detection = detection::Detection::new(rule_files);
         let mut total_records: usize = 0;
-        let mut recover_records: usize = 0;
+        let mut recover_recordss: usize = 0;
         let mut tl = Timeline::new();
 
         *STORED_EKEY_ALIAS.write().unwrap() = Some(stored_static.eventkey_alias.clone());
@@ -1084,7 +1084,7 @@ impl App {
                 )
             };
             total_records += cnt_tmp;
-            recover_records += recover_cnt_tmp;
+            recover_recordss += recover_cnt_tmp;
             pb.inc(1);
         }
         pb.finish_with_message(
@@ -1118,7 +1118,7 @@ impl App {
                 stored_static.common_options.no_color,
                 stored_static,
                 tl,
-                recover_records,
+                recover_recordss,
             );
         }
         CHECKPOINT
@@ -1139,11 +1139,11 @@ impl App {
         stored_static: &StoredStatic,
     ) -> (detection::Detection, usize, Timeline, usize) {
         let path = evtx_filepath.display();
-        let parser = self.evtx_to_jsons(&evtx_filepath, stored_static.enable_recover_record);
+        let parser = self.evtx_to_jsons(&evtx_filepath, stored_static.enable_recover_records);
         let mut record_cnt = 0;
-        let mut recover_record_cnt = 0;
+        let mut recover_records_cnt = 0;
         if parser.is_none() {
-            return (detection, record_cnt, tl, recover_record_cnt);
+            return (detection, record_cnt, tl, recover_records_cnt);
         }
 
         let mut parser = parser.unwrap();
@@ -1163,7 +1163,7 @@ impl App {
                 let record_result = next_rec.unwrap();
 
                 if record_result.as_ref().unwrap().allocation == RecordAllocation::EmptyPage {
-                    recover_record_cnt += 1;
+                    recover_records_cnt += 1;
                 };
 
                 if record_result.is_err() {
@@ -1259,7 +1259,7 @@ impl App {
             }
         }
         tl.total_record_cnt += record_cnt;
-        (detection, record_cnt, tl, recover_record_cnt)
+        (detection, record_cnt, tl, recover_records_cnt)
     }
 
     // JSON形式のイベントログファイルを1ファイル分解析する。
@@ -1274,7 +1274,7 @@ impl App {
     ) -> (detection::Detection, usize, Timeline, usize) {
         let path = filepath.display();
         let mut record_cnt = 0;
-        let recover_record_cnt = 0;
+        let recover_records_cnt = 0;
         let filename = filepath.to_str().unwrap_or_default();
         let filepath = if filename.starts_with("./") {
             check_setting_path(&CURRENT_EXE_PATH.to_path_buf(), filename, true)
@@ -1296,7 +1296,7 @@ impl App {
                     Ok(values) => values,
                     Err(e) => {
                         AlertMessage::alert(&e).ok();
-                        return (detection, record_cnt, tl, recover_record_cnt);
+                        return (detection, record_cnt, tl, recover_records_cnt);
                     }
                 }
             }
@@ -1432,7 +1432,7 @@ impl App {
             }
         }
         tl.total_record_cnt += record_cnt;
-        (detection, record_cnt, tl, recover_record_cnt)
+        (detection, record_cnt, tl, recover_records_cnt)
     }
 
     async fn create_rec_infos(
@@ -1540,13 +1540,13 @@ impl App {
     fn evtx_to_jsons(
         &self,
         evtx_filepath: &PathBuf,
-        enable_recover_record: bool,
+        enable_recover_records: bool,
     ) -> Option<EvtxParser<File>> {
         match EvtxParser::from_path(evtx_filepath) {
             Ok(evtx_parser) => {
                 // parserのデフォルト設定を変更
                 let mut parse_config =
-                    ParserSettings::default().parse_empty_chunks(enable_recover_record);
+                    ParserSettings::default().parse_empty_chunks(enable_recover_records);
                 parse_config = parse_config.separate_json_attributes(true); // XMLのattributeをJSONに変換する時のルールを設定
                 parse_config = parse_config.num_threads(0); // 設定しないと遅かったので、設定しておく。
 
@@ -1672,7 +1672,7 @@ mod tests {
                         directory: None,
                         filepath: None,
                         live_analysis: false,
-                        recover_record: false,
+                        recover_records: false,
                     },
                     profile: None,
                     enable_deprecated_rules: false,
@@ -1831,7 +1831,7 @@ mod tests {
                     directory: None,
                     filepath: Some(Path::new("test_files/evtx/test.json").to_path_buf()),
                     live_analysis: false,
-                    recover_record: false,
+                    recover_records: false,
                 },
                 profile: None,
                 enable_deprecated_rules: false,
@@ -1911,7 +1911,7 @@ mod tests {
                     directory: None,
                     filepath: Some(Path::new("test_files/evtx/test.json").to_path_buf()),
                     live_analysis: false,
-                    recover_record: false,
+                    recover_records: false,
                 },
                 profile: None,
                 enable_deprecated_rules: false,
@@ -1989,7 +1989,7 @@ mod tests {
                     directory: None,
                     filepath: Some(Path::new("test_files/evtx/test.json").to_path_buf()),
                     live_analysis: false,
-                    recover_record: false,
+                    recover_records: false,
                 },
                 profile: None,
                 enable_deprecated_rules: false,
@@ -2069,7 +2069,7 @@ mod tests {
                     directory: None,
                     filepath: Some(Path::new("test_files/evtx/test.json").to_path_buf()),
                     live_analysis: false,
-                    recover_record: false,
+                    recover_records: false,
                 },
                 profile: None,
                 enable_deprecated_rules: false,
@@ -2147,7 +2147,7 @@ mod tests {
                 directory: None,
                 filepath: Some(Path::new("test_files/evtx/test_metrics.json").to_path_buf()),
                 live_analysis: false,
-                recover_record: false,
+                recover_records: false,
             },
             common_options: CommonOptions {
                 no_color: false,
@@ -2201,7 +2201,7 @@ mod tests {
                 directory: None,
                 filepath: Some(Path::new("test_files/evtx/test_metrics.json").to_path_buf()),
                 live_analysis: false,
-                recover_record: false,
+                recover_records: false,
             },
             common_options: CommonOptions {
                 no_color: false,
@@ -2253,7 +2253,7 @@ mod tests {
                 directory: None,
                 filepath: Some(Path::new("test_files/evtx/test_metrics.json").to_path_buf()),
                 live_analysis: false,
-                recover_record: false,
+                recover_records: false,
             },
             common_options: CommonOptions {
                 no_color: false,
@@ -2307,7 +2307,7 @@ mod tests {
                 directory: None,
                 filepath: Some(Path::new("test_files/evtx/test_metrics.json").to_path_buf()),
                 live_analysis: false,
-                recover_record: false,
+                recover_records: false,
             },
             common_options: CommonOptions {
                 no_color: false,
@@ -2360,7 +2360,7 @@ mod tests {
                 directory: None,
                 filepath: Some(Path::new("test_files/evtx/test_metrics.json").to_path_buf()),
                 live_analysis: false,
-                recover_record: false,
+                recover_records: false,
             },
             common_options: CommonOptions {
                 no_color: false,
@@ -2402,7 +2402,7 @@ mod tests {
                 directory: None,
                 filepath: Some(Path::new("test_files/evtx/test_metrics.json").to_path_buf()),
                 live_analysis: false,
-                recover_record: false,
+                recover_records: false,
             },
             common_options: CommonOptions {
                 no_color: false,

@@ -171,7 +171,7 @@ pub fn after_fact(
     no_color_flag: bool,
     stored_static: &StoredStatic,
     tl: Timeline,
-    recover_record_cnt: usize,
+    recover_records_cnt: usize,
 ) {
     let fn_emit_csv_err = |err: Box<dyn Error>| {
         AlertMessage::alert(&format!("Failed to write CSV. {err}")).ok();
@@ -198,7 +198,7 @@ pub fn after_fact(
         &mut target,
         displayflag,
         color_map,
-        (all_record_cnt as u128, recover_record_cnt as u128),
+        (all_record_cnt as u128, recover_records_cnt as u128),
         stored_static.profiles.as_ref().unwrap(),
         stored_static,
         (&tl.stats.start_time, &tl.stats.end_time),
@@ -211,7 +211,7 @@ fn emit_csv<W: std::io::Write>(
     writer: &mut W,
     displayflag: bool,
     color_map: HashMap<CompactString, Colors>,
-    (all_record_cnt, recover_record_cnt): (u128, u128),
+    (all_record_cnt, recover_records_cnt): (u128, u128),
     profile: &Vec<(CompactString, Profile)>,
     stored_static: &StoredStatic,
     tl_start_end_time: (&Option<DateTime<Utc>>, &Option<DateTime<Utc>>),
@@ -731,7 +731,7 @@ fn emit_csv<W: std::io::Write>(
             true,
         )
         .ok();
-        if stored_static.enable_recover_record {
+        if stored_static.enable_recover_records {
             write_color_buffer(
                 &disp_wtr,
                 get_writable_color(
@@ -749,7 +749,7 @@ fn emit_csv<W: std::io::Write>(
                 false,
             )
             .ok();
-            let recovered_record_output = recover_record_cnt.to_formatted_string(&Locale::en);
+            let recovered_record_output = recover_records_cnt.to_formatted_string(&Locale::en);
             write_color_buffer(
                 &disp_wtr,
                 get_writable_color(
@@ -769,7 +769,7 @@ fn emit_csv<W: std::io::Write>(
             html_output_stock.push(format!("- {reduction_output}"));
             html_output_stock.push(format!(
                 "- Recovered events analyzed: {}",
-                &recover_record_cnt.to_formatted_string(&Locale::en)
+                &recover_records_cnt.to_formatted_string(&Locale::en)
             ));
         }
 
@@ -1848,7 +1848,7 @@ mod tests {
                     directory: None,
                     filepath: None,
                     live_analysis: false,
-                    recover_record: false,
+                    recover_records: false,
                 },
                 profile: None,
                 enable_deprecated_rules: false,
@@ -1934,7 +1934,7 @@ mod tests {
                     directory: None,
                     filepath: None,
                     live_analysis: false,
-                    recover_record: false,
+                    recover_records: false,
                 },
                 profile: None,
                 enable_deprecated_rules: false,
@@ -2168,7 +2168,7 @@ mod tests {
                     directory: None,
                     filepath: None,
                     live_analysis: false,
-                    recover_record: false,
+                    recover_records: false,
                 },
                 profile: Some("verbose-2".to_string()),
                 enable_deprecated_rules: false,
@@ -2256,7 +2256,7 @@ mod tests {
                     directory: None,
                     filepath: None,
                     live_analysis: false,
-                    recover_record: false,
+                    recover_records: false,
                 },
                 profile: Some("verbose-2".to_string()),
                 enable_deprecated_rules: false,
@@ -2476,7 +2476,7 @@ mod tests {
                     directory: None,
                     filepath: None,
                     live_analysis: false,
-                    recover_record: false,
+                    recover_records: false,
                 },
                 profile: None,
                 enable_deprecated_rules: false,
@@ -2562,7 +2562,7 @@ mod tests {
                     directory: None,
                     filepath: None,
                     live_analysis: false,
-                    recover_record: false,
+                    recover_records: false,
                 },
                 profile: None,
                 enable_deprecated_rules: false,
@@ -2793,7 +2793,7 @@ mod tests {
                     directory: None,
                     filepath: None,
                     live_analysis: false,
-                    recover_record: false,
+                    recover_records: false,
                 },
                 profile: None,
                 enable_deprecated_rules: false,
@@ -2879,7 +2879,7 @@ mod tests {
                     directory: None,
                     filepath: None,
                     live_analysis: false,
-                    recover_record: false,
+                    recover_records: false,
                 },
                 profile: None,
                 enable_deprecated_rules: false,
@@ -3194,7 +3194,7 @@ mod tests {
                 directory: None,
                 filepath: None,
                 live_analysis: false,
-                recover_record: false,
+                recover_records: false,
             },
             profile: None,
             enable_deprecated_rules: false,
@@ -3330,7 +3330,7 @@ mod tests {
                     directory: None,
                     filepath: None,
                     live_analysis: false,
-                    recover_record: false,
+                    recover_records: false,
                 },
                 profile: None,
                 enable_deprecated_rules: false,
@@ -3415,7 +3415,7 @@ mod tests {
                     directory: None,
                     filepath: None,
                     live_analysis: false,
-                    recover_record: false,
+                    recover_records: false,
                 },
                 profile: None,
                 enable_deprecated_rules: false,
@@ -3586,7 +3586,7 @@ mod tests {
                     directory: None,
                     filepath: None,
                     live_analysis: false,
-                    recover_record: false,
+                    recover_records: false,
                 },
                 profile: None,
                 enable_deprecated_rules: false,
@@ -3671,7 +3671,7 @@ mod tests {
                     directory: None,
                     filepath: None,
                     live_analysis: false,
-                    recover_record: false,
+                    recover_records: false,
                 },
                 profile: None,
                 enable_deprecated_rules: false,
