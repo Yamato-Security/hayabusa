@@ -8,7 +8,7 @@ use bytesize::ByteSize;
 use chrono::{DateTime, Datelike, Local, NaiveDateTime, Utc};
 use clap::Command;
 use compact_str::CompactString;
-use evtx::{EvtxParser, ParserSettings};
+use evtx::{EvtxParser, ParserSettings, RecordAllocation};
 use hashbrown::{HashMap, HashSet};
 use hayabusa::debug::checkpoint_process_timer::CHECKPOINT;
 use hayabusa::detections::configs::{
@@ -1052,6 +1052,7 @@ impl App {
         self.rule_keys = self.get_all_keys(&rule_files);
         let mut detection = detection::Detection::new(rule_files);
         let mut total_records: usize = 0;
+        let mut recover_records: usize = 0;
         let mut tl = Timeline::new();
 
         *STORED_EKEY_ALIAS.write().unwrap() = Some(stored_static.eventkey_alias.clone());
@@ -1061,7 +1062,9 @@ impl App {
             pb.set_message(pb_msg);
 
             let cnt_tmp: usize;
-            (detection, cnt_tmp, tl) = if evtx_file.extension().unwrap() == "json" {
+            let recover_cnt_tmp: usize;
+            (detection, cnt_tmp, tl, recover_cnt_tmp) = if evtx_file.extension().unwrap() == "json"
+            {
                 self.analysis_json_file(
                     evtx_file,
                     detection,
@@ -1081,6 +1084,7 @@ impl App {
                 )
             };
             total_records += cnt_tmp;
+            recover_records += recover_cnt_tmp;
             pb.inc(1);
         }
         pb.finish_with_message(
@@ -1114,6 +1118,7 @@ impl App {
                 stored_static.common_options.no_color,
                 stored_static,
                 tl,
+                recover_records,
             );
         }
         CHECKPOINT
@@ -1132,12 +1137,13 @@ impl App {
         mut tl: Timeline,
         target_event_ids: &TargetIds,
         stored_static: &StoredStatic,
-    ) -> (detection::Detection, usize, Timeline) {
+    ) -> (detection::Detection, usize, Timeline, usize) {
         let path = evtx_filepath.display();
         let parser = self.evtx_to_jsons(&evtx_filepath, stored_static.enable_recover_record);
         let mut record_cnt = 0;
+        let mut recover_record_cnt = 0;
         if parser.is_none() {
-            return (detection, record_cnt, tl);
+            return (detection, record_cnt, tl, recover_record_cnt);
         }
 
         let mut parser = parser.unwrap();
@@ -1154,8 +1160,12 @@ impl App {
                     break;
                 }
                 record_cnt += 1;
-
                 let record_result = next_rec.unwrap();
+
+                if record_result.as_ref().unwrap().allocation == RecordAllocation::EmptyPage {
+                    recover_record_cnt += 1;
+                };
+
                 if record_result.is_err() {
                     let evtx_filepath = &path;
                     let errmsg = format!(
@@ -1249,7 +1259,7 @@ impl App {
             }
         }
         tl.total_record_cnt += record_cnt;
-        (detection, record_cnt, tl)
+        (detection, record_cnt, tl, recover_record_cnt)
     }
 
     // JSON形式のイベントログファイルを1ファイル分解析する。
@@ -1261,9 +1271,10 @@ impl App {
         mut tl: Timeline,
         target_event_ids: &TargetIds,
         stored_static: &StoredStatic,
-    ) -> (detection::Detection, usize, Timeline) {
+    ) -> (detection::Detection, usize, Timeline, usize) {
         let path = filepath.display();
         let mut record_cnt = 0;
+        let recover_record_cnt = 0;
         let filename = filepath.to_str().unwrap_or_default();
         let filepath = if filename.starts_with("./") {
             check_setting_path(&CURRENT_EXE_PATH.to_path_buf(), filename, true)
@@ -1285,7 +1296,7 @@ impl App {
                     Ok(values) => values,
                     Err(e) => {
                         AlertMessage::alert(&e).ok();
-                        return (detection, record_cnt, tl);
+                        return (detection, record_cnt, tl, recover_record_cnt);
                     }
                 }
             }
@@ -1421,7 +1432,7 @@ impl App {
             }
         }
         tl.total_record_cnt += record_cnt;
-        (detection, record_cnt, tl)
+        (detection, record_cnt, tl, recover_record_cnt)
     }
 
     async fn create_rec_infos(

@@ -171,6 +171,7 @@ pub fn after_fact(
     no_color_flag: bool,
     stored_static: &StoredStatic,
     tl: Timeline,
+    recover_record_cnt: usize,
 ) {
     let fn_emit_csv_err = |err: Box<dyn Error>| {
         AlertMessage::alert(&format!("Failed to write CSV. {err}")).ok();
@@ -201,6 +202,7 @@ pub fn after_fact(
         stored_static.profiles.as_ref().unwrap(),
         stored_static,
         (&tl.stats.start_time, &tl.stats.end_time),
+        recover_record_cnt,
     ) {
         fn_emit_csv_err(Box::new(err));
     }
@@ -214,6 +216,7 @@ fn emit_csv<W: std::io::Write>(
     profile: &Vec<(CompactString, Profile)>,
     stored_static: &StoredStatic,
     tl_start_end_time: (&Option<DateTime<Utc>>, &Option<DateTime<Utc>>),
+    recover_record_cnt: usize,
 ) -> io::Result<()> {
     let output_replaced_maps: HashMap<&str, &str> =
         HashMap::from_iter(vec![("🛂r", "\r"), ("🛂n", "\n"), ("🛂t", "\t")]);
@@ -727,16 +730,49 @@ fn emit_csv<W: std::io::Write>(
             &disp_wtr,
             get_writable_color(None, stored_static.common_options.no_color),
             ")",
-            false,
+            true,
         )
         .ok();
-        println!();
+        if stored_static.enable_recover_record {
+            write_color_buffer(
+                &disp_wtr,
+                get_writable_color(
+                    Some(Color::Rgb(0, 255, 255)),
+                    stored_static.common_options.no_color,
+                ),
+                "Recovered records",
+                false,
+            )
+            .ok();
+            write_color_buffer(
+                &disp_wtr,
+                get_writable_color(None, stored_static.common_options.no_color),
+                ": ",
+                false,
+            )
+            .ok();
+            let recovered_record_output = recover_record_cnt.to_formatted_string(&Locale::en);
+            write_color_buffer(
+                &disp_wtr,
+                get_writable_color(
+                    Some(Color::Rgb(0, 255, 255)),
+                    stored_static.common_options.no_color,
+                ),
+                &recovered_record_output,
+                true,
+            )
+            .ok();
+        }
         println!();
 
         if html_output_flag {
             html_output_stock.push(format!("- Events with hits: {}", &saved_alerts_output));
             html_output_stock.push(format!("- Total events analyzed: {}", &all_record_output));
             html_output_stock.push(format!("- {reduction_output}"));
+            html_output_stock.push(format!(
+                "- Recovered events analyzed: {}",
+                &recover_record_cnt.to_formatted_string(&Locale::en)
+            ));
         }
 
         _print_unique_results(
