@@ -198,11 +198,10 @@ pub fn after_fact(
         &mut target,
         displayflag,
         color_map,
-        all_record_cnt as u128,
+        (all_record_cnt as u128, recover_record_cnt as u128),
         stored_static.profiles.as_ref().unwrap(),
         stored_static,
         (&tl.stats.start_time, &tl.stats.end_time),
-        recover_record_cnt,
     ) {
         fn_emit_csv_err(Box::new(err));
     }
@@ -212,11 +211,10 @@ fn emit_csv<W: std::io::Write>(
     writer: &mut W,
     displayflag: bool,
     color_map: HashMap<CompactString, Colors>,
-    all_record_cnt: u128,
+    (all_record_cnt, recover_record_cnt): (u128, u128),
     profile: &Vec<(CompactString, Profile)>,
     stored_static: &StoredStatic,
     tl_start_end_time: (&Option<DateTime<Utc>>, &Option<DateTime<Utc>>),
-    recover_record_cnt: usize,
 ) -> io::Result<()> {
     let output_replaced_maps: HashMap<&str, &str> =
         HashMap::from_iter(vec![("🛂r", "\r"), ("🛂n", "\n"), ("🛂t", "\t")]);
