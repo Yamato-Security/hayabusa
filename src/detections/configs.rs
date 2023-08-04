@@ -83,6 +83,7 @@ pub struct StoredStatic {
     pub include_eid: HashSet<CompactString>,
     pub exclude_eid: HashSet<CompactString>,
     pub field_data_map: Option<FieldDataMap>,
+    pub enable_recover_record: bool,
 }
 impl StoredStatic {
     /// main.rsでパースした情報からデータを格納する関数
@@ -494,6 +495,15 @@ impl StoredStatic {
                     .unwrap(),
             ))
         };
+        let enable_recover_record = match &input_config.as_ref().unwrap().action {
+            Some(Action::CsvTimeline(opt)) => opt.output_options.input_args.recover_record,
+            Some(Action::JsonTimeline(opt)) => opt.output_options.input_args.recover_record,
+            Some(Action::EidMetrics(opt)) => opt.input_args.recover_record,
+            Some(Action::LogonSummary(opt)) => opt.input_args.recover_record,
+            Some(Action::PivotKeywordsList(opt)) => opt.input_args.recover_record,
+            Some(Action::Search(opt)) => opt.input_args.recover_record,
+            _ => false,
+        };
 
         let mut ret = StoredStatic {
             config: input_config.as_ref().unwrap().to_owned(),
@@ -606,6 +616,7 @@ impl StoredStatic {
             include_eid,
             exclude_eid,
             field_data_map,
+            enable_recover_record,
         };
         ret.profiles = load_profile(
             check_setting_path(
@@ -1452,6 +1463,10 @@ pub struct InputOption {
     /// Analyze the local C:\Windows\System32\winevt\Logs folder
     #[arg(help_heading = Some("Input"), short = 'l', long = "live-analysis", conflicts_with_all = ["filepath", "directory", "json_input"], display_order = 380)]
     pub live_analysis: bool,
+
+    /// enabled read the empty page of the evtx file(default: disabled)
+    #[arg(help_heading = Some("Input"), long = "recover-record", display_order = 440)]
+    pub recover_record: bool,
 }
 
 #[derive(Args, Clone, Debug)]

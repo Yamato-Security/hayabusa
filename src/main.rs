@@ -1134,7 +1134,7 @@ impl App {
         stored_static: &StoredStatic,
     ) -> (detection::Detection, usize, Timeline) {
         let path = evtx_filepath.display();
-        let parser = self.evtx_to_jsons(&evtx_filepath);
+        let parser = self.evtx_to_jsons(&evtx_filepath, stored_static.enable_recover_record);
         let mut record_cnt = 0;
         if parser.is_none() {
             return (detection, record_cnt, tl);
@@ -1526,11 +1526,16 @@ impl App {
             || (eid_filter && !self._is_target_event_id(data, target_event_ids, eventkey_alias))
     }
 
-    fn evtx_to_jsons(&self, evtx_filepath: &PathBuf) -> Option<EvtxParser<File>> {
+    fn evtx_to_jsons(
+        &self,
+        evtx_filepath: &PathBuf,
+        enable_recover_record: bool,
+    ) -> Option<EvtxParser<File>> {
         match EvtxParser::from_path(evtx_filepath) {
             Ok(evtx_parser) => {
                 // parserのデフォルト設定を変更
-                let mut parse_config = ParserSettings::default().parse_empty_chunks(true);
+                let mut parse_config =
+                    ParserSettings::default().parse_empty_chunks(enable_recover_record);
                 parse_config = parse_config.separate_json_attributes(true); // XMLのattributeをJSONに変換する時のルールを設定
                 parse_config = parse_config.num_threads(0); // 設定しないと遅かったので、設定しておく。
 
