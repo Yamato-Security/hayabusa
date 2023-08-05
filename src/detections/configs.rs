@@ -1465,7 +1465,7 @@ pub struct InputOption {
     pub live_analysis: bool,
 
     /// Carve evtx records from empty pages (default: disabled)
-    #[arg(help_heading = Some("Input"), short = 'x', long = "recover-records", display_order = 440)]
+    #[arg(help_heading = Some("Input"), short = 'x', long = "recover-records", conflicts_with = "json_input", display_order = 440)]
     pub recover_records: bool,
 }
 
