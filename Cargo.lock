@@ -19,6 +19,17 @@ checksum = "f26201604c87b1e01bd3d98f8d5d9a8fcbb815e8cedb41ffccbeb4bf593a35fe"
 
 [[package]]
 name = "ahash"
+version = "0.7.6"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "fcb51a0695d8f838b1ee009b3fbf66bda078cd64590202a864a8f3e8c4315c47"
+dependencies = [
+ "getrandom",
+ "once_cell",
+ "version_check",
+]
+
+[[package]]
+name = "ahash"
 version = "0.8.3"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "2c99f64d1e06488f620f932677e24bc6e2897582980441ae90a671415bd7ec2f"
@@ -697,8 +708,8 @@ dependencies = [
 
 [[package]]
 name = "evtx"
-version = "0.8.6"
-source = "git+https://github.com/Yamato-Security/hayabusa-evtx.git?rev=b30fb3e#b30fb3e13b8146d01ec155f6e3278ddf173e56dc"
+version = "0.8.7"
+source = "git+https://github.com/Yamato-Security/hayabusa-evtx.git?rev=3788e74#3788e748dd1ace38a3486677eb2477d8249ddd83"
 dependencies = [
  "anyhow",
  "bitflags 1.3.2",
@@ -708,7 +719,7 @@ dependencies = [
  "crc32fast",
  "dialoguer",
  "encoding",
- "hashbrown 0.14.0",
+ "hashbrown 0.12.3",
  "indoc",
  "jemallocator",
  "log",
@@ -832,6 +843,9 @@ name = "hashbrown"
 version = "0.12.3"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "8a9ee70c43aaf417c914396645a0fa852624801b24ebb7ae78fe8272889ac888"
+dependencies = [
+ "ahash 0.7.6",
+]
 
 [[package]]
 name = "hashbrown"
@@ -839,7 +853,7 @@ version = "0.14.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "2c6201b9ff9fd90a5a3bac2e56a830d0caa509576f0e503818ee82c181b3437a"
 dependencies = [
- "ahash",
+ "ahash 0.8.3",
  "allocator-api2",
 ]
 
@@ -1017,9 +1031,9 @@ dependencies = [
 
 [[package]]
 name = "indoc"
-version = "1.0.9"
+version = "2.0.3"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "bfa799dd5ed20a7e349f3b4639aa80d74549c81716d9ec4f994c9b5815598306"
+checksum = "2c785eefb63ebd0e33416dfcb8d6da0bf27ce752843a45632a67bf10d4d4b5c4"
 
 [[package]]
 name = "instant"
