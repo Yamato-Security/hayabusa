@@ -1,3 +1,4 @@
+use crate::detections::field_data_map::FieldDataConverter::{HexToDecimal, ReplaceStr};
 use crate::detections::message::AlertMessage;
 use aho_corasick::AhoCorasick;
 use compact_str::CompactString;
@@ -8,7 +9,13 @@ use std::string::String;
 use yaml_rust::{Yaml, YamlLoader};
 
 pub type FieldDataMap = HashMap<FieldDataMapKey, FieldDataMapEntry>;
-pub type FieldDataMapEntry = HashMap<String, (AhoCorasick, Vec<String>)>;
+pub type FieldDataMapEntry = HashMap<String, FieldDataConverter>;
+
+#[derive(Debug, Clone)]
+pub enum FieldDataConverter {
+    HexToDecimal,
+    ReplaceStr((AhoCorasick, Vec<String>)),
+}
 
 #[derive(Debug, Eq, Hash, PartialEq, Default, Clone)]
 pub struct FieldDataMapKey {
@@ -37,33 +44,51 @@ impl FieldDataMapKey {
 
 fn build_field_data_map(yaml_data: Yaml) -> (FieldDataMapKey, FieldDataMapEntry) {
     let rewrite_field_data = yaml_data["RewriteFieldData"].as_hash();
-    if rewrite_field_data.is_none() {
+    let hex2decimal = if let Some(s) = yaml_data["HexToDecimal"].as_str() {
+        Some(YamlLoader::load_from_str(s).unwrap_or_default())
+    } else {
+        yaml_data["HexToDecimal"].as_vec().map(|v| v.to_owned())
+    };
+    if rewrite_field_data.is_none() && hex2decimal.is_none() {
         return (FieldDataMapKey::default(), FieldDataMapEntry::default());
     }
     let mut mapping = HashMap::new();
-    for (key_yaml, val_yaml) in rewrite_field_data.unwrap().iter() {
-        let field = key_yaml.as_str().unwrap_or_default();
-        let replace_values = val_yaml.as_vec();
-        if field.is_empty() || replace_values.is_none() {
-            continue;
-        }
-        let mut ptns = vec![];
-        let mut reps = vec![];
-        for rep_val in replace_values.unwrap() {
-            let entry = rep_val.as_hash();
-            if entry.is_none() {
+    if let Some(x) = rewrite_field_data {
+        for (key_yaml, val_yaml) in x.iter() {
+            let field = key_yaml.as_str().unwrap_or_default();
+            let replace_values = val_yaml.as_vec();
+            if field.is_empty() || replace_values.is_none() {
                 continue;
             }
-            for (ptn, rep) in entry.unwrap().iter() {
-                ptns.push(ptn.as_str().unwrap_or_default().to_string());
-                reps.push(rep.as_str().unwrap_or_default().to_string());
+            let mut ptns = vec![];
+            let mut reps = vec![];
+            for rep_val in replace_values.unwrap() {
+                let entry = rep_val.as_hash();
+                if entry.is_none() {
+                    continue;
+                }
+                for (ptn, rep) in entry.unwrap().iter() {
+                    ptns.push(ptn.as_str().unwrap_or_default().to_string());
+                    reps.push(rep.as_str().unwrap_or_default().to_string());
+                }
+            }
+            let ac = AhoCorasick::new(ptns);
+            if ac.is_err() {
+                continue;
+            }
+            mapping.insert(
+                field.to_string().to_lowercase(),
+                ReplaceStr((ac.unwrap(), reps)),
+            );
+        }
+    }
+
+    if let Some(fields) = hex2decimal {
+        for field in fields {
+            if let Some(key) = field.as_str() {
+                mapping.insert(key.to_lowercase(), HexToDecimal);
             }
         }
-        let ac = AhoCorasick::new(ptns);
-        if ac.is_err() {
-            continue;
-        }
-        mapping.insert(field.to_string().to_lowercase(), (ac.unwrap(), reps));
     }
     (FieldDataMapKey::new(yaml_data), mapping)
 }
@@ -78,11 +103,16 @@ pub fn convert_field_data(
         None => None,
         Some(data_map_entry) => match data_map_entry.get(field) {
             None => None,
-            Some((ac, rep)) => {
+            Some(ReplaceStr(x)) => {
+                let (ac, rep) = x;
                 let mut wtr = vec![];
                 let _ = ac.try_stream_replace_all(field_data_str.as_bytes(), &mut wtr, rep);
                 Some(CompactString::from(std::str::from_utf8(&wtr).unwrap()))
             }
+            Some(HexToDecimal) => match u64::from_str_radix(&field_data_str[2..], 16) {
+                Ok(decimal_value) => Some(CompactString::from(decimal_value.to_string())),
+                Err(_) => Some(CompactString::from(field_data_str)),
+            },
         },
     }
 }
@@ -122,7 +152,7 @@ pub fn create_field_data_map(dir_path: &Path) -> Option<FieldDataMap> {
 mod tests {
     use crate::detections::field_data_map::{
         build_field_data_map, convert_field_data, create_field_data_map, load_yaml_files,
-        FieldDataMap, FieldDataMapKey,
+        FieldDataConverter, FieldDataMap, FieldDataMapKey,
     };
     use crate::detections::utils;
     use compact_str::CompactString;
@@ -238,16 +268,23 @@ mod tests {
         "##;
         let r = build_field_data_map(build_yaml(s));
         let mut wtr = vec![];
-        let ac = r.1.get("elevatedtoken").unwrap().0.clone();
-        let rp = r.1.get("elevatedtoken").unwrap().1.clone();
-        let _ = ac.try_stream_replace_all("foo, %%1842, %%1843".as_bytes(), &mut wtr, &rp);
-        assert_eq!(b"foo, YES, NO".to_vec(), wtr);
-
-        let mut wtr = vec![];
-        let ac = r.1.get("impersonationlevel").unwrap().0.clone();
-        let rp = r.1.get("impersonationlevel").unwrap().1.clone();
-        let _ = ac.try_stream_replace_all("foo, %%1832, %%1833".as_bytes(), &mut wtr, &rp);
-        assert_eq!(b"foo, A, B".to_vec(), wtr);
+        match r.1.get("elevatedtoken").unwrap() {
+            FieldDataConverter::HexToDecimal => panic!(),
+            FieldDataConverter::ReplaceStr(x) => {
+                let (ac, rp) = x;
+                let _ = ac.try_stream_replace_all("foo, %%1842, %%1843".as_bytes(), &mut wtr, rp);
+                assert_eq!(b"foo, YES, NO".to_vec(), wtr);
+            }
+        }
+        match r.1.get("impersonationlevel").unwrap() {
+            FieldDataConverter::HexToDecimal => panic!(),
+            FieldDataConverter::ReplaceStr(x) => {
+                let mut wtr = vec![];
+                let (ac, rp) = x;
+                let _ = ac.try_stream_replace_all("foo, %%1832, %%1833".as_bytes(), &mut wtr, rp);
+                assert_eq!(b"foo, A, B".to_vec(), wtr);
+            }
+        }
     }
 
     #[test]
@@ -264,7 +301,9 @@ mod tests {
                 "System": {"EventID": 4624, "Channel": "Security", "Computer":"DESKTOP"},
                 "EventData": {
                     "ElevatedToken": "%%1843",
-                    "ImpersonationLevel": "%%1832"
+                    "ImpersonationLevel": "%%1832",
+                    "NewProcessId": "0x1980",
+                    "ProcessId": "0x44c"
                 },
                 "EventData_attributes": {"xmlns": "http://schemas.microsoft.com/win/2004/08/events/event"}
             },
@@ -280,6 +319,9 @@ mod tests {
                 ImpersonationLevel:
                     - '%%1832': 'A'
                     - '%%1833': 'B'
+            HexToDecimal:
+                    - 'NewProcessId'
+                    - 'ProcessId'
         "##;
         let (key, entry) = build_field_data_map(build_yaml(s));
         let mut map: FieldDataMap = HashMap::new();
@@ -287,7 +329,7 @@ mod tests {
         match serde_json::from_str(record_json_str) {
             Ok(record) => {
                 let ret = utils::create_recordinfos(&record, &key, &Some(map));
-                let expected = "ElevatedToken: NO ¦ ImpersonationLevel: A".to_string();
+                let expected = "ElevatedToken: NO ¦ ImpersonationLevel: A ¦ NewProcessId: 6528 ¦ ProcessId: 1100".to_string();
                 assert_eq!(ret, expected);
             }
             Err(_) => {

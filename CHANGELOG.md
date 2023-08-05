@@ -1,5 +1,11 @@
 # Changes
 
+## 2.8.0 [xxxx/xx/xx]
+
+**New Features:**
+
+- Added a `HexToDecimal` feature to the field mapping configuration to convert hex values to decimal. (Useful for converting the original hex process IDs.) (#1133) (@fukusuket)
+
 ## 2.7.0 [2023/08/03] "SANS DFIR Summit Release"
 
 **New Features:**
