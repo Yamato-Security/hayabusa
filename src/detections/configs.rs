@@ -1464,8 +1464,8 @@ pub struct InputOption {
     #[arg(help_heading = Some("Input"), short = 'l', long = "live-analysis", conflicts_with_all = ["filepath", "directory", "json_input"], display_order = 380)]
     pub live_analysis: bool,
 
-    /// enabled read the empty page of the evtx file(default: disabled)
-    #[arg(help_heading = Some("Input"), long = "recover-records", display_order = 440)]
+    /// Carve evtx records from empty pages (default: disabled)
+    #[arg(help_heading = Some("Input"), short = 'x', long = "recover-records", display_order = 440)]
     pub recover_records: bool,
 }
 
