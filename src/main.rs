@@ -1162,7 +1162,9 @@ impl App {
                 record_cnt += 1;
                 let record_result = next_rec.unwrap();
 
-                if record_result.as_ref().unwrap().allocation == RecordAllocation::EmptyPage {
+                if record_result.is_ok()
+                    && record_result.as_ref().unwrap().allocation == RecordAllocation::EmptyPage
+                {
                     recover_records_cnt += 1;
                 };
 
