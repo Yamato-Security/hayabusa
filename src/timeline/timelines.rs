@@ -528,6 +528,7 @@ mod tests {
                     directory: None,
                     filepath: None,
                     live_analysis: false,
+                    recover_records: false,
                 },
                 common_options: CommonOptions {
                     no_color: false,
@@ -707,6 +708,7 @@ mod tests {
                     directory: None,
                     filepath: None,
                     live_analysis: false,
+                    recover_records: false,
                 },
                 common_options: CommonOptions {
                     no_color: false,
@@ -793,6 +795,7 @@ mod tests {
                     directory: None,
                     filepath: Some(Path::new("./dummy.evtx").to_path_buf()),
                     live_analysis: false,
+                    recover_records: false,
                 },
                 common_options: CommonOptions {
                     no_color: false,

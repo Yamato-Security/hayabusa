@@ -968,6 +968,7 @@ mod tests {
                         directory: None,
                         filepath: None,
                         live_analysis: false,
+                        recover_records: false,
                     },
                     profile: Some("super-verbose".to_string()),
                     enable_deprecated_rules: false,

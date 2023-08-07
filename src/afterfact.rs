@@ -171,6 +171,7 @@ pub fn after_fact(
     no_color_flag: bool,
     stored_static: &StoredStatic,
     tl: Timeline,
+    recover_records_cnt: usize,
 ) {
     let fn_emit_csv_err = |err: Box<dyn Error>| {
         AlertMessage::alert(&format!("Failed to write CSV. {err}")).ok();
@@ -197,7 +198,7 @@ pub fn after_fact(
         &mut target,
         displayflag,
         color_map,
-        all_record_cnt as u128,
+        (all_record_cnt as u128, recover_records_cnt as u128),
         stored_static.profiles.as_ref().unwrap(),
         stored_static,
         (&tl.stats.start_time, &tl.stats.end_time),
@@ -210,7 +211,7 @@ fn emit_csv<W: std::io::Write>(
     writer: &mut W,
     displayflag: bool,
     color_map: HashMap<CompactString, Colors>,
-    all_record_cnt: u128,
+    (all_record_cnt, recover_records_cnt): (u128, u128),
     profile: &Vec<(CompactString, Profile)>,
     stored_static: &StoredStatic,
     tl_start_end_time: (&Option<DateTime<Utc>>, &Option<DateTime<Utc>>),
@@ -727,16 +728,49 @@ fn emit_csv<W: std::io::Write>(
             &disp_wtr,
             get_writable_color(None, stored_static.common_options.no_color),
             ")",
-            false,
+            true,
         )
         .ok();
-        println!();
+        if stored_static.enable_recover_records {
+            write_color_buffer(
+                &disp_wtr,
+                get_writable_color(
+                    Some(Color::Rgb(0, 255, 255)),
+                    stored_static.common_options.no_color,
+                ),
+                "Recovered records",
+                false,
+            )
+            .ok();
+            write_color_buffer(
+                &disp_wtr,
+                get_writable_color(None, stored_static.common_options.no_color),
+                ": ",
+                false,
+            )
+            .ok();
+            let recovered_record_output = recover_records_cnt.to_formatted_string(&Locale::en);
+            write_color_buffer(
+                &disp_wtr,
+                get_writable_color(
+                    Some(Color::Rgb(0, 255, 255)),
+                    stored_static.common_options.no_color,
+                ),
+                &recovered_record_output,
+                true,
+            )
+            .ok();
+        }
         println!();
 
         if html_output_flag {
             html_output_stock.push(format!("- Events with hits: {}", &saved_alerts_output));
             html_output_stock.push(format!("- Total events analyzed: {}", &all_record_output));
             html_output_stock.push(format!("- {reduction_output}"));
+            html_output_stock.push(format!(
+                "- Recovered events analyzed: {}",
+                &recover_records_cnt.to_formatted_string(&Locale::en)
+            ));
         }
 
         _print_unique_results(
@@ -1814,6 +1848,7 @@ mod tests {
                     directory: None,
                     filepath: None,
                     live_analysis: false,
+                    recover_records: false,
                 },
                 profile: None,
                 enable_deprecated_rules: false,
@@ -1899,6 +1934,7 @@ mod tests {
                     directory: None,
                     filepath: None,
                     live_analysis: false,
+                    recover_records: false,
                 },
                 profile: None,
                 enable_deprecated_rules: false,
@@ -2088,7 +2124,7 @@ mod tests {
             &mut file,
             false,
             HashMap::new(),
-            1,
+            (1, 0),
             &output_profile,
             &stored_static,
             (&Some(expect_tz), &Some(expect_tz))
@@ -2132,6 +2168,7 @@ mod tests {
                     directory: None,
                     filepath: None,
                     live_analysis: false,
+                    recover_records: false,
                 },
                 profile: Some("verbose-2".to_string()),
                 enable_deprecated_rules: false,
@@ -2219,6 +2256,7 @@ mod tests {
                     directory: None,
                     filepath: None,
                     live_analysis: false,
+                    recover_records: false,
                 },
                 profile: Some("verbose-2".to_string()),
                 enable_deprecated_rules: false,
@@ -2394,7 +2432,7 @@ mod tests {
             &mut file,
             false,
             HashMap::new(),
-            1,
+            (1, 0),
             &output_profile,
             &stored_static,
             (&Some(expect_tz), &Some(expect_tz))
@@ -2438,6 +2476,7 @@ mod tests {
                     directory: None,
                     filepath: None,
                     live_analysis: false,
+                    recover_records: false,
                 },
                 profile: None,
                 enable_deprecated_rules: false,
@@ -2523,6 +2562,7 @@ mod tests {
                     directory: None,
                     filepath: None,
                     live_analysis: false,
+                    recover_records: false,
                 },
                 profile: None,
                 enable_deprecated_rules: false,
@@ -2709,7 +2749,7 @@ mod tests {
             &mut file,
             false,
             HashMap::new(),
-            1,
+            (1, 0),
             &output_profile,
             &stored_static,
             (&Some(expect_tz), &Some(expect_tz))
@@ -2753,6 +2793,7 @@ mod tests {
                     directory: None,
                     filepath: None,
                     live_analysis: false,
+                    recover_records: false,
                 },
                 profile: None,
                 enable_deprecated_rules: false,
@@ -2838,6 +2879,7 @@ mod tests {
                     directory: None,
                     filepath: None,
                     live_analysis: false,
+                    recover_records: false,
                 },
                 profile: None,
                 enable_deprecated_rules: false,
@@ -3097,7 +3139,7 @@ mod tests {
             &mut file,
             false,
             HashMap::new(),
-            1,
+            (1, 0),
             &output_profile,
             &stored_static,
             (&Some(expect_tz), &Some(expect_tz))
@@ -3152,6 +3194,7 @@ mod tests {
                 directory: None,
                 filepath: None,
                 live_analysis: false,
+                recover_records: false,
             },
             profile: None,
             enable_deprecated_rules: false,
@@ -3287,6 +3330,7 @@ mod tests {
                     directory: None,
                     filepath: None,
                     live_analysis: false,
+                    recover_records: false,
                 },
                 profile: None,
                 enable_deprecated_rules: false,
@@ -3371,6 +3415,7 @@ mod tests {
                     directory: None,
                     filepath: None,
                     live_analysis: false,
+                    recover_records: false,
                 },
                 profile: None,
                 enable_deprecated_rules: false,
@@ -3498,7 +3543,7 @@ mod tests {
             &mut file,
             false,
             HashMap::new(),
-            1,
+            (1, 0),
             &output_profile,
             &stored_static,
             (&Some(expect_tz), &Some(expect_tz))
@@ -3541,6 +3586,7 @@ mod tests {
                     directory: None,
                     filepath: None,
                     live_analysis: false,
+                    recover_records: false,
                 },
                 profile: None,
                 enable_deprecated_rules: false,
@@ -3625,6 +3671,7 @@ mod tests {
                     directory: None,
                     filepath: None,
                     live_analysis: false,
+                    recover_records: false,
                 },
                 profile: None,
                 enable_deprecated_rules: false,
@@ -3752,7 +3799,7 @@ mod tests {
             &mut file,
             false,
             HashMap::new(),
-            1,
+            (1, 0),
             &output_profile,
             &stored_static,
             (&Some(expect_tz), &Some(expect_tz))
