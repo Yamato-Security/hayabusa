@@ -892,13 +892,13 @@ hayabusa.exe csv-timeline -d .\hayabusa-sample-evtx -v
 
 * Verbose出力の例:
 
-ルールファイルのロード:
+ルールファイルの読み込み:
 
 ```
-Loaded yml file path: rules/sigma/builtin/deprecated/proc_creation_win_susp_run_folder.yml
-Loaded yml file path: rules/sigma/builtin/deprecated/proc_creation_win_execution_mssql_xp_cmdshell_stored_procedure.yml
-Loaded yml file path: rules/sigma/builtin/deprecated/proc_creation_win_susp_squirrel_lolbin.yml
-Loaded yml file path: rules/sigma/builtin/win_alert_mimikatz_keywords.yml
+Loaded rule: rules/sigma/builtin/deprecated/proc_creation_win_susp_run_folder.yml
+Loaded rule: rules/sigma/builtin/deprecated/proc_creation_win_execution_mssql_xp_cmdshell_stored_procedure.yml
+Loaded rule: rules/sigma/builtin/deprecated/proc_creation_win_susp_squirrel_lolbin.yml
+Loaded rule: rules/sigma/builtin/win_alert_mimikatz_keywords.yml
 ```
 
 スキャン中のエラー:
