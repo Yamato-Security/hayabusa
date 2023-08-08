@@ -441,7 +441,7 @@ impl ParseYaml {
             }
 
             if stored_static.verbose_flag {
-                println!("Loaded yml file path: {filepath}");
+                println!("Loaded rule: {filepath}");
             }
 
             // 指定されたレベルより低いルールは無視する

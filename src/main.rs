@@ -1171,7 +1171,7 @@ impl App {
                 if record_result.is_err() {
                     let evtx_filepath = &path;
                     let errmsg = format!(
-                        "Failed to parse event file. EventFile:{} Error:{}",
+                        "Failed to parse event file.\nEventFile: {}\nError: {}\n",
                         evtx_filepath,
                         record_result.unwrap_err()
                     );
