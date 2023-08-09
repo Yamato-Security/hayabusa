@@ -901,17 +901,28 @@ hayabusa.exe csv-timeline -d .\hayabusa-sample-evtx -v
 
 * Verbose output example:
 
+Loading rules:
+
 ```
-Checking target evtx FilePath: "./hayabusa-sample-evtx/sample1.evtx"
-1 / 509 [>---------------------------------------------------------------] 0.20 % 1s
-Checking target evtx FilePath: "./hayabusa-sample-evtx/sample2.evtx"
-2 / 509 [=>--------------------------------------------------------------] 0.39 % 1s
-Checking target evtx FilePath: "./hayabusa-sample-evtx/sample3.evtx"
-3 / 509 [==>-------------------------------------------------------------] 0.59 % 1s
-Checking target evtx FilePath: "./hayabusa-sample-evtx/sample4.evtx"
-4 / 509 [===>------------------------------------------------------------] 0.79 % 1s
-Checking target evtx FilePath: "./hayabusa-sample-evtx/sample5.evtx"
-5 / 509 [====>-----------------------------------------------------------] 0.98 % 1s
+Loaded rule: rules/sigma/builtin/deprecated/proc_creation_win_susp_run_folder.yml
+Loaded rule: rules/sigma/builtin/deprecated/proc_creation_win_execution_mssql_xp_cmdshell_stored_procedure.yml
+Loaded rule: rules/sigma/builtin/deprecated/proc_creation_win_susp_squirrel_lolbin.yml
+Loaded rule: rules/sigma/builtin/win_alert_mimikatz_keywords.yml
+```
+
+Errors during the scan:
+```
+[ERROR] Failed to parse event file.
+EventFile: ../logs/Microsoft-Rdms-UI%4Operational.evtx
+Error: Failed to parse record number 58471
+
+[ERROR] Failed to parse event file.
+EventFile: ../logs/Microsoft-Rdms-UI%4Operational.evtx
+Error: Failed to parse record number 58470
+
+[ERROR] Failed to parse event file.
+EventFile: ../logs/Microsoft-Windows-AppxPackaging%4Operational.evtx
+Error: An error occurred while trying to serialize binary xml to output.
 ```
 
 * Output to a CSV format compatible to import into [Timesketch](https://timesketch.org/):
