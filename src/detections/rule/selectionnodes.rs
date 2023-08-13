@@ -570,6 +570,7 @@ mod tests {
                     exclude_eid: None,
                     no_field: false,
                     remove_duplicate_data: false,
+                    remove_duplicate_detections: false,
                 },
                 geo_ip: None,
                 output: None,
