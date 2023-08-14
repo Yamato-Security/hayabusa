@@ -26,7 +26,7 @@ use termcolor::{BufferWriter, ColorChoice};
 
 use super::configs::EventKeyAliasConfig;
 
-#[derive(Debug, Clone, PartialEq, Eq, Default)]
+#[derive(Debug, Clone, PartialEq, Eq, Hash, Default)]
 pub struct DetectInfo {
     pub rulepath: CompactString,
     pub ruleid: CompactString,

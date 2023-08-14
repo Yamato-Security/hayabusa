@@ -1,7 +1,7 @@
 use crate::detections::configs::{
     Action, OutputOption, StoredStatic, CONTROL_CHAT_REPLACE_MAP, CURRENT_EXE_PATH, GEOIP_DB_PARSER,
 };
-use crate::detections::message::{self, AlertMessage, DetectInfo, LEVEL_FULL, MESSAGEKEYS};
+use crate::detections::message::{self, AlertMessage, LEVEL_FULL, MESSAGEKEYS};
 use crate::detections::utils::{
     self, format_time, get_writable_color, output_and_data_stack_for_html, write_color_buffer,
 };
@@ -337,7 +337,7 @@ fn emit_csv<W: std::io::Write>(
     {
         let multi = message::MESSAGES.get(time).unwrap();
         let (_, detect_infos) = multi.pair();
-        let mut prev_detect_info = &DetectInfo::default();
+        let mut prev_detect_infos = HashSet::new();
         timestamps[message_idx] = _get_timestamp(output_option, time);
         for detect_info in detect_infos.iter().sorted_by(|a, b| {
             Ord::cmp(
@@ -357,11 +357,11 @@ fn emit_csv<W: std::io::Write>(
                 ),
             )
         }) {
-            if output_option.remove_duplicate_detections {
-                if prev_detect_info == detect_info {
+            if output_option.remove_duplicate_detections && detect_infos.len() > 1 {
+                if prev_detect_infos.get(detect_info).is_some() {
                     continue;
                 }
-                prev_detect_info = detect_info;
+                prev_detect_infos.insert(detect_info);
             }
             if !detect_info.is_condition {
                 detected_record_idset.insert(CompactString::from(format!(
