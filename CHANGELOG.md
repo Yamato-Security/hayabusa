@@ -4,7 +4,9 @@
 
 **New Features:**
 
-- Added a `HexToDecimal` feature to the field mapping configuration to convert hex values to decimal. (Useful for converting the original hex process IDs.) (#1133) (@fukusuket)
+- Added support for `HexToDecimal` in the field mapping configuration files to convert hex values to decimal. (Useful for converting the original process IDs from hex to decimal.) (#1133) (@fukusuket)
+- Added `-x, --recover-records` option to `csv-timeline` and `json-timeline` to recover evtx records through file carving on empty pages. (#952) (@hitenkoku) (Evtx carving feature is thanks to @forensicmatt)
+- Added `-X, --remove-duplicate-detections` option to `csv-timeline` and `json-timeline` to not output any duplicate detection entries. (Useful when you use `-x`, include older backup logs with duplicate data, etc...)
 
 ## 2.7.0 [2023/08/03] "SANS DFIR Summit Release"
 
