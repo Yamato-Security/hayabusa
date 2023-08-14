@@ -1446,8 +1446,8 @@ pub struct OutputOption {
         )]
     pub remove_duplicate_data: bool,
 
-    /// Remove duplicate detections(default: disabled)
-    #[arg(help_heading = Some("Input"), short = 'X', long = "remove-duplicate-detections", display_order = 441)]
+    /// Remove duplicate detections (default: disabled)
+    #[arg(help_heading = Some("Output"), short = 'X', long = "remove-duplicate-detections", display_order = 441)]
     pub remove_duplicate_detections: bool,
 }
 
