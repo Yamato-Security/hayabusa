@@ -358,10 +358,10 @@ fn emit_csv<W: std::io::Write>(
             )
         }) {
             if output_option.remove_duplicate_detections && detect_infos.len() > 1 {
-                if prev_detect_infos.get(detect_info).is_some() {
+                if prev_detect_infos.get(&detect_info.ext_field).is_some() {
                     continue;
                 }
-                prev_detect_infos.insert(detect_info);
+                prev_detect_infos.insert(&detect_info.ext_field);
             }
             if !detect_info.is_condition {
                 detected_record_idset.insert(CompactString::from(format!(
