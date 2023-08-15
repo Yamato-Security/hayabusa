@@ -1445,6 +1445,10 @@ pub struct OutputOption {
             display_order = 440
         )]
     pub remove_duplicate_data: bool,
+
+    /// Remove duplicate detections (default: disabled)
+    #[arg(help_heading = Some("Output"), short = 'X', long = "remove-duplicate-detections", display_order = 441)]
+    pub remove_duplicate_detections: bool,
 }
 
 #[derive(Copy, Args, Clone, Debug)]
@@ -1958,6 +1962,7 @@ fn extract_output_options(config: &Config) -> Option<OutputOption> {
             exclude_eid: option.exclude_eid.clone(),
             no_field: false,
             remove_duplicate_data: false,
+            remove_duplicate_detections: false,
         }),
         Action::EidMetrics(option) => Some(OutputOption {
             input_args: option.input_args.clone(),
@@ -1994,6 +1999,7 @@ fn extract_output_options(config: &Config) -> Option<OutputOption> {
             exclude_eid: None,
             no_field: false,
             remove_duplicate_data: false,
+            remove_duplicate_detections: false,
         }),
         Action::LogonSummary(option) => Some(OutputOption {
             input_args: option.input_args.clone(),
@@ -2030,6 +2036,7 @@ fn extract_output_options(config: &Config) -> Option<OutputOption> {
             exclude_eid: None,
             no_field: false,
             remove_duplicate_data: false,
+            remove_duplicate_detections: false,
         }),
         Action::ComputerMetrics(option) => Some(OutputOption {
             input_args: option.input_args.clone(),
@@ -2075,6 +2082,7 @@ fn extract_output_options(config: &Config) -> Option<OutputOption> {
             exclude_eid: None,
             no_field: false,
             remove_duplicate_data: false,
+            remove_duplicate_detections: false,
         }),
         Action::Search(option) => Some(OutputOption {
             input_args: option.input_args.clone(),
@@ -2120,6 +2128,7 @@ fn extract_output_options(config: &Config) -> Option<OutputOption> {
             exclude_eid: None,
             no_field: false,
             remove_duplicate_data: false,
+            remove_duplicate_detections: false,
         }),
         Action::SetDefaultProfile(option) => Some(OutputOption {
             input_args: InputOption {
@@ -2170,6 +2179,7 @@ fn extract_output_options(config: &Config) -> Option<OutputOption> {
             exclude_eid: None,
             no_field: false,
             remove_duplicate_data: false,
+            remove_duplicate_detections: false,
         }),
         Action::UpdateRules(option) => Some(OutputOption {
             input_args: InputOption {
@@ -2220,6 +2230,7 @@ fn extract_output_options(config: &Config) -> Option<OutputOption> {
             exclude_eid: None,
             no_field: false,
             remove_duplicate_data: false,
+            remove_duplicate_detections: false,
         }),
         _ => None,
     }

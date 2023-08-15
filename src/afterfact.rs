@@ -236,7 +236,6 @@ fn emit_csv<W: std::io::Write>(
     let mut html_output_stock = Nested::<String>::new();
     let html_output_flag = stored_static.html_report_flag;
     let output_option = stored_static.output_option.as_ref().unwrap();
-
     let disp_wtr = BufferWriter::stdout(ColorChoice::Always);
     let mut disp_wtr_buf = disp_wtr.buffer();
     let mut json_output_flag = false;
@@ -338,6 +337,7 @@ fn emit_csv<W: std::io::Write>(
     {
         let multi = message::MESSAGES.get(time).unwrap();
         let (_, detect_infos) = multi.pair();
+        let mut prev_detect_infos = HashSet::new();
         timestamps[message_idx] = _get_timestamp(output_option, time);
         for detect_info in detect_infos.iter().sorted_by(|a, b| {
             Ord::cmp(
@@ -357,6 +357,12 @@ fn emit_csv<W: std::io::Write>(
                 ),
             )
         }) {
+            if output_option.remove_duplicate_detections && detect_infos.len() > 1 {
+                if prev_detect_infos.get(&detect_info.ext_field).is_some() {
+                    continue;
+                }
+                prev_detect_infos.insert(&detect_info.ext_field);
+            }
             if !detect_info.is_condition {
                 detected_record_idset.insert(CompactString::from(format!(
                     "{}_{}",
@@ -1895,6 +1901,7 @@ mod tests {
                 exclude_eid: None,
                 no_field: false,
                 remove_duplicate_data: false,
+                remove_duplicate_detections: false,
             },
             geo_ip: None,
             output: Some(Path::new("./test_emit_csv.csv").to_path_buf()),
@@ -1981,6 +1988,7 @@ mod tests {
                 exclude_eid: None,
                 no_field: false,
                 remove_duplicate_data: false,
+                remove_duplicate_detections: false,
             };
             let ch = mock_ch_filter
                 .get(&CompactString::from("security"))
@@ -2215,6 +2223,7 @@ mod tests {
                 exclude_eid: None,
                 no_field: false,
                 remove_duplicate_data: false,
+                remove_duplicate_detections: false,
             },
             geo_ip: None,
             output: Some(Path::new("./test_emit_csv_multiline.csv").to_path_buf()),
@@ -2303,6 +2312,7 @@ mod tests {
                 exclude_eid: None,
                 no_field: false,
                 remove_duplicate_data: false,
+                remove_duplicate_detections: false,
             };
             let ch = mock_ch_filter
                 .get(&CompactString::from("security"))
@@ -2523,6 +2533,7 @@ mod tests {
                 exclude_eid: None,
                 no_field: false,
                 remove_duplicate_data: true,
+                remove_duplicate_detections: false,
             },
             geo_ip: None,
             output: Some(Path::new("./test_emit_csv_remove_duplicate.csv").to_path_buf()),
@@ -2609,6 +2620,7 @@ mod tests {
                 exclude_eid: None,
                 no_field: false,
                 remove_duplicate_data: false,
+                remove_duplicate_detections: false,
             };
             let ch = mock_ch_filter
                 .get(&CompactString::from("security"))
@@ -2840,6 +2852,7 @@ mod tests {
                 exclude_eid: None,
                 no_field: false,
                 remove_duplicate_data: true,
+                remove_duplicate_detections: false,
             },
             geo_ip: None,
             output: Some(Path::new("./test_emit_csv_remove_duplicate.json").to_path_buf()),
@@ -2926,6 +2939,7 @@ mod tests {
                 exclude_eid: None,
                 no_field: false,
                 remove_duplicate_data: true,
+                remove_duplicate_detections: false,
             };
             let ch = mock_ch_filter
                 .get(&CompactString::from("security"))
@@ -3241,6 +3255,7 @@ mod tests {
             exclude_eid: None,
             no_field: false,
             remove_duplicate_data: false,
+            remove_duplicate_detections: false,
         };
         let data: Vec<(CompactString, Profile)> = vec![
             (
@@ -3377,6 +3392,7 @@ mod tests {
                 exclude_eid: None,
                 no_field: false,
                 remove_duplicate_data: false,
+                remove_duplicate_detections: false,
             },
             geo_ip: None,
             output: Some(Path::new("./test_emit_csv_json.json").to_path_buf()),
@@ -3462,6 +3478,7 @@ mod tests {
                 exclude_eid: None,
                 no_field: false,
                 remove_duplicate_data: false,
+                remove_duplicate_detections: false,
             };
             let ch = mock_ch_filter
                 .get(&CompactString::from("security"))
@@ -3633,6 +3650,7 @@ mod tests {
                 exclude_eid: None,
                 no_field: false,
                 remove_duplicate_data: false,
+                remove_duplicate_detections: false,
             },
             geo_ip: None,
             output: Some(Path::new("./test_emit_csv_jsonl.jsonl").to_path_buf()),
@@ -3718,6 +3736,7 @@ mod tests {
                 exclude_eid: None,
                 no_field: false,
                 remove_duplicate_data: false,
+                remove_duplicate_detections: false,
             };
             let ch = mock_ch_filter
                 .get(&CompactString::from("security"))
