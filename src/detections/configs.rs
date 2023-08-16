@@ -83,6 +83,7 @@ pub struct StoredStatic {
     pub include_eid: HashSet<CompactString>,
     pub exclude_eid: HashSet<CompactString>,
     pub field_data_map: Option<FieldDataMap>,
+    pub enable_recover_records: bool,
 }
 impl StoredStatic {
     /// main.rsでパースした情報からデータを格納する関数
@@ -494,6 +495,15 @@ impl StoredStatic {
                     .unwrap(),
             ))
         };
+        let enable_recover_records = match &input_config.as_ref().unwrap().action {
+            Some(Action::CsvTimeline(opt)) => opt.output_options.input_args.recover_records,
+            Some(Action::JsonTimeline(opt)) => opt.output_options.input_args.recover_records,
+            Some(Action::EidMetrics(opt)) => opt.input_args.recover_records,
+            Some(Action::LogonSummary(opt)) => opt.input_args.recover_records,
+            Some(Action::PivotKeywordsList(opt)) => opt.input_args.recover_records,
+            Some(Action::Search(opt)) => opt.input_args.recover_records,
+            _ => false,
+        };
 
         let mut ret = StoredStatic {
             config: input_config.as_ref().unwrap().to_owned(),
@@ -606,6 +616,7 @@ impl StoredStatic {
             include_eid,
             exclude_eid,
             field_data_map,
+            enable_recover_records,
         };
         ret.profiles = load_profile(
             check_setting_path(
@@ -702,7 +713,7 @@ fn check_thread_number(config: &Config) -> Option<usize> {
 pub enum Action {
     #[clap(
         author = "Yamato Security (https://github.com/Yamato-Security/hayabusa - @SecurityYamato)",
-        help_template = "\nHayabusa v2.7.0 - SANS DFIR Summit Release \n{author-with-newline}\n{usage-heading}\n  hayabusa.exe csv-timeline <INPUT> [OPTIONS]\n\n{all-args}",
+        help_template = "\nHayabusa v2.8.0 - Dev Build \n{author-with-newline}\n{usage-heading}\n  hayabusa.exe csv-timeline <INPUT> [OPTIONS]\n\n{all-args}",
         term_width = 400,
         disable_help_flag = true,
         display_order = 290
@@ -712,7 +723,7 @@ pub enum Action {
 
     #[clap(
         author = "Yamato Security (https://github.com/Yamato-Security/hayabusa - @SecurityYamato)",
-        help_template = "\nHayabusa v2.7.0 - SANS DFIR Summit Release \n{author-with-newline}\n{usage-heading}\n  hayabusa.exe json-timeline <INPUT> [OPTIONS]\n\n{all-args}",
+        help_template = "\nHayabusa v2.8.0 - Dev Build \n{author-with-newline}\n{usage-heading}\n  hayabusa.exe json-timeline <INPUT> [OPTIONS]\n\n{all-args}",
         term_width = 400,
         disable_help_flag = true,
         display_order = 360
@@ -722,7 +733,7 @@ pub enum Action {
 
     #[clap(
         author = "Yamato Security (https://github.com/Yamato-Security/hayabusa - @SecurityYamato)",
-        help_template = "\nHayabusa v2.7.0 - SANS DFIR Summit Release \n{author-with-newline}\n{usage-heading}\n  hayabusa.exe logon-summary <INPUT> [OPTIONS]\n\n{all-args}",
+        help_template = "\nHayabusa v2.8.0 - Dev Build \n{author-with-newline}\n{usage-heading}\n  hayabusa.exe logon-summary <INPUT> [OPTIONS]\n\n{all-args}",
         term_width = 400,
         disable_help_flag = true,
         display_order = 383
@@ -732,7 +743,7 @@ pub enum Action {
 
     #[clap(
         author = "Yamato Security (https://github.com/Yamato-Security/hayabusa - @SecurityYamato)",
-        help_template = "\nHayabusa v2.7.0 - SANS DFIR Summit Release \n{author-with-newline}\n{usage-heading}\n  hayabusa.exe eid-metrics <INPUT> [OPTIONS]\n\n{all-args}",
+        help_template = "\nHayabusa v2.8.0 - Dev Build \n{author-with-newline}\n{usage-heading}\n  hayabusa.exe eid-metrics <INPUT> [OPTIONS]\n\n{all-args}",
         term_width = 400,
         disable_help_flag = true,
         display_order = 310
@@ -742,7 +753,7 @@ pub enum Action {
 
     #[clap(
         author = "Yamato Security (https://github.com/Yamato-Security/hayabusa - @SecurityYamato)",
-        help_template = "\nHayabusa v2.7.0 - SANS DFIR Summit Release \n{author-with-newline}\n{usage-heading}\n  hayabusa.exe pivot-keywords-list <INPUT> [OPTIONS]\n\n{all-args}",
+        help_template = "\nHayabusa v2.8.0 - Dev Build \n{author-with-newline}\n{usage-heading}\n  hayabusa.exe pivot-keywords-list <INPUT> [OPTIONS]\n\n{all-args}",
         term_width = 400,
         disable_help_flag = true,
         display_order = 420
@@ -752,7 +763,7 @@ pub enum Action {
 
     #[clap(
         author = "Yamato Security (https://github.com/Yamato-Security/hayabusa - @SecurityYamato)",
-        help_template = "\nHayabusa v2.7.0 - SANS DFIR Summit Release \n{author-with-newline}\n{usage-heading}\n  hayabusa.exe search <INPUT> <--keywords \"<KEYWORDS>\" OR --regex \"<REGEX>\"> [OPTIONS]\n\n{all-args}",
+        help_template = "\nHayabusa v2.8.0 - Dev Build \n{author-with-newline}\n{usage-heading}\n  hayabusa.exe search <INPUT> <--keywords \"<KEYWORDS>\" OR --regex \"<REGEX>\"> [OPTIONS]\n\n{all-args}",
         term_width = 400,
         disable_help_flag = true,
         display_order = 450
@@ -762,7 +773,7 @@ pub enum Action {
 
     #[clap(
         author = "Yamato Security (https://github.com/Yamato-Security/hayabusa - @SecurityYamato)",
-        help_template = "\nHayabusa v2.7.0 - SANS DFIR Summit Release \n{author-with-newline}\n{usage-heading}\n  {usage}\n\n{all-args}",
+        help_template = "\nHayabusa v2.8.0 - Dev Build \n{author-with-newline}\n{usage-heading}\n  {usage}\n\n{all-args}",
         term_width = 400,
         disable_help_flag = true,
         display_order = 470
@@ -772,7 +783,7 @@ pub enum Action {
 
     #[clap(
         author = "Yamato Security (https://github.com/Yamato-Security/hayabusa - @SecurityYamato)",
-        help_template = "\nHayabusa v2.7.0 - SANS DFIR Summit Release \n{author-with-newline}\n{usage-heading}\n  {usage}\n\n{all-args}",
+        help_template = "\nHayabusa v2.8.0 - Dev Build \n{author-with-newline}\n{usage-heading}\n  {usage}\n\n{all-args}",
         term_width = 400,
         disable_help_flag = true,
         display_order = 380
@@ -782,7 +793,7 @@ pub enum Action {
 
     #[clap(
         author = "Yamato Security (https://github.com/Yamato-Security/hayabusa - @SecurityYamato)",
-        help_template = "\nHayabusa v2.7.0 - SANS DFIR Summit Release \n{author-with-newline}\n{usage-heading}\n  {usage}\n\n{all-args}",
+        help_template = "\nHayabusa v2.8.0 - Dev Build \n{author-with-newline}\n{usage-heading}\n  {usage}\n\n{all-args}",
         term_width = 400,
         disable_help_flag = true,
         display_order = 451
@@ -800,7 +811,7 @@ pub enum Action {
 
     #[clap(
         author = "Yamato Security (https://github.com/Yamato-Security/hayabusa - @SecurityYamato)",
-        help_template = "\nHayabusa v2.7.0 - SANS DFIR Summit Release \n{author-with-newline}\n{usage-heading}\n  {usage}\n\n{all-args}",
+        help_template = "\nHayabusa v2.8.0 - Dev Build \n{author-with-newline}\n{usage-heading}\n  {usage}\n\n{all-args}",
         term_width = 400,
         disable_help_flag = true,
         display_order = 290
@@ -1434,6 +1445,10 @@ pub struct OutputOption {
             display_order = 440
         )]
     pub remove_duplicate_data: bool,
+
+    /// Remove duplicate detections (default: disabled)
+    #[arg(help_heading = Some("Output"), short = 'X', long = "remove-duplicate-detections", display_order = 441)]
+    pub remove_duplicate_detections: bool,
 }
 
 #[derive(Copy, Args, Clone, Debug)]
@@ -1460,6 +1475,10 @@ pub struct InputOption {
     /// Analyze the local C:\Windows\System32\winevt\Logs folder
     #[arg(help_heading = Some("Input"), short = 'l', long = "live-analysis", conflicts_with_all = ["filepath", "directory", "json_input"], display_order = 380)]
     pub live_analysis: bool,
+
+    /// Carve evtx records from empty pages (default: disabled)
+    #[arg(help_heading = Some("Input"), short = 'x', long = "recover-records", conflicts_with = "json_input", display_order = 440)]
+    pub recover_records: bool,
 }
 
 #[derive(Args, Clone, Debug)]
@@ -1569,7 +1588,7 @@ pub struct ComputerMetricsOption {
 #[derive(Parser, Clone, Debug)]
 #[clap(
     author = "Yamato Security (https://github.com/Yamato-Security/hayabusa - @SecurityYamato)",
-    help_template = "\nHayabusa v2.7.0 - SANS DFIR Summit Release \n{author-with-newline}\n{usage-heading}\n  hayabusa.exe <COMMAND> [OPTIONS]\n  hayabusa.exe help <COMMAND>\n\n{all-args}{options}",
+    help_template = "\nHayabusa v2.8.0 - Dev Build \n{author-with-newline}\n{usage-heading}\n  hayabusa.exe <COMMAND> [OPTIONS]\n  hayabusa.exe help <COMMAND>\n\n{all-args}{options}",
     term_width = 400,
     disable_help_flag = true
 )]
@@ -1943,6 +1962,7 @@ fn extract_output_options(config: &Config) -> Option<OutputOption> {
             exclude_eid: option.exclude_eid.clone(),
             no_field: false,
             remove_duplicate_data: false,
+            remove_duplicate_detections: false,
         }),
         Action::EidMetrics(option) => Some(OutputOption {
             input_args: option.input_args.clone(),
@@ -1979,6 +1999,7 @@ fn extract_output_options(config: &Config) -> Option<OutputOption> {
             exclude_eid: None,
             no_field: false,
             remove_duplicate_data: false,
+            remove_duplicate_detections: false,
         }),
         Action::LogonSummary(option) => Some(OutputOption {
             input_args: option.input_args.clone(),
@@ -2015,6 +2036,7 @@ fn extract_output_options(config: &Config) -> Option<OutputOption> {
             exclude_eid: None,
             no_field: false,
             remove_duplicate_data: false,
+            remove_duplicate_detections: false,
         }),
         Action::ComputerMetrics(option) => Some(OutputOption {
             input_args: option.input_args.clone(),
@@ -2060,6 +2082,7 @@ fn extract_output_options(config: &Config) -> Option<OutputOption> {
             exclude_eid: None,
             no_field: false,
             remove_duplicate_data: false,
+            remove_duplicate_detections: false,
         }),
         Action::Search(option) => Some(OutputOption {
             input_args: option.input_args.clone(),
@@ -2105,12 +2128,14 @@ fn extract_output_options(config: &Config) -> Option<OutputOption> {
             exclude_eid: None,
             no_field: false,
             remove_duplicate_data: false,
+            remove_duplicate_detections: false,
         }),
         Action::SetDefaultProfile(option) => Some(OutputOption {
             input_args: InputOption {
                 directory: None,
                 filepath: None,
                 live_analysis: false,
+                recover_records: false,
             },
             enable_deprecated_rules: false,
             enable_noisy_rules: false,
@@ -2154,12 +2179,14 @@ fn extract_output_options(config: &Config) -> Option<OutputOption> {
             exclude_eid: None,
             no_field: false,
             remove_duplicate_data: false,
+            remove_duplicate_detections: false,
         }),
         Action::UpdateRules(option) => Some(OutputOption {
             input_args: InputOption {
                 directory: None,
                 filepath: None,
                 live_analysis: false,
+                recover_records: false,
             },
             enable_deprecated_rules: true,
             enable_noisy_rules: true,
@@ -2203,6 +2230,7 @@ fn extract_output_options(config: &Config) -> Option<OutputOption> {
             exclude_eid: None,
             no_field: false,
             remove_duplicate_data: false,
+            remove_duplicate_detections: false,
         }),
         _ => None,
     }

@@ -1,5 +1,13 @@
 # 変更点
 
+## 2.8.0 [xxxx/xx/xx]
+
+**新機能:**
+
+- フィールドマッピング設定に16進数値を10進数に変換する`HexToDecimal`機能に対応した。 (元の16進数のプロセスIDを変換するのに便利。) (#1133) (@fukusuket)
+- `csv-timeline`と`json-timeline`に`-x, --recover-records`オプションを追加し、空ページのファイルカービングによってevtxレコードを復元できるようにした。(#952) (@hitenkoku) (Evtxカービング機能は@forensicmattに実装された。)
+- `csv-timeline`と`json-timeline`に`-X, --remove-duplicate-detections`オプションを追加した。(`-x`を使用する場合、重複データのあるバックアップログを含める場合などに便利。) (#1157) (@fukusuket)
+
 ## 2.7.0 [2023/08/03] "SANS DFIR Summit Release"
 
 **新機能:**

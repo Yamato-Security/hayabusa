@@ -171,6 +171,7 @@ pub fn after_fact(
     no_color_flag: bool,
     stored_static: &StoredStatic,
     tl: Timeline,
+    recover_records_cnt: usize,
 ) {
     let fn_emit_csv_err = |err: Box<dyn Error>| {
         AlertMessage::alert(&format!("Failed to write CSV. {err}")).ok();
@@ -197,7 +198,7 @@ pub fn after_fact(
         &mut target,
         displayflag,
         color_map,
-        all_record_cnt as u128,
+        (all_record_cnt as u128, recover_records_cnt as u128),
         stored_static.profiles.as_ref().unwrap(),
         stored_static,
         (&tl.stats.start_time, &tl.stats.end_time),
@@ -210,7 +211,7 @@ fn emit_csv<W: std::io::Write>(
     writer: &mut W,
     displayflag: bool,
     color_map: HashMap<CompactString, Colors>,
-    all_record_cnt: u128,
+    (all_record_cnt, recover_records_cnt): (u128, u128),
     profile: &Vec<(CompactString, Profile)>,
     stored_static: &StoredStatic,
     tl_start_end_time: (&Option<DateTime<Utc>>, &Option<DateTime<Utc>>),
@@ -235,7 +236,6 @@ fn emit_csv<W: std::io::Write>(
     let mut html_output_stock = Nested::<String>::new();
     let html_output_flag = stored_static.html_report_flag;
     let output_option = stored_static.output_option.as_ref().unwrap();
-
     let disp_wtr = BufferWriter::stdout(ColorChoice::Always);
     let mut disp_wtr_buf = disp_wtr.buffer();
     let mut json_output_flag = false;
@@ -337,6 +337,7 @@ fn emit_csv<W: std::io::Write>(
     {
         let multi = message::MESSAGES.get(time).unwrap();
         let (_, detect_infos) = multi.pair();
+        let mut prev_detect_infos = HashSet::new();
         timestamps[message_idx] = _get_timestamp(output_option, time);
         for detect_info in detect_infos.iter().sorted_by(|a, b| {
             Ord::cmp(
@@ -356,6 +357,12 @@ fn emit_csv<W: std::io::Write>(
                 ),
             )
         }) {
+            if output_option.remove_duplicate_detections && detect_infos.len() > 1 {
+                if prev_detect_infos.get(&detect_info.ext_field).is_some() {
+                    continue;
+                }
+                prev_detect_infos.insert(&detect_info.ext_field);
+            }
             if !detect_info.is_condition {
                 detected_record_idset.insert(CompactString::from(format!(
                     "{}_{}",
@@ -727,16 +734,49 @@ fn emit_csv<W: std::io::Write>(
             &disp_wtr,
             get_writable_color(None, stored_static.common_options.no_color),
             ")",
-            false,
+            true,
         )
         .ok();
-        println!();
+        if stored_static.enable_recover_records {
+            write_color_buffer(
+                &disp_wtr,
+                get_writable_color(
+                    Some(Color::Rgb(0, 255, 255)),
+                    stored_static.common_options.no_color,
+                ),
+                "Recovered records",
+                false,
+            )
+            .ok();
+            write_color_buffer(
+                &disp_wtr,
+                get_writable_color(None, stored_static.common_options.no_color),
+                ": ",
+                false,
+            )
+            .ok();
+            let recovered_record_output = recover_records_cnt.to_formatted_string(&Locale::en);
+            write_color_buffer(
+                &disp_wtr,
+                get_writable_color(
+                    Some(Color::Rgb(0, 255, 255)),
+                    stored_static.common_options.no_color,
+                ),
+                &recovered_record_output,
+                true,
+            )
+            .ok();
+        }
         println!();
 
         if html_output_flag {
             html_output_stock.push(format!("- Events with hits: {}", &saved_alerts_output));
             html_output_stock.push(format!("- Total events analyzed: {}", &all_record_output));
             html_output_stock.push(format!("- {reduction_output}"));
+            html_output_stock.push(format!(
+                "- Recovered events analyzed: {}",
+                &recover_records_cnt.to_formatted_string(&Locale::en)
+            ));
         }
 
         _print_unique_results(
@@ -1840,6 +1880,7 @@ mod tests {
                     directory: None,
                     filepath: None,
                     live_analysis: false,
+                    recover_records: false,
                 },
                 profile: None,
                 enable_deprecated_rules: false,
@@ -1886,6 +1927,7 @@ mod tests {
                 exclude_eid: None,
                 no_field: false,
                 remove_duplicate_data: false,
+                remove_duplicate_detections: false,
             },
             geo_ip: None,
             output: Some(Path::new("./test_emit_csv.csv").to_path_buf()),
@@ -1925,6 +1967,7 @@ mod tests {
                     directory: None,
                     filepath: None,
                     live_analysis: false,
+                    recover_records: false,
                 },
                 profile: None,
                 enable_deprecated_rules: false,
@@ -1971,6 +2014,7 @@ mod tests {
                 exclude_eid: None,
                 no_field: false,
                 remove_duplicate_data: false,
+                remove_duplicate_detections: false,
             };
             let ch = mock_ch_filter
                 .get(&CompactString::from("security"))
@@ -2114,7 +2158,7 @@ mod tests {
             &mut file,
             false,
             HashMap::new(),
-            1,
+            (1, 0),
             &output_profile,
             &stored_static,
             (&Some(expect_tz), &Some(expect_tz))
@@ -2158,6 +2202,7 @@ mod tests {
                     directory: None,
                     filepath: None,
                     live_analysis: false,
+                    recover_records: false,
                 },
                 profile: Some("verbose-2".to_string()),
                 enable_deprecated_rules: false,
@@ -2204,6 +2249,7 @@ mod tests {
                 exclude_eid: None,
                 no_field: false,
                 remove_duplicate_data: false,
+                remove_duplicate_detections: false,
             },
             geo_ip: None,
             output: Some(Path::new("./test_emit_csv_multiline.csv").to_path_buf()),
@@ -2245,6 +2291,7 @@ mod tests {
                     directory: None,
                     filepath: None,
                     live_analysis: false,
+                    recover_records: false,
                 },
                 profile: Some("verbose-2".to_string()),
                 enable_deprecated_rules: false,
@@ -2291,6 +2338,7 @@ mod tests {
                 exclude_eid: None,
                 no_field: false,
                 remove_duplicate_data: false,
+                remove_duplicate_detections: false,
             };
             let ch = mock_ch_filter
                 .get(&CompactString::from("security"))
@@ -2420,7 +2468,7 @@ mod tests {
             &mut file,
             false,
             HashMap::new(),
-            1,
+            (1, 0),
             &output_profile,
             &stored_static,
             (&Some(expect_tz), &Some(expect_tz))
@@ -2464,6 +2512,7 @@ mod tests {
                     directory: None,
                     filepath: None,
                     live_analysis: false,
+                    recover_records: false,
                 },
                 profile: None,
                 enable_deprecated_rules: false,
@@ -2510,6 +2559,7 @@ mod tests {
                 exclude_eid: None,
                 no_field: false,
                 remove_duplicate_data: true,
+                remove_duplicate_detections: false,
             },
             geo_ip: None,
             output: Some(Path::new("./test_emit_csv_remove_duplicate.csv").to_path_buf()),
@@ -2549,6 +2599,7 @@ mod tests {
                     directory: None,
                     filepath: None,
                     live_analysis: false,
+                    recover_records: false,
                 },
                 profile: None,
                 enable_deprecated_rules: false,
@@ -2595,6 +2646,7 @@ mod tests {
                 exclude_eid: None,
                 no_field: false,
                 remove_duplicate_data: false,
+                remove_duplicate_detections: false,
             };
             let ch = mock_ch_filter
                 .get(&CompactString::from("security"))
@@ -2735,7 +2787,7 @@ mod tests {
             &mut file,
             false,
             HashMap::new(),
-            1,
+            (1, 0),
             &output_profile,
             &stored_static,
             (&Some(expect_tz), &Some(expect_tz))
@@ -2779,6 +2831,7 @@ mod tests {
                     directory: None,
                     filepath: None,
                     live_analysis: false,
+                    recover_records: false,
                 },
                 profile: None,
                 enable_deprecated_rules: false,
@@ -2825,6 +2878,7 @@ mod tests {
                 exclude_eid: None,
                 no_field: false,
                 remove_duplicate_data: true,
+                remove_duplicate_detections: false,
             },
             geo_ip: None,
             output: Some(Path::new("./test_emit_csv_remove_duplicate.json").to_path_buf()),
@@ -2864,6 +2918,7 @@ mod tests {
                     directory: None,
                     filepath: None,
                     live_analysis: false,
+                    recover_records: false,
                 },
                 profile: None,
                 enable_deprecated_rules: false,
@@ -2910,6 +2965,7 @@ mod tests {
                 exclude_eid: None,
                 no_field: false,
                 remove_duplicate_data: true,
+                remove_duplicate_detections: false,
             };
             let ch = mock_ch_filter
                 .get(&CompactString::from("security"))
@@ -3123,7 +3179,7 @@ mod tests {
             &mut file,
             false,
             HashMap::new(),
-            1,
+            (1, 0),
             &output_profile,
             &stored_static,
             (&Some(expect_tz), &Some(expect_tz))
@@ -3178,6 +3234,7 @@ mod tests {
                 directory: None,
                 filepath: None,
                 live_analysis: false,
+                recover_records: false,
             },
             profile: None,
             enable_deprecated_rules: false,
@@ -3224,6 +3281,7 @@ mod tests {
             exclude_eid: None,
             no_field: false,
             remove_duplicate_data: false,
+            remove_duplicate_detections: false,
         };
         let data: Vec<(CompactString, Profile)> = vec![
             (
@@ -3313,6 +3371,7 @@ mod tests {
                     directory: None,
                     filepath: None,
                     live_analysis: false,
+                    recover_records: false,
                 },
                 profile: None,
                 enable_deprecated_rules: false,
@@ -3359,6 +3418,7 @@ mod tests {
                 exclude_eid: None,
                 no_field: false,
                 remove_duplicate_data: false,
+                remove_duplicate_detections: false,
             },
             geo_ip: None,
             output: Some(Path::new("./test_emit_csv_json.json").to_path_buf()),
@@ -3397,6 +3457,7 @@ mod tests {
                     directory: None,
                     filepath: None,
                     live_analysis: false,
+                    recover_records: false,
                 },
                 profile: None,
                 enable_deprecated_rules: false,
@@ -3443,6 +3504,7 @@ mod tests {
                 exclude_eid: None,
                 no_field: false,
                 remove_duplicate_data: false,
+                remove_duplicate_detections: false,
             };
             let ch = mock_ch_filter
                 .get(&CompactString::from("security"))
@@ -3524,7 +3586,7 @@ mod tests {
             &mut file,
             false,
             HashMap::new(),
-            1,
+            (1, 0),
             &output_profile,
             &stored_static,
             (&Some(expect_tz), &Some(expect_tz))
@@ -3567,6 +3629,7 @@ mod tests {
                     directory: None,
                     filepath: None,
                     live_analysis: false,
+                    recover_records: false,
                 },
                 profile: None,
                 enable_deprecated_rules: false,
@@ -3613,6 +3676,7 @@ mod tests {
                 exclude_eid: None,
                 no_field: false,
                 remove_duplicate_data: false,
+                remove_duplicate_detections: false,
             },
             geo_ip: None,
             output: Some(Path::new("./test_emit_csv_jsonl.jsonl").to_path_buf()),
@@ -3651,6 +3715,7 @@ mod tests {
                     directory: None,
                     filepath: None,
                     live_analysis: false,
+                    recover_records: false,
                 },
                 profile: None,
                 enable_deprecated_rules: false,
@@ -3697,6 +3762,7 @@ mod tests {
                 exclude_eid: None,
                 no_field: false,
                 remove_duplicate_data: false,
+                remove_duplicate_detections: false,
             };
             let ch = mock_ch_filter
                 .get(&CompactString::from("security"))
@@ -3778,7 +3844,7 @@ mod tests {
             &mut file,
             false,
             HashMap::new(),
-            1,
+            (1, 0),
             &output_profile,
             &stored_static,
             (&Some(expect_tz), &Some(expect_tz))

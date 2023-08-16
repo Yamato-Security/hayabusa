@@ -441,7 +441,7 @@ impl ParseYaml {
             }
 
             if stored_static.verbose_flag {
-                println!("Loaded yml file path: {filepath}");
+                println!("Loaded rule: {filepath}");
             }
 
             // 指定されたレベルより低いルールは無視する
@@ -491,6 +491,7 @@ mod tests {
                         directory: None,
                         filepath: None,
                         live_analysis: false,
+                        recover_records: false,
                     },
                     profile: None,
                     enable_deprecated_rules: false,
@@ -537,6 +538,7 @@ mod tests {
                     exclude_eid: None,
                     no_field: false,
                     remove_duplicate_data: false,
+                    remove_duplicate_detections: false,
                 },
                 geo_ip: None,
                 output: None,

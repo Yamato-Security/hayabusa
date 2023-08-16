@@ -450,7 +450,7 @@ impl SelectionNode for LeafSelectionNode {
         if self.get_key() == "EventID" && !self.select_value.is_null() {
             if let Some(event_id) = self.select_value.as_i64() {
                 // 正規表現は重いので、数値のEventIDのみ文字列完全一致で判定
-                return event_value.unwrap() == &event_id.to_string();
+                return event_value.unwrap_or(&String::default()) == &event_id.to_string();
             }
         }
         if !self.key_list.is_empty() && self.key_list[0].eq("|all") {
@@ -523,6 +523,7 @@ mod tests {
                         directory: None,
                         filepath: None,
                         live_analysis: false,
+                        recover_records: false,
                     },
                     profile: None,
                     enable_deprecated_rules: false,
@@ -569,6 +570,7 @@ mod tests {
                     exclude_eid: None,
                     no_field: false,
                     remove_duplicate_data: false,
+                    remove_duplicate_detections: false,
                 },
                 geo_ip: None,
                 output: None,
