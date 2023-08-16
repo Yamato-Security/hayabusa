@@ -1527,6 +1527,7 @@ pub fn output_json_str(
                                 && sp.ends_with(';')
                                 && sp.len() < 5
                                 && key_index_stock.len() > 1
+                                && key_index_stock.last().unwrap_or(&String::default()) != "Cmdline"
                             {
                                 let last_key = key_index_stock.pop().unwrap_or_default();
                                 let mut last_stocked_value =
