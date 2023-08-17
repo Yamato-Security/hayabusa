@@ -358,10 +358,15 @@ fn emit_csv<W: std::io::Write>(
             )
         }) {
             if output_option.remove_duplicate_detections && detect_infos.len() > 1 {
-                if prev_detect_infos.get(&detect_info.ext_field).is_some() {
+                let fields: Vec<&(CompactString, Profile)> = detect_info
+                    .ext_field
+                    .iter()
+                    .filter(|(_, profile)| !matches!(profile, Profile::EvtxFile(_)))
+                    .collect();
+                if prev_detect_infos.get(&fields).is_some() {
                     continue;
                 }
-                prev_detect_infos.insert(&detect_info.ext_field);
+                prev_detect_infos.insert(fields);
             }
             if !detect_info.is_condition {
                 detected_record_idset.insert(CompactString::from(format!(
