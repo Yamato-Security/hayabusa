@@ -366,7 +366,7 @@ fn emit_csv<W: std::io::Write>(
                 if prev_detect_infos.get(&fields).is_some() {
                     continue;
                 }
-                prev_detect_infos.insert(fields.clone());
+                prev_detect_infos.insert(fields);
             }
             if !detect_info.is_condition {
                 detected_record_idset.insert(CompactString::from(format!(
