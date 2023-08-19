@@ -962,7 +962,7 @@ pub struct SearchOption {
     )]
     pub ignore_case: bool,
 
-    /// Search by keyword(s)
+    /// Search keywords with AND logic. (default: OR)
     #[arg(
         help_heading = Some("Filtering"),
         short = 'a',
