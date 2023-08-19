@@ -962,6 +962,18 @@ pub struct SearchOption {
     )]
     pub ignore_case: bool,
 
+    /// Search by keyword(s)
+    #[arg(
+        help_heading = Some("Filtering"),
+        short = 'a',
+        long = "and-logic",
+        value_name = "KEYWORD...",
+        display_order = 270,
+        conflicts_with = "regex",
+        requires="keywords"
+    )]
+    pub and_logic: bool,
+
     /// Filter by specific field(s)
     #[arg(
         help_heading = Some("Filtering"),
@@ -1917,6 +1929,7 @@ fn extract_search_options(config: &Config) -> Option<SearchOption> {
             us_military_time: option.us_military_time,
             us_time: option.us_time,
             utc: option.utc,
+            and_logic: option.and_logic,
         }),
         _ => None,
     }
