@@ -8,6 +8,10 @@
 - Added `-x, --recover-records` option to `csv-timeline` and `json-timeline` to recover evtx records through file carving on empty pages. (#952) (@hitenkoku) (Evtx carving feature is thanks to @forensicmatt)
 - Added `-X, --remove-duplicate-detections` option to `csv-timeline` and `json-timeline` to not output any duplicate detection entries. (Useful when you use `-x`, include older backup logs with duplicate data, etc...)
 
+**Enhancements:**
+
+- Added `-a, --and-logic` option in `search` to search keywords with AND logic. (#1162) (@hitenkoku)
+
 ## 2.7.0 [2023/08/03] "SANS DFIR Summit Release"
 
 **New Features:**

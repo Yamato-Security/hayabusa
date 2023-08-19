@@ -8,6 +8,10 @@
 - `csv-timeline`と`json-timeline`に`-x, --recover-records`オプションを追加し、空ページのファイルカービングによってevtxレコードを復元できるようにした。(#952) (@hitenkoku) (Evtxカービング機能は@forensicmattに実装された。)
 - `csv-timeline`と`json-timeline`に`-X, --remove-duplicate-detections`オプションを追加した。(`-x`を使用する場合、重複データのあるバックアップログを含める場合などに便利。) (#1157) (@fukusuket)
 
+**改善:**
+
+- `search`に`-a, --and-logic`オプションを追加し、複数のキーワードをAND条件で検索できるようにした。 (#1162) (@hitenkoku)
+
 ## 2.7.0 [2023/08/03] "SANS DFIR Summit Release"
 
 **新機能:**
