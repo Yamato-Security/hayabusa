@@ -10,8 +10,8 @@
 
 **Enhancements:**
 
-- Added `-a, --and-logic` option in `search` to search keywords with AND logic. (#1162) (@hitenkoku)
-- Added the support for the `%RecoveredRecord%` field in output profiles which is recovered or not. (#1160) (@hitenkoku)
+- Added a `-a, --and-logic` option in the `search` command to search keywords with AND logic. (#1162) (@hitenkoku)
+- When using `-x, --recover-records`, an additional `%RecoveredRecord%` field will be added to the output profile and will output `Y` to indicate if a record was recovered. (#1160) (@hitenkoku)
 
 ## 2.7.0 [2023/08/03] "SANS DFIR Summit Release"
 
