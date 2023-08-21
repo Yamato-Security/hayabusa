@@ -297,7 +297,12 @@ pub fn create_tokio_runtime(thread_number: Option<usize>) -> Runtime {
 }
 
 // EvtxRecordInfoを作成します。
-pub fn create_rec_info(data: Value, path: String, keys: &Nested<String>) -> EvtxRecordInfo {
+pub fn create_rec_info(
+    data: Value,
+    path: String,
+    keys: &Nested<String>,
+    recovered_record: &bool,
+) -> EvtxRecordInfo {
     // 高速化のための処理
 
     // 例えば、Value型から"Event.System.EventID"の値を取得しようとすると、value["Event"]["System"]["EventID"]のように3回アクセスする必要がある。
@@ -331,6 +336,7 @@ pub fn create_rec_info(data: Value, path: String, keys: &Nested<String>) -> Evtx
         record: data,
         data_string: data_str,
         key_2_value: key_2_values,
+        recovered_record: *recovered_record,
     }
 }
 
