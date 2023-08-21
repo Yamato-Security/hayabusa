@@ -1553,7 +1553,8 @@ mod tests {
             let dummy_rule = RuleNode::new(test_rulepath.to_string(), Yaml::from_str(""));
             let keys = detections::rule::get_detection_keys(&dummy_rule);
 
-            let input_evtxrecord = utils::create_rec_info(event, test_filepath.to_owned(), &keys);
+            let input_evtxrecord =
+                utils::create_rec_info(event, test_filepath.to_owned(), &keys, &false);
             Detection::insert_message(&dummy_rule, &input_evtxrecord, &stored_static);
             let multi = message::MESSAGES.get(&expect_time).unwrap();
             let (_, detect_infos) = multi.pair();
@@ -1685,7 +1686,8 @@ mod tests {
             let dummy_rule = RuleNode::new(test_rulepath.to_string(), Yaml::from_str(""));
             let keys = detections::rule::get_detection_keys(&dummy_rule);
 
-            let input_evtxrecord = utils::create_rec_info(event, test_filepath.to_owned(), &keys);
+            let input_evtxrecord =
+                utils::create_rec_info(event, test_filepath.to_owned(), &keys, &false);
             Detection::insert_message(&dummy_rule, &input_evtxrecord, &stored_static);
             let multi = message::MESSAGES.get(&expect_time).unwrap();
             let (_, detect_infos) = multi.pair();
@@ -1830,7 +1832,8 @@ mod tests {
             assert!(rule_node.init(&create_dummy_stored_static()).is_ok());
 
             let keys = detections::rule::get_detection_keys(&rule_node);
-            let input_evtxrecord = utils::create_rec_info(event, test_filepath.to_owned(), &keys);
+            let input_evtxrecord =
+                utils::create_rec_info(event, test_filepath.to_owned(), &keys, &false);
             Detection::insert_message(&rule_node, &input_evtxrecord, &stored_static.clone());
             let multi = message::MESSAGES.get(&expect_time).unwrap();
             let (_, detect_infos) = multi.pair();
@@ -1972,7 +1975,8 @@ mod tests {
             assert!(rule_node.init(&create_dummy_stored_static()).is_ok());
 
             let keys = detections::rule::get_detection_keys(&rule_node);
-            let input_evtxrecord = utils::create_rec_info(event, test_filepath.to_owned(), &keys);
+            let input_evtxrecord =
+                utils::create_rec_info(event, test_filepath.to_owned(), &keys, &false);
             Detection::insert_message(&rule_node, &input_evtxrecord, &stored_static.clone());
             let multi = message::MESSAGES.get(&expect_time).unwrap();
             let (_, detect_infos) = multi.pair();

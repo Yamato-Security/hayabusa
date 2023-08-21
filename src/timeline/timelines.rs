@@ -581,6 +581,7 @@ mod tests {
             alias_ch_record,
             "testpath".to_string(),
             &Nested::<String>::new(),
+            &false,
         ));
         timeline
             .stats
@@ -616,6 +617,7 @@ mod tests {
             include_tcreated_attribe_record,
             "testpath2".to_string(),
             &Nested::<String>::new(),
+            &false,
         ));
 
         // テスト3: Event.System.@timestampにタイムスタンプが含まれる場合
@@ -639,6 +641,7 @@ mod tests {
             include_timestamp_record,
             "testpath2".to_string(),
             &Nested::<String>::new(),
+            &false,
         ));
 
         let mut expect: HashMap<
@@ -757,6 +760,7 @@ mod tests {
             include_timestamp_record,
             "testpath2".to_string(),
             &Nested::<String>::new(),
+            &false,
         ));
 
         let include_computer: HashSet<CompactString> = HashSet::new();
@@ -852,6 +856,7 @@ mod tests {
             include_tcreated_attribe_record,
             "testpath2".to_string(),
             &Nested::<String>::new(),
+            &false,
         ));
 
         let timestamp_attribe_record_str = r#"{
@@ -874,6 +879,7 @@ mod tests {
             include_timestamp_record,
             "testpath2".to_string(),
             &Nested::<String>::new(),
+            &false,
         ));
 
         timeline
