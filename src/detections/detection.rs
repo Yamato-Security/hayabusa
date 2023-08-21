@@ -486,7 +486,7 @@ impl Detection {
                 }
                 RecoveredRecord(_) => {
                     profile_converter
-                        .insert(key.as_str(), RecoveredRecord(recovered_record.into()));
+                        .insert("RecoveredRecord", RecoveredRecord(recovered_record.into()));
                 }
                 RenderedMessage(_) => {
                     let convert_value = if let Some(message) =
@@ -871,7 +871,7 @@ impl Detection {
                     profile_converter.insert(key.as_str(), Provider("-".into()));
                 }
                 RecoveredRecord(_) => {
-                    profile_converter.insert(key.as_str(), RenderedMessage("".into()));
+                    profile_converter.insert("RecoveredRecord", RenderedMessage("".into()));
                 }
                 RenderedMessage(_) => {
                     profile_converter.insert(key.as_str(), RenderedMessage("-".into()));
