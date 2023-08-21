@@ -11,6 +11,7 @@
 **改善:**
 
 - `search`に`-a, --and-logic`オプションを追加し、複数のキーワードをAND条件で検索できるようにした。 (#1162) (@hitenkoku)
+- 出力プロファイルに、回復されたかどうかを示す `%RecoveredRecord%` フィールドを追加した。 (#1170) (@hitenkoku)
 
 ## 2.7.0 [2023/08/03] "SANS DFIR Summit Release"
 
