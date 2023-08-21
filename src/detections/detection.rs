@@ -262,7 +262,7 @@ impl Detection {
             get_serde_number_to_string(&record_info.record["Event"]["System"]["EventID"], false)
                 .unwrap_or_else(|| "-".into());
         let recovered_record = if record_info.recovered_record {
-            "y"
+            "Y"
         } else {
             ""
         };
