@@ -1510,6 +1510,7 @@ pub fn output_json_str(
                                 && !sp.starts_with(['-', '/'])
                                 && sp.ends_with(':')
                                 && sp.len() > 2
+                                && sp != "Number:"
                             {
                                 key_index_stock.push(sp.replace(':', ""));
                                 if sp == "Payload:" {
