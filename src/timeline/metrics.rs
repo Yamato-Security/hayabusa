@@ -379,6 +379,7 @@ mod tests {
             alias_ch_record,
             "testpath".to_string(),
             &Nested::<String>::new(),
+            &false,
         ));
 
         // テスト2: レコードのチャンネル名がaliasに含まれていない場合
@@ -395,6 +396,7 @@ mod tests {
             no_alias_ch_record,
             "testpath2".to_string(),
             &Nested::<String>::new(),
+            &false,
         ));
 
         let include_computer: HashSet<CompactString> = HashSet::new();

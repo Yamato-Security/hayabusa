@@ -1497,6 +1497,15 @@ pub fn output_json_str(
                 | Profile::TgtASN(_)
                 | Profile::TgtCountry(_)
                 | Profile::TgtCity(_) => continue,
+                Profile::RecoveredRecord(data) => {
+                    target.push(_create_json_output_format(
+                        "RecoveredRecord",
+                        data,
+                        false,
+                        data.starts_with('\"'),
+                        4,
+                    ));
+                }
                 Profile::Details(_) | Profile::AllFieldInfo(_) | Profile::ExtraFieldInfo(_) => {
                     let mut output_stock: Vec<String> = vec![];
                     output_stock.push(format!("    \"{key}\": {{"));

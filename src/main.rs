@@ -1052,7 +1052,7 @@ impl App {
         self.rule_keys = self.get_all_keys(&rule_files);
         let mut detection = detection::Detection::new(rule_files);
         let mut total_records: usize = 0;
-        let mut recover_recordss: usize = 0;
+        let mut recover_records: usize = 0;
         let mut tl = Timeline::new();
 
         *STORED_EKEY_ALIAS.write().unwrap() = Some(stored_static.eventkey_alias.clone());
@@ -1084,7 +1084,7 @@ impl App {
                 )
             };
             total_records += cnt_tmp;
-            recover_recordss += recover_cnt_tmp;
+            recover_records += recover_cnt_tmp;
             pb.inc(1);
         }
         pb.finish_with_message(
@@ -1118,7 +1118,7 @@ impl App {
                 stored_static.common_options.no_color,
                 stored_static,
                 tl,
-                recover_recordss,
+                recover_records,
             );
         }
         CHECKPOINT
@@ -1143,7 +1143,7 @@ impl App {
         let mut record_cnt = 0;
         let mut recover_records_cnt = 0;
         if parser.is_none() {
-            return (detection, record_cnt, tl, recover_records_cnt);
+            return (detection, record_cnt, tl, 0);
         }
 
         let mut parser = parser.unwrap();
@@ -1166,7 +1166,7 @@ impl App {
                     && record_result.as_ref().unwrap().allocation == RecordAllocation::EmptyPage
                 {
                     recover_records_cnt += 1;
-                };
+                }
 
                 if record_result.is_err() {
                     let evtx_filepath = &path;
@@ -1238,7 +1238,9 @@ impl App {
                     }
                 }
 
-                records_per_detect.push(data.to_owned());
+                let recover_record_flag = record_result.is_ok()
+                    && record_result.as_ref().unwrap().allocation == RecordAllocation::EmptyPage;
+                records_per_detect.push((data.to_owned(), recover_record_flag));
             }
             if records_per_detect.is_empty() {
                 break;
@@ -1409,7 +1411,7 @@ impl App {
                     continue;
                 }
 
-                records_per_detect.push(data.to_owned());
+                records_per_detect.push((data.to_owned(), false));
             }
             if records_per_detect.is_empty() {
                 break;
@@ -1438,22 +1440,27 @@ impl App {
     }
 
     async fn create_rec_infos(
-        records_per_detect: Vec<Value>,
+        records_per_detect: Vec<(Value, bool)>,
         path: &dyn Display,
         rule_keys: Nested<String>,
     ) -> Vec<EvtxRecordInfo> {
         let path = Arc::new(path.to_string());
         let rule_keys = Arc::new(rule_keys);
         let threads: Vec<JoinHandle<EvtxRecordInfo>> = {
-            let this = records_per_detect
-                .into_iter()
-                .map(|rec| -> JoinHandle<EvtxRecordInfo> {
+            let this = records_per_detect.into_iter().map(
+                |(rec, recovered_record_flag)| -> JoinHandle<EvtxRecordInfo> {
                     let arc_rule_keys = Arc::clone(&rule_keys);
                     let arc_path = Arc::clone(&path);
                     spawn(async move {
-                        utils::create_rec_info(rec, arc_path.to_string(), &arc_rule_keys)
+                        utils::create_rec_info(
+                            rec,
+                            arc_path.to_string(),
+                            &arc_rule_keys,
+                            &recovered_record_flag,
+                        )
                     })
-                });
+                },
+            );
             FromIterator::from_iter(this)
         };
 
