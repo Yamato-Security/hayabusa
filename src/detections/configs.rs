@@ -6,7 +6,7 @@ use crate::options::htmlreport;
 use crate::options::pivot::{PivotKeyword, PIVOT_KEYWORD};
 use crate::options::profile::{load_profile, Profile};
 use aho_corasick::{AhoCorasick, AhoCorasickBuilder, MatchKind};
-use chrono::{DateTime, Utc};
+use chrono::{DateTime, Utc, Local, Duration};
 use clap::{ArgGroup, Args, ColorChoice, Command, CommandFactory, Parser, Subcommand};
 use compact_str::CompactString;
 use hashbrown::{HashMap, HashSet};
@@ -1491,6 +1491,10 @@ pub struct InputOption {
     /// Carve evtx records from empty pages (default: disabled)
     #[arg(help_heading = Some("Input"), short = 'x', long = "recover-records", conflicts_with = "json_input", display_order = 440)]
     pub recover_records: bool,
+
+    /// Scan just the most recent number of days(example: 1y, 30d, 24h, etc...)
+    #[arg(help_heading = Some("Filtering"), long = "timeline-offset", conflicts_with = "start_timeline", display_order = 440)]
+    pub timeline_offset: Option<String>,
 }
 
 #[derive(Args, Clone, Debug)]
@@ -2149,6 +2153,7 @@ fn extract_output_options(config: &Config) -> Option<OutputOption> {
                 filepath: None,
                 live_analysis: false,
                 recover_records: false,
+                timeline_offset: None,
             },
             enable_deprecated_rules: false,
             enable_noisy_rules: false,
@@ -2200,6 +2205,7 @@ fn extract_output_options(config: &Config) -> Option<OutputOption> {
                 filepath: None,
                 live_analysis: false,
                 recover_records: false,
+                timeline_offset: None,
             },
             enable_deprecated_rules: true,
             enable_noisy_rules: true,
