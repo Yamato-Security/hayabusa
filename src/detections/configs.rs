@@ -1708,12 +1708,55 @@ impl TargetEventTime {
                 None
             }
         };
+
+        let get_timeline_offset = |timeline_offset: &Option<String>| {
+            if let Some(timeline_offline) = timeline_offset {
+                let mut start_prev_sec = 0;
+                let timekey = ["y", "d", "h", "m", "s"];
+                for key in timekey {
+                    let mut timekey_splitter = timeline_offline.split(key);
+                    let mix_check = timekey_splitter.next();
+                    let mixed_checker: Vec<&str> = mix_check.unwrap_or_default().split(['y', 'd', 'h', 'm', 's']).collect();
+                    let target_num = if mixed_checker.is_empty() {
+                        mix_check.unwrap()
+                    } else {
+                        mixed_checker[mixed_checker.len() - 1]
+                    };
+                    if let Ok(num) = target_num.parse::<i64>() {
+                        if num < 0 {
+                            AlertMessage::alert("timeline-offset field: the timestamp format is not correct.")
+                        .ok();
+                        return None;
+                        }
+                        match key {
+                            "y" => start_prev_sec += num * 365 * 24 * 60 * 60,
+                            "d" => start_prev_sec += num * 24 * 60 * 60,
+                            "h" => start_prev_sec += num * 60 * 60,
+                            "m" => start_prev_sec += num * 60,
+                            "s" => start_prev_sec += num,
+                            _ => {}
+                        }
+                    }
+                }
+                let target_start_time = Local::now() - Duration::seconds(start_prev_sec);
+                Some(target_start_time.format("%Y-%m-%d %H:%M:%S %z").to_string())
+            } else {
+                None
+            }
+        };
         match &stored_static.config.action.as_ref().unwrap() {
             Action::CsvTimeline(option) => {
-                let start_time = get_time(
+                let timeoffset = get_timeline_offset(&option.output_options.input_args.timeline_offset);
+                let start_time = if timeoffset.is_some() {
+                    get_time(
+                        timeoffset.as_ref(),
+                        "timeline-offset field: the timestamp format is not correct.",
+                    )
+                } else {
+                    get_time(
                     option.output_options.start_timeline.as_ref(),
                     "start-timeline field: the timestamp format is not correct.",
-                );
+                )};
                 let end_time = get_time(
                     option.output_options.end_timeline.as_ref(),
                     "end-timeline field: the timestamp format is not correct.",
@@ -1721,10 +1764,17 @@ impl TargetEventTime {
                 Self::set(parse_success_flag, start_time, end_time)
             }
             Action::JsonTimeline(option) => {
-                let start_time = get_time(
+                let timeoffset = get_timeline_offset(&option.output_options.input_args.timeline_offset);
+                let start_time = if timeoffset.is_some() {
+                    get_time(
+                        timeoffset.as_ref(),
+                        "timeline-offset field: the timestamp format is not correct.",
+                    )
+                } else {
+                    get_time(
                     option.output_options.start_timeline.as_ref(),
                     "start-timeline field: the timestamp format is not correct.",
-                );
+                )};
                 let end_time = get_time(
                     option.output_options.end_timeline.as_ref(),
                     "end-timeline field: the timestamp format is not correct.",
@@ -1732,10 +1782,17 @@ impl TargetEventTime {
                 Self::set(parse_success_flag, start_time, end_time)
             }
             Action::PivotKeywordsList(option) => {
-                let start_time = get_time(
+                let timeoffset = get_timeline_offset(&option.input_args.timeline_offset);
+                let start_time = if timeoffset.is_some() {
+                    get_time(
+                        timeoffset.as_ref(),
+                        "timeline-offset field: the timestamp format is not correct.",
+                    )
+                } else {
+                    get_time(
                     option.start_timeline.as_ref(),
                     "start-timeline field: the timestamp format is not correct.",
-                );
+                )};
                 let end_time = get_time(
                     option.end_timeline.as_ref(),
                     "end-timeline field: the timestamp format is not correct.",
@@ -1743,15 +1800,58 @@ impl TargetEventTime {
                 Self::set(parse_success_flag, start_time, end_time)
             }
             Action::LogonSummary(option) => {
-                let start_time = get_time(
+                let timeoffset = get_timeline_offset(&option.input_args.timeline_offset);
+                let start_time = if timeoffset.is_some() {
+                    get_time(
+                        timeoffset.as_ref(),
+                        "timeline-offset field: the timestamp format is not correct.",
+                    )
+                } else {
+                    get_time(
                     option.start_timeline.as_ref(),
                     "start-timeline field: the timestamp format is not correct.",
-                );
+                )};
                 let end_time = get_time(
                     option.end_timeline.as_ref(),
                     "end-timeline field: the timestamp format is not correct.",
                 );
                 Self::set(parse_success_flag, start_time, end_time)
+            },
+            Action::ComputerMetrics(option) => {
+                let timeoffset = get_timeline_offset(&option.input_args.timeline_offset);
+                let start_time = if timeoffset.is_some() {
+                    get_time(
+                        timeoffset.as_ref(),
+                        "timeline-offset field: the timestamp format is not correct.",
+                    )
+                } else {
+                    None
+                };
+                Self::set(parse_success_flag, start_time, None)
+            },
+            Action::EidMetrics(option) => {
+                let timeoffset = get_timeline_offset(&option.input_args.timeline_offset);
+                let start_time = if timeoffset.is_some() {
+                    get_time(
+                        timeoffset.as_ref(),
+                        "timeline-offset field: the timestamp format is not correct.",
+                    )
+                } else {
+                    None
+                };
+                Self::set(parse_success_flag, start_time, None)
+            },
+            Action::Search(option) => {
+                let timeoffset = get_timeline_offset(&option.input_args.timeline_offset);
+                let start_time = if timeoffset.is_some() {
+                    get_time(
+                        timeoffset.as_ref(),
+                        "timeline-offset field: the timestamp format is not correct.",
+                    )
+                } else {
+                    None
+                };
+                Self::set(parse_success_flag, start_time, None)
             }
             _ => Self::set(parse_success_flag, None, None),
         }
