@@ -1230,7 +1230,6 @@ impl App {
                     ) {
                         continue;
                     }
-
                 }
                 // EventID側の条件との条件の混同を防ぐため時間でのフィルタリングの条件分岐を分離した
                 let timestamp = record_result.as_ref().unwrap().timestamp;
