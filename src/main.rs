@@ -1682,6 +1682,7 @@ mod tests {
                         filepath: None,
                         live_analysis: false,
                         recover_records: false,
+                        timeline_offset: None,
                     },
                     profile: None,
                     enable_deprecated_rules: false,
@@ -1842,6 +1843,7 @@ mod tests {
                     filepath: Some(Path::new("test_files/evtx/test.json").to_path_buf()),
                     live_analysis: false,
                     recover_records: false,
+                    timeline_offset: None,
                 },
                 profile: None,
                 enable_deprecated_rules: false,
@@ -1923,6 +1925,7 @@ mod tests {
                     filepath: Some(Path::new("test_files/evtx/test.json").to_path_buf()),
                     live_analysis: false,
                     recover_records: false,
+                    timeline_offset: None,
                 },
                 profile: None,
                 enable_deprecated_rules: false,
@@ -2002,6 +2005,7 @@ mod tests {
                     filepath: Some(Path::new("test_files/evtx/test.json").to_path_buf()),
                     live_analysis: false,
                     recover_records: false,
+                    timeline_offset: None,
                 },
                 profile: None,
                 enable_deprecated_rules: false,
@@ -2083,6 +2087,7 @@ mod tests {
                     filepath: Some(Path::new("test_files/evtx/test.json").to_path_buf()),
                     live_analysis: false,
                     recover_records: false,
+                    timeline_offset: None,
                 },
                 profile: None,
                 enable_deprecated_rules: false,
@@ -2162,6 +2167,7 @@ mod tests {
                 filepath: Some(Path::new("test_files/evtx/test_metrics.json").to_path_buf()),
                 live_analysis: false,
                 recover_records: false,
+                timeline_offset: None,
             },
             common_options: CommonOptions {
                 no_color: false,
@@ -2216,6 +2222,7 @@ mod tests {
                 filepath: Some(Path::new("test_files/evtx/test_metrics.json").to_path_buf()),
                 live_analysis: false,
                 recover_records: false,
+                timeline_offset: None,
             },
             common_options: CommonOptions {
                 no_color: false,
@@ -2267,6 +2274,7 @@ mod tests {
                 directory: None,
                 filepath: Some(Path::new("test_files/evtx/test_metrics.json").to_path_buf()),
                 live_analysis: false,
+                timeline_offset: None,
                 recover_records: false,
             },
             common_options: CommonOptions {
@@ -2324,6 +2332,7 @@ mod tests {
                 filepath: Some(Path::new("test_files/evtx/test_metrics.json").to_path_buf()),
                 live_analysis: false,
                 recover_records: false,
+                timeline_offset: None,
             },
             common_options: CommonOptions {
                 no_color: false,
@@ -2379,6 +2388,7 @@ mod tests {
                 filepath: Some(Path::new("test_files/evtx/test_metrics.json").to_path_buf()),
                 live_analysis: false,
                 recover_records: false,
+                timeline_offset: None,
             },
             common_options: CommonOptions {
                 no_color: false,
@@ -2421,6 +2431,7 @@ mod tests {
                 filepath: Some(Path::new("test_files/evtx/test_metrics.json").to_path_buf()),
                 live_analysis: false,
                 recover_records: false,
+                timeline_offset: None,
             },
             common_options: CommonOptions {
                 no_color: false,
