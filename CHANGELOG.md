@@ -12,6 +12,7 @@
 
 - Added a `-a, --and-logic` option in the `search` command to search keywords with AND logic. (#1162) (@hitenkoku)
 - When using `-x, --recover-records`, an additional `%RecoveredRecord%` field will be added to the output profile and will output `Y` to indicate if a record was recovered. (#1160) (@hitenkoku)
+- Added a `--timeline-offset` option in `csv-timeline`, `json-timeline`, `logon-summary`, `eid-metrics`, `pivot-keywords-list`, `search` command to scan just the most recent number of days. (#1159) (@hitenkoku)
 
 ## 2.7.0 [2023/08/03] "SANS DFIR Summit Release"
 

@@ -12,6 +12,7 @@
 
 - `search`に`-a, --and-logic`オプションを追加し、複数のキーワードをAND条件で検索できるようにした。 (#1162) (@hitenkoku)
 - 出力プロファイルに、回復されたかどうかを示す `%RecoveredRecord%` フィールドを追加した。 (#1170) (@hitenkoku)
+- `csv-timeline`、`json-timeline`、`logon-summary`、`eid-metrics`、`pivot-keywords-list`、`search` コマンドに、直近の日数だけをスキャンするための `--timeline-offset` オプションを追加した。 (#1159) (@hitenkoku)
 
 ## 2.7.0 [2023/08/03] "SANS DFIR Summit Release"
 
