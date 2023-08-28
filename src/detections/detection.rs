@@ -1532,7 +1532,7 @@ mod tests {
 
             let messages = &message::MESSAGES;
             messages.clear();
-            let val = r##"
+            let val = r#"
             {
                 "Event": {
                     "EventData": {
@@ -1550,7 +1550,7 @@ mod tests {
                     }
                 }
             }
-        "##;
+        "#;
             let event: Value = serde_json::from_str(val).unwrap();
             let dummy_rule = RuleNode::new(test_rulepath.to_string(), Yaml::from_str(""));
             let keys = detections::rule::get_detection_keys(&dummy_rule);
@@ -1666,7 +1666,7 @@ mod tests {
 
             let messages = &message::MESSAGES;
             messages.clear();
-            let val = r##"
+            let val = r#"
             {
                 "Event": {
                     "EventData": {
@@ -1684,7 +1684,7 @@ mod tests {
                     }
                 }
             }
-        "##;
+        "#;
             let event: Value = serde_json::from_str(val).unwrap();
             let dummy_rule = RuleNode::new(test_rulepath.to_string(), Yaml::from_str(""));
             let keys = detections::rule::get_detection_keys(&dummy_rule);
@@ -1800,7 +1800,7 @@ mod tests {
 
             let messages = &message::MESSAGES;
             messages.clear();
-            let val = r##"
+            let val = r#"
             {
                 "Event": {
                     "EventData": {
@@ -1818,7 +1818,7 @@ mod tests {
                     }
                 }
             }
-        "##;
+        "#;
             let rule_str = r#"
         enabled: true
         author: "Test, Test2/Test3; Test4 "
@@ -1944,7 +1944,7 @@ mod tests {
 
             let messages = &message::MESSAGES;
             messages.clear();
-            let val = r##"
+            let val = r#"
             {
                 "Event": {
                     "EventData": {
@@ -1962,7 +1962,7 @@ mod tests {
                     }
                 }
             }
-        "##;
+        "#;
             let rule_str = r#"
         enabled: true
         author: "Test, Test2/Test3; Test4 "

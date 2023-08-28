@@ -194,14 +194,14 @@ mod tests {
 
     #[test]
     fn test_convert_field_data() {
-        let s = r##"
+        let s = r#"
             Channel: Security
             EventID: 4624
             RewriteFieldData:
                 LogonType:
                     - '0': '0 - SYSTEM'
                     - '2': '2 - INTERACTIVE'
-        "##;
+        "#;
         let (key, entry) = build_field_data_map(build_yaml(s));
         let mut map = HashMap::new();
         map.insert(key.clone(), entry);
@@ -211,31 +211,31 @@ mod tests {
 
     #[test]
     fn test_build_field_data_map_invalid0() {
-        let s = r##"
+        let s = r#"
             INVALID
-        "##;
+        "#;
         let r = build_field_data_map(build_yaml(s));
         assert_eq!(r.0, FieldDataMapKey::default());
     }
 
     #[test]
     fn test_build_field_data_map_invalid1() {
-        let s = r##"
+        let s = r#"
             Foo:
                 Bar:
                     - 'A': '1'
-        "##;
+        "#;
         let r = build_field_data_map(build_yaml(s));
         assert_eq!(r.0, FieldDataMapKey::default());
     }
 
     #[test]
     fn test_build_field_data_map_invalid2() {
-        let s = r##"
+        let s = r#"
             Channel: Security
             EventID: 4624
             INVALID: 1
-        "##;
+        "#;
         let r = build_field_data_map(build_yaml(s));
         assert_eq!(r.0, FieldDataMapKey::default());
         assert!(r.1.is_empty());
@@ -243,11 +243,11 @@ mod tests {
 
     #[test]
     fn test_build_field_data_map_invalid3() {
-        let s = r##"
+        let s = r#"
             Channel: Security
             EventID: 4624
             RewriteFieldData: 'INVALID'
-        "##;
+        "#;
         let r = build_field_data_map(build_yaml(s));
         assert_eq!(r.0, FieldDataMapKey::default());
         assert!(r.1.is_empty());
@@ -255,7 +255,7 @@ mod tests {
 
     #[test]
     fn test_build_field_data_map_valid() {
-        let s = r##"
+        let s = r#"
             Channel: Security
             EventID: 4624
             RewriteFieldData:
@@ -265,7 +265,7 @@ mod tests {
                 ImpersonationLevel:
                     - '%%1832': 'A'
                     - '%%1833': 'B'
-        "##;
+        "#;
         let r = build_field_data_map(build_yaml(s));
         let mut wtr = vec![];
         match r.1.get("elevatedtoken").unwrap() {
@@ -309,7 +309,7 @@ mod tests {
             },
             "Event_attributes": {"xmlns": "http://schemas.microsoft.com/win/2004/08/events/event"}
         }"#;
-        let s = r##"
+        let s = r#"
             Channel: Security
             EventID: 4624
             RewriteFieldData:
@@ -322,7 +322,7 @@ mod tests {
             HexToDecimal:
                     - 'NewProcessId'
                     - 'ProcessId'
-        "##;
+        "#;
         let (key, entry) = build_field_data_map(build_yaml(s));
         let mut map: FieldDataMap = HashMap::new();
         map.insert(key.clone(), entry);
