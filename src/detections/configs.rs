@@ -2455,12 +2455,17 @@ fn create_control_chat_replace_map() -> HashMap<char, CompactString> {
 mod tests {
     use std::path::Path;
 
-    use crate::detections::configs;
-    use chrono::{DateTime, Utc, Duration};
+    use super::{
+        create_control_chat_replace_map, Action, CommonOptions, Config, CsvOutputOption,
+        DetectCommonOption, InputOption, JSONOutputOption, OutputOption, StoredStatic,
+        TargetEventTime,
+    };
+    use crate::detections::configs::{
+        self, EidMetricsOption, LogonSummaryOption, PivotKeywordOption, SearchOption,
+    };
+    use chrono::{DateTime, Utc};
     use compact_str::CompactString;
     use hashbrown::{HashMap, HashSet};
-    use super::{create_control_chat_replace_map, Action, CommonOptions, Config,
-        CsvOutputOption, DetectCommonOption, InputOption, OutputOption, StoredStatic, TargetEventTime};
 
     //     #[test]
     //     #[ignore]
@@ -2546,8 +2551,7 @@ mod tests {
 
     #[test]
     fn test_timeline_offset_csv() {
-
-        let  csv_timeline = StoredStatic::create_static_data(Some(Config {
+        let csv_timeline = StoredStatic::create_static_data(Some(Config {
             action: Some(Action::CsvTimeline(CsvOutputOption {
                 output_options: OutputOption {
                     input_args: InputOption {
@@ -2614,5 +2618,259 @@ mod tests {
         let actual = TargetEventTime::new(&csv_timeline);
         let actual_diff = now - actual.start_time.unwrap();
         assert!(actual_diff.num_days() == 1);
+    }
+
+    #[test]
+    fn test_timeline_offset_json() {
+        let json_timeline = StoredStatic::create_static_data(Some(Config {
+            action: Some(Action::JsonTimeline(JSONOutputOption {
+                output_options: OutputOption {
+                    input_args: InputOption {
+                        directory: None,
+                        filepath: None,
+                        live_analysis: false,
+                        recover_records: false,
+                        timeline_offset: Some("1y".to_string()),
+                    },
+                    profile: None,
+                    enable_deprecated_rules: false,
+                    exclude_status: None,
+                    min_level: "informational".to_string(),
+                    exact_level: None,
+                    enable_noisy_rules: false,
+                    end_timeline: None,
+                    start_timeline: None,
+                    eid_filter: false,
+                    european_time: false,
+                    iso_8601: false,
+                    rfc_2822: false,
+                    rfc_3339: false,
+                    us_military_time: false,
+                    us_time: false,
+                    utc: false,
+                    visualize_timeline: false,
+                    rules: Path::new("./rules").to_path_buf(),
+                    html_report: None,
+                    no_summary: false,
+                    common_options: CommonOptions {
+                        no_color: false,
+                        quiet: false,
+                    },
+                    detect_common_options: DetectCommonOption {
+                        evtx_file_ext: None,
+                        thread_number: None,
+                        quiet_errors: false,
+                        config: Path::new("./rules/config").to_path_buf(),
+                        verbose: false,
+                        json_input: true,
+                        include_computer: None,
+                        exclude_computer: None,
+                    },
+                    enable_unsupported_rules: false,
+                    clobber: false,
+                    proven_rules: false,
+                    include_tag: None,
+                    exclude_tag: None,
+                    include_category: None,
+                    exclude_category: None,
+                    include_eid: None,
+                    exclude_eid: None,
+                    no_field: false,
+                    remove_duplicate_data: false,
+                    remove_duplicate_detections: false,
+                },
+                geo_ip: None,
+                output: None,
+                jsonl_timeline: false,
+            })),
+            debug: false,
+        }));
+        let now = Utc::now();
+        let actual = TargetEventTime::new(&json_timeline);
+        let actual_diff = now - actual.start_time.unwrap();
+        assert!(actual_diff.num_days() == 365 || actual_diff.num_days() == 366);
+    }
+
+    #[test]
+    fn test_timeline_offset_search() {
+        let json_timeline = StoredStatic::create_static_data(Some(Config {
+            action: Some(Action::Search(SearchOption {
+                output: None,
+                common_options: CommonOptions {
+                    no_color: false,
+                    quiet: false,
+                },
+                input_args: InputOption {
+                    directory: None,
+                    filepath: None,
+                    live_analysis: false,
+                    recover_records: false,
+                    timeline_offset: Some("1h".to_string()),
+                },
+                keywords: Some(vec!["mimikatz".to_string()]),
+                regex: None,
+                ignore_case: true,
+                and_logic: false,
+                filter: vec![],
+                evtx_file_ext: None,
+                thread_number: None,
+                quiet_errors: false,
+                config: Path::new("./rules/config").to_path_buf(),
+                verbose: false,
+                multiline: false,
+                clobber: true,
+                json_output: false,
+                jsonl_output: false,
+                european_time: false,
+                iso_8601: false,
+                rfc_2822: false,
+                rfc_3339: false,
+                us_military_time: false,
+                us_time: false,
+                utc: false,
+            })),
+            debug: false,
+        }));
+        let now = Utc::now();
+        let actual = TargetEventTime::new(&json_timeline);
+        let actual_diff = now - actual.start_time.unwrap();
+        assert!(actual_diff.num_hours() == 1);
+    }
+
+    #[test]
+    fn test_timeline_offset_eid_metrics() {
+        let eid_metrics = StoredStatic::create_static_data(Some(Config {
+            action: Some(Action::EidMetrics(EidMetricsOption {
+                output: None,
+                common_options: CommonOptions {
+                    no_color: false,
+                    quiet: false,
+                },
+                input_args: InputOption {
+                    directory: None,
+                    filepath: None,
+                    live_analysis: false,
+                    recover_records: false,
+                    timeline_offset: Some("1h1m".to_string()),
+                },
+                clobber: true,
+                european_time: false,
+                iso_8601: false,
+                rfc_2822: false,
+                rfc_3339: false,
+                us_military_time: false,
+                us_time: false,
+                utc: false,
+                detect_common_options: DetectCommonOption {
+                    evtx_file_ext: None,
+                    thread_number: None,
+                    quiet_errors: false,
+                    config: Path::new("./rules/config").to_path_buf(),
+                    verbose: false,
+                    json_input: true,
+                    include_computer: None,
+                    exclude_computer: None,
+                },
+            })),
+            debug: false,
+        }));
+        let now = Utc::now();
+        let actual = TargetEventTime::new(&eid_metrics);
+        let actual_diff = now - actual.start_time.unwrap();
+        assert!(actual_diff.num_hours() == 1 && actual_diff.num_minutes() == 61);
+    }
+
+    #[test]
+    fn test_timeline_offset_logon_summary() {
+        let logon_summary = StoredStatic::create_static_data(Some(Config {
+            action: Some(Action::LogonSummary(LogonSummaryOption {
+                output: None,
+                common_options: CommonOptions {
+                    no_color: false,
+                    quiet: false,
+                },
+                input_args: InputOption {
+                    directory: None,
+                    filepath: None,
+                    live_analysis: false,
+                    recover_records: false,
+                    timeline_offset: Some("1y1d1h".to_string()),
+                },
+                clobber: true,
+                european_time: false,
+                iso_8601: false,
+                rfc_2822: false,
+                rfc_3339: false,
+                us_military_time: false,
+                us_time: false,
+                utc: false,
+                detect_common_options: DetectCommonOption {
+                    evtx_file_ext: None,
+                    thread_number: None,
+                    quiet_errors: false,
+                    config: Path::new("./rules/config").to_path_buf(),
+                    verbose: false,
+                    json_input: true,
+                    include_computer: None,
+                    exclude_computer: None,
+                },
+                end_timeline: None,
+                start_timeline: None,
+            })),
+            debug: false,
+        }));
+        let now = Utc::now();
+        let actual = TargetEventTime::new(&logon_summary);
+        let actual_diff = now - actual.start_time.unwrap();
+        let days = actual_diff.num_days();
+        assert!(days == 366 && actual_diff.num_hours() == days * 24 + 1);
+    }
+
+    #[test]
+    fn test_timeline_offset_pivot() {
+        let pivot_keywords_list = StoredStatic::create_static_data(Some(Config {
+            action: Some(Action::PivotKeywordsList(PivotKeywordOption {
+                output: None,
+                common_options: CommonOptions {
+                    no_color: false,
+                    quiet: false,
+                },
+                input_args: InputOption {
+                    directory: None,
+                    filepath: None,
+                    live_analysis: false,
+                    recover_records: false,
+                    timeline_offset: Some("10y1s".to_string()),
+                },
+                clobber: true,
+                detect_common_options: DetectCommonOption {
+                    evtx_file_ext: None,
+                    thread_number: None,
+                    quiet_errors: false,
+                    config: Path::new("./rules/config").to_path_buf(),
+                    verbose: false,
+                    json_input: true,
+                    include_computer: None,
+                    exclude_computer: None,
+                },
+                end_timeline: None,
+                start_timeline: None,
+                enable_deprecated_rules: false,
+                enable_unsupported_rules: false,
+                exclude_status: None,
+                min_level: "informational".to_string(),
+                exact_level: None,
+                enable_noisy_rules: false,
+                eid_filter: false,
+                include_eid: None,
+                exclude_eid: None,
+            })),
+            debug: false,
+        }));
+        let now = Utc::now();
+        let actual = TargetEventTime::new(&pivot_keywords_list);
+        let actual_diff = now - actual.start_time.unwrap();
+        let days = actual_diff.num_days();
+        assert!(days == 3650 && actual_diff.num_seconds() == days * 24 * 60 * 60 + 1);
     }
 }
