@@ -583,6 +583,7 @@ mod tests {
                         directory: None,
                         filepath: None,
                         live_analysis: false,
+                        recover_records: false,
                     },
                     profile: None,
                     enable_deprecated_rules: false,
@@ -615,8 +616,21 @@ mod tests {
                         config: Path::new("./rules/config").to_path_buf(),
                         verbose: false,
                         json_input: false,
+                        include_computer: None,
+                        exclude_computer: None,
                     },
                     enable_unsupported_rules: false,
+                    clobber: false,
+                    proven_rules: false,
+                    include_tag: None,
+                    exclude_tag: None,
+                    include_category: None,
+                    exclude_category: None,
+                    include_eid: None,
+                    exclude_eid: None,
+                    no_field: false,
+                    remove_duplicate_data: false,
+                    remove_duplicate_detections: false,
                 },
                 geo_ip: None,
                 output: None,
@@ -926,7 +940,7 @@ mod tests {
             match serde_json::from_str(record) {
                 Ok(rec) => {
                     let keys = detections::rule::get_detection_keys(&rule_node);
-                    let recinfo = utils::create_rec_info(rec, "testpath".to_owned(), &keys);
+                    let recinfo = utils::create_rec_info(rec, "testpath".to_owned(), &keys, &false);
                     let _result = rule_node.select(
                         &recinfo,
                         dummy_stored_static.verbose_flag,
@@ -1701,7 +1715,8 @@ mod tests {
             match serde_json::from_str(record_str) {
                 Ok(record) => {
                     let keys = detections::rule::get_detection_keys(&rule_node);
-                    let recinfo = utils::create_rec_info(record, "testpath".to_owned(), &keys);
+                    let recinfo =
+                        utils::create_rec_info(record, "testpath".to_owned(), &keys, &false);
                     let result = &rule_node.select(
                         &recinfo,
                         dummy_stored_static.verbose_flag,

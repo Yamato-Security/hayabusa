@@ -2,9 +2,9 @@ use base64::{engine::general_purpose, Engine as _};
 use cidr_utils::cidr::{IpCidr, IpCidrError};
 use nested::Nested;
 use regex::Regex;
-use std::cmp::Ordering;
 use std::net::IpAddr;
 use std::str::FromStr;
+use std::{cmp::Ordering, collections::HashMap};
 use yaml_rust::Yaml;
 
 use crate::detections::{detection::EvtxRecordInfo, utils};
@@ -191,6 +191,7 @@ enum FastMatch {
     StartsWith(String),
     EndsWith(String),
     Contains(String),
+    AllOnly(String),
 }
 
 /// デフォルトのマッチクラス
@@ -279,6 +280,12 @@ impl DefaultMatcher {
         {
             // 高速なマッチに変換できないパターンは、正規表現マッチのみ
             return None;
+        } else if s.starts_with("allOnly*") && s.ends_with('*') && wildcard_count == 2 {
+            let removed_asterisk = s[8..(s.len() - 1)].replace(r"\\", r"\");
+            if ignore_case {
+                return Some(vec![FastMatch::AllOnly(removed_asterisk.to_lowercase())]);
+            }
+            return Some(vec![FastMatch::AllOnly(removed_asterisk)]);
         } else if s.starts_with('*')
             && s.ends_with('*')
             && wildcard_count == 2
@@ -342,10 +349,23 @@ impl LeafMatcher for DefaultMatcher {
         let pattern = yaml_value.unwrap();
         // Pipeが指定されていればパースする
         let emp = String::default();
-        // 一つ目はただのキーで、2つめ以降がpipe
-        let keys = key_list.get(0).unwrap_or(&emp).split('|').skip(1); // key_listが空はあり得ない
+        // 一つ目はただのキーで、2つめ以jj降がpipe
+
+        let mut keys_all: Vec<&str> = key_list.get(0).unwrap_or(&emp).split('|').collect(); // key_listが空はあり得ない
+
+        //all -> allOnlyの対応関係
+        let mut change_map: HashMap<&str, &str> = HashMap::new();
+        change_map.insert("all", "allOnly");
+
+        //先頭が｜の場合を検知して、all -> allOnlyに変更
+        if keys_all[0].is_empty() && keys_all.len() == 2 && keys_all[1] == "all" {
+            keys_all[1] = change_map["all"];
+        }
+
+        let keys_without_head = &keys_all[1..];
+
         let mut err_msges = vec![];
-        keys.for_each(|key| {
+        for key in keys_without_head.iter() {
             let pipe_element = PipeElement::new(key, &pattern, key_list);
             match pipe_element {
                 Ok(element) => {
@@ -355,7 +375,7 @@ impl LeafMatcher for DefaultMatcher {
                     err_msges.push(e);
                 }
             }
-        });
+        }
         if !err_msges.is_empty() {
             return Err(err_msges);
         }
@@ -363,16 +383,6 @@ impl LeafMatcher for DefaultMatcher {
         if n == 0 {
             // パイプがないケース
             self.fast_match = Self::convert_to_fast_match(&pattern, true);
-            if self.fast_match.is_some()
-                && matches!(
-                    &self.fast_match.as_ref().unwrap()[0],
-                    FastMatch::Exact(_) | FastMatch::Contains(_)
-                )
-                && !self.key_list.is_empty()
-            {
-                // FastMatch::Exact/Contains検索に置き換えられたときは正規表現は不要
-                return Result::Ok(());
-            }
         } else if n == 1 {
             // パイプがあるケース
             self.fast_match = match &self.pipes[0] {
@@ -384,6 +394,9 @@ impl LeafMatcher for DefaultMatcher {
                 }
                 PipeElement::Contains => {
                     Self::convert_to_fast_match(format!("*{pattern}*").as_str(), true)
+                }
+                PipeElement::AllOnly => {
+                    Self::convert_to_fast_match(format!("allOnly*{pattern}*").as_str(), true)
                 }
                 _ => None,
             };
@@ -461,7 +474,16 @@ impl LeafMatcher for DefaultMatcher {
             );
             return Result::Err(vec![errmsg]);
         }
-
+        if self.fast_match.is_some()
+            && matches!(
+                &self.fast_match.as_ref().unwrap()[0],
+                FastMatch::Exact(_) | FastMatch::Contains(_)
+            )
+            && !self.key_list.is_empty()
+        {
+            // FastMatch::Exact/Contains検索に置き換えられたときは正規表現は不要
+            return Result::Ok(());
+        }
         let is_eqfield = self.pipes.iter().any(|pipe_element| {
             matches!(
                 pipe_element,
@@ -551,7 +573,7 @@ impl LeafMatcher for DefaultMatcher {
                     FastMatch::Exact(s) => Some(Self::eq_ignore_case(event_value_str, s)),
                     FastMatch::StartsWith(s) => Self::starts_with_ignore_case(event_value_str, s),
                     FastMatch::EndsWith(s) => Self::ends_with_ignore_case(event_value_str, s),
-                    FastMatch::Contains(s) => {
+                    FastMatch::Contains(s) | FastMatch::AllOnly(s) => {
                         Some(utils::contains_str(&event_value_str.to_lowercase(), s))
                     }
                 }
@@ -584,6 +606,7 @@ enum PipeElement {
     Base64offset,
     Cidr(Result<IpCidr, IpCidrError>),
     All,
+    AllOnly,
 }
 
 impl PipeElement {
@@ -598,6 +621,7 @@ impl PipeElement {
             "base64offset" => Option::Some(PipeElement::Base64offset),
             "cidr" => Option::Some(PipeElement::Cidr(IpCidr::from_str(pattern))),
             "all" => Option::Some(PipeElement::All),
+            "allOnly" => Option::Some(PipeElement::AllOnly),
             _ => Option::None,
         };
 
@@ -655,6 +679,10 @@ impl PipeElement {
                 patt + "*"
             } else if patt.ends_with('*') {
                 patt
+            } else if patt.ends_with('\\') {
+                // 末尾が\(バックスラッシュ1つ)の場合は、末尾を\\* (バックスラッシュ2つとアスタリスク)に変換する
+                // 末尾が\\*は、バックスラッシュ1文字とそれに続けてワイルドカードパターンであることを表す
+                patt + "\\*"
             } else {
                 patt + "*"
             }
@@ -794,6 +822,7 @@ mod tests {
                         directory: None,
                         filepath: None,
                         live_analysis: false,
+                        recover_records: false,
                     },
                     profile: None,
                     enable_deprecated_rules: false,
@@ -826,8 +855,21 @@ mod tests {
                         config: Path::new("./rules/config").to_path_buf(),
                         verbose: false,
                         json_input: false,
+                        include_computer: None,
+                        exclude_computer: None,
                     },
                     enable_unsupported_rules: false,
+                    clobber: false,
+                    proven_rules: false,
+                    include_tag: None,
+                    exclude_tag: None,
+                    include_category: None,
+                    exclude_category: None,
+                    include_eid: None,
+                    exclude_eid: None,
+                    no_field: false,
+                    remove_duplicate_data: false,
+                    remove_duplicate_detections: false,
                 },
                 geo_ip: None,
                 output: None,
@@ -841,7 +883,7 @@ mod tests {
         match serde_json::from_str(record_str) {
             Ok(record) => {
                 let keys = detections::rule::get_detection_keys(&rule_node);
-                let recinfo = utils::create_rec_info(record, "testpath".to_owned(), &keys);
+                let recinfo = utils::create_rec_info(record, "testpath".to_owned(), &keys, &false);
                 assert_eq!(
                     rule_node.select(
                         &recinfo,
@@ -2333,6 +2375,7 @@ mod tests {
         assert!(!DefaultMatcher::ends_with_ignore_case("bc", "bcd").unwrap());
         assert!(!DefaultMatcher::ends_with_ignore_case("bcd", "abc").unwrap());
     }
+
     #[test]
     fn test_convert_to_fast_match() {
         assert_eq!(DefaultMatcher::convert_to_fast_match("ab?", true), None);
@@ -2501,6 +2544,284 @@ mod tests {
         let record_json_str = r#"{
             "Event": {"System": {"EventID": 4624} },
             "Event_attributes": {"xmlns": "http://schemas.microsoft.com/win/2004/08/events/event"}
+        }"#;
+
+        check_select(rule_str, record_json_str, false);
+    }
+
+    #[test]
+    fn test_detect_backslash_exact_match() {
+        let rule_str = r#"
+        enabled: true
+        detection:
+            selection:
+                Channel: 'Microsoft-Windows-Sysmon/Operational'
+                EventID: 1
+                CurrentDirectory: 'C:\Windows\'
+        "#;
+
+        let record_json_str = r#"
+        {
+          "Event": {
+            "System": {
+              "EventID": 1,
+              "Channel": "Microsoft-Windows-Sysmon/Operational"
+            },
+            "EventData": {
+              "CurrentDirectory": "C:\\Windows\\"
+            }
+          }
+        }"#;
+
+        check_select(rule_str, record_json_str, true);
+    }
+
+    #[test]
+    fn test_detect_startswith_backslash1() {
+        let rule_str = r#"
+        enabled: true
+        detection:
+            selection:
+                EventID: 1040
+                Data|startswith: C:\Windows\
+        "#;
+
+        let record_json_str = r#"
+        {
+          "Event": {
+            "System": {
+              "EventID": 1040,
+              "Channel": "Application"
+            },
+            "EventData": {
+              "Data": "C:\\Windows\\hoge.exe"
+            }
+          }
+        }"#;
+
+        check_select(rule_str, record_json_str, true);
+    }
+
+    #[test]
+    fn test_detect_startswith_backslash2() {
+        let rule_str = r#"
+        enabled: true
+        detection:
+            selection:
+                EventID: 1040
+                Data|startswith: C:\Windows\
+        "#;
+
+        let record_json_str = r#"
+        {
+          "Event": {
+            "System": {
+              "EventID": 1040,
+              "Channel": "Application"
+            },
+            "EventData": {
+              "Data": "C:\\Windows_\\hoge.exe"
+            }
+          }
+        }"#;
+
+        check_select(rule_str, record_json_str, false); //★ expect false
+    }
+
+    #[test]
+    fn test_detect_contains_backslash1() {
+        let rule_str = r#"
+        enabled: true
+        detection:
+            selection:
+                EventID: 1040
+                Data|contains: \Windows\
+        "#;
+
+        let record_json_str = r#"
+        {
+          "Event": {
+            "System": {
+              "EventID": 1040,
+              "Channel": "Application"
+            },
+            "EventData": {
+              "Data": "C:\\Windows\\hoge.exe"
+            }
+          }
+        }"#;
+
+        check_select(rule_str, record_json_str, true);
+    }
+
+    #[test]
+    fn test_detect_contains_backslash2() {
+        let rule_str = r#"
+        enabled: true
+        detection:
+            selection:
+                EventID: 1040
+                Data|contains: \Windows\
+        "#;
+
+        let record_json_str = r#"
+        {
+          "Event": {
+            "System": {
+              "EventID": 1040,
+              "Channel": "Application"
+            },
+            "EventData": {
+              "Data": "C:\\Windows_\\hoge.exe"
+            }
+          }
+        }"#;
+
+        check_select(rule_str, record_json_str, false);
+    }
+
+    #[test]
+    fn test_detect_backslash_endswith() {
+        let rule_str = r#"
+        enabled: true
+        detection:
+            selection:
+                Channel: 'Microsoft-Windows-Sysmon/Operational'
+                EventID: 1
+                CurrentDirectory|endswith: 'C:\Windows\system32\'
+        "#;
+
+        let record_json_str = r#"
+        {
+          "Event": {
+            "System": {
+              "EventID": 1,
+              "Channel": "Microsoft-Windows-Sysmon/Operational"
+            },
+            "EventData": {
+              "CurrentDirectory": "C:\\Windows\\system32\\"
+            }
+          }
+        }"#;
+
+        check_select(rule_str, record_json_str, true);
+    }
+
+    #[test]
+    fn test_detect_backslash_regex() {
+        let rule_str = r#"
+        enabled: true
+        detection:
+            selection:
+                Channel: 'Microsoft-Windows-Sysmon/Operational'
+                EventID: 1
+                CurrentDirectory|re: '.*system32\\'
+        "#;
+
+        let record_json_str = r#"
+        {
+          "Event": {
+            "System": {
+              "EventID": 1,
+              "Channel": "Microsoft-Windows-Sysmon/Operational"
+            },
+            "EventData": {
+              "CurrentDirectory": "C:\\Windows\\system32\\"
+            }
+          }
+        }"#;
+
+        check_select(rule_str, record_json_str, true);
+    }
+
+    #[test]
+    fn test_all_only_true() {
+        let rule_str = r#"
+        enabled: true
+        detection:
+            selection1:
+                '|all':
+                    - 'Sysmon/Operational'
+                    - 'indows\'
+            selection2:
+                - 1
+                - 2
+            condition: selection1 and selection2
+        "#;
+
+        let record_json_str = r#"
+        {
+          "Event": {
+            "System": {
+              "EventID": 1,
+              "Channel": "Microsoft-Windows-Sysmon/Operational"
+            },
+            "EventData": {
+              "CurrentDirectory": "C:\\Windows\\system32\\"
+            }
+          }
+        }"#;
+
+        check_select(rule_str, record_json_str, true);
+    }
+
+    #[test]
+    fn test_all_only_false() {
+        let rule_str = r#"
+        enabled: true
+        detection:
+            selection1:
+                '|all':
+                    - 'Sysmon/Operational'
+                    - 'false'
+            selection2:
+                - 1
+                - 2
+            condition: selection1 and selection2
+        "#;
+
+        let record_json_str = r#"
+        {
+          "Event": {
+            "System": {
+              "EventID": 1,
+              "Channel": "Microsoft-Windows-Sysmon/Operational"
+            },
+            "EventData": {
+              "CurrentDirectory": "C:\\Windows\\system32\\"
+            }
+          }
+        }"#;
+
+        check_select(rule_str, record_json_str, false);
+    }
+
+    #[test]
+    fn test_all_only_or_false() {
+        let rule_str = r#"
+        enabled: true
+        detection:
+            selection1:
+                '|all':
+                    - 'Sysmon/Operational'
+                    - 'false'
+            selection2:
+                - 3
+                - 2
+            condition: selection1 and selection2
+        "#;
+
+        let record_json_str = r#"
+        {
+          "Event": {
+            "System": {
+              "EventID": 1,
+              "Channel": "Microsoft-Windows-Sysmon/Operational"
+            },
+            "EventData": {
+              "CurrentDirectory": "C:\\Windows\\system32\\"
+            }
+          }
         }"#;
 
         check_select(rule_str, record_json_str, false);

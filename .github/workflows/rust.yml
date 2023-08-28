@@ -50,7 +50,7 @@ jobs:
           targets: ${{ matrix.info.target }}
       - name: Enable Rust cache
         if: ${{ steps.skip_check.outputs.should_skip != 'true' }}
-        uses: Swatinem/rust-cache@cb2cf0cc7c5198d3364b9630e2c3d457f160790c # 1.4.0
+        uses: Swatinem/rust-cache@6fd3edff6979b79f87531400ad694fb7f2c84b1f #2.1.0
       - name: Fmt Check
         run: cargo fmt -- --check
       - name: Prepare Clippy
@@ -59,7 +59,7 @@ jobs:
         run: cargo clippy --all-targets -- -D warnings
       - name: Build tests
         if: ${{ steps.skip_check.outputs.should_skip != 'true' }}
-        uses: ClementTsang/cargo-action@v0.0.2
+        uses: ClementTsang/cargo-action@v0.0.3
         with:
           command: test
           args: --no-run --locked ${{ matrix.features }} --target=${{ matrix.info.target }}

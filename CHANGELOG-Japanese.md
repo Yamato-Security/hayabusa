@@ -1,20 +1,113 @@
 # 変更点
 
-## 2.5.0 [2023/05/12] "Security Mini Camp in Tokyo Release"
+## 2.8.0 [xxxx/xx/xx]
 
 **新機能:**
 
-- XXX
+- フィールドマッピング設定に16進数値を10進数に変換する`HexToDecimal`機能に対応した。 (元の16進数のプロセスIDを変換するのに便利。) (#1133) (@fukusuket)
+- `csv-timeline`と`json-timeline`に`-x, --recover-records`オプションを追加し、空ページのファイルカービングによってevtxレコードを復元できるようにした。(#952) (@hitenkoku) (Evtxカービング機能は@forensicmattに実装された。)
+- `csv-timeline`と`json-timeline`に`-X, --remove-duplicate-detections`オプションを追加した。(`-x`を使用する場合、重複データのあるバックアップログを含める場合などに便利。) (#1157) (@fukusuket)
+
+**改善:**
+
+- `search`に`-a, --and-logic`オプションを追加し、複数のキーワードをAND条件で検索できるようにした。 (#1162) (@hitenkoku)
+- 出力プロファイルに、回復されたかどうかを示す `%RecoveredRecord%` フィールドを追加した。 (#1170) (@hitenkoku)
+
+## 2.7.0 [2023/08/03] "SANS DFIR Summit Release"
+
+**新機能:**
+
+- `./rules/config/data_mapping`にある`.yaml`設定ファイルに基づいて、特定のコード番号が人間が読めるメッセージにマッピングされるようになった。(例:`%%2307`は、`ACCOUNT LOCKOUT`に変換される)。この動作は`-F, --no-field-data-mapping`オプションで無効にできる。(#177) (@fukusuket)
+- `csv-timeline`コマンドに`-R, --remove-duplicate-data`オプションを追加し、`%Details%`、`%AllFieldInfo%`、`%ExtraFieldInfo%`列の重複フィールドデータを`DUP`という文字列に変換し、ファイルサイズの削減を行う。(#1056) (@hitenkoku)
+- `csv-timeline`と`json-timeline`コマンドに`-P, --proven-rules`オプションを追加した。有効にすると、検知が証明されたルールしかロードされない。ロードされるルールは、`./rules/config/proven_rules.txt`の設定ファイルにルールIDで定義されている。 (#1115) (@hitenkoku)
+- `csv-timeline`と`json-timeline`コマンドに`--include-tag`オプションを追加し、指定した`tags`フィールドを持つルールのみをロードするようにした。(#1108) (@hitenkoku)
+- `csv-timeline`と`json-timeline`コマンドに`--exclude-tag`オプションを追加し、指定した`tags`フィールドを持つルールをロードしないようにした。(#1118) (@hitenkoku)
+- `csv-timeline`と`json-timeline`コマンドに`--include-category`と`--exclude-category`オプションを追加した。`include-category`は、指定された`category`フィールドのルールのみをロードする。`--exclude-category`は、指定された`category`フィールドを持つルールをロードしない。 (#1119) (@hitenkoku)
+- コンピュータ名に基づくイベント数をリストアップする`computer-metrics`コマンドを追加した。(#1116) (@hitenkoku)
+- `csv-timeline`、`json-timeline`、`metrics`、`logon-summary`、`pivot-keywords-list`コマンドに`--include-computer`と`--exclude-computer`オプションを追加した。`include-computer`は、指定された`computer`の検知のみを出力する。`--exclude-computer`は、指定された`computer`の検知を除外する。 (#1117) (@hitenkoku)
+- `csv-timeline`、`json-timeline`、`pivot-keywords-list`コマンドに`--include-eid`と`--exclude-eid`オプションを追加した。`include-eid`は、指定された`EventID`のみを検知対象とする。`--exclude-eid`は、指定された`EventID`を検知対象から除外する。 (#1130) (@hitenkoku)
+- `json-timeline`コマンドに`-R, --remove-duplicate-data`オプションを追加し、`%Details%`、`%AllFieldInfo%`、`%ExtraFieldInfo%`フィールドの重複フィールドデータを`DUP`という文字列に変換し、ファイルサイズの削減を行う。(#1134) (@hitenkoku)
+
+**改善:**
+
+- 新しいログ形式の`.evtx`を使用するWindows Vistaがリリースされた2007年1月31日以前のタイムスタンプを持つ破損されたイベントレコードを無視するようにした。(#1102) (@fukusuket)
+- `metrics`コマンドで`--output`オプションを指定した時に標準出力に結果を表示しないように変更した。 (#1099) (@hitenkoku)
+- `csv-timeline` コマンドと `json-timeline` コマンドに `--tags` オプションを追加し、指定した `tags` フィールドを持つルールのみでスキャンできるようにした。(#1108) (@hitenkoku)
+- `pivot-keywords-list`コマンドに対して、出力ファイルを上書きするための`-C, --clobber`オプションを追加した。 (#1125) (@hitenkoku)
+- `metrics`コマンドを`eid-metrics`に変更した。 (#1128) (@hitenkoku)
+- 端末の調整に余裕を持たせるため、プログレスバーの幅を減らした。 (#1135) (@hitenkoku)
+- `search`コマンドで出力時間フォーマットのオプションをサポートした。(`--European-time`, `--ISO-8601`, `--RFC-2822`, `--RFC-3339`, `--US-time`, `--US-military-time`, `-U, --UTC`) (#1040) (@hitenkoku)
+- プログレスバーのETA時間が正確でなかったため、経過時間に置き換えた。 (#1143) (@YamatoSecurity)
+- `logon-summary`コマンドで`--timeline-start`と`--timeline-end`オプションを追加した。 (#1152) (@hitenkoku)
+
+**バグ修正:**
+
+- `metrics`と`logon-summary`コマンドのレコード数の表示が`csv-timeline`のコマンドでのレコード数の表示と異なっている状態を修正した。 (#1105) (@hitenkoku)
+- パスの代わりにルールIDでルール数を数えるように変更した。 (#1113) (@hitenkoku)
+- `json-timeline`コマンドで`--timeline-start`と`--timeline-end`オプションが動作しなかったのを修正した。 (#1148) (@hitenkoku)
+- `pivot-keywords-list`コマンドで`--timeline-start`と`--timeline-end`オプションが動作しなかったのを修正した。 (#1150) (@hitenkoku)
+
+**その他:**
+
+- ルールのIDベースでユニークな検出数をカウントするように修正した。 (#1111) (@hitenkoku)
+- `--live_analysis`オプションを`--live-analysis`に変更した。 (#1139) (@hitenkoku)
+- `metrics`コマンドを`eid-metrics`に変更した。 (#1128) (@hitenkoku)
+
+## 2.6.0 [2023/06/16] "Ajisai Release"
+
+**新機能:**
+
+- Sigmaルールの`'|all':`キーワードに対応した。 (#1038) (@kazuminn)
+
+**改善:**
+
+- プロファイルに`%ExtraFieldInfo%`エイリアスを追加した。デフォルトの`standard`出力プロファイルに含まれるようになった。(#900) (@hitenkoku)
+- 互換性のない引数に対するエラーメッセージを追加した。 (#1054) (@YamatoSecurity)
+- 標準出力とHTML出力にプロファイル名を出力する機能を追加した。 (#1055) (@hitenkoku)
+- HTML出力のルールアラートにルール作者名を表示するように修正した。 (#1065) (@hitenkoku)
+- 端末サイズが小さくてもテーブルが壊れないように、テーブル幅を短くした。 (#1071) (@hitenkoku)
+- `csv-timeline`、`json-timeline`、`metrics`、`logon-summary`、`search`コマンドに対して、出力ファイルを上書きするための`-C, --clobber`オプションを追加した。 (#1063) (@YamatoSecurity, @hitenkoku)
+- HTML内にCSSと画像を組み込んだ。 (#1078) (@hitenkoku, 提案者: @joswr1ght)
+- 出力時の速度向上。 (#1088) (@hitenkoku, @fukusuket)
+- `metrics`コマンドは、テーブルが正しくレンダリングされるように、ワードラップを行うようになった。 (#1067) (@garigariganzy)
+- `search`コマンドでJSON/JSONLの出力できるようにした。 (#1041) (@hitenkoku)
+
+**バグ修正:**
+
+- `json-timeline`コマンドを利用した出力で、`MitreTactics`、`MitreTags`、`OtherTags`フィールドが出力されていない問題を修正した。 (#1062) (@hitenkoku)
+- `no-summary`オプションを使用した時にイベント頻度のタイムラインが出力されない問題を修正した。 (#1072) (@hitenkoku)
+- `json-timline`コマンドの出力に制御文字が含まれる問題を修正した。 (#1068) (@hitenkoku)
+- `metrics`コマンドでは、チャンネル名が小文字の場合、省略されなかった。 (#1066) (@garigariganzy)
+- JSON出力内でいくつかのフィールドがずれてしまっていた問題を修正した。 (#1086) (@hitenkoku)
+
+## 2.5.1 [2023/05/14] "Mothers Day Release"
+
+**改善:**
+
+- 新たに変換されたルールを使用する際のメモリ使用量を半分に削減した。(#1047) (@fukusuket)
+
+**バグ修正:**
+
+- `AccessMask`等のフィールド内の情報が空白で区切られていなかった状態を修正した。 (#1035) (@hitenkoku)
+- JSON形式に出力時に複数の空白が一つの空白に変換されていた。 (#1048) (@hitenkoku)
+- `pivot-keywords-list`コマンドで`--no-color`を使用した場合でも、結果がカラーで出力された。 (#1044) (@kazuminn)
+
+## 2.5.0 [2023/05/07] "Golden Week Release"
 
 **改善:**
 
 - `search`コマンドに`-M, --multiline`オプションを追加した。 (#1017) (@hitenkoku)
 - `search`コマンドの出力での不要な改行やタブを削除した。 (#1003) (@hitenkoku)
 - 正規表現の不要なエスケープを許容し、パースエラーを減らす`regex`クレートを1.8に更新した。(#1018) (@YamatoSecurity)
+- `csv-timeline`コマンドの出力で不要な空白文字の削除を行った。 (#1019) (@hitenkoku)
+- `update-rules`コマンド使用時にハヤブサのバージョン番号の詳細を確認するようにした (#1028) (@hitenkoku)
+- `search`コマンドの結果を時刻順にソートした。 (#1033) (@hitenkoku)
+- `pivot-keywords-list`のターミナル出力の改善。 (#1022) (@kazuminn)
 
 **バグ修正:**
 
-- XXX
+- ruleで指定された値で`\`が最後の文字のときに、検知ができない問題を修正した。 (#1025) (@fukusuket)
+- results summary内のInformationalレベルアラートの結果が同じ内容が2つ表示されている状態を修正した。 (#1031) (@hitenkoku)
 
 ## 2.4.0 [2023/04/19] "SANS Secure Korea Release"
 

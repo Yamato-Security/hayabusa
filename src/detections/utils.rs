@@ -20,7 +20,7 @@ use chrono::{DateTime, TimeZone, Utc};
 use regex::Regex;
 use serde_json::{json, Error, Map, Value};
 use std::cmp::Ordering;
-use std::fs::File;
+use std::fs::{read_to_string, File};
 use std::io::prelude::*;
 use std::io::{BufRead, BufReader};
 use std::str;
@@ -33,6 +33,7 @@ use super::configs::{EventKeyAliasConfig, OutputOption, STORED_EKEY_ALIAS};
 use super::detection::EvtxRecordInfo;
 use super::message::AlertMessage;
 
+use crate::detections::field_data_map::{convert_field_data, FieldDataMap, FieldDataMapKey};
 use memchr::memmem;
 
 pub fn concat_selection_key(key_list: &Nested<String>) -> String {
@@ -296,7 +297,12 @@ pub fn create_tokio_runtime(thread_number: Option<usize>) -> Runtime {
 }
 
 // EvtxRecordInfoを作成します。
-pub fn create_rec_info(data: Value, path: String, keys: &Nested<String>) -> EvtxRecordInfo {
+pub fn create_rec_info(
+    data: Value,
+    path: String,
+    keys: &Nested<String>,
+    recovered_record: &bool,
+) -> EvtxRecordInfo {
     // 高速化のための処理
 
     // 例えば、Value型から"Event.System.EventID"の値を取得しようとすると、value["Event"]["System"]["EventID"]のように3回アクセスする必要がある。
@@ -330,6 +336,7 @@ pub fn create_rec_info(data: Value, path: String, keys: &Nested<String>) -> Evtx
         record: data,
         data_string: data_str,
         key_2_value: key_2_values,
+        recovered_record: *recovered_record,
     }
 }
 
@@ -364,7 +371,11 @@ pub fn get_writable_color(color: Option<Color>, no_color: bool) -> Option<Color>
 /**
  * CSVのrecord infoカラムに出力する文字列を作る
  */
-pub fn create_recordinfos(record: &Value) -> String {
+pub fn create_recordinfos(
+    record: &Value,
+    field_data_map_key: &FieldDataMapKey,
+    field_data_map: &Option<FieldDataMap>,
+) -> String {
     let mut output = HashSet::new();
     _collect_recordinfo(&mut vec![], "", record, &mut output);
 
@@ -382,11 +393,16 @@ pub fn create_recordinfos(record: &Value) -> String {
     output_vec
         .iter()
         .map(|(key, value)| {
-            if value.ends_with(',') {
-                format!("{}: {}", key, &value[..value.len() - 1])
-            } else {
-                format!("{key}: {value}")
+            if let Some(map) = field_data_map.as_ref() {
+                if let Some(converted_str) =
+                    convert_field_data(map, field_data_map_key, &key.to_lowercase(), value)
+                {
+                    let val = converted_str.strip_suffix(',').unwrap_or(&converted_str);
+                    return format!("{key}: {val}");
+                }
             }
+            let val = value.strip_suffix(',').unwrap_or(value);
+            format!("{key}: {val}")
         })
         .join(" ¦ ")
 }
@@ -609,14 +625,79 @@ pub fn contains_str(input: &str, check: &str) -> bool {
     memmem::find(input.as_bytes(), check.as_bytes()).is_some()
 }
 
+pub fn output_profile_name(output_option: &Option<OutputOption>, stdout: bool) {
+    // output profile name
+    if let Some(profile_opt) = output_option {
+        // default profile name check
+        let default_profile_name = read_to_string(
+            check_setting_path(
+                &CURRENT_EXE_PATH.to_path_buf(),
+                "config/default_profile_name.txt",
+                true,
+            )
+            .unwrap()
+            .to_str()
+            .unwrap(),
+        )
+        .unwrap_or("n/a".into());
+
+        // user input profile option
+        let profile_name = profile_opt
+            .profile
+            .as_ref()
+            .unwrap_or(&default_profile_name);
+        let output_saved_str = format!("Output profile: {profile_name}");
+        if stdout {
+            println!("{output_saved_str}");
+        }
+        // profileの表示位置とHTMLの出力順が異なるため引数で管理をした
+        if !stdout && profile_opt.html_report.is_some() {
+            htmlreport::add_md_data(
+                "General Overview {#general_overview}",
+                Nested::from_iter(vec![format!("- {output_saved_str}")]),
+            );
+        }
+    }
+}
+
+/// コンピュータ名がフィルタリング対象であるかを判定する関数
+pub fn is_filtered_by_computer_name(
+    record: Option<&Value>,
+    (include_computer, exclude_computer): (&HashSet<CompactString>, &HashSet<CompactString>),
+) -> bool {
+    if let Some(computer_name) = record {
+        let computer_str = computer_name.as_str().unwrap_or_default().replace('\"', "");
+        if (!include_computer.is_empty() && !include_computer.contains(computer_str.as_str()))
+            || (!exclude_computer.is_empty() && exclude_computer.contains(computer_str.as_str()))
+        {
+            return true;
+        }
+    }
+    false
+}
+
 #[cfg(test)]
 mod tests {
     use std::path::Path;
 
-    use crate::detections::utils::{self, check_setting_path, make_ascii_titlecase};
+    use crate::detections::field_data_map::FieldDataMapKey;
+    use crate::{
+        detections::{
+            configs::{
+                Action, CommonOptions, Config, CsvOutputOption, DetectCommonOption, InputOption,
+                OutputOption, StoredStatic,
+            },
+            utils::{self, check_setting_path, make_ascii_titlecase},
+        },
+        options::htmlreport::HTML_REPORTER,
+    };
     use compact_str::CompactString;
+    use hashbrown::{HashMap, HashSet};
+    use nested::Nested;
     use regex::Regex;
     use serde_json::Value;
+
+    use super::output_profile_name;
 
     #[test]
     fn test_create_recordinfos() {
@@ -632,7 +713,7 @@ mod tests {
 
         match serde_json::from_str(record_json_str) {
             Ok(record) => {
-                let ret = utils::create_recordinfos(&record);
+                let ret = utils::create_recordinfos(&record, &FieldDataMapKey::default(), &None);
                 // Systemは除外される/属性(_attributesも除外される)/key順に並ぶ
                 let expected = "AccessMask: %%1369 ¦ Process: lsass.exe ¦ User: u1".to_string();
                 assert_eq!(ret, expected);
@@ -666,7 +747,7 @@ mod tests {
 
         match serde_json::from_str(record_json_str) {
             Ok(record) => {
-                let ret = utils::create_recordinfos(&record);
+                let ret = utils::create_recordinfos(&record, &FieldDataMapKey::default(), &None);
                 // Systemは除外される/属性(_attributesも除外される)/key順に並ぶ
                 let expected = "Binary: hogehoge ¦ Data:  ¦ Data: Data1 ¦ Data: DataData2 ¦ Data: DataDataData3"
                     .to_string();
@@ -881,5 +962,139 @@ mod tests {
             records[1]["Event"]["EventData"]["@timestamp"],
             "2020-05-02T02:55:30.540Z"
         );
+    }
+
+    #[test]
+    fn test_output_profile() {
+        HTML_REPORTER.write().unwrap().md_datas.clear();
+        let stored_static = StoredStatic::create_static_data(Some(Config {
+            action: Some(Action::CsvTimeline(CsvOutputOption {
+                output_options: OutputOption {
+                    input_args: InputOption {
+                        directory: None,
+                        filepath: None,
+                        live_analysis: false,
+                        recover_records: false,
+                    },
+                    profile: Some("super-verbose".to_string()),
+                    enable_deprecated_rules: false,
+                    exclude_status: None,
+                    min_level: "informational".to_string(),
+                    exact_level: None,
+                    enable_noisy_rules: false,
+                    end_timeline: None,
+                    start_timeline: None,
+                    eid_filter: false,
+                    european_time: false,
+                    iso_8601: false,
+                    rfc_2822: false,
+                    rfc_3339: false,
+                    us_military_time: false,
+                    us_time: false,
+                    utc: false,
+                    visualize_timeline: false,
+                    rules: Path::new("./rules").to_path_buf(),
+                    html_report: Some(Path::new("dummy.html").to_path_buf()),
+                    no_summary: false,
+                    common_options: CommonOptions {
+                        no_color: false,
+                        quiet: false,
+                    },
+                    detect_common_options: DetectCommonOption {
+                        evtx_file_ext: None,
+                        thread_number: None,
+                        quiet_errors: false,
+                        config: Path::new("./rules/config").to_path_buf(),
+                        verbose: false,
+                        json_input: false,
+                        include_computer: None,
+                        exclude_computer: None,
+                    },
+                    enable_unsupported_rules: false,
+                    clobber: false,
+                    proven_rules: false,
+                    include_tag: None,
+                    exclude_tag: None,
+                    include_category: None,
+                    exclude_category: None,
+                    include_eid: None,
+                    exclude_eid: None,
+                    no_field: false,
+                    remove_duplicate_data: false,
+                    remove_duplicate_detections: false,
+                },
+                geo_ip: None,
+                output: None,
+                multiline: false,
+            })),
+            debug: false,
+        }));
+        output_profile_name(&stored_static.output_option, true);
+        output_profile_name(&stored_static.output_option, false);
+        let expect: HashMap<&str, Nested<String>> = HashMap::from_iter(vec![
+            ("Results Summary {#results_summary}", Nested::new()),
+            (
+                "General Overview {#general_overview}",
+                Nested::from_iter(vec!["- Output profile: super-verbose"]),
+            ),
+        ]);
+        for (k, v) in HTML_REPORTER.read().unwrap().md_datas.iter() {
+            assert!(expect.keys().any(|x| x == k));
+            assert!(expect.values().any(|y| y == v));
+        }
+    }
+
+    #[test]
+    /// Computerの値をもとにフィルタリングされることを確認するテスト
+    fn test_is_filtered_by_computer_name() {
+        let json_str = r##"
+        {
+            "Event": {
+                "System": {
+                    "Computer": "HayabusaComputer1"
+                }
+            }
+        }
+        "##;
+        let event_record: Value = serde_json::from_str(json_str).unwrap();
+
+        // include_computer, exclude_computerが指定されていない場合はフィルタリングされない
+        assert!(!utils::is_filtered_by_computer_name(
+            Some(&event_record["Event"]["System"]["Computer"]),
+            (&HashSet::new(), &HashSet::new()),
+        ));
+
+        // recordのコンピュータ名の情報がない場合はフィルタリングされない
+        assert!(!utils::is_filtered_by_computer_name(
+            None,
+            (&HashSet::new(), &HashSet::new()),
+        ));
+
+        // include_computerで合致しない場合フィルタリングされる
+        assert!(utils::is_filtered_by_computer_name(
+            Some(&event_record["Event"]["System"]["Computer"]),
+            (
+                &HashSet::from_iter(vec!["Hayabusa".into()]),
+                &HashSet::new()
+            ),
+        ));
+
+        // include_computerで合致する場合フィルタリングされない
+        assert!(!utils::is_filtered_by_computer_name(
+            Some(&event_record["Event"]["System"]["Computer"]),
+            (
+                &HashSet::from_iter(vec!["HayabusaComputer1".into()]),
+                &HashSet::new()
+            ),
+        ));
+
+        // exclude_computerで合致する場合フィルタリングされる
+        assert!(utils::is_filtered_by_computer_name(
+            Some(&event_record["Event"]["System"]["Computer"]),
+            (
+                &HashSet::new(),
+                &HashSet::from_iter(vec!["HayabusaComputer1".into()]),
+            ),
+        ));
     }
 }

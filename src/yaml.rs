@@ -23,6 +23,7 @@ pub struct ParseYaml {
     pub errorrule_count: u128,
     pub exclude_status: HashSet<String>,
     pub level_map: HashMap<String, u128>,
+    pub loaded_rule_ids: HashSet<CompactString>,
 }
 
 impl ParseYaml {
@@ -49,6 +50,7 @@ impl ParseYaml {
                 ("HIGH".to_owned(), 4),
                 ("CRITICAL".to_owned(), 5),
             ]),
+            loaded_rule_ids: HashSet::new(),
         }
     }
 
@@ -240,7 +242,7 @@ impl ParseYaml {
                 io::Result::Ok(ret)
             })?;
         }
-
+        let exist_output_opt = stored_static.output_option.is_some();
         let files = yaml_docs.into_iter().filter_map(|(filepath, yaml_doc)| {
             //除外されたルールは無視する
             let rule_id = &yaml_doc["id"].as_str();
@@ -257,6 +259,7 @@ impl ParseYaml {
                     // テスト用のルール(ID:000...0)の場合はexcluded ruleのカウントから除外するようにする
                     if v != "00000000-0000-0000-0000-000000000000" {
                         let entry = self.rule_load_cnt.entry(entry_key.into()).or_insert(0);
+                        self.loaded_rule_ids.insert(v.into());
                         *entry += 1;
                     }
                     let enable_noisy_rules = if let Some(o) = stored_static.output_option.as_ref() {
@@ -269,6 +272,16 @@ impl ParseYaml {
                         return Option::None;
                     }
                 }
+                if let Some(id) = rule_id {
+                    if !stored_static.target_ruleids.is_target(id, true) {
+                        if !self.loaded_rule_ids.contains(*id) {
+                            let entry = self.rule_load_cnt.entry("excluded".into()).or_insert(0);
+                            *entry += 1;
+                            self.loaded_rule_ids.insert(CompactString::from(*id));
+                        }
+                        return Option::None;
+                    }
+                }
             }
 
             let mut up_rule_status_cnt = |status: &str| {
@@ -276,15 +289,22 @@ impl ParseYaml {
                 *status_cnt += 1;
             };
 
+            let mut up_rule_load_cnt = |status: &str, rule_id: &str| {
+                if !self.loaded_rule_ids.contains(rule_id) {
+                    let entry = self.rule_load_cnt.entry(status.into()).or_insert(0);
+                    *entry += 1;
+                    self.loaded_rule_ids.insert(rule_id.into());
+                }
+            };
+
             let status = yaml_doc["status"].as_str();
             if let Some(s) = yaml_doc["status"].as_str() {
                 // excluded status optionで指定されたstatusを除外する
                 if self.exclude_status.contains(&s.to_string()) {
-                    let entry = self.rule_load_cnt.entry("excluded".into()).or_insert(0);
-                    *entry += 1;
+                    up_rule_load_cnt("excluded", rule_id.unwrap_or(&String::default()));
                     return Option::None;
                 }
-                if stored_static.output_option.is_some()
+                if exist_output_opt
                     && ((s == "deprecated"
                         && !stored_static
                             .output_option
@@ -304,18 +324,124 @@ impl ParseYaml {
                 }
             }
 
-            self.rulecounter.insert(
-                yaml_doc["ruletype"].as_str().unwrap_or("Other").into(),
-                self.rulecounter
-                    .get(yaml_doc["ruletype"].as_str().unwrap_or("Other"))
-                    .unwrap_or(&0)
-                    + 1,
-            );
+            if exist_output_opt {
+                let category_in_rule = yaml_doc["logsource"]["category"]
+                    .as_str()
+                    .unwrap_or_default();
+                let mut include_category = &Vec::default();
+                let mut exclude_category = &Vec::default();
 
-            up_rule_status_cnt(status.unwrap_or("undefined"));
+                if let Some(tmp) = &stored_static
+                    .output_option
+                    .as_ref()
+                    .unwrap()
+                    .include_category
+                {
+                    include_category = tmp;
+                }
+
+                if let Some(tmp) = &stored_static
+                    .output_option
+                    .as_ref()
+                    .unwrap()
+                    .exclude_category
+                {
+                    exclude_category = tmp;
+                }
+
+                if !include_category.is_empty()
+                    && !include_category.contains(&category_in_rule.to_string())
+                {
+                    up_rule_load_cnt("excluded", rule_id.unwrap_or(&String::default()));
+                    return Option::None;
+                }
+                if !exclude_category.is_empty()
+                    && exclude_category.contains(&category_in_rule.to_string())
+                {
+                    up_rule_load_cnt("excluded", rule_id.unwrap_or(&String::default()));
+                    return Option::None;
+                }
+            }
+
+            // tags optionで指定されたtagsを持たないルールは除外する
+            if exist_output_opt
+                && stored_static
+                    .output_option
+                    .as_ref()
+                    .unwrap()
+                    .include_tag
+                    .is_some()
+            {
+                let target_tags = stored_static
+                    .output_option
+                    .as_ref()
+                    .unwrap()
+                    .include_tag
+                    .as_ref()
+                    .unwrap();
+                let rule_tags_vec = yaml_doc["tags"].as_vec();
+                if let Some(rule_tags) = rule_tags_vec {
+                    let is_match = rule_tags.iter().any(|tag| {
+                        target_tags.contains(&tag.as_str().unwrap_or_default().to_string())
+                    });
+                    if !is_match {
+                        up_rule_load_cnt("excluded", rule_id.unwrap_or(&String::default()));
+                        return Option::None;
+                    }
+                } else {
+                    up_rule_load_cnt("excluded", rule_id.unwrap_or(&String::default()));
+                    return Option::None;
+                }
+            }
+
+            // exclude-tag optionで指定されたtagを持つルールは除外する
+            if stored_static.output_option.is_some()
+                && stored_static
+                    .output_option
+                    .as_ref()
+                    .unwrap()
+                    .exclude_tag
+                    .is_some()
+            {
+                let exclude_target_tags = stored_static
+                    .output_option
+                    .as_ref()
+                    .unwrap()
+                    .exclude_tag
+                    .as_ref()
+                    .unwrap();
+                let rule_tags_vec = yaml_doc["tags"].as_vec();
+                if let Some(rule_tags) = rule_tags_vec {
+                    let is_match = rule_tags.iter().any(|tag| {
+                        exclude_target_tags.contains(&tag.as_str().unwrap_or_default().to_string())
+                    });
+                    if is_match {
+                        up_rule_load_cnt("excluded", rule_id.unwrap_or(&String::default()));
+                        return Option::None;
+                    }
+                }
+            }
+
+            if !self
+                .loaded_rule_ids
+                .contains(rule_id.unwrap_or(&String::default()))
+            {
+                self.rulecounter.insert(
+                    yaml_doc["ruletype"].as_str().unwrap_or("Other").into(),
+                    self.rulecounter
+                        .get(yaml_doc["ruletype"].as_str().unwrap_or("Other"))
+                        .unwrap_or(&0)
+                        + 1,
+                );
+
+                up_rule_status_cnt(status.unwrap_or("undefined"));
+
+                self.loaded_rule_ids
+                    .insert(rule_id.unwrap_or(&String::default()).into());
+            }
 
             if stored_static.verbose_flag {
-                println!("Loaded yml file path: {filepath}");
+                println!("Loaded rule: {filepath}");
             }
 
             // 指定されたレベルより低いルールは無視する
@@ -365,6 +491,7 @@ mod tests {
                         directory: None,
                         filepath: None,
                         live_analysis: false,
+                        recover_records: false,
                     },
                     profile: None,
                     enable_deprecated_rules: false,
@@ -397,8 +524,21 @@ mod tests {
                         config: Path::new("./rules/config").to_path_buf(),
                         verbose: false,
                         json_input: false,
+                        include_computer: None,
+                        exclude_computer: None,
                     },
                     enable_unsupported_rules: false,
+                    clobber: false,
+                    proven_rules: false,
+                    include_tag: None,
+                    exclude_tag: None,
+                    include_category: None,
+                    exclude_category: None,
+                    include_eid: None,
+                    exclude_eid: None,
+                    no_field: false,
+                    remove_duplicate_data: false,
+                    remove_duplicate_detections: false,
                 },
                 geo_ip: None,
                 output: None,
@@ -704,5 +844,158 @@ mod tests {
         )
         .unwrap();
         assert_eq!(yaml.files.len(), 1);
+    }
+
+    #[test]
+    fn test_specified_tags_option() {
+        let path = Path::new("test_files/rules/level_yaml");
+        let mut dummy_stored_static = create_dummy_stored_static();
+        dummy_stored_static
+            .output_option
+            .as_mut()
+            .unwrap()
+            .include_tag = Some(vec!["tag1".to_string(), "tag2".to_string()]);
+        let mut yaml = yaml::ParseYaml::new(&dummy_stored_static);
+        yaml.read_dir(
+            path,
+            "",
+            "",
+            &filter::exclude_ids(&dummy_stored_static),
+            &dummy_stored_static,
+        )
+        .unwrap();
+        assert_eq!(yaml.files.len(), 3);
+    }
+
+    #[test]
+    fn test_include_category_option_1opt() {
+        let path = Path::new("test_files/rules/level_yaml");
+        let mut dummy_stored_static = create_dummy_stored_static();
+        dummy_stored_static
+            .output_option
+            .as_mut()
+            .unwrap()
+            .include_category = Some(vec!["test_category1".to_string()]);
+        let mut yaml = yaml::ParseYaml::new(&dummy_stored_static);
+        yaml.read_dir(
+            path,
+            "",
+            "",
+            &filter::exclude_ids(&dummy_stored_static),
+            &dummy_stored_static,
+        )
+        .unwrap();
+        assert_eq!(yaml.files.len(), 1);
+    }
+
+    #[test]
+    fn test_include_category_option_multi_opt() {
+        let path = Path::new("test_files/rules/level_yaml");
+        let mut dummy_stored_static = create_dummy_stored_static();
+        dummy_stored_static
+            .output_option
+            .as_mut()
+            .unwrap()
+            .include_category = Some(vec![
+            "test_category1".to_string(),
+            "test_category2".to_string(),
+        ]);
+        let mut yaml = yaml::ParseYaml::new(&dummy_stored_static);
+        yaml.read_dir(
+            path,
+            "",
+            "",
+            &filter::exclude_ids(&dummy_stored_static),
+            &dummy_stored_static,
+        )
+        .unwrap();
+        assert_eq!(yaml.files.len(), 2);
+    }
+
+    #[test]
+    fn test_include_category_option_not_found() {
+        let path = Path::new("test_files/rules/level_yaml");
+        let mut dummy_stored_static = create_dummy_stored_static();
+        dummy_stored_static
+            .output_option
+            .as_mut()
+            .unwrap()
+            .include_category = Some(vec!["not found".to_string()]);
+        let mut yaml = yaml::ParseYaml::new(&dummy_stored_static);
+        yaml.read_dir(
+            path,
+            "",
+            "",
+            &filter::exclude_ids(&dummy_stored_static),
+            &dummy_stored_static,
+        )
+        .unwrap();
+        assert_eq!(yaml.files.len(), 0);
+    }
+
+    #[test]
+    fn test_exclude_category_option_1opt() {
+        let path = Path::new("test_files/rules/level_yaml");
+        let mut dummy_stored_static = create_dummy_stored_static();
+        dummy_stored_static
+            .output_option
+            .as_mut()
+            .unwrap()
+            .exclude_category = Some(vec!["test_category1".to_string()]);
+        let mut yaml = yaml::ParseYaml::new(&dummy_stored_static);
+        yaml.read_dir(
+            path,
+            "",
+            "",
+            &filter::exclude_ids(&dummy_stored_static),
+            &dummy_stored_static,
+        )
+        .unwrap();
+        assert_eq!(yaml.files.len(), 4);
+    }
+
+    #[test]
+    fn test_exclude_category_option_multi_opt() {
+        let path = Path::new("test_files/rules/level_yaml");
+        let mut dummy_stored_static = create_dummy_stored_static();
+        dummy_stored_static
+            .output_option
+            .as_mut()
+            .unwrap()
+            .exclude_category = Some(vec![
+            "test_category1".to_string(),
+            "test_category2".to_string(),
+        ]);
+        let mut yaml = yaml::ParseYaml::new(&dummy_stored_static);
+        yaml.read_dir(
+            path,
+            "",
+            "",
+            &filter::exclude_ids(&dummy_stored_static),
+            &dummy_stored_static,
+        )
+        .unwrap();
+        assert_eq!(yaml.files.len(), 3);
+    }
+
+    #[test]
+    fn test_exclude_category_option_notfound() {
+        let path = Path::new("test_files/rules/level_yaml");
+        let mut dummy_stored_static = create_dummy_stored_static();
+        dummy_stored_static
+            .output_option
+            .as_mut()
+            .unwrap()
+            .exclude_category = Some(vec!["not found".to_string()]);
+        let mut yaml = yaml::ParseYaml::new(&dummy_stored_static);
+        yaml.read_dir(
+            path,
+            "",
+            "",
+            &filter::exclude_ids(&dummy_stored_static),
+            &dummy_stored_static,
+        )
+        .unwrap();
+        assert_eq!(yaml.files.len(), 5);
     }
 }

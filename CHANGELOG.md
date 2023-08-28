@@ -1,20 +1,112 @@
 # Changes
 
-## 2.5.0 [2023/05/12] "Security Mini Camp in Tokyo Release"
+## 2.8.0 [xxxx/xx/xx]
 
 **New Features:**
 
-- XXX
+- Added support for `HexToDecimal` in the field mapping configuration files to convert hex values to decimal. (Useful for converting the original process IDs from hex to decimal.) (#1133) (@fukusuket)
+- Added `-x, --recover-records` option to `csv-timeline` and `json-timeline` to recover evtx records through file carving on empty pages. (#952) (@hitenkoku) (Evtx carving feature is thanks to @forensicmatt)
+- Added `-X, --remove-duplicate-detections` option to `csv-timeline` and `json-timeline` to not output any duplicate detection entries. (Useful when you use `-x`, include older backup logs with duplicate data, etc...)
+
+**Enhancements:**
+
+- Added a `-a, --and-logic` option in the `search` command to search keywords with AND logic. (#1162) (@hitenkoku)
+- When using `-x, --recover-records`, an additional `%RecoveredRecord%` field will be added to the output profile and will output `Y` to indicate if a record was recovered. (#1160) (@hitenkoku)
+
+## 2.7.0 [2023/08/03] "SANS DFIR Summit Release"
+
+**New Features:**
+
+- Certain code numbers are now mapped to human-readable messages based on the `.yaml` config files in `./rules/config/data_mapping`. (Example: `%%2307` will be converted to `ACCOUNT LOCKOUT`). You can turn off this behavior with the `-F, --no-field-data-mapping` option. (#177) (@fukusuket)
+- Added the `-R, --remove-duplicate-data` option in the `csv-timeline` command to replace duplicate field data with the string `DUP` in the `%Details%`, `%AllFieldInfo%`, `%ExtraFieldInfo%` columns to reduce file size. (#1056) (@hitenkoku)
+- Added the `-P, --proven-rules` option in `csv-timeline` and `json-timeline` commands. When used, Hayabusa will only load rules that have been proven to work. These are defined by rule ID in the `./rules/config/proven_rules.txt` config file. (#1115) (@hitenkoku)
+- Added the `--include-tag` option to `csv-timeline` and `json-timeline` commands to only load rules with the specified `tags` field. (#1108) (@hitenkoku)
+- Added the `--exclude-tag` option to `csv-timeline` and `json-timeline` commands to exclude rules with specific `tags` from being loaded. (#1118) (@hitenkoku)
+- Added `--include-category` and `--exclude-category` options to `csv-timeline` and `json-timeline` commands. When using `--include-category`, only rules with the specified `category` field will be loaded. `--exclude-category` will exclude rules from being loaded based on `category`. (#1119) (@hitenkoku)
+- Added the `computer-metrics` command to list up how many events there are based on computer name. (#1116) (@hitenkoku)
+- Added `--include-computer` and `--exclude-computer` options to `csv-timeline`, `json-timeline`, `metrics`, `logon-summary` and `pivot-keywords-list` commands. The `--include-computer` option only scans the specified computer(s). `--exclude-computer` excludes them. (#1117) (@hitenkoku)
+- Added `--include-eid` and `--exclude-eid` options to `csv-timeline`, `json-timeline`, and `pivot-keywords-list` commands. The `--include-eid` option only scans the specified EventID(s). `--exclude-eid` excludes them. (#1130) (@hitenkoku)
+- Added the `-R, --remove-duplicate-data` option to the `json-timeline` command to replace duplicate field data with the string `DUP` in the `%Details%`, `%AllFieldInfo%`, `%ExtraFieldInfo%` fields to reduce file size. (#1134) (@hitenkoku)
+
+**Enhancements:**
+
+- Ignore corrupted event records with timestamps before 2007/1/31 when Windows Vista was released with the new `.evtx` log format. (#1102) (@fukusuket)
+- When `--output` is set in the `metrics` command, the results will not be displayed to screen. (#1099) (@hitenkoku)
+- Added the `-C, --clobber` option to overwrite existing output files in the `pivot-keywords-list` command. (#1125) (@hitenkoku)
+- Renamed the `metrics` command to `eid-metrics`. (#1128) (@hitenkoku)
+- Reduced progress bar width to leave room for adjustment of the terminal. (#1135) (@hitenkoku)
+- Added support for outputing timestamps in the following formats in the `search` command: `--European-time`, `--ISO-8601`, `--RFC-2822`, `--RFC-3339`, `--US-time`, `--US-military-time`, `-U, --UTC`. (#1040) (@hitenkoku)
+- Replaced the ETA time in the progress bar with elapsed time as the ETA time was not accurate. (#1143) (@YamatoSecurity)
+- Added `--timeline-start` and `--timeline-end` to the `logon-summary` command. (#1152) (@hitenkoku)
+
+**Bug Fixes:**
+
+- The total number of records being displayed in the `metrics` and `logon-summary` commands differed from the `csv-timeline` command. (#1105) (@hitenkoku)
+- Changed rule count by rule ID instead of path. (#1113) (@hitenkoku)
+- `--timeline-start` and `--timeline-end` were not working correctly with the `json-timeline` command. (#1148) (@hitenkoku)
+- `--timeline-start` and `--timeline-end` were not working correctly with the `pivot-keywords-list` command. (#1150) (@hitenkoku)
+
+**Other:**
+
+- The total count of unique detections are now based on rule IDs instead of rule file paths. (#1111) (@hitenkoku)
+- Renamed the `--live_analysis` option to `--live-analysis`. (#1139) (@hitenkoku)
+- Renamed the `metrics` command to `eid-metrics`. (#1128) (@hitenkoku)
+
+## 2.6.0 [2023/06/16] "Ajisai Release"
+
+**New Features:**
+
+- Added support for `'|all':`  keyword in sigma rules. (#1038) (@kazuminn)
+
+**Enhancements:**
+
+- Added `%ExtraFieldInfo%` alias to output profiles which will output all of the other fields that do not get outputted in `Details`. This is now included in the default `standard` output profile. (#900) (@hitenkoku)
+- Added error messages for incompatible arguments. (#1054) (@YamatoSecurity)
+- The output profile name is now outputted to standard output and in the HTML report. (#1055) (@hitenkoku)
+- Added rule author names next to rule alerts in the HTML report. (#1065) (@hitenkoku)
+- Made the table width shorter to prevent tables breaking in smaller terminal sizes. (#1071) (@hitenkoku)
+- Added the `-C, --clobber` option to overwrite existing output files in `csv-timeline`, `json-timeline`, `metrics`, `logon-summary`, and `search` commands. (#1063) (@YamatoSecurity, @hitenkoku)
+- Made the HTML report portable by embedding the images and inlining CSS. (#1078) (@hitenkoku, thanks for the suggestion from @joswr1ght)
+- Speed improvements in the output. (#1088) (@hitenkoku, @fukusuket)
+- The `metrics` command now performs word wrapping to make sure the table gets rendered correctly. (#1067) (@garigariganzy)
+- `search` command results can now be outputted to JSON/JSONL. (#1041) (@hitenkoku)
+
+**Bug Fixes:**
+
+- `MitreTactics`, `MitreTags`, `OtherTags` fields were not being outputted in the `json-timeline` command. (#1062) (@hitenkoku)
+- The detection frequency timeline (`-T`) would not output when the `no-summary` option was also enabled. (#1072) (@hitenkoku)
+- Control characters would not be escaped in the `json-timeline` command causing a JSON parsing error. (#1068) (@hitenkoku)
+- In the `metrics` command, channels would not be abbreviated if they were lowercase. (#1066) (@garigariganzy)
+- Fixed an issue where some fields were misaligned in the JSON output. (#1086) (@hitenkoku)
+
+## 2.5.1 [2023/05/14] "Mothers Day Release"
+
+**Enhancements:**
+
+- Reduced memory usage by half when using newly converted rules. (#1047) (@fukusuket)
+
+**Bug Fixes:**
+
+- Data in certain fields such as `AccessMask` would not be separated by spaces when outputted from the `details` field. (#1035) (@hitenkoku)
+- Multiple spaces would be condensed to a single space when outputting to JSON. (#1048) (@hitenkoku)
+- Output would be in color even if `--no-color` was used in the `pivot-keywords-list` command. (#1044) (@kazuminn)
+
+## 2.5.0 [2023/05/07] "Golden Week Release"
 
 **Enhancements:**
 
 - Added `-M, --multiline` option to search command. (#1017) (@hitenkoku)
 - Deleted return characters in the output of the `search` command. (#1003) (@hitenkoku)
 - `regex` crate updated to 1.8 which allows unnecessary escapes in regular expressions reducing parsing errors. (#1018) (@YamatoSecurity)
+- Deleted return characters in output of the `csv-timeline` command. (#1019) (@hitenkoku)
+- Don't show new version information with the `update-rules` command when building a newer dev build. (#1028) (@hitenkoku)
+- Sorted `search` timeline order. (#1033) (@hitenkoku)
+- Enhanced `pivot-keywords-list` terminal output. (#1022) (@kazuminn)
 
 **Bug Fixes:**
 
-- XXX
+- Unconverted sigma rules that search for a string that end in a backslash would not be detected. Also `|contains` conditions would not match if the string was located in the beginning. (#1025) (@fukusuket)
+- In versions 2.3.3-2.4.0, informational level alerts in the Results Summary would show the top 5 events twice instead of the top 10 events. (#1031) (@hitenkoku)
 
 ## 2.4.0 [2023/04/19] "SANS Secure Korea Release"
 

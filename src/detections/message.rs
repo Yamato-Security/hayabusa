@@ -1,8 +1,10 @@
 extern crate lazy_static;
 use crate::detections::configs::CURRENT_EXE_PATH;
+use crate::detections::field_data_map::{convert_field_data, FieldDataMap, FieldDataMapKey};
 use crate::detections::utils::{self, get_serde_number_to_string, write_color_buffer};
 use crate::options::profile::Profile::{
-    self, AllFieldInfo, Details, Literal, SrcASN, SrcCity, SrcCountry, TgtASN, TgtCity, TgtCountry,
+    self, AllFieldInfo, Details, ExtraFieldInfo, Literal, SrcASN, SrcCity, SrcCountry, TgtASN,
+    TgtCity, TgtCountry,
 };
 use chrono::{DateTime, Local, Utc};
 use compact_str::CompactString;
@@ -14,6 +16,7 @@ use lazy_static::lazy_static;
 use nested::Nested;
 use regex::Regex;
 use serde_json::Value;
+use std::borrow::Borrow;
 use std::env;
 use std::fs::{create_dir, File};
 use std::io::{self, BufWriter, Write};
@@ -23,9 +26,10 @@ use termcolor::{BufferWriter, ColorChoice};
 
 use super::configs::EventKeyAliasConfig;
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, PartialEq, Eq, Hash, Default)]
 pub struct DetectInfo {
     pub rulepath: CompactString,
+    pub ruleid: CompactString,
     pub ruletitle: CompactString,
     pub level: CompactString,
     pub computername: CompactString,
@@ -105,58 +109,125 @@ pub fn insert_message(detect_info: DetectInfo, event_time: DateTime<Utc>) {
     info.push(detect_info);
 }
 
-/// メッセージを設定
+/// メッセージを設定 TODO 要リファクタリング
 pub fn insert(
     event_record: &Value,
     output: CompactString,
     mut detect_info: DetectInfo,
     time: DateTime<Utc>,
     profile_converter: &mut HashMap<&str, Profile>,
-    is_agg: bool,
-    eventkey_alias: &EventKeyAliasConfig,
+    (is_agg, is_json_timeline, included_all_field_info): (bool, bool, bool),
+    (eventkey_alias, field_data_map_key, field_data_map): (
+        &EventKeyAliasConfig,
+        &FieldDataMapKey,
+        &Option<FieldDataMap>,
+    ),
 ) {
     if !is_agg {
         let mut prev = 'a';
-        let mut removed_sp_parsed_detail = parse_message(event_record, output, eventkey_alias)
+        let mut removed_sp_parsed_detail = parse_message(
+            event_record,
+            output,
+            eventkey_alias,
+            is_json_timeline,
+            field_data_map_key,
+            field_data_map,
+        );
+        removed_sp_parsed_detail.retain(|ch| {
+            let retain_flag = prev == ' ' && ch == ' ' && ch.is_control();
+            if !retain_flag {
+                prev = ch;
+            }
+            !retain_flag
+        });
+        let parsed_detail = removed_sp_parsed_detail
             .replace('\n', "🛂n")
             .replace('\r', "🛂r")
             .replace('\t', "🛂t");
-        removed_sp_parsed_detail.retain(|ch| {
-            let continuous_space = prev == ' ' && ch == ' ';
-            prev = ch;
-            !continuous_space
-        });
-        let parsed_detail = removed_sp_parsed_detail
-            .chars()
-            .filter(|&c| !c.is_control())
-            .collect::<CompactString>();
         detect_info.detail = if parsed_detail.is_empty() {
             CompactString::from("-")
         } else {
-            parsed_detail
+            parsed_detail.into()
         };
     }
     let mut replaced_profiles: Vec<(CompactString, Profile)> = vec![];
     for (key, profile) in detect_info.ext_field.iter() {
         match profile {
             Details(_) => {
-                if detect_info.detail.is_empty() {
+                let existed_flag = replaced_profiles
+                    .iter()
+                    .any(|(_, y)| matches!(y, Details(_)));
+                if existed_flag {
+                    continue;
+                }
+                if detect_info.borrow().detail.is_empty() {
                     replaced_profiles.push((key.to_owned(), profile.to_owned()));
                 } else {
-                    replaced_profiles.push((key.to_owned(), Details(detect_info.detail.into())));
+                    replaced_profiles
+                        .push((key.to_owned(), Details(detect_info.detail.clone().into())));
                     detect_info.detail = CompactString::default();
                 }
             }
             AllFieldInfo(_) => {
+                let existed_flag = replaced_profiles
+                    .iter()
+                    .any(|(_, y)| matches!(y, AllFieldInfo(_)));
+                if existed_flag {
+                    continue;
+                }
                 if is_agg {
                     replaced_profiles.push((key.to_owned(), AllFieldInfo("-".into())));
                 } else {
-                    let rec = utils::create_recordinfos(event_record);
+                    let rec =
+                        utils::create_recordinfos(event_record, field_data_map_key, field_data_map);
                     let rec = if rec.is_empty() { "-".to_string() } else { rec };
                     replaced_profiles.push((key.to_owned(), AllFieldInfo(rec.into())));
                 }
             }
             Literal(_) => replaced_profiles.push((key.to_owned(), profile.to_owned())),
+            ExtraFieldInfo(_) => {
+                let mut profile_all_field_info_prof = None;
+                let mut profile_details_prof = None;
+                replaced_profiles.iter().for_each(|(_, y)| match y {
+                    AllFieldInfo(_) => profile_all_field_info_prof = Some(y.to_value()),
+                    Details(_) => profile_details_prof = Some(y.to_value()),
+                    _ => {}
+                });
+                let profile_details =
+                    profile_details_prof.unwrap_or(detect_info.detail.clone().into());
+                let profile_all_field_info = if let Some(all_field_info_val) =
+                    profile_all_field_info_prof
+                {
+                    all_field_info_val
+                } else if is_agg {
+                    if included_all_field_info {
+                        // AllFieldInfoがまだ読み込まれていない場合は、AllFieldInfoを追加する
+                        replaced_profiles.push((key.to_owned(), AllFieldInfo("-".into())));
+                    }
+                    "-".to_string()
+                } else {
+                    let rec =
+                        utils::create_recordinfos(event_record, field_data_map_key, field_data_map);
+                    let rec = if rec.is_empty() { "-".to_string() } else { rec };
+                    if included_all_field_info {
+                        replaced_profiles.push((key.to_owned(), AllFieldInfo(rec.clone().into())));
+                    }
+                    rec
+                };
+                let details_splits: HashSet<&str> = HashSet::from_iter(
+                    profile_details
+                        .split(" ¦ ")
+                        .map(|x| x.split_once(": ").unwrap_or_default().1),
+                );
+                let extra_field_val = profile_all_field_info
+                    .split(" ¦ ")
+                    .filter(|x| {
+                        let value = x.split_once(": ").unwrap_or_default().1;
+                        !details_splits.contains(value)
+                    })
+                    .join(" ¦ ");
+                replaced_profiles.push((key.to_owned(), ExtraFieldInfo(extra_field_val.into())));
+            }
             SrcASN(_) | SrcCountry(_) | SrcCity(_) | TgtASN(_) | TgtCountry(_) | TgtCity(_) => {
                 replaced_profiles.push((
                     key.to_owned(),
@@ -171,6 +242,9 @@ pub fn insert(
                             event_record,
                             CompactString::new(p.to_value()),
                             eventkey_alias,
+                            is_json_timeline,
+                            field_data_map_key,
+                            field_data_map,
                         )),
                     ))
                 }
@@ -186,31 +260,34 @@ pub fn parse_message(
     event_record: &Value,
     output: CompactString,
     eventkey_alias: &EventKeyAliasConfig,
+    json_timeline_flag: bool,
+    field_data_map_key: &FieldDataMapKey,
+    field_data_map: &Option<FieldDataMap>,
 ) -> CompactString {
     let mut return_message = output;
     let mut hash_map: HashMap<CompactString, CompactString> = HashMap::new();
     for caps in ALIASREGEX.captures_iter(&return_message) {
         let full_target_str = &caps[0];
-        let target_length = full_target_str.chars().count() - 2; // The meaning of 2 is two percent
         let target_str = full_target_str
-            .chars()
-            .skip(1)
-            .take(target_length)
-            .collect::<String>();
-
-        let array_str = if let Some(_array_str) = eventkey_alias.get_event_key(&target_str) {
+            .strip_suffix('%')
+            .unwrap()
+            .strip_prefix('%')
+            .unwrap();
+        let array_str = if let Some(_array_str) = eventkey_alias.get_event_key(target_str) {
             _array_str.to_string()
         } else {
             format!("Event.EventData.{target_str}")
         };
 
         let mut tmp_event_record: &Value = event_record;
+        let mut field = "";
         for s in array_str.split('.') {
             if let Some(record) = tmp_event_record.get(s) {
                 tmp_event_record = record;
+                field = s;
             }
         }
-        let suffix_match = SUFFIXREGEX.captures(&target_str);
+        let suffix_match = SUFFIXREGEX.captures(target_str);
         let suffix: i64 = match suffix_match {
             Some(cap) => cap.get(1).map_or(-1, |a| a.as_str().parse().unwrap_or(-1)),
             None => -1,
@@ -225,7 +302,25 @@ pub fn parse_message(
         let hash_value = get_serde_number_to_string(tmp_event_record, false);
         if hash_value.is_some() {
             if let Some(hash_value) = hash_value {
-                hash_map.insert(CompactString::from(full_target_str), hash_value);
+                let field_data = if field_data_map.is_none() || field.is_empty() {
+                    hash_value
+                } else {
+                    let converted_str = convert_field_data(
+                        field_data_map.as_ref().unwrap(),
+                        field_data_map_key,
+                        field.to_lowercase().as_str(),
+                        hash_value.as_str(),
+                    );
+                    converted_str.unwrap_or(hash_value)
+                };
+                if json_timeline_flag {
+                    hash_map.insert(CompactString::from(full_target_str), field_data);
+                } else {
+                    hash_map.insert(
+                        CompactString::from(full_target_str),
+                        field_data.split_ascii_whitespace().join(" ").into(),
+                    );
+                }
             }
         } else {
             hash_map.insert(CompactString::from(full_target_str), "n/a".into());
@@ -314,6 +409,7 @@ impl AlertMessage {
 #[cfg(test)]
 mod tests {
     use crate::detections::configs::{load_eventkey_alias, StoredStatic, CURRENT_EXE_PATH};
+    use crate::detections::field_data_map::FieldDataMapKey;
     use crate::detections::message::{get, insert_message, AlertMessage, DetectInfo};
     use crate::detections::message::{parse_message, MESSAGES};
     use crate::detections::utils;
@@ -374,6 +470,9 @@ mod tests {
                     .to_str()
                     .unwrap(),
                 ),
+                true,
+                &FieldDataMapKey::default(),
+                &None
             ),
             expected,
         );
@@ -407,6 +506,9 @@ mod tests {
                     .to_str()
                     .unwrap(),
                 ),
+                true,
+                &FieldDataMapKey::default(),
+                &None
             ),
             expected,
         );
@@ -446,6 +548,9 @@ mod tests {
                     .to_str()
                     .unwrap(),
                 ),
+                true,
+                &FieldDataMapKey::default(),
+                &None
             ),
             expected,
         );
@@ -484,6 +589,9 @@ mod tests {
                     .to_str()
                     .unwrap(),
                 ),
+                true,
+                &FieldDataMapKey::default(),
+                &None
             ),
             expected,
         );
@@ -527,6 +635,9 @@ mod tests {
                     .to_str()
                     .unwrap(),
                 ),
+                true,
+                &FieldDataMapKey::default(),
+                &None
             ),
             expected,
         );
@@ -570,6 +681,9 @@ mod tests {
                     .to_str()
                     .unwrap(),
                 ),
+                true,
+                &FieldDataMapKey::default(),
+                &None
             ),
             expected,
         );
@@ -613,6 +727,9 @@ mod tests {
                     .to_str()
                     .unwrap(),
                 ),
+                true,
+                &FieldDataMapKey::default(),
+                &None
             ),
             expected,
         );
@@ -676,6 +793,7 @@ mod tests {
         for i in 1..2001 {
             let detect_info = DetectInfo {
                 rulepath: CompactString::default(),
+                ruleid: CompactString::default(),
                 ruletitle: CompactString::default(),
                 level: CompactString::default(),
                 computername: CompactString::default(),

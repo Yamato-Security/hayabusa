@@ -1,12 +1,13 @@
+use crate::detections::message::ERROR_LOG_STACK;
 use crate::detections::{
     configs::{EventKeyAliasConfig, StoredStatic},
     detection::EvtxRecordInfo,
     message::AlertMessage,
     utils,
 };
-use chrono::{DateTime, NaiveDateTime, Utc};
+use chrono::{DateTime, NaiveDate, NaiveDateTime, Utc};
 use compact_str::CompactString;
-use hashbrown::HashMap;
+use hashbrown::{HashMap, HashSet};
 
 #[derive(Debug, Clone)]
 pub struct EventMetrics {
@@ -57,8 +58,13 @@ impl EventMetrics {
         }
     }
 
-    pub fn evt_stats_start(&mut self, records: &[EvtxRecordInfo], stored_static: &StoredStatic) {
-        // _recordsから、EventIDを取り出す。
+    pub fn evt_stats_start(
+        &mut self,
+        records: &[EvtxRecordInfo],
+        stored_static: &StoredStatic,
+        (include_computer, exclude_computer): (&HashSet<CompactString>, &HashSet<CompactString>),
+    ) {
+        // recordsから、 最初のレコードの時刻と最後のレコードの時刻、レコードの総数を取得する
         self.stats_time_cnt(records, &stored_static.eventkey_alias);
 
         // 引数でmetricsオプションが指定されている時だけ、統計情報を出力する。
@@ -67,7 +73,7 @@ impl EventMetrics {
         }
 
         // EventIDで集計
-        self.stats_eventid(records, stored_static);
+        self.stats_eventid(records, stored_static, (include_computer, exclude_computer));
     }
 
     pub fn logon_stats_start(
@@ -91,7 +97,11 @@ impl EventMetrics {
             return;
         }
         self.filepath = CompactString::from(records[0].evtx_filepath.as_str());
-
+        let dt: NaiveDateTime = NaiveDate::from_ymd_opt(2007, 1, 30)
+            .unwrap()
+            .and_hms_opt(0, 0, 0)
+            .unwrap();
+        let evtx_service_released_date = Some(DateTime::<Utc>::from_utc(dt, Utc));
         let mut check_start_end_time = |evttime: &str| {
             let timestamp = match NaiveDateTime::parse_from_str(evttime, "%Y-%m-%dT%H:%M:%S%.3fZ") {
                 Ok(without_timezone_datetime) => {
@@ -107,7 +117,16 @@ impl EventMetrics {
                 return;
             }
             if self.start_time.is_none() || timestamp < self.start_time {
-                self.start_time = timestamp;
+                if timestamp >= evtx_service_released_date {
+                    self.start_time = timestamp;
+                } else {
+                    // evtxがリリースされた2007/1/30以前の日付データは不正な形式データ扱いとする
+                    ERROR_LOG_STACK.lock().unwrap().push(format!(
+                        "[ERROR] Invalid record found. EventFile:{} Timestamp:{}",
+                        self.filepath,
+                        timestamp.unwrap()
+                    ));
+                }
             }
             if self.end_time.is_none() || timestamp > self.end_time {
                 self.end_time = timestamp;
@@ -135,8 +154,23 @@ impl EventMetrics {
     }
 
     /// EventIDで集計
-    fn stats_eventid(&mut self, records: &[EvtxRecordInfo], stored_static: &StoredStatic) {
+    fn stats_eventid(
+        &mut self,
+        records: &[EvtxRecordInfo],
+        stored_static: &StoredStatic,
+        (include_computer, exclude_computer): (&HashSet<CompactString>, &HashSet<CompactString>),
+    ) {
         for record in records.iter() {
+            if utils::is_filtered_by_computer_name(
+                utils::get_event_value(
+                    "Event.System.Computer",
+                    &record.record,
+                    &stored_static.eventkey_alias,
+                ),
+                (include_computer, exclude_computer),
+            ) {
+                continue;
+            }
             let channel = if let Some(ch) =
                 utils::get_event_value("Channel", &record.record, &stored_static.eventkey_alias)
             {
@@ -267,6 +301,116 @@ impl EventMetrics {
                     count[1] += 1;
                 }
             };
+        }
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use std::path::Path;
+
+    use compact_str::CompactString;
+    use hashbrown::{HashMap, HashSet};
+    use nested::Nested;
+
+    use crate::{
+        detections::{
+            configs::{
+                Action, CommonOptions, Config, DetectCommonOption, EidMetricsOption, InputOption,
+                StoredStatic,
+            },
+            utils::create_rec_info,
+        },
+        timeline::timelines::Timeline,
+    };
+
+    fn create_dummy_stored_static(action: Action) -> StoredStatic {
+        StoredStatic::create_static_data(Some(Config {
+            action: Some(action),
+            debug: false,
+        }))
+    }
+
+    /// メトリクスコマンドの統計情報集計のテスト。 Testing of statistics aggregation for metrics commands.
+    #[test]
+    pub fn test_evt_logon_stats() {
+        let dummy_stored_static =
+            create_dummy_stored_static(Action::EidMetrics(EidMetricsOption {
+                input_args: InputOption {
+                    directory: None,
+                    filepath: None,
+                    live_analysis: false,
+                    recover_records: false,
+                },
+                common_options: CommonOptions {
+                    no_color: false,
+                    quiet: false,
+                },
+                detect_common_options: DetectCommonOption {
+                    json_input: false,
+                    evtx_file_ext: None,
+                    thread_number: None,
+                    quiet_errors: false,
+                    config: Path::new("./rules/config").to_path_buf(),
+                    verbose: false,
+                    include_computer: None,
+                    exclude_computer: None,
+                },
+                european_time: false,
+                iso_8601: false,
+                rfc_2822: false,
+                rfc_3339: false,
+                us_military_time: false,
+                us_time: false,
+                utc: false,
+                output: None,
+                clobber: false,
+            }));
+
+        let mut timeline = Timeline::new();
+        // テスト1: レコードのチャンネルがaliasに含まれている場合
+        let alias_ch_record_str = r#"{
+            "Event": {"System": {"EventID": 4103, "Channel": "Security", "Computer":"HAYABUSA-DESKTOP"}},
+            "Event_attributes": {"xmlns": "http://schemas.microsoft.com/win/2004/08/events/event"}
+        }"#;
+        let mut input_datas = vec![];
+        let alias_ch_record = serde_json::from_str(alias_ch_record_str).unwrap();
+        input_datas.push(create_rec_info(
+            alias_ch_record,
+            "testpath".to_string(),
+            &Nested::<String>::new(),
+            &false,
+        ));
+
+        // テスト2: レコードのチャンネル名がaliasに含まれていない場合
+        let no_alias_ch_record_str = r#"{
+            "Event": {"System": {"EventID": 4104, "Channel": "NotExistInAlias", "Computer":"HAYABUSA-DESKTOP"}},
+            "Event_attributes": {"xmlns": "http://schemas.microsoft.com/win/2004/08/events/event"}
+        }"#;
+
+        let mut expect: HashMap<(CompactString, CompactString), usize> = HashMap::new();
+        expect.insert(("4103".into(), "security".into()), 1);
+        expect.insert(("4104".into(), "notexistinalias".into()), 1);
+        let no_alias_ch_record = serde_json::from_str(no_alias_ch_record_str).unwrap();
+        input_datas.push(create_rec_info(
+            no_alias_ch_record,
+            "testpath2".to_string(),
+            &Nested::<String>::new(),
+            &false,
+        ));
+
+        let include_computer: HashSet<CompactString> = HashSet::new();
+        let exclude_computer: HashSet<CompactString> = HashSet::new();
+        timeline.stats.evt_stats_start(
+            &input_datas,
+            &dummy_stored_static,
+            (&include_computer, &exclude_computer),
+        );
+        assert_eq!(timeline.stats.stats_list.len(), expect.len());
+
+        for (k, v) in timeline.stats.stats_list {
+            assert!(expect.contains_key(&k));
+            assert_eq!(expect.get(&k).unwrap(), &v);
         }
     }
 }

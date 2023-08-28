@@ -52,7 +52,9 @@ Click on `New investiation` and create a name for the new sketch:
 
 Click `Upload timeline` and upload a CSV file that you created with the following command:
 
-`hayabusa-1.5.1-win-x64.exe -d ../hayabusa-sample-evtx --RFC-3339 -o timesketch-import.csv -P timesketch -U`
+```shell
+hayabusa-2.5.1-win-x64.exe csv-timeline -d ../hayabusa-sample-evtx --RFC-3339 -o timesketch-import.csv -p timesketch-verbose -U
+```
 
 You can add `-m low` if you just want alerts and not include Windows events.
 

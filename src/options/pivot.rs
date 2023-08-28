@@ -1,21 +1,25 @@
-use hashbrown::{HashMap, HashSet};
+use indexmap::{IndexMap, IndexSet};
 use lazy_static::lazy_static;
 use serde_json::Value;
+use std::fmt::Write as _;
 use std::sync::RwLock;
+use termcolor::{BufferWriter, Color, ColorChoice};
 
-use crate::detections::utils::get_serde_number_to_string;
+use crate::detections::utils::{
+    get_event_value, get_serde_number_to_string, get_writable_color, write_color_buffer,
+};
 
-use crate::detections::configs::EventKeyAliasConfig;
+use crate::detections::configs::{EventKeyAliasConfig, StoredStatic};
 
 #[derive(Debug)]
 pub struct PivotKeyword {
-    pub keywords: HashSet<String>,
-    pub fields: HashSet<String>,
+    pub keywords: IndexSet<String>,
+    pub fields: IndexSet<String>,
 }
 
 lazy_static! {
-    pub static ref PIVOT_KEYWORD: RwLock<HashMap<String, PivotKeyword>> =
-        RwLock::new(HashMap::new());
+    pub static ref PIVOT_KEYWORD: RwLock<IndexMap<String, PivotKeyword>> =
+        RwLock::new(IndexMap::new());
 }
 
 impl Default for PivotKeyword {
@@ -27,8 +31,8 @@ impl Default for PivotKeyword {
 impl PivotKeyword {
     pub fn new() -> PivotKeyword {
         PivotKeyword {
-            keywords: HashSet::new(),
-            fields: HashSet::new(),
+            keywords: IndexSet::new(),
+            fields: IndexSet::new(),
         }
     }
 }
@@ -36,18 +40,11 @@ impl PivotKeyword {
 ///levelがlowより大きいレコードの場合、keywordがrecord内にみつかれば、
 ///それをPIVOT_KEYWORD.keywordsに入れる。
 pub fn insert_pivot_keyword(event_record: &Value, eventkey_alias: &EventKeyAliasConfig) {
-    //levelがlow以上なら続ける
-    let mut is_exist_event_key = false;
-    let mut tmp_event_record: &Value = event_record;
-    for s in ["Event", "System", "Level"] {
-        if let Some(record) = tmp_event_record.get(s) {
-            is_exist_event_key = true;
-            tmp_event_record = record;
-        }
-    }
-    if is_exist_event_key {
-        if let Some(event_record_str) = get_serde_number_to_string(tmp_event_record, false) {
+    if let Some(record_level) = get_event_value("Event.System.Level", event_record, eventkey_alias)
+    {
+        if let Some(event_record_str) = get_serde_number_to_string(record_level, false) {
             let exclude_check_str = event_record_str.as_str();
+            //levelがlow以上なら続ける
             if exclude_check_str == "infomational"
                 || exclude_check_str == "undefined"
                 || exclude_check_str == "-"
@@ -58,6 +55,7 @@ pub fn insert_pivot_keyword(event_record: &Value, eventkey_alias: &EventKeyAlias
     } else {
         return;
     }
+
     let mut pivots = PIVOT_KEYWORD.write().unwrap();
     pivots.iter_mut().for_each(|(_, pivot)| {
         for field in &pivot.fields {
@@ -83,6 +81,63 @@ pub fn insert_pivot_keyword(event_record: &Value, eventkey_alias: &EventKeyAlias
             }
         }
     });
+}
+
+//pivot_keywordsの標準出力などに関する関数たち
+pub fn create_output(
+    mut output: String,
+    key: &String,
+    pivot_keyword: &PivotKeyword,
+    place: &str,
+    stored_static: &StoredStatic,
+) -> String {
+    if place == "standard" {
+        //headers
+        let output = String::default();
+        write_color_buffer(
+            &BufferWriter::stdout(ColorChoice::Always),
+            get_writable_color(Some(Color::Green), stored_static.common_options.no_color),
+            &fmt_headers(output, key, pivot_keyword),
+            false,
+        )
+        .ok();
+
+        //keywords_results
+        let output = String::default();
+        write_color_buffer(
+            &BufferWriter::stdout(ColorChoice::Always),
+            None,
+            &fmt_keywords_results(output, pivot_keyword),
+            true,
+        )
+        .ok();
+        "".to_string()
+    } else {
+        output = fmt_headers(output, key, pivot_keyword);
+        fmt_keywords_results(output, pivot_keyword)
+    }
+}
+
+pub fn fmt_headers(mut output: String, key: &String, pivot_keyword: &PivotKeyword) -> String {
+    write!(output, "{key}: ( ").ok();
+    for i in pivot_keyword.fields.iter() {
+        write!(output, "%{i}% ").ok();
+    }
+
+    if pivot_keyword.keywords.is_empty() {
+        write!(output, "):").ok();
+    } else {
+        writeln!(output, "):").ok();
+    }
+
+    output
+}
+
+pub fn fmt_keywords_results(mut output: String, pivot_keyword: &PivotKeyword) -> String {
+    for i in pivot_keyword.keywords.iter() {
+        writeln!(output, "{i}").ok();
+    }
+    output
 }
 
 #[cfg(test)]

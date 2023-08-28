@@ -1,5 +1,5 @@
 use crate::detections::configs::{
-    Action, OutputOption, StoredStatic, CURRENT_EXE_PATH, GEOIP_DB_PARSER,
+    Action, OutputOption, StoredStatic, CONTROL_CHAT_REPLACE_MAP, CURRENT_EXE_PATH, GEOIP_DB_PARSER,
 };
 use crate::detections::message::{self, AlertMessage, LEVEL_FULL, MESSAGEKEYS};
 use crate::detections::utils::{
@@ -27,7 +27,7 @@ use yaml_rust::YamlLoader;
 use comfy_table::*;
 use hashbrown::{HashMap, HashSet};
 use num_format::{Locale, ToFormattedString};
-use std::cmp::min;
+use std::cmp::{self, min};
 use std::error::Error;
 
 use std::io::{self, BufWriter, Write};
@@ -171,6 +171,7 @@ pub fn after_fact(
     no_color_flag: bool,
     stored_static: &StoredStatic,
     tl: Timeline,
+    recover_records_cnt: usize,
 ) {
     let fn_emit_csv_err = |err: Box<dyn Error>| {
         AlertMessage::alert(&format!("Failed to write CSV. {err}")).ok();
@@ -197,7 +198,7 @@ pub fn after_fact(
         &mut target,
         displayflag,
         color_map,
-        all_record_cnt as u128,
+        (all_record_cnt as u128, recover_records_cnt as u128),
         stored_static.profiles.as_ref().unwrap(),
         stored_static,
         (&tl.stats.start_time, &tl.stats.end_time),
@@ -210,7 +211,7 @@ fn emit_csv<W: std::io::Write>(
     writer: &mut W,
     displayflag: bool,
     color_map: HashMap<CompactString, Colors>,
-    all_record_cnt: u128,
+    (all_record_cnt, recover_records_cnt): (u128, u128),
     profile: &Vec<(CompactString, Profile)>,
     stored_static: &StoredStatic,
     tl_start_end_time: (&Option<DateTime<Utc>>, &Option<DateTime<Utc>>),
@@ -235,16 +236,17 @@ fn emit_csv<W: std::io::Write>(
     let mut html_output_stock = Nested::<String>::new();
     let html_output_flag = stored_static.html_report_flag;
     let output_option = stored_static.output_option.as_ref().unwrap();
-
     let disp_wtr = BufferWriter::stdout(ColorChoice::Always);
     let mut disp_wtr_buf = disp_wtr.buffer();
     let mut json_output_flag = false;
     let mut jsonl_output_flag = false;
+    let mut remove_duplicate_data_flag = false;
 
     let tmp_wtr = match &stored_static.config.action.as_ref().unwrap() {
         Action::JsonTimeline(option) => {
             json_output_flag = true;
             jsonl_output_flag = option.jsonl_timeline;
+            remove_duplicate_data_flag = option.output_options.remove_duplicate_data;
             Some(
                 WriterBuilder::new()
                     .delimiter(b'\n')
@@ -253,11 +255,14 @@ fn emit_csv<W: std::io::Write>(
                     .from_writer(writer),
             )
         }
-        Action::CsvTimeline(_) => Some(
-            WriterBuilder::new()
-                .quote_style(QuoteStyle::NonNumeric)
-                .from_writer(writer),
-        ),
+        Action::CsvTimeline(option) => {
+            remove_duplicate_data_flag = option.output_options.remove_duplicate_data;
+            Some(
+                WriterBuilder::new()
+                    .quote_style(QuoteStyle::NonNumeric)
+                    .from_writer(writer),
+            )
+        }
         _ => None,
     };
     //CsvTimeLineとJsonTimeLine以外はこの関数は呼ばれないが、matchをつかうためにこの処理を追加した。
@@ -272,6 +277,7 @@ fn emit_csv<W: std::io::Write>(
     let mut total_detect_counts_by_level: Vec<u128> = vec![0; 6];
     let mut unique_detect_counts_by_level: Vec<u128> = vec![0; 6];
     let mut detected_rule_files: HashSet<CompactString> = HashSet::new();
+    let mut detected_rule_ids: HashSet<CompactString> = HashSet::new();
     let mut detected_computer_and_rule_names: HashSet<CompactString> = HashSet::new();
     let mut detect_counts_by_date_and_level: HashMap<CompactString, HashMap<CompactString, i128>> =
         HashMap::new();
@@ -282,6 +288,7 @@ fn emit_csv<W: std::io::Write>(
     let mut detect_counts_by_rule_and_level: HashMap<CompactString, HashMap<CompactString, i128>> =
         HashMap::new();
     let mut rule_title_path_map: HashMap<CompactString, CompactString> = HashMap::new();
+    let mut detect_rule_authors: HashMap<CompactString, CompactString> = HashMap::new();
     let mut rule_author_counter: HashMap<CompactString, i128> = HashMap::new();
 
     let levels = ["crit", "high", "med ", "low ", "info", "undefined"];
@@ -317,7 +324,10 @@ fn emit_csv<W: std::io::Write>(
             )
             .unwrap_or(&0) as usize
     };
+    let mut author_list_cache: HashMap<CompactString, Nested<String>> = HashMap::new();
 
+    // remove duplicate dataのための前レコード分の情報を保持する変数
+    let mut prev_message: HashMap<CompactString, Profile> = HashMap::new();
     for (message_idx, time) in MESSAGEKEYS
         .lock()
         .unwrap()
@@ -327,6 +337,7 @@ fn emit_csv<W: std::io::Write>(
     {
         let multi = message::MESSAGES.get(time).unwrap();
         let (_, detect_infos) = multi.pair();
+        let mut prev_detect_infos = HashSet::new();
         timestamps[message_idx] = _get_timestamp(output_option, time);
         for detect_info in detect_infos.iter().sorted_by(|a, b| {
             Ord::cmp(
@@ -346,6 +357,17 @@ fn emit_csv<W: std::io::Write>(
                 ),
             )
         }) {
+            if output_option.remove_duplicate_detections && detect_infos.len() > 1 {
+                let fields: Vec<&(CompactString, Profile)> = detect_info
+                    .ext_field
+                    .iter()
+                    .filter(|(_, profile)| !matches!(profile, Profile::EvtxFile(_)))
+                    .collect();
+                if prev_detect_infos.get(&fields).is_some() {
+                    continue;
+                }
+                prev_detect_infos.insert(fields);
+            }
             if !detect_info.is_condition {
                 detected_record_idset.insert(CompactString::from(format!(
                     "{}_{}",
@@ -353,8 +375,9 @@ fn emit_csv<W: std::io::Write>(
                 )));
             }
             if displayflag {
-                //ヘッダーのみを出力
+                // 標準出力の場合
                 if plus_header {
+                    // ヘッダーのみを出力
                     write_color_buffer(
                         &disp_wtr,
                         get_writable_color(None, stored_static.common_options.no_color),
@@ -373,28 +396,35 @@ fn emit_csv<W: std::io::Write>(
                         ),
                         stored_static.common_options.no_color,
                     ),
-                    &_get_serialized_disp_output(&detect_info.ext_field, false),
-                    false,
+                    &_get_serialized_disp_output(&detect_info.ext_field, false)
+                        .split_whitespace()
+                        .join(" "),
+                    true,
                 )
                 .ok();
             } else if jsonl_output_flag {
                 // JSONL output format
-                wtr.write_field(format!(
-                    "{{ {} }}",
-                    &output_json_str(
-                        &detect_info.ext_field,
-                        jsonl_output_flag,
-                        GEOIP_DB_PARSER.read().unwrap().is_some()
-                    )
-                ))?;
+                let result = output_json_str(
+                    &detect_info.ext_field,
+                    prev_message,
+                    jsonl_output_flag,
+                    GEOIP_DB_PARSER.read().unwrap().is_some(),
+                    remove_duplicate_data_flag,
+                );
+                prev_message = result.1;
+                wtr.write_field(format!("{{ {} }}", &result.0))?;
             } else if json_output_flag {
                 // JSON output
                 wtr.write_field("{")?;
-                wtr.write_field(&output_json_str(
+                let result = output_json_str(
                     &detect_info.ext_field,
+                    prev_message,
                     jsonl_output_flag,
                     GEOIP_DB_PARSER.read().unwrap().is_some(),
-                ))?;
+                    remove_duplicate_data_flag,
+                );
+                prev_message = result.1;
+                wtr.write_field(&result.0)?;
                 wtr.write_field("}")?;
             } else {
                 // csv output format
@@ -403,27 +433,69 @@ fn emit_csv<W: std::io::Write>(
                     plus_header = false;
                 }
                 wtr.write_record(detect_info.ext_field.iter().map(|x| {
-                    output_remover.replace_all(
-                        &output_replacer.replace_all(
-                            &x.1.to_value(),
-                            &output_replaced_maps.values().collect_vec(),
+                    match x.1 {
+                        Profile::Details(_)
+                        | Profile::AllFieldInfo(_)
+                        | Profile::ExtraFieldInfo(_) => {
+                            let ret = if remove_duplicate_data_flag
+                                && x.1.to_value()
+                                    == prev_message
+                                        .get(&x.0)
+                                        .unwrap_or(&Profile::Literal("-".into()))
+                                        .to_value()
+                            {
+                                "DUP".to_string()
+                            } else {
+                                output_remover.replace_all(
+                                    &output_replacer
+                                        .replace_all(
+                                            &x.1.to_value(),
+                                            &output_replaced_maps.values().collect_vec(),
+                                        )
+                                        .split_whitespace()
+                                        .join(" "),
+                                    &removed_replaced_maps.values().collect_vec(),
+                                )
+                            };
+                            prev_message.insert(x.0.clone(), x.1.clone());
+                            ret
+                        }
+                        _ => output_remover.replace_all(
+                            &output_replacer
+                                .replace_all(
+                                    &x.1.to_value(),
+                                    &output_replaced_maps.values().collect_vec(),
+                                )
+                                .split_whitespace()
+                                .join(" "),
+                            &removed_replaced_maps.values().collect_vec(),
                         ),
-                        &removed_replaced_maps.values().collect_vec(),
-                    )
+                    }
                 }))?;
             }
             // 各種集計作業
             if !output_option.no_summary {
                 let level_suffix = get_level_suffix(detect_info.level.as_str());
+                let author_list = author_list_cache
+                    .entry(detect_info.rulepath.clone())
+                    .or_insert_with(|| extract_author_name(&detect_info.rulepath, stored_static))
+                    .clone();
+                let author_str = author_list.iter().join(", ");
+                detect_rule_authors.insert(
+                    detect_info.rulepath.to_owned(),
+                    author_str.to_owned().into(),
+                );
 
                 if !detected_rule_files.contains(&detect_info.rulepath) {
                     detected_rule_files.insert(detect_info.rulepath.to_owned());
-                    let tmp = extract_author_name(&detect_info.rulepath, stored_static);
-                    for author in tmp.iter() {
+                    for author in author_list.iter() {
                         *rule_author_counter
                             .entry(CompactString::from(author))
                             .or_insert(0) += 1;
                     }
+                }
+                if !detected_rule_ids.contains(&detect_info.ruleid) {
+                    detected_rule_ids.insert(detect_info.ruleid.to_owned());
                     unique_detect_counts_by_level[level_suffix] += 1;
                 }
 
@@ -466,44 +538,67 @@ fn emit_csv<W: std::io::Write>(
     }
 
     disp_wtr_buf.clear();
-    if !output_option.no_summary {
-        let level_abbr: Nested<Vec<CompactString>> = Nested::from_iter(
-            vec![
-                [CompactString::from("critical"), CompactString::from("crit")].to_vec(),
-                [CompactString::from("high"), CompactString::from("high")].to_vec(),
-                [CompactString::from("medium"), CompactString::from("med ")].to_vec(),
-                [CompactString::from("low"), CompactString::from("low ")].to_vec(),
-                [
-                    CompactString::from("informational"),
-                    CompactString::from("info"),
-                ]
-                .to_vec(),
+    let level_abbr: Nested<Vec<CompactString>> = Nested::from_iter(
+        vec![
+            [CompactString::from("critical"), CompactString::from("crit")].to_vec(),
+            [CompactString::from("high"), CompactString::from("high")].to_vec(),
+            [CompactString::from("medium"), CompactString::from("med ")].to_vec(),
+            [CompactString::from("low"), CompactString::from("low ")].to_vec(),
+            [
+                CompactString::from("informational"),
+                CompactString::from("info"),
             ]
-            .iter(),
-        );
-        if !rule_author_counter.is_empty() {
-            write_color_buffer(
-                &disp_wtr,
-                get_writable_color(
-                    Some(Color::Rgb(0, 255, 0)),
-                    stored_static.common_options.no_color,
-                ),
-                "Rule Authors:",
-                false,
-            )
-            .ok();
-            write_color_buffer(
-                &disp_wtr,
-                get_writable_color(None, stored_static.common_options.no_color),
-                " ",
-                true,
-            )
-            .ok();
+            .to_vec(),
+        ]
+        .iter(),
+    );
 
-            println!();
-            output_detected_rule_authors(rule_author_counter);
-            println!();
-        }
+    let terminal_width = match terminal_size() {
+        Some((Width(w), _)) => w as usize,
+        None => 100,
+    };
+
+    if !output_option.no_summary && !rule_author_counter.is_empty() {
+        write_color_buffer(
+            &disp_wtr,
+            get_writable_color(
+                Some(Color::Rgb(0, 255, 0)),
+                stored_static.common_options.no_color,
+            ),
+            "Rule Authors:",
+            false,
+        )
+        .ok();
+        write_color_buffer(
+            &disp_wtr,
+            get_writable_color(None, stored_static.common_options.no_color),
+            " ",
+            true,
+        )
+        .ok();
+
+        println!();
+        let table_column_num = if terminal_width <= 105 {
+            2
+        } else if terminal_width < 140 {
+            3
+        } else if terminal_width < 175 {
+            4
+        } else if terminal_width <= 210 {
+            5
+        } else {
+            6
+        };
+        output_detected_rule_authors(rule_author_counter, table_column_num);
+    }
+
+    println!();
+    if output_option.visualize_timeline {
+        _print_timeline_hist(timestamps, terminal_width, 3);
+        println!();
+    }
+
+    if !output_option.no_summary {
         disp_wtr_buf.clear();
         write_color_buffer(
             &disp_wtr,
@@ -511,21 +606,10 @@ fn emit_csv<W: std::io::Write>(
                 Some(Color::Rgb(0, 255, 0)),
                 stored_static.common_options.no_color,
             ),
-            "Results Summary:",
+            "Results Summary:\n",
             true,
         )
         .ok();
-
-        let terminal_width = match terminal_size() {
-            Some((Width(w), _)) => w as usize,
-            None => 100,
-        };
-
-        println!();
-        if output_option.visualize_timeline {
-            _print_timeline_hist(timestamps, terminal_width, 3);
-            println!();
-        }
 
         if tl_start_end_time.0.is_some() {
             output_and_data_stack_for_html(
@@ -655,16 +739,49 @@ fn emit_csv<W: std::io::Write>(
             &disp_wtr,
             get_writable_color(None, stored_static.common_options.no_color),
             ")",
-            false,
+            true,
         )
         .ok();
-        println!();
+        if stored_static.enable_recover_records {
+            write_color_buffer(
+                &disp_wtr,
+                get_writable_color(
+                    Some(Color::Rgb(0, 255, 255)),
+                    stored_static.common_options.no_color,
+                ),
+                "Recovered records",
+                false,
+            )
+            .ok();
+            write_color_buffer(
+                &disp_wtr,
+                get_writable_color(None, stored_static.common_options.no_color),
+                ": ",
+                false,
+            )
+            .ok();
+            let recovered_record_output = recover_records_cnt.to_formatted_string(&Locale::en);
+            write_color_buffer(
+                &disp_wtr,
+                get_writable_color(
+                    Some(Color::Rgb(0, 255, 255)),
+                    stored_static.common_options.no_color,
+                ),
+                &recovered_record_output,
+                true,
+            )
+            .ok();
+        }
         println!();
 
         if html_output_flag {
             html_output_stock.push(format!("- Events with hits: {}", &saved_alerts_output));
             html_output_stock.push(format!("- Total events analyzed: {}", &all_record_output));
             html_output_stock.push(format!("- {reduction_output}"));
+            html_output_stock.push(format!(
+                "- Recovered events analyzed: {}",
+                &recover_records_cnt.to_formatted_string(&Locale::en)
+            ));
         }
 
         _print_unique_results(
@@ -709,10 +826,11 @@ fn emit_csv<W: std::io::Write>(
         _print_detection_summary_tables(
             detect_counts_by_rule_and_level,
             &color_map,
-            rule_title_path_map,
+            (rule_title_path_map, detect_rule_authors),
             &level_abbr,
             &mut html_output_stock,
             stored_static,
+            cmp::min((terminal_width / 2) - 15, 200),
         );
         println!();
         if html_output_flag {
@@ -735,9 +853,7 @@ fn countup_aggregation(
         .get(&compact_lowercase_key)
         .unwrap_or_else(|| count_map.get("undefined").unwrap())
         .to_owned();
-    *detect_counts_by_rules
-        .entry(CompactString::from(entry_key))
-        .or_insert(0) += 1;
+    *detect_counts_by_rules.entry(entry_key.into()).or_insert(0) += 1;
     count_map.insert(compact_lowercase_key, detect_counts_by_rules);
 }
 
@@ -859,7 +975,7 @@ fn _print_unique_results(
     .ok();
 
     let mut total_detect_md = vec!["- Total detections:".to_string()];
-    let mut unique_detect_md = vec!["- Unique detecions:".to_string()];
+    let mut unique_detect_md = vec!["- Unique detections:".to_string()];
 
     for (i, level_name) in level_abbr.iter().enumerate() {
         if "undefined" == level_name[0] {
@@ -1043,10 +1159,14 @@ fn _print_detection_summary_by_computer(
 fn _print_detection_summary_tables(
     detect_counts_by_rule_and_level: HashMap<CompactString, HashMap<CompactString, i128>>,
     color_map: &HashMap<CompactString, Colors>,
-    rule_title_path_map: HashMap<CompactString, CompactString>,
+    (rule_title_path_map, rule_detect_author_map): (
+        HashMap<CompactString, CompactString>,
+        HashMap<CompactString, CompactString>,
+    ),
     level_abbr: &Nested<Vec<CompactString>>,
     html_output_stock: &mut Nested<String>,
     stored_static: &StoredStatic,
+    limit_num: usize,
 ) {
     let buf_wtr = BufferWriter::stdout(ColorChoice::Always);
     let mut wtr = buf_wtr.buffer();
@@ -1075,19 +1195,21 @@ fn _print_detection_summary_tables(
         // html出力の場合はすべての内容を出力するようにする
         if stored_static.html_report_flag {
             html_output_stock.push(format!(
-                "### Top {} alerts: {{#top_{}_alerts}}",
+                "### All {} alerts: {{#all_{}_alerts}}",
                 LEVEL_FULL.get(level[1].as_str()).unwrap(),
                 LEVEL_FULL.get(level[1].as_str()).unwrap()
             ));
             for x in sorted_detections.iter() {
+                let not_found_str = CompactString::from_str("<Not Found Path>").unwrap();
+                let rule_path = rule_title_path_map.get(x.0).unwrap_or(&not_found_str);
                 html_output_stock.push(format!(
-                    "- [{}]({}) ({})",
+                    "- [{}]({}) ({}) - {}",
                     x.0,
-                    rule_title_path_map
-                        .get(x.0)
-                        .unwrap_or(&CompactString::from("<Not Found Path>"))
-                        .replace('\\', "/"),
-                    x.1.to_formatted_string(&Locale::en)
+                    &rule_path.replace('\\', "/"),
+                    x.1.to_formatted_string(&Locale::en),
+                    rule_detect_author_map
+                        .get(rule_path)
+                        .unwrap_or(&not_found_str)
                 ));
             }
             html_output_stock.push("");
@@ -1099,9 +1221,13 @@ fn _print_detection_summary_tables(
             5
         };
         for x in sorted_detections.iter().take(take_cnt) {
+            let output_title = if x.0.len() > limit_num - 3 {
+                format!("{}...", &x.0[..(limit_num - 3)])
+            } else {
+                x.0.to_string()
+            };
             col_output.push(format!(
-                "{} ({})",
-                x.0,
+                "{output_title} ({})",
                 x.1.to_formatted_string(&Locale::en)
             ));
         }
@@ -1140,15 +1266,15 @@ fn _print_detection_summary_tables(
         ]);
     }
 
-    let odd_row = &mut output[4].iter().skip(1).take(5);
-    let even_row = &mut output[4].iter().skip(1).take(5);
+    let odd_col = &mut output[4].iter().skip(1).take(5);
+    let even_col = &mut output[4].iter().skip(6).take(5);
     tb.add_row(vec![
         Cell::new(&output[4][0]).fg(col_color[4].unwrap_or(comfy_table::Color::Reset)),
         Cell::new(""),
     ]);
     tb.add_row(vec![
-        Cell::new(odd_row.join("\n")).fg(col_color[4].unwrap_or(comfy_table::Color::Reset)),
-        Cell::new(even_row.join("\n")).fg(col_color[4].unwrap_or(comfy_table::Color::Reset)),
+        Cell::new(odd_col.join("\n")).fg(col_color[4].unwrap_or(comfy_table::Color::Reset)),
+        Cell::new(even_col.join("\n")).fg(col_color[4].unwrap_or(comfy_table::Color::Reset)),
     ]);
     println!("{tb}");
 }
@@ -1173,7 +1299,7 @@ fn _get_json_vec(profile: &Profile, target_data: &String) -> Vec<String> {
         Profile::MitreTactics(_) | Profile::MitreTags(_) | Profile::OtherTags(_) => {
             target_data.split(": ").map(|x| x.to_string()).collect()
         }
-        Profile::Details(_) | Profile::AllFieldInfo(_) => {
+        Profile::Details(_) | Profile::AllFieldInfo(_) | Profile::ExtraFieldInfo(_) => {
             let ret: Vec<String> = target_data.split(" ¦ ").map(|x| x.to_string()).collect();
             if target_data == &ret[0] && !utils::contains_str(target_data, ": ") {
                 vec![]
@@ -1194,9 +1320,26 @@ fn _create_json_output_format(
     space_cnt: usize,
 ) -> String {
     let head = if key_quote_exclude_flag {
-        key.to_string()
+        key.chars()
+            .map(|x| {
+                if let Some(c) = CONTROL_CHAT_REPLACE_MAP.get(&x) {
+                    c.to_string()
+                } else {
+                    String::from(x)
+                }
+            })
+            .collect::<CompactString>()
     } else {
         format!("\"{key}\"")
+            .chars()
+            .map(|x| {
+                if let Some(c) = CONTROL_CHAT_REPLACE_MAP.get(&x) {
+                    c.to_string()
+                } else {
+                    String::from(x)
+                }
+            })
+            .collect::<CompactString>()
     };
     // 4 space is json indent.
     if let Ok(i) = i64::from_str(value) {
@@ -1204,9 +1347,37 @@ fn _create_json_output_format(
     } else if let Ok(b) = bool::from_str(value) {
         format!("{}{}: {}", " ".repeat(space_cnt), head, b)
     } else if concat_flag {
-        format!("{}{}: {}", " ".repeat(space_cnt), head, value)
+        format!(
+            "{}{}: {}",
+            " ".repeat(space_cnt),
+            head,
+            value
+                .chars()
+                .map(|x| {
+                    if let Some(c) = CONTROL_CHAT_REPLACE_MAP.get(&x) {
+                        c.to_string()
+                    } else {
+                        String::from(x)
+                    }
+                })
+                .collect::<CompactString>()
+        )
     } else {
-        format!("{}{}: \"{}\"", " ".repeat(space_cnt), head, value)
+        format!(
+            "{}{}: \"{}\"",
+            " ".repeat(space_cnt),
+            head,
+            value
+                .chars()
+                .map(|x| {
+                    if let Some(c) = CONTROL_CHAT_REPLACE_MAP.get(&x) {
+                        c.to_string()
+                    } else {
+                        String::from(x)
+                    }
+                })
+                .collect::<CompactString>()
+        )
     }
 }
 
@@ -1249,13 +1420,44 @@ fn _convert_valid_json_str(input: &[&str], concat_flag: bool) -> String {
 }
 
 /// JSONに出力する1検知分のオブジェクトの文字列を出力する関数
-fn output_json_str(
+pub fn output_json_str(
     ext_field: &[(CompactString, Profile)],
+    prev_message: HashMap<CompactString, Profile>,
     jsonl_output_flag: bool,
     is_included_geo_ip: bool,
-) -> String {
+    remove_duplicate_flag: bool,
+) -> (String, HashMap<CompactString, Profile>) {
     let mut target: Vec<String> = vec![];
+    let mut target_ext_field = Vec::new();
     let ext_field_map: HashMap<CompactString, Profile> = HashMap::from_iter(ext_field.to_owned());
+    let mut next_prev_message = prev_message.clone();
+    if remove_duplicate_flag {
+        for (field_name, profile) in ext_field.iter() {
+            match profile {
+                Profile::Details(_) | Profile::AllFieldInfo(_) | Profile::ExtraFieldInfo(_) => {
+                    if prev_message
+                        .get(field_name)
+                        .unwrap_or(&Profile::Literal("-".into()))
+                        .to_value()
+                        == profile.to_value()
+                    {
+                        // 合致する場合は前回レコード分のメッセージを更新する合致している場合は出力用のフィールドマップの内容を変更する。
+                        // 合致しているので前回分のメッセージは更新しない
+                        target_ext_field.push((field_name.clone(), profile.convert(&"DUP".into())));
+                    } else {
+                        // 合致しない場合は前回レコード分のメッセージを更新する
+                        next_prev_message.insert(field_name.clone(), profile.clone());
+                        target_ext_field.push((field_name.clone(), profile.clone()));
+                    }
+                }
+                _ => {
+                    target_ext_field.push((field_name.clone(), profile.clone()));
+                }
+            }
+        }
+    } else {
+        target_ext_field = ext_field.to_owned();
+    }
     let key_add_to_details = vec![
         "SrcASN",
         "SrcCountry",
@@ -1272,7 +1474,7 @@ fn output_json_str(
         })
         .copied()
         .collect();
-    for (key, profile) in ext_field.iter() {
+    for (key, profile) in target_ext_field.iter() {
         let val = profile.to_value();
         let vec_data = _get_json_vec(profile, &val.to_string());
         if !key_add_to_details.contains(&key.as_str()) && vec_data.is_empty() {
@@ -1295,7 +1497,16 @@ fn output_json_str(
                 | Profile::TgtASN(_)
                 | Profile::TgtCountry(_)
                 | Profile::TgtCity(_) => continue,
-                Profile::AllFieldInfo(_) | Profile::Details(_) => {
+                Profile::RecoveredRecord(data) => {
+                    target.push(_create_json_output_format(
+                        "RecoveredRecord",
+                        data,
+                        false,
+                        data.starts_with('\"'),
+                        4,
+                    ));
+                }
+                Profile::Details(_) | Profile::AllFieldInfo(_) | Profile::ExtraFieldInfo(_) => {
                     let mut output_stock: Vec<String> = vec![];
                     output_stock.push(format!("    \"{key}\": {{"));
                     let mut stocked_value: Vec<Vec<String>> = vec![];
@@ -1305,7 +1516,7 @@ fn output_json_str(
                         let mut tmp_stock = vec![];
                         let mut space_split_contents = detail_contents.split(' ');
                         while let Some(sp) = space_split_contents.next() {
-                            if sp.ends_with(':') && sp.len() > 2 {
+                            if !sp.contains('\\') && sp.ends_with(':') && sp.len() > 2 {
                                 key_index_stock.push(sp.replace(':', ""));
                                 if sp == "Payload:" {
                                     stocked_value.push(vec![]);
@@ -1359,8 +1570,9 @@ fn output_json_str(
                             output_value_stock.push_str(" | ");
                         }
                         output_value_stock.push_str(&value.join(" "));
-                        //``1つまえのキーの段階で以降にvalueの配列で区切りとなる空の配列が存在しているかを確認する
-                        let is_remain_split_stock = key_idx == key_index_stock.len() - 2
+                        //1つまえのキーの段階で以降にvalueの配列で区切りとなる空の配列が存在しているかを確認する
+                        let is_remain_split_stock = key_index_stock.len() > 1
+                            && key_idx == key_index_stock.len() - 2
                             && value_idx < stocked_value.len() - 1
                             && !output_value_stock.is_empty()
                             && !stocked_value[value_idx + 1..]
@@ -1451,7 +1663,7 @@ fn output_json_str(
                 Profile::MitreTags(_) | Profile::MitreTactics(_) | Profile::OtherTags(_) => {
                     let key = _convert_valid_json_str(&[key.as_str()], false);
                     let values = val.split(": ").filter(|x| x.trim() != "");
-                    let values_len = values.size_hint().0;
+                    let values_len = values.clone().count();
                     if values_len == 0 {
                         continue;
                     }
@@ -1487,22 +1699,28 @@ fn output_json_str(
     }
     if jsonl_output_flag {
         // JSONL output
-        target.into_iter().map(|x| x.replace("  ", "")).join(",")
+        (
+            target.into_iter().map(|x| x.replace("  ", "")).join(","),
+            next_prev_message,
+        )
     } else {
         // JSON format output
-        target.join(",\n")
+        (target.join(",\n"), next_prev_message)
     }
 }
 
 /// output detected rule author name function.
-fn output_detected_rule_authors(rule_author_counter: HashMap<CompactString, i128>) {
+fn output_detected_rule_authors(
+    rule_author_counter: HashMap<CompactString, i128>,
+    table_column_num: usize,
+) {
     let mut sorted_authors: Vec<(&CompactString, &i128)> = rule_author_counter.iter().collect();
 
     sorted_authors.sort_by(|a, b| (-a.1).cmp(&(-b.1)));
     let div = if sorted_authors.len() % 4 != 0 {
-        sorted_authors.len() / 4 + 1
+        sorted_authors.len() / table_column_num + 1
     } else {
-        sorted_authors.len() / 4
+        sorted_authors.len() / table_column_num
     };
 
     let mut tb = Table::new();
@@ -1512,19 +1730,20 @@ fn output_detected_rule_authors(rule_author_counter: HashMap<CompactString, i128
     let mut stored_by_column = vec![];
     let hlch = tb.style(TableComponent::HorizontalLines).unwrap();
     let tbch = tb.style(TableComponent::TopBorder).unwrap();
-    for x in 0..4 {
+    for x in 0..table_column_num {
         let mut tmp = Vec::new();
         for y in 0..div {
-            if y * 4 + x < sorted_authors.len() {
-                let filter_author = if sorted_authors[y * 4 + x].0.len() <= 40 {
-                    sorted_authors[y * 4 + x].0.to_string()
+            if y * table_column_num + x < sorted_authors.len() {
+                // Limit length to 27 to prevent the table from wrapping
+                let filter_author = if sorted_authors[y * table_column_num + x].0.len() <= 27 {
+                    sorted_authors[y * table_column_num + x].0.to_string()
                 } else {
-                    format!("{}...", &sorted_authors[y * 4 + x].0[0..37])
+                    format!("{}...", &sorted_authors[y * table_column_num + x].0[0..24])
                 };
                 tmp.push(format!(
                     "{} ({})",
                     filter_author,
-                    sorted_authors[y * 4 + x].1
+                    sorted_authors[y * table_column_num + x].1
                 ));
             }
         }
@@ -1600,9 +1819,11 @@ mod tests {
     use crate::detections::configs::CsvOutputOption;
     use crate::detections::configs::DetectCommonOption;
     use crate::detections::configs::InputOption;
+    use crate::detections::configs::JSONOutputOption;
     use crate::detections::configs::OutputOption;
     use crate::detections::configs::StoredStatic;
     use crate::detections::configs::CURRENT_EXE_PATH;
+    use crate::detections::field_data_map::FieldDataMapKey;
     use crate::detections::message;
     use crate::detections::message::DetectInfo;
     use crate::detections::utils;
@@ -1626,6 +1847,7 @@ mod tests {
         );
         let test_filepath: &str = "test.evtx";
         let test_rulepath: &str = "test-rule.yml";
+        let test_rule_id: &str = "00000000-0000-0000-0000-000000000000";
         let test_title = "test_title";
         let test_level = "high";
         let test_computername = "testcomputer";
@@ -1646,6 +1868,7 @@ mod tests {
                     directory: None,
                     filepath: None,
                     live_analysis: false,
+                    recover_records: false,
                 },
                 profile: None,
                 enable_deprecated_rules: false,
@@ -1678,8 +1901,21 @@ mod tests {
                     config: Path::new("./rules/config").to_path_buf(),
                     verbose: false,
                     json_input: false,
+                    include_computer: None,
+                    exclude_computer: None,
                 },
                 enable_unsupported_rules: false,
+                clobber: false,
+                proven_rules: false,
+                include_tag: None,
+                exclude_tag: None,
+                include_category: None,
+                exclude_category: None,
+                include_eid: None,
+                exclude_eid: None,
+                no_field: false,
+                remove_duplicate_data: false,
+                remove_duplicate_detections: false,
             },
             geo_ip: None,
             output: Some(Path::new("./test_emit_csv.csv").to_path_buf()),
@@ -1719,6 +1955,7 @@ mod tests {
                     directory: None,
                     filepath: None,
                     live_analysis: false,
+                    recover_records: false,
                 },
                 profile: None,
                 enable_deprecated_rules: false,
@@ -1751,8 +1988,21 @@ mod tests {
                     config: Path::new("./rules/config").to_path_buf(),
                     verbose: false,
                     json_input: false,
+                    include_computer: None,
+                    exclude_computer: None,
                 },
                 enable_unsupported_rules: false,
+                clobber: false,
+                proven_rules: false,
+                include_tag: None,
+                exclude_tag: None,
+                include_category: None,
+                exclude_category: None,
+                include_eid: None,
+                exclude_eid: None,
+                no_field: false,
+                remove_duplicate_data: false,
+                remove_duplicate_detections: false,
             };
             let ch = mock_ch_filter
                 .get(&CompactString::from("security"))
@@ -1793,6 +2043,7 @@ mod tests {
                 CompactString::new(output),
                 DetectInfo {
                     rulepath: CompactString::from(test_rulepath),
+                    ruleid: test_rule_id.into(),
                     ruletitle: CompactString::from(test_title),
                     level: CompactString::from(test_level),
                     computername: CompactString::from(test_computername2),
@@ -1803,8 +2054,8 @@ mod tests {
                 },
                 expect_time,
                 &mut profile_converter,
-                false,
-                &eventkey_alias,
+                (false, false, false),
+                (&eventkey_alias, &FieldDataMapKey::default(), &None),
             );
             *profile_converter.get_mut("Computer").unwrap() =
                 Profile::Computer(test_computername.into());
@@ -1814,6 +2065,7 @@ mod tests {
                 CompactString::new(output),
                 DetectInfo {
                     rulepath: CompactString::from(test_rulepath),
+                    ruleid: test_rule_id.into(),
                     ruletitle: CompactString::from(test_title),
                     level: CompactString::from(test_level),
                     computername: CompactString::from(test_computername),
@@ -1824,8 +2076,8 @@ mod tests {
                 },
                 expect_time,
                 &mut profile_converter,
-                false,
-                &eventkey_alias,
+                (false, false, false),
+                (&eventkey_alias, &FieldDataMapKey::default(), &None),
             );
             let multi = message::MESSAGES.get(&expect_time).unwrap();
             let (_, detect_infos) = multi.pair();
@@ -1894,7 +2146,7 @@ mod tests {
             &mut file,
             false,
             HashMap::new(),
-            1,
+            (1, 0),
             &output_profile,
             &stored_static,
             (&Some(expect_tz), &Some(expect_tz))
@@ -1917,6 +2169,7 @@ mod tests {
         );
         let test_filepath: &str = "test.evtx";
         let test_rulepath: &str = "test-rule.yml";
+        let test_rule_id: &str = "00000000-0000-0000-0000-000000000000";
         let test_title = "test_title";
         let test_level = "high";
         let test_computername = "testcomputer";
@@ -1937,6 +2190,7 @@ mod tests {
                     directory: None,
                     filepath: None,
                     live_analysis: false,
+                    recover_records: false,
                 },
                 profile: Some("verbose-2".to_string()),
                 enable_deprecated_rules: false,
@@ -1969,8 +2223,21 @@ mod tests {
                     config: Path::new("./rules/config").to_path_buf(),
                     verbose: false,
                     json_input: false,
+                    include_computer: None,
+                    exclude_computer: None,
                 },
                 enable_unsupported_rules: false,
+                clobber: false,
+                proven_rules: false,
+                include_tag: None,
+                exclude_tag: None,
+                include_category: None,
+                exclude_category: None,
+                include_eid: None,
+                exclude_eid: None,
+                no_field: false,
+                remove_duplicate_data: false,
+                remove_duplicate_detections: false,
             },
             geo_ip: None,
             output: Some(Path::new("./test_emit_csv_multiline.csv").to_path_buf()),
@@ -2012,6 +2279,7 @@ mod tests {
                     directory: None,
                     filepath: None,
                     live_analysis: false,
+                    recover_records: false,
                 },
                 profile: Some("verbose-2".to_string()),
                 enable_deprecated_rules: false,
@@ -2044,8 +2312,21 @@ mod tests {
                     config: Path::new("./rules/config").to_path_buf(),
                     verbose: false,
                     json_input: false,
+                    include_computer: None,
+                    exclude_computer: None,
                 },
                 enable_unsupported_rules: false,
+                clobber: false,
+                proven_rules: false,
+                include_tag: None,
+                exclude_tag: None,
+                include_category: None,
+                exclude_category: None,
+                include_eid: None,
+                exclude_eid: None,
+                no_field: false,
+                remove_duplicate_data: false,
+                remove_duplicate_detections: false,
             };
             let ch = mock_ch_filter
                 .get(&CompactString::from("security"))
@@ -2083,6 +2364,7 @@ mod tests {
                 CompactString::new(output),
                 DetectInfo {
                     rulepath: CompactString::from(test_rulepath),
+                    ruleid: test_rule_id.into(),
                     ruletitle: CompactString::from(test_title),
                     level: CompactString::from(test_level),
                     computername: CompactString::from(test_computername2),
@@ -2093,8 +2375,8 @@ mod tests {
                 },
                 expect_time,
                 &mut profile_converter,
-                false,
-                &eventkey_alias,
+                (false, false, true),
+                (&eventkey_alias, &FieldDataMapKey::default(), &None),
             );
             *profile_converter.get_mut("Computer").unwrap() =
                 Profile::Computer(test_computername.into());
@@ -2104,6 +2386,7 @@ mod tests {
                 CompactString::new(output),
                 DetectInfo {
                     rulepath: CompactString::from(test_rulepath),
+                    ruleid: test_rule_id.into(),
                     ruletitle: CompactString::from(test_title),
                     level: CompactString::from(test_level),
                     computername: CompactString::from(test_computername),
@@ -2114,8 +2397,8 @@ mod tests {
                 },
                 expect_time,
                 &mut profile_converter,
-                false,
-                &eventkey_alias,
+                (false, false, true),
+                (&eventkey_alias, &FieldDataMapKey::default(), &None),
             );
             let multi = message::MESSAGES.get(&expect_time).unwrap();
             let (_, detect_infos) = multi.pair();
@@ -2173,7 +2456,7 @@ mod tests {
             &mut file,
             false,
             HashMap::new(),
-            1,
+            (1, 0),
             &output_profile,
             &stored_static,
             (&Some(expect_tz), &Some(expect_tz))
@@ -2186,6 +2469,717 @@ mod tests {
             }
         };
         assert!(remove_file("./test_emit_csv_multiline.csv").is_ok());
+    }
+
+    #[test]
+    fn test_emit_csv_output_with_remove_duplicate_opt() {
+        let mock_ch_filter = message::create_output_filter_config(
+            "test_files/config/channel_abbreviations.txt",
+            true,
+        );
+        let test_filepath: &str = "test.evtx";
+        let test_rulepath: &str = "test-rule.yml";
+        let test_rule_id: &str = "00000000-0000-0000-0000-000000000000";
+        let test_title = "test_title";
+        let test_level = "high";
+        let test_computername = "testcomputer";
+        let test_computername2 = "testcomputer2";
+        let test_eventid = "1111";
+        let test_channel = "Sec";
+        let output = "pokepoke";
+        let test_attack = "execution/txxxx.yyy";
+        let test_recinfo = "CommandRLine: hoge";
+        let test_record_id = "11111";
+        let expect_time = Utc
+            .datetime_from_str("1996-02-27T01:05:01Z", "%Y-%m-%dT%H:%M:%SZ")
+            .unwrap();
+        let expect_tz = expect_time.with_timezone(&Utc);
+        let dummy_action = Action::CsvTimeline(CsvOutputOption {
+            output_options: OutputOption {
+                input_args: InputOption {
+                    directory: None,
+                    filepath: None,
+                    live_analysis: false,
+                    recover_records: false,
+                },
+                profile: None,
+                enable_deprecated_rules: false,
+                exclude_status: None,
+                min_level: "informational".to_string(),
+                exact_level: None,
+                enable_noisy_rules: false,
+                end_timeline: None,
+                start_timeline: None,
+                eid_filter: false,
+                european_time: false,
+                iso_8601: false,
+                rfc_2822: false,
+                rfc_3339: false,
+                us_military_time: false,
+                us_time: false,
+                utc: false,
+                visualize_timeline: false,
+                rules: Path::new("./rules").to_path_buf(),
+                html_report: None,
+                no_summary: true,
+                common_options: CommonOptions {
+                    no_color: false,
+                    quiet: false,
+                },
+                detect_common_options: DetectCommonOption {
+                    evtx_file_ext: None,
+                    thread_number: None,
+                    quiet_errors: false,
+                    config: Path::new("./rules/config").to_path_buf(),
+                    verbose: false,
+                    json_input: false,
+                    include_computer: None,
+                    exclude_computer: None,
+                },
+                enable_unsupported_rules: false,
+                clobber: false,
+                proven_rules: false,
+                include_tag: None,
+                exclude_tag: None,
+                include_category: None,
+                exclude_category: None,
+                include_eid: None,
+                exclude_eid: None,
+                no_field: false,
+                remove_duplicate_data: true,
+                remove_duplicate_detections: false,
+            },
+            geo_ip: None,
+            output: Some(Path::new("./test_emit_csv_remove_duplicate.csv").to_path_buf()),
+            multiline: false,
+        });
+        let dummy_config = Some(Config {
+            action: Some(dummy_action),
+            debug: false,
+        });
+        let stored_static = StoredStatic::create_static_data(dummy_config);
+        let output_profile: Vec<(CompactString, Profile)> = load_profile(
+            "test_files/config/default_profile.yaml",
+            "test_files/config/profiles.yaml",
+            Some(&stored_static),
+        )
+        .unwrap_or_default();
+        {
+            let messages = &message::MESSAGES;
+            messages.clear();
+            let val = r##"
+                {
+                    "Event": {
+                        "EventData": {
+                            "CommandRLine": "hoge"
+                        },
+                        "System": {
+                            "TimeCreated_attributes": {
+                                "SystemTime": "1996-02-27T01:05:01Z"
+                            }
+                        }
+                    }
+                }
+            "##;
+            let event: Value = serde_json::from_str(val).unwrap();
+            let output_option = OutputOption {
+                input_args: InputOption {
+                    directory: None,
+                    filepath: None,
+                    live_analysis: false,
+                    recover_records: false,
+                },
+                profile: None,
+                enable_deprecated_rules: false,
+                exclude_status: None,
+                min_level: "informational".to_string(),
+                exact_level: None,
+                enable_noisy_rules: false,
+                end_timeline: None,
+                start_timeline: None,
+                eid_filter: false,
+                european_time: false,
+                iso_8601: false,
+                rfc_2822: false,
+                rfc_3339: false,
+                us_military_time: false,
+                us_time: false,
+                utc: false,
+                visualize_timeline: false,
+                rules: Path::new("./rules").to_path_buf(),
+                html_report: None,
+                no_summary: false,
+                common_options: CommonOptions {
+                    no_color: false,
+                    quiet: false,
+                },
+                detect_common_options: DetectCommonOption {
+                    evtx_file_ext: None,
+                    thread_number: None,
+                    quiet_errors: false,
+                    config: Path::new("./rules/config").to_path_buf(),
+                    verbose: false,
+                    json_input: false,
+                    include_computer: None,
+                    exclude_computer: None,
+                },
+                enable_unsupported_rules: false,
+                clobber: false,
+                proven_rules: false,
+                include_tag: None,
+                exclude_tag: None,
+                include_category: None,
+                exclude_category: None,
+                include_eid: None,
+                exclude_eid: None,
+                no_field: false,
+                remove_duplicate_data: false,
+                remove_duplicate_detections: false,
+            };
+            let ch = mock_ch_filter
+                .get(&CompactString::from("security"))
+                .unwrap_or(&CompactString::default())
+                .clone();
+            let mut profile_converter: HashMap<&str, Profile> = HashMap::from([
+                (
+                    "Timestamp",
+                    Profile::Timestamp(format_time(&expect_time, false, &output_option).into()),
+                ),
+                ("Computer", Profile::Computer(test_computername2.into())),
+                ("Channel", Profile::Channel(ch.into())),
+                ("Level", Profile::Level(test_level.into())),
+                ("EventID", Profile::EventID(test_eventid.into())),
+                ("MitreAttack", Profile::MitreTactics(test_attack.into())),
+                ("RecordID", Profile::RecordID(test_record_id.into())),
+                ("RuleTitle", Profile::RuleTitle(test_title.into())),
+                (
+                    "RecordInformation",
+                    Profile::AllFieldInfo(test_recinfo.into()),
+                ),
+                ("RuleFile", Profile::RuleFile(test_rulepath.into())),
+                ("EvtxFile", Profile::EvtxFile(test_filepath.into())),
+                ("Tags", Profile::MitreTags(test_attack.into())),
+            ]);
+            let eventkey_alias = load_eventkey_alias(
+                utils::check_setting_path(
+                    &CURRENT_EXE_PATH.to_path_buf(),
+                    "rules/config/eventkey_alias.txt",
+                    true,
+                )
+                .unwrap()
+                .to_str()
+                .unwrap(),
+            );
+            message::insert(
+                &event,
+                CompactString::new(output),
+                DetectInfo {
+                    rulepath: CompactString::from(test_rulepath),
+                    ruleid: test_rule_id.into(),
+                    ruletitle: CompactString::from(test_title),
+                    level: CompactString::from(test_level),
+                    computername: CompactString::from(test_computername2),
+                    eventid: CompactString::from(test_eventid),
+                    detail: CompactString::default(),
+                    ext_field: output_profile.to_owned(),
+                    is_condition: false,
+                },
+                expect_time,
+                &mut profile_converter,
+                (false, false, false),
+                (&eventkey_alias, &FieldDataMapKey::default(), &None),
+            );
+            *profile_converter.get_mut("Computer").unwrap() =
+                Profile::Computer(test_computername.into());
+
+            message::insert(
+                &event,
+                CompactString::new(output),
+                DetectInfo {
+                    rulepath: CompactString::from(test_rulepath),
+                    ruleid: test_rule_id.into(),
+                    ruletitle: CompactString::from(test_title),
+                    level: CompactString::from(test_level),
+                    computername: CompactString::from(test_computername),
+                    eventid: CompactString::from(test_eventid),
+                    detail: CompactString::default(),
+                    ext_field: output_profile.to_owned(),
+                    is_condition: false,
+                },
+                expect_time,
+                &mut profile_converter,
+                (false, false, false),
+                (&eventkey_alias, &FieldDataMapKey::default(), &None),
+            );
+            let multi = message::MESSAGES.get(&expect_time).unwrap();
+            let (_, detect_infos) = multi.pair();
+
+            println!("message: {detect_infos:?}");
+        }
+        let expect =
+            "\"Timestamp\",\"Computer\",\"Channel\",\"Level\",\"EventID\",\"MitreAttack\",\"RecordID\",\"RuleTitle\",\"Details\",\"RecordInformation\",\"RuleFile\",\"EvtxFile\",\"Tags\"\n\""
+                .to_string()
+                + &expect_tz.with_timezone(&Local).format("%Y-%m-%d %H:%M:%S%.3f %:z").to_string()
+                + "\",\""
+                + test_computername
+                + "\",\""
+                + test_channel
+                + "\",\""
+                + test_level
+                + "\","
+                + test_eventid
+                + ",\""
+                + test_attack
+                + "\","
+                + test_record_id
+                + ",\""
+                + test_title
+                + "\",\""
+                + output
+                + "\",\""
+                + test_recinfo
+                + "\",\""
+                + test_rulepath
+                + "\",\""
+                + test_filepath
+                + "\",\""
+                + test_attack
+                + "\"\n\""
+                + &expect_tz.with_timezone(&Local).format("%Y-%m-%d %H:%M:%S%.3f %:z")
+                .to_string()
+                + "\",\""
+                + test_computername2
+                + "\",\""
+                + test_channel
+                + "\",\""
+                + test_level
+                + "\","
+                + test_eventid
+                + ",\""
+                + test_attack
+                + "\","
+                + test_record_id
+                + ",\""
+                + test_title
+                + "\",\"DUP\",\"DUP\",\""
+                + test_rulepath
+                + "\",\""
+                + test_filepath
+                + "\",\""
+                + test_attack
+                + "\"\n";
+        let mut file: Box<dyn io::Write> =
+            Box::new(File::create("./test_emit_csv_remove_duplicate.csv").unwrap());
+
+        assert!(emit_csv(
+            &mut file,
+            false,
+            HashMap::new(),
+            (1, 0),
+            &output_profile,
+            &stored_static,
+            (&Some(expect_tz), &Some(expect_tz))
+        )
+        .is_ok());
+        match read_to_string("./test_emit_csv_remove_duplicate.csv") {
+            Err(_) => panic!("Failed to open file."),
+            Ok(s) => {
+                assert_eq!(s, expect);
+            }
+        };
+        assert!(remove_file("./test_emit_csv_remove_duplicate.csv").is_ok());
+    }
+
+    #[test]
+    fn test_emit_json_output_with_remove_duplicate_opt() {
+        let mock_ch_filter = message::create_output_filter_config(
+            "test_files/config/channel_abbreviations.txt",
+            true,
+        );
+        let test_filepath: &str = "test.evtx";
+        let test_rulepath: &str = "test-rule.yml";
+        let test_rule_id: &str = "00000000-0000-0000-0000-000000000000";
+        let test_title = "test_title";
+        let test_level = "high";
+        let test_computername = "testcomputer";
+        let test_computername2 = "testcomputer2";
+        let test_eventid = "1111";
+        let test_channel = "Sec";
+        let output = "pokepoke";
+        let test_attack = "execution/txxxx.yyy";
+        let test_recinfo = "CommandRLine: hoge";
+        let test_record_id = "11111";
+        let expect_time = Utc
+            .datetime_from_str("1996-02-27T01:05:01Z", "%Y-%m-%dT%H:%M:%SZ")
+            .unwrap();
+        let expect_tz = expect_time.with_timezone(&Utc);
+        let dummy_action = Action::JsonTimeline(JSONOutputOption {
+            output_options: OutputOption {
+                input_args: InputOption {
+                    directory: None,
+                    filepath: None,
+                    live_analysis: false,
+                    recover_records: false,
+                },
+                profile: None,
+                enable_deprecated_rules: false,
+                exclude_status: None,
+                min_level: "informational".to_string(),
+                exact_level: None,
+                enable_noisy_rules: false,
+                end_timeline: None,
+                start_timeline: None,
+                eid_filter: false,
+                european_time: false,
+                iso_8601: false,
+                rfc_2822: false,
+                rfc_3339: false,
+                us_military_time: false,
+                us_time: false,
+                utc: false,
+                visualize_timeline: false,
+                rules: Path::new("./rules").to_path_buf(),
+                html_report: None,
+                no_summary: true,
+                common_options: CommonOptions {
+                    no_color: false,
+                    quiet: false,
+                },
+                detect_common_options: DetectCommonOption {
+                    evtx_file_ext: None,
+                    thread_number: None,
+                    quiet_errors: false,
+                    config: Path::new("./rules/config").to_path_buf(),
+                    verbose: false,
+                    json_input: false,
+                    include_computer: None,
+                    exclude_computer: None,
+                },
+                enable_unsupported_rules: false,
+                clobber: false,
+                proven_rules: false,
+                include_tag: None,
+                exclude_tag: None,
+                include_category: None,
+                exclude_category: None,
+                include_eid: None,
+                exclude_eid: None,
+                no_field: false,
+                remove_duplicate_data: true,
+                remove_duplicate_detections: false,
+            },
+            geo_ip: None,
+            output: Some(Path::new("./test_emit_csv_remove_duplicate.json").to_path_buf()),
+            jsonl_timeline: false,
+        });
+        let dummy_config = Some(Config {
+            action: Some(dummy_action),
+            debug: false,
+        });
+        let stored_static = StoredStatic::create_static_data(dummy_config);
+        let output_profile: Vec<(CompactString, Profile)> = load_profile(
+            "test_files/config/default_profile.yaml",
+            "test_files/config/profiles.yaml",
+            Some(&stored_static),
+        )
+        .unwrap_or_default();
+        {
+            let messages = &message::MESSAGES;
+            messages.clear();
+            let val = r##"
+                {
+                    "Event": {
+                        "EventData": {
+                            "CommandRLine": "hoge"
+                        },
+                        "System": {
+                            "TimeCreated_attributes": {
+                                "SystemTime": "1996-02-27T01:05:01Z"
+                            }
+                        }
+                    }
+                }
+            "##;
+            let event: Value = serde_json::from_str(val).unwrap();
+            let output_option = OutputOption {
+                input_args: InputOption {
+                    directory: None,
+                    filepath: None,
+                    live_analysis: false,
+                    recover_records: false,
+                },
+                profile: None,
+                enable_deprecated_rules: false,
+                exclude_status: None,
+                min_level: "informational".to_string(),
+                exact_level: None,
+                enable_noisy_rules: false,
+                end_timeline: None,
+                start_timeline: None,
+                eid_filter: false,
+                european_time: false,
+                iso_8601: false,
+                rfc_2822: false,
+                rfc_3339: false,
+                us_military_time: false,
+                us_time: false,
+                utc: false,
+                visualize_timeline: false,
+                rules: Path::new("./rules").to_path_buf(),
+                html_report: None,
+                no_summary: false,
+                common_options: CommonOptions {
+                    no_color: false,
+                    quiet: false,
+                },
+                detect_common_options: DetectCommonOption {
+                    evtx_file_ext: None,
+                    thread_number: None,
+                    quiet_errors: false,
+                    config: Path::new("./rules/config").to_path_buf(),
+                    verbose: false,
+                    json_input: false,
+                    include_computer: None,
+                    exclude_computer: None,
+                },
+                enable_unsupported_rules: false,
+                clobber: false,
+                proven_rules: false,
+                include_tag: None,
+                exclude_tag: None,
+                include_category: None,
+                exclude_category: None,
+                include_eid: None,
+                exclude_eid: None,
+                no_field: false,
+                remove_duplicate_data: true,
+                remove_duplicate_detections: false,
+            };
+            let ch = mock_ch_filter
+                .get(&CompactString::from("security"))
+                .unwrap_or(&CompactString::default())
+                .clone();
+            let mut profile_converter: HashMap<&str, Profile> = HashMap::from([
+                (
+                    "Timestamp",
+                    Profile::Timestamp(format_time(&expect_time, false, &output_option).into()),
+                ),
+                ("Computer", Profile::Computer(test_computername2.into())),
+                ("Channel", Profile::Channel(ch.into())),
+                ("Level", Profile::Level(test_level.into())),
+                ("EventID", Profile::EventID(test_eventid.into())),
+                ("MitreAttack", Profile::MitreTactics(test_attack.into())),
+                ("RecordID", Profile::RecordID(test_record_id.into())),
+                ("RuleTitle", Profile::RuleTitle(test_title.into())),
+                (
+                    "RecordInformation",
+                    Profile::AllFieldInfo(test_recinfo.into()),
+                ),
+                ("RuleFile", Profile::RuleFile(test_rulepath.into())),
+                ("EvtxFile", Profile::EvtxFile(test_filepath.into())),
+                ("Tags", Profile::MitreTags(test_attack.into())),
+            ]);
+            let eventkey_alias = load_eventkey_alias(
+                utils::check_setting_path(
+                    &CURRENT_EXE_PATH.to_path_buf(),
+                    "rules/config/eventkey_alias.txt",
+                    true,
+                )
+                .unwrap()
+                .to_str()
+                .unwrap(),
+            );
+            message::insert(
+                &event,
+                CompactString::new(output),
+                DetectInfo {
+                    rulepath: CompactString::from(test_rulepath),
+                    ruleid: test_rule_id.into(),
+                    ruletitle: CompactString::from(test_title),
+                    level: CompactString::from(test_level),
+                    computername: CompactString::from(test_computername2),
+                    eventid: CompactString::from(test_eventid),
+                    detail: CompactString::default(),
+                    ext_field: output_profile.to_owned(),
+                    is_condition: false,
+                },
+                expect_time,
+                &mut profile_converter,
+                (false, false, false),
+                (&eventkey_alias, &FieldDataMapKey::default(), &None),
+            );
+            *profile_converter.get_mut("Computer").unwrap() =
+                Profile::Computer(test_computername.into());
+
+            message::insert(
+                &event,
+                CompactString::new(output),
+                DetectInfo {
+                    rulepath: CompactString::from(test_rulepath),
+                    ruleid: test_rule_id.into(),
+                    ruletitle: CompactString::from(test_title),
+                    level: CompactString::from(test_level),
+                    computername: CompactString::from(test_computername),
+                    eventid: CompactString::from(test_eventid),
+                    detail: CompactString::default(),
+                    ext_field: output_profile.to_owned(),
+                    is_condition: false,
+                },
+                expect_time,
+                &mut profile_converter,
+                (false, false, false),
+                (&eventkey_alias, &FieldDataMapKey::default(), &None),
+            );
+            let multi = message::MESSAGES.get(&expect_time).unwrap();
+            let (_, detect_infos) = multi.pair();
+
+            println!("message: {detect_infos:?}");
+        }
+
+        let expect_target = vec![
+            vec![
+                (
+                    "Timestamp",
+                    CompactString::from(
+                        "\"".to_string()
+                            + &expect_tz
+                                .with_timezone(&Local)
+                                .format("%Y-%m-%d %H:%M:%S%.3f %:z")
+                                .to_string()
+                            + "\"",
+                    ),
+                ),
+                (
+                    "Computer",
+                    CompactString::from("\"".to_string() + test_computername + "\""),
+                ),
+                (
+                    "Channel",
+                    CompactString::from("\"".to_string() + test_channel + "\""),
+                ),
+                (
+                    "Level",
+                    CompactString::from("\"".to_string() + test_level + "\""),
+                ),
+                ("EventID", CompactString::from(test_eventid)),
+                (
+                    "MitreAttack",
+                    CompactString::from("[\n        \"".to_string() + test_attack + "\"\n    ]"),
+                ),
+                ("RecordID", CompactString::from(test_record_id)),
+                (
+                    "RuleTitle",
+                    CompactString::from("\"".to_string() + test_title + "\""),
+                ),
+                (
+                    "Details",
+                    CompactString::from("\"".to_string() + output + "\""),
+                ),
+                (
+                    "RecordInformation",
+                    CompactString::from("{\n        \"CommandRLine\": \"hoge\"\n    }"),
+                ),
+                (
+                    "RuleFile",
+                    CompactString::from("\"".to_string() + test_rulepath + "\""),
+                ),
+                (
+                    "EvtxFile",
+                    CompactString::from("\"".to_string() + test_filepath + "\""),
+                ),
+                (
+                    "Tags",
+                    CompactString::from("[\n        \"".to_string() + test_attack + "\"\n    ]"),
+                ),
+            ],
+            vec![
+                (
+                    "Timestamp",
+                    CompactString::from(
+                        "\"".to_string()
+                            + &expect_tz
+                                .with_timezone(&Local)
+                                .format("%Y-%m-%d %H:%M:%S%.3f %:z")
+                                .to_string()
+                            + "\"",
+                    ),
+                ),
+                (
+                    "Computer",
+                    CompactString::from("\"".to_string() + test_computername2 + "\""),
+                ),
+                (
+                    "Channel",
+                    CompactString::from("\"".to_string() + test_channel + "\""),
+                ),
+                (
+                    "Level",
+                    CompactString::from("\"".to_string() + test_level + "\""),
+                ),
+                ("EventID", test_eventid.into()),
+                (
+                    "MitreAttack",
+                    CompactString::from("[\n        \"".to_string() + test_attack + "\"\n    ]"),
+                ),
+                ("RecordID", test_record_id.into()),
+                (
+                    "RuleTitle",
+                    CompactString::from("\"".to_string() + test_title + "\""),
+                ),
+                ("Details", "\"DUP\"".into()),
+                ("RecordInformation", "\"DUP\"".into()),
+                (
+                    "RuleFile",
+                    CompactString::from("\"".to_string() + test_rulepath + "\""),
+                ),
+                (
+                    "EvtxFile",
+                    CompactString::from("\"".to_string() + test_filepath + "\""),
+                ),
+                (
+                    "Tags",
+                    CompactString::from("[\n        \"".to_string() + test_attack + "\"\n    ]"),
+                ),
+            ],
+        ];
+        let mut expect_str = String::default();
+        for (target_idx, target) in expect_target.iter().enumerate() {
+            let mut expect_json = "{\n".to_string();
+            for (idx, (key, value)) in target.iter().enumerate() {
+                expect_json = expect_json + "    \"" + key + "\": " + value;
+                if idx != target.len() - 1 {
+                    expect_json += ",\n";
+                } else {
+                    expect_json += "\n";
+                }
+            }
+            expect_json += "}";
+            if target_idx != expect_target.len() - 1 {
+                expect_json += "\n";
+            }
+            expect_str = expect_str.to_string() + &expect_json;
+        }
+
+        let mut file: Box<dyn io::Write> =
+            Box::new(File::create("./test_emit_csv_remove_duplicate.json").unwrap());
+
+        assert!(emit_csv(
+            &mut file,
+            false,
+            HashMap::new(),
+            (1, 0),
+            &output_profile,
+            &stored_static,
+            (&Some(expect_tz), &Some(expect_tz))
+        )
+        .is_ok());
+        match read_to_string("./test_emit_csv_remove_duplicate.json") {
+            Err(_) => panic!("Failed to open file."),
+            Ok(s) => {
+                assert_eq!(s, expect_str);
+            }
+        };
+        assert!(remove_file("./test_emit_csv_remove_duplicate.json").is_ok());
     }
 
     #[test]
@@ -2228,6 +3222,7 @@ mod tests {
                 directory: None,
                 filepath: None,
                 live_analysis: false,
+                recover_records: false,
             },
             profile: None,
             enable_deprecated_rules: false,
@@ -2260,8 +3255,21 @@ mod tests {
                 config: Path::new("./rules/config").to_path_buf(),
                 verbose: false,
                 json_input: false,
+                include_computer: None,
+                exclude_computer: None,
             },
             enable_unsupported_rules: false,
+            clobber: false,
+            proven_rules: false,
+            include_tag: None,
+            exclude_tag: None,
+            include_category: None,
+            exclude_category: None,
+            include_eid: None,
+            exclude_eid: None,
+            no_field: false,
+            remove_duplicate_data: false,
+            remove_duplicate_detections: false,
         };
         let data: Vec<(CompactString, Profile)> = vec![
             (
@@ -2321,5 +3329,521 @@ mod tests {
     fn test_set_output_color_no_color_flag() {
         let expect: HashMap<CompactString, Colors> = HashMap::new();
         check_hashmap_data(set_output_color(true), expect);
+    }
+
+    #[test]
+    fn test_emit_csv_json_output() {
+        let mock_ch_filter = message::create_output_filter_config(
+            "test_files/config/channel_abbreviations.txt",
+            true,
+        );
+        let test_filepath: &str = "test.evtx";
+        let test_rulepath: &str = "test-rule.yml";
+        let test_rule_id: &str = "00000000-0000-0000-0000-000000000000";
+        let test_title = "test_title";
+        let test_level = "high";
+        let test_computername = "testcomputer";
+        let test_computername2 = "testcomputer";
+        let test_eventid = "1111";
+        let output = "pokepoke";
+        let test_attack = "execution/txxxx.yyy";
+        let test_recinfo = "CommandRLine: hoge";
+        let test_record_id = "11111";
+        let expect_time = Utc
+            .datetime_from_str("1996-02-27T01:05:01Z", "%Y-%m-%dT%H:%M:%SZ")
+            .unwrap();
+        let expect_tz = expect_time.with_timezone(&Utc);
+        let json_dummy_action = Action::JsonTimeline(JSONOutputOption {
+            output_options: OutputOption {
+                input_args: InputOption {
+                    directory: None,
+                    filepath: None,
+                    live_analysis: false,
+                    recover_records: false,
+                },
+                profile: None,
+                enable_deprecated_rules: false,
+                exclude_status: None,
+                min_level: "informational".to_string(),
+                exact_level: None,
+                enable_noisy_rules: false,
+                end_timeline: None,
+                start_timeline: None,
+                eid_filter: false,
+                european_time: false,
+                iso_8601: false,
+                rfc_2822: false,
+                rfc_3339: false,
+                us_military_time: false,
+                us_time: false,
+                utc: false,
+                visualize_timeline: false,
+                rules: Path::new("./rules").to_path_buf(),
+                html_report: None,
+                no_summary: true,
+                common_options: CommonOptions {
+                    no_color: false,
+                    quiet: false,
+                },
+                detect_common_options: DetectCommonOption {
+                    evtx_file_ext: None,
+                    thread_number: None,
+                    quiet_errors: false,
+                    config: Path::new("./rules/config").to_path_buf(),
+                    verbose: false,
+                    json_input: false,
+                    include_computer: None,
+                    exclude_computer: None,
+                },
+                enable_unsupported_rules: false,
+                clobber: false,
+                proven_rules: false,
+                include_tag: None,
+                exclude_tag: None,
+                include_category: None,
+                exclude_category: None,
+                include_eid: None,
+                exclude_eid: None,
+                no_field: false,
+                remove_duplicate_data: false,
+                remove_duplicate_detections: false,
+            },
+            geo_ip: None,
+            output: Some(Path::new("./test_emit_csv_json.json").to_path_buf()),
+            jsonl_timeline: false,
+        });
+
+        let dummy_config = Some(Config {
+            action: Some(json_dummy_action),
+            debug: false,
+        });
+        let stored_static = StoredStatic::create_static_data(dummy_config);
+        let output_profile: Vec<(CompactString, Profile)> = load_profile(
+            "test_files/config/default_profile.yaml",
+            "test_files/config/profiles.yaml",
+            Some(&stored_static),
+        )
+        .unwrap_or_default();
+        {
+            let val = r##"
+                {
+                    "Event": {
+                        "EventData": {
+                            "CommandRLine": "hoge"
+                        },
+                        "System": {
+                            "TimeCreated_attributes": {
+                                "SystemTime": "1996-02-27T01:05:01Z"
+                            }
+                        }
+                    }
+                }
+            "##;
+            let event: Value = serde_json::from_str(val).unwrap();
+            let output_option = OutputOption {
+                input_args: InputOption {
+                    directory: None,
+                    filepath: None,
+                    live_analysis: false,
+                    recover_records: false,
+                },
+                profile: None,
+                enable_deprecated_rules: false,
+                exclude_status: None,
+                min_level: "informational".to_string(),
+                exact_level: None,
+                enable_noisy_rules: false,
+                end_timeline: None,
+                start_timeline: None,
+                eid_filter: false,
+                european_time: false,
+                iso_8601: false,
+                rfc_2822: false,
+                rfc_3339: false,
+                us_military_time: false,
+                us_time: false,
+                utc: true,
+                visualize_timeline: false,
+                rules: Path::new("./rules").to_path_buf(),
+                html_report: None,
+                no_summary: false,
+                common_options: CommonOptions {
+                    no_color: false,
+                    quiet: false,
+                },
+                detect_common_options: DetectCommonOption {
+                    evtx_file_ext: None,
+                    thread_number: None,
+                    quiet_errors: false,
+                    config: Path::new("./rules/config").to_path_buf(),
+                    verbose: false,
+                    json_input: false,
+                    include_computer: None,
+                    exclude_computer: None,
+                },
+                enable_unsupported_rules: false,
+                clobber: false,
+                proven_rules: false,
+                include_tag: None,
+                exclude_tag: None,
+                include_category: None,
+                exclude_category: None,
+                include_eid: None,
+                exclude_eid: None,
+                no_field: false,
+                remove_duplicate_data: false,
+                remove_duplicate_detections: false,
+            };
+            let ch = mock_ch_filter
+                .get(&CompactString::from("security"))
+                .unwrap_or(&CompactString::default())
+                .clone();
+            let mut profile_converter: HashMap<&str, Profile> = HashMap::from([
+                (
+                    "Timestamp",
+                    Profile::Timestamp(format_time(&expect_time, false, &output_option).into()),
+                ),
+                ("Computer", Profile::Computer(test_computername2.into())),
+                ("Channel", Profile::Channel(ch.into())),
+                ("Level", Profile::Level(test_level.into())),
+                ("EventID", Profile::EventID(test_eventid.into())),
+                ("MitreAttack", Profile::MitreTactics(test_attack.into())),
+                ("RecordID", Profile::RecordID(test_record_id.into())),
+                ("RuleTitle", Profile::RuleTitle(test_title.into())),
+                (
+                    "RecordInformation",
+                    Profile::AllFieldInfo(test_recinfo.into()),
+                ),
+                ("RuleFile", Profile::RuleFile(test_rulepath.into())),
+                ("EvtxFile", Profile::EvtxFile(test_filepath.into())),
+                ("Tags", Profile::MitreTags(test_attack.into())),
+            ]);
+            let eventkey_alias = load_eventkey_alias(
+                utils::check_setting_path(
+                    &CURRENT_EXE_PATH.to_path_buf(),
+                    "rules/config/eventkey_alias.txt",
+                    true,
+                )
+                .unwrap()
+                .to_str()
+                .unwrap(),
+            );
+            let messages = &message::MESSAGES;
+            messages.clear();
+            message::insert(
+                &event,
+                CompactString::new(output),
+                DetectInfo {
+                    rulepath: CompactString::from(test_rulepath),
+                    ruleid: test_rule_id.into(),
+                    ruletitle: CompactString::from(test_title),
+                    level: CompactString::from(test_level),
+                    computername: CompactString::from(test_computername2),
+                    eventid: CompactString::from(test_eventid),
+                    detail: CompactString::default(),
+                    ext_field: output_profile.to_owned(),
+                    is_condition: false,
+                },
+                expect_time,
+                &mut profile_converter,
+                (false, false, false),
+                (&eventkey_alias, &FieldDataMapKey::default(), &None),
+            );
+            *profile_converter.get_mut("Computer").unwrap() =
+                Profile::Computer(test_computername.into());
+        }
+        let expect = vec![
+            "{",
+            "\"Timestamp\": \"1996-02-27 01:05:01.000 +00:00\",",
+            "\"Computer\": \"testcomputer\",",
+            "\"Channel\": \"Sec\",",
+            "\"Level\": \"high\",",
+            "\"EventID\": 1111,",
+            "\"MitreAttack\": [\n        \"execution/txxxx.yyy\"\n    ],",
+            "\"RecordID\": 11111,",
+            "\"RuleTitle\": \"test_title\",",
+            "\"Details\": \"pokepoke\",",
+            "\"RecordInformation\": {\n        \"CommandRLine\": \"hoge\"\n    },",
+            "\"RuleFile\": \"test-rule.yml\",",
+            "\"EvtxFile\": \"test.evtx\",",
+            "\"Tags\": [\n        \"execution/txxxx.yyy\"\n    ]",
+        ];
+        let mut file: Box<dyn io::Write> =
+            Box::new(File::create("./test_emit_csv_json.json").unwrap());
+        assert!(emit_csv(
+            &mut file,
+            false,
+            HashMap::new(),
+            (1, 0),
+            &output_profile,
+            &stored_static,
+            (&Some(expect_tz), &Some(expect_tz))
+        )
+        .is_ok());
+        match read_to_string("./test_emit_csv_json.json") {
+            Err(_) => panic!("Failed to open file."),
+            Ok(s) => {
+                assert_eq!(s, format!("{}\n}}", expect.join("\n    ")));
+            }
+        };
+        assert!(remove_file("./test_emit_csv_json.json").is_ok());
+    }
+
+    #[test]
+    fn test_emit_csv_jsonl_output() {
+        let mock_ch_filter = message::create_output_filter_config(
+            "test_files/config/channel_abbreviations.txt",
+            true,
+        );
+        let test_filepath: &str = "test.evtx";
+        let test_rulepath: &str = "test-rule.yml";
+        let test_rule_id: &str = "00000000-0000-0000-0000-000000000000";
+        let test_title = "test_title";
+        let test_level = "high";
+        let test_computername = "testcomputer";
+        let test_computername2 = "testcomputer";
+        let test_eventid = "1111";
+        let output = "pokepoke";
+        let test_attack = "execution/txxxx.yyy";
+        let test_recinfo = "CommandRLine: hoge";
+        let test_record_id = "11111";
+        let expect_time = Utc
+            .datetime_from_str("1996-02-27T01:05:01Z", "%Y-%m-%dT%H:%M:%SZ")
+            .unwrap();
+        let expect_tz = expect_time.with_timezone(&Utc);
+        let json_dummy_action = Action::JsonTimeline(JSONOutputOption {
+            output_options: OutputOption {
+                input_args: InputOption {
+                    directory: None,
+                    filepath: None,
+                    live_analysis: false,
+                    recover_records: false,
+                },
+                profile: None,
+                enable_deprecated_rules: false,
+                exclude_status: None,
+                min_level: "informational".to_string(),
+                exact_level: None,
+                enable_noisy_rules: false,
+                end_timeline: None,
+                start_timeline: None,
+                eid_filter: false,
+                european_time: false,
+                iso_8601: false,
+                rfc_2822: false,
+                rfc_3339: false,
+                us_military_time: false,
+                us_time: false,
+                utc: false,
+                visualize_timeline: false,
+                rules: Path::new("./rules").to_path_buf(),
+                html_report: None,
+                no_summary: true,
+                common_options: CommonOptions {
+                    no_color: false,
+                    quiet: false,
+                },
+                detect_common_options: DetectCommonOption {
+                    evtx_file_ext: None,
+                    thread_number: None,
+                    quiet_errors: false,
+                    config: Path::new("./rules/config").to_path_buf(),
+                    verbose: false,
+                    json_input: false,
+                    include_computer: None,
+                    exclude_computer: None,
+                },
+                enable_unsupported_rules: false,
+                clobber: false,
+                proven_rules: false,
+                include_tag: None,
+                exclude_tag: None,
+                include_category: None,
+                exclude_category: None,
+                include_eid: None,
+                exclude_eid: None,
+                no_field: false,
+                remove_duplicate_data: false,
+                remove_duplicate_detections: false,
+            },
+            geo_ip: None,
+            output: Some(Path::new("./test_emit_csv_jsonl.jsonl").to_path_buf()),
+            jsonl_timeline: true,
+        });
+
+        let dummy_config = Some(Config {
+            action: Some(json_dummy_action),
+            debug: false,
+        });
+        let stored_static = StoredStatic::create_static_data(dummy_config);
+        let output_profile: Vec<(CompactString, Profile)> = load_profile(
+            "test_files/config/default_profile.yaml",
+            "test_files/config/profiles.yaml",
+            Some(&stored_static),
+        )
+        .unwrap_or_default();
+        {
+            let val = r##"
+                {
+                    "Event": {
+                        "EventData": {
+                            "CommandRLine": "hoge"
+                        },
+                        "System": {
+                            "TimeCreated_attributes": {
+                                "SystemTime": "1996-02-27T01:05:01Z"
+                            }
+                        }
+                    }
+                }
+            "##;
+            let event: Value = serde_json::from_str(val).unwrap();
+            let output_option = OutputOption {
+                input_args: InputOption {
+                    directory: None,
+                    filepath: None,
+                    live_analysis: false,
+                    recover_records: false,
+                },
+                profile: None,
+                enable_deprecated_rules: false,
+                exclude_status: None,
+                min_level: "informational".to_string(),
+                exact_level: None,
+                enable_noisy_rules: false,
+                end_timeline: None,
+                start_timeline: None,
+                eid_filter: false,
+                european_time: false,
+                iso_8601: false,
+                rfc_2822: false,
+                rfc_3339: false,
+                us_military_time: false,
+                us_time: false,
+                utc: true,
+                visualize_timeline: false,
+                rules: Path::new("./rules").to_path_buf(),
+                html_report: None,
+                no_summary: false,
+                common_options: CommonOptions {
+                    no_color: false,
+                    quiet: false,
+                },
+                detect_common_options: DetectCommonOption {
+                    evtx_file_ext: None,
+                    thread_number: None,
+                    quiet_errors: false,
+                    config: Path::new("./rules/config").to_path_buf(),
+                    verbose: false,
+                    json_input: false,
+                    include_computer: None,
+                    exclude_computer: None,
+                },
+                enable_unsupported_rules: false,
+                clobber: false,
+                proven_rules: false,
+                include_tag: None,
+                exclude_tag: None,
+                include_category: None,
+                exclude_category: None,
+                include_eid: None,
+                exclude_eid: None,
+                no_field: false,
+                remove_duplicate_data: false,
+                remove_duplicate_detections: false,
+            };
+            let ch = mock_ch_filter
+                .get(&CompactString::from("security"))
+                .unwrap_or(&CompactString::default())
+                .clone();
+            let mut profile_converter: HashMap<&str, Profile> = HashMap::from([
+                (
+                    "Timestamp",
+                    Profile::Timestamp(format_time(&expect_time, false, &output_option).into()),
+                ),
+                ("Computer", Profile::Computer(test_computername2.into())),
+                ("Channel", Profile::Channel(ch.into())),
+                ("Level", Profile::Level(test_level.into())),
+                ("EventID", Profile::EventID(test_eventid.into())),
+                ("MitreAttack", Profile::MitreTactics(test_attack.into())),
+                ("RecordID", Profile::RecordID(test_record_id.into())),
+                ("RuleTitle", Profile::RuleTitle(test_title.into())),
+                (
+                    "RecordInformation",
+                    Profile::AllFieldInfo(test_recinfo.into()),
+                ),
+                ("RuleFile", Profile::RuleFile(test_rulepath.into())),
+                ("EvtxFile", Profile::EvtxFile(test_filepath.into())),
+                ("Tags", Profile::MitreTags(test_attack.into())),
+            ]);
+            let eventkey_alias = load_eventkey_alias(
+                utils::check_setting_path(
+                    &CURRENT_EXE_PATH.to_path_buf(),
+                    "rules/config/eventkey_alias.txt",
+                    true,
+                )
+                .unwrap()
+                .to_str()
+                .unwrap(),
+            );
+            let messages = &message::MESSAGES;
+            messages.clear();
+            message::insert(
+                &event,
+                CompactString::new(output),
+                DetectInfo {
+                    rulepath: CompactString::from(test_rulepath),
+                    ruleid: test_rule_id.into(),
+                    ruletitle: CompactString::from(test_title),
+                    level: CompactString::from(test_level),
+                    computername: CompactString::from(test_computername2),
+                    eventid: CompactString::from(test_eventid),
+                    detail: CompactString::default(),
+                    ext_field: output_profile.to_owned(),
+                    is_condition: false,
+                },
+                expect_time,
+                &mut profile_converter,
+                (false, false, false),
+                (&eventkey_alias, &FieldDataMapKey::default(), &None),
+            );
+            *profile_converter.get_mut("Computer").unwrap() =
+                Profile::Computer(test_computername.into());
+        }
+        let expect = vec![
+            "{ ",
+            "\"Timestamp\": \"1996-02-27 01:05:01.000 +00:00\",",
+            "\"Computer\": \"testcomputer\",",
+            "\"Channel\": \"Sec\",",
+            "\"Level\": \"high\",",
+            "\"EventID\": 1111,",
+            "\"MitreAttack\": [\"execution/txxxx.yyy\"],",
+            "\"RecordID\": 11111,",
+            "\"RuleTitle\": \"test_title\",",
+            "\"Details\": \"pokepoke\",",
+            "\"RecordInformation\": {\"CommandRLine\": \"hoge\"},",
+            "\"RuleFile\": \"test-rule.yml\",",
+            "\"EvtxFile\": \"test.evtx\",",
+            "\"Tags\": [\"execution/txxxx.yyy\"]",
+        ];
+        let mut file: Box<dyn io::Write> =
+            Box::new(File::create("./test_emit_csv_jsonl.jsonl").unwrap());
+        assert!(emit_csv(
+            &mut file,
+            false,
+            HashMap::new(),
+            (1, 0),
+            &output_profile,
+            &stored_static,
+            (&Some(expect_tz), &Some(expect_tz))
+        )
+        .is_ok());
+        match read_to_string("./test_emit_csv_jsonl.jsonl") {
+            Err(_) => panic!("Failed to open file."),
+            Ok(s) => {
+                assert_eq!(s, format!("{} }}", expect.join("")));
+            }
+        };
+        assert!(remove_file("./test_emit_csv_jsonl.jsonl").is_ok());
     }
 }

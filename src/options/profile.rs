@@ -2,10 +2,10 @@ use crate::detections::configs::{Action, StoredStatic, CURRENT_EXE_PATH, GEOIP_D
 use crate::detections::message::AlertMessage;
 use crate::detections::utils::check_setting_path;
 use crate::options::profile::Profile::{
-    AllFieldInfo, Channel, Computer, Details, EventID, EvtxFile, Level, Literal, MitreTactics,
-    MitreTags, OtherTags, Provider, RecordID, RenderedMessage, RuleAuthor, RuleCreationDate,
-    RuleFile, RuleID, RuleModifiedDate, RuleTitle, SrcASN, SrcCity, SrcCountry, Status, TgtASN,
-    TgtCity, TgtCountry, Timestamp,
+    AllFieldInfo, Channel, Computer, Details, EventID, EvtxFile, ExtraFieldInfo, Level, Literal,
+    MitreTactics, MitreTags, OtherTags, Provider, RecordID, RecoveredRecord, RenderedMessage,
+    RuleAuthor, RuleCreationDate, RuleFile, RuleID, RuleModifiedDate, RuleTitle, SrcASN, SrcCity,
+    SrcCountry, Status, TgtASN, TgtCity, TgtCountry, Timestamp,
 };
 use crate::yaml;
 use compact_str::CompactString;
@@ -46,6 +46,8 @@ pub enum Profile {
     TgtASN(Cow<'static, str>),
     TgtCountry(Cow<'static, str>),
     TgtCity(Cow<'static, str>),
+    ExtraFieldInfo(Cow<'static, str>),
+    RecoveredRecord(Cow<'static, str>),
     Literal(Cow<'static, str>), // profiles.yamlの固定文字列を変換なしでそのまま出力する場合
 }
 
@@ -57,7 +59,9 @@ impl Profile {
             | MitreTags(v) | OtherTags(v) | RuleAuthor(v) | RuleCreationDate(v)
             | RuleModifiedDate(v) | Status(v) | RuleID(v) | Provider(v) | Details(v)
             | RenderedMessage(v) | SrcASN(v) | SrcCountry(v) | SrcCity(v) | TgtASN(v)
-            | TgtCountry(v) | TgtCity(v) | Literal(v) => v.to_string(),
+            | TgtCountry(v) | TgtCity(v) | RecoveredRecord(v) | ExtraFieldInfo(v) | Literal(v) => {
+                v.to_string()
+            }
         }
     }
 
@@ -88,6 +92,10 @@ impl Profile {
             TgtASN(_) => TgtASN(converted_string.to_owned().into()),
             TgtCountry(_) => TgtCountry(converted_string.to_owned().into()),
             TgtCity(_) => TgtCity(converted_string.to_owned().into()),
+            ExtraFieldInfo(_) => ExtraFieldInfo(converted_string.to_owned().into()),
+            RecoveredRecord(_) => RecoveredRecord(converted_string.to_owned().into()),
+            Details(_) => Details(converted_string.to_owned().into()),
+            AllFieldInfo(_) => AllFieldInfo(converted_string.to_owned().into()),
             p => p.to_owned(),
         }
     }
@@ -117,6 +125,8 @@ impl From<&str> for Profile {
             "%Provider%" => Provider(Default::default()),
             "%Details%" => Details(Default::default()),
             "%RenderedMessage%" => RenderedMessage(Default::default()),
+            "%ExtraFieldInfo%" => ExtraFieldInfo(Default::default()),
+            "%RecoveredRecord%" => RecoveredRecord(Default::default()),
             s => Literal(s.to_string().into()), // profiles.yamlの固定文字列を変換なしでそのまま出力する場合
         }
     }
@@ -243,6 +253,14 @@ pub fn load_profile(
         ));
         ret.push((CompactString::from("TgtCity"), TgtCity(Cow::default())));
     }
+    if let Some(opt) = &opt_stored_static.as_ref().unwrap().output_option {
+        if opt.input_args.recover_records {
+            ret.push((
+                CompactString::from("RecoveredRecord"),
+                RecoveredRecord(Cow::default()),
+            ));
+        }
+    }
     Some(ret)
 }
 
@@ -264,6 +282,11 @@ pub fn set_default_profile(
         Action::SetDefaultProfile(s) => Some(s),
         _ => None,
     };
+
+    let default_profile_name_path = Path::new(default_profile_path)
+        .to_path_buf()
+        .with_file_name("default_profile_name.txt");
+
     if set_default_profile.is_some() && set_default_profile.unwrap().profile.is_some() {
         let profile_name = set_default_profile
             .as_ref()
@@ -290,6 +313,14 @@ pub fn set_default_profile(
                         )),
                         _ => {
                             buf_wtr.flush().ok();
+                            if let Ok(mut default_name_buf_wtr) = OpenOptions::new()
+                                .write(true)
+                                .truncate(true)
+                                .open(default_profile_name_path)
+                                .map(BufWriter::new)
+                            {
+                                default_name_buf_wtr.write_all(profile_name.as_bytes()).ok();
+                            }
                             Ok(())
                         }
                     },
@@ -395,6 +426,7 @@ mod tests {
                         directory: None,
                         filepath: None,
                         live_analysis: false,
+                        recover_records: false,
                     },
                     profile: None,
                     enable_deprecated_rules: false,
@@ -427,8 +459,21 @@ mod tests {
                         config: Path::new("./rules/config").to_path_buf(),
                         verbose: false,
                         json_input: false,
+                        include_computer: None,
+                        exclude_computer: None,
                     },
                     enable_unsupported_rules: false,
+                    clobber: false,
+                    proven_rules: false,
+                    include_tag: None,
+                    exclude_tag: None,
+                    include_category: None,
+                    exclude_category: None,
+                    include_eid: None,
+                    exclude_eid: None,
+                    no_field: false,
+                    remove_duplicate_data: false,
+                    remove_duplicate_detections: false,
                 },
                 geo_ip: None,
                 output: None,
@@ -504,6 +549,7 @@ mod tests {
                         directory: None,
                         filepath: None,
                         live_analysis: false,
+                        recover_records: false,
                     },
                     profile: None,
                     enable_deprecated_rules: false,
@@ -536,8 +582,21 @@ mod tests {
                         config: Path::new("./rules/config").to_path_buf(),
                         verbose: false,
                         json_input: false,
+                        include_computer: None,
+                        exclude_computer: None,
                     },
                     enable_unsupported_rules: false,
+                    clobber: false,
+                    proven_rules: false,
+                    include_tag: None,
+                    exclude_tag: None,
+                    include_category: None,
+                    exclude_category: None,
+                    include_eid: None,
+                    exclude_eid: None,
+                    no_field: false,
+                    remove_duplicate_data: false,
+                    remove_duplicate_detections: false,
                 },
                 geo_ip: None,
                 output: None,
@@ -563,6 +622,7 @@ mod tests {
                         directory: None,
                         filepath: None,
                         live_analysis: false,
+                        recover_records: false,
                     },
                     profile: Some("minimal".to_string()),
                     enable_deprecated_rules: false,
@@ -595,8 +655,21 @@ mod tests {
                         config: Path::new("./rules/config").to_path_buf(),
                         verbose: false,
                         json_input: false,
+                        include_computer: None,
+                        exclude_computer: None,
                     },
                     enable_unsupported_rules: false,
+                    clobber: false,
+                    proven_rules: false,
+                    include_tag: None,
+                    exclude_tag: None,
+                    include_category: None,
+                    exclude_category: None,
+                    include_eid: None,
+                    exclude_eid: None,
+                    no_field: false,
+                    remove_duplicate_data: false,
+                    remove_duplicate_detections: false,
                 },
                 geo_ip: None,
                 output: None,
@@ -652,6 +725,7 @@ mod tests {
                         directory: None,
                         filepath: None,
                         live_analysis: false,
+                        recover_records: false,
                     },
                     profile: Some("not_exist".to_string()),
                     enable_deprecated_rules: false,
@@ -684,8 +758,21 @@ mod tests {
                         config: Path::new("./rules/config").to_path_buf(),
                         verbose: false,
                         json_input: false,
+                        include_computer: None,
+                        exclude_computer: None,
                     },
                     enable_unsupported_rules: false,
+                    clobber: false,
+                    proven_rules: false,
+                    include_tag: None,
+                    exclude_tag: None,
+                    include_category: None,
+                    exclude_category: None,
+                    include_eid: None,
+                    exclude_eid: None,
+                    no_field: false,
+                    remove_duplicate_data: false,
+                    remove_duplicate_detections: false,
                 },
                 geo_ip: None,
                 output: None,

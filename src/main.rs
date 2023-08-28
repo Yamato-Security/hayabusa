@@ -7,34 +7,38 @@ extern crate serde_derive;
 use bytesize::ByteSize;
 use chrono::{DateTime, Datelike, Local, NaiveDateTime, Utc};
 use clap::Command;
-use evtx::{EvtxParser, ParserSettings};
+use compact_str::CompactString;
+use evtx::{EvtxParser, ParserSettings, RecordAllocation};
 use hashbrown::{HashMap, HashSet};
 use hayabusa::debug::checkpoint_process_timer::CHECKPOINT;
 use hayabusa::detections::configs::{
     load_pivot_keywords, Action, ConfigReader, EventInfoConfig, EventKeyAliasConfig, StoredStatic,
-    TargetEventIds, TargetEventTime, CURRENT_EXE_PATH, STORED_EKEY_ALIAS, STORED_STATIC,
+    TargetEventTime, TargetIds, CURRENT_EXE_PATH, STORED_EKEY_ALIAS, STORED_STATIC,
 };
 use hayabusa::detections::detection::{self, EvtxRecordInfo};
 use hayabusa::detections::message::{AlertMessage, ERROR_LOG_STACK};
 use hayabusa::detections::rule::{get_detection_keys, RuleNode};
-use hayabusa::detections::utils::{check_setting_path, output_and_data_stack_for_html};
+use hayabusa::detections::utils::{
+    check_setting_path, get_writable_color, output_and_data_stack_for_html, output_profile_name,
+};
 use hayabusa::options;
 use hayabusa::options::htmlreport::{self, HTML_REPORTER};
-use hayabusa::options::pivot::PivotKeyword;
+use hayabusa::options::pivot::create_output;
 use hayabusa::options::pivot::PIVOT_KEYWORD;
 use hayabusa::options::profile::set_default_profile;
 use hayabusa::options::{level_tuning::LevelTuning, update::Update};
+use hayabusa::timeline::computer_metrics::countup_event_by_computer;
 use hayabusa::{afterfact::after_fact, detections::utils};
 use hayabusa::{detections::configs, timeline::timelines::Timeline};
 use hayabusa::{detections::utils::write_color_buffer, filter};
 use hhmmss::Hhmmss;
+use indicatif::ProgressBar;
+use indicatif::{ProgressDrawTarget, ProgressStyle};
 use itertools::Itertools;
 use libmimalloc_sys::mi_stats_print_out;
 use mimalloc::MiMalloc;
 use nested::Nested;
-use pbr::ProgressBar;
 use serde_json::{Map, Value};
-use std::borrow::Borrow;
 use std::ffi::{OsStr, OsString};
 use std::fmt::Display;
 use std::fmt::Write as _;
@@ -42,6 +46,7 @@ use std::io::{BufWriter, Write};
 use std::path::Path;
 use std::ptr::null_mut;
 use std::sync::Arc;
+use std::time::Duration;
 use std::{
     env,
     fs::{self, File},
@@ -230,6 +235,23 @@ impl App {
             HashSet::default()
         };
 
+        let output_saved_file = |output_path: &Option<PathBuf>, message: &str| {
+            if let Some(path) = output_path {
+                if let Ok(metadata) = fs::metadata(path) {
+                    let output_saved_str = format!(
+                        "{message}: {} ({})",
+                        path.display(),
+                        ByteSize::b(metadata.len()).to_string_as(false)
+                    );
+                    output_and_data_stack_for_html(
+                        &output_saved_str,
+                        "General Overview {#general_overview}",
+                        stored_static.html_report_flag,
+                    );
+                }
+            }
+        };
+
         match &stored_static.config.action.as_ref().unwrap() {
             Action::CsvTimeline(_) | Action::JsonTimeline(_) => {
                 // カレントディレクトリ以外からの実行の際にrulesオプションの指定がないとエラーが発生することを防ぐための処理
@@ -250,43 +272,36 @@ impl App {
                 if let Some(html_path) = &stored_static.output_option.as_ref().unwrap().html_report
                 {
                     // if already exists same html report file. output alert message and exit
-                    if utils::check_file_expect_not_exist(
-                        html_path.as_path(),
-                        format!(
-                            " The file {} already exists. Please specify a different filename.",
-                            html_path.to_str().unwrap()
-                        ),
-                    ) {
+                    if !(stored_static.output_option.as_ref().unwrap().clobber)
+                        && utils::check_file_expect_not_exist(
+                            html_path.as_path(),
+                            format!(
+                                " The file {} already exists. Please specify a different filename or add the -C, --clobber option to overwrite.\n",
+                                html_path.to_str().unwrap()
+                            ),
+                        )
+                    {
                         return;
                     }
                 }
                 if let Some(path) = &stored_static.output_path {
-                    if utils::check_file_expect_not_exist(
-                        path.as_path(),
-                        format!(
-                            " The file {} already exists. Please specify a different filename.",
-                            path.as_os_str().to_str().unwrap()
-                        ),
-                    ) {
+                    if !(stored_static.output_option.as_ref().unwrap().clobber)
+                        && utils::check_file_expect_not_exist(
+                            path.as_path(),
+                            format!(
+                                " The file {} already exists. Please specify a different filename or add the -C, --clobber option to overwrite.\n",
+                                path.as_os_str().to_str().unwrap()
+                            ),
+                        )
+                    {
                         return;
                     }
                 }
                 self.analysis_start(&target_extensions, &time_filter, stored_static);
 
-                if let Some(path) = &stored_static.output_path {
-                    if let Ok(metadata) = fs::metadata(path) {
-                        let output_saved_str = format!(
-                            "Saved file: {} ({})",
-                            path.display(),
-                            ByteSize::b(metadata.len()).to_string_as(false)
-                        );
-                        output_and_data_stack_for_html(
-                            &output_saved_str,
-                            "General Overview {#general_overview}",
-                            stored_static.html_report_flag,
-                        );
-                    }
-                }
+                output_profile_name(&stored_static.output_option, false);
+                output_saved_file(&stored_static.output_path, "Saved file");
+                println!();
                 if stored_static.html_report_flag {
                     let html_str = HTML_REPORTER.read().unwrap().to_owned().create_html();
                     htmlreport::create_html_file(
@@ -307,49 +322,79 @@ impl App {
                 self.print_contributors();
                 return;
             }
-            Action::LogonSummary(_) | Action::Metrics(_) | Action::Search(_) => {
-                self.analysis_start(&target_extensions, &time_filter, stored_static);
+            Action::LogonSummary(_) => {
+                let mut target_output_path = Nested::<String>::new();
                 if let Some(path) = &stored_static.output_path {
-                    if let Ok(metadata) = fs::metadata(path) {
-                        let output_saved_str = format!(
-                            "Saved file: {} ({})",
-                            path.display(),
-                            ByteSize::b(metadata.len()).to_string_as(false)
-                        );
-                        output_and_data_stack_for_html(
-                            &output_saved_str,
-                            "General Overview {#general_overview}",
-                            stored_static.html_report_flag,
-                        );
+                    for suffix in &["-successful.csv", "-failed.csv"] {
+                        let output_file = format!("{}{suffix}", path.to_str().unwrap());
+                        if !(stored_static.output_option.as_ref().unwrap().clobber)
+                            && utils::check_file_expect_not_exist(
+                                Path::new(output_file.as_str()),
+                                format!(
+                                " The files with a base name of {} already exist. Please specify a different base filename or add the -C, --clobber option to overwrite.\n",
+                                path.as_os_str().to_str().unwrap()
+                            ),
+                            )
+                        {
+                            return;
+                        }
+                        target_output_path.push(output_file);
                     }
                 }
+                self.analysis_start(&target_extensions, &time_filter, stored_static);
+                for target_path in target_output_path.iter() {
+                    let mut msg = "";
+                    if target_path.ends_with("-successful.csv") {
+                        msg = "Successful logon results"
+                    }
+                    if target_path.ends_with("-failed.csv") {
+                        msg = "Failed logon results"
+                    }
+                    output_saved_file(&Some(Path::new(target_path).to_path_buf()), msg);
+                }
+                println!();
             }
-            Action::PivotKeywordsList(_) => {
-                // pivot 機能でファイルを出力する際に同名ファイルが既に存在していた場合はエラー文を出して終了する。
-                if let Some(csv_path) = &stored_static.output_path {
-                    let mut error_flag = false;
-                    let pivot_key_unions = PIVOT_KEYWORD.read().unwrap();
-                    pivot_key_unions.iter().for_each(|(key, _)| {
-                        let keywords_file_name =
-                            csv_path.as_path().display().to_string() + "-" + key + ".txt";
-                        if utils::check_file_expect_not_exist(
-                            Path::new(&keywords_file_name),
+            Action::EidMetrics(_) | Action::Search(_) => {
+                if let Some(path) = &stored_static.output_path {
+                    if !(stored_static.output_option.as_ref().unwrap().clobber)
+                        && utils::check_file_expect_not_exist(
+                            path.as_path(),
                             format!(
-                                " The file {} already exists. Please specify a different filename.",
-                                &keywords_file_name
+                                " The file {} already exists. Please specify a different filename or add the -C, --clobber option to overwrite.\n",
+                                path.as_os_str().to_str().unwrap()
                             ),
-                        ) {
-                            error_flag = true
-                        };
-                    });
-                    if error_flag {
+                        )
+                    {
                         return;
                     }
                 }
+                self.analysis_start(&target_extensions, &time_filter, stored_static);
+                output_saved_file(&stored_static.output_path, "Saved results");
+                println!();
+            }
+            Action::ComputerMetrics(_) => {
+                if let Some(path) = &stored_static.output_path {
+                    if !(stored_static.output_option.as_ref().unwrap().clobber)
+                        && utils::check_file_expect_not_exist(
+                            path.as_path(),
+                            format!(
+                                " The file {} already exists. Please specify a different filename or add the -C, --clobber option to overwrite.\n",
+                                path.as_os_str().to_str().unwrap()
+                            ),
+                        )
+                    {
+                        return;
+                    }
+                }
+                self.analysis_start(&target_extensions, &time_filter, stored_static);
+                output_saved_file(&stored_static.output_path, "Saved results");
+                println!();
+            }
+            Action::PivotKeywordsList(_) => {
                 load_pivot_keywords(
                     utils::check_setting_path(
                         &CURRENT_EXE_PATH.to_path_buf(),
-                        "config/pivot_keywords.txt",
+                        "rules/config/pivot_keywords.txt",
                         true,
                     )
                     .unwrap()
@@ -357,26 +402,34 @@ impl App {
                     .unwrap(),
                 );
 
+                // pivot 機能でファイルを出力する際に同名ファイルが既に存在していた場合はエラー文を出して終了する。
+                let mut error_flag = false;
+                if let Some(csv_path) = &stored_static.output_path {
+                    let pivot_key_unions = PIVOT_KEYWORD.read().unwrap();
+                    pivot_key_unions.iter().for_each(|(key, _)| {
+                        let keywords_file_name =
+                            csv_path.as_path().display().to_string() + "-" + key + ".txt";
+                        if !(stored_static.output_option.as_ref().unwrap().clobber) && utils::check_file_expect_not_exist(
+                            Path::new(&keywords_file_name),
+                            format!(
+                                " The file {} already exists. Please specify a different filename or add the -C, --clobber option to overwrite.",
+                                &keywords_file_name
+                            ),
+                        ) {
+                            error_flag = true
+                        };
+                    });
+                }
+                if error_flag {
+                    println!();
+                    return;
+                }
+
                 self.analysis_start(&target_extensions, &time_filter, stored_static);
 
-                // pivotのファイルの作成。pivot.rsに投げたい
                 let pivot_key_unions = PIVOT_KEYWORD.read().unwrap();
-                let create_output =
-                    |mut output: String, key: &String, pivot_keyword: &PivotKeyword| {
-                        write!(output, "{key}: ( ").ok();
-                        for i in pivot_keyword.fields.iter() {
-                            write!(output, "%{i}% ").ok();
-                        }
-                        writeln!(output, "):").ok();
-
-                        for i in pivot_keyword.keywords.iter() {
-                            writeln!(output, "{i}").ok();
-                        }
-                        writeln!(output).ok();
-
-                        output
-                    };
                 if let Some(pivot_file) = &stored_static.output_path {
+                    //ファイル出力の場合
                     pivot_key_unions.iter().for_each(|(key, pivot_keyword)| {
                         let mut f = BufWriter::new(
                             fs::File::create(
@@ -385,13 +438,19 @@ impl App {
                             .unwrap(),
                         );
                         f.write_all(
-                            create_output(String::default(), key, pivot_keyword).as_bytes(),
+                            create_output(
+                                String::default(),
+                                key,
+                                pivot_keyword,
+                                "file",
+                                stored_static,
+                            )
+                            .as_bytes(),
                         )
                         .unwrap();
                     });
-                    //output to stdout
                     let mut output =
-                        "Pivot keyword results saved to the following files:\n".to_string();
+                        "Pivot keyword results were saved to the following files:\n".to_string();
 
                     pivot_key_unions.iter().for_each(|(key, _)| {
                         writeln!(
@@ -410,7 +469,7 @@ impl App {
                     .ok();
                 } else {
                     //標準出力の場合
-                    let output = "The following pivot keywords were found:";
+                    let output = "\nThe following pivot keywords were found:\n";
                     write_color_buffer(
                         &BufferWriter::stdout(ColorChoice::Always),
                         None,
@@ -420,13 +479,26 @@ impl App {
                     .ok();
 
                     pivot_key_unions.iter().for_each(|(key, pivot_keyword)| {
-                        write_color_buffer(
-                            &BufferWriter::stdout(ColorChoice::Always),
-                            None,
-                            &create_output(String::default(), key, pivot_keyword),
-                            true,
-                        )
-                        .ok();
+                        create_output(
+                            String::default(),
+                            key,
+                            pivot_keyword,
+                            "standard",
+                            stored_static,
+                        );
+
+                        if pivot_keyword.keywords.is_empty() {
+                            write_color_buffer(
+                                &BufferWriter::stdout(ColorChoice::Always),
+                                get_writable_color(
+                                    Some(Color::Red),
+                                    stored_static.common_options.no_color,
+                                ),
+                                "No keywords found\n",
+                                true,
+                            )
+                            .ok();
+                        }
                     });
                 }
             }
@@ -465,13 +537,19 @@ impl App {
                     }
                 }
                 println!();
-                if latest_version_data.is_some()
-                    && now_version
-                        != &latest_version_data
-                            .as_ref()
-                            .unwrap_or(now_version)
-                            .replace('\"', "")
-                {
+                let split_now_version = &now_version
+                    .replace("-dev", "")
+                    .split('.')
+                    .filter_map(|x| x.parse().ok())
+                    .collect::<Vec<i8>>();
+                let split_latest_version = &latest_version_data
+                    .as_ref()
+                    .unwrap_or(now_version)
+                    .replace('"', "")
+                    .split('.')
+                    .filter_map(|x| x.parse().ok())
+                    .collect::<Vec<i8>>();
+                if split_latest_version > split_now_version {
                     write_color_buffer(
                         &BufferWriter::stdout(ColorChoice::Always),
                         None,
@@ -491,7 +569,6 @@ impl App {
                     .ok();
                     println!();
                 }
-
                 return;
             }
             Action::LevelTuning(option) => {
@@ -758,7 +835,7 @@ impl App {
         _target_extensions: &HashSet<String>,
         _stored_static: &StoredStatic,
     ) -> Option<Vec<PathBuf>> {
-        AlertMessage::alert("-l / --liveanalysis needs to be run as Administrator on Windows.")
+        AlertMessage::alert("-l, --live-analysis needs to be run as Administrator on Windows.")
             .ok();
         println!();
         None
@@ -783,7 +860,7 @@ impl App {
             }
             Some(evtx_files)
         } else {
-            AlertMessage::alert("-l / --liveanalysis needs to be run as Administrator on Windows.")
+            AlertMessage::alert("-l, --live-analysis needs to be run as Administrator on Windows.")
                 .ok();
             println!();
             None
@@ -875,7 +952,7 @@ impl App {
         evtx_files: Vec<PathBuf>,
         time_filter: &TargetEventTime,
         event_timeline_config: &EventInfoConfig,
-        target_event_ids: &TargetEventIds,
+        target_event_ids: &TargetIds,
         stored_static: &StoredStatic,
     ) {
         let level = stored_static
@@ -924,7 +1001,8 @@ impl App {
         println!();
         if !(stored_static.metrics_flag
             || stored_static.logon_summary_flag
-            || stored_static.search_flag)
+            || stored_static.search_flag
+            || stored_static.computer_metrics_flag)
         {
             println!("Loading detections rules. Please wait.");
             println!();
@@ -960,21 +1038,34 @@ impl App {
             return;
         }
 
-        let mut pb = ProgressBar::new(evtx_files.len() as u64);
-        pb.show_speed = false;
+        let template =
+            "[{elapsed_precise}] {human_pos} / {human_len} {spinner:.green} [{bar:40.green}] {percent}%\r\n\r\n{msg}";
+        let progress_style = ProgressStyle::with_template(template)
+            .unwrap()
+            .progress_chars("=> ");
+        let pb = ProgressBar::with_draw_target(
+            Some(evtx_files.len() as u64),
+            ProgressDrawTarget::stdout_with_hz(10),
+        )
+        .with_tab_width(55);
+        pb.set_style(progress_style);
+        pb.enable_steady_tick(Duration::from_millis(300));
         self.rule_keys = self.get_all_keys(&rule_files);
         let mut detection = detection::Detection::new(rule_files);
         let mut total_records: usize = 0;
+        let mut recover_records: usize = 0;
         let mut tl = Timeline::new();
 
         *STORED_EKEY_ALIAS.write().unwrap() = Some(stored_static.eventkey_alias.clone());
         *STORED_STATIC.write().unwrap() = Some(stored_static.clone());
         for evtx_file in evtx_files {
-            if stored_static.verbose_flag {
-                println!("Checking target evtx FilePath: {:?}", &evtx_file);
-            }
+            let pb_msg = format!("{:?}", &evtx_file);
+            pb.set_message(pb_msg);
+
             let cnt_tmp: usize;
-            (detection, cnt_tmp, tl) = if evtx_file.extension().unwrap() == "json" {
+            let recover_cnt_tmp: usize;
+            (detection, cnt_tmp, tl, recover_cnt_tmp) = if evtx_file.extension().unwrap() == "json"
+            {
                 self.analysis_json_file(
                     evtx_file,
                     detection,
@@ -994,8 +1085,12 @@ impl App {
                 )
             };
             total_records += cnt_tmp;
-            pb.inc();
+            recover_records += recover_cnt_tmp;
+            pb.inc(1);
         }
+        pb.finish_with_message(
+            "Scanning finished. Please wait while the results are being saved.\r\n",
+        );
         CHECKPOINT
             .lock()
             .as_mut()
@@ -1007,25 +1102,24 @@ impl App {
             tl.tm_logon_stats_dsp_msg(stored_static);
         } else if stored_static.search_flag {
             tl.search_dsp_msg(event_timeline_config, stored_static);
+        } else if stored_static.computer_metrics_flag {
+            tl.computer_metrics_dsp_msg(stored_static)
         }
-        if stored_static.output_path.is_some() {
-            println!();
-            println!();
-            println!("Scanning finished. Please wait while the results are being saved.");
-        }
-        println!();
-        detection.add_aggcondition_msges(&self.rt, stored_static);
         if !(stored_static.metrics_flag
             || stored_static.logon_summary_flag
             || stored_static.search_flag
-            || stored_static.pivot_keyword_list_flag)
+            || stored_static.pivot_keyword_list_flag
+            || stored_static.computer_metrics_flag)
         {
+            println!();
+            detection.add_aggcondition_msges(&self.rt, stored_static);
             after_fact(
                 total_records,
                 &stored_static.output_path,
                 stored_static.common_options.no_color,
                 stored_static,
                 tl,
+                recover_records,
             );
         }
         CHECKPOINT
@@ -1042,14 +1136,15 @@ impl App {
         mut detection: detection::Detection,
         time_filter: &TargetEventTime,
         mut tl: Timeline,
-        target_event_ids: &TargetEventIds,
+        target_event_ids: &TargetIds,
         stored_static: &StoredStatic,
-    ) -> (detection::Detection, usize, Timeline) {
+    ) -> (detection::Detection, usize, Timeline, usize) {
         let path = evtx_filepath.display();
-        let parser = self.evtx_to_jsons(&evtx_filepath);
+        let parser = self.evtx_to_jsons(&evtx_filepath, stored_static.enable_recover_records);
         let mut record_cnt = 0;
+        let mut recover_records_cnt = 0;
         if parser.is_none() {
-            return (detection, record_cnt, tl);
+            return (detection, record_cnt, tl, 0);
         }
 
         let mut parser = parser.unwrap();
@@ -1066,12 +1161,18 @@ impl App {
                     break;
                 }
                 record_cnt += 1;
-
                 let record_result = next_rec.unwrap();
+
+                if record_result.is_ok()
+                    && record_result.as_ref().unwrap().allocation == RecordAllocation::EmptyPage
+                {
+                    recover_records_cnt += 1;
+                }
+
                 if record_result.is_err() {
                     let evtx_filepath = &path;
                     let errmsg = format!(
-                        "Failed to parse event file. EventFile:{} Error:{}",
+                        "Failed to parse event file.\nEventFile: {}\nError: {}\n",
                         evtx_filepath,
                         record_result.unwrap_err()
                     );
@@ -1087,21 +1188,47 @@ impl App {
                     continue;
                 }
 
-                let data = record_result.as_ref().unwrap().data.borrow();
+                let data = &record_result.as_ref().unwrap().data;
+                if stored_static.computer_metrics_flag {
+                    countup_event_by_computer(data, &stored_static.eventkey_alias, &mut tl);
+                    // computer-metricsコマンドでは検知は行わないためカウントのみ行い次のレコードを確認する
+                    continue;
+                }
+
                 // Searchならすべてのフィルタを無視
                 if !stored_static.search_flag {
-                    // channelがnullである場合とEventID Filter optionが指定されていない場合は、target_eventids.txtでイベントIDベースでフィルタする。
+                    // Computer名がinclude_computerで指定されたものに合致しないまたはexclude_computerで指定されたものに合致した場合はフィルタリングする。
+                    if utils::is_filtered_by_computer_name(
+                        utils::get_event_value(
+                            "Event.System.Computer",
+                            data,
+                            &stored_static.eventkey_alias,
+                        ),
+                        (
+                            &stored_static.include_computer,
+                            &stored_static.exclude_computer,
+                        ),
+                    ) {
+                        continue;
+                    }
+
+                    // EventIDがinclude_eidで指定されたものに合致しないまたはexclude_eidで指定されたものに合致した場合、target_eventids.txtで指定されたEventIDではない場合はフィルタリングする。
+                    if self.is_filtered_by_eid(
+                        data,
+                        &stored_static.eventkey_alias,
+                        (&stored_static.include_eid, &stored_static.exclude_eid),
+                        stored_static.output_option.as_ref().unwrap().eid_filter,
+                        target_event_ids,
+                    ) {
+                        continue;
+                    }
+
+                    // channelがnullである場合はフィルタリングする。
                     if !self._is_valid_channel(
                         data,
                         &stored_static.eventkey_alias,
                         "Event.System.Channel",
-                    ) || (stored_static.output_option.as_ref().unwrap().eid_filter
-                        && !self._is_target_event_id(
-                            data,
-                            target_event_ids,
-                            &stored_static.eventkey_alias,
-                        ))
-                    {
+                    ) {
                         continue;
                     }
 
@@ -1112,7 +1239,9 @@ impl App {
                     }
                 }
 
-                records_per_detect.push(data.to_owned());
+                let recover_record_flag = record_result.is_ok()
+                    && record_result.as_ref().unwrap().allocation == RecordAllocation::EmptyPage;
+                records_per_detect.push((data.to_owned(), recover_record_flag));
             }
             if records_per_detect.is_empty() {
                 break;
@@ -1126,7 +1255,6 @@ impl App {
 
             // timeline機能の実行
             tl.start(&records_per_detect, stored_static);
-
             if !(stored_static.metrics_flag
                 || stored_static.logon_summary_flag
                 || stored_static.search_flag)
@@ -1135,8 +1263,8 @@ impl App {
                 detection = detection.start(&self.rt, records_per_detect);
             }
         }
-
-        (detection, record_cnt, tl)
+        tl.total_record_cnt += record_cnt;
+        (detection, record_cnt, tl, recover_records_cnt)
     }
 
     // JSON形式のイベントログファイルを1ファイル分解析する。
@@ -1146,11 +1274,12 @@ impl App {
         mut detection: detection::Detection,
         time_filter: &TargetEventTime,
         mut tl: Timeline,
-        target_event_ids: &TargetEventIds,
+        target_event_ids: &TargetIds,
         stored_static: &StoredStatic,
-    ) -> (detection::Detection, usize, Timeline) {
+    ) -> (detection::Detection, usize, Timeline, usize) {
         let path = filepath.display();
         let mut record_cnt = 0;
+        let recover_records_cnt = 0;
         let filename = filepath.to_str().unwrap_or_default();
         let filepath = if filename.starts_with("./") {
             check_setting_path(&CURRENT_EXE_PATH.to_path_buf(), filename, true)
@@ -1172,7 +1301,7 @@ impl App {
                     Ok(values) => values,
                     Err(e) => {
                         AlertMessage::alert(&e).ok();
-                        return (detection, record_cnt, tl);
+                        return (detection, record_cnt, tl, recover_records_cnt);
                     }
                 }
             }
@@ -1208,18 +1337,45 @@ impl App {
                 // Computer名に対応する内容はHostnameであることがわかったためデータをクローンして投入
                 data["Event"]["System"]["Computer"] =
                     data["Event"]["EventData"]["Hostname"].clone();
-                // channelがnullである場合とEventID Filter optionが指定されていない場合は、target_eventids.txtでイベントIDベースでフィルタする。
+
+                if stored_static.computer_metrics_flag {
+                    countup_event_by_computer(&data, &stored_static.eventkey_alias, &mut tl);
+                    // computer-metricsコマンドでは検知は行わないためカウントのみ行い次のレコードを確認する
+                    continue;
+                }
+
+                // Computer名がinclude_computerで指定されたものに合致しないまたはexclude_computerで指定されたものに合致した場合はフィルタリングする。
+                if utils::is_filtered_by_computer_name(
+                    utils::get_event_value(
+                        "Event.System.Computer",
+                        &data,
+                        &stored_static.eventkey_alias,
+                    ),
+                    (
+                        &stored_static.include_computer,
+                        &stored_static.exclude_computer,
+                    ),
+                ) {
+                    continue;
+                }
+
+                // EventIDがinclude_eidで指定されたものに合致しないまたはexclude_eidで指定されたものに合致した場合、EventID Filter optionが指定されていないかつtarget_eventids.txtで指定されたEventIDではない場合はフィルタリングする。
+                if self.is_filtered_by_eid(
+                    &data,
+                    &stored_static.eventkey_alias,
+                    (&stored_static.include_eid, &stored_static.exclude_eid),
+                    stored_static.output_option.as_ref().unwrap().eid_filter,
+                    target_event_ids,
+                ) {
+                    continue;
+                }
+
+                // channelがnullである場合はフィルタリングする。
                 if !self._is_valid_channel(
                     &data,
                     &stored_static.eventkey_alias,
                     "Event.EventData.Channel",
-                ) || (stored_static.output_option.as_ref().unwrap().eid_filter
-                    && !self._is_target_event_id(
-                        &data,
-                        target_event_ids,
-                        &stored_static.eventkey_alias,
-                    ))
-                {
+                ) {
                     continue;
                 }
                 let target_timestamp = if data["Event"]["EventData"]["@timestamp"].is_null() {
@@ -1256,7 +1412,7 @@ impl App {
                     continue;
                 }
 
-                records_per_detect.push(data.to_owned());
+                records_per_detect.push((data.to_owned(), false));
             }
             if records_per_detect.is_empty() {
                 break;
@@ -1280,27 +1436,32 @@ impl App {
                 detection = detection.start(&self.rt, records_per_detect);
             }
         }
-
-        (detection, record_cnt, tl)
+        tl.total_record_cnt += record_cnt;
+        (detection, record_cnt, tl, recover_records_cnt)
     }
 
     async fn create_rec_infos(
-        records_per_detect: Vec<Value>,
+        records_per_detect: Vec<(Value, bool)>,
         path: &dyn Display,
         rule_keys: Nested<String>,
     ) -> Vec<EvtxRecordInfo> {
         let path = Arc::new(path.to_string());
         let rule_keys = Arc::new(rule_keys);
         let threads: Vec<JoinHandle<EvtxRecordInfo>> = {
-            let this = records_per_detect
-                .into_iter()
-                .map(|rec| -> JoinHandle<EvtxRecordInfo> {
+            let this = records_per_detect.into_iter().map(
+                |(rec, recovered_record_flag)| -> JoinHandle<EvtxRecordInfo> {
                     let arc_rule_keys = Arc::clone(&rule_keys);
                     let arc_path = Arc::clone(&path);
                     spawn(async move {
-                        utils::create_rec_info(rec, arc_path.to_string(), &arc_rule_keys)
+                        utils::create_rec_info(
+                            rec,
+                            arc_path.to_string(),
+                            &arc_rule_keys,
+                            &recovered_record_flag,
+                        )
                     })
-                });
+                },
+            );
             FromIterator::from_iter(this)
         };
 
@@ -1326,7 +1487,7 @@ impl App {
     fn _is_target_event_id(
         &self,
         data: &Value,
-        target_event_ids: &TargetEventIds,
+        target_event_ids: &TargetIds,
         eventkey_alias: &EventKeyAliasConfig,
     ) -> bool {
         let eventid = utils::get_event_value(&utils::get_event_id_key(), data, eventkey_alias);
@@ -1335,8 +1496,8 @@ impl App {
         }
 
         match eventid.unwrap() {
-            Value::String(s) => target_event_ids.is_target(&s.replace('\"', "")),
-            Value::Number(n) => target_event_ids.is_target(&n.to_string().replace('\"', "")),
+            Value::String(s) => target_event_ids.is_target(&s.replace('\"', ""), true),
+            Value::Number(n) => target_event_ids.is_target(&n.to_string().replace('\"', ""), true),
             _ => true, // レコードからEventIdが取得できない場合は、特にフィルタしない
         }
     }
@@ -1358,11 +1519,44 @@ impl App {
         }
     }
 
-    fn evtx_to_jsons(&self, evtx_filepath: &PathBuf) -> Option<EvtxParser<File>> {
+    fn is_filtered_by_eid(
+        &self,
+        data: &Value,
+        eventkey_alias: &EventKeyAliasConfig,
+        (include_eid, exclude_eid): (&HashSet<CompactString>, &HashSet<CompactString>),
+        eid_filter: bool,
+        target_event_ids: &TargetIds,
+    ) -> bool {
+        let target_eid = if !include_eid.is_empty() || !exclude_eid.is_empty() {
+            if let Some(eid_record) =
+                utils::get_event_value(&utils::get_event_id_key(), data, eventkey_alias)
+            {
+                utils::get_serde_number_to_string(eid_record, false).unwrap_or_default()
+            } else {
+                CompactString::default()
+            }
+        } else {
+            CompactString::default()
+        };
+        // 以下の場合はフィルタリングする。
+        // 1. include_eidが指定されているが、include_eidに含まれていない場合
+        // 2. exclude_eidが指定されていて、exclude_eidに含まれている場合
+        // 3. eid_filterが指定されていて、target_eventids.txtで指定されたEventIDでない場合
+        (!include_eid.is_empty() && !include_eid.contains(&target_eid))
+            || (!exclude_eid.is_empty() && exclude_eid.contains(&target_eid))
+            || (eid_filter && !self._is_target_event_id(data, target_event_ids, eventkey_alias))
+    }
+
+    fn evtx_to_jsons(
+        &self,
+        evtx_filepath: &PathBuf,
+        enable_recover_records: bool,
+    ) -> Option<EvtxParser<File>> {
         match EvtxParser::from_path(evtx_filepath) {
             Ok(evtx_parser) => {
                 // parserのデフォルト設定を変更
-                let mut parse_config = ParserSettings::default();
+                let mut parse_config =
+                    ParserSettings::default().parse_empty_chunks(enable_recover_records);
                 parse_config = parse_config.separate_json_attributes(true); // XMLのattributeをJSONに変換する時のルールを設定
                 parse_config = parse_config.num_threads(0); // 設定しないと遅かったので、設定しておく。
 
@@ -1442,13 +1636,11 @@ impl App {
             Action::CsvTimeline(_)
             | Action::JsonTimeline(_)
             | Action::LogonSummary(_)
-            | Action::Metrics(_)
+            | Action::EidMetrics(_)
             | Action::PivotKeywordsList(_)
-            | Action::SetDefaultProfile(_) => std::env::args().len() != 2,
-            Action::Search(opt) => {
-                std::env::args().len() != 2 && (opt.keywords.is_some() ^ opt.regex.is_some())
-                // key word and regex are conflict
-            }
+            | Action::SetDefaultProfile(_)
+            | Action::Search(_)
+            | Action::ComputerMetrics(_) => std::env::args().len() != 2,
             _ => true,
         }
     }
@@ -1456,7 +1648,10 @@ impl App {
 
 #[cfg(test)]
 mod tests {
-    use std::path::Path;
+    use std::{
+        fs::{self, remove_file, File},
+        path::Path,
+    };
 
     use crate::App;
     use chrono::Local;
@@ -1464,12 +1659,13 @@ mod tests {
     use hayabusa::{
         detections::{
             configs::{
-                Action, CommonOptions, Config, ConfigReader, CsvOutputOption, DetectCommonOption,
-                InputOption, OutputOption, StoredStatic, TargetEventIds, TargetEventTime,
-                STORED_EKEY_ALIAS, STORED_STATIC,
+                Action, CommonOptions, ComputerMetricsOption, Config, ConfigReader,
+                CsvOutputOption, DetectCommonOption, EidMetricsOption, InputOption,
+                JSONOutputOption, LogonSummaryOption, OutputOption, StoredStatic, TargetEventTime,
+                TargetIds, STORED_EKEY_ALIAS, STORED_STATIC,
             },
             detection,
-            message::MESSAGES,
+            message::{MESSAGEKEYS, MESSAGES},
             rule::create_rule,
         },
         options::htmlreport::HTML_REPORTER,
@@ -1486,6 +1682,7 @@ mod tests {
                         directory: None,
                         filepath: None,
                         live_analysis: false,
+                        recover_records: false,
                     },
                     profile: None,
                     enable_deprecated_rules: false,
@@ -1518,8 +1715,21 @@ mod tests {
                         config: Path::new("./rules/config").to_path_buf(),
                         verbose: false,
                         json_input: true,
+                        include_computer: None,
+                        exclude_computer: None,
                     },
                     enable_unsupported_rules: false,
+                    clobber: false,
+                    proven_rules: false,
+                    include_tag: None,
+                    exclude_tag: None,
+                    include_category: None,
+                    exclude_category: None,
+                    include_eid: None,
+                    exclude_eid: None,
+                    no_field: false,
+                    remove_duplicate_data: false,
+                    remove_duplicate_detections: false,
                 },
                 geo_ip: None,
                 output: None,
@@ -1606,7 +1816,7 @@ mod tests {
         let detection = detection::Detection::new(rule_files);
         let target_time_filter = TargetEventTime::new(&stored_static);
         let tl = Timeline::default();
-        let target_event_ids = TargetEventIds::default();
+        let target_event_ids = TargetIds::default();
 
         let actual = app.analysis_json_file(
             Path::new("test_files/evtx/test.jsonl").to_path_buf(),
@@ -1618,5 +1828,707 @@ mod tests {
         );
         assert_eq!(actual.1, 2);
         assert_eq!(MESSAGES.len(), 2);
+    }
+
+    #[test]
+    fn test_same_file_output_csv_exit() {
+        MESSAGES.clear();
+        // 先に空ファイルを作成する
+        let mut app = App::new(None);
+        File::create("overwrite.csv").ok();
+        let action = Action::CsvTimeline(CsvOutputOption {
+            output_options: OutputOption {
+                input_args: InputOption {
+                    directory: None,
+                    filepath: Some(Path::new("test_files/evtx/test.json").to_path_buf()),
+                    live_analysis: false,
+                    recover_records: false,
+                },
+                profile: None,
+                enable_deprecated_rules: false,
+                exclude_status: None,
+                min_level: "informational".to_string(),
+                exact_level: None,
+                enable_noisy_rules: false,
+                end_timeline: None,
+                start_timeline: None,
+                eid_filter: false,
+                european_time: false,
+                iso_8601: false,
+                rfc_2822: false,
+                rfc_3339: false,
+                us_military_time: false,
+                us_time: false,
+                utc: false,
+                visualize_timeline: false,
+                rules: Path::new("./test_files/rules/yaml/test_json_detect.yml").to_path_buf(),
+                html_report: None,
+                no_summary: true,
+                common_options: CommonOptions {
+                    no_color: false,
+                    quiet: false,
+                },
+                detect_common_options: DetectCommonOption {
+                    evtx_file_ext: None,
+                    thread_number: None,
+                    quiet_errors: false,
+                    config: Path::new("./rules/config").to_path_buf(),
+                    verbose: false,
+                    json_input: true,
+                    include_computer: None,
+                    exclude_computer: None,
+                },
+                enable_unsupported_rules: false,
+                clobber: false,
+                proven_rules: false,
+                include_tag: None,
+                exclude_tag: None,
+                include_category: None,
+                exclude_category: None,
+                include_eid: None,
+                exclude_eid: None,
+                no_field: false,
+                remove_duplicate_data: false,
+                remove_duplicate_detections: false,
+            },
+            geo_ip: None,
+            output: Some(Path::new("overwrite.csv").to_path_buf()),
+            multiline: false,
+        });
+        let config = Some(Config {
+            action: Some(action),
+            debug: false,
+        });
+        let mut stored_static = StoredStatic::create_static_data(config);
+        *STORED_EKEY_ALIAS.write().unwrap() = Some(stored_static.eventkey_alias.clone());
+        *STORED_STATIC.write().unwrap() = Some(stored_static.clone());
+        let mut config_reader = ConfigReader::new();
+        app.exec(&mut config_reader.app, &mut stored_static);
+        assert_eq!(MESSAGES.len(), 0);
+
+        // テストファイルの作成
+        remove_file("overwrite.csv").ok();
+    }
+
+    #[test]
+    fn test_overwrite_csv() {
+        MESSAGES.clear();
+        MESSAGEKEYS.lock().unwrap().clear();
+        // 先に空ファイルを作成する
+        let mut app = App::new(None);
+        File::create("overwrite.csv").ok();
+        let action = Action::CsvTimeline(CsvOutputOption {
+            output_options: OutputOption {
+                input_args: InputOption {
+                    directory: None,
+                    filepath: Some(Path::new("test_files/evtx/test.json").to_path_buf()),
+                    live_analysis: false,
+                    recover_records: false,
+                },
+                profile: None,
+                enable_deprecated_rules: false,
+                exclude_status: None,
+                min_level: "informational".to_string(),
+                exact_level: None,
+                enable_noisy_rules: false,
+                end_timeline: None,
+                start_timeline: None,
+                eid_filter: false,
+                european_time: false,
+                iso_8601: false,
+                rfc_2822: false,
+                rfc_3339: false,
+                us_military_time: false,
+                us_time: false,
+                utc: false,
+                visualize_timeline: false,
+                rules: Path::new("test_files/rules/yaml/test_json_detect.yml").to_path_buf(),
+                html_report: None,
+                no_summary: true,
+                common_options: CommonOptions {
+                    no_color: false,
+                    quiet: false,
+                },
+                detect_common_options: DetectCommonOption {
+                    evtx_file_ext: None,
+                    thread_number: None,
+                    quiet_errors: false,
+                    config: Path::new("./rules/config").to_path_buf(),
+                    verbose: false,
+                    json_input: true,
+                    include_computer: None,
+                    exclude_computer: None,
+                },
+                enable_unsupported_rules: false,
+                clobber: true,
+                proven_rules: false,
+                include_tag: None,
+                exclude_tag: None,
+                include_category: None,
+                exclude_category: None,
+                include_eid: None,
+                exclude_eid: None,
+                no_field: false,
+                remove_duplicate_data: false,
+                remove_duplicate_detections: false,
+            },
+            geo_ip: None,
+            output: Some(Path::new("overwrite.csv").to_path_buf()),
+            multiline: false,
+        });
+        let config = Some(Config {
+            action: Some(action),
+            debug: false,
+        });
+        let mut stored_static = StoredStatic::create_static_data(config);
+        *STORED_EKEY_ALIAS.write().unwrap() = Some(stored_static.eventkey_alias.clone());
+        *STORED_STATIC.write().unwrap() = Some(stored_static.clone());
+        let mut config_reader = ConfigReader::new();
+        app.exec(&mut config_reader.app, &mut stored_static);
+        assert_ne!(MESSAGES.len(), 0);
+        // テストファイルの作成
+        remove_file("overwrite.csv").ok();
+    }
+
+    #[test]
+    fn test_same_file_output_json_exit() {
+        MESSAGES.clear();
+        // 先に空ファイルを作成する
+        let mut app = App::new(None);
+        File::create("overwrite.json").ok();
+        let action = Action::JsonTimeline(JSONOutputOption {
+            output_options: OutputOption {
+                input_args: InputOption {
+                    directory: None,
+                    filepath: Some(Path::new("test_files/evtx/test.json").to_path_buf()),
+                    live_analysis: false,
+                    recover_records: false,
+                },
+                profile: None,
+                enable_deprecated_rules: false,
+                exclude_status: None,
+                min_level: "informational".to_string(),
+                exact_level: None,
+                enable_noisy_rules: false,
+                end_timeline: None,
+                start_timeline: None,
+                eid_filter: false,
+                european_time: false,
+                iso_8601: false,
+                rfc_2822: false,
+                rfc_3339: false,
+                us_military_time: false,
+                us_time: false,
+                utc: false,
+                visualize_timeline: false,
+                rules: Path::new("./test_files/rules/yaml/test_json_detect.yml").to_path_buf(),
+                html_report: None,
+                no_summary: true,
+                common_options: CommonOptions {
+                    no_color: false,
+                    quiet: false,
+                },
+                detect_common_options: DetectCommonOption {
+                    evtx_file_ext: None,
+                    thread_number: None,
+                    quiet_errors: false,
+                    config: Path::new("./rules/config").to_path_buf(),
+                    verbose: false,
+                    json_input: true,
+                    include_computer: None,
+                    exclude_computer: None,
+                },
+                enable_unsupported_rules: false,
+                clobber: false,
+                proven_rules: false,
+                include_tag: None,
+                exclude_tag: None,
+                include_category: None,
+                exclude_category: None,
+                include_eid: None,
+                exclude_eid: None,
+                no_field: false,
+                remove_duplicate_data: false,
+                remove_duplicate_detections: false,
+            },
+            geo_ip: None,
+            output: Some(Path::new("overwrite.json").to_path_buf()),
+            jsonl_timeline: false,
+        });
+        let config = Some(Config {
+            action: Some(action),
+            debug: false,
+        });
+        let mut stored_static = StoredStatic::create_static_data(config);
+        *STORED_EKEY_ALIAS.write().unwrap() = Some(stored_static.eventkey_alias.clone());
+        *STORED_STATIC.write().unwrap() = Some(stored_static.clone());
+        let mut config_reader = ConfigReader::new();
+        app.exec(&mut config_reader.app, &mut stored_static);
+        assert_eq!(MESSAGES.len(), 0);
+
+        // テストファイルの作成
+        remove_file("overwrite.json").ok();
+    }
+
+    #[test]
+    fn test_overwrite_json() {
+        MESSAGES.clear();
+        MESSAGEKEYS.lock().unwrap().clear();
+        // 先に空ファイルを作成する
+        let mut app = App::new(None);
+        File::create("overwrite.csv").ok();
+        let action = Action::JsonTimeline(JSONOutputOption {
+            output_options: OutputOption {
+                input_args: InputOption {
+                    directory: None,
+                    filepath: Some(Path::new("test_files/evtx/test.json").to_path_buf()),
+                    live_analysis: false,
+                    recover_records: false,
+                },
+                profile: None,
+                enable_deprecated_rules: false,
+                exclude_status: None,
+                min_level: "informational".to_string(),
+                exact_level: None,
+                enable_noisy_rules: false,
+                end_timeline: None,
+                start_timeline: None,
+                eid_filter: false,
+                european_time: false,
+                iso_8601: false,
+                rfc_2822: false,
+                rfc_3339: false,
+                us_military_time: false,
+                us_time: false,
+                utc: false,
+                visualize_timeline: false,
+                rules: Path::new("test_files/rules/yaml/test_json_detect.yml").to_path_buf(),
+                html_report: None,
+                no_summary: true,
+                common_options: CommonOptions {
+                    no_color: false,
+                    quiet: false,
+                },
+                detect_common_options: DetectCommonOption {
+                    evtx_file_ext: None,
+                    thread_number: None,
+                    quiet_errors: false,
+                    config: Path::new("./rules/config").to_path_buf(),
+                    verbose: false,
+                    json_input: true,
+                    include_computer: None,
+                    exclude_computer: None,
+                },
+                enable_unsupported_rules: false,
+                clobber: true,
+                proven_rules: false,
+                include_tag: None,
+                exclude_tag: None,
+                include_category: None,
+                exclude_category: None,
+                include_eid: None,
+                exclude_eid: None,
+                no_field: false,
+                remove_duplicate_data: false,
+                remove_duplicate_detections: false,
+            },
+            geo_ip: None,
+            output: Some(Path::new("overwrite.json").to_path_buf()),
+            jsonl_timeline: false,
+        });
+        let config = Some(Config {
+            action: Some(action),
+            debug: false,
+        });
+        let mut stored_static = StoredStatic::create_static_data(config);
+        *STORED_EKEY_ALIAS.write().unwrap() = Some(stored_static.eventkey_alias.clone());
+        *STORED_STATIC.write().unwrap() = Some(stored_static.clone());
+        let mut config_reader = ConfigReader::new();
+        app.exec(&mut config_reader.app, &mut stored_static);
+        assert_ne!(MESSAGES.len(), 0);
+        // テストファイルの削除
+        remove_file("overwrite.json").ok();
+    }
+
+    #[test]
+    fn test_same_file_output_metric_csv_exit() {
+        MESSAGES.clear();
+        // 先に空ファイルを作成する
+        let mut app = App::new(None);
+        File::create("overwrite-metric.csv").ok();
+        let action = Action::EidMetrics(EidMetricsOption {
+            output: Some(Path::new("overwrite-metric.csv").to_path_buf()),
+            input_args: InputOption {
+                directory: None,
+                filepath: Some(Path::new("test_files/evtx/test_metrics.json").to_path_buf()),
+                live_analysis: false,
+                recover_records: false,
+            },
+            common_options: CommonOptions {
+                no_color: false,
+                quiet: false,
+            },
+            detect_common_options: DetectCommonOption {
+                evtx_file_ext: None,
+                thread_number: None,
+                quiet_errors: false,
+                config: Path::new("./rules/config").to_path_buf(),
+                verbose: false,
+                json_input: true,
+                include_computer: None,
+                exclude_computer: None,
+            },
+            european_time: false,
+            iso_8601: false,
+            rfc_2822: false,
+            rfc_3339: false,
+            us_military_time: false,
+            us_time: false,
+            utc: false,
+            clobber: false,
+        });
+        let config = Some(Config {
+            action: Some(action),
+            debug: false,
+        });
+        let mut stored_static = StoredStatic::create_static_data(config);
+        *STORED_EKEY_ALIAS.write().unwrap() = Some(stored_static.eventkey_alias.clone());
+        *STORED_STATIC.write().unwrap() = Some(stored_static.clone());
+        let mut config_reader = ConfigReader::new();
+        app.exec(&mut config_reader.app, &mut stored_static);
+        let meta = fs::metadata("overwrite-metric.csv").unwrap();
+        assert_eq!(meta.len(), 0);
+
+        // テストファイルの削除
+        remove_file("overwrite-metric.csv").ok();
+    }
+
+    #[test]
+    fn test_same_file_output_metric_csv() {
+        MESSAGES.clear();
+        MESSAGEKEYS.lock().unwrap().clear();
+        // 先に空ファイルを作成する
+        let mut app = App::new(None);
+        File::create("overwrite-metric.csv").ok();
+        let action = Action::EidMetrics(EidMetricsOption {
+            output: Some(Path::new("overwrite-metric.csv").to_path_buf()),
+            input_args: InputOption {
+                directory: None,
+                filepath: Some(Path::new("test_files/evtx/test_metrics.json").to_path_buf()),
+                live_analysis: false,
+                recover_records: false,
+            },
+            common_options: CommonOptions {
+                no_color: false,
+                quiet: false,
+            },
+            detect_common_options: DetectCommonOption {
+                evtx_file_ext: None,
+                thread_number: None,
+                quiet_errors: false,
+                config: Path::new("./rules/config").to_path_buf(),
+                verbose: false,
+                json_input: true,
+                include_computer: None,
+                exclude_computer: None,
+            },
+            european_time: false,
+            iso_8601: false,
+            rfc_2822: false,
+            rfc_3339: false,
+            us_military_time: false,
+            us_time: false,
+            utc: false,
+            clobber: true,
+        });
+        let config = Some(Config {
+            action: Some(action),
+            debug: false,
+        });
+        let mut stored_static = StoredStatic::create_static_data(config);
+        *STORED_EKEY_ALIAS.write().unwrap() = Some(stored_static.eventkey_alias.clone());
+        *STORED_STATIC.write().unwrap() = Some(stored_static.clone());
+        let mut config_reader = ConfigReader::new();
+        app.exec(&mut config_reader.app, &mut stored_static);
+        let meta = fs::metadata("overwrite-metric.csv").unwrap();
+        assert_ne!(meta.len(), 0);
+        // テストファイルの削除
+        remove_file("overwrite-metric.csv").ok();
+    }
+
+    #[test]
+    fn test_same_file_output_logon_summary_csv_exit() {
+        MESSAGES.clear();
+        // 先に空ファイルを作成する
+        let mut app = App::new(None);
+        File::create("overwrite-metric-successful.csv").ok();
+        let action = Action::LogonSummary(LogonSummaryOption {
+            output: Some(Path::new("overwrite-metric").to_path_buf()),
+            input_args: InputOption {
+                directory: None,
+                filepath: Some(Path::new("test_files/evtx/test_metrics.json").to_path_buf()),
+                live_analysis: false,
+                recover_records: false,
+            },
+            common_options: CommonOptions {
+                no_color: false,
+                quiet: false,
+            },
+            detect_common_options: DetectCommonOption {
+                evtx_file_ext: None,
+                thread_number: None,
+                quiet_errors: false,
+                config: Path::new("./rules/config").to_path_buf(),
+                verbose: false,
+                json_input: true,
+                include_computer: None,
+                exclude_computer: None,
+            },
+            european_time: false,
+            iso_8601: false,
+            rfc_2822: false,
+            rfc_3339: false,
+            us_military_time: false,
+            us_time: false,
+            utc: false,
+            clobber: false,
+            end_timeline: None,
+            start_timeline: None,
+        });
+        let config = Some(Config {
+            action: Some(action),
+            debug: false,
+        });
+        let mut stored_static = StoredStatic::create_static_data(config);
+        *STORED_EKEY_ALIAS.write().unwrap() = Some(stored_static.eventkey_alias.clone());
+        *STORED_STATIC.write().unwrap() = Some(stored_static.clone());
+        let mut config_reader = ConfigReader::new();
+        app.exec(&mut config_reader.app, &mut stored_static);
+        let meta = fs::metadata("overwrite-metric-successful.csv").unwrap();
+        assert_eq!(meta.len(), 0);
+
+        // テストファイルの削除
+        remove_file("overwrite-metric-successful.csv").ok();
+    }
+
+    #[test]
+    fn test_same_file_output_logon_summary_csv() {
+        MESSAGES.clear();
+        MESSAGEKEYS.lock().unwrap().clear();
+        // 先に空ファイルを作成する
+        let mut app = App::new(None);
+        File::create("overwrite-metric-successful.csv").ok();
+        let action = Action::LogonSummary(LogonSummaryOption {
+            output: Some(Path::new("overwrite-metric").to_path_buf()),
+            input_args: InputOption {
+                directory: None,
+                filepath: Some(Path::new("test_files/evtx/test_metrics.json").to_path_buf()),
+                live_analysis: false,
+                recover_records: false,
+            },
+            common_options: CommonOptions {
+                no_color: false,
+                quiet: false,
+            },
+            detect_common_options: DetectCommonOption {
+                evtx_file_ext: None,
+                thread_number: None,
+                quiet_errors: false,
+                config: Path::new("./rules/config").to_path_buf(),
+                verbose: false,
+                json_input: true,
+                include_computer: None,
+                exclude_computer: None,
+            },
+            european_time: false,
+            iso_8601: false,
+            rfc_2822: false,
+            rfc_3339: false,
+            us_military_time: false,
+            us_time: false,
+            utc: false,
+            clobber: true,
+            end_timeline: None,
+            start_timeline: None,
+        });
+        let config = Some(Config {
+            action: Some(action),
+            debug: false,
+        });
+        let mut stored_static = StoredStatic::create_static_data(config);
+        *STORED_EKEY_ALIAS.write().unwrap() = Some(stored_static.eventkey_alias.clone());
+        *STORED_STATIC.write().unwrap() = Some(stored_static.clone());
+        let mut config_reader = ConfigReader::new();
+        app.exec(&mut config_reader.app, &mut stored_static);
+        let meta = fs::metadata("overwrite-metric-successful.csv").unwrap();
+        assert_ne!(meta.len(), 0);
+        // テストファイルの削除
+        remove_file("overwrite-metric-successful.csv").ok();
+    }
+
+    #[test]
+    fn test_same_file_output_computer_metrics_exit() {
+        MESSAGES.clear();
+        MESSAGEKEYS.lock().unwrap().clear();
+        // 先に空ファイルを作成する
+        let mut app = App::new(None);
+        File::create("overwrite-computer-metrics.csv").ok();
+        let action = Action::ComputerMetrics(ComputerMetricsOption {
+            output: Some(Path::new("overwrite-computer-metrics.csv").to_path_buf()),
+            input_args: InputOption {
+                directory: None,
+                filepath: Some(Path::new("test_files/evtx/test_metrics.json").to_path_buf()),
+                live_analysis: false,
+                recover_records: false,
+            },
+            common_options: CommonOptions {
+                no_color: false,
+                quiet: false,
+            },
+            evtx_file_ext: None,
+            thread_number: None,
+            quiet_errors: false,
+            config: Path::new("./rules/config").to_path_buf(),
+            verbose: false,
+            json_input: true,
+            clobber: false,
+        });
+        let config = Some(Config {
+            action: Some(action),
+            debug: false,
+        });
+        let mut stored_static = StoredStatic::create_static_data(config);
+        *STORED_EKEY_ALIAS.write().unwrap() = Some(stored_static.eventkey_alias.clone());
+        *STORED_STATIC.write().unwrap() = Some(stored_static.clone());
+        let mut config_reader = ConfigReader::new();
+        app.exec(&mut config_reader.app, &mut stored_static);
+        let meta = fs::metadata("overwrite-computer-metrics.csv").unwrap();
+        assert_eq!(meta.len(), 0);
+        // テストファイルの削除
+        remove_file("overwrite-computer-metrics.csv").ok();
+    }
+
+    #[test]
+    fn test_same_file_output_computer_metrics_csv() {
+        MESSAGES.clear();
+        MESSAGEKEYS.lock().unwrap().clear();
+        // 先に空ファイルを作成する
+        let mut app = App::new(None);
+        File::create("overwrite-computer-metrics.csv").ok();
+        let action = Action::ComputerMetrics(ComputerMetricsOption {
+            output: Some(Path::new("overwrite-computer-metrics.csv").to_path_buf()),
+            input_args: InputOption {
+                directory: None,
+                filepath: Some(Path::new("test_files/evtx/test_metrics.json").to_path_buf()),
+                live_analysis: false,
+                recover_records: false,
+            },
+            common_options: CommonOptions {
+                no_color: false,
+                quiet: false,
+            },
+            evtx_file_ext: None,
+            thread_number: None,
+            quiet_errors: false,
+            config: Path::new("./rules/config").to_path_buf(),
+            verbose: false,
+            json_input: true,
+            clobber: true,
+        });
+        let config = Some(Config {
+            action: Some(action),
+            debug: false,
+        });
+        let mut stored_static = StoredStatic::create_static_data(config);
+        *STORED_EKEY_ALIAS.write().unwrap() = Some(stored_static.eventkey_alias.clone());
+        *STORED_STATIC.write().unwrap() = Some(stored_static.clone());
+        let mut config_reader = ConfigReader::new();
+        app.exec(&mut config_reader.app, &mut stored_static);
+        let meta = fs::metadata("overwrite-computer-metrics.csv").unwrap();
+        assert_ne!(meta.len(), 0);
+        // テストファイルの削除
+        remove_file("overwrite-computer-metrics.csv").ok();
+    }
+
+    #[test]
+    fn test_analysis_json_file_include_eid() {
+        MESSAGES.clear();
+        let mut app = App::new(None);
+        let mut stored_static = create_dummy_stored_static();
+        *STORED_EKEY_ALIAS.write().unwrap() = Some(stored_static.eventkey_alias.clone());
+        stored_static.include_eid = HashSet::from_iter(vec!["10".into()]);
+        *STORED_STATIC.write().unwrap() = Some(stored_static.clone());
+
+        let rule_str = r#"
+        enabled: true
+        detection:
+            selection1:
+                Channel: 'Microsoft-Windows-Sysmon/Operational'
+            condition: selection1
+        details: testdata
+        "#;
+        let mut rule_yaml = YamlLoader::load_from_str(rule_str).unwrap().into_iter();
+        let test_yaml_data = rule_yaml.next().unwrap();
+        let mut rule = create_rule("testpath".to_string(), test_yaml_data);
+        let rule_init = rule.init(&stored_static);
+        assert!(rule_init.is_ok());
+        let rule_files = vec![rule];
+        app.rule_keys = app.get_all_keys(&rule_files);
+        let detection = detection::Detection::new(rule_files);
+        let target_time_filter = TargetEventTime::new(&stored_static);
+        let tl = Timeline::default();
+        let target_event_ids = TargetIds::default();
+
+        let actual = app.analysis_json_file(
+            Path::new("test_files/evtx/test.jsonl").to_path_buf(),
+            detection,
+            &target_time_filter,
+            tl,
+            &target_event_ids,
+            &stored_static,
+        );
+        assert_eq!(actual.1, 2);
+        assert_eq!(MESSAGES.len(), 1);
+    }
+
+    #[test]
+    fn test_analysis_json_file_exclude_eid() {
+        MESSAGES.clear();
+        let mut app = App::new(None);
+        let mut stored_static = create_dummy_stored_static();
+        *STORED_EKEY_ALIAS.write().unwrap() = Some(stored_static.eventkey_alias.clone());
+        stored_static.exclude_eid = HashSet::from_iter(vec!["10".into(), "11".into()]);
+        *STORED_STATIC.write().unwrap() = Some(stored_static.clone());
+
+        let rule_str = r#"
+        enabled: true
+        detection:
+            selection1:
+                Channel: 'Microsoft-Windows-Sysmon/Operational'
+            condition: selection1
+        details: testdata
+        "#;
+        let mut rule_yaml = YamlLoader::load_from_str(rule_str).unwrap().into_iter();
+        let test_yaml_data = rule_yaml.next().unwrap();
+        let mut rule = create_rule("testpath".to_string(), test_yaml_data);
+        let rule_init = rule.init(&stored_static);
+        assert!(rule_init.is_ok());
+        let rule_files = vec![rule];
+        app.rule_keys = app.get_all_keys(&rule_files);
+        let detection = detection::Detection::new(rule_files);
+        let target_time_filter = TargetEventTime::new(&stored_static);
+        let tl = Timeline::default();
+        let target_event_ids = TargetIds::default();
+
+        let actual = app.analysis_json_file(
+            Path::new("test_files/evtx/test.jsonl").to_path_buf(),
+            detection,
+            &target_time_filter,
+            tl,
+            &target_event_ids,
+            &stored_static,
+        );
+        assert_eq!(actual.1, 2);
+        assert_eq!(MESSAGES.len(), 0);
     }
 }

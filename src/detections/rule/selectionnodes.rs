@@ -97,6 +97,76 @@ impl SelectionNode for AndSelectionNode {
     }
 }
 
+/// detection - selection配下でAll条件を表すノード
+pub struct AllSelectionNode {
+    pub child_nodes: Vec<Box<dyn SelectionNode>>,
+}
+
+impl AllSelectionNode {
+    pub fn new() -> AllSelectionNode {
+        AllSelectionNode {
+            child_nodes: vec![],
+        }
+    }
+}
+
+impl SelectionNode for AllSelectionNode {
+    fn select(&self, event_record: &EvtxRecordInfo, eventkey_alias: &EventKeyAliasConfig) -> bool {
+        self.child_nodes
+            .iter()
+            .all(|child_node| child_node.select(event_record, eventkey_alias))
+    }
+
+    fn init(&mut self) -> Result<(), Vec<String>> {
+        let err_msgs = self
+            .child_nodes
+            .iter_mut()
+            .map(|child_node| {
+                let res = child_node.init();
+                if let Err(err) = res {
+                    err
+                } else {
+                    vec![]
+                }
+            })
+            .fold(
+                vec![],
+                |mut acc: Vec<String>, cur: Vec<String>| -> Vec<String> {
+                    acc.extend(cur.into_iter());
+                    acc
+                },
+            );
+
+        if err_msgs.is_empty() {
+            Result::Ok(())
+        } else {
+            Result::Err(err_msgs)
+        }
+    }
+
+    fn get_childs(&self) -> Vec<&dyn SelectionNode> {
+        let mut ret = vec![];
+        self.child_nodes.iter().for_each(|child_node| {
+            ret.push(child_node.as_ref());
+        });
+
+        ret
+    }
+
+    fn get_descendants(&self) -> Vec<&dyn SelectionNode> {
+        let mut ret = self.get_childs();
+
+        self.child_nodes
+            .iter()
+            .flat_map(|child_node| child_node.get_descendants())
+            .for_each(|descendant_node| {
+                ret.push(descendant_node);
+            });
+
+        ret
+    }
+}
+
 /// detection - selection配下でOr条件を表すノード
 pub struct OrSelectionNode {
     pub child_nodes: Vec<Box<dyn SelectionNode>>,
@@ -376,12 +446,15 @@ impl SelectionNode for LeafSelectionNode {
             }
         }
 
-        let event_value = self.get_event_value(event_record);
+        let mut event_value = self.get_event_value(event_record);
         if self.get_key() == "EventID" && !self.select_value.is_null() {
             if let Some(event_id) = self.select_value.as_i64() {
                 // 正規表現は重いので、数値のEventIDのみ文字列完全一致で判定
-                return event_value.unwrap() == &event_id.to_string();
+                return event_value.unwrap_or(&String::default()) == &event_id.to_string();
             }
+        }
+        if !self.key_list.is_empty() && self.key_list[0].eq("|all") {
+            event_value = Some(&event_record.data_string);
         }
         return self
             .matcher
@@ -450,6 +523,7 @@ mod tests {
                         directory: None,
                         filepath: None,
                         live_analysis: false,
+                        recover_records: false,
                     },
                     profile: None,
                     enable_deprecated_rules: false,
@@ -482,8 +556,21 @@ mod tests {
                         config: Path::new("./rules/config").to_path_buf(),
                         verbose: false,
                         json_input: false,
+                        include_computer: None,
+                        exclude_computer: None,
                     },
                     enable_unsupported_rules: false,
+                    clobber: false,
+                    proven_rules: false,
+                    include_tag: None,
+                    exclude_tag: None,
+                    include_category: None,
+                    exclude_category: None,
+                    include_eid: None,
+                    exclude_eid: None,
+                    no_field: false,
+                    remove_duplicate_data: false,
+                    remove_duplicate_detections: false,
                 },
                 geo_ip: None,
                 output: None,
@@ -501,7 +588,7 @@ mod tests {
         match serde_json::from_str(record_str) {
             Ok(record) => {
                 let keys = detections::rule::get_detection_keys(&rule_node);
-                let recinfo = utils::create_rec_info(record, "testpath".to_owned(), &keys);
+                let recinfo = utils::create_rec_info(record, "testpath".to_owned(), &keys, &false);
                 assert_eq!(
                     rule_node.select(
                         &recinfo,

@@ -308,7 +308,11 @@ impl DetectionNode {
                 and_node.child_nodes.push(child_node);
             });
             Box::new(and_node)
-        } else if yaml.as_vec().is_some() && !key_list.is_empty() && key_list[0].ends_with("|all") {
+        } else if yaml.as_vec().is_some()
+            && !key_list.is_empty()
+            && key_list[0].ends_with("|all")
+            && !key_list[0].eq("|all")
+        {
             //key_listにallが入っていた場合は子要素の配列はAND条件と解釈する。
             let mut and_node = selectionnodes::AndSelectionNode::new();
             yaml.as_vec().unwrap().iter().for_each(|child_yaml| {
@@ -316,6 +320,14 @@ impl DetectionNode {
                 and_node.child_nodes.push(child_node);
             });
             Box::new(and_node)
+        } else if yaml.as_vec().is_some() && !key_list.is_empty() && key_list[0].eq("|all") {
+            // |all だけの場合、
+            let mut or_node = selectionnodes::AllSelectionNode::new();
+            yaml.as_vec().unwrap().iter().for_each(|child_yaml| {
+                let child_node = Self::parse_selection_recursively(key_list, child_yaml);
+                or_node.child_nodes.push(child_node);
+            });
+            Box::new(or_node)
         } else if yaml.as_vec().is_some() {
             // 配列はOR条件と解釈する。
             let mut or_node = selectionnodes::OrSelectionNode::new();
@@ -391,6 +403,7 @@ mod tests {
                         directory: None,
                         filepath: None,
                         live_analysis: false,
+                        recover_records: false,
                     },
                     profile: None,
                     enable_deprecated_rules: false,
@@ -423,8 +436,21 @@ mod tests {
                         config: Path::new("./rules/config").to_path_buf(),
                         verbose: false,
                         json_input: false,
+                        include_computer: None,
+                        exclude_computer: None,
                     },
                     enable_unsupported_rules: false,
+                    clobber: false,
+                    proven_rules: false,
+                    include_tag: None,
+                    exclude_tag: None,
+                    include_category: None,
+                    exclude_category: None,
+                    include_eid: None,
+                    exclude_eid: None,
+                    no_field: false,
+                    remove_duplicate_data: false,
+                    remove_duplicate_detections: false,
                 },
                 geo_ip: None,
                 output: None,
@@ -452,7 +478,7 @@ mod tests {
         match serde_json::from_str(record_str) {
             Ok(record) => {
                 let keys = detections::rule::get_detection_keys(&rule_node);
-                let recinfo = utils::create_rec_info(record, "testpath".to_owned(), &keys);
+                let recinfo = utils::create_rec_info(record, "testpath".to_owned(), &keys, &false);
                 assert_eq!(
                     rule_node.select(
                         &recinfo,
@@ -1021,7 +1047,7 @@ mod tests {
         match serde_json::from_str(record_str) {
             Ok(record) => {
                 let keys = detections::rule::get_detection_keys(&rule_node);
-                let recinfo = utils::create_rec_info(record, "testpath".to_owned(), &keys);
+                let recinfo = utils::create_rec_info(record, "testpath".to_owned(), &keys, &false);
                 let result = rule_node.select(
                     &recinfo,
                     dummy_stored_static.verbose_flag,
