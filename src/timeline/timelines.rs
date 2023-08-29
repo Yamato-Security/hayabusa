@@ -201,7 +201,7 @@ impl Timeline {
             None => 100,
         };
 
-        let constraints = vec![
+        let constraints = [
             LowerBoundary(Fixed(7)),  // Minimum number of characters for "Total"
             UpperBoundary(Fixed(9)),  // Maximum number of characters for "percent"
             UpperBoundary(Fixed(20)), // Maximum number of characters for "Channel"
