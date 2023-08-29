@@ -62,7 +62,7 @@ impl SelectionNode for AndSelectionNode {
             .fold(
                 vec![],
                 |mut acc: Vec<String>, cur: Vec<String>| -> Vec<String> {
-                    acc.extend(cur.into_iter());
+                    acc.extend(cur);
                     acc
                 },
             );
@@ -132,7 +132,7 @@ impl SelectionNode for AllSelectionNode {
             .fold(
                 vec![],
                 |mut acc: Vec<String>, cur: Vec<String>| -> Vec<String> {
-                    acc.extend(cur.into_iter());
+                    acc.extend(cur);
                     acc
                 },
             );
@@ -202,7 +202,7 @@ impl SelectionNode for OrSelectionNode {
             .fold(
                 vec![],
                 |mut acc: Vec<String>, cur: Vec<String>| -> Vec<String> {
-                    acc.extend(cur.into_iter());
+                    acc.extend(cur);
                     acc
                 },
             );
