@@ -887,7 +887,7 @@ mod tests {
             .logon_stats_start(&input_datas, true, &dummy_stored_static.eventkey_alias);
 
         timeline.tm_logon_stats_dsp_msg(&dummy_stored_static);
-        let mut header = vec![
+        let mut header = [
             "Successful",
             "Target Account",
             "Target Computer",
