@@ -2552,14 +2552,14 @@ mod tests {
 
     #[test]
     fn test_detect_backslash_exact_match() {
-        let rule_str = r#"
+        let rule_str = r"
         enabled: true
         detection:
             selection:
                 Channel: 'Microsoft-Windows-Sysmon/Operational'
                 EventID: 1
                 CurrentDirectory: 'C:\Windows\'
-        "#;
+        ";
 
         let record_json_str = r#"
         {
@@ -2579,13 +2579,13 @@ mod tests {
 
     #[test]
     fn test_detect_startswith_backslash1() {
-        let rule_str = r#"
+        let rule_str = r"
         enabled: true
         detection:
             selection:
                 EventID: 1040
                 Data|startswith: C:\Windows\
-        "#;
+        ";
 
         let record_json_str = r#"
         {
@@ -2605,13 +2605,13 @@ mod tests {
 
     #[test]
     fn test_detect_startswith_backslash2() {
-        let rule_str = r#"
+        let rule_str = r"
         enabled: true
         detection:
             selection:
                 EventID: 1040
                 Data|startswith: C:\Windows\
-        "#;
+        ";
 
         let record_json_str = r#"
         {
@@ -2631,13 +2631,13 @@ mod tests {
 
     #[test]
     fn test_detect_contains_backslash1() {
-        let rule_str = r#"
+        let rule_str = r"
         enabled: true
         detection:
             selection:
                 EventID: 1040
                 Data|contains: \Windows\
-        "#;
+        ";
 
         let record_json_str = r#"
         {
@@ -2657,13 +2657,13 @@ mod tests {
 
     #[test]
     fn test_detect_contains_backslash2() {
-        let rule_str = r#"
+        let rule_str = r"
         enabled: true
         detection:
             selection:
                 EventID: 1040
                 Data|contains: \Windows\
-        "#;
+        ";
 
         let record_json_str = r#"
         {
@@ -2683,14 +2683,14 @@ mod tests {
 
     #[test]
     fn test_detect_backslash_endswith() {
-        let rule_str = r#"
+        let rule_str = r"
         enabled: true
         detection:
             selection:
                 Channel: 'Microsoft-Windows-Sysmon/Operational'
                 EventID: 1
                 CurrentDirectory|endswith: 'C:\Windows\system32\'
-        "#;
+        ";
 
         let record_json_str = r#"
         {
@@ -2710,14 +2710,14 @@ mod tests {
 
     #[test]
     fn test_detect_backslash_regex() {
-        let rule_str = r#"
+        let rule_str = r"
         enabled: true
         detection:
             selection:
                 Channel: 'Microsoft-Windows-Sysmon/Operational'
                 EventID: 1
                 CurrentDirectory|re: '.*system32\\'
-        "#;
+        ";
 
         let record_json_str = r#"
         {
@@ -2737,7 +2737,7 @@ mod tests {
 
     #[test]
     fn test_all_only_true() {
-        let rule_str = r#"
+        let rule_str = r"
         enabled: true
         detection:
             selection1:
@@ -2748,7 +2748,7 @@ mod tests {
                 - 1
                 - 2
             condition: selection1 and selection2
-        "#;
+        ";
 
         let record_json_str = r#"
         {
