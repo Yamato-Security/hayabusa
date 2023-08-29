@@ -6,7 +6,7 @@ use crate::options::htmlreport;
 use crate::options::pivot::{PivotKeyword, PIVOT_KEYWORD};
 use crate::options::profile::{load_profile, Profile};
 use aho_corasick::{AhoCorasick, AhoCorasickBuilder, MatchKind};
-use chrono::{DateTime, Duration, Local, Utc};
+use chrono::{DateTime, Days, Duration, Local, Months, Utc};
 use clap::{ArgGroup, Args, ColorChoice, Command, CommandFactory, Parser, Subcommand};
 use compact_str::CompactString;
 use hashbrown::{HashMap, HashSet};
@@ -1711,40 +1711,45 @@ impl TargetEventTime {
 
         let get_timeline_offset = |timeline_offset: &Option<String>| {
             if let Some(timeline_offline) = timeline_offset {
-                let mut start_prev_sec = 0;
-                let timekey = ["y", "d", "h", "m", "s"];
-                for key in timekey {
-                    let mut timekey_splitter = timeline_offline.split(key);
+                let timekey = ['y', 'M', 'd', 'h', 'm', 's'];
+                let mut time_num = [0, 0, 0, 0, 0, 0];
+                for (idx, key) in timekey.iter().enumerate() {
+                    let mut timekey_splitter = timeline_offline.split(*key);
                     let mix_check = timekey_splitter.next();
-                    let mixed_checker: Vec<&str> = mix_check
-                        .unwrap_or_default()
-                        .split(['y', 'd', 'h', 'm', 's'])
-                        .collect();
+                    let mixed_checker: Vec<&str> =
+                        mix_check.unwrap_or_default().split(timekey).collect();
                     let target_num = if mixed_checker.is_empty() {
                         mix_check.unwrap()
                     } else {
                         mixed_checker[mixed_checker.len() - 1]
                     };
-                    if let Ok(num) = target_num.parse::<i64>() {
-                        if num < 0 {
-                            AlertMessage::alert(
-                                "timeline-offset field: the timestamp format is not correct.",
-                            )
-                            .ok();
-                            return None;
-                        }
-                        match key {
-                            "y" => start_prev_sec += num * 365 * 24 * 60 * 60,
-                            "d" => start_prev_sec += num * 24 * 60 * 60,
-                            "h" => start_prev_sec += num * 60 * 60,
-                            "m" => start_prev_sec += num * 60,
-                            "s" => start_prev_sec += num,
-                            _ => {}
-                        }
+                    if target_num.is_empty() {
+                        continue;
+                    }
+                    if let Ok(num) = target_num.parse::<u32>() {
+                        time_num[idx] = num;
+                    } else {
+                        AlertMessage::alert(
+                            "timeline-offset field: the timestamp format is not correct.",
+                        )
+                        .ok();
+                        return None;
                     }
                 }
-                let target_start_time = Local::now() - Duration::seconds(start_prev_sec);
-                Some(target_start_time.format("%Y-%m-%d %H:%M:%S %z").to_string())
+                let target_start_time = Local::now()
+                    .checked_sub_months(Months::new(time_num[0] * 12))
+                    .and_then(|dt| dt.checked_sub_months(Months::new(time_num[1])))
+                    .and_then(|dt| dt.checked_sub_days(Days::new(time_num[2].into())))
+                    .and_then(|dt| dt.checked_sub_signed(Duration::hours(time_num[3].into())))
+                    .and_then(|dt| dt.checked_sub_signed(Duration::minutes(time_num[4].into())))
+                    .and_then(|dt| dt.checked_sub_signed(Duration::seconds(time_num[5].into())));
+                if let Some(start_time) = target_start_time {
+                    Some(start_time.format("%Y-%m-%d %H:%M:%S %z").to_string())
+                } else {
+                    AlertMessage::alert("timeline-offset field: the timestamp value is too large.")
+                        .ok();
+                    None
+                }
             } else {
                 None
             }
@@ -2840,7 +2845,7 @@ mod tests {
                     filepath: None,
                     live_analysis: false,
                     recover_records: false,
-                    timeline_offset: Some("10y1s".to_string()),
+                    timeline_offset: Some("1y1M1s".to_string()),
                 },
                 clobber: true,
                 detect_common_options: DetectCommonOption {
@@ -2870,7 +2875,10 @@ mod tests {
         let now = Utc::now();
         let actual = TargetEventTime::new(&pivot_keywords_list);
         let actual_diff = now - actual.start_time.unwrap();
-        let days = actual_diff.num_days();
-        assert!(days == 3650 && actual_diff.num_seconds() == days * 24 * 60 * 60 + 1);
+        let actual_diff_day = actual_diff.num_days();
+        assert!(
+            (393..=397).contains(&actual_diff_day)
+                && actual_diff.num_seconds() - (actual_diff_day * 24 * 60 * 60) == 1
+        );
     }
 }
