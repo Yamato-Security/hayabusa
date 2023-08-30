@@ -1390,9 +1390,9 @@ impl App {
                         .replace('"', ""),
                     "%Y-%m-%dT%H:%M:%S%.3fZ",
                 ) {
-                    Ok(without_timezone_datetime) => {
-                        Some(DateTime::<Utc>::from_utc(without_timezone_datetime, Utc))
-                    }
+                    Ok(without_timezone_datetime) => Some(
+                        DateTime::<Utc>::from_naive_utc_and_offset(without_timezone_datetime, Utc),
+                    ),
                     Err(e) => {
                         AlertMessage::alert(&format!(
                             "timestamp parse error. filepath:{},{} {}",

@@ -680,7 +680,7 @@ mod tests {
             .logon_stats_start(&input_datas, true, &dummy_stored_static.eventkey_alias);
         assert_eq!(
             timeline.stats.start_time,
-            Some(DateTime::<Utc>::from_utc(
+            Some(DateTime::<Utc>::from_naive_utc_and_offset(
                 NaiveDateTime::parse_from_str("2021-12-23T00:00:00.000Z", "%Y-%m-%dT%H:%M:%S%.3fZ")
                     .unwrap(),
                 Utc
@@ -688,7 +688,7 @@ mod tests {
         );
         assert_eq!(
             timeline.stats.end_time,
-            Some(DateTime::<Utc>::from_utc(
+            Some(DateTime::<Utc>::from_naive_utc_and_offset(
                 NaiveDateTime::parse_from_str("2022-12-23T00:00:00.000Z", "%Y-%m-%dT%H:%M:%S%.3fZ")
                     .unwrap(),
                 Utc
