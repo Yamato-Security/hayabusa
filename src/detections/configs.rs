@@ -1492,8 +1492,8 @@ pub struct InputOption {
     #[arg(help_heading = Some("Input"), short = 'x', long = "recover-records", conflicts_with = "json_input", display_order = 440)]
     pub recover_records: bool,
 
-    /// Scan just the most recent number of days(ex: 1y, 30d, 24h, etc...)
-    #[arg(help_heading = Some("Filtering"), long = "timeline-offset", conflicts_with = "start_timeline", display_order = 460)]
+    /// Scan recent events based on an offset (ex: 1y, 3M, 30d, 24h, 30m)
+    #[arg(help_heading = Some("Filtering"), long = "timeline-offset", value_name = "OFFSET", conflicts_with = "start_timeline", display_order = 460)]
     pub timeline_offset: Option<String>,
 }
 
