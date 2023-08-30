@@ -262,9 +262,9 @@ checksum = "baf1de4339761588bc0619e3cbc0120ee582ebb74b53b4efbf79117bd2da40fd"
 
 [[package]]
 name = "chrono"
-version = "0.4.27"
+version = "0.4.28"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "f56b4c72906975ca04becb8a30e102dfecddd0c06181e3e95ddc444be28881f8"
+checksum = "95ed24df0632f708f5f6d8082675bef2596f7084dee3dd55f632290bf35bfe0f"
 dependencies = [
  "android-tzdata",
  "iana-time-zone",
@@ -691,7 +691,7 @@ dependencies = [
 [[package]]
 name = "evtx"
 version = "0.8.7"
-source = "git+https://github.com/Yamato-Security/hayabusa-evtx.git?rev=60e9d35#60e9d3523d0ecec0ec46d37ed2f39e03f0d36643"
+source = "git+https://github.com/Yamato-Security/hayabusa-evtx.git?rev=fe38ad6#fe38ad649d6c73c1c7d7fcba1d38245f62582fb5"
 dependencies = [
  "anyhow",
  "bitflags 2.4.0",
@@ -1234,9 +1234,9 @@ dependencies = [
 
 [[package]]
 name = "memchr"
-version = "2.6.1"
+version = "2.6.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "f478948fd84d9f8e86967bf432640e46adfb5a4bd4f14ef7e864ab38220534ae"
+checksum = "5486aed0026218e61b8a01d5fbd5a0a134649abb71a0e53b7bc088529dced86e"
 
 [[package]]
 name = "memmap2"
