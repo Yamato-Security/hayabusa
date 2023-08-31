@@ -84,6 +84,7 @@ pub struct StoredStatic {
     pub exclude_eid: HashSet<CompactString>,
     pub field_data_map: Option<FieldDataMap>,
     pub enable_recover_records: bool,
+    pub timeline_offset: Option<String>,
 }
 impl StoredStatic {
     /// main.rsでパースした情報からデータを格納する関数
@@ -504,6 +505,18 @@ impl StoredStatic {
             Some(Action::Search(opt)) => opt.input_args.recover_records,
             _ => false,
         };
+        let timeline_offset = match &input_config.as_ref().unwrap().action {
+            Some(Action::CsvTimeline(opt)) => opt.output_options.input_args.timeline_offset.clone(),
+            Some(Action::JsonTimeline(opt)) => {
+                opt.output_options.input_args.timeline_offset.clone()
+            }
+            Some(Action::EidMetrics(opt)) => opt.input_args.timeline_offset.clone(),
+            Some(Action::LogonSummary(opt)) => opt.input_args.timeline_offset.clone(),
+            Some(Action::PivotKeywordsList(opt)) => opt.input_args.timeline_offset.clone(),
+            Some(Action::Search(opt)) => opt.input_args.timeline_offset.clone(),
+            Some(Action::ComputerMetrics(opt)) => opt.input_args.timeline_offset.clone(),
+            _ => None,
+        };
 
         let mut ret = StoredStatic {
             config: input_config.as_ref().unwrap().to_owned(),
@@ -617,6 +630,7 @@ impl StoredStatic {
             exclude_eid,
             field_data_map,
             enable_recover_records,
+            timeline_offset,
         };
         ret.profiles = load_profile(
             check_setting_path(
@@ -696,7 +710,7 @@ impl StoredStatic {
     }
 }
 
-/// config情報からthred_numberの情報を抽出する関数
+/// config情報からthread_numberの情報を抽出する関数
 fn check_thread_number(config: &Config) -> Option<usize> {
     match config.action.as_ref()? {
         Action::CsvTimeline(opt) => opt.output_options.detect_common_options.thread_number,
@@ -1690,179 +1704,204 @@ pub struct TargetEventTime {
 
 impl TargetEventTime {
     pub fn new(stored_static: &StoredStatic) -> Self {
-        let mut parse_success_flag = true;
-        let mut get_time = |input_time: Option<&String>, error_contents: &str| {
-            if let Some(time) = input_time {
-                match DateTime::parse_from_str(time, "%Y-%m-%d %H:%M:%S %z") // 2014-11-28 21:00:09 +09:00
+        let get_time =
+            |input_time: Option<&String>, error_contents: &str, parse_success_flag: &mut bool| {
+                if let Some(time) = input_time {
+                    match DateTime::parse_from_str(time, "%Y-%m-%d %H:%M:%S %z") // 2014-11-28 21:00:09 +09:00
                     .or_else(|_| DateTime::parse_from_str(time, "%Y/%m/%d %H:%M:%S %z")) // 2014/11/28 21:00:09 +09:00
                 {
                     Ok(dt) => Some(dt.with_timezone(&Utc)),
                     Err(_) => {
                         AlertMessage::alert(error_contents)
                         .ok();
-                        parse_success_flag = false;
+                        *parse_success_flag = false;
                         None
                     }
                 }
-            } else {
-                None
-            }
-        };
-
-        let get_timeline_offset = |timeline_offset: &Option<String>| {
-            if let Some(timeline_offline) = timeline_offset {
-                let timekey = ['y', 'M', 'd', 'h', 'm', 's'];
-                let mut time_num = [0, 0, 0, 0, 0, 0];
-                for (idx, key) in timekey.iter().enumerate() {
-                    let mut timekey_splitter = timeline_offline.split(*key);
-                    let mix_check = timekey_splitter.next();
-                    let mixed_checker: Vec<&str> =
-                        mix_check.unwrap_or_default().split(timekey).collect();
-                    let target_num = if mixed_checker.is_empty() {
-                        mix_check.unwrap()
-                    } else {
-                        mixed_checker[mixed_checker.len() - 1]
-                    };
-                    if target_num.is_empty() {
-                        continue;
-                    }
-                    if let Ok(num) = target_num.parse::<u32>() {
-                        time_num[idx] = num;
-                    } else {
-                        AlertMessage::alert(
-                            "timeline-offset field: the timestamp format is not correct.",
-                        )
-                        .ok();
-                        return None;
-                    }
-                }
-                let target_start_time = Local::now()
-                    .checked_sub_months(Months::new(time_num[0] * 12))
-                    .and_then(|dt| dt.checked_sub_months(Months::new(time_num[1])))
-                    .and_then(|dt| dt.checked_sub_days(Days::new(time_num[2].into())))
-                    .and_then(|dt| dt.checked_sub_signed(Duration::hours(time_num[3].into())))
-                    .and_then(|dt| dt.checked_sub_signed(Duration::minutes(time_num[4].into())))
-                    .and_then(|dt| dt.checked_sub_signed(Duration::seconds(time_num[5].into())));
-                if let Some(start_time) = target_start_time {
-                    Some(start_time.format("%Y-%m-%d %H:%M:%S %z").to_string())
                 } else {
-                    AlertMessage::alert("timeline-offset field: the timestamp value is too large.")
-                        .ok();
                     None
                 }
-            } else {
-                None
-            }
-        };
+            };
+
+        let get_timeline_offset =
+            |timeline_offset: &Option<String>, parse_success_flag: &mut bool| {
+                if let Some(timeline_offline) = timeline_offset {
+                    let timekey = ['y', 'M', 'd', 'h', 'm', 's'];
+                    let mut time_num = [0, 0, 0, 0, 0, 0];
+                    for (idx, key) in timekey.iter().enumerate() {
+                        let mut timekey_splitter = timeline_offline.split(*key);
+                        let mix_check = timekey_splitter.next();
+                        let mixed_checker: Vec<&str> =
+                            mix_check.unwrap_or_default().split(timekey).collect();
+                        let target_num = if mixed_checker.is_empty() {
+                            mix_check.unwrap()
+                        } else {
+                            mixed_checker[mixed_checker.len() - 1]
+                        };
+                        if target_num.is_empty() {
+                            continue;
+                        }
+                        if let Ok(num) = target_num.parse::<u32>() {
+                            time_num[idx] = num;
+                        } else {
+                            AlertMessage::alert(
+                            "Invalid timeline offset. Please use one of the following formats: 1y, 3M, 30d, 24h, 30m",
+                        )
+                        .ok();
+                            *parse_success_flag = false;
+                            return None;
+                        }
+                    }
+                    if time_num.iter().all(|&x| x == 0) {
+                        AlertMessage::alert(
+                        "Invalid timeline offset. Please use one of the following formats: 1y, 3M, 30d, 24h, 30m",
+                    )
+                    .ok();
+                        *parse_success_flag = false;
+                        return None;
+                    }
+                    let target_start_time = Local::now()
+                        .checked_sub_months(Months::new(time_num[0] * 12))
+                        .and_then(|dt| dt.checked_sub_months(Months::new(time_num[1])))
+                        .and_then(|dt| dt.checked_sub_days(Days::new(time_num[2].into())))
+                        .and_then(|dt| dt.checked_sub_signed(Duration::hours(time_num[3].into())))
+                        .and_then(|dt| dt.checked_sub_signed(Duration::minutes(time_num[4].into())))
+                        .and_then(|dt| {
+                            dt.checked_sub_signed(Duration::seconds(time_num[5].into()))
+                        });
+                    if let Some(start_time) = target_start_time {
+                        Some(start_time.format("%Y-%m-%d %H:%M:%S %z").to_string())
+                    } else {
+                        AlertMessage::alert(
+                            "timeline-offset field: the timestamp value is too large.",
+                        )
+                        .ok();
+                        *parse_success_flag = false;
+                        None
+                    }
+                } else {
+                    None
+                }
+            };
+
+        let mut parse_success_flag = true;
+        let timeline_offset =
+            get_timeline_offset(&stored_static.timeline_offset, &mut parse_success_flag);
         match &stored_static.config.action.as_ref().unwrap() {
             Action::CsvTimeline(option) => {
-                let timeoffset =
-                    get_timeline_offset(&option.output_options.input_args.timeline_offset);
-                let start_time = if timeoffset.is_some() {
+                let start_time = if timeline_offset.is_some() {
                     get_time(
-                        timeoffset.as_ref(),
-                        "timeline-offset field: the timestamp format is not correct.",
+                        timeline_offset.as_ref(),
+                        "Invalid timeline offset. Please use one of the following formats: 1y, 3M, 30d, 24h, 30m",
+                        &mut parse_success_flag,
                     )
                 } else {
                     get_time(
                         option.output_options.start_timeline.as_ref(),
                         "start-timeline field: the timestamp format is not correct.",
+                        &mut parse_success_flag,
                     )
                 };
                 let end_time = get_time(
                     option.output_options.end_timeline.as_ref(),
                     "end-timeline field: the timestamp format is not correct.",
+                    &mut parse_success_flag,
                 );
                 Self::set(parse_success_flag, start_time, end_time)
             }
             Action::JsonTimeline(option) => {
-                let timeoffset =
-                    get_timeline_offset(&option.output_options.input_args.timeline_offset);
-                let start_time = if timeoffset.is_some() {
+                let start_time = if timeline_offset.is_some() {
                     get_time(
-                        timeoffset.as_ref(),
-                        "timeline-offset field: the timestamp format is not correct.",
+                        timeline_offset.as_ref(),
+                        "Invalid timeline offset. Please use one of the following formats: 1y, 3M, 30d, 24h, 30m",
+                        &mut parse_success_flag,
                     )
                 } else {
                     get_time(
                         option.output_options.start_timeline.as_ref(),
                         "start-timeline field: the timestamp format is not correct.",
+                        &mut parse_success_flag,
                     )
                 };
                 let end_time = get_time(
                     option.output_options.end_timeline.as_ref(),
                     "end-timeline field: the timestamp format is not correct.",
+                    &mut parse_success_flag,
                 );
                 Self::set(parse_success_flag, start_time, end_time)
             }
             Action::PivotKeywordsList(option) => {
-                let timeoffset = get_timeline_offset(&option.input_args.timeline_offset);
-                let start_time = if timeoffset.is_some() {
+                let start_time = if timeline_offset.is_some() {
                     get_time(
-                        timeoffset.as_ref(),
-                        "timeline-offset field: the timestamp format is not correct.",
+                        timeline_offset.as_ref(),
+                        "Invalid timeline offset. Please use one of the following formats: 1y, 3M, 30d, 24h, 30m",
+                        &mut parse_success_flag,
                     )
                 } else {
                     get_time(
                         option.start_timeline.as_ref(),
                         "start-timeline field: the timestamp format is not correct.",
+                        &mut parse_success_flag,
                     )
                 };
                 let end_time = get_time(
                     option.end_timeline.as_ref(),
                     "end-timeline field: the timestamp format is not correct.",
+                    &mut parse_success_flag,
                 );
                 Self::set(parse_success_flag, start_time, end_time)
             }
             Action::LogonSummary(option) => {
-                let timeoffset = get_timeline_offset(&option.input_args.timeline_offset);
-                let start_time = if timeoffset.is_some() {
+                let start_time = if timeline_offset.is_some() {
                     get_time(
-                        timeoffset.as_ref(),
-                        "timeline-offset field: the timestamp format is not correct.",
+                        timeline_offset.as_ref(),
+                        "Invalid timeline offset. Please use one of the following formats: 1y, 3M, 30d, 24h, 30m",
+                        &mut parse_success_flag,
                     )
                 } else {
                     get_time(
                         option.start_timeline.as_ref(),
                         "start-timeline field: the timestamp format is not correct.",
+                        &mut parse_success_flag,
                     )
                 };
                 let end_time = get_time(
                     option.end_timeline.as_ref(),
                     "end-timeline field: the timestamp format is not correct.",
+                    &mut parse_success_flag,
                 );
                 Self::set(parse_success_flag, start_time, end_time)
             }
-            Action::ComputerMetrics(option) => {
-                let timeoffset = get_timeline_offset(&option.input_args.timeline_offset);
-                let start_time = if timeoffset.is_some() {
+            Action::ComputerMetrics(_) => {
+                let start_time = if timeline_offset.is_some() {
                     get_time(
-                        timeoffset.as_ref(),
-                        "timeline-offset field: the timestamp format is not correct.",
+                        timeline_offset.as_ref(),
+                        "Invalid timeline offset. Please use one of the following formats: 1y, 3M, 30d, 24h, 30m",
+                        &mut parse_success_flag,
                     )
                 } else {
                     None
                 };
                 Self::set(parse_success_flag, start_time, None)
             }
-            Action::EidMetrics(option) => {
-                let timeoffset = get_timeline_offset(&option.input_args.timeline_offset);
-                let start_time = if timeoffset.is_some() {
+            Action::EidMetrics(_) => {
+                let start_time = if timeline_offset.is_some() {
                     get_time(
-                        timeoffset.as_ref(),
-                        "timeline-offset field: the timestamp format is not correct.",
+                        timeline_offset.as_ref(),
+                        "Invalid timeline offset. Please use one of the following formats: 1y, 3M, 30d, 24h, 30m",
+                        &mut parse_success_flag,
                     )
                 } else {
                     None
                 };
                 Self::set(parse_success_flag, start_time, None)
             }
-            Action::Search(option) => {
-                let timeoffset = get_timeline_offset(&option.input_args.timeline_offset);
-                let start_time = if timeoffset.is_some() {
+            Action::Search(_) => {
+                let start_time = if timeline_offset.is_some() {
                     get_time(
-                        timeoffset.as_ref(),
-                        "timeline-offset field: the timestamp format is not correct.",
+                        timeline_offset.as_ref(),
+                        "Invalid timeline offset. Please use one of the following formats: 1y, 3M, 30d, 24h, 30m",
+                        &mut parse_success_flag,
                     )
                 } else {
                     None
