@@ -1230,12 +1230,11 @@ impl App {
                     ) {
                         continue;
                     }
-
-                    // EventID側の条件との条件の混同を防ぐため時間でのフィルタリングの条件分岐を分離した
-                    let timestamp = record_result.as_ref().unwrap().timestamp;
-                    if !time_filter.is_target(&Some(timestamp)) {
-                        continue;
-                    }
+                }
+                // EventID側の条件との条件の混同を防ぐため時間でのフィルタリングの条件分岐を分離した
+                let timestamp = record_result.as_ref().unwrap().timestamp;
+                if !time_filter.is_target(&Some(timestamp)) {
+                    continue;
                 }
 
                 let recover_record_flag = record_result.is_ok()
@@ -1682,6 +1681,7 @@ mod tests {
                         filepath: None,
                         live_analysis: false,
                         recover_records: false,
+                        timeline_offset: None,
                     },
                     profile: None,
                     enable_deprecated_rules: false,
@@ -1842,6 +1842,7 @@ mod tests {
                     filepath: Some(Path::new("test_files/evtx/test.json").to_path_buf()),
                     live_analysis: false,
                     recover_records: false,
+                    timeline_offset: None,
                 },
                 profile: None,
                 enable_deprecated_rules: false,
@@ -1923,6 +1924,7 @@ mod tests {
                     filepath: Some(Path::new("test_files/evtx/test.json").to_path_buf()),
                     live_analysis: false,
                     recover_records: false,
+                    timeline_offset: None,
                 },
                 profile: None,
                 enable_deprecated_rules: false,
@@ -2002,6 +2004,7 @@ mod tests {
                     filepath: Some(Path::new("test_files/evtx/test.json").to_path_buf()),
                     live_analysis: false,
                     recover_records: false,
+                    timeline_offset: None,
                 },
                 profile: None,
                 enable_deprecated_rules: false,
@@ -2083,6 +2086,7 @@ mod tests {
                     filepath: Some(Path::new("test_files/evtx/test.json").to_path_buf()),
                     live_analysis: false,
                     recover_records: false,
+                    timeline_offset: None,
                 },
                 profile: None,
                 enable_deprecated_rules: false,
@@ -2162,6 +2166,7 @@ mod tests {
                 filepath: Some(Path::new("test_files/evtx/test_metrics.json").to_path_buf()),
                 live_analysis: false,
                 recover_records: false,
+                timeline_offset: None,
             },
             common_options: CommonOptions {
                 no_color: false,
@@ -2216,6 +2221,7 @@ mod tests {
                 filepath: Some(Path::new("test_files/evtx/test_metrics.json").to_path_buf()),
                 live_analysis: false,
                 recover_records: false,
+                timeline_offset: None,
             },
             common_options: CommonOptions {
                 no_color: false,
@@ -2267,6 +2273,7 @@ mod tests {
                 directory: None,
                 filepath: Some(Path::new("test_files/evtx/test_metrics.json").to_path_buf()),
                 live_analysis: false,
+                timeline_offset: None,
                 recover_records: false,
             },
             common_options: CommonOptions {
@@ -2324,6 +2331,7 @@ mod tests {
                 filepath: Some(Path::new("test_files/evtx/test_metrics.json").to_path_buf()),
                 live_analysis: false,
                 recover_records: false,
+                timeline_offset: None,
             },
             common_options: CommonOptions {
                 no_color: false,
@@ -2379,6 +2387,7 @@ mod tests {
                 filepath: Some(Path::new("test_files/evtx/test_metrics.json").to_path_buf()),
                 live_analysis: false,
                 recover_records: false,
+                timeline_offset: None,
             },
             common_options: CommonOptions {
                 no_color: false,
@@ -2421,6 +2430,7 @@ mod tests {
                 filepath: Some(Path::new("test_files/evtx/test_metrics.json").to_path_buf()),
                 live_analysis: false,
                 recover_records: false,
+                timeline_offset: None,
             },
             common_options: CommonOptions {
                 no_color: false,
