@@ -201,7 +201,7 @@ impl Timeline {
             None => 100,
         };
 
-        let constraints = vec![
+        let constraints = [
             LowerBoundary(Fixed(7)),  // Minimum number of characters for "Total"
             UpperBoundary(Fixed(9)),  // Maximum number of characters for "percent"
             UpperBoundary(Fixed(20)), // Maximum number of characters for "Channel"
@@ -680,7 +680,7 @@ mod tests {
             .logon_stats_start(&input_datas, true, &dummy_stored_static.eventkey_alias);
         assert_eq!(
             timeline.stats.start_time,
-            Some(DateTime::<Utc>::from_utc(
+            Some(DateTime::<Utc>::from_naive_utc_and_offset(
                 NaiveDateTime::parse_from_str("2021-12-23T00:00:00.000Z", "%Y-%m-%dT%H:%M:%S%.3fZ")
                     .unwrap(),
                 Utc
@@ -688,7 +688,7 @@ mod tests {
         );
         assert_eq!(
             timeline.stats.end_time,
-            Some(DateTime::<Utc>::from_utc(
+            Some(DateTime::<Utc>::from_naive_utc_and_offset(
                 NaiveDateTime::parse_from_str("2022-12-23T00:00:00.000Z", "%Y-%m-%dT%H:%M:%S%.3fZ")
                     .unwrap(),
                 Utc
@@ -887,7 +887,7 @@ mod tests {
             .logon_stats_start(&input_datas, true, &dummy_stored_static.eventkey_alias);
 
         timeline.tm_logon_stats_dsp_msg(&dummy_stored_static);
-        let mut header = vec![
+        let mut header = [
             "Successful",
             "Target Account",
             "Target Computer",

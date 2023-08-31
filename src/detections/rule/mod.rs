@@ -801,14 +801,14 @@ mod tests {
         // 上記テストケースのEventDataの更に特殊ケースで下記のようにDataタグの中にNameキーがないケースがある。
         // そのためにruleファイルでEventDataというキーだけ特別対応している。
         // 現状、downgrade_attack.ymlというルールの場合だけで確認出来ているケース
-        let rule_str = r#"
+        let rule_str = r"
         enabled: true
         detection:
             selection:
                 EventID: 403
                 EventData|re: '[\s\S]*EngineVersion=2\.0[\s\S]*'
         details: 'command=%CommandLine%'
-        "#;
+        ";
 
         let record_json_str = r#"
         {
@@ -855,14 +855,14 @@ mod tests {
         // 上記テストケースのEventDataの更に特殊ケースで下記のようにDataタグの中にNameキーがないケースがある。
         // そのためにruleファイルでEventDataというキーだけ特別対応している。
         // 現状、downgrade_attack.ymlというルールの場合だけで確認出来ているケース
-        let rule_str = r#"
+        let rule_str = r"
         enabled: true
         detection:
             selection:
                 EventID: 403
                 EventData: '[\s\S]*EngineVersion=3.0[\s\S]*'
         details: 'command=%CommandLine%'
-        "#;
+        ";
 
         let record_json_str = r#"
         {

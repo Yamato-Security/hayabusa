@@ -8,7 +8,7 @@ use yaml_rust::Yaml;
 use super::matchers::{self, DefaultMatcher};
 
 // Ruleファイルの detection- selection配下のノードはこのtraitを実装する。
-pub trait SelectionNode: Downcast {
+pub trait SelectionNode: Downcast + Send + Sync {
     // 引数で指定されるイベントログのレコードが、条件に一致するかどうかを判定する
     // このトレイトを実装する構造体毎に適切な判定処理を書く必要がある。
     fn select(&self, event_record: &EvtxRecordInfo, eventkey_alias: &EventKeyAliasConfig) -> bool;
@@ -62,7 +62,7 @@ impl SelectionNode for AndSelectionNode {
             .fold(
                 vec![],
                 |mut acc: Vec<String>, cur: Vec<String>| -> Vec<String> {
-                    acc.extend(cur.into_iter());
+                    acc.extend(cur);
                     acc
                 },
             );
@@ -132,7 +132,7 @@ impl SelectionNode for AllSelectionNode {
             .fold(
                 vec![],
                 |mut acc: Vec<String>, cur: Vec<String>| -> Vec<String> {
-                    acc.extend(cur.into_iter());
+                    acc.extend(cur);
                     acc
                 },
             );
@@ -202,7 +202,7 @@ impl SelectionNode for OrSelectionNode {
             .fold(
                 vec![],
                 |mut acc: Vec<String>, cur: Vec<String>| -> Vec<String> {
-                    acc.extend(cur.into_iter());
+                    acc.extend(cur);
                     acc
                 },
             );
@@ -307,6 +307,9 @@ pub struct LeafSelectionNode {
     select_value: Yaml,
     pub matcher: Option<Box<dyn matchers::LeafMatcher>>,
 }
+
+unsafe impl Sync for LeafSelectionNode {}
+unsafe impl Send for LeafSelectionNode {}
 
 impl LeafSelectionNode {
     pub fn new(keys: Nested<String>, value_yaml: Yaml) -> LeafSelectionNode {

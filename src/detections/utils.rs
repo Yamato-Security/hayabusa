@@ -792,7 +792,7 @@ mod tests {
     #[test]
     /// Serde::Valueの数値型の値を文字列として返却することを確かめるテスト
     fn test_get_serde_number_to_string() {
-        let json_str = r##"
+        let json_str = r#"
         {
             "Event": {
                 "System": {
@@ -800,7 +800,7 @@ mod tests {
                 }
             }
         }
-        "##;
+        "#;
         let event_record: Value = serde_json::from_str(json_str).unwrap();
 
         assert_eq!(
@@ -812,7 +812,7 @@ mod tests {
     #[test]
     /// Serde::Valueの文字列型の値を文字列として返却することを確かめるテスト
     fn test_get_serde_number_serde_string_to_string() {
-        let json_str = r##"
+        let json_str = r#"
         {
             "Event": {
                 "EventData": {
@@ -820,7 +820,7 @@ mod tests {
                 }
             }
         }
-        "##;
+        "#;
         let event_record: Value = serde_json::from_str(json_str).unwrap();
 
         assert_eq!(
@@ -836,7 +836,7 @@ mod tests {
     #[test]
     /// Serde::Valueのオブジェクト型の内容を誤って渡した際にNoneを返却することを確かめるテスト
     fn test_get_serde_number_serde_object_ret_none() {
-        let json_str = r##"
+        let json_str = r#"
         {
             "Event": {
                 "EventData": {
@@ -844,7 +844,7 @@ mod tests {
                 }
             }
         }
-        "##;
+        "#;
         let event_record: Value = serde_json::from_str(json_str).unwrap();
 
         assert!(
@@ -1047,7 +1047,7 @@ mod tests {
     #[test]
     /// Computerの値をもとにフィルタリングされることを確認するテスト
     fn test_is_filtered_by_computer_name() {
-        let json_str = r##"
+        let json_str = r#"
         {
             "Event": {
                 "System": {
@@ -1055,7 +1055,7 @@ mod tests {
                 }
             }
         }
-        "##;
+        "#;
         let event_record: Value = serde_json::from_str(json_str).unwrap();
 
         // include_computer, exclude_computerが指定されていない場合はフィルタリングされない

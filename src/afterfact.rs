@@ -539,7 +539,7 @@ fn emit_csv<W: std::io::Write>(
 
     disp_wtr_buf.clear();
     let level_abbr: Nested<Vec<CompactString>> = Nested::from_iter(
-        vec![
+        [
             [CompactString::from("critical"), CompactString::from("crit")].to_vec(),
             [CompactString::from("high"), CompactString::from("high")].to_vec(),
             [CompactString::from("medium"), CompactString::from("med ")].to_vec(),
@@ -1458,7 +1458,7 @@ pub fn output_json_str(
     } else {
         target_ext_field = ext_field.to_owned();
     }
-    let key_add_to_details = vec![
+    let key_add_to_details = [
         "SrcASN",
         "SrcCountry",
         "SrcCity",
@@ -1935,7 +1935,7 @@ mod tests {
         {
             let messages = &message::MESSAGES;
             messages.clear();
-            let val = r##"
+            let val = r#"
                 {
                     "Event": {
                         "EventData": {
@@ -1948,7 +1948,7 @@ mod tests {
                         }
                     }
                 }
-            "##;
+            "#;
             let event: Value = serde_json::from_str(val).unwrap();
             let output_option = OutputOption {
                 input_args: InputOption {
@@ -2257,7 +2257,7 @@ mod tests {
         {
             let messages = &message::MESSAGES;
             messages.clear();
-            let val = r##"
+            let val = r#"
                 {
                     "Event": {
                         "EventData": {
@@ -2272,7 +2272,7 @@ mod tests {
                         }
                     }
                 }
-            "##;
+            "#;
             let event: Value = serde_json::from_str(val).unwrap();
             let output_option = OutputOption {
                 input_args: InputOption {
@@ -2567,7 +2567,7 @@ mod tests {
         {
             let messages = &message::MESSAGES;
             messages.clear();
-            let val = r##"
+            let val = r#"
                 {
                     "Event": {
                         "EventData": {
@@ -2580,7 +2580,7 @@ mod tests {
                         }
                     }
                 }
-            "##;
+            "#;
             let event: Value = serde_json::from_str(val).unwrap();
             let output_option = OutputOption {
                 input_args: InputOption {
@@ -2886,7 +2886,7 @@ mod tests {
         {
             let messages = &message::MESSAGES;
             messages.clear();
-            let val = r##"
+            let val = r#"
                 {
                     "Event": {
                         "EventData": {
@@ -2899,7 +2899,7 @@ mod tests {
                         }
                     }
                 }
-            "##;
+            "#;
             let event: Value = serde_json::from_str(val).unwrap();
             let output_option = OutputOption {
                 input_args: InputOption {
@@ -3425,7 +3425,7 @@ mod tests {
         )
         .unwrap_or_default();
         {
-            let val = r##"
+            let val = r#"
                 {
                     "Event": {
                         "EventData": {
@@ -3438,7 +3438,7 @@ mod tests {
                         }
                     }
                 }
-            "##;
+            "#;
             let event: Value = serde_json::from_str(val).unwrap();
             let output_option = OutputOption {
                 input_args: InputOption {
@@ -3683,7 +3683,7 @@ mod tests {
         )
         .unwrap_or_default();
         {
-            let val = r##"
+            let val = r#"
                 {
                     "Event": {
                         "EventData": {
@@ -3696,7 +3696,7 @@ mod tests {
                         }
                     }
                 }
-            "##;
+            "#;
             let event: Value = serde_json::from_str(val).unwrap();
             let output_option = OutputOption {
                 input_args: InputOption {

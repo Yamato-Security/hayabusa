@@ -197,7 +197,7 @@ mod tests {
 
         computer_metrics_dsp_msg(&timeline.stats.stats_list, &output);
 
-        let header = vec!["\"Computer\"", "\"Events\""];
+        let header = ["\"Computer\"", "\"Events\""];
 
         let expect = vec![vec!["\"HAYABUSA-DESKTOP\"", "1"], vec!["\"FALCON\"", "1"]];
         let expect_str =

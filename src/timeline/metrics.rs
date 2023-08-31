@@ -101,12 +101,13 @@ impl EventMetrics {
             .unwrap()
             .and_hms_opt(0, 0, 0)
             .unwrap();
-        let evtx_service_released_date = Some(DateTime::<Utc>::from_utc(dt, Utc));
+        let evtx_service_released_date = Some(DateTime::<Utc>::from_naive_utc_and_offset(dt, Utc));
         let mut check_start_end_time = |evttime: &str| {
             let timestamp = match NaiveDateTime::parse_from_str(evttime, "%Y-%m-%dT%H:%M:%S%.3fZ") {
-                Ok(without_timezone_datetime) => {
-                    Some(DateTime::<Utc>::from_utc(without_timezone_datetime, Utc))
-                }
+                Ok(without_timezone_datetime) => Some(DateTime::<Utc>::from_naive_utc_and_offset(
+                    without_timezone_datetime,
+                    Utc,
+                )),
                 Err(e) => {
                     AlertMessage::alert(&format!("timestamp parse error. input: {evttime} {e}"))
                         .ok();

@@ -1283,7 +1283,7 @@ mod tests {
         // timeframe=10secはギリギリHit
         {
             let rule_str = create_std_rule("count(EventID) >= 3", "10s");
-            let default_time = DateTime::<Utc>::from_utc(
+            let default_time = DateTime::<Utc>::from_naive_utc_and_offset(
                 NaiveDate::from_ymd_opt(2021, 12, 21)
                     .unwrap()
                     .and_hms_milli_opt(10, 40, 0, 50)
@@ -1323,7 +1323,7 @@ mod tests {
         // timeframe=11secはギリギリHit
         {
             let rule_str = create_std_rule("count(EventID) >= 3", "11s");
-            let default_time = DateTime::<Utc>::from_utc(
+            let default_time = DateTime::<Utc>::from_naive_utc_and_offset(
                 NaiveDate::from_ymd_opt(2021, 12, 21)
                     .unwrap()
                     .and_hms_milli_opt(10, 40, 0, 50)
@@ -1371,7 +1371,7 @@ mod tests {
         // byない
         {
             let rule_str = create_std_rule("count(EventID) >= 1", "1s");
-            let default_time = DateTime::<Utc>::from_utc(
+            let default_time = DateTime::<Utc>::from_naive_utc_and_offset(
                 NaiveDate::from_ymd_opt(2021, 12, 21)
                     .unwrap()
                     .and_hms_milli_opt(10, 40, 0, 0)
@@ -1393,7 +1393,7 @@ mod tests {
         // byある
         {
             let rule_str = create_std_rule("count(EventID) by param1>= 1", "1s");
-            let default_time = DateTime::<Utc>::from_utc(
+            let default_time = DateTime::<Utc>::from_naive_utc_and_offset(
                 NaiveDate::from_ymd_opt(2021, 12, 21)
                     .unwrap()
                     .and_hms_milli_opt(10, 40, 0, 0)
