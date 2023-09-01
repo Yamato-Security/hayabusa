@@ -15,6 +15,7 @@
     <a href="https://www.blackhat.com/asia-22/arsenal/schedule/#hayabusa-26211"><img src="https://raw.githubusercontent.com/toolswatch/badges/master/arsenal/asia/2022.svg"></a>
     <a href="https://codeblue.jp/2022/en/talks/?content=talks_24"><img src="https://img.shields.io/badge/CODE%20BLUE%20Bluebox-2022-blue"></a>
     <a href="https://www.seccon.jp/2022/seccon_workshop/windows.html"><img src="https://img.shields.io/badge/SECCON-2023-blue"></a>
+    <a href="https://www.security-camp.or.jp/minicamp/tokyo2023.html"><img src="https://img.shields.io/badge/Security%20MiniCamp%20Tokyo-2023-blue"></a>
     <a href="https://www.sans.org/cyber-security-training-events/digital-forensics-summit-2023/"><img src="https://img.shields.io/badge/SANS%20DFIR%20Summit-2023-blue"></a>
     <a href=""><img src="https://img.shields.io/badge/Maintenance%20Level-Actively%20Developed-brightgreen.svg" /></a>
     <a href="https://rust-reportcard.xuri.me/report/github.com/Yamato-Security/hayabusa"><img src="https://rust-reportcard.xuri.me/badge/github.com/Yamato-Security/hayabusa" /></a>
@@ -68,6 +69,7 @@ Hayabusaは、日本の[Yamato Security](https://yamatosecurity.connpass.com/)�
 - [Hayabusaの実行](#hayabusaの実行)
   - [注意: アンチウィルス/EDRの誤検知と遅い初回実行](#注意-アンチウィルスedrの誤検知と遅い初回実行)
   - [Windows](#windows)
+    - [パスにスペースが含まれるファイルまたはディレクトリをスキャンしようとするとエラーが発生した場合](#パスにスペースが含まれるファイルまたはディレクトリをスキャンしようとするとエラーが発生した場合)
   - [Linux](#linux)
   - [macOS](#macos)
 - [コマンド一覧](#コマンド一覧)
@@ -144,7 +146,7 @@ Hayabusaは、日本の[Yamato Security](https://yamatosecurity.connpass.com/)�
 
 ### スレット(脅威)ハンティングと企業向けの広範囲なDFIR
 
-Hayabusaには現在、2500以上のSigmaルールと150以上のHayabusa検知ルールがあり、定期的にルールが追加されています。
+Hayabusaには現在、2300以上のSigmaルールと150以上のHayabusa検知ルールがあり、定期的にルールが追加されています。
 [Velociraptor](https://docs.velociraptor.app/)の[Hayabusa artifact](https://docs.velociraptor.app/exchange/artifacts/pages/windows.eventlogs.hayabusa/)を用いることで企業向けの広範囲なスレットハンティングだけでなくDFIR(デジタルフォレンジックとインシデントレスポンス)にも無料で利用することが可能です。
 この2つのオープンソースを組み合わせることで、SIEMが設定されていない環境でも実質的に遡及してSIEMを再現することができます。
 具体的な方法は[Eric Capuano](https://twitter.com/eric_capuano)の[こちら](https://www.youtube.com/watch?v=Q1IoGX--814)の動画で学ぶことができます。
@@ -246,6 +248,8 @@ JSON形式の結果を`jq`で解析する方法については、[こちら](/do
 * IPアドレスにGeoIP（ASN、都市、国）情報を付加することによるログエンリッチメント。
 * キーワードや正規表現で全イベントの検索。
 * フィールドデータのマッピング (例: `0xc0000234` -> `ACCOUNT LOCKED`)
+* 空領域からのEvtxレコードカービング。
+* 出力時のイベント重複排除。(レコード復元が有効になっている場合や、バックアップされたevtxファイル、VSSから抽出されたevtxファイルなどが含まれている場合に便利。)
 
 # ダウンロード
 
@@ -379,6 +383,13 @@ Windows PC起動後の初回実行時に時間がかかる場合があります�
 
 コマンドプロンプトやWindows Terminalから32ビットもしくは64ビットのWindowsバイナリをHayabusaのルートディレクトリから実行します。
 
+### パスにスペースが含まれるファイルまたはディレクトリをスキャンしようとするとエラーが発生した場合
+
+Windowsに組み込まれているコマンドプロンプトまたはPowerShellプロンプトを使用する場合、ファイルまたはディレクトリのパスに空白があると、.evtxファイルをロードできないというエラーが表示されることがあります。
+.evtxファイルを正しくロードするために、以下のことを行ってください:
+1. ファイルまたはディレクトリのパスをダブルクォートで囲む。
+2. ディレクトリパスの場合は、最後の文字にバックスラッシュを入れない。
+
 ## Linux
 
 まず、バイナリに実行権限を与える必要があります。
@@ -464,6 +475,10 @@ Input:
   -f, --file <FILE>            1つの.evtxファイルに対して解析を行う
   -l, --live-analysis          ローカル端末のC:\Windows\System32\winevt\Logsフォルダを解析する
   -J, --JSON-input             .evtxファイルの代わりにJSON形式のログファイル(.jsonまたは.jsonl)をスキャンする
+  -x, --recover-records        空ページからevtxレコードをカービングする (デフォルト: 無効)
+
+Filtering:
+      --timeline-offset <OFFSET>  オフセットに基づく最近のイベントのスキャン (例: 1y, 3M, 30d, 24h, 30m)
 
 Output:
   -o, --output <FILE>       イベントIDに基づくイベントの合計と割合の集計を出力する (例: computer-metrics.csv)
@@ -499,6 +514,12 @@ Input:
   -f, --file <FILE>            1つの.evtxファイルに対して解析を行う
   -l, --live-analysis          ローカル端末のC:\Windows\System32\winevt\Logsフォルダを解析する
   -J, --JSON-input             .evtxファイルの代わりにJSON形式のログファイル(.jsonまたは.jsonl)をスキャンする
+  -x, --recover-records        空ページからevtxレコードをカービングする (デフォルト: 無効)
+
+Filtering:
+      --exclude-computer <COMPUTER...>  特定のコンピュータ名をスキャンしない (例: ComputerA) (例: ComputerA,ComputerB)
+      --include-computer <COMPUTER...>  特定のコンピュータ名のみをスキャンする (例: ComputerA) (例: ComputerA,ComputerB)
+      --timeline-offset <OFFSET>        オフセットに基づく最近のイベントのスキャン (例: 1y, 3M, 30d, 24h, 30m)
 
 Output:
   -o, --output <FILE>       イベントIDに基づくイベントの合計と割合の集計を出力する (例: eid-metrics.csv)
@@ -514,10 +535,6 @@ General Options:
   -c, --rules-config <DIR>               ルールフォルダのコンフィグディレクトリ (デフォルト: ./rules/config)
       --target-file-ext <FILE-EXT...>    evtx以外の拡張子を解析対象に追加する。 (例１: evtx_data 例２: evtx1,evtx2)
   -t, --threads <NUMBER>                 スレッド数 (デフォルト: パフォーマンスに最適な数値)
-
-Filtering:
-      --exclude-computer <COMPUTER...>  特定のコンピュータ名をスキャンしない (例: ComputerA) (例: ComputerA,ComputerB)
-      --include-computer <COMPUTER...>  特定のコンピュータ名のみをスキャンする (例: ComputerA) (例: ComputerA,ComputerB)
 
 Time Format:
       --European-time     ヨーロッパ形式で日付と時刻を出力する (例: 22-02-2022 22:00:00.123 +02:00)
@@ -548,6 +565,7 @@ Microsoft-Windows-Sysmon/Operational,3,Network Connection.
 Microsoft-Windows-Sysmon/Operational,4,Sysmon Service State Changed.
 ```
 
+
 ### `logon-summary`コマンド
 
 `logon-summary`コマンドを使うことでログオン情報の要約(ユーザ名、ログイン成功数、ログイン失敗数)の画面出力ができます。
@@ -561,9 +579,17 @@ Input:
   -f, --file <FILE>            1つの.evtxファイルに対して解析を行う
   -l, --live-analysis          ローカル端末のC:\Windows\System32\winevt\Logsフォルダを解析する
   -J, --JSON-input             .evtxファイルの代わりにJSON形式のログファイル(.jsonまたは.jsonl)をスキャンする
+  -x, --recover-records        空ページからevtxレコードをカービングする (デフォルト: 無効)
+
+Filtering:
+      --exclude-computer <COMPUTER...>  特定のコンピュータ名をスキャンしない (例: ComputerA) (例: ComputerA,ComputerB)
+      --include-computer <COMPUTER...>  特定のコンピュータ名のみをスキャンする (例: ComputerA) (例: ComputerA,ComputerB)
+      --timeline-end <DATE>             解析対象とするイベントログの終了時刻 (例: "2022-02-22 23:59:59 +09:00")
+      --timeline-offset <OFFSET>        オフセットに基づく最近のイベントのスキャン (例: 1y, 3M, 30d, 24h, 30m)
+      --timeline-start <DATE>           解析対象とするイベントログの開始時刻 (例: "2020-02-22 00:00:00 +09:00")
 
 Output:
-  -o, --output <FILE>  ログオンサマリをCSV形式で保存する (例: logon-summary.csv)
+  -o, --output <FILENAME-PREFIX>  ログオンサマリをCSV形式で２つのファイルに保存する (例: -o logon-summary.csv)
 
 Display Settings:
       --no-color            カラーで出力しない
@@ -576,10 +602,6 @@ General Options:
   -c, --rules-config <DIR>               ルールフォルダのコンフィグディレクトリ (デフォルト: ./rules/config)
       --target-file-ext <FILE-EXT...>    evtx以外の拡張子を解析対象に追加する (例１: evtx_data 例２:evtx1,evtx2)
   -t, --threads <NUMBER>                 スレッド数 (デフォルト: パフォーマンスに最適な数値)
-
-Filtering:
-      --exclude-computer <COMPUTER...>  特定のコンピュータ名をスキャンしない (例: ComputerA) (例: ComputerA,ComputerB)
-      --include-computer <COMPUTER...>  特定のコンピュータ名のみをスキャンする (例: ComputerA) (例: ComputerA,ComputerB)
 
 Time Format:
       --European-time     ヨーロッパ形式で日付と時刻を出力する (例: 22-02-2022 22:00:00.123 +02:00)
@@ -613,14 +635,7 @@ Input:
   -f, --file <FILE>            1つの.evtxファイルに対して解析を行う
   -l, --live-analysis          ローカル端末のC:\Windows\System32\winevt\Logsフォルダを解析する
   -J, --JSON-input             .evtxファイルの代わりにJSON形式のログファイル(.jsonまたは.jsonl)をスキャンする
-
-Output:
-  -o, --output <FILE>       ピボットキーワードの一覧を複数ファイルに出力する (例: pivot-keywords.txt)
-
-Display Settings:
-      --no-color       カラーで出力しない
-  -q, --quiet          Quietモード: 起動バナーを表示しない
-  -v, --verbose        詳細な情報を出力する
+  -x, --recover-records        空ページからevtxレコードをカービングする (デフォルト: 無効)
 
 Filtering:
   -E, --EID-filter                      速度を上げるため主なEIDだけスキャンする (コンフィグファイル: ./rules/config/target_event_IDs.txt)
@@ -635,7 +650,16 @@ Filtering:
       --include-eid <EID...>            指定したEIDのみをスキャンして高速化する (例 1) (例: 1,4688)
   -m, --min-level <LEVEL>               結果出力をするルールの最低レベル (デフォルト: informational)
       --timeline-end <DATE>             解析対象とするイベントログの終了時刻 (例: "2022-02-22 23:59:59 +09:00")
+      --timeline-offset <OFFSET>        オフセットに基づく最近のイベントのスキャン (例: 1y, 3M, 30d, 24h, 30m)
       --timeline-start <DATE>           解析対象とするイベントログの開始時刻 (例: "2020-02-22 00:00:00 +09:00")
+
+Output:
+  -o, --output <FILE>       ピボットキーワードの一覧を複数ファイルに出力する (例: pivot-keywords.txt)
+
+Display Settings:
+      --no-color       カラーで出力しない
+  -q, --quiet          Quietモード: 起動バナーを表示しない
+  -v, --verbose        詳細な情報を出力する
 
 General Options:
   -C, --clobber                          結果ファイルを上書きする
@@ -662,6 +686,7 @@ hayabusa.exe pivot-keywords-list -d ../logs -m critical -o keywords
 
 フォーマットは、`キーワード名.フィールド名`です。例えば、`Users`のリストを作成する場合、Hayabusaは、`SubjectUserName`、`TargetUserName`、`User`フィールドにあるすべての値をリストアップします。
 
+
 ### `search`コマンド
 
 `search`コマンドは、すべてのイベントのキーワード検索が可能です。
@@ -677,15 +702,18 @@ Display Settings:
   -v, --verbose   詳細な情報を出力する
 
 Input:
-  -d, --directory <DIR>  .evtxファイルを持つディレクトリのパス
-  -f, --file <FILE>      1つの.evtxファイルに対して解析を行う
-  -l, --live-analysis    ローカル端末のC:\Windows\System32\winevt\Logsフォルダを解析する
+  -d, --directory <DIR>        .evtxファイルを持つディレクトリのパス
+  -f, --file <FILE>            1つの.evtxファイルに対して解析を行う
+  -l, --live-analysis          ローカル端末のC:\Windows\System32\winevt\Logsフォルダを解析する
+  -x, --recover-records        空ページからevtxレコードをカービングする (デフォルト: 無効)
 
 Filtering:
-  -F, --filter <FILTER...>       特定のフィールドでフィルタする
-  -i, --ignore-case              大文字と小文字を区別しない
-  -k, --keywords <KEYWORD...>    キーワードでの検索
-  -r, --regex <REGEX>            正規表現での検索
+  -a, --and-logic                    ANDロジックでキーワード検索を行う (デフォルト: OR)
+  -F, --filter <FILTER...>           特定のフィールドでフィルタする
+  -i, --ignore-case                  大文字と小文字を区別しない
+  -k, --keywords <KEYWORD...>        キーワードでの検索
+  -r, --regex <REGEX>                正規表現での検索
+      --timeline-offset <OFFSET>     オフセットに基づく最近のイベントのスキャン (例: 1y, 3M, 30d, 24h, 30m)
 
 Output:
   -J, --JSON-output    JSON形式で検索結果を保存する (例: -J -o results.json)
@@ -699,6 +727,15 @@ General Options:
   -c, --rules-config <DIR>               ルールフォルダのコンフィグディレクトリ (デフォルト: ./rules/config)
       --target-file-ext <FILE-EXT...>    evtx以外の拡張子を解析対象に追加する (例１: evtx_data 例２:evtx1,evtx2)
   -t, --threads <NUMBER>                 スレッド数 (デフォルト: パフォーマンスに最適な数値)
+
+Time Format:
+      --European-time     ヨーロッパ形式で日付と時刻を出力する (例: 22-02-2022 22:00:00.123 +02:00)
+      --ISO-8601          ISO-8601形式で日付と時刻を出力する (例: 2022-02-22T10:10:10.1234567Z) (UTC時刻)
+      --RFC-2822          RFC 2822形式で日付と時刻を出力する (例: Fri, 22 Feb 2022 22:00:00 -0600)
+      --RFC-3339          RFC 3339形式で日付と時刻を出力する (例: 2022-02-22 22:00:00.123456-06:00)
+      --US-military-time  24時間制(ミリタリータイム)のアメリカ形式で日付と時刻を出力する (例: 02-22-2022 22:00:00.123 -06:00)
+      --US-time           アメリカ形式で日付と時刻を出力する (例: 02-22-2022 10:00:00.123 PM -06:00)
+  -U, --UTC               UTC形式で日付と時刻を出力する (デフォルト: 現地時間)
 ```
 
 #### `search`コマンドの使用例
@@ -756,22 +793,7 @@ Input:
   -f, --file <FILE>        1つの.evtxファイルに対して解析を行う
   -l, --live-analysis      ローカル端末のC:\Windows\System32\winevt\Logsフォルダを解析する
   -J, --JSON-input         .evtxファイルの代わりにJSON形式のログファイル(.jsonまたは.jsonl)をスキャンする
-
-Output:
-  -G, --GeoIP <MAXMIND-DB-DIR>    IPアドレスのGeoIP(ASN、都市、国)情報を追加する
-  -H, --HTML-report <FILE>        HTML形式で詳細な結果を出力する (例: results.html)
-  -M, --multiline                 イベントフィールド情報を複数の行に出力する
-  -F, --no-field-data-mapping     フィールドデータのマッピングを無効にする
-  -o, --output <FILE>             タイムラインを保存する (例: results.csv)
-  -p, --profile <PROFILE>         利用する出力プロファイル名を指定する
-  -R, --remove-duplicate-data     重複したフィールドデータは「DUP」に置き換えられる (ファイルサイズが約10〜15％削減される)
-
-Display Settings:
-      --no-color            カラーで出力しない
-  -N, --no-summary          結果概要を出力しない (多少速くなる)
-  -q, --quiet               Quietモード: 起動バナーを表示しない
-  -v, --verbose             詳細な情報を出力する
-  -T, --visualize-timeline  検知頻度タイムラインを出力する（ターミナルはUnicodeに対応する必要がある）
+  -x, --recover-records    空ページからevtxレコードをカービングする (デフォルト: 無効)
 
 Filtering:
   -E, --EID-filter                      速度を上げるため主なEIDだけスキャンする (コンフィグファイル: ./rules/config/target_event_IDs.txt)
@@ -791,7 +813,25 @@ Filtering:
   -m, --min-level <LEVEL>               結果出力をするルールの最低レベル (デフォルト: informational)
   -P, --proven-rules                    実績のあるルールだけでスキャンし、高速化する (./rules/config/proven_rules.txt)
       --timeline-end <DATE>             解析対象とするイベントログの終了時刻 (例: "2022-02-22 23:59:59 +09:00")
+      --timeline-offset <OFFSET>        オフセットに基づく最近のイベントのスキャン (例: 1y, 3M, 30d, 24h, 30m)
       --timeline-start <DATE>           解析対象とするイベントログの開始時刻 (例: "2020-02-22 00:00:00 +09:00")
+
+Output:
+  -G, --GeoIP <MAXMIND-DB-DIR>       IPアドレスのGeoIP(ASN、都市、国)情報を追加する
+  -H, --HTML-report <FILE>           HTML形式で詳細な結果を出力する (例: results.html)
+  -M, --multiline                    イベントフィールド情報を複数の行に出力する
+  -F, --no-field-data-mapping        フィールドデータのマッピングを無効にする
+  -o, --output <FILE>                タイムラインを保存する (例: results.csv)
+  -p, --profile <PROFILE>            利用する出力プロファイル名を指定する
+  -R, --remove-duplicate-data        重複したフィールドデータは「DUP」に置き換えられる (ファイルサイズが約10〜15％削減される)
+  -X, --remove-duplicate-detections  重複した検知項目を削除する (デフォルト: 無効)
+
+Display Settings:
+      --no-color            カラーで出力しない
+  -N, --no-summary          結果概要を出力しない (多少速くなる)
+  -q, --quiet               Quietモード: 起動バナーを表示しない
+  -v, --verbose             詳細な情報を出力する
+  -T, --visualize-timeline  検知頻度タイムラインを出力する（ターミナルはUnicodeに対応する必要がある）
 
 General Options:
   -C, --clobber                          結果ファイルを上書きする
@@ -1011,22 +1051,7 @@ Input:
   -f, --file <FILE>        1つの.evtxファイルに対して解析を行う
   -l, --live-analysis      ローカル端末のC:\Windows\System32\winevt\Logsフォルダを解析する
   -J, --JSON-input         .evtxファイルの代わりにJSON形式のログファイル(.jsonまたは.jsonl)をスキャンする
-
-Output:
-  -G, --GeoIP <MAXMIND-DB-DIR>    IPアドレスのGeoIP(ASN、都市、国)情報を追加する
-  -H, --HTML-report <FILE>        HTML形式で詳細な結果を出力する (例: results.html)
-  -L, --JSONL-output              タイムラインをJSONL形式で保存する (例: -L -o results.jsonl)
-  -F, --no-field-data-mapping     フィールドデータのマッピングを無効にする
-  -o, --output <FILE>             タイムラインを保存する (例: results.csv)
-  -p, --profile <PROFILE>         利用する出力プロファイル名を指定する
-  -R, --remove-duplicate-data     重複したフィールドデータは「DUP」に置き換えられる (ファイルサイズが約10〜15％削減される)
-
-Display Settings:
-      --no-color            カラーで出力しない
-  -N, --no-summary          結果概要を出力しない (多少速くなる)
-  -q, --quiet               Quietモード: 起動バナーを表示しない
-  -v, --verbose             詳細な情報を出力する
-  -T, --visualize-timeline  検知頻度タイムラインを出力する（ターミナルはUnicodeに対応する必要がある）
+  -x, --recover-records    空ページからevtxレコードをカービングする (デフォルト: 無効)
 
 Filtering:
   -E, --EID-filter                      速度を上げるため主なEIDだけスキャンする (コンフィグファイル: ./rules/config/target_event_IDs.txt)
@@ -1046,7 +1071,25 @@ Filtering:
   -m, --min-level <LEVEL>               結果出力をするルールの最低レベル (デフォルト: informational)
   -P, --proven-rules                    実績のあるルールだけでスキャンし、高速化する (./rules/config/proven_rules.txt)
       --timeline-end <DATE>             解析対象とするイベントログの終了時刻 (例: "2022-02-22 23:59:59 +09:00")
+      --timeline-offset <OFFSET>        オフセットに基づく最近のイベントのスキャン (例: 1y, 3M, 30d, 24h, 30m)
       --timeline-start <DATE>           解析対象とするイベントログの開始時刻 (例: "2020-02-22 00:00:00 +09:00")
+
+Output:
+  -G, --GeoIP <MAXMIND-DB-DIR>       IPアドレスのGeoIP(ASN、都市、国)情報を追加する
+  -H, --HTML-report <FILE>           HTML形式で詳細な結果を出力する (例: results.html)
+  -L, --JSONL-output                 タイムラインをJSONL形式で保存する (例: -L -o results.jsonl)
+  -F, --no-field-data-mapping        フィールドデータのマッピングを無効にする
+  -o, --output <FILE>                タイムラインを保存する (例: results.csv)
+  -p, --profile <PROFILE>            利用する出力プロファイル名を指定する
+  -R, --remove-duplicate-data        重複したフィールドデータは「DUP」に置き換えられる (ファイルサイズが約10〜15％削減される)
+  -X, --remove-duplicate-detections  重複した検知項目を削除する (デフォルト: 無効)
+
+Display Settings:
+      --no-color            カラーで出力しない
+  -N, --no-summary          結果概要を出力しない (多少速くなる)
+  -q, --quiet               Quietモード: 起動バナーを表示しない
+  -v, --verbose             詳細な情報を出力する
+  -T, --visualize-timeline  検知頻度タイムラインを出力する（ターミナルはUnicodeに対応する必要がある）
 
 General Options:
   -C, --clobber                          結果ファイルを上書きする
