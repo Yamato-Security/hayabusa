@@ -1,18 +1,18 @@
 # Changes
 
-## 2.8.0 [xxxx/xx/xx]
+## 2.8.0 [2023/09/01] "Double X Release"
 
 **New Features:**
 
 - Added support for `HexToDecimal` in the field mapping configuration files to convert hex values to decimal. (Useful for converting the original process IDs from hex to decimal.) (#1133) (@fukusuket)
 - Added `-x, --recover-records` option to `csv-timeline` and `json-timeline` to recover evtx records through file carving on empty pages. (#952) (@hitenkoku) (Evtx carving feature is thanks to @forensicmatt)
-- Added `-X, --remove-duplicate-detections` option to `csv-timeline` and `json-timeline` to not output any duplicate detection entries. (Useful when you use `-x`, include older backup logs with duplicate data, etc...)
-
-**Enhancements:**
-
+- Added `-X, --remove-duplicate-detections` option to `csv-timeline` and `json-timeline` to not output any duplicate detection entries. (Useful when you use `-x`, include backup logs or logs extracted from VSS with duplicate data, etc...)
+- Added a `--timeline-offset` option to `csv-timeline`, `json-timeline`, `logon-summary`, `eid-metrics`, `pivot-keywords-list` and `search` commands to scan just recent events based on a offset of years, months, days, hours, etc... (#1159) (@hitenkoku)
 - Added a `-a, --and-logic` option in the `search` command to search keywords with AND logic. (#1162) (@hitenkoku)
+
+**Other:**
+
 - When using `-x, --recover-records`, an additional `%RecoveredRecord%` field will be added to the output profile and will output `Y` to indicate if a record was recovered. (#1160) (@hitenkoku)
-- Added a `--timeline-offset` option in `csv-timeline`, `json-timeline`, `logon-summary`, `eid-metrics`, `pivot-keywords-list`, `search` command to scan just the most recent number of days. (#1159) (@hitenkoku)
 
 ## 2.7.0 [2023/08/03] "SANS DFIR Summit Release"
 
