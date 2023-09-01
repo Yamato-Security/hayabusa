@@ -1052,7 +1052,7 @@ impl App {
         self.rule_keys = self.get_all_keys(&rule_files);
         let mut detection = detection::Detection::new(rule_files);
         let mut total_records: usize = 0;
-        let mut recover_recordss: usize = 0;
+        let mut recover_records: usize = 0;
         let mut tl = Timeline::new();
 
         *STORED_EKEY_ALIAS.write().unwrap() = Some(stored_static.eventkey_alias.clone());
@@ -1084,7 +1084,7 @@ impl App {
                 )
             };
             total_records += cnt_tmp;
-            recover_recordss += recover_cnt_tmp;
+            recover_records += recover_cnt_tmp;
             pb.inc(1);
         }
         pb.finish_with_message(
@@ -1118,7 +1118,7 @@ impl App {
                 stored_static.common_options.no_color,
                 stored_static,
                 tl,
-                recover_recordss,
+                recover_records,
             );
         }
         CHECKPOINT
@@ -1143,7 +1143,7 @@ impl App {
         let mut record_cnt = 0;
         let mut recover_records_cnt = 0;
         if parser.is_none() {
-            return (detection, record_cnt, tl, recover_records_cnt);
+            return (detection, record_cnt, tl, 0);
         }
 
         let mut parser = parser.unwrap();
@@ -1166,7 +1166,7 @@ impl App {
                     && record_result.as_ref().unwrap().allocation == RecordAllocation::EmptyPage
                 {
                     recover_records_cnt += 1;
-                };
+                }
 
                 if record_result.is_err() {
                     let evtx_filepath = &path;
@@ -1230,15 +1230,16 @@ impl App {
                     ) {
                         continue;
                     }
-
-                    // EventID側の条件との条件の混同を防ぐため時間でのフィルタリングの条件分岐を分離した
-                    let timestamp = record_result.as_ref().unwrap().timestamp;
-                    if !time_filter.is_target(&Some(timestamp)) {
-                        continue;
-                    }
+                }
+                // EventID側の条件との条件の混同を防ぐため時間でのフィルタリングの条件分岐を分離した
+                let timestamp = record_result.as_ref().unwrap().timestamp;
+                if !time_filter.is_target(&Some(timestamp)) {
+                    continue;
                 }
 
-                records_per_detect.push(data.to_owned());
+                let recover_record_flag = record_result.is_ok()
+                    && record_result.as_ref().unwrap().allocation == RecordAllocation::EmptyPage;
+                records_per_detect.push((data.to_owned(), recover_record_flag));
             }
             if records_per_detect.is_empty() {
                 break;
@@ -1388,9 +1389,9 @@ impl App {
                         .replace('"', ""),
                     "%Y-%m-%dT%H:%M:%S%.3fZ",
                 ) {
-                    Ok(without_timezone_datetime) => {
-                        Some(DateTime::<Utc>::from_utc(without_timezone_datetime, Utc))
-                    }
+                    Ok(without_timezone_datetime) => Some(
+                        DateTime::<Utc>::from_naive_utc_and_offset(without_timezone_datetime, Utc),
+                    ),
                     Err(e) => {
                         AlertMessage::alert(&format!(
                             "timestamp parse error. filepath:{},{} {}",
@@ -1409,7 +1410,7 @@ impl App {
                     continue;
                 }
 
-                records_per_detect.push(data.to_owned());
+                records_per_detect.push((data.to_owned(), false));
             }
             if records_per_detect.is_empty() {
                 break;
@@ -1438,22 +1439,27 @@ impl App {
     }
 
     async fn create_rec_infos(
-        records_per_detect: Vec<Value>,
+        records_per_detect: Vec<(Value, bool)>,
         path: &dyn Display,
         rule_keys: Nested<String>,
     ) -> Vec<EvtxRecordInfo> {
         let path = Arc::new(path.to_string());
         let rule_keys = Arc::new(rule_keys);
         let threads: Vec<JoinHandle<EvtxRecordInfo>> = {
-            let this = records_per_detect
-                .into_iter()
-                .map(|rec| -> JoinHandle<EvtxRecordInfo> {
+            let this = records_per_detect.into_iter().map(
+                |(rec, recovered_record_flag)| -> JoinHandle<EvtxRecordInfo> {
                     let arc_rule_keys = Arc::clone(&rule_keys);
                     let arc_path = Arc::clone(&path);
                     spawn(async move {
-                        utils::create_rec_info(rec, arc_path.to_string(), &arc_rule_keys)
+                        utils::create_rec_info(
+                            rec,
+                            arc_path.to_string(),
+                            &arc_rule_keys,
+                            &recovered_record_flag,
+                        )
                     })
-                });
+                },
+            );
             FromIterator::from_iter(this)
         };
 
@@ -1675,6 +1681,7 @@ mod tests {
                         filepath: None,
                         live_analysis: false,
                         recover_records: false,
+                        timeline_offset: None,
                     },
                     profile: None,
                     enable_deprecated_rules: false,
@@ -1835,6 +1842,7 @@ mod tests {
                     filepath: Some(Path::new("test_files/evtx/test.json").to_path_buf()),
                     live_analysis: false,
                     recover_records: false,
+                    timeline_offset: None,
                 },
                 profile: None,
                 enable_deprecated_rules: false,
@@ -1916,6 +1924,7 @@ mod tests {
                     filepath: Some(Path::new("test_files/evtx/test.json").to_path_buf()),
                     live_analysis: false,
                     recover_records: false,
+                    timeline_offset: None,
                 },
                 profile: None,
                 enable_deprecated_rules: false,
@@ -1995,6 +2004,7 @@ mod tests {
                     filepath: Some(Path::new("test_files/evtx/test.json").to_path_buf()),
                     live_analysis: false,
                     recover_records: false,
+                    timeline_offset: None,
                 },
                 profile: None,
                 enable_deprecated_rules: false,
@@ -2076,6 +2086,7 @@ mod tests {
                     filepath: Some(Path::new("test_files/evtx/test.json").to_path_buf()),
                     live_analysis: false,
                     recover_records: false,
+                    timeline_offset: None,
                 },
                 profile: None,
                 enable_deprecated_rules: false,
@@ -2155,6 +2166,7 @@ mod tests {
                 filepath: Some(Path::new("test_files/evtx/test_metrics.json").to_path_buf()),
                 live_analysis: false,
                 recover_records: false,
+                timeline_offset: None,
             },
             common_options: CommonOptions {
                 no_color: false,
@@ -2209,6 +2221,7 @@ mod tests {
                 filepath: Some(Path::new("test_files/evtx/test_metrics.json").to_path_buf()),
                 live_analysis: false,
                 recover_records: false,
+                timeline_offset: None,
             },
             common_options: CommonOptions {
                 no_color: false,
@@ -2260,6 +2273,7 @@ mod tests {
                 directory: None,
                 filepath: Some(Path::new("test_files/evtx/test_metrics.json").to_path_buf()),
                 live_analysis: false,
+                timeline_offset: None,
                 recover_records: false,
             },
             common_options: CommonOptions {
@@ -2317,6 +2331,7 @@ mod tests {
                 filepath: Some(Path::new("test_files/evtx/test_metrics.json").to_path_buf()),
                 live_analysis: false,
                 recover_records: false,
+                timeline_offset: None,
             },
             common_options: CommonOptions {
                 no_color: false,
@@ -2372,6 +2387,7 @@ mod tests {
                 filepath: Some(Path::new("test_files/evtx/test_metrics.json").to_path_buf()),
                 live_analysis: false,
                 recover_records: false,
+                timeline_offset: None,
             },
             common_options: CommonOptions {
                 no_color: false,
@@ -2414,6 +2430,7 @@ mod tests {
                 filepath: Some(Path::new("test_files/evtx/test_metrics.json").to_path_buf()),
                 live_analysis: false,
                 recover_records: false,
+                timeline_offset: None,
             },
             common_options: CommonOptions {
                 no_color: false,

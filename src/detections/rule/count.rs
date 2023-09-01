@@ -584,6 +584,7 @@ mod tests {
                         filepath: None,
                         live_analysis: false,
                         recover_records: false,
+                        timeline_offset: None,
                     },
                     profile: None,
                     enable_deprecated_rules: false,
@@ -940,7 +941,7 @@ mod tests {
             match serde_json::from_str(record) {
                 Ok(rec) => {
                     let keys = detections::rule::get_detection_keys(&rule_node);
-                    let recinfo = utils::create_rec_info(rec, "testpath".to_owned(), &keys);
+                    let recinfo = utils::create_rec_info(rec, "testpath".to_owned(), &keys, &false);
                     let _result = rule_node.select(
                         &recinfo,
                         dummy_stored_static.verbose_flag,
@@ -1283,7 +1284,7 @@ mod tests {
         // timeframe=10secはギリギリHit
         {
             let rule_str = create_std_rule("count(EventID) >= 3", "10s");
-            let default_time = DateTime::<Utc>::from_utc(
+            let default_time = DateTime::<Utc>::from_naive_utc_and_offset(
                 NaiveDate::from_ymd_opt(2021, 12, 21)
                     .unwrap()
                     .and_hms_milli_opt(10, 40, 0, 50)
@@ -1323,7 +1324,7 @@ mod tests {
         // timeframe=11secはギリギリHit
         {
             let rule_str = create_std_rule("count(EventID) >= 3", "11s");
-            let default_time = DateTime::<Utc>::from_utc(
+            let default_time = DateTime::<Utc>::from_naive_utc_and_offset(
                 NaiveDate::from_ymd_opt(2021, 12, 21)
                     .unwrap()
                     .and_hms_milli_opt(10, 40, 0, 50)
@@ -1371,7 +1372,7 @@ mod tests {
         // byない
         {
             let rule_str = create_std_rule("count(EventID) >= 1", "1s");
-            let default_time = DateTime::<Utc>::from_utc(
+            let default_time = DateTime::<Utc>::from_naive_utc_and_offset(
                 NaiveDate::from_ymd_opt(2021, 12, 21)
                     .unwrap()
                     .and_hms_milli_opt(10, 40, 0, 0)
@@ -1393,7 +1394,7 @@ mod tests {
         // byある
         {
             let rule_str = create_std_rule("count(EventID) by param1>= 1", "1s");
-            let default_time = DateTime::<Utc>::from_utc(
+            let default_time = DateTime::<Utc>::from_naive_utc_and_offset(
                 NaiveDate::from_ymd_opt(2021, 12, 21)
                     .unwrap()
                     .and_hms_milli_opt(10, 40, 0, 0)
@@ -1715,7 +1716,8 @@ mod tests {
             match serde_json::from_str(record_str) {
                 Ok(record) => {
                     let keys = detections::rule::get_detection_keys(&rule_node);
-                    let recinfo = utils::create_rec_info(record, "testpath".to_owned(), &keys);
+                    let recinfo =
+                        utils::create_rec_info(record, "testpath".to_owned(), &keys, &false);
                     let result = &rule_node.select(
                         &recinfo,
                         dummy_stored_static.verbose_flag,

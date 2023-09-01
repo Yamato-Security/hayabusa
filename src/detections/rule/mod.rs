@@ -404,6 +404,7 @@ mod tests {
                         filepath: None,
                         live_analysis: false,
                         recover_records: false,
+                        timeline_offset: None,
                     },
                     profile: None,
                     enable_deprecated_rules: false,
@@ -478,7 +479,7 @@ mod tests {
         match serde_json::from_str(record_str) {
             Ok(record) => {
                 let keys = detections::rule::get_detection_keys(&rule_node);
-                let recinfo = utils::create_rec_info(record, "testpath".to_owned(), &keys);
+                let recinfo = utils::create_rec_info(record, "testpath".to_owned(), &keys, &false);
                 assert_eq!(
                     rule_node.select(
                         &recinfo,
@@ -801,14 +802,14 @@ mod tests {
         // 上記テストケースのEventDataの更に特殊ケースで下記のようにDataタグの中にNameキーがないケースがある。
         // そのためにruleファイルでEventDataというキーだけ特別対応している。
         // 現状、downgrade_attack.ymlというルールの場合だけで確認出来ているケース
-        let rule_str = r#"
+        let rule_str = r"
         enabled: true
         detection:
             selection:
                 EventID: 403
                 EventData|re: '[\s\S]*EngineVersion=2\.0[\s\S]*'
         details: 'command=%CommandLine%'
-        "#;
+        ";
 
         let record_json_str = r#"
         {
@@ -855,14 +856,14 @@ mod tests {
         // 上記テストケースのEventDataの更に特殊ケースで下記のようにDataタグの中にNameキーがないケースがある。
         // そのためにruleファイルでEventDataというキーだけ特別対応している。
         // 現状、downgrade_attack.ymlというルールの場合だけで確認出来ているケース
-        let rule_str = r#"
+        let rule_str = r"
         enabled: true
         detection:
             selection:
                 EventID: 403
                 EventData: '[\s\S]*EngineVersion=3.0[\s\S]*'
         details: 'command=%CommandLine%'
-        "#;
+        ";
 
         let record_json_str = r#"
         {
@@ -1047,7 +1048,7 @@ mod tests {
         match serde_json::from_str(record_str) {
             Ok(record) => {
                 let keys = detections::rule::get_detection_keys(&rule_node);
-                let recinfo = utils::create_rec_info(record, "testpath".to_owned(), &keys);
+                let recinfo = utils::create_rec_info(record, "testpath".to_owned(), &keys, &false);
                 let result = rule_node.select(
                     &recinfo,
                     dummy_stored_static.verbose_flag,

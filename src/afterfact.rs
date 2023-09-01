@@ -358,10 +358,15 @@ fn emit_csv<W: std::io::Write>(
             )
         }) {
             if output_option.remove_duplicate_detections && detect_infos.len() > 1 {
-                if prev_detect_infos.get(&detect_info.ext_field).is_some() {
+                let fields: Vec<&(CompactString, Profile)> = detect_info
+                    .ext_field
+                    .iter()
+                    .filter(|(_, profile)| !matches!(profile, Profile::EvtxFile(_)))
+                    .collect();
+                if prev_detect_infos.get(&fields).is_some() {
                     continue;
                 }
-                prev_detect_infos.insert(&detect_info.ext_field);
+                prev_detect_infos.insert(fields);
             }
             if !detect_info.is_condition {
                 detected_record_idset.insert(CompactString::from(format!(
@@ -534,7 +539,7 @@ fn emit_csv<W: std::io::Write>(
 
     disp_wtr_buf.clear();
     let level_abbr: Nested<Vec<CompactString>> = Nested::from_iter(
-        vec![
+        [
             [CompactString::from("critical"), CompactString::from("crit")].to_vec(),
             [CompactString::from("high"), CompactString::from("high")].to_vec(),
             [CompactString::from("medium"), CompactString::from("med ")].to_vec(),
@@ -1453,7 +1458,7 @@ pub fn output_json_str(
     } else {
         target_ext_field = ext_field.to_owned();
     }
-    let key_add_to_details = vec![
+    let key_add_to_details = [
         "SrcASN",
         "SrcCountry",
         "SrcCity",
@@ -1492,6 +1497,15 @@ pub fn output_json_str(
                 | Profile::TgtASN(_)
                 | Profile::TgtCountry(_)
                 | Profile::TgtCity(_) => continue,
+                Profile::RecoveredRecord(data) => {
+                    target.push(_create_json_output_format(
+                        "RecoveredRecord",
+                        data,
+                        false,
+                        data.starts_with('\"'),
+                        4,
+                    ));
+                }
                 Profile::Details(_) | Profile::AllFieldInfo(_) | Profile::ExtraFieldInfo(_) => {
                     let mut output_stock: Vec<String> = vec![];
                     output_stock.push(format!("    \"{key}\": {{"));
@@ -1883,6 +1897,7 @@ mod tests {
                     filepath: None,
                     live_analysis: false,
                     recover_records: false,
+                    timeline_offset: None,
                 },
                 profile: None,
                 enable_deprecated_rules: false,
@@ -1949,7 +1964,7 @@ mod tests {
         {
             let messages = &message::MESSAGES;
             messages.clear();
-            let val = r##"
+            let val = r#"
                 {
                     "Event": {
                         "EventData": {
@@ -1962,7 +1977,7 @@ mod tests {
                         }
                     }
                 }
-            "##;
+            "#;
             let event: Value = serde_json::from_str(val).unwrap();
             let output_option = OutputOption {
                 input_args: InputOption {
@@ -1970,6 +1985,7 @@ mod tests {
                     filepath: None,
                     live_analysis: false,
                     recover_records: false,
+                    timeline_offset: None,
                 },
                 profile: None,
                 enable_deprecated_rules: false,
@@ -2205,6 +2221,7 @@ mod tests {
                     filepath: None,
                     live_analysis: false,
                     recover_records: false,
+                    timeline_offset: None,
                 },
                 profile: Some("verbose-2".to_string()),
                 enable_deprecated_rules: false,
@@ -2271,7 +2288,7 @@ mod tests {
         {
             let messages = &message::MESSAGES;
             messages.clear();
-            let val = r##"
+            let val = r#"
                 {
                     "Event": {
                         "EventData": {
@@ -2286,7 +2303,7 @@ mod tests {
                         }
                     }
                 }
-            "##;
+            "#;
             let event: Value = serde_json::from_str(val).unwrap();
             let output_option = OutputOption {
                 input_args: InputOption {
@@ -2294,6 +2311,7 @@ mod tests {
                     filepath: None,
                     live_analysis: false,
                     recover_records: false,
+                    timeline_offset: None,
                 },
                 profile: Some("verbose-2".to_string()),
                 enable_deprecated_rules: false,
@@ -2515,6 +2533,7 @@ mod tests {
                     filepath: None,
                     live_analysis: false,
                     recover_records: false,
+                    timeline_offset: None,
                 },
                 profile: None,
                 enable_deprecated_rules: false,
@@ -2581,7 +2600,7 @@ mod tests {
         {
             let messages = &message::MESSAGES;
             messages.clear();
-            let val = r##"
+            let val = r#"
                 {
                     "Event": {
                         "EventData": {
@@ -2594,7 +2613,7 @@ mod tests {
                         }
                     }
                 }
-            "##;
+            "#;
             let event: Value = serde_json::from_str(val).unwrap();
             let output_option = OutputOption {
                 input_args: InputOption {
@@ -2602,6 +2621,7 @@ mod tests {
                     filepath: None,
                     live_analysis: false,
                     recover_records: false,
+                    timeline_offset: None,
                 },
                 profile: None,
                 enable_deprecated_rules: false,
@@ -2834,6 +2854,7 @@ mod tests {
                     filepath: None,
                     live_analysis: false,
                     recover_records: false,
+                    timeline_offset: None,
                 },
                 profile: None,
                 enable_deprecated_rules: false,
@@ -2900,7 +2921,7 @@ mod tests {
         {
             let messages = &message::MESSAGES;
             messages.clear();
-            let val = r##"
+            let val = r#"
                 {
                     "Event": {
                         "EventData": {
@@ -2913,7 +2934,7 @@ mod tests {
                         }
                     }
                 }
-            "##;
+            "#;
             let event: Value = serde_json::from_str(val).unwrap();
             let output_option = OutputOption {
                 input_args: InputOption {
@@ -2921,6 +2942,7 @@ mod tests {
                     filepath: None,
                     live_analysis: false,
                     recover_records: false,
+                    timeline_offset: None,
                 },
                 profile: None,
                 enable_deprecated_rules: false,
@@ -3237,6 +3259,7 @@ mod tests {
                 filepath: None,
                 live_analysis: false,
                 recover_records: false,
+                timeline_offset: None,
             },
             profile: None,
             enable_deprecated_rules: false,
@@ -3374,6 +3397,7 @@ mod tests {
                     filepath: None,
                     live_analysis: false,
                     recover_records: false,
+                    timeline_offset: None,
                 },
                 profile: None,
                 enable_deprecated_rules: false,
@@ -3439,7 +3463,7 @@ mod tests {
         )
         .unwrap_or_default();
         {
-            let val = r##"
+            let val = r#"
                 {
                     "Event": {
                         "EventData": {
@@ -3452,7 +3476,7 @@ mod tests {
                         }
                     }
                 }
-            "##;
+            "#;
             let event: Value = serde_json::from_str(val).unwrap();
             let output_option = OutputOption {
                 input_args: InputOption {
@@ -3460,6 +3484,7 @@ mod tests {
                     filepath: None,
                     live_analysis: false,
                     recover_records: false,
+                    timeline_offset: None,
                 },
                 profile: None,
                 enable_deprecated_rules: false,
@@ -3632,6 +3657,7 @@ mod tests {
                     filepath: None,
                     live_analysis: false,
                     recover_records: false,
+                    timeline_offset: None,
                 },
                 profile: None,
                 enable_deprecated_rules: false,
@@ -3697,7 +3723,7 @@ mod tests {
         )
         .unwrap_or_default();
         {
-            let val = r##"
+            let val = r#"
                 {
                     "Event": {
                         "EventData": {
@@ -3710,7 +3736,7 @@ mod tests {
                         }
                     }
                 }
-            "##;
+            "#;
             let event: Value = serde_json::from_str(val).unwrap();
             let output_option = OutputOption {
                 input_args: InputOption {
@@ -3718,6 +3744,7 @@ mod tests {
                     filepath: None,
                     live_analysis: false,
                     recover_records: false,
+                    timeline_offset: None,
                 },
                 profile: None,
                 enable_deprecated_rules: false,
