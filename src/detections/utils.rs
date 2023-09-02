@@ -375,7 +375,7 @@ pub fn create_recordinfos(
     record: &Value,
     field_data_map_key: &FieldDataMapKey,
     field_data_map: &Option<FieldDataMap>,
-) -> String {
+) -> Vec<CompactString> {
     let mut output = HashSet::new();
     _collect_recordinfo(&mut vec![], "", record, &mut output);
 
@@ -398,13 +398,13 @@ pub fn create_recordinfos(
                     convert_field_data(map, field_data_map_key, &key.to_lowercase(), value)
                 {
                     let val = converted_str.strip_suffix(',').unwrap_or(&converted_str);
-                    return format!("{key}: {val}");
+                    return format!("{key}: {val}").into();
                 }
             }
             let val = value.strip_suffix(',').unwrap_or(value);
-            format!("{key}: {val}")
+            format!("{key}: {val}").into()
         })
-        .join(" ¦ ")
+        .collect()
 }
 
 /**
