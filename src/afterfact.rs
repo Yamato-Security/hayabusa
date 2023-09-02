@@ -1575,7 +1575,7 @@ pub fn output_json_str(
                             output_stock.push(format!(
                                 "{}{last_contents_end}",
                                 _create_json_output_format(
-                                    &key,
+                                    key,
                                     &fmted_val,
                                     key.starts_with('\"'),
                                     fmted_val.starts_with('\"'),
