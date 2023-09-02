@@ -174,6 +174,10 @@ pub fn insert(
                 } else {
                     replaced_profiles
                         .push((key.to_owned(), Details(detect_info.detail.clone().into())));
+                    detect_info.details_convert_map.insert(
+                        "#Details".into(),
+                        detect_info.detail.split(" ¦ ").map(|x| x.into()).collect(),
+                    );
                     // メモリの節約のためにDetailsの中身を空にする
                     detect_info.detail = CompactString::default();
                 }
@@ -371,7 +375,8 @@ pub fn parse_message(
         // JSON出力の場合は各種のaliasを置き換える処理はafterfactの出力用の関数で行うため、ここでは行わない
         if !json_timeline_flag {
             return_message = CompactString::new(return_message.replace(k.as_str(), v[0].as_str()));
-        } else {
+        }
+        if detail_key.len() > i {
             details_key_and_value.push(format!("{}: {}", detail_key[i], v[0]).into());
         }
     }
