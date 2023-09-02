@@ -515,10 +515,11 @@ mod tests {
                     .to_str()
                     .unwrap(),
                 ),
-                true,
+                false,
                 &FieldDataMapKey::default(),
                 &None
-            ),
+            )
+            .0,
             expected,
         );
     }
@@ -551,10 +552,11 @@ mod tests {
                     .to_str()
                     .unwrap(),
                 ),
-                true,
+                false,
                 &FieldDataMapKey::default(),
                 &None
-            ),
+            )
+            .0,
             expected,
         );
     }
@@ -593,10 +595,11 @@ mod tests {
                     .to_str()
                     .unwrap(),
                 ),
-                true,
+                false,
                 &FieldDataMapKey::default(),
                 &None
-            ),
+            )
+            .0,
             expected,
         );
     }
@@ -634,10 +637,11 @@ mod tests {
                     .to_str()
                     .unwrap(),
                 ),
-                true,
+                false,
                 &FieldDataMapKey::default(),
                 &None
-            ),
+            )
+            .0,
             expected,
         );
     }
@@ -680,10 +684,11 @@ mod tests {
                     .to_str()
                     .unwrap(),
                 ),
-                true,
+                false,
                 &FieldDataMapKey::default(),
                 &None
-            ),
+            )
+            .0,
             expected,
         );
     }
@@ -726,10 +731,11 @@ mod tests {
                     .to_str()
                     .unwrap(),
                 ),
-                true,
+                false,
                 &FieldDataMapKey::default(),
                 &None
-            ),
+            )
+            .0,
             expected,
         );
     }
@@ -772,10 +778,11 @@ mod tests {
                     .to_str()
                     .unwrap(),
                 ),
-                true,
+                false,
                 &FieldDataMapKey::default(),
                 &None
-            ),
+            )
+            .0,
             expected,
         );
     }
@@ -846,6 +853,7 @@ mod tests {
                 detail: CompactString::default(),
                 ext_field: vec![],
                 is_condition: false,
+                details_convert_map: HashMap::default(),
             };
             sample_detects.push((sample_event_time, detect_info, rng.gen_range(0..10)));
         }

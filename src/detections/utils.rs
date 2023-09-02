@@ -716,7 +716,7 @@ mod tests {
                 let ret = utils::create_recordinfos(&record, &FieldDataMapKey::default(), &None);
                 // Systemは除外される/属性(_attributesも除外される)/key順に並ぶ
                 let expected = "AccessMask: %%1369 ¦ Process: lsass.exe ¦ User: u1".to_string();
-                assert_eq!(ret, expected);
+                assert_eq!(ret.join(" ¦ "), expected);
             }
             Err(_) => {
                 panic!("Failed to parse json record.");
@@ -751,7 +751,7 @@ mod tests {
                 // Systemは除外される/属性(_attributesも除外される)/key順に並ぶ
                 let expected = "Binary: hogehoge ¦ Data:  ¦ Data: Data1 ¦ Data: DataData2 ¦ Data: DataDataData3"
                     .to_string();
-                assert_eq!(ret, expected);
+                assert_eq!(ret.join(" ¦ "), expected);
             }
             Err(_) => {
                 panic!("Failed to parse json record.");

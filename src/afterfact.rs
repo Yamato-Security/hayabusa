@@ -2010,9 +2010,10 @@ mod tests {
                     detail: CompactString::default(),
                     ext_field: output_profile.to_owned(),
                     is_condition: false,
+                    details_convert_map: HashMap::default(),
                 },
                 expect_time,
-                &mut profile_converter,
+                &profile_converter,
                 (false, false, false),
                 (&eventkey_alias, &FieldDataMapKey::default(), &None),
             );
@@ -2032,9 +2033,10 @@ mod tests {
                     detail: CompactString::default(),
                     ext_field: output_profile.to_owned(),
                     is_condition: false,
+                    details_convert_map: HashMap::default(),
                 },
                 expect_time,
-                &mut profile_converter,
+                &profile_converter,
                 (false, false, false),
                 (&eventkey_alias, &FieldDataMapKey::default(), &None),
             );
@@ -2333,9 +2335,10 @@ mod tests {
                     detail: CompactString::default(),
                     ext_field: output_profile.to_owned(),
                     is_condition: false,
+                    details_convert_map: HashMap::default(),
                 },
                 expect_time,
-                &mut profile_converter,
+                &profile_converter,
                 (false, false, true),
                 (&eventkey_alias, &FieldDataMapKey::default(), &None),
             );
@@ -2355,9 +2358,10 @@ mod tests {
                     detail: CompactString::default(),
                     ext_field: output_profile.to_owned(),
                     is_condition: false,
+                    details_convert_map: HashMap::default(),
                 },
                 expect_time,
-                &mut profile_converter,
+                &profile_converter,
                 (false, false, true),
                 (&eventkey_alias, &FieldDataMapKey::default(), &None),
             );
@@ -2646,9 +2650,10 @@ mod tests {
                     detail: CompactString::default(),
                     ext_field: output_profile.to_owned(),
                     is_condition: false,
+                    details_convert_map: HashMap::default(),
                 },
                 expect_time,
-                &mut profile_converter,
+                &profile_converter,
                 (false, false, false),
                 (&eventkey_alias, &FieldDataMapKey::default(), &None),
             );
@@ -2668,9 +2673,10 @@ mod tests {
                     detail: CompactString::default(),
                     ext_field: output_profile.to_owned(),
                     is_condition: false,
+                    details_convert_map: HashMap::default(),
                 },
                 expect_time,
-                &mut profile_converter,
+                &profile_converter,
                 (false, false, false),
                 (&eventkey_alias, &FieldDataMapKey::default(), &None),
             );
@@ -2954,6 +2960,8 @@ mod tests {
                 .to_str()
                 .unwrap(),
             );
+            let details_convert_map: HashMap<CompactString, Vec<CompactString>> =
+                HashMap::from_iter([("#AllFieldInfo".into(), vec![test_recinfo.into()])]);
             message::insert(
                 &event,
                 CompactString::new(output),
@@ -2967,10 +2975,11 @@ mod tests {
                     detail: CompactString::default(),
                     ext_field: output_profile.to_owned(),
                     is_condition: false,
+                    details_convert_map,
                 },
                 expect_time,
-                &mut profile_converter,
-                (false, false, false),
+                &profile_converter,
+                (false, true, true),
                 (&eventkey_alias, &FieldDataMapKey::default(), &None),
             );
             *profile_converter.get_mut("Computer").unwrap() =
@@ -2989,10 +2998,11 @@ mod tests {
                     detail: CompactString::default(),
                     ext_field: output_profile.to_owned(),
                     is_condition: false,
+                    details_convert_map: HashMap::default(),
                 },
                 expect_time,
-                &mut profile_converter,
-                (false, false, false),
+                &profile_converter,
+                (false, true, true),
                 (&eventkey_alias, &FieldDataMapKey::default(), &None),
             );
             let multi = message::MESSAGES.get(&expect_time).unwrap();
@@ -3498,6 +3508,8 @@ mod tests {
             );
             let messages = &message::MESSAGES;
             messages.clear();
+            let details_convert_map: HashMap<CompactString, Vec<CompactString>> =
+                HashMap::from_iter([("#AllFieldInfo".into(), vec![test_recinfo.into()])]);
             message::insert(
                 &event,
                 CompactString::new(output),
@@ -3511,10 +3523,11 @@ mod tests {
                     detail: CompactString::default(),
                     ext_field: output_profile.to_owned(),
                     is_condition: false,
+                    details_convert_map,
                 },
                 expect_time,
-                &mut profile_converter,
-                (false, false, false),
+                &profile_converter,
+                (false, true, true),
                 (&eventkey_alias, &FieldDataMapKey::default(), &None),
             );
             *profile_converter.get_mut("Computer").unwrap() =
@@ -3746,6 +3759,8 @@ mod tests {
                 ("EvtxFile", Profile::EvtxFile(test_filepath.into())),
                 ("Tags", Profile::MitreTags(test_attack.into())),
             ]);
+            let details_convert_map: HashMap<CompactString, Vec<CompactString>> =
+                HashMap::from_iter([("#AllFieldInfo".into(), vec![test_recinfo.into()])]);
             let eventkey_alias = load_eventkey_alias(
                 utils::check_setting_path(
                     &CURRENT_EXE_PATH.to_path_buf(),
@@ -3771,10 +3786,11 @@ mod tests {
                     detail: CompactString::default(),
                     ext_field: output_profile.to_owned(),
                     is_condition: false,
+                    details_convert_map,
                 },
                 expect_time,
-                &mut profile_converter,
-                (false, false, false),
+                &profile_converter,
+                (false, true, true),
                 (&eventkey_alias, &FieldDataMapKey::default(), &None),
             );
             *profile_converter.get_mut("Computer").unwrap() =
