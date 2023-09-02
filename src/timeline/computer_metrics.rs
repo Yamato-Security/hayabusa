@@ -129,6 +129,7 @@ mod tests {
                     filepath: Some(Path::new("./dummy.evtx").to_path_buf()),
                     live_analysis: false,
                     recover_records: false,
+                    timeline_offset: None,
                 },
                 common_options: CommonOptions {
                     no_color: false,
@@ -197,7 +198,7 @@ mod tests {
 
         computer_metrics_dsp_msg(&timeline.stats.stats_list, &output);
 
-        let header = vec!["\"Computer\"", "\"Events\""];
+        let header = ["\"Computer\"", "\"Events\""];
 
         let expect = vec![vec!["\"HAYABUSA-DESKTOP\"", "1"], vec!["\"FALCON\"", "1"]];
         let expect_str =

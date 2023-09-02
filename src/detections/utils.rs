@@ -297,7 +297,12 @@ pub fn create_tokio_runtime(thread_number: Option<usize>) -> Runtime {
 }
 
 // EvtxRecordInfoを作成します。
-pub fn create_rec_info(data: Value, path: String, keys: &Nested<String>) -> EvtxRecordInfo {
+pub fn create_rec_info(
+    data: Value,
+    path: String,
+    keys: &Nested<String>,
+    recovered_record: &bool,
+) -> EvtxRecordInfo {
     // 高速化のための処理
 
     // 例えば、Value型から"Event.System.EventID"の値を取得しようとすると、value["Event"]["System"]["EventID"]のように3回アクセスする必要がある。
@@ -331,6 +336,7 @@ pub fn create_rec_info(data: Value, path: String, keys: &Nested<String>) -> Evtx
         record: data,
         data_string: data_str,
         key_2_value: key_2_values,
+        recovered_record: *recovered_record,
     }
 }
 
@@ -786,7 +792,7 @@ mod tests {
     #[test]
     /// Serde::Valueの数値型の値を文字列として返却することを確かめるテスト
     fn test_get_serde_number_to_string() {
-        let json_str = r##"
+        let json_str = r#"
         {
             "Event": {
                 "System": {
@@ -794,7 +800,7 @@ mod tests {
                 }
             }
         }
-        "##;
+        "#;
         let event_record: Value = serde_json::from_str(json_str).unwrap();
 
         assert_eq!(
@@ -806,7 +812,7 @@ mod tests {
     #[test]
     /// Serde::Valueの文字列型の値を文字列として返却することを確かめるテスト
     fn test_get_serde_number_serde_string_to_string() {
-        let json_str = r##"
+        let json_str = r#"
         {
             "Event": {
                 "EventData": {
@@ -814,7 +820,7 @@ mod tests {
                 }
             }
         }
-        "##;
+        "#;
         let event_record: Value = serde_json::from_str(json_str).unwrap();
 
         assert_eq!(
@@ -830,7 +836,7 @@ mod tests {
     #[test]
     /// Serde::Valueのオブジェクト型の内容を誤って渡した際にNoneを返却することを確かめるテスト
     fn test_get_serde_number_serde_object_ret_none() {
-        let json_str = r##"
+        let json_str = r#"
         {
             "Event": {
                 "EventData": {
@@ -838,7 +844,7 @@ mod tests {
                 }
             }
         }
-        "##;
+        "#;
         let event_record: Value = serde_json::from_str(json_str).unwrap();
 
         assert!(
@@ -969,6 +975,7 @@ mod tests {
                         filepath: None,
                         live_analysis: false,
                         recover_records: false,
+                        timeline_offset: None,
                     },
                     profile: Some("super-verbose".to_string()),
                     enable_deprecated_rules: false,
@@ -1041,7 +1048,7 @@ mod tests {
     #[test]
     /// Computerの値をもとにフィルタリングされることを確認するテスト
     fn test_is_filtered_by_computer_name() {
-        let json_str = r##"
+        let json_str = r#"
         {
             "Event": {
                 "System": {
@@ -1049,7 +1056,7 @@ mod tests {
                 }
             }
         }
-        "##;
+        "#;
         let event_record: Value = serde_json::from_str(json_str).unwrap();
 
         // include_computer, exclude_computerが指定されていない場合はフィルタリングされない

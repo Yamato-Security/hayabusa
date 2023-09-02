@@ -6,7 +6,7 @@ use crate::options::htmlreport;
 use crate::options::pivot::{PivotKeyword, PIVOT_KEYWORD};
 use crate::options::profile::{load_profile, Profile};
 use aho_corasick::{AhoCorasick, AhoCorasickBuilder, MatchKind};
-use chrono::{DateTime, Utc};
+use chrono::{DateTime, Days, Duration, Local, Months, Utc};
 use clap::{ArgGroup, Args, ColorChoice, Command, CommandFactory, Parser, Subcommand};
 use compact_str::CompactString;
 use hashbrown::{HashMap, HashSet};
@@ -84,6 +84,7 @@ pub struct StoredStatic {
     pub exclude_eid: HashSet<CompactString>,
     pub field_data_map: Option<FieldDataMap>,
     pub enable_recover_records: bool,
+    pub timeline_offset: Option<String>,
 }
 impl StoredStatic {
     /// main.rsでパースした情報からデータを格納する関数
@@ -504,6 +505,18 @@ impl StoredStatic {
             Some(Action::Search(opt)) => opt.input_args.recover_records,
             _ => false,
         };
+        let timeline_offset = match &input_config.as_ref().unwrap().action {
+            Some(Action::CsvTimeline(opt)) => opt.output_options.input_args.timeline_offset.clone(),
+            Some(Action::JsonTimeline(opt)) => {
+                opt.output_options.input_args.timeline_offset.clone()
+            }
+            Some(Action::EidMetrics(opt)) => opt.input_args.timeline_offset.clone(),
+            Some(Action::LogonSummary(opt)) => opt.input_args.timeline_offset.clone(),
+            Some(Action::PivotKeywordsList(opt)) => opt.input_args.timeline_offset.clone(),
+            Some(Action::Search(opt)) => opt.input_args.timeline_offset.clone(),
+            Some(Action::ComputerMetrics(opt)) => opt.input_args.timeline_offset.clone(),
+            _ => None,
+        };
 
         let mut ret = StoredStatic {
             config: input_config.as_ref().unwrap().to_owned(),
@@ -617,6 +630,7 @@ impl StoredStatic {
             exclude_eid,
             field_data_map,
             enable_recover_records,
+            timeline_offset,
         };
         ret.profiles = load_profile(
             check_setting_path(
@@ -696,7 +710,7 @@ impl StoredStatic {
     }
 }
 
-/// config情報からthred_numberの情報を抽出する関数
+/// config情報からthread_numberの情報を抽出する関数
 fn check_thread_number(config: &Config) -> Option<usize> {
     match config.action.as_ref()? {
         Action::CsvTimeline(opt) => opt.output_options.detect_common_options.thread_number,
@@ -713,7 +727,7 @@ fn check_thread_number(config: &Config) -> Option<usize> {
 pub enum Action {
     #[clap(
         author = "Yamato Security (https://github.com/Yamato-Security/hayabusa - @SecurityYamato)",
-        help_template = "\nHayabusa v2.8.0 - Dev Build \n{author-with-newline}\n{usage-heading}\n  hayabusa.exe csv-timeline <INPUT> [OPTIONS]\n\n{all-args}",
+        help_template = "\nHayabusa v2.8.0 - Double X Release\n{author-with-newline}\n{usage-heading}\n  hayabusa.exe csv-timeline <INPUT> [OPTIONS]\n\n{all-args}",
         term_width = 400,
         disable_help_flag = true,
         display_order = 290
@@ -723,7 +737,7 @@ pub enum Action {
 
     #[clap(
         author = "Yamato Security (https://github.com/Yamato-Security/hayabusa - @SecurityYamato)",
-        help_template = "\nHayabusa v2.8.0 - Dev Build \n{author-with-newline}\n{usage-heading}\n  hayabusa.exe json-timeline <INPUT> [OPTIONS]\n\n{all-args}",
+        help_template = "\nHayabusa v2.8.0 - Double X Release\n{author-with-newline}\n{usage-heading}\n  hayabusa.exe json-timeline <INPUT> [OPTIONS]\n\n{all-args}",
         term_width = 400,
         disable_help_flag = true,
         display_order = 360
@@ -733,7 +747,7 @@ pub enum Action {
 
     #[clap(
         author = "Yamato Security (https://github.com/Yamato-Security/hayabusa - @SecurityYamato)",
-        help_template = "\nHayabusa v2.8.0 - Dev Build \n{author-with-newline}\n{usage-heading}\n  hayabusa.exe logon-summary <INPUT> [OPTIONS]\n\n{all-args}",
+        help_template = "\nHayabusa v2.8.0 - Double X Release\n{author-with-newline}\n{usage-heading}\n  hayabusa.exe logon-summary <INPUT> [OPTIONS]\n\n{all-args}",
         term_width = 400,
         disable_help_flag = true,
         display_order = 383
@@ -743,7 +757,7 @@ pub enum Action {
 
     #[clap(
         author = "Yamato Security (https://github.com/Yamato-Security/hayabusa - @SecurityYamato)",
-        help_template = "\nHayabusa v2.8.0 - Dev Build \n{author-with-newline}\n{usage-heading}\n  hayabusa.exe eid-metrics <INPUT> [OPTIONS]\n\n{all-args}",
+        help_template = "\nHayabusa v2.8.0 - Double X Release\n{author-with-newline}\n{usage-heading}\n  hayabusa.exe eid-metrics <INPUT> [OPTIONS]\n\n{all-args}",
         term_width = 400,
         disable_help_flag = true,
         display_order = 310
@@ -753,7 +767,7 @@ pub enum Action {
 
     #[clap(
         author = "Yamato Security (https://github.com/Yamato-Security/hayabusa - @SecurityYamato)",
-        help_template = "\nHayabusa v2.8.0 - Dev Build \n{author-with-newline}\n{usage-heading}\n  hayabusa.exe pivot-keywords-list <INPUT> [OPTIONS]\n\n{all-args}",
+        help_template = "\nHayabusa v2.8.0 - Double X Release\n{author-with-newline}\n{usage-heading}\n  hayabusa.exe pivot-keywords-list <INPUT> [OPTIONS]\n\n{all-args}",
         term_width = 400,
         disable_help_flag = true,
         display_order = 420
@@ -763,7 +777,7 @@ pub enum Action {
 
     #[clap(
         author = "Yamato Security (https://github.com/Yamato-Security/hayabusa - @SecurityYamato)",
-        help_template = "\nHayabusa v2.8.0 - Dev Build \n{author-with-newline}\n{usage-heading}\n  hayabusa.exe search <INPUT> <--keywords \"<KEYWORDS>\" OR --regex \"<REGEX>\"> [OPTIONS]\n\n{all-args}",
+        help_template = "\nHayabusa v2.8.0 - Double X Release\n{author-with-newline}\n{usage-heading}\n  hayabusa.exe search <INPUT> <--keywords \"<KEYWORDS>\" OR --regex \"<REGEX>\"> [OPTIONS]\n\n{all-args}",
         term_width = 400,
         disable_help_flag = true,
         display_order = 450
@@ -773,7 +787,7 @@ pub enum Action {
 
     #[clap(
         author = "Yamato Security (https://github.com/Yamato-Security/hayabusa - @SecurityYamato)",
-        help_template = "\nHayabusa v2.8.0 - Dev Build \n{author-with-newline}\n{usage-heading}\n  {usage}\n\n{all-args}",
+        help_template = "\nHayabusa v2.8.0 - Double X Release\n{author-with-newline}\n{usage-heading}\n  {usage}\n\n{all-args}",
         term_width = 400,
         disable_help_flag = true,
         display_order = 470
@@ -783,7 +797,7 @@ pub enum Action {
 
     #[clap(
         author = "Yamato Security (https://github.com/Yamato-Security/hayabusa - @SecurityYamato)",
-        help_template = "\nHayabusa v2.8.0 - Dev Build \n{author-with-newline}\n{usage-heading}\n  {usage}\n\n{all-args}",
+        help_template = "\nHayabusa v2.8.0 - Double X Release\n{author-with-newline}\n{usage-heading}\n  {usage}\n\n{all-args}",
         term_width = 400,
         disable_help_flag = true,
         display_order = 380
@@ -793,7 +807,7 @@ pub enum Action {
 
     #[clap(
         author = "Yamato Security (https://github.com/Yamato-Security/hayabusa - @SecurityYamato)",
-        help_template = "\nHayabusa v2.8.0 - Dev Build \n{author-with-newline}\n{usage-heading}\n  {usage}\n\n{all-args}",
+        help_template = "\nHayabusa v2.8.0 - Double X Release\n{author-with-newline}\n{usage-heading}\n  {usage}\n\n{all-args}",
         term_width = 400,
         disable_help_flag = true,
         display_order = 451
@@ -811,7 +825,7 @@ pub enum Action {
 
     #[clap(
         author = "Yamato Security (https://github.com/Yamato-Security/hayabusa - @SecurityYamato)",
-        help_template = "\nHayabusa v2.8.0 - Dev Build \n{author-with-newline}\n{usage-heading}\n  {usage}\n\n{all-args}",
+        help_template = "\nHayabusa v2.8.0 - Double X Release\n{author-with-newline}\n{usage-heading}\n  {usage}\n\n{all-args}",
         term_width = 400,
         disable_help_flag = true,
         display_order = 290
@@ -961,6 +975,18 @@ pub struct SearchOption {
         conflicts_with = "regex",
     )]
     pub ignore_case: bool,
+
+    /// Search keywords with AND logic (default: OR)
+    #[arg(
+        help_heading = Some("Filtering"),
+        short = 'a',
+        long = "and-logic",
+        value_name = "KEYWORD...",
+        display_order = 270,
+        conflicts_with = "regex",
+        requires="keywords"
+    )]
+    pub and_logic: bool,
 
     /// Filter by specific field(s)
     #[arg(
@@ -1151,7 +1177,7 @@ pub struct PivotKeywordOption {
     pub input_args: InputOption,
 
     /// Save pivot words to separate files (ex: PivotKeywords)
-    #[arg(help_heading = Some("Output"), short = 'o', long, value_name = "FILENAMES-BASE", display_order = 410)]
+    #[arg(help_heading = Some("Output"), short = 'o', long, value_name = "FILENAME-PREFIX", display_order = 410)]
     pub output: Option<PathBuf>,
 
     #[clap(flatten)]
@@ -1230,8 +1256,8 @@ pub struct LogonSummaryOption {
     #[clap(flatten)]
     pub input_args: InputOption,
 
-    /// Save the logon summary to 2 CSV files. Specify the base filename. (ex: -o logon-summary)
-    #[arg(help_heading = Some("Output"), short = 'o', long, value_name = "FILE", display_order = 410)]
+    /// Save the logon summary to two CSV files (ex: -o logon-summary)
+    #[arg(help_heading = Some("Output"), short = 'o', long, value_name = "FILENAME-PREFIX", display_order = 410)]
     pub output: Option<PathBuf>,
 
     #[clap(flatten)]
@@ -1479,6 +1505,10 @@ pub struct InputOption {
     /// Carve evtx records from empty pages (default: disabled)
     #[arg(help_heading = Some("Input"), short = 'x', long = "recover-records", conflicts_with = "json_input", display_order = 440)]
     pub recover_records: bool,
+
+    /// Scan recent events based on an offset (ex: 1y, 3M, 30d, 24h, 30m)
+    #[arg(help_heading = Some("Filtering"), long = "timeline-offset", value_name = "OFFSET", conflicts_with = "start_timeline", display_order = 460)]
+    pub timeline_offset: Option<String>,
 }
 
 #[derive(Args, Clone, Debug)]
@@ -1588,7 +1618,7 @@ pub struct ComputerMetricsOption {
 #[derive(Parser, Clone, Debug)]
 #[clap(
     author = "Yamato Security (https://github.com/Yamato-Security/hayabusa - @SecurityYamato)",
-    help_template = "\nHayabusa v2.8.0 - Dev Build \n{author-with-newline}\n{usage-heading}\n  hayabusa.exe <COMMAND> [OPTIONS]\n  hayabusa.exe help <COMMAND>\n\n{all-args}{options}",
+    help_template = "\nHayabusa v2.8.0 - Double X Release\n{author-with-newline}\n{usage-heading}\n  hayabusa.exe <COMMAND> [OPTIONS]\n  hayabusa.exe help <COMMAND>\n\n{all-args}{options}",
     term_width = 400,
     disable_help_flag = true
 )]
@@ -1674,68 +1704,209 @@ pub struct TargetEventTime {
 
 impl TargetEventTime {
     pub fn new(stored_static: &StoredStatic) -> Self {
-        let mut parse_success_flag = true;
-        let mut get_time = |input_time: Option<&String>, error_contents: &str| {
-            if let Some(time) = input_time {
-                match DateTime::parse_from_str(time, "%Y-%m-%d %H:%M:%S %z") // 2014-11-28 21:00:09 +09:00
+        let get_time =
+            |input_time: Option<&String>, error_contents: &str, parse_success_flag: &mut bool| {
+                if let Some(time) = input_time {
+                    match DateTime::parse_from_str(time, "%Y-%m-%d %H:%M:%S %z") // 2014-11-28 21:00:09 +09:00
                     .or_else(|_| DateTime::parse_from_str(time, "%Y/%m/%d %H:%M:%S %z")) // 2014/11/28 21:00:09 +09:00
                 {
                     Ok(dt) => Some(dt.with_timezone(&Utc)),
                     Err(_) => {
                         AlertMessage::alert(error_contents)
                         .ok();
-                        parse_success_flag = false;
+                        *parse_success_flag = false;
                         None
                     }
                 }
-            } else {
-                None
-            }
-        };
+                } else {
+                    None
+                }
+            };
+
+        let get_timeline_offset =
+            |timeline_offset: &Option<String>, parse_success_flag: &mut bool| {
+                if let Some(timeline_offline) = timeline_offset {
+                    let timekey = ['y', 'M', 'd', 'h', 'm', 's'];
+                    let mut time_num = [0, 0, 0, 0, 0, 0];
+                    for (idx, key) in timekey.iter().enumerate() {
+                        let mut timekey_splitter = timeline_offline.split(*key);
+                        let mix_check = timekey_splitter.next();
+                        let mixed_checker: Vec<&str> =
+                            mix_check.unwrap_or_default().split(timekey).collect();
+                        let target_num = if mixed_checker.is_empty() {
+                            mix_check.unwrap()
+                        } else {
+                            mixed_checker[mixed_checker.len() - 1]
+                        };
+                        if target_num.is_empty() {
+                            continue;
+                        }
+                        if let Ok(num) = target_num.parse::<u32>() {
+                            time_num[idx] = num;
+                        } else {
+                            AlertMessage::alert(
+                            "Invalid timeline offset. Please use one of the following formats: 1y, 3M, 30d, 24h, 30m",
+                        )
+                        .ok();
+                            *parse_success_flag = false;
+                            return None;
+                        }
+                    }
+                    if time_num.iter().all(|&x| x == 0) {
+                        AlertMessage::alert(
+                        "Invalid timeline offset. Please use one of the following formats: 1y, 3M, 30d, 24h, 30m",
+                    )
+                    .ok();
+                        *parse_success_flag = false;
+                        return None;
+                    }
+                    let target_start_time = Local::now()
+                        .checked_sub_months(Months::new(time_num[0] * 12))
+                        .and_then(|dt| dt.checked_sub_months(Months::new(time_num[1])))
+                        .and_then(|dt| dt.checked_sub_days(Days::new(time_num[2].into())))
+                        .and_then(|dt| dt.checked_sub_signed(Duration::hours(time_num[3].into())))
+                        .and_then(|dt| dt.checked_sub_signed(Duration::minutes(time_num[4].into())))
+                        .and_then(|dt| {
+                            dt.checked_sub_signed(Duration::seconds(time_num[5].into()))
+                        });
+                    if let Some(start_time) = target_start_time {
+                        Some(start_time.format("%Y-%m-%d %H:%M:%S %z").to_string())
+                    } else {
+                        AlertMessage::alert(
+                            "timeline-offset field: the timestamp value is too large.",
+                        )
+                        .ok();
+                        *parse_success_flag = false;
+                        None
+                    }
+                } else {
+                    None
+                }
+            };
+
+        let mut parse_success_flag = true;
+        let timeline_offset =
+            get_timeline_offset(&stored_static.timeline_offset, &mut parse_success_flag);
         match &stored_static.config.action.as_ref().unwrap() {
             Action::CsvTimeline(option) => {
-                let start_time = get_time(
-                    option.output_options.start_timeline.as_ref(),
-                    "start-timeline field: the timestamp format is not correct.",
-                );
+                let start_time = if timeline_offset.is_some() {
+                    get_time(
+                        timeline_offset.as_ref(),
+                        "Invalid timeline offset. Please use one of the following formats: 1y, 3M, 30d, 24h, 30m",
+                        &mut parse_success_flag,
+                    )
+                } else {
+                    get_time(
+                        option.output_options.start_timeline.as_ref(),
+                        "start-timeline field: the timestamp format is not correct.",
+                        &mut parse_success_flag,
+                    )
+                };
                 let end_time = get_time(
                     option.output_options.end_timeline.as_ref(),
                     "end-timeline field: the timestamp format is not correct.",
+                    &mut parse_success_flag,
                 );
                 Self::set(parse_success_flag, start_time, end_time)
             }
             Action::JsonTimeline(option) => {
-                let start_time = get_time(
-                    option.output_options.start_timeline.as_ref(),
-                    "start-timeline field: the timestamp format is not correct.",
-                );
+                let start_time = if timeline_offset.is_some() {
+                    get_time(
+                        timeline_offset.as_ref(),
+                        "Invalid timeline offset. Please use one of the following formats: 1y, 3M, 30d, 24h, 30m",
+                        &mut parse_success_flag,
+                    )
+                } else {
+                    get_time(
+                        option.output_options.start_timeline.as_ref(),
+                        "start-timeline field: the timestamp format is not correct.",
+                        &mut parse_success_flag,
+                    )
+                };
                 let end_time = get_time(
                     option.output_options.end_timeline.as_ref(),
                     "end-timeline field: the timestamp format is not correct.",
+                    &mut parse_success_flag,
                 );
                 Self::set(parse_success_flag, start_time, end_time)
             }
             Action::PivotKeywordsList(option) => {
-                let start_time = get_time(
-                    option.start_timeline.as_ref(),
-                    "start-timeline field: the timestamp format is not correct.",
-                );
+                let start_time = if timeline_offset.is_some() {
+                    get_time(
+                        timeline_offset.as_ref(),
+                        "Invalid timeline offset. Please use one of the following formats: 1y, 3M, 30d, 24h, 30m",
+                        &mut parse_success_flag,
+                    )
+                } else {
+                    get_time(
+                        option.start_timeline.as_ref(),
+                        "start-timeline field: the timestamp format is not correct.",
+                        &mut parse_success_flag,
+                    )
+                };
                 let end_time = get_time(
                     option.end_timeline.as_ref(),
                     "end-timeline field: the timestamp format is not correct.",
+                    &mut parse_success_flag,
                 );
                 Self::set(parse_success_flag, start_time, end_time)
             }
             Action::LogonSummary(option) => {
-                let start_time = get_time(
-                    option.start_timeline.as_ref(),
-                    "start-timeline field: the timestamp format is not correct.",
-                );
+                let start_time = if timeline_offset.is_some() {
+                    get_time(
+                        timeline_offset.as_ref(),
+                        "Invalid timeline offset. Please use one of the following formats: 1y, 3M, 30d, 24h, 30m",
+                        &mut parse_success_flag,
+                    )
+                } else {
+                    get_time(
+                        option.start_timeline.as_ref(),
+                        "start-timeline field: the timestamp format is not correct.",
+                        &mut parse_success_flag,
+                    )
+                };
                 let end_time = get_time(
                     option.end_timeline.as_ref(),
                     "end-timeline field: the timestamp format is not correct.",
+                    &mut parse_success_flag,
                 );
                 Self::set(parse_success_flag, start_time, end_time)
+            }
+            Action::ComputerMetrics(_) => {
+                let start_time = if timeline_offset.is_some() {
+                    get_time(
+                        timeline_offset.as_ref(),
+                        "Invalid timeline offset. Please use one of the following formats: 1y, 3M, 30d, 24h, 30m",
+                        &mut parse_success_flag,
+                    )
+                } else {
+                    None
+                };
+                Self::set(parse_success_flag, start_time, None)
+            }
+            Action::EidMetrics(_) => {
+                let start_time = if timeline_offset.is_some() {
+                    get_time(
+                        timeline_offset.as_ref(),
+                        "Invalid timeline offset. Please use one of the following formats: 1y, 3M, 30d, 24h, 30m",
+                        &mut parse_success_flag,
+                    )
+                } else {
+                    None
+                };
+                Self::set(parse_success_flag, start_time, None)
+            }
+            Action::Search(_) => {
+                let start_time = if timeline_offset.is_some() {
+                    get_time(
+                        timeline_offset.as_ref(),
+                        "Invalid timeline offset. Please use one of the following formats: 1y, 3M, 30d, 24h, 30m",
+                        &mut parse_success_flag,
+                    )
+                } else {
+                    None
+                };
+                Self::set(parse_success_flag, start_time, None)
             }
             _ => Self::set(parse_success_flag, None, None),
         }
@@ -1917,6 +2088,7 @@ fn extract_search_options(config: &Config) -> Option<SearchOption> {
             us_military_time: option.us_military_time,
             us_time: option.us_time,
             utc: option.utc,
+            and_logic: option.and_logic,
         }),
         _ => None,
     }
@@ -2136,6 +2308,7 @@ fn extract_output_options(config: &Config) -> Option<OutputOption> {
                 filepath: None,
                 live_analysis: false,
                 recover_records: false,
+                timeline_offset: None,
             },
             enable_deprecated_rules: false,
             enable_noisy_rules: false,
@@ -2187,6 +2360,7 @@ fn extract_output_options(config: &Config) -> Option<OutputOption> {
                 filepath: None,
                 live_analysis: false,
                 recover_records: false,
+                timeline_offset: None,
             },
             enable_deprecated_rules: true,
             enable_noisy_rules: true,
@@ -2323,12 +2497,19 @@ fn create_control_chat_replace_map() -> HashMap<char, CompactString> {
 
 #[cfg(test)]
 mod tests {
-    use crate::detections::configs;
+    use std::path::Path;
+
+    use super::{
+        create_control_chat_replace_map, Action, CommonOptions, Config, CsvOutputOption,
+        DetectCommonOption, InputOption, JSONOutputOption, OutputOption, StoredStatic,
+        TargetEventTime,
+    };
+    use crate::detections::configs::{
+        self, EidMetricsOption, LogonSummaryOption, PivotKeywordOption, SearchOption,
+    };
     use chrono::{DateTime, Utc};
     use compact_str::CompactString;
     use hashbrown::{HashMap, HashSet};
-
-    use super::create_control_chat_replace_map;
 
     //     #[test]
     //     #[ignore]
@@ -2410,5 +2591,333 @@ mod tests {
         expect.remove(&'\x0A');
         let actual = create_control_chat_replace_map();
         assert_eq!(expect, actual);
+    }
+
+    #[test]
+    fn test_timeline_offset_csv() {
+        let csv_timeline = StoredStatic::create_static_data(Some(Config {
+            action: Some(Action::CsvTimeline(CsvOutputOption {
+                output_options: OutputOption {
+                    input_args: InputOption {
+                        directory: None,
+                        filepath: None,
+                        live_analysis: false,
+                        recover_records: false,
+                        timeline_offset: Some("1d".to_string()),
+                    },
+                    profile: None,
+                    enable_deprecated_rules: false,
+                    exclude_status: None,
+                    min_level: "informational".to_string(),
+                    exact_level: None,
+                    enable_noisy_rules: false,
+                    end_timeline: None,
+                    start_timeline: None,
+                    eid_filter: false,
+                    european_time: false,
+                    iso_8601: false,
+                    rfc_2822: false,
+                    rfc_3339: false,
+                    us_military_time: false,
+                    us_time: false,
+                    utc: false,
+                    visualize_timeline: false,
+                    rules: Path::new("./rules").to_path_buf(),
+                    html_report: None,
+                    no_summary: false,
+                    common_options: CommonOptions {
+                        no_color: false,
+                        quiet: false,
+                    },
+                    detect_common_options: DetectCommonOption {
+                        evtx_file_ext: None,
+                        thread_number: None,
+                        quiet_errors: false,
+                        config: Path::new("./rules/config").to_path_buf(),
+                        verbose: false,
+                        json_input: true,
+                        include_computer: None,
+                        exclude_computer: None,
+                    },
+                    enable_unsupported_rules: false,
+                    clobber: false,
+                    proven_rules: false,
+                    include_tag: None,
+                    exclude_tag: None,
+                    include_category: None,
+                    exclude_category: None,
+                    include_eid: None,
+                    exclude_eid: None,
+                    no_field: false,
+                    remove_duplicate_data: false,
+                    remove_duplicate_detections: false,
+                },
+                geo_ip: None,
+                output: None,
+                multiline: false,
+            })),
+            debug: false,
+        }));
+        let now = Utc::now();
+        let actual = TargetEventTime::new(&csv_timeline);
+        let actual_diff = now - actual.start_time.unwrap();
+        assert!(actual_diff.num_days() == 1);
+    }
+
+    #[test]
+    fn test_timeline_offset_json() {
+        let json_timeline = StoredStatic::create_static_data(Some(Config {
+            action: Some(Action::JsonTimeline(JSONOutputOption {
+                output_options: OutputOption {
+                    input_args: InputOption {
+                        directory: None,
+                        filepath: None,
+                        live_analysis: false,
+                        recover_records: false,
+                        timeline_offset: Some("1y".to_string()),
+                    },
+                    profile: None,
+                    enable_deprecated_rules: false,
+                    exclude_status: None,
+                    min_level: "informational".to_string(),
+                    exact_level: None,
+                    enable_noisy_rules: false,
+                    end_timeline: None,
+                    start_timeline: None,
+                    eid_filter: false,
+                    european_time: false,
+                    iso_8601: false,
+                    rfc_2822: false,
+                    rfc_3339: false,
+                    us_military_time: false,
+                    us_time: false,
+                    utc: false,
+                    visualize_timeline: false,
+                    rules: Path::new("./rules").to_path_buf(),
+                    html_report: None,
+                    no_summary: false,
+                    common_options: CommonOptions {
+                        no_color: false,
+                        quiet: false,
+                    },
+                    detect_common_options: DetectCommonOption {
+                        evtx_file_ext: None,
+                        thread_number: None,
+                        quiet_errors: false,
+                        config: Path::new("./rules/config").to_path_buf(),
+                        verbose: false,
+                        json_input: true,
+                        include_computer: None,
+                        exclude_computer: None,
+                    },
+                    enable_unsupported_rules: false,
+                    clobber: false,
+                    proven_rules: false,
+                    include_tag: None,
+                    exclude_tag: None,
+                    include_category: None,
+                    exclude_category: None,
+                    include_eid: None,
+                    exclude_eid: None,
+                    no_field: false,
+                    remove_duplicate_data: false,
+                    remove_duplicate_detections: false,
+                },
+                geo_ip: None,
+                output: None,
+                jsonl_timeline: false,
+            })),
+            debug: false,
+        }));
+        let now = Utc::now();
+        let actual = TargetEventTime::new(&json_timeline);
+        let actual_diff = now - actual.start_time.unwrap();
+        assert!(actual_diff.num_days() == 365 || actual_diff.num_days() == 366);
+    }
+
+    #[test]
+    fn test_timeline_offset_search() {
+        let json_timeline = StoredStatic::create_static_data(Some(Config {
+            action: Some(Action::Search(SearchOption {
+                output: None,
+                common_options: CommonOptions {
+                    no_color: false,
+                    quiet: false,
+                },
+                input_args: InputOption {
+                    directory: None,
+                    filepath: None,
+                    live_analysis: false,
+                    recover_records: false,
+                    timeline_offset: Some("1h".to_string()),
+                },
+                keywords: Some(vec!["mimikatz".to_string()]),
+                regex: None,
+                ignore_case: true,
+                and_logic: false,
+                filter: vec![],
+                evtx_file_ext: None,
+                thread_number: None,
+                quiet_errors: false,
+                config: Path::new("./rules/config").to_path_buf(),
+                verbose: false,
+                multiline: false,
+                clobber: true,
+                json_output: false,
+                jsonl_output: false,
+                european_time: false,
+                iso_8601: false,
+                rfc_2822: false,
+                rfc_3339: false,
+                us_military_time: false,
+                us_time: false,
+                utc: false,
+            })),
+            debug: false,
+        }));
+        let now = Utc::now();
+        let actual = TargetEventTime::new(&json_timeline);
+        let actual_diff = now - actual.start_time.unwrap();
+        assert!(actual_diff.num_hours() == 1);
+    }
+
+    #[test]
+    fn test_timeline_offset_eid_metrics() {
+        let eid_metrics = StoredStatic::create_static_data(Some(Config {
+            action: Some(Action::EidMetrics(EidMetricsOption {
+                output: None,
+                common_options: CommonOptions {
+                    no_color: false,
+                    quiet: false,
+                },
+                input_args: InputOption {
+                    directory: None,
+                    filepath: None,
+                    live_analysis: false,
+                    recover_records: false,
+                    timeline_offset: Some("1h1m".to_string()),
+                },
+                clobber: true,
+                european_time: false,
+                iso_8601: false,
+                rfc_2822: false,
+                rfc_3339: false,
+                us_military_time: false,
+                us_time: false,
+                utc: false,
+                detect_common_options: DetectCommonOption {
+                    evtx_file_ext: None,
+                    thread_number: None,
+                    quiet_errors: false,
+                    config: Path::new("./rules/config").to_path_buf(),
+                    verbose: false,
+                    json_input: true,
+                    include_computer: None,
+                    exclude_computer: None,
+                },
+            })),
+            debug: false,
+        }));
+        let now = Utc::now();
+        let actual = TargetEventTime::new(&eid_metrics);
+        let actual_diff = now - actual.start_time.unwrap();
+        assert!(actual_diff.num_hours() == 1 && actual_diff.num_minutes() == 61);
+    }
+
+    #[test]
+    fn test_timeline_offset_logon_summary() {
+        let logon_summary = StoredStatic::create_static_data(Some(Config {
+            action: Some(Action::LogonSummary(LogonSummaryOption {
+                output: None,
+                common_options: CommonOptions {
+                    no_color: false,
+                    quiet: false,
+                },
+                input_args: InputOption {
+                    directory: None,
+                    filepath: None,
+                    live_analysis: false,
+                    recover_records: false,
+                    timeline_offset: Some("1y1d1h".to_string()),
+                },
+                clobber: true,
+                european_time: false,
+                iso_8601: false,
+                rfc_2822: false,
+                rfc_3339: false,
+                us_military_time: false,
+                us_time: false,
+                utc: false,
+                detect_common_options: DetectCommonOption {
+                    evtx_file_ext: None,
+                    thread_number: None,
+                    quiet_errors: false,
+                    config: Path::new("./rules/config").to_path_buf(),
+                    verbose: false,
+                    json_input: true,
+                    include_computer: None,
+                    exclude_computer: None,
+                },
+                end_timeline: None,
+                start_timeline: None,
+            })),
+            debug: false,
+        }));
+        let now = Utc::now();
+        let actual = TargetEventTime::new(&logon_summary);
+        let actual_diff = now - actual.start_time.unwrap();
+        let days = actual_diff.num_days();
+        assert!(days == 366 && actual_diff.num_hours() == days * 24 + 1);
+    }
+
+    #[test]
+    fn test_timeline_offset_pivot() {
+        let pivot_keywords_list = StoredStatic::create_static_data(Some(Config {
+            action: Some(Action::PivotKeywordsList(PivotKeywordOption {
+                output: None,
+                common_options: CommonOptions {
+                    no_color: false,
+                    quiet: false,
+                },
+                input_args: InputOption {
+                    directory: None,
+                    filepath: None,
+                    live_analysis: false,
+                    recover_records: false,
+                    timeline_offset: Some("1y1M1s".to_string()),
+                },
+                clobber: true,
+                detect_common_options: DetectCommonOption {
+                    evtx_file_ext: None,
+                    thread_number: None,
+                    quiet_errors: false,
+                    config: Path::new("./rules/config").to_path_buf(),
+                    verbose: false,
+                    json_input: true,
+                    include_computer: None,
+                    exclude_computer: None,
+                },
+                end_timeline: None,
+                start_timeline: None,
+                enable_deprecated_rules: false,
+                enable_unsupported_rules: false,
+                exclude_status: None,
+                min_level: "informational".to_string(),
+                exact_level: None,
+                enable_noisy_rules: false,
+                eid_filter: false,
+                include_eid: None,
+                exclude_eid: None,
+            })),
+            debug: false,
+        }));
+        let now = Utc::now();
+        let actual = TargetEventTime::new(&pivot_keywords_list);
+        let actual_diff = now - actual.start_time.unwrap();
+        let actual_diff_day = actual_diff.num_days();
+        assert!(
+            (393..=397).contains(&actual_diff_day)
+                && actual_diff.num_seconds() - (actual_diff_day * 24 * 60 * 60) == 1
+        );
     }
 }

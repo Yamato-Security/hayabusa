@@ -439,7 +439,7 @@ mod tests {
     /// outputで指定されているキー(eventkey_alias.txt内で設定済み)から対象のレコード内の情報でメッセージをパースしているか確認する関数
     fn test_parse_message() {
         MESSAGES.clear();
-        let json_str = r##"
+        let json_str = r#"
         {
             "Event": {
                 "EventData": {
@@ -453,7 +453,7 @@ mod tests {
                 }
             }
         }
-    "##;
+    "#;
         let event_record: Value = serde_json::from_str(json_str).unwrap();
         let expected = "commandline:parsetest1 computername:testcomputer1";
         assert_eq!(
@@ -481,7 +481,7 @@ mod tests {
     #[test]
     fn test_parse_message_auto_search() {
         MESSAGES.clear();
-        let json_str = r##"
+        let json_str = r#"
         {
             "Event": {
                 "EventData": {
@@ -489,7 +489,7 @@ mod tests {
                 }
             }
         }
-    "##;
+    "#;
         let event_record: Value = serde_json::from_str(json_str).unwrap();
         let expected = "alias:no_alias";
         assert_eq!(
@@ -518,7 +518,7 @@ mod tests {
     /// outputで指定されているキーが、eventkey_alias.txt内で設定されていない場合の出力テスト
     fn test_parse_message_not_exist_key_in_output() {
         MESSAGES.clear();
-        let json_str = r##"
+        let json_str = r#"
         {
             "Event": {
                 "EventData": {
@@ -531,7 +531,7 @@ mod tests {
                 }
             }
         }
-    "##;
+    "#;
         let event_record: Value = serde_json::from_str(json_str).unwrap();
         let expected = "NoExistAlias:n/a";
         assert_eq!(
@@ -559,7 +559,7 @@ mod tests {
     /// output test when no exist info in target record output and described key-value data in eventkey_alias.txt
     fn test_parse_message_not_exist_value_in_record() {
         MESSAGES.clear();
-        let json_str = r##"
+        let json_str = r#"
         {
             "Event": {
                 "EventData": {
@@ -572,7 +572,7 @@ mod tests {
                 }
             }
         }
-    "##;
+    "#;
         let event_record: Value = serde_json::from_str(json_str).unwrap();
         let expected = "commandline:parsetest3 computername:n/a";
         assert_eq!(
@@ -600,7 +600,7 @@ mod tests {
     /// output test when no exist info in target record output and described key-value data in eventkey_alias.txt
     fn test_parse_message_multiple_no_suffix_in_record() {
         MESSAGES.clear();
-        let json_str = r##"
+        let json_str = r#"
         {
             "Event": {
                 "EventData": {
@@ -618,7 +618,7 @@ mod tests {
                 }
             }
         }
-    "##;
+    "#;
         let event_record: Value = serde_json::from_str(json_str).unwrap();
         let expected = "commandline:parsetest3 data:[\"data1\",\"data2\",\"data3\"]";
         assert_eq!(
@@ -646,7 +646,7 @@ mod tests {
     /// output test when no exist info in target record output and described key-value data in eventkey_alias.txt
     fn test_parse_message_multiple_with_suffix_in_record() {
         MESSAGES.clear();
-        let json_str = r##"
+        let json_str = r#"
         {
             "Event": {
                 "EventData": {
@@ -664,7 +664,7 @@ mod tests {
                 }
             }
         }
-    "##;
+    "#;
         let event_record: Value = serde_json::from_str(json_str).unwrap();
         let expected = "commandline:parsetest3 data:data2";
         assert_eq!(
@@ -692,7 +692,7 @@ mod tests {
     /// output test when no exist info in target record output and described key-value data in eventkey_alias.txt
     fn test_parse_message_multiple_no_exist_in_record() {
         MESSAGES.clear();
-        let json_str = r##"
+        let json_str = r#"
         {
             "Event": {
                 "EventData": {
@@ -710,7 +710,7 @@ mod tests {
                 }
             }
         }
-    "##;
+    "#;
         let event_record: Value = serde_json::from_str(json_str).unwrap();
         let expected = "commandline:parsetest3 data:n/a";
         assert_eq!(

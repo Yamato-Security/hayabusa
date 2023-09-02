@@ -69,10 +69,10 @@ impl EventSearch {
         stored_static: &StoredStatic,
     ) {
         if !keywords.is_empty() {
-            // 大文字小文字を区別しないかどうかのフラグを設定
-            let case_insensitive_flag = match &stored_static.config.action {
-                Some(Action::Search(opt)) => opt.ignore_case,
-                _ => false,
+            // 大文字小文字を区別しないかどうか、and検索を行うかのフラグを設定
+            let (case_insensitive_flag, and_logic_flag) = match &stored_static.config.action {
+                Some(Action::Search(opt)) => (opt.ignore_case, opt.and_logic),
+                _ => (false, false),
             };
             self.search_keyword(
                 records,
@@ -80,7 +80,7 @@ impl EventSearch {
                 filters,
                 eventkey_alias,
                 stored_static.output_option.as_ref().unwrap(),
-                case_insensitive_flag,
+                (case_insensitive_flag, and_logic_flag),
             );
         }
         if let Some(re) = regex {
@@ -138,7 +138,7 @@ impl EventSearch {
         filters: &[String],
         eventkey_alias: &EventKeyAliasConfig,
         output_option: &OutputOption,
-        case_insensitive_flag: bool, // 検索時に大文字小文字を区別するかどうか
+        (case_insensitive_flag, and_logic_flag): (bool, bool), // 検索時に大文字小文字を区別するかどうか, 検索時にAND条件で検索するかどうか
     ) {
         if records.is_empty() {
             return;
@@ -157,14 +157,28 @@ impl EventSearch {
                 record.data_string.clone()
             };
             self.filepath = CompactString::from(record.evtx_filepath.as_str());
-            if keywords.iter().any(|key| {
-                let converted_key = if case_insensitive_flag {
-                    key.to_lowercase()
+            let search_condition = |keywords: &[String]| -> bool {
+                if and_logic_flag {
+                    keywords.iter().all(|key| {
+                        let converted_key = if case_insensitive_flag {
+                            key.to_lowercase()
+                        } else {
+                            key.clone()
+                        };
+                        utils::contains_str(&search_target, &converted_key)
+                    })
                 } else {
-                    key.clone()
-                };
-                utils::contains_str(&search_target, &converted_key)
-            }) {
+                    keywords.iter().any(|key| {
+                        let converted_key = if case_insensitive_flag {
+                            key.to_lowercase()
+                        } else {
+                            key.clone()
+                        };
+                        utils::contains_str(&search_target, &converted_key)
+                    })
+                }
+            };
+            if search_condition(keywords) {
                 let (timestamp, hostname, channel, eventid, recordid, allfieldinfo) =
                     extract_search_event_info(record, eventkey_alias, output_option);
 

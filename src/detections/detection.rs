@@ -6,9 +6,9 @@ use crate::detections::utils::{
 };
 use crate::options::profile::Profile::{
     self, AllFieldInfo, Channel, Computer, EventID, EvtxFile, Level, MitreTactics, MitreTags,
-    OtherTags, Provider, RecordID, RenderedMessage, RuleAuthor, RuleCreationDate, RuleFile, RuleID,
-    RuleModifiedDate, RuleTitle, SrcASN, SrcCity, SrcCountry, Status, TgtASN, TgtCity, TgtCountry,
-    Timestamp,
+    OtherTags, Provider, RecordID, RecoveredRecord, RenderedMessage, RuleAuthor, RuleCreationDate,
+    RuleFile, RuleID, RuleModifiedDate, RuleTitle, SrcASN, SrcCity, SrcCountry, Status, TgtASN,
+    TgtCity, TgtCountry, Timestamp,
 };
 use chrono::{TimeZone, Utc};
 use compact_str::CompactString;
@@ -47,6 +47,7 @@ pub struct EvtxRecordInfo {
     pub record: Value,         // 1レコード分のデータをJSON形式にシリアライズしたもの
     pub data_string: String,   //1レコード内のデータを文字列にしたもの
     pub key_2_value: HashMap<String, String>, // 階層化されたキーを.でつないだデータとその値のマップ
+    pub recovered_record: bool, // レコードが復元されたかどうか
 }
 
 impl EvtxRecordInfo {
@@ -260,6 +261,11 @@ impl Detection {
         let eid =
             get_serde_number_to_string(&record_info.record["Event"]["System"]["EventID"], false)
                 .unwrap_or_else(|| "-".into());
+        let recovered_record = if record_info.recovered_record {
+            "Y"
+        } else {
+            ""
+        };
 
         let default_time = Utc.with_ymd_and_hms(1970, 1, 1, 0, 0, 0).unwrap();
         let time = message::get_event_time(&record_info.record, stored_static.json_input_flag)
@@ -477,6 +483,10 @@ impl Detection {
                                 .into(),
                         ),
                     );
+                }
+                RecoveredRecord(_) => {
+                    profile_converter
+                        .insert("RecoveredRecord", RecoveredRecord(recovered_record.into()));
                 }
                 RenderedMessage(_) => {
                     let convert_value = if let Some(message) =
@@ -860,6 +870,9 @@ impl Detection {
                 Provider(_) => {
                     profile_converter.insert(key.as_str(), Provider("-".into()));
                 }
+                RecoveredRecord(_) => {
+                    profile_converter.insert("RecoveredRecord", RenderedMessage("".into()));
+                }
                 RenderedMessage(_) => {
                     profile_converter.insert(key.as_str(), RenderedMessage("-".into()));
                 }
@@ -1186,6 +1199,7 @@ mod tests {
                         filepath: None,
                         live_analysis: false,
                         recover_records: false,
+                        timeline_offset: None,
                     },
                     profile: None,
                     enable_deprecated_rules: false,
@@ -1445,6 +1459,7 @@ mod tests {
                     filepath: None,
                     live_analysis: false,
                     recover_records: false,
+                    timeline_offset: None,
                 },
                 profile: None,
                 enable_deprecated_rules: false,
@@ -1517,7 +1532,7 @@ mod tests {
 
             let messages = &message::MESSAGES;
             messages.clear();
-            let val = r##"
+            let val = r#"
             {
                 "Event": {
                     "EventData": {
@@ -1535,12 +1550,13 @@ mod tests {
                     }
                 }
             }
-        "##;
+        "#;
             let event: Value = serde_json::from_str(val).unwrap();
             let dummy_rule = RuleNode::new(test_rulepath.to_string(), Yaml::from_str(""));
             let keys = detections::rule::get_detection_keys(&dummy_rule);
 
-            let input_evtxrecord = utils::create_rec_info(event, test_filepath.to_owned(), &keys);
+            let input_evtxrecord =
+                utils::create_rec_info(event, test_filepath.to_owned(), &keys, &false);
             Detection::insert_message(&dummy_rule, &input_evtxrecord, &stored_static);
             let multi = message::MESSAGES.get(&expect_time).unwrap();
             let (_, detect_infos) = multi.pair();
@@ -1577,6 +1593,7 @@ mod tests {
                     filepath: None,
                     live_analysis: false,
                     recover_records: false,
+                    timeline_offset: None,
                 },
                 profile: None,
                 enable_deprecated_rules: false,
@@ -1649,7 +1666,7 @@ mod tests {
 
             let messages = &message::MESSAGES;
             messages.clear();
-            let val = r##"
+            let val = r#"
             {
                 "Event": {
                     "EventData": {
@@ -1667,12 +1684,13 @@ mod tests {
                     }
                 }
             }
-        "##;
+        "#;
             let event: Value = serde_json::from_str(val).unwrap();
             let dummy_rule = RuleNode::new(test_rulepath.to_string(), Yaml::from_str(""));
             let keys = detections::rule::get_detection_keys(&dummy_rule);
 
-            let input_evtxrecord = utils::create_rec_info(event, test_filepath.to_owned(), &keys);
+            let input_evtxrecord =
+                utils::create_rec_info(event, test_filepath.to_owned(), &keys, &false);
             Detection::insert_message(&dummy_rule, &input_evtxrecord, &stored_static);
             let multi = message::MESSAGES.get(&expect_time).unwrap();
             let (_, detect_infos) = multi.pair();
@@ -1705,6 +1723,7 @@ mod tests {
                     filepath: None,
                     live_analysis: false,
                     recover_records: false,
+                    timeline_offset: None,
                 },
                 profile: None,
                 enable_deprecated_rules: false,
@@ -1781,7 +1800,7 @@ mod tests {
 
             let messages = &message::MESSAGES;
             messages.clear();
-            let val = r##"
+            let val = r#"
             {
                 "Event": {
                     "EventData": {
@@ -1799,7 +1818,7 @@ mod tests {
                     }
                 }
             }
-        "##;
+        "#;
             let rule_str = r#"
         enabled: true
         author: "Test, Test2/Test3; Test4 "
@@ -1817,7 +1836,8 @@ mod tests {
             assert!(rule_node.init(&create_dummy_stored_static()).is_ok());
 
             let keys = detections::rule::get_detection_keys(&rule_node);
-            let input_evtxrecord = utils::create_rec_info(event, test_filepath.to_owned(), &keys);
+            let input_evtxrecord =
+                utils::create_rec_info(event, test_filepath.to_owned(), &keys, &false);
             Detection::insert_message(&rule_node, &input_evtxrecord, &stored_static.clone());
             let multi = message::MESSAGES.get(&expect_time).unwrap();
             let (_, detect_infos) = multi.pair();
@@ -1846,6 +1866,7 @@ mod tests {
                     filepath: None,
                     live_analysis: false,
                     recover_records: false,
+                    timeline_offset: None,
                 },
                 profile: None,
                 enable_deprecated_rules: false,
@@ -1923,7 +1944,7 @@ mod tests {
 
             let messages = &message::MESSAGES;
             messages.clear();
-            let val = r##"
+            let val = r#"
             {
                 "Event": {
                     "EventData": {
@@ -1941,7 +1962,7 @@ mod tests {
                     }
                 }
             }
-        "##;
+        "#;
             let rule_str = r#"
         enabled: true
         author: "Test, Test2/Test3; Test4 "
@@ -1959,7 +1980,8 @@ mod tests {
             assert!(rule_node.init(&create_dummy_stored_static()).is_ok());
 
             let keys = detections::rule::get_detection_keys(&rule_node);
-            let input_evtxrecord = utils::create_rec_info(event, test_filepath.to_owned(), &keys);
+            let input_evtxrecord =
+                utils::create_rec_info(event, test_filepath.to_owned(), &keys, &false);
             Detection::insert_message(&rule_node, &input_evtxrecord, &stored_static.clone());
             let multi = message::MESSAGES.get(&expect_time).unwrap();
             let (_, detect_infos) = multi.pair();

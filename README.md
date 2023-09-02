@@ -15,6 +15,7 @@
     <a href="https://www.blackhat.com/asia-22/arsenal/schedule/#hayabusa-26211"><img src="https://raw.githubusercontent.com/toolswatch/badges/master/arsenal/asia/2022.svg"></a>
     <a href="https://codeblue.jp/2022/en/talks/?content=talks_24"><img src="https://img.shields.io/badge/CODE%20BLUE%20Bluebox-2022-blue"></a>
     <a href="https://www.seccon.jp/2022/seccon_workshop/windows.html"><img src="https://img.shields.io/badge/SECCON-2023-blue"></a>
+    <a href="https://www.security-camp.or.jp/minicamp/tokyo2023.html"><img src="https://img.shields.io/badge/Security%20MiniCamp%20Tokyo-2023-blue"></a>
     <a href="https://www.sans.org/cyber-security-training-events/digital-forensics-summit-2023/"><img src="https://img.shields.io/badge/SANS%20DFIR%20Summit-2023-blue"></a>
     <a href=""><img src="https://img.shields.io/badge/Maintenance%20Level-Actively%20Developed-brightgreen.svg" /></a>
     <a href="https://rust-reportcard.xuri.me/report/github.com/Yamato-Security/hayabusa"><img src="https://rust-reportcard.xuri.me/badge/github.com/Yamato-Security/hayabusa" /></a>
@@ -68,6 +69,7 @@ Hayabusa is a **Windows event log fast forensics timeline generator** and **thre
 - [Running Hayabusa](#running-hayabusa)
   - [Caution: Anti-Virus/EDR Warnings and Slow Runtimes](#caution-anti-virusedr-warnings-and-slow-runtimes)
   - [Windows](#windows)
+    - [Error when trying to scan a file or directory with a space in the path](#error-when-trying-to-scan-a-file-or-directory-with-a-space-in-the-path)
   - [Linux](#linux)
   - [macOS](#macos)
 - [Command List](#command-list)
@@ -144,7 +146,7 @@ Hayabusa is a **Windows event log fast forensics timeline generator** and **thre
 
 ### Threat Hunting and Enterprise-wide DFIR
 
-Hayabusa currently has over 2500 Sigma rules and over 150 Hayabusa built-in detection rules with more rules being added regularly.
+Hayabusa currently has over 2300 Sigma rules and over 150 Hayabusa built-in detection rules with more rules being added regularly.
 It can be used for enterprise-wide proactive threat hunting as well as DFIR (Digital Forensics and Incident Response) for free with [Velociraptor](https://docs.velociraptor.app/)'s [Hayabusa artifact](https://docs.velociraptor.app/exchange/artifacts/pages/windows.eventlogs.hayabusa/).
 By combining these two open-source tools, you can essentially retroactively reproduce a SIEM when there is no SIEM setup in the environment.
 You can learn about how to do this by watching [Eric Capuano](https://twitter.com/eric_capuano)'s Velociraptor walkthrough [here](https://www.youtube.com/watch?v=Q1IoGX--814).
@@ -246,6 +248,8 @@ You can learn how to analyze JSON-formatted results with `jq` [here](doc/Analysi
 * Log enrichment by adding GeoIP (ASN, city, country) information to IP addresses.
 * Search all events for keywords or regular expressions.
 * Field data mapping. (Ex: `0xc0000234` -> `ACCOUNT LOCKED`)
+* Evtx record carving from empty space.
+* Event de-duplication when outputting. (Useful when recovery records is enabled or when you include backed up evtx files, evtx files from VSS, etc...)
 
 # Downloads
 
@@ -379,6 +383,13 @@ You can avoid this by temporarily turning real-time protection off or adding an 
 
 In a Command/PowerShell Prompt or Windows Terminal, just run the appropriate 32-bit or 64-bit Windows binary.
 
+### Error when trying to scan a file or directory with a space in the path
+
+When using the built-in Command or PowerShell prompt in Windows, you may receive an error that Hayabusa was not able to load any .evtx files if there is a space in your file or directory path.
+In order to load the .evtx files properly, be sure to do the following:
+1. Enclose the file or directory path with double quotes.
+2. If it is a directory path, make sure that you do not include a backslash for the last character.
+
 ## Linux
 
 You first need to make the binary executable.
@@ -464,6 +475,10 @@ Input:
   -f, --file <FILE>      File path to one .evtx file
   -l, --live-analysis    Analyze the local C:\Windows\System32\winevt\Logs folder
   -J, --JSON-input       Scan JSON formatted logs instead of .evtx (.json or .jsonl)
+  -x, --recover-records  Carve evtx records from empty pages (default: disabled)
+
+Filtering:
+      --timeline-offset <OFFSET>  Scan recent events based on an offset (ex: 1y, 3M, 30d, 24h, 30m)
 
 Output:
   -o, --output <FILE>  Save the results in CSV format (ex: computer-metrics.csv)
@@ -499,6 +514,12 @@ Input:
   -f, --file <FILE>      File path to one .evtx file
   -l, --live-analysis    Analyze the local C:\Windows\System32\winevt\Logs folder
   -J, --JSON-input       Scan JSON formatted logs instead of .evtx (.json or .jsonl)
+  -x, --recover-records  Carve evtx records from empty pages (default: disabled)
+
+Filtering:
+      --exclude-computer <COMPUTER...>  Do not scan specified computer names (ex: ComputerA) (ex: ComputerA,ComputerB)
+      --include-computer <COMPUTER...>  Scan only specified computer names (ex: ComputerA) (ex: ComputerA,ComputerB)
+      --timeline-offset <OFFSET>        Scan recent events based on an offset (ex: 1y, 3M, 30d, 24h, 30m)
 
 Output:
   -o, --output <FILE>  Save the Metrics in CSV format (ex: metrics.csv)
@@ -514,10 +535,6 @@ General Options:
   -c, --rules-config <DIR>             Specify custom rule config directory (default: ./rules/config)
       --target-file-ext <FILE-EXT...>  Specify additional evtx file extensions (ex: evtx_data)
   -t, --threads <NUMBER>               Number of threads (default: optimal number for performance)
-
-Filtering:
-      --exclude-computer <COMPUTER...>  Do not scan specified computer names (ex: ComputerA) (ex: ComputerA,ComputerB)
-      --include-computer <COMPUTER...>  Scan only specified computer names (ex: ComputerA) (ex: ComputerA,ComputerB)
 
 Time Format:
       --European-time     Output timestamp in European time format (ex: 22-02-2022 22:00:00.123 +02:00)
@@ -562,9 +579,17 @@ Input:
   -f, --file <FILE>      File path to one .evtx file
   -l, --live-analysis    Analyze the local C:\Windows\System32\winevt\Logs folder
   -J, --JSON-input       Scan JSON formatted logs instead of .evtx (.json or .jsonl)
+  -x, --recover-records  Carve evtx records from empty pages (default: disabled)
+
+Filtering:
+      --exclude-computer <COMPUTER...>  Do not scan specified computer names (ex: ComputerA) (ex: ComputerA,ComputerB)
+      --include-computer <COMPUTER...>  Scan only specified computer names (ex: ComputerA) (ex: ComputerA,ComputerB)
+      --timeline-end <DATE>             End time of the event logs to load (ex: "2022-02-22 23:59:59 +09:00")
+      --timeline-offset <OFFSET>        Scan recent events based on an offset (ex: 1y, 3M, 30d, 24h, 30m)
+      --timeline-start <DATE>           Start time of the event logs to load (ex: "2020-02-22 00:00:00 +09:00")
 
 Output:
-  -o, --output <FILE>  Save the logon summary to 2 CSV files. Specify the base filename. (ex: -o logon-summary)
+  -o, --output <FILENAME-PREFIX>  Save the logon summary to two CSV files (ex: -o logon-summary)
 
 Display Settings:
       --no-color  Disable color output
@@ -577,10 +602,6 @@ General Options:
   -c, --rules-config <DIR>             Specify custom rule config directory (default: ./rules/config)
       --target-file-ext <FILE-EXT...>  Specify additional evtx file extensions (ex: evtx_data)
   -t, --threads <NUMBER>               Number of threads (default: optimal number for performance)
-
-Filtering:
-      --exclude-computer <COMPUTER...>  Do not scan specified computer names (ex: ComputerA) (ex: ComputerA,ComputerB)
-      --include-computer <COMPUTER...>  Scan only specified computer names (ex: ComputerA) (ex: ComputerA,ComputerB)
 
 Time Format:
       --European-time     Output timestamp in European time format (ex: 22-02-2022 22:00:00.123 +02:00)
@@ -596,6 +617,7 @@ Time Format:
 
 * Print logon summary: `hayabusa.exe logon-summary -f Security.evtx`
 * Save logon summary results: `hayabusa.exe logon-summary -d ../logs -o logon-summary.csv`
+
 
 ### `pivot-keywords-list` command
 
@@ -613,14 +635,7 @@ Input:
   -f, --file <FILE>      File path to one .evtx file
   -l, --live-analysis    Analyze the local C:\Windows\System32\winevt\Logs folder
   -J, --JSON-input       Scan JSON formatted logs instead of .evtx (.json or .jsonl)
-
-Output:
-  -o, --output <FILENAMES-BASE>  Save pivot words to separate files (ex: PivotKeywords)
-
-Display Settings:
-      --no-color  Disable color output
-  -q, --quiet     Quiet mode: do not display the launch banner
-  -v, --verbose   Output verbose information
+  -x, --recover-records  Carve evtx records from empty pages (default: disabled)
 
 Filtering:
   -E, --EID-filter                      Scan only common EIDs for faster speed (./rules/config/target_event_IDs.txt)
@@ -635,7 +650,16 @@ Filtering:
       --include-eid <EID...>            Scan only specified EIDs for faster speed (ex: 1) (ex: 1,4688)
   -m, --min-level <LEVEL>               Minimum level for rules to load (default: informational)
       --timeline-end <DATE>             End time of the event logs to load (ex: "2022-02-22 23:59:59 +09:00")
+      --timeline-offset <OFFSET>        Scan recent events based on an offset (ex: 1y, 3M, 30d, 24h, 30m)
       --timeline-start <DATE>           Start time of the event logs to load (ex: "2020-02-22 00:00:00 +09:00")
+
+Output:
+  -o, --output <FILENAME-PREFIX>  Save pivot words to separate files (ex: PivotKeywords)
+
+Display Settings:
+      --no-color  Disable color output
+  -q, --quiet     Quiet mode: do not display the launch banner
+  -v, --verbose   Output verbose information
 
 General Options:
   -C, --clobber                        Overwrite files when saving
@@ -662,6 +686,7 @@ You can customize what keywords you want to search for by editing `./rules/confi
 
 The format is `KeywordName.FieldName`. For example, when creating the list of `Users`, hayabusa will list up all the values in the `SubjectUserName`, `TargetUserName` and `User` fields.
 
+
 ### `search` command
 
 The `search` command will let you keyword search on all events.
@@ -680,12 +705,15 @@ Input:
   -d, --directory <DIR>  Directory of multiple .evtx files
   -f, --file <FILE>      File path to one .evtx file
   -l, --live-analysis    Analyze the local C:\Windows\System32\winevt\Logs folder
+  -x, --recover-records  Carve evtx records from empty pages (default: disabled)
 
 Filtering:
-  -F, --filter <FILTER...>    Filter by specific field(s)
-  -i, --ignore-case           Case-insensitive keyword search
-  -k, --keyword <KEYWORD...>  Search by keyword(s)
-  -r, --regex <REGEX>         Search by regular expression
+  -a, --and-logic                 Search keywords with AND logic (default: OR)
+  -F, --filter <FILTER...>        Filter by specific field(s)
+  -i, --ignore-case               Case-insensitive keyword search
+  -k, --keyword <KEYWORD...>      Search by keyword(s)
+  -r, --regex <REGEX>             Search by regular expression
+      --timeline-offset <OFFSET>  Scan recent events based on an offset (ex: 1y, 3M, 30d, 24h, 30m)
 
 Output:
   -J, --JSON-output    Save the search results in JSON format (ex: -J -o results.json)
@@ -765,22 +793,7 @@ Input:
   -f, --file <FILE>      File path to one .evtx file
   -l, --live-analysis    Analyze the local C:\Windows\System32\winevt\Logs folder
   -J, --JSON-input       Scan JSON formatted logs instead of .evtx (.json or .jsonl)
-
-Output:
-  -G, --GeoIP <MAXMIND-DB-DIR>  Add GeoIP (ASN, city, country) info to IP addresses
-  -H, --HTML-report <FILE>      Save Results Summary details to an HTML report (ex: results.html)
-  -M, --multiline               Output event field information in multiple rows
-  -F, --no-field-data-mapping   Disable field data mapping
-  -o, --output <FILE>           Save the timeline in CSV format (ex: results.csv)
-  -p, --profile <PROFILE>       Specify output profile
-  -R, --remove-duplicate-data   Duplicate field data will be replaced with "DUP"
-
-Display Settings:
-      --no-color            Disable color output
-  -N, --no-summary          Do not display Results Summary for faster speed
-  -q, --quiet               Quiet mode: do not display the launch banner
-  -v, --verbose             Output verbose information
-  -T, --visualize-timeline  Output event frequency timeline (terminal needs to support unicode)
+  -x, --recover-records  Carve evtx records from empty pages (default: disabled)
 
 Filtering:
   -E, --EID-filter                      Scan only common EIDs for faster speed (./rules/config/target_event_IDs.txt)
@@ -800,7 +813,25 @@ Filtering:
   -m, --min-level <LEVEL>               Minimum level for rules to load (default: informational)
   -P, --proven-rules                    Scan with only proven rules for faster speed (./rules/config/proven_rules.txt)
       --timeline-end <DATE>             End time of the event logs to load (ex: "2022-02-22 23:59:59 +09:00")
+      --timeline-offset <OFFSET>        Scan recent events based on an offset (ex: 1y, 3M, 30d, 24h, 30m)
       --timeline-start <DATE>           Start time of the event logs to load (ex: "2020-02-22 00:00:00 +09:00")
+
+Output:
+  -G, --GeoIP <MAXMIND-DB-DIR>       Add GeoIP (ASN, city, country) info to IP addresses
+  -H, --HTML-report <FILE>           Save Results Summary details to an HTML report (ex: results.html)
+  -M, --multiline                    Output event field information in multiple rows
+  -F, --no-field-data-mapping        Disable field data mapping
+  -o, --output <FILE>                Save the timeline in CSV format (ex: results.csv)
+  -p, --profile <PROFILE>            Specify output profile
+  -R, --remove-duplicate-data        Duplicate field data will be replaced with "DUP"
+  -X, --remove-duplicate-detections  Remove duplicate detections (default: disabled)
+
+Display Settings:
+      --no-color            Disable color output
+  -N, --no-summary          Do not display Results Summary for faster speed
+  -q, --quiet               Quiet mode: do not display the launch banner
+  -v, --verbose             Output verbose information
+  -T, --visualize-timeline  Output event frequency timeline (terminal needs to support unicode)
 
 General Options:
   -C, --clobber                        Overwrite files when saving
@@ -1020,22 +1051,7 @@ Input:
   -f, --file <FILE>      File path to one .evtx file
   -l, --live-analysis    Analyze the local C:\Windows\System32\winevt\Logs folder
   -J, --JSON-input       Scan JSON formatted logs instead of .evtx (.json or .jsonl)
-
-Output:
-  -G, --GeoIP <MAXMIND-DB-DIR>  Add GeoIP (ASN, city, country) info to IP addresses
-  -H, --HTML-report <FILE>      Save Results Summary details to an HTML report (ex: results.html)
-  -L, --JSONL-output            Save the timeline in JSONL format (ex: -L -o results.jsonl)
-  -F, --no-field-data-mapping   Disable field data mapping
-  -o, --output <FILE>           Save the timeline in JSON format (ex: results.json)
-  -p, --profile <PROFILE>       Specify output profile
-  -R, --remove-duplicate-data   Duplicate field data will be replaced with "DUP"
-
-Display Settings:
-      --no-color            Disable color output
-  -N, --no-summary          Do not display Results Summary for faster speed
-  -q, --quiet               Quiet mode: do not display the launch banner
-  -v, --verbose             Output verbose information
-  -T, --visualize-timeline  Output event frequency timeline (terminal needs to support unicode)
+  -x, --recover-records  Carve evtx records from empty pages (default: disabled)
 
 Filtering:
   -E, --EID-filter                      Scan only common EIDs for faster speed (./rules/config/target_event_IDs.txt)
@@ -1055,7 +1071,25 @@ Filtering:
   -m, --min-level <LEVEL>               Minimum level for rules to load (default: informational)
   -P, --proven-rules                    Scan with only proven rules for faster speed (./rules/config/proven_rules.txt)
       --timeline-end <DATE>             End time of the event logs to load (ex: "2022-02-22 23:59:59 +09:00")
+      --timeline-offset <OFFSET>        Scan recent events based on an offset (ex: 1y, 3M, 30d, 24h, 30m)
       --timeline-start <DATE>           Start time of the event logs to load (ex: "2020-02-22 00:00:00 +09:00")
+
+Output:
+  -G, --GeoIP <MAXMIND-DB-DIR>       Add GeoIP (ASN, city, country) info to IP addresses
+  -H, --HTML-report <FILE>           Save Results Summary details to an HTML report (ex: results.html)
+  -L, --JSONL-output                 Save the timeline in JSONL format (ex: -L -o results.jsonl)
+  -F, --no-field-data-mapping        Disable field data mapping
+  -o, --output <FILE>                Save the timeline in JSON format (ex: results.json)
+  -p, --profile <PROFILE>            Specify output profile
+  -R, --remove-duplicate-data        Duplicate field data will be replaced with "DUP"
+  -X, --remove-duplicate-detections  Remove duplicate detections (default: disabled)
+
+Display Settings:
+      --no-color            Disable color output
+  -N, --no-summary          Do not display Results Summary for faster speed
+  -q, --quiet               Quiet mode: do not display the launch banner
+  -v, --verbose             Output verbose information
+  -T, --visualize-timeline  Output event frequency timeline (terminal needs to support unicode)
 
 General Options:
   -C, --clobber                        Overwrite files when saving
