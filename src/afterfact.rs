@@ -1299,18 +1299,10 @@ fn _get_timestamp(output_option: &OutputOption, time: &DateTime<Utc>) -> i64 {
 }
 
 /// json出力の際に配列として対応させるdetails,MitreTactics,MitreTags,OtherTagsに該当する場合に配列を返す関数
-fn _get_json_vec(profile: &Profile, target_data: &String) -> Vec<String> {
+fn _get_json_vec(profile: &Profile, target_data: &str) -> Vec<String> {
     match profile {
         Profile::MitreTactics(_) | Profile::MitreTags(_) | Profile::OtherTags(_) => {
             target_data.split(": ").map(|x| x.to_string()).collect()
-        }
-        Profile::Details(_) | Profile::AllFieldInfo(_) | Profile::ExtraFieldInfo(_) => {
-            let ret: Vec<String> = target_data.split(" ¦ ").map(|x| x.to_string()).collect();
-            if target_data == &ret[0] && !utils::contains_str(target_data, ": ") {
-                vec![]
-            } else {
-                ret
-            }
         }
         _ => vec![],
     }
@@ -1575,7 +1567,7 @@ pub fn output_json_str(
                             output_stock.push(format!(
                                 "{}{last_contents_end}",
                                 _create_json_output_format(
-                                    &key,
+                                    key,
                                     &fmted_val,
                                     key.starts_with('\"'),
                                     fmted_val.starts_with('\"'),
