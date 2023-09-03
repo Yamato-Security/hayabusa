@@ -126,9 +126,8 @@ pub fn insert(
 ) {
     let mut record_details_info_map = HashMap::new();
     if !is_agg {
-        let mut prev = 'a';
         //ここの段階でdetailsの内容でaliasを置き換えた内容と各種、key,valueの組み合わせのmapを取得する
-        let (mut removed_sp_parsed_detail, alias_hash_map) = parse_message(
+        let (mut removed_sp_parsed_detail, details_in_record) = parse_message(
             event_record,
             output,
             eventkey_alias,
@@ -136,15 +135,25 @@ pub fn insert(
             field_data_map_key,
             field_data_map,
         );
-        record_details_info_map.insert("#Details".into(), alias_hash_map);
-        // 特殊文字の除外のためのretain処理
-        removed_sp_parsed_detail.retain(|ch| {
-            let retain_flag = prev == ' ' && ch == ' ' && ch.is_control();
-            if !retain_flag {
-                prev = ch;
-            }
-            !retain_flag
+
+        let removed_sp_char = |mut cs: CompactString| -> CompactString {
+            let mut prev = 'a';
+            cs.retain(|ch| {
+                let retain_flag = (prev == ' ' && ch == ' ') || ch.is_control();
+                if !retain_flag {
+                    prev = ch;
+                }
+                !retain_flag
+            });
+            cs.clone()
+        };
+        let mut sp_removed_details_in_record = vec![];
+        details_in_record.iter().for_each(|v| {
+            sp_removed_details_in_record.push(removed_sp_char(v.clone()));
         });
+        record_details_info_map.insert("#Details".into(), sp_removed_details_in_record);
+        // 特殊文字の除外のためのretain処理
+        removed_sp_parsed_detail = removed_sp_char(removed_sp_parsed_detail);
 
         // Details内にある改行文字は除外しないために絵文字を含めた特殊な文字に変換することで対応する
         let parsed_detail = removed_sp_parsed_detail
