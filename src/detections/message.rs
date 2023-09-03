@@ -127,7 +127,7 @@ pub fn insert(
     let mut record_details_info_map = HashMap::new();
     if !is_agg {
         //ここの段階でdetailsの内容でaliasを置き換えた内容と各種、key,valueの組み合わせのmapを取得する
-        let (mut removed_sp_parsed_detail, details_in_record) = parse_message(
+        let (removed_sp_parsed_detail, details_in_record) = parse_message(
             event_record,
             output,
             eventkey_alias,
@@ -136,16 +136,20 @@ pub fn insert(
             field_data_map,
         );
 
-        let removed_sp_char = |mut cs: CompactString| -> CompactString {
+        let removed_sp_char = |cs: CompactString| -> CompactString {
+            let mut newline_replaced_cs = cs
+                .replace('\n', "🛂n")
+                .replace('\r', "🛂r")
+                .replace('\t', "🛂t");
             let mut prev = 'a';
-            cs.retain(|ch| {
+            newline_replaced_cs.retain(|ch| {
                 let retain_flag = (prev == ' ' && ch == ' ') || ch.is_control();
                 if !retain_flag {
                     prev = ch;
                 }
                 !retain_flag
             });
-            cs.clone()
+            newline_replaced_cs.into()
         };
         let mut sp_removed_details_in_record = vec![];
         details_in_record.iter().for_each(|v| {
@@ -153,17 +157,12 @@ pub fn insert(
         });
         record_details_info_map.insert("#Details".into(), sp_removed_details_in_record);
         // 特殊文字の除外のためのretain処理
-        removed_sp_parsed_detail = removed_sp_char(removed_sp_parsed_detail);
-
         // Details内にある改行文字は除外しないために絵文字を含めた特殊な文字に変換することで対応する
-        let parsed_detail = removed_sp_parsed_detail
-            .replace('\n', "🛂n")
-            .replace('\r', "🛂r")
-            .replace('\t', "🛂t");
+        let parsed_detail = removed_sp_char(removed_sp_parsed_detail);
         detect_info.detail = if parsed_detail.is_empty() {
             CompactString::from("-")
         } else {
-            parsed_detail.into()
+            parsed_detail
         };
     }
     let mut replaced_profiles: Vec<(CompactString, Profile)> = vec![];
