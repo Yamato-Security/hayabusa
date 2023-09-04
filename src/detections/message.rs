@@ -262,7 +262,8 @@ pub fn insert(
                         let value = x.split_once(": ").unwrap_or_default().1;
                         !details_splits.contains(value)
                     })
-                    .map(|y| y.to_owned());
+                    .map(|y| y.to_owned())
+                    .sorted_unstable();
                 if is_json_timeline {
                     record_details_info_map
                         .insert("#ExtraFieldInfo".into(), extra_field_val.collect());
@@ -389,6 +390,7 @@ pub fn parse_message(
             }
         }
     }
+    details_key_and_value.sort_unstable();
     (return_message, details_key_and_value)
 }
 
