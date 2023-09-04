@@ -311,9 +311,8 @@ pub fn parse_message(
 ) -> (CompactString, Vec<CompactString>) {
     let mut return_message = output.clone();
     let mut hash_map: HashMap<CompactString, Vec<CompactString>> = HashMap::new();
-    let detail_key: Vec<&str> = output
+    let details_key: Vec<&str> = output
         .split(" ¦ ")
-        .map(|x| x.split_once(": ").unwrap_or_default().0)
         .collect();
     for caps in ALIASREGEX.captures_iter(&return_message) {
         let full_target_str = &caps[0];
@@ -379,13 +378,17 @@ pub fn parse_message(
         }
     }
     let mut details_key_and_value: Vec<CompactString> = vec![];
-    for (i, (k, v)) in hash_map.iter().enumerate() {
+    for (k, v) in hash_map.iter() {
         // JSON出力の場合は各種のaliasを置き換える処理はafterfactの出力用の関数で行うため、ここでは行わない
         if !json_timeline_flag {
             return_message = CompactString::new(return_message.replace(k.as_str(), v[0].as_str()));
         }
-        if detail_key.len() > i {
-            details_key_and_value.push(format!("{}: {}", detail_key[i], v[0]).into());
+        for detail_contents in details_key.iter() {
+            if detail_contents.contains(k.as_str()) {
+                let key = detail_contents.split_once(": ").unwrap_or_default().0;
+                details_key_and_value.push(format!("{}: {}", key, v[0]).into());
+                break;
+            }
         }
     }
     (return_message, details_key_and_value)
