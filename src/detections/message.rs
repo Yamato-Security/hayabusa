@@ -311,9 +311,7 @@ pub fn parse_message(
 ) -> (CompactString, Vec<CompactString>) {
     let mut return_message = output.clone();
     let mut hash_map: HashMap<CompactString, Vec<CompactString>> = HashMap::new();
-    let details_key: Vec<&str> = output
-        .split(" ¦ ")
-        .collect();
+    let details_key: Vec<&str> = output.split(" ¦ ").collect();
     for caps in ALIASREGEX.captures_iter(&return_message) {
         let full_target_str = &caps[0];
         let target_str = full_target_str
