@@ -3,7 +3,7 @@ use crate::detections::message::AlertMessage;
 use crate::detections::utils;
 use crate::options::geoip_search::GeoIPSearch;
 use crate::options::htmlreport;
-use crate::options::pivot::{PivotKeyword, PIVOT_KEYWORD};
+use crate::options::pivot::PIVOT_KEYWORD;
 use crate::options::profile::{load_profile, Profile};
 use aho_corasick::{AhoCorasick, AhoCorasickBuilder, MatchKind};
 use chrono::{DateTime, Days, Duration, Local, Months, Utc};
@@ -2033,7 +2033,7 @@ pub fn load_pivot_keywords(path: &str) {
             .write()
             .unwrap()
             .entry(key.to_string())
-            .or_insert_with(PivotKeyword::new);
+            .or_default();
 
         PIVOT_KEYWORD
             .write()

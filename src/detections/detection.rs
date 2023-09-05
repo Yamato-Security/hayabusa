@@ -699,7 +699,7 @@ impl Detection {
             CompactString::new(details_fmt_str),
             detect_info,
             time,
-            &mut profile_converter,
+            &profile_converter,
             (false, is_json_timeline, included_all_field_info_flag),
             (
                 eventkey_alias,
@@ -921,7 +921,7 @@ impl Detection {
             CompactString::new(rule.yaml["details"].as_str().unwrap_or("-")),
             detect_info,
             agg_result.start_timedate,
-            &mut profile_converter,
+            &profile_converter,
             (true, is_json_timeline, false),
             (eventkey_alias, &field_data_map_key, &None),
         )
