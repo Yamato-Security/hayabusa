@@ -12,7 +12,7 @@
 
 **Enhancements:**
 
-- XXX
+- Added error message to indicate that trailing backslashes should not be used in a directory path specification. (#1166) (@hitenkoku, thanks for the suggestion from @joswr1ght)
 
 **Bug Fixes:**
 
