@@ -129,7 +129,7 @@ pub fn insert(
         //ここの段階でdetailsの内容でaliasを置き換えた内容と各種、key,valueの組み合わせのmapを取得する
         let (removed_sp_parsed_detail, details_in_record) = parse_message(
             event_record,
-            output,
+            &output,
             eventkey_alias,
             is_json_timeline,
             field_data_map_key,
@@ -186,6 +186,16 @@ pub fn insert(
                         "#Details".into(),
                         detect_info.detail.split(" ¦ ").map(|x| x.into()).collect(),
                     );
+                    if is_agg {
+                        if output != "-" {
+                            record_details_info_map.insert("#Details".into(), vec![output.clone()]);
+                        } else if detect_info.detail != "-" {
+                            record_details_info_map
+                                .insert("#Details".into(), vec![detect_info.detail.clone()]);
+                        } else {
+                            record_details_info_map.insert("#Details".into(), vec!["-".into()]);
+                        }
+                    }
                     // メモリの節約のためにDetailsの中身を空にする
                     detect_info.detail = CompactString::default();
                 }
@@ -285,7 +295,7 @@ pub fn insert(
                 if let Some(p) = profile_converter.get(key.as_str()) {
                     let (parsed_message, _) = &parse_message(
                         event_record,
-                        CompactString::new(p.to_value()),
+                        &CompactString::new(p.to_value()),
                         eventkey_alias,
                         is_json_timeline,
                         field_data_map_key,
@@ -304,7 +314,7 @@ pub fn insert(
 /// メッセージ内の%で囲まれた箇所をエイリアスとしてレコード情報を参照して置き換える関数
 pub fn parse_message(
     event_record: &Value,
-    output: CompactString,
+    output: &CompactString,
     eventkey_alias: &EventKeyAliasConfig,
     json_timeline_flag: bool,
     field_data_map_key: &FieldDataMapKey,
@@ -520,7 +530,7 @@ mod tests {
         assert_eq!(
             parse_message(
                 &event_record,
-                CompactString::new("commandline:%CommandLine% computername:%ComputerName%"),
+                &CompactString::new("commandline:%CommandLine% computername:%ComputerName%"),
                 &load_eventkey_alias(
                     utils::check_setting_path(
                         &CURRENT_EXE_PATH.to_path_buf(),
@@ -557,7 +567,7 @@ mod tests {
         assert_eq!(
             parse_message(
                 &event_record,
-                CompactString::new("alias:%NoAlias%"),
+                &CompactString::new("alias:%NoAlias%"),
                 &load_eventkey_alias(
                     utils::check_setting_path(
                         &CURRENT_EXE_PATH.to_path_buf(),
@@ -600,7 +610,7 @@ mod tests {
         assert_eq!(
             parse_message(
                 &event_record,
-                CompactString::new("NoExistAlias:%NoAliasNoHit%"),
+                &CompactString::new("NoExistAlias:%NoAliasNoHit%"),
                 &load_eventkey_alias(
                     utils::check_setting_path(
                         &CURRENT_EXE_PATH.to_path_buf(),
@@ -642,7 +652,7 @@ mod tests {
         assert_eq!(
             parse_message(
                 &event_record,
-                CompactString::new("commandline:%CommandLine% computername:%ComputerName%"),
+                &CompactString::new("commandline:%CommandLine% computername:%ComputerName%"),
                 &load_eventkey_alias(
                     utils::check_setting_path(
                         &CURRENT_EXE_PATH.to_path_buf(),
@@ -689,7 +699,7 @@ mod tests {
         assert_eq!(
             parse_message(
                 &event_record,
-                CompactString::new("commandline:%CommandLine% data:%Data%"),
+                &CompactString::new("commandline:%CommandLine% data:%Data%"),
                 &load_eventkey_alias(
                     utils::check_setting_path(
                         &CURRENT_EXE_PATH.to_path_buf(),
@@ -736,7 +746,7 @@ mod tests {
         assert_eq!(
             parse_message(
                 &event_record,
-                CompactString::new("commandline:%CommandLine% data:%Data[2]%"),
+                &CompactString::new("commandline:%CommandLine% data:%Data[2]%"),
                 &load_eventkey_alias(
                     utils::check_setting_path(
                         &CURRENT_EXE_PATH.to_path_buf(),
@@ -783,7 +793,7 @@ mod tests {
         assert_eq!(
             parse_message(
                 &event_record,
-                CompactString::new("commandline:%CommandLine% data:%Data[0]%"),
+                &CompactString::new("commandline:%CommandLine% data:%Data[0]%"),
                 &load_eventkey_alias(
                     utils::check_setting_path(
                         &CURRENT_EXE_PATH.to_path_buf(),

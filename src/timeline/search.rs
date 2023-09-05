@@ -465,6 +465,7 @@ pub fn search_result_dsp_msg(
                 jsonl_output,
                 false,
                 false,
+                false,
                 &[&HashMap::default(), &HashMap::default()],
             );
 

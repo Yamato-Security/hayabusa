@@ -1150,7 +1150,7 @@ impl Detection {
         for alias in target_alias {
             let (search_data, _) = message::parse_message(
                 record,
-                CompactString::from(alias),
+                &CompactString::from(alias),
                 eventkey_alias,
                 is_csv_output,
                 &FieldDataMapKey::default(),
