@@ -16,7 +16,6 @@ use lazy_static::lazy_static;
 use nested::Nested;
 use regex::Regex;
 use serde_json::Value;
-use std::borrow::Borrow;
 use std::env;
 use std::fs::{create_dir, File};
 use std::io::{self, BufWriter, Write};
@@ -115,7 +114,7 @@ pub fn insert(
     output: CompactString,
     mut detect_info: DetectInfo,
     time: DateTime<Utc>,
-    profile_converter: &mut HashMap<&str, Profile>,
+    profile_converter: &HashMap<&str, Profile>,
     (is_agg, is_json_timeline, included_all_field_info): (bool, bool, bool),
     (eventkey_alias, field_data_map_key, field_data_map): (
         &EventKeyAliasConfig,
@@ -160,7 +159,7 @@ pub fn insert(
                 if existed_flag {
                     continue;
                 }
-                if detect_info.borrow().detail.is_empty() {
+                if detect_info.detail.is_empty() {
                     replaced_profiles.push((key.to_owned(), profile.to_owned()));
                 } else {
                     replaced_profiles
