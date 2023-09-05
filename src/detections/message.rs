@@ -364,17 +364,13 @@ impl AlertMessage {
             create_dir(path.parent().unwrap()).ok();
         }
         let mut error_log_writer = BufWriter::new(File::create(path).unwrap());
+        let mut error_contents = env::args().collect::<Nested<String>>().iter().join(" ");
+        // 複数言語対応のためエラーコード123の数値部分を参照する
+        if error_contents.ends_with("123)") {
+            error_contents = format!("{error_contents}. When specifying a directory path in Windows, do not include a trailing slash at the end of the path.");
+        }
         error_log_writer
-            .write_all(
-                format!(
-                    "user input: {:?}\n",
-                    format_args!(
-                        "{}",
-                        env::args().collect::<Nested<String>>().iter().join(" ")
-                    )
-                )
-                .as_bytes(),
-            )
+            .write_all(format!("user input: {error_contents:?}\n").as_bytes())
             .ok();
         let error_logs = ERROR_LOG_STACK.lock().unwrap();
         error_logs.iter().for_each(|error_log| {
