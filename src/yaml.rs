@@ -77,10 +77,19 @@ impl ParseYaml {
     ) -> io::Result<String> {
         let metadata = fs::metadata(path.as_ref());
         if metadata.is_err() {
-            let errmsg = format!(
-                "fail to read metadata of file: {}",
+            let err_contents = if let Err(e) = metadata {
+                e.to_string()
+            } else {
+                String::default()
+            };
+            let mut errmsg = format!(
+                "fail to read metadata of file: {} {}",
                 path.as_ref().to_path_buf().display(),
+                err_contents
             );
+            if err_contents.ends_with("123)") {
+                errmsg = format!("{errmsg}. When specifying a directory path in Windows, do not include a trailing slash at the end of the path.");
+            }
             if stored_static.verbose_flag {
                 AlertMessage::alert(&errmsg)?;
             }
