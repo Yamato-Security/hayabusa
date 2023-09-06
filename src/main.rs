@@ -880,7 +880,10 @@ impl App {
         }
         let entries = fs::read_dir(dirpath);
         if entries.is_err() {
-            let errmsg = format!("{}", entries.unwrap_err());
+            let mut errmsg = format!("{}", entries.unwrap_err());
+            if errmsg.ends_with("123)") {
+                errmsg = format!("{errmsg}. When specifying a directory path in Windows, do not include a trailing slash at the end of the path.");
+            }
             if stored_static.verbose_flag {
                 AlertMessage::alert(&errmsg).ok();
             }
