@@ -133,7 +133,10 @@ fn load_yaml_files(dir_path: &Path) -> Result<Vec<Yaml>, String> {
             .flatten()
             .collect()),
         Err(e) => {
-            let msg = format!("Failed to open field mapping dir[{path}].");
+            let mut msg = format!("Failed to open field mapping dir[{path}]. ",);
+            if e.to_string().ends_with("123)") {
+                msg = format!("{msg}. When specifying a directory path in Windows, do not include a trailing slash at the end of the path.");
+            }
             AlertMessage::warn(&msg).ok();
             Err(e.to_string())
         }
