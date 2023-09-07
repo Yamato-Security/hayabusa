@@ -64,8 +64,9 @@ use is_elevated::is_elevated;
 #[global_allocator]
 static GLOBAL: MiMalloc = MiMalloc;
 
-// 一度にtimelineやdetectionを実行する行数
-const MAX_DETECT_RECORDS: usize = 5000;
+// 一度に読み込んで、スキャンするレコード数
+// The number of records to load and scan at a time. 1000 gave the fastest results and lowest memory usage in test benchmarks.
+const MAX_DETECT_RECORDS: usize = 1000;
 
 fn main() {
     let mut config_reader = ConfigReader::new();
