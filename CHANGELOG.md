@@ -1,5 +1,27 @@
 # Changes
 
+## 2.9.0 [2023/XX/XX] "xxx Release"
+
+**New Features:**
+
+- XXX
+
+**New Features:**
+
+- XXX
+
+**Enhancements:**
+
+- Optimized the number of records to load at a time. (#1175) (@yamatosecurity)
+
+**Bug Fixes:**
+
+- XXX
+
+**Other:**
+
+- XXX
+
 ## 2.8.0 [2023/09/01] "Double X Release"
 
 **New Features:**
