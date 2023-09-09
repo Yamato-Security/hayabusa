@@ -13,6 +13,7 @@
 **Enhancements:**
 
 - Optimized the number of records to load at a time. (#1175) (@yamatosecurity)
+- Replaced backslashes in paths in the progress bar with slash. (#1172) (@hitenkoku)
 
 **Bug Fixes:**
 
