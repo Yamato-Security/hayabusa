@@ -135,7 +135,7 @@ fn load_yaml_files(dir_path: &Path) -> Result<Vec<Yaml>, String> {
         Err(e) => {
             let mut msg = format!("Failed to open field mapping dir[{path}]. ",);
             if e.to_string().ends_with("123)") {
-                msg = format!("{msg}. When specifying a directory path in Windows, do not include a trailing slash at the end of the path.");
+                msg = format!("{msg}. You may not be able to load evtx files when there are spaces in the directory path. Please enclose the path with double quotes and remove any trailing slash at the end of the path.");
             }
             AlertMessage::warn(&msg).ok();
             Err(e.to_string())

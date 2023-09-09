@@ -88,7 +88,7 @@ impl ParseYaml {
                 err_contents
             );
             if err_contents.ends_with("123)") {
-                errmsg = format!("{errmsg}. When specifying a directory path in Windows, do not include a trailing slash at the end of the path.");
+                errmsg = format!("{errmsg}. You may not be able to load evtx files when there are spaces in the directory path. Please enclose the path with double quotes and remove any trailing slash at the end of the path.");
             }
             if stored_static.verbose_flag {
                 AlertMessage::alert(&errmsg)?;
