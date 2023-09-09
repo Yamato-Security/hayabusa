@@ -1182,6 +1182,7 @@ mod tests {
     use crate::detections::utils;
     use crate::filter;
     use crate::options::profile::Profile;
+    use chrono::NaiveDateTime;
     use chrono::TimeZone;
     use chrono::Utc;
     use compact_str::CompactString;
@@ -1449,9 +1450,9 @@ mod tests {
     fn test_insert_message_with_geoip() {
         let test_filepath: &str = "test.evtx";
         let test_rulepath: &str = "test-rule.yml";
-        let expect_time = Utc
-            .datetime_from_str("1996-02-27T01:05:01Z", "%Y-%m-%dT%H:%M:%SZ")
-            .unwrap();
+        let expect_naivetime =
+            NaiveDateTime::parse_from_str("1996-02-27T01:05:01Z", "%Y-%m-%dT%H:%M:%SZ").unwrap();
+        let expect_time = Utc.from_local_datetime(&expect_naivetime).unwrap();
         let dummy_action = Action::CsvTimeline(CsvOutputOption {
             output_options: OutputOption {
                 input_args: InputOption {
@@ -1583,9 +1584,9 @@ mod tests {
     fn test_filtered_insert_message_with_geoip() {
         let test_filepath: &str = "test.evtx";
         let test_rulepath: &str = "test-rule.yml";
-        let expect_time = Utc
-            .datetime_from_str("1996-02-27T01:05:01Z", "%Y-%m-%dT%H:%M:%SZ")
-            .unwrap();
+        let expect_naivetime =
+            NaiveDateTime::parse_from_str("1996-02-27T01:05:01Z", "%Y-%m-%dT%H:%M:%SZ").unwrap();
+        let expect_time = Utc.from_local_datetime(&expect_naivetime).unwrap();
         let dummy_action = Action::CsvTimeline(CsvOutputOption {
             output_options: OutputOption {
                 input_args: InputOption {
@@ -1713,9 +1714,9 @@ mod tests {
     #[test]
     fn test_insert_message_extra_field_info() {
         let test_filepath: &str = "test.evtx";
-        let expect_time = Utc
-            .datetime_from_str("1996-02-27T01:05:01Z", "%Y-%m-%dT%H:%M:%SZ")
-            .unwrap();
+        let expect_naivetime =
+            NaiveDateTime::parse_from_str("1996-02-27T01:05:01Z", "%Y-%m-%dT%H:%M:%SZ").unwrap();
+        let expect_time = Utc.from_local_datetime(&expect_naivetime).unwrap();
         let dummy_action = Action::CsvTimeline(CsvOutputOption {
             output_options: OutputOption {
                 input_args: InputOption {
@@ -1856,9 +1857,9 @@ mod tests {
     #[test]
     fn test_insert_message_multiline_ruleauthor() {
         let test_filepath: &str = "test.evtx";
-        let expect_time = Utc
-            .datetime_from_str("1996-02-27T01:05:01Z", "%Y-%m-%dT%H:%M:%SZ")
-            .unwrap();
+        let expect_naivetime =
+            NaiveDateTime::parse_from_str("1996-02-27T01:05:01Z", "%Y-%m-%dT%H:%M:%SZ").unwrap();
+        let expect_time = Utc.from_local_datetime(&expect_naivetime).unwrap();
         let dummy_action = Action::CsvTimeline(CsvOutputOption {
             output_options: OutputOption {
                 input_args: InputOption {
