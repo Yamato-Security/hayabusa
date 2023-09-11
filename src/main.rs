@@ -1062,7 +1062,10 @@ impl App {
         *STORED_EKEY_ALIAS.write().unwrap() = Some(stored_static.eventkey_alias.clone());
         *STORED_STATIC.write().unwrap() = Some(stored_static.clone());
         for evtx_file in evtx_files {
-            let pb_msg = format!("{:?}", &evtx_file);
+            let pb_msg = format!(
+                "{:?}",
+                &evtx_file.to_str().unwrap_or_default().replace('\\', "/")
+            );
             pb.set_message(pb_msg);
 
             let cnt_tmp: usize;
