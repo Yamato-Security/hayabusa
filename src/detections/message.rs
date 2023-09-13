@@ -203,6 +203,9 @@ pub fn insert(
             AllFieldInfo(_) => {
                 if is_agg {
                     replaced_profiles.push((key.to_owned(), AllFieldInfo("-".into())));
+                } else if record_details_info_map.get("#AllFieldInfo").is_some() {
+                    // ExtraFieldInfoの要素の作成の際に、record_details_info_mapに要素を追加しているときにはAllFieldInfoの要素をすでに追加しているためスキップする
+                    continue;
                 } else {
                     let recinfos =
                         utils::create_recordinfos(event_record, field_data_map_key, field_data_map);
@@ -213,7 +216,7 @@ pub fn insert(
                     } else {
                         String::default()
                     };
-                    if rec.is_empty() {
+                    if is_json_timeline {
                         record_details_info_map.insert("#AllFieldInfo".into(), recinfos);
                         replaced_profiles.push((key.to_owned(), AllFieldInfo("".into())));
                     } else {
@@ -223,6 +226,16 @@ pub fn insert(
             }
             Literal(_) => replaced_profiles.push((key.to_owned(), profile.to_owned())),
             ExtraFieldInfo(_) => {
+                if is_agg {
+                    if is_json_timeline {
+                        record_details_info_map
+                            .insert("#ExtraFieldInfo".into(), vec![CompactString::from("-")]);
+                        replaced_profiles.push((key.to_owned(), ExtraFieldInfo("".into())));
+                    } else {
+                        replaced_profiles.push((key.to_owned(), ExtraFieldInfo("-".into())));
+                    }
+                    continue;
+                }
                 let empty = vec![];
                 let record_details_info_ref = record_details_info_map.clone();
                 let profile_all_field_info_prof = record_details_info_ref.get("#AllFieldInfo");
@@ -237,12 +250,6 @@ pub fn insert(
                     profile_all_field_info_prof
                 {
                     all_field_info_val.to_owned()
-                } else if is_agg {
-                    if included_all_field_info {
-                        // AllFieldInfoがまだ読み込まれていない場合は、AllFieldInfoを追加する
-                        replaced_profiles.push((key.to_owned(), AllFieldInfo("-".into())));
-                    }
-                    vec![]
                 } else {
                     let recinfos =
                         utils::create_recordinfos(event_record, field_data_map_key, field_data_map);
@@ -255,9 +262,8 @@ pub fn insert(
                     };
 
                     if included_all_field_info {
-                        if rec.is_empty() {
-                            record_details_info_map
-                                .insert("#AllFieldInfo".into(), recinfos.clone());
+                        record_details_info_map.insert("#AllFieldInfo".into(), recinfos.clone());
+                        if is_json_timeline {
                             replaced_profiles.push((key.to_owned(), AllFieldInfo("".into())));
                         } else {
                             replaced_profiles
@@ -266,22 +272,24 @@ pub fn insert(
                     }
                     recinfos
                 };
-                let mut extra_field_val = profile_all_field_info
+                let extra_field_vec = profile_all_field_info
                     .iter()
                     .filter(|x| {
                         let value = x.split_once(": ").unwrap_or_default().1;
                         !details_splits.contains(value)
                     })
                     .map(|y| y.to_owned())
-                    .sorted_unstable();
+                    .sorted_unstable()
+                    .collect();
                 if is_json_timeline {
-                    record_details_info_map
-                        .insert("#ExtraFieldInfo".into(), extra_field_val.collect());
+                    record_details_info_map.insert("#ExtraFieldInfo".into(), extra_field_vec);
                     replaced_profiles.push((key.to_owned(), ExtraFieldInfo("".into())));
+                } else if extra_field_vec.is_empty() {
+                    replaced_profiles.push((key.to_owned(), ExtraFieldInfo("-".into())));
                 } else {
                     replaced_profiles.push((
                         key.to_owned(),
-                        ExtraFieldInfo(extra_field_val.join(" ¦ ").into()),
+                        ExtraFieldInfo(extra_field_vec.join(" ¦ ").into()),
                     ));
                 }
             }

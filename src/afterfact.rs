@@ -1547,50 +1547,27 @@ pub fn output_json_str(
                         Profile::ExtraFieldInfo(_) => "ExtraFieldInfo",
                         _ => "",
                     };
-                    let mut details_target_stocks = vec![];
-                    for details_info in details_infos {
-                        let details_target_stock =
-                            details_info.get(&CompactString::from(format!("#{details_key}")));
-                        if let Some(tmp_stock) = details_target_stock {
-                            details_target_stocks.extend(tmp_stock);
-                        }
-                    }
-
-                    if details_infos[0]
-                        .get(&CompactString::from(format!("#{details_key}")))
-                        .is_none()
-                    {
+                    let details_target_stocks =
+                        details_infos[0].get(&CompactString::from(format!("#{details_key}")));
+                    if details_target_stocks.is_none() {
                         continue;
                     }
+                    let details_target_stock = details_target_stocks.unwrap();
                     // aggregation conditionの場合は分解せずにそのまま出力する
-                    if is_condition && details_key == "Details" {
-                        if details_target_stocks.is_empty() {
-                            output_stock.push(format!(
-                                "{}",
-                                _create_json_output_format(
-                                    &key,
-                                    "-",
-                                    key.starts_with('\"'),
-                                    false,
-                                    4
-                                )
-                            ));
-                        } else {
-                            let joined_details_target_stock =
-                                details_target_stocks.iter().join(" ");
-                            let output_str_details_target_stock =
-                                joined_details_target_stock.trim();
-                            output_stock.push(format!(
-                                "{}",
-                                _create_json_output_format(
-                                    &key,
-                                    output_str_details_target_stock,
-                                    key.starts_with('\"'),
-                                    output_str_details_target_stock.starts_with('\"'),
-                                    4
-                                )
-                            ));
-                        }
+                    if is_condition {
+                        let details_val =
+                            if details_target_stock.is_empty() || details_target_stock[0] == "-" {
+                                "-".into()
+                            } else {
+                                details_target_stock[0].clone()
+                            };
+                        output_stock.push(_create_json_output_format(
+                            &key,
+                            &details_val,
+                            key.starts_with('\"'),
+                            details_val.starts_with('\"'),
+                            4,
+                        ));
                         if jsonl_output_flag {
                             target.push(output_stock.join(""));
                         } else {
@@ -1600,12 +1577,12 @@ pub fn output_json_str(
                     } else {
                         output_stock.push(format!("    \"{key}\": {{"));
                     };
-                    for (idx, contents) in details_target_stocks.iter().enumerate() {
+                    for (idx, contents) in details_target_stock.iter().enumerate() {
                         let (key, value) = contents.split_once(": ").unwrap_or_default();
                         let output_key = _convert_valid_json_str(&[key], false);
                         let fmted_val = _convert_valid_json_str(&[value], false);
 
-                        if idx != details_target_stocks.len() - 1 {
+                        if idx != details_target_stock.len() - 1 {
                             output_stock.push(format!(
                                 "{},",
                                 _create_json_output_format(
