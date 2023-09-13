@@ -1562,7 +1562,7 @@ pub fn output_json_str(
                                 details_target_stock[0].clone()
                             };
                         output_stock.push(_create_json_output_format(
-                            &key,
+                            key,
                             &details_val,
                             key.starts_with('\"'),
                             details_val.starts_with('\"'),
