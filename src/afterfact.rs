@@ -328,6 +328,7 @@ fn emit_csv<W: std::io::Write>(
 
     // remove duplicate dataのための前レコード分の情報を保持する変数
     let mut prev_message: HashMap<CompactString, Profile> = HashMap::new();
+    let mut prev_details_convert_map: HashMap<CompactString, Vec<CompactString>> = HashMap::new();
     for (message_idx, time) in MESSAGEKEYS
         .lock()
         .unwrap()
@@ -410,8 +411,11 @@ fn emit_csv<W: std::io::Write>(
                     jsonl_output_flag,
                     GEOIP_DB_PARSER.read().unwrap().is_some(),
                     remove_duplicate_data_flag,
+                    detect_info.is_condition,
+                    &[&detect_info.details_convert_map, &prev_details_convert_map],
                 );
                 prev_message = result.1;
+                prev_details_convert_map = detect_info.details_convert_map.clone();
                 wtr.write_field(format!("{{ {} }}", &result.0))?;
             } else if json_output_flag {
                 // JSON output
@@ -422,8 +426,11 @@ fn emit_csv<W: std::io::Write>(
                     jsonl_output_flag,
                     GEOIP_DB_PARSER.read().unwrap().is_some(),
                     remove_duplicate_data_flag,
+                    detect_info.is_condition,
+                    &[&detect_info.details_convert_map, &prev_details_convert_map],
                 );
                 prev_message = result.1;
+                prev_details_convert_map = detect_info.details_convert_map.clone();
                 wtr.write_field(&result.0)?;
                 wtr.write_field("}")?;
             } else {
@@ -1426,6 +1433,8 @@ pub fn output_json_str(
     jsonl_output_flag: bool,
     is_included_geo_ip: bool,
     remove_duplicate_flag: bool,
+    is_condition: bool,
+    details_infos: &[&HashMap<CompactString, Vec<CompactString>>],
 ) -> (String, HashMap<CompactString, Profile>) {
     let mut target: Vec<String> = vec![];
     let mut target_ext_field = Vec::new();
@@ -1435,15 +1444,32 @@ pub fn output_json_str(
         for (field_name, profile) in ext_field.iter() {
             match profile {
                 Profile::Details(_) | Profile::AllFieldInfo(_) | Profile::ExtraFieldInfo(_) => {
-                    if prev_message
-                        .get(field_name)
-                        .unwrap_or(&Profile::Literal("-".into()))
-                        .to_value()
-                        == profile.to_value()
-                    {
+                    let details_key = match profile {
+                        Profile::Details(_) => "Details",
+                        Profile::AllFieldInfo(_) => "AllFieldInfo",
+                        Profile::ExtraFieldInfo(_) => "ExtraFieldInfo",
+                        _ => "",
+                    };
+
+                    let empty = vec![];
+                    let now = details_infos[0]
+                        .get(format!("#{details_key}").as_str())
+                        .unwrap_or(&empty);
+                    let prev = details_infos[1]
+                        .get(format!("#{details_key}").as_str())
+                        .unwrap_or(&empty);
+                    let dup_flag = (!profile.to_value().is_empty()
+                        && prev_message
+                            .get(field_name)
+                            .unwrap_or(&Profile::Literal("".into()))
+                            .to_value()
+                            == profile.to_value())
+                        || (!&now.is_empty() && !&prev.is_empty() && now == prev);
+                    if dup_flag {
                         // 合致する場合は前回レコード分のメッセージを更新する合致している場合は出力用のフィールドマップの内容を変更する。
                         // 合致しているので前回分のメッセージは更新しない
-                        target_ext_field.push((field_name.clone(), profile.convert(&"DUP".into())));
+                        //DUPという通常の文字列を出すためにProfile::Literalを使用する
+                        target_ext_field.push((field_name.clone(), Profile::Literal("DUP".into())));
                     } else {
                         // 合致しない場合は前回レコード分のメッセージを更新する
                         next_prev_message.insert(field_name.clone(), profile.clone());
@@ -1466,6 +1492,7 @@ pub fn output_json_str(
         "TgtCountry",
         "TgtCity",
     ];
+
     let valid_key_add_to_details: Vec<&str> = key_add_to_details
         .iter()
         .filter(|target_key| {
@@ -1477,7 +1504,13 @@ pub fn output_json_str(
     for (key, profile) in target_ext_field.iter() {
         let val = profile.to_value();
         let vec_data = _get_json_vec(profile, &val.to_string());
-        if !key_add_to_details.contains(&key.as_str()) && vec_data.is_empty() {
+        if (!key_add_to_details.contains(&key.as_str())
+            && !matches!(
+                profile,
+                Profile::AllFieldInfo(_) | Profile::ExtraFieldInfo(_)
+            ))
+            && vec_data.is_empty()
+        {
             let tmp_val: Vec<&str> = val.split(": ").collect();
             let output_val =
                 _convert_valid_json_str(&tmp_val, matches!(profile, Profile::AllFieldInfo(_)));
@@ -1508,134 +1541,59 @@ pub fn output_json_str(
                 }
                 Profile::Details(_) | Profile::AllFieldInfo(_) | Profile::ExtraFieldInfo(_) => {
                     let mut output_stock: Vec<String> = vec![];
-                    output_stock.push(format!("    \"{key}\": {{"));
-                    let mut stocked_value: Vec<Vec<String>> = vec![];
-                    let mut key_index_stock = vec![];
-                    for detail_contents in vec_data.iter() {
-                        // 分解してキーとなりえる箇所を抽出する
-                        let mut tmp_stock = vec![];
-                        let mut space_split_contents = detail_contents.split(' ');
-                        while let Some(sp) = space_split_contents.next() {
-                            let first_character =
-                                char::from_str(&sp.chars().next().unwrap_or('-').to_string())
-                                    .unwrap_or_default();
-                            if !sp.contains(['\\', '"', '🛂'])
-                                && first_character.is_uppercase()
-                                && !sp.starts_with(['-', '/'])
-                                && sp.ends_with(':')
-                                && sp.len() > 2
-                                && sp != "Number:"
-                            {
-                                key_index_stock.push(sp.replace(':', ""));
-                                if sp == "Payload:" {
-                                    stocked_value.push(vec![]);
-                                    stocked_value.push(
-                                        space_split_contents.map(|s| s.to_string()).collect(),
-                                    );
-                                    break;
-                                } else {
-                                    stocked_value.push(tmp_stock);
-                                    tmp_stock = vec![];
-                                }
-                            } else if (first_character.is_lowercase()
-                                || first_character.is_numeric())
-                                && sp.ends_with(';')
-                                && sp.len() < 5
-                                && key_index_stock.len() > 1
-                                && key_index_stock.last().unwrap_or(&String::default()) != "Cmdline"
-                            {
-                                let last_key = key_index_stock.pop().unwrap_or_default();
-                                let mut last_stocked_value =
-                                    stocked_value.pop().unwrap_or_default();
-                                last_stocked_value.push(format!("{last_key}: {sp}"));
-                                stocked_value.push(last_stocked_value);
+                    let details_key = match profile {
+                        Profile::Details(_) => "Details",
+                        Profile::AllFieldInfo(_) => "AllFieldInfo",
+                        Profile::ExtraFieldInfo(_) => "ExtraFieldInfo",
+                        _ => "",
+                    };
+                    let details_target_stocks =
+                        details_infos[0].get(&CompactString::from(format!("#{details_key}")));
+                    if details_target_stocks.is_none() {
+                        continue;
+                    }
+                    let details_target_stock = details_target_stocks.unwrap();
+                    // aggregation conditionの場合は分解せずにそのまま出力する
+                    if is_condition {
+                        let details_val =
+                            if details_target_stock.is_empty() || details_target_stock[0] == "-" {
+                                "-".into()
                             } else {
-                                tmp_stock.push(sp.to_owned());
-                            }
-                        }
-                        if !tmp_stock.is_empty() {
-                            stocked_value.push(tmp_stock);
-                        }
-                    }
-                    if stocked_value
-                        .iter()
-                        .counts_by(|x| x.len())
-                        .get(&0)
-                        .unwrap_or(&0)
-                        != &key_index_stock.len()
-                    {
-                        if let Some((target_idx, _)) = key_index_stock
-                            .iter()
-                            .enumerate()
-                            .rfind(|(_, y)| "CmdLine" == *y)
-                        {
-                            let cmd_line_vec_idx_len =
-                                stocked_value[2 * (target_idx + 1) - 1].len();
-                            stocked_value[2 * (target_idx + 1) - 1][cmd_line_vec_idx_len - 1]
-                                .push_str(&format!(" {}:", key_index_stock[target_idx + 1]));
-                            key_index_stock.remove(target_idx + 1);
-                        }
-                    }
-                    let mut key_idx = 0;
-                    let mut output_value_stock = String::default();
-                    for (value_idx, value) in stocked_value.iter().enumerate() {
-                        if key_idx >= key_index_stock.len() {
-                            break;
-                        }
-                        let mut tmp = if value_idx == 0 && !value.is_empty() {
-                            key.as_str()
+                                details_target_stock[0].clone()
+                            };
+                        output_stock.push(_create_json_output_format(
+                            key,
+                            &details_val,
+                            key.starts_with('\"'),
+                            details_val.starts_with('\"'),
+                            4,
+                        ));
+                        if jsonl_output_flag {
+                            target.push(output_stock.join(""));
                         } else {
-                            key_index_stock[key_idx].as_str()
-                        };
-                        if !output_value_stock.is_empty() {
-                            let separate_chr =
-                                if key_index_stock[key_idx].starts_with("ScriptBlock") {
-                                    " | "
-                                } else {
-                                    ": "
-                                };
-                            output_value_stock.push_str(separate_chr);
+                            target.push(output_stock.join("\n"));
                         }
-                        output_value_stock.push_str(&value.join(" "));
-                        //1つまえのキーの段階で以降にvalueの配列で区切りとなる空の配列が存在しているかを確認する
-                        let is_remain_split_stock = key_index_stock.len() > 1
-                            && key_idx == key_index_stock.len() - 2
-                            && value_idx < stocked_value.len() - 1
-                            && !output_value_stock.is_empty()
-                            && !stocked_value[value_idx + 1..]
-                                .iter()
-                                .any(|remain_value| remain_value.is_empty());
-                        if (value_idx < stocked_value.len() - 1
-                            && stocked_value[value_idx + 1].is_empty()
-                            && key_idx != key_index_stock.len() - 1)
-                            || is_remain_split_stock
-                        {
-                            // 次の要素を確認して、存在しないもしくは、キーが入っているとなった場合現在ストックしている内容が出力していいことが確定するので出力処理を行う
-                            let output_tmp = format!("{tmp}: {output_value_stock}");
-                            let output: Vec<&str> = output_tmp.split(": ").collect();
-                            let key = _convert_valid_json_str(&[output[0]], false);
-                            let fmted_val = _convert_valid_json_str(&output, false);
+                        continue;
+                    } else {
+                        output_stock.push(format!("    \"{key}\": {{"));
+                    };
+                    for (idx, contents) in details_target_stock.iter().enumerate() {
+                        let (key, value) = contents.split_once(": ").unwrap_or_default();
+                        let output_key = _convert_valid_json_str(&[key], false);
+                        let fmted_val = _convert_valid_json_str(&[value], false);
+
+                        if idx != details_target_stock.len() - 1 {
                             output_stock.push(format!(
                                 "{},",
                                 _create_json_output_format(
-                                    &key,
+                                    &output_key,
                                     &fmted_val,
                                     key.starts_with('\"'),
                                     fmted_val.starts_with('\"'),
                                     8
                                 )
                             ));
-                            output_value_stock.clear();
-                            tmp = "";
-                            key_idx += 1;
-                        }
-                        if value_idx == stocked_value.len() - 1
-                            && !(tmp.is_empty() && stocked_value.is_empty())
-                        {
-                            let output_tmp = format!("{tmp}: {output_value_stock}");
-                            let output: Vec<&str> = output_tmp.split(": ").collect();
-                            let key = _convert_valid_json_str(&[output[0]], false);
-                            let fmted_val = _convert_valid_json_str(&output, false);
+                        } else {
                             let last_contents_end =
                                 if is_included_geo_ip && !valid_key_add_to_details.is_empty() {
                                     ","
@@ -1645,14 +1603,13 @@ pub fn output_json_str(
                             output_stock.push(format!(
                                 "{}{last_contents_end}",
                                 _create_json_output_format(
-                                    &key,
+                                    key,
                                     &fmted_val,
                                     key.starts_with('\"'),
                                     fmted_val.starts_with('\"'),
                                     8,
                                 )
                             ));
-                            key_idx += 1;
                         }
                     }
                     if is_included_geo_ip {
@@ -2081,9 +2038,10 @@ mod tests {
                     detail: CompactString::default(),
                     ext_field: output_profile.to_owned(),
                     is_condition: false,
+                    details_convert_map: HashMap::default(),
                 },
                 expect_time,
-                &mut profile_converter,
+                &profile_converter,
                 (false, false, false),
                 (&eventkey_alias, &FieldDataMapKey::default(), &None),
             );
@@ -2103,9 +2061,10 @@ mod tests {
                     detail: CompactString::default(),
                     ext_field: output_profile.to_owned(),
                     is_condition: false,
+                    details_convert_map: HashMap::default(),
                 },
                 expect_time,
-                &mut profile_converter,
+                &profile_converter,
                 (false, false, false),
                 (&eventkey_alias, &FieldDataMapKey::default(), &None),
             );
@@ -2404,9 +2363,10 @@ mod tests {
                     detail: CompactString::default(),
                     ext_field: output_profile.to_owned(),
                     is_condition: false,
+                    details_convert_map: HashMap::default(),
                 },
                 expect_time,
-                &mut profile_converter,
+                &profile_converter,
                 (false, false, true),
                 (&eventkey_alias, &FieldDataMapKey::default(), &None),
             );
@@ -2426,9 +2386,10 @@ mod tests {
                     detail: CompactString::default(),
                     ext_field: output_profile.to_owned(),
                     is_condition: false,
+                    details_convert_map: HashMap::default(),
                 },
                 expect_time,
-                &mut profile_converter,
+                &profile_converter,
                 (false, false, true),
                 (&eventkey_alias, &FieldDataMapKey::default(), &None),
             );
@@ -2717,9 +2678,10 @@ mod tests {
                     detail: CompactString::default(),
                     ext_field: output_profile.to_owned(),
                     is_condition: false,
+                    details_convert_map: HashMap::default(),
                 },
                 expect_time,
-                &mut profile_converter,
+                &profile_converter,
                 (false, false, false),
                 (&eventkey_alias, &FieldDataMapKey::default(), &None),
             );
@@ -2739,9 +2701,10 @@ mod tests {
                     detail: CompactString::default(),
                     ext_field: output_profile.to_owned(),
                     is_condition: false,
+                    details_convert_map: HashMap::default(),
                 },
                 expect_time,
-                &mut profile_converter,
+                &profile_converter,
                 (false, false, false),
                 (&eventkey_alias, &FieldDataMapKey::default(), &None),
             );
@@ -3025,6 +2988,8 @@ mod tests {
                 .to_str()
                 .unwrap(),
             );
+            let details_convert_map: HashMap<CompactString, Vec<CompactString>> =
+                HashMap::from_iter([("#AllFieldInfo".into(), vec![test_recinfo.into()])]);
             message::insert(
                 &event,
                 CompactString::new(output),
@@ -3038,10 +3003,11 @@ mod tests {
                     detail: CompactString::default(),
                     ext_field: output_profile.to_owned(),
                     is_condition: false,
+                    details_convert_map,
                 },
                 expect_time,
-                &mut profile_converter,
-                (false, false, false),
+                &profile_converter,
+                (false, true, true),
                 (&eventkey_alias, &FieldDataMapKey::default(), &None),
             );
             *profile_converter.get_mut("Computer").unwrap() =
@@ -3060,10 +3026,11 @@ mod tests {
                     detail: CompactString::default(),
                     ext_field: output_profile.to_owned(),
                     is_condition: false,
+                    details_convert_map: HashMap::default(),
                 },
                 expect_time,
-                &mut profile_converter,
-                (false, false, false),
+                &profile_converter,
+                (false, true, true),
                 (&eventkey_alias, &FieldDataMapKey::default(), &None),
             );
             let multi = message::MESSAGES.get(&expect_time).unwrap();
@@ -3569,6 +3536,8 @@ mod tests {
             );
             let messages = &message::MESSAGES;
             messages.clear();
+            let details_convert_map: HashMap<CompactString, Vec<CompactString>> =
+                HashMap::from_iter([("#AllFieldInfo".into(), vec![test_recinfo.into()])]);
             message::insert(
                 &event,
                 CompactString::new(output),
@@ -3582,10 +3551,11 @@ mod tests {
                     detail: CompactString::default(),
                     ext_field: output_profile.to_owned(),
                     is_condition: false,
+                    details_convert_map,
                 },
                 expect_time,
-                &mut profile_converter,
-                (false, false, false),
+                &profile_converter,
+                (false, true, true),
                 (&eventkey_alias, &FieldDataMapKey::default(), &None),
             );
             *profile_converter.get_mut("Computer").unwrap() =
@@ -3817,6 +3787,8 @@ mod tests {
                 ("EvtxFile", Profile::EvtxFile(test_filepath.into())),
                 ("Tags", Profile::MitreTags(test_attack.into())),
             ]);
+            let details_convert_map: HashMap<CompactString, Vec<CompactString>> =
+                HashMap::from_iter([("#AllFieldInfo".into(), vec![test_recinfo.into()])]);
             let eventkey_alias = load_eventkey_alias(
                 utils::check_setting_path(
                     &CURRENT_EXE_PATH.to_path_buf(),
@@ -3842,10 +3814,11 @@ mod tests {
                     detail: CompactString::default(),
                     ext_field: output_profile.to_owned(),
                     is_condition: false,
+                    details_convert_map,
                 },
                 expect_time,
-                &mut profile_converter,
-                (false, false, false),
+                &profile_converter,
+                (false, true, true),
                 (&eventkey_alias, &FieldDataMapKey::default(), &None),
             );
             *profile_converter.get_mut("Computer").unwrap() =

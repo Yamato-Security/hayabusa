@@ -375,7 +375,7 @@ pub fn create_recordinfos(
     record: &Value,
     field_data_map_key: &FieldDataMapKey,
     field_data_map: &Option<FieldDataMap>,
-) -> String {
+) -> Vec<CompactString> {
     let mut output = HashSet::new();
     _collect_recordinfo(&mut vec![], "", record, &mut output);
 
@@ -398,13 +398,13 @@ pub fn create_recordinfos(
                     convert_field_data(map, field_data_map_key, &key.to_lowercase(), value)
                 {
                     let val = converted_str.strip_suffix(',').unwrap_or(&converted_str);
-                    return format!("{key}: {val}");
+                    return format!("{key}: {val}").into();
                 }
             }
             let val = value.strip_suffix(',').unwrap_or(value);
-            format!("{key}: {val}")
+            format!("{key}: {val}").into()
         })
-        .join(" ¦ ")
+        .collect()
 }
 
 /**
@@ -716,7 +716,7 @@ mod tests {
                 let ret = utils::create_recordinfos(&record, &FieldDataMapKey::default(), &None);
                 // Systemは除外される/属性(_attributesも除外される)/key順に並ぶ
                 let expected = "AccessMask: %%1369 ¦ Process: lsass.exe ¦ User: u1".to_string();
-                assert_eq!(ret, expected);
+                assert_eq!(ret.join(" ¦ "), expected);
             }
             Err(_) => {
                 panic!("Failed to parse json record.");
@@ -751,7 +751,7 @@ mod tests {
                 // Systemは除外される/属性(_attributesも除外される)/key順に並ぶ
                 let expected = "Binary: hogehoge ¦ Data:  ¦ Data: Data1 ¦ Data: DataData2 ¦ Data: DataDataData3"
                     .to_string();
-                assert_eq!(ret, expected);
+                assert_eq!(ret.join(" ¦ "), expected);
             }
             Err(_) => {
                 panic!("Failed to parse json record.");
