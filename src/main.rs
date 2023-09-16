@@ -64,8 +64,9 @@ use is_elevated::is_elevated;
 #[global_allocator]
 static GLOBAL: MiMalloc = MiMalloc;
 
-// 一度にtimelineやdetectionを実行する行数
-const MAX_DETECT_RECORDS: usize = 5000;
+// 一度に読み込んで、スキャンするレコード数
+// The number of records to load and scan at a time. 1000 gave the fastest results and lowest memory usage in test benchmarks.
+const MAX_DETECT_RECORDS: usize = 1000;
 
 fn main() {
     let mut config_reader = ConfigReader::new();
@@ -880,7 +881,10 @@ impl App {
         }
         let entries = fs::read_dir(dirpath);
         if entries.is_err() {
-            let errmsg = format!("{}", entries.unwrap_err());
+            let mut errmsg = format!("{}", entries.unwrap_err());
+            if errmsg.ends_with("123)") {
+                errmsg = format!("{errmsg}. You may not be able to load evtx files when there are spaces in the directory path. Please enclose the path with double quotes and remove any trailing slash at the end of the path.");
+            }
             if stored_static.verbose_flag {
                 AlertMessage::alert(&errmsg).ok();
             }
@@ -1058,7 +1062,10 @@ impl App {
         *STORED_EKEY_ALIAS.write().unwrap() = Some(stored_static.eventkey_alias.clone());
         *STORED_STATIC.write().unwrap() = Some(stored_static.clone());
         for evtx_file in evtx_files {
-            let pb_msg = format!("{:?}", &evtx_file);
+            let pb_msg = format!(
+                "{:?}",
+                &evtx_file.to_str().unwrap_or_default().replace('\\', "/")
+            );
             pb.set_message(pb_msg);
 
             let cnt_tmp: usize;

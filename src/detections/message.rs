@@ -16,7 +16,6 @@ use lazy_static::lazy_static;
 use nested::Nested;
 use regex::Regex;
 use serde_json::Value;
-
 use std::env;
 use std::fs::{create_dir, File};
 use std::io::{self, BufWriter, Write};

@@ -1,5 +1,29 @@
 # Changes
 
+## 2.9.0 [2023/XX/XX] "xxx Release"
+
+**New Features:**
+
+- XXX
+
+**New Features:**
+
+- XXX
+
+**Enhancements:**
+
+- Added an error message to indicate that when you can't load evtx files in Windows due to specifying a directory path with spaces in it, you need to remove the trailing backslash. (#1166) (@hitenkoku, thanks for the suggestion from @joswr1ght)
+- Optimized the number of records to load at a time. (#1175) (@yamatosecurity)
+- Replaced double backslashes in paths in under the progress bar on Windows systems with single forward slashes. (#1172) (@hitenkoku)
+
+**Bug Fixes:**
+
+- XXX
+
+**Other:**
+
+- XXX
+
 ## 2.8.0 [2023/09/01] "Double X Release"
 
 **New Features:**

@@ -1813,6 +1813,7 @@ mod tests {
     use crate::detections::message::DetectInfo;
     use crate::detections::utils;
     use crate::options::profile::{load_profile, Profile};
+    use chrono::NaiveDateTime;
     use chrono::{Local, TimeZone, Utc};
     use compact_str::CompactString;
     use hashbrown::HashMap;
@@ -1843,9 +1844,9 @@ mod tests {
         let test_attack = "execution/txxxx.yyy";
         let test_recinfo = "CommandRLine: hoge";
         let test_record_id = "11111";
-        let expect_time = Utc
-            .datetime_from_str("1996-02-27T01:05:01Z", "%Y-%m-%dT%H:%M:%SZ")
-            .unwrap();
+        let expect_naivetime =
+            NaiveDateTime::parse_from_str("1996-02-27T01:05:01Z", "%Y-%m-%dT%H:%M:%SZ").unwrap();
+        let expect_time = Utc.from_local_datetime(&expect_naivetime).unwrap();
         let expect_tz = expect_time.with_timezone(&Utc);
         let dummy_action = Action::CsvTimeline(CsvOutputOption {
             output_options: OutputOption {
@@ -2169,9 +2170,9 @@ mod tests {
         let test_attack = "execution/txxxx.yyy";
         let test_recinfo = "CommandRLine: hoge ¦ Test1: hogetest1 ¦ Test2: hogetest2";
         let test_record_id = "11111";
-        let expect_time = Utc
-            .datetime_from_str("1996-02-27T01:05:01Z", "%Y-%m-%dT%H:%M:%SZ")
-            .unwrap();
+        let expect_naivetime =
+            NaiveDateTime::parse_from_str("1996-02-27T01:05:01Z", "%Y-%m-%dT%H:%M:%SZ").unwrap();
+        let expect_time = Utc.from_local_datetime(&expect_naivetime).unwrap();
         let expect_tz = expect_time.with_timezone(&Utc);
         let dummy_action = Action::CsvTimeline(CsvOutputOption {
             output_options: OutputOption {
@@ -2483,9 +2484,9 @@ mod tests {
         let test_attack = "execution/txxxx.yyy";
         let test_recinfo = "CommandRLine: hoge";
         let test_record_id = "11111";
-        let expect_time = Utc
-            .datetime_from_str("1996-02-27T01:05:01Z", "%Y-%m-%dT%H:%M:%SZ")
-            .unwrap();
+        let expect_naivetime =
+            NaiveDateTime::parse_from_str("1996-02-27T01:05:01Z", "%Y-%m-%dT%H:%M:%SZ").unwrap();
+        let expect_time = Utc.from_local_datetime(&expect_naivetime).unwrap();
         let expect_tz = expect_time.with_timezone(&Utc);
         let dummy_action = Action::CsvTimeline(CsvOutputOption {
             output_options: OutputOption {
@@ -2806,9 +2807,9 @@ mod tests {
         let test_attack = "execution/txxxx.yyy";
         let test_recinfo = "CommandRLine: hoge";
         let test_record_id = "11111";
-        let expect_time = Utc
-            .datetime_from_str("1996-02-27T01:05:01Z", "%Y-%m-%dT%H:%M:%SZ")
-            .unwrap();
+        let expect_naivetime =
+            NaiveDateTime::parse_from_str("1996-02-27T01:05:01Z", "%Y-%m-%dT%H:%M:%SZ").unwrap();
+        let expect_time = Utc.from_local_datetime(&expect_naivetime).unwrap();
         let expect_tz = expect_time.with_timezone(&Utc);
         let dummy_action = Action::JsonTimeline(JSONOutputOption {
             output_options: OutputOption {
@@ -3195,10 +3196,9 @@ mod tests {
         let output = "displaytest";
         let test_recinfo = "testinfo";
         let test_recid = "22222";
-
-        let test_timestamp = Utc
-            .datetime_from_str("1996-02-27T01:05:01Z", "%Y-%m-%dT%H:%M:%SZ")
-            .unwrap();
+        let test_naivetime =
+            NaiveDateTime::parse_from_str("1996-02-27T01:05:01Z", "%Y-%m-%dT%H:%M:%SZ").unwrap();
+        let test_timestamp = Utc.from_local_datetime(&test_naivetime).unwrap();
         let expect_header = "Timestamp ‖ Computer ‖ Channel ‖ EventID ‖ Level ‖ RecordID ‖ RuleTitle ‖ Details ‖ RecordInformation\n";
         let expect_tz = test_timestamp.with_timezone(&Local);
 
@@ -3353,9 +3353,9 @@ mod tests {
         let test_attack = "execution/txxxx.yyy";
         let test_recinfo = "CommandRLine: hoge";
         let test_record_id = "11111";
-        let expect_time = Utc
-            .datetime_from_str("1996-02-27T01:05:01Z", "%Y-%m-%dT%H:%M:%SZ")
-            .unwrap();
+        let expect_naivetime =
+            NaiveDateTime::parse_from_str("1996-02-27T01:05:01Z", "%Y-%m-%dT%H:%M:%SZ").unwrap();
+        let expect_time = Utc.from_local_datetime(&expect_naivetime).unwrap();
         let expect_tz = expect_time.with_timezone(&Utc);
         let json_dummy_action = Action::JsonTimeline(JSONOutputOption {
             output_options: OutputOption {
@@ -3616,9 +3616,9 @@ mod tests {
         let test_attack = "execution/txxxx.yyy";
         let test_recinfo = "CommandRLine: hoge";
         let test_record_id = "11111";
-        let expect_time = Utc
-            .datetime_from_str("1996-02-27T01:05:01Z", "%Y-%m-%dT%H:%M:%SZ")
-            .unwrap();
+        let expect_naivetime =
+            NaiveDateTime::parse_from_str("1996-02-27T01:05:01Z", "%Y-%m-%dT%H:%M:%SZ").unwrap();
+        let expect_time = Utc.from_local_datetime(&expect_naivetime).unwrap();
         let expect_tz = expect_time.with_timezone(&Utc);
         let json_dummy_action = Action::JsonTimeline(JSONOutputOption {
             output_options: OutputOption {
