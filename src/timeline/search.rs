@@ -310,7 +310,7 @@ fn extract_search_event_info(
 
     let datainfo = utils::create_recordinfos(&record.record, &FieldDataMapKey::default(), &None);
     let allfieldinfo = if !datainfo.is_empty() {
-        datainfo.into()
+        datainfo.join(" ¦ ").into()
     } else {
         CompactString::new("-")
     };
@@ -465,6 +465,8 @@ pub fn search_result_dsp_msg(
                 jsonl_output,
                 false,
                 false,
+                false,
+                &[&HashMap::default(), &HashMap::default()],
             );
 
             file_wtr

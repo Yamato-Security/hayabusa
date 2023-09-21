@@ -333,7 +333,7 @@ mod tests {
             Ok(record) => {
                 let ret = utils::create_recordinfos(&record, &key, &Some(map));
                 let expected = "ElevatedToken: NO ¦ ImpersonationLevel: A ¦ NewProcessId: 6528 ¦ ProcessId: 1100".to_string();
-                assert_eq!(ret, expected);
+                assert_eq!(ret.join(" ¦ "), expected);
             }
             Err(_) => {
                 panic!("Failed to parse json record.");

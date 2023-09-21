@@ -655,6 +655,7 @@ impl Detection {
                 _ => {}
             }
         }
+        //ルール側にdetailsの項目があればそれをそのまま出力し、そうでない場合はproviderとeventidの組で設定したdetailsの項目を出力する
         let details_fmt_str = match rule.yaml["details"].as_str() {
             Some(s) => s.to_string(),
             None => match stored_static
@@ -662,10 +663,11 @@ impl Detection {
                 .get(&CompactString::from(format!("{provider}_{eid}")))
             {
                 Some(str) => str.to_string(),
-                None => create_recordinfos(&record_info.record, &FieldDataMapKey::default(), &None),
+                None => create_recordinfos(&record_info.record, &FieldDataMapKey::default(), &None)
+                    .join(" ¦ "),
             },
         };
-        let field_data_map_key = if stored_static.field_data_map.is_none() {
+        let field_data_map_key: FieldDataMapKey = if stored_static.field_data_map.is_none() {
             FieldDataMapKey::default()
         } else {
             FieldDataMapKey {
@@ -693,6 +695,7 @@ impl Detection {
             detail: CompactString::default(),
             ext_field: stored_static.profiles.as_ref().unwrap().to_owned(),
             is_condition: false,
+            details_convert_map: HashMap::default(),
         };
         message::insert(
             &record_info.record,
@@ -911,6 +914,7 @@ impl Detection {
             detail: output,
             ext_field: stored_static.profiles.as_ref().unwrap().to_owned(),
             is_condition: true,
+            details_convert_map: HashMap::default(),
         };
         let binding = STORED_EKEY_ALIAS.read().unwrap();
         let eventkey_alias = binding.as_ref().unwrap();
@@ -1144,9 +1148,9 @@ impl Detection {
         is_csv_output: bool,
     ) -> CompactString {
         for alias in target_alias {
-            let search_data = message::parse_message(
+            let (search_data, _) = message::parse_message(
                 record,
-                CompactString::from(alias),
+                &CompactString::from(alias),
                 eventkey_alias,
                 is_csv_output,
                 &FieldDataMapKey::default(),
