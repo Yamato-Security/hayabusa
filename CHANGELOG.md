@@ -11,7 +11,7 @@
 
 **Bug Fixes:**
 
-- In rare cases, JSON fields would not be correctly parsed. (#1145) (@hitenkoku)
+- Fixed JSON fields would not be correctly parsed in rare cases. (#1145) (@hitenkoku)
 
 ## 2.8.0 [2023/09/01] "Double X Release"
 
