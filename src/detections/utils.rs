@@ -11,7 +11,7 @@ use itertools::Itertools;
 use nested::Nested;
 use std::path::{Path, PathBuf};
 
-use chrono::Local;
+use chrono::{Duration, Local};
 use termcolor::{Color, ColorChoice};
 
 use tokio::runtime::{Builder, Runtime};
@@ -674,6 +674,21 @@ pub fn is_filtered_by_computer_name(
         }
     }
     false
+}
+
+///Durationから出力文字列を作成する関数。絶対値での秒数から算出してhh:mm:ss.fffの形式で出力する。
+pub fn output_duration(d: Duration) -> String {
+    let mut s = d.num_seconds();
+    let mut ms = d.num_milliseconds() - 1000 * s;
+    if s < 0 {
+        s = -s;
+        ms = -ms;
+    }
+    let h = s / 3600;
+    s %= 3600;
+    let m = s / 60;
+    s %= 60;
+    format!("{h:02}:{m:02}:{s:02}.{ms:03}")
 }
 
 #[cfg(test)]

@@ -26,7 +26,6 @@ yaml-rust = "0.4.*"
 tokio = { version = "1", features = ["full"] }
 num_cpus = "1.*"
 downcast-rs = "1.*"
-hhmmss = "*"
 indicatif = "*"
 hashbrown = "0.14.*"
 hex = "0.4.*"
