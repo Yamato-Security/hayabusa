@@ -1007,7 +1007,7 @@ impl App {
             || stored_static.search_flag
             || stored_static.computer_metrics_flag)
         {
-            println!("Loading detections rules. Please wait.");
+            println!("Loading detection rules. Please wait.");
             println!();
         }
 
