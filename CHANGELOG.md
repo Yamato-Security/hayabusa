@@ -1,5 +1,27 @@
 # Changes
 
+## 2.10.0 [2023/XX/XX] "xxx Release"
+
+**New Features:**
+
+- XXX
+
+**New Features:**
+
+- XXX
+
+**Enhancements:**
+
+- XXX
+
+**Bug Fixes:**
+
+- XXX
+
+**Other:**
+
+- XXX
+
 ## 2.9.0 [2023/XX/XX] "xxx Release"
 
 **New Features:**
