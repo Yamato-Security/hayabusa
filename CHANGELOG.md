@@ -20,7 +20,7 @@
 
 **Other:**
 
-- XXX
+- Excluded unupdated hhmmss crates that use time crates to pass CI. (#1181) (@hitenkoku)
 
 ## 2.9.0 [2023/XX/XX] "xxx Release"
 
