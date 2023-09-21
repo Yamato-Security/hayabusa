@@ -713,7 +713,7 @@ mod tests {
     use regex::Regex;
     use serde_json::Value;
 
-    use super::{output_profile_name, output_duration};
+    use super::{output_duration, output_profile_name};
 
     #[test]
     fn test_create_recordinfos() {
@@ -1118,10 +1118,15 @@ mod tests {
     #[test]
     /// Durationから出力文字列を作成する関数のテスト
     fn test_output_duration() {
-        let time1 = NaiveDate::from_ymd_opt(2021, 12, 26).unwrap().and_hms_milli_opt(2,34, 49, 0).unwrap();
-        let time2 = NaiveDate::from_ymd_opt(2021, 12, 25).unwrap().and_hms_milli_opt(1,23, 45, 678).unwrap();
+        let time1 = NaiveDate::from_ymd_opt(2021, 12, 26)
+            .unwrap()
+            .and_hms_milli_opt(2, 34, 49, 0)
+            .unwrap();
+        let time2 = NaiveDate::from_ymd_opt(2021, 12, 25)
+            .unwrap()
+            .and_hms_milli_opt(1, 23, 45, 678)
+            .unwrap();
         assert_eq!(output_duration(time1 - time2), "25:11:03.322".to_string());
         assert_eq!(output_duration(time2 - time1), "25:11:03.322".to_string());
     }
-
 }
