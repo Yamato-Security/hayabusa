@@ -11,7 +11,7 @@ use itertools::Itertools;
 use nested::Nested;
 use std::path::{Path, PathBuf};
 
-use chrono::Local;
+use chrono::{Duration, Local};
 use termcolor::{Color, ColorChoice};
 
 use tokio::runtime::{Builder, Runtime};
@@ -676,6 +676,21 @@ pub fn is_filtered_by_computer_name(
     false
 }
 
+///Durationから出力文字列を作成する関数。絶対値での秒数から算出してhh:mm:ss.fffの形式で出力する。
+pub fn output_duration(d: Duration) -> String {
+    let mut s = d.num_seconds();
+    let mut ms = d.num_milliseconds() - 1000 * s;
+    if s < 0 {
+        s = -s;
+        ms = -ms;
+    }
+    let h = s / 3600;
+    s %= 3600;
+    let m = s / 60;
+    s %= 60;
+    format!("{h:02}:{m:02}:{s:02}.{ms:03}")
+}
+
 #[cfg(test)]
 mod tests {
     use std::path::Path;
@@ -691,13 +706,14 @@ mod tests {
         },
         options::htmlreport::HTML_REPORTER,
     };
+    use chrono::NaiveDate;
     use compact_str::CompactString;
     use hashbrown::{HashMap, HashSet};
     use nested::Nested;
     use regex::Regex;
     use serde_json::Value;
 
-    use super::output_profile_name;
+    use super::{output_duration, output_profile_name};
 
     #[test]
     fn test_create_recordinfos() {
@@ -1097,5 +1113,20 @@ mod tests {
                 &HashSet::from_iter(vec!["HayabusaComputer1".into()]),
             ),
         ));
+    }
+
+    #[test]
+    /// Durationから出力文字列を作成する関数のテスト
+    fn test_output_duration() {
+        let time1 = NaiveDate::from_ymd_opt(2021, 12, 26)
+            .unwrap()
+            .and_hms_milli_opt(2, 34, 49, 0)
+            .unwrap();
+        let time2 = NaiveDate::from_ymd_opt(2021, 12, 25)
+            .unwrap()
+            .and_hms_milli_opt(1, 23, 45, 678)
+            .unwrap();
+        assert_eq!(output_duration(time1 - time2), "25:11:03.322".to_string());
+        assert_eq!(output_duration(time2 - time1), "25:11:03.322".to_string());
     }
 }
