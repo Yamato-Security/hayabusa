@@ -10,6 +10,7 @@ use hashbrown::{HashMap, HashSet};
 use itertools::Itertools;
 use nested::Nested;
 use std::path::{Path, PathBuf};
+use std::thread::available_parallelism;
 
 use chrono::{Duration, Local};
 use termcolor::{Color, ColorChoice};
@@ -284,8 +285,8 @@ pub fn get_event_value<'a>(
 }
 
 pub fn get_thread_num(thread_number: Option<usize>) -> usize {
-    let cpu_num = num_cpus::get();
-    thread_number.unwrap_or(cpu_num)
+    let cpu_num = available_parallelism().unwrap();
+    thread_number.unwrap_or(cpu_num.into())
 }
 
 pub fn create_tokio_runtime(thread_number: Option<usize>) -> Runtime {
