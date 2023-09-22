@@ -1,57 +1,29 @@
 # Changes
 
-## 2.10.0 [2023/XX/XX] "xxx Release"
-
-**New Features:**
-
-- XXX
-
-**New Features:**
-
-- XXX
-
-**Enhancements:**
-
-- XXX
-
-**Bug Fixes:**
-
-- XXX
-
-**Other:**
-
-- Excluded unupdated hhmmss crates that use time crates to pass CI. (#1181) (@hitenkoku)
-
-## 2.9.0 [2023/XX/XX] "xxx Release"
-
-**New Features:**
-
-- XXX
-
-**New Features:**
-
-- XXX
+## 2.9.0 [2023/09/22] "Autumn Rain Release"
 
 **Enhancements:**
 
 - Added an error message to indicate that when you can't load evtx files in Windows due to specifying a directory path with spaces in it, you need to remove the trailing backslash. (#1166) (@hitenkoku, thanks for the suggestion from @joswr1ght)
-- Optimized the number of records to load at a time. (#1175) (@yamatosecurity)
-- Replaced double backslashes in paths in under the progress bar on Windows systems with single forward slashes. (#1172) (@hitenkoku)
+- Optimized the number of records to load at a time for performance. (#1175) (@yamatosecurity)
+- Replaced double backslashes in paths under the progress bar on Windows systems with single forward slashes. (#1172) (@hitenkoku)
+- Made the `Details` field for `count` rules a string in the JSON output for easier parsing. (#1179) (@hitenkoku)
+- Changed the default number of threads from number of CPUs to the estimate of the default amount of parallelism a program should use (`std::thread::available_parallelism`). (#1182) (@hitenkoku)
 
 **Bug Fixes:**
 
-- XXX
+- Fixed JSON fields would not be correctly parsed in rare cases. (#1145) (@hitenkoku)
 
 **Other:**
 
-- XXX
+- Removed the unmaintained `hhmmss` crate that uses an old `time` crate in order to pass the code coverage CI checks. (#1181) (@hitenkoku)
 
 ## 2.8.0 [2023/09/01] "Double X Release"
 
 **New Features:**
 
 - Added support for `HexToDecimal` in the field mapping configuration files to convert hex values to decimal. (Useful for converting the original process IDs from hex to decimal.) (#1133) (@fukusuket)
-- Added `-x, --recover-records` option to `csv-timeline` and `json-timeline` to recover evtx records through file carving on empty pages. (#952) (@hitenkoku) (Evtx carving feature is thanks to @forensicmatt)
+- Added `-x, --recover-records` option to `csv-timeline` and `json-timeline` to recover evtx records through file carving in evtx slack space. (#952) (@hitenkoku) (Evtx carving feature is thanks to @forensicmatt)
 - Added `-X, --remove-duplicate-detections` option to `csv-timeline` and `json-timeline` to not output any duplicate detection entries. (Useful when you use `-x`, include backup logs or logs extracted from VSS with duplicate data, etc...)
 - Added a `--timeline-offset` option to `csv-timeline`, `json-timeline`, `logon-summary`, `eid-metrics`, `pivot-keywords-list` and `search` commands to scan just recent events based on a offset of years, months, days, hours, etc... (#1159) (@hitenkoku)
 - Added a `-a, --and-logic` option in the `search` command to search keywords with AND logic. (#1162) (@hitenkoku)

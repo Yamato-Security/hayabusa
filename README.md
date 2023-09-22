@@ -248,7 +248,7 @@ You can learn how to analyze JSON-formatted results with `jq` [here](doc/Analysi
 * Log enrichment by adding GeoIP (ASN, city, country) information to IP addresses.
 * Search all events for keywords or regular expressions.
 * Field data mapping. (Ex: `0xc0000234` -> `ACCOUNT LOCKED`)
-* Evtx record carving from empty space.
+* Evtx record carving from evtx slack space.
 * Event de-duplication when outputting. (Useful when recovery records is enabled or when you include backed up evtx files, evtx files from VSS, etc...)
 
 # Downloads
@@ -475,7 +475,7 @@ Input:
   -f, --file <FILE>      File path to one .evtx file
   -l, --live-analysis    Analyze the local C:\Windows\System32\winevt\Logs folder
   -J, --JSON-input       Scan JSON formatted logs instead of .evtx (.json or .jsonl)
-  -x, --recover-records  Carve evtx records from empty pages (default: disabled)
+  -x, --recover-records  Carve evtx records from slack space (default: disabled)
 
 Filtering:
       --timeline-offset <OFFSET>  Scan recent events based on an offset (ex: 1y, 3M, 30d, 24h, 30m)
@@ -514,7 +514,7 @@ Input:
   -f, --file <FILE>      File path to one .evtx file
   -l, --live-analysis    Analyze the local C:\Windows\System32\winevt\Logs folder
   -J, --JSON-input       Scan JSON formatted logs instead of .evtx (.json or .jsonl)
-  -x, --recover-records  Carve evtx records from empty pages (default: disabled)
+  -x, --recover-records  Carve evtx records from slack space (default: disabled)
 
 Filtering:
       --exclude-computer <COMPUTER...>  Do not scan specified computer names (ex: ComputerA) (ex: ComputerA,ComputerB)
@@ -579,7 +579,7 @@ Input:
   -f, --file <FILE>      File path to one .evtx file
   -l, --live-analysis    Analyze the local C:\Windows\System32\winevt\Logs folder
   -J, --JSON-input       Scan JSON formatted logs instead of .evtx (.json or .jsonl)
-  -x, --recover-records  Carve evtx records from empty pages (default: disabled)
+  -x, --recover-records  Carve evtx records from slack space (default: disabled)
 
 Filtering:
       --exclude-computer <COMPUTER...>  Do not scan specified computer names (ex: ComputerA) (ex: ComputerA,ComputerB)
@@ -635,7 +635,7 @@ Input:
   -f, --file <FILE>      File path to one .evtx file
   -l, --live-analysis    Analyze the local C:\Windows\System32\winevt\Logs folder
   -J, --JSON-input       Scan JSON formatted logs instead of .evtx (.json or .jsonl)
-  -x, --recover-records  Carve evtx records from empty pages (default: disabled)
+  -x, --recover-records  Carve evtx records from slack space (default: disabled)
 
 Filtering:
   -E, --EID-filter                      Scan only common EIDs for faster speed (./rules/config/target_event_IDs.txt)
@@ -705,7 +705,7 @@ Input:
   -d, --directory <DIR>  Directory of multiple .evtx files
   -f, --file <FILE>      File path to one .evtx file
   -l, --live-analysis    Analyze the local C:\Windows\System32\winevt\Logs folder
-  -x, --recover-records  Carve evtx records from empty pages (default: disabled)
+  -x, --recover-records  Carve evtx records from slack space (default: disabled)
 
 Filtering:
   -a, --and-logic                 Search keywords with AND logic (default: OR)
@@ -793,7 +793,7 @@ Input:
   -f, --file <FILE>      File path to one .evtx file
   -l, --live-analysis    Analyze the local C:\Windows\System32\winevt\Logs folder
   -J, --JSON-input       Scan JSON formatted logs instead of .evtx (.json or .jsonl)
-  -x, --recover-records  Carve evtx records from empty pages (default: disabled)
+  -x, --recover-records  Carve evtx records from slack space (default: disabled)
 
 Filtering:
   -E, --EID-filter                      Scan only common EIDs for faster speed (./rules/config/target_event_IDs.txt)
@@ -1051,7 +1051,7 @@ Input:
   -f, --file <FILE>      File path to one .evtx file
   -l, --live-analysis    Analyze the local C:\Windows\System32\winevt\Logs folder
   -J, --JSON-input       Scan JSON formatted logs instead of .evtx (.json or .jsonl)
-  -x, --recover-records  Carve evtx records from empty pages (default: disabled)
+  -x, --recover-records  Carve evtx records from slack space (default: disabled)
 
 Filtering:
   -E, --EID-filter                      Scan only common EIDs for faster speed (./rules/config/target_event_IDs.txt)

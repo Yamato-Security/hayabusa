@@ -1,49 +1,29 @@
 # 変更点
 
-## 2.10.0 [2023/XX/XX] "xxx Release"
-
-**新機能:**
-
-- XXX
-
-**改善:**
-
-- XXX
-
-**バグ修正:**
-
-- XXX
-
-**その他:**
-
-- CIを通すためにtimeクレートを利用している更新されていないhhmmssクレートを除外した。 (#1181) (@hitenkoku)
-
-## 2.9.0 [2023/XX/XX] "xxx Release"
-
-**新機能:**
-
-- XXX
+## 2.9.0 [2023/09/22] "Autumn Rain Release"
 
 **改善:**
 
 - ディレクトリパスの指定にバックスラッシュを使用すべきではないことを示すエラーメッセージを追加した。 (#1166) (@hitenkoku, 提案者: @joswr1ght)
 - 一度に読み込むレコード数の最適化。(#1175) (@yamatosecurity)
 - プログレスバー内にあるバックスラッシュの表示をスラッシュに変更した。 (#1172) (@hitenkoku)
+- JSON形式で出力する際に、`count`ルールの`Details`フィールドを文字列にし、パースしやすくした。(#1179) (@hitenkoku)
+- デフォルトのスレッド数をCPU数から、プログラムが使用すべきデフォルトの並列度の推定値(`std::thread::available_parallelism`)に変更した。(#1182) (@hitenkoku)
 
 **バグ修正:**
 
-- XXX
+- まれにJSONフィールドが正しくパースされない状態を修正した。(#1145) (@hitenkoku)
 
 **その他:**
 
-- XXX
+- CIを通すために`time`クレートを利用している更新されていない`hhmmss`クレートを除外した。 (#1181) (@hitenkoku)
 
 ## 2.8.0 [2023/09/01] "Double X Release"
 
 **新機能:**
 
 - フィールドマッピング設定に16進数値を10進数に変換する`HexToDecimal`機能に対応した。 (元の16進数のプロセスIDを変換するのに便利。) (#1133) (@fukusuket)
-- `csv-timeline`と`json-timeline`に`-x, --recover-records`オプションを追加し、空ページのファイルカービングによってevtxレコードを復元できるようにした。(#952) (@hitenkoku) (Evtxカービング機能は@forensicmattに実装された。)
+- `csv-timeline`と`json-timeline`に`-x, --recover-records`オプションを追加し、evtxのスラックスペースのファイルカービングによってevtxレコードを復元できるようにした。(#952) (@hitenkoku) (Evtxカービング機能は@forensicmattに実装された。)
 - `csv-timeline`と`json-timeline`に`-X, --remove-duplicate-detections`オプションを追加した。(`-x`を使用する場合、重複データのあるバックアップログを含める場合などに便利。) (#1157) (@fukusuket)
 - `csv-timeline`、`json-timeline`、`logon-summary`、`eid-metrics`、`pivot-keywords-list`、`search`コマンドに、直近のイベントだけをスキャンするための`--timeline-offset`オプションを追加した。 (#1159) (@hitenkoku)
 - `search`コマンドに`-a, --and-logic`オプションを追加し、複数のキーワードをAND条件で検索できるようにした。 (#1162) (@hitenkoku)
