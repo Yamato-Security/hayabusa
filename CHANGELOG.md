@@ -8,10 +8,15 @@
 - Optimized the number of records to load at a time for performance. (#1175) (@yamatosecurity)
 - Replaced double backslashes in paths under the progress bar on Windows systems with single forward slashes. (#1172) (@hitenkoku)
 - Made the `Details` field for `count` rules a string in the JSON output for easier parsing. (#1179) (@hitenkoku)
+- Changed the default number of threads from number of CPUs to the estimate of the default amount of parallelism a program should use (`std::thread::available_parallelism`). (#1182) (@hitenkoku)
 
 **Bug Fixes:**
 
 - Fixed JSON fields would not be correctly parsed in rare cases. (#1145) (@hitenkoku)
+
+**Other:**
+
+- Removed the unmaintained `hhmmss` crate that uses an old `time` crate in order to pass the code coverage CI checks. (#1181) (@hitenkoku)
 
 ## 2.8.0 [2023/09/01] "Double X Release"
 
