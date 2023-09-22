@@ -19,7 +19,8 @@ use hayabusa::detections::detection::{self, EvtxRecordInfo};
 use hayabusa::detections::message::{AlertMessage, ERROR_LOG_STACK};
 use hayabusa::detections::rule::{get_detection_keys, RuleNode};
 use hayabusa::detections::utils::{
-    check_setting_path, get_writable_color, output_and_data_stack_for_html, output_profile_name,
+    check_setting_path, get_writable_color, output_and_data_stack_for_html, output_duration,
+    output_profile_name,
 };
 use hayabusa::options;
 use hayabusa::options::htmlreport::{self, HTML_REPORTER};
@@ -31,7 +32,6 @@ use hayabusa::timeline::computer_metrics::countup_event_by_computer;
 use hayabusa::{afterfact::after_fact, detections::utils};
 use hayabusa::{detections::configs, timeline::timelines::Timeline};
 use hayabusa::{detections::utils::write_color_buffer, filter};
-use hhmmss::Hhmmss;
 use indicatif::ProgressBar;
 use indicatif::{ProgressDrawTarget, ProgressStyle};
 use itertools::Itertools;
@@ -700,7 +700,7 @@ impl App {
         // 処理時間の出力
         let analysis_end_time: DateTime<Local> = Local::now();
         let analysis_duration = analysis_end_time.signed_duration_since(analysis_start_time);
-        let elapsed_output_str = format!("Elapsed time: {}", &analysis_duration.hhmmssxxx());
+        let elapsed_output_str = format!("Elapsed time: {}", output_duration(analysis_duration));
         output_and_data_stack_for_html(
             &elapsed_output_str,
             "General Overview {#general_overview}",

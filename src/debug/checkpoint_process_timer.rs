@@ -1,7 +1,7 @@
 use std::sync::Mutex;
 
+use crate::detections::utils::output_duration;
 use chrono::{DateTime, Local};
-use hhmmss::Hhmmss;
 use lazy_static::lazy_static;
 use nested::Nested;
 
@@ -38,7 +38,7 @@ impl CheckPointProcessTimer {
         self.stocked_results.push(format!(
             "{}: {} ",
             output_str,
-            (new_checkpoint - self.prev_checkpoint.unwrap()).hhmmssxxx()
+            output_duration(new_checkpoint - self.prev_checkpoint.unwrap())
         ));
         self.prev_checkpoint = Some(new_checkpoint);
     }
