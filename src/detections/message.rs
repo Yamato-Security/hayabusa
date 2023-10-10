@@ -79,12 +79,14 @@ pub fn create_output_filter_config(
     is_lower_case: bool,
 ) -> HashMap<CompactString, CompactString> {
     let mut ret: HashMap<CompactString, CompactString> = HashMap::new();
-    let read_result = utils::read_csv(path);
-    if read_result.is_err() {
-        AlertMessage::alert(read_result.as_ref().unwrap_err()).ok();
-        return HashMap::default();
-    }
-    read_result.unwrap().iter().for_each(|line| {
+    let read_result = match utils::read_csv(path) {
+        Ok(c) => c,
+        Err(e) => {
+            AlertMessage::alert(&e).ok();
+            return HashMap::default();
+        }
+    };
+    read_result.iter().for_each(|line| {
         if line.len() != 2 {
             return;
         }

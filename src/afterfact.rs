@@ -59,12 +59,15 @@ pub fn set_output_color(no_color_flag: bool) -> HashMap<CompactString, Colors> {
     if no_color_flag {
         return color_map;
     }
-    if read_result.is_err() {
-        // color情報がない場合は通常の白色の出力が出てくるのみで動作への影響を与えない為warnとして処理する
-        AlertMessage::warn(read_result.as_ref().unwrap_err()).ok();
-        return color_map;
-    }
-    read_result.unwrap().iter().for_each(|line| {
+    let color_map_contents = match read_result {
+        Ok(c) => c,
+        Err(e) => {
+            // color情報がない場合は通常の白色の出力が出てくるのみで動作への影響を与えない為warnとして処理する
+            AlertMessage::warn(&e).ok();
+            return color_map;
+        }
+    };
+    color_map_contents.iter().for_each(|line| {
         if line.len() != 2 {
             return;
         }
