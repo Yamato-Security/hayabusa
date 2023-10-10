@@ -24,6 +24,7 @@ use std::sync::Mutex;
 use termcolor::{BufferWriter, ColorChoice};
 
 use super::configs::EventKeyAliasConfig;
+use super::utils::remove_sp_char;
 
 #[derive(Debug, Clone, PartialEq, Eq, Default)]
 pub struct DetectInfo {
@@ -135,29 +136,14 @@ pub fn insert(
             field_data_map,
         );
 
-        let removed_sp_char = |cs: CompactString| -> CompactString {
-            let mut newline_replaced_cs = cs
-                .replace('\n', "🛂n")
-                .replace('\r', "🛂r")
-                .replace('\t', "🛂t");
-            let mut prev = 'a';
-            newline_replaced_cs.retain(|ch| {
-                let retain_flag = (prev == ' ' && ch == ' ') || ch.is_control();
-                if !retain_flag {
-                    prev = ch;
-                }
-                !retain_flag
-            });
-            newline_replaced_cs.into()
-        };
         let mut sp_removed_details_in_record = vec![];
         details_in_record.iter().for_each(|v| {
-            sp_removed_details_in_record.push(removed_sp_char(v.clone()));
+            sp_removed_details_in_record.push(remove_sp_char(v.clone()));
         });
         record_details_info_map.insert("#Details".into(), sp_removed_details_in_record);
         // 特殊文字の除外のためのretain処理
         // Details内にある改行文字は除外しないために絵文字を含めた特殊な文字に変換することで対応する
-        let parsed_detail = removed_sp_char(removed_sp_parsed_detail);
+        let parsed_detail = remove_sp_char(removed_sp_parsed_detail);
         detect_info.detail = if parsed_detail.is_empty() {
             CompactString::from("-")
         } else {

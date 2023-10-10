@@ -398,11 +398,16 @@ pub fn create_recordinfos(
                 if let Some(converted_str) =
                     convert_field_data(map, field_data_map_key, &key.to_lowercase(), value)
                 {
-                    let val = converted_str.strip_suffix(',').unwrap_or(&converted_str);
+                    let val = remove_sp_char(
+                        converted_str
+                            .strip_suffix(',')
+                            .unwrap_or(&converted_str)
+                            .into(),
+                    );
                     return format!("{key}: {val}").into();
                 }
             }
-            let val = value.strip_suffix(',').unwrap_or(value);
+            let val = remove_sp_char(value.strip_suffix(',').unwrap_or(value).into());
             format!("{key}: {val}").into()
         })
         .collect()
@@ -690,6 +695,22 @@ pub fn output_duration(d: Duration) -> String {
     let m = s / 60;
     s %= 60;
     format!("{h:02}:{m:02}:{s:02}.{ms:03}")
+}
+
+pub fn remove_sp_char(record_value: CompactString) -> CompactString {
+    let mut newline_replaced_cs = record_value
+        .replace('\n', "🛂n")
+        .replace('\r', "🛂r")
+        .replace('\t', "🛂t");
+    let mut prev = 'a';
+    newline_replaced_cs.retain(|ch| {
+        let retain_flag = (prev == ' ' && ch == ' ') || ch.is_control();
+        if !retain_flag {
+            prev = ch;
+        }
+        !retain_flag
+    });
+    newline_replaced_cs.into()
 }
 
 #[cfg(test)]
