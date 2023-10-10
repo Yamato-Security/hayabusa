@@ -2013,7 +2013,7 @@ pub fn load_eventkey_alias(path: &str) -> EventKeyAliasConfig {
 
 ///設定ファイルを読み込み、keyとfieldsのマップをPIVOT_KEYWORD大域変数にロードする。
 pub fn load_pivot_keywords(path: &str) {
-    let read_result =  match utils::read_txt(path) {
+    let read_result = match utils::read_txt(path) {
         Ok(v) => v,
         Err(e) => {
             AlertMessage::alert(&e).ok();
