@@ -2046,7 +2046,7 @@ mod tests {
                 },
                 expect_time,
                 &profile_converter,
-                (false, false, false),
+                (false, false),
                 (&eventkey_alias, &FieldDataMapKey::default(), &None),
             );
             *profile_converter.get_mut("Computer").unwrap() =
@@ -2069,7 +2069,7 @@ mod tests {
                 },
                 expect_time,
                 &profile_converter,
-                (false, false, false),
+                (false, false),
                 (&eventkey_alias, &FieldDataMapKey::default(), &None),
             );
             let multi = message::MESSAGES.get(&expect_time).unwrap();
@@ -2371,7 +2371,7 @@ mod tests {
                 },
                 expect_time,
                 &profile_converter,
-                (false, false, true),
+                (false, false),
                 (&eventkey_alias, &FieldDataMapKey::default(), &None),
             );
             *profile_converter.get_mut("Computer").unwrap() =
@@ -2394,7 +2394,7 @@ mod tests {
                 },
                 expect_time,
                 &profile_converter,
-                (false, false, true),
+                (false, false),
                 (&eventkey_alias, &FieldDataMapKey::default(), &None),
             );
             let multi = message::MESSAGES.get(&expect_time).unwrap();
@@ -2686,7 +2686,7 @@ mod tests {
                 },
                 expect_time,
                 &profile_converter,
-                (false, false, false),
+                (false, false),
                 (&eventkey_alias, &FieldDataMapKey::default(), &None),
             );
             *profile_converter.get_mut("Computer").unwrap() =
@@ -2709,7 +2709,7 @@ mod tests {
                 },
                 expect_time,
                 &profile_converter,
-                (false, false, false),
+                (false, false),
                 (&eventkey_alias, &FieldDataMapKey::default(), &None),
             );
             let multi = message::MESSAGES.get(&expect_time).unwrap();
@@ -3011,7 +3011,7 @@ mod tests {
                 },
                 expect_time,
                 &profile_converter,
-                (false, true, true),
+                (false, true),
                 (&eventkey_alias, &FieldDataMapKey::default(), &None),
             );
             *profile_converter.get_mut("Computer").unwrap() =
@@ -3034,7 +3034,7 @@ mod tests {
                 },
                 expect_time,
                 &profile_converter,
-                (false, true, true),
+                (false, true),
                 (&eventkey_alias, &FieldDataMapKey::default(), &None),
             );
             let multi = message::MESSAGES.get(&expect_time).unwrap();
@@ -3558,7 +3558,7 @@ mod tests {
                 },
                 expect_time,
                 &profile_converter,
-                (false, true, true),
+                (false, true),
                 (&eventkey_alias, &FieldDataMapKey::default(), &None),
             );
             *profile_converter.get_mut("Computer").unwrap() =
@@ -3821,7 +3821,7 @@ mod tests {
                 },
                 expect_time,
                 &profile_converter,
-                (false, true, true),
+                (false, true),
                 (&eventkey_alias, &FieldDataMapKey::default(), &None),
             );
             *profile_converter.get_mut("Computer").unwrap() =

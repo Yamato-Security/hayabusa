@@ -119,7 +119,7 @@ pub fn insert(
     mut detect_info: DetectInfo,
     time: DateTime<Utc>,
     profile_converter: &HashMap<&str, Profile>,
-    (is_agg, is_json_timeline, included_all_field_info): (bool, bool, bool),
+    (is_agg, is_json_timeline): (bool, bool),
     (eventkey_alias, field_data_map_key, field_data_map): (
         &EventKeyAliasConfig,
         &FieldDataMapKey,
@@ -192,12 +192,12 @@ pub fn insert(
             AllFieldInfo(_) => {
                 if is_agg {
                     replaced_profiles.push((key.to_owned(), AllFieldInfo("-".into())));
-                } else if record_details_info_map.get("#AllFieldInfo").is_some() {
-                    // ExtraFieldInfoの要素の作成の際に、record_details_info_mapに要素を追加しているときにはAllFieldInfoの要素をすでに追加しているためスキップする
-                    continue;
                 } else {
-                    let recinfos =
-                        utils::create_recordinfos(event_record, field_data_map_key, field_data_map);
+                    let recinfos = if let Some(c) = record_details_info_map.get("#AllFieldInfo") {
+                        c.to_owned()
+                    } else {
+                        utils::create_recordinfos(event_record, field_data_map_key, field_data_map)
+                    };
                     let rec = if recinfos.is_empty() {
                         "-".to_string()
                     } else if !is_json_timeline {
@@ -232,32 +232,12 @@ pub fn insert(
                         .iter()
                         .map(|x| x.split_once(": ").unwrap_or_default().1),
                 );
-                let profile_all_field_info = if let Some(all_field_info_val) =
-                    profile_all_field_info_prof
-                {
-                    all_field_info_val.to_owned()
-                } else {
-                    let recinfos =
-                        utils::create_recordinfos(event_record, field_data_map_key, field_data_map);
-                    let rec = if recinfos.is_empty() {
-                        "-".to_string()
-                    } else if !is_json_timeline {
-                        recinfos.join(" ¦ ")
+                let profile_all_field_info =
+                    if let Some(all_field_info_val) = profile_all_field_info_prof {
+                        all_field_info_val.to_owned()
                     } else {
-                        String::default()
+                        utils::create_recordinfos(event_record, field_data_map_key, field_data_map)
                     };
-
-                    if included_all_field_info {
-                        record_details_info_map.insert("#AllFieldInfo".into(), recinfos.clone());
-                        if is_json_timeline {
-                            replaced_profiles.push((key.to_owned(), AllFieldInfo("".into())));
-                        } else {
-                            replaced_profiles
-                                .push((key.to_owned(), AllFieldInfo(rec.clone().into())));
-                        }
-                    }
-                    recinfos
-                };
                 let extra_field_vec = profile_all_field_info
                     .iter()
                     .filter(|x| {
