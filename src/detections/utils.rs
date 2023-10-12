@@ -403,11 +403,12 @@ pub fn create_recordinfos(
                             .strip_suffix(',')
                             .unwrap_or(&converted_str)
                             .into(),
+                        true,
                     );
                     return format!("{key}: {val}").into();
                 }
             }
-            let val = remove_sp_char(value.strip_suffix(',').unwrap_or(value).into());
+            let val = remove_sp_char(value.strip_suffix(',').unwrap_or(value).into(), true);
             format!("{key}: {val}").into()
         })
         .collect()
@@ -697,11 +698,22 @@ pub fn output_duration(d: Duration) -> String {
     format!("{h:02}:{m:02}:{s:02}.{ms:03}")
 }
 
-pub fn remove_sp_char(record_value: CompactString) -> CompactString {
-    let mut newline_replaced_cs = record_value
-        .replace('\n', "🛂n")
-        .replace('\r', "🛂r")
-        .replace('\t', "🛂t");
+pub fn remove_sp_char(record_value: CompactString, remain_newline: bool) -> CompactString {
+    let mut newline_replaced_cs: String = if remain_newline {
+        record_value
+            .replace('\n', "🛂n")
+            .replace('\r', "🛂r")
+            .replace('\t', "🛂t")
+    } else {
+        record_value.chars().fold(String::default(), |mut acc, c| {
+            if c.is_control() || c.is_ascii_whitespace() {
+                acc.push(' ');
+            } else {
+                acc.push(c);
+            };
+            acc
+        })
+    };
     let mut prev = 'a';
     newline_replaced_cs.retain(|ch| {
         let retain_flag = (prev == ' ' && ch == ' ') || ch.is_control();
