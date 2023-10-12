@@ -710,7 +710,7 @@ pub fn remove_sp_char(record_value: CompactString) -> CompactString {
         }
         !retain_flag
     });
-    newline_replaced_cs.into()
+    newline_replaced_cs.trim().into()
 }
 
 #[cfg(test)]
