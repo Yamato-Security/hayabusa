@@ -227,11 +227,12 @@ pub fn insert(
                 }
                 let record_details_info_ref = record_details_info_map.clone();
                 let profile_all_field_info_prof = record_details_info_ref.get("#AllFieldInfo");
-                let details_splits: HashSet<&str> = HashSet::from_iter(
-                    sp_removed_details_in_record_trim_newline
-                        .iter()
-                        .map(|x| x.split_once(": ").unwrap_or_default().1),
-                );
+                let details_splits: HashSet<&str> =
+                    HashSet::from_iter(sp_removed_details_in_record_trim_newline.iter().map(|x| {
+                        let v = x.split_once(": ").unwrap_or_default().1;
+                        // 末尾のカンマが含まれている場合と含まれていない場合でExtraFieldInfoでの一致判定が変わってしまうため判定用のハッシュセットの末尾のカンマを削除する
+                        v.strip_suffix(',').unwrap_or(v)
+                    }));
                 let profile_all_field_info = if let Some(all_field_info_val) =
                     profile_all_field_info_prof
                 {
