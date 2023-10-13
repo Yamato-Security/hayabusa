@@ -232,12 +232,16 @@ pub fn insert(
                         .iter()
                         .map(|x| x.split_once(": ").unwrap_or_default().1),
                 );
-                let profile_all_field_info =
-                    if let Some(all_field_info_val) = profile_all_field_info_prof {
-                        all_field_info_val.to_owned()
-                    } else {
-                        utils::create_recordinfos(event_record, field_data_map_key, field_data_map)
-                    };
+                let profile_all_field_info = if let Some(all_field_info_val) =
+                    profile_all_field_info_prof
+                {
+                    all_field_info_val.to_owned()
+                } else {
+                    let recinfo =
+                        utils::create_recordinfos(event_record, field_data_map_key, field_data_map);
+                    record_details_info_map.insert("#AllFieldInfo".into(), recinfo.clone());
+                    recinfo
+                };
                 let extra_field_vec = profile_all_field_info
                     .iter()
                     .filter(|x| {
