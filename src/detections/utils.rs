@@ -398,11 +398,11 @@ pub fn create_recordinfos(
                 if let Some(converted_str) =
                     convert_field_data(map, field_data_map_key, &key.to_lowercase(), value)
                 {
-                    let val = remove_sp_char(converted_str, true);
+                    let val = remove_sp_char(converted_str);
                     return format!("{key}: {}", val.strip_suffix(',').unwrap_or(&val)).into();
                 }
             }
-            let val = remove_sp_char(value.into(), true);
+            let val = remove_sp_char(value.into());
             format!("{key}: {}", val.strip_suffix(',').unwrap_or(&val)).into()
         })
         .collect()
