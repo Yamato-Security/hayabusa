@@ -73,7 +73,7 @@ pub fn value_to_string(value: &Value) -> Option<String> {
         Value::Null => Option::None,
         Value::Bool(b) => Option::Some(b.to_string()),
         Value::Number(n) => Option::Some(n.to_string()),
-        Value::String(s) => Option::Some(s.trim().to_string()),
+        Value::String(s) => Option::Some(s.to_string()),
         Value::Array(_) => Option::None,
         Value::Object(_) => Option::None,
     }
@@ -448,7 +448,7 @@ fn _collect_recordinfo<'a>(
             // 一番子の要素の値しか収集しない
             let strval = value_to_string(value);
             if let Some(strval) = strval {
-                let strval = strval.trim().chars().fold(String::default(), |mut acc, c| {
+                let strval = strval.chars().fold(String::default(), |mut acc, c| {
                     if (c.is_control() || c.is_ascii_whitespace())
                         && !['\r', '\n', '\t'].contains(&c)
                     {
