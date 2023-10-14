@@ -218,7 +218,7 @@ pub fn get_serde_number_to_string(
     if value.is_string() {
         let val_str = value.as_str().unwrap_or("");
         if val_str.ends_with(',') {
-            Some(CompactString::from(val_str.strip_suffix(',').unwrap()))
+            Some(CompactString::from(val_str))
         } else {
             Option::Some(CompactString::from(val_str))
         }
@@ -399,11 +399,11 @@ pub fn create_recordinfos(
                     convert_field_data(map, field_data_map_key, &key.to_lowercase(), value)
                 {
                     let val = remove_sp_char(converted_str);
-                    return format!("{key}: {}", val.strip_suffix(',').unwrap_or(&val)).into();
+                    return format!("{key}: {val}",).into();
                 }
             }
             let val = remove_sp_char(value.into());
-            format!("{key}: {}", val.strip_suffix(',').unwrap_or(&val)).into()
+            format!("{key}: {val}").into()
         })
         .collect()
 }
