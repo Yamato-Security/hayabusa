@@ -1581,9 +1581,9 @@ pub fn output_json_str(
                         output_stock.push(format!("    \"{key}\": {{"));
                     };
                     for (idx, contents) in details_target_stock.iter().enumerate() {
-                        let (key, value) = contents.split_once(": ").unwrap_or_default();
+                        let (key, value) = contents.split_once(':').unwrap_or_default();
                         let output_key = _convert_valid_json_str(&[key], false);
-                        let fmted_val = _convert_valid_json_str(&[value], false);
+                        let fmted_val = _convert_valid_json_str(&[value.trim_start()], false);
 
                         if idx != details_target_stock.len() - 1 {
                             output_stock.push(format!(
