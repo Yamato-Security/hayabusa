@@ -129,7 +129,7 @@ pub fn insert(
     let mut record_details_info_map = HashMap::new();
     if !is_agg {
         //ここの段階でdetailsの内容でaliasを置き換えた内容と各種、key,valueの組み合わせのmapを取得する
-        let (removed_sp_parsed_detail, details_in_record) = parse_message(
+        let (removed_sp_parsed_detail, mut details_in_record) = parse_message(
             event_record,
             &output,
             eventkey_alias,
@@ -139,7 +139,7 @@ pub fn insert(
         );
 
         let mut sp_removed_details_in_record = vec![];
-        details_in_record.iter().for_each(|v| {
+        details_in_record.drain(..).for_each(|v| {
             sp_removed_details_in_record.push(remove_sp_char(v.clone()));
         });
         record_details_info_map.insert("#Details".into(), sp_removed_details_in_record);
