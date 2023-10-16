@@ -73,7 +73,7 @@ pub fn value_to_string(value: &Value) -> Option<String> {
         Value::Null => Option::None,
         Value::Bool(b) => Option::Some(b.to_string()),
         Value::Number(n) => Option::Some(n.to_string()),
-        Value::String(s) => Option::Some(s.trim().to_string()),
+        Value::String(s) => Option::Some(s.to_string()),
         Value::Array(_) => Option::None,
         Value::Object(_) => Option::None,
     }
@@ -218,7 +218,7 @@ pub fn get_serde_number_to_string(
     if value.is_string() {
         let val_str = value.as_str().unwrap_or("");
         if val_str.ends_with(',') {
-            Some(CompactString::from(val_str.strip_suffix(',').unwrap()))
+            Some(CompactString::from(val_str))
         } else {
             Option::Some(CompactString::from(val_str))
         }
@@ -398,12 +398,12 @@ pub fn create_recordinfos(
                 if let Some(converted_str) =
                     convert_field_data(map, field_data_map_key, &key.to_lowercase(), value)
                 {
-                    let val = remove_sp_char(converted_str, true);
-                    return format!("{key}: {}", val.strip_suffix(',').unwrap_or(&val)).into();
+                    let val = remove_sp_char(converted_str);
+                    return format!("{key}: {val}",).into();
                 }
             }
-            let val = remove_sp_char(value.into(), true);
-            format!("{key}: {}", val.strip_suffix(',').unwrap_or(&val)).into()
+            let val = remove_sp_char(value.into());
+            format!("{key}: {val}").into()
         })
         .collect()
 }
@@ -448,8 +448,10 @@ fn _collect_recordinfo<'a>(
             // 一番子の要素の値しか収集しない
             let strval = value_to_string(value);
             if let Some(strval) = strval {
-                let strval = strval.trim().chars().fold(String::default(), |mut acc, c| {
-                    if c.is_control() || c.is_ascii_whitespace() {
+                let strval = strval.chars().fold(String::default(), |mut acc, c| {
+                    if (c.is_control() || c.is_ascii_whitespace())
+                        && !['\r', '\n', '\t'].contains(&c)
+                    {
                         acc.push(' ');
                     } else {
                         acc.push(c);
@@ -692,22 +694,11 @@ pub fn output_duration(d: Duration) -> String {
     format!("{h:02}:{m:02}:{s:02}.{ms:03}")
 }
 
-pub fn remove_sp_char(record_value: CompactString, remain_newline: bool) -> CompactString {
-    let mut newline_replaced_cs: String = if remain_newline {
-        record_value
-            .replace('\n', "🛂n")
-            .replace('\r', "🛂r")
-            .replace('\t', "🛂t")
-    } else {
-        record_value.chars().fold(String::default(), |mut acc, c| {
-            if c.is_control() || c.is_ascii_whitespace() {
-                acc.push(' ');
-            } else {
-                acc.push(c);
-            };
-            acc
-        })
-    };
+pub fn remove_sp_char(record_value: CompactString) -> CompactString {
+    let mut newline_replaced_cs: String = record_value
+        .replace('\n', "🛂n")
+        .replace('\r', "🛂r")
+        .replace('\t', "🛂t");
     let mut prev = 'a';
     newline_replaced_cs.retain(|ch| {
         let retain_flag = (prev == ' ' && ch == ' ') || ch.is_control();

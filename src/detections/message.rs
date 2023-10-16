@@ -127,10 +127,9 @@ pub fn insert(
     ),
 ) {
     let mut record_details_info_map = HashMap::new();
-    let mut sp_removed_details_in_record_trim_newline = vec![];
     if !is_agg {
         //ここの段階でdetailsの内容でaliasを置き換えた内容と各種、key,valueの組み合わせのmapを取得する
-        let (removed_sp_parsed_detail, details_in_record) = parse_message(
+        let (removed_sp_parsed_detail, mut details_in_record) = parse_message(
             event_record,
             &output,
             eventkey_alias,
@@ -140,14 +139,13 @@ pub fn insert(
         );
 
         let mut sp_removed_details_in_record = vec![];
-        details_in_record.iter().for_each(|v| {
-            sp_removed_details_in_record.push(remove_sp_char(v.clone(), true));
-            sp_removed_details_in_record_trim_newline.push(remove_sp_char(v.clone(), false));
+        details_in_record.drain(..).for_each(|v| {
+            sp_removed_details_in_record.push(remove_sp_char(v.clone()));
         });
         record_details_info_map.insert("#Details".into(), sp_removed_details_in_record);
         // 特殊文字の除外のためのretain処理
         // Details内にある改行文字は除外しないために絵文字を含めた特殊な文字に変換することで対応する
-        let parsed_detail = remove_sp_char(removed_sp_parsed_detail, true);
+        let parsed_detail = remove_sp_char(removed_sp_parsed_detail);
         detect_info.detail = if parsed_detail.is_empty() {
             CompactString::from("-")
         } else {
@@ -227,12 +225,18 @@ pub fn insert(
                 }
                 let record_details_info_ref = record_details_info_map.clone();
                 let profile_all_field_info_prof = record_details_info_ref.get("#AllFieldInfo");
-                let details_splits: HashSet<&str> =
-                    HashSet::from_iter(sp_removed_details_in_record_trim_newline.iter().map(|x| {
-                        let v = x.split_once(": ").unwrap_or_default().1;
-                        // 末尾のカンマが含まれている場合と含まれていない場合でExtraFieldInfoでの一致判定が変わってしまうため判定用のハッシュセットの末尾のカンマを削除する
-                        v.strip_suffix(',').unwrap_or(v)
-                    }));
+                let empty = vec![];
+                let details_splits: HashSet<&str> = HashSet::from_iter(
+                    record_details_info_ref
+                        .get("#Details")
+                        .unwrap_or(&empty)
+                        .iter()
+                        .map(|x| {
+                            let v = x.split_once(": ").unwrap_or_default().1;
+                            // 末尾のカンマが含まれている場合と含まれていない場合でExtraFieldInfoでの一致判定が変わってしまうため判定用のハッシュセットの末尾のカンマを削除する
+                            v.strip_suffix(',').unwrap_or(v)
+                        }),
+                );
                 let profile_all_field_info = if let Some(all_field_info_val) =
                     profile_all_field_info_prof
                 {
