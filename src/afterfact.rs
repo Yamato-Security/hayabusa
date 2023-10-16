@@ -491,10 +491,7 @@ fn emit_csv<W: std::io::Write>(
                     .or_insert_with(|| extract_author_name(&detect_info.rulepath, stored_static))
                     .clone();
                 let author_str = author_list.iter().join(", ");
-                detect_rule_authors.insert(
-                    detect_info.rulepath.to_owned(),
-                    author_str.to_owned().into(),
-                );
+                detect_rule_authors.insert(detect_info.rulepath.to_owned(), author_str.into());
 
                 if !detected_rule_files.contains(&detect_info.rulepath) {
                     detected_rule_files.insert(detect_info.rulepath.to_owned());

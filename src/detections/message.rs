@@ -127,6 +127,7 @@ pub fn insert(
     ),
 ) {
     let mut record_details_info_map = HashMap::new();
+    let mut sp_removed_details_in_record = vec![];
     if !is_agg {
         //ここの段階でdetailsの内容でaliasを置き換えた内容と各種、key,valueの組み合わせのmapを取得する
         let (removed_sp_parsed_detail, mut details_in_record) = parse_message(
@@ -137,12 +138,12 @@ pub fn insert(
             field_data_map_key,
             field_data_map,
         );
-
-        let mut sp_removed_details_in_record = vec![];
         details_in_record.drain(..).for_each(|v| {
-            sp_removed_details_in_record.push(remove_sp_char(v.clone()));
+            sp_removed_details_in_record.push(remove_sp_char(v));
         });
-        record_details_info_map.insert("#Details".into(), sp_removed_details_in_record);
+        if is_json_timeline {
+            record_details_info_map.insert("#Details".into(), sp_removed_details_in_record.clone());
+        }
         // 特殊文字の除外のためのretain処理
         // Details内にある改行文字は除外しないために絵文字を含めた特殊な文字に変換することで対応する
         let parsed_detail = remove_sp_char(removed_sp_parsed_detail);
@@ -151,43 +152,30 @@ pub fn insert(
         } else {
             parsed_detail
         };
+    } else if output != "-" {
+        record_details_info_map.insert("#Details".into(), vec![output]);
+    } else if detect_info.detail != "-" {
+        record_details_info_map.insert("#Details".into(), vec![detect_info.detail.clone()]);
+    } else {
+        record_details_info_map.insert("#Details".into(), vec!["-".into()]);
     }
     let mut replaced_profiles: Vec<(CompactString, Profile)> = vec![];
+    let mut exist_all_field_info_in_ext_field = false;
     for (key, profile) in detect_info.ext_field.iter() {
         match profile {
             Details(_) => {
-                // Detailsの要素がすでにreplaced_profilesに存在する場合は次の処理に進み
-                let existed_flag = replaced_profiles
-                    .iter()
-                    .any(|(_, y)| matches!(y, Details(_)));
-                if existed_flag {
-                    continue;
-                }
                 if detect_info.detail.is_empty() {
                     //Detailsの中身が何も入っていない場合はそのままの値を入れる
                     replaced_profiles.push((key.to_owned(), profile.to_owned()));
                 } else {
-                    replaced_profiles
-                        .push((key.to_owned(), Details(detect_info.detail.clone().into())));
-                    detect_info.details_convert_map.insert(
-                        "#Details".into(),
-                        detect_info.detail.split(" ¦ ").map(|x| x.into()).collect(),
-                    );
-                    if is_agg {
-                        if output != "-" {
-                            record_details_info_map.insert("#Details".into(), vec![output.clone()]);
-                        } else if detect_info.detail != "-" {
-                            record_details_info_map
-                                .insert("#Details".into(), vec![detect_info.detail.clone()]);
-                        } else {
-                            record_details_info_map.insert("#Details".into(), vec!["-".into()]);
-                        }
-                    }
+                    replaced_profiles.push((key.to_owned(), Details(detect_info.detail.into())));
+
                     // メモリの節約のためにDetailsの中身を空にする
                     detect_info.detail = CompactString::default();
                 }
             }
             AllFieldInfo(_) => {
+                exist_all_field_info_in_ext_field = true;
                 if is_agg {
                     replaced_profiles.push((key.to_owned(), AllFieldInfo("-".into())));
                 } else {
@@ -196,6 +184,11 @@ pub fn insert(
                     } else {
                         utils::create_recordinfos(event_record, field_data_map_key, field_data_map)
                     };
+                    if is_json_timeline {
+                        record_details_info_map.insert("#AllFieldInfo".into(), recinfos);
+                        replaced_profiles.push((key.to_owned(), AllFieldInfo("".into())));
+                        continue;
+                    }
                     let rec = if recinfos.is_empty() {
                         "-".to_string()
                     } else if !is_json_timeline {
@@ -203,12 +196,7 @@ pub fn insert(
                     } else {
                         String::default()
                     };
-                    if is_json_timeline {
-                        record_details_info_map.insert("#AllFieldInfo".into(), recinfos);
-                        replaced_profiles.push((key.to_owned(), AllFieldInfo("".into())));
-                    } else {
-                        replaced_profiles.push((key.to_owned(), AllFieldInfo(rec.into())));
-                    }
+                    replaced_profiles.push((key.to_owned(), AllFieldInfo(rec.into())));
                 }
             }
             Literal(_) => replaced_profiles.push((key.to_owned(), profile.to_owned())),
@@ -223,20 +211,15 @@ pub fn insert(
                     }
                     continue;
                 }
-                let record_details_info_ref = record_details_info_map.clone();
-                let profile_all_field_info_prof = record_details_info_ref.get("#AllFieldInfo");
-                let empty = vec![];
-                let details_splits: HashSet<&str> = HashSet::from_iter(
-                    record_details_info_ref
-                        .get("#Details")
-                        .unwrap_or(&empty)
-                        .iter()
-                        .map(|x| {
-                            let v = x.split_once(": ").unwrap_or_default().1;
-                            // 末尾のカンマが含まれている場合と含まれていない場合でExtraFieldInfoでの一致判定が変わってしまうため判定用のハッシュセットの末尾のカンマを削除する
-                            v.strip_suffix(',').unwrap_or(v)
-                        }),
-                );
+                let profile_all_field_info_prof = record_details_info_map.get("#AllFieldInfo");
+                let details_splits: HashSet<&str> = {
+                    let details = sp_removed_details_in_record.iter().map(|x| {
+                        let v = x.split_once(": ").unwrap_or_default().1;
+                        // 末尾のカンマが含まれている場合と含まれていない場合でExtraFieldInfoでの一致判定が変わってしまうため判定用のハッシュセットの末尾のカンマを削除する
+                        v.strip_suffix(',').unwrap_or(v)
+                    });
+                    HashSet::from_iter(details)
+                };
                 let profile_all_field_info = if let Some(all_field_info_val) =
                     profile_all_field_info_prof
                 {
@@ -288,6 +271,9 @@ pub fn insert(
                 }
             }
         }
+    }
+    if !exist_all_field_info_in_ext_field {
+        record_details_info_map.remove("#AllFieldInfo");
     }
     detect_info.ext_field = replaced_profiles;
     detect_info.details_convert_map = record_details_info_map;
