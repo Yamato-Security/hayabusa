@@ -8,8 +8,8 @@ xxx
 
 **Bug Fixes:**
 
-- 場合によっては`Details`で定義されたフィールド情報が`ExtraFieldInfo`にも出力されていた。(#1145) (@hitenkoku)
-- JSON出力で、`AllFieldInfo`は改行文字とタブ文字を除去していたが、出力するように修正した。 (#1189) (@hitenkoku)
+- Fixed that field information defined in `Details` was also output to `ExtraFieldInfo` in some cases. (#1145) (@hitenkoku)
+- Fixed output of newline and tab characters in `AllFieldInfo` in JSON output. (#1189) (@hitenkoku)
 
 **Other:**
 
