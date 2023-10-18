@@ -2141,6 +2141,7 @@ fn extract_output_options(config: &Config) -> Option<OutputOption> {
             no_field: false,
             remove_duplicate_data: false,
             remove_duplicate_detections: false,
+            no_ask_flag: true,
         }),
         Action::EidMetrics(option) => Some(OutputOption {
             input_args: option.input_args.clone(),
@@ -2178,6 +2179,7 @@ fn extract_output_options(config: &Config) -> Option<OutputOption> {
             no_field: false,
             remove_duplicate_data: false,
             remove_duplicate_detections: false,
+            no_ask_flag: true,
         }),
         Action::LogonSummary(option) => Some(OutputOption {
             input_args: option.input_args.clone(),
@@ -2215,6 +2217,7 @@ fn extract_output_options(config: &Config) -> Option<OutputOption> {
             no_field: false,
             remove_duplicate_data: false,
             remove_duplicate_detections: false,
+            no_ask_flag: true,
         }),
         Action::ComputerMetrics(option) => Some(OutputOption {
             input_args: option.input_args.clone(),
@@ -2261,6 +2264,7 @@ fn extract_output_options(config: &Config) -> Option<OutputOption> {
             no_field: false,
             remove_duplicate_data: false,
             remove_duplicate_detections: false,
+            no_ask_flag: true,
         }),
         Action::Search(option) => Some(OutputOption {
             input_args: option.input_args.clone(),
@@ -2307,6 +2311,7 @@ fn extract_output_options(config: &Config) -> Option<OutputOption> {
             no_field: false,
             remove_duplicate_data: false,
             remove_duplicate_detections: false,
+            no_ask_flag: true,
         }),
         Action::SetDefaultProfile(option) => Some(OutputOption {
             input_args: InputOption {
@@ -2359,6 +2364,7 @@ fn extract_output_options(config: &Config) -> Option<OutputOption> {
             no_field: false,
             remove_duplicate_data: false,
             remove_duplicate_detections: false,
+            no_ask_flag: true,
         }),
         Action::UpdateRules(option) => Some(OutputOption {
             input_args: InputOption {
@@ -2411,6 +2417,7 @@ fn extract_output_options(config: &Config) -> Option<OutputOption> {
             no_field: false,
             remove_duplicate_data: false,
             remove_duplicate_detections: false,
+            no_ask_flag: true,
         }),
         _ => None,
     }
@@ -2657,6 +2664,7 @@ mod tests {
                     no_field: false,
                     remove_duplicate_data: false,
                     remove_duplicate_detections: false,
+                    no_ask_flag: true,
                 },
                 geo_ip: None,
                 output: None,
@@ -2728,6 +2736,7 @@ mod tests {
                     no_field: false,
                     remove_duplicate_data: false,
                     remove_duplicate_detections: false,
+                    no_ask_flag: true,
                 },
                 geo_ip: None,
                 output: None,
