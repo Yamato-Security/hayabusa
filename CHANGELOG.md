@@ -4,7 +4,7 @@
 
 **Enhancements:**
 
-xxx
+- added prompt that the user which sigma rules they want to enable by default. When `-a, --no-asking` is enabled, Hayabusa will run in the traditionally way(Scan for all events and alerts). (#1188) (@hitenkoku)
 
 **Bug Fixes:**
 
