@@ -118,7 +118,7 @@ impl App {
             && !self.check_is_valid_args_num(stored_static.config.action.as_ref())
         {
             if !stored_static.common_options.quiet {
-                self.output_logo(&stored_static);
+                self.output_logo(stored_static);
                 write_color_buffer(&BufferWriter::stdout(ColorChoice::Always), None, "", true).ok();
             }
             app.find_subcommand(subcommand_name)
@@ -133,7 +133,7 @@ impl App {
         // Show usage when no arguments.
         if stored_static.config.action.is_none() {
             if !stored_static.common_options.quiet {
-                self.output_logo(&stored_static);
+                self.output_logo(stored_static);
                 write_color_buffer(&BufferWriter::stdout(ColorChoice::Always), None, "", true).ok();
             }
             app.print_help().ok();
@@ -141,7 +141,7 @@ impl App {
             return;
         }
         if !stored_static.common_options.quiet {
-            self.output_logo(&stored_static);
+            self.output_logo(stored_static);
             write_color_buffer(&BufferWriter::stdout(ColorChoice::Always), None, "", true).ok();
             self.output_eggs(&format!(
                 "{:02}/{:02}",
@@ -173,7 +173,7 @@ impl App {
                     .unwrap();
         }
 
-        let time_filter = TargetEventTime::new(&stored_static);
+        let time_filter = TargetEventTime::new(stored_static);
         if !time_filter.is_parse_success() {
             return;
         }
@@ -464,7 +464,7 @@ impl App {
                                 key,
                                 pivot_keyword,
                                 "file",
-                                &stored_static,
+                                stored_static,
                             )
                             .as_bytes(),
                         )
@@ -505,7 +505,7 @@ impl App {
                             key,
                             pivot_keyword,
                             "standard",
-                            &stored_static,
+                            stored_static,
                         );
 
                         if pivot_keyword.keywords.is_empty() {
@@ -536,7 +536,7 @@ impl App {
                 };
                 let now_version = &format!("v{}", env!("CARGO_PKG_VERSION"));
 
-                match Update::update_rules(update_target.unwrap().to_str().unwrap(), &stored_static)
+                match Update::update_rules(update_target.unwrap().to_str().unwrap(), stored_static)
                 {
                     Ok(output) => {
                         if output != "You currently have the latest rules." {
@@ -648,7 +648,7 @@ impl App {
 
                 if Path::new(&level_tuning_config_path).exists() {
                     if let Err(err) =
-                        LevelTuning::run(&level_tuning_config_path, rules_path, &stored_static)
+                        LevelTuning::run(&level_tuning_config_path, rules_path, stored_static)
                     {
                         AlertMessage::alert(&err).ok();
                     }
@@ -678,7 +678,7 @@ impl App {
                     .unwrap()
                     .to_str()
                     .unwrap(),
-                    &stored_static,
+                    stored_static,
                 ) {
                     AlertMessage::alert(&e).ok();
                 } else {
@@ -688,7 +688,7 @@ impl App {
             }
             Action::ListProfiles(_) => {
                 let profile_list =
-                    options::profile::get_profile_list("config/profiles.yaml", &stored_static);
+                    options::profile::get_profile_list("config/profiles.yaml", stored_static);
                 write_color_buffer(
                     &BufferWriter::stdout(ColorChoice::Always),
                     None,
@@ -759,7 +759,7 @@ impl App {
             .live_analysis
         {
             let live_analysis_list =
-                self.collect_liveanalysis_files(target_extensions, &stored_static);
+                self.collect_liveanalysis_files(target_extensions, stored_static);
             if live_analysis_list.is_none() {
                 return;
             }
