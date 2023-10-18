@@ -76,6 +76,7 @@ impl ParseYaml {
         stored_static: &StoredStatic,
     ) -> io::Result<String> {
         let metadata = fs::metadata(path.as_ref());
+        let is_contained_include_status_all_allowed = stored_static.include_status.contains("*");
         if metadata.is_err() {
             let err_contents = if let Err(e) = metadata {
                 e.to_string()
@@ -308,8 +309,11 @@ impl ParseYaml {
 
             let status = yaml_doc["status"].as_str();
             if let Some(s) = yaml_doc["status"].as_str() {
-                // excluded status optionで指定されたstatusを除外する
-                if self.exclude_status.contains(&s.to_string()) {
+                // excluded status optionで指定されたstatusとinclude_status optionで指定されたstatus以外のルールは除外する
+                if self.exclude_status.contains(&s.to_string())
+                    || (!is_contained_include_status_all_allowed
+                        && stored_static.include_status.contains(s))
+                {
                     up_rule_load_cnt("excluded", rule_id.unwrap_or(&String::default()));
                     return Option::None;
                 }

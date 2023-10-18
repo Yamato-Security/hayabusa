@@ -82,6 +82,7 @@ pub struct StoredStatic {
     pub exclude_computer: HashSet<CompactString>,
     pub include_eid: HashSet<CompactString>,
     pub exclude_eid: HashSet<CompactString>,
+    pub include_status: HashSet<CompactString>, // 読み込み対象ルールのステータスのセット。*はすべてのステータスを読み込む
     pub field_data_map: Option<FieldDataMap>,
     pub enable_recover_records: bool,
     pub timeline_offset: Option<String>,
@@ -631,6 +632,7 @@ impl StoredStatic {
             field_data_map,
             enable_recover_records,
             timeline_offset,
+            include_status: HashSet::new(),
         };
         ret.profiles = load_profile(
             check_setting_path(
