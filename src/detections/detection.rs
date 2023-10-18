@@ -5,10 +5,10 @@ use crate::detections::utils::{
     create_recordinfos, format_time, output_profile_name, write_color_buffer,
 };
 use crate::options::profile::Profile::{
-    self, AllFieldInfo, Channel, Computer, EventID, EvtxFile, Level, MitreTactics, MitreTags,
-    OtherTags, Provider, RecordID, RecoveredRecord, RenderedMessage, RuleAuthor, RuleCreationDate,
-    RuleFile, RuleID, RuleModifiedDate, RuleTitle, SrcASN, SrcCity, SrcCountry, Status, TgtASN,
-    TgtCity, TgtCountry, Timestamp,
+    self, Channel, Computer, EventID, EvtxFile, Level, MitreTactics, MitreTags, OtherTags,
+    Provider, RecordID, RecoveredRecord, RenderedMessage, RuleAuthor, RuleCreationDate, RuleFile,
+    RuleID, RuleModifiedDate, RuleTitle, SrcASN, SrcCity, SrcCountry, Status, TgtASN, TgtCity,
+    TgtCountry, Timestamp,
 };
 use chrono::{TimeZone, Utc};
 use compact_str::CompactString;
@@ -276,7 +276,6 @@ impl Detection {
         let tags_config_values: Vec<&CompactString> = TAGS_CONFIG.values().collect();
         let binding = STORED_EKEY_ALIAS.read().unwrap();
         let eventkey_alias = binding.as_ref().unwrap();
-        let mut included_all_field_info_flag = false;
         let is_json_timeline = matches!(stored_static.config.action, Some(Action::JsonTimeline(_)));
 
         for (key, profile) in stored_static.profiles.as_ref().unwrap().iter() {
@@ -649,9 +648,6 @@ impl Detection {
                         .entry("SrcCity")
                         .and_modify(|p| *p = SrcCity(src_data.next().unwrap().to_owned().into()));
                 }
-                AllFieldInfo(_) => {
-                    included_all_field_info_flag = true;
-                }
                 _ => {}
             }
         }
@@ -703,7 +699,7 @@ impl Detection {
             detect_info,
             time,
             &profile_converter,
-            (false, is_json_timeline, included_all_field_info_flag),
+            (false, is_json_timeline),
             (
                 eventkey_alias,
                 &field_data_map_key,
@@ -926,7 +922,7 @@ impl Detection {
             detect_info,
             agg_result.start_timedate,
             &profile_converter,
-            (true, is_json_timeline, false),
+            (true, is_json_timeline),
             (eventkey_alias, &field_data_map_key, &None),
         )
     }

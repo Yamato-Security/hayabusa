@@ -16,14 +16,14 @@ impl LevelTuning {
         rules_path: &str,
         stored_static: &StoredStatic,
     ) -> Result<(), String> {
-        let read_result = utils::read_csv(level_tuning_config_path);
-        if read_result.is_err() {
-            return Result::Err(read_result.as_ref().unwrap_err().to_string());
-        }
+        let read_result = match utils::read_csv(level_tuning_config_path) {
+            Ok(c) => c,
+            Err(e) => return Result::Err(e.to_string()),
+        };
 
         // Read Tuning files
         let mut tuning_map: HashMap<String, String> = HashMap::new();
-        read_result.unwrap().iter().try_for_each(|line| -> Result<(), String> {
+        read_result.iter().try_for_each(|line| -> Result<(), String> {
             // 1つ目の要素も存在しない場合はread_csvの段階で読み飛ばされるためget(0)がNoneにはならない
             let id = line.get(0).unwrap();
             if !configs::IDS_REGEX.is_match(id) {
