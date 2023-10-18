@@ -629,7 +629,7 @@ fn emit_csv<W: std::io::Write>(
                     )
                 ),
                 "Results Summary {#results_summary}",
-                stored_static.html_report_flag,
+                &stored_static.html_report_flag,
             );
         }
         if tl_start_end_time.1.is_some() {
@@ -643,7 +643,7 @@ fn emit_csv<W: std::io::Write>(
                     )
                 ),
                 "Results Summary {#results_summary}",
-                stored_static.html_report_flag,
+                &stored_static.html_report_flag,
             );
             println!();
         }

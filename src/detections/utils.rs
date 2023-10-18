@@ -605,7 +605,7 @@ pub fn check_file_expect_not_exist(path: &Path, exist_alert_str: String) -> bool
 pub fn output_and_data_stack_for_html(
     output_str: &str,
     section_name: &str,
-    html_report_flag: bool,
+    html_report_flag: &bool,
 ) {
     write_color_buffer(
         &BufferWriter::stdout(ColorChoice::Always),
@@ -615,7 +615,7 @@ pub fn output_and_data_stack_for_html(
     )
     .ok();
 
-    if html_report_flag {
+    if *html_report_flag {
         let mut output_data = Nested::<String>::new();
         output_data.extend(vec![format!("- {output_str}")]);
         htmlreport::add_md_data(section_name, output_data);

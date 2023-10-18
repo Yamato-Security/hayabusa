@@ -1477,6 +1477,10 @@ pub struct OutputOption {
     /// Remove duplicate detections (default: disabled)
     #[arg(help_heading = Some("Output"), short = 'X', long = "remove-duplicate-detections", display_order = 441)]
     pub remove_duplicate_detections: bool,
+
+    /// Do not ask questions. Scan for all events and alerts.
+    #[arg(help_heading = Some("Output"), short = 'a', long = "no-asking", display_order = 400)]
+    pub no_ask_flag: bool,
 }
 
 #[derive(Copy, Args, Clone, Debug)]
