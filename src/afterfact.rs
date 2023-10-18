@@ -59,12 +59,15 @@ pub fn set_output_color(no_color_flag: bool) -> HashMap<CompactString, Colors> {
     if no_color_flag {
         return color_map;
     }
-    if read_result.is_err() {
-        // color情報がない場合は通常の白色の出力が出てくるのみで動作への影響を与えない為warnとして処理する
-        AlertMessage::warn(read_result.as_ref().unwrap_err()).ok();
-        return color_map;
-    }
-    read_result.unwrap().iter().for_each(|line| {
+    let color_map_contents = match read_result {
+        Ok(c) => c,
+        Err(e) => {
+            // color情報がない場合は通常の白色の出力が出てくるのみで動作への影響を与えない為warnとして処理する
+            AlertMessage::warn(&e).ok();
+            return color_map;
+        }
+    };
+    color_map_contents.iter().for_each(|line| {
         if line.len() != 2 {
             return;
         }
@@ -488,10 +491,7 @@ fn emit_csv<W: std::io::Write>(
                     .or_insert_with(|| extract_author_name(&detect_info.rulepath, stored_static))
                     .clone();
                 let author_str = author_list.iter().join(", ");
-                detect_rule_authors.insert(
-                    detect_info.rulepath.to_owned(),
-                    author_str.to_owned().into(),
-                );
+                detect_rule_authors.insert(detect_info.rulepath.to_owned(), author_str.into());
 
                 if !detected_rule_files.contains(&detect_info.rulepath) {
                     detected_rule_files.insert(detect_info.rulepath.to_owned());
@@ -1578,9 +1578,9 @@ pub fn output_json_str(
                         output_stock.push(format!("    \"{key}\": {{"));
                     };
                     for (idx, contents) in details_target_stock.iter().enumerate() {
-                        let (key, value) = contents.split_once(": ").unwrap_or_default();
+                        let (key, value) = contents.split_once(':').unwrap_or_default();
                         let output_key = _convert_valid_json_str(&[key], false);
-                        let fmted_val = _convert_valid_json_str(&[value], false);
+                        let fmted_val = _convert_valid_json_str(&[value.trim_start()], false);
 
                         if idx != details_target_stock.len() - 1 {
                             output_stock.push(format!(
@@ -2043,7 +2043,7 @@ mod tests {
                 },
                 expect_time,
                 &profile_converter,
-                (false, false, false),
+                (false, false),
                 (&eventkey_alias, &FieldDataMapKey::default(), &None),
             );
             *profile_converter.get_mut("Computer").unwrap() =
@@ -2066,7 +2066,7 @@ mod tests {
                 },
                 expect_time,
                 &profile_converter,
-                (false, false, false),
+                (false, false),
                 (&eventkey_alias, &FieldDataMapKey::default(), &None),
             );
             let multi = message::MESSAGES.get(&expect_time).unwrap();
@@ -2368,7 +2368,7 @@ mod tests {
                 },
                 expect_time,
                 &profile_converter,
-                (false, false, true),
+                (false, false),
                 (&eventkey_alias, &FieldDataMapKey::default(), &None),
             );
             *profile_converter.get_mut("Computer").unwrap() =
@@ -2391,7 +2391,7 @@ mod tests {
                 },
                 expect_time,
                 &profile_converter,
-                (false, false, true),
+                (false, false),
                 (&eventkey_alias, &FieldDataMapKey::default(), &None),
             );
             let multi = message::MESSAGES.get(&expect_time).unwrap();
@@ -2683,7 +2683,7 @@ mod tests {
                 },
                 expect_time,
                 &profile_converter,
-                (false, false, false),
+                (false, false),
                 (&eventkey_alias, &FieldDataMapKey::default(), &None),
             );
             *profile_converter.get_mut("Computer").unwrap() =
@@ -2706,7 +2706,7 @@ mod tests {
                 },
                 expect_time,
                 &profile_converter,
-                (false, false, false),
+                (false, false),
                 (&eventkey_alias, &FieldDataMapKey::default(), &None),
             );
             let multi = message::MESSAGES.get(&expect_time).unwrap();
@@ -3008,7 +3008,7 @@ mod tests {
                 },
                 expect_time,
                 &profile_converter,
-                (false, true, true),
+                (false, true),
                 (&eventkey_alias, &FieldDataMapKey::default(), &None),
             );
             *profile_converter.get_mut("Computer").unwrap() =
@@ -3031,7 +3031,7 @@ mod tests {
                 },
                 expect_time,
                 &profile_converter,
-                (false, true, true),
+                (false, true),
                 (&eventkey_alias, &FieldDataMapKey::default(), &None),
             );
             let multi = message::MESSAGES.get(&expect_time).unwrap();
@@ -3555,7 +3555,7 @@ mod tests {
                 },
                 expect_time,
                 &profile_converter,
-                (false, true, true),
+                (false, true),
                 (&eventkey_alias, &FieldDataMapKey::default(), &None),
             );
             *profile_converter.get_mut("Computer").unwrap() =
@@ -3818,7 +3818,7 @@ mod tests {
                 },
                 expect_time,
                 &profile_converter,
-                (false, true, true),
+                (false, true),
                 (&eventkey_alias, &FieldDataMapKey::default(), &None),
             );
             *profile_converter.get_mut("Computer").unwrap() =

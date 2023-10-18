@@ -12,7 +12,6 @@ use compact_str::CompactString;
 use hashbrown::{HashMap, HashSet};
 use itertools::Itertools;
 use lazy_static::lazy_static;
-use nested::Nested;
 use regex::Regex;
 use std::env::current_exe;
 use std::path::{Path, PathBuf};
@@ -727,7 +726,7 @@ fn check_thread_number(config: &Config) -> Option<usize> {
 pub enum Action {
     #[clap(
         author = "Yamato Security (https://github.com/Yamato-Security/hayabusa - @SecurityYamato)",
-        help_template = "\nHayabusa v2.9.0 - Autumn Rain Release\n{author-with-newline}\n{usage-heading}\n  hayabusa.exe csv-timeline <INPUT> [OPTIONS]\n\n{all-args}",
+        help_template = "\nHayabusa v2.10.0-dev - Dev Build\n{author-with-newline}\n{usage-heading}\n  hayabusa.exe csv-timeline <INPUT> [OPTIONS]\n\n{all-args}",
         term_width = 400,
         disable_help_flag = true,
         display_order = 290
@@ -737,7 +736,7 @@ pub enum Action {
 
     #[clap(
         author = "Yamato Security (https://github.com/Yamato-Security/hayabusa - @SecurityYamato)",
-        help_template = "\nHayabusa v2.9.0 - Autumn Rain Release\n{author-with-newline}\n{usage-heading}\n  hayabusa.exe json-timeline <INPUT> [OPTIONS]\n\n{all-args}",
+        help_template = "\nHayabusa v2.10.0-dev - Dev Build\n{author-with-newline}\n{usage-heading}\n  hayabusa.exe json-timeline <INPUT> [OPTIONS]\n\n{all-args}",
         term_width = 400,
         disable_help_flag = true,
         display_order = 360
@@ -747,7 +746,7 @@ pub enum Action {
 
     #[clap(
         author = "Yamato Security (https://github.com/Yamato-Security/hayabusa - @SecurityYamato)",
-        help_template = "\nHayabusa v2.9.0 - Autumn Rain Release\n{author-with-newline}\n{usage-heading}\n  hayabusa.exe logon-summary <INPUT> [OPTIONS]\n\n{all-args}",
+        help_template = "\nHayabusa v2.10.0-dev - Dev Build\n{author-with-newline}\n{usage-heading}\n  hayabusa.exe logon-summary <INPUT> [OPTIONS]\n\n{all-args}",
         term_width = 400,
         disable_help_flag = true,
         display_order = 383
@@ -757,7 +756,7 @@ pub enum Action {
 
     #[clap(
         author = "Yamato Security (https://github.com/Yamato-Security/hayabusa - @SecurityYamato)",
-        help_template = "\nHayabusa v2.9.0 - Autumn Rain Release\n{author-with-newline}\n{usage-heading}\n  hayabusa.exe eid-metrics <INPUT> [OPTIONS]\n\n{all-args}",
+        help_template = "\nHayabusa v2.10.0-dev - Dev Build\n{author-with-newline}\n{usage-heading}\n  hayabusa.exe eid-metrics <INPUT> [OPTIONS]\n\n{all-args}",
         term_width = 400,
         disable_help_flag = true,
         display_order = 310
@@ -767,7 +766,7 @@ pub enum Action {
 
     #[clap(
         author = "Yamato Security (https://github.com/Yamato-Security/hayabusa - @SecurityYamato)",
-        help_template = "\nHayabusa v2.9.0 - Autumn Rain Release\n{author-with-newline}\n{usage-heading}\n  hayabusa.exe pivot-keywords-list <INPUT> [OPTIONS]\n\n{all-args}",
+        help_template = "\nHayabusa v2.10.0-dev - Dev Build\n{author-with-newline}\n{usage-heading}\n  hayabusa.exe pivot-keywords-list <INPUT> [OPTIONS]\n\n{all-args}",
         term_width = 400,
         disable_help_flag = true,
         display_order = 420
@@ -777,7 +776,7 @@ pub enum Action {
 
     #[clap(
         author = "Yamato Security (https://github.com/Yamato-Security/hayabusa - @SecurityYamato)",
-        help_template = "\nHayabusa v2.9.0 - Autumn Rain Release\n{author-with-newline}\n{usage-heading}\n  hayabusa.exe search <INPUT> <--keywords \"<KEYWORDS>\" OR --regex \"<REGEX>\"> [OPTIONS]\n\n{all-args}",
+        help_template = "\nHayabusa v2.10.0-dev - Dev Build\n{author-with-newline}\n{usage-heading}\n  hayabusa.exe search <INPUT> <--keywords \"<KEYWORDS>\" OR --regex \"<REGEX>\"> [OPTIONS]\n\n{all-args}",
         term_width = 400,
         disable_help_flag = true,
         display_order = 450
@@ -787,7 +786,7 @@ pub enum Action {
 
     #[clap(
         author = "Yamato Security (https://github.com/Yamato-Security/hayabusa - @SecurityYamato)",
-        help_template = "\nHayabusa v2.9.0 - Autumn Rain Release\n{author-with-newline}\n{usage-heading}\n  {usage}\n\n{all-args}",
+        help_template = "\nHayabusa v2.10.0-dev - Dev Build\n{author-with-newline}\n{usage-heading}\n  {usage}\n\n{all-args}",
         term_width = 400,
         disable_help_flag = true,
         display_order = 470
@@ -797,7 +796,7 @@ pub enum Action {
 
     #[clap(
         author = "Yamato Security (https://github.com/Yamato-Security/hayabusa - @SecurityYamato)",
-        help_template = "\nHayabusa v2.9.0 - Autumn Rain Release\n{author-with-newline}\n{usage-heading}\n  {usage}\n\n{all-args}",
+        help_template = "\nHayabusa v2.10.0-dev - Dev Build\n{author-with-newline}\n{usage-heading}\n  {usage}\n\n{all-args}",
         term_width = 400,
         disable_help_flag = true,
         display_order = 380
@@ -807,7 +806,7 @@ pub enum Action {
 
     #[clap(
         author = "Yamato Security (https://github.com/Yamato-Security/hayabusa - @SecurityYamato)",
-        help_template = "\nHayabusa v2.9.0 - Autumn Rain Release\n{author-with-newline}\n{usage-heading}\n  {usage}\n\n{all-args}",
+        help_template = "\nHayabusa v2.10.0-dev - Dev Build\n{author-with-newline}\n{usage-heading}\n  {usage}\n\n{all-args}",
         term_width = 400,
         disable_help_flag = true,
         display_order = 451
@@ -825,7 +824,7 @@ pub enum Action {
 
     #[clap(
         author = "Yamato Security (https://github.com/Yamato-Security/hayabusa - @SecurityYamato)",
-        help_template = "\nHayabusa v2.9.0 - Autumn Rain Release\n{author-with-newline}\n{usage-heading}\n  {usage}\n\n{all-args}",
+        help_template = "\nHayabusa v2.10.0-dev - Dev Build\n{author-with-newline}\n{usage-heading}\n  {usage}\n\n{all-args}",
         term_width = 400,
         disable_help_flag = true,
         display_order = 290
@@ -1618,7 +1617,7 @@ pub struct ComputerMetricsOption {
 #[derive(Parser, Clone, Debug)]
 #[clap(
     author = "Yamato Security (https://github.com/Yamato-Security/hayabusa - @SecurityYamato)",
-    help_template = "\nHayabusa v2.9.0 - Autumn Rain Release\n{author-with-newline}\n{usage-heading}\n  hayabusa.exe <COMMAND> [OPTIONS]\n  hayabusa.exe help <COMMAND>\n\n{all-args}{options}",
+    help_template = "\nHayabusa v2.10.0-dev - Dev Build\n{author-with-newline}\n{usage-heading}\n  hayabusa.exe <COMMAND> [OPTIONS]\n  hayabusa.exe help <COMMAND>\n\n{all-args}{options}",
     term_width = 400,
     disable_help_flag = true
 )]
@@ -1679,13 +1678,16 @@ impl TargetIds {
 
 fn load_target_ids(path: &str) -> TargetIds {
     let mut ret = TargetIds::default();
-    let lines = utils::read_txt(path); // ファイルが存在しなければエラーとする
-    if lines.is_err() {
-        AlertMessage::alert(lines.as_ref().unwrap_err()).ok();
-        return ret;
-    }
+    let lines = match utils::read_txt(path) {
+        Ok(lines) => lines,
+        Err(e) => {
+            // ファイルが存在しなければエラーとする
+            AlertMessage::alert(&e).ok();
+            return ret;
+        }
+    };
 
-    for line in lines.unwrap_or_else(|_| Nested::<String>::new()).iter() {
+    for line in lines.iter() {
         if line.is_empty() {
             continue;
         }
@@ -1980,8 +1982,8 @@ pub fn load_eventkey_alias(path: &str) -> EventKeyAliasConfig {
 
     // eventkey_aliasが読み込めなかったらエラーで終了とする。
     let read_result = utils::read_csv(path);
-    if read_result.is_err() {
-        AlertMessage::alert(read_result.as_ref().unwrap_err()).ok();
+    if let Err(e) = read_result {
+        AlertMessage::alert(&e).ok();
         return config;
     }
 
@@ -2011,12 +2013,15 @@ pub fn load_eventkey_alias(path: &str) -> EventKeyAliasConfig {
 
 ///設定ファイルを読み込み、keyとfieldsのマップをPIVOT_KEYWORD大域変数にロードする。
 pub fn load_pivot_keywords(path: &str) {
-    let read_result = utils::read_txt(path);
-    if read_result.is_err() {
-        AlertMessage::alert(read_result.as_ref().unwrap_err()).ok();
-    }
+    let read_result = match utils::read_txt(path) {
+        Ok(v) => v,
+        Err(e) => {
+            AlertMessage::alert(&e).ok();
+            return;
+        }
+    };
 
-    read_result.unwrap().iter().for_each(|line| {
+    read_result.iter().for_each(|line| {
         let mut map = line.split('.').take(2);
         if let Some(size) = map.size_hint().1 {
             if size < 2 {
@@ -2453,14 +2458,16 @@ impl EventInfoConfig {
 fn load_eventcode_info(path: &str) -> EventInfoConfig {
     let mut infodata = EventInfo::new();
     let mut config = EventInfoConfig::new();
-    let read_result = utils::read_csv(path);
-    if read_result.is_err() {
-        AlertMessage::alert(read_result.as_ref().unwrap_err()).ok();
-        return config;
-    }
+    let read_result = match utils::read_csv(path) {
+        Ok(v) => v,
+        Err(e) => {
+            AlertMessage::alert(&e).ok();
+            return config;
+        }
+    };
 
     // channel_eid_info.txtが読み込めなかったらエラーで終了とする。
-    read_result.unwrap().iter().for_each(|line| {
+    read_result.iter().for_each(|line| {
         if line.len() != 3 {
             return;
         }

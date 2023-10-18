@@ -218,7 +218,7 @@ pub fn get_serde_number_to_string(
     if value.is_string() {
         let val_str = value.as_str().unwrap_or("");
         if val_str.ends_with(',') {
-            Some(CompactString::from(val_str.strip_suffix(',').unwrap()))
+            Some(CompactString::from(val_str))
         } else {
             Option::Some(CompactString::from(val_str))
         }
@@ -398,11 +398,11 @@ pub fn create_recordinfos(
                 if let Some(converted_str) =
                     convert_field_data(map, field_data_map_key, &key.to_lowercase(), value)
                 {
-                    let val = converted_str.strip_suffix(',').unwrap_or(&converted_str);
-                    return format!("{key}: {val}").into();
+                    let val = remove_sp_char(converted_str);
+                    return format!("{key}: {val}",).into();
                 }
             }
-            let val = value.strip_suffix(',').unwrap_or(value);
+            let val = remove_sp_char(value.into());
             format!("{key}: {val}").into()
         })
         .collect()
@@ -448,8 +448,10 @@ fn _collect_recordinfo<'a>(
             // 一番子の要素の値しか収集しない
             let strval = value_to_string(value);
             if let Some(strval) = strval {
-                let strval = strval.trim().chars().fold(String::default(), |mut acc, c| {
-                    if c.is_control() || c.is_ascii_whitespace() {
+                let strval = strval.chars().fold(String::default(), |mut acc, c| {
+                    if (c.is_control() || c.is_ascii_whitespace())
+                        && !['\r', '\n', '\t'].contains(&c)
+                    {
                         acc.push(' ');
                     } else {
                         acc.push(c);
@@ -690,6 +692,22 @@ pub fn output_duration(d: Duration) -> String {
     let m = s / 60;
     s %= 60;
     format!("{h:02}:{m:02}:{s:02}.{ms:03}")
+}
+
+pub fn remove_sp_char(record_value: CompactString) -> CompactString {
+    let mut newline_replaced_cs: String = record_value
+        .replace('\n', "🛂n")
+        .replace('\r', "🛂r")
+        .replace('\t', "🛂t");
+    let mut prev = 'a';
+    newline_replaced_cs.retain(|ch| {
+        let retain_flag = (prev == ' ' && ch == ' ') || ch.is_control();
+        if !retain_flag {
+            prev = ch;
+        }
+        !retain_flag
+    });
+    newline_replaced_cs.trim().into()
 }
 
 #[cfg(test)]
