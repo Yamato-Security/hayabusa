@@ -968,12 +968,6 @@ impl App {
     ) {
         let event_timeline_config = &stored_static.event_timeline_config;
         let target_event_ids = &stored_static.target_eventids;
-        let level = stored_static
-            .output_option
-            .as_ref()
-            .unwrap()
-            .min_level
-            .to_uppercase();
         let target_level = stored_static
             .output_option
             .as_ref()
@@ -989,7 +983,6 @@ impl App {
             true,
         )
         .ok();
-        let mut include_status = stored_static.include_status.clone();
         let mut total_file_size = ByteSize::b(0);
         for file_path in &evtx_files {
             let file_size = match fs::metadata(file_path) {
@@ -1022,7 +1015,7 @@ impl App {
             println!("Detection rule sets:");
             println!();
             let selections_status = &[
-                ("1. Core ( status: testing, stable | level: high, critical )", (vec!["testing", "stable"], "critical")),
+                ("1. Core ( status: testing, stable | level: high, critical )", (vec!["testing", "stable"], "high")),
                 ("2. Core+ ( status: testing, stable | level: medium, high, critical )", (vec!["testing", "stable"], "medium")),
                 ("3. Core++ ( status: experimental, testing, stable | level: medium, high, critical )", (vec!["experimental", "testing", "stable"], "medium")),
                 ("4. All alert rules ( status: * | level: low+ )", (vec!["*"], "low")),
@@ -1040,8 +1033,10 @@ impl App {
                 "- selected detection rule sets: {}",
                 selections_status[selected_index].0
             ));
+            stored_static.output_option.as_mut().unwrap().min_level =
+                selections_status[selected_index].1 .1.into();
             if selected_index <= 3 {
-                include_status.extend(
+                stored_static.include_status.extend(
                     selections_status[selected_index]
                         .1
                          .0
@@ -1105,6 +1100,13 @@ impl App {
             output_data.extend(html_report_data.iter());
             htmlreport::add_md_data("General Overview #{general_overview}", output_data);
         }
+
+        let level = stored_static
+            .output_option
+            .as_ref()
+            .unwrap()
+            .min_level
+            .to_uppercase();
 
         let rule_files = detection::Detection::parse_rule_files(
             &level,
