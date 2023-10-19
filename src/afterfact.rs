@@ -1855,6 +1855,8 @@ mod tests {
     use crate::detections::message::DetectInfo;
     use crate::detections::utils;
     use crate::options::profile::{load_profile, Profile};
+    use aho_corasick::AhoCorasickBuilder;
+    use aho_corasick::MatchKind;
     use chrono::NaiveDateTime;
     use chrono::{Local, TimeZone, Utc};
     use compact_str::CompactString;
@@ -3355,8 +3357,37 @@ mod tests {
                 Profile::AllFieldInfo(test_recinfo.into()),
             ),
         ];
-        assert_eq!(_get_serialized_disp_output(&data, true), expect_header);
-        assert_eq!(_get_serialized_disp_output(&data, false), expect_no_header);
+        let output_replaced_maps: HashMap<&str, &str> =
+            HashMap::from_iter(vec![("🛂r", "\r"), ("🛂n", "\n"), ("🛂t", "\t")]);
+        let mut removed_replaced_maps: HashMap<&str, &str> =
+            HashMap::from_iter(vec![("\n", " "), ("\r", " "), ("\t", " ")]);
+        let output_replacer = AhoCorasickBuilder::new()
+            .match_kind(MatchKind::LeftmostLongest)
+            .build(output_replaced_maps.keys())
+            .unwrap();
+        let output_remover = AhoCorasickBuilder::new()
+            .match_kind(MatchKind::LeftmostLongest)
+            .build(removed_replaced_maps.keys())
+            .unwrap();
+
+        assert_eq!(
+            _get_serialized_disp_output(
+                &data,
+                true,
+                (&output_replacer, &output_replaced_maps),
+                (&output_remover, &removed_replaced_maps)
+            ),
+            expect_header
+        );
+        assert_eq!(
+            _get_serialized_disp_output(
+                &data,
+                false,
+                (&output_replacer, &output_replaced_maps),
+                (&output_remover, &removed_replaced_maps)
+            ),
+            expect_no_header
+        );
     }
 
     fn check_hashmap_data(
