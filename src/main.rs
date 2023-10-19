@@ -1071,8 +1071,8 @@ impl App {
                     stored_static.output_option.as_mut().unwrap().exclude_tag =
                         Some(exclude_tags.to_owned());
                 }
-                println!();
             }
+            println!();
             println!("Loading detection rules. Please wait.");
             println!();
         }
