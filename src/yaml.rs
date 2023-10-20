@@ -311,8 +311,8 @@ impl ParseYaml {
             if let Some(s) = yaml_doc["status"].as_str() {
                 // excluded status optionで指定されたstatusとinclude_status optionで指定されたstatus以外のルールは除外する
                 if self.exclude_status.contains(&s.to_string())
-                    || (!is_contained_include_status_all_allowed
-                        && stored_static.include_status.contains(s))
+                    || !(is_contained_include_status_all_allowed
+                        || stored_static.include_status.contains(s))
                 {
                     up_rule_load_cnt("excluded", rule_id.unwrap_or(&String::default()));
                     return Option::None;
