@@ -1056,7 +1056,7 @@ impl App {
                     .interact()
                     .unwrap();
                 // If no is selected, then add "--exclude-tags detection.emerging_threats"
-                if et_rules_load_flag {
+                if !et_rules_load_flag {
                     exclude_tags.push("detection.emerging_threats".into());
                 }
                 let th_rules_load_flag = Confirm::with_theme(&ColorfulTheme::default())
@@ -1066,7 +1066,7 @@ impl App {
                     .interact()
                     .unwrap();
                 // If no is selected, then add "--exclude-tags detection.threat_hunting"
-                if th_rules_load_flag {
+                if !th_rules_load_flag {
                     exclude_tags.push("detection.threat_hunting".into());
                 }
                 if !exclude_tags.is_empty() {
