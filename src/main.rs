@@ -1010,7 +1010,7 @@ impl App {
             || stored_static.logon_summary_flag
             || stored_static.search_flag
             || stored_static.computer_metrics_flag
-            || stored_static.output_option.as_ref().unwrap().no_ask_flag)
+            || stored_static.output_option.as_ref().unwrap().no_wizard)
         {
             println!("Scan wizard:");
             println!();
