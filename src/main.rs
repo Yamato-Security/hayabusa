@@ -1012,12 +1012,12 @@ impl App {
             || stored_static.computer_metrics_flag
             || stored_static.output_option.as_ref().unwrap().no_ask_flag)
         {
-            println!("Detection rule sets:");
+            println!("Scan wizard:");
             println!();
             let selections_status = &[
-                ("1. Core ( status: testing, stable | level: high, critical )", (vec!["testing", "stable"], "high")),
-                ("2. Core+ ( status: testing, stable | level: medium, high, critical )", (vec!["testing", "stable"], "medium")),
-                ("3. Core++ ( status: experimental, testing, stable | level: medium, high, critical )", (vec!["experimental", "testing", "stable"], "medium")),
+                ("1. Core ( status: test, stable | level: high, critical )", (vec!["testing", "stable"], "high")),
+                ("2. Core+ ( status: test, stable | level: medium, high, critical )", (vec!["testing", "stable"], "medium")),
+                ("3. Core++ ( status: experimental, test, stable | level: medium, high, critical )", (vec!["experimental", "testing", "stable"], "medium")),
                 ("4. All alert rules ( status: * | level: low+ )", (vec!["*"], "low")),
                 ("5. All event and alert rules ( status: * | level: informational+ )", (vec!["*"], "informational")),
             ];
@@ -1045,25 +1045,27 @@ impl App {
                 );
             }
 
-            // If other than "All alert rules" and "All event alert rules" are selected, ask questions about tag.
+            // If anything other than "4. All alert rules" or "5. All event and alert rules" was selected, ask questions about tags.
             if selected_index < 3 {
                 let mut output_option = stored_static.output_option.clone().unwrap();
                 let exclude_tags = output_option.exclude_tag.get_or_insert_with(Vec::new);
                 let et_rules_load_flag = Confirm::with_theme(&ColorfulTheme::default())
-                    .with_prompt("Include Emerging Threats rules?(Y/n):")
+                    .with_prompt("Include Emerging Threats rules?")
                     .default(true)
                     .show_default(true)
                     .interact()
                     .unwrap();
+                // If no is selected, then add "--exclude-tags detection.emerging_threats"
                 if et_rules_load_flag {
                     exclude_tags.push("detection.emerging_threats".into());
                 }
                 let th_rules_load_flag = Confirm::with_theme(&ColorfulTheme::default())
-                    .with_prompt("Include Threat Hunting rules?(y/N):")
+                    .with_prompt("Include Threat Hunting rules?")
                     .default(false)
                     .show_default(true)
                     .interact()
                     .unwrap();
+                // If no is selected, then add "--exclude-tags detection.threat_hunting"
                 if th_rules_load_flag {
                     exclude_tags.push("detection.threat_hunting".into());
                 }
