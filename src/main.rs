@@ -1015,9 +1015,9 @@ impl App {
             println!("Scan wizard:");
             println!();
             let selections_status = &[
-                ("1. Core ( status: test, stable | level: high, critical )", (vec!["testing", "stable"], "high")),
-                ("2. Core+ ( status: test, stable | level: medium, high, critical )", (vec!["testing", "stable"], "medium")),
-                ("3. Core++ ( status: experimental, test, stable | level: medium, high, critical )", (vec!["experimental", "testing", "stable"], "medium")),
+                ("1. Core ( status: test, stable | level: high, critical )", (vec!["test", "stable"], "high")),
+                ("2. Core+ ( status: test, stable | level: medium, high, critical )", (vec!["test", "stable"], "medium")),
+                ("3. Core++ ( status: experimental, test, stable | level: medium, high, critical )", (vec!["experimental", "test", "stable"], "medium")),
                 ("4. All alert rules ( status: * | level: low+ )", (vec!["*"], "low")),
                 ("5. All event and alert rules ( status: * | level: informational+ )", (vec!["*"], "informational")),
             ];
