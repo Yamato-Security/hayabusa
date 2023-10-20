@@ -2938,6 +2938,7 @@ mod tests {
                 eid_filter: false,
                 include_eid: None,
                 exclude_eid: None,
+                no_wizard: true,
             })),
             debug: false,
         }));
