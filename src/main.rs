@@ -1122,8 +1122,11 @@ impl App {
             .as_mut()
             .unwrap()
             .rap_check_point("Rule Parse Processing Time");
-
-        if rule_files.is_empty() {
+        let unused_rules_option = stored_static.logon_summary_flag
+            || stored_static.search_flag
+            || stored_static.computer_metrics_flag
+            || stored_static.metrics_flag;
+        if !unused_rules_option && rule_files.is_empty() {
             AlertMessage::alert(
                 "No rules were loaded. Please download the latest rules with the update-rules command.\r\n",
             )
