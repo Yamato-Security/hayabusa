@@ -1478,7 +1478,7 @@ pub struct OutputOption {
     pub remove_duplicate_detections: bool,
 
     /// Do not ask questions. Scan for all events and alerts.
-    #[arg(help_heading = Some("General Options"), short = 'a', long = "no-asking", display_order = 400)]
+    #[arg(help_heading = Some("General Options"), short = 'w', long = "no-wizard", display_order = 400)]
     pub no_ask_flag: bool,
 }
 
