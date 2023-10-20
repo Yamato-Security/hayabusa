@@ -492,7 +492,9 @@ mod tests {
     use crate::filter;
     use crate::yaml;
     use crate::yaml::RuleExclude;
+    use compact_str::CompactString;
     use hashbrown::HashMap;
+    use hashbrown::HashSet;
     use std::path::Path;
     use yaml_rust::YamlLoader;
 
@@ -746,7 +748,8 @@ mod tests {
     #[test]
     fn test_none_exclude_rules_file() {
         let path = Path::new("test_files/rules/yaml");
-        let dummy_stored_static = create_dummy_stored_static();
+        let mut dummy_stored_static = create_dummy_stored_static();
+        dummy_stored_static.include_status = HashSet::from_iter(vec![CompactString::from("*")]);
         let mut yaml = yaml::ParseYaml::new(&dummy_stored_static);
         let exclude_ids = RuleExclude::new();
         yaml.read_dir(path, "", "", &exclude_ids, &dummy_stored_static)
@@ -756,7 +759,8 @@ mod tests {
     #[test]
     fn test_exclude_deprecated_rules_file() {
         let path = Path::new("test_files/rules/deprecated");
-        let dummy_stored_static = create_dummy_stored_static();
+        let mut dummy_stored_static = create_dummy_stored_static();
+        dummy_stored_static.include_status = HashSet::from_iter(vec![CompactString::from("*")]);
         let mut yaml = yaml::ParseYaml::new(&dummy_stored_static);
         let exclude_ids = RuleExclude::new();
         yaml.read_dir(path, "", "", &exclude_ids, &dummy_stored_static)
@@ -770,7 +774,8 @@ mod tests {
     #[test]
     fn test_exclude_unsupported_rules_file() {
         let path = Path::new("test_files/rules/unsupported");
-        let dummy_stored_static = create_dummy_stored_static();
+        let mut dummy_stored_static = create_dummy_stored_static();
+        dummy_stored_static.include_status = HashSet::from_iter(vec![CompactString::from("*")]);
         let mut yaml = yaml::ParseYaml::new(&dummy_stored_static);
         let exclude_ids = RuleExclude::new();
         yaml.read_dir(path, "", "", &exclude_ids, &dummy_stored_static)
