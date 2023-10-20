@@ -4,7 +4,7 @@
 
 **Enhancements:**
 
-- Added a prompt to ask users which Sigma rules they want to enable by default. Add the `-a, --no-asking` option to run Hayabusa in the traditional way. (Scan for all events and alerts). (#1188) (@hitenkoku)
+- Added a scan wizard to help new users choose which rules they want to enable. Add the `-w, --no-wizard` option to run Hayabusa in the traditional way. (Scan for all events and alerts, and customize options manually.) (#1188) (@hitenkoku)
 
 **Bug Fixes:**
 
