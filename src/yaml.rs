@@ -307,6 +307,21 @@ impl ParseYaml {
                 }
             };
 
+            // 指定されたレベルより低いルールは無視する
+            let doc_level = &yaml_doc["level"]
+                .as_str()
+                .unwrap_or("informational")
+                .to_uppercase();
+            let doc_level_num = self.level_map.get(doc_level).unwrap_or(&1);
+            let args_level_num = self.level_map.get(min_level).unwrap_or(&1);
+            let target_level_num = self.level_map.get(target_level).unwrap_or(&0);
+            if doc_level_num < args_level_num
+                || (target_level_num != &0_u128 && doc_level_num != target_level_num)
+            {
+                up_rule_load_cnt("excluded", rule_id.unwrap_or(&String::default()));
+                return Option::None;
+            }
+
             let status = yaml_doc["status"].as_str();
             if let Some(s) = yaml_doc["status"].as_str() {
                 // excluded status optionで指定されたstatusとinclude_status optionで指定されたstatus以外のルールは除外する
@@ -455,20 +470,6 @@ impl ParseYaml {
 
             if stored_static.verbose_flag {
                 println!("Loaded rule: {filepath}");
-            }
-
-            // 指定されたレベルより低いルールは無視する
-            let doc_level = &yaml_doc["level"]
-                .as_str()
-                .unwrap_or("informational")
-                .to_uppercase();
-            let doc_level_num = self.level_map.get(doc_level).unwrap_or(&1);
-            let args_level_num = self.level_map.get(min_level).unwrap_or(&1);
-            let target_level_num = self.level_map.get(target_level).unwrap_or(&0);
-            if doc_level_num < args_level_num
-                || (target_level_num != &0_u128 && doc_level_num != target_level_num)
-            {
-                return Option::None;
             }
 
             Option::Some((filepath, yaml_doc))
