@@ -1196,6 +1196,14 @@ pub struct PivotKeywordOption {
     #[arg(help_heading = Some("Filtering"), long = "exclude-status", value_name = "STATUS...", requires="no_wizard", use_value_delimiter = true, value_delimiter = ',', display_order = 316)]
     pub exclude_status: Option<Vec<String>>,
 
+    /// Only load rules with specific tags (ex: attack.execution,attack.discovery)
+    #[arg(help_heading = Some("Filtering"), long = "include-tag", value_name = "TAG...", requires="no_wizard", conflicts_with = "exclude_tag", use_value_delimiter = true, value_delimiter = ',', display_order = 353)]
+    pub include_tag: Option<Vec<String>>,
+
+    /// Do not load rules with specific tags (ex: sysmon)
+    #[arg(help_heading = Some("Filtering"), long = "exclude-tag", value_name = "TAG...", requires="no_wizard", conflicts_with = "include_tag", use_value_delimiter = true, value_delimiter = ',', display_order = 316)]
+    pub exclude_tag: Option<Vec<String>>,
+
     /// Minimum level for rules to load (default: informational)
     #[arg(
         help_heading = Some("Filtering"),
@@ -2145,8 +2153,8 @@ fn extract_output_options(config: &Config) -> Option<OutputOption> {
             enable_unsupported_rules: option.enable_unsupported_rules,
             clobber: option.clobber,
             proven_rules: false,
-            include_tag: None,
-            exclude_tag: None,
+            include_tag: option.include_tag.clone(),
+            exclude_tag: option.exclude_tag.clone(),
             include_category: None,
             exclude_category: None,
             include_eid: option.include_eid.clone(),
@@ -2154,7 +2162,7 @@ fn extract_output_options(config: &Config) -> Option<OutputOption> {
             no_field: false,
             remove_duplicate_data: false,
             remove_duplicate_detections: false,
-            no_wizard: true,
+            no_wizard: option.no_wizard,
         }),
         Action::EidMetrics(option) => Some(OutputOption {
             input_args: option.input_args.clone(),
@@ -2939,6 +2947,8 @@ mod tests {
                 include_eid: None,
                 exclude_eid: None,
                 no_wizard: true,
+                include_tag: None,
+                exclude_tag: None,
             })),
             debug: false,
         }));
