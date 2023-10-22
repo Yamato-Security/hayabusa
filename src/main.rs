@@ -1035,15 +1035,14 @@ impl App {
             ));
             stored_static.output_option.as_mut().unwrap().min_level =
                 selections_status[selected_index].1 .1.into();
-            if selected_index <= 3 {
-                stored_static.include_status.extend(
-                    selections_status[selected_index]
-                        .1
-                         .0
-                        .iter()
-                        .map(|x| x.to_owned().into()),
-                );
-            }
+
+            stored_static.include_status.extend(
+                selections_status[selected_index]
+                    .1
+                     .0
+                    .iter()
+                    .map(|x| x.to_owned().into()),
+            );
 
             // If anything other than "4. All alert rules" or "5. All event and alert rules" was selected, ask questions about tags.
             if selected_index < 3 {
