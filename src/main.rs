@@ -8,12 +8,14 @@ use bytesize::ByteSize;
 use chrono::{DateTime, Datelike, Local, NaiveDateTime, Utc};
 use clap::Command;
 use compact_str::CompactString;
+use dialoguer::Confirm;
+use dialoguer::{theme::ColorfulTheme, Select};
 use evtx::{EvtxParser, ParserSettings, RecordAllocation};
 use hashbrown::{HashMap, HashSet};
 use hayabusa::debug::checkpoint_process_timer::CHECKPOINT;
 use hayabusa::detections::configs::{
-    load_pivot_keywords, Action, ConfigReader, EventInfoConfig, EventKeyAliasConfig, StoredStatic,
-    TargetEventTime, TargetIds, CURRENT_EXE_PATH, STORED_EKEY_ALIAS, STORED_STATIC,
+    load_pivot_keywords, Action, ConfigReader, EventKeyAliasConfig, StoredStatic, TargetEventTime,
+    TargetIds, CURRENT_EXE_PATH, STORED_EKEY_ALIAS, STORED_STATIC,
 };
 use hayabusa::detections::detection::{self, EvtxRecordInfo};
 use hayabusa::detections::message::{AlertMessage, ERROR_LOG_STACK};
@@ -39,6 +41,7 @@ use libmimalloc_sys::mi_stats_print_out;
 use mimalloc::MiMalloc;
 use nested::Nested;
 use serde_json::{Map, Value};
+use std::borrow::BorrowMut;
 use std::ffi::{OsStr, OsString};
 use std::fmt::Display;
 use std::fmt::Write as _;
@@ -236,22 +239,23 @@ impl App {
             HashSet::default()
         };
 
-        let output_saved_file = |output_path: &Option<PathBuf>, message: &str| {
-            if let Some(path) = output_path {
-                if let Ok(metadata) = fs::metadata(path) {
-                    let output_saved_str = format!(
-                        "{message}: {} ({})",
-                        path.display(),
-                        ByteSize::b(metadata.len()).to_string_as(false)
-                    );
-                    output_and_data_stack_for_html(
-                        &output_saved_str,
-                        "General Overview {#general_overview}",
-                        stored_static.html_report_flag,
-                    );
+        let output_saved_file =
+            |output_path: &Option<PathBuf>, message: &str, html_report_flag: &bool| {
+                if let Some(path) = output_path {
+                    if let Ok(metadata) = fs::metadata(path) {
+                        let output_saved_str = format!(
+                            "{message}: {} ({})",
+                            path.display(),
+                            ByteSize::b(metadata.len()).to_string_as(false)
+                        );
+                        output_and_data_stack_for_html(
+                            &output_saved_str,
+                            "General Overview {#general_overview}",
+                            html_report_flag,
+                        );
+                    }
                 }
-            }
-        };
+            };
 
         match &stored_static.config.action.as_ref().unwrap() {
             Action::CsvTimeline(_) | Action::JsonTimeline(_) => {
@@ -301,7 +305,11 @@ impl App {
                 self.analysis_start(&target_extensions, &time_filter, stored_static);
 
                 output_profile_name(&stored_static.output_option, false);
-                output_saved_file(&stored_static.output_path, "Saved file");
+                output_saved_file(
+                    &stored_static.output_path,
+                    "Saved file",
+                    &stored_static.html_report_flag,
+                );
                 println!();
                 if stored_static.html_report_flag {
                     let html_str = HTML_REPORTER.read().unwrap().to_owned().create_html();
@@ -351,7 +359,11 @@ impl App {
                     if target_path.ends_with("-failed.csv") {
                         msg = "Failed logon results"
                     }
-                    output_saved_file(&Some(Path::new(target_path).to_path_buf()), msg);
+                    output_saved_file(
+                        &Some(Path::new(target_path).to_path_buf()),
+                        msg,
+                        &stored_static.html_report_flag,
+                    );
                 }
                 println!();
             }
@@ -370,7 +382,11 @@ impl App {
                     }
                 }
                 self.analysis_start(&target_extensions, &time_filter, stored_static);
-                output_saved_file(&stored_static.output_path, "Saved results");
+                output_saved_file(
+                    &stored_static.output_path,
+                    "Saved results",
+                    &stored_static.html_report_flag,
+                );
                 println!();
             }
             Action::ComputerMetrics(_) => {
@@ -388,7 +404,11 @@ impl App {
                     }
                 }
                 self.analysis_start(&target_extensions, &time_filter, stored_static);
-                output_saved_file(&stored_static.output_path, "Saved results");
+                output_saved_file(
+                    &stored_static.output_path,
+                    "Saved results",
+                    &stored_static.html_report_flag,
+                );
                 println!();
             }
             Action::PivotKeywordsList(_) => {
@@ -704,7 +724,7 @@ impl App {
         output_and_data_stack_for_html(
             &elapsed_output_str,
             "General Overview {#general_overview}",
-            stored_static.html_report_flag,
+            &stored_static.html_report_flag,
         );
 
         // Qオプションを付けた場合もしくはパースのエラーがない場合はerrorのstackが0となるのでエラーログファイル自体が生成されない。
@@ -728,7 +748,7 @@ impl App {
         &mut self,
         target_extensions: &HashSet<String>,
         time_filter: &TargetEventTime,
-        stored_static: &StoredStatic,
+        stored_static: &mut StoredStatic,
     ) {
         if stored_static.output_option.is_none() {
         } else if stored_static
@@ -746,9 +766,7 @@ impl App {
             self.analysis_files(
                 live_analysis_list.unwrap(),
                 time_filter,
-                &stored_static.event_timeline_config,
-                &stored_static.target_eventids,
-                stored_static,
+                stored_static.borrow_mut(),
             );
         } else if let Some(directory) = &stored_static
             .output_option
@@ -766,13 +784,7 @@ impl App {
                 AlertMessage::alert("No .evtx files were found.").ok();
                 return;
             }
-            self.analysis_files(
-                evtx_files,
-                time_filter,
-                &stored_static.event_timeline_config,
-                &stored_static.target_eventids,
-                stored_static,
-            );
+            self.analysis_files(evtx_files, time_filter, stored_static.borrow_mut());
         } else {
             // directory, live_analysis以外はfilepathの指定の場合
             if let Some(filepath) = &stored_static
@@ -821,9 +833,7 @@ impl App {
                 self.analysis_files(
                     vec![check_path.to_path_buf()],
                     time_filter,
-                    &stored_static.event_timeline_config,
-                    &stored_static.target_eventids,
-                    stored_static,
+                    stored_static.borrow_mut(),
                 );
             }
         }
@@ -954,16 +964,10 @@ impl App {
         &mut self,
         evtx_files: Vec<PathBuf>,
         time_filter: &TargetEventTime,
-        event_timeline_config: &EventInfoConfig,
-        target_event_ids: &TargetIds,
-        stored_static: &StoredStatic,
+        stored_static: &mut StoredStatic,
     ) {
-        let level = stored_static
-            .output_option
-            .as_ref()
-            .unwrap()
-            .min_level
-            .to_uppercase();
+        let event_timeline_config = &stored_static.event_timeline_config;
+        let target_event_ids = &stored_static.target_eventids;
         let target_level = stored_static
             .output_option
             .as_ref()
@@ -979,7 +983,6 @@ impl App {
             true,
         )
         .ok();
-
         let mut total_file_size = ByteSize::b(0);
         for file_path in &evtx_files {
             let file_size = match fs::metadata(file_path) {
@@ -1002,23 +1005,111 @@ impl App {
         let total_size_output = format!("Total file size: {}", total_file_size.to_string_as(false));
         println!("{total_size_output}");
         println!();
+        let mut status_append_output = None;
         if !(stored_static.metrics_flag
             || stored_static.logon_summary_flag
             || stored_static.search_flag
-            || stored_static.computer_metrics_flag)
+            || stored_static.computer_metrics_flag
+            || stored_static.output_option.as_ref().unwrap().no_wizard)
         {
-            println!("Loading detection rules. Please wait.");
+            println!("Scan wizard:");
             println!();
+            let selections_status = &[
+                ("1. Core ( status: test, stable | level: high, critical )", (vec!["test", "stable"], "high")),
+                ("2. Core+ ( status: test, stable | level: medium, high, critical )", (vec!["test", "stable"], "medium")),
+                ("3. Core++ ( status: experimental, test, stable | level: medium, high, critical )", (vec!["experimental", "test", "stable"], "medium")),
+                ("4. All alert rules ( status: * | level: low+ )", (vec!["*"], "low")),
+                ("5. All event and alert rules ( status: * | level: informational+ )", (vec!["*"], "informational")),
+            ];
+
+            let selections = selections_status.iter().map(|x| x.0).collect_vec();
+            let selected_index = Select::with_theme(&ColorfulTheme::default())
+                .with_prompt("Which set of detection rules would you like to load?")
+                .default(0)
+                .items(selections.as_slice())
+                .interact()
+                .unwrap();
+            status_append_output = Some(format!(
+                "- selected detection rule sets: {}",
+                selections_status[selected_index].0
+            ));
+            stored_static.output_option.as_mut().unwrap().min_level =
+                selections_status[selected_index].1 .1.into();
+
+            stored_static.include_status.extend(
+                selections_status[selected_index]
+                    .1
+                     .0
+                    .iter()
+                    .map(|x| x.to_owned().into()),
+            );
+
+            // If anything other than "4. All alert rules" or "5. All event and alert rules" was selected, ask questions about tags.
+            if selected_index < 3 {
+                let mut output_option = stored_static.output_option.clone().unwrap();
+                let exclude_tags = output_option.exclude_tag.get_or_insert_with(Vec::new);
+                let et_rules_load_flag = Confirm::with_theme(&ColorfulTheme::default())
+                    .with_prompt("Include Emerging Threats rules?")
+                    .default(true)
+                    .show_default(true)
+                    .interact()
+                    .unwrap();
+                // If no is selected, then add "--exclude-tags detection.emerging_threats"
+                if !et_rules_load_flag {
+                    exclude_tags.push("detection.emerging_threats".into());
+                }
+                let th_rules_load_flag = Confirm::with_theme(&ColorfulTheme::default())
+                    .with_prompt("Include Threat Hunting rules?")
+                    .default(false)
+                    .show_default(true)
+                    .interact()
+                    .unwrap();
+                // If no is selected, then add "--exclude-tags detection.threat_hunting"
+                if !th_rules_load_flag {
+                    exclude_tags.push("detection.threat_hunting".into());
+                }
+                if !exclude_tags.is_empty() {
+                    stored_static.output_option.as_mut().unwrap().exclude_tag =
+                        Some(exclude_tags.to_owned());
+                }
+            }
+        } else {
+            stored_static.include_status.insert("*".into());
         }
+        println!();
+        println!("Loading detection rules. Please wait.");
+        println!();
 
         if stored_static.html_report_flag {
             let mut output_data = Nested::<String>::new();
-            output_data.extend(vec![
+            let mut html_report_data = Nested::<String>::from_iter(vec![
                 format!("- Analyzed event files: {}", evtx_files.len()),
                 format!("- {total_size_output}"),
             ]);
+            if let Some(status_report) = status_append_output {
+                html_report_data.push(format!("- Selected deteciton rule set: {status_report}"));
+            }
+            let exclude_tags_data = stored_static
+                .output_option
+                .as_ref()
+                .unwrap()
+                .exclude_tag
+                .clone()
+                .unwrap_or_default()
+                .join(" / ");
+            if !exclude_tags_data.is_empty() {
+                html_report_data.push(format!("- Excluded tags: {}", exclude_tags_data));
+            }
+            output_data.extend(html_report_data.iter());
             htmlreport::add_md_data("General Overview #{general_overview}", output_data);
         }
+
+        let level = stored_static
+            .output_option
+            .as_ref()
+            .unwrap()
+            .min_level
+            .to_uppercase();
 
         let rule_files = detection::Detection::parse_rule_files(
             &level,
@@ -1032,8 +1123,11 @@ impl App {
             .as_mut()
             .unwrap()
             .rap_check_point("Rule Parse Processing Time");
-
-        if rule_files.is_empty() {
+        let unused_rules_option = stored_static.logon_summary_flag
+            || stored_static.search_flag
+            || stored_static.computer_metrics_flag
+            || stored_static.metrics_flag;
+        if !unused_rules_option && rule_files.is_empty() {
             AlertMessage::alert(
                 "No rules were loaded. Please download the latest rules with the update-rules command.\r\n",
             )
@@ -1736,6 +1830,7 @@ mod tests {
                     no_field: false,
                     remove_duplicate_data: false,
                     remove_duplicate_detections: false,
+                    no_wizard: true,
                 },
                 geo_ip: None,
                 output: None,
@@ -1897,6 +1992,7 @@ mod tests {
                 no_field: false,
                 remove_duplicate_data: false,
                 remove_duplicate_detections: false,
+                no_wizard: true,
             },
             geo_ip: None,
             output: Some(Path::new("overwrite.csv").to_path_buf()),
@@ -1979,6 +2075,7 @@ mod tests {
                 no_field: false,
                 remove_duplicate_data: false,
                 remove_duplicate_detections: false,
+                no_wizard: true,
             },
             geo_ip: None,
             output: Some(Path::new("overwrite.csv").to_path_buf()),
@@ -2059,6 +2156,7 @@ mod tests {
                 no_field: false,
                 remove_duplicate_data: false,
                 remove_duplicate_detections: false,
+                no_wizard: true,
             },
             geo_ip: None,
             output: Some(Path::new("overwrite.json").to_path_buf()),
@@ -2141,6 +2239,7 @@ mod tests {
                 no_field: false,
                 remove_duplicate_data: false,
                 remove_duplicate_detections: false,
+                no_wizard: true,
             },
             geo_ip: None,
             output: Some(Path::new("overwrite.json").to_path_buf()),

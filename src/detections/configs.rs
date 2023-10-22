@@ -81,6 +81,7 @@ pub struct StoredStatic {
     pub exclude_computer: HashSet<CompactString>,
     pub include_eid: HashSet<CompactString>,
     pub exclude_eid: HashSet<CompactString>,
+    pub include_status: HashSet<CompactString>, // 読み込み対象ルールのステータスのセット。*はすべてのステータスを読み込む
     pub field_data_map: Option<FieldDataMap>,
     pub enable_recover_records: bool,
     pub timeline_offset: Option<String>,
@@ -630,6 +631,7 @@ impl StoredStatic {
             field_data_map,
             enable_recover_records,
             timeline_offset,
+            include_status: HashSet::new(),
         };
         ret.profiles = load_profile(
             check_setting_path(
@@ -1191,8 +1193,16 @@ pub struct PivotKeywordOption {
     pub enable_unsupported_rules: bool,
 
     /// Do not load rules according to status (ex: experimental) (ex: stable,test)
-    #[arg(help_heading = Some("Filtering"), long = "exclude-status", value_name = "STATUS...", use_value_delimiter = true, value_delimiter = ',', display_order = 316)]
+    #[arg(help_heading = Some("Filtering"), long = "exclude-status", value_name = "STATUS...", requires="no_wizard", use_value_delimiter = true, value_delimiter = ',', display_order = 316)]
     pub exclude_status: Option<Vec<String>>,
+
+    /// Only load rules with specific tags (ex: attack.execution,attack.discovery)
+    #[arg(help_heading = Some("Filtering"), long = "include-tag", value_name = "TAG...", requires="no_wizard", conflicts_with = "exclude_tag", use_value_delimiter = true, value_delimiter = ',', display_order = 353)]
+    pub include_tag: Option<Vec<String>>,
+
+    /// Do not load rules with specific tags (ex: sysmon)
+    #[arg(help_heading = Some("Filtering"), long = "exclude-tag", value_name = "TAG...", requires="no_wizard", conflicts_with = "include_tag", use_value_delimiter = true, value_delimiter = ',', display_order = 316)]
+    pub exclude_tag: Option<Vec<String>>,
 
     /// Minimum level for rules to load (default: informational)
     #[arg(
@@ -1202,6 +1212,7 @@ pub struct PivotKeywordOption {
         default_value = "informational",
         hide_default_value = true,
         value_name = "LEVEL",
+        requires="no_wizard",
         conflicts_with = "exact_level",
         display_order = 390
     )]
@@ -1213,6 +1224,7 @@ pub struct PivotKeywordOption {
         short = 'e',
         long = "exact-level",
         value_name = "LEVEL",
+        requires="no_wizard",
         conflicts_with = "min_level",
         display_order = 313
     )]
@@ -1248,6 +1260,10 @@ pub struct PivotKeywordOption {
     /// Overwrite files when saving
     #[arg(help_heading = Some("General Options"), short='C', long = "clobber", display_order = 290, requires = "output")]
     pub clobber: bool,
+
+    /// Do not ask questions. Scan for all events and alerts.
+    #[arg(help_heading = Some("General Options"), short = 'w', long = "no-wizard", display_order = 400)]
+    pub no_wizard: bool,
 }
 
 #[derive(Args, Clone, Debug)]
@@ -1329,11 +1345,11 @@ pub struct OutputOption {
     pub enable_unsupported_rules: bool,
 
     /// Do not load rules according to status (ex: experimental) (ex: stable,test)
-    #[arg(help_heading = Some("Filtering"), long = "exclude-status", value_name = "STATUS...", use_value_delimiter = true, value_delimiter = ',', display_order = 316)]
+    #[arg(help_heading = Some("Filtering"), long = "exclude-status", value_name = "STATUS...", requires="no_wizard", use_value_delimiter = true, value_delimiter = ',', display_order = 316)]
     pub exclude_status: Option<Vec<String>>,
 
     /// Only load rules with specific tags (ex: attack.execution,attack.discovery)
-    #[arg(help_heading = Some("Filtering"), long = "include-tag", value_name = "TAG...", conflicts_with = "exclude_tag", use_value_delimiter = true, value_delimiter = ',', display_order = 353)]
+    #[arg(help_heading = Some("Filtering"), long = "include-tag", value_name = "TAG...", requires="no_wizard", conflicts_with = "exclude_tag", use_value_delimiter = true, value_delimiter = ',', display_order = 353)]
     pub include_tag: Option<Vec<String>>,
 
     /// Only load rules with specified logsource categories (ex: process_creation,pipe_created)
@@ -1350,6 +1366,7 @@ pub struct OutputOption {
         short = 'm',
         long = "min-level",
         default_value = "informational",
+        requires="no_wizard",
         hide_default_value = true,
         value_name = "LEVEL",
         display_order = 390,
@@ -1362,6 +1379,7 @@ pub struct OutputOption {
         short = 'e',
         long = "exact-level",
         value_name = "LEVEL",
+        requires="no_wizard",
         conflicts_with = "min-level",
         display_order = 313
     )]
@@ -1388,7 +1406,7 @@ pub struct OutputOption {
     pub proven_rules: bool,
 
     /// Do not load rules with specific tags (ex: sysmon)
-    #[arg(help_heading = Some("Filtering"), long = "exclude-tag", value_name = "TAG...", conflicts_with = "include_tag", use_value_delimiter = true, value_delimiter = ',', display_order = 316)]
+    #[arg(help_heading = Some("Filtering"), long = "exclude-tag", value_name = "TAG...", requires="no_wizard", conflicts_with = "include_tag", use_value_delimiter = true, value_delimiter = ',', display_order = 316)]
     pub exclude_tag: Option<Vec<String>>,
 
     /// Scan only specified EIDs for faster speed (ex: 1) (ex: 1,4688)
@@ -1474,6 +1492,10 @@ pub struct OutputOption {
     /// Remove duplicate detections (default: disabled)
     #[arg(help_heading = Some("Output"), short = 'X', long = "remove-duplicate-detections", display_order = 441)]
     pub remove_duplicate_detections: bool,
+
+    /// Do not ask questions. Scan for all events and alerts.
+    #[arg(help_heading = Some("General Options"), short = 'w', long = "no-wizard", display_order = 400)]
+    pub no_wizard: bool,
 }
 
 #[derive(Copy, Args, Clone, Debug)]
@@ -2131,8 +2153,8 @@ fn extract_output_options(config: &Config) -> Option<OutputOption> {
             enable_unsupported_rules: option.enable_unsupported_rules,
             clobber: option.clobber,
             proven_rules: false,
-            include_tag: None,
-            exclude_tag: None,
+            include_tag: option.include_tag.clone(),
+            exclude_tag: option.exclude_tag.clone(),
             include_category: None,
             exclude_category: None,
             include_eid: option.include_eid.clone(),
@@ -2140,6 +2162,7 @@ fn extract_output_options(config: &Config) -> Option<OutputOption> {
             no_field: false,
             remove_duplicate_data: false,
             remove_duplicate_detections: false,
+            no_wizard: option.no_wizard,
         }),
         Action::EidMetrics(option) => Some(OutputOption {
             input_args: option.input_args.clone(),
@@ -2177,6 +2200,7 @@ fn extract_output_options(config: &Config) -> Option<OutputOption> {
             no_field: false,
             remove_duplicate_data: false,
             remove_duplicate_detections: false,
+            no_wizard: true,
         }),
         Action::LogonSummary(option) => Some(OutputOption {
             input_args: option.input_args.clone(),
@@ -2214,6 +2238,7 @@ fn extract_output_options(config: &Config) -> Option<OutputOption> {
             no_field: false,
             remove_duplicate_data: false,
             remove_duplicate_detections: false,
+            no_wizard: true,
         }),
         Action::ComputerMetrics(option) => Some(OutputOption {
             input_args: option.input_args.clone(),
@@ -2260,6 +2285,7 @@ fn extract_output_options(config: &Config) -> Option<OutputOption> {
             no_field: false,
             remove_duplicate_data: false,
             remove_duplicate_detections: false,
+            no_wizard: true,
         }),
         Action::Search(option) => Some(OutputOption {
             input_args: option.input_args.clone(),
@@ -2306,6 +2332,7 @@ fn extract_output_options(config: &Config) -> Option<OutputOption> {
             no_field: false,
             remove_duplicate_data: false,
             remove_duplicate_detections: false,
+            no_wizard: true,
         }),
         Action::SetDefaultProfile(option) => Some(OutputOption {
             input_args: InputOption {
@@ -2358,6 +2385,7 @@ fn extract_output_options(config: &Config) -> Option<OutputOption> {
             no_field: false,
             remove_duplicate_data: false,
             remove_duplicate_detections: false,
+            no_wizard: true,
         }),
         Action::UpdateRules(option) => Some(OutputOption {
             input_args: InputOption {
@@ -2410,6 +2438,7 @@ fn extract_output_options(config: &Config) -> Option<OutputOption> {
             no_field: false,
             remove_duplicate_data: false,
             remove_duplicate_detections: false,
+            no_wizard: true,
         }),
         _ => None,
     }
@@ -2658,6 +2687,7 @@ mod tests {
                     no_field: false,
                     remove_duplicate_data: false,
                     remove_duplicate_detections: false,
+                    no_wizard: true,
                 },
                 geo_ip: None,
                 output: None,
@@ -2729,6 +2759,7 @@ mod tests {
                     no_field: false,
                     remove_duplicate_data: false,
                     remove_duplicate_detections: false,
+                    no_wizard: true,
                 },
                 geo_ip: None,
                 output: None,
@@ -2915,6 +2946,9 @@ mod tests {
                 eid_filter: false,
                 include_eid: None,
                 exclude_eid: None,
+                no_wizard: true,
+                include_tag: None,
+                exclude_tag: None,
             })),
             debug: false,
         }));

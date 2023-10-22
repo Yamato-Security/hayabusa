@@ -76,6 +76,7 @@ impl ParseYaml {
         stored_static: &StoredStatic,
     ) -> io::Result<String> {
         let metadata = fs::metadata(path.as_ref());
+        let is_contained_include_status_all_allowed = stored_static.include_status.contains("*");
         if metadata.is_err() {
             let err_contents = if let Err(e) = metadata {
                 e.to_string()
@@ -306,10 +307,28 @@ impl ParseYaml {
                 }
             };
 
+            // 指定されたレベルより低いルールは無視する
+            let doc_level = &yaml_doc["level"]
+                .as_str()
+                .unwrap_or("informational")
+                .to_uppercase();
+            let doc_level_num = self.level_map.get(doc_level).unwrap_or(&1);
+            let args_level_num = self.level_map.get(min_level).unwrap_or(&1);
+            let target_level_num = self.level_map.get(target_level).unwrap_or(&0);
+            if doc_level_num < args_level_num
+                || (target_level_num != &0_u128 && doc_level_num != target_level_num)
+            {
+                up_rule_load_cnt("excluded", rule_id.unwrap_or(&String::default()));
+                return Option::None;
+            }
+
             let status = yaml_doc["status"].as_str();
             if let Some(s) = yaml_doc["status"].as_str() {
-                // excluded status optionで指定されたstatusを除外する
-                if self.exclude_status.contains(&s.to_string()) {
+                // excluded status optionで指定されたstatusとinclude_status optionで指定されたstatus以外のルールは除外する
+                if self.exclude_status.contains(&s.to_string())
+                    || !(is_contained_include_status_all_allowed
+                        || stored_static.include_status.contains(s))
+                {
                     up_rule_load_cnt("excluded", rule_id.unwrap_or(&String::default()));
                     return Option::None;
                 }
@@ -453,20 +472,6 @@ impl ParseYaml {
                 println!("Loaded rule: {filepath}");
             }
 
-            // 指定されたレベルより低いルールは無視する
-            let doc_level = &yaml_doc["level"]
-                .as_str()
-                .unwrap_or("informational")
-                .to_uppercase();
-            let doc_level_num = self.level_map.get(doc_level).unwrap_or(&1);
-            let args_level_num = self.level_map.get(min_level).unwrap_or(&1);
-            let target_level_num = self.level_map.get(target_level).unwrap_or(&0);
-            if doc_level_num < args_level_num
-                || (target_level_num != &0_u128 && doc_level_num != target_level_num)
-            {
-                return Option::None;
-            }
-
             Option::Some((filepath, yaml_doc))
         });
         self.files.extend(files);
@@ -488,7 +493,9 @@ mod tests {
     use crate::filter;
     use crate::yaml;
     use crate::yaml::RuleExclude;
+    use compact_str::CompactString;
     use hashbrown::HashMap;
+    use hashbrown::HashSet;
     use std::path::Path;
     use yaml_rust::YamlLoader;
 
@@ -549,6 +556,7 @@ mod tests {
                     no_field: false,
                     remove_duplicate_data: false,
                     remove_duplicate_detections: false,
+                    no_wizard: true,
                 },
                 geo_ip: None,
                 output: None,
@@ -741,7 +749,8 @@ mod tests {
     #[test]
     fn test_none_exclude_rules_file() {
         let path = Path::new("test_files/rules/yaml");
-        let dummy_stored_static = create_dummy_stored_static();
+        let mut dummy_stored_static = create_dummy_stored_static();
+        dummy_stored_static.include_status = HashSet::from_iter(vec![CompactString::from("*")]);
         let mut yaml = yaml::ParseYaml::new(&dummy_stored_static);
         let exclude_ids = RuleExclude::new();
         yaml.read_dir(path, "", "", &exclude_ids, &dummy_stored_static)
@@ -751,7 +760,8 @@ mod tests {
     #[test]
     fn test_exclude_deprecated_rules_file() {
         let path = Path::new("test_files/rules/deprecated");
-        let dummy_stored_static = create_dummy_stored_static();
+        let mut dummy_stored_static = create_dummy_stored_static();
+        dummy_stored_static.include_status = HashSet::from_iter(vec![CompactString::from("*")]);
         let mut yaml = yaml::ParseYaml::new(&dummy_stored_static);
         let exclude_ids = RuleExclude::new();
         yaml.read_dir(path, "", "", &exclude_ids, &dummy_stored_static)
@@ -765,7 +775,8 @@ mod tests {
     #[test]
     fn test_exclude_unsupported_rules_file() {
         let path = Path::new("test_files/rules/unsupported");
-        let dummy_stored_static = create_dummy_stored_static();
+        let mut dummy_stored_static = create_dummy_stored_static();
+        dummy_stored_static.include_status = HashSet::from_iter(vec![CompactString::from("*")]);
         let mut yaml = yaml::ParseYaml::new(&dummy_stored_static);
         let exclude_ids = RuleExclude::new();
         yaml.read_dir(path, "", "", &exclude_ids, &dummy_stored_static)

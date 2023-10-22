@@ -802,6 +802,7 @@ dependencies = [
  "crossbeam-utils",
  "csv",
  "dashmap",
+ "dialoguer",
  "downcast-rs",
  "evtx",
  "flate2",
