@@ -5,8 +5,8 @@
 **Enhancements:**
 
 - Added a scan wizard to help new users choose which rules they want to enable. Add the `-w, --no-wizard` option to run Hayabusa in the traditional way. (Scan for all events and alerts, and customize options manually.) (#1188) (@hitenkoku)
-- Added the `--include-tag` option to `pivot-keywords-list` command to only load rules with the specified `tags` field. (#1195) (@hitenkoku)
-- Added the `--exclude-tag` option to `pivot-keywords-list` commands to exclude rules with specific `tags` from being loaded. (#1195) (@hitenkoku)
+- Added the `--include-tag` option to the `pivot-keywords-list` command to only load rules with the specified `tags` field. (#1195) (@hitenkoku)
+- Added the `--exclude-tag` option to the `pivot-keywords-list` command to exclude rules with specific `tags` from being loaded. (#1195) (@hitenkoku)
 
 **Bug Fixes:**
 
