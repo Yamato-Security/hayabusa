@@ -1073,10 +1073,12 @@ impl App {
                         Some(exclude_tags.to_owned());
                 }
             }
-            println!();
-            println!("Loading detection rules. Please wait.");
-            println!();
+        } else {
+            stored_static.include_status.insert("*".into());
         }
+        println!();
+        println!("Loading detection rules. Please wait.");
+        println!();
 
         if stored_static.html_report_flag {
             let mut output_data = Nested::<String>::new();
