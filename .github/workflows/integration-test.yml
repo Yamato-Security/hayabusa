@@ -42,22 +42,22 @@ jobs:
         run: cd main && cargo run --release -- computer-metrics -d ../hayabusa-sample-evtx -q
 
       - name: csv-timeline
-        run: cd main && cargo run --release -- csv-timeline -d ../hayabusa-sample-evtx -o out.csv -q
+        run: cd main && cargo run --release -- csv-timeline -d ../hayabusa-sample-evtx -o out.csv -q -w
 
       - name: csv-timeline(-p super-verbose)
-        run: cd main && cargo run --release -- csv-timeline -d ../hayabusa-sample-evtx -o out-s.csv -p super-verbose -q
+        run: cd main && cargo run --release -- csv-timeline -d ../hayabusa-sample-evtx -o out-s.csv -p super-verbose -q -w
 
       - name: eid-metrics
         run: cd main && cargo run --release -- eid-metrics -d ../hayabusa-sample-evtx -q
 
       - name: json-timeline
-        run: cd main && cargo run --release -- json-timeline -d ../hayabusa-sample-evtx -o out.json -q
+        run: cd main && cargo run --release -- json-timeline -d ../hayabusa-sample-evtx -o out.json -q -w
 
       - name: json-timeline(-p super-verbose)
-        run: cd main && cargo run --release -- json-timeline -d ../hayabusa-sample-evtx -o out-s.json -p super-verbose -q
+        run: cd main && cargo run --release -- json-timeline -d ../hayabusa-sample-evtx -o out-s.json -p super-verbose -q -w
 
       - name: json-timeline(-L)
-        run: cd main && cargo run --release -- json-timeline -d ../hayabusa-sample-evtx -o out.jsonl -q -L
+        run: cd main && cargo run --release -- json-timeline -d ../hayabusa-sample-evtx -o out.jsonl -q -L -w
 
       - name: level-tuning
         run: cd main && cargo run --release -- level-tuning -f ./rules/config/level_tuning.txt -q
@@ -72,10 +72,10 @@ jobs:
         run: cd main && cargo run --release -- logon-summary -d ../hayabusa-sample-evtx -q
 
       - name: pivot-keywords-list
-        run: cd main && cargo run --release -- pivot-keywords-list -d ../hayabusa-sample-evtx -o p.csv -q
+        run: cd main && cargo run --release -- pivot-keywords-list -d ../hayabusa-sample-evtx -o key -q -w
 
       - name: search
-        run: cd main && cargo run --release -- search -d ../hayabusa-sample-evtx -k mimikatz -o p.csv -q
+        run: cd main && cargo run --release -- search -d ../hayabusa-sample-evtx -k mimikatz -o search.csv -q
 
       - name: set-default-profile
         run: cd main && cargo run --release -- set-default-profile -p verbose -q
