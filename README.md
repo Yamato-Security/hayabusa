@@ -67,6 +67,7 @@ Hayabusa is a **Windows event log fast forensics timeline generator** and **thre
   - [Linux Compiling Notes](#linux-compiling-notes)
   - [Cross-compiling Linux MUSL Binaries](#cross-compiling-linux-musl-binaries)
 - [Running Hayabusa](#running-hayabusa)
+  - [Scan Wizard](#scan-wizard)
   - [Caution: Anti-Virus/EDR Warnings and Slow Runtimes](#caution-anti-virusedr-warnings-and-slow-runtimes)
   - [Windows](#windows)
     - [Error when trying to scan a file or directory with a space in the path](#error-when-trying-to-scan-a-file-or-directory-with-a-space-in-the-path)
@@ -369,6 +370,14 @@ The MUSL binary will be created in the `./target/x86_64-unknown-linux-musl/relea
 MUSL binaries are are about 15% slower than the GNU binaries, however, they are more portable accross different versions and distributions of linux.
 
 # Running Hayabusa
+
+## Scan Wizard
+
+Commands like `csv-timeline` and `json-timeline` now have a scan wizard enabled by default.
+This is intended to help users easily choose which detection rules they want to enable according to their needs and preferences.
+The sets of detections rules to load are based off of the official lists in the Sigma project.
+Details are explained in [this blog post](https://blog.sigmahq.io/introducing-sigma-rule-packages-releases-76043ce42e81).
+You can easily turn off the wizard and use Hayabusa in its traditional way by adding the `-w, --no-wizard` option.
 
 ## Caution: Anti-Virus/EDR Warnings and Slow Runtimes
 
