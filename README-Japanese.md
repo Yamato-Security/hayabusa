@@ -146,7 +146,7 @@ Hayabusaは、日本の[Yamato Security](https://yamatosecurity.connpass.com/)�
 
 ### スレット(脅威)ハンティングと企業向けの広範囲なDFIR
 
-Hayabusaには現在、2300以上のSigmaルールと150以上のHayabusa検知ルールがあり、定期的にルールが追加されています。
+Hayabusaには現在、2500以上のSigmaルールと150以上のHayabusa検知ルールがあり、定期的にルールが追加されています。
 [Velociraptor](https://docs.velociraptor.app/)の[Hayabusa artifact](https://docs.velociraptor.app/exchange/artifacts/pages/windows.eventlogs.hayabusa/)を用いることで企業向けの広範囲なスレットハンティングだけでなくDFIR(デジタルフォレンジックとインシデントレスポンス)にも無料で利用することが可能です。
 この2つのオープンソースを組み合わせることで、SIEMが設定されていない環境でも実質的に遡及してSIEMを再現することができます。
 具体的な方法は[Eric Capuano](https://twitter.com/eric_capuano)の[こちら](https://www.youtube.com/watch?v=Q1IoGX--814)の動画で学ぶことができます。
@@ -250,6 +250,7 @@ JSON形式の結果を`jq`で解析する方法については、[こちら](/do
 * フィールドデータのマッピング (例: `0xc0000234` -> `ACCOUNT LOCKED`)
 * 空領域からのEvtxレコードカービング。
 * 出力時のイベント重複排除。(レコード復元が有効になっている場合や、バックアップされたevtxファイル、VSSから抽出されたevtxファイルなどが含まれている場合に便利。)
+* スキャン設定ウィザードにより、有効にするルールの選択が容易に。(誤検出を減らすためなど。）
 
 # ダウンロード
 
@@ -647,7 +648,9 @@ Filtering:
       --exclude-eid <EID...>            高速化のために特定のEIDをスキャンしない (例: 1) (例: 1,4688)
       --exclude-status <STATUS...>      読み込み対象外とするルール内でのステータス (例１: experimental) (例２: stable,test)
       --include-computer <COMPUTER...>  特定のコンピュータ名のみをスキャンする (例: ComputerA) (例: ComputerA,ComputerB)
+      --exclude-tag <TAG...>            特定のタグを持つルールをロードしない (例: sysmon)
       --include-eid <EID...>            指定したEIDのみをスキャンして高速化する (例 1) (例: 1,4688)
+      --include-tag <TAG...>            特定のタグを持つルールのみをロードする (例１: attack.execution,attack.discovery) (例２: wmi)
   -m, --min-level <LEVEL>               結果出力をするルールの最低レベル (デフォルト: informational)
       --timeline-end <DATE>             解析対象とするイベントログの終了時刻 (例: "2022-02-22 23:59:59 +09:00")
       --timeline-offset <OFFSET>        オフセットに基づく最近のイベントのスキャン (例: 1y, 3M, 30d, 24h, 30m)
@@ -835,6 +838,7 @@ Display Settings:
 
 General Options:
   -C, --clobber                          結果ファイルを上書きする
+  -w, --no-wizard                        質問はしない。すべてのイベントとアラートをスキャンする
   -Q, --quiet-errors                     Quiet errorsモード: エラーログを保存しない
   -r, --rules <DIR/FILE>                 ルールファイルまたはルールファイルを持つディレクトリ (デフォルト: ./rules)
   -c, --rules-config <DIR>               ルールフォルダのコンフィグディレクトリ (デフォルト: ./rules/config)
@@ -1093,6 +1097,7 @@ Display Settings:
 
 General Options:
   -C, --clobber                          結果ファイルを上書きする
+  -w, --no-wizard                        質問はしない。すべてのイベントとアラートをスキャンする
   -Q, --quiet-errors                     Quiet errorsモード: エラーログを保存しない
   -r, --rules <DIR/FILE>                 ルールファイルまたはルールファイルを持つディレクトリ (デフォルト: ./rules)
   -c, --rules-config <DIR>               ルールフォルダのコンフィグディレクトリ (デフォルト: ./rules/config)
@@ -1548,6 +1553,8 @@ Windows機での悪性な活動を検知する為には、デフォルトのロ�
 
 ## 日本語
 
+* 2023/09/29 NECセキュリティブログ: [HayabusaとSplunkによるファストフォレンジック効率化](https://jpn.nec.com/cybersecurity/blog/230929/index.html)
+* 2023/09/13 FFRIセキュリティブログ: [HayabusaによるWindowsイベントログ解析](https://engineers.ffri.jp/entry/2023/09/13/130750)
 * 2023/03/14 Fukusuke Takahashi氏による[Hayabusa開発者向けRustパフォーマンスガイド](doc/RustPerformance-Japanese.md)
 * 2022/01/22 [@kzzzzo2](https://qiita.com/kzzzzo2)氏による[Hayabusa結果をElastic Stackで可視化する方法](https://qiita.com/kzzzzo2/items/ead8ccc77b7609143749)
 * 2021/12/31 itiB ([@itiB_S144](https://twitter.com/itiB_S144))氏による[Windowsイベントログ解析ツール「Hayabusa」を使ってみる](https://itib.hatenablog.com/entry/2021/12/31/222946)
