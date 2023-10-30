@@ -9,7 +9,7 @@ use crate::options::htmlreport;
 use crate::options::profile::Profile;
 use crate::timeline::timelines::Timeline;
 use crate::yaml::ParseYaml;
-use aho_corasick::{AhoCorasickBuilder, MatchKind};
+use aho_corasick::{AhoCorasick, AhoCorasickBuilder, MatchKind};
 use chrono::{DateTime, Local, TimeZone, Utc};
 use comfy_table::modifiers::UTF8_ROUND_CORNERS;
 use comfy_table::presets::UTF8_FULL;
@@ -385,7 +385,12 @@ fn emit_csv<W: std::io::Write>(
                     write_color_buffer(
                         &disp_wtr,
                         get_writable_color(None, stored_static.common_options.no_color),
-                        &_get_serialized_disp_output(profile, true),
+                        &_get_serialized_disp_output(
+                            profile,
+                            true,
+                            (&output_replacer, &output_replaced_maps),
+                            (&output_remover, &removed_replaced_maps),
+                        ),
                         false,
                     )
                     .ok();
@@ -400,9 +405,14 @@ fn emit_csv<W: std::io::Write>(
                         ),
                         stored_static.common_options.no_color,
                     ),
-                    &_get_serialized_disp_output(&detect_info.ext_field, false)
-                        .split_whitespace()
-                        .join(" "),
+                    &_get_serialized_disp_output(
+                        &detect_info.ext_field,
+                        false,
+                        (&output_replacer, &output_replaced_maps),
+                        (&output_remover, &removed_replaced_maps),
+                    )
+                    .split_whitespace()
+                    .join(" "),
                     true,
                 )
                 .ok();
@@ -874,7 +884,12 @@ enum ColPos {
     Other,
 }
 
-fn _get_serialized_disp_output(data: &Vec<(CompactString, Profile)>, header: bool) -> String {
+fn _get_serialized_disp_output(
+    data: &Vec<(CompactString, Profile)>,
+    header: bool,
+    (output_replacer, output_replaced_maps): (&AhoCorasick, &HashMap<&str, &str>),
+    (output_remover, removed_replaced_maps): (&AhoCorasick, &HashMap<&str, &str>),
+) -> String {
     let data_length = data.len();
     let mut ret = Nested::<String>::new();
     if header {
@@ -892,10 +907,19 @@ fn _get_serialized_disp_output(data: &Vec<(CompactString, Profile)>, header: boo
             if i == 0 {
                 ret.push(
                     _format_cellpos(
-                        &d.1.to_value()
-                            .replace("🛂r", "")
-                            .replace("🛂n", "")
-                            .replace("🛂t", ""),
+                        &output_remover
+                            .replace_all(
+                                &output_replacer
+                                    .replace_all(
+                                        &d.1.to_value(),
+                                        &output_replaced_maps.values().collect_vec(),
+                                    )
+                                    .split_whitespace()
+                                    .join(" "),
+                                &removed_replaced_maps.values().collect_vec(),
+                            )
+                            .split_ascii_whitespace()
+                            .join(" "),
                         ColPos::First,
                     )
                     .replace('|', "🦅"),
@@ -903,10 +927,19 @@ fn _get_serialized_disp_output(data: &Vec<(CompactString, Profile)>, header: boo
             } else if i == data_length - 1 {
                 ret.push(
                     _format_cellpos(
-                        &d.1.to_value()
-                            .replace("🛂r", "")
-                            .replace("🛂n", "")
-                            .replace("🛂t", ""),
+                        &output_remover
+                            .replace_all(
+                                &output_replacer
+                                    .replace_all(
+                                        &d.1.to_value(),
+                                        &output_replaced_maps.values().collect_vec(),
+                                    )
+                                    .split_whitespace()
+                                    .join(" "),
+                                &removed_replaced_maps.values().collect_vec(),
+                            )
+                            .split_ascii_whitespace()
+                            .join(" "),
                         ColPos::Last,
                     )
                     .replace('|', "🦅"),
@@ -914,10 +947,19 @@ fn _get_serialized_disp_output(data: &Vec<(CompactString, Profile)>, header: boo
             } else {
                 ret.push(
                     _format_cellpos(
-                        &d.1.to_value()
-                            .replace("🛂r", "")
-                            .replace("🛂n", "")
-                            .replace("🛂t", ""),
+                        &output_remover
+                            .replace_all(
+                                &output_replacer
+                                    .replace_all(
+                                        &d.1.to_value(),
+                                        &output_replaced_maps.values().collect_vec(),
+                                    )
+                                    .split_whitespace()
+                                    .join(" "),
+                                &removed_replaced_maps.values().collect_vec(),
+                            )
+                            .split_ascii_whitespace()
+                            .join(" "),
                         ColPos::Other,
                     )
                     .replace('|', "🦅"),
@@ -1813,6 +1855,8 @@ mod tests {
     use crate::detections::message::DetectInfo;
     use crate::detections::utils;
     use crate::options::profile::{load_profile, Profile};
+    use aho_corasick::AhoCorasickBuilder;
+    use aho_corasick::MatchKind;
     use chrono::NaiveDateTime;
     use chrono::{Local, TimeZone, Utc};
     use compact_str::CompactString;
@@ -3322,8 +3366,37 @@ mod tests {
                 Profile::AllFieldInfo(test_recinfo.into()),
             ),
         ];
-        assert_eq!(_get_serialized_disp_output(&data, true), expect_header);
-        assert_eq!(_get_serialized_disp_output(&data, false), expect_no_header);
+        let output_replaced_maps: HashMap<&str, &str> =
+            HashMap::from_iter(vec![("🛂r", "\r"), ("🛂n", "\n"), ("🛂t", "\t")]);
+        let removed_replaced_maps: HashMap<&str, &str> =
+            HashMap::from_iter(vec![("\n", " "), ("\r", " "), ("\t", " ")]);
+        let output_replacer = AhoCorasickBuilder::new()
+            .match_kind(MatchKind::LeftmostLongest)
+            .build(output_replaced_maps.keys())
+            .unwrap();
+        let output_remover = AhoCorasickBuilder::new()
+            .match_kind(MatchKind::LeftmostLongest)
+            .build(removed_replaced_maps.keys())
+            .unwrap();
+
+        assert_eq!(
+            _get_serialized_disp_output(
+                &data,
+                true,
+                (&output_replacer, &output_replaced_maps),
+                (&output_remover, &removed_replaced_maps)
+            ),
+            expect_header
+        );
+        assert_eq!(
+            _get_serialized_disp_output(
+                &data,
+                false,
+                (&output_replacer, &output_replaced_maps),
+                (&output_remover, &removed_replaced_maps)
+            ),
+            expect_no_header
+        );
     }
 
     fn check_hashmap_data(

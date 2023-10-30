@@ -12,6 +12,7 @@
 
 - Fixed that field information defined in `Details` was also output to `ExtraFieldInfo` in some cases. (#1145) (@hitenkoku)
 - Fixed output of newline and tab characters in `AllFieldInfo` in JSON output. (#1189) (@hitenkoku)
+- Fixed output of space characters in some fields in standard output. (#1192) (@hitenkoku)
 
 ## 2.9.0 [2023/09/22] "Autumn Rain Release"
 
