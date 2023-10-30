@@ -1,6 +1,6 @@
 # Changes
 
-## 2.10.0 [xxxx/xx/xx] "xxx Release"
+## 2.10.0 [2023/10/31] "Halloween Release"
 
 **Enhancements:**
 
@@ -12,10 +12,6 @@
 
 - Fixed that field information defined in `Details` was also output to `ExtraFieldInfo` in some cases. (#1145) (@hitenkoku)
 - Fixed output of newline and tab characters in `AllFieldInfo` in JSON output. (#1189) (@hitenkoku)
-
-**Other:**
-
-xxx
 
 ## 2.9.0 [2023/09/22] "Autumn Rain Release"
 
