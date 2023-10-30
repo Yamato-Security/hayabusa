@@ -4,14 +4,14 @@ version = "2.10.0"
 repository = "https://github.com/Yamato-Security/hayabusa"
 authors = ["Yamato Security @SecurityYamato"]
 edition = "2021"
-rust-version = "1.72.1"
+rust-version = "1.73.0"
 include = ["src/**/*", "LICENSE.txt", "README.md", "CHANGELOG.md"]
 
 [dependencies]
 itertools = "*"
 dashmap = "*"
 clap = { version = "4.*", features = ["derive", "cargo", "color"]}
-evtx = { git = "https://github.com/Yamato-Security/hayabusa-evtx.git" , features = ["fast-alloc"] , rev = "d7af285" } # 0.8.7 2023/09/22 update
+evtx = { git = "https://github.com/Yamato-Security/hayabusa-evtx.git" , features = ["fast-alloc"] , rev = "ee951aa" } # 0.8.7 2023/10/30 update
 quick-xml = {version = "0.*", features = ["serialize"] }
 serde = { version = "1.*", features = ["derive"] }
 serde_json = { version = "1.0"}

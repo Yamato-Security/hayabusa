@@ -1,6 +1,6 @@
 # 変更点
 
-## 2.10.0 [xxxx/xx/xx] "xxx Release"
+## 2.10.0 [2023/10/31] "Halloween Release"
 
 **改善:**
 
@@ -12,10 +12,6 @@
 
 - まれにJSONフィールドが正しくパースされない状態を修正した。(#1145) (@hitenkoku)
 - JSON出力で、`AllFieldInfo`は改行文字とタブ文字を除去していたが、出力するように修正した。 (#1189) (@hitenkoku)
-
-**その他:**
-
-xxx
 
 ## 2.9.0 [2023/09/22] "Autumn Rain Release"
 
