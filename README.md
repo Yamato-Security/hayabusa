@@ -67,6 +67,7 @@ Hayabusa is a **Windows event log fast forensics timeline generator** and **thre
   - [Linux Compiling Notes](#linux-compiling-notes)
   - [Cross-compiling Linux MUSL Binaries](#cross-compiling-linux-musl-binaries)
 - [Running Hayabusa](#running-hayabusa)
+  - [Scan Wizard](#scan-wizard)
   - [Caution: Anti-Virus/EDR Warnings and Slow Runtimes](#caution-anti-virusedr-warnings-and-slow-runtimes)
   - [Windows](#windows)
     - [Error when trying to scan a file or directory with a space in the path](#error-when-trying-to-scan-a-file-or-directory-with-a-space-in-the-path)
@@ -146,7 +147,7 @@ Hayabusa is a **Windows event log fast forensics timeline generator** and **thre
 
 ### Threat Hunting and Enterprise-wide DFIR
 
-Hayabusa currently has over 2300 Sigma rules and over 150 Hayabusa built-in detection rules with more rules being added regularly.
+Hayabusa currently has over 2500 Sigma rules and over 150 Hayabusa built-in detection rules with more rules being added regularly.
 It can be used for enterprise-wide proactive threat hunting as well as DFIR (Digital Forensics and Incident Response) for free with [Velociraptor](https://docs.velociraptor.app/)'s [Hayabusa artifact](https://docs.velociraptor.app/exchange/artifacts/pages/windows.eventlogs.hayabusa/).
 By combining these two open-source tools, you can essentially retroactively reproduce a SIEM when there is no SIEM setup in the environment.
 You can learn about how to do this by watching [Eric Capuano](https://twitter.com/eric_capuano)'s Velociraptor walkthrough [here](https://www.youtube.com/watch?v=Q1IoGX--814).
@@ -250,6 +251,7 @@ You can learn how to analyze JSON-formatted results with `jq` [here](doc/Analysi
 * Field data mapping. (Ex: `0xc0000234` -> `ACCOUNT LOCKED`)
 * Evtx record carving from evtx slack space.
 * Event de-duplication when outputting. (Useful when recovery records is enabled or when you include backed up evtx files, evtx files from VSS, etc...)
+* Scan setting wizard to help choose which rules to enable easier. (In order to reduce false positives, etc...)
 
 # Downloads
 
@@ -368,6 +370,14 @@ The MUSL binary will be created in the `./target/x86_64-unknown-linux-musl/relea
 MUSL binaries are are about 15% slower than the GNU binaries, however, they are more portable accross different versions and distributions of linux.
 
 # Running Hayabusa
+
+## Scan Wizard
+
+Commands like `csv-timeline` and `json-timeline` now have a scan wizard enabled by default.
+This is intended to help users easily choose which detection rules they want to enable according to their needs and preferences.
+The sets of detections rules to load are based off of the official lists in the Sigma project.
+Details are explained in [this blog post](https://blog.sigmahq.io/introducing-sigma-rule-packages-releases-76043ce42e81).
+You can easily turn off the wizard and use Hayabusa in its traditional way by adding the `-w, --no-wizard` option.
 
 ## Caution: Anti-Virus/EDR Warnings and Slow Runtimes
 
@@ -646,8 +656,10 @@ Filtering:
       --exclude-computer <COMPUTER...>  Do not scan specified computer names (ex: ComputerA) (ex: ComputerA,ComputerB)
       --exclude-eid <EID...>            Do not scan specific EIDs for faster speed (ex: 1) (ex: 1,4688)
       --exclude-status <STATUS...>      Do not load rules according to status (ex: experimental) (ex: stable,test)
+      --exclude-tag <TAG...>            Do not load rules with specific tags (ex: sysmon)
       --include-computer <COMPUTER...>  Scan only specified computer names (ex: ComputerA) (ex: ComputerA,ComputerB)
       --include-eid <EID...>            Scan only specified EIDs for faster speed (ex: 1) (ex: 1,4688)
+      --include-tag <TAG...>            Only load rules with specific tags (ex: attack.execution,attack.discovery)
   -m, --min-level <LEVEL>               Minimum level for rules to load (default: informational)
       --timeline-end <DATE>             End time of the event logs to load (ex: "2022-02-22 23:59:59 +09:00")
       --timeline-offset <OFFSET>        Scan recent events based on an offset (ex: 1y, 3M, 30d, 24h, 30m)
@@ -835,6 +847,7 @@ Display Settings:
 
 General Options:
   -C, --clobber                        Overwrite files when saving
+  -w, --no-wizard                      Do not ask questions. Scan for all events and alerts
   -Q, --quiet-errors                   Quiet errors mode: do not save error logs
   -r, --rules <DIR/FILE>               Specify a custom rule directory or file (default: ./rules)
   -c, --rules-config <DIR>             Specify custom rule config directory (default: ./rules/config)
@@ -1093,6 +1106,7 @@ Display Settings:
 
 General Options:
   -C, --clobber                        Overwrite files when saving
+  -w, --no-wizard                      Do not ask questions. Scan for all events and alerts
   -Q, --quiet-errors                   Quiet errors mode: do not save error logs
   -r, --rules <DIR/FILE>               Specify a custom rule directory or file (default: ./rules)
   -c, --rules-config <DIR>             Specify custom rule config directory (default: ./rules/config)
@@ -1548,6 +1562,8 @@ To create the most forensic evidence and detect with the highest accuracy, you n
 
 ## Japanese
 
+* 2023/09/29 [Fast Forensics with Hayabusa and Splunk](https://jpn.nec.com/cybersecurity/blog/230929/index.html) by NEC Security Blog
+* 2023/09/13 [Windows Event Log Analysis with Hayabusa](https://engineers.ffri.jp/entry/2023/09/13/130750) by FFRI
 * 2022/03/14 [Rust Performance Guide for Hayabusa Developers](doc/RustPerformance-Japanese.md) by Fukusuke Takahashi
 * 2022/01/22 [Visualizing Hayabusa results in Elastic Stack](https://qiita.com/kzzzzo2/items/ead8ccc77b7609143749) by [@kzzzzo2](https://qiita.com/kzzzzo2)
 * 2021/12/31 [Intro to Hayabusa](https://itib.hatenablog.com/entry/2021/12/31/222946) by itiB ([@itiB_S144](https://twitter.com/itiB_S144))
