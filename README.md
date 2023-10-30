@@ -68,6 +68,11 @@ Hayabusa is a **Windows event log fast forensics timeline generator** and **thre
   - [Cross-compiling Linux MUSL Binaries](#cross-compiling-linux-musl-binaries)
 - [Running Hayabusa](#running-hayabusa)
   - [Scan Wizard](#scan-wizard)
+    - [Core Rules](#core-rules)
+    - [Core+ Rules](#core-rules-1)
+    - [Core++ Rules](#core-rules-2)
+    - [Emerging Threats (ET) Add-On Rules](#emerging-threats-et-add-on-rules)
+    - [Threat Hunting (TH) Add-On Rules](#threat-hunting-th-add-on-rules)
   - [Caution: Anti-Virus/EDR Warnings and Slow Runtimes](#caution-anti-virusedr-warnings-and-slow-runtimes)
   - [Windows](#windows)
     - [Error when trying to scan a file or directory with a space in the path](#error-when-trying-to-scan-a-file-or-directory-with-a-space-in-the-path)
@@ -378,6 +383,44 @@ This is intended to help users easily choose which detection rules they want to 
 The sets of detections rules to load are based off of the official lists in the Sigma project.
 Details are explained in [this blog post](https://blog.sigmahq.io/introducing-sigma-rule-packages-releases-76043ce42e81).
 You can easily turn off the wizard and use Hayabusa in its traditional way by adding the `-w, --no-wizard` option.
+
+### Core Rules
+
+The `core` rule set enables rules that have a status of `test` or `stable` and a level of `high` or `critical`.
+These are high quality rules of high confidence and relevance and should not produce many false positives.
+The rule status is `test` or `stable` which means no false positives were reported for over 6 months.
+Rules will match on attacker techniques, generic suspicious activity, or malicious behavior.
+It is the same as using the `--exclude-status deprecated,unsupported,experimental --min-level high` options.
+
+### Core+ Rules
+
+The `core+` rule set enables rules that have a status of `test` or `stable` and a level of `medium` or higher.
+`medium` rules most often need additional tuning as certain applications, legitimate user behavior or scripts of an organization might be matched.
+It is the same as using the `--exclude-status deprecated,unsupported,experimental --min-level medium` options.
+
+### Core++ Rules
+
+The `core++` rule set enables rules that have a status of `test` or `stable` and a level of `medium` or higher.
+These rules are bleeding edge.
+They are validated against the baseline evtx files available at the SigmaHQ project and reviewed by multiple detection engineers.
+Other than that they are pretty much untested at first.
+Use these if you want to be able to detect threats as early as possible at the cost of managing a higher threshold of false positives.
+It is the same as using the `--exclude-status deprecated,unsupported --min-level medium` options.
+
+### Emerging Threats (ET) Add-On Rules
+
+The `Emerging Threats (ET)` rule set enables rules that have a tag of `detection.emerging_threats`.
+These rules target specific threats and are especially useful for current threats where not much information is available yet.
+These rules should not have many false positives but will decrease in relevance over time.
+When these rules are not enabled, it is the same as using the `--exclude-tag detection.emerging_threats` option.
+When running Hayabusa traditionally without the wizard, these rules will be included by default.
+
+### Threat Hunting (TH) Add-On Rules
+
+The `Threat Hunting (TH)` rule set enables rules that have a tag of `detection.threat_hunting`.
+These rules may detect unknown malicious activity, however, will typicially have more false positives.
+When these rules are not enabled, it is the same as using the `--exclude-tag detection.threat_hunting` option.
+When running Hayabusa traditionally without the wizard, these rules will be included by default.
 
 ## Caution: Anti-Virus/EDR Warnings and Slow Runtimes
 
