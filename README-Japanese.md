@@ -72,7 +72,7 @@ Hayabusaは、日本の[Yamato Security](https://yamatosecurity.connpass.com/)�
     - [Core+ Rules](#core-ルール-1)
     - [Core++ Rules](#core-ルール-2)
     - [Emerging Threats (ET) Add-On Rules](#emerging-threats-et-アドオンルール)
-    - [Threat Hunting (TH) Add-On Rules](#threat-hunting-th-add-アドオンルール)
+    - [Threat Hunting (TH) Add-On Rules](#threat-hunting-th-アドオンルール)
   - [注意: アンチウィルス/EDRの誤検知と遅い初回実行](#注意-アンチウィルスedrの誤検知と遅い初回実行)
   - [Windows](#windows)
     - [パスにスペースが含まれるファイルまたはディレクトリをスキャンしようとするとエラーが発生した場合](#パスにスペースが含まれるファイルまたはディレクトリをスキャンしようとするとエラーが発生した場合)
@@ -417,7 +417,7 @@ MUSLバイナリはGNUバイナリより約15％遅いですが、より多く�
 
 ### Threat Hunting (TH) アドオンルール
 
-Threat Hunting (TH)ルールセットは、detection.threat_huntingのタグを持つルールを有効にします。
+`Threat Hunting (TH)`ルールセットは、`detection.threat_hunting`のタグを持つルールを有効にします。
 これらのルールは未知の悪意のあるアクティビティを検出するかもしれませんが、通常は誤検知が多くなります。
 これらのルールが無効になっている場合、`--exclude-tag detection.threat_hunting`オプションを使用した場合と同じです。
 ウィザードを無効にしてHayabusaを従来の方法で実行する場合、これらのルールはデフォルトで含まれます。
