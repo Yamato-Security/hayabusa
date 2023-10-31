@@ -67,7 +67,12 @@ Hayabusaは、日本の[Yamato Security](https://yamatosecurity.connpass.com/)�
   - [Linuxでのコンパイルの注意点](#linuxでのコンパイルの注意点)
   - [LinuxのMUSLバイナリのクロスコンパイル](#linuxのmuslバイナリのクロスコンパイル)
 - [Hayabusaの実行](#hayabusaの実行)
-- [スキャンウィザード](#スキャンウィザード)
+  - [スキャンウィザード](#スキャンウィザード)
+    - [Core Rules](#core-ルール)
+    - [Core+ Rules](#core-ルール-1)
+    - [Core++ Rules](#ore-ルール-2)
+    - [Emerging Threats (ET) Add-On Rules](#emerging-threats-et アドオンルール)
+    - [Threat Hunting (TH) Add-On Rules](#threat-hunting-th-add アドオンルール)
   - [注意: アンチウィルス/EDRの誤検知と遅い初回実行](#注意-アンチウィルスedrの誤検知と遅い初回実行)
   - [Windows](#windows)
     - [パスにスペースが含まれるファイルまたはディレクトリをスキャンしようとするとエラーが発生した場合](#パスにスペースが含まれるファイルまたはディレクトリをスキャンしようとするとエラーが発生した場合)
@@ -371,13 +376,51 @@ MUSLバイナリはGNUバイナリより約15％遅いですが、より多く�
 
 # Hayabusaの実行
 
-# スキャンウィザード
+## スキャンウィザード
 
 `csv-timeline`や`json-timeline`などのコマンドは、デフォルトでスキャンウィザードが有効になりました。
 これは、ユーザのニーズや好みに応じて、どの検知ルールを有効にするかを簡単に選択できるようにするためのものであります。
 読み込む検知ルールのセットは、Sigmaプロジェクトの公式リストに基づいています。
 詳細は[このブログ記事](https://blog.sigmahq.io/introducing-sigma-rule-packages-releases-76043ce42e81)で説明されています。
 `w, --no-wizard`オプションを追加することで、簡単にウィザードを無効にし、従来の方法でHayabusaを使用できます。
+
+### Core ルール
+
+`core`ルールセットは、ステータスが`test`または`stable`かつ、レベルが`high`または`critical`のルールを有効にします。
+これらは高品質のルールで、多くの誤検知は発生しないはずです。
+ルールのステータスが`test`または`stable`であるため、6ヶ月以上の間に誤検知が報告されていません。
+ルールは攻撃者の戦術、一般的な不審なアクティビティ、または悪意のある振る舞いに一致します。
+これは`--exclude-status deprecated,unsupported,experimental --min-level high`オプションを使用した場合と同じです。
+
+### Core+ ルール
+
+`core+`ルールセットは、ステータスが`test`または`stable`かつ、レベルが`medium`以上のルールを有効にします。
+`medium`ルールは、しばしば特定のアプリケーション、正当なユーザーの行動、または組織のスクリプトと一致するため、追加のチューニングが必要です。
+これは`--exclude-status deprecated,unsupported,experimental --min-level medium`オプションを使用した場合と同じです。
+
+### Core++ ルール
+
+`core++`ルールセットは、ステータスが`experimental`、`test`または`stable`かつ、レベルが`medium`以上のルールを有効にします。
+これらのルールは最先端のものです。
+これらはSigmaHQプロジェクトで提供されているベースラインのevtxファイルに対して検証され、複数のエンジニアによってレビューされています。 
+それ以外最初は、ほとんどテストされていません。
+これらは、できるだけ早く脅威を検出できる場合に使用しますが、誤検知のしきい値を高く保つのにコストがかかります。
+これは`--exclude-status deprecated,unsupported --min-level medium`オプションを使用した場合と同じです。
+
+### Emerging Threats (ET) アドオンルール
+
+`Emerging Threats (ET)`ルールセットは、`detection.emerging_threats`のタグを持つルールを有効にします。
+これらのルールは特定の脅威を対象とし、情報がまだほとんど入手できていない現在の脅威に特に役立ちます。
+これらのルールは多くの誤検知を生成しないはずですが、時間とともに関連性が低下します。
+これらのルールが無効になっている場合、`--exclude-tag detection.emerging_threats`オプションを使用した場合と同じです。
+ウィザードを無効にしてHayabusaを従来の方法で実行する場合、これらのルールはデフォルトで含まれます。
+
+### Threat Hunting (TH) アドオンルール
+
+Threat Hunting (TH)ルールセットは、detection.threat_huntingのタグを持つルールを有効にします。
+これらのルールは未知の悪意のあるアクティビティを検出するかもしれませんが、通常は誤検知が多くなります。
+これらのルールが無効になっている場合、`--exclude-tag detection.threat_hunting`オプションを使用した場合と同じです。
+ウィザードを無効にしてHayabusaを従来の方法で実行する場合、これらのルールはデフォルトで含まれます。
 
 ## 注意: アンチウィルス/EDRの誤検知と遅い初回実行
 

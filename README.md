@@ -400,7 +400,7 @@ It is the same as using the `--exclude-status deprecated,unsupported,experimenta
 
 ### Core++ Rules
 
-The `core++` rule set enables rules that have a status of `test` or `stable` and a level of `medium` or higher.
+The `core++` rule set enables rules that have a status of `experimental`, `test` or `stable` and a level of `medium` or higher.
 These rules are bleeding edge.
 They are validated against the baseline evtx files available at the SigmaHQ project and reviewed by multiple detection engineers.
 Other than that they are pretty much untested at first.
