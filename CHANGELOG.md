@@ -1,5 +1,23 @@
 # Changes
 
+## 2.11.0 [2023/XX/XX] "XX Release"
+
+**New Features:**
+
+- XXX
+
+**Enhancements:**
+
+- XXX
+
+**Bug Fixes:**
+
+- XXX
+
+**Other:**
+
+- XXX
+
 ## 2.10.0 [2023/10/31] "Halloween Release"
 
 **Enhancements:**
