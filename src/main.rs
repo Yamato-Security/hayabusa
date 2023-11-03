@@ -1071,7 +1071,7 @@ impl App {
             }
             // deprecated rules load prompt
             let dep_rules_load_flag = Confirm::with_theme(&ColorfulTheme::default())
-                .with_prompt("Include deprecated rules? ( xxxx rules) (y/n) (default: no)")
+                .with_prompt("Include deprecated rules? (y/n) (default: no)")
                 .default(false)
                 .show_default(true)
                 .interact()
@@ -1086,7 +1086,7 @@ impl App {
 
             // noisy rules load prompt
             let noisy_rules_load_flag = Confirm::with_theme(&ColorfulTheme::default())
-                .with_prompt("Include noisy rules? ( xxxx rules) (y/n) (default: no)")
+                .with_prompt("Include noisy rules? (y/n) (default: no)")
                 .default(false)
                 .show_default(true)
                 .interact()
@@ -1101,7 +1101,7 @@ impl App {
 
             // unsupported rules load prompt
             let unsupported_rules_load_flag = Confirm::with_theme(&ColorfulTheme::default())
-                .with_prompt("Include unsupported rules? ( xxxx rules) (y/n) (default: no)")
+                .with_prompt("Include unsupported rules? (y/n) (default: no)")
                 .default(false)
                 .show_default(true)
                 .interact()
@@ -1115,7 +1115,7 @@ impl App {
             }
 
             let sysmon_rules_load_flag = Confirm::with_theme(&ColorfulTheme::default())
-                .with_prompt("Include sysmon rules? ( xxxx rules) (y/n) (default: yes)")
+                .with_prompt("Include sysmon rules? (y/n) (default: yes)")
                 .default(true)
                 .show_default(true)
                 .interact()
