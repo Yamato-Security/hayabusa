@@ -1,5 +1,11 @@
 # Changes
 
+## x.x.x [xxxx/xx/xx]
+
+**Bug Fixes:**
+
+- `update-rules` command would output `You currently have the latest rules` even if new rules were downloaded. (#1209) (@fukusuket)
+
 ## 2.10.0 [2023/10/31] "Halloween Release"
 
 **Enhancements:**

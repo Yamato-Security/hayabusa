@@ -1,5 +1,11 @@
 # 変更点
 
+## x.x.x [xxxx/xx/xx]
+
+**バグ修正:**
+
+- 新しいルールがダウンロードされても、`update-rules`コマンドは`You currently have the latest rules`というメッセージを出力していたので、修正した。 (#1209) (@fukusuket)
+
 ## 2.10.0 [2023/10/31] "Halloween Release"
 
 **改善:**
