@@ -8,7 +8,7 @@
 
 **Enhancements:**
 
-- XXX
+- Added additional questions to the scan wizard. (#1207) (@hitenkoku)
 
 **Bug Fixes:**
 
