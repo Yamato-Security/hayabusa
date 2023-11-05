@@ -12,7 +12,7 @@
 
 **Bug Fixes:**
 
-- `update-rules` command would output `You currently have the latest rules` even if new rules were downloaded. (#1209) (@fukusuket)
+- `update-rules` command would output `You currently have the latest rules` even if new rules were downloaded in version `2.10.0`. (#1209) (@fukusuket)
 
 **Other:**
 
