@@ -1,10 +1,22 @@
 # 変更点
 
-## x.x.x [xxxx/xx/xx]
+## 2.11.0 [2023/XX/XX] "XXX Release"
+
+**新機能:**
+
+- xxx
+
+**改善:**
+
+- スキャンウィザードに質問を追加した。 (#1207) (@hitenkoku)
 
 **バグ修正:**
 
 - 新しいルールがダウンロードされても、`update-rules`コマンドは`You currently have the latest rules`というメッセージを出力していたので、修正した。 (#1209) (@fukusuket)
+
+**その他:**
+
+- xxx
 
 ## 2.10.0 [2023/10/31] "Halloween Release"
 

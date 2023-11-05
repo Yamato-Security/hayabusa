@@ -1,10 +1,22 @@
 # Changes
 
-## x.x.x [xxxx/xx/xx]
+## 2.11.0 [2023/XX/XX] "XX Release"
+
+**New Features:**
+
+- XXX
+
+**Enhancements:**
+
+- Added questions to the scan wizard. (#1207) (@hitenkoku)
 
 **Bug Fixes:**
 
 - `update-rules` command would output `You currently have the latest rules` even if new rules were downloaded. (#1209) (@fukusuket)
+
+**Other:**
+
+- XXX
 
 ## 2.10.0 [2023/10/31] "Halloween Release"
 

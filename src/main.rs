@@ -1044,10 +1044,10 @@ impl App {
                     .map(|x| x.to_owned().into()),
             );
 
+            let mut output_option = stored_static.output_option.clone().unwrap();
+            let exclude_tags = output_option.exclude_tag.get_or_insert_with(Vec::new);
             // If anything other than "4. All alert rules" or "5. All event and alert rules" was selected, ask questions about tags.
             if selected_index < 3 {
-                let mut output_option = stored_static.output_option.clone().unwrap();
-                let exclude_tags = output_option.exclude_tag.get_or_insert_with(Vec::new);
                 let et_rules_load_flag = Confirm::with_theme(&ColorfulTheme::default())
                     .with_prompt("Include Emerging Threats rules?")
                     .default(true)
@@ -1068,10 +1068,67 @@ impl App {
                 if !th_rules_load_flag {
                     exclude_tags.push("detection.threat_hunting".into());
                 }
-                if !exclude_tags.is_empty() {
-                    stored_static.output_option.as_mut().unwrap().exclude_tag =
-                        Some(exclude_tags.to_owned());
-                }
+            }
+            // deprecated rules load prompt
+            let dep_rules_load_flag = Confirm::with_theme(&ColorfulTheme::default())
+                .with_prompt("Include deprecated rules?")
+                .default(false)
+                .show_default(true)
+                .interact()
+                .unwrap();
+            if dep_rules_load_flag {
+                stored_static
+                    .output_option
+                    .as_mut()
+                    .unwrap()
+                    .enable_deprecated_rules = true;
+            }
+
+            // noisy rules load prompt
+            let noisy_rules_load_flag = Confirm::with_theme(&ColorfulTheme::default())
+                .with_prompt("Include noisy rules?")
+                .default(false)
+                .show_default(true)
+                .interact()
+                .unwrap();
+            if noisy_rules_load_flag {
+                stored_static
+                    .output_option
+                    .as_mut()
+                    .unwrap()
+                    .enable_noisy_rules = true;
+            }
+
+            // unsupported rules load prompt
+            let unsupported_rules_load_flag = Confirm::with_theme(&ColorfulTheme::default())
+                .with_prompt("Include unsupported rules?")
+                .default(false)
+                .show_default(true)
+                .interact()
+                .unwrap();
+            if unsupported_rules_load_flag {
+                stored_static
+                    .output_option
+                    .as_mut()
+                    .unwrap()
+                    .enable_unsupported_rules = true;
+            }
+
+            let sysmon_rules_load_flag = Confirm::with_theme(&ColorfulTheme::default())
+                .with_prompt("Include sysmon rules?")
+                .default(true)
+                .show_default(true)
+                .interact()
+                .unwrap();
+
+            // If no is selected, then add "--exclude-tags sysmon"
+            if !sysmon_rules_load_flag {
+                exclude_tags.push("sysmon".into());
+            }
+
+            if !exclude_tags.is_empty() {
+                stored_static.output_option.as_mut().unwrap().exclude_tag =
+                    Some(exclude_tags.to_owned());
             }
         } else {
             stored_static.include_status.insert("*".into());
