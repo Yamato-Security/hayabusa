@@ -535,7 +535,7 @@ impl App {
                     None
                 };
                 let now_version = &format!("v{}", env!("CARGO_PKG_VERSION"));
-
+                stored_static.include_status.insert("*".into());
                 match Update::update_rules(update_target.unwrap().to_str().unwrap(), stored_static)
                 {
                     Ok(output) => {

@@ -12,7 +12,7 @@
 
 **バグ修正:**
 
-- xxx
+- バージョン`2.10.0`の`update-rules`コマンドでは、新しいルールがダウンロードされても、`You currently have the latest rules`というメッセージを出力していた。 (#1209) (@fukusuket)
 
 **その他:**
 
