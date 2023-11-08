@@ -219,12 +219,8 @@ impl DefaultMatcher {
     }
 
     /// このmatcherの正規表現とマッチするかどうか判定します。
-    /// 判定対象の文字列とこのmatcherが保持する正規表現が完全にマッチした場合のTRUEを返します。
-    /// 例えば、判定対象文字列が"abc"で、正規表現が"ab"の場合、正規表現は判定対象文字列の一部分にしか一致していないので、この関数はfalseを返します。
     fn is_regex_fullmatch(&self, value: &str) -> bool {
-        return self.re.as_ref().unwrap().find_iter(value).any(|match_obj| {
-            return match_obj.as_str() == value;
-        });
+        return self.re.as_ref().unwrap().is_match(value);
     }
 
     /// Hayabusaのルールファイルのフィールド名とそれに続いて指定されるパイプを、正規表現形式の文字列に変換します。
