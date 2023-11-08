@@ -1377,7 +1377,7 @@ mod tests {
         enabled: true
         detection:
             selection:
-                Computer|re: DESKTOP.*
+                Computer|re: DESKTOP
         details: 'command=%CommandLine%'
         "#;
 
