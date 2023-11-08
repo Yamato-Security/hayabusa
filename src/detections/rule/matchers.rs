@@ -1371,6 +1371,26 @@ mod tests {
     }
 
     #[test]
+    fn test_detect_regex_partial_match() {
+        // 正規表現の部分一致
+        let rule_str = r#"
+        enabled: true
+        detection:
+            selection:
+                Computer|re: DESKTOP.*
+        details: 'command=%CommandLine%'
+        "#;
+
+        let record_json_str = r#"
+        {
+            "Event": {"System": {"EventID": 4103, "Channel": "Program", "Computer":"DESKTOP-ICHIICHI"}},
+            "Event_attributes": {"xmlns": "http://schemas.microsoft.com/win/2004/08/events/event"}
+        }"#;
+
+        check_select(rule_str, record_json_str, true);
+    }
+
+    #[test]
     fn test_detect_regexes() {
         // regexes.txtが正しく検知できることを確認
         // この場合ではEventIDが一致しているが、allowlistに一致するので検知しないはず。
