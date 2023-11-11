@@ -13,6 +13,7 @@
 **Bug Fixes:**
 
 - `update-rules` command would output `You currently have the latest rules` even if new rules were downloaded in version `2.10.0`. (#1209) (@fukusuket)
+- Regular expressions would sometimes be incorrectly handled. (#1212) (@fukusuket)
 
 **Other:**
 
