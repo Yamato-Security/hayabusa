@@ -1,10 +1,6 @@
 # Changes
 
-## 2.11.0 [2023/XX/XX] "XX Release"
-
-**New Features:**
-
-- XXX
+## 2.10.1 [2023/11/12] "Kamemushi Release"
 
 **Enhancements:**
 
@@ -14,10 +10,6 @@
 
 - `update-rules` command would output `You currently have the latest rules` even if new rules were downloaded in version `2.10.0`. (#1209) (@fukusuket)
 - Regular expressions would sometimes be incorrectly handled. (#1212) (@fukusuket)
-
-**Other:**
-
-- XXX
 
 ## 2.10.0 [2023/10/31] "Halloween Release"
 

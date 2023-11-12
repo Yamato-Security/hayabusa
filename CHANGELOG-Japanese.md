@@ -1,10 +1,6 @@
 # 変更点
 
-## 2.11.0 [2023/XX/XX] "XXX Release"
-
-**新機能:**
-
-- xxx
+## 2.10.1 [2023/11/12] "Kamemushi Release"
 
 **改善:**
 
@@ -14,10 +10,6 @@
 
 - バージョン`2.10.0`の`update-rules`コマンドでは、新しいルールがダウンロードされても、`You currently have the latest rules`というメッセージを出力していた。 (#1209) (@fukusuket)
 - 正規表現が正しく処理されない場合があった。 (#1212) (@fukusuket)
-
-**その他:**
-
-- xxx
 
 ## 2.10.0 [2023/10/31] "Halloween Release"
 
