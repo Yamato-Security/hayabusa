@@ -1004,7 +1004,6 @@ impl App {
         }
         let total_size_output = format!("Total file size: {}", total_file_size.to_string_as(false));
         println!("{total_size_output}");
-        println!();
         let mut status_append_output = None;
         if !(stored_static.metrics_flag
             || stored_static.logon_summary_flag
@@ -1012,6 +1011,7 @@ impl App {
             || stored_static.computer_metrics_flag
             || stored_static.output_option.as_ref().unwrap().no_wizard)
         {
+            println!();
             println!("Scan wizard:");
             println!();
             let selections_status = &[
