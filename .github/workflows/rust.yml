@@ -56,7 +56,7 @@ jobs:
       - name: Prepare Clippy
         run: rustup component add clippy
       - name: brew update
-        if: ${{ matrix.info.target == 'macOS-latest'}}
+        if: ${{ matrix.info.os == 'macOS-latest'}}
         run: brew update && brew upgrade
       - name: Run clippy action to produce annotations
         run: cargo clippy --all-targets -- -D warnings
