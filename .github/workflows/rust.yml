@@ -58,13 +58,13 @@ jobs:
         run: cargo fmt -- --check
       - name: Prepare Clippy
         run: rustup component add clippy
-      - name: brew update(port)
+      - name: brew update
         if: ${{ matrix.info.os == 'macOS-latest'}}
-        run: sudo port install openssl
+        run: brew update && brew upgrade openssl && brew link --overwrite openssl@3
       - name: Run clippy action to produce annotations
         env:
-          OPENSSL_LIB_DIR: /usr/lib/${{matrix.info.target}}
-          OPENSSL_INCLUDE_DIR: /usr/include/${{matrix.info.target}}/openssl 
+          OPENSSL_LIB_DIR: /usr/local/lib/openssl@3
+          OPENSSL_INCLUDE_DIR: /usr/local/include/openssl@3
         run: cargo clippy --all-targets -- -D warnings
       - name: Build tests
         if: ${{ steps.skip_check.outputs.should_skip != 'true' }}
