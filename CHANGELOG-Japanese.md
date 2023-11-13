@@ -10,6 +10,7 @@
 
 - バージョン`2.10.0`の`update-rules`コマンドでは、新しいルールがダウンロードされても、`You currently have the latest rules`というメッセージを出力していた。 (#1209) (@fukusuket)
 - 正規表現が正しく処理されない場合があった。 (#1212) (@fukusuket)
+- JSON入力等に`Data`フィールドが存在しない場合、パニックが発生していた。(#1215) (@fukusuket)
 
 ## 2.10.0 [2023/10/31] "Halloween Release"
 
