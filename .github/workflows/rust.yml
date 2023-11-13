@@ -59,7 +59,7 @@ jobs:
         run: rustup component add clippy
       - name: brew update
         if: ${{ matrix.info.os == 'macOS-latest'}}
-        run: brew update && brew upgrade openssl && xcode-select --install
+        run: brew update && brew upgrade openssl
       - name: Run clippy action to produce annotations
         run: cargo clippy --all-targets -- -D warnings
       - name: Build tests
