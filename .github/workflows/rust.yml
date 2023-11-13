@@ -9,6 +9,7 @@ env:
   CARGO_TERM_COLOR: always
   OPENSSL_INCLUDE_DIR: /usr/local/opt/openssl/include
   DEP_OPENSSL_INCLUDE: /usr/local/opt/openssl/include
+  RUST_BACKTRACE: 1
 
 jobs:
   build:
