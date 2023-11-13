@@ -321,7 +321,7 @@ pub fn parse_message(
         if suffix >= 1 {
             tmp_event_record = tmp_event_record
                 .get("Data")
-                .unwrap()
+                .unwrap_or(tmp_event_record)
                 .get((suffix - 1) as usize)
                 .unwrap_or(tmp_event_record);
         }
