@@ -62,6 +62,9 @@ jobs:
         if: ${{ matrix.info.os == 'macOS-latest'}}
         run: brew update && brew upgrade openssl && brew link --overwrite openssl@3
       - name: Run clippy action to produce annotations
+        env:
+          OPENSSL_LIB_DIR: /usr/lib/${{matrix.info.target}}
+          OPENSSL_INCLUDE_DIR: /usr/include/${{matrix.info.target}}/openssl 
         run: cargo clippy --all-targets -- -D warnings
       - name: Build tests
         if: ${{ steps.skip_check.outputs.should_skip != 'true' }}
