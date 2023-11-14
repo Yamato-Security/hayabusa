@@ -61,6 +61,7 @@ jobs:
       - name: brew update
         if: ${{ matrix.info.os == 'macOS-latest'}}
         run: brew update && brew upgrade openssl && brew link --overwrite openssl@3
+        run: perl -V
       - name: Run clippy action to produce annotations
         env:
           OPENSSL_LIB_DIR: /usr/local/lib/openssl@3
