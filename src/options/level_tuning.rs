@@ -25,7 +25,7 @@ impl LevelTuning {
         let mut tuning_map: HashMap<String, String> = HashMap::new();
         read_result.iter().try_for_each(|line| -> Result<(), String> {
             // 1つ目の要素も存在しない場合はread_csvの段階で読み飛ばされるためget(0)がNoneにはならない
-            let id = line.get(0).unwrap();
+            let id = line.first().unwrap();
             if !configs::IDS_REGEX.is_match(id) {
                 return Result::Err(format!("Failed to read level tuning file. {id} is not correct id format, fix it."));
             }

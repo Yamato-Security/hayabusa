@@ -667,7 +667,7 @@ impl StoredStatic {
                 lines
                     .iter()
                     .try_for_each(|line| -> Result<(), String> {
-                        let provider = match line.get(0) {
+                        let provider = match line.first() {
                             Some(_provider) => _provider.trim(),
                             _ => {
                                 return Result::Err(
@@ -2015,7 +2015,7 @@ pub fn load_eventkey_alias(path: &str) -> EventKeyAliasConfig {
         }
 
         let empty = &"".to_string();
-        let alias = line.get(0).unwrap_or(empty);
+        let alias = line.first().unwrap_or(empty);
         let event_key = line.get(1).unwrap_or(empty);
         if alias.is_empty() || event_key.is_empty() {
             return;
@@ -2502,7 +2502,7 @@ fn load_eventcode_info(path: &str) -> EventInfoConfig {
         }
 
         let empty = &"".to_string();
-        let channel = line.get(0).unwrap_or(empty);
+        let channel = line.first().unwrap_or(empty);
         let eventcode = line.get(1).unwrap_or(empty);
         let event_title = line.get(2).unwrap_or(empty);
         infodata = EventInfo {

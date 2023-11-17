@@ -689,7 +689,7 @@ impl App {
             }
             Action::ListProfiles(_) => {
                 let profile_list =
-                    options::profile::get_profile_list("config/profiles.yaml", stored_static);
+                    options::profile::get_profile_list("config/profiles.yaml");
                 write_color_buffer(
                     &BufferWriter::stdout(ColorChoice::Always),
                     None,
