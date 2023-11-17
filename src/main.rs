@@ -24,7 +24,6 @@ use hayabusa::detections::utils::{
     check_setting_path, get_writable_color, output_and_data_stack_for_html, output_duration,
     output_profile_name,
 };
-use hayabusa::{options, yaml};
 use hayabusa::options::htmlreport::{self, HTML_REPORTER};
 use hayabusa::options::pivot::create_output;
 use hayabusa::options::pivot::PIVOT_KEYWORD;
@@ -34,6 +33,7 @@ use hayabusa::timeline::computer_metrics::countup_event_by_computer;
 use hayabusa::{afterfact::after_fact, detections::utils};
 use hayabusa::{detections::configs, timeline::timelines::Timeline};
 use hayabusa::{detections::utils::write_color_buffer, filter};
+use hayabusa::{options, yaml};
 use indicatif::ProgressBar;
 use indicatif::{ProgressDrawTarget, ProgressStyle};
 use itertools::Itertools;
@@ -688,8 +688,7 @@ impl App {
                 return;
             }
             Action::ListProfiles(_) => {
-                let profile_list =
-                    options::profile::get_profile_list("config/profiles.yaml");
+                let profile_list = options::profile::get_profile_list("config/profiles.yaml");
                 write_color_buffer(
                     &BufferWriter::stdout(ColorChoice::Always),
                     None,
@@ -1014,8 +1013,13 @@ impl App {
             || stored_static.output_option.as_ref().unwrap().no_wizard)
         {
             let mut rule_counter_wizard_map = HashMap::new();
-            yaml::count_rules(&stored_static.output_option.as_ref().unwrap().rules, &filter::exclude_ids(stored_static), stored_static, &mut rule_counter_wizard_map);
-            let level_map:HashMap<&str, u128> =  HashMap::from([
+            yaml::count_rules(
+                &stored_static.output_option.as_ref().unwrap().rules,
+                &filter::exclude_ids(stored_static),
+                stored_static,
+                &mut rule_counter_wizard_map,
+            );
+            let level_map: HashMap<&str, u128> = HashMap::from([
                 ("INFORMATIONAL", 1),
                 ("LOW", 2),
                 ("MEDIUM", 3),
@@ -1024,17 +1028,26 @@ impl App {
             ]);
             println!("Scan wizard:");
             println!();
-            let calcurate_wizard_rule_count = |exclude_noisytarget_flag: bool, exclude_noisy_status: Vec<&str>, min_level: &str, target_status: Vec<&str>, target_tags: Vec<&str>| -> HashMap<CompactString, u128> {
+            let calcurate_wizard_rule_count = |exclude_noisytarget_flag: bool,
+                                               exclude_noisy_status: Vec<&str>,
+                                               min_level: &str,
+                                               target_status: Vec<&str>,
+                                               target_tags: Vec<&str>|
+             -> HashMap<CompactString, u128> {
                 let mut ret = HashMap::new();
                 if exclude_noisytarget_flag {
                     for s in exclude_noisy_status {
                         let mut ret_cnt = 0;
                         if let Some(target_status_count) = rule_counter_wizard_map.get(s) {
-                            target_status_count.iter().for_each(| (rule_level, value)| {
-                                let doc_level_num = level_map.get(rule_level.to_uppercase().as_str()).unwrap_or(&1);
-                                let args_level_num = level_map.get(min_level.to_uppercase().as_str()).unwrap_or(&1);
+                            target_status_count.iter().for_each(|(rule_level, value)| {
+                                let doc_level_num = level_map
+                                    .get(rule_level.to_uppercase().as_str())
+                                    .unwrap_or(&1);
+                                let args_level_num = level_map
+                                    .get(min_level.to_uppercase().as_str())
+                                    .unwrap_or(&1);
                                 if doc_level_num >= args_level_num {
-                                    ret_cnt += value.iter().map(|(_, cnt )| cnt).sum::<u128>()
+                                    ret_cnt += value.iter().map(|(_, cnt)| cnt).sum::<u128>()
                                 }
                             });
                         }
@@ -1044,14 +1057,21 @@ impl App {
                     let all_status_flag = target_status.contains(&"*");
                     for s in rule_counter_wizard_map.keys() {
                         // 指定されたstatusに合致しないものは集計をスキップする
-                        if (exclude_noisy_status.contains(&s.as_str()) || !target_status.contains(&s.as_str())) && !all_status_flag {
+                        if (exclude_noisy_status.contains(&s.as_str())
+                            || !target_status.contains(&s.as_str()))
+                            && !all_status_flag
+                        {
                             continue;
                         }
                         let mut ret_cnt = 0;
                         if let Some(target_status_count) = rule_counter_wizard_map.get(s) {
-                            target_status_count.iter().for_each(| (rule_level, value)| {
-                                let doc_level_num = level_map.get(rule_level.to_uppercase().as_str()).unwrap_or(&1);
-                                let args_level_num = level_map.get(min_level.to_uppercase().as_str()).unwrap_or(&1);
+                            target_status_count.iter().for_each(|(rule_level, value)| {
+                                let doc_level_num = level_map
+                                    .get(rule_level.to_uppercase().as_str())
+                                    .unwrap_or(&1);
+                                let args_level_num = level_map
+                                    .get(min_level.to_uppercase().as_str())
+                                    .unwrap_or(&1);
                                 if doc_level_num >= args_level_num {
                                     if !target_tags.is_empty() {
                                         for (tag, cnt) in value.iter() {
@@ -1061,7 +1081,7 @@ impl App {
                                             }
                                         }
                                     } else {
-                                        ret_cnt += value.iter().map(|(_, cnt )| cnt).sum::<u128>()
+                                        ret_cnt += value.iter().map(|(_, cnt)| cnt).sum::<u128>()
                                     }
                                 }
                             });
@@ -1081,9 +1101,18 @@ impl App {
                 ("5. All event and alert rules ( status: * | level: informational+ )", (vec!["*"], "informational")),
             ];
 
-            let sections_rule_cnt = selections_status.iter().map(|(_, (status, min_level))| {
-                calcurate_wizard_rule_count(false, [].to_vec(), min_level, status.to_vec(), [].to_vec())
-            }).collect_vec();
+            let sections_rule_cnt = selections_status
+                .iter()
+                .map(|(_, (status, min_level))| {
+                    calcurate_wizard_rule_count(
+                        false,
+                        [].to_vec(),
+                        min_level,
+                        status.to_vec(),
+                        [].to_vec(),
+                    )
+                })
+                .collect_vec();
             let selection_status_items = &[
                 format!("1. Core ({} rules) ( status: test, stable | level: high, critical )", sections_rule_cnt[0].iter().map(|(_, cnt)| cnt).sum::<u128>()),
                 format!("2. Core+ ({} rules) ( status: test, stable | level: medium, high, critical )", sections_rule_cnt[1].iter().map(|(_, cnt)| cnt).sum::<u128>()),
@@ -1093,23 +1122,29 @@ impl App {
             ];
 
             let selected_index = Select::with_theme(&ColorfulTheme::default())
-            .with_prompt("Which set of detection rules would you like to load?")
-            .default(0)
-            .items(selection_status_items.as_slice())
-            .interact()
-            .unwrap();
-        status_append_output = Some(format!(
-            "- selected detection rule sets: {}",
-            selections_status[selected_index].0
-        ));
-        stored_static.output_option.as_mut().unwrap().min_level =
-        selections_status[selected_index].1 .1.into();
+                .with_prompt("Which set of detection rules would you like to load?")
+                .default(0)
+                .items(selection_status_items.as_slice())
+                .interact()
+                .unwrap();
+            status_append_output = Some(format!(
+                "- selected detection rule sets: {}",
+                selections_status[selected_index].0
+            ));
+            stored_static.output_option.as_mut().unwrap().min_level =
+                selections_status[selected_index].1 .1.into();
 
-        let exclude_noisy_cnt = calcurate_wizard_rule_count(true, ["exclude", "noisy", "deprecated", "unsupported"].to_vec(), selections_status[selected_index].1.1, [].to_vec(), [].to_vec());
+            let exclude_noisy_cnt = calcurate_wizard_rule_count(
+                true,
+                ["exclude", "noisy", "deprecated", "unsupported"].to_vec(),
+                selections_status[selected_index].1 .1,
+                [].to_vec(),
+                [].to_vec(),
+            );
 
-        stored_static.include_status.extend(
-            selections_status[selected_index]
-            .1
+            stored_static.include_status.extend(
+                selections_status[selected_index]
+                    .1
                      .0
                     .iter()
                     .map(|x| x.to_owned().into()),
@@ -1117,10 +1152,24 @@ impl App {
 
             let mut output_option = stored_static.output_option.clone().unwrap();
             let exclude_tags = output_option.exclude_tag.get_or_insert_with(Vec::new);
-            let tags_cnt = calcurate_wizard_rule_count(false, [].to_vec(), selections_status[selected_index].1.1, selections_status[selected_index].1.0.clone(), ["detection.emerging_threats", "detection.threat_hunting", "sysmon"].to_vec());
+            let tags_cnt = calcurate_wizard_rule_count(
+                false,
+                [].to_vec(),
+                selections_status[selected_index].1 .1,
+                selections_status[selected_index].1 .0.clone(),
+                [
+                    "detection.emerging_threats",
+                    "detection.threat_hunting",
+                    "sysmon",
+                ]
+                .to_vec(),
+            );
             // If anything other than "4. All alert rules" or "5. All event and alert rules" was selected, ask questions about tags.
             if selected_index < 3 {
-                let prompt_fmt = format!("Include Emerging Threats rules? ({} rules)", tags_cnt.get("detection.emerging_threats").unwrap_or(&0));
+                let prompt_fmt = format!(
+                    "Include Emerging Threats rules? ({} rules)",
+                    tags_cnt.get("detection.emerging_threats").unwrap_or(&0)
+                );
                 let et_rules_load_flag = Confirm::with_theme(&ColorfulTheme::default())
                     .with_prompt(prompt_fmt)
                     .default(true)
@@ -1131,7 +1180,10 @@ impl App {
                 if !et_rules_load_flag {
                     exclude_tags.push("detection.emerging_threats".into());
                 }
-                let prompt_fmt = format!("Include Threat Hunting rules? ({} rules)", tags_cnt.get("detection.threat_hunting").unwrap_or(&0));
+                let prompt_fmt = format!(
+                    "Include Threat Hunting rules? ({} rules)",
+                    tags_cnt.get("detection.threat_hunting").unwrap_or(&0)
+                );
                 let th_rules_load_flag = Confirm::with_theme(&ColorfulTheme::default())
                     .with_prompt(prompt_fmt)
                     .default(false)
@@ -1144,7 +1196,10 @@ impl App {
                 }
             }
             // deprecated rules load prompt
-            let prompt_fmt = format!("Include deprecated rules? ({} rules)", exclude_noisy_cnt.get("deprecated").unwrap_or(&0));
+            let prompt_fmt = format!(
+                "Include deprecated rules? ({} rules)",
+                exclude_noisy_cnt.get("deprecated").unwrap_or(&0)
+            );
             let dep_rules_load_flag = Confirm::with_theme(&ColorfulTheme::default())
                 .with_prompt(prompt_fmt)
                 .default(false)
@@ -1160,7 +1215,10 @@ impl App {
             }
 
             // noisy rules load prompt
-            let prompt_fmt = format!("Include noisy rules? ({} rules)", tags_cnt.get("noisy").unwrap_or(&0));
+            let prompt_fmt = format!(
+                "Include noisy rules? ({} rules)",
+                tags_cnt.get("noisy").unwrap_or(&0)
+            );
             let noisy_rules_load_flag = Confirm::with_theme(&ColorfulTheme::default())
                 .with_prompt(prompt_fmt)
                 .default(false)
@@ -1176,7 +1234,10 @@ impl App {
             }
 
             // unsupported rules load prompt
-            let prompt_fmt = format!("Include unsupported rules? ({} rules)", exclude_noisy_cnt.get("unsupported").unwrap_or(&0));
+            let prompt_fmt = format!(
+                "Include unsupported rules? ({} rules)",
+                exclude_noisy_cnt.get("unsupported").unwrap_or(&0)
+            );
             let unsupported_rules_load_flag = Confirm::with_theme(&ColorfulTheme::default())
                 .with_prompt(prompt_fmt)
                 .default(false)
@@ -1191,7 +1252,10 @@ impl App {
                     .enable_unsupported_rules = true;
             }
 
-            let prompt_fmt = format!("Include sysmon rules? ({} rules)", tags_cnt.get("sysmon").unwrap_or(&0));
+            let prompt_fmt = format!(
+                "Include sysmon rules? ({} rules)",
+                tags_cnt.get("sysmon").unwrap_or(&0)
+            );
             let sysmon_rules_load_flag = Confirm::with_theme(&ColorfulTheme::default())
                 .with_prompt(prompt_fmt)
                 .default(true)

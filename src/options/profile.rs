@@ -133,9 +133,7 @@ impl From<&str> for Profile {
 }
 
 // 指定されたパスのprofileを読み込む処理
-fn read_profile_data(
-    profile_path: &str,
-) -> Result<Vec<Yaml>, String> {
+fn read_profile_data(profile_path: &str) -> Result<Vec<Yaml>, String> {
     if let Ok(loaded_profile) = yaml::ParseYaml::read_file(Path::new(profile_path).to_path_buf()) {
         match YamlLoader::load_from_str(&loaded_profile) {
             Ok(profile_yml) => Ok(profile_yml),
@@ -354,7 +352,7 @@ pub fn get_profile_list(profile_path: &str) -> Nested<Vec<String>> {
         check_setting_path(&CURRENT_EXE_PATH.to_path_buf(), profile_path, true)
             .unwrap()
             .to_str()
-            .unwrap()
+            .unwrap(),
     ) {
         Ok(data) => data,
         Err(e) => {
@@ -763,11 +761,6 @@ mod tests {
         expect.push(vec!["standard".to_string(), "%Timestamp%, %Computer%, %Channel%, %EventID%, %Level%, %MitreTags%, %RecordID%, %RuleTitle%, %Details%".to_string()]);
         expect.push(vec!["verbose-1".to_string(), "%Timestamp%, %Computer%, %Channel%, %EventID%, %Level%, %MitreTags%, %RecordID%, %RuleTitle%, %Details%, %RuleFile%, %EvtxFile%".to_string()]);
         expect.push(vec!["verbose-2".to_string(), "%Timestamp%, %Computer%, %Channel%, %EventID%, %Level%, %MitreTags%, %RecordID%, %RuleTitle%, %Details%, %AllFieldInfo%".to_string()]);
-        assert_eq!(
-            expect,
-            get_profile_list(
-                "test_files/config/profiles.yaml"
-            )
-        );
+        assert_eq!(expect, get_profile_list("test_files/config/profiles.yaml"));
     }
 }
