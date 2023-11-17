@@ -8,10 +8,10 @@ use crate::detections::utils;
 use crate::filter::RuleExclude;
 use compact_str::CompactString;
 use hashbrown::{HashMap, HashSet};
+use itertools::Itertools;
 use std::ffi::OsStr;
 use std::fs;
-use std::io;
-use std::io::{BufReader, Read};
+use std::io::{self, BufReader, Read};
 use std::path::{Path, PathBuf};
 use yaml_rust::YamlLoader;
 
@@ -54,7 +54,7 @@ impl ParseYaml {
         }
     }
 
-    pub fn read_file(&self, path: PathBuf) -> Result<String, String> {
+    pub fn read_file(path: PathBuf) -> Result<String, String> {
         let mut file_content = String::new();
 
         let mut fr = fs::File::open(path)
@@ -116,7 +116,7 @@ impl ParseYaml {
             }
 
             // 個別のファイルの読み込みは即終了としない。
-            let read_content = self.read_file(path.as_ref().to_path_buf());
+            let read_content = Self::read_file(path.as_ref().to_path_buf());
             if read_content.is_err() {
                 let errmsg = format!(
                     "fail to read file: {}\n{} ",
@@ -203,7 +203,7 @@ impl ParseYaml {
                 }
 
                 // 個別のファイルの読み込みは即終了としない。
-                let read_content = self.read_file(path);
+                let read_content = Self::read_file(path);
                 if read_content.is_err() {
                     let errmsg = format!(
                         "fail to read file: {}\n{} ",
@@ -479,6 +479,172 @@ impl ParseYaml {
     }
 }
 
+    /// wizardへのルール数表示のためのstatus/level/tagsごとに階層化させてカウントする
+    pub fn count_rules<P: AsRef<Path>>(
+        path: P,
+        exclude_ids: &RuleExclude,
+        stored_static: &StoredStatic,
+        result_container: &mut HashMap<CompactString, HashMap<CompactString, HashMap<CompactString, u128>>>
+    ) -> HashMap<CompactString, HashMap<CompactString, HashMap<CompactString, u128>>> {
+        let metadata = fs::metadata(path.as_ref());
+        if metadata.is_err() {
+            return HashMap::default();
+        }
+        let mut yaml_docs = vec![];
+        if metadata.unwrap().file_type().is_file() {
+            // 拡張子がymlでないファイルは無視
+            if path
+                .as_ref()
+                .to_path_buf()
+                .extension()
+                .unwrap_or_else(|| OsStr::new(""))
+                != "yml"
+            {
+                return HashMap::default();
+            }
+
+            // 個別のファイルの読み込みは即終了としない。
+            let read_content = ParseYaml::read_file(path.as_ref().to_path_buf());
+            if read_content.is_err() {
+                return HashMap::default();
+            }
+
+            // ここも個別のファイルの読み込みは即終了としない。
+            let yaml_contents = YamlLoader::load_from_str(&read_content.unwrap());
+            if yaml_contents.is_err() {
+                return HashMap::default();
+            }
+
+            yaml_docs.extend(yaml_contents.unwrap().into_iter().map(|yaml_content| {
+                let filepath = format!("{}", path.as_ref().to_path_buf().display());
+                (filepath, yaml_content)
+            }));
+        } else {
+            let entries = fs::read_dir(path);
+            if entries.is_err() {
+                return HashMap::default();
+            }
+            yaml_docs = entries.unwrap().try_fold(vec![], |mut ret, entry| {
+                let entry = entry?;
+                // フォルダは再帰的に呼び出す。
+                if entry.file_type()?.is_dir() {
+                    count_rules(
+                        entry.path(),
+                        exclude_ids,
+                        stored_static,
+                        result_container
+                    );
+                    return io::Result::Ok(ret);
+                }
+                // ファイル以外は無視
+                if !entry.file_type()?.is_file() {
+                    return io::Result::Ok(ret);
+                }
+
+                // 拡張子がymlでないファイルは無視
+                let path = entry.path();
+                if path.extension().unwrap_or_else(|| OsStr::new("")) != "yml" {
+                    return io::Result::Ok(ret);
+                }
+
+                let path_str = path.to_str().unwrap();
+                // ignore if yml file in .git folder.
+                if utils::contains_str(path_str, "/.git/")
+                    || utils::contains_str(path_str, "\\.git\\")
+                {
+                    return io::Result::Ok(ret);
+                }
+
+                // ignore if tool test yml file in hayabusa-rules.
+                if utils::contains_str(path_str, "rules/tools/sigmac/test_files")
+                    || utils::contains_str(path_str, "rules\\tools\\sigmac\\test_files")
+                {
+                    return io::Result::Ok(ret);
+                }
+
+                // 個別のファイルの読み込みは即終了としない。
+                let read_content = ParseYaml::read_file(path);
+                if read_content.is_err() {
+                    return io::Result::Ok(ret);
+                }
+
+                // ここも個別のファイルの読み込みは即終了としない。
+                let yaml_contents = YamlLoader::load_from_str(&read_content.unwrap());
+                if yaml_contents.is_err() {
+                    let errmsg = format!(
+                        "Failed to parse yml: {}\n{} ",
+                        entry.path().display(),
+                        yaml_contents.unwrap_err()
+                    );
+                    if stored_static.verbose_flag {
+                        AlertMessage::warn(&errmsg)?;
+                    }
+                    if !stored_static.quiet_errors_flag {
+                        ERROR_LOG_STACK
+                            .lock()
+                            .unwrap()
+                            .push(format!("[WARN] {errmsg}"));
+                    }
+                    return io::Result::Ok(ret);
+                }
+
+                let yaml_contents = yaml_contents.unwrap().into_iter().map(|yaml_content| {
+                    let filepath = format!("{}", entry.path().display());
+                    (filepath, yaml_content)
+                });
+                ret.extend(yaml_contents);
+                io::Result::Ok(ret)
+            }).unwrap_or_default();
+        }
+        yaml_docs.into_iter().for_each(|(_filepath, yaml_doc)| {
+            //除外されたルールは無視する
+            let empty = vec![];
+            let rule_id = &yaml_doc["id"].as_str();
+            let rule_tags_vec = yaml_doc["tags"].as_vec().unwrap_or(&empty);
+            let included_target_tag_vec = {
+                let target_wizard_tags = ["detection.emerging_threats", "detection.threat_hunting", "sysmon"];
+                rule_tags_vec.iter().filter(|x| target_wizard_tags.contains(&x.as_str().unwrap_or_default())).filter_map(|s| s.as_str()).collect_vec()
+            };
+            if rule_id.is_some() {
+                if let Some(v) = exclude_ids
+                    .no_use_rule
+                    .get(&rule_id.unwrap_or(&String::default()).to_string())
+                {
+                    let entry_key = if utils::contains_str(v, "exclude_rule") {
+                        "excluded"
+                    } else {
+                        "noisy"
+                    };
+                    let counter = result_container.entry(entry_key.into()).or_insert(HashMap::new());
+                    *counter.entry(yaml_doc["level"]
+                    .as_str()
+                    .unwrap_or("informational")
+                    .to_uppercase().into()).or_insert(HashMap::new()).entry(yaml_doc["status"].as_str().unwrap_or("undefined").to_lowercase().into()).or_insert(0) += 1;
+                    return;
+                }
+            }
+
+            if let Some(s) = yaml_doc["status"].as_str() {
+                // wizard用の初期カウンティングではstatusとlevelの内容を確認したうえで以降の処理は行わないようにする
+                    let counter = result_container.entry(s.into()).or_insert(HashMap::new());
+                    if included_target_tag_vec.is_empty() {
+                        *counter.entry(yaml_doc["level"]
+                        .as_str()
+                        .unwrap_or("informational")
+                        .to_uppercase().into()).or_insert(HashMap::new()).entry("other".into()).or_insert(0) += 1;
+                    } else {
+                        for tag in included_target_tag_vec {
+                            *counter.entry(yaml_doc["level"]
+                            .as_str()
+                            .unwrap_or("informational")
+                            .to_uppercase().into()).or_insert(HashMap::new()).entry(tag.into()).or_insert(0) += 1;
+                        }
+                    }
+            }
+        });
+        result_container.to_owned()
+    }
+
 #[cfg(test)]
 mod tests {
 
@@ -492,6 +658,7 @@ mod tests {
     use crate::detections::configs::StoredStatic;
     use crate::filter;
     use crate::yaml;
+    use crate::yaml::ParseYaml;
     use crate::yaml::RuleExclude;
     use compact_str::CompactString;
     use hashbrown::HashMap;
@@ -600,9 +767,8 @@ mod tests {
 
     #[test]
     fn test_read_yaml() {
-        let yaml = yaml::ParseYaml::new(&create_dummy_stored_static());
         let path = Path::new("test_files/rules/yaml/1.yml");
-        let ret = yaml.read_file(path.to_path_buf()).unwrap();
+        let ret = ParseYaml::read_file(path.to_path_buf()).unwrap();
         let rule = YamlLoader::load_from_str(&ret).unwrap();
         for i in rule {
             if i["title"].as_str().unwrap() == "Sysmon Check command lines" {
@@ -617,9 +783,8 @@ mod tests {
 
     #[test]
     fn test_failed_read_yaml() {
-        let yaml = yaml::ParseYaml::new(&create_dummy_stored_static());
         let path = Path::new("test_files/rules/yaml/error.yml");
-        let ret = yaml.read_file(path.to_path_buf()).unwrap();
+        let ret = ParseYaml::read_file(path.to_path_buf()).unwrap();
         let rule = YamlLoader::load_from_str(&ret);
         assert!(rule.is_err());
     }
