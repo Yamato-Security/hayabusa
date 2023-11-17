@@ -1004,7 +1004,6 @@ impl App {
         }
         let total_size_output = format!("Total file size: {}", total_file_size.to_string_as(false));
         println!("{total_size_output}");
-        println!();
         let mut status_append_output = None;
         if !(stored_static.metrics_flag
             || stored_static.logon_summary_flag
@@ -1026,6 +1025,7 @@ impl App {
                 ("HIGH", 4),
                 ("CRITICAL", 5),
             ]);
+            println!();
             println!("Scan wizard:");
             println!();
             let calcurate_wizard_rule_count = |exclude_noisytarget_flag: bool,

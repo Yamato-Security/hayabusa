@@ -1,34 +1,13 @@
 Hayabusa was possible thanks to the following people (in alphabetical order):
 
-Akira Nishikawa (@nishikawaakira): Previous lead developer, core hayabusa rule support, etc...
-Fukusuke Takahashi (fukuseket): Static compiling for Windows, race condition, python hayabusa converter bug fixes, etc...
-Garigariganzy (@garigariganzy31): Developer, event ID metrics implementation, etc...
-ItiB (@itiB_S144) :  Core developer, sigmac hayabusa backend, rule creation, etc...
-James Takai / hachiyone(@hach1yon): Previous lead developer, tokio multi-threading, sigma aggregation logic, sigmac backend, rule creation, sigma count implementation etc…
-Kazuminn (@k47_um1n): Core Developer
+Akira Nishikawa (@nishikawaakira): First lead developer (core hayabusa rule support, etc...)
+DustInDark/Hitenkoku: Current lead developer (Too many features to count.)
+Fukusuke Takahashi (fukusuket): Core developer (Too many bug fixes to count, hayabusa converter upgrades, new features, etc...)
+Garigariganzy (@garigariganzy31): Developer (Event ID metrics implementation, etc...)
+ItiB (@itiB_S144):  Core developer (sigmac hayabusa backend, search command, etc...)
+James Takai / hachiyone(@hach1yon): Second lead developer (Tokio multi-threading, sigma aggregation logic, sigmac backend, rule creation, sigma count implementation etc…)
+Kazuminn (@k47_um1n): Core Developer (Many features.)
 Tsubokku (@ytsuboi0322): Translations
 Yusuke Matsui (@apt773): AD hacking working group leader, rule testing, documentation, research, support, etc...
 Zach Mathis (@yamatosecurity, Yamato Security Founder): Project leader, tool and concept design, rule creation and tuning, etc…
 
-
-Hayabusa would not have been possible without first creating RustyBlue, so we would also like to thank the RustyBlue contributors:
-
-Zach Mathis (@yamatosecurity, Yamato Security Founder): Project Leader
-Nishikawa Akira (@nishikawaakira): Lead Developer
-Kazuminn (@k47_um1n): Core Developer
-itiB (@itiB_S144): Core Developer
-James Takai / hachiyone (@hach1yon): Core Developer
-garigariganzy (@garigariganzy31): Developer
-7itoh (@yNitocrypto22): Developer
-dai (@__da13__): Developer
-siam (@siamease): Developer
-mimura (@mimura1133): Developer
-Yusuke Matsui (@apt773): AD hacking working group leader, rule testing and supporter
-Hiroki Takizawa (@hr_zwtk): Rule testing and supporter
-su (@su-10): Supporter
-lisbun (@lisbun): Supporter
-Tsubokku (@ytsuboi0322): Supporter
-Handy (@asasawqv): Supporter
-Sachiel (@sachielarcangel): Supporter
-Segacchi (@TakahikoSega): Supporter
-tanabe (@rtanab): Supporter

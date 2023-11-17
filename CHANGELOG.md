@@ -1,10 +1,6 @@
 # Changes
 
-## 2.11.0 [2023/XX/XX] "XX Release"
-
-**New Features:**
-
-- XXX
+## 2.10.1 [2023/11/13] "Kamemushi Release"
 
 **Enhancements:**
 
@@ -13,10 +9,8 @@
 **Bug Fixes:**
 
 - `update-rules` command would output `You currently have the latest rules` even if new rules were downloaded in version `2.10.0`. (#1209) (@fukusuket)
-
-**Other:**
-
-- XXX
+- Regular expressions would sometimes be incorrectly handled. (#1212) (@fukusuket)
+- In the rare case that there is no `Data` field such as for JSON input, a panic would occur. (#1215) (@fukusuket)
 
 ## 2.10.0 [2023/10/31] "Halloween Release"
 
