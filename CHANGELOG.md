@@ -8,7 +8,7 @@
 
 **Enhancements:**
 
-- XXX
+- Added rule count in the scan wizard. (#1206) (@hitenkoku)
 
 **Bug Fixes:**
 
