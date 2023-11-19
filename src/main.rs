@@ -1106,7 +1106,7 @@ impl App {
                 .map(|(_, (status, min_level))| {
                     calcurate_wizard_rule_count(
                         false,
-                        [].to_vec(),
+                        ["exclude", "noisy", "deprecated", "unsupported"].to_vec(),
                         min_level,
                         status.to_vec(),
                         [].to_vec(),
