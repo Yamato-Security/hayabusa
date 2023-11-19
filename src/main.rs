@@ -1136,7 +1136,7 @@ impl App {
 
             let exclude_noisy_cnt = calcurate_wizard_rule_count(
                 true,
-                ["exclude", "noisy", "deprecated", "unsupported"].to_vec(),
+                ["exclude", "excluded", "noisy", "deprecated", "unsupported"].to_vec(),
                 selections_status[selected_index].1 .1,
                 [].to_vec(),
                 [].to_vec(),
@@ -1217,7 +1217,7 @@ impl App {
             // noisy rules load prompt
             let prompt_fmt = format!(
                 "Include noisy rules? ({} rules)",
-                tags_cnt.get("noisy").unwrap_or(&0)
+                exclude_noisy_cnt.get("noisy").unwrap_or(&0)
             );
             let noisy_rules_load_flag = Confirm::with_theme(&ColorfulTheme::default())
                 .with_prompt(prompt_fmt)
