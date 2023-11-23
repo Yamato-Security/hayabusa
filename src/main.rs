@@ -1051,7 +1051,9 @@ impl App {
                                 }
                             });
                         }
-                        ret.insert(CompactString::from(s), ret_cnt);
+                        if ret_cnt > 0 {
+                            ret.insert(CompactString::from(s), ret_cnt);
+                        }
                     }
                 } else {
                     let all_status_flag = target_status.contains(&"*");
@@ -1085,7 +1087,7 @@ impl App {
                                     }
                                 }
                             });
-                            if !exclude_noisy_status.contains(&s.as_str()) {
+                            if !exclude_noisy_status.contains(&s.as_str()) && ret_cnt > 0 {
                                 ret.insert(s.clone(), ret_cnt);
                             }
                         }
@@ -1166,106 +1168,118 @@ impl App {
             );
             // If anything other than "4. All alert rules" or "5. All event and alert rules" was selected, ask questions about tags.
             if selected_index < 3 {
-                let prompt_fmt = format!(
-                    "Include Emerging Threats rules? ({} rules)",
-                    tags_cnt.get("detection.emerging_threats").unwrap_or(&0)
-                );
-                let et_rules_load_flag = Confirm::with_theme(&ColorfulTheme::default())
-                    .with_prompt(prompt_fmt)
-                    .default(true)
-                    .show_default(true)
-                    .interact()
-                    .unwrap();
-                // If no is selected, then add "--exclude-tags detection.emerging_threats"
-                if !et_rules_load_flag {
-                    exclude_tags.push("detection.emerging_threats".into());
+                if let Some(et_cnt) = tags_cnt.get("detection.emerging_threats") {
+                    let prompt_fmt = format!(
+                        "Include Emerging Threats rules? ({} rules)",
+                        et_cnt
+                    );
+                    let et_rules_load_flag = Confirm::with_theme(&ColorfulTheme::default())
+                        .with_prompt(prompt_fmt)
+                        .default(true)
+                        .show_default(true)
+                        .interact()
+                        .unwrap();
+                    // If no is selected, then add "--exclude-tags detection.emerging_threats"
+                    if !et_rules_load_flag {
+                        exclude_tags.push("detection.emerging_threats".into());
+                    }
                 }
+                if let Some(th_cnt) = tags_cnt.get("detection.threat_hunting") {
+                    let prompt_fmt = format!(
+                        "Include Threat Hunting rules? ({} rules)",
+                        th_cnt
+                    );
+                    let th_rules_load_flag = Confirm::with_theme(&ColorfulTheme::default())
+                        .with_prompt(prompt_fmt)
+                        .default(false)
+                        .show_default(true)
+                        .interact()
+                        .unwrap();
+                    // If no is selected, then add "--exclude-tags detection.threat_hunting"
+                    if !th_rules_load_flag {
+                        exclude_tags.push("detection.threat_hunting".into());
+                    }
+                }
+            }
+            if let Some(dep_cnt) = exclude_noisy_cnt.get("deprecated") {
+                // deprecated rules load prompt
                 let prompt_fmt = format!(
-                    "Include Threat Hunting rules? ({} rules)",
-                    tags_cnt.get("detection.threat_hunting").unwrap_or(&0)
+                    "Include deprecated rules? ({} rules)",
+                    dep_cnt
                 );
-                let th_rules_load_flag = Confirm::with_theme(&ColorfulTheme::default())
+                let dep_rules_load_flag = Confirm::with_theme(&ColorfulTheme::default())
                     .with_prompt(prompt_fmt)
                     .default(false)
                     .show_default(true)
                     .interact()
                     .unwrap();
-                // If no is selected, then add "--exclude-tags detection.threat_hunting"
-                if !th_rules_load_flag {
-                    exclude_tags.push("detection.threat_hunting".into());
+                if dep_rules_load_flag {
+                    stored_static
+                        .output_option
+                        .as_mut()
+                        .unwrap()
+                        .enable_deprecated_rules = true;
                 }
             }
-            // deprecated rules load prompt
-            let prompt_fmt = format!(
-                "Include deprecated rules? ({} rules)",
-                exclude_noisy_cnt.get("deprecated").unwrap_or(&0)
-            );
-            let dep_rules_load_flag = Confirm::with_theme(&ColorfulTheme::default())
-                .with_prompt(prompt_fmt)
-                .default(false)
-                .show_default(true)
-                .interact()
-                .unwrap();
-            if dep_rules_load_flag {
-                stored_static
-                    .output_option
-                    .as_mut()
-                    .unwrap()
-                    .enable_deprecated_rules = true;
+
+            if let Some(noisy_cnt) = exclude_noisy_cnt.get("noisy") {
+                // noisy rules load prompt
+                let prompt_fmt = format!(
+                    "Include noisy rules? ({} rules)",
+                    noisy_cnt
+                );
+                let noisy_rules_load_flag = Confirm::with_theme(&ColorfulTheme::default())
+                    .with_prompt(prompt_fmt)
+                    .default(false)
+                    .show_default(true)
+                    .interact()
+                    .unwrap();
+                if noisy_rules_load_flag {
+                    stored_static
+                        .output_option
+                        .as_mut()
+                        .unwrap()
+                        .enable_noisy_rules = true;
+                }
             }
 
-            // noisy rules load prompt
-            let prompt_fmt = format!(
-                "Include noisy rules? ({} rules)",
-                exclude_noisy_cnt.get("noisy").unwrap_or(&0)
-            );
-            let noisy_rules_load_flag = Confirm::with_theme(&ColorfulTheme::default())
-                .with_prompt(prompt_fmt)
-                .default(false)
-                .show_default(true)
-                .interact()
-                .unwrap();
-            if noisy_rules_load_flag {
-                stored_static
-                    .output_option
-                    .as_mut()
-                    .unwrap()
-                    .enable_noisy_rules = true;
+            if let Some(unsup_cnt) = exclude_noisy_cnt.get("unsupported") {
+                // unsupported rules load prompt
+                let prompt_fmt = format!(
+                    "Include unsupported rules? ({} rules)",
+                    unsup_cnt
+                );
+                let unsupported_rules_load_flag = Confirm::with_theme(&ColorfulTheme::default())
+                    .with_prompt(prompt_fmt)
+                    .default(false)
+                    .show_default(true)
+                    .interact()
+                    .unwrap();
+                if unsupported_rules_load_flag {
+                    stored_static
+                        .output_option
+                        .as_mut()
+                        .unwrap()
+                        .enable_unsupported_rules = true;
+                }
             }
 
-            // unsupported rules load prompt
-            let prompt_fmt = format!(
-                "Include unsupported rules? ({} rules)",
-                exclude_noisy_cnt.get("unsupported").unwrap_or(&0)
-            );
-            let unsupported_rules_load_flag = Confirm::with_theme(&ColorfulTheme::default())
-                .with_prompt(prompt_fmt)
-                .default(false)
-                .show_default(true)
-                .interact()
-                .unwrap();
-            if unsupported_rules_load_flag {
-                stored_static
-                    .output_option
-                    .as_mut()
-                    .unwrap()
-                    .enable_unsupported_rules = true;
-            }
+            if let Some(sysmon_cnt) = tags_cnt.get("sysmon") {
+                let prompt_fmt = format!(
+                    "Include sysmon rules? ({} rules)",
+                    sysmon_cnt
+                );
+                let sysmon_rules_load_flag = Confirm::with_theme(&ColorfulTheme::default())
+                    .with_prompt(prompt_fmt)
+                    .default(true)
+                    .show_default(true)
+                    .interact()
+                    .unwrap();
 
-            let prompt_fmt = format!(
-                "Include sysmon rules? ({} rules)",
-                tags_cnt.get("sysmon").unwrap_or(&0)
-            );
-            let sysmon_rules_load_flag = Confirm::with_theme(&ColorfulTheme::default())
-                .with_prompt(prompt_fmt)
-                .default(true)
-                .show_default(true)
-                .interact()
-                .unwrap();
-
-            // If no is selected, then add "--exclude-tags sysmon"
-            if !sysmon_rules_load_flag {
-                exclude_tags.push("sysmon".into());
+                // If no is selected, then add "--exclude-tags sysmon"
+                if !sysmon_rules_load_flag {
+                    exclude_tags.push("sysmon".into());
+                }
             }
 
             if !exclude_tags.is_empty() {
