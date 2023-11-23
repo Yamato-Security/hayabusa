@@ -7,22 +7,23 @@ pub fn extract_fields(channel: Option<String>, event_id: Option<String>, data: &
             if ch == "Windows PowerShell"
                 && (eid == "400" || eid == "403" || eid == "600" || eid == "800")
             {
-                extract_powershell_classic_data_fields(data);
+                let data_field_index = if eid == "800" { 1 } else { 2 };
+                extract_powershell_classic_data_fields(data, data_field_index);
             }
         }
     }
 }
 
-fn extract_powershell_classic_data_fields(data: &mut Value) {
+fn extract_powershell_classic_data_fields(data: &mut Value, data_field_index: usize) {
     match data {
         Value::Object(map) => {
             for (_, val) in map {
-                extract_powershell_classic_data_fields(val);
+                extract_powershell_classic_data_fields(val, data_field_index);
             }
         }
         Value::Array(vec) => {
             for (i, val) in enumerate(vec) {
-                if i == 2 {
+                if i == data_field_index {
                     if let Some(powershell_data_str) = val.as_str() {
                         let map_val: std::collections::HashMap<&str, &str> = powershell_data_str
                             .trim()
@@ -47,7 +48,7 @@ mod tests {
     use serde_json::Value;
 
     #[test]
-    fn test_powershell_classic_data_fields_extraction() {
+    fn test_powershell_classic_data_fields_extraction_400() {
         let record_json_str = r#"
 {
     "Event": {
@@ -82,14 +83,50 @@ mod tests {
             .unwrap()
             .get("NewEngineState")
             .unwrap();
-        assert_eq!(
-            extracted_fields,
-            &serde_json::Value::String("Available".to_string())
-        );
+        assert_eq!(extracted_fields, &Value::String("Available".to_string()));
     }
 
     #[test]
-    fn test_powershell_classic_data_fields_extraction_data_2_missing() {
+    fn test_powershell_classic_data_fields_extraction_800() {
+        let record_json_str = r#"
+{
+    "Event": {
+        "System": {
+            "EventID": 800,
+            "Channel": "Windows PowerShell"
+        },
+        "EventData": {
+            "Data": [
+                "Available",
+                "NewEngineState=Available",
+                "None"
+            ]
+        }
+    }
+}"#;
+
+        let mut val = serde_json::from_str(record_json_str).unwrap();
+        extract_fields(
+            Some("Windows PowerShell".to_string()),
+            Some("800".to_string()),
+            &mut val,
+        );
+        let extracted_fields = val
+            .get("Event")
+            .unwrap()
+            .get("EventData")
+            .unwrap()
+            .get("Data")
+            .unwrap()
+            .get(1)
+            .unwrap()
+            .get("NewEngineState")
+            .unwrap();
+        assert_eq!(extracted_fields, &Value::String("Available".to_string()));
+    }
+
+    #[test]
+    fn test_powershell_classic_data_fields_extraction_400_data_2_missing() {
         let record_json_str = r#"
 {
     "Event": {
