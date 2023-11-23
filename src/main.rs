@@ -1169,10 +1169,7 @@ impl App {
             // If anything other than "4. All alert rules" or "5. All event and alert rules" was selected, ask questions about tags.
             if selected_index < 3 {
                 if let Some(et_cnt) = tags_cnt.get("detection.emerging_threats") {
-                    let prompt_fmt = format!(
-                        "Include Emerging Threats rules? ({} rules)",
-                        et_cnt
-                    );
+                    let prompt_fmt = format!("Include Emerging Threats rules? ({} rules)", et_cnt);
                     let et_rules_load_flag = Confirm::with_theme(&ColorfulTheme::default())
                         .with_prompt(prompt_fmt)
                         .default(true)
@@ -1185,10 +1182,7 @@ impl App {
                     }
                 }
                 if let Some(th_cnt) = tags_cnt.get("detection.threat_hunting") {
-                    let prompt_fmt = format!(
-                        "Include Threat Hunting rules? ({} rules)",
-                        th_cnt
-                    );
+                    let prompt_fmt = format!("Include Threat Hunting rules? ({} rules)", th_cnt);
                     let th_rules_load_flag = Confirm::with_theme(&ColorfulTheme::default())
                         .with_prompt(prompt_fmt)
                         .default(false)
@@ -1203,10 +1197,7 @@ impl App {
             }
             if let Some(dep_cnt) = exclude_noisy_cnt.get("deprecated") {
                 // deprecated rules load prompt
-                let prompt_fmt = format!(
-                    "Include deprecated rules? ({} rules)",
-                    dep_cnt
-                );
+                let prompt_fmt = format!("Include deprecated rules? ({} rules)", dep_cnt);
                 let dep_rules_load_flag = Confirm::with_theme(&ColorfulTheme::default())
                     .with_prompt(prompt_fmt)
                     .default(false)
@@ -1224,10 +1215,7 @@ impl App {
 
             if let Some(noisy_cnt) = exclude_noisy_cnt.get("noisy") {
                 // noisy rules load prompt
-                let prompt_fmt = format!(
-                    "Include noisy rules? ({} rules)",
-                    noisy_cnt
-                );
+                let prompt_fmt = format!("Include noisy rules? ({} rules)", noisy_cnt);
                 let noisy_rules_load_flag = Confirm::with_theme(&ColorfulTheme::default())
                     .with_prompt(prompt_fmt)
                     .default(false)
@@ -1245,10 +1233,7 @@ impl App {
 
             if let Some(unsup_cnt) = exclude_noisy_cnt.get("unsupported") {
                 // unsupported rules load prompt
-                let prompt_fmt = format!(
-                    "Include unsupported rules? ({} rules)",
-                    unsup_cnt
-                );
+                let prompt_fmt = format!("Include unsupported rules? ({} rules)", unsup_cnt);
                 let unsupported_rules_load_flag = Confirm::with_theme(&ColorfulTheme::default())
                     .with_prompt(prompt_fmt)
                     .default(false)
@@ -1265,10 +1250,7 @@ impl App {
             }
 
             if let Some(sysmon_cnt) = tags_cnt.get("sysmon") {
-                let prompt_fmt = format!(
-                    "Include sysmon rules? ({} rules)",
-                    sysmon_cnt
-                );
+                let prompt_fmt = format!("Include sysmon rules? ({} rules)", sysmon_cnt);
                 let sysmon_rules_load_flag = Confirm::with_theme(&ColorfulTheme::default())
                     .with_prompt(prompt_fmt)
                     .default(true)
