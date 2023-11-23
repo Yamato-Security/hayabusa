@@ -284,11 +284,8 @@ impl ParseYaml {
                 }
                 if let Some(id) = rule_id {
                     if !stored_static.target_ruleids.is_target(id, true) {
-                        if !self.loaded_rule_ids.contains(*id) {
-                            let entry = self.rule_load_cnt.entry("excluded".into()).or_insert(0);
-                            *entry += 1;
-                            self.loaded_rule_ids.insert(CompactString::from(*id));
-                        }
+                        let entry = self.rule_load_cnt.entry("excluded".into()).or_insert(0);
+                        *entry += 1;
                         return Option::None;
                     }
                 }
@@ -299,12 +296,9 @@ impl ParseYaml {
                 *status_cnt += 1;
             };
 
-            let mut up_rule_load_cnt = |status: &str, rule_id: &str| {
-                if !self.loaded_rule_ids.contains(rule_id) {
-                    let entry = self.rule_load_cnt.entry(status.into()).or_insert(0);
-                    *entry += 1;
-                    self.loaded_rule_ids.insert(rule_id.into());
-                }
+            let mut up_rule_load_cnt = |status: &str| {
+                let entry = self.rule_load_cnt.entry(status.into()).or_insert(0);
+                *entry += 1;
             };
 
             // 指定されたレベルより低いルールは無視する
@@ -318,7 +312,7 @@ impl ParseYaml {
             if doc_level_num < args_level_num
                 || (target_level_num != &0_u128 && doc_level_num != target_level_num)
             {
-                up_rule_load_cnt("excluded", rule_id.unwrap_or(&String::default()));
+                up_rule_load_cnt("excluded");
                 return Option::None;
             }
 
@@ -329,7 +323,7 @@ impl ParseYaml {
                     || !(is_contained_include_status_all_allowed
                         || stored_static.include_status.contains(s))
                 {
-                    up_rule_load_cnt("excluded", rule_id.unwrap_or(&String::default()));
+                    up_rule_load_cnt("excluded");
                     return Option::None;
                 }
                 if exist_output_opt
@@ -380,13 +374,13 @@ impl ParseYaml {
                 if !include_category.is_empty()
                     && !include_category.contains(&category_in_rule.to_string())
                 {
-                    up_rule_load_cnt("excluded", rule_id.unwrap_or(&String::default()));
+                    up_rule_load_cnt("excluded");
                     return Option::None;
                 }
                 if !exclude_category.is_empty()
                     && exclude_category.contains(&category_in_rule.to_string())
                 {
-                    up_rule_load_cnt("excluded", rule_id.unwrap_or(&String::default()));
+                    up_rule_load_cnt("excluded");
                     return Option::None;
                 }
             }
@@ -413,11 +407,11 @@ impl ParseYaml {
                         target_tags.contains(&tag.as_str().unwrap_or_default().to_string())
                     });
                     if !is_match {
-                        up_rule_load_cnt("excluded", rule_id.unwrap_or(&String::default()));
+                        up_rule_load_cnt("excluded");
                         return Option::None;
                     }
                 } else {
-                    up_rule_load_cnt("excluded", rule_id.unwrap_or(&String::default()));
+                    up_rule_load_cnt("excluded");
                     return Option::None;
                 }
             }
@@ -444,29 +438,24 @@ impl ParseYaml {
                         exclude_target_tags.contains(&tag.as_str().unwrap_or_default().to_string())
                     });
                     if is_match {
-                        up_rule_load_cnt("excluded", rule_id.unwrap_or(&String::default()));
+                        up_rule_load_cnt("excluded");
                         return Option::None;
                     }
                 }
             }
 
-            if !self
-                .loaded_rule_ids
-                .contains(rule_id.unwrap_or(&String::default()))
-            {
-                self.rulecounter.insert(
-                    yaml_doc["ruletype"].as_str().unwrap_or("Other").into(),
-                    self.rulecounter
-                        .get(yaml_doc["ruletype"].as_str().unwrap_or("Other"))
-                        .unwrap_or(&0)
-                        + 1,
-                );
+            self.rulecounter.insert(
+                yaml_doc["ruletype"].as_str().unwrap_or("Other").into(),
+                self.rulecounter
+                    .get(yaml_doc["ruletype"].as_str().unwrap_or("Other"))
+                    .unwrap_or(&0)
+                    + 1,
+            );
 
-                up_rule_status_cnt(status.unwrap_or("undefined"));
+            up_rule_status_cnt(status.unwrap_or("undefined"));
 
-                self.loaded_rule_ids
-                    .insert(rule_id.unwrap_or(&String::default()).into());
-            }
+            self.loaded_rule_ids
+                .insert(rule_id.unwrap_or(&String::default()).into());
 
             if stored_static.verbose_flag {
                 println!("Loaded rule: {filepath}");
