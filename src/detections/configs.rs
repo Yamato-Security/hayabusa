@@ -83,6 +83,7 @@ pub struct StoredStatic {
     pub exclude_eid: HashSet<CompactString>,
     pub include_status: HashSet<CompactString>, // 読み込み対象ルールのステータスのセット。*はすべてのステータスを読み込む
     pub field_data_map: Option<FieldDataMap>,
+    pub field_data_extraction: bool,
     pub enable_recover_records: bool,
     pub timeline_offset: Option<String>,
 }
@@ -496,6 +497,13 @@ impl StoredStatic {
                     .unwrap(),
             ))
         };
+
+        let field_data_extraction_flag = match &input_config.as_ref().unwrap().action {
+            Some(Action::CsvTimeline(opt)) => opt.output_options.field_data_extraction,
+            Some(Action::JsonTimeline(opt)) => opt.output_options.field_data_extraction,
+            _ => false,
+        };
+
         let enable_recover_records = match &input_config.as_ref().unwrap().action {
             Some(Action::CsvTimeline(opt)) => opt.output_options.input_args.recover_records,
             Some(Action::JsonTimeline(opt)) => opt.output_options.input_args.recover_records,
@@ -629,6 +637,7 @@ impl StoredStatic {
             include_eid,
             exclude_eid,
             field_data_map,
+            field_data_extraction: field_data_extraction_flag,
             enable_recover_records,
             timeline_offset,
             include_status: HashSet::new(),
@@ -1476,6 +1485,10 @@ pub struct OutputOption {
     #[arg(help_heading = Some("General Options"), short='C', long = "clobber", display_order = 290, requires = "output")]
     pub clobber: bool,
 
+    /// Enable PowerShell Classic Data field extraction (default: disabled)
+    #[arg(help_heading = Some("Output"), long = "field-data-extraction", display_order = 390)]
+    pub field_data_extraction: bool,
+
     /// Disable field data mapping
     #[arg(help_heading = Some("Output"), short = 'F', long = "no-field-data-mapping", display_order = 400)]
     pub no_field: bool,
@@ -2160,6 +2173,7 @@ fn extract_output_options(config: &Config) -> Option<OutputOption> {
             include_eid: option.include_eid.clone(),
             exclude_eid: option.exclude_eid.clone(),
             no_field: false,
+            field_data_extraction: false,
             remove_duplicate_data: false,
             remove_duplicate_detections: false,
             no_wizard: option.no_wizard,
@@ -2198,6 +2212,7 @@ fn extract_output_options(config: &Config) -> Option<OutputOption> {
             include_eid: None,
             exclude_eid: None,
             no_field: false,
+            field_data_extraction: false,
             remove_duplicate_data: false,
             remove_duplicate_detections: false,
             no_wizard: true,
@@ -2236,6 +2251,7 @@ fn extract_output_options(config: &Config) -> Option<OutputOption> {
             include_eid: None,
             exclude_eid: None,
             no_field: false,
+            field_data_extraction: false,
             remove_duplicate_data: false,
             remove_duplicate_detections: false,
             no_wizard: true,
@@ -2283,6 +2299,7 @@ fn extract_output_options(config: &Config) -> Option<OutputOption> {
             include_eid: None,
             exclude_eid: None,
             no_field: false,
+            field_data_extraction: false,
             remove_duplicate_data: false,
             remove_duplicate_detections: false,
             no_wizard: true,
@@ -2330,6 +2347,7 @@ fn extract_output_options(config: &Config) -> Option<OutputOption> {
             include_eid: None,
             exclude_eid: None,
             no_field: false,
+            field_data_extraction: false,
             remove_duplicate_data: false,
             remove_duplicate_detections: false,
             no_wizard: true,
@@ -2383,6 +2401,7 @@ fn extract_output_options(config: &Config) -> Option<OutputOption> {
             include_eid: None,
             exclude_eid: None,
             no_field: false,
+            field_data_extraction: false,
             remove_duplicate_data: false,
             remove_duplicate_detections: false,
             no_wizard: true,
@@ -2436,6 +2455,7 @@ fn extract_output_options(config: &Config) -> Option<OutputOption> {
             include_eid: None,
             exclude_eid: None,
             no_field: false,
+            field_data_extraction: false,
             remove_duplicate_data: false,
             remove_duplicate_detections: false,
             no_wizard: true,
@@ -2685,6 +2705,7 @@ mod tests {
                     include_eid: None,
                     exclude_eid: None,
                     no_field: false,
+                    field_data_extraction: false,
                     remove_duplicate_data: false,
                     remove_duplicate_detections: false,
                     no_wizard: true,
@@ -2757,6 +2778,7 @@ mod tests {
                     include_eid: None,
                     exclude_eid: None,
                     no_field: false,
+                    field_data_extraction: false,
                     remove_duplicate_data: false,
                     remove_duplicate_detections: false,
                     no_wizard: true,

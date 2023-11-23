@@ -573,6 +573,7 @@ mod tests {
                     include_eid: None,
                     exclude_eid: None,
                     no_field: false,
+                    field_data_extraction: false,
                     remove_duplicate_data: false,
                     remove_duplicate_detections: false,
                     no_wizard: true,
@@ -593,7 +594,8 @@ mod tests {
         match serde_json::from_str(record_str) {
             Ok(record) => {
                 let keys = detections::rule::get_detection_keys(&rule_node);
-                let recinfo = utils::create_rec_info(record, "testpath".to_owned(), &keys, &false);
+                let recinfo =
+                    utils::create_rec_info(record, "testpath".to_owned(), &keys, &false, &false);
                 assert_eq!(
                     rule_node.select(
                         &recinfo,

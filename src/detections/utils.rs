@@ -35,6 +35,7 @@ use super::detection::EvtxRecordInfo;
 use super::message::AlertMessage;
 
 use crate::detections::field_data_map::{convert_field_data, FieldDataMap, FieldDataMapKey};
+use crate::detections::field_extract::extract_fields;
 use memchr::memmem;
 
 pub fn concat_selection_key(key_list: &Nested<String>) -> String {
@@ -299,10 +300,11 @@ pub fn create_tokio_runtime(thread_number: Option<usize>) -> Runtime {
 
 // EvtxRecordInfoを作成します。
 pub fn create_rec_info(
-    data: Value,
+    mut data: Value,
     path: String,
     keys: &Nested<String>,
     recovered_record: &bool,
+    enable_field_extraction: &bool,
 ) -> EvtxRecordInfo {
     // 高速化のための処理
 
@@ -315,6 +317,8 @@ pub fn create_rec_info(
 
     let binding = STORED_EKEY_ALIAS.read().unwrap();
     let eventkey_alias = binding.as_ref().unwrap();
+    let mut event_id = None;
+    let mut channel = None;
     for key in keys.iter() {
         let val = get_event_value(key, &data, eventkey_alias);
         if val.is_none() {
@@ -326,7 +330,18 @@ pub fn create_rec_info(
             continue;
         }
 
+        if *enable_field_extraction {
+            if key == "EventID" {
+                event_id = val.clone();
+            }
+            if key == "Channel" {
+                channel = val.clone();
+            }
+        }
         key_2_values.insert(key.to_string(), val.unwrap());
+    }
+    if *enable_field_extraction {
+        extract_fields(channel, event_id, &mut data);
     }
 
     // EvtxRecordInfoを作る
@@ -1056,6 +1071,7 @@ mod tests {
                     include_eid: None,
                     exclude_eid: None,
                     no_field: false,
+                    field_data_extraction: false,
                     remove_duplicate_data: false,
                     remove_duplicate_detections: false,
                     no_wizard: true,

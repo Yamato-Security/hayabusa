@@ -554,6 +554,7 @@ mod tests {
                     include_eid: None,
                     exclude_eid: None,
                     no_field: false,
+                    field_data_extraction: false,
                     remove_duplicate_data: false,
                     remove_duplicate_detections: false,
                     no_wizard: true,
