@@ -1194,22 +1194,42 @@ impl App {
                         exclude_tags.push("detection.threat_hunting".into());
                     }
                 }
-            }
-            if let Some(dep_cnt) = exclude_noisy_cnt.get("deprecated") {
-                // deprecated rules load prompt
-                let prompt_fmt = format!("Include deprecated rules? ({} rules)", dep_cnt);
-                let dep_rules_load_flag = Confirm::with_theme(&ColorfulTheme::default())
-                    .with_prompt(prompt_fmt)
-                    .default(false)
-                    .show_default(true)
-                    .interact()
-                    .unwrap();
-                if dep_rules_load_flag {
-                    stored_static
-                        .output_option
-                        .as_mut()
-                        .unwrap()
-                        .enable_deprecated_rules = true;
+            } else {
+                // If "4. All alert rules" or "5. All event and alert rules" was selected, ask questions about deprecated and unsupported rules.
+                if let Some(dep_cnt) = exclude_noisy_cnt.get("deprecated") {
+                    // deprecated rules load prompt
+                    let prompt_fmt = format!("Include deprecated rules? ({} rules)", dep_cnt);
+                    let dep_rules_load_flag = Confirm::with_theme(&ColorfulTheme::default())
+                        .with_prompt(prompt_fmt)
+                        .default(false)
+                        .show_default(true)
+                        .interact()
+                        .unwrap();
+                    if dep_rules_load_flag {
+                        stored_static
+                            .output_option
+                            .as_mut()
+                            .unwrap()
+                            .enable_deprecated_rules = true;
+                    }
+                }
+                if let Some(unsup_cnt) = exclude_noisy_cnt.get("unsupported") {
+                    // unsupported rules load prompt
+                    let prompt_fmt = format!("Include unsupported rules? ({} rules)", unsup_cnt);
+                    let unsupported_rules_load_flag =
+                        Confirm::with_theme(&ColorfulTheme::default())
+                            .with_prompt(prompt_fmt)
+                            .default(false)
+                            .show_default(true)
+                            .interact()
+                            .unwrap();
+                    if unsupported_rules_load_flag {
+                        stored_static
+                            .output_option
+                            .as_mut()
+                            .unwrap()
+                            .enable_unsupported_rules = true;
+                    }
                 }
             }
 
@@ -1228,24 +1248,6 @@ impl App {
                         .as_mut()
                         .unwrap()
                         .enable_noisy_rules = true;
-                }
-            }
-
-            if let Some(unsup_cnt) = exclude_noisy_cnt.get("unsupported") {
-                // unsupported rules load prompt
-                let prompt_fmt = format!("Include unsupported rules? ({} rules)", unsup_cnt);
-                let unsupported_rules_load_flag = Confirm::with_theme(&ColorfulTheme::default())
-                    .with_prompt(prompt_fmt)
-                    .default(false)
-                    .show_default(true)
-                    .interact()
-                    .unwrap();
-                if unsupported_rules_load_flag {
-                    stored_static
-                        .output_option
-                        .as_mut()
-                        .unwrap()
-                        .enable_unsupported_rules = true;
                 }
             }
 
