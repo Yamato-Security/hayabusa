@@ -1407,7 +1407,7 @@ impl App {
                 records_per_detect,
                 &path,
                 self.rule_keys.to_owned(),
-                stored_static.field_data_extraction,
+                stored_static.no_pwsh_field_extraction,
             ));
 
             // timeline機能の実行
@@ -1579,7 +1579,7 @@ impl App {
                 records_per_detect,
                 &path,
                 self.rule_keys.to_owned(),
-                stored_static.field_data_extraction,
+                stored_static.no_pwsh_field_extraction,
             ));
 
             // timeline機能の実行

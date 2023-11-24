@@ -83,7 +83,7 @@ pub struct StoredStatic {
     pub exclude_eid: HashSet<CompactString>,
     pub include_status: HashSet<CompactString>, // 読み込み対象ルールのステータスのセット。*はすべてのステータスを読み込む
     pub field_data_map: Option<FieldDataMap>,
-    pub field_data_extraction: bool,
+    pub no_pwsh_field_extraction: bool,
     pub enable_recover_records: bool,
     pub timeline_offset: Option<String>,
 }
@@ -498,7 +498,7 @@ impl StoredStatic {
             ))
         };
 
-        let field_data_extraction_flag = match &input_config.as_ref().unwrap().action {
+        let no_pwsh_field_extraction_flag = match &input_config.as_ref().unwrap().action {
             Some(Action::CsvTimeline(opt)) => opt.output_options.no_pwsh_field_extraction,
             Some(Action::JsonTimeline(opt)) => opt.output_options.no_pwsh_field_extraction,
             _ => false,
@@ -637,7 +637,7 @@ impl StoredStatic {
             include_eid,
             exclude_eid,
             field_data_map,
-            field_data_extraction: field_data_extraction_flag,
+            no_pwsh_field_extraction: no_pwsh_field_extraction_flag,
             enable_recover_records,
             timeline_offset,
             include_status: HashSet::new(),
