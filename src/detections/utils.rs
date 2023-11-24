@@ -341,7 +341,7 @@ pub fn create_rec_info(
         key_2_values.insert(key.to_string(), val.unwrap());
     }
     if !*no_pwsh_field_extraction {
-        extract_fields(channel, event_id, &mut data);
+        extract_fields(channel, event_id, &mut data, &mut key_2_values);
     }
 
     // EvtxRecordInfoを作る

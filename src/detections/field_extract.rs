@@ -1,44 +1,54 @@
+use hashbrown::HashMap;
 use serde_json::Value;
 
-pub fn extract_fields(channel: Option<String>, event_id: Option<String>, data: &mut Value) {
+pub fn extract_fields(
+    channel: Option<String>,
+    event_id: Option<String>,
+    data: &mut Value,
+    key_2_values: &mut HashMap<String, String>,
+) {
     if let Some(ch) = channel {
         if let Some(eid) = event_id {
             if ch == "Windows PowerShell"
                 && (eid == "400" || eid == "403" || eid == "600" || eid == "800")
             {
-                let data_field_index = if eid == "800" { 1 } else { 2 };
-                extract_powershell_classic_data_fields(data, data_field_index);
+                let target_data_index = if eid == "800" { 1 } else { 2 };
+                extract_powershell_classic_fields(data, target_data_index, key_2_values);
             }
         }
     }
 }
 
-fn extract_powershell_classic_data_fields(
+fn extract_powershell_classic_fields(
     data: &mut Value,
-    data_field_index: usize,
+    data_index: usize,
+    key_2_values: &mut HashMap<String, String>,
 ) -> Option<Value> {
     match data {
         Value::Object(map) => {
             let mut extracted_fields = None;
             for (_, val) in &mut *map {
-                extracted_fields = extract_powershell_classic_data_fields(val, data_field_index);
+                extracted_fields = extract_powershell_classic_fields(val, data_index, key_2_values);
                 if extracted_fields.is_some() {
                     break;
                 }
             }
             if let Some(Value::Object(fields)) = extracted_fields {
                 for (key, val) in fields {
-                    map.insert(key, val);
+                    map.insert(key.clone(), val.clone());
+                    if let Value::String(s) = val {
+                        key_2_values.insert(key, s.to_string());
+                    }
                 }
             }
         }
         Value::Array(vec) => {
-            if let Some(val) = vec.get(data_field_index) {
+            if let Some(val) = vec.get(data_index) {
                 if let Some(powershell_data_str) = val.as_str() {
                     let fields_data: std::collections::HashMap<&str, &str> = powershell_data_str
                         .trim()
                         .split("\n\t")
-                        .map(|s| s.trim_end_matches("\r\n"))
+                        .map(|s| s.trim_end_matches("\r\n").trim_end_matches('\r'))
                         .filter_map(|s| s.split_once('='))
                         .collect();
                     if let Ok(extracted_fields) = serde_json::to_value(fields_data) {
@@ -55,6 +65,7 @@ fn extract_powershell_classic_data_fields(
 #[cfg(test)]
 mod tests {
     use crate::detections::field_extract::extract_fields;
+    use hashbrown::HashMap;
     use serde_json::Value;
 
     #[test]
@@ -77,10 +88,12 @@ mod tests {
 }"#;
 
         let mut val = serde_json::from_str(record_json_str).unwrap();
+        let mut key2values: HashMap<String, String> = HashMap::new();
         extract_fields(
             Some("Windows PowerShell".to_string()),
             Some("400".to_string()),
             &mut val,
+            &mut key2values,
         );
         let extracted_fields = val
             .get("Event")
@@ -112,10 +125,12 @@ mod tests {
 }"#;
 
         let mut val = serde_json::from_str(record_json_str).unwrap();
+        let mut key2values: HashMap<String, String> = HashMap::new();
         extract_fields(
             Some("Windows PowerShell".to_string()),
             Some("800".to_string()),
             &mut val,
+            &mut key2values,
         );
         let extracted_fields = val
             .get("Event")
@@ -147,10 +162,12 @@ mod tests {
 
         let original_val: Value = serde_json::from_str(record_json_str).unwrap();
         let mut val = serde_json::from_str(record_json_str).unwrap();
+        let mut key2values: HashMap<String, String> = HashMap::new();
         extract_fields(
             Some("Windows PowerShell".to_string()),
             Some("400".to_string()),
             &mut val,
+            &mut key2values,
         );
         assert_eq!(original_val, val);
     }
