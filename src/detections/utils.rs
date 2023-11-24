@@ -304,7 +304,7 @@ pub fn create_rec_info(
     path: String,
     keys: &Nested<String>,
     recovered_record: &bool,
-    enable_field_extraction: &bool,
+    no_pwsh_field_extraction: &bool,
 ) -> EvtxRecordInfo {
     // 高速化のための処理
 
@@ -330,7 +330,7 @@ pub fn create_rec_info(
             continue;
         }
 
-        if *enable_field_extraction {
+        if !*no_pwsh_field_extraction {
             if key == "EventID" {
                 event_id = val.clone();
             }
@@ -340,7 +340,7 @@ pub fn create_rec_info(
         }
         key_2_values.insert(key.to_string(), val.unwrap());
     }
-    if *enable_field_extraction {
+    if !*no_pwsh_field_extraction {
         extract_fields(channel, event_id, &mut data);
     }
 
@@ -1071,7 +1071,7 @@ mod tests {
                     include_eid: None,
                     exclude_eid: None,
                     no_field: false,
-                    field_data_extraction: false,
+                    no_pwsh_field_extraction: false,
                     remove_duplicate_data: false,
                     remove_duplicate_detections: false,
                     no_wizard: true,
