@@ -1,4 +1,3 @@
-use itertools::enumerate;
 use serde_json::Value;
 
 pub fn extract_fields(channel: Option<String>, event_id: Option<String>, data: &mut Value) {
@@ -14,32 +13,43 @@ pub fn extract_fields(channel: Option<String>, event_id: Option<String>, data: &
     }
 }
 
-fn extract_powershell_classic_data_fields(data: &mut Value, data_field_index: usize) {
+fn extract_powershell_classic_data_fields(
+    data: &mut Value,
+    data_field_index: usize,
+) -> Option<Value> {
     match data {
         Value::Object(map) => {
-            for (_, val) in map {
-                extract_powershell_classic_data_fields(val, data_field_index);
+            let mut extracted_fields = None;
+            for (_, val) in &mut *map {
+                extracted_fields = extract_powershell_classic_data_fields(val, data_field_index);
+                if extracted_fields.is_some() {
+                    break;
+                }
+            }
+            if let Some(Value::Object(fields)) = extracted_fields {
+                for (key, val) in fields {
+                    map.insert(key, val);
+                }
             }
         }
         Value::Array(vec) => {
-            for (i, val) in enumerate(vec) {
-                if i == data_field_index {
-                    if let Some(powershell_data_str) = val.as_str() {
-                        let map_val: std::collections::HashMap<&str, &str> = powershell_data_str
-                            .trim()
-                            .split("\n\t")
-                            .map(|s| s.trim_end_matches("\r\n"))
-                            .filter_map(|s| s.split_once('='))
-                            .collect();
-                        if let Ok(extracted_fields) = serde_json::to_value(map_val) {
-                            *val = extracted_fields
-                        }
+            if let Some(val) = vec.get(data_field_index) {
+                if let Some(powershell_data_str) = val.as_str() {
+                    let fields_data: std::collections::HashMap<&str, &str> = powershell_data_str
+                        .trim()
+                        .split("\n\t")
+                        .map(|s| s.trim_end_matches("\r\n"))
+                        .filter_map(|s| s.split_once('='))
+                        .collect();
+                    if let Ok(extracted_fields) = serde_json::to_value(fields_data) {
+                        return Some(extracted_fields);
                     }
                 }
             }
         }
         _ => {}
     }
+    None
 }
 
 #[cfg(test)]
@@ -77,10 +87,6 @@ mod tests {
             .unwrap()
             .get("EventData")
             .unwrap()
-            .get("Data")
-            .unwrap()
-            .get(2)
-            .unwrap()
             .get("NewEngineState")
             .unwrap();
         assert_eq!(extracted_fields, &Value::String("Available".to_string()));
@@ -115,10 +121,6 @@ mod tests {
             .get("Event")
             .unwrap()
             .get("EventData")
-            .unwrap()
-            .get("Data")
-            .unwrap()
-            .get(1)
             .unwrap()
             .get("NewEngineState")
             .unwrap();
