@@ -1,5 +1,11 @@
 # Changes
 
+## 2.x.x [xxxx/xx/xx]
+
+**New Features:**
+
+- Extraction of fields from PowerShell classic logs. (Can disable with `--no-pwsh-field-extraction`) (#1220) (@fukusuket)
+
 ## 2.10.1 [2023/11/13] "Kamemushi Release"
 
 **Enhancements:**
