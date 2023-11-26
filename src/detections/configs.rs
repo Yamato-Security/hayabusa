@@ -83,6 +83,7 @@ pub struct StoredStatic {
     pub exclude_eid: HashSet<CompactString>,
     pub include_status: HashSet<CompactString>, // 読み込み対象ルールのステータスのセット。*はすべてのステータスを読み込む
     pub field_data_map: Option<FieldDataMap>,
+    pub no_pwsh_field_extraction: bool,
     pub enable_recover_records: bool,
     pub timeline_offset: Option<String>,
 }
@@ -496,6 +497,13 @@ impl StoredStatic {
                     .unwrap(),
             ))
         };
+
+        let no_pwsh_field_extraction_flag = match &input_config.as_ref().unwrap().action {
+            Some(Action::CsvTimeline(opt)) => opt.output_options.no_pwsh_field_extraction,
+            Some(Action::JsonTimeline(opt)) => opt.output_options.no_pwsh_field_extraction,
+            _ => false,
+        };
+
         let enable_recover_records = match &input_config.as_ref().unwrap().action {
             Some(Action::CsvTimeline(opt)) => opt.output_options.input_args.recover_records,
             Some(Action::JsonTimeline(opt)) => opt.output_options.input_args.recover_records,
@@ -629,6 +637,7 @@ impl StoredStatic {
             include_eid,
             exclude_eid,
             field_data_map,
+            no_pwsh_field_extraction: no_pwsh_field_extraction_flag,
             enable_recover_records,
             timeline_offset,
             include_status: HashSet::new(),
@@ -728,7 +737,7 @@ fn check_thread_number(config: &Config) -> Option<usize> {
 pub enum Action {
     #[clap(
         author = "Yamato Security (https://github.com/Yamato-Security/hayabusa - @SecurityYamato)",
-        help_template = "\nHayabusa v2.10.1 - Kamemushi-Tsubushi Release\n{author-with-newline}\n{usage-heading}\n  hayabusa.exe csv-timeline <INPUT> [OPTIONS]\n\n{all-args}",
+        help_template = "\nHayabusa v2.10.2 - Dev Build\n{author-with-newline}\n{usage-heading}\n  hayabusa.exe csv-timeline <INPUT> [OPTIONS]\n\n{all-args}",
         term_width = 400,
         disable_help_flag = true,
         display_order = 290
@@ -738,7 +747,7 @@ pub enum Action {
 
     #[clap(
         author = "Yamato Security (https://github.com/Yamato-Security/hayabusa - @SecurityYamato)",
-        help_template = "\nHayabusa v2.10.1 - Kamemushi-Tsubushi Release\n{author-with-newline}\n{usage-heading}\n  hayabusa.exe json-timeline <INPUT> [OPTIONS]\n\n{all-args}",
+        help_template = "\nHayabusa v2.10.2 - Dev Build\n{author-with-newline}\n{usage-heading}\n  hayabusa.exe json-timeline <INPUT> [OPTIONS]\n\n{all-args}",
         term_width = 400,
         disable_help_flag = true,
         display_order = 360
@@ -748,7 +757,7 @@ pub enum Action {
 
     #[clap(
         author = "Yamato Security (https://github.com/Yamato-Security/hayabusa - @SecurityYamato)",
-        help_template = "\nHayabusa v2.10.1 - Kamemushi-Tsubushi Release\n{author-with-newline}\n{usage-heading}\n  hayabusa.exe logon-summary <INPUT> [OPTIONS]\n\n{all-args}",
+        help_template = "\nHayabusa v2.10.2 - Dev Build\n{author-with-newline}\n{usage-heading}\n  hayabusa.exe logon-summary <INPUT> [OPTIONS]\n\n{all-args}",
         term_width = 400,
         disable_help_flag = true,
         display_order = 383
@@ -758,7 +767,7 @@ pub enum Action {
 
     #[clap(
         author = "Yamato Security (https://github.com/Yamato-Security/hayabusa - @SecurityYamato)",
-        help_template = "\nHayabusa v2.10.1 - Kamemushi-Tsubushi Release\n{author-with-newline}\n{usage-heading}\n  hayabusa.exe eid-metrics <INPUT> [OPTIONS]\n\n{all-args}",
+        help_template = "\nHayabusa v2.10.2 - Dev Build\n{author-with-newline}\n{usage-heading}\n  hayabusa.exe eid-metrics <INPUT> [OPTIONS]\n\n{all-args}",
         term_width = 400,
         disable_help_flag = true,
         display_order = 310
@@ -768,7 +777,7 @@ pub enum Action {
 
     #[clap(
         author = "Yamato Security (https://github.com/Yamato-Security/hayabusa - @SecurityYamato)",
-        help_template = "\nHayabusa v2.10.1 - Kamemushi-Tsubushi Release\n{author-with-newline}\n{usage-heading}\n  hayabusa.exe pivot-keywords-list <INPUT> [OPTIONS]\n\n{all-args}",
+        help_template = "\nHayabusa v2.10.2 - Dev Build\n{author-with-newline}\n{usage-heading}\n  hayabusa.exe pivot-keywords-list <INPUT> [OPTIONS]\n\n{all-args}",
         term_width = 400,
         disable_help_flag = true,
         display_order = 420
@@ -778,7 +787,7 @@ pub enum Action {
 
     #[clap(
         author = "Yamato Security (https://github.com/Yamato-Security/hayabusa - @SecurityYamato)",
-        help_template = "\nHayabusa v2.10.1 - Kamemushi-Tsubushi Release\n{author-with-newline}\n{usage-heading}\n  hayabusa.exe search <INPUT> <--keywords \"<KEYWORDS>\" OR --regex \"<REGEX>\"> [OPTIONS]\n\n{all-args}",
+        help_template = "\nHayabusa v2.10.2 - Dev Build\n{author-with-newline}\n{usage-heading}\n  hayabusa.exe search <INPUT> <--keywords \"<KEYWORDS>\" OR --regex \"<REGEX>\"> [OPTIONS]\n\n{all-args}",
         term_width = 400,
         disable_help_flag = true,
         display_order = 450
@@ -788,7 +797,7 @@ pub enum Action {
 
     #[clap(
         author = "Yamato Security (https://github.com/Yamato-Security/hayabusa - @SecurityYamato)",
-        help_template = "\nHayabusa v2.10.1 - Kamemushi-Tsubushi Release\n{author-with-newline}\n{usage-heading}\n  {usage}\n\n{all-args}",
+        help_template = "\nHayabusa v2.10.2 - Dev Build\n{author-with-newline}\n{usage-heading}\n  {usage}\n\n{all-args}",
         term_width = 400,
         disable_help_flag = true,
         display_order = 470
@@ -798,7 +807,7 @@ pub enum Action {
 
     #[clap(
         author = "Yamato Security (https://github.com/Yamato-Security/hayabusa - @SecurityYamato)",
-        help_template = "\nHayabusa v2.10.1 - Kamemushi-Tsubushi Release\n{author-with-newline}\n{usage-heading}\n  {usage}\n\n{all-args}",
+        help_template = "\nHayabusa v2.10.2 - Dev Build\n{author-with-newline}\n{usage-heading}\n  {usage}\n\n{all-args}",
         term_width = 400,
         disable_help_flag = true,
         display_order = 380
@@ -808,7 +817,7 @@ pub enum Action {
 
     #[clap(
         author = "Yamato Security (https://github.com/Yamato-Security/hayabusa - @SecurityYamato)",
-        help_template = "\nHayabusa v2.10.1 - Kamemushi-Tsubushi Release\n{author-with-newline}\n{usage-heading}\n  {usage}\n\n{all-args}",
+        help_template = "\nHayabusa v2.10.2 - Dev Build\n{author-with-newline}\n{usage-heading}\n  {usage}\n\n{all-args}",
         term_width = 400,
         disable_help_flag = true,
         display_order = 451
@@ -826,7 +835,7 @@ pub enum Action {
 
     #[clap(
         author = "Yamato Security (https://github.com/Yamato-Security/hayabusa - @SecurityYamato)",
-        help_template = "\nHayabusa v2.10.1 - Kamemushi-Tsubushi Release\n{author-with-newline}\n{usage-heading}\n  {usage}\n\n{all-args}",
+        help_template = "\nHayabusa v2.10.2 - Dev Build\n{author-with-newline}\n{usage-heading}\n  {usage}\n\n{all-args}",
         term_width = 400,
         disable_help_flag = true,
         display_order = 290
@@ -1480,6 +1489,10 @@ pub struct OutputOption {
     #[arg(help_heading = Some("Output"), short = 'F', long = "no-field-data-mapping", display_order = 400)]
     pub no_field: bool,
 
+    /// Disable field extration of PowerShell classic logs
+    #[arg(help_heading = Some("Output"), long = "no-pwsh-field-extraction", display_order = 410)]
+    pub no_pwsh_field_extraction: bool,
+
     /// Duplicate field data will be replaced with "DUP"
     #[arg(
             help_heading = Some("Output"),
@@ -1639,7 +1652,7 @@ pub struct ComputerMetricsOption {
 #[derive(Parser, Clone, Debug)]
 #[clap(
     author = "Yamato Security (https://github.com/Yamato-Security/hayabusa - @SecurityYamato)",
-    help_template = "\nHayabusa v2.10.1 - Kamemushi-Tsubushi Release\n{author-with-newline}\n{usage-heading}\n  hayabusa.exe <COMMAND> [OPTIONS]\n  hayabusa.exe help <COMMAND>\n\n{all-args}{options}",
+    help_template = "\nHayabusa v2.10.2 - Dev Build\n{author-with-newline}\n{usage-heading}\n  hayabusa.exe <COMMAND> [OPTIONS]\n  hayabusa.exe help <COMMAND>\n\n{all-args}{options}",
     term_width = 400,
     disable_help_flag = true
 )]
@@ -2160,6 +2173,7 @@ fn extract_output_options(config: &Config) -> Option<OutputOption> {
             include_eid: option.include_eid.clone(),
             exclude_eid: option.exclude_eid.clone(),
             no_field: false,
+            no_pwsh_field_extraction: false,
             remove_duplicate_data: false,
             remove_duplicate_detections: false,
             no_wizard: option.no_wizard,
@@ -2198,6 +2212,7 @@ fn extract_output_options(config: &Config) -> Option<OutputOption> {
             include_eid: None,
             exclude_eid: None,
             no_field: false,
+            no_pwsh_field_extraction: false,
             remove_duplicate_data: false,
             remove_duplicate_detections: false,
             no_wizard: true,
@@ -2236,6 +2251,7 @@ fn extract_output_options(config: &Config) -> Option<OutputOption> {
             include_eid: None,
             exclude_eid: None,
             no_field: false,
+            no_pwsh_field_extraction: false,
             remove_duplicate_data: false,
             remove_duplicate_detections: false,
             no_wizard: true,
@@ -2283,6 +2299,7 @@ fn extract_output_options(config: &Config) -> Option<OutputOption> {
             include_eid: None,
             exclude_eid: None,
             no_field: false,
+            no_pwsh_field_extraction: false,
             remove_duplicate_data: false,
             remove_duplicate_detections: false,
             no_wizard: true,
@@ -2330,6 +2347,7 @@ fn extract_output_options(config: &Config) -> Option<OutputOption> {
             include_eid: None,
             exclude_eid: None,
             no_field: false,
+            no_pwsh_field_extraction: false,
             remove_duplicate_data: false,
             remove_duplicate_detections: false,
             no_wizard: true,
@@ -2383,6 +2401,7 @@ fn extract_output_options(config: &Config) -> Option<OutputOption> {
             include_eid: None,
             exclude_eid: None,
             no_field: false,
+            no_pwsh_field_extraction: false,
             remove_duplicate_data: false,
             remove_duplicate_detections: false,
             no_wizard: true,
@@ -2436,6 +2455,7 @@ fn extract_output_options(config: &Config) -> Option<OutputOption> {
             include_eid: None,
             exclude_eid: None,
             no_field: false,
+            no_pwsh_field_extraction: false,
             remove_duplicate_data: false,
             remove_duplicate_detections: false,
             no_wizard: true,
@@ -2685,6 +2705,7 @@ mod tests {
                     include_eid: None,
                     exclude_eid: None,
                     no_field: false,
+                    no_pwsh_field_extraction: false,
                     remove_duplicate_data: false,
                     remove_duplicate_detections: false,
                     no_wizard: true,
@@ -2757,6 +2778,7 @@ mod tests {
                     include_eid: None,
                     exclude_eid: None,
                     no_field: false,
+                    no_pwsh_field_extraction: false,
                     remove_duplicate_data: false,
                     remove_duplicate_detections: false,
                     no_wizard: true,

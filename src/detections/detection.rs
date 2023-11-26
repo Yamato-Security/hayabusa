@@ -1246,6 +1246,7 @@ mod tests {
                     include_eid: None,
                     exclude_eid: None,
                     no_field: false,
+                    no_pwsh_field_extraction: false,
                     remove_duplicate_data: false,
                     remove_duplicate_detections: false,
                     no_wizard: true,
@@ -1507,6 +1508,7 @@ mod tests {
                 include_eid: None,
                 exclude_eid: None,
                 no_field: false,
+                no_pwsh_field_extraction: false,
                 remove_duplicate_data: false,
                 remove_duplicate_detections: false,
                 no_wizard: true,
@@ -1559,7 +1561,7 @@ mod tests {
             let keys = detections::rule::get_detection_keys(&dummy_rule);
 
             let input_evtxrecord =
-                utils::create_rec_info(event, test_filepath.to_owned(), &keys, &false);
+                utils::create_rec_info(event, test_filepath.to_owned(), &keys, &false, &false);
             Detection::insert_message(&dummy_rule, &input_evtxrecord, &stored_static);
             let multi = message::MESSAGES.get(&expect_time).unwrap();
             let (_, detect_infos) = multi.pair();
@@ -1642,6 +1644,7 @@ mod tests {
                 include_eid: None,
                 exclude_eid: None,
                 no_field: false,
+                no_pwsh_field_extraction: false,
                 remove_duplicate_data: false,
                 remove_duplicate_detections: false,
                 no_wizard: true,
@@ -1694,7 +1697,7 @@ mod tests {
             let keys = detections::rule::get_detection_keys(&dummy_rule);
 
             let input_evtxrecord =
-                utils::create_rec_info(event, test_filepath.to_owned(), &keys, &false);
+                utils::create_rec_info(event, test_filepath.to_owned(), &keys, &false, &false);
             Detection::insert_message(&dummy_rule, &input_evtxrecord, &stored_static);
             let multi = message::MESSAGES.get(&expect_time).unwrap();
             let (_, detect_infos) = multi.pair();
@@ -1773,6 +1776,7 @@ mod tests {
                 include_eid: None,
                 exclude_eid: None,
                 no_field: false,
+                no_pwsh_field_extraction: false,
                 remove_duplicate_data: false,
                 remove_duplicate_detections: false,
                 no_wizard: true,
@@ -1842,7 +1846,7 @@ mod tests {
 
             let keys = detections::rule::get_detection_keys(&rule_node);
             let input_evtxrecord =
-                utils::create_rec_info(event, test_filepath.to_owned(), &keys, &false);
+                utils::create_rec_info(event, test_filepath.to_owned(), &keys, &false, &false);
             Detection::insert_message(&rule_node, &input_evtxrecord, &stored_static.clone());
             let multi = message::MESSAGES.get(&expect_time).unwrap();
             let (_, detect_infos) = multi.pair();
@@ -1917,6 +1921,7 @@ mod tests {
                 include_eid: None,
                 exclude_eid: None,
                 no_field: false,
+                no_pwsh_field_extraction: false,
                 remove_duplicate_data: false,
                 remove_duplicate_detections: false,
                 no_wizard: true,
@@ -1987,7 +1992,7 @@ mod tests {
 
             let keys = detections::rule::get_detection_keys(&rule_node);
             let input_evtxrecord =
-                utils::create_rec_info(event, test_filepath.to_owned(), &keys, &false);
+                utils::create_rec_info(event, test_filepath.to_owned(), &keys, &false, &false);
             Detection::insert_message(&rule_node, &input_evtxrecord, &stored_static.clone());
             let multi = message::MESSAGES.get(&expect_time).unwrap();
             let (_, detect_infos) = multi.pair();

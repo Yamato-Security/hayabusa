@@ -630,6 +630,7 @@ mod tests {
                     include_eid: None,
                     exclude_eid: None,
                     no_field: false,
+                    no_pwsh_field_extraction: false,
                     remove_duplicate_data: false,
                     remove_duplicate_detections: false,
                     no_wizard: true,
@@ -942,7 +943,8 @@ mod tests {
             match serde_json::from_str(record) {
                 Ok(rec) => {
                     let keys = detections::rule::get_detection_keys(&rule_node);
-                    let recinfo = utils::create_rec_info(rec, "testpath".to_owned(), &keys, &false);
+                    let recinfo =
+                        utils::create_rec_info(rec, "testpath".to_owned(), &keys, &false, &false);
                     let _result = rule_node.select(
                         &recinfo,
                         dummy_stored_static.verbose_flag,
@@ -1717,8 +1719,13 @@ mod tests {
             match serde_json::from_str(record_str) {
                 Ok(record) => {
                     let keys = detections::rule::get_detection_keys(&rule_node);
-                    let recinfo =
-                        utils::create_rec_info(record, "testpath".to_owned(), &keys, &false);
+                    let recinfo = utils::create_rec_info(
+                        record,
+                        "testpath".to_owned(),
+                        &keys,
+                        &false,
+                        &false,
+                    );
                     let result = &rule_node.select(
                         &recinfo,
                         dummy_stored_static.verbose_flag,

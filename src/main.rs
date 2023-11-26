@@ -1407,6 +1407,7 @@ impl App {
                 records_per_detect,
                 &path,
                 self.rule_keys.to_owned(),
+                stored_static.no_pwsh_field_extraction,
             ));
 
             // timeline機能の実行
@@ -1578,6 +1579,7 @@ impl App {
                 records_per_detect,
                 &path,
                 self.rule_keys.to_owned(),
+                stored_static.no_pwsh_field_extraction,
             ));
 
             // timeline機能の実行
@@ -1600,7 +1602,9 @@ impl App {
         records_per_detect: Vec<(Value, bool)>,
         path: &dyn Display,
         rule_keys: Nested<String>,
+        no_pwsh_field_extraction: bool,
     ) -> Vec<EvtxRecordInfo> {
+        let no_pwsh_field_extraction = Arc::new(no_pwsh_field_extraction);
         let path = Arc::new(path.to_string());
         let rule_keys = Arc::new(rule_keys);
         let threads: Vec<JoinHandle<EvtxRecordInfo>> = {
@@ -1608,12 +1612,14 @@ impl App {
                 |(rec, recovered_record_flag)| -> JoinHandle<EvtxRecordInfo> {
                     let arc_rule_keys = Arc::clone(&rule_keys);
                     let arc_path = Arc::clone(&path);
+                    let arc_no_pwsh_field_extraction = Arc::clone(&no_pwsh_field_extraction);
                     spawn(async move {
                         utils::create_rec_info(
                             rec,
                             arc_path.to_string(),
                             &arc_rule_keys,
                             &recovered_record_flag,
+                            &arc_no_pwsh_field_extraction,
                         )
                     })
                 },
@@ -1886,6 +1892,7 @@ mod tests {
                     include_eid: None,
                     exclude_eid: None,
                     no_field: false,
+                    no_pwsh_field_extraction: false,
                     remove_duplicate_data: false,
                     remove_duplicate_detections: false,
                     no_wizard: true,
@@ -2048,6 +2055,7 @@ mod tests {
                 include_eid: None,
                 exclude_eid: None,
                 no_field: false,
+                no_pwsh_field_extraction: false,
                 remove_duplicate_data: false,
                 remove_duplicate_detections: false,
                 no_wizard: true,
@@ -2131,6 +2139,7 @@ mod tests {
                 include_eid: None,
                 exclude_eid: None,
                 no_field: false,
+                no_pwsh_field_extraction: false,
                 remove_duplicate_data: false,
                 remove_duplicate_detections: false,
                 no_wizard: true,
@@ -2212,6 +2221,7 @@ mod tests {
                 include_eid: None,
                 exclude_eid: None,
                 no_field: false,
+                no_pwsh_field_extraction: false,
                 remove_duplicate_data: false,
                 remove_duplicate_detections: false,
                 no_wizard: true,
@@ -2295,6 +2305,7 @@ mod tests {
                 include_eid: None,
                 exclude_eid: None,
                 no_field: false,
+                no_pwsh_field_extraction: false,
                 remove_duplicate_data: false,
                 remove_duplicate_detections: false,
                 no_wizard: true,
