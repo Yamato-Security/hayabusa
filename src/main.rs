@@ -1033,7 +1033,7 @@ impl App {
                                                min_level: &str,
                                                target_status: Vec<&str>,
                                                target_tags: Vec<&str>|
-             -> HashMap<CompactString, u128> {
+             -> HashMap<CompactString, i128> {
                 let mut ret = HashMap::new();
                 if exclude_noisytarget_flag {
                     for s in exclude_noisy_status {
@@ -1047,7 +1047,7 @@ impl App {
                                     .get(min_level.to_uppercase().as_str())
                                     .unwrap_or(&1);
                                 if doc_level_num >= args_level_num {
-                                    ret_cnt += value.iter().map(|(_, cnt)| cnt).sum::<u128>()
+                                    ret_cnt += value.iter().map(|(_, cnt)| cnt).sum::<i128>()
                                 }
                             });
                         }
@@ -1083,11 +1083,11 @@ impl App {
                                             }
                                         }
                                     } else {
-                                        ret_cnt += value.iter().map(|(_, cnt)| cnt).sum::<u128>()
+                                        ret_cnt += value.iter().map(|(t, cnt)| cnt).sum::<i128>()
                                     }
                                 }
                             });
-                            if !exclude_noisy_status.contains(&s.as_str()) && ret_cnt > 0 {
+                            if ret_cnt > 0 {
                                 ret.insert(s.clone(), ret_cnt);
                             }
                         }
@@ -1106,21 +1106,22 @@ impl App {
             let sections_rule_cnt = selections_status
                 .iter()
                 .map(|(_, (status, min_level))| {
-                    calcurate_wizard_rule_count(
+                    let ret = calcurate_wizard_rule_count(
                         false,
-                        ["excluded", "deprecated", "unsupported"].to_vec(),
+                        ["excluded", "deprecated", "unsupported", "noisy"].to_vec(),
                         min_level,
                         status.to_vec(),
                         [].to_vec(),
-                    )
+                    );
+                    ret
                 })
                 .collect_vec();
             let selection_status_items = &[
-                format!("1. Core ({} rules) ( status: test, stable | level: high, critical )", sections_rule_cnt[0].iter().map(|(_, cnt)| cnt).sum::<u128>()),
-                format!("2. Core+ ({} rules) ( status: test, stable | level: medium, high, critical )", sections_rule_cnt[1].iter().map(|(_, cnt)| cnt).sum::<u128>()),
-                format!("3. Core++ ({} rules) ( status: experimental, test, stable | level: medium, high, critical )", sections_rule_cnt[2].iter().map(|(_, cnt)| cnt).sum::<u128>()),
-                format!("4. All alert rules ({} rules) ( status: * | level: low+ )", sections_rule_cnt[3].iter().map(|(_, cnt)| cnt).sum::<u128>()),
-                format!("5. All event and alert rules ({} rules) ( status: * | level: informational+ )", sections_rule_cnt[4].iter().map(|(_, cnt)| cnt).sum::<u128>())
+                format!("1. Core ({} rules) ( status: test, stable | level: high, critical )", sections_rule_cnt[0].iter().map(|(_, cnt)| cnt).sum::<i128>()),
+                format!("2. Core+ ({} rules) ( status: test, stable | level: medium, high, critical )", sections_rule_cnt[1].iter().map(|(_, cnt)| cnt).sum::<i128>()),
+                format!("3. Core++ ({} rules) ( status: experimental, test, stable | level: medium, high, critical )", sections_rule_cnt[2].iter().map(|(_, cnt)| cnt).sum::<i128>()),
+                format!("4. All alert rules ({} rules) ( status: * | level: low+ )", sections_rule_cnt[3].iter().map(|(_, cnt)| cnt).sum::<i128>()),
+                format!("5. All event and alert rules ({} rules) ( status: * | level: informational+ )", sections_rule_cnt[4].iter().map(|(_, cnt)| cnt).sum::<i128>())
             ];
 
             let selected_index = Select::with_theme(&ColorfulTheme::default())
@@ -1138,7 +1139,7 @@ impl App {
 
             let exclude_noisy_cnt = calcurate_wizard_rule_count(
                 true,
-                ["exclude", "excluded", "noisy", "deprecated", "unsupported"].to_vec(),
+                ["excluded", "noisy", "deprecated", "unsupported"].to_vec(),
                 selections_status[selected_index].1 .1,
                 [].to_vec(),
                 [].to_vec(),

@@ -269,7 +269,6 @@ impl ParseYaml {
                     // テスト用のルール(ID:000...0)の場合はexcluded ruleのカウントから除外するようにする
                     if v != "00000000-0000-0000-0000-000000000000" {
                         let entry = self.rule_load_cnt.entry(entry_key.into()).or_insert(0);
-                        self.loaded_rule_ids.insert(v.into());
                         *entry += 1;
                     }
                     let enable_noisy_rules = if let Some(o) = stored_static.output_option.as_ref() {
@@ -454,9 +453,6 @@ impl ParseYaml {
 
             up_rule_status_cnt(status.unwrap_or("undefined"));
 
-            self.loaded_rule_ids
-                .insert(rule_id.unwrap_or(&String::default()).into());
-
             if stored_static.verbose_flag {
                 println!("Loaded rule: {filepath}");
             }
@@ -475,9 +471,9 @@ pub fn count_rules<P: AsRef<Path>>(
     stored_static: &StoredStatic,
     result_container: &mut HashMap<
         CompactString,
-        HashMap<CompactString, HashMap<CompactString, u128>>,
+        HashMap<CompactString, HashMap<CompactString, i128>>,
     >,
-) -> HashMap<CompactString, HashMap<CompactString, HashMap<CompactString, u128>>> {
+) -> HashMap<CompactString, HashMap<CompactString, HashMap<CompactString, i128>>> {
     let metadata = fs::metadata(path.as_ref());
     if metadata.is_err() {
         return HashMap::default();
@@ -613,26 +609,29 @@ pub fn count_rules<P: AsRef<Path>>(
                 } else {
                     "noisy"
                 };
-                let counter = result_container
-                    .entry(entry_key.into())
-                    .or_insert(HashMap::new());
-                *counter
-                    .entry(
-                        yaml_doc["level"]
-                            .as_str()
-                            .unwrap_or("informational")
-                            .to_uppercase()
-                            .into(),
-                    )
-                    .or_insert(HashMap::new())
-                    .entry(
-                        yaml_doc["status"]
-                            .as_str()
-                            .unwrap_or("undefined")
-                            .to_lowercase()
-                            .into(),
-                    )
-                    .or_insert(0) += 1;
+                // テスト用のルール(ID:000...0)の場合はexcluded ruleのカウントから除外するようにする
+                if v != "00000000-0000-0000-0000-000000000000" {
+                    let counter = result_container
+                        .entry(entry_key.into())
+                        .or_insert(HashMap::new());
+                    *counter
+                        .entry(
+                            yaml_doc["level"]
+                                .as_str()
+                                .unwrap_or("informational")
+                                .to_uppercase()
+                                .into(),
+                        )
+                        .or_insert(HashMap::new())
+                        .entry(
+                            yaml_doc["status"]
+                                .as_str()
+                                .unwrap_or("undefined")
+                                .to_lowercase()
+                                .into(),
+                        )
+                        .or_insert(0) += 1;
+                }
                 return;
             }
         }
@@ -653,6 +652,19 @@ pub fn count_rules<P: AsRef<Path>>(
                     .entry("other".into())
                     .or_insert(0) += 1;
             } else {
+                if included_target_tag_vec.len() > 1 {
+                    *counter
+                        .entry(
+                            yaml_doc["level"]
+                                .as_str()
+                                .unwrap_or("informational")
+                                .to_uppercase()
+                                .into(),
+                        )
+                        .or_insert(HashMap::new())
+                        .entry("duplicated".into())
+                        .or_insert(0) -= (included_target_tag_vec.len() - 1) as i128;
+                }
                 for tag in included_target_tag_vec {
                     *counter
                         .entry(
