@@ -4,7 +4,7 @@
 
 **New Features:**
 
-- XXX
+- Extraction of fields from PowerShell classic logs. (Can disable with `--no-pwsh-field-extraction`) (#1220) (@fukusuket)
 
 **Enhancements:**
 

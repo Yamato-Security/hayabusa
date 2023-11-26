@@ -4,7 +4,7 @@
 
 **新機能:**
 
-- xxx
+- PowerShell classicログのフィールドを抽出するようにした。(`--no-pwsh-field-extraction`で無効化できる) (#1220) (@fukusuket)
 
 **改善:**
 

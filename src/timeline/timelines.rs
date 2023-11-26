@@ -583,6 +583,7 @@ mod tests {
             "testpath".to_string(),
             &Nested::<String>::new(),
             &false,
+            &false,
         ));
         timeline
             .stats
@@ -619,6 +620,7 @@ mod tests {
             "testpath2".to_string(),
             &Nested::<String>::new(),
             &false,
+            &false,
         ));
 
         // テスト3: Event.System.@timestampにタイムスタンプが含まれる場合
@@ -642,6 +644,7 @@ mod tests {
             include_timestamp_record,
             "testpath2".to_string(),
             &Nested::<String>::new(),
+            &false,
             &false,
         ));
 
@@ -763,6 +766,7 @@ mod tests {
             "testpath2".to_string(),
             &Nested::<String>::new(),
             &false,
+            &false,
         ));
 
         let include_computer: HashSet<CompactString> = HashSet::new();
@@ -860,6 +864,7 @@ mod tests {
             "testpath2".to_string(),
             &Nested::<String>::new(),
             &false,
+            &false,
         ));
 
         let timestamp_attribe_record_str = r#"{
@@ -882,6 +887,7 @@ mod tests {
             include_timestamp_record,
             "testpath2".to_string(),
             &Nested::<String>::new(),
+            &false,
             &false,
         ));
 
