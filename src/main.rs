@@ -1083,7 +1083,7 @@ impl App {
                                             }
                                         }
                                     } else {
-                                        ret_cnt += value.iter().map(|(t, cnt)| cnt).sum::<i128>()
+                                        ret_cnt += value.iter().map(|(_, cnt)| cnt).sum::<i128>()
                                     }
                                 }
                             });
@@ -1106,14 +1106,13 @@ impl App {
             let sections_rule_cnt = selections_status
                 .iter()
                 .map(|(_, (status, min_level))| {
-                    let ret = calcurate_wizard_rule_count(
+                    calcurate_wizard_rule_count(
                         false,
                         ["excluded", "deprecated", "unsupported", "noisy"].to_vec(),
                         min_level,
                         status.to_vec(),
                         [].to_vec(),
-                    );
-                    ret
+                    )
                 })
                 .collect_vec();
             let selection_status_items = &[
