@@ -1116,11 +1116,11 @@ impl App {
                 })
                 .collect_vec();
             let selection_status_items = &[
-                format!("1. Core ({} rules) ( status: test, stable | level: high, critical )", sections_rule_cnt[0].iter().map(|(_, cnt)| cnt).sum::<i128>()),
-                format!("2. Core+ ({} rules) ( status: test, stable | level: medium, high, critical )", sections_rule_cnt[1].iter().map(|(_, cnt)| cnt).sum::<i128>()),
-                format!("3. Core++ ({} rules) ( status: experimental, test, stable | level: medium, high, critical )", sections_rule_cnt[2].iter().map(|(_, cnt)| cnt).sum::<i128>()),
-                format!("4. All alert rules ({} rules) ( status: * | level: low+ )", sections_rule_cnt[3].iter().map(|(_, cnt)| cnt).sum::<i128>()),
-                format!("5. All event and alert rules ({} rules) ( status: * | level: informational+ )", sections_rule_cnt[4].iter().map(|(_, cnt)| cnt).sum::<i128>())
+                format!("1. Core ({} rules) ( status: test, stable | level: high, critical )", sections_rule_cnt[0].iter().map(|(_, cnt)| cnt).sum::<i128>() - sections_rule_cnt[0].get("excluded").unwrap_or(&0)),
+                format!("2. Core+ ({} rules) ( status: test, stable | level: medium, high, critical )", sections_rule_cnt[1].iter().map(|(_, cnt)| cnt).sum::<i128>() - sections_rule_cnt[1].get("excluded").unwrap_or(&0)),
+                format!("3. Core++ ({} rules) ( status: experimental, test, stable | level: medium, high, critical )", sections_rule_cnt[2].iter().map(|(_, cnt)| cnt).sum::<i128>() - sections_rule_cnt[2].get("excluded").unwrap_or(&0)),
+                format!("4. All alert rules ({} rules) ( status: * | level: low+ )", sections_rule_cnt[3].iter().map(|(_, cnt)| cnt).sum::<i128>() - sections_rule_cnt[3].get("excluded").unwrap_or(&0)),
+                format!("5. All event and alert rules ({} rules) ( status: * | level: informational+ )", sections_rule_cnt[4].iter().map(|(_, cnt)| cnt).sum::<i128>() - sections_rule_cnt[4].get("excluded").unwrap_or(&0))
             ];
 
             let selected_index = Select::with_theme(&ColorfulTheme::default())
