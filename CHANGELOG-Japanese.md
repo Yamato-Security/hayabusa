@@ -1,10 +1,22 @@
 # 変更点
 
-## 2.x.x [xxxx/xx/xx]
+## 2.11.0 [2023/XX/XX] "XXX Release"
 
 **新機能:**
 
 - PowerShell classicログのフィールドを抽出するようにした。(`--no-pwsh-field-extraction`で無効化できる) (#1220) (@fukusuket)
+
+**改善:**
+
+- スキャンウィザードにルール数を追加した. (#1206) (@hitenkoku)
+
+**バグ修正:**
+
+- xxx
+
+**その他:**
+
+- xxx
 
 ## 2.10.1 [2023/11/12] "Kamemushi Release"
 

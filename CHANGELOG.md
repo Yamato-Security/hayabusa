@@ -1,10 +1,22 @@
 # Changes
 
-## 2.x.x [xxxx/xx/xx]
+## 2.11.0 [2023/XX/XX] "XX Release"
 
 **New Features:**
 
 - Extraction of fields from PowerShell classic logs. (Can disable with `--no-pwsh-field-extraction`) (#1220) (@fukusuket)
+
+**Enhancements:**
+
+- Added rule count in the scan wizard. (#1206) (@hitenkoku)
+
+**Bug Fixes:**
+
+- XXX
+
+**Other:**
+
+- XXX
 
 ## 2.10.1 [2023/11/13] "Kamemushi Release"
 

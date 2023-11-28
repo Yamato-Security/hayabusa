@@ -166,7 +166,7 @@ mod tests {
     fn build_yaml(s: &str) -> Yaml {
         YamlLoader::load_from_str(s)
             .unwrap_or_default()
-            .get(0)
+            .first()
             .unwrap()
             .clone()
     }

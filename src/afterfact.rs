@@ -72,7 +72,7 @@ pub fn set_output_color(no_color_flag: bool) -> HashMap<CompactString, Colors> {
             return;
         }
         let empty = &"".to_string();
-        let level = CompactString::new(line.get(0).unwrap_or(empty).to_lowercase());
+        let level = CompactString::new(line.first().unwrap_or(empty).to_lowercase());
         let convert_color_result = hex::decode(line.get(1).unwrap_or(empty).trim());
         if convert_color_result.is_err() {
             AlertMessage::warn(&format!(
@@ -498,7 +498,7 @@ fn emit_csv<W: std::io::Write>(
                 let level_suffix = get_level_suffix(detect_info.level.as_str());
                 let author_list = author_list_cache
                     .entry(detect_info.rulepath.clone())
-                    .or_insert_with(|| extract_author_name(&detect_info.rulepath, stored_static))
+                    .or_insert_with(|| extract_author_name(&detect_info.rulepath))
                     .clone();
                 let author_str = author_list.iter().join(", ");
                 detect_rule_authors.insert(detect_info.rulepath.to_owned(), author_str.into());
@@ -1792,9 +1792,8 @@ fn output_detected_rule_authors(
 }
 
 /// 与えられたyaml_pathからauthorの名前を抽出して配列で返却する関数
-fn extract_author_name(yaml_path: &str, stored_static: &StoredStatic) -> Nested<String> {
-    let parser = ParseYaml::new(stored_static);
-    let contents = match parser.read_file(Path::new(&yaml_path).to_path_buf()) {
+fn extract_author_name(yaml_path: &str) -> Nested<String> {
+    let contents = match ParseYaml::read_file(Path::new(&yaml_path).to_path_buf()) {
         Ok(yaml) => Some(yaml),
         Err(e) => {
             AlertMessage::alert(&e).ok();
