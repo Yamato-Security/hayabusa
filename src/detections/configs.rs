@@ -1489,7 +1489,7 @@ pub struct OutputOption {
     #[arg(help_heading = Some("Output"), short = 'F', long = "no-field-data-mapping", display_order = 400)]
     pub no_field: bool,
 
-    /// Disable field extration of PowerShell classic logs
+    /// Disable field extraction of PowerShell classic logs
     #[arg(help_heading = Some("Output"), long = "no-pwsh-field-extraction", display_order = 410)]
     pub no_pwsh_field_extraction: bool,
 
