@@ -257,6 +257,7 @@ JSON形式の結果を`jq`で解析する方法については、[こちら](/do
 * 空領域からのEvtxレコードカービング。
 * 出力時のイベント重複排除。(レコード復元が有効になっている場合や、バックアップされたevtxファイル、VSSから抽出されたevtxファイルなどが含まれている場合に便利。)
 * スキャン設定ウィザードにより、有効にするルールの選択が容易に。(誤検出を減らすためなど。）
+* PowerShell classicログのフィールドパースと抽出。
 
 # ダウンロード
 
@@ -876,6 +877,7 @@ Output:
   -H, --HTML-report <FILE>           HTML形式で詳細な結果を出力する (例: results.html)
   -M, --multiline                    イベントフィールド情報を複数の行に出力する
   -F, --no-field-data-mapping        フィールドデータのマッピングを無効にする
+      --no-pwsh-field-extraction     PowerShell Classicログフィールド抽出の無効化
   -o, --output <FILE>                タイムラインを保存する (例: results.csv)
   -p, --profile <PROFILE>            利用する出力プロファイル名を指定する
   -R, --remove-duplicate-data        重複したフィールドデータは「DUP」に置き換えられる (ファイルサイズが約10〜15％削減される)
@@ -1135,6 +1137,7 @@ Output:
   -H, --HTML-report <FILE>           HTML形式で詳細な結果を出力する (例: results.html)
   -L, --JSONL-output                 タイムラインをJSONL形式で保存する (例: -L -o results.jsonl)
   -F, --no-field-data-mapping        フィールドデータのマッピングを無効にする
+      --no-pwsh-field-extraction     PowerShell Classicログフィールド抽出の無効化
   -o, --output <FILE>                タイムラインを保存する (例: results.csv)
   -p, --profile <PROFILE>            利用する出力プロファイル名を指定する
   -R, --remove-duplicate-data        重複したフィールドデータは「DUP」に置き換えられる (ファイルサイズが約10〜15％削減される)

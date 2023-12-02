@@ -257,6 +257,7 @@ You can learn how to analyze JSON-formatted results with `jq` [here](doc/Analysi
 * Evtx record carving from evtx slack space.
 * Event de-duplication when outputting. (Useful when recovery records is enabled or when you include backed up evtx files, evtx files from VSS, etc...)
 * Scan setting wizard to help choose which rules to enable easier. (In order to reduce false positives, etc...)
+* PowerShell classic log field parsing and extraction.
 
 # Downloads
 
@@ -876,6 +877,7 @@ Output:
   -H, --HTML-report <FILE>           Save Results Summary details to an HTML report (ex: results.html)
   -M, --multiline                    Output event field information in multiple rows
   -F, --no-field-data-mapping        Disable field data mapping
+      --no-pwsh-field-extraction     Disable field extraction of PowerShell classic logs
   -o, --output <FILE>                Save the timeline in CSV format (ex: results.csv)
   -p, --profile <PROFILE>            Specify output profile
   -R, --remove-duplicate-data        Duplicate field data will be replaced with "DUP"
@@ -1135,6 +1137,7 @@ Output:
   -H, --HTML-report <FILE>           Save Results Summary details to an HTML report (ex: results.html)
   -L, --JSONL-output                 Save the timeline in JSONL format (ex: -L -o results.jsonl)
   -F, --no-field-data-mapping        Disable field data mapping
+      --no-pwsh-field-extraction     Disable field extraction of PowerShell classic logs
   -o, --output <FILE>                Save the timeline in JSON format (ex: results.json)
   -p, --profile <PROFILE>            Specify output profile
   -R, --remove-duplicate-data        Duplicate field data will be replaced with "DUP"
