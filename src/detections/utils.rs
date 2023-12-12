@@ -10,8 +10,9 @@ use hashbrown::{HashMap, HashSet};
 use itertools::Itertools;
 use nested::Nested;
 use std::path::{Path, PathBuf};
+use std::thread::available_parallelism;
 
-use chrono::Local;
+use chrono::{Duration, Local};
 use termcolor::{Color, ColorChoice};
 
 use tokio::runtime::{Builder, Runtime};
@@ -33,6 +34,8 @@ use super::configs::{EventKeyAliasConfig, OutputOption, STORED_EKEY_ALIAS};
 use super::detection::EvtxRecordInfo;
 use super::message::AlertMessage;
 
+use crate::detections::field_data_map::{convert_field_data, FieldDataMap, FieldDataMapKey};
+use crate::detections::field_extract::extract_fields;
 use memchr::memmem;
 
 pub fn concat_selection_key(key_list: &Nested<String>) -> String {
@@ -216,7 +219,7 @@ pub fn get_serde_number_to_string(
     if value.is_string() {
         let val_str = value.as_str().unwrap_or("");
         if val_str.ends_with(',') {
-            Some(CompactString::from(val_str.strip_suffix(',').unwrap()))
+            Some(CompactString::from(val_str))
         } else {
             Option::Some(CompactString::from(val_str))
         }
@@ -283,8 +286,8 @@ pub fn get_event_value<'a>(
 }
 
 pub fn get_thread_num(thread_number: Option<usize>) -> usize {
-    let cpu_num = num_cpus::get();
-    thread_number.unwrap_or(cpu_num)
+    let cpu_num = available_parallelism().unwrap();
+    thread_number.unwrap_or(cpu_num.into())
 }
 
 pub fn create_tokio_runtime(thread_number: Option<usize>) -> Runtime {
@@ -296,7 +299,13 @@ pub fn create_tokio_runtime(thread_number: Option<usize>) -> Runtime {
 }
 
 // EvtxRecordInfoを作成します。
-pub fn create_rec_info(data: Value, path: String, keys: &Nested<String>) -> EvtxRecordInfo {
+pub fn create_rec_info(
+    mut data: Value,
+    path: String,
+    keys: &Nested<String>,
+    recovered_record: &bool,
+    no_pwsh_field_extraction: &bool,
+) -> EvtxRecordInfo {
     // 高速化のための処理
 
     // 例えば、Value型から"Event.System.EventID"の値を取得しようとすると、value["Event"]["System"]["EventID"]のように3回アクセスする必要がある。
@@ -308,6 +317,8 @@ pub fn create_rec_info(data: Value, path: String, keys: &Nested<String>) -> Evtx
 
     let binding = STORED_EKEY_ALIAS.read().unwrap();
     let eventkey_alias = binding.as_ref().unwrap();
+    let mut event_id = None;
+    let mut channel = None;
     for key in keys.iter() {
         let val = get_event_value(key, &data, eventkey_alias);
         if val.is_none() {
@@ -319,7 +330,18 @@ pub fn create_rec_info(data: Value, path: String, keys: &Nested<String>) -> Evtx
             continue;
         }
 
+        if !*no_pwsh_field_extraction {
+            if key == "EventID" {
+                event_id = val.clone();
+            }
+            if key == "Channel" {
+                channel = val.clone();
+            }
+        }
         key_2_values.insert(key.to_string(), val.unwrap());
+    }
+    if !*no_pwsh_field_extraction {
+        extract_fields(channel, event_id, &mut data, &mut key_2_values);
     }
 
     // EvtxRecordInfoを作る
@@ -330,6 +352,7 @@ pub fn create_rec_info(data: Value, path: String, keys: &Nested<String>) -> Evtx
         record: data,
         data_string: data_str,
         key_2_value: key_2_values,
+        recovered_record: *recovered_record,
     }
 }
 
@@ -364,7 +387,11 @@ pub fn get_writable_color(color: Option<Color>, no_color: bool) -> Option<Color>
 /**
  * CSVのrecord infoカラムに出力する文字列を作る
  */
-pub fn create_recordinfos(record: &Value) -> String {
+pub fn create_recordinfos(
+    record: &Value,
+    field_data_map_key: &FieldDataMapKey,
+    field_data_map: &Option<FieldDataMap>,
+) -> Vec<CompactString> {
     let mut output = HashSet::new();
     _collect_recordinfo(&mut vec![], "", record, &mut output);
 
@@ -382,13 +409,18 @@ pub fn create_recordinfos(record: &Value) -> String {
     output_vec
         .iter()
         .map(|(key, value)| {
-            if value.ends_with(',') {
-                format!("{}: {}", key, &value[..value.len() - 1])
-            } else {
-                format!("{key}: {value}")
+            if let Some(map) = field_data_map.as_ref() {
+                if let Some(converted_str) =
+                    convert_field_data(map, field_data_map_key, &key.to_lowercase(), value)
+                {
+                    let val = remove_sp_char(converted_str);
+                    return format!("{key}: {val}",).into();
+                }
             }
+            let val = remove_sp_char(value.into());
+            format!("{key}: {val}").into()
         })
-        .join(" ¦ ")
+        .collect()
 }
 
 /**
@@ -431,8 +463,10 @@ fn _collect_recordinfo<'a>(
             // 一番子の要素の値しか収集しない
             let strval = value_to_string(value);
             if let Some(strval) = strval {
-                let strval = strval.trim().chars().fold(String::default(), |mut acc, c| {
-                    if c.is_control() || c.is_ascii_whitespace() {
+                let strval = strval.chars().fold(String::default(), |mut acc, c| {
+                    if (c.is_control() || c.is_ascii_whitespace())
+                        && !['\r', '\n', '\t'].contains(&c)
+                    {
                         acc.push(' ');
                     } else {
                         acc.push(c);
@@ -588,7 +622,7 @@ pub fn check_file_expect_not_exist(path: &Path, exist_alert_str: String) -> bool
 pub fn output_and_data_stack_for_html(
     output_str: &str,
     section_name: &str,
-    html_report_flag: bool,
+    html_report_flag: &bool,
 ) {
     write_color_buffer(
         &BufferWriter::stdout(ColorChoice::Always),
@@ -598,7 +632,7 @@ pub fn output_and_data_stack_for_html(
     )
     .ok();
 
-    if html_report_flag {
+    if *html_report_flag {
         let mut output_data = Nested::<String>::new();
         output_data.extend(vec![format!("- {output_str}")]);
         htmlreport::add_md_data(section_name, output_data);
@@ -644,10 +678,58 @@ pub fn output_profile_name(output_option: &Option<OutputOption>, stdout: bool) {
     }
 }
 
+/// コンピュータ名がフィルタリング対象であるかを判定する関数
+pub fn is_filtered_by_computer_name(
+    record: Option<&Value>,
+    (include_computer, exclude_computer): (&HashSet<CompactString>, &HashSet<CompactString>),
+) -> bool {
+    if let Some(computer_name) = record {
+        let computer_str = computer_name.as_str().unwrap_or_default().replace('\"', "");
+        if (!include_computer.is_empty() && !include_computer.contains(computer_str.as_str()))
+            || (!exclude_computer.is_empty() && exclude_computer.contains(computer_str.as_str()))
+        {
+            return true;
+        }
+    }
+    false
+}
+
+///Durationから出力文字列を作成する関数。絶対値での秒数から算出してhh:mm:ss.fffの形式で出力する。
+pub fn output_duration(d: Duration) -> String {
+    let mut s = d.num_seconds();
+    let mut ms = d.num_milliseconds() - 1000 * s;
+    if s < 0 {
+        s = -s;
+        ms = -ms;
+    }
+    let h = s / 3600;
+    s %= 3600;
+    let m = s / 60;
+    s %= 60;
+    format!("{h:02}:{m:02}:{s:02}.{ms:03}")
+}
+
+pub fn remove_sp_char(record_value: CompactString) -> CompactString {
+    let mut newline_replaced_cs: String = record_value
+        .replace('\n', "🛂n")
+        .replace('\r', "🛂r")
+        .replace('\t', "🛂t");
+    let mut prev = 'a';
+    newline_replaced_cs.retain(|ch| {
+        let retain_flag = (prev == ' ' && ch == ' ') || ch.is_control();
+        if !retain_flag {
+            prev = ch;
+        }
+        !retain_flag
+    });
+    newline_replaced_cs.trim().into()
+}
+
 #[cfg(test)]
 mod tests {
     use std::path::Path;
 
+    use crate::detections::field_data_map::FieldDataMapKey;
     use crate::{
         detections::{
             configs::{
@@ -658,13 +740,14 @@ mod tests {
         },
         options::htmlreport::HTML_REPORTER,
     };
+    use chrono::NaiveDate;
     use compact_str::CompactString;
-    use hashbrown::HashMap;
+    use hashbrown::{HashMap, HashSet};
     use nested::Nested;
     use regex::Regex;
     use serde_json::Value;
 
-    use super::output_profile_name;
+    use super::{output_duration, output_profile_name};
 
     #[test]
     fn test_create_recordinfos() {
@@ -680,10 +763,10 @@ mod tests {
 
         match serde_json::from_str(record_json_str) {
             Ok(record) => {
-                let ret = utils::create_recordinfos(&record);
+                let ret = utils::create_recordinfos(&record, &FieldDataMapKey::default(), &None);
                 // Systemは除外される/属性(_attributesも除外される)/key順に並ぶ
                 let expected = "AccessMask: %%1369 ¦ Process: lsass.exe ¦ User: u1".to_string();
-                assert_eq!(ret, expected);
+                assert_eq!(ret.join(" ¦ "), expected);
             }
             Err(_) => {
                 panic!("Failed to parse json record.");
@@ -714,11 +797,11 @@ mod tests {
 
         match serde_json::from_str(record_json_str) {
             Ok(record) => {
-                let ret = utils::create_recordinfos(&record);
+                let ret = utils::create_recordinfos(&record, &FieldDataMapKey::default(), &None);
                 // Systemは除外される/属性(_attributesも除外される)/key順に並ぶ
                 let expected = "Binary: hogehoge ¦ Data:  ¦ Data: Data1 ¦ Data: DataData2 ¦ Data: DataDataData3"
                     .to_string();
-                assert_eq!(ret, expected);
+                assert_eq!(ret.join(" ¦ "), expected);
             }
             Err(_) => {
                 panic!("Failed to parse json record.");
@@ -759,7 +842,7 @@ mod tests {
     #[test]
     /// Serde::Valueの数値型の値を文字列として返却することを確かめるテスト
     fn test_get_serde_number_to_string() {
-        let json_str = r##"
+        let json_str = r#"
         {
             "Event": {
                 "System": {
@@ -767,7 +850,7 @@ mod tests {
                 }
             }
         }
-        "##;
+        "#;
         let event_record: Value = serde_json::from_str(json_str).unwrap();
 
         assert_eq!(
@@ -779,7 +862,7 @@ mod tests {
     #[test]
     /// Serde::Valueの文字列型の値を文字列として返却することを確かめるテスト
     fn test_get_serde_number_serde_string_to_string() {
-        let json_str = r##"
+        let json_str = r#"
         {
             "Event": {
                 "EventData": {
@@ -787,7 +870,7 @@ mod tests {
                 }
             }
         }
-        "##;
+        "#;
         let event_record: Value = serde_json::from_str(json_str).unwrap();
 
         assert_eq!(
@@ -803,7 +886,7 @@ mod tests {
     #[test]
     /// Serde::Valueのオブジェクト型の内容を誤って渡した際にNoneを返却することを確かめるテスト
     fn test_get_serde_number_serde_object_ret_none() {
-        let json_str = r##"
+        let json_str = r#"
         {
             "Event": {
                 "EventData": {
@@ -811,7 +894,7 @@ mod tests {
                 }
             }
         }
-        "##;
+        "#;
         let event_record: Value = serde_json::from_str(json_str).unwrap();
 
         assert!(
@@ -941,6 +1024,8 @@ mod tests {
                         directory: None,
                         filepath: None,
                         live_analysis: false,
+                        recover_records: false,
+                        timeline_offset: None,
                     },
                     profile: Some("super-verbose".to_string()),
                     enable_deprecated_rules: false,
@@ -973,17 +1058,27 @@ mod tests {
                         config: Path::new("./rules/config").to_path_buf(),
                         verbose: false,
                         json_input: false,
+                        include_computer: None,
+                        exclude_computer: None,
                     },
                     enable_unsupported_rules: false,
                     clobber: false,
-                    tags: None,
+                    proven_rules: false,
+                    include_tag: None,
+                    exclude_tag: None,
                     include_category: None,
                     exclude_category: None,
+                    include_eid: None,
+                    exclude_eid: None,
+                    no_field: false,
+                    no_pwsh_field_extraction: false,
+                    remove_duplicate_data: false,
+                    remove_duplicate_detections: false,
+                    no_wizard: true,
                 },
                 geo_ip: None,
                 output: None,
                 multiline: false,
-                remove_duplicate_data: false,
             })),
             debug: false,
         }));
@@ -1000,5 +1095,74 @@ mod tests {
             assert!(expect.keys().any(|x| x == k));
             assert!(expect.values().any(|y| y == v));
         }
+    }
+
+    #[test]
+    /// Computerの値をもとにフィルタリングされることを確認するテスト
+    fn test_is_filtered_by_computer_name() {
+        let json_str = r#"
+        {
+            "Event": {
+                "System": {
+                    "Computer": "HayabusaComputer1"
+                }
+            }
+        }
+        "#;
+        let event_record: Value = serde_json::from_str(json_str).unwrap();
+
+        // include_computer, exclude_computerが指定されていない場合はフィルタリングされない
+        assert!(!utils::is_filtered_by_computer_name(
+            Some(&event_record["Event"]["System"]["Computer"]),
+            (&HashSet::new(), &HashSet::new()),
+        ));
+
+        // recordのコンピュータ名の情報がない場合はフィルタリングされない
+        assert!(!utils::is_filtered_by_computer_name(
+            None,
+            (&HashSet::new(), &HashSet::new()),
+        ));
+
+        // include_computerで合致しない場合フィルタリングされる
+        assert!(utils::is_filtered_by_computer_name(
+            Some(&event_record["Event"]["System"]["Computer"]),
+            (
+                &HashSet::from_iter(vec!["Hayabusa".into()]),
+                &HashSet::new()
+            ),
+        ));
+
+        // include_computerで合致する場合フィルタリングされない
+        assert!(!utils::is_filtered_by_computer_name(
+            Some(&event_record["Event"]["System"]["Computer"]),
+            (
+                &HashSet::from_iter(vec!["HayabusaComputer1".into()]),
+                &HashSet::new()
+            ),
+        ));
+
+        // exclude_computerで合致する場合フィルタリングされる
+        assert!(utils::is_filtered_by_computer_name(
+            Some(&event_record["Event"]["System"]["Computer"]),
+            (
+                &HashSet::new(),
+                &HashSet::from_iter(vec!["HayabusaComputer1".into()]),
+            ),
+        ));
+    }
+
+    #[test]
+    /// Durationから出力文字列を作成する関数のテスト
+    fn test_output_duration() {
+        let time1 = NaiveDate::from_ymd_opt(2021, 12, 26)
+            .unwrap()
+            .and_hms_milli_opt(2, 34, 49, 0)
+            .unwrap();
+        let time2 = NaiveDate::from_ymd_opt(2021, 12, 25)
+            .unwrap()
+            .and_hms_milli_opt(1, 23, 45, 678)
+            .unwrap();
+        assert_eq!(output_duration(time1 - time2), "25:11:03.322".to_string());
+        assert_eq!(output_duration(time2 - time1), "25:11:03.322".to_string());
     }
 }

@@ -219,12 +219,8 @@ impl DefaultMatcher {
     }
 
     /// このmatcherの正規表現とマッチするかどうか判定します。
-    /// 判定対象の文字列とこのmatcherが保持する正規表現が完全にマッチした場合のTRUEを返します。
-    /// 例えば、判定対象文字列が"abc"で、正規表現が"ab"の場合、正規表現は判定対象文字列の一部分にしか一致していないので、この関数はfalseを返します。
     fn is_regex_fullmatch(&self, value: &str) -> bool {
-        return self.re.as_ref().unwrap().find_iter(value).any(|match_obj| {
-            return match_obj.as_str() == value;
-        });
+        return self.re.as_ref().unwrap().is_match(value);
     }
 
     /// Hayabusaのルールファイルのフィールド名とそれに続いて指定されるパイプを、正規表現形式の文字列に変換します。
@@ -822,6 +818,8 @@ mod tests {
                         directory: None,
                         filepath: None,
                         live_analysis: false,
+                        recover_records: false,
+                        timeline_offset: None,
                     },
                     profile: None,
                     enable_deprecated_rules: false,
@@ -854,17 +852,27 @@ mod tests {
                         config: Path::new("./rules/config").to_path_buf(),
                         verbose: false,
                         json_input: false,
+                        include_computer: None,
+                        exclude_computer: None,
                     },
                     enable_unsupported_rules: false,
                     clobber: false,
-                    tags: None,
+                    proven_rules: false,
+                    include_tag: None,
+                    exclude_tag: None,
                     include_category: None,
                     exclude_category: None,
+                    include_eid: None,
+                    exclude_eid: None,
+                    no_field: false,
+                    no_pwsh_field_extraction: false,
+                    remove_duplicate_data: false,
+                    remove_duplicate_detections: false,
+                    no_wizard: true,
                 },
                 geo_ip: None,
                 output: None,
                 multiline: false,
-                remove_duplicate_data: false,
             })),
             debug: false,
         }));
@@ -874,7 +882,8 @@ mod tests {
         match serde_json::from_str(record_str) {
             Ok(record) => {
                 let keys = detections::rule::get_detection_keys(&rule_node);
-                let recinfo = utils::create_rec_info(record, "testpath".to_owned(), &keys);
+                let recinfo =
+                    utils::create_rec_info(record, "testpath".to_owned(), &keys, &false, &false);
                 assert_eq!(
                     rule_node.select(
                         &recinfo,
@@ -1351,6 +1360,26 @@ mod tests {
         detection:
             selection:
                 Channel|re: ^Program$
+        details: 'command=%CommandLine%'
+        "#;
+
+        let record_json_str = r#"
+        {
+            "Event": {"System": {"EventID": 4103, "Channel": "Program", "Computer":"DESKTOP-ICHIICHI"}},
+            "Event_attributes": {"xmlns": "http://schemas.microsoft.com/win/2004/08/events/event"}
+        }"#;
+
+        check_select(rule_str, record_json_str, true);
+    }
+
+    #[test]
+    fn test_detect_regex_partial_match() {
+        // 正規表現の部分一致
+        let rule_str = r#"
+        enabled: true
+        detection:
+            selection:
+                Computer|re: DESKTOP
         details: 'command=%CommandLine%'
         "#;
 
@@ -2542,14 +2571,14 @@ mod tests {
 
     #[test]
     fn test_detect_backslash_exact_match() {
-        let rule_str = r#"
+        let rule_str = r"
         enabled: true
         detection:
             selection:
                 Channel: 'Microsoft-Windows-Sysmon/Operational'
                 EventID: 1
                 CurrentDirectory: 'C:\Windows\'
-        "#;
+        ";
 
         let record_json_str = r#"
         {
@@ -2569,13 +2598,13 @@ mod tests {
 
     #[test]
     fn test_detect_startswith_backslash1() {
-        let rule_str = r#"
+        let rule_str = r"
         enabled: true
         detection:
             selection:
                 EventID: 1040
                 Data|startswith: C:\Windows\
-        "#;
+        ";
 
         let record_json_str = r#"
         {
@@ -2595,13 +2624,13 @@ mod tests {
 
     #[test]
     fn test_detect_startswith_backslash2() {
-        let rule_str = r#"
+        let rule_str = r"
         enabled: true
         detection:
             selection:
                 EventID: 1040
                 Data|startswith: C:\Windows\
-        "#;
+        ";
 
         let record_json_str = r#"
         {
@@ -2621,13 +2650,13 @@ mod tests {
 
     #[test]
     fn test_detect_contains_backslash1() {
-        let rule_str = r#"
+        let rule_str = r"
         enabled: true
         detection:
             selection:
                 EventID: 1040
                 Data|contains: \Windows\
-        "#;
+        ";
 
         let record_json_str = r#"
         {
@@ -2647,13 +2676,13 @@ mod tests {
 
     #[test]
     fn test_detect_contains_backslash2() {
-        let rule_str = r#"
+        let rule_str = r"
         enabled: true
         detection:
             selection:
                 EventID: 1040
                 Data|contains: \Windows\
-        "#;
+        ";
 
         let record_json_str = r#"
         {
@@ -2673,14 +2702,14 @@ mod tests {
 
     #[test]
     fn test_detect_backslash_endswith() {
-        let rule_str = r#"
+        let rule_str = r"
         enabled: true
         detection:
             selection:
                 Channel: 'Microsoft-Windows-Sysmon/Operational'
                 EventID: 1
                 CurrentDirectory|endswith: 'C:\Windows\system32\'
-        "#;
+        ";
 
         let record_json_str = r#"
         {
@@ -2700,14 +2729,14 @@ mod tests {
 
     #[test]
     fn test_detect_backslash_regex() {
-        let rule_str = r#"
+        let rule_str = r"
         enabled: true
         detection:
             selection:
                 Channel: 'Microsoft-Windows-Sysmon/Operational'
                 EventID: 1
                 CurrentDirectory|re: '.*system32\\'
-        "#;
+        ";
 
         let record_json_str = r#"
         {
@@ -2727,7 +2756,7 @@ mod tests {
 
     #[test]
     fn test_all_only_true() {
-        let rule_str = r#"
+        let rule_str = r"
         enabled: true
         detection:
             selection1:
@@ -2738,7 +2767,7 @@ mod tests {
                 - 1
                 - 2
             condition: selection1 and selection2
-        "#;
+        ";
 
         let record_json_str = r#"
         {

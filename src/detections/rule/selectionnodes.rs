@@ -8,7 +8,7 @@ use yaml_rust::Yaml;
 use super::matchers::{self, DefaultMatcher};
 
 // Ruleファイルの detection- selection配下のノードはこのtraitを実装する。
-pub trait SelectionNode: Downcast {
+pub trait SelectionNode: Downcast + Send + Sync {
     // 引数で指定されるイベントログのレコードが、条件に一致するかどうかを判定する
     // このトレイトを実装する構造体毎に適切な判定処理を書く必要がある。
     fn select(&self, event_record: &EvtxRecordInfo, eventkey_alias: &EventKeyAliasConfig) -> bool;
@@ -62,7 +62,7 @@ impl SelectionNode for AndSelectionNode {
             .fold(
                 vec![],
                 |mut acc: Vec<String>, cur: Vec<String>| -> Vec<String> {
-                    acc.extend(cur.into_iter());
+                    acc.extend(cur);
                     acc
                 },
             );
@@ -132,7 +132,7 @@ impl SelectionNode for AllSelectionNode {
             .fold(
                 vec![],
                 |mut acc: Vec<String>, cur: Vec<String>| -> Vec<String> {
-                    acc.extend(cur.into_iter());
+                    acc.extend(cur);
                     acc
                 },
             );
@@ -202,7 +202,7 @@ impl SelectionNode for OrSelectionNode {
             .fold(
                 vec![],
                 |mut acc: Vec<String>, cur: Vec<String>| -> Vec<String> {
-                    acc.extend(cur.into_iter());
+                    acc.extend(cur);
                     acc
                 },
             );
@@ -307,6 +307,9 @@ pub struct LeafSelectionNode {
     select_value: Yaml,
     pub matcher: Option<Box<dyn matchers::LeafMatcher>>,
 }
+
+unsafe impl Sync for LeafSelectionNode {}
+unsafe impl Send for LeafSelectionNode {}
 
 impl LeafSelectionNode {
     pub fn new(keys: Nested<String>, value_yaml: Yaml) -> LeafSelectionNode {
@@ -450,7 +453,7 @@ impl SelectionNode for LeafSelectionNode {
         if self.get_key() == "EventID" && !self.select_value.is_null() {
             if let Some(event_id) = self.select_value.as_i64() {
                 // 正規表現は重いので、数値のEventIDのみ文字列完全一致で判定
-                return event_value.unwrap() == &event_id.to_string();
+                return event_value.unwrap_or(&String::default()) == &event_id.to_string();
             }
         }
         if !self.key_list.is_empty() && self.key_list[0].eq("|all") {
@@ -523,6 +526,8 @@ mod tests {
                         directory: None,
                         filepath: None,
                         live_analysis: false,
+                        recover_records: false,
+                        timeline_offset: None,
                     },
                     profile: None,
                     enable_deprecated_rules: false,
@@ -555,17 +560,27 @@ mod tests {
                         config: Path::new("./rules/config").to_path_buf(),
                         verbose: false,
                         json_input: false,
+                        include_computer: None,
+                        exclude_computer: None,
                     },
                     enable_unsupported_rules: false,
                     clobber: false,
-                    tags: None,
+                    proven_rules: false,
+                    include_tag: None,
+                    exclude_tag: None,
                     include_category: None,
                     exclude_category: None,
+                    include_eid: None,
+                    exclude_eid: None,
+                    no_field: false,
+                    no_pwsh_field_extraction: false,
+                    remove_duplicate_data: false,
+                    remove_duplicate_detections: false,
+                    no_wizard: true,
                 },
                 geo_ip: None,
                 output: None,
                 multiline: false,
-                remove_duplicate_data: false,
             })),
             debug: false,
         }))
@@ -579,7 +594,8 @@ mod tests {
         match serde_json::from_str(record_str) {
             Ok(record) => {
                 let keys = detections::rule::get_detection_keys(&rule_node);
-                let recinfo = utils::create_rec_info(record, "testpath".to_owned(), &keys);
+                let recinfo =
+                    utils::create_rec_info(record, "testpath".to_owned(), &keys, &false, &false);
                 assert_eq!(
                     rule_node.select(
                         &recinfo,

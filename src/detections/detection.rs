@@ -5,10 +5,10 @@ use crate::detections::utils::{
     create_recordinfos, format_time, output_profile_name, write_color_buffer,
 };
 use crate::options::profile::Profile::{
-    self, AllFieldInfo, Channel, Computer, EventID, EvtxFile, Level, MitreTactics, MitreTags,
-    OtherTags, Provider, RecordID, RenderedMessage, RuleAuthor, RuleCreationDate, RuleFile, RuleID,
-    RuleModifiedDate, RuleTitle, SrcASN, SrcCity, SrcCountry, Status, TgtASN, TgtCity, TgtCountry,
-    Timestamp,
+    self, Channel, Computer, EventID, EvtxFile, Level, MitreTactics, MitreTags, OtherTags,
+    Provider, RecordID, RecoveredRecord, RenderedMessage, RuleAuthor, RuleCreationDate, RuleFile,
+    RuleID, RuleModifiedDate, RuleTitle, SrcASN, SrcCity, SrcCountry, Status, TgtASN, TgtCity,
+    TgtCountry, Timestamp,
 };
 use chrono::{TimeZone, Utc};
 use compact_str::CompactString;
@@ -31,6 +31,7 @@ use std::fmt::Write;
 use std::path::Path;
 
 use crate::detections::configs::STORED_EKEY_ALIAS;
+use crate::detections::field_data_map::FieldDataMapKey;
 use std::sync::Arc;
 use tokio::{runtime::Runtime, spawn, task::JoinHandle};
 
@@ -46,6 +47,7 @@ pub struct EvtxRecordInfo {
     pub record: Value,         // 1レコード分のデータをJSON形式にシリアライズしたもの
     pub data_string: String,   //1レコード内のデータを文字列にしたもの
     pub key_2_value: HashMap<String, String>, // 階層化されたキーを.でつないだデータとその値のマップ
+    pub recovered_record: bool, // レコードが復元されたかどうか
 }
 
 impl EvtxRecordInfo {
@@ -141,7 +143,8 @@ impl Detection {
             .collect();
         if !(stored_static.logon_summary_flag
             || stored_static.search_flag
-            || stored_static.metrics_flag)
+            || stored_static.metrics_flag
+            || stored_static.computer_metrics_flag)
         {
             Detection::print_rule_load_info(
                 &rulefile_loader.rulecounter,
@@ -258,6 +261,11 @@ impl Detection {
         let eid =
             get_serde_number_to_string(&record_info.record["Event"]["System"]["EventID"], false)
                 .unwrap_or_else(|| "-".into());
+        let recovered_record = if record_info.recovered_record {
+            "Y"
+        } else {
+            ""
+        };
 
         let default_time = Utc.with_ymd_and_hms(1970, 1, 1, 0, 0, 0).unwrap();
         let time = message::get_event_time(&record_info.record, stored_static.json_input_flag)
@@ -268,7 +276,6 @@ impl Detection {
         let tags_config_values: Vec<&CompactString> = TAGS_CONFIG.values().collect();
         let binding = STORED_EKEY_ALIAS.read().unwrap();
         let eventkey_alias = binding.as_ref().unwrap();
-        let mut included_all_field_info_flag = false;
         let is_json_timeline = matches!(stored_static.config.action, Some(Action::JsonTimeline(_)));
 
         for (key, profile) in stored_static.profiles.as_ref().unwrap().iter() {
@@ -476,6 +483,10 @@ impl Detection {
                         ),
                     );
                 }
+                RecoveredRecord(_) => {
+                    profile_converter
+                        .insert("RecoveredRecord", RecoveredRecord(recovered_record.into()));
+                }
                 RenderedMessage(_) => {
                     let convert_value = if let Some(message) =
                         record_info.record["Event"]["RenderingInfo"]["Message"].as_str()
@@ -637,12 +648,10 @@ impl Detection {
                         .entry("SrcCity")
                         .and_modify(|p| *p = SrcCity(src_data.next().unwrap().to_owned().into()));
                 }
-                AllFieldInfo(_) => {
-                    included_all_field_info_flag = true;
-                }
                 _ => {}
             }
         }
+        //ルール側にdetailsの項目があればそれをそのまま出力し、そうでない場合はproviderとeventidの組で設定したdetailsの項目を出力する
         let details_fmt_str = match rule.yaml["details"].as_str() {
             Some(s) => s.to_string(),
             None => match stored_static
@@ -650,10 +659,18 @@ impl Detection {
                 .get(&CompactString::from(format!("{provider}_{eid}")))
             {
                 Some(str) => str.to_string(),
-                None => create_recordinfos(&record_info.record),
+                None => create_recordinfos(&record_info.record, &FieldDataMapKey::default(), &None)
+                    .join(" ¦ "),
             },
         };
-
+        let field_data_map_key: FieldDataMapKey = if stored_static.field_data_map.is_none() {
+            FieldDataMapKey::default()
+        } else {
+            FieldDataMapKey {
+                channel: CompactString::from(ch_str.clone().to_lowercase()),
+                event_id: eid.clone(),
+            }
+        };
         let detect_info = DetectInfo {
             rulepath: CompactString::from(&rule.rulepath),
             ruleid: CompactString::from(rule.yaml["id"].as_str().unwrap_or("-")),
@@ -674,15 +691,20 @@ impl Detection {
             detail: CompactString::default(),
             ext_field: stored_static.profiles.as_ref().unwrap().to_owned(),
             is_condition: false,
+            details_convert_map: HashMap::default(),
         };
         message::insert(
             &record_info.record,
             CompactString::new(details_fmt_str),
             detect_info,
             time,
-            &mut profile_converter,
-            (false, is_json_timeline, included_all_field_info_flag),
-            eventkey_alias,
+            &profile_converter,
+            (false, is_json_timeline),
+            (
+                eventkey_alias,
+                &field_data_map_key,
+                &stored_static.field_data_map,
+            ),
         );
     }
 
@@ -847,6 +869,9 @@ impl Detection {
                 Provider(_) => {
                     profile_converter.insert(key.as_str(), Provider("-".into()));
                 }
+                RecoveredRecord(_) => {
+                    profile_converter.insert("RecoveredRecord", RenderedMessage("".into()));
+                }
                 RenderedMessage(_) => {
                     profile_converter.insert(key.as_str(), RenderedMessage("-".into()));
                 }
@@ -885,17 +910,20 @@ impl Detection {
             detail: output,
             ext_field: stored_static.profiles.as_ref().unwrap().to_owned(),
             is_condition: true,
+            details_convert_map: HashMap::default(),
         };
         let binding = STORED_EKEY_ALIAS.read().unwrap();
         let eventkey_alias = binding.as_ref().unwrap();
+
+        let field_data_map_key = FieldDataMapKey::default();
         message::insert(
             &Value::default(),
             CompactString::new(rule.yaml["details"].as_str().unwrap_or("-")),
             detect_info,
             agg_result.start_timedate,
-            &mut profile_converter,
-            (true, is_json_timeline, false),
-            eventkey_alias,
+            &profile_converter,
+            (true, is_json_timeline),
+            (eventkey_alias, &field_data_map_key, &None),
         )
     }
 
@@ -1116,11 +1144,13 @@ impl Detection {
         is_csv_output: bool,
     ) -> CompactString {
         for alias in target_alias {
-            let search_data = message::parse_message(
+            let (search_data, _) = message::parse_message(
                 record,
-                CompactString::from(alias),
+                &CompactString::from(alias),
                 eventkey_alias,
                 is_csv_output,
+                &FieldDataMapKey::default(),
+                &None,
             );
             if search_data != "n/a" {
                 return search_data;
@@ -1152,6 +1182,7 @@ mod tests {
     use crate::detections::utils;
     use crate::filter;
     use crate::options::profile::Profile;
+    use chrono::NaiveDateTime;
     use chrono::TimeZone;
     use chrono::Utc;
     use compact_str::CompactString;
@@ -1168,6 +1199,8 @@ mod tests {
                         directory: None,
                         filepath: None,
                         live_analysis: false,
+                        recover_records: false,
+                        timeline_offset: None,
                     },
                     profile: None,
                     enable_deprecated_rules: false,
@@ -1200,17 +1233,27 @@ mod tests {
                         config: Path::new("./rules/config").to_path_buf(),
                         verbose: false,
                         json_input: false,
+                        include_computer: None,
+                        exclude_computer: None,
                     },
                     enable_unsupported_rules: false,
                     clobber: false,
-                    tags: None,
+                    proven_rules: false,
+                    include_tag: None,
+                    exclude_tag: None,
                     include_category: None,
                     exclude_category: None,
+                    include_eid: None,
+                    exclude_eid: None,
+                    no_field: false,
+                    no_pwsh_field_extraction: false,
+                    remove_duplicate_data: false,
+                    remove_duplicate_detections: false,
+                    no_wizard: true,
                 },
                 geo_ip: None,
                 output: None,
                 multiline: false,
-                remove_duplicate_data: false,
             })),
             debug: false,
         }))
@@ -1409,15 +1452,17 @@ mod tests {
     fn test_insert_message_with_geoip() {
         let test_filepath: &str = "test.evtx";
         let test_rulepath: &str = "test-rule.yml";
-        let expect_time = Utc
-            .datetime_from_str("1996-02-27T01:05:01Z", "%Y-%m-%dT%H:%M:%SZ")
-            .unwrap();
+        let expect_naivetime =
+            NaiveDateTime::parse_from_str("1996-02-27T01:05:01Z", "%Y-%m-%dT%H:%M:%SZ").unwrap();
+        let expect_time = Utc.from_local_datetime(&expect_naivetime).unwrap();
         let dummy_action = Action::CsvTimeline(CsvOutputOption {
             output_options: OutputOption {
                 input_args: InputOption {
                     directory: None,
                     filepath: None,
                     live_analysis: false,
+                    recover_records: false,
+                    timeline_offset: None,
                 },
                 profile: None,
                 enable_deprecated_rules: false,
@@ -1450,17 +1495,27 @@ mod tests {
                     config: Path::new("./rules/config").to_path_buf(),
                     verbose: false,
                     json_input: false,
+                    include_computer: None,
+                    exclude_computer: None,
                 },
                 enable_unsupported_rules: false,
                 clobber: false,
-                tags: None,
+                proven_rules: false,
+                include_tag: None,
+                exclude_tag: None,
                 include_category: None,
                 exclude_category: None,
+                include_eid: None,
+                exclude_eid: None,
+                no_field: false,
+                no_pwsh_field_extraction: false,
+                remove_duplicate_data: false,
+                remove_duplicate_detections: false,
+                no_wizard: true,
             },
             geo_ip: Some(Path::new("test_files/mmdb").to_path_buf()),
             output: Some(Path::new("./test_emit_csv.csv").to_path_buf()),
             multiline: false,
-            remove_duplicate_data: false,
         });
         let dummy_config = Some(Config {
             action: Some(dummy_action),
@@ -1482,7 +1537,7 @@ mod tests {
 
             let messages = &message::MESSAGES;
             messages.clear();
-            let val = r##"
+            let val = r#"
             {
                 "Event": {
                     "EventData": {
@@ -1500,12 +1555,13 @@ mod tests {
                     }
                 }
             }
-        "##;
+        "#;
             let event: Value = serde_json::from_str(val).unwrap();
             let dummy_rule = RuleNode::new(test_rulepath.to_string(), Yaml::from_str(""));
             let keys = detections::rule::get_detection_keys(&dummy_rule);
 
-            let input_evtxrecord = utils::create_rec_info(event, test_filepath.to_owned(), &keys);
+            let input_evtxrecord =
+                utils::create_rec_info(event, test_filepath.to_owned(), &keys, &false, &false);
             Detection::insert_message(&dummy_rule, &input_evtxrecord, &stored_static);
             let multi = message::MESSAGES.get(&expect_time).unwrap();
             let (_, detect_infos) = multi.pair();
@@ -1532,15 +1588,17 @@ mod tests {
     fn test_filtered_insert_message_with_geoip() {
         let test_filepath: &str = "test.evtx";
         let test_rulepath: &str = "test-rule.yml";
-        let expect_time = Utc
-            .datetime_from_str("1996-02-27T01:05:01Z", "%Y-%m-%dT%H:%M:%SZ")
-            .unwrap();
+        let expect_naivetime =
+            NaiveDateTime::parse_from_str("1996-02-27T01:05:01Z", "%Y-%m-%dT%H:%M:%SZ").unwrap();
+        let expect_time = Utc.from_local_datetime(&expect_naivetime).unwrap();
         let dummy_action = Action::CsvTimeline(CsvOutputOption {
             output_options: OutputOption {
                 input_args: InputOption {
                     directory: None,
                     filepath: None,
                     live_analysis: false,
+                    recover_records: false,
+                    timeline_offset: None,
                 },
                 profile: None,
                 enable_deprecated_rules: false,
@@ -1573,17 +1631,27 @@ mod tests {
                     config: Path::new("./rules/config").to_path_buf(),
                     verbose: false,
                     json_input: false,
+                    include_computer: None,
+                    exclude_computer: None,
                 },
                 enable_unsupported_rules: false,
                 clobber: false,
-                tags: None,
+                proven_rules: false,
+                include_tag: None,
+                exclude_tag: None,
                 include_category: None,
                 exclude_category: None,
+                include_eid: None,
+                exclude_eid: None,
+                no_field: false,
+                no_pwsh_field_extraction: false,
+                remove_duplicate_data: false,
+                remove_duplicate_detections: false,
+                no_wizard: true,
             },
             geo_ip: Some(Path::new("test_files/mmdb").to_path_buf()),
             output: Some(Path::new("./test_emit_csv.csv").to_path_buf()),
             multiline: false,
-            remove_duplicate_data: false,
         });
         let dummy_config = Some(Config {
             action: Some(dummy_action),
@@ -1605,7 +1673,7 @@ mod tests {
 
             let messages = &message::MESSAGES;
             messages.clear();
-            let val = r##"
+            let val = r#"
             {
                 "Event": {
                     "EventData": {
@@ -1623,12 +1691,13 @@ mod tests {
                     }
                 }
             }
-        "##;
+        "#;
             let event: Value = serde_json::from_str(val).unwrap();
             let dummy_rule = RuleNode::new(test_rulepath.to_string(), Yaml::from_str(""));
             let keys = detections::rule::get_detection_keys(&dummy_rule);
 
-            let input_evtxrecord = utils::create_rec_info(event, test_filepath.to_owned(), &keys);
+            let input_evtxrecord =
+                utils::create_rec_info(event, test_filepath.to_owned(), &keys, &false, &false);
             Detection::insert_message(&dummy_rule, &input_evtxrecord, &stored_static);
             let multi = message::MESSAGES.get(&expect_time).unwrap();
             let (_, detect_infos) = multi.pair();
@@ -1651,15 +1720,17 @@ mod tests {
     #[test]
     fn test_insert_message_extra_field_info() {
         let test_filepath: &str = "test.evtx";
-        let expect_time = Utc
-            .datetime_from_str("1996-02-27T01:05:01Z", "%Y-%m-%dT%H:%M:%SZ")
-            .unwrap();
+        let expect_naivetime =
+            NaiveDateTime::parse_from_str("1996-02-27T01:05:01Z", "%Y-%m-%dT%H:%M:%SZ").unwrap();
+        let expect_time = Utc.from_local_datetime(&expect_naivetime).unwrap();
         let dummy_action = Action::CsvTimeline(CsvOutputOption {
             output_options: OutputOption {
                 input_args: InputOption {
                     directory: None,
                     filepath: None,
                     live_analysis: false,
+                    recover_records: false,
+                    timeline_offset: None,
                 },
                 profile: None,
                 enable_deprecated_rules: false,
@@ -1692,17 +1763,27 @@ mod tests {
                     config: Path::new("./rules/config").to_path_buf(),
                     verbose: false,
                     json_input: false,
+                    include_computer: None,
+                    exclude_computer: None,
                 },
                 enable_unsupported_rules: false,
                 clobber: false,
-                tags: None,
+                proven_rules: false,
+                include_tag: None,
+                exclude_tag: None,
                 include_category: None,
                 exclude_category: None,
+                include_eid: None,
+                exclude_eid: None,
+                no_field: false,
+                no_pwsh_field_extraction: false,
+                remove_duplicate_data: false,
+                remove_duplicate_detections: false,
+                no_wizard: true,
             },
             geo_ip: None,
             output: Some(Path::new("./test_emit_csv.csv").to_path_buf()),
             multiline: true,
-            remove_duplicate_data: false,
         });
         let dummy_config = Some(Config {
             action: Some(dummy_action),
@@ -1728,7 +1809,7 @@ mod tests {
 
             let messages = &message::MESSAGES;
             messages.clear();
-            let val = r##"
+            let val = r#"
             {
                 "Event": {
                     "EventData": {
@@ -1746,7 +1827,7 @@ mod tests {
                     }
                 }
             }
-        "##;
+        "#;
             let rule_str = r#"
         enabled: true
         author: "Test, Test2/Test3; Test4 "
@@ -1764,7 +1845,8 @@ mod tests {
             assert!(rule_node.init(&create_dummy_stored_static()).is_ok());
 
             let keys = detections::rule::get_detection_keys(&rule_node);
-            let input_evtxrecord = utils::create_rec_info(event, test_filepath.to_owned(), &keys);
+            let input_evtxrecord =
+                utils::create_rec_info(event, test_filepath.to_owned(), &keys, &false, &false);
             Detection::insert_message(&rule_node, &input_evtxrecord, &stored_static.clone());
             let multi = message::MESSAGES.get(&expect_time).unwrap();
             let (_, detect_infos) = multi.pair();
@@ -1783,15 +1865,17 @@ mod tests {
     #[test]
     fn test_insert_message_multiline_ruleauthor() {
         let test_filepath: &str = "test.evtx";
-        let expect_time = Utc
-            .datetime_from_str("1996-02-27T01:05:01Z", "%Y-%m-%dT%H:%M:%SZ")
-            .unwrap();
+        let expect_naivetime =
+            NaiveDateTime::parse_from_str("1996-02-27T01:05:01Z", "%Y-%m-%dT%H:%M:%SZ").unwrap();
+        let expect_time = Utc.from_local_datetime(&expect_naivetime).unwrap();
         let dummy_action = Action::CsvTimeline(CsvOutputOption {
             output_options: OutputOption {
                 input_args: InputOption {
                     directory: None,
                     filepath: None,
                     live_analysis: false,
+                    recover_records: false,
+                    timeline_offset: None,
                 },
                 profile: None,
                 enable_deprecated_rules: false,
@@ -1824,17 +1908,27 @@ mod tests {
                     config: Path::new("./rules/config").to_path_buf(),
                     verbose: false,
                     json_input: false,
+                    include_computer: None,
+                    exclude_computer: None,
                 },
                 enable_unsupported_rules: false,
                 clobber: false,
-                tags: None,
+                proven_rules: false,
+                include_tag: None,
+                exclude_tag: None,
                 include_category: None,
                 exclude_category: None,
+                include_eid: None,
+                exclude_eid: None,
+                no_field: false,
+                no_pwsh_field_extraction: false,
+                remove_duplicate_data: false,
+                remove_duplicate_detections: false,
+                no_wizard: true,
             },
             geo_ip: None,
             output: Some(Path::new("./test_emit_csv.csv").to_path_buf()),
             multiline: true,
-            remove_duplicate_data: false,
         });
         let dummy_config = Some(Config {
             action: Some(dummy_action),
@@ -1861,7 +1955,7 @@ mod tests {
 
             let messages = &message::MESSAGES;
             messages.clear();
-            let val = r##"
+            let val = r#"
             {
                 "Event": {
                     "EventData": {
@@ -1879,7 +1973,7 @@ mod tests {
                     }
                 }
             }
-        "##;
+        "#;
             let rule_str = r#"
         enabled: true
         author: "Test, Test2/Test3; Test4 "
@@ -1897,7 +1991,8 @@ mod tests {
             assert!(rule_node.init(&create_dummy_stored_static()).is_ok());
 
             let keys = detections::rule::get_detection_keys(&rule_node);
-            let input_evtxrecord = utils::create_rec_info(event, test_filepath.to_owned(), &keys);
+            let input_evtxrecord =
+                utils::create_rec_info(event, test_filepath.to_owned(), &keys, &false, &false);
             Detection::insert_message(&rule_node, &input_evtxrecord, &stored_static.clone());
             let multi = message::MESSAGES.get(&expect_time).unwrap();
             let (_, detect_infos) = multi.pair();

@@ -6,7 +6,7 @@ use std::sync::RwLock;
 use termcolor::{BufferWriter, Color, ColorChoice};
 
 use crate::detections::utils::{
-    get_serde_number_to_string, get_writable_color, write_color_buffer,
+    get_event_value, get_serde_number_to_string, get_writable_color, write_color_buffer,
 };
 
 use crate::detections::configs::{EventKeyAliasConfig, StoredStatic};
@@ -40,18 +40,11 @@ impl PivotKeyword {
 ///levelがlowより大きいレコードの場合、keywordがrecord内にみつかれば、
 ///それをPIVOT_KEYWORD.keywordsに入れる。
 pub fn insert_pivot_keyword(event_record: &Value, eventkey_alias: &EventKeyAliasConfig) {
-    //levelがlow以上なら続ける
-    let mut is_exist_event_key = false;
-    let mut tmp_event_record: &Value = event_record;
-    for s in ["Event", "System", "Level"] {
-        if let Some(record) = tmp_event_record.get(s) {
-            is_exist_event_key = true;
-            tmp_event_record = record;
-        }
-    }
-    if is_exist_event_key {
-        if let Some(event_record_str) = get_serde_number_to_string(tmp_event_record, false) {
+    if let Some(record_level) = get_event_value("Event.System.Level", event_record, eventkey_alias)
+    {
+        if let Some(event_record_str) = get_serde_number_to_string(record_level, false) {
             let exclude_check_str = event_record_str.as_str();
+            //levelがlow以上なら続ける
             if exclude_check_str == "infomational"
                 || exclude_check_str == "undefined"
                 || exclude_check_str == "-"
@@ -62,6 +55,7 @@ pub fn insert_pivot_keyword(event_record: &Value, eventkey_alias: &EventKeyAlias
     } else {
         return;
     }
+
     let mut pivots = PIVOT_KEYWORD.write().unwrap();
     pivots.iter_mut().for_each(|(_, pivot)| {
         for field in &pivot.fields {

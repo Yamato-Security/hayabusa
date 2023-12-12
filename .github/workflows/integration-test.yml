@@ -13,7 +13,7 @@ jobs:
 
     strategy:
       matrix:
-        os: ['ubuntu-20.04', 'windows-2019']
+        os: ['ubuntu-22.04', 'windows-2019']
 
     steps:
       - name: Checkout main
@@ -28,41 +28,54 @@ jobs:
           repository: Yamato-Security/hayabusa-sample-evtx
           path: hayabusa-sample-evtx
 
+      - name: Set up Rust toolchain
+        if: ${{ steps.skip_check.outputs.should_skip != 'true' }}
+        uses: dtolnay/rust-toolchain@stable
+
       - name: help
         run: cd main && cargo run --release -- help
 
       - name: update-rules
         run: cd main && cargo run --release -- update-rules -q
 
+      - name: computer-metrics
+        run: cd main && cargo run --release -- computer-metrics -d ../hayabusa-sample-evtx -q
+
       - name: csv-timeline
-        run: cd main && cargo run --release -- csv-timeline -d ../hayabusa-sample-evtx -o out.csv -q
+        run: cd main && cargo run --release -- csv-timeline -d ../hayabusa-sample-evtx -o out.csv -q -w
 
       - name: csv-timeline(-p super-verbose)
-        run: cd main && cargo run --release -- csv-timeline -d ../hayabusa-sample-evtx -o out-s.csv -p super-verbose -q
+        run: cd main && cargo run --release -- csv-timeline -d ../hayabusa-sample-evtx -o out-s.csv -p super-verbose -q -w
+
+      - name: eid-metrics
+        run: cd main && cargo run --release -- eid-metrics -d ../hayabusa-sample-evtx -q
 
       - name: json-timeline
-        run: cd main && cargo run --release -- json-timeline -d ../hayabusa-sample-evtx -o out.json -q
+        run: cd main && cargo run --release -- json-timeline -d ../hayabusa-sample-evtx -o out.json -q -w
 
       - name: json-timeline(-p super-verbose)
-        run: cd main && cargo run --release -- json-timeline -d ../hayabusa-sample-evtx -o out-s.json -p super-verbose -q
+        run: cd main && cargo run --release -- json-timeline -d ../hayabusa-sample-evtx -o out-s.json -p super-verbose -q -w
 
       - name: json-timeline(-L)
-        run: cd main && cargo run --release -- json-timeline -d ../hayabusa-sample-evtx -o out.jsonl -q -L
-
-      - name: logon-summary
-        run: cd main && cargo run --release -- logon-summary -d ../hayabusa-sample-evtx -q
-
-      - name: metrics
-        run: cd main && cargo run --release -- metrics -d ../hayabusa-sample-evtx -q
-
-      - name: pivot-keywords-list
-        run: cd main && cargo run --release -- pivot-keywords-list -d ../hayabusa-sample-evtx -o p.csv -q
+        run: cd main && cargo run --release -- json-timeline -d ../hayabusa-sample-evtx -o out.jsonl -q -L -w
 
       - name: level-tuning
         run: cd main && cargo run --release -- level-tuning -f ./rules/config/level_tuning.txt -q
 
-      - name: set-default-profile
-        run: cd main && cargo run --release -- set-default-profile -p verbose -q
-
       - name: list-contributors
         run: cd main && cargo run --release -- list-contributors -q
+
+      - name: list-profiles
+        run: cd main && cargo run --release -- list-profiles -q
+
+      - name: logon-summary
+        run: cd main && cargo run --release -- logon-summary -d ../hayabusa-sample-evtx -q
+
+      - name: pivot-keywords-list
+        run: cd main && cargo run --release -- pivot-keywords-list -d ../hayabusa-sample-evtx -o key -q -w
+
+      - name: search
+        run: cd main && cargo run --release -- search -d ../hayabusa-sample-evtx -k mimikatz -o search.csv -q
+
+      - name: set-default-profile
+        run: cd main && cargo run --release -- set-default-profile -p verbose -q

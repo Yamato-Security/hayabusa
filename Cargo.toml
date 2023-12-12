@@ -1,17 +1,17 @@
 [package]
 name = "hayabusa"
-version = "2.7.0-dev"
+version = "2.11.0"
 repository = "https://github.com/Yamato-Security/hayabusa"
 authors = ["Yamato Security @SecurityYamato"]
 edition = "2021"
-rust-version = "1.70.0"
+rust-version = "1.74.0"
 include = ["src/**/*", "LICENSE.txt", "README.md", "CHANGELOG.md"]
 
 [dependencies]
 itertools = "*"
 dashmap = "*"
 clap = { version = "4.*", features = ["derive", "cargo", "color"]}
-evtx = { git = "https://github.com/Yamato-Security/hayabusa-evtx.git" , features = ["fast-alloc"] , rev = "128a425" } # 0.8.6 2023/06/15 update
+evtx = { git = "https://github.com/Yamato-Security/hayabusa-evtx.git" , features = ["fast-alloc"] , rev = "4f96b8e" } # 0.8.7 2023/11/29 update
 quick-xml = {version = "0.*", features = ["serialize"] }
 serde = { version = "1.*", features = ["derive"] }
 serde_json = { version = "1.0"}
@@ -26,8 +26,7 @@ yaml-rust = "0.4.*"
 tokio = { version = "1", features = ["full"] }
 num_cpus = "1.*"
 downcast-rs = "1.*"
-hhmmss = "*"
-pbr = "*"
+indicatif = "*"
 hashbrown = "0.14.*"
 hex = "0.4.*"
 git2 = "0.*"
@@ -48,10 +47,12 @@ compact_str = "0.7.*"
 ureq = "*"
 mockall = "*"
 maxminddb = "0.*"
-cidr-utils = "0.*"
+cidr-utils = "0.5.*"
 aho-corasick = "*"
 memchr = "2.*"
-indexmap = "1.9.*"
+num = "0.4.0"
+indexmap = "2.*"
+dialoguer = "*"
 
 [profile.dev]
 debug = 0

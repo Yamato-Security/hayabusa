@@ -23,6 +23,7 @@ use termcolor::{BufferWriter, Color, ColorChoice};
 use terminal_size::terminal_size;
 use terminal_size::Width;
 
+use super::computer_metrics;
 use super::metrics::EventMetrics;
 use super::search::EventSearch;
 use hashbrown::{HashMap, HashSet};
@@ -66,7 +67,14 @@ impl Timeline {
 
     pub fn start(&mut self, records: &[EvtxRecordInfo], stored_static: &StoredStatic) {
         if stored_static.metrics_flag {
-            self.stats.evt_stats_start(records, stored_static);
+            self.stats.evt_stats_start(
+                records,
+                stored_static,
+                (
+                    &stored_static.include_computer,
+                    &stored_static.exclude_computer,
+                ),
+            );
         } else if stored_static.logon_summary_flag {
             self.stats.logon_stats_start(
                 records,
@@ -107,7 +115,7 @@ impl Timeline {
         let target;
 
         match &stored_static.config.action.as_ref().unwrap() {
-            Action::Metrics(option) => {
+            Action::EidMetrics(option) => {
                 if option.input_args.filepath.is_some() {
                     sammsges.push(format!("Evtx File Path: {}", self.stats.filepath));
                 }
@@ -193,7 +201,7 @@ impl Timeline {
             None => 100,
         };
 
-        let constraints = vec![
+        let constraints = [
             LowerBoundary(Fixed(7)),  // Minimum number of characters for "Total"
             UpperBoundary(Fixed(9)),  // Maximum number of characters for "percent"
             UpperBoundary(Fixed(20)), // Maximum number of characters for "Channel"
@@ -448,6 +456,37 @@ impl Timeline {
             }
         }
     }
+
+    /// ComputeMetrics結果出力
+    pub fn computer_metrics_dsp_msg(&mut self, stored_static: &StoredStatic) {
+        if let Action::ComputerMetrics(computer_metrics_option) =
+            &stored_static.config.action.as_ref().unwrap()
+        {
+            let mut sammsges: Nested<String> = Nested::new();
+            if self.stats.stats_list.is_empty() {
+                write_color_buffer(
+                    &BufferWriter::stdout(ColorChoice::Always),
+                    Some(Color::Rgb(238, 102, 97)),
+                    "\n\nNo matches found.",
+                    true,
+                )
+                .ok();
+            } else {
+                sammsges.push(format!(
+                    "\nTotal computers: {}",
+                    self.stats.stats_list.len().to_formatted_string(&Locale::en)
+                ));
+            }
+            println!();
+            computer_metrics::computer_metrics_dsp_msg(
+                &self.stats.stats_list,
+                &computer_metrics_option.output,
+            );
+            for msgprint in sammsges.iter() {
+                println!("{}", msgprint);
+            }
+        }
+    }
 }
 
 #[cfg(test)]
@@ -459,14 +498,14 @@ mod tests {
 
     use chrono::{DateTime, NaiveDateTime, Utc};
     use compact_str::CompactString;
-    use hashbrown::HashMap;
+    use hashbrown::{HashMap, HashSet};
     use nested::Nested;
 
     use crate::{
         detections::{
             configs::{
-                Action, CommonOptions, Config, DetectCommonOption, InputOption, LogonSummaryOption,
-                MetricsOption, StoredStatic, STORED_EKEY_ALIAS,
+                Action, CommonOptions, Config, DetectCommonOption, EidMetricsOption, InputOption,
+                LogonSummaryOption, StoredStatic, STORED_EKEY_ALIAS,
             },
             utils::create_rec_info,
         },
@@ -489,6 +528,8 @@ mod tests {
                     directory: None,
                     filepath: None,
                     live_analysis: false,
+                    recover_records: false,
+                    timeline_offset: None,
                 },
                 common_options: CommonOptions {
                     no_color: false,
@@ -501,6 +542,8 @@ mod tests {
                     quiet_errors: false,
                     config: Path::new("./rules/config").to_path_buf(),
                     verbose: false,
+                    include_computer: None,
+                    exclude_computer: None,
                 },
                 european_time: false,
                 iso_8601: false,
@@ -511,6 +554,8 @@ mod tests {
                 utc: false,
                 output: None,
                 clobber: false,
+                end_timeline: None,
+                start_timeline: None,
             }));
         *STORED_EKEY_ALIAS.write().unwrap() = Some(dummy_stored_static.eventkey_alias.clone());
         let mut timeline = Timeline::default();
@@ -537,6 +582,8 @@ mod tests {
             alias_ch_record,
             "testpath".to_string(),
             &Nested::<String>::new(),
+            &false,
+            &false,
         ));
         timeline
             .stats
@@ -572,6 +619,8 @@ mod tests {
             include_tcreated_attribe_record,
             "testpath2".to_string(),
             &Nested::<String>::new(),
+            &false,
+            &false,
         ));
 
         // テスト3: Event.System.@timestampにタイムスタンプが含まれる場合
@@ -595,6 +644,8 @@ mod tests {
             include_timestamp_record,
             "testpath2".to_string(),
             &Nested::<String>::new(),
+            &false,
+            &false,
         ));
 
         let mut expect: HashMap<
@@ -633,7 +684,7 @@ mod tests {
             .logon_stats_start(&input_datas, true, &dummy_stored_static.eventkey_alias);
         assert_eq!(
             timeline.stats.start_time,
-            Some(DateTime::<Utc>::from_utc(
+            Some(DateTime::<Utc>::from_naive_utc_and_offset(
                 NaiveDateTime::parse_from_str("2021-12-23T00:00:00.000Z", "%Y-%m-%dT%H:%M:%S%.3fZ")
                     .unwrap(),
                 Utc
@@ -641,7 +692,7 @@ mod tests {
         );
         assert_eq!(
             timeline.stats.end_time,
-            Some(DateTime::<Utc>::from_utc(
+            Some(DateTime::<Utc>::from_naive_utc_and_offset(
                 NaiveDateTime::parse_from_str("2022-12-23T00:00:00.000Z", "%Y-%m-%dT%H:%M:%S%.3fZ")
                     .unwrap(),
                 Utc
@@ -658,34 +709,39 @@ mod tests {
 
     #[test]
     pub fn test_tm_stats_dsp_msg() {
-        let dummy_stored_static = create_dummy_stored_static(Action::Metrics(MetricsOption {
-            input_args: InputOption {
-                directory: None,
-                filepath: None,
-                live_analysis: false,
-            },
-            common_options: CommonOptions {
-                no_color: false,
-                quiet: false,
-            },
-            detect_common_options: DetectCommonOption {
-                json_input: false,
-                evtx_file_ext: None,
-                thread_number: None,
-                quiet_errors: false,
-                config: Path::new("./rules/config").to_path_buf(),
-                verbose: false,
-            },
-            european_time: false,
-            iso_8601: false,
-            rfc_2822: false,
-            rfc_3339: false,
-            us_military_time: false,
-            us_time: false,
-            utc: false,
-            output: Some(Path::new("./test_tm_stats.csv").to_path_buf()),
-            clobber: false,
-        }));
+        let dummy_stored_static =
+            create_dummy_stored_static(Action::EidMetrics(EidMetricsOption {
+                input_args: InputOption {
+                    directory: None,
+                    filepath: None,
+                    live_analysis: false,
+                    recover_records: false,
+                    timeline_offset: None,
+                },
+                common_options: CommonOptions {
+                    no_color: false,
+                    quiet: false,
+                },
+                detect_common_options: DetectCommonOption {
+                    json_input: false,
+                    evtx_file_ext: None,
+                    thread_number: None,
+                    quiet_errors: false,
+                    config: Path::new("./rules/config").to_path_buf(),
+                    verbose: false,
+                    include_computer: None,
+                    exclude_computer: None,
+                },
+                european_time: false,
+                iso_8601: false,
+                rfc_2822: false,
+                rfc_3339: false,
+                us_military_time: false,
+                us_time: false,
+                utc: false,
+                output: Some(Path::new("./test_tm_stats.csv").to_path_buf()),
+                clobber: false,
+            }));
         *STORED_EKEY_ALIAS.write().unwrap() = Some(dummy_stored_static.eventkey_alias.clone());
         let mut timeline = Timeline::default();
         let mut input_datas = vec![];
@@ -709,11 +765,18 @@ mod tests {
             include_timestamp_record,
             "testpath2".to_string(),
             &Nested::<String>::new(),
+            &false,
+            &false,
         ));
 
-        timeline
-            .stats
-            .evt_stats_start(&input_datas, &dummy_stored_static);
+        let include_computer: HashSet<CompactString> = HashSet::new();
+        let exclude_computer: HashSet<CompactString> = HashSet::new();
+
+        timeline.stats.evt_stats_start(
+            &input_datas,
+            &dummy_stored_static,
+            (&include_computer, &exclude_computer),
+        );
 
         timeline.tm_stats_dsp_msg(
             &dummy_stored_static.event_timeline_config,
@@ -742,6 +805,8 @@ mod tests {
                     directory: None,
                     filepath: Some(Path::new("./dummy.evtx").to_path_buf()),
                     live_analysis: false,
+                    recover_records: false,
+                    timeline_offset: None,
                 },
                 common_options: CommonOptions {
                     no_color: false,
@@ -754,6 +819,8 @@ mod tests {
                     quiet_errors: false,
                     config: Path::new("./rules/config").to_path_buf(),
                     verbose: false,
+                    include_computer: None,
+                    exclude_computer: None,
                 },
                 european_time: false,
                 iso_8601: false,
@@ -764,6 +831,8 @@ mod tests {
                 utc: false,
                 output: Some(Path::new("./test_tm_logon_stats").to_path_buf()),
                 clobber: false,
+                end_timeline: None,
+                start_timeline: None,
             }));
         *STORED_EKEY_ALIAS.write().unwrap() = Some(dummy_stored_static.eventkey_alias.clone());
         let mut timeline = Timeline::default();
@@ -794,6 +863,8 @@ mod tests {
             include_tcreated_attribe_record,
             "testpath2".to_string(),
             &Nested::<String>::new(),
+            &false,
+            &false,
         ));
 
         let timestamp_attribe_record_str = r#"{
@@ -816,6 +887,8 @@ mod tests {
             include_timestamp_record,
             "testpath2".to_string(),
             &Nested::<String>::new(),
+            &false,
+            &false,
         ));
 
         timeline
@@ -823,7 +896,7 @@ mod tests {
             .logon_stats_start(&input_datas, true, &dummy_stored_static.eventkey_alias);
 
         timeline.tm_logon_stats_dsp_msg(&dummy_stored_static);
-        let mut header = vec![
+        let mut header = [
             "Successful",
             "Target Account",
             "Target Computer",

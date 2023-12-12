@@ -15,6 +15,7 @@
     <a href="https://www.blackhat.com/asia-22/arsenal/schedule/#hayabusa-26211"><img src="https://raw.githubusercontent.com/toolswatch/badges/master/arsenal/asia/2022.svg"></a>
     <a href="https://codeblue.jp/2022/en/talks/?content=talks_24"><img src="https://img.shields.io/badge/CODE%20BLUE%20Bluebox-2022-blue"></a>
     <a href="https://www.seccon.jp/2022/seccon_workshop/windows.html"><img src="https://img.shields.io/badge/SECCON-2023-blue"></a>
+    <a href="https://www.security-camp.or.jp/minicamp/tokyo2023.html"><img src="https://img.shields.io/badge/Security%20MiniCamp%20Tokyo-2023-blue"></a>
     <a href="https://www.sans.org/cyber-security-training-events/digital-forensics-summit-2023/"><img src="https://img.shields.io/badge/SANS%20DFIR%20Summit-2023-blue"></a>
     <a href=""><img src="https://img.shields.io/badge/Maintenance%20Level-Actively%20Developed-brightgreen.svg" /></a>
     <a href="https://rust-reportcard.xuri.me/report/github.com/Yamato-Security/hayabusa"><img src="https://rust-reportcard.xuri.me/badge/github.com/Yamato-Security/hayabusa" /></a>
@@ -66,8 +67,15 @@ Hayabusa is a **Windows event log fast forensics timeline generator** and **thre
   - [Linux Compiling Notes](#linux-compiling-notes)
   - [Cross-compiling Linux MUSL Binaries](#cross-compiling-linux-musl-binaries)
 - [Running Hayabusa](#running-hayabusa)
+  - [Scan Wizard](#scan-wizard)
+    - [Core Rules](#core-rules)
+    - [Core+ Rules](#core-rules-1)
+    - [Core++ Rules](#core-rules-2)
+    - [Emerging Threats (ET) Add-On Rules](#emerging-threats-et-add-on-rules)
+    - [Threat Hunting (TH) Add-On Rules](#threat-hunting-th-add-on-rules)
   - [Caution: Anti-Virus/EDR Warnings and Slow Runtimes](#caution-anti-virusedr-warnings-and-slow-runtimes)
   - [Windows](#windows)
+    - [Error when trying to scan a file or directory with a space in the path](#error-when-trying-to-scan-a-file-or-directory-with-a-space-in-the-path)
   - [Linux](#linux)
   - [macOS](#macos)
 - [Command List](#command-list)
@@ -76,13 +84,15 @@ Hayabusa is a **Windows event log fast forensics timeline generator** and **thre
   - [General Commands:](#general-commands)
 - [Command Usage](#command-usage)
   - [Analysis Commands](#analysis-commands-1)
+    - [`computer-metrics` command](#computer-metrics-command)
+      - [`computer-metrics` command examples](#computer-metrics-command-examples)
+    - [`eid-metrics` command](#eid-metrics-command)
+      - [`eid-metrics` command examples](#eid-metrics-command-examples)
+      - [`eid-metrics` command config file](#eid-metrics-command-config-file)
     - [`logon-summary` command](#logon-summary-command)
-      - [`logon-summary` command example](#logon-summary-command-example)
-    - [`metrics` command](#metrics-command)
-      - [`metrics` command examples](#metrics-command-examples)
-      - [`metrics` command config file](#metrics-command-config-file)
+      - [`logon-summary` command examples](#logon-summary-command-examples)
     - [`pivot-keywords-list` command](#pivot-keywords-list-command)
-      - [`pivot-keywords-list` command example](#pivot-keywords-list-command-example)
+      - [`pivot-keywords-list` command examples](#pivot-keywords-list-command-examples)
       - [`pivot-keywords-list` config file](#pivot-keywords-list-config-file)
     - [`search` command](#search-command)
       - [`search` command examples](#search-command-examples)
@@ -101,6 +111,7 @@ Hayabusa is a **Windows event log fast forensics timeline generator** and **thre
       - [`level-tuning` config file](#level-tuning-config-file)
     - [`list-profiles` command](#list-profiles-command)
     - [`set-default-profile` command](#set-default-profile-command)
+      - [`set-default-profile` command examples](#set-default-profile-command-examples)
     - [`update-rules` command](#update-rules-command)
       - [`update-rules` command example](#update-rules-command-example)
 - [Timeline Output](#timeline-output)
@@ -115,6 +126,7 @@ Hayabusa is a **Windows event log fast forensics timeline generator** and **thre
     - [8. `timesketch-verbose` profile output](#8-timesketch-verbose-profile-output)
     - [Profile Comparison](#profile-comparison)
     - [Profile Field Aliases](#profile-field-aliases)
+      - [Extra Profile Field Aliases](#extra-profile-field-aliases)
   - [Level Abbrevations](#level-abbrevations)
   - [MITRE ATT\&CK Tactics Abbreviations](#mitre-attck-tactics-abbreviations)
   - [Channel Abbreviations](#channel-abbreviations)
@@ -140,7 +152,7 @@ Hayabusa is a **Windows event log fast forensics timeline generator** and **thre
 
 ### Threat Hunting and Enterprise-wide DFIR
 
-Hayabusa currently has over 3250 Sigma rules and around 150 Hayabusa built-in detection rules with more rules being added regularly.
+Hayabusa currently has over 2500 Sigma rules and over 150 Hayabusa built-in detection rules with more rules being added regularly.
 It can be used for enterprise-wide proactive threat hunting as well as DFIR (Digital Forensics and Incident Response) for free with [Velociraptor](https://docs.velociraptor.app/)'s [Hayabusa artifact](https://docs.velociraptor.app/exchange/artifacts/pages/windows.eventlogs.hayabusa/).
 By combining these two open-source tools, you can essentially retroactively reproduce a SIEM when there is no SIEM setup in the environment.
 You can learn about how to do this by watching [Eric Capuano](https://twitter.com/eric_capuano)'s Velociraptor walkthrough [here](https://www.youtube.com/watch?v=Q1IoGX--814).
@@ -220,12 +232,13 @@ You can learn how to analyze JSON-formatted results with `jq` [here](doc/Analysi
 # Features
 
 * Cross-platform support: Windows, Linux, macOS.
-* Developed in Rust to be memory safe and faster than a hayabusa falcon!
+* Developed in Rust to be memory safe and fast.
 * Multi-thread support delivering up to a 5x speed improvement.
-* Creates a single easy-to-analyze CSV timeline for forensic investigations and incident response.
+* Creates single easy-to-analyze timelines for forensic investigations and incident response.
 * Threat hunting based on IoC signatures written in easy to read/create/edit YML based hayabusa rules.
 * Sigma rule support to convert sigma rules to hayabusa rules.
 * Currently it supports the most sigma rules compared to other similar tools and even supports count rules and new aggregators such as `|equalsfield` and `|endswithfield`.
+* Computer metrics. (Useful for filtering on/out certain computers with a large amount of events.)
 * Event ID metrics. (Useful for getting a picture of what types of events there are and for tuning your log settings.)
 * Rule tuning configuration by excluding unneeded or noisy rules.
 * MITRE ATT&CK mapping of tactics.
@@ -240,6 +253,11 @@ You can learn how to analyze JSON-formatted results with `jq` [here](doc/Analysi
 * Log field normalization. (Converting multiple fields with different naming conventions into the same field name.)
 * Log enrichment by adding GeoIP (ASN, city, country) information to IP addresses.
 * Search all events for keywords or regular expressions.
+* Field data mapping. (Ex: `0xc0000234` -> `ACCOUNT LOCKED`)
+* Evtx record carving from evtx slack space.
+* Event de-duplication when outputting. (Useful when recovery records is enabled or when you include backed up evtx files, evtx files from VSS, etc...)
+* Scan setting wizard to help choose which rules to enable easier. (In order to reduce false positives, etc...)
+* PowerShell classic log field parsing and extraction.
 
 # Downloads
 
@@ -359,6 +377,52 @@ MUSL binaries are are about 15% slower than the GNU binaries, however, they are 
 
 # Running Hayabusa
 
+## Scan Wizard
+
+Commands like `csv-timeline` and `json-timeline` now have a scan wizard enabled by default.
+This is intended to help users easily choose which detection rules they want to enable according to their needs and preferences.
+The sets of detections rules to load are based off of the official lists in the Sigma project.
+Details are explained in [this blog post](https://blog.sigmahq.io/introducing-sigma-rule-packages-releases-76043ce42e81).
+You can easily turn off the wizard and use Hayabusa in its traditional way by adding the `-w, --no-wizard` option.
+
+### Core Rules
+
+The `core` rule set enables rules that have a status of `test` or `stable` and a level of `high` or `critical`.
+These are high quality rules of high confidence and relevance and should not produce many false positives.
+The rule status is `test` or `stable` which means no false positives were reported for over 6 months.
+Rules will match on attacker techniques, generic suspicious activity, or malicious behavior.
+It is the same as using the `--exclude-status deprecated,unsupported,experimental --min-level high` options.
+
+### Core+ Rules
+
+The `core+` rule set enables rules that have a status of `test` or `stable` and a level of `medium` or higher.
+`medium` rules most often need additional tuning as certain applications, legitimate user behavior or scripts of an organization might be matched.
+It is the same as using the `--exclude-status deprecated,unsupported,experimental --min-level medium` options.
+
+### Core++ Rules
+
+The `core++` rule set enables rules that have a status of `experimental`, `test` or `stable` and a level of `medium` or higher.
+These rules are bleeding edge.
+They are validated against the baseline evtx files available at the SigmaHQ project and reviewed by multiple detection engineers.
+Other than that they are pretty much untested at first.
+Use these if you want to be able to detect threats as early as possible at the cost of managing a higher threshold of false positives.
+It is the same as using the `--exclude-status deprecated,unsupported --min-level medium` options.
+
+### Emerging Threats (ET) Add-On Rules
+
+The `Emerging Threats (ET)` rule set enables rules that have a tag of `detection.emerging_threats`.
+These rules target specific threats and are especially useful for current threats where not much information is available yet.
+These rules should not have many false positives but will decrease in relevance over time.
+When these rules are not enabled, it is the same as using the `--exclude-tag detection.emerging_threats` option.
+When running Hayabusa traditionally without the wizard, these rules will be included by default.
+
+### Threat Hunting (TH) Add-On Rules
+
+The `Threat Hunting (TH)` rule set enables rules that have a tag of `detection.threat_hunting`.
+These rules may detect unknown malicious activity, however, will typicially have more false positives.
+When these rules are not enabled, it is the same as using the `--exclude-tag detection.threat_hunting` option.
+When running Hayabusa traditionally without the wizard, these rules will be included by default.
+
 ## Caution: Anti-Virus/EDR Warnings and Slow Runtimes
 
 You may receive an alert from anti-virus or EDR products when trying to run hayabusa or even just when downloading the `.yml` rules as there will be keywords like `mimikatz` and suspicious PowerShell commands in the detection signature.
@@ -372,6 +436,13 @@ You can avoid this by temporarily turning real-time protection off or adding an 
 ## Windows
 
 In a Command/PowerShell Prompt or Windows Terminal, just run the appropriate 32-bit or 64-bit Windows binary.
+
+### Error when trying to scan a file or directory with a space in the path
+
+When using the built-in Command or PowerShell prompt in Windows, you may receive an error that Hayabusa was not able to load any .evtx files if there is a space in your file or directory path.
+In order to load the .evtx files properly, be sure to do the following:
+1. Enclose the file or directory path with double quotes.
+2. If it is a directory path, make sure that you do not include a backslash for the last character.
 
 ## Linux
 
@@ -424,8 +495,9 @@ You should now be able to run hayabusa.
 # Command List
 
 ## Analysis Commands:
+* `computer-metrics`: Print the number of events based on computer names.
+* `eid-metrics`: Print the number and percentage of events based on Event ID.
 * `logon-summary`: Print a summary of logon events.
-* `metrics`: Print metrics of the number and percentage of events based on Event ID.
 * `pivot-keywords-list`: Print a list of suspicious keywords to pivot on.
 * `search`: Search all events by keyword(s) or regular expressions
 
@@ -445,6 +517,109 @@ You should now be able to run hayabusa.
 
 ## Analysis Commands
 
+### `computer-metrics` command
+
+You can use the `computer-metrics` command to print out the total number and percentage of Event IDs seperated by Channels.
+
+```
+Usage: computer-metrics <INPUT> [OPTIONS]
+
+Input:
+  -d, --directory <DIR>  Directory of multiple .evtx files
+  -f, --file <FILE>      File path to one .evtx file
+  -l, --live-analysis    Analyze the local C:\Windows\System32\winevt\Logs folder
+  -J, --JSON-input       Scan JSON formatted logs instead of .evtx (.json or .jsonl)
+  -x, --recover-records  Carve evtx records from slack space (default: disabled)
+
+Filtering:
+      --timeline-offset <OFFSET>  Scan recent events based on an offset (ex: 1y, 3M, 30d, 24h, 30m)
+
+Output:
+  -o, --output <FILE>  Save the results in CSV format (ex: computer-metrics.csv)
+
+Display Settings:
+      --no-color  Disable color output
+  -q, --quiet     Quiet mode: do not display the launch banner
+  -v, --verbose   Output verbose information
+
+General Options:
+  -C, --clobber                        Overwrite files when saving
+  -Q, --quiet-errors                   Quiet errors mode: do not save error logs
+  -c, --rules-config <DIR>             Specify custom rule config directory (default: ./rules/config)
+      --target-file-ext <FILE-EXT...>  Specify additional evtx file extensions (ex: evtx_data)
+  -t, --threads <NUMBER>               Number of threads (default: optimal number for performance)
+```
+
+#### `computer-metrics` command examples
+
+* Print computer name metrics from a directory: `hayabusa.exe computer-metrics -d ../logs`
+* Save results to a CSV file: `hayabusa.exe computer-metrics -d ../logs -o computer-metrics.csv`
+
+
+### `eid-metrics` command
+
+You can use the `eid-metrics` command to print out the total number and percentage of Event IDs seperated by Channels.
+
+```
+Usage: eid-metrics <INPUT> [OPTIONS]
+
+Input:
+  -d, --directory <DIR>  Directory of multiple .evtx files
+  -f, --file <FILE>      File path to one .evtx file
+  -l, --live-analysis    Analyze the local C:\Windows\System32\winevt\Logs folder
+  -J, --JSON-input       Scan JSON formatted logs instead of .evtx (.json or .jsonl)
+  -x, --recover-records  Carve evtx records from slack space (default: disabled)
+
+Filtering:
+      --exclude-computer <COMPUTER...>  Do not scan specified computer names (ex: ComputerA) (ex: ComputerA,ComputerB)
+      --include-computer <COMPUTER...>  Scan only specified computer names (ex: ComputerA) (ex: ComputerA,ComputerB)
+      --timeline-offset <OFFSET>        Scan recent events based on an offset (ex: 1y, 3M, 30d, 24h, 30m)
+
+Output:
+  -o, --output <FILE>  Save the Metrics in CSV format (ex: metrics.csv)
+
+Display Settings:
+      --no-color  Disable color output
+  -q, --quiet     Quiet mode: do not display the launch banner
+  -v, --verbose   Output verbose information
+
+General Options:
+  -C, --clobber                        Overwrite files when saving
+  -Q, --quiet-errors                   Quiet errors mode: do not save error logs
+  -c, --rules-config <DIR>             Specify custom rule config directory (default: ./rules/config)
+      --target-file-ext <FILE-EXT...>  Specify additional evtx file extensions (ex: evtx_data)
+  -t, --threads <NUMBER>               Number of threads (default: optimal number for performance)
+
+Time Format:
+      --European-time     Output timestamp in European time format (ex: 22-02-2022 22:00:00.123 +02:00)
+      --ISO-8601          Output timestamp in ISO-8601 format (ex: 2022-02-22T10:10:10.1234567Z) (Always UTC)
+      --RFC-2822          Output timestamp in RFC 2822 format (ex: Fri, 22 Feb 2022 22:00:00 -0600)
+      --RFC-3339          Output timestamp in RFC 3339 format (ex: 2022-02-22 22:00:00.123456-06:00)
+      --US-military-time  Output timestamp in US military time format (ex: 02-22-2022 22:00:00.123 -06:00)
+      --US-time           Output timestamp in US time format (ex: 02-22-2022 10:00:00.123 PM -06:00)
+  -U, --UTC               Output time in UTC format (default: local time)
+```
+
+#### `eid-metrics` command examples
+
+* Print Event ID metrics from a single file: `hayabusa.exe eid-metrics -f Security.evtx`
+* Print Event ID metrics from a directory: `hayabusa.exe eid-metrics -d ../logs`
+* Save results to a CSV file: `hayabusa.exe eid-metrics -f Security.evtx -o eid-metrics.csv`
+
+#### `eid-metrics` command config file
+
+The channel, event IDs and titles of the events are defined in `rules/config/channel_eid_info.txt`.
+
+Example:
+```
+Channel,EventID,EventTitle
+Microsoft-Windows-Sysmon/Operational,1,Process Creation.
+Microsoft-Windows-Sysmon/Operational,2,File Creation Timestamp Changed. (Possible Timestomping)
+Microsoft-Windows-Sysmon/Operational,3,Network Connection.
+Microsoft-Windows-Sysmon/Operational,4,Sysmon Service State Changed.
+```
+
+
 ### `logon-summary` command
 
 You can use the `logon-summary` command to output logon information summary (logon usernames and successful and failed logon count).
@@ -458,9 +633,17 @@ Input:
   -f, --file <FILE>      File path to one .evtx file
   -l, --live-analysis    Analyze the local C:\Windows\System32\winevt\Logs folder
   -J, --JSON-input       Scan JSON formatted logs instead of .evtx (.json or .jsonl)
+  -x, --recover-records  Carve evtx records from slack space (default: disabled)
+
+Filtering:
+      --exclude-computer <COMPUTER...>  Do not scan specified computer names (ex: ComputerA) (ex: ComputerA,ComputerB)
+      --include-computer <COMPUTER...>  Scan only specified computer names (ex: ComputerA) (ex: ComputerA,ComputerB)
+      --timeline-end <DATE>             End time of the event logs to load (ex: "2022-02-22 23:59:59 +09:00")
+      --timeline-offset <OFFSET>        Scan recent events based on an offset (ex: 1y, 3M, 30d, 24h, 30m)
+      --timeline-start <DATE>           Start time of the event logs to load (ex: "2020-02-22 00:00:00 +09:00")
 
 Output:
-  -o, --output <FILE>  Save the Logon summary in CSV format (ex: logon-summary.csv)
+  -o, --output <FILENAME-PREFIX>  Save the logon summary to two CSV files (ex: -o logon-summary)
 
 Display Settings:
       --no-color  Disable color output
@@ -468,67 +651,27 @@ Display Settings:
   -v, --verbose   Output verbose information
 
 General Options:
-  -C, --clobber                          Overwrite results files
-  -Q, --quiet-errors                     Quiet errors mode: do not save error logs
-  -c, --rules-config <DIR>               Specify custom rule config directory (default: ./rules/config)
-      --target-file-ext <EVTX_FILE_EXT>  Specify additional file extensions (ex: evtx_data) (ex: evtx1,evtx2)
-  -t, --threads <NUMBER>                 Number of threads (default: optimal number for performance)
+  -C, --clobber                        Overwrite files when saving
+  -Q, --quiet-errors                   Quiet errors mode: do not save error logs
+  -c, --rules-config <DIR>             Specify custom rule config directory (default: ./rules/config)
+      --target-file-ext <FILE-EXT...>  Specify additional evtx file extensions (ex: evtx_data)
+  -t, --threads <NUMBER>               Number of threads (default: optimal number for performance)
+
+Time Format:
+      --European-time     Output timestamp in European time format (ex: 22-02-2022 22:00:00.123 +02:00)
+      --ISO-8601          Output timestamp in ISO-8601 format (ex: 2022-02-22T10:10:10.1234567Z) (Always UTC)
+      --RFC-2822          Output timestamp in RFC 2822 format (ex: Fri, 22 Feb 2022 22:00:00 -0600)
+      --RFC-3339          Output timestamp in RFC 3339 format (ex: 2022-02-22 22:00:00.123456-06:00)
+      --US-military-time  Output timestamp in US military time format (ex: 02-22-2022 22:00:00.123 -06:00)
+      --US-time           Output timestamp in US time format (ex: 02-22-2022 10:00:00.123 PM -06:00)
+  -U, --UTC               Output time in UTC format (default: local time)
 ```
 
-#### `logon-summary` command example
+#### `logon-summary` command examples
 
 * Print logon summary: `hayabusa.exe logon-summary -f Security.evtx`
 * Save logon summary results: `hayabusa.exe logon-summary -d ../logs -o logon-summary.csv`
 
-### `metrics` command
-
-You can use the `metrics` command to print out the total number and percentage of Event IDs seperated by Channels.
-
-```
-Usage: metrics <INPUT> [OPTIONS]
-
-Input:
-  -d, --directory <DIR>  Directory of multiple .evtx files
-  -f, --file <FILE>      File path to one .evtx file
-  -l, --live-analysis    Analyze the local C:\Windows\System32\winevt\Logs folder
-  -J, --JSON-input       Scan JSON formatted logs instead of .evtx (.json or .jsonl)
-
-Output:
-  -o, --output <FILE>  Save the Metrics in CSV format (ex: metrics.csv)
-
-Display Settings:
-      --no-color  Disable color output
-  -q, --quiet     Quiet mode: do not display the launch banner
-  -v, --verbose   Output verbose information
-
-General Options:
-  -C, --clobber                          Overwrite results files
-  -Q, --quiet-errors                     Quiet errors mode: do not save error logs
-  -c, --rules-config <DIR>               Specify custom rule config directory (default: ./rules/config)
-      --target-file-ext <EVTX_FILE_EXT>  Specify additional file extensions (ex: evtx_data) (ex: evtx1,evtx2)
-  -t, --threads <NUMBER>                 Number of threads (default: optimal number for performance)
-```
-
-#### `metrics` command examples
-
-* Print Event ID metrics from a single file: `hayabusa.exe metrics -f Security.evtx`
-
-* Print Event ID metrics from a directory: `hayabusa.exe metrics -d ../logs`
-
-* Save results to a CSV file: `hayabusa.exe metrics -f Security.evtx -o metrics.csv`
-
-#### `metrics` command config file
-
-The channel, event IDs and titles of the events are defined in `rules/config/channel_eid_info.txt`.
-
-Example:
-```
-Channel,EventID,EventTitle
-Microsoft-Windows-Sysmon/Operational,1,Process Creation.
-Microsoft-Windows-Sysmon/Operational,2,File Creation Timestamp Changed. (Possible Timestomping)
-Microsoft-Windows-Sysmon/Operational,3,Network Connection.
-Microsoft-Windows-Sysmon/Operational,4,Sysmon Service State Changed.
-```
 
 ### `pivot-keywords-list` command
 
@@ -546,39 +689,49 @@ Input:
   -f, --file <FILE>      File path to one .evtx file
   -l, --live-analysis    Analyze the local C:\Windows\System32\winevt\Logs folder
   -J, --JSON-input       Scan JSON formatted logs instead of .evtx (.json or .jsonl)
+  -x, --recover-records  Carve evtx records from slack space (default: disabled)
+
+Filtering:
+  -E, --EID-filter                      Scan only common EIDs for faster speed (./rules/config/target_event_IDs.txt)
+  -D, --enable-deprecated-rules         Enable rules with a status of deprecated
+  -n, --enable-noisy-rules              Enable rules set to noisy (./rules/config/noisy_rules.txt)
+  -u, --enable-unsupported-rules        Enable rules with a status of unsupported
+  -e, --exact-level <LEVEL>             Only load rules with a specific level (informational, low, medium, high, critical)
+      --exclude-computer <COMPUTER...>  Do not scan specified computer names (ex: ComputerA) (ex: ComputerA,ComputerB)
+      --exclude-eid <EID...>            Do not scan specific EIDs for faster speed (ex: 1) (ex: 1,4688)
+      --exclude-status <STATUS...>      Do not load rules according to status (ex: experimental) (ex: stable,test)
+      --exclude-tag <TAG...>            Do not load rules with specific tags (ex: sysmon)
+      --include-computer <COMPUTER...>  Scan only specified computer names (ex: ComputerA) (ex: ComputerA,ComputerB)
+      --include-eid <EID...>            Scan only specified EIDs for faster speed (ex: 1) (ex: 1,4688)
+      --include-tag <TAG...>            Only load rules with specific tags (ex: attack.execution,attack.discovery)
+  -m, --min-level <LEVEL>               Minimum level for rules to load (default: informational)
+      --timeline-end <DATE>             End time of the event logs to load (ex: "2022-02-22 23:59:59 +09:00")
+      --timeline-offset <OFFSET>        Scan recent events based on an offset (ex: 1y, 3M, 30d, 24h, 30m)
+      --timeline-start <DATE>           Start time of the event logs to load (ex: "2020-02-22 00:00:00 +09:00")
 
 Output:
-  -o, --output <FILENAMES-BASE>  Save pivot words to separate files (ex: PivotKeywords)
+  -o, --output <FILENAME-PREFIX>  Save pivot words to separate files (ex: PivotKeywords)
 
 Display Settings:
       --no-color  Disable color output
   -q, --quiet     Quiet mode: do not display the launch banner
   -v, --verbose   Output verbose information
 
-Filtering:
-  -E, --EID-filter                Scan only common EIDs for faster speed (./rules/config/target_event_IDs.txt)
-  -D, --enable-deprecated-rules   Enable rules with status of deprecated
-  -n, --enable-noisy-rules        Enable rules set to noisy (./rules/config/noisy_rules.txt)
-  -u, --enable-unsupported-rules  Enable rules with status of unsupported
-  -e, --exact-level <LEVEL>       Scan for only specific levels (informational, low, medium, high, critical)
-      --exclude-status <STATUS>   Ignore rules according to status (ex: experimental) (ex: stable,test)
-  -m, --min-level <LEVEL>         Minimum level for rules (default: informational)
-      --timeline-end <DATE>       End time of the event logs to load (ex: "2022-02-22 23:59:59 +09:00")
-      --timeline-start <DATE>     Start time of the event logs to load (ex: "2020-02-22 00:00:00 +09:00")
-
 General Options:
-  -Q, --quiet-errors                     Quiet errors mode: do not save error logs
-  -c, --rules-config <DIR>               Specify custom rule config directory (default: ./rules/config)
-      --target-file-ext <EVTX_FILE_EXT>  Specify additional file extensions (ex: evtx_data) (ex: evtx1,evtx2)
-  -t, --threads <NUMBER>                 Number of threads (default: optimal number for performance)
+  -C, --clobber                        Overwrite files when saving
+  -Q, --quiet-errors                   Quiet errors mode: do not save error logs
+  -c, --rules-config <DIR>             Specify custom rule config directory (default: ./rules/config)
+      --target-file-ext <FILE-EXT...>  Specify additional evtx file extensions (ex: evtx_data)
+  -t, --threads <NUMBER>               Number of threads (default: optimal number for performance)
 ```
 
-#### `pivot-keywords-list` command example
+#### `pivot-keywords-list` command examples
 
+* Output pivot keywords to screen: `hayabusa.exe pivot-keywords-list -d ../logs -m critical`
 * Create a list of pivot keywords from critical alerts and save the results. (Results will be saved to `keywords-Ip Addresses.txt`, `keywords-Users.txt`, etc...):
 
 ```
-hayabusa.exe pivot-keywords-list -d ../logs -m critical -o keywords
+hayabusa.exe pivot-keywords-list -d ../logs -m critical -o keywords`
 ```
 
 #### `pivot-keywords-list` config file
@@ -588,6 +741,7 @@ You can customize what keywords you want to search for by editing `./rules/confi
 
 
 The format is `KeywordName.FieldName`. For example, when creating the list of `Users`, hayabusa will list up all the values in the `SubjectUserName`, `TargetUserName` and `User` fields.
+
 
 ### `search` command
 
@@ -607,23 +761,37 @@ Input:
   -d, --directory <DIR>  Directory of multiple .evtx files
   -f, --file <FILE>      File path to one .evtx file
   -l, --live-analysis    Analyze the local C:\Windows\System32\winevt\Logs folder
+  -x, --recover-records  Carve evtx records from slack space (default: disabled)
 
 Filtering:
-  -F, --filter <FILTER>      Filter by specific field(s)
-  -i, --ignore-case          Ignore case
-  -k, --keywords <KEYWORDS>  Search by keyword(s)
-  -r, --regex <REGEX>        Search by regular expression
+  -a, --and-logic                 Search keywords with AND logic (default: OR)
+  -F, --filter <FILTER...>        Filter by specific field(s)
+  -i, --ignore-case               Case-insensitive keyword search
+  -k, --keyword <KEYWORD...>      Search by keyword(s)
+  -r, --regex <REGEX>             Search by regular expression
+      --timeline-offset <OFFSET>  Scan recent events based on an offset (ex: 1y, 3M, 30d, 24h, 30m)
 
 Output:
+  -J, --JSON-output    Save the search results in JSON format (ex: -J -o results.json)
+  -L, --JSONL-output   Save the search results in JSONL format (ex: -L -o results.jsonl)
   -M, --multiline      Output event field information in multiple rows
   -o, --output <FILE>  Save the search results in CSV format (ex: search.csv)
 
 General Options:
-  -C, --clobber                          Overwrite results files
-  -Q, --quiet-errors                     Quiet errors mode: do not save error logs
-  -c, --rules-config <DIR>               Specify custom rule config directory (default: ./rules/config)
-      --target-file-ext <EVTX_FILE_EXT>  Specify additional file extensions (ex: evtx_data) (ex: evtx1,evtx2)
-  -t, --threads <NUMBER>                 Number of threads (default: optimal number for performance)
+  -C, --clobber                        Overwrite files when saving
+  -Q, --quiet-errors                   Quiet errors mode: do not save error logs
+  -c, --rules-config <DIR>             Specify custom rule config directory (default: ./rules/config)
+      --target-file-ext <FILE-EXT...>  Specify additional evtx file extensions (ex: evtx_data)
+  -t, --threads <NUMBER>               Number of threads (default: optimal number for performance)
+
+Time Format:
+      --European-time     Output timestamp in European time format (ex: 22-02-2022 22:00:00.123 +02:00)
+      --ISO-8601          Output timestamp in ISO-8601 format (ex: 2022-02-22T10:10:10.1234567Z) (Always UTC)
+      --RFC-2822          Output timestamp in RFC 2822 format (ex: Fri, 22 Feb 2022 22:00:00 -0600)
+      --RFC-3339          Output timestamp in RFC 3339 format (ex: 2022-02-22 22:00:00.123456-06:00)
+      --US-military-time  Output timestamp in US military time format (ex: 02-22-2022 22:00:00.123 -06:00)
+      --US-time           Output timestamp in US time format (ex: 02-22-2022 10:00:00.123 PM -06:00)
+  -U, --UTC               Output time in UTC format (default: local time)
 ```
 
 #### `search` command examples
@@ -666,6 +834,7 @@ hayabusa.exe search -d ../hayabusa-sample-evtx -r ".*" -F WorkstationName:"kali"
 
 `./rules/config/channel_abbreviations.txt`: Mappings of channel names and their abbreviations.
 
+
 ## DFIR Timeline Commands
 
 ### `csv-timeline` command
@@ -680,39 +849,55 @@ Input:
   -f, --file <FILE>      File path to one .evtx file
   -l, --live-analysis    Analyze the local C:\Windows\System32\winevt\Logs folder
   -J, --JSON-input       Scan JSON formatted logs instead of .evtx (.json or .jsonl)
+  -x, --recover-records  Carve evtx records from slack space (default: disabled)
+
+Filtering:
+  -E, --EID-filter                      Scan only common EIDs for faster speed (./rules/config/target_event_IDs.txt)
+  -D, --enable-deprecated-rules         Enable rules with a status of deprecated
+  -n, --enable-noisy-rules              Enable rules set to noisy (./rules/config/noisy_rules.txt)
+  -u, --enable-unsupported-rules        Enable rules with a status of unsupported
+  -e, --exact-level <LEVEL>             Only load rules with a specific level (informational, low, medium, high, critical)
+      --exclude-category <CATEGORY...>  Do not load rules with specified logsource categories (ex: process_creation,pipe_created)
+      --exclude-computer <COMPUTER...>  Do not scan specified computer names (ex: ComputerA) (ex: ComputerA,ComputerB)
+      --exclude-eid <EID...>            Do not scan specific EIDs for faster speed (ex: 1) (ex: 1,4688)
+      --exclude-status <STATUS...>      Do not load rules according to status (ex: experimental) (ex: stable,test)
+      --exclude-tag <TAG...>            Do not load rules with specific tags (ex: sysmon)
+      --include-category <CATEGORY...>  Only load rules with specified logsource categories (ex: process_creation,pipe_created)
+      --include-computer <COMPUTER...>  Scan only specified computer names (ex: ComputerA) (ex: ComputerA,ComputerB)
+      --include-eid <EID...>            Scan only specified EIDs for faster speed (ex: 1) (ex: 1,4688)
+      --include-tag <TAG...>            Only load rules with specific tags (ex: attack.execution,attack.discovery)
+  -m, --min-level <LEVEL>               Minimum level for rules to load (default: informational)
+  -P, --proven-rules                    Scan with only proven rules for faster speed (./rules/config/proven_rules.txt)
+      --timeline-end <DATE>             End time of the event logs to load (ex: "2022-02-22 23:59:59 +09:00")
+      --timeline-offset <OFFSET>        Scan recent events based on an offset (ex: 1y, 3M, 30d, 24h, 30m)
+      --timeline-start <DATE>           Start time of the event logs to load (ex: "2020-02-22 00:00:00 +09:00")
 
 Output:
-  -G, --GeoIP <MAXMIND-DB-DIR>  Add GeoIP (ASN, city, country) info to IP addresses
-  -H, --HTML-report <FILE>      Save Results Summary details to an HTML report (ex: results.html)
-  -M, --multiline               Output event field information in multiple rows
-  -o, --output <FILE>           Save the timeline in CSV format (ex: results.csv)
-  -p, --profile <PROFILE>       Specify output profile
+  -G, --GeoIP <MAXMIND-DB-DIR>       Add GeoIP (ASN, city, country) info to IP addresses
+  -H, --HTML-report <FILE>           Save Results Summary details to an HTML report (ex: results.html)
+  -M, --multiline                    Output event field information in multiple rows
+  -F, --no-field-data-mapping        Disable field data mapping
+      --no-pwsh-field-extraction     Disable field extraction of PowerShell classic logs
+  -o, --output <FILE>                Save the timeline in CSV format (ex: results.csv)
+  -p, --profile <PROFILE>            Specify output profile
+  -R, --remove-duplicate-data        Duplicate field data will be replaced with "DUP"
+  -X, --remove-duplicate-detections  Remove duplicate detections (default: disabled)
 
 Display Settings:
       --no-color            Disable color output
-  -N, --no-summary          Do not display Results Summary (slightly faster speed)
+  -N, --no-summary          Do not display Results Summary for faster speed
   -q, --quiet               Quiet mode: do not display the launch banner
   -v, --verbose             Output verbose information
   -T, --visualize-timeline  Output event frequency timeline (terminal needs to support unicode)
 
-Filtering:
-  -E, --EID-filter                Scan only common EIDs for faster speed (./rules/config/target_event_IDs.txt)
-  -D, --enable-deprecated-rules   Enable rules with status of deprecated
-  -n, --enable-noisy-rules        Enable rules set to noisy (./rules/config/noisy_rules.txt)
-  -u, --enable-unsupported-rules  Enable rules with status of unsupported
-  -e, --exact-level <LEVEL>       Scan for only specific levels (informational, low, medium, high, critical)
-      --exclude-status <STATUS>   Ignore rules according to status (ex: experimental) (ex: stable,test)
-  -m, --min-level <LEVEL>         Minimum level for rules (default: informational)
-      --timeline-end <DATE>       End time of the event logs to load (ex: "2022-02-22 23:59:59 +09:00")
-      --timeline-start <DATE>     Start time of the event logs to load (ex: "2020-02-22 00:00:00 +09:00")
-
 General Options:
-  -C, --clobber                          Overwrite results files
-  -Q, --quiet-errors                     Quiet errors mode: do not save error logs
-  -r, --rules <DIR/FILE>                 Specify a custom rule directory or file (default: ./rules)
-  -c, --rules-config <DIR>               Specify custom rule config directory (default: ./rules/config)
-      --target-file-ext <EVTX_FILE_EXT>  Specify additional file extensions (ex: evtx_data) (ex: evtx1,evtx2)
-  -t, --threads <NUMBER>                 Number of threads (default: optimal number for performance)
+  -C, --clobber                        Overwrite files when saving
+  -w, --no-wizard                      Do not ask questions. Scan for all events and alerts
+  -Q, --quiet-errors                   Quiet errors mode: do not save error logs
+  -r, --rules <DIR/FILE>               Specify a custom rule directory or file (default: ./rules)
+  -c, --rules-config <DIR>             Specify custom rule config directory (default: ./rules/config)
+      --target-file-ext <FILE-EXT...>  Specify additional evtx file extensions (ex: evtx_data)
+  -t, --threads <NUMBER>               Number of threads (default: optimal number for performance)
 
 Time Format:
       --European-time     Output timestamp in European time format (ex: 22-02-2022 22:00:00.123 +02:00)
@@ -755,25 +940,25 @@ hayabusa.exe csv-timeline -E -d .\hayabusa-sample-evtx -o results.csv
 * Only run hayabusa rules (the default is to run all the rules in `-r .\rules`):
 
 ```
-hayabusa.exe csv-timeline -d .\hayabusa-sample-evtx -r .\rules\hayabusa -o results.csv
+hayabusa.exe csv-timeline -d .\hayabusa-sample-evtx -r .\rules\hayabusa -o results.csv -w
 ```
 
 * Only run hayabusa rules for logs that are enabled by default on Windows:
 
 ```
-hayabusa.exe csv-timeline -d .\hayabusa-sample-evtx -r .\rules\hayabusa\builtin -o results.csv
+hayabusa.exe csv-timeline -d .\hayabusa-sample-evtx -r .\rules\hayabusa\builtin -o results.csv -w
 ```
 
 * Only run hayabusa rules for sysmon logs:
 
 ```
-hayabusa.exe csv-timeline -d .\hayabusa-sample-evtx -r .\rules\hayabusa\sysmon -o results.csv
+hayabusa.exe csv-timeline -d .\hayabusa-sample-evtx -r .\rules\hayabusa\sysmon -o results.csv -w
 ```
 
 * Only run sigma rules:
 
 ```
-hayabusa.exe csv-timeline -d .\hayabusa-sample-evtx -r .\rules\sigma -o results.csv
+hayabusa.exe csv-timeline -d .\hayabusa-sample-evtx -r .\rules\sigma -o results.csv -w
 ```
 
 * Enable deprecated rules (those with `status` marked as `deprecated`) and noisy rules (those whose rule ID is listed in `.\rules\config\noisy_rules.txt`):
@@ -782,13 +967,13 @@ hayabusa.exe csv-timeline -d .\hayabusa-sample-evtx -r .\rules\sigma -o results.
 > Therefore, you probably have no need to enable deprecated rules.
 
 ```
-hayabusa.exe csv-timeline -d .\hayabusa-sample-evtx --enable-noisy-rules --enable-deprecated-rules -o results.csv
+hayabusa.exe csv-timeline -d .\hayabusa-sample-evtx --enable-noisy-rules --enable-deprecated-rules -o results.csv -w
 ```
 
 * Only run rules to analyze logons and output in the UTC timezone:
 
 ```
-hayabusa.exe csv-timeline -d .\hayabusa-sample-evtx -r .\rules\hayabusa\builtin\Security\LogonLogoff\Logon -U -o results.csv
+hayabusa.exe csv-timeline -d .\hayabusa-sample-evtx -r .\rules\hayabusa\builtin\Security\LogonLogoff\Logon -U -o results.csv -w
 ```
 
 * Run on a live Windows machine (requires Administrator privileges) and only detect alerts (potentially malicious behavior):
@@ -805,17 +990,28 @@ hayabusa.exe csv-timeline -d .\hayabusa-sample-evtx -v
 
 * Verbose output example:
 
+Loading rules:
+
 ```
-Checking target evtx FilePath: "./hayabusa-sample-evtx/sample1.evtx"
-1 / 509 [>---------------------------------------------------------------] 0.20 % 1s
-Checking target evtx FilePath: "./hayabusa-sample-evtx/sample2.evtx"
-2 / 509 [=>--------------------------------------------------------------] 0.39 % 1s
-Checking target evtx FilePath: "./hayabusa-sample-evtx/sample3.evtx"
-3 / 509 [==>-------------------------------------------------------------] 0.59 % 1s
-Checking target evtx FilePath: "./hayabusa-sample-evtx/sample4.evtx"
-4 / 509 [===>------------------------------------------------------------] 0.79 % 1s
-Checking target evtx FilePath: "./hayabusa-sample-evtx/sample5.evtx"
-5 / 509 [====>-----------------------------------------------------------] 0.98 % 1s
+Loaded rule: rules/sigma/builtin/deprecated/proc_creation_win_susp_run_folder.yml
+Loaded rule: rules/sigma/builtin/deprecated/proc_creation_win_execution_mssql_xp_cmdshell_stored_procedure.yml
+Loaded rule: rules/sigma/builtin/deprecated/proc_creation_win_susp_squirrel_lolbin.yml
+Loaded rule: rules/sigma/builtin/win_alert_mimikatz_keywords.yml
+```
+
+Errors during the scan:
+```
+[ERROR] Failed to parse event file.
+EventFile: ../logs/Microsoft-Rdms-UI%4Operational.evtx
+Error: Failed to parse record number 58471
+
+[ERROR] Failed to parse event file.
+EventFile: ../logs/Microsoft-Rdms-UI%4Operational.evtx
+Error: Failed to parse record number 58470
+
+[ERROR] Failed to parse event file.
+EventFile: ../logs/Microsoft-Windows-AppxPackaging%4Operational.evtx
+Error: An error occurred while trying to serialize binary xml to output.
 ```
 
 * Output to a CSV format compatible to import into [Timesketch](https://timesketch.org/):
@@ -895,6 +1091,7 @@ These rules are usually noisy by nature or due to false positives.
 By default, Hayabusa will scan all events, but if you want to improve performance, please use the `-E, --EID-filter` option.
 This usually results in a 10~25% speed improvement.
 
+
 ### `json-timeline` command
 
 The `json-timeline` command will create a forensics timeline of events in JSON or JSONL format.
@@ -912,39 +1109,55 @@ Input:
   -f, --file <FILE>      File path to one .evtx file
   -l, --live-analysis    Analyze the local C:\Windows\System32\winevt\Logs folder
   -J, --JSON-input       Scan JSON formatted logs instead of .evtx (.json or .jsonl)
+  -x, --recover-records  Carve evtx records from slack space (default: disabled)
+
+Filtering:
+  -E, --EID-filter                      Scan only common EIDs for faster speed (./rules/config/target_event_IDs.txt)
+  -D, --enable-deprecated-rules         Enable rules with a status of deprecated
+  -n, --enable-noisy-rules              Enable rules set to noisy (./rules/config/noisy_rules.txt)
+  -u, --enable-unsupported-rules        Enable rules with a status of unsupported
+  -e, --exact-level <LEVEL>             Only load rules with a specific level (informational, low, medium, high, critical)
+      --exclude-category <CATEGORY...>  Do not load rules with specified logsource categories (ex: process_creation,pipe_created)
+      --exclude-computer <COMPUTER...>  Do not scan specified computer names (ex: ComputerA) (ex: ComputerA,ComputerB)
+      --exclude-eid <EID...>            Do not scan specific EIDs for faster speed (ex: 1) (ex: 1,4688)
+      --exclude-status <STATUS...>      Do not load rules according to status (ex: experimental) (ex: stable,test)
+      --exclude-tag <TAG...>            Do not load rules with specific tags (ex: sysmon)
+      --include-category <CATEGORY...>  Only load rules with specified logsource categories (ex: process_creation,pipe_created)
+      --include-computer <COMPUTER...>  Scan only specified computer names (ex: ComputerA) (ex: ComputerA,ComputerB)
+      --include-eid <EID...>            Scan only specified EIDs for faster speed (ex: 1) (ex: 1,4688)
+      --include-tag <TAG...>            Only load rules with specific tags (ex: attack.execution,attack.discovery)
+  -m, --min-level <LEVEL>               Minimum level for rules to load (default: informational)
+  -P, --proven-rules                    Scan with only proven rules for faster speed (./rules/config/proven_rules.txt)
+      --timeline-end <DATE>             End time of the event logs to load (ex: "2022-02-22 23:59:59 +09:00")
+      --timeline-offset <OFFSET>        Scan recent events based on an offset (ex: 1y, 3M, 30d, 24h, 30m)
+      --timeline-start <DATE>           Start time of the event logs to load (ex: "2020-02-22 00:00:00 +09:00")
 
 Output:
-  -G, --GeoIP <MAXMIND-DB-DIR>  Add GeoIP (ASN, city, country) info to IP addresses
-  -H, --HTML-report <FILE>      Save Results Summary details to an HTML report (ex: results.html)
-  -L, --JSONL-output            Save the timeline in JSONL format (ex: -L -o results.jsonl)
-  -o, --output <FILE>           Save the timeline in JSON format (ex: results.json)
-  -p, --profile <PROFILE>       Specify output profile
+  -G, --GeoIP <MAXMIND-DB-DIR>       Add GeoIP (ASN, city, country) info to IP addresses
+  -H, --HTML-report <FILE>           Save Results Summary details to an HTML report (ex: results.html)
+  -L, --JSONL-output                 Save the timeline in JSONL format (ex: -L -o results.jsonl)
+  -F, --no-field-data-mapping        Disable field data mapping
+      --no-pwsh-field-extraction     Disable field extraction of PowerShell classic logs
+  -o, --output <FILE>                Save the timeline in JSON format (ex: results.json)
+  -p, --profile <PROFILE>            Specify output profile
+  -R, --remove-duplicate-data        Duplicate field data will be replaced with "DUP"
+  -X, --remove-duplicate-detections  Remove duplicate detections (default: disabled)
 
 Display Settings:
       --no-color            Disable color output
-  -N, --no-summary          Do not display Results Summary (slightly faster speed)
+  -N, --no-summary          Do not display Results Summary for faster speed
   -q, --quiet               Quiet mode: do not display the launch banner
   -v, --verbose             Output verbose information
   -T, --visualize-timeline  Output event frequency timeline (terminal needs to support unicode)
 
-Filtering:
-  -E, --EID-filter                Scan only common EIDs for faster speed (./rules/config/target_event_IDs.txt)
-  -D, --enable-deprecated-rules   Enable rules with status of deprecated
-  -n, --enable-noisy-rules        Enable rules set to noisy (./rules/config/noisy_rules.txt)
-  -u, --enable-unsupported-rules  Enable rules with status of unsupported
-  -e, --exact-level <LEVEL>       Scan for only specific levels (informational, low, medium, high, critical)
-      --exclude-status <STATUS>   Ignore rules according to status (ex: experimental) (ex: stable,test)
-  -m, --min-level <LEVEL>         Minimum level for rules (default: informational)
-      --timeline-end <DATE>       End time of the event logs to load (ex: "2022-02-22 23:59:59 +09:00")
-      --timeline-start <DATE>     Start time of the event logs to load (ex: "2020-02-22 00:00:00 +09:00")
-
 General Options:
-  -C, --clobber                          Overwrite results files
-  -Q, --quiet-errors                     Quiet errors mode: do not save error logs
-  -r, --rules <DIR/FILE>                 Specify a custom rule directory or file (default: ./rules)
-  -c, --rules-config <DIR>               Specify custom rule config directory (default: ./rules/config)
-      --target-file-ext <EVTX_FILE_EXT>  Specify additional file extensions (ex: evtx_data) (ex: evtx1,evtx2)
-  -t, --threads <NUMBER>                 Number of threads (default: optimal number for performance)
+  -C, --clobber                        Overwrite files when saving
+  -w, --no-wizard                      Do not ask questions. Scan for all events and alerts
+  -Q, --quiet-errors                   Quiet errors mode: do not save error logs
+  -r, --rules <DIR/FILE>               Specify a custom rule directory or file (default: ./rules)
+  -c, --rules-config <DIR>             Specify custom rule config directory (default: ./rules/config)
+      --target-file-ext <FILE-EXT...>  Specify additional evtx file extensions (ex: evtx_data)
+  -t, --threads <NUMBER>               Number of threads (default: optimal number for performance)
 
 Time Format:
       --European-time     Output timestamp in European time format (ex: 22-02-2022 22:00:00.123 +02:00)
@@ -978,7 +1191,6 @@ General Options:
 #### `level-tuning` command examples
 
 * Normal usage: `hayabusa.exe level-tuning`
-
 * Tune rule alert levels based on your custom config file: `hayabusa.exe level-tuning -f my_level_tuning.txt`
 
 #### `level-tuning` config file
@@ -1022,6 +1234,11 @@ Display Settings:
 General Options:
   -p, --profile <PROFILE>  Specify output profile
 ```
+
+#### `set-default-profile` command examples
+
+* Set the default profile to `minimal`: `hayabusa.exe set-default-profile minimal`
+* Set the default profile to `super-verbose`: `hayabusa.exe set-default-profile super-verbose`
 
 ### `update-rules` command
 
@@ -1112,32 +1329,48 @@ The following benchmarks were conducted on a 2018 Lenovo P51 (Xeon 4 Core CPU / 
 
 ### Profile Field Aliases
 
+The following information can be outputted with built-in output profiles:
+
 | Alias name | Hayabusa output information|
 | :--- | :--- |
-|%Timestamp% | Default is `YYYY-MM-DD HH:mm:ss.sss +hh:mm` format. `<Event><System><TimeCreated SystemTime>` field in the event log. The default timezone will be the local timezone but you can change the timezone to UTC with the `--UTC` option. |
-|%Computer% | The `<Event><System><Computer>` field. |
+|%AllFieldInfo% | All field information. |
 |%Channel% | The name of log. `<Event><System><Channel>` field. |
+|%Computer% | The `<Event><System><Computer>` field. |
+|%Details% | The `details` field in the YML detection rule, however, only hayabusa rules have this field. This field gives extra information about the alert or event and can extract useful data from the fields in event logs. For example, usernames, command line information, process information, etc... When a placeholder points to a field that does not exist or there is an incorrect alias mapping, it will be outputted as `n/a` (not available). If the `details` field is not specified (i.e. sigma rules), default `details` messages to extract fields defined in `./rules/config/default_details.txt` will be outputted. You can add more default `details` messages by adding the `Provider Name`, `EventID` and `details` message you want to output in `default_details.txt`. When no `details` field is defined in a rule nor in `default_details.txt`, all fields will be outputted to the `details` column. |
+|%ExtraFieldInfo% | Print the field information that was not outputted in %Details%. |
 |%EventID% | The `<Event><System><EventID>` field. |
+|%EvtxFile% | The evtx filename that caused the alert or event. |
 |%Level% | The `level` field in the YML detection rule. (`informational`, `low`, `medium`, `high`, `critical`) |
 |%MitreTactics% | MITRE ATT&CK [tactics](https://attack.mitre.org/tactics/enterprise/) (Ex: Initial Access, Lateral Movement, etc...). |
 |%MitreTags% | MITRE ATT&CK Group ID, Technique ID and Software ID. |
 |%OtherTags% | Any keyword in the `tags` field in a YML detection rule which is not included in `MitreTactics` or `MitreTags`. |
+|%Provider% | The `Name` attribute in `<Event><System><Provider>` field. |
 |%RecordID% | The Event Record ID from `<Event><System><EventRecordID>` field. |
-|%RuleTitle% | The `title` field in the YML detection rule. |
-|%Details% | The `details` field in the YML detection rule, however, only hayabusa rules have this field. This field gives extra information about the alert or event and can extract useful data from the fields in event logs. For example, usernames, command line information, process information, etc... When a placeholder points to a field that does not exist or there is an incorrect alias mapping, it will be outputted as `n/a` (not available). If the `details` field is not specified (i.e. sigma rules), default `details` messages to extract fields defined in `./rules/config/default_details.txt` will be outputted. You can add more default `details` messages by adding the `Provider Name`, `EventID` and `details` message you want to output in `default_details.txt`. When no `details` field is defined in a rule nor in `default_details.txt`, all fields will be outputted to the `details` column. |
-|%ExtraFieldInfo% | Print the field information that was not outputted in %Details%. |
-|%AllFieldInfo% | All field information. |
-|%RuleFile% | The filename of the detection rule that generated the alert or event. |
-|%EvtxFile% | The evtx filename that caused the alert or event. |
 |%RuleAuthor% | The `author` field in the YML detection rule. |
 |%RuleCreationDate% | The `date` field in the YML detection rule. |
+|%RuleFile% | The filename of the detection rule that generated the alert or event. |
 |%RuleModifiedDate% | The `modified` field in the YML detection rule. |
+|%RuleTitle% | The `title` field in the YML detection rule. |
 |%Status% | The `status` field in the YML detection rule. |
-|%RuleID% | The `id` field in the YML detection rule. |
-|%Provider% | The `Name` attribute in `<Event><System><Provider>` field. |
-|%RenderedMessage% | The `<Event><RenderingInfo><Message>` field in WEC forwarded logs. |
+|%Timestamp% | Default is `YYYY-MM-DD HH:mm:ss.sss +hh:mm` format. `<Event><System><TimeCreated SystemTime>` field in the event log. The default timezone will be the local timezone but you can change the timezone to UTC with the `--UTC` option. |
 
-You can use these aliases in your output profiles, as well as define other [event key alises](https://github.com/Yamato-Security/hayabusa-rules/blob/main/README.md#eventkey-aliases) to output other fields.
+#### Extra Profile Field Aliases
+
+You can also add these extra aliases to your output profile if you need them:
+
+| Alias name | Hayabusa output information|
+| :--- | :--- |
+|%RenderedMessage% | The `<Event><RenderingInfo><Message>` field in WEC forwarded logs. |
+|%RuleID% | The `id` field in the YML detection rule. |
+
+Note: these are **not** included in any built in profiles so you will need to manually edit the `config/default_profile.yaml` file and add the following lines:
+
+```
+Message: "%RenderedMessage%"
+RuleID: "%RuleID%"
+```
+
+You can also define [event key aliases](https://github.com/Yamato-Security/hayabusa-rules/blob/main/README.md#eventkey-aliases) to output other fields.
 
 ## Level Abbrevations
 
@@ -1375,6 +1608,8 @@ To create the most forensic evidence and detect with the highest accuracy, you n
 
 ## Japanese
 
+* 2023/09/29 [Fast Forensics with Hayabusa and Splunk](https://jpn.nec.com/cybersecurity/blog/230929/index.html) by NEC Security Blog
+* 2023/09/13 [Windows Event Log Analysis with Hayabusa](https://engineers.ffri.jp/entry/2023/09/13/130750) by FFRI
 * 2022/03/14 [Rust Performance Guide for Hayabusa Developers](doc/RustPerformance-Japanese.md) by Fukusuke Takahashi
 * 2022/01/22 [Visualizing Hayabusa results in Elastic Stack](https://qiita.com/kzzzzo2/items/ead8ccc77b7609143749) by [@kzzzzo2](https://qiita.com/kzzzzo2)
 * 2021/12/31 [Intro to Hayabusa](https://itib.hatenablog.com/entry/2021/12/31/222946) by itiB ([@itiB_S144](https://twitter.com/itiB_S144))

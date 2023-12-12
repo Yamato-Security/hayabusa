@@ -1,25 +1,113 @@
 # 変更点
 
-## 2.7.0 [2023/xx/xx]
+## 2.11.0 [2023/12/03] "Nasi Lemak Release"
 
 **新機能:**
 
+- PowerShell classicログのフィールドを抽出するようにした。(`--no-pwsh-field-extraction`で無効化できる) (#1220) (@fukusuket)
+
+**改善:**
+
+- スキャンウィザードにルール数を追加した. (#1206) (@hitenkoku)
+
+## 2.10.1 [2023/11/12] "Kamemushi Release"
+
+**改善:**
+
+- スキャンウィザードに質問を追加した。 (#1207) (@hitenkoku)
+
+**バグ修正:**
+
+- バージョン`2.10.0`の`update-rules`コマンドでは、新しいルールがダウンロードされても、`You currently have the latest rules`というメッセージを出力していた。 (#1209) (@fukusuket)
+- 正規表現が正しく処理されない場合があった。 (#1212) (@fukusuket)
+- JSON入力等に`Data`フィールドが存在しない場合、パニックが発生していた。(#1215) (@fukusuket)
+
+## 2.10.0 [2023/10/31] "Halloween Release"
+
+**改善:**
+
+- 初心者のユーザのために有効にしたいルールを選択するようにスキャンウィザードを追加した。`-w, --no-wizard`オプションを追加すると、従来の形式でHayabusaを実行できる。(すべてのイベントとアラートをスキャンし、オプションを手動でカスタマイズする） (#1188) (@hitenkoku)
+- `pivot-keywords-list`コマンドに`--include-tag`オプションを追加し、指定した`tags`フィールドを持つルールのみをロードするようにした。(#1195) (@hitenkoku)
+- `pivot-keywords-list`コマンドに`--exclude-tag`オプションを追加し、指定した`tags`フィールドを持つルールをロードしないようにした。(#1195) (@hitenkoku)
+
+**バグ修正:**
+
+- まれにJSONフィールドが正しくパースされない状態を修正した。(#1145) (@hitenkoku)
+- JSON出力で、`AllFieldInfo`は改行文字とタブ文字を除去していたが、出力するように修正した。 (#1189) (@hitenkoku)
+- 標準出力のいくつかのフィールドでスペースが削除されて見づらくなっていたのを修正した。 (#1192) (@hitenkoku)
+
+## 2.9.0 [2023/09/22] "Autumn Rain Release"
+
+**改善:**
+
+- ディレクトリパスの指定にバックスラッシュを使用すべきではないことを示すエラーメッセージを追加した。 (#1166) (@hitenkoku, 提案者: @joswr1ght)
+- 一度に読み込むレコード数の最適化。(#1175) (@yamatosecurity)
+- プログレスバー内にあるバックスラッシュの表示をスラッシュに変更した。 (#1172) (@hitenkoku)
+- JSON形式で出力する際に、`count`ルールの`Details`フィールドを文字列にし、パースしやすくした。(#1179) (@hitenkoku)
+- デフォルトのスレッド数をCPU数から、プログラムが使用すべきデフォルトの並列度の推定値(`std::thread::available_parallelism`)に変更した。(#1182) (@hitenkoku)
+
+**バグ修正:**
+
+- まれにJSONフィールドが正しくパースされない状態を修正した。(#1145) (@hitenkoku)
+
+**その他:**
+
+- CIを通すために`time`クレートを利用している更新されていない`hhmmss`クレートを除外した。 (#1181) (@hitenkoku)
+
+## 2.8.0 [2023/09/01] "Double X Release"
+
+**新機能:**
+
+- フィールドマッピング設定に16進数値を10進数に変換する`HexToDecimal`機能に対応した。 (元の16進数のプロセスIDを変換するのに便利。) (#1133) (@fukusuket)
+- `csv-timeline`と`json-timeline`に`-x, --recover-records`オプションを追加し、evtxのスラックスペースのファイルカービングによってevtxレコードを復元できるようにした。(#952) (@hitenkoku) (Evtxカービング機能は@forensicmattに実装された。)
+- `csv-timeline`と`json-timeline`に`-X, --remove-duplicate-detections`オプションを追加した。(`-x`を使用する場合、重複データのあるバックアップログを含める場合などに便利。) (#1157) (@fukusuket)
+- `csv-timeline`、`json-timeline`、`logon-summary`、`eid-metrics`、`pivot-keywords-list`、`search`コマンドに、直近のイベントだけをスキャンするための`--timeline-offset`オプションを追加した。 (#1159) (@hitenkoku)
+- `search`コマンドに`-a, --and-logic`オプションを追加し、複数のキーワードをAND条件で検索できるようにした。 (#1162) (@hitenkoku)
+
+**その他:**
+
+- 出力プロファイルに、回復されたかどうかを示す `%RecoveredRecord%` フィールドを追加した。 (#1170) (@hitenkoku)
+
+## 2.7.0 [2023/08/03] "SANS DFIR Summit Release"
+
+**新機能:**
+
+- `./rules/config/data_mapping`にある`.yaml`設定ファイルに基づいて、特定のコード番号が人間が読めるメッセージにマッピングされるようになった。(例:`%%2307`は、`ACCOUNT LOCKOUT`に変換される)。この動作は`-F, --no-field-data-mapping`オプションで無効にできる。(#177) (@fukusuket)
 - `csv-timeline`コマンドに`-R, --remove-duplicate-data`オプションを追加し、`%Details%`、`%AllFieldInfo%`、`%ExtraFieldInfo%`列の重複フィールドデータを`DUP`という文字列に変換し、ファイルサイズの削減を行う。(#1056) (@hitenkoku)
+- `csv-timeline`と`json-timeline`コマンドに`-P, --proven-rules`オプションを追加した。有効にすると、検知が証明されたルールしかロードされない。ロードされるルールは、`./rules/config/proven_rules.txt`の設定ファイルにルールIDで定義されている。 (#1115) (@hitenkoku)
+- `csv-timeline`と`json-timeline`コマンドに`--include-tag`オプションを追加し、指定した`tags`フィールドを持つルールのみをロードするようにした。(#1108) (@hitenkoku)
+- `csv-timeline`と`json-timeline`コマンドに`--exclude-tag`オプションを追加し、指定した`tags`フィールドを持つルールをロードしないようにした。(#1118) (@hitenkoku)
 - `csv-timeline`と`json-timeline`コマンドに`--include-category`と`--exclude-category`オプションを追加した。`include-category`は、指定された`category`フィールドのルールのみをロードする。`--exclude-category`は、指定された`category`フィールドを持つルールをロードしない。 (#1119) (@hitenkoku)
+- コンピュータ名に基づくイベント数をリストアップする`computer-metrics`コマンドを追加した。(#1116) (@hitenkoku)
+- `csv-timeline`、`json-timeline`、`metrics`、`logon-summary`、`pivot-keywords-list`コマンドに`--include-computer`と`--exclude-computer`オプションを追加した。`include-computer`は、指定された`computer`の検知のみを出力する。`--exclude-computer`は、指定された`computer`の検知を除外する。 (#1117) (@hitenkoku)
+- `csv-timeline`、`json-timeline`、`pivot-keywords-list`コマンドに`--include-eid`と`--exclude-eid`オプションを追加した。`include-eid`は、指定された`EventID`のみを検知対象とする。`--exclude-eid`は、指定された`EventID`を検知対象から除外する。 (#1130) (@hitenkoku)
+- `json-timeline`コマンドに`-R, --remove-duplicate-data`オプションを追加し、`%Details%`、`%AllFieldInfo%`、`%ExtraFieldInfo%`フィールドの重複フィールドデータを`DUP`という文字列に変換し、ファイルサイズの削減を行う。(#1134) (@hitenkoku)
 
 **改善:**
 
 - 新しいログ形式の`.evtx`を使用するWindows Vistaがリリースされた2007年1月31日以前のタイムスタンプを持つ破損されたイベントレコードを無視するようにした。(#1102) (@fukusuket)
 - `metrics`コマンドで`--output`オプションを指定した時に標準出力に結果を表示しないように変更した。 (#1099) (@hitenkoku)
-- `csv-timeline` コマンドと `json-timeline` コマンドに `--tags` オプションを追加し、指定した `tags` フィールドを持つルールのみでスキャンできるようにした。()
+- `csv-timeline` コマンドと `json-timeline` コマンドに `--tags` オプションを追加し、指定した `tags` フィールドを持つルールのみでスキャンできるようにした。(#1108) (@hitenkoku)
+- `pivot-keywords-list`コマンドに対して、出力ファイルを上書きするための`-C, --clobber`オプションを追加した。 (#1125) (@hitenkoku)
+- `metrics`コマンドを`eid-metrics`に変更した。 (#1128) (@hitenkoku)
+- 端末の調整に余裕を持たせるため、プログレスバーの幅を減らした。 (#1135) (@hitenkoku)
+- `search`コマンドで出力時間フォーマットのオプションをサポートした。(`--European-time`, `--ISO-8601`, `--RFC-2822`, `--RFC-3339`, `--US-time`, `--US-military-time`, `-U, --UTC`) (#1040) (@hitenkoku)
+- プログレスバーのETA時間が正確でなかったため、経過時間に置き換えた。 (#1143) (@YamatoSecurity)
+- `logon-summary`コマンドで`--timeline-start`と`--timeline-end`オプションを追加した。 (#1152) (@hitenkoku)
 
 **バグ修正:**
 
 - `metrics`と`logon-summary`コマンドのレコード数の表示が`csv-timeline`のコマンドでのレコード数の表示と異なっている状態を修正した。 (#1105) (@hitenkoku)
+- パスの代わりにルールIDでルール数を数えるように変更した。 (#1113) (@hitenkoku)
+- JSON出力で`CommandLine`フィールド内で誤ったフィールドの分割が行われてしまう問題を修正した。 (#1145) (@hitenkoku)
+- `json-timeline`コマンドで`--timeline-start`と`--timeline-end`オプションが動作しなかったのを修正した。 (#1148) (@hitenkoku)
+- `pivot-keywords-list`コマンドで`--timeline-start`と`--timeline-end`オプションが動作しなかったのを修正した。 (#1150) (@hitenkoku)
 
 **その他:**
 
 - ルールのIDベースでユニークな検出数をカウントするように修正した。 (#1111) (@hitenkoku)
+- `--live_analysis`オプションを`--live-analysis`に変更した。 (#1139) (@hitenkoku)
+- `metrics`コマンドを`eid-metrics`に変更した。 (#1128) (@hitenkoku)
 
 ## 2.6.0 [2023/06/16] "Ajisai Release"
 

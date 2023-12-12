@@ -583,6 +583,8 @@ mod tests {
                         directory: None,
                         filepath: None,
                         live_analysis: false,
+                        recover_records: false,
+                        timeline_offset: None,
                     },
                     profile: None,
                     enable_deprecated_rules: false,
@@ -615,17 +617,27 @@ mod tests {
                         config: Path::new("./rules/config").to_path_buf(),
                         verbose: false,
                         json_input: false,
+                        include_computer: None,
+                        exclude_computer: None,
                     },
                     enable_unsupported_rules: false,
                     clobber: false,
-                    tags: None,
+                    proven_rules: false,
+                    include_tag: None,
+                    exclude_tag: None,
                     include_category: None,
                     exclude_category: None,
+                    include_eid: None,
+                    exclude_eid: None,
+                    no_field: false,
+                    no_pwsh_field_extraction: false,
+                    remove_duplicate_data: false,
+                    remove_duplicate_detections: false,
+                    no_wizard: true,
                 },
                 geo_ip: None,
                 output: None,
                 multiline: false,
-                remove_duplicate_data: false,
             })),
             debug: false,
         }))
@@ -931,7 +943,8 @@ mod tests {
             match serde_json::from_str(record) {
                 Ok(rec) => {
                     let keys = detections::rule::get_detection_keys(&rule_node);
-                    let recinfo = utils::create_rec_info(rec, "testpath".to_owned(), &keys);
+                    let recinfo =
+                        utils::create_rec_info(rec, "testpath".to_owned(), &keys, &false, &false);
                     let _result = rule_node.select(
                         &recinfo,
                         dummy_stored_static.verbose_flag,
@@ -1274,7 +1287,7 @@ mod tests {
         // timeframe=10secはギリギリHit
         {
             let rule_str = create_std_rule("count(EventID) >= 3", "10s");
-            let default_time = DateTime::<Utc>::from_utc(
+            let default_time = DateTime::<Utc>::from_naive_utc_and_offset(
                 NaiveDate::from_ymd_opt(2021, 12, 21)
                     .unwrap()
                     .and_hms_milli_opt(10, 40, 0, 50)
@@ -1314,7 +1327,7 @@ mod tests {
         // timeframe=11secはギリギリHit
         {
             let rule_str = create_std_rule("count(EventID) >= 3", "11s");
-            let default_time = DateTime::<Utc>::from_utc(
+            let default_time = DateTime::<Utc>::from_naive_utc_and_offset(
                 NaiveDate::from_ymd_opt(2021, 12, 21)
                     .unwrap()
                     .and_hms_milli_opt(10, 40, 0, 50)
@@ -1362,7 +1375,7 @@ mod tests {
         // byない
         {
             let rule_str = create_std_rule("count(EventID) >= 1", "1s");
-            let default_time = DateTime::<Utc>::from_utc(
+            let default_time = DateTime::<Utc>::from_naive_utc_and_offset(
                 NaiveDate::from_ymd_opt(2021, 12, 21)
                     .unwrap()
                     .and_hms_milli_opt(10, 40, 0, 0)
@@ -1384,7 +1397,7 @@ mod tests {
         // byある
         {
             let rule_str = create_std_rule("count(EventID) by param1>= 1", "1s");
-            let default_time = DateTime::<Utc>::from_utc(
+            let default_time = DateTime::<Utc>::from_naive_utc_and_offset(
                 NaiveDate::from_ymd_opt(2021, 12, 21)
                     .unwrap()
                     .and_hms_milli_opt(10, 40, 0, 0)
@@ -1706,7 +1719,13 @@ mod tests {
             match serde_json::from_str(record_str) {
                 Ok(record) => {
                     let keys = detections::rule::get_detection_keys(&rule_node);
-                    let recinfo = utils::create_rec_info(record, "testpath".to_owned(), &keys);
+                    let recinfo = utils::create_rec_info(
+                        record,
+                        "testpath".to_owned(),
+                        &keys,
+                        &false,
+                        &false,
+                    );
                     let result = &rule_node.select(
                         &recinfo,
                         dummy_stored_static.verbose_flag,

@@ -7,35 +7,41 @@ extern crate serde_derive;
 use bytesize::ByteSize;
 use chrono::{DateTime, Datelike, Local, NaiveDateTime, Utc};
 use clap::Command;
-use evtx::{EvtxParser, ParserSettings};
+use compact_str::CompactString;
+use dialoguer::Confirm;
+use dialoguer::{theme::ColorfulTheme, Select};
+use evtx::{EvtxParser, ParserSettings, RecordAllocation};
 use hashbrown::{HashMap, HashSet};
 use hayabusa::debug::checkpoint_process_timer::CHECKPOINT;
 use hayabusa::detections::configs::{
-    load_pivot_keywords, Action, ConfigReader, EventInfoConfig, EventKeyAliasConfig, StoredStatic,
-    TargetEventIds, TargetEventTime, CURRENT_EXE_PATH, STORED_EKEY_ALIAS, STORED_STATIC,
+    load_pivot_keywords, Action, ConfigReader, EventKeyAliasConfig, StoredStatic, TargetEventTime,
+    TargetIds, CURRENT_EXE_PATH, STORED_EKEY_ALIAS, STORED_STATIC,
 };
 use hayabusa::detections::detection::{self, EvtxRecordInfo};
 use hayabusa::detections::message::{AlertMessage, ERROR_LOG_STACK};
 use hayabusa::detections::rule::{get_detection_keys, RuleNode};
 use hayabusa::detections::utils::{
-    check_setting_path, get_writable_color, output_and_data_stack_for_html, output_profile_name,
+    check_setting_path, get_writable_color, output_and_data_stack_for_html, output_duration,
+    output_profile_name,
 };
-use hayabusa::options;
 use hayabusa::options::htmlreport::{self, HTML_REPORTER};
 use hayabusa::options::pivot::create_output;
 use hayabusa::options::pivot::PIVOT_KEYWORD;
 use hayabusa::options::profile::set_default_profile;
 use hayabusa::options::{level_tuning::LevelTuning, update::Update};
+use hayabusa::timeline::computer_metrics::countup_event_by_computer;
 use hayabusa::{afterfact::after_fact, detections::utils};
 use hayabusa::{detections::configs, timeline::timelines::Timeline};
 use hayabusa::{detections::utils::write_color_buffer, filter};
-use hhmmss::Hhmmss;
+use hayabusa::{options, yaml};
+use indicatif::ProgressBar;
+use indicatif::{ProgressDrawTarget, ProgressStyle};
 use itertools::Itertools;
 use libmimalloc_sys::mi_stats_print_out;
 use mimalloc::MiMalloc;
 use nested::Nested;
-use pbr::ProgressBar;
 use serde_json::{Map, Value};
+use std::borrow::BorrowMut;
 use std::ffi::{OsStr, OsString};
 use std::fmt::Display;
 use std::fmt::Write as _;
@@ -43,6 +49,8 @@ use std::io::{BufWriter, Write};
 use std::path::Path;
 use std::ptr::null_mut;
 use std::sync::Arc;
+use std::time::Duration;
+use std::u128;
 use std::{
     env,
     fs::{self, File},
@@ -60,8 +68,9 @@ use is_elevated::is_elevated;
 #[global_allocator]
 static GLOBAL: MiMalloc = MiMalloc;
 
-// 一度にtimelineやdetectionを実行する行数
-const MAX_DETECT_RECORDS: usize = 5000;
+// 一度に読み込んで、スキャンするレコード数
+// The number of records to load and scan at a time. 1000 gave the fastest results and lowest memory usage in test benchmarks.
+const MAX_DETECT_RECORDS: usize = 1000;
 
 fn main() {
     let mut config_reader = ConfigReader::new();
@@ -231,22 +240,23 @@ impl App {
             HashSet::default()
         };
 
-        let output_saved_file = |output_path: &Option<PathBuf>, message: &str| {
-            if let Some(path) = output_path {
-                if let Ok(metadata) = fs::metadata(path) {
-                    let output_saved_str = format!(
-                        "{message}: {} ({})",
-                        path.display(),
-                        ByteSize::b(metadata.len()).to_string_as(false)
-                    );
-                    output_and_data_stack_for_html(
-                        &output_saved_str,
-                        "General Overview {#general_overview}",
-                        stored_static.html_report_flag,
-                    );
+        let output_saved_file =
+            |output_path: &Option<PathBuf>, message: &str, html_report_flag: &bool| {
+                if let Some(path) = output_path {
+                    if let Ok(metadata) = fs::metadata(path) {
+                        let output_saved_str = format!(
+                            "{message}: {} ({})",
+                            path.display(),
+                            ByteSize::b(metadata.len()).to_string_as(false)
+                        );
+                        output_and_data_stack_for_html(
+                            &output_saved_str,
+                            "General Overview {#general_overview}",
+                            html_report_flag,
+                        );
+                    }
                 }
-            }
-        };
+            };
 
         match &stored_static.config.action.as_ref().unwrap() {
             Action::CsvTimeline(_) | Action::JsonTimeline(_) => {
@@ -296,7 +306,11 @@ impl App {
                 self.analysis_start(&target_extensions, &time_filter, stored_static);
 
                 output_profile_name(&stored_static.output_option, false);
-                output_saved_file(&stored_static.output_path, "Saved file");
+                output_saved_file(
+                    &stored_static.output_path,
+                    "Saved file",
+                    &stored_static.html_report_flag,
+                );
                 println!();
                 if stored_static.html_report_flag {
                     let html_str = HTML_REPORTER.read().unwrap().to_owned().create_html();
@@ -346,11 +360,15 @@ impl App {
                     if target_path.ends_with("-failed.csv") {
                         msg = "Failed logon results"
                     }
-                    output_saved_file(&Some(Path::new(target_path).to_path_buf()), msg);
+                    output_saved_file(
+                        &Some(Path::new(target_path).to_path_buf()),
+                        msg,
+                        &stored_static.html_report_flag,
+                    );
                 }
                 println!();
             }
-            Action::Metrics(_) | Action::Search(_) => {
+            Action::EidMetrics(_) | Action::Search(_) => {
                 if let Some(path) = &stored_static.output_path {
                     if !(stored_static.output_option.as_ref().unwrap().clobber)
                         && utils::check_file_expect_not_exist(
@@ -365,31 +383,36 @@ impl App {
                     }
                 }
                 self.analysis_start(&target_extensions, &time_filter, stored_static);
-                output_saved_file(&stored_static.output_path, "Saved results");
+                output_saved_file(
+                    &stored_static.output_path,
+                    "Saved results",
+                    &stored_static.html_report_flag,
+                );
                 println!();
             }
-            Action::PivotKeywordsList(_) => {
-                // pivot 機能でファイルを出力する際に同名ファイルが既に存在していた場合はエラー文を出して終了する。
-                if let Some(csv_path) = &stored_static.output_path {
-                    let mut error_flag = false;
-                    let pivot_key_unions = PIVOT_KEYWORD.read().unwrap();
-                    pivot_key_unions.iter().for_each(|(key, _)| {
-                        let keywords_file_name =
-                            csv_path.as_path().display().to_string() + "-" + key + ".txt";
-                        if utils::check_file_expect_not_exist(
-                            Path::new(&keywords_file_name),
+            Action::ComputerMetrics(_) => {
+                if let Some(path) = &stored_static.output_path {
+                    if !(stored_static.output_option.as_ref().unwrap().clobber)
+                        && utils::check_file_expect_not_exist(
+                            path.as_path(),
                             format!(
                                 " The file {} already exists. Please specify a different filename or add the -C, --clobber option to overwrite.\n",
-                                &keywords_file_name
+                                path.as_os_str().to_str().unwrap()
                             ),
-                        ) {
-                            error_flag = true
-                        };
-                    });
-                    if error_flag {
+                        )
+                    {
                         return;
                     }
                 }
+                self.analysis_start(&target_extensions, &time_filter, stored_static);
+                output_saved_file(
+                    &stored_static.output_path,
+                    "Saved results",
+                    &stored_static.html_report_flag,
+                );
+                println!();
+            }
+            Action::PivotKeywordsList(_) => {
                 load_pivot_keywords(
                     utils::check_setting_path(
                         &CURRENT_EXE_PATH.to_path_buf(),
@@ -400,6 +423,29 @@ impl App {
                     .to_str()
                     .unwrap(),
                 );
+
+                // pivot 機能でファイルを出力する際に同名ファイルが既に存在していた場合はエラー文を出して終了する。
+                let mut error_flag = false;
+                if let Some(csv_path) = &stored_static.output_path {
+                    let pivot_key_unions = PIVOT_KEYWORD.read().unwrap();
+                    pivot_key_unions.iter().for_each(|(key, _)| {
+                        let keywords_file_name =
+                            csv_path.as_path().display().to_string() + "-" + key + ".txt";
+                        if !(stored_static.output_option.as_ref().unwrap().clobber) && utils::check_file_expect_not_exist(
+                            Path::new(&keywords_file_name),
+                            format!(
+                                " The file {} already exists. Please specify a different filename or add the -C, --clobber option to overwrite.",
+                                &keywords_file_name
+                            ),
+                        ) {
+                            error_flag = true
+                        };
+                    });
+                }
+                if error_flag {
+                    println!();
+                    return;
+                }
 
                 self.analysis_start(&target_extensions, &time_filter, stored_static);
 
@@ -490,7 +536,7 @@ impl App {
                     None
                 };
                 let now_version = &format!("v{}", env!("CARGO_PKG_VERSION"));
-
+                stored_static.include_status.insert("*".into());
                 match Update::update_rules(update_target.unwrap().to_str().unwrap(), stored_static)
                 {
                     Ok(output) => {
@@ -642,8 +688,7 @@ impl App {
                 return;
             }
             Action::ListProfiles(_) => {
-                let profile_list =
-                    options::profile::get_profile_list("config/profiles.yaml", stored_static);
+                let profile_list = options::profile::get_profile_list("config/profiles.yaml");
                 write_color_buffer(
                     &BufferWriter::stdout(ColorChoice::Always),
                     None,
@@ -675,11 +720,11 @@ impl App {
         // 処理時間の出力
         let analysis_end_time: DateTime<Local> = Local::now();
         let analysis_duration = analysis_end_time.signed_duration_since(analysis_start_time);
-        let elapsed_output_str = format!("Elapsed time: {}", &analysis_duration.hhmmssxxx());
+        let elapsed_output_str = format!("Elapsed time: {}", output_duration(analysis_duration));
         output_and_data_stack_for_html(
             &elapsed_output_str,
             "General Overview {#general_overview}",
-            stored_static.html_report_flag,
+            &stored_static.html_report_flag,
         );
 
         // Qオプションを付けた場合もしくはパースのエラーがない場合はerrorのstackが0となるのでエラーログファイル自体が生成されない。
@@ -703,7 +748,7 @@ impl App {
         &mut self,
         target_extensions: &HashSet<String>,
         time_filter: &TargetEventTime,
-        stored_static: &StoredStatic,
+        stored_static: &mut StoredStatic,
     ) {
         if stored_static.output_option.is_none() {
         } else if stored_static
@@ -721,9 +766,7 @@ impl App {
             self.analysis_files(
                 live_analysis_list.unwrap(),
                 time_filter,
-                &stored_static.event_timeline_config,
-                &stored_static.target_eventids,
-                stored_static,
+                stored_static.borrow_mut(),
             );
         } else if let Some(directory) = &stored_static
             .output_option
@@ -741,13 +784,7 @@ impl App {
                 AlertMessage::alert("No .evtx files were found.").ok();
                 return;
             }
-            self.analysis_files(
-                evtx_files,
-                time_filter,
-                &stored_static.event_timeline_config,
-                &stored_static.target_eventids,
-                stored_static,
-            );
+            self.analysis_files(evtx_files, time_filter, stored_static.borrow_mut());
         } else {
             // directory, live_analysis以外はfilepathの指定の場合
             if let Some(filepath) = &stored_static
@@ -796,9 +833,7 @@ impl App {
                 self.analysis_files(
                     vec![check_path.to_path_buf()],
                     time_filter,
-                    &stored_static.event_timeline_config,
-                    &stored_static.target_eventids,
-                    stored_static,
+                    stored_static.borrow_mut(),
                 );
             }
         }
@@ -810,7 +845,7 @@ impl App {
         _target_extensions: &HashSet<String>,
         _stored_static: &StoredStatic,
     ) -> Option<Vec<PathBuf>> {
-        AlertMessage::alert("-l / --liveanalysis needs to be run as Administrator on Windows.")
+        AlertMessage::alert("-l, --live-analysis needs to be run as Administrator on Windows.")
             .ok();
         println!();
         None
@@ -835,7 +870,7 @@ impl App {
             }
             Some(evtx_files)
         } else {
-            AlertMessage::alert("-l / --liveanalysis needs to be run as Administrator on Windows.")
+            AlertMessage::alert("-l, --live-analysis needs to be run as Administrator on Windows.")
                 .ok();
             println!();
             None
@@ -856,7 +891,10 @@ impl App {
         }
         let entries = fs::read_dir(dirpath);
         if entries.is_err() {
-            let errmsg = format!("{}", entries.unwrap_err());
+            let mut errmsg = format!("{}", entries.unwrap_err());
+            if errmsg.ends_with("123)") {
+                errmsg = format!("{errmsg}. You may not be able to load evtx files when there are spaces in the directory path. Please enclose the path with double quotes and remove any trailing slash at the end of the path.");
+            }
             if stored_static.verbose_flag {
                 AlertMessage::alert(&errmsg).ok();
             }
@@ -926,16 +964,10 @@ impl App {
         &mut self,
         evtx_files: Vec<PathBuf>,
         time_filter: &TargetEventTime,
-        event_timeline_config: &EventInfoConfig,
-        target_event_ids: &TargetEventIds,
-        stored_static: &StoredStatic,
+        stored_static: &mut StoredStatic,
     ) {
-        let level = stored_static
-            .output_option
-            .as_ref()
-            .unwrap()
-            .min_level
-            .to_uppercase();
+        let event_timeline_config = &stored_static.event_timeline_config;
+        let target_event_ids = &stored_static.target_eventids;
         let target_level = stored_static
             .output_option
             .as_ref()
@@ -951,7 +983,6 @@ impl App {
             true,
         )
         .ok();
-
         let mut total_file_size = ByteSize::b(0);
         for file_path in &evtx_files {
             let file_size = match fs::metadata(file_path) {
@@ -973,23 +1004,309 @@ impl App {
         }
         let total_size_output = format!("Total file size: {}", total_file_size.to_string_as(false));
         println!("{total_size_output}");
-        println!();
+        let mut status_append_output = None;
         if !(stored_static.metrics_flag
             || stored_static.logon_summary_flag
-            || stored_static.search_flag)
+            || stored_static.search_flag
+            || stored_static.computer_metrics_flag
+            || stored_static.output_option.as_ref().unwrap().no_wizard)
         {
-            println!("Loading detections rules. Please wait.");
+            let mut rule_counter_wizard_map = HashMap::new();
+            yaml::count_rules(
+                &stored_static.output_option.as_ref().unwrap().rules,
+                &filter::exclude_ids(stored_static),
+                stored_static,
+                &mut rule_counter_wizard_map,
+            );
+            let level_map: HashMap<&str, u128> = HashMap::from([
+                ("INFORMATIONAL", 1),
+                ("LOW", 2),
+                ("MEDIUM", 3),
+                ("HIGH", 4),
+                ("CRITICAL", 5),
+            ]);
             println!();
+            println!("Scan wizard:");
+            println!();
+            let calcurate_wizard_rule_count = |exclude_noisytarget_flag: bool,
+                                               exclude_noisy_status: Vec<&str>,
+                                               min_level: &str,
+                                               target_status: Vec<&str>,
+                                               target_tags: Vec<&str>|
+             -> HashMap<CompactString, i128> {
+                let mut ret = HashMap::new();
+                if exclude_noisytarget_flag {
+                    for s in exclude_noisy_status {
+                        let mut ret_cnt = 0;
+                        if let Some(target_status_count) = rule_counter_wizard_map.get(s) {
+                            target_status_count.iter().for_each(|(rule_level, value)| {
+                                let doc_level_num = level_map
+                                    .get(rule_level.to_uppercase().as_str())
+                                    .unwrap_or(&1);
+                                let args_level_num = level_map
+                                    .get(min_level.to_uppercase().as_str())
+                                    .unwrap_or(&1);
+                                if doc_level_num >= args_level_num {
+                                    ret_cnt += value.iter().map(|(_, cnt)| cnt).sum::<i128>()
+                                }
+                            });
+                        }
+                        if ret_cnt > 0 {
+                            ret.insert(CompactString::from(s), ret_cnt);
+                        }
+                    }
+                } else {
+                    let all_status_flag = target_status.contains(&"*");
+                    for s in rule_counter_wizard_map.keys() {
+                        // 指定されたstatusに合致しないものは集計をスキップする
+                        if (exclude_noisy_status.contains(&s.as_str())
+                            || !target_status.contains(&s.as_str()))
+                            && !all_status_flag
+                        {
+                            continue;
+                        }
+                        let mut ret_cnt = 0;
+                        if let Some(target_status_count) = rule_counter_wizard_map.get(s) {
+                            target_status_count.iter().for_each(|(rule_level, value)| {
+                                let doc_level_num = level_map
+                                    .get(rule_level.to_uppercase().as_str())
+                                    .unwrap_or(&1);
+                                let args_level_num = level_map
+                                    .get(min_level.to_uppercase().as_str())
+                                    .unwrap_or(&1);
+                                if doc_level_num >= args_level_num {
+                                    if !target_tags.is_empty() {
+                                        for (tag, cnt) in value.iter() {
+                                            if target_tags.contains(&tag.as_str()) {
+                                                let matched_tag_cnt = ret.entry(tag.clone());
+                                                *matched_tag_cnt.or_insert(0) += cnt;
+                                            }
+                                        }
+                                    } else {
+                                        ret_cnt += value.iter().map(|(_, cnt)| cnt).sum::<i128>()
+                                    }
+                                }
+                            });
+                            if ret_cnt > 0 {
+                                ret.insert(s.clone(), ret_cnt);
+                            }
+                        }
+                    }
+                }
+                ret
+            };
+            let selections_status = &[
+                ("1. Core ( status: test, stable | level: high, critical )", (vec!["test", "stable"], "high")),
+                ("2. Core+ ( status: test, stable | level: medium, high, critical )", (vec!["test", "stable"], "medium")),
+                ("3. Core++ ( status: experimental, test, stable | level: medium, high, critical )", (vec!["experimental", "test", "stable"], "medium")),
+                ("4. All alert rules ( status: * | level: low+ )", (vec!["*"], "low")),
+                ("5. All event and alert rules ( status: * | level: informational+ )", (vec!["*"], "informational")),
+            ];
+
+            let sections_rule_cnt = selections_status
+                .iter()
+                .map(|(_, (status, min_level))| {
+                    calcurate_wizard_rule_count(
+                        false,
+                        ["excluded", "deprecated", "unsupported", "noisy"].to_vec(),
+                        min_level,
+                        status.to_vec(),
+                        [].to_vec(),
+                    )
+                })
+                .collect_vec();
+            let selection_status_items = &[
+                format!("1. Core ({} rules) ( status: test, stable | level: high, critical )", sections_rule_cnt[0].iter().map(|(_, cnt)| cnt).sum::<i128>() - sections_rule_cnt[0].get("excluded").unwrap_or(&0)),
+                format!("2. Core+ ({} rules) ( status: test, stable | level: medium, high, critical )", sections_rule_cnt[1].iter().map(|(_, cnt)| cnt).sum::<i128>() - sections_rule_cnt[1].get("excluded").unwrap_or(&0)),
+                format!("3. Core++ ({} rules) ( status: experimental, test, stable | level: medium, high, critical )", sections_rule_cnt[2].iter().map(|(_, cnt)| cnt).sum::<i128>() - sections_rule_cnt[2].get("excluded").unwrap_or(&0)),
+                format!("4. All alert rules ({} rules) ( status: * | level: low+ )", sections_rule_cnt[3].iter().map(|(_, cnt)| cnt).sum::<i128>() - sections_rule_cnt[3].get("excluded").unwrap_or(&0)),
+                format!("5. All event and alert rules ({} rules) ( status: * | level: informational+ )", sections_rule_cnt[4].iter().map(|(_, cnt)| cnt).sum::<i128>() - sections_rule_cnt[4].get("excluded").unwrap_or(&0))
+            ];
+
+            let selected_index = Select::with_theme(&ColorfulTheme::default())
+                .with_prompt("Which set of detection rules would you like to load?")
+                .default(0)
+                .items(selection_status_items.as_slice())
+                .interact()
+                .unwrap();
+            status_append_output = Some(format!(
+                "- selected detection rule sets: {}",
+                selections_status[selected_index].0
+            ));
+            stored_static.output_option.as_mut().unwrap().min_level =
+                selections_status[selected_index].1 .1.into();
+
+            let exclude_noisy_cnt = calcurate_wizard_rule_count(
+                true,
+                ["excluded", "noisy", "deprecated", "unsupported"].to_vec(),
+                selections_status[selected_index].1 .1,
+                [].to_vec(),
+                [].to_vec(),
+            );
+
+            stored_static.include_status.extend(
+                selections_status[selected_index]
+                    .1
+                     .0
+                    .iter()
+                    .map(|x| x.to_owned().into()),
+            );
+
+            let mut output_option = stored_static.output_option.clone().unwrap();
+            let exclude_tags = output_option.exclude_tag.get_or_insert_with(Vec::new);
+            let tags_cnt = calcurate_wizard_rule_count(
+                false,
+                [].to_vec(),
+                selections_status[selected_index].1 .1,
+                selections_status[selected_index].1 .0.clone(),
+                [
+                    "detection.emerging_threats",
+                    "detection.threat_hunting",
+                    "sysmon",
+                ]
+                .to_vec(),
+            );
+            // If anything other than "4. All alert rules" or "5. All event and alert rules" was selected, ask questions about tags.
+            if selected_index < 3 {
+                if let Some(et_cnt) = tags_cnt.get("detection.emerging_threats") {
+                    let prompt_fmt = format!("Include Emerging Threats rules? ({} rules)", et_cnt);
+                    let et_rules_load_flag = Confirm::with_theme(&ColorfulTheme::default())
+                        .with_prompt(prompt_fmt)
+                        .default(true)
+                        .show_default(true)
+                        .interact()
+                        .unwrap();
+                    // If no is selected, then add "--exclude-tags detection.emerging_threats"
+                    if !et_rules_load_flag {
+                        exclude_tags.push("detection.emerging_threats".into());
+                    }
+                }
+                if let Some(th_cnt) = tags_cnt.get("detection.threat_hunting") {
+                    let prompt_fmt = format!("Include Threat Hunting rules? ({} rules)", th_cnt);
+                    let th_rules_load_flag = Confirm::with_theme(&ColorfulTheme::default())
+                        .with_prompt(prompt_fmt)
+                        .default(false)
+                        .show_default(true)
+                        .interact()
+                        .unwrap();
+                    // If no is selected, then add "--exclude-tags detection.threat_hunting"
+                    if !th_rules_load_flag {
+                        exclude_tags.push("detection.threat_hunting".into());
+                    }
+                }
+            } else {
+                // If "4. All alert rules" or "5. All event and alert rules" was selected, ask questions about deprecated and unsupported rules.
+                if let Some(dep_cnt) = exclude_noisy_cnt.get("deprecated") {
+                    // deprecated rules load prompt
+                    let prompt_fmt = format!("Include deprecated rules? ({} rules)", dep_cnt);
+                    let dep_rules_load_flag = Confirm::with_theme(&ColorfulTheme::default())
+                        .with_prompt(prompt_fmt)
+                        .default(false)
+                        .show_default(true)
+                        .interact()
+                        .unwrap();
+                    if dep_rules_load_flag {
+                        stored_static
+                            .output_option
+                            .as_mut()
+                            .unwrap()
+                            .enable_deprecated_rules = true;
+                    }
+                }
+                if let Some(unsup_cnt) = exclude_noisy_cnt.get("unsupported") {
+                    // unsupported rules load prompt
+                    let prompt_fmt = format!("Include unsupported rules? ({} rules)", unsup_cnt);
+                    let unsupported_rules_load_flag =
+                        Confirm::with_theme(&ColorfulTheme::default())
+                            .with_prompt(prompt_fmt)
+                            .default(false)
+                            .show_default(true)
+                            .interact()
+                            .unwrap();
+                    if unsupported_rules_load_flag {
+                        stored_static
+                            .output_option
+                            .as_mut()
+                            .unwrap()
+                            .enable_unsupported_rules = true;
+                    }
+                }
+            }
+
+            if let Some(noisy_cnt) = exclude_noisy_cnt.get("noisy") {
+                // noisy rules load prompt
+                let prompt_fmt = format!("Include noisy rules? ({} rules)", noisy_cnt);
+                let noisy_rules_load_flag = Confirm::with_theme(&ColorfulTheme::default())
+                    .with_prompt(prompt_fmt)
+                    .default(false)
+                    .show_default(true)
+                    .interact()
+                    .unwrap();
+                if noisy_rules_load_flag {
+                    stored_static
+                        .output_option
+                        .as_mut()
+                        .unwrap()
+                        .enable_noisy_rules = true;
+                }
+            }
+
+            if let Some(sysmon_cnt) = tags_cnt.get("sysmon") {
+                let prompt_fmt = format!("Include sysmon rules? ({} rules)", sysmon_cnt);
+                let sysmon_rules_load_flag = Confirm::with_theme(&ColorfulTheme::default())
+                    .with_prompt(prompt_fmt)
+                    .default(true)
+                    .show_default(true)
+                    .interact()
+                    .unwrap();
+
+                // If no is selected, then add "--exclude-tags sysmon"
+                if !sysmon_rules_load_flag {
+                    exclude_tags.push("sysmon".into());
+                }
+            }
+
+            if !exclude_tags.is_empty() {
+                stored_static.output_option.as_mut().unwrap().exclude_tag =
+                    Some(exclude_tags.to_owned());
+            }
+        } else {
+            stored_static.include_status.insert("*".into());
         }
+        println!();
+        println!("Loading detection rules. Please wait.");
+        println!();
 
         if stored_static.html_report_flag {
             let mut output_data = Nested::<String>::new();
-            output_data.extend(vec![
+            let mut html_report_data = Nested::<String>::from_iter(vec![
                 format!("- Analyzed event files: {}", evtx_files.len()),
                 format!("- {total_size_output}"),
             ]);
+            if let Some(status_report) = status_append_output {
+                html_report_data.push(format!("- Selected deteciton rule set: {status_report}"));
+            }
+            let exclude_tags_data = stored_static
+                .output_option
+                .as_ref()
+                .unwrap()
+                .exclude_tag
+                .clone()
+                .unwrap_or_default()
+                .join(" / ");
+            if !exclude_tags_data.is_empty() {
+                html_report_data.push(format!("- Excluded tags: {}", exclude_tags_data));
+            }
+            output_data.extend(html_report_data.iter());
             htmlreport::add_md_data("General Overview #{general_overview}", output_data);
         }
+
+        let level = stored_static
+            .output_option
+            .as_ref()
+            .unwrap()
+            .min_level
+            .to_uppercase();
 
         let rule_files = detection::Detection::parse_rule_files(
             &level,
@@ -1003,8 +1320,11 @@ impl App {
             .as_mut()
             .unwrap()
             .rap_check_point("Rule Parse Processing Time");
-
-        if rule_files.is_empty() {
+        let unused_rules_option = stored_static.logon_summary_flag
+            || stored_static.search_flag
+            || stored_static.computer_metrics_flag
+            || stored_static.metrics_flag;
+        if !unused_rules_option && rule_files.is_empty() {
             AlertMessage::alert(
                 "No rules were loaded. Please download the latest rules with the update-rules command.\r\n",
             )
@@ -1012,21 +1332,37 @@ impl App {
             return;
         }
 
-        let mut pb = ProgressBar::new(evtx_files.len() as u64);
-        pb.show_speed = false;
+        let template =
+            "[{elapsed_precise}] {human_pos} / {human_len} {spinner:.green} [{bar:40.green}] {percent}%\r\n\r\n{msg}";
+        let progress_style = ProgressStyle::with_template(template)
+            .unwrap()
+            .progress_chars("=> ");
+        let pb = ProgressBar::with_draw_target(
+            Some(evtx_files.len() as u64),
+            ProgressDrawTarget::stdout_with_hz(10),
+        )
+        .with_tab_width(55);
+        pb.set_style(progress_style);
+        pb.enable_steady_tick(Duration::from_millis(300));
         self.rule_keys = self.get_all_keys(&rule_files);
         let mut detection = detection::Detection::new(rule_files);
         let mut total_records: usize = 0;
+        let mut recover_records: usize = 0;
         let mut tl = Timeline::new();
 
         *STORED_EKEY_ALIAS.write().unwrap() = Some(stored_static.eventkey_alias.clone());
         *STORED_STATIC.write().unwrap() = Some(stored_static.clone());
         for evtx_file in evtx_files {
-            if stored_static.verbose_flag {
-                println!("Checking target evtx FilePath: {:?}", &evtx_file);
-            }
+            let pb_msg = format!(
+                "{:?}",
+                &evtx_file.to_str().unwrap_or_default().replace('\\', "/")
+            );
+            pb.set_message(pb_msg);
+
             let cnt_tmp: usize;
-            (detection, cnt_tmp, tl) = if evtx_file.extension().unwrap() == "json" {
+            let recover_cnt_tmp: usize;
+            (detection, cnt_tmp, tl, recover_cnt_tmp) = if evtx_file.extension().unwrap() == "json"
+            {
                 self.analysis_json_file(
                     evtx_file,
                     detection,
@@ -1046,8 +1382,12 @@ impl App {
                 )
             };
             total_records += cnt_tmp;
-            pb.inc();
+            recover_records += recover_cnt_tmp;
+            pb.inc(1);
         }
+        pb.finish_with_message(
+            "Scanning finished. Please wait while the results are being saved.\r\n",
+        );
         CHECKPOINT
             .lock()
             .as_mut()
@@ -1059,23 +1399,24 @@ impl App {
             tl.tm_logon_stats_dsp_msg(stored_static);
         } else if stored_static.search_flag {
             tl.search_dsp_msg(event_timeline_config, stored_static);
+        } else if stored_static.computer_metrics_flag {
+            tl.computer_metrics_dsp_msg(stored_static)
         }
-        if stored_static.output_path.is_some() {
-            println!("\n\nScanning finished. Please wait while the results are being saved.");
-        }
-        println!();
-        detection.add_aggcondition_msges(&self.rt, stored_static);
         if !(stored_static.metrics_flag
             || stored_static.logon_summary_flag
             || stored_static.search_flag
-            || stored_static.pivot_keyword_list_flag)
+            || stored_static.pivot_keyword_list_flag
+            || stored_static.computer_metrics_flag)
         {
+            println!();
+            detection.add_aggcondition_msges(&self.rt, stored_static);
             after_fact(
                 total_records,
                 &stored_static.output_path,
                 stored_static.common_options.no_color,
                 stored_static,
                 tl,
+                recover_records,
             );
         }
         CHECKPOINT
@@ -1092,14 +1433,15 @@ impl App {
         mut detection: detection::Detection,
         time_filter: &TargetEventTime,
         mut tl: Timeline,
-        target_event_ids: &TargetEventIds,
+        target_event_ids: &TargetIds,
         stored_static: &StoredStatic,
-    ) -> (detection::Detection, usize, Timeline) {
+    ) -> (detection::Detection, usize, Timeline, usize) {
         let path = evtx_filepath.display();
-        let parser = self.evtx_to_jsons(&evtx_filepath);
+        let parser = self.evtx_to_jsons(&evtx_filepath, stored_static.enable_recover_records);
         let mut record_cnt = 0;
+        let mut recover_records_cnt = 0;
         if parser.is_none() {
-            return (detection, record_cnt, tl);
+            return (detection, record_cnt, tl, 0);
         }
 
         let mut parser = parser.unwrap();
@@ -1116,12 +1458,18 @@ impl App {
                     break;
                 }
                 record_cnt += 1;
-
                 let record_result = next_rec.unwrap();
+
+                if record_result.is_ok()
+                    && record_result.as_ref().unwrap().allocation == RecordAllocation::EmptyPage
+                {
+                    recover_records_cnt += 1;
+                }
+
                 if record_result.is_err() {
                     let evtx_filepath = &path;
                     let errmsg = format!(
-                        "Failed to parse event file. EventFile:{} Error:{}",
+                        "Failed to parse event file.\nEventFile: {}\nError: {}\n",
                         evtx_filepath,
                         record_result.unwrap_err()
                     );
@@ -1138,31 +1486,58 @@ impl App {
                 }
 
                 let data = &record_result.as_ref().unwrap().data;
+                if stored_static.computer_metrics_flag {
+                    countup_event_by_computer(data, &stored_static.eventkey_alias, &mut tl);
+                    // computer-metricsコマンドでは検知は行わないためカウントのみ行い次のレコードを確認する
+                    continue;
+                }
+
                 // Searchならすべてのフィルタを無視
                 if !stored_static.search_flag {
-                    // channelがnullである場合とEventID Filter optionが指定されていない場合は、target_eventids.txtでイベントIDベースでフィルタする。
+                    // Computer名がinclude_computerで指定されたものに合致しないまたはexclude_computerで指定されたものに合致した場合はフィルタリングする。
+                    if utils::is_filtered_by_computer_name(
+                        utils::get_event_value(
+                            "Event.System.Computer",
+                            data,
+                            &stored_static.eventkey_alias,
+                        ),
+                        (
+                            &stored_static.include_computer,
+                            &stored_static.exclude_computer,
+                        ),
+                    ) {
+                        continue;
+                    }
+
+                    // EventIDがinclude_eidで指定されたものに合致しないまたはexclude_eidで指定されたものに合致した場合、target_eventids.txtで指定されたEventIDではない場合はフィルタリングする。
+                    if self.is_filtered_by_eid(
+                        data,
+                        &stored_static.eventkey_alias,
+                        (&stored_static.include_eid, &stored_static.exclude_eid),
+                        stored_static.output_option.as_ref().unwrap().eid_filter,
+                        target_event_ids,
+                    ) {
+                        continue;
+                    }
+
+                    // channelがnullである場合はフィルタリングする。
                     if !self._is_valid_channel(
                         data,
                         &stored_static.eventkey_alias,
                         "Event.System.Channel",
-                    ) || (stored_static.output_option.as_ref().unwrap().eid_filter
-                        && !self._is_target_event_id(
-                            data,
-                            target_event_ids,
-                            &stored_static.eventkey_alias,
-                        ))
-                    {
-                        continue;
-                    }
-
-                    // EventID側の条件との条件の混同を防ぐため時間でのフィルタリングの条件分岐を分離した
-                    let timestamp = record_result.as_ref().unwrap().timestamp;
-                    if !time_filter.is_target(&Some(timestamp)) {
+                    ) {
                         continue;
                     }
                 }
+                // EventID側の条件との条件の混同を防ぐため時間でのフィルタリングの条件分岐を分離した
+                let timestamp = record_result.as_ref().unwrap().timestamp;
+                if !time_filter.is_target(&Some(timestamp)) {
+                    continue;
+                }
 
-                records_per_detect.push(data.to_owned());
+                let recover_record_flag = record_result.is_ok()
+                    && record_result.as_ref().unwrap().allocation == RecordAllocation::EmptyPage;
+                records_per_detect.push((data.to_owned(), recover_record_flag));
             }
             if records_per_detect.is_empty() {
                 break;
@@ -1172,6 +1547,7 @@ impl App {
                 records_per_detect,
                 &path,
                 self.rule_keys.to_owned(),
+                stored_static.no_pwsh_field_extraction,
             ));
 
             // timeline機能の実行
@@ -1185,7 +1561,7 @@ impl App {
             }
         }
         tl.total_record_cnt += record_cnt;
-        (detection, record_cnt, tl)
+        (detection, record_cnt, tl, recover_records_cnt)
     }
 
     // JSON形式のイベントログファイルを1ファイル分解析する。
@@ -1195,11 +1571,12 @@ impl App {
         mut detection: detection::Detection,
         time_filter: &TargetEventTime,
         mut tl: Timeline,
-        target_event_ids: &TargetEventIds,
+        target_event_ids: &TargetIds,
         stored_static: &StoredStatic,
-    ) -> (detection::Detection, usize, Timeline) {
+    ) -> (detection::Detection, usize, Timeline, usize) {
         let path = filepath.display();
         let mut record_cnt = 0;
+        let recover_records_cnt = 0;
         let filename = filepath.to_str().unwrap_or_default();
         let filepath = if filename.starts_with("./") {
             check_setting_path(&CURRENT_EXE_PATH.to_path_buf(), filename, true)
@@ -1221,7 +1598,7 @@ impl App {
                     Ok(values) => values,
                     Err(e) => {
                         AlertMessage::alert(&e).ok();
-                        return (detection, record_cnt, tl);
+                        return (detection, record_cnt, tl, recover_records_cnt);
                     }
                 }
             }
@@ -1257,18 +1634,45 @@ impl App {
                 // Computer名に対応する内容はHostnameであることがわかったためデータをクローンして投入
                 data["Event"]["System"]["Computer"] =
                     data["Event"]["EventData"]["Hostname"].clone();
-                // channelがnullである場合とEventID Filter optionが指定されていない場合は、target_eventids.txtでイベントIDベースでフィルタする。
+
+                if stored_static.computer_metrics_flag {
+                    countup_event_by_computer(&data, &stored_static.eventkey_alias, &mut tl);
+                    // computer-metricsコマンドでは検知は行わないためカウントのみ行い次のレコードを確認する
+                    continue;
+                }
+
+                // Computer名がinclude_computerで指定されたものに合致しないまたはexclude_computerで指定されたものに合致した場合はフィルタリングする。
+                if utils::is_filtered_by_computer_name(
+                    utils::get_event_value(
+                        "Event.System.Computer",
+                        &data,
+                        &stored_static.eventkey_alias,
+                    ),
+                    (
+                        &stored_static.include_computer,
+                        &stored_static.exclude_computer,
+                    ),
+                ) {
+                    continue;
+                }
+
+                // EventIDがinclude_eidで指定されたものに合致しないまたはexclude_eidで指定されたものに合致した場合、EventID Filter optionが指定されていないかつtarget_eventids.txtで指定されたEventIDではない場合はフィルタリングする。
+                if self.is_filtered_by_eid(
+                    &data,
+                    &stored_static.eventkey_alias,
+                    (&stored_static.include_eid, &stored_static.exclude_eid),
+                    stored_static.output_option.as_ref().unwrap().eid_filter,
+                    target_event_ids,
+                ) {
+                    continue;
+                }
+
+                // channelがnullである場合はフィルタリングする。
                 if !self._is_valid_channel(
                     &data,
                     &stored_static.eventkey_alias,
                     "Event.EventData.Channel",
-                ) || (stored_static.output_option.as_ref().unwrap().eid_filter
-                    && !self._is_target_event_id(
-                        &data,
-                        target_event_ids,
-                        &stored_static.eventkey_alias,
-                    ))
-                {
+                ) {
                     continue;
                 }
                 let target_timestamp = if data["Event"]["EventData"]["@timestamp"].is_null() {
@@ -1284,9 +1688,9 @@ impl App {
                         .replace('"', ""),
                     "%Y-%m-%dT%H:%M:%S%.3fZ",
                 ) {
-                    Ok(without_timezone_datetime) => {
-                        Some(DateTime::<Utc>::from_utc(without_timezone_datetime, Utc))
-                    }
+                    Ok(without_timezone_datetime) => Some(
+                        DateTime::<Utc>::from_naive_utc_and_offset(without_timezone_datetime, Utc),
+                    ),
                     Err(e) => {
                         AlertMessage::alert(&format!(
                             "timestamp parse error. filepath:{},{} {}",
@@ -1305,7 +1709,7 @@ impl App {
                     continue;
                 }
 
-                records_per_detect.push(data.to_owned());
+                records_per_detect.push((data.to_owned(), false));
             }
             if records_per_detect.is_empty() {
                 break;
@@ -1315,6 +1719,7 @@ impl App {
                 records_per_detect,
                 &path,
                 self.rule_keys.to_owned(),
+                stored_static.no_pwsh_field_extraction,
             ));
 
             // timeline機能の実行
@@ -1330,26 +1735,35 @@ impl App {
             }
         }
         tl.total_record_cnt += record_cnt;
-        (detection, record_cnt, tl)
+        (detection, record_cnt, tl, recover_records_cnt)
     }
 
     async fn create_rec_infos(
-        records_per_detect: Vec<Value>,
+        records_per_detect: Vec<(Value, bool)>,
         path: &dyn Display,
         rule_keys: Nested<String>,
+        no_pwsh_field_extraction: bool,
     ) -> Vec<EvtxRecordInfo> {
+        let no_pwsh_field_extraction = Arc::new(no_pwsh_field_extraction);
         let path = Arc::new(path.to_string());
         let rule_keys = Arc::new(rule_keys);
         let threads: Vec<JoinHandle<EvtxRecordInfo>> = {
-            let this = records_per_detect
-                .into_iter()
-                .map(|rec| -> JoinHandle<EvtxRecordInfo> {
+            let this = records_per_detect.into_iter().map(
+                |(rec, recovered_record_flag)| -> JoinHandle<EvtxRecordInfo> {
                     let arc_rule_keys = Arc::clone(&rule_keys);
                     let arc_path = Arc::clone(&path);
+                    let arc_no_pwsh_field_extraction = Arc::clone(&no_pwsh_field_extraction);
                     spawn(async move {
-                        utils::create_rec_info(rec, arc_path.to_string(), &arc_rule_keys)
+                        utils::create_rec_info(
+                            rec,
+                            arc_path.to_string(),
+                            &arc_rule_keys,
+                            &recovered_record_flag,
+                            &arc_no_pwsh_field_extraction,
+                        )
                     })
-                });
+                },
+            );
             FromIterator::from_iter(this)
         };
 
@@ -1375,7 +1789,7 @@ impl App {
     fn _is_target_event_id(
         &self,
         data: &Value,
-        target_event_ids: &TargetEventIds,
+        target_event_ids: &TargetIds,
         eventkey_alias: &EventKeyAliasConfig,
     ) -> bool {
         let eventid = utils::get_event_value(&utils::get_event_id_key(), data, eventkey_alias);
@@ -1384,8 +1798,8 @@ impl App {
         }
 
         match eventid.unwrap() {
-            Value::String(s) => target_event_ids.is_target(&s.replace('\"', "")),
-            Value::Number(n) => target_event_ids.is_target(&n.to_string().replace('\"', "")),
+            Value::String(s) => target_event_ids.is_target(&s.replace('\"', ""), true),
+            Value::Number(n) => target_event_ids.is_target(&n.to_string().replace('\"', ""), true),
             _ => true, // レコードからEventIdが取得できない場合は、特にフィルタしない
         }
     }
@@ -1407,11 +1821,44 @@ impl App {
         }
     }
 
-    fn evtx_to_jsons(&self, evtx_filepath: &PathBuf) -> Option<EvtxParser<File>> {
+    fn is_filtered_by_eid(
+        &self,
+        data: &Value,
+        eventkey_alias: &EventKeyAliasConfig,
+        (include_eid, exclude_eid): (&HashSet<CompactString>, &HashSet<CompactString>),
+        eid_filter: bool,
+        target_event_ids: &TargetIds,
+    ) -> bool {
+        let target_eid = if !include_eid.is_empty() || !exclude_eid.is_empty() {
+            if let Some(eid_record) =
+                utils::get_event_value(&utils::get_event_id_key(), data, eventkey_alias)
+            {
+                utils::get_serde_number_to_string(eid_record, false).unwrap_or_default()
+            } else {
+                CompactString::default()
+            }
+        } else {
+            CompactString::default()
+        };
+        // 以下の場合はフィルタリングする。
+        // 1. include_eidが指定されているが、include_eidに含まれていない場合
+        // 2. exclude_eidが指定されていて、exclude_eidに含まれている場合
+        // 3. eid_filterが指定されていて、target_eventids.txtで指定されたEventIDでない場合
+        (!include_eid.is_empty() && !include_eid.contains(&target_eid))
+            || (!exclude_eid.is_empty() && exclude_eid.contains(&target_eid))
+            || (eid_filter && !self._is_target_event_id(data, target_event_ids, eventkey_alias))
+    }
+
+    fn evtx_to_jsons(
+        &self,
+        evtx_filepath: &PathBuf,
+        enable_recover_records: bool,
+    ) -> Option<EvtxParser<File>> {
         match EvtxParser::from_path(evtx_filepath) {
             Ok(evtx_parser) => {
                 // parserのデフォルト設定を変更
-                let mut parse_config = ParserSettings::default();
+                let mut parse_config =
+                    ParserSettings::default().parse_empty_chunks(enable_recover_records);
                 parse_config = parse_config.separate_json_attributes(true); // XMLのattributeをJSONに変換する時のルールを設定
                 parse_config = parse_config.num_threads(0); // 設定しないと遅かったので、設定しておく。
 
@@ -1450,6 +1897,7 @@ impl App {
         eggs.insert("01/01", ("art/happynewyear.txt", Color::Rgb(255, 0, 0))); // Red
         eggs.insert("02/22", ("art/ninja.txt", Color::Rgb(0, 171, 240))); // Cerulean
         eggs.insert("08/08", ("art/takoyaki.txt", Color::Rgb(181, 101, 29))); // Light Brown
+        eggs.insert("10/31", ("art/halloween.txt", Color::Rgb(255, 87, 51))); // Pumpkin Orange
         eggs.insert("12/24", ("art/christmas.txt", Color::Rgb(70, 192, 22))); // Green
         eggs.insert("12/25", ("art/christmas.txt", Color::Rgb(70, 192, 22))); // Green
 
@@ -1491,13 +1939,11 @@ impl App {
             Action::CsvTimeline(_)
             | Action::JsonTimeline(_)
             | Action::LogonSummary(_)
-            | Action::Metrics(_)
+            | Action::EidMetrics(_)
             | Action::PivotKeywordsList(_)
-            | Action::SetDefaultProfile(_) => std::env::args().len() != 2,
-            Action::Search(opt) => {
-                std::env::args().len() != 2 && (opt.keywords.is_some() ^ opt.regex.is_some())
-                // key word and regex are conflict
-            }
+            | Action::SetDefaultProfile(_)
+            | Action::Search(_)
+            | Action::ComputerMetrics(_) => std::env::args().len() != 2,
             _ => true,
         }
     }
@@ -1516,9 +1962,10 @@ mod tests {
     use hayabusa::{
         detections::{
             configs::{
-                Action, CommonOptions, Config, ConfigReader, CsvOutputOption, DetectCommonOption,
-                InputOption, JSONOutputOption, LogonSummaryOption, MetricsOption, OutputOption,
-                StoredStatic, TargetEventIds, TargetEventTime, STORED_EKEY_ALIAS, STORED_STATIC,
+                Action, CommonOptions, ComputerMetricsOption, Config, ConfigReader,
+                CsvOutputOption, DetectCommonOption, EidMetricsOption, InputOption,
+                JSONOutputOption, LogonSummaryOption, OutputOption, StoredStatic, TargetEventTime,
+                TargetIds, STORED_EKEY_ALIAS, STORED_STATIC,
             },
             detection,
             message::{MESSAGEKEYS, MESSAGES},
@@ -1538,6 +1985,8 @@ mod tests {
                         directory: None,
                         filepath: None,
                         live_analysis: false,
+                        recover_records: false,
+                        timeline_offset: None,
                     },
                     profile: None,
                     enable_deprecated_rules: false,
@@ -1570,17 +2019,27 @@ mod tests {
                         config: Path::new("./rules/config").to_path_buf(),
                         verbose: false,
                         json_input: true,
+                        include_computer: None,
+                        exclude_computer: None,
                     },
                     enable_unsupported_rules: false,
                     clobber: false,
-                    tags: None,
+                    proven_rules: false,
+                    include_tag: None,
+                    exclude_tag: None,
                     include_category: None,
                     exclude_category: None,
+                    include_eid: None,
+                    exclude_eid: None,
+                    no_field: false,
+                    no_pwsh_field_extraction: false,
+                    remove_duplicate_data: false,
+                    remove_duplicate_detections: false,
+                    no_wizard: true,
                 },
                 geo_ip: None,
                 output: None,
                 multiline: false,
-                remove_duplicate_data: false,
             })),
             debug: false,
         }))
@@ -1663,7 +2122,7 @@ mod tests {
         let detection = detection::Detection::new(rule_files);
         let target_time_filter = TargetEventTime::new(&stored_static);
         let tl = Timeline::default();
-        let target_event_ids = TargetEventIds::default();
+        let target_event_ids = TargetIds::default();
 
         let actual = app.analysis_json_file(
             Path::new("test_files/evtx/test.jsonl").to_path_buf(),
@@ -1689,6 +2148,8 @@ mod tests {
                     directory: None,
                     filepath: Some(Path::new("test_files/evtx/test.json").to_path_buf()),
                     live_analysis: false,
+                    recover_records: false,
+                    timeline_offset: None,
                 },
                 profile: None,
                 enable_deprecated_rules: false,
@@ -1721,17 +2182,27 @@ mod tests {
                     config: Path::new("./rules/config").to_path_buf(),
                     verbose: false,
                     json_input: true,
+                    include_computer: None,
+                    exclude_computer: None,
                 },
                 enable_unsupported_rules: false,
                 clobber: false,
-                tags: None,
+                proven_rules: false,
+                include_tag: None,
+                exclude_tag: None,
                 include_category: None,
                 exclude_category: None,
+                include_eid: None,
+                exclude_eid: None,
+                no_field: false,
+                no_pwsh_field_extraction: false,
+                remove_duplicate_data: false,
+                remove_duplicate_detections: false,
+                no_wizard: true,
             },
             geo_ip: None,
             output: Some(Path::new("overwrite.csv").to_path_buf()),
             multiline: false,
-            remove_duplicate_data: false,
         });
         let config = Some(Config {
             action: Some(action),
@@ -1761,6 +2232,8 @@ mod tests {
                     directory: None,
                     filepath: Some(Path::new("test_files/evtx/test.json").to_path_buf()),
                     live_analysis: false,
+                    recover_records: false,
+                    timeline_offset: None,
                 },
                 profile: None,
                 enable_deprecated_rules: false,
@@ -1793,17 +2266,27 @@ mod tests {
                     config: Path::new("./rules/config").to_path_buf(),
                     verbose: false,
                     json_input: true,
+                    include_computer: None,
+                    exclude_computer: None,
                 },
                 enable_unsupported_rules: false,
                 clobber: true,
-                tags: None,
+                proven_rules: false,
+                include_tag: None,
+                exclude_tag: None,
                 include_category: None,
                 exclude_category: None,
+                include_eid: None,
+                exclude_eid: None,
+                no_field: false,
+                no_pwsh_field_extraction: false,
+                remove_duplicate_data: false,
+                remove_duplicate_detections: false,
+                no_wizard: true,
             },
             geo_ip: None,
             output: Some(Path::new("overwrite.csv").to_path_buf()),
             multiline: false,
-            remove_duplicate_data: false,
         });
         let config = Some(Config {
             action: Some(action),
@@ -1831,6 +2314,8 @@ mod tests {
                     directory: None,
                     filepath: Some(Path::new("test_files/evtx/test.json").to_path_buf()),
                     live_analysis: false,
+                    recover_records: false,
+                    timeline_offset: None,
                 },
                 profile: None,
                 enable_deprecated_rules: false,
@@ -1863,12 +2348,23 @@ mod tests {
                     config: Path::new("./rules/config").to_path_buf(),
                     verbose: false,
                     json_input: true,
+                    include_computer: None,
+                    exclude_computer: None,
                 },
                 enable_unsupported_rules: false,
                 clobber: false,
-                tags: None,
+                proven_rules: false,
+                include_tag: None,
+                exclude_tag: None,
                 include_category: None,
                 exclude_category: None,
+                include_eid: None,
+                exclude_eid: None,
+                no_field: false,
+                no_pwsh_field_extraction: false,
+                remove_duplicate_data: false,
+                remove_duplicate_detections: false,
+                no_wizard: true,
             },
             geo_ip: None,
             output: Some(Path::new("overwrite.json").to_path_buf()),
@@ -1902,6 +2398,8 @@ mod tests {
                     directory: None,
                     filepath: Some(Path::new("test_files/evtx/test.json").to_path_buf()),
                     live_analysis: false,
+                    recover_records: false,
+                    timeline_offset: None,
                 },
                 profile: None,
                 enable_deprecated_rules: false,
@@ -1934,12 +2432,23 @@ mod tests {
                     config: Path::new("./rules/config").to_path_buf(),
                     verbose: false,
                     json_input: true,
+                    include_computer: None,
+                    exclude_computer: None,
                 },
                 enable_unsupported_rules: false,
                 clobber: true,
-                tags: None,
+                proven_rules: false,
+                include_tag: None,
+                exclude_tag: None,
                 include_category: None,
                 exclude_category: None,
+                include_eid: None,
+                exclude_eid: None,
+                no_field: false,
+                no_pwsh_field_extraction: false,
+                remove_duplicate_data: false,
+                remove_duplicate_detections: false,
+                no_wizard: true,
             },
             geo_ip: None,
             output: Some(Path::new("overwrite.json").to_path_buf()),
@@ -1965,12 +2474,14 @@ mod tests {
         // 先に空ファイルを作成する
         let mut app = App::new(None);
         File::create("overwrite-metric.csv").ok();
-        let action = Action::Metrics(MetricsOption {
+        let action = Action::EidMetrics(EidMetricsOption {
             output: Some(Path::new("overwrite-metric.csv").to_path_buf()),
             input_args: InputOption {
                 directory: None,
                 filepath: Some(Path::new("test_files/evtx/test_metrics.json").to_path_buf()),
                 live_analysis: false,
+                recover_records: false,
+                timeline_offset: None,
             },
             common_options: CommonOptions {
                 no_color: false,
@@ -1983,6 +2494,8 @@ mod tests {
                 config: Path::new("./rules/config").to_path_buf(),
                 verbose: false,
                 json_input: true,
+                include_computer: None,
+                exclude_computer: None,
             },
             european_time: false,
             iso_8601: false,
@@ -2016,12 +2529,14 @@ mod tests {
         // 先に空ファイルを作成する
         let mut app = App::new(None);
         File::create("overwrite-metric.csv").ok();
-        let action = Action::Metrics(MetricsOption {
+        let action = Action::EidMetrics(EidMetricsOption {
             output: Some(Path::new("overwrite-metric.csv").to_path_buf()),
             input_args: InputOption {
                 directory: None,
                 filepath: Some(Path::new("test_files/evtx/test_metrics.json").to_path_buf()),
                 live_analysis: false,
+                recover_records: false,
+                timeline_offset: None,
             },
             common_options: CommonOptions {
                 no_color: false,
@@ -2034,6 +2549,8 @@ mod tests {
                 config: Path::new("./rules/config").to_path_buf(),
                 verbose: false,
                 json_input: true,
+                include_computer: None,
+                exclude_computer: None,
             },
             european_time: false,
             iso_8601: false,
@@ -2071,6 +2588,8 @@ mod tests {
                 directory: None,
                 filepath: Some(Path::new("test_files/evtx/test_metrics.json").to_path_buf()),
                 live_analysis: false,
+                timeline_offset: None,
+                recover_records: false,
             },
             common_options: CommonOptions {
                 no_color: false,
@@ -2083,6 +2602,8 @@ mod tests {
                 config: Path::new("./rules/config").to_path_buf(),
                 verbose: false,
                 json_input: true,
+                include_computer: None,
+                exclude_computer: None,
             },
             european_time: false,
             iso_8601: false,
@@ -2092,6 +2613,8 @@ mod tests {
             us_time: false,
             utc: false,
             clobber: false,
+            end_timeline: None,
+            start_timeline: None,
         });
         let config = Some(Config {
             action: Some(action),
@@ -2122,6 +2645,8 @@ mod tests {
                 directory: None,
                 filepath: Some(Path::new("test_files/evtx/test_metrics.json").to_path_buf()),
                 live_analysis: false,
+                recover_records: false,
+                timeline_offset: None,
             },
             common_options: CommonOptions {
                 no_color: false,
@@ -2134,6 +2659,8 @@ mod tests {
                 config: Path::new("./rules/config").to_path_buf(),
                 verbose: false,
                 json_input: true,
+                include_computer: None,
+                exclude_computer: None,
             },
             european_time: false,
             iso_8601: false,
@@ -2143,6 +2670,8 @@ mod tests {
             us_time: false,
             utc: false,
             clobber: true,
+            end_timeline: None,
+            start_timeline: None,
         });
         let config = Some(Config {
             action: Some(action),
@@ -2157,5 +2686,173 @@ mod tests {
         assert_ne!(meta.len(), 0);
         // テストファイルの削除
         remove_file("overwrite-metric-successful.csv").ok();
+    }
+
+    #[test]
+    fn test_same_file_output_computer_metrics_exit() {
+        MESSAGES.clear();
+        MESSAGEKEYS.lock().unwrap().clear();
+        // 先に空ファイルを作成する
+        let mut app = App::new(None);
+        File::create("overwrite-computer-metrics.csv").ok();
+        let action = Action::ComputerMetrics(ComputerMetricsOption {
+            output: Some(Path::new("overwrite-computer-metrics.csv").to_path_buf()),
+            input_args: InputOption {
+                directory: None,
+                filepath: Some(Path::new("test_files/evtx/test_metrics.json").to_path_buf()),
+                live_analysis: false,
+                recover_records: false,
+                timeline_offset: None,
+            },
+            common_options: CommonOptions {
+                no_color: false,
+                quiet: false,
+            },
+            evtx_file_ext: None,
+            thread_number: None,
+            quiet_errors: false,
+            config: Path::new("./rules/config").to_path_buf(),
+            verbose: false,
+            json_input: true,
+            clobber: false,
+        });
+        let config = Some(Config {
+            action: Some(action),
+            debug: false,
+        });
+        let mut stored_static = StoredStatic::create_static_data(config);
+        *STORED_EKEY_ALIAS.write().unwrap() = Some(stored_static.eventkey_alias.clone());
+        *STORED_STATIC.write().unwrap() = Some(stored_static.clone());
+        let mut config_reader = ConfigReader::new();
+        app.exec(&mut config_reader.app, &mut stored_static);
+        let meta = fs::metadata("overwrite-computer-metrics.csv").unwrap();
+        assert_eq!(meta.len(), 0);
+        // テストファイルの削除
+        remove_file("overwrite-computer-metrics.csv").ok();
+    }
+
+    #[test]
+    fn test_same_file_output_computer_metrics_csv() {
+        MESSAGES.clear();
+        MESSAGEKEYS.lock().unwrap().clear();
+        // 先に空ファイルを作成する
+        let mut app = App::new(None);
+        File::create("overwrite-computer-metrics.csv").ok();
+        let action = Action::ComputerMetrics(ComputerMetricsOption {
+            output: Some(Path::new("overwrite-computer-metrics.csv").to_path_buf()),
+            input_args: InputOption {
+                directory: None,
+                filepath: Some(Path::new("test_files/evtx/test_metrics.json").to_path_buf()),
+                live_analysis: false,
+                recover_records: false,
+                timeline_offset: None,
+            },
+            common_options: CommonOptions {
+                no_color: false,
+                quiet: false,
+            },
+            evtx_file_ext: None,
+            thread_number: None,
+            quiet_errors: false,
+            config: Path::new("./rules/config").to_path_buf(),
+            verbose: false,
+            json_input: true,
+            clobber: true,
+        });
+        let config = Some(Config {
+            action: Some(action),
+            debug: false,
+        });
+        let mut stored_static = StoredStatic::create_static_data(config);
+        *STORED_EKEY_ALIAS.write().unwrap() = Some(stored_static.eventkey_alias.clone());
+        *STORED_STATIC.write().unwrap() = Some(stored_static.clone());
+        let mut config_reader = ConfigReader::new();
+        app.exec(&mut config_reader.app, &mut stored_static);
+        let meta = fs::metadata("overwrite-computer-metrics.csv").unwrap();
+        assert_ne!(meta.len(), 0);
+        // テストファイルの削除
+        remove_file("overwrite-computer-metrics.csv").ok();
+    }
+
+    #[test]
+    fn test_analysis_json_file_include_eid() {
+        MESSAGES.clear();
+        let mut app = App::new(None);
+        let mut stored_static = create_dummy_stored_static();
+        *STORED_EKEY_ALIAS.write().unwrap() = Some(stored_static.eventkey_alias.clone());
+        stored_static.include_eid = HashSet::from_iter(vec!["10".into()]);
+        *STORED_STATIC.write().unwrap() = Some(stored_static.clone());
+
+        let rule_str = r#"
+        enabled: true
+        detection:
+            selection1:
+                Channel: 'Microsoft-Windows-Sysmon/Operational'
+            condition: selection1
+        details: testdata
+        "#;
+        let mut rule_yaml = YamlLoader::load_from_str(rule_str).unwrap().into_iter();
+        let test_yaml_data = rule_yaml.next().unwrap();
+        let mut rule = create_rule("testpath".to_string(), test_yaml_data);
+        let rule_init = rule.init(&stored_static);
+        assert!(rule_init.is_ok());
+        let rule_files = vec![rule];
+        app.rule_keys = app.get_all_keys(&rule_files);
+        let detection = detection::Detection::new(rule_files);
+        let target_time_filter = TargetEventTime::new(&stored_static);
+        let tl = Timeline::default();
+        let target_event_ids = TargetIds::default();
+
+        let actual = app.analysis_json_file(
+            Path::new("test_files/evtx/test.jsonl").to_path_buf(),
+            detection,
+            &target_time_filter,
+            tl,
+            &target_event_ids,
+            &stored_static,
+        );
+        assert_eq!(actual.1, 2);
+        assert_eq!(MESSAGES.len(), 1);
+    }
+
+    #[test]
+    fn test_analysis_json_file_exclude_eid() {
+        MESSAGES.clear();
+        let mut app = App::new(None);
+        let mut stored_static = create_dummy_stored_static();
+        *STORED_EKEY_ALIAS.write().unwrap() = Some(stored_static.eventkey_alias.clone());
+        stored_static.exclude_eid = HashSet::from_iter(vec!["10".into(), "11".into()]);
+        *STORED_STATIC.write().unwrap() = Some(stored_static.clone());
+
+        let rule_str = r#"
+        enabled: true
+        detection:
+            selection1:
+                Channel: 'Microsoft-Windows-Sysmon/Operational'
+            condition: selection1
+        details: testdata
+        "#;
+        let mut rule_yaml = YamlLoader::load_from_str(rule_str).unwrap().into_iter();
+        let test_yaml_data = rule_yaml.next().unwrap();
+        let mut rule = create_rule("testpath".to_string(), test_yaml_data);
+        let rule_init = rule.init(&stored_static);
+        assert!(rule_init.is_ok());
+        let rule_files = vec![rule];
+        app.rule_keys = app.get_all_keys(&rule_files);
+        let detection = detection::Detection::new(rule_files);
+        let target_time_filter = TargetEventTime::new(&stored_static);
+        let tl = Timeline::default();
+        let target_event_ids = TargetIds::default();
+
+        let actual = app.analysis_json_file(
+            Path::new("test_files/evtx/test.jsonl").to_path_buf(),
+            detection,
+            &target_time_filter,
+            tl,
+            &target_event_ids,
+            &stored_static,
+        );
+        assert_eq!(actual.1, 2);
+        assert_eq!(MESSAGES.len(), 0);
     }
 }

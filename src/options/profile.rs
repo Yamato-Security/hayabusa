@@ -3,9 +3,9 @@ use crate::detections::message::AlertMessage;
 use crate::detections::utils::check_setting_path;
 use crate::options::profile::Profile::{
     AllFieldInfo, Channel, Computer, Details, EventID, EvtxFile, ExtraFieldInfo, Level, Literal,
-    MitreTactics, MitreTags, OtherTags, Provider, RecordID, RenderedMessage, RuleAuthor,
-    RuleCreationDate, RuleFile, RuleID, RuleModifiedDate, RuleTitle, SrcASN, SrcCity, SrcCountry,
-    Status, TgtASN, TgtCity, TgtCountry, Timestamp,
+    MitreTactics, MitreTags, OtherTags, Provider, RecordID, RecoveredRecord, RenderedMessage,
+    RuleAuthor, RuleCreationDate, RuleFile, RuleID, RuleModifiedDate, RuleTitle, SrcASN, SrcCity,
+    SrcCountry, Status, TgtASN, TgtCity, TgtCountry, Timestamp,
 };
 use crate::yaml;
 use compact_str::CompactString;
@@ -47,6 +47,7 @@ pub enum Profile {
     TgtCountry(Cow<'static, str>),
     TgtCity(Cow<'static, str>),
     ExtraFieldInfo(Cow<'static, str>),
+    RecoveredRecord(Cow<'static, str>),
     Literal(Cow<'static, str>), // profiles.yamlの固定文字列を変換なしでそのまま出力する場合
 }
 
@@ -58,7 +59,9 @@ impl Profile {
             | MitreTags(v) | OtherTags(v) | RuleAuthor(v) | RuleCreationDate(v)
             | RuleModifiedDate(v) | Status(v) | RuleID(v) | Provider(v) | Details(v)
             | RenderedMessage(v) | SrcASN(v) | SrcCountry(v) | SrcCity(v) | TgtASN(v)
-            | TgtCountry(v) | TgtCity(v) | ExtraFieldInfo(v) | Literal(v) => v.to_string(),
+            | TgtCountry(v) | TgtCity(v) | RecoveredRecord(v) | ExtraFieldInfo(v) | Literal(v) => {
+                v.to_string()
+            }
         }
     }
 
@@ -90,6 +93,9 @@ impl Profile {
             TgtCountry(_) => TgtCountry(converted_string.to_owned().into()),
             TgtCity(_) => TgtCity(converted_string.to_owned().into()),
             ExtraFieldInfo(_) => ExtraFieldInfo(converted_string.to_owned().into()),
+            RecoveredRecord(_) => RecoveredRecord(converted_string.to_owned().into()),
+            Details(_) => Details(converted_string.to_owned().into()),
+            AllFieldInfo(_) => AllFieldInfo(converted_string.to_owned().into()),
             p => p.to_owned(),
         }
     }
@@ -120,18 +126,15 @@ impl From<&str> for Profile {
             "%Details%" => Details(Default::default()),
             "%RenderedMessage%" => RenderedMessage(Default::default()),
             "%ExtraFieldInfo%" => ExtraFieldInfo(Default::default()),
+            "%RecoveredRecord%" => RecoveredRecord(Default::default()),
             s => Literal(s.to_string().into()), // profiles.yamlの固定文字列を変換なしでそのまま出力する場合
         }
     }
 }
 
 // 指定されたパスのprofileを読み込む処理
-fn read_profile_data(
-    profile_path: &str,
-    stored_static: &StoredStatic,
-) -> Result<Vec<Yaml>, String> {
-    let yml = yaml::ParseYaml::new(stored_static);
-    if let Ok(loaded_profile) = yml.read_file(Path::new(profile_path).to_path_buf()) {
+fn read_profile_data(profile_path: &str) -> Result<Vec<Yaml>, String> {
+    if let Ok(loaded_profile) = yaml::ParseYaml::read_file(Path::new(profile_path).to_path_buf()) {
         match YamlLoader::load_from_str(&loaded_profile) {
             Ok(profile_yml) => Ok(profile_yml),
             Err(e) => Err(format!("Parse error: {profile_path}. {e}")),
@@ -168,7 +171,7 @@ pub fn load_profile(
     };
 
     let profile_all: Vec<Yaml> = if profile.is_none() {
-        match read_profile_data(default_profile_path, opt_stored_static.unwrap()) {
+        match read_profile_data(default_profile_path) {
             Ok(data) => data,
             Err(e) => {
                 AlertMessage::alert(&e).ok();
@@ -176,7 +179,7 @@ pub fn load_profile(
             }
         }
     } else {
-        match read_profile_data(profile_path, opt_stored_static.unwrap()) {
+        match read_profile_data(profile_path) {
             Ok(data) => data,
             Err(e) => {
                 AlertMessage::alert(&e).ok();
@@ -246,6 +249,14 @@ pub fn load_profile(
         ));
         ret.push((CompactString::from("TgtCity"), TgtCity(Cow::default())));
     }
+    if let Some(opt) = &opt_stored_static.as_ref().unwrap().output_option {
+        if opt.input_args.recover_records {
+            ret.push((
+                CompactString::from("RecoveredRecord"),
+                RecoveredRecord(Cow::default()),
+            ));
+        }
+    }
     Some(ret)
 }
 
@@ -255,7 +266,7 @@ pub fn set_default_profile(
     profile_path: &str,
     stored_static: &StoredStatic,
 ) -> Result<(), String> {
-    let profile_data: Vec<Yaml> = match read_profile_data(profile_path, stored_static) {
+    let profile_data: Vec<Yaml> = match read_profile_data(profile_path) {
         Ok(data) => data,
         Err(e) => {
             AlertMessage::alert(&e).ok();
@@ -336,13 +347,12 @@ pub fn set_default_profile(
 }
 
 /// Get profile name and tag list in yaml file.
-pub fn get_profile_list(profile_path: &str, stored_static: &StoredStatic) -> Nested<Vec<String>> {
+pub fn get_profile_list(profile_path: &str) -> Nested<Vec<String>> {
     let ymls = match read_profile_data(
         check_setting_path(&CURRENT_EXE_PATH.to_path_buf(), profile_path, true)
             .unwrap()
             .to_str()
             .unwrap(),
-        stored_static,
     ) {
         Ok(data) => data,
         Err(e) => {
@@ -374,7 +384,7 @@ mod tests {
 
     use crate::detections::configs::{
         Action, CommonOptions, Config, CsvOutputOption, DetectCommonOption, InputOption,
-        OutputOption, StoredStatic, UpdateOption, GEOIP_DB_PARSER,
+        OutputOption, StoredStatic, GEOIP_DB_PARSER,
     };
     use crate::options::profile::{get_profile_list, load_profile, Profile};
     use compact_str::CompactString;
@@ -404,60 +414,9 @@ mod tests {
 
     #[test]
     fn test_get_profile_list_err_load() {
-        let dummy_stored_static =
-            create_dummy_stored_static(Action::CsvTimeline(CsvOutputOption {
-                output_options: OutputOption {
-                    input_args: InputOption {
-                        directory: None,
-                        filepath: None,
-                        live_analysis: false,
-                    },
-                    profile: None,
-                    enable_deprecated_rules: false,
-                    exclude_status: None,
-                    min_level: "informational".to_string(),
-                    exact_level: None,
-                    enable_noisy_rules: false,
-                    end_timeline: None,
-                    start_timeline: None,
-                    eid_filter: false,
-                    european_time: false,
-                    iso_8601: false,
-                    rfc_2822: false,
-                    rfc_3339: false,
-                    us_military_time: false,
-                    us_time: false,
-                    utc: false,
-                    visualize_timeline: false,
-                    rules: Path::new("./rules").to_path_buf(),
-                    html_report: None,
-                    no_summary: false,
-                    common_options: CommonOptions {
-                        no_color: false,
-                        quiet: false,
-                    },
-                    detect_common_options: DetectCommonOption {
-                        evtx_file_ext: None,
-                        thread_number: None,
-                        quiet_errors: false,
-                        config: Path::new("./rules/config").to_path_buf(),
-                        verbose: false,
-                        json_input: false,
-                    },
-                    enable_unsupported_rules: false,
-                    clobber: false,
-                    tags: None,
-                    include_category: None,
-                    exclude_category: None,
-                },
-                geo_ip: None,
-                output: None,
-                multiline: false,
-                remove_duplicate_data: false,
-            }));
         assert_eq!(
             Nested::<Vec<String>>::new(),
-            get_profile_list("test_files/not_exist_path", &dummy_stored_static)
+            get_profile_list("test_files/not_exist_path")
         );
     }
 
@@ -525,6 +484,8 @@ mod tests {
                         directory: None,
                         filepath: None,
                         live_analysis: false,
+                        recover_records: false,
+                        timeline_offset: None,
                     },
                     profile: None,
                     enable_deprecated_rules: false,
@@ -557,17 +518,27 @@ mod tests {
                         config: Path::new("./rules/config").to_path_buf(),
                         verbose: false,
                         json_input: false,
+                        include_computer: None,
+                        exclude_computer: None,
                     },
                     enable_unsupported_rules: false,
                     clobber: false,
-                    tags: None,
+                    proven_rules: false,
+                    include_tag: None,
+                    exclude_tag: None,
                     include_category: None,
                     exclude_category: None,
+                    include_eid: None,
+                    exclude_eid: None,
+                    no_field: false,
+                    no_pwsh_field_extraction: false,
+                    remove_duplicate_data: false,
+                    remove_duplicate_detections: false,
+                    no_wizard: true,
                 },
                 geo_ip: None,
                 output: None,
                 multiline: false,
-                remove_duplicate_data: false,
             }));
         *GEOIP_DB_PARSER.write().unwrap() = None;
         assert_eq!(
@@ -589,6 +560,8 @@ mod tests {
                         directory: None,
                         filepath: None,
                         live_analysis: false,
+                        recover_records: false,
+                        timeline_offset: None,
                     },
                     profile: Some("minimal".to_string()),
                     enable_deprecated_rules: false,
@@ -621,17 +594,27 @@ mod tests {
                         config: Path::new("./rules/config").to_path_buf(),
                         verbose: false,
                         json_input: false,
+                        include_computer: None,
+                        exclude_computer: None,
                     },
                     enable_unsupported_rules: false,
                     clobber: false,
-                    tags: None,
+                    proven_rules: false,
+                    include_tag: None,
+                    exclude_tag: None,
                     include_category: None,
                     exclude_category: None,
+                    include_eid: None,
+                    exclude_eid: None,
+                    no_field: false,
+                    no_pwsh_field_extraction: false,
+                    remove_duplicate_data: false,
+                    remove_duplicate_detections: false,
+                    no_wizard: true,
                 },
                 geo_ip: None,
                 output: None,
                 multiline: false,
-                remove_duplicate_data: false,
             }));
 
         let expect: Vec<(CompactString, Profile)> = vec![
@@ -683,6 +666,8 @@ mod tests {
                         directory: None,
                         filepath: None,
                         live_analysis: false,
+                        recover_records: false,
+                        timeline_offset: None,
                     },
                     profile: Some("not_exist".to_string()),
                     enable_deprecated_rules: false,
@@ -715,17 +700,27 @@ mod tests {
                         config: Path::new("./rules/config").to_path_buf(),
                         verbose: false,
                         json_input: false,
+                        include_computer: None,
+                        exclude_computer: None,
                     },
                     enable_unsupported_rules: false,
                     clobber: false,
-                    tags: None,
+                    proven_rules: false,
+                    include_tag: None,
+                    exclude_tag: None,
                     include_category: None,
                     exclude_category: None,
+                    include_eid: None,
+                    exclude_eid: None,
+                    no_field: false,
+                    no_pwsh_field_extraction: false,
+                    remove_duplicate_data: false,
+                    remove_duplicate_detections: false,
+                    no_wizard: true,
                 },
                 geo_ip: None,
                 output: None,
                 multiline: false,
-                remove_duplicate_data: false,
             }));
         //両方のファイルが存在しない場合
         assert_eq!(
@@ -769,18 +764,6 @@ mod tests {
         expect.push(vec!["standard".to_string(), "%Timestamp%, %Computer%, %Channel%, %EventID%, %Level%, %MitreTags%, %RecordID%, %RuleTitle%, %Details%".to_string()]);
         expect.push(vec!["verbose-1".to_string(), "%Timestamp%, %Computer%, %Channel%, %EventID%, %Level%, %MitreTags%, %RecordID%, %RuleTitle%, %Details%, %RuleFile%, %EvtxFile%".to_string()]);
         expect.push(vec!["verbose-2".to_string(), "%Timestamp%, %Computer%, %Channel%, %EventID%, %Level%, %MitreTags%, %RecordID%, %RuleTitle%, %Details%, %AllFieldInfo%".to_string()]);
-        assert_eq!(
-            expect,
-            get_profile_list(
-                "test_files/config/profiles.yaml",
-                &create_dummy_stored_static(Action::UpdateRules(UpdateOption {
-                    rules: Path::new("./rules").to_path_buf(),
-                    common_options: CommonOptions {
-                        no_color: false,
-                        quiet: false,
-                    },
-                }))
-            )
-        );
+        assert_eq!(expect, get_profile_list("test_files/config/profiles.yaml"));
     }
 }

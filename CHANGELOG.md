@@ -1,25 +1,112 @@
 # Changes
 
-## 2.7.0 [2023/xx/xx]
+## 2.11.0 [2023/12/03] "Nasi Lemak Release"
 
 **New Features:**
 
+- Extraction of fields from PowerShell classic logs. (Can disable with `--no-pwsh-field-extraction`) (#1220) (@fukusuket)
+
+**Enhancements:**
+
+- Added rule count in the scan wizard. (#1206) (@hitenkoku)
+
+## 2.10.1 [2023/11/13] "Kamemushi Release"
+
+**Enhancements:**
+
+- Added questions to the scan wizard. (#1207) (@hitenkoku)
+
+**Bug Fixes:**
+
+- `update-rules` command would output `You currently have the latest rules` even if new rules were downloaded in version `2.10.0`. (#1209) (@fukusuket)
+- Regular expressions would sometimes be incorrectly handled. (#1212) (@fukusuket)
+- In the rare case that there is no `Data` field such as for JSON input, a panic would occur. (#1215) (@fukusuket)
+
+## 2.10.0 [2023/10/31] "Halloween Release"
+
+**Enhancements:**
+
+- Added a scan wizard to help new users choose which rules they want to enable. Add the `-w, --no-wizard` option to run Hayabusa in the traditional way. (Scan for all events and alerts, and customize options manually.) (#1188) (@hitenkoku)
+- Added the `--include-tag` option to the `pivot-keywords-list` command to only load rules with the specified `tags` field. (#1195) (@hitenkoku)
+- Added the `--exclude-tag` option to the `pivot-keywords-list` command to exclude rules with specific `tags` from being loaded. (#1195) (@hitenkoku)
+
+**Bug Fixes:**
+
+- Fixed that field information defined in `Details` was also output to `ExtraFieldInfo` in some cases. (#1145) (@hitenkoku)
+- Fixed output of newline and tab characters in `AllFieldInfo` in JSON output. (#1189) (@hitenkoku)
+- Fixed output of space characters in some fields in standard output. (#1192) (@hitenkoku)
+
+## 2.9.0 [2023/09/22] "Autumn Rain Release"
+
+**Enhancements:**
+
+- Added an error message to indicate that when you can't load evtx files in Windows due to specifying a directory path with spaces in it, you need to remove the trailing backslash. (#1166) (@hitenkoku, thanks for the suggestion from @joswr1ght)
+- Optimized the number of records to load at a time for performance. (#1175) (@yamatosecurity)
+- Replaced double backslashes in paths under the progress bar on Windows systems with single forward slashes. (#1172) (@hitenkoku)
+- Made the `Details` field for `count` rules a string in the JSON output for easier parsing. (#1179) (@hitenkoku)
+- Changed the default number of threads from number of CPUs to the estimate of the default amount of parallelism a program should use (`std::thread::available_parallelism`). (#1182) (@hitenkoku)
+
+**Bug Fixes:**
+
+- Fixed JSON fields would not be correctly parsed in rare cases. (#1145) (@hitenkoku)
+
+**Other:**
+
+- Removed the unmaintained `hhmmss` crate that uses an old `time` crate in order to pass the code coverage CI checks. (#1181) (@hitenkoku)
+
+## 2.8.0 [2023/09/01] "Double X Release"
+
+**New Features:**
+
+- Added support for `HexToDecimal` in the field mapping configuration files to convert hex values to decimal. (Useful for converting the original process IDs from hex to decimal.) (#1133) (@fukusuket)
+- Added `-x, --recover-records` option to `csv-timeline` and `json-timeline` to recover evtx records through file carving in evtx slack space. (#952) (@hitenkoku) (Evtx carving feature is thanks to @forensicmatt)
+- Added `-X, --remove-duplicate-detections` option to `csv-timeline` and `json-timeline` to not output any duplicate detection entries. (Useful when you use `-x`, include backup logs or logs extracted from VSS with duplicate data, etc...)
+- Added a `--timeline-offset` option to `csv-timeline`, `json-timeline`, `logon-summary`, `eid-metrics`, `pivot-keywords-list` and `search` commands to scan just recent events based on a offset of years, months, days, hours, etc... (#1159) (@hitenkoku)
+- Added a `-a, --and-logic` option in the `search` command to search keywords with AND logic. (#1162) (@hitenkoku)
+
+**Other:**
+
+- When using `-x, --recover-records`, an additional `%RecoveredRecord%` field will be added to the output profile and will output `Y` to indicate if a record was recovered. (#1160) (@hitenkoku)
+
+## 2.7.0 [2023/08/03] "SANS DFIR Summit Release"
+
+**New Features:**
+
+- Certain code numbers are now mapped to human-readable messages based on the `.yaml` config files in `./rules/config/data_mapping`. (Example: `%%2307` will be converted to `ACCOUNT LOCKOUT`). You can turn off this behavior with the `-F, --no-field-data-mapping` option. (#177) (@fukusuket)
 - Added the `-R, --remove-duplicate-data` option in the `csv-timeline` command to replace duplicate field data with the string `DUP` in the `%Details%`, `%AllFieldInfo%`, `%ExtraFieldInfo%` columns to reduce file size. (#1056) (@hitenkoku)
+- Added the `-P, --proven-rules` option in `csv-timeline` and `json-timeline` commands. When used, Hayabusa will only load rules that have been proven to work. These are defined by rule ID in the `./rules/config/proven_rules.txt` config file. (#1115) (@hitenkoku)
+- Added the `--include-tag` option to `csv-timeline` and `json-timeline` commands to only load rules with the specified `tags` field. (#1108) (@hitenkoku)
+- Added the `--exclude-tag` option to `csv-timeline` and `json-timeline` commands to exclude rules with specific `tags` from being loaded. (#1118) (@hitenkoku)
 - Added `--include-category` and `--exclude-category` options to `csv-timeline` and `json-timeline` commands. When using `--include-category`, only rules with the specified `category` field will be loaded. `--exclude-category` will exclude rules from being loaded based on `category`. (#1119) (@hitenkoku)
+- Added the `computer-metrics` command to list up how many events there are based on computer name. (#1116) (@hitenkoku)
+- Added `--include-computer` and `--exclude-computer` options to `csv-timeline`, `json-timeline`, `metrics`, `logon-summary` and `pivot-keywords-list` commands. The `--include-computer` option only scans the specified computer(s). `--exclude-computer` excludes them. (#1117) (@hitenkoku)
+- Added `--include-eid` and `--exclude-eid` options to `csv-timeline`, `json-timeline`, and `pivot-keywords-list` commands. The `--include-eid` option only scans the specified EventID(s). `--exclude-eid` excludes them. (#1130) (@hitenkoku)
+- Added the `-R, --remove-duplicate-data` option to the `json-timeline` command to replace duplicate field data with the string `DUP` in the `%Details%`, `%AllFieldInfo%`, `%ExtraFieldInfo%` fields to reduce file size. (#1134) (@hitenkoku)
 
 **Enhancements:**
 
 - Ignore corrupted event records with timestamps before 2007/1/31 when Windows Vista was released with the new `.evtx` log format. (#1102) (@fukusuket)
-- Modified don't output to terminal when `--output` is set in `metrics` command. (#1099) (@hitenkoku)
-- Added `--tags` option to `csv-timeline` and `json-timeline` commands to allow scanning only for rules with the specified `tags` field. (#1108) (@hitenkoku)
+- When `--output` is set in the `metrics` command, the results will not be displayed to screen. (#1099) (@hitenkoku)
+- Added the `-C, --clobber` option to overwrite existing output files in the `pivot-keywords-list` command. (#1125) (@hitenkoku)
+- Renamed the `metrics` command to `eid-metrics`. (#1128) (@hitenkoku)
+- Reduced progress bar width to leave room for adjustment of the terminal. (#1135) (@hitenkoku)
+- Added support for outputing timestamps in the following formats in the `search` command: `--European-time`, `--ISO-8601`, `--RFC-2822`, `--RFC-3339`, `--US-time`, `--US-military-time`, `-U, --UTC`. (#1040) (@hitenkoku)
+- Replaced the ETA time in the progress bar with elapsed time as the ETA time was not accurate. (#1143) (@YamatoSecurity)
+- Added `--timeline-start` and `--timeline-end` to the `logon-summary` command. (#1152) (@hitenkoku)
 
 **Bug Fixes:**
 
 - The total number of records being displayed in the `metrics` and `logon-summary` commands differed from the `csv-timeline` command. (#1105) (@hitenkoku)
+- Changed rule count by rule ID instead of path. (#1113) (@hitenkoku)
+- Fixed a problem with incorrect field splitting in the `CommandLine` field in JSON output. (#1145) (@hitenkoku)
+- `--timeline-start` and `--timeline-end` were not working correctly with the `json-timeline` command. (#1148) (@hitenkoku)
+- `--timeline-start` and `--timeline-end` were not working correctly with the `pivot-keywords-list` command. (#1150) (@hitenkoku)
 
 **Other:**
 
-- The total counts of unique detections are now based on rule ID instead of rule file paths. (#1111) (@hitenkoku)
+- The total count of unique detections are now based on rule IDs instead of rule file paths. (#1111) (@hitenkoku)
+- Renamed the `--live_analysis` option to `--live-analysis`. (#1139) (@hitenkoku)
+- Renamed the `metrics` command to `eid-metrics`. (#1128) (@hitenkoku)
 
 ## 2.6.0 [2023/06/16] "Ajisai Release"
 

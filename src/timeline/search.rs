@@ -1,3 +1,7 @@
+use crate::detections::configs::OutputOption;
+use crate::detections::field_data_map::FieldDataMapKey;
+use crate::detections::message;
+use crate::detections::utils::format_time;
 use crate::{
     afterfact::output_json_str,
     detections::{
@@ -8,6 +12,7 @@ use crate::{
     },
     options::profile::Profile,
 };
+use chrono::{TimeZone, Utc};
 use compact_str::CompactString;
 use csv::{QuoteStyle, WriterBuilder};
 use downcast_rs::__std::process;
@@ -64,21 +69,28 @@ impl EventSearch {
         stored_static: &StoredStatic,
     ) {
         if !keywords.is_empty() {
-            // 大文字小文字を区別しないかどうかのフラグを設定
-            let case_insensitive_flag = match &stored_static.config.action {
-                Some(Action::Search(opt)) => opt.ignore_case,
-                _ => false,
+            // 大文字小文字を区別しないかどうか、and検索を行うかのフラグを設定
+            let (case_insensitive_flag, and_logic_flag) = match &stored_static.config.action {
+                Some(Action::Search(opt)) => (opt.ignore_case, opt.and_logic),
+                _ => (false, false),
             };
             self.search_keyword(
                 records,
                 keywords,
                 filters,
                 eventkey_alias,
-                case_insensitive_flag,
+                stored_static.output_option.as_ref().unwrap(),
+                (case_insensitive_flag, and_logic_flag),
             );
         }
         if let Some(re) = regex {
-            self.search_regex(records, re, filters, eventkey_alias);
+            self.search_regex(
+                records,
+                re,
+                filters,
+                eventkey_alias,
+                stored_static.output_option.as_ref().unwrap(),
+            );
         }
     }
 
@@ -125,7 +137,8 @@ impl EventSearch {
         keywords: &[String],
         filters: &[String],
         eventkey_alias: &EventKeyAliasConfig,
-        case_insensitive_flag: bool, // 検索時に大文字小文字を区別するかどうか
+        output_option: &OutputOption,
+        (case_insensitive_flag, and_logic_flag): (bool, bool), // 検索時に大文字小文字を区別するかどうか, 検索時にAND条件で検索するかどうか
     ) {
         if records.is_empty() {
             return;
@@ -144,16 +157,30 @@ impl EventSearch {
                 record.data_string.clone()
             };
             self.filepath = CompactString::from(record.evtx_filepath.as_str());
-            if keywords.iter().any(|key| {
-                let converted_key = if case_insensitive_flag {
-                    key.to_lowercase()
+            let search_condition = |keywords: &[String]| -> bool {
+                if and_logic_flag {
+                    keywords.iter().all(|key| {
+                        let converted_key = if case_insensitive_flag {
+                            key.to_lowercase()
+                        } else {
+                            key.clone()
+                        };
+                        utils::contains_str(&search_target, &converted_key)
+                    })
                 } else {
-                    key.clone()
-                };
-                utils::contains_str(&search_target, &converted_key)
-            }) {
+                    keywords.iter().any(|key| {
+                        let converted_key = if case_insensitive_flag {
+                            key.to_lowercase()
+                        } else {
+                            key.clone()
+                        };
+                        utils::contains_str(&search_target, &converted_key)
+                    })
+                }
+            };
+            if search_condition(keywords) {
                 let (timestamp, hostname, channel, eventid, recordid, allfieldinfo) =
-                    extract_search_event_info(record, eventkey_alias);
+                    extract_search_event_info(record, eventkey_alias, output_option);
 
                 self.search_result.insert((
                     timestamp,
@@ -175,6 +202,7 @@ impl EventSearch {
         regex: &str,
         filters: &[String],
         eventkey_alias: &EventKeyAliasConfig,
+        output_option: &OutputOption,
     ) {
         let re = Regex::new(regex).unwrap_or_else(|err| {
             AlertMessage::alert(&format!("Failed to create regex pattern. \n{err}")).ok();
@@ -194,7 +222,7 @@ impl EventSearch {
             self.filepath = CompactString::from(record.evtx_filepath.as_str());
             if re.is_match(&record.data_string) {
                 let (timestamp, hostname, channel, eventid, recordid, allfieldinfo) =
-                    extract_search_event_info(record, eventkey_alias);
+                    extract_search_event_info(record, eventkey_alias, output_option);
                 self.search_result.insert((
                     timestamp,
                     hostname,
@@ -235,6 +263,7 @@ fn create_filter_rule(filters: &[String]) -> HashMap<String, Nested<String>> {
 fn extract_search_event_info(
     record: &EvtxRecordInfo,
     eventkey_alias: &EventKeyAliasConfig,
+    output_option: &OutputOption,
 ) -> (
     CompactString,
     CompactString,
@@ -243,20 +272,10 @@ fn extract_search_event_info(
     CompactString,
     CompactString,
 ) {
-    let timestamp = utils::get_event_value(
-        "Event.System.TimeCreated_attributes.SystemTime",
-        &record.record,
-        eventkey_alias,
-    )
-    .map(|evt_value| {
-        evt_value
-            .as_str()
-            .unwrap_or_default()
-            .replace("\\\"", "")
-            .replace('"', "")
-    })
-    .unwrap_or_else(|| "n/a".into())
-    .replace(['"', '\''], "");
+    let default_time = Utc.with_ymd_and_hms(1970, 1, 1, 0, 0, 0).unwrap();
+    let timestamp_datetime = message::get_event_time(&record.record, false).unwrap_or(default_time);
+
+    let timestamp = format_time(&timestamp_datetime, false, output_option);
 
     let hostname = CompactString::from(
         utils::get_serde_number_to_string(
@@ -289,15 +308,15 @@ fn extract_search_event_info(
         _ => CompactString::new("-"),
     };
 
-    let datainfo = utils::create_recordinfos(&record.record);
+    let datainfo = utils::create_recordinfos(&record.record, &FieldDataMapKey::default(), &None);
     let allfieldinfo = if !datainfo.is_empty() {
-        datainfo.into()
+        datainfo.join(" ¦ ").into()
     } else {
         CompactString::new("-")
     };
 
     (
-        timestamp.into(),
+        timestamp,
         hostname,
         channel,
         eventid.into(),
@@ -413,41 +432,47 @@ pub fn search_result_dsp_msg(
             file_wtr.as_mut().unwrap().write_record(&record_data).ok();
         } else if output.is_some() && (json_output || jsonl_output) {
             file_wtr.as_mut().unwrap().write_field("{").ok();
+            let (output_json_str_ret, _) = output_json_str(
+                &vec![
+                    (
+                        "Timestamp".into(),
+                        Profile::Timestamp(timestamp.clone().into()),
+                    ),
+                    (
+                        "Hostname".into(),
+                        Profile::Computer(hostname.clone().into()),
+                    ),
+                    (
+                        "Channel".into(),
+                        Profile::Channel(abbr_channel.clone().into()),
+                    ),
+                    ("Event ID".into(), Profile::EventID(event_id.clone().into())),
+                    (
+                        "Record ID".into(),
+                        Profile::RecordID(record_id.clone().into()),
+                    ),
+                    (
+                        "EventTitle".into(),
+                        Profile::Literal(event_title.clone().into()),
+                    ),
+                    (
+                        "AllFieldInfo".into(),
+                        Profile::AllFieldInfo(all_field_info.into()),
+                    ),
+                    ("EvtxFile".into(), Profile::EvtxFile(evtx_file.into())),
+                ],
+                HashMap::new(),
+                jsonl_output,
+                false,
+                false,
+                false,
+                &[&HashMap::default(), &HashMap::default()],
+            );
+
             file_wtr
                 .as_mut()
                 .unwrap()
-                .write_field(output_json_str(
-                    &vec![
-                        (
-                            "Timestamp".into(),
-                            Profile::Timestamp(timestamp.clone().into()),
-                        ),
-                        (
-                            "Hostname".into(),
-                            Profile::Computer(hostname.clone().into()),
-                        ),
-                        (
-                            "Channel".into(),
-                            Profile::Channel(abbr_channel.clone().into()),
-                        ),
-                        ("Event ID".into(), Profile::EventID(event_id.clone().into())),
-                        (
-                            "Record ID".into(),
-                            Profile::RecordID(record_id.clone().into()),
-                        ),
-                        (
-                            "EventTitle".into(),
-                            Profile::Literal(event_title.clone().into()),
-                        ),
-                        (
-                            "AllFieldInfo".into(),
-                            Profile::AllFieldInfo(all_field_info.into()),
-                        ),
-                        ("EvtxFile".into(), Profile::EvtxFile(evtx_file.into())),
-                    ],
-                    jsonl_output,
-                    false,
-                ))
+                .write_field(output_json_str_ret)
                 .ok();
             file_wtr.as_mut().unwrap().write_field("}").ok();
         } else {
