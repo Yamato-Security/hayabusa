@@ -315,7 +315,6 @@ impl ParseYaml {
                 return Option::None;
             }
 
-            let status = yaml_doc["status"].as_str();
             if let Some(s) = yaml_doc["status"].as_str() {
                 // excluded status optionで指定されたstatusとinclude_status optionで指定されたstatus以外のルールは除外する
                 if self.exclude_status.contains(&s.to_string())
@@ -326,131 +325,135 @@ impl ParseYaml {
                     return Option::None;
                 }
                 if exist_output_opt
-                    && ((s == "deprecated"
+                    && (s == "deprecated"
                         && !stored_static
                             .output_option
                             .as_ref()
                             .unwrap()
-                            .enable_unsupported_rules))
-            {
-                // deprecated or unsupported statusで対応するenable-xxx-rules optionが指定されていない場合はステータスのカウントのみ行ったうえで除外する
-                up_rule_status_cnt(status);
-                return Option::None;
-            }
-
-            if exist_output_opt {
-                let category_in_rule = yaml_doc["logsource"]["category"]
-                    .as_str()
-                    .unwrap_or_default();
-                let mut include_category = &Vec::default();
-                let mut exclude_category = &Vec::default();
-
-                if let Some(tmp) = &stored_static
-                    .output_option
-                    .as_ref()
-                    .unwrap()
-                    .include_category
+                            .enable_unsupported_rules)
                 {
-                    include_category = tmp;
-                }
-
-                if let Some(tmp) = &stored_static
-                    .output_option
-                    .as_ref()
-                    .unwrap()
-                    .exclude_category
-                {
-                    exclude_category = tmp;
-                }
-
-                if !include_category.is_empty()
-                    && !include_category.contains(&category_in_rule.to_string())
-                {
-                    up_rule_load_cnt("excluded");
+                    // deprecated or unsupported statusで対応するenable-xxx-rules optionが指定されていない場合はステータスのカウントのみ行ったうえで除外する
+                    up_rule_status_cnt(s);
                     return Option::None;
                 }
-                if !exclude_category.is_empty()
-                    && exclude_category.contains(&category_in_rule.to_string())
-                {
-                    up_rule_load_cnt("excluded");
-                    return Option::None;
-                }
-            }
 
-            // tags optionで指定されたtagsを持たないルールは除外する
-            if exist_output_opt
-                && stored_static
-                    .output_option
-                    .as_ref()
-                    .unwrap()
-                    .include_tag
-                    .is_some()
-            {
-                let target_tags = stored_static
-                    .output_option
-                    .as_ref()
-                    .unwrap()
-                    .include_tag
-                    .as_ref()
-                    .unwrap();
-                let rule_tags_vec = yaml_doc["tags"].as_vec();
-                if let Some(rule_tags) = rule_tags_vec {
-                    let is_match = rule_tags.iter().any(|tag| {
-                        target_tags.contains(&tag.as_str().unwrap_or_default().to_string())
-                    });
-                    if !is_match {
+                if exist_output_opt {
+                    let category_in_rule = yaml_doc["logsource"]["category"]
+                        .as_str()
+                        .unwrap_or_default();
+                    let mut include_category = &Vec::default();
+                    let mut exclude_category = &Vec::default();
+
+                    if let Some(tmp) = &stored_static
+                        .output_option
+                        .as_ref()
+                        .unwrap()
+                        .include_category
+                    {
+                        include_category = tmp;
+                    }
+
+                    if let Some(tmp) = &stored_static
+                        .output_option
+                        .as_ref()
+                        .unwrap()
+                        .exclude_category
+                    {
+                        exclude_category = tmp;
+                    }
+
+                    if !include_category.is_empty()
+                        && !include_category.contains(&category_in_rule.to_string())
+                    {
                         up_rule_load_cnt("excluded");
                         return Option::None;
                     }
-                } else {
-                    up_rule_load_cnt("excluded");
-                    return Option::None;
-                }
-            }
-
-            // exclude-tag optionで指定されたtagを持つルールは除外する
-            if stored_static.output_option.is_some()
-                && stored_static
-                    .output_option
-                    .as_ref()
-                    .unwrap()
-                    .exclude_tag
-                    .is_some()
-            {
-                let exclude_target_tags = stored_static
-                    .output_option
-                    .as_ref()
-                    .unwrap()
-                    .exclude_tag
-                    .as_ref()
-                    .unwrap();
-                let rule_tags_vec = yaml_doc["tags"].as_vec();
-                if let Some(rule_tags) = rule_tags_vec {
-                    let is_match = rule_tags.iter().any(|tag| {
-                        exclude_target_tags.contains(&tag.as_str().unwrap_or_default().to_string())
-                    });
-                    if is_match {
+                    if !exclude_category.is_empty()
+                        && exclude_category.contains(&category_in_rule.to_string())
+                    {
                         up_rule_load_cnt("excluded");
                         return Option::None;
                     }
                 }
+
+                // tags optionで指定されたtagsを持たないルールは除外する
+                if exist_output_opt
+                    && stored_static
+                        .output_option
+                        .as_ref()
+                        .unwrap()
+                        .include_tag
+                        .is_some()
+                {
+                    let target_tags = stored_static
+                        .output_option
+                        .as_ref()
+                        .unwrap()
+                        .include_tag
+                        .as_ref()
+                        .unwrap();
+                    let rule_tags_vec = yaml_doc["tags"].as_vec();
+                    if let Some(rule_tags) = rule_tags_vec {
+                        let is_match = rule_tags.iter().any(|tag| {
+                            target_tags.contains(&tag.as_str().unwrap_or_default().to_string())
+                        });
+                        if !is_match {
+                            up_rule_load_cnt("excluded");
+                            return Option::None;
+                        }
+                    } else {
+                        up_rule_load_cnt("excluded");
+                        return Option::None;
+                    }
+                }
+
+                // exclude-tag optionで指定されたtagを持つルールは除外する
+                if stored_static.output_option.is_some()
+                    && stored_static
+                        .output_option
+                        .as_ref()
+                        .unwrap()
+                        .exclude_tag
+                        .is_some()
+                {
+                    let exclude_target_tags = stored_static
+                        .output_option
+                        .as_ref()
+                        .unwrap()
+                        .exclude_tag
+                        .as_ref()
+                        .unwrap();
+                    let rule_tags_vec = yaml_doc["tags"].as_vec();
+                    if let Some(rule_tags) = rule_tags_vec {
+                        let is_match = rule_tags.iter().any(|tag| {
+                            exclude_target_tags
+                                .contains(&tag.as_str().unwrap_or_default().to_string())
+                        });
+                        if is_match {
+                            up_rule_load_cnt("excluded");
+                            return Option::None;
+                        }
+                    }
+                }
+
+                self.rulecounter.insert(
+                    yaml_doc["ruletype"].as_str().unwrap_or("Other").into(),
+                    self.rulecounter
+                        .get(yaml_doc["ruletype"].as_str().unwrap_or("Other"))
+                        .unwrap_or(&0)
+                        + 1,
+                );
+
+                up_rule_status_cnt(s);
+
+                if stored_static.verbose_flag {
+                    println!("Loaded rule: {filepath}");
+                }
+
+                Option::Some((filepath, yaml_doc))
+            } else {
+                Option::None
             }
-
-            self.rulecounter.insert(
-                yaml_doc["ruletype"].as_str().unwrap_or("Other").into(),
-                self.rulecounter
-                    .get(yaml_doc["ruletype"].as_str().unwrap_or("Other"))
-                    .unwrap_or(&0)
-                    + 1,
-            );
-
-            up_rule_status_cnt(status);
-
-            if stored_static.verbose_flag {
-                println!("Loaded rule: {filepath}");
-            }
-
-            Option::Some((filepath, yaml_doc))
         });
         self.files.extend(files);
         io::Result::Ok(String::default())
