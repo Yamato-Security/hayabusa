@@ -558,7 +558,11 @@ fn emit_csv<W: std::io::Write>(
     disp_wtr_buf.clear();
     let level_abbr: Nested<Vec<CompactString>> = Nested::from_iter(
         vec![
-            [CompactString::from("undefined"), CompactString::from("undefined")].to_vec(),
+            [
+                CompactString::from("undefined"),
+                CompactString::from("undefined"),
+            ]
+            .to_vec(),
             [CompactString::from("critical"), CompactString::from("crit")].to_vec(),
             [CompactString::from("high"), CompactString::from("high")].to_vec(),
             [CompactString::from("medium"), CompactString::from("med ")].to_vec(),
