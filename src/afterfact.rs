@@ -1619,19 +1619,36 @@ pub fn output_json_str(
                     } else {
                         output_stock.push(format!("    \"{key}\": {{"));
                     };
-                    for (idx, contents) in details_target_stock.iter().enumerate() {
+                    let mut children_output_stock: HashMap<CompactString, Vec<CompactString>> =
+                        HashMap::new();
+                    for contents in details_target_stock.iter() {
                         let (key, value) = contents.split_once(':').unwrap_or_default();
                         let output_key = _convert_valid_json_str(&[key], false);
                         let fmted_val = _convert_valid_json_str(&[value.trim_start()], false);
-
-                        if idx != details_target_stock.len() - 1 {
+                        children_output_stock
+                            .entry(output_key.into())
+                            .or_insert(vec![])
+                            .push(fmted_val.into());
+                    }
+                    let mut sorted_children_output_stock: Vec<(
+                        &CompactString,
+                        &Vec<CompactString>,
+                    )> = children_output_stock.iter().collect_vec();
+                    sorted_children_output_stock.sort_by(|a, b| a.0.cmp(b.0));
+                    for (idx, (c_key, c_val)) in sorted_children_output_stock.iter().enumerate() {
+                        let fmted_c_val = if c_val.len() == 1 {
+                            c_val[0].to_string()
+                        } else {
+                            format!("[{}]", c_val.iter().map(|x| format!("\"{x}\"")).join(", "))
+                        };
+                        if idx != sorted_children_output_stock.len() - 1 {
                             output_stock.push(format!(
                                 "{},",
                                 _create_json_output_format(
-                                    &output_key,
-                                    &fmted_val,
-                                    key.starts_with('\"'),
-                                    fmted_val.starts_with('\"'),
+                                    c_key,
+                                    &fmted_c_val,
+                                    c_key.starts_with('\"'),
+                                    fmted_c_val.starts_with('\"') || fmted_c_val.starts_with('['),
                                     8
                                 )
                             ));
@@ -1645,10 +1662,10 @@ pub fn output_json_str(
                             output_stock.push(format!(
                                 "{}{last_contents_end}",
                                 _create_json_output_format(
-                                    key,
-                                    &fmted_val,
-                                    key.starts_with('\"'),
-                                    fmted_val.starts_with('\"'),
+                                    c_key,
+                                    &fmted_c_val,
+                                    c_key.starts_with('\"'),
+                                    fmted_c_val.starts_with('\"') || fmted_c_val.starts_with('['),
                                     8,
                                 )
                             ));
