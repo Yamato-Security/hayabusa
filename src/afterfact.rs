@@ -1639,8 +1639,17 @@ pub fn output_json_str(
                         let fmted_c_val = if c_val.len() == 1 {
                             c_val[0].to_string()
                         } else {
-                            format!("[{}]", c_val.iter().map(|x| format!("\"{x}\"")).join(", "))
+                            format!(
+                                "[{}]",
+                                c_val.iter().map(|x| { format!("\"{x}\"") }).join(", ")
+                            )
                         };
+                        println!(
+                            "dbg : {} | {} -> {}",
+                            &fmted_c_val,
+                            fmted_c_val.starts_with('['),
+                            fmted_c_val.ends_with(']')
+                        );
                         if idx != sorted_children_output_stock.len() - 1 {
                             output_stock.push(format!(
                                 "{},",
@@ -1648,7 +1657,7 @@ pub fn output_json_str(
                                     c_key,
                                     &fmted_c_val,
                                     c_key.starts_with('\"'),
-                                    fmted_c_val.starts_with('\"') || fmted_c_val.starts_with('['),
+                                    fmted_c_val.starts_with('\"') || c_val.len() != 1,
                                     8
                                 )
                             ));
@@ -1665,7 +1674,7 @@ pub fn output_json_str(
                                     c_key,
                                     &fmted_c_val,
                                     c_key.starts_with('\"'),
-                                    fmted_c_val.starts_with('\"') || fmted_c_val.starts_with('['),
+                                    fmted_c_val.starts_with('\"') || c_val.len() != 1,
                                     8,
                                 )
                             ));
