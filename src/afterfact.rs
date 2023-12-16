@@ -1644,12 +1644,6 @@ pub fn output_json_str(
                                 c_val.iter().map(|x| { format!("\"{x}\"") }).join(", ")
                             )
                         };
-                        println!(
-                            "dbg : {} | {} -> {}",
-                            &fmted_c_val,
-                            fmted_c_val.starts_with('['),
-                            fmted_c_val.ends_with(']')
-                        );
                         if idx != sorted_children_output_stock.len() - 1 {
                             output_stock.push(format!(
                                 "{},",
