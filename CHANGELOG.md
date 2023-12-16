@@ -4,7 +4,7 @@
 
 **Enhancements:**
 
-- `%MitreTactics%`, `%MitreTags%`, `%OtherTags%` in an array of strings in JSON output. (#1230) (@hitenkoku)
+- `%MitreTactics%`, `%MitreTags%`, `%OtherTags%` fields are now outputted as an array of strings in JSON output. (#1230) (@hitenkoku)
 
 **Bug Fixes:**
 
