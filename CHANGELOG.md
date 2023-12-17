@@ -2,6 +2,10 @@
 
 ## 2.12.0 [xxxx/xx/xx]
 
+**Enhancements:**
+
+- `%MitreTactics%`, `%MitreTags%`, `%OtherTags%` fields are now outputted as an array of strings in JSON output. (#1230) (@hitenkoku)
+
 **Bug Fixes:**
 
 - In JSON output, multiple field names with the same names were not outputted as an array so only one result would be returned when parsing with `jq`. We fixed this by outputting multiple field data with the same field name inside an array. (#1202) (@hitenkoku)
