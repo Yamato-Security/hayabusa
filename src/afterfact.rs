@@ -1699,7 +1699,10 @@ pub fn output_json_str(
                         if idx == 0 {
                             value.push("[\n".to_string());
                         }
-                        let insert_val = format!("        \"{}\"", tag_val.trim());
+                        let insert_val = format!(
+                            "        \"{}\"",
+                            tag_val.split('¦').map(|x| x.trim()).join("\", \"")
+                        );
                         value.push(insert_val);
                         if idx != values_len - 1 {
                             value.push(",\n".to_string());
