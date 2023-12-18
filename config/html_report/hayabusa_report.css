@@ -83,8 +83,10 @@ h3 {
 }
 
 table {
+  max-width: 860px;
   width: 100%;
-  margin: 16px;
+  box-sizing: border-box;
+  padding: 8px;
 }
 
 tbody tr td {
