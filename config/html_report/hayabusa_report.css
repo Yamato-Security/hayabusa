@@ -77,6 +77,35 @@ h3 {
   border-bottom: solid 3px #ffffff;
 }
 
+#computers_with_mitre_attck_detections {
+  color: #ffffff;
+  border-bottom: solid 3px #ffffff;
+}
+
+table {
+  width: 100%;
+  margin: 16px;
+}
+
+tbody tr td {
+  text-align: left;
+}
+
+tr:nth-child(odd) {
+  background-color: #f4faff
+}
+
+tr:nth-child(even) {
+  background-color: #ffffff
+}
+
+th {
+  background-color: #ff0000;
+  color: #ffffff;
+  text-align: center;
+  padding: 8px;
+}
+
 
 li {
   padding: 5px;
