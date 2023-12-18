@@ -5,6 +5,7 @@
 **Enhancements:**
 
 - `%MitreTactics%`, `%MitreTags%`, `%OtherTags%` fields are now outputted as an array of strings in JSON output. (#1230) (@hitenkoku)
+- Added MITRE ATT&CK Tactics list up where detected for each computer to HTML report. This feature needs to exist `%MitreTactics%` in used profile. (#1230)
 
 **Bug Fixes:**
 

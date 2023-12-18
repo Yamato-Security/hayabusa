@@ -5,6 +5,7 @@
 **改善:**
 
 - JSON出力において、MitreTactics、MitreTags, OtherTagsの出力を要素ごとに文字列で出力させるように修正した。 (#1230) (@hitenkoku)
+- 検知した端末に対してMITRE ATT&CKの戦術をHTMLレポートに出力できるようにした。この機能を利用するためには利用したプロファイルに`%MitreTactics%`が存在する必要がある。 (#1226) (@hitenkoku)
 
 **バグ修正:**
 
