@@ -381,7 +381,6 @@ impl Detection {
                     let output_tactics_str = CompactString::from(
                         tactics
                             .clone()
-                            .into_iter()
                             .filter_map(|x| x.split(',').next())
                             .join(" ¦ "),
                     );
