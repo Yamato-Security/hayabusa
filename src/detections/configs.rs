@@ -1109,6 +1109,7 @@ pub struct UpdateOption {
         default_value = "./rules",
         hide_default_value = true,
         value_name = "DIR/FILE",
+        requires = "no_wizard",
         display_order = 440
     )]
     pub rules: PathBuf,
@@ -1194,23 +1195,23 @@ pub struct PivotKeywordOption {
     pub common_options: CommonOptions,
 
     /// Enable rules with a status of deprecated
-    #[arg(help_heading = Some("Filtering"), short = 'D', long = "enable-deprecated-rules", display_order = 310)]
+    #[arg(help_heading = Some("Filtering"), short = 'D', long = "enable-deprecated-rules", requires = "no_wizard", display_order = 310)]
     pub enable_deprecated_rules: bool,
 
     /// Enable rules with a status of unsupported
-    #[arg(help_heading = Some("Filtering"), short = 'u', long = "enable-unsupported-rules", display_order = 312)]
+    #[arg(help_heading = Some("Filtering"), short = 'u', long = "enable-unsupported-rules", requires = "no_wizard", display_order = 312)]
     pub enable_unsupported_rules: bool,
 
     /// Do not load rules according to status (ex: experimental) (ex: stable,test)
-    #[arg(help_heading = Some("Filtering"), long = "exclude-status", value_name = "STATUS...", requires="no_wizard", use_value_delimiter = true, value_delimiter = ',', display_order = 316)]
+    #[arg(help_heading = Some("Filtering"), long = "exclude-status", value_name = "STATUS...", requires = "no_wizard", use_value_delimiter = true, value_delimiter = ',', display_order = 316)]
     pub exclude_status: Option<Vec<String>>,
 
     /// Only load rules with specific tags (ex: attack.execution,attack.discovery)
-    #[arg(help_heading = Some("Filtering"), long = "include-tag", value_name = "TAG...", requires="no_wizard", conflicts_with = "exclude_tag", use_value_delimiter = true, value_delimiter = ',', display_order = 353)]
+    #[arg(help_heading = Some("Filtering"), long = "include-tag", value_name = "TAG...", requires = "no_wizard", conflicts_with = "exclude_tag", use_value_delimiter = true, value_delimiter = ',', display_order = 353)]
     pub include_tag: Option<Vec<String>>,
 
     /// Do not load rules with specific tags (ex: sysmon)
-    #[arg(help_heading = Some("Filtering"), long = "exclude-tag", value_name = "TAG...", requires="no_wizard", conflicts_with = "include_tag", use_value_delimiter = true, value_delimiter = ',', display_order = 316)]
+    #[arg(help_heading = Some("Filtering"), long = "exclude-tag", value_name = "TAG...", requires = "no_wizard", conflicts_with = "include_tag", use_value_delimiter = true, value_delimiter = ',', display_order = 316)]
     pub exclude_tag: Option<Vec<String>>,
 
     /// Minimum level for rules to load (default: informational)
@@ -1221,7 +1222,7 @@ pub struct PivotKeywordOption {
         default_value = "informational",
         hide_default_value = true,
         value_name = "LEVEL",
-        requires="no_wizard",
+        requires = "no_wizard",
         conflicts_with = "exact_level",
         display_order = 390
     )]
@@ -1233,14 +1234,14 @@ pub struct PivotKeywordOption {
         short = 'e',
         long = "exact-level",
         value_name = "LEVEL",
-        requires="no_wizard",
+        requires = "no_wizard",
         conflicts_with = "min_level",
         display_order = 313
     )]
     pub exact_level: Option<String>,
 
     /// Enable rules set to noisy (./rules/config/noisy_rules.txt)
-    #[arg(help_heading = Some("Filtering"), short = 'n', long = "enable-noisy-rules", display_order = 311)]
+    #[arg(help_heading = Some("Filtering"), short = 'n', long = "enable-noisy-rules", requires = "no_wizard", display_order = 311)]
     pub enable_noisy_rules: bool,
 
     /// End time of the event logs to load (ex: "2022-02-22 23:59:59 +09:00")
@@ -1346,27 +1347,27 @@ pub struct OutputOption {
     pub common_options: CommonOptions,
 
     /// Enable rules with a status of deprecated
-    #[arg(help_heading = Some("Filtering"), short = 'D', long = "enable-deprecated-rules", display_order = 310)]
+    #[arg(help_heading = Some("Filtering"), short = 'D', long = "enable-deprecated-rules", requires = "no_wizard", display_order = 310)]
     pub enable_deprecated_rules: bool,
 
     /// Enable rules with a status of unsupported
-    #[arg(help_heading = Some("Filtering"), short = 'u', long = "enable-unsupported-rules", display_order = 312)]
+    #[arg(help_heading = Some("Filtering"), short = 'u', long = "enable-unsupported-rules", requires = "no_wizard", display_order = 312)]
     pub enable_unsupported_rules: bool,
 
     /// Do not load rules according to status (ex: experimental) (ex: stable,test)
-    #[arg(help_heading = Some("Filtering"), long = "exclude-status", value_name = "STATUS...", requires="no_wizard", use_value_delimiter = true, value_delimiter = ',', display_order = 316)]
+    #[arg(help_heading = Some("Filtering"), long = "exclude-status", value_name = "STATUS...", requires = "no_wizard", use_value_delimiter = true, value_delimiter = ',', display_order = 316)]
     pub exclude_status: Option<Vec<String>>,
 
     /// Only load rules with specific tags (ex: attack.execution,attack.discovery)
-    #[arg(help_heading = Some("Filtering"), long = "include-tag", value_name = "TAG...", requires="no_wizard", conflicts_with = "exclude_tag", use_value_delimiter = true, value_delimiter = ',', display_order = 353)]
+    #[arg(help_heading = Some("Filtering"), long = "include-tag", value_name = "TAG...", requires = "no_wizard", conflicts_with = "exclude_tag", use_value_delimiter = true, value_delimiter = ',', display_order = 353)]
     pub include_tag: Option<Vec<String>>,
 
     /// Only load rules with specified logsource categories (ex: process_creation,pipe_created)
-    #[arg(help_heading = Some("Filtering"), long = "include-category", value_name = "CATEGORY...", conflicts_with = "exclude-category", use_value_delimiter = true, value_delimiter = ',', display_order = 351)]
+    #[arg(help_heading = Some("Filtering"), long = "include-category", value_name = "CATEGORY...", conflicts_with = "exclude-category", requires = "no_wizard", use_value_delimiter = true, value_delimiter = ',', display_order = 351)]
     pub include_category: Option<Vec<String>>,
 
     /// Do not load rules with specified logsource categories (ex: process_creation,pipe_created)
-    #[arg(help_heading = Some("Filtering"), long = "exclude-category", value_name = "CATEGORY...", conflicts_with = "include_category",use_value_delimiter = true, value_delimiter = ',', display_order = 314)]
+    #[arg(help_heading = Some("Filtering"), long = "exclude-category", value_name = "CATEGORY...", conflicts_with = "include_category", requires = "no_wizard", use_value_delimiter = true, value_delimiter = ',', display_order = 314)]
     pub exclude_category: Option<Vec<String>>,
 
     /// Minimum level for rules to load (default: informational)
@@ -1375,7 +1376,7 @@ pub struct OutputOption {
         short = 'm',
         long = "min-level",
         default_value = "informational",
-        requires="no_wizard",
+        requires = "no_wizard",
         hide_default_value = true,
         value_name = "LEVEL",
         display_order = 390,
@@ -1388,14 +1389,14 @@ pub struct OutputOption {
         short = 'e',
         long = "exact-level",
         value_name = "LEVEL",
-        requires="no_wizard",
+        requires = "no_wizard",
         conflicts_with = "min-level",
         display_order = 313
     )]
     pub exact_level: Option<String>,
 
     /// Enable rules set to noisy (./rules/config/noisy_rules.txt)
-    #[arg(help_heading = Some("Filtering"), short = 'n', long = "enable-noisy-rules", display_order = 311)]
+    #[arg(help_heading = Some("Filtering"), short = 'n', long = "enable-noisy-rules", requires = "no_wizard", display_order = 311)]
     pub enable_noisy_rules: bool,
 
     /// End time of the event logs to load (ex: "2022-02-22 23:59:59 +09:00")
@@ -1415,7 +1416,7 @@ pub struct OutputOption {
     pub proven_rules: bool,
 
     /// Do not load rules with specific tags (ex: sysmon)
-    #[arg(help_heading = Some("Filtering"), long = "exclude-tag", value_name = "TAG...", requires="no_wizard", conflicts_with = "include_tag", use_value_delimiter = true, value_delimiter = ',', display_order = 316)]
+    #[arg(help_heading = Some("Filtering"), long = "exclude-tag", value_name = "TAG...", requires = "no_wizard", conflicts_with = "include_tag", use_value_delimiter = true, value_delimiter = ',', display_order = 316)]
     pub exclude_tag: Option<Vec<String>>,
 
     /// Scan only specified EIDs for faster speed (ex: 1) (ex: 1,4688)
@@ -1469,6 +1470,7 @@ pub struct OutputOption {
         default_value = "./rules",
         hide_default_value = true,
         value_name = "DIR/FILE",
+        requires = "no_wizard",
         display_order = 440
     )]
     pub rules: PathBuf,
