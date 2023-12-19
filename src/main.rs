@@ -731,7 +731,7 @@ impl App {
                 println!();
                 println!("Please report any issues with Hayabusa rules to: https://github.com/Yamato-Security/hayabusa-rules/issues");
                 println!("Please report any false positives with Sigma rules to: https://github.com/SigmaHQ/sigma/issues");
-                println!("Please submit new detection rules with pull requests to: https://github.com/SigmaHQ/sigma/pulls");
+                println!("Please submit new Sigma rules with pull requests to: https://github.com/SigmaHQ/sigma/pulls");
             }
             _ => {}
         }
