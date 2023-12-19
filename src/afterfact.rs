@@ -1862,7 +1862,7 @@ fn extract_author_name(yaml_path: &str) -> Nested<String> {
 fn _output_html_computer_by_mitre_attck(html_output_stock: &mut Nested<String>) {
     html_output_stock.push("### MITRE ATT&CK Tactics:{#computers_with_mitre_attck_detections}");
     if COMPUTER_MITRE_ATTCK_MAP.is_empty() {
-        html_output_stock.push("#### No computer detected by MITRE ATT&CK Tactics:");
+        html_output_stock.push("#### No computers were detected with MITRE ATT&CK Tactics. Make sure you run Hayabusa with a profile that includes %MitreTactics% in order to get this info.");
     }
     for (idx, sorted_output_map) in COMPUTER_MITRE_ATTCK_MAP
         .iter()
