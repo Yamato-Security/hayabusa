@@ -5,6 +5,7 @@
 **改善:**
 
 - JSON出力において、MitreTactics、MitreTags, OtherTagsの出力を要素ごとに文字列で出力させるように修正した。 (#1230) (@hitenkoku)
+- `csv-timeline` or `json-timeline` コマンドが利用されたときにissueやpull-requestの連絡先についてのメッセージを追加した。 (#1236) (@hitenkoku)
 
 **バグ修正:**
 

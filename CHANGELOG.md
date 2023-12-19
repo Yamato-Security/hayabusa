@@ -5,6 +5,7 @@
 **Enhancements:**
 
 - `%MitreTactics%`, `%MitreTags%`, `%OtherTags%` fields are now outputted as an array of strings in JSON output. (#1230) (@hitenkoku)
+- Printed message about reporting issues and false positives when `csv-timeline` or `json-timeline` command was used. (#1236) (@hitenkoku)
 
 **Bug Fixes:**
 
