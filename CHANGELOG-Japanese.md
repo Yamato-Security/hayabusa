@@ -1,11 +1,12 @@
 # 変更点
 
-## 2.12.0 [xxxx/xx/xx]
+## 2.12.0 [2023/12/24] "SECCON Christmas Release"
 
 **改善:**
 
 - JSON出力において、MitreTactics、MitreTags, OtherTagsの出力を要素ごとに文字列で出力させるように修正した。 (#1230) (@hitenkoku)
 - 検知した端末に対してMITRE ATT&CKの戦術をHTMLレポートに出力できるようにした。この機能を利用するためには利用したプロファイルに`%MitreTactics%`が存在する必要がある。 (#1226) (@hitenkoku)
+- `csv-timeline`または`json-timeline`コマンドが利用されたときにissueやpull-requestの連絡先についてのメッセージを追加した。 (#1236) (@hitenkoku)
 
 **バグ修正:**
 
