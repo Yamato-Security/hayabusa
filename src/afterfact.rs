@@ -1868,8 +1868,8 @@ fn _output_html_computer_by_mitre_attck(html_output_stock: &mut Nested<String>) 
         .iter()
         .sorted_by(|a, b| {
             Ord::cmp(
-                &format!("{}-{}", &b.value()[0], b.key()),
-                &format!("{}-{}", &a.value()[0], a.key()),
+                &format!("{}-{}", &b.value()[b.value().len() - 1], b.key()),
+                &format!("{}-{}", &a.value()[a.value().len() - 1], a.key()),
             )
         })
         .enumerate()

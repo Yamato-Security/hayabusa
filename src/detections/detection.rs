@@ -402,7 +402,7 @@ impl Detection {
                         for html_attck_tac in html_output_tactics_str {
                             if !attck_tac.contains(&html_attck_tac.into()) {
                                 attck_tac.push(html_attck_tac.into());
-                                attck_tac.sort_unstable_by(|a, b| Ord::cmp(b, a));
+                                attck_tac.sort_unstable();
                             }
                         }
                     }
