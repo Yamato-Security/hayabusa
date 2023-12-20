@@ -1,15 +1,15 @@
-tag_full_str,tag_output_str
-attack.reconnaissance,Recon
-attack.resource_development,ResDev
-attack.initial_access,InitAccess
-attack.execution,Exec
-attack.persistence,Persis
-attack.privilege_escalation,PrivEsc
-attack.defense_evasion,Evas
-attack.credential_access,CredAccess
-attack.discovery,Disc
-attack.lateral_movement,LatMov
-attack.collection,Collect
-attack.command_and_control,C2
-attack.exfiltration,Exfil
-attack.impact,Impact
+tag_full_str,tag_output_str,html_tag_output_str
+attack.reconnaissance,Recon,01. Reconnaissance
+attack.resource_development,ResDev,02. Resource Development
+attack.initial_access,InitAccess,03. Initial Access
+attack.execution,Exec,04. Execution
+attack.persistence,Persis,05. Persistence
+attack.privilege_escalation,PrivEsc,06. Privilege Escalation
+attack.defense_evasion,Evas,07. Defense Evasion
+attack.credential_access,CredAccess,08. Credential Access
+attack.discovery,Disc,09. Discovery
+attack.lateral_movement,LatMov,10. Lateral Movement
+attack.collection,Collect,11. Collection
+attack.command_and_control,C2,12. C2
+attack.exfiltration,Exfil,13. Exfiltration
+attack.impact,Impact,14. Impact

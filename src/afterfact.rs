@@ -1,7 +1,9 @@
 use crate::detections::configs::{
     Action, OutputOption, StoredStatic, CONTROL_CHAT_REPLACE_MAP, CURRENT_EXE_PATH, GEOIP_DB_PARSER,
 };
-use crate::detections::message::{self, AlertMessage, LEVEL_FULL, MESSAGEKEYS};
+use crate::detections::message::{
+    self, AlertMessage, COMPUTER_MITRE_ATTCK_MAP, LEVEL_FULL, MESSAGEKEYS,
+};
 use crate::detections::utils::{
     self, format_time, get_writable_color, output_and_data_stack_for_html, write_color_buffer,
 };
@@ -855,6 +857,7 @@ fn emit_csv<W: std::io::Write>(
         }
     }
     if html_output_flag {
+        _output_html_computer_by_mitre_attck(&mut html_output_stock);
         htmlreport::add_md_data("Results Summary {#results_summary}", html_output_stock);
     }
     Ok(())
@@ -1853,6 +1856,34 @@ fn extract_author_name(yaml_path: &str) -> Nested<String> {
     }
     // ここまで来た場合は要素がない場合なので空配列を返す
     Nested::new()
+}
+
+///MITRE ATTCKのTacticsの属性を持つルールに検知したコンピュータ名をhtml出力するための文字列をhtml_output_stockに追加する関数
+fn _output_html_computer_by_mitre_attck(html_output_stock: &mut Nested<String>) {
+    html_output_stock.push("### MITRE ATT&CK Tactics:{#computers_with_mitre_attck_detections}");
+    if COMPUTER_MITRE_ATTCK_MAP.is_empty() {
+        html_output_stock.push("- No computers were detected with MITRE ATT&CK Tactics.<br>Make sure you run Hayabusa with a profile that includes %MitreTactics% in order to get this info.<br>");
+    }
+    for (idx, sorted_output_map) in COMPUTER_MITRE_ATTCK_MAP
+        .iter()
+        .sorted_by(|a, b| {
+            Ord::cmp(
+                &format!("{}-{}", &b.value()[b.value().len() - 1], b.key()),
+                &format!("{}-{}", &a.value()[a.value().len() - 1], a.key()),
+            )
+        })
+        .enumerate()
+    {
+        if idx == 0 {
+            html_output_stock.push("|Computer| MITRE ATT&CK Tactics|");
+            html_output_stock.push("|---|---|");
+        }
+        html_output_stock.push(format!(
+            "|{}|{}|",
+            sorted_output_map.key(),
+            sorted_output_map.value().join("<br>")
+        ));
+    }
 }
 
 #[cfg(test)]

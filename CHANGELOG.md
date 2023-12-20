@@ -1,10 +1,11 @@
 # Changes
 
-## 2.12.0 [xxxx/xx/xx]
+## 2.12.0 [2023/12/24] "SECCON Christmas Release"
 
 **Enhancements:**
 
 - `%MitreTactics%`, `%MitreTags%`, `%OtherTags%` fields are now outputted as an array of strings in JSON output. (#1230) (@hitenkoku)
+- Added a summary of MITRE ATT&CK tactics that were detected for each computer in the HTML report. In order to use this feature, you need to use a profile that includes the `%MitreTactics%` field. (#1226) (@hitenkoku)
 - Output messages about reporting issues and false positives when using `csv-timeline` or `json-timeline` commands. (#1236) (@hitenkoku)
 
 **Bug Fixes:**

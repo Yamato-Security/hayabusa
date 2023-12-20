@@ -55,6 +55,7 @@ lazy_static! {
             .unwrap(),
         true
     );
+    pub static ref COMPUTER_MITRE_ATTCK_MAP : DashMap<CompactString, Vec<CompactString>> = DashMap::new();
     pub static ref LEVEL_ABBR_MAP:HashMap<&'static str, &'static str> = HashMap::from_iter(vec![
         ("critical", "crit"),
         ("high", "high"),
@@ -87,10 +88,6 @@ pub fn create_output_filter_config(
         }
     };
     read_result.iter().for_each(|line| {
-        if line.len() != 2 {
-            return;
-        }
-
         let key = if is_lower_case {
             line[0].trim().to_ascii_lowercase()
         } else {
@@ -98,7 +95,7 @@ pub fn create_output_filter_config(
         };
         ret.insert(
             CompactString::from(key),
-            CompactString::from(line[1].trim()),
+            CompactString::from(line[1..].iter().map(|x| x.trim()).join(",")),
         );
     });
     ret

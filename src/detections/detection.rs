@@ -38,7 +38,7 @@ use tokio::{runtime::Runtime, spawn, task::JoinHandle};
 use super::configs::{
     EventKeyAliasConfig, StoredStatic, GEOIP_DB_PARSER, GEOIP_DB_YAML, GEOIP_FILTER, STORED_STATIC,
 };
-use super::message::{self, LEVEL_ABBR_MAP};
+use super::message::{self, COMPUTER_MITRE_ATTCK_MAP, LEVEL_ABBR_MAP};
 
 // イベントファイルの1レコード分の情報を保持する構造体
 #[derive(Clone, Debug)]
@@ -278,6 +278,7 @@ impl Detection {
         let eventkey_alias = binding.as_ref().unwrap();
         let is_json_timeline = matches!(stored_static.config.action, Some(Action::JsonTimeline(_)));
 
+        let mut computer_name_to_mitre_tactics = CompactString::default();
         for (key, profile) in stored_static.profiles.as_ref().unwrap().iter() {
             match profile {
                 Timestamp(_) => {
@@ -294,16 +295,16 @@ impl Detection {
                     );
                 }
                 Computer(_) => {
-                    profile_converter.insert(
-                        key.as_str(),
-                        Computer(
-                            record_info.record["Event"]["System"]["Computer"]
-                                .as_str()
-                                .unwrap_or_default()
-                                .replace('\"', "")
-                                .into(),
-                        ),
+                    let computer_name = CompactString::from(
+                        record_info.record["Event"]["System"]["Computer"]
+                            .as_str()
+                            .unwrap_or_default()
+                            .replace('\"', ""),
                     );
+                    if stored_static.html_report_flag {
+                        computer_name_to_mitre_tactics = computer_name.clone();
+                    }
+                    profile_converter.insert(key.as_str(), Computer(computer_name.into()));
                 }
                 Channel(_) => {
                     profile_converter.insert(
@@ -373,14 +374,39 @@ impl Detection {
                     );
                 }
                 MitreTactics(_) => {
-                    let tactics = CompactString::from(
-                        tag_info
-                            .iter()
-                            .filter(|x| tags_config_values.contains(&&CompactString::from(*x)))
+                    let tactics = tag_info
+                        .iter()
+                        .filter(|x| tags_config_values.contains(&&CompactString::from(*x)));
+                    // .map(|x| TAGS_CONFIG.get(x.into()).unwrap());
+                    let output_tactics_str = CompactString::from(
+                        tactics
+                            .clone()
+                            .filter_map(|x| x.split(',').next())
                             .join(" ¦ "),
                     );
 
-                    profile_converter.insert(key.as_str(), MitreTactics(tactics.into()));
+                    profile_converter.insert(
+                        key.as_str(),
+                        MitreTactics(output_tactics_str.clone().into()),
+                    );
+
+                    let html_output_tactics_str = tactics
+                        .into_iter()
+                        .map(|x| x.split(',').nth(1).unwrap_or_default())
+                        .collect_vec();
+                    if stored_static.html_report_flag && !html_output_tactics_str.is_empty() {
+                        let mut v = COMPUTER_MITRE_ATTCK_MAP
+                            .entry(computer_name_to_mitre_tactics.clone())
+                            .or_default();
+                        let (_, attck_tac) = v.pair_mut();
+                        for html_attck_tac in html_output_tactics_str {
+                            if !attck_tac.contains(&html_attck_tac.into()) {
+                                attck_tac.push(html_attck_tac.into());
+                                attck_tac.sort_unstable();
+                            }
+                        }
+                    }
+                    // profile_converter.insert(key.as_str(), MitreTactics(output_tactics_str.into()));
                 }
                 MitreTags(_) => {
                     let techniques = tag_info
@@ -929,33 +955,19 @@ impl Detection {
 
     /// rule内のtagsの内容を配列として返却する関数
     fn get_tag_info(rule: &RuleNode) -> Nested<String> {
-        match TAGS_CONFIG.is_empty() {
-            false => Nested::from_iter(
-                rule.yaml["tags"]
-                    .as_vec()
-                    .unwrap_or(&Vec::default())
-                    .iter()
-                    .map(|info| {
-                        if let Some(tag) = TAGS_CONFIG.get(info.as_str().unwrap_or_default()) {
-                            tag.to_owned()
-                        } else {
-                            CompactString::from(info.as_str().unwrap_or_default())
-                        }
-                    }),
-            ),
-            true => Nested::from_iter(
-                rule.yaml["tags"]
-                    .as_vec()
-                    .unwrap_or(&Vec::default())
-                    .iter()
-                    .map(|info| {
-                        match TAGS_CONFIG.get(info.as_str().unwrap_or(&String::default())) {
-                            Some(s) => s.to_owned(),
-                            _ => CompactString::from(info.as_str().unwrap_or("")),
-                        }
-                    }),
-            ),
-        }
+        Nested::from_iter(
+            rule.yaml["tags"]
+                .as_vec()
+                .unwrap_or(&Vec::default())
+                .iter()
+                .map(|info| {
+                    if let Some(tag) = TAGS_CONFIG.get(info.as_str().unwrap_or_default()) {
+                        tag.to_owned()
+                    } else {
+                        CompactString::from(info.as_str().unwrap_or_default())
+                    }
+                }),
+        )
     }
 
     ///aggregation conditionのcount部分の検知出力文の文字列を返す関数

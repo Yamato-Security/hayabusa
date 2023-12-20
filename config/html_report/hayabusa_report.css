@@ -77,6 +77,37 @@ h3 {
   border-bottom: solid 3px #ffffff;
 }
 
+#computers_with_mitre_attck_detections {
+  color: #ffffff;
+  border-bottom: solid 3px #ffffff;
+}
+
+table {
+  max-width: 860px;
+  width: 100%;
+  box-sizing: border-box;
+  padding: 8px;
+}
+
+tbody tr td {
+  text-align: left;
+}
+
+tr:nth-child(odd) {
+  background-color: #f4faff
+}
+
+tr:nth-child(even) {
+  background-color: #ffffff
+}
+
+th {
+  background-color: #999999;
+  color: #ffffff;
+  text-align: center;
+  padding: 8px;
+}
+
 
 li {
   padding: 5px;
