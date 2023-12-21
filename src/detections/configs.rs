@@ -1182,6 +1182,7 @@ pub struct EidMetricsOption {
 }
 
 #[derive(Args, Clone, Debug)]
+#[clap(group(ArgGroup::new("input_filtering").args(["directory", "filepath", "live_analysis"]).required(true)))]
 #[clap(group(ArgGroup::new("level_rule_filtering").args(["min_level", "exact_level"]).multiple(false)))]
 pub struct PivotKeywordOption {
     #[clap(flatten)]
@@ -1525,6 +1526,7 @@ pub struct CommonOptions {
 }
 
 #[derive(Args, Clone, Debug)]
+#[clap(group(ArgGroup::new("input_filtering").args(["directory", "filepath", "live_analysis"]).required(true)))]
 pub struct InputOption {
     /// Directory of multiple .evtx files
     #[arg(help_heading = Some("Input"), short = 'd', long, value_name = "DIR", conflicts_with_all = ["filepath", "live_analysis"], display_order = 300)]
