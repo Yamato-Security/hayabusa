@@ -11,6 +11,7 @@
 **バグ修正:**
 
 - JSON出力において、同じ名前の複数のフィールド名が配列として出力されないため、`jq`でパースすると1つの結果しか返されなかった。同じフィールド名を持つ複数のフィールドデータを配列内に出力することで修正した。 (#1202) (@hitenkoku)
+- `csv-timeline`、`json-timeline`、`eid-metrics`、`logon-summary`、`pivot-keywords-list`、`search`コマンドで調査対象ファイルの指定オプション(`-l`、 `-f`、 `-d`)が存在しないときに処理が実行されないように修正した。 (#1235) (@hitenkoku)
 
 ## 2.11.0 [2023/12/03] "Nasi Lemak Release"
 
