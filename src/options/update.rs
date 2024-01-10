@@ -216,13 +216,15 @@ impl Update {
         updated_sets: HashMap<String, String>,
     ) -> Result<String, git2::Error> {
         let diff = updated_sets.iter().filter_map(|(k, v)| {
-            prev_sets.get(k).and_then(|prev_val| {
+            if let Some(prev_val) = prev_sets.get(k) {
                 if prev_val != v {
-                    Option::Some(v)
+                    Some(v)
                 } else {
-                    Option::None
+                    None
                 }
-            })
+            } else {
+                Some(v)
+            }
         });
         let mut update_count_by_rule_type: HashMap<String, u128> = HashMap::new();
         for diff_key in diff {
@@ -289,7 +291,7 @@ mod tests {
 
         let prev_modified_rules2 =
             Update::get_updated_rules("test_files/rules/level_yaml", &dummy_stored_static);
-        assert_eq!(prev_modified_rules2.len(), 0);
+        assert_eq!(prev_modified_rules2.len(), 5);
     }
 
     #[test]
