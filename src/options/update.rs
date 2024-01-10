@@ -212,11 +212,12 @@ impl Update {
                 if file_modified_date.cmp(target_date).is_gt() {
                     let yaml_date = yaml["date"].as_str().unwrap_or("-");
                     return Option::Some(format!(
-                        "{}|{}|{}|{}",
+                        "{}|{}|{}|{}|{}",
                         yaml["title"].as_str().unwrap_or(&String::default()),
                         yaml["modified"].as_str().unwrap_or(yaml_date),
                         &filepath,
-                        yaml["ruletype"].as_str().unwrap_or("Other")
+                        yaml["ruletype"].as_str().unwrap_or("Other"),
+                        yaml.as_str().unwrap_or(&String::default())
                     ));
                 }
                 Option::None
@@ -282,6 +283,7 @@ mod tests {
         detections::configs::{Action, CommonOptions, Config, StoredStatic, UpdateOption},
         options::update::Update,
     };
+    use std::fs::read_to_string;
     use std::{path::Path, time::SystemTime};
 
     #[test]
@@ -362,8 +364,10 @@ mod tests {
         );
         let mut dummy_after_updated_rules = prev_modified_rules.clone();
         dummy_after_updated_rules.insert(format!(
-            "Dummy New|-|{}|Other",
-            Path::new("test_files/rules/yaml/1.yml").to_str().unwrap()
+            "Dummy New|-|{}|Other|{}",
+            Path::new("test_files/rules/yaml/1.yml").to_str().unwrap(),
+            read_to_string(Path::new("test_files/rules/yaml/1.yml").to_str().unwrap())
+                .unwrap_or_default()
         ));
         let actual =
             Update::print_diff_modified_rule_dates(prev_modified_rules, dummy_after_updated_rules);
