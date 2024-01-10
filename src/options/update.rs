@@ -3,16 +3,12 @@ use crate::detections::message::AlertMessage;
 use crate::detections::utils::write_color_buffer;
 use crate::filter;
 use crate::yaml::ParseYaml;
-use chrono::{DateTime, Local, TimeZone};
 use git2::{ErrorCode, Repository};
 use serde_json::Value;
 use std::fs::{self, create_dir};
 use std::path::Path;
 
-use hashbrown::{HashMap, HashSet};
-use std::cmp::Ordering;
-
-use std::time::SystemTime;
+use hashbrown::HashMap;
 
 use termcolor::{BufferWriter, ColorChoice};
 
@@ -42,8 +38,7 @@ impl Update {
         stored_staic: &StoredStatic,
     ) -> Result<String, git2::Error> {
         let mut result;
-        let mut prev_modified_time: SystemTime = SystemTime::UNIX_EPOCH;
-        let mut prev_modified_rules: HashSet<String> = HashSet::default();
+        let mut prev_modified_rules: HashMap<String, String> = HashMap::default();
         let hayabusa_repo = Repository::open(Path::new("."));
         let hayabusa_rule_repo = Repository::open(Path::new(rule_path));
         if hayabusa_repo.is_err() && hayabusa_rule_repo.is_err() {
@@ -60,9 +55,7 @@ impl Update {
             // case of exist hayabusa-rules repository
             Update::_repo_main_reset_hard(hayabusa_rule_repo.as_ref().unwrap())?;
             // case of failed fetching origin/main, git clone is not executed so network error has occurred possibly.
-            prev_modified_rules =
-                Update::get_updated_rules(rule_path, &prev_modified_time, stored_staic);
-            prev_modified_time = fs::metadata(rule_path).unwrap().modified().unwrap();
+            prev_modified_rules = Update::get_updated_rules(rule_path, stored_staic);
             result = Update::pull_repository(&hayabusa_rule_repo.unwrap());
         } else {
             // case of no exist hayabusa-rules repository in rules.
@@ -72,7 +65,6 @@ impl Update {
             if !rules_path.exists() {
                 create_dir(rules_path).ok();
             }
-            prev_modified_time = fs::metadata(rule_path).unwrap().modified().unwrap();
             if rule_path == "./rules" {
                 let hayabusa_repo = hayabusa_repo.unwrap();
                 let submodules = hayabusa_repo.submodules()?;
@@ -105,8 +97,7 @@ impl Update {
             }
         }
         if result.is_ok() {
-            let updated_modified_rules =
-                Update::get_updated_rules(rule_path, &prev_modified_time, stored_staic);
+            let updated_modified_rules = Update::get_updated_rules(rule_path, stored_staic);
             result =
                 Update::print_diff_modified_rule_dates(prev_modified_rules, updated_modified_rules);
         }
@@ -131,11 +122,12 @@ impl Update {
         match input_repo
             .find_remote("origin")?
             .fetch(&["main"], None, None)
-            .map_err(|e| {
-                AlertMessage::alert(&format!("Failed git fetch to rules folder. {e}")).ok();
-            }) {
+        {
             Ok(it) => it,
-            Err(_err) => return Err(git2::Error::from_str(&String::default())),
+            Err(e) => {
+                AlertMessage::alert(&format!("Failed git fetch to rules folder. {e}")).ok();
+                return Err(git2::Error::from_str(&String::default()));
+            }
         };
         let fetch_head = input_repo.find_reference("FETCH_HEAD")?;
         let fetch_commit = input_repo.reference_to_annotated_commit(&fetch_head)?;
@@ -188,9 +180,8 @@ impl Update {
     /// Create rules folder files Hashset. Format is "[rule title in yaml]|[filepath]|[filemodified date]|[rule type in yaml]"
     fn get_updated_rules(
         rule_folder_path: &str,
-        target_date: &SystemTime,
         stored_staic: &StoredStatic,
-    ) -> HashSet<String> {
+    ) -> HashMap<String, String> {
         let mut rulefile_loader = ParseYaml::new(stored_staic);
         // level in read_dir is hard code to check all rules.
         rulefile_loader
@@ -203,45 +194,39 @@ impl Update {
             )
             .ok();
 
-        rulefile_loader
-            .files
-            .into_iter()
-            .filter_map(|(filepath, yaml)| {
-                let file_modified_date = fs::metadata(&filepath).unwrap().modified().unwrap();
-
-                if file_modified_date.cmp(target_date).is_gt() {
-                    let yaml_date = yaml["date"].as_str().unwrap_or("-");
-                    return Option::Some(format!(
-                        "{}|{}|{}|{}|{}",
-                        yaml["title"].as_str().unwrap_or(&String::default()),
-                        yaml["modified"].as_str().unwrap_or(yaml_date),
-                        &filepath,
-                        yaml["ruletype"].as_str().unwrap_or("Other"),
-                        yaml.as_str().unwrap_or(&String::default())
-                    ));
-                }
-                Option::None
-            })
-            .collect()
+        HashMap::from_iter(rulefile_loader.files.into_iter().map(|(filepath, yaml)| {
+            let yaml_date = yaml["date"].as_str().unwrap_or("-");
+            (
+                filepath.clone(),
+                format!(
+                    "{}|{}|{}|{}|{:?}",
+                    yaml["title"].as_str().unwrap_or(&String::default()),
+                    yaml["modified"].as_str().unwrap_or(yaml_date),
+                    &filepath,
+                    yaml["ruletype"].as_str().unwrap_or("Other"),
+                    yaml
+                ),
+            )
+        }))
     }
 
     /// print updated rule files.
     fn print_diff_modified_rule_dates(
-        prev_sets: HashSet<String>,
-        updated_sets: HashSet<String>,
+        prev_sets: HashMap<String, String>,
+        updated_sets: HashMap<String, String>,
     ) -> Result<String, git2::Error> {
-        let diff = updated_sets.difference(&prev_sets);
+        let diff = updated_sets.iter().filter_map(|(k, v)| {
+            prev_sets.get(k).and_then(|prev_val| {
+                if prev_val != v {
+                    Option::Some(v)
+                } else {
+                    Option::None
+                }
+            })
+        });
         let mut update_count_by_rule_type: HashMap<String, u128> = HashMap::new();
-        let mut latest_update_date = Local.timestamp_opt(0, 0).unwrap();
         for diff_key in diff {
             let tmp: Vec<&str> = diff_key.split('|').collect();
-            let file_modified_date = fs::metadata(tmp[2]).unwrap().modified().unwrap();
-
-            let dt_local: DateTime<Local> = file_modified_date.into();
-
-            if latest_update_date.cmp(&dt_local) == Ordering::Less {
-                latest_update_date = dt_local;
-            }
             *update_count_by_rule_type
                 .entry(tmp[3].to_string())
                 .or_insert(0b0) += 1;
@@ -284,11 +269,10 @@ mod tests {
         options::update::Update,
     };
     use std::fs::read_to_string;
-    use std::{path::Path, time::SystemTime};
+    use std::path::Path;
 
     #[test]
     fn test_get_updated_rules() {
-        let prev_modified_time: SystemTime = SystemTime::UNIX_EPOCH;
         let dummy_stored_static = StoredStatic::create_static_data(Some(Config {
             action: Some(Action::UpdateRules(UpdateOption {
                 rules: Path::new("./rules").to_path_buf(),
@@ -299,25 +283,17 @@ mod tests {
             })),
             debug: false,
         }));
-        let prev_modified_rules = Update::get_updated_rules(
-            "test_files/rules/level_yaml",
-            &prev_modified_time,
-            &dummy_stored_static,
-        );
+        let prev_modified_rules =
+            Update::get_updated_rules("test_files/rules/level_yaml", &dummy_stored_static);
         assert_eq!(prev_modified_rules.len(), 5);
 
-        let target_time: SystemTime = SystemTime::now();
-        let prev_modified_rules2 = Update::get_updated_rules(
-            "test_files/rules/level_yaml",
-            &target_time,
-            &dummy_stored_static,
-        );
+        let prev_modified_rules2 =
+            Update::get_updated_rules("test_files/rules/level_yaml", &dummy_stored_static);
         assert_eq!(prev_modified_rules2.len(), 0);
     }
 
     #[test]
     fn test_no_diff_print_diff_modified_rule_dates() {
-        let prev_modified_time: SystemTime = SystemTime::UNIX_EPOCH;
         let dummy_stored_static = StoredStatic::create_static_data(Some(Config {
             action: Some(Action::UpdateRules(UpdateOption {
                 rules: Path::new("./rules").to_path_buf(),
@@ -328,11 +304,8 @@ mod tests {
             })),
             debug: false,
         }));
-        let prev_modified_rules = Update::get_updated_rules(
-            "test_files/rules/level_yaml",
-            &prev_modified_time,
-            &dummy_stored_static,
-        );
+        let prev_modified_rules =
+            Update::get_updated_rules("test_files/rules/level_yaml", &dummy_stored_static);
         let dummy_after_updated_rules = prev_modified_rules.clone();
 
         let actual =
@@ -346,7 +319,6 @@ mod tests {
 
     #[test]
     fn test_diff_print_diff_modified_rule_dates() {
-        let prev_modified_time: SystemTime = SystemTime::UNIX_EPOCH;
         let dummy_stored_static = StoredStatic::create_static_data(Some(Config {
             action: Some(Action::UpdateRules(UpdateOption {
                 rules: Path::new("./rules").to_path_buf(),
@@ -357,18 +329,18 @@ mod tests {
             })),
             debug: false,
         }));
-        let prev_modified_rules = Update::get_updated_rules(
-            "test_files/rules/level_yaml",
-            &prev_modified_time,
-            &dummy_stored_static,
-        );
+        let prev_modified_rules =
+            Update::get_updated_rules("test_files/rules/level_yaml", &dummy_stored_static);
         let mut dummy_after_updated_rules = prev_modified_rules.clone();
-        dummy_after_updated_rules.insert(format!(
-            "Dummy New|-|{}|Other|{}",
-            Path::new("test_files/rules/yaml/1.yml").to_str().unwrap(),
-            read_to_string(Path::new("test_files/rules/yaml/1.yml").to_str().unwrap())
-                .unwrap_or_default()
-        ));
+        dummy_after_updated_rules.insert(
+            "test_files/rules/yaml/1.yml".to_string(),
+            format!(
+                "Dummy New|-|{}|Other|{}",
+                Path::new("test_files/rules/yaml/1.yml").to_str().unwrap(),
+                read_to_string(Path::new("test_files/rules/yaml/1.yml").to_str().unwrap())
+                    .unwrap_or_default()
+            ),
+        );
         let actual =
             Update::print_diff_modified_rule_dates(prev_modified_rules, dummy_after_updated_rules);
         assert!(actual.is_ok());
