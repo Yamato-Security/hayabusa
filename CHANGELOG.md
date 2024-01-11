@@ -12,7 +12,7 @@
 
 **Bug Fixes:**
 
-- XXX
+- Fixed `update-rules` command to updated rules output logic. (#1240) (@hitenkoku)
 
 **Other:**
 
