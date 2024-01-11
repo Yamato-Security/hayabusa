@@ -1622,10 +1622,14 @@ impl App {
                     break;
                 }
                 record_cnt += 1;
-
                 let mut data = next_rec.unwrap();
                 // ChannelなどのデータはEvent -> Systemに存在する必要があるが、他処理のことも考え、Event -> EventDataのデータをそのまま投入する形にした。cloneを利用しているのはCopy trait実装がserde_json::Valueにないため
-                data["Event"]["System"] = data["Event"]["EventData"].clone();
+
+                if data["Event"]["EventData"].is_object() {
+                    data["Event"]["System"] = data["Event"]["EventData"].clone();
+                } else if data["Event"]["EventData"].is_array() {
+                    data["Event"]["System"] = data["Event"]["EventData"].as_array().unwrap()[0].clone();
+                }
                 data["Event"]["System"]
                     .as_object_mut()
                     .unwrap()
