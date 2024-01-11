@@ -2,23 +2,23 @@
 
 ## 2.13.0 [2024/XX/XX] "XXX Release"
 
-**新機能:**
+**New Features:**
 
 - XXX
 
-**改善:**
+**Enhancements:**
+
+- `update-rules`コマンドを実行したときに、検知ルールが変更された場合にルール名を出力するようにした。以前は`modified:`フィールドを更新したルールだけが表示されていた。(#1243) (@hitenkoku)
+
+**Bug Fixes:**
 
 - XXX
 
-**バグ修正:**
-
-- `update-rules` コマンドの更新済みルール一覧の表示ロジックに誤りがあったため修正した。 (#1240) (@hitenkoku)
-
-**その他:**
+**Other:**
 
 - XXX
 
-## 2.12.0 [2023/12/24] "SECCON Christmas Release"
+## 2.12.0 [2023/12/23] "SECCON Christmas Release"
 
 **改善:**
 
