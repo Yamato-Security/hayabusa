@@ -1,5 +1,23 @@
 # Changes
 
+## 2.13.0 [2024/XX/XX] "XXX Release"
+
+**New Features:**
+
+- XXX
+
+**Enhancements:**
+
+- XXX
+
+**Bug Fixes:**
+
+- XXX
+
+**Other:**
+
+- XXX
+
 ## 2.12.0 [2023/12/24] "SECCON Christmas Release"
 
 **Enhancements:**
