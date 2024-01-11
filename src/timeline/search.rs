@@ -18,12 +18,12 @@ use csv::{QuoteStyle, WriterBuilder};
 use downcast_rs::__std::process;
 use hashbrown::{HashMap, HashSet};
 use itertools::Itertools;
-use nested::Nested;
 use regex::Regex;
 use std::fs::File;
 use std::io::BufWriter;
 use std::path::PathBuf;
 use termcolor::{BufferWriter, Color, ColorChoice};
+use wildmatch::WildMatch;
 
 #[derive(Debug, Clone)]
 pub struct EventSearch {
@@ -98,7 +98,7 @@ impl EventSearch {
     fn filter_record(
         &mut self,
         record: &EvtxRecordInfo,
-        filter_rule: &HashMap<String, Nested<String>>,
+        filter_rule: &HashMap<String, Vec<WildMatch>>,
         eventkey_alias: &EventKeyAliasConfig,
     ) -> bool {
         filter_rule.iter().all(|(k, v)| {
@@ -109,10 +109,9 @@ impl EventSearch {
             )
             .unwrap_or_else(|| "n/a".into())
             .replace(['"', '\''], "");
-
             // aliasでマッチした場合はaliasに登録されていないフィールドを検索する必要がないためtrueを返す
             if v.iter()
-                .all(|search_target| utils::contains_str(&alias_target_val, search_target))
+                .all(|search_target| search_target.matches(&alias_target_val))
             {
                 return true;
             }
@@ -126,7 +125,7 @@ impl EventSearch {
                 _ => CompactString::new("-"),
             };
             v.iter()
-                .all(|search_target| utils::contains_str(&allfieldinfo, search_target))
+                .all(|search_target| search_target.matches(&allfieldinfo))
         })
     }
 
@@ -238,7 +237,7 @@ impl EventSearch {
 }
 
 /// filters からフィルタリング条件を作成する関数
-fn create_filter_rule(filters: &[String]) -> HashMap<String, Nested<String>> {
+fn create_filter_rule(filters: &[String]) -> HashMap<String, Vec<WildMatch>> {
     filters
         .iter()
         .fold(HashMap::new(), |mut acc, filter_condition| {
@@ -250,10 +249,10 @@ fn create_filter_rule(filters: &[String]) -> HashMap<String, Nested<String>> {
                 .unwrap_or(prefix_trim_condition);
             let condition = trimed_condition.split(':').map(|x| x.trim()).collect_vec();
             if condition.len() != 1 {
-                let acc_val = acc
-                    .entry(condition[0].to_string())
-                    .or_insert(Nested::<String>::new());
-                acc_val.push(condition[1..].join(":"));
+                let acc_val = acc.entry(condition[0].to_string()).or_insert(vec![]);
+                condition[1..]
+                    .iter()
+                    .for_each(|x| acc_val.push(WildMatch::new(x)));
             }
             acc
         })

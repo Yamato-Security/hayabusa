@@ -53,6 +53,7 @@ memchr = "2.*"
 num = "0.4.0"
 indexmap = "2.*"
 dialoguer = "*"
+wildmatch = "2.*"
 
 [profile.dev]
 debug = 0
