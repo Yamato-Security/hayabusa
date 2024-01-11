@@ -8,7 +8,7 @@
 
 **Enhancements:**
 
-- XXX
+- adjusted `search` command's Filter option an exact match and wild card character. (#1240) (@hitenkoku)
 
 **Bug Fixes:**
 
