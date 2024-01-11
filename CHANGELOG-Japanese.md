@@ -1,6 +1,24 @@
 # 変更点
 
-## 2.12.0 [2023/12/23] "SECCON Christmas Release"
+## 2.13.0 [2024/XX/XX] "XXX Release"
+
+**新機能:**
+
+- XXX
+
+**改善:**
+
+- XXX
+
+**バグ修正:**
+
+- XXX
+
+**その他:**
+
+- XXX
+
+## 2.12.0 [2023/12/24] "SECCON Christmas Release"
 
 **改善:**
 
