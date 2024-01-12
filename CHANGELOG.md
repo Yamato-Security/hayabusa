@@ -1,6 +1,24 @@
 # Changes
 
-## 2.12.0 [2023/12/23] "SECCON Christmas Release"
+## 2.13.0 [2024/XX/XX] "XXX Release"
+
+**New Features:**
+
+- XXX
+
+**Enhancements:**
+
+- Any time there is a change in a detection rule, it will be displayed when running the `update-rules` command. Previously, only rules that updated their `modified:` field would be displayed. (#1243) (@hitenkoku)
+
+**Bug Fixes:**
+
+- XXX
+
+**Other:**
+
+- XXX
+
+## 2.12.0 [2023/12/24] "SECCON Christmas Release"
 
 **Enhancements:**
 
