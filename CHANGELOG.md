@@ -8,7 +8,8 @@
 
 **Enhancements:**
 
-- adjusted `search` command's Filter option an exact match and wild card character. (#1240) (@hitenkoku)
+- Adjusted the `search` command's Filter option to be an exact match and support wildcard characters. (#1240) (@hitenkoku)
+- Any time there is a change in a detection rule, it will be displayed when running the `update-rules` command. Previously, only rules that updated their `modified:` field would be displayed. (#1243) (@hitenkoku)
 
 **Bug Fixes:**
 
