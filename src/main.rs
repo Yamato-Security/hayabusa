@@ -1628,7 +1628,8 @@ impl App {
                 if data["Event"]["EventData"].is_object() {
                     data["Event"]["System"] = data["Event"]["EventData"].clone();
                 } else if data["Event"]["EventData"].is_array() {
-                    data["Event"]["System"] = data["Event"]["EventData"].as_array().unwrap()[0].clone();
+                    data["Event"]["System"] =
+                        data["Event"]["EventData"].as_array().unwrap()[0].clone();
                 }
                 data["Event"]["System"]
                     .as_object_mut()
