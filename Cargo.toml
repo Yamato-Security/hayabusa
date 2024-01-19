@@ -4,7 +4,7 @@ version = "2.13.0-dev"
 repository = "https://github.com/Yamato-Security/hayabusa"
 authors = ["Yamato Security @SecurityYamato"]
 edition = "2021"
-rust-version = "1.74.1"
+rust-version = "1.75.0"
 include = ["src/**/*", "LICENSE.txt", "README.md", "CHANGELOG.md"]
 
 [dependencies]
