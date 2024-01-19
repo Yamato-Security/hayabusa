@@ -9,6 +9,7 @@
 **Enhancements:**
 
 - Any time there is a change in a detection rule, it will be displayed when running the `update-rules` command. Previously, only rules that updated their `modified:` field would be displayed. (#1243) (@hitenkoku)
+- Modified to Output JSON format in `json-timeline` command for standard output. (#1197) (@hitenkoku)
 
 **Bug Fixes:**
 
