@@ -380,7 +380,7 @@ fn emit_csv<W: std::io::Write>(
                     time, detect_info.eventid
                 )));
             }
-            if displayflag {
+            if displayflag && !(json_output_flag || jsonl_output_flag) {
                 // 標準出力の場合
                 if plus_header {
                     // ヘッダーのみを出力
@@ -431,10 +431,13 @@ fn emit_csv<W: std::io::Write>(
                 );
                 prev_message = result.1;
                 prev_details_convert_map = detect_info.details_convert_map.clone();
-                wtr.write_field(format!("{{ {} }}", &result.0))?;
+                if displayflag {
+                    write_color_buffer(&disp_wtr, None, &format!("{{ {} }}", &result.0), true).ok();
+                } else {
+                    wtr.write_field(format!("{{ {} }}", &result.0))?;
+                }
             } else if json_output_flag {
                 // JSON output
-                wtr.write_field("{")?;
                 let result = output_json_str(
                     &detect_info.ext_field,
                     prev_message,
@@ -446,8 +449,14 @@ fn emit_csv<W: std::io::Write>(
                 );
                 prev_message = result.1;
                 prev_details_convert_map = detect_info.details_convert_map.clone();
-                wtr.write_field(&result.0)?;
-                wtr.write_field("}")?;
+                if displayflag {
+                    write_color_buffer(&disp_wtr, None, &format!("{{\n{}\n}}", &result.0), true)
+                        .ok();
+                } else {
+                    wtr.write_field("{")?;
+                    wtr.write_field(&result.0)?;
+                    wtr.write_field("}")?;
+                }
             } else {
                 // csv output format
                 if plus_header {
