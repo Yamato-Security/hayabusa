@@ -8,7 +8,7 @@
 
 **Enhancements:**
 
-- XXX
+- Added support for parsing JSON input when the data is inside an array. (#1248) (@hitenkoku)
 
 **Bug Fixes:**
 
