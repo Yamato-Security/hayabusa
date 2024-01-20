@@ -2,23 +2,24 @@
 
 ## 2.13.0 [2024/XX/XX] "XXX Release"
 
-**New Features:**
+**新機能:**
 
 - XXX
 
-**Enhancements:**
+**改善:**
 
 - `update-rules`コマンドを実行したときに、検知ルールが変更された場合にルール名を出力するようにした。以前は`modified:`フィールドを更新したルールだけが表示されていた。(#1243) (@hitenkoku)
+- JSON入力でデータが配列内にある場合に解析できるようにした。 (#1248) (@hitenkoku)
 
-**Bug Fixes:**
-
-- XXX
-
-**Other:**
+**バグ修正:**
 
 - XXX
 
-## 2.12.0 [2023/12/23] "SECCON Christmas Release"
+**その他:**
+
+- XXX
+
+## 2.12.0 [2023/12/24] "SECCON Christmas Release"
 
 **改善:**
 
