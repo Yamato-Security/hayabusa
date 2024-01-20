@@ -8,6 +8,7 @@
 
 **Enhancements:**
 
+- Any time there is a change in a detection rule, it will be displayed when running the `update-rules` command. Previously, only rules that updated their `modified:` field would be displayed. (#1243) (@hitenkoku)
 - Added support for parsing JSON input when the data is inside an array. (#1248) (@hitenkoku)
 
 **Bug Fixes:**
