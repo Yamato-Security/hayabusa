@@ -386,7 +386,7 @@ pub fn search_result_dsp_msg(
     if output.is_some() && !json_output && !jsonl_output {
         file_wtr.as_mut().unwrap().write_record(&header).ok();
     } else if output.is_none() && !result_list.is_empty() {
-        write_color_buffer(disp_wtr.as_mut().unwrap(), None, &header.join(" ‖ "), true).ok();
+        write_color_buffer(disp_wtr.as_mut().unwrap(), None, &header.join(" · "), true).ok();
     }
 
     // Write contents
@@ -530,7 +530,7 @@ pub fn search_result_dsp_msg(
                     write_color_buffer(
                         disp_wtr.as_mut().unwrap(),
                         Some(Color::Rgb(238, 102, 97)),
-                        " ‖ ",
+                        " · ",
                         false,
                     )
                     .ok();
