@@ -991,7 +991,7 @@ fn _get_serialized_disp_output(
         .ok();
     String::from_utf8(disp_serializer.into_inner().unwrap_or_default())
         .unwrap_or_default()
-        .replace('|', "‖")
+        .replace('|', "·")
         .replace('🦅', "|")
 }
 
@@ -3649,25 +3649,25 @@ mod tests {
         let test_naivetime =
             NaiveDateTime::parse_from_str("1996-02-27T01:05:01Z", "%Y-%m-%dT%H:%M:%SZ").unwrap();
         let test_timestamp = Utc.from_local_datetime(&test_naivetime).unwrap();
-        let expect_header = "Timestamp ‖ Computer ‖ Channel ‖ EventID ‖ Level ‖ RecordID ‖ RuleTitle ‖ Details ‖ RecordInformation\n";
+        let expect_header = "Timestamp · Computer · Channel · EventID · Level · RecordID · RuleTitle · Details · RecordInformation\n";
         let expect_tz = test_timestamp.with_timezone(&Local);
 
         let expect_no_header = expect_tz.format("%Y-%m-%d %H:%M:%S%.3f %:z").to_string()
-            + " ‖ "
+            + " · "
             + test_computername
-            + " ‖ "
+            + " · "
             + test_channel
-            + " ‖ "
+            + " · "
             + test_eventid
-            + " ‖ "
+            + " · "
             + test_level
-            + " ‖ "
+            + " · "
             + test_recid
-            + " ‖ "
+            + " · "
             + test_title
-            + " ‖ "
+            + " · "
             + output
-            + " ‖ "
+            + " · "
             + test_recinfo
             + "\n";
         let output_option = OutputOption {
