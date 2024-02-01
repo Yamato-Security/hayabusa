@@ -1056,7 +1056,7 @@ pub struct SearchOption {
     #[arg(help_heading = Some("Display Settings"), short = 'v', long, display_order = 480)]
     pub verbose: bool,
 
-    /// Output event field information in multiple rows
+    /// Output event field information in multiple rows for CSV output
     #[arg(help_heading = Some("Output"), short = 'M', long="multiline", display_order = 390)]
     pub multiline: bool,
 
