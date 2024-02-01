@@ -951,6 +951,7 @@ pub struct DefaultProfileOption {
 }
 
 #[derive(Args, Clone, Debug)]
+#[clap(group(ArgGroup::new("search_input_filtering").args(["keywords", "regex"]).required(true)))]
 pub struct SearchOption {
     #[clap(flatten)]
     pub common_options: CommonOptions,
