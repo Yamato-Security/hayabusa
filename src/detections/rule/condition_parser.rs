@@ -58,7 +58,7 @@ impl IntoIterator for ConditionToken {
 }
 
 impl ConditionToken {
-    fn replace_subtoken(&self, sub_tokens: Vec<ConditionToken>) -> ConditionToken {
+    fn replace_subtoken(self, sub_tokens: Vec<ConditionToken>) -> ConditionToken {
         match self {
             ConditionToken::ParenthesisContainer(_) => {
                 ConditionToken::ParenthesisContainer(sub_tokens.into_iter())
@@ -69,15 +69,13 @@ impl ConditionToken {
             ConditionToken::OperandContainer(_) => {
                 ConditionToken::OperandContainer(sub_tokens.into_iter())
             }
-            ConditionToken::LeftParenthesis => ConditionToken::LeftParenthesis,
-            ConditionToken::RightParenthesis => ConditionToken::RightParenthesis,
-            ConditionToken::Space => ConditionToken::Space,
-            ConditionToken::Not => ConditionToken::Not,
-            ConditionToken::And => ConditionToken::And,
-            ConditionToken::Or => ConditionToken::Or,
-            ConditionToken::SelectionReference(name) => {
-                ConditionToken::SelectionReference(name.clone())
-            }
+            ConditionToken::LeftParenthesis => self,
+            ConditionToken::RightParenthesis => self,
+            ConditionToken::Space => self,
+            ConditionToken::Not => self,
+            ConditionToken::And => self,
+            ConditionToken::Or => self,
+            ConditionToken::SelectionReference(_) => self,
         }
     }
 
