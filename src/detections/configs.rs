@@ -35,6 +35,10 @@ lazy_static! {
         Regex::new(r"^[0-9a-z]{8}-[0-9a-z]{4}-[0-9a-z]{4}-[0-9a-z]{4}-[0-9a-z]{12}$").unwrap();
     pub static ref CONTROL_CHAT_REPLACE_MAP: HashMap<char, CompactString> =
         create_control_chat_replace_map();
+    pub static ref ALLFIELDINFO_SPECIAL_CHARS: AhoCorasick = AhoCorasickBuilder::new()
+        .match_kind(MatchKind::LeftmostLongest)
+        .build(["🛂r", "🛂n", "🛂t"])
+        .unwrap();
 }
 
 pub struct ConfigReader {

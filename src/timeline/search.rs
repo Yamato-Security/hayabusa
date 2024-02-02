@@ -1,4 +1,4 @@
-use crate::detections::configs::OutputOption;
+use crate::detections::configs::{OutputOption, ALLFIELDINFO_SPECIAL_CHARS};
 use crate::detections::field_data_map::FieldDataMapKey;
 use crate::detections::message;
 use crate::detections::utils::format_time;
@@ -180,14 +180,18 @@ impl EventSearch {
             if search_condition(keywords) {
                 let (timestamp, hostname, channel, eventid, recordid, allfieldinfo) =
                     extract_search_event_info(record, eventkey_alias, output_option);
-
+                let allfieldinfo_newline_splited = ALLFIELDINFO_SPECIAL_CHARS
+                    .replace_all(&allfieldinfo, &["🦅", "🦅", "🦅"])
+                    .split('🦅')
+                    .filter(|x| !x.is_empty())
+                    .join(" ");
                 self.search_result.insert((
                     timestamp,
                     hostname,
                     channel,
                     eventid,
                     recordid,
-                    allfieldinfo,
+                    allfieldinfo_newline_splited.into(),
                     self.filepath.clone(),
                 ));
             }
@@ -222,13 +226,18 @@ impl EventSearch {
             if re.is_match(&record.data_string) {
                 let (timestamp, hostname, channel, eventid, recordid, allfieldinfo) =
                     extract_search_event_info(record, eventkey_alias, output_option);
+                let allfieldinfo_newline_splited = ALLFIELDINFO_SPECIAL_CHARS
+                    .replace_all(&allfieldinfo, &["🦅", "🦅", "🦅"])
+                    .split('🦅')
+                    .filter(|x| !x.is_empty())
+                    .join(" ");
                 self.search_result.insert((
                     timestamp,
                     hostname,
                     channel,
                     eventid,
                     recordid,
-                    allfieldinfo,
+                    allfieldinfo_newline_splited.into(),
                     self.filepath.clone(),
                 ));
             }
