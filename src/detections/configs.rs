@@ -951,6 +951,7 @@ pub struct DefaultProfileOption {
 }
 
 #[derive(Args, Clone, Debug)]
+#[clap(group(ArgGroup::new("search_input_filtering").args(["keywords", "regex"]).required(true)))]
 pub struct SearchOption {
     #[clap(flatten)]
     pub common_options: CommonOptions,
@@ -1055,7 +1056,7 @@ pub struct SearchOption {
     #[arg(help_heading = Some("Display Settings"), short = 'v', long, display_order = 480)]
     pub verbose: bool,
 
-    /// Output event field information in multiple rows
+    /// Output event field information in multiple rows for CSV output
     #[arg(help_heading = Some("Output"), short = 'M', long="multiline", display_order = 390)]
     pub multiline: bool,
 
@@ -1064,11 +1065,11 @@ pub struct SearchOption {
     pub clobber: bool,
 
     /// Save the search results in JSON format (ex: -J -o results.json)
-    #[arg(help_heading = Some("Output"), short = 'J', long = "JSON-output", conflicts_with = "jsonl_output", requires = "output", display_order = 100)]
+    #[arg(help_heading = Some("Output"), short = 'J', long = "JSON-output", conflicts_with_all = ["jsonl_output", "multiline"], requires = "output", display_order = 100)]
     pub json_output: bool,
 
     /// Save the search results in JSONL format (ex: -L -o results.jsonl)
-    #[arg(help_heading = Some("Output"), short = 'L', long = "JSONL-output", conflicts_with = "jsonl_output", requires = "output", display_order = 100)]
+    #[arg(help_heading = Some("Output"), short = 'L', long = "JSONL-output", conflicts_with_all = ["jsonl_output", "multiline"], requires = "output", display_order = 100)]
     pub jsonl_output: bool,
 
     /// Output timestamp in European time format (ex: 22-02-2022 22:00:00.123 +02:00)

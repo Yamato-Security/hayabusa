@@ -774,7 +774,7 @@ Filtering:
 Output:
   -J, --JSON-output    Save the search results in JSON format (ex: -J -o results.json)
   -L, --JSONL-output   Save the search results in JSONL format (ex: -L -o results.jsonl)
-  -M, --multiline      Output event field information in multiple rows
+  -M, --multiline      Output event field information in multiple rows for CSV output
   -o, --output <FILE>  Save the search results in CSV format (ex: search.csv)
 
 General Options:
