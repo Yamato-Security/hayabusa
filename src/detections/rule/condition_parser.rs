@@ -41,7 +41,7 @@ pub enum ConditionToken {
 
 impl ConditionToken {
     /// convert from ConditionToken into SelectionNode
-    pub fn to_selection_node(
+    pub fn into_selection_node(
         self,
         name_2_node: &HashMap<String, Arc<Box<dyn SelectionNode>>>,
     ) -> Result<Box<dyn SelectionNode>, String> {
@@ -59,12 +59,12 @@ impl ConditionToken {
                 }
             }
             ConditionToken::ParenthesisContainer(sub_token) => {
-                Result::Ok((*sub_token).to_selection_node(name_2_node)?)
+                Result::Ok((*sub_token).into_selection_node(name_2_node)?)
             }
             ConditionToken::AndContainer(sub_tokens) => {
                 let mut select_and_node = AndSelectionNode::new();
                 for sub_token in sub_tokens {
-                    let sub_node = sub_token.to_selection_node(name_2_node)?;
+                    let sub_node = sub_token.into_selection_node(name_2_node)?;
                     select_and_node.child_nodes.push(sub_node);
                 }
                 return Result::Ok(Box::new(select_and_node));
@@ -72,13 +72,13 @@ impl ConditionToken {
             ConditionToken::OrContainer(sub_tokens) => {
                 let mut select_or_node = OrSelectionNode::new();
                 for sub_token in sub_tokens {
-                    let sub_node = sub_token.to_selection_node(name_2_node)?;
+                    let sub_node = sub_token.into_selection_node(name_2_node)?;
                     select_or_node.child_nodes.push(sub_node);
                 }
                 return Result::Ok(Box::new(select_or_node));
             }
             ConditionToken::NotContainer(sub_token) => {
-                let select_sub_node = sub_token.to_selection_node(name_2_node)?;
+                let select_sub_node = sub_token.into_selection_node(name_2_node)?;
                 let select_not_node = NotSelectionNode::new(select_sub_node);
                 return Result::Ok(Box::new(select_not_node));
             }
@@ -177,7 +177,7 @@ impl ConditionCompiler {
 
         let parsed = self.parse(tokens.into_iter())?;
 
-        parsed.to_selection_node(name_2_node)
+        parsed.into_selection_node(name_2_node)
     }
 
     /// 構文解析を実行する。
@@ -186,7 +186,7 @@ impl ConditionCompiler {
         let tokens = self.parse_parenthesis(tokens)?;
 
         // AndとOrをパースする。
-        return self.parse_and_or_operator(tokens);
+        self.parse_and_or_operator(tokens)
     }
 
     /// 字句解析を行う
@@ -320,7 +320,7 @@ impl ConditionCompiler {
         }
 
         // 次にOrでつながっている部分をまとめる
-        return Result::Ok(ConditionToken::OrContainer(operands.into_iter()));
+        Result::Ok(ConditionToken::OrContainer(operands.into_iter()))
     }
 
     /// OperandContainerの中身をパースする。現状はNotをパースするためだけに存在している。
@@ -337,7 +337,7 @@ impl ConditionCompiler {
         }
 
         // 0はありえないはず
-        if sub_tokens.len() == 0 {
+        if sub_tokens.is_empty() {
             return Result::Err("Unknown error.".to_string());
         }
 
