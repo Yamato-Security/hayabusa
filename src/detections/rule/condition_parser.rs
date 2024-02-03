@@ -40,23 +40,6 @@ pub enum ConditionToken {
     OperandContainer(IntoIter<ConditionToken>), // ANDやORやNOT等の演算子に対して、非演算子を表す
 }
 
-// ここを参考にしました。https://qiita.com/yasuo-ozu/items/7ce2f8ff846ba00dd244
-impl IntoIterator for ConditionToken {
-    type Item = ConditionToken;
-    type IntoIter = std::vec::IntoIter<ConditionToken>;
-
-    fn into_iter(self) -> Self::IntoIter {
-        match self {
-            ConditionToken::ParenthesisContainer(sub_tokens) => sub_tokens,
-            ConditionToken::AndContainer(sub_tokens) => sub_tokens,
-            ConditionToken::OrContainer(sub_tokens) => sub_tokens,
-            ConditionToken::NotContainer(sub_tokens) => sub_tokens,
-            ConditionToken::OperandContainer(sub_tokens) => sub_tokens,
-            _ => vec![].into_iter(),
-        }
-    }
-}
-
 impl ConditionToken {
     fn replace_subtoken(self, sub_tokens: Vec<ConditionToken>) -> ConditionToken {
         match self {
