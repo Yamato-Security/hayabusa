@@ -534,6 +534,7 @@ mod tests {
                 common_options: CommonOptions {
                     no_color: false,
                     quiet: false,
+                    help: false,
                 },
                 detect_common_options: DetectCommonOption {
                     json_input: false,
@@ -721,6 +722,7 @@ mod tests {
                 common_options: CommonOptions {
                     no_color: false,
                     quiet: false,
+                    help: false,
                 },
                 detect_common_options: DetectCommonOption {
                     json_input: false,
@@ -811,6 +813,7 @@ mod tests {
                 common_options: CommonOptions {
                     no_color: false,
                     quiet: false,
+                    help: false,
                 },
                 detect_common_options: DetectCommonOption {
                     json_input: false,

@@ -134,6 +134,7 @@ mod tests {
                 common_options: CommonOptions {
                     no_color: false,
                     quiet: false,
+                    help: false,
                 },
                 json_input: false,
                 evtx_file_ext: None,
