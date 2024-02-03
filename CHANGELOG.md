@@ -13,6 +13,7 @@
 - The `json-timeline` command now outputs in JSON format when outputting to the terminal. (#1197) (@hitenkoku)
 - Added support for parsing JSON input when the data is inside an array. (#1248) (@hitenkoku)
 - Changed the `‖` separator into a `·` separator to make it easier to read and render properly on older terminals. (#1258) (@YamatoSecurity)
+- Added back `-h --help` option to General Options. (#1255) (@hitenkoku)
 
 **Bug Fixes:**
 
