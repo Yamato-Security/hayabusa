@@ -17,6 +17,7 @@
 **Bug Fixes:**
 
 - Removed newline characters in `search` command output. (#1253) (@hitenkoku)
+- Fixed progress bar and wizard colored output when `--no-color` option is used. (#1256) (@hitenkoku)
 
 **Other:**
 
