@@ -34,8 +34,8 @@ pub enum ConditionToken {
 
     // パースの時に上手く処理するために作った疑似的なトークン
     ParenthesisContainer(Box<ConditionToken>), // 括弧を表すトークン
-    AndContainer(IntoIter<ConditionToken>),         // ANDでつながった条件をまとめるためのトークン
-    OrContainer(IntoIter<ConditionToken>),          // ORでつながった条件をまとめるためのトークン
+    AndContainer(IntoIter<ConditionToken>),    // ANDでつながった条件をまとめるためのトークン
+    OrContainer(IntoIter<ConditionToken>),     // ORでつながった条件をまとめるためのトークン
     NotContainer(Box<ConditionToken>), // 「NOT」と「NOTで否定される式」をまとめるためのトークン この配列には要素が一つしか入らないが、他のContainerと同じように扱えるようにするためにVecにしている。あんまり良くない。
 }
 
@@ -202,7 +202,8 @@ impl ConditionCompiler {
 
             // ここで再帰的に呼び出す。
             let parsed_sub_token = self.parse(sub_tokens.into_iter())?;
-            let parenthesis_token = ConditionToken::ParenthesisContainer(Box::new(parsed_sub_token));
+            let parenthesis_token =
+                ConditionToken::ParenthesisContainer(Box::new(parsed_sub_token));
             ret.push(parenthesis_token);
         }
 
@@ -306,8 +307,7 @@ impl ConditionCompiler {
             if let ConditionToken::Not = second_token {
                 Result::Err("Not is continuous.".to_string())
             } else {
-                let not_container =
-                    ConditionToken::NotContainer(Box::new(second_token));
+                let not_container = ConditionToken::NotContainer(Box::new(second_token));
                 Result::Ok(not_container)
             }
         } else {
@@ -359,8 +359,7 @@ impl ConditionCompiler {
 
         // NotSelectionNodeに変換
         if let ConditionToken::NotContainer(sub_token) = token {
-            let select_sub_node =
-                Self::to_selectnode(*sub_token, name_2_node)?;
+            let select_sub_node = Self::to_selectnode(*sub_token, name_2_node)?;
             let select_not_node = NotSelectionNode::new(select_sub_node);
             return Result::Ok(Box::new(select_not_node));
         }
@@ -392,7 +391,9 @@ impl ConditionCompiler {
                     continue;
                 }
 
-                ret.push(ConditionCompiler::parse_operand_container(grouped_operands)?);
+                ret.push(ConditionCompiler::parse_operand_container(
+                    grouped_operands,
+                )?);
                 ret.push(token);
                 grouped_operands = vec![];
                 continue;
@@ -401,7 +402,9 @@ impl ConditionCompiler {
             grouped_operands.push(token);
         }
         if !grouped_operands.is_empty() {
-            ret.push(ConditionCompiler::parse_operand_container(grouped_operands)?);
+            ret.push(ConditionCompiler::parse_operand_container(
+                grouped_operands,
+            )?);
         }
 
         Result::Ok(ret)
