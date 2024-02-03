@@ -39,6 +39,77 @@ pub enum ConditionToken {
     NotContainer(Box<ConditionToken>), // 「NOT」と「NOTで否定される式」をまとめるためのトークン この配列には要素が一つしか入らないが、他のContainerと同じように扱えるようにするためにVecにしている。あんまり良くない。
 }
 
+impl ConditionToken {
+    /// convert from ConditionToken into SelectionNode
+    pub fn to_selection_node(
+        self,
+        name_2_node: &HashMap<String, Arc<Box<dyn SelectionNode>>>,
+    ) -> Result<Box<dyn SelectionNode>, String> {
+        return match self {
+            ConditionToken::SelectionReference(selection_name) => {
+                let selection_node = name_2_node.get(&selection_name);
+                if let Some(select_node) = selection_node {
+                    let selection_node = select_node;
+                    let selection_node = Arc::clone(selection_node);
+                    let ref_node = RefSelectionNode::new(selection_node);
+                    return Result::Ok(Box::new(ref_node));
+                } else {
+                    let err_msg = format!("{selection_name} is not defined.");
+                    return Result::Err(err_msg);
+                }
+            }
+            ConditionToken::ParenthesisContainer(sub_token) => {
+                Result::Ok((*sub_token).to_selection_node(name_2_node)?)
+            }
+            ConditionToken::AndContainer(sub_tokens) => {
+                let mut select_and_node = AndSelectionNode::new();
+                for sub_token in sub_tokens {
+                    let sub_node = sub_token.to_selection_node(name_2_node)?;
+                    select_and_node.child_nodes.push(sub_node);
+                }
+                return Result::Ok(Box::new(select_and_node));
+            }
+            ConditionToken::OrContainer(sub_tokens) => {
+                let mut select_or_node = OrSelectionNode::new();
+                for sub_token in sub_tokens {
+                    let sub_node = sub_token.to_selection_node(name_2_node)?;
+                    select_or_node.child_nodes.push(sub_node);
+                }
+                return Result::Ok(Box::new(select_or_node));
+            }
+            ConditionToken::NotContainer(sub_token) => {
+                let select_sub_node = sub_token.to_selection_node(name_2_node)?;
+                let select_not_node = NotSelectionNode::new(select_sub_node);
+                return Result::Ok(Box::new(select_not_node));
+            }
+            ConditionToken::LeftParenthesis => Result::Err("Unknown error".to_string()),
+            ConditionToken::RightParenthesis => Result::Err("Unknown error".to_string()),
+            ConditionToken::Space => Result::Err("Unknown error".to_string()),
+            ConditionToken::Not => Result::Err("Unknown error".to_string()),
+            ConditionToken::And => Result::Err("Unknown error".to_string()),
+            ConditionToken::Or => Result::Err("Unknown error".to_string()),
+        };
+    }
+
+    pub fn to_condition_token(token: String) -> ConditionToken {
+        if token == "(" {
+            ConditionToken::LeftParenthesis
+        } else if token == ")" {
+            ConditionToken::RightParenthesis
+        } else if token == " " {
+            ConditionToken::Space
+        } else if token == "not" {
+            ConditionToken::Not
+        } else if token == "and" {
+            ConditionToken::And
+        } else if token == "or" {
+            ConditionToken::Or
+        } else {
+            ConditionToken::SelectionReference(token)
+        }
+    }
+}
+
 #[derive(Debug)]
 pub struct ConditionCompiler {}
 
@@ -106,7 +177,7 @@ impl ConditionCompiler {
 
         let parsed = self.parse(tokens.into_iter())?;
 
-        Self::to_selectnode(parsed, name_2_node)
+        parsed.to_selection_node(name_2_node)
     }
 
     /// 構文解析を実行する。
@@ -133,7 +204,7 @@ impl ConditionCompiler {
             }
 
             let mached_str = captured.unwrap().get(0).unwrap().as_str();
-            let token = self.to_enum(mached_str.to_string());
+            let token = ConditionToken::to_condition_token(mached_str.to_string());
             if let ConditionToken::Space = token {
                 // 空白は特に意味ないので、読み飛ばす。
                 cur_condition_str = cur_condition_str.replacen(mached_str, "", 1);
@@ -145,25 +216,6 @@ impl ConditionCompiler {
         }
 
         Result::Ok(tokens)
-    }
-
-    /// 文字列をConditionTokenに変換する。
-    fn to_enum(&self, token: String) -> ConditionToken {
-        if token == "(" {
-            ConditionToken::LeftParenthesis
-        } else if token == ")" {
-            ConditionToken::RightParenthesis
-        } else if token == " " {
-            ConditionToken::Space
-        } else if token == "not" {
-            ConditionToken::Not
-        } else if token == "and" {
-            ConditionToken::And
-        } else if token == "or" {
-            ConditionToken::Or
-        } else {
-            ConditionToken::SelectionReference(token)
-        }
     }
 
     /// 右括弧と左括弧をだけをパースする。戻り値の配列にはLeftParenthesisとRightParenthesisが含まれず、代わりにTokenContainerに変換される。TokenContainerが括弧で囲まれた部分を表現している。
@@ -316,59 +368,6 @@ impl ConditionCompiler {
                     .to_string(),
             )
         }
-    }
-
-    /// convert from ConditionToken into SelectionNode
-    fn to_selectnode(
-        token: ConditionToken,
-        name_2_node: &HashMap<String, Arc<Box<dyn SelectionNode>>>,
-    ) -> Result<Box<dyn SelectionNode>, String> {
-        // convert to RefSelectionNode
-        if let ConditionToken::SelectionReference(selection_name) = token {
-            let selection_node = name_2_node.get(&selection_name);
-            if let Some(select_node) = selection_node {
-                let selection_node = select_node;
-                let selection_node = Arc::clone(selection_node);
-                let ref_node = RefSelectionNode::new(selection_node);
-                return Result::Ok(Box::new(ref_node));
-            } else {
-                let err_msg = format!("{selection_name} is not defined.");
-                return Result::Err(err_msg);
-            }
-        }
-
-        // AndSelectionNodeに変換
-        if let ConditionToken::AndContainer(sub_tokens) = token {
-            let mut select_and_node = AndSelectionNode::new();
-            for sub_token in sub_tokens {
-                let sub_node = Self::to_selectnode(sub_token, name_2_node)?;
-                select_and_node.child_nodes.push(sub_node);
-            }
-            return Result::Ok(Box::new(select_and_node));
-        }
-
-        // OrSelectionNodeに変換
-        if let ConditionToken::OrContainer(sub_tokens) = token {
-            let mut select_or_node = OrSelectionNode::new();
-            for sub_token in sub_tokens {
-                let sub_node = Self::to_selectnode(sub_token, name_2_node)?;
-                select_or_node.child_nodes.push(sub_node);
-            }
-            return Result::Ok(Box::new(select_or_node));
-        }
-
-        // NotSelectionNodeに変換
-        if let ConditionToken::NotContainer(sub_token) = token {
-            let select_sub_node = Self::to_selectnode(*sub_token, name_2_node)?;
-            let select_not_node = NotSelectionNode::new(select_sub_node);
-            return Result::Ok(Box::new(select_not_node));
-        }
-
-        if let ConditionToken::ParenthesisContainer(sub_token) = token {
-            return Result::Ok(Self::to_selectnode(*sub_token, name_2_node)?);
-        }
-
-        Result::Err("Unknown error".to_string())
     }
 
     /// ConditionTokenがAndまたはOrTokenならばTrue
