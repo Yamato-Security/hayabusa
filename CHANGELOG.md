@@ -17,7 +17,7 @@
 
 **Bug Fixes:**
 
-- XXX
+- Removed newline characters in `search` command output. (#1253) (@hitenkoku)
 
 **Other:**
 
