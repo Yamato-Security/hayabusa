@@ -794,6 +794,7 @@ dependencies = [
  "clap 4.4.11",
  "comfy-table",
  "compact_str",
+ "console",
  "crossbeam-utils",
  "csv",
  "dashmap",

@@ -8,6 +8,7 @@ use bytesize::ByteSize;
 use chrono::{DateTime, Datelike, Local, NaiveDateTime, Utc};
 use clap::Command;
 use compact_str::CompactString;
+use console::{style, Style};
 use dialoguer::Confirm;
 use dialoguer::{theme::ColorfulTheme, Select};
 use evtx::{EvtxParser, ParserSettings, RecordAllocation};
@@ -1132,7 +1133,31 @@ impl App {
                 format!("5. All event and alert rules ({} rules) ( status: * | level: informational+ )", sections_rule_cnt[4].iter().map(|(_, cnt)| cnt).sum::<i128>() - sections_rule_cnt[4].get("excluded").unwrap_or(&0))
             ];
 
-            let selected_index = Select::with_theme(&ColorfulTheme::default())
+            let color_theme = if stored_static.common_options.no_color {
+                ColorfulTheme {
+                    defaults_style: Style::new().for_stderr(),
+                    prompt_style: Style::new().for_stderr().bold(),
+                    prompt_prefix: style("?".to_string()).for_stderr(),
+                    prompt_suffix: style("›".to_string()).for_stderr(),
+                    success_prefix: style("✔".to_string()).for_stderr(),
+                    success_suffix: style("·".to_string()).for_stderr(),
+                    error_prefix: style("✘".to_string()).for_stderr(),
+                    error_style: Style::new().for_stderr(),
+                    hint_style: Style::new().for_stderr(),
+                    values_style: Style::new().for_stderr(),
+                    active_item_style: Style::new().for_stderr(),
+                    inactive_item_style: Style::new().for_stderr(),
+                    active_item_prefix: style("❯".to_string()).for_stderr(),
+                    inactive_item_prefix: style(" ".to_string()).for_stderr(),
+                    checked_item_prefix: style("✔".to_string()).for_stderr(),
+                    unchecked_item_prefix: style("⬚".to_string()).for_stderr(),
+                    picked_item_prefix: style("❯".to_string()).for_stderr(),
+                    unpicked_item_prefix: style(" ".to_string()).for_stderr(),
+                }
+            } else {
+                ColorfulTheme::default()
+            };
+            let selected_index = Select::with_theme(&color_theme)
                 .with_prompt("Which set of detection rules would you like to load?")
                 .default(0)
                 .items(selection_status_items.as_slice())
@@ -1179,7 +1204,7 @@ impl App {
             if selected_index < 3 {
                 if let Some(et_cnt) = tags_cnt.get("detection.emerging_threats") {
                     let prompt_fmt = format!("Include Emerging Threats rules? ({} rules)", et_cnt);
-                    let et_rules_load_flag = Confirm::with_theme(&ColorfulTheme::default())
+                    let et_rules_load_flag = Confirm::with_theme(&color_theme)
                         .with_prompt(prompt_fmt)
                         .default(true)
                         .show_default(true)
@@ -1192,7 +1217,7 @@ impl App {
                 }
                 if let Some(th_cnt) = tags_cnt.get("detection.threat_hunting") {
                     let prompt_fmt = format!("Include Threat Hunting rules? ({} rules)", th_cnt);
-                    let th_rules_load_flag = Confirm::with_theme(&ColorfulTheme::default())
+                    let th_rules_load_flag = Confirm::with_theme(&color_theme)
                         .with_prompt(prompt_fmt)
                         .default(false)
                         .show_default(true)
@@ -1208,7 +1233,7 @@ impl App {
                 if let Some(dep_cnt) = exclude_noisy_cnt.get("deprecated") {
                     // deprecated rules load prompt
                     let prompt_fmt = format!("Include deprecated rules? ({} rules)", dep_cnt);
-                    let dep_rules_load_flag = Confirm::with_theme(&ColorfulTheme::default())
+                    let dep_rules_load_flag = Confirm::with_theme(&color_theme)
                         .with_prompt(prompt_fmt)
                         .default(false)
                         .show_default(true)
@@ -1225,13 +1250,12 @@ impl App {
                 if let Some(unsup_cnt) = exclude_noisy_cnt.get("unsupported") {
                     // unsupported rules load prompt
                     let prompt_fmt = format!("Include unsupported rules? ({} rules)", unsup_cnt);
-                    let unsupported_rules_load_flag =
-                        Confirm::with_theme(&ColorfulTheme::default())
-                            .with_prompt(prompt_fmt)
-                            .default(false)
-                            .show_default(true)
-                            .interact()
-                            .unwrap();
+                    let unsupported_rules_load_flag = Confirm::with_theme(&color_theme)
+                        .with_prompt(prompt_fmt)
+                        .default(false)
+                        .show_default(true)
+                        .interact()
+                        .unwrap();
                     if unsupported_rules_load_flag {
                         stored_static
                             .output_option
@@ -1245,7 +1269,7 @@ impl App {
             if let Some(noisy_cnt) = exclude_noisy_cnt.get("noisy") {
                 // noisy rules load prompt
                 let prompt_fmt = format!("Include noisy rules? ({} rules)", noisy_cnt);
-                let noisy_rules_load_flag = Confirm::with_theme(&ColorfulTheme::default())
+                let noisy_rules_load_flag = Confirm::with_theme(&color_theme)
                     .with_prompt(prompt_fmt)
                     .default(false)
                     .show_default(true)
@@ -1262,7 +1286,7 @@ impl App {
 
             if let Some(sysmon_cnt) = tags_cnt.get("sysmon") {
                 let prompt_fmt = format!("Include sysmon rules? ({} rules)", sysmon_cnt);
-                let sysmon_rules_load_flag = Confirm::with_theme(&ColorfulTheme::default())
+                let sysmon_rules_load_flag = Confirm::with_theme(&color_theme)
                     .with_prompt(prompt_fmt)
                     .default(true)
                     .show_default(true)
@@ -1341,8 +1365,11 @@ impl App {
             return;
         }
 
-        let template =
-            "[{elapsed_precise}] {human_pos} / {human_len} {spinner:.green} [{bar:40.green}] {percent}%\r\n\r\n{msg}";
+        let template = if stored_static.common_options.no_color {
+            "[{elapsed_precise}] {human_pos} / {human_len} {spinner} [{bar:40}] {percent}%\r\n\r\n{msg}"
+        } else {
+            "[{elapsed_precise}] {human_pos} / {human_len} {spinner:.green} [{bar:40.green}] {percent}%\r\n\r\n{msg}"
+        };
         let progress_style = ProgressStyle::with_template(template)
             .unwrap()
             .progress_chars("=> ");
