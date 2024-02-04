@@ -122,7 +122,7 @@ impl StoredStatic {
             None => CommonOptions {
                 no_color: false,
                 quiet: false,
-                help: false,
+                help: None,
             },
         };
         let binding = Path::new("./rules/config").to_path_buf();
@@ -1521,8 +1521,8 @@ pub struct CommonOptions {
     pub quiet: bool,
 
     /// Show the help menu
-    #[clap(help_heading = Some("General Options"), short = 'h', long = "help", global = true, action = ArgAction::Help, display_order = 80)]
-    pub help: bool,
+    #[clap(help_heading = Some("General Options"), short = 'h', long = "help", action = ArgAction::Help, display_order = 80, required = false)]
+    pub help: Option<bool>,
 }
 
 #[derive(Args, Clone, Debug)]
@@ -1657,8 +1657,7 @@ pub struct ComputerMetricsOption {
 #[clap(
     author = "Yamato Security (https://github.com/Yamato-Security/hayabusa - @SecurityYamato)",
     help_template = "\nHayabusa v2.13.0 - Dev Build\n{author-with-newline}\n{usage-heading}\n  hayabusa.exe <COMMAND> [OPTIONS]\n  hayabusa.exe help <COMMAND>\n\n{all-args}{options}",
-    term_width = 400,
-    disable_help_flag = true
+    term_width = 400
 )]
 pub struct Config {
     #[command(subcommand)]
