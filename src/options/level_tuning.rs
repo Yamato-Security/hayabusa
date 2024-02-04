@@ -138,7 +138,7 @@ mod tests {
                 common_options: CommonOptions {
                     no_color: false,
                     quiet: false,
-                    help: false,
+                    help: None,
                 },
             })),
             debug: false,

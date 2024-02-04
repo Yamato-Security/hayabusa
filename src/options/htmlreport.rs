@@ -275,7 +275,7 @@ mod tests {
                 common_options: CommonOptions {
                     no_color: false,
                     quiet: false,
-                    help: false,
+                    help: None,
                 },
                 detect_common_options: DetectCommonOption {
                     evtx_file_ext: None,
@@ -341,7 +341,7 @@ mod tests {
                 common_options: CommonOptions {
                     no_color: false,
                     quiet: false,
-                    help: false,
+                    help: None,
                 },
                 detect_common_options: DetectCommonOption {
                     evtx_file_ext: None,
@@ -410,7 +410,7 @@ mod tests {
                 common_options: CommonOptions {
                     no_color: false,
                     quiet: false,
-                    help: false,
+                    help: None,
                 },
                 detect_common_options: DetectCommonOption {
                     evtx_file_ext: None,
@@ -476,7 +476,7 @@ mod tests {
                 common_options: CommonOptions {
                     no_color: false,
                     quiet: false,
-                    help: false,
+                    help: None,
                 },
                 detect_common_options: DetectCommonOption {
                     evtx_file_ext: None,
