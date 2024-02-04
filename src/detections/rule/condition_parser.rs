@@ -305,20 +305,27 @@ impl ConditionCompiler {
         }
 
         // 先にANDでつながっている部分を全部まとめる
-        let mut operant_ite = operand_list.into_iter();
-        let mut operands = vec![operant_ite.next().unwrap()];
+        let mut operand_ite = operand_list.into_iter();
+        let mut operands = vec![];
+        let mut and_grops = vec![];
+        operator_list.push(ConditionToken::Or); // add "or token" as a sentinel
         for token in operator_list.iter() {
             if let ConditionToken::Or = token {
-                // Orの場合はそのままリストに追加
-                operands.push(operant_ite.next().unwrap());
+                if and_grops.is_empty() {
+                    operands.push(operand_ite.next().unwrap());
+                } else {
+                    and_grops.push(operand_ite.next().unwrap());
+                    operands.push(ConditionToken::AndContainer(and_grops.into_iter()));
+                }
+                and_grops = vec![];
             } else {
-                // Andの場合はANDでつなげる
-                let and_operands = vec![operands.pop().unwrap(), operant_ite.next().unwrap()];
-                let and_container = ConditionToken::AndContainer(and_operands.into_iter());
-                operands.push(and_container);
+                and_grops.push(operand_ite.next().unwrap());
             }
         }
 
+        if operands.len() == 1 {
+            return Result::Ok(operands.into_iter().next().unwrap());
+        }
         // 次にOrでつながっている部分をまとめる
         Result::Ok(ConditionToken::OrContainer(operands.into_iter()))
     }
