@@ -1282,9 +1282,6 @@ impl App {
         } else {
             stored_static.include_status.insert("*".into());
         }
-        println!();
-        println!("Loading detection rules. Please wait.");
-        println!();
 
         if stored_static.html_report_flag {
             let mut output_data = Nested::<String>::new();
@@ -1317,28 +1314,53 @@ impl App {
             .min_level
             .to_uppercase();
 
-        let rule_files = detection::Detection::parse_rule_files(
-            &level,
-            &target_level,
-            &stored_static.output_option.as_ref().unwrap().rules,
-            &filter::exclude_ids(stored_static),
-            stored_static,
-        );
-        CHECKPOINT
-            .lock()
-            .as_mut()
-            .unwrap()
-            .rap_check_point("Rule Parse Processing Time");
-        let unused_rules_option = stored_static.logon_summary_flag
+        println!();
+        if !(stored_static.logon_summary_flag
             || stored_static.search_flag
-            || stored_static.computer_metrics_flag
-            || stored_static.metrics_flag;
-        if !unused_rules_option && rule_files.is_empty() {
-            AlertMessage::alert(
-                "No rules were loaded. Please download the latest rules with the update-rules command.\r\n",
-            )
-            .ok();
-            return;
+            || stored_static.metrics_flag
+            || stored_static.computer_metrics_flag)
+        {
+            println!("Loading detection rules. Please wait.");
+        } else if stored_static.logon_summary_flag {
+            println!("Currently analyzing Logon Summary. Please wait.");
+        } else if stored_static.search_flag {
+            println!("Currently searching. Please wait.");
+        } else if stored_static.metrics_flag {
+            println!("Currently analyzing Event ID Metrics. Please wait.");
+        } else if stored_static.computer_metrics_flag {
+            println!("Currently analyzing Compute Metrics. Please wait.");
+        }
+        println!();
+
+        let mut rule_files = vec![];
+        if !(stored_static.logon_summary_flag
+            || stored_static.search_flag
+            || stored_static.metrics_flag
+            || stored_static.computer_metrics_flag)
+        {
+            rule_files = detection::Detection::parse_rule_files(
+                &level,
+                &target_level,
+                &stored_static.output_option.as_ref().unwrap().rules,
+                &filter::exclude_ids(stored_static),
+                stored_static,
+            );
+            CHECKPOINT
+                .lock()
+                .as_mut()
+                .unwrap()
+                .rap_check_point("Rule Parse Processing Time");
+            let unused_rules_option = stored_static.logon_summary_flag
+                || stored_static.search_flag
+                || stored_static.computer_metrics_flag
+                || stored_static.metrics_flag;
+            if !unused_rules_option && rule_files.is_empty() {
+                AlertMessage::alert(
+                        "No rules were loaded. Please download the latest rules with the update-rules command.\r\n",
+                    )
+                    .ok();
+                return;
+            }
         }
 
         let template =
