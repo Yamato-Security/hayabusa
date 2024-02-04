@@ -419,6 +419,13 @@ pub fn search_result_dsp_msg(
                 .as_str(),
             &stored_static.disp_abbr_general_values,
         );
+        let get_char_color = |output_char_color: Option<Color>| {
+            if stored_static.common_options.no_color {
+                None
+            } else {
+                output_char_color
+            }
+        };
 
         let fmted_all_field_info = all_field_info.split_whitespace().join(" ");
         let all_field_info = if output.is_some() && stored_static.multiline_flag {
@@ -494,14 +501,14 @@ pub fn search_result_dsp_msg(
                             fields.split(':').map(|x| x.split_whitespace().join(" "));
                         write_color_buffer(
                             disp_wtr.as_mut().unwrap(),
-                            Some(Color::Rgb(255, 158, 61)),
+                            get_char_color(Some(Color::Rgb(255, 158, 61))),
                             &format!("{}: ", separated_fields_data.next().unwrap()),
                             newline_flag,
                         )
                         .ok();
                         write_color_buffer(
                             disp_wtr.as_mut().unwrap(),
-                            Some(Color::Rgb(0, 255, 255)),
+                            get_char_color(Some(Color::Rgb(0, 255, 255))),
                             separated_fields_data.join(":").trim(),
                             newline_flag,
                         )
@@ -520,7 +527,7 @@ pub fn search_result_dsp_msg(
                     //タイムスタンプとイベントタイトルは同じ色で表示
                     write_color_buffer(
                         disp_wtr.as_mut().unwrap(),
-                        Some(Color::Rgb(0, 255, 0)),
+                        get_char_color(Some(Color::Rgb(0, 255, 0))),
                         record_field_data,
                         newline_flag,
                     )
@@ -538,7 +545,7 @@ pub fn search_result_dsp_msg(
                 if !newline_flag {
                     write_color_buffer(
                         disp_wtr.as_mut().unwrap(),
-                        Some(Color::Rgb(238, 102, 97)),
+                        get_char_color(Some(Color::Rgb(238, 102, 97))),
                         " · ",
                         false,
                     )
