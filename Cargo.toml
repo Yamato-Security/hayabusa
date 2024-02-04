@@ -54,6 +54,7 @@ num = "0.4.0"
 indexmap = "2.*"
 dialoguer = "*"
 wildmatch = "2.*"
+console = "0.15.7"
 
 [profile.dev]
 debug = 0
