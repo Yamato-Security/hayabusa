@@ -287,7 +287,7 @@ pub fn parse_message(
     field_data_map: &Option<FieldDataMap>,
 ) -> (CompactString, Vec<CompactString>) {
     let mut return_message = output.clone();
-    let mut hash_map: HashMap<CompactString, Vec<CompactString>> = HashMap::new();
+    let mut hash_map: Vec<(CompactString, Vec<CompactString>)> = vec![];
     let details_key: Vec<&str> = output.split(" ¦ ").collect();
     for caps in ALIASREGEX.captures_iter(&return_message) {
         let full_target_str = &caps[0];
@@ -337,19 +337,19 @@ pub fn parse_message(
                     converted_str.unwrap_or(hash_value)
                 };
                 if json_timeline_flag {
-                    hash_map.insert(CompactString::from(full_target_str), [field_data].to_vec());
+                    hash_map.push((CompactString::from(full_target_str), [field_data].to_vec()));
                 } else {
-                    hash_map.insert(
+                    hash_map.push((
                         CompactString::from(full_target_str),
                         [field_data.split_ascii_whitespace().join(" ").into()].to_vec(),
-                    );
+                    ));
                 }
             }
         } else {
-            hash_map.insert(
+            hash_map.push((
                 CompactString::from(full_target_str),
                 ["n/a".into()].to_vec(),
-            );
+            ));
         }
     }
     let mut details_key_and_value: Vec<CompactString> = vec![];
@@ -366,7 +366,6 @@ pub fn parse_message(
             }
         }
     }
-    details_key_and_value.sort_unstable();
     (return_message, details_key_and_value)
 }
 
