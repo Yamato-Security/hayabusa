@@ -16,6 +16,7 @@ use chrono::{DateTime, Local, TimeZone, Utc};
 use comfy_table::modifiers::UTF8_ROUND_CORNERS;
 use comfy_table::presets::UTF8_FULL;
 use compact_str::CompactString;
+use hashbrown::hash_map::RawEntryMut;
 use terminal_size::terminal_size;
 
 use csv::{QuoteStyle, WriterBuilder};
@@ -1633,20 +1634,32 @@ pub fn output_json_str(
                     };
                     let mut children_output_stock: HashMap<CompactString, Vec<CompactString>> =
                         HashMap::new();
+                    let mut children_output_order = vec![];
                     for contents in details_target_stock.iter() {
                         let (key, value) = contents.split_once(':').unwrap_or_default();
                         let output_key = _convert_valid_json_str(&[key], false);
                         let fmted_val = _convert_valid_json_str(&[value.trim_start()], false);
+                        if let RawEntryMut::Vacant(_) = children_output_stock
+                            .raw_entry_mut()
+                            .from_key(output_key.as_str())
+                        {
+                            children_output_order.push(output_key.clone());
+                        }
                         children_output_stock
                             .entry(output_key.into())
                             .or_insert(vec![])
                             .push(fmted_val.into());
                     }
+                    // ルール内での表示順に合わせた表示順を戻した配列
                     let mut sorted_children_output_stock: Vec<(
                         &CompactString,
                         &Vec<CompactString>,
                     )> = children_output_stock.iter().collect_vec();
-                    sorted_children_output_stock.sort_by(|a, b| a.0.cmp(b.0));
+                    for (k, v) in children_output_stock.iter() {
+                        let index_in_rule =
+                            children_output_order.iter().position(|x| x == k).unwrap();
+                        sorted_children_output_stock[index_in_rule] = (k, v);
+                    }
                     for (idx, (c_key, c_val)) in sorted_children_output_stock.iter().enumerate() {
                         let fmted_c_val = if c_val.len() == 1 {
                             c_val[0].to_string()
@@ -1656,7 +1669,7 @@ pub fn output_json_str(
                                 c_val.iter().map(|x| { format!("\"{x}\"") }).join(", ")
                             )
                         };
-                        if idx != sorted_children_output_stock.len() - 1 {
+                        if idx != children_output_stock.len() - 1 {
                             output_stock.push(format!(
                                 "{},",
                                 _create_json_output_format(

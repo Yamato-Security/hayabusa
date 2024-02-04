@@ -14,6 +14,7 @@
 - Added support for parsing JSON input when the data is inside an array. (#1248) (@hitenkoku)
 - Changed the `‖` separator into a `·` separator to make it easier to read and render properly on older terminals. (#1258) (@YamatoSecurity)
 - Added back `-h --help` option to General Options. (#1255) (@hitenkoku)
+- Changed the `Details` output in `json-timeline` command from alphabetical order to the original order. 
 - Skiped loading detection rules when running to command which is no need to load rule. (#1263) (@hitenkoku)
 
 **Bug Fixes:**
