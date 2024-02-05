@@ -7,7 +7,7 @@ use crate::options::pivot::PIVOT_KEYWORD;
 use crate::options::profile::{load_profile, Profile};
 use aho_corasick::{AhoCorasick, AhoCorasickBuilder, MatchKind};
 use chrono::{DateTime, Days, Duration, Local, Months, Utc};
-use clap::{ArgGroup, Args, ColorChoice, Command, CommandFactory, Parser, Subcommand};
+use clap::{ArgAction, ArgGroup, Args, ColorChoice, Command, CommandFactory, Parser, Subcommand};
 use compact_str::CompactString;
 use hashbrown::{HashMap, HashSet};
 use itertools::Itertools;
@@ -122,6 +122,7 @@ impl StoredStatic {
             None => CommonOptions {
                 no_color: false,
                 quiet: false,
+                help: None,
             },
         };
         let binding = Path::new("./rules/config").to_path_buf();
@@ -743,7 +744,6 @@ pub enum Action {
         author = "Yamato Security (https://github.com/Yamato-Security/hayabusa - @SecurityYamato)",
         help_template = "\nHayabusa v2.13.0 - Dev Build\n{author-with-newline}\n{usage-heading}\n  hayabusa.exe csv-timeline <INPUT> [OPTIONS]\n\n{all-args}",
         term_width = 400,
-        disable_help_flag = true,
         display_order = 290
     )]
     /// Save the timeline in CSV format.
@@ -753,7 +753,6 @@ pub enum Action {
         author = "Yamato Security (https://github.com/Yamato-Security/hayabusa - @SecurityYamato)",
         help_template = "\nHayabusa v2.13.0 - Dev Build\n{author-with-newline}\n{usage-heading}\n  hayabusa.exe json-timeline <INPUT> [OPTIONS]\n\n{all-args}",
         term_width = 400,
-        disable_help_flag = true,
         display_order = 360
     )]
     /// Save the timeline in JSON/JSONL format.
@@ -763,7 +762,6 @@ pub enum Action {
         author = "Yamato Security (https://github.com/Yamato-Security/hayabusa - @SecurityYamato)",
         help_template = "\nHayabusa v2.13.0 - Dev Build\n{author-with-newline}\n{usage-heading}\n  hayabusa.exe logon-summary <INPUT> [OPTIONS]\n\n{all-args}",
         term_width = 400,
-        disable_help_flag = true,
         display_order = 383
     )]
     /// Print a summary of successful and failed logons
@@ -773,7 +771,6 @@ pub enum Action {
         author = "Yamato Security (https://github.com/Yamato-Security/hayabusa - @SecurityYamato)",
         help_template = "\nHayabusa v2.13.0 - Dev Build\n{author-with-newline}\n{usage-heading}\n  hayabusa.exe eid-metrics <INPUT> [OPTIONS]\n\n{all-args}",
         term_width = 400,
-        disable_help_flag = true,
         display_order = 310
     )]
     /// Print event ID metrics
@@ -783,7 +780,6 @@ pub enum Action {
         author = "Yamato Security (https://github.com/Yamato-Security/hayabusa - @SecurityYamato)",
         help_template = "\nHayabusa v2.13.0 - Dev Build\n{author-with-newline}\n{usage-heading}\n  hayabusa.exe pivot-keywords-list <INPUT> [OPTIONS]\n\n{all-args}",
         term_width = 400,
-        disable_help_flag = true,
         display_order = 420
     )]
     /// Create a list of pivot keywords
@@ -793,7 +789,6 @@ pub enum Action {
         author = "Yamato Security (https://github.com/Yamato-Security/hayabusa - @SecurityYamato)",
         help_template = "\nHayabusa v2.13.0 - Dev Build\n{author-with-newline}\n{usage-heading}\n  hayabusa.exe search <INPUT> <--keywords \"<KEYWORDS>\" OR --regex \"<REGEX>\"> [OPTIONS]\n\n{all-args}",
         term_width = 400,
-        disable_help_flag = true,
         display_order = 450
     )]
     /// Search all events by keyword(s) or regular expression
@@ -803,7 +798,6 @@ pub enum Action {
         author = "Yamato Security (https://github.com/Yamato-Security/hayabusa - @SecurityYamato)",
         help_template = "\nHayabusa v2.13.0 - Dev Build\n{author-with-newline}\n{usage-heading}\n  {usage}\n\n{all-args}",
         term_width = 400,
-        disable_help_flag = true,
         display_order = 470
     )]
     /// Update to the latest rules in the hayabusa-rules github repository
@@ -813,7 +807,6 @@ pub enum Action {
         author = "Yamato Security (https://github.com/Yamato-Security/hayabusa - @SecurityYamato)",
         help_template = "\nHayabusa v2.13.0 - Dev Build\n{author-with-newline}\n{usage-heading}\n  {usage}\n\n{all-args}",
         term_width = 400,
-        disable_help_flag = true,
         display_order = 380
     )]
     /// Tune alert levels (default: ./rules/config/level_tuning.txt)
@@ -823,7 +816,6 @@ pub enum Action {
         author = "Yamato Security (https://github.com/Yamato-Security/hayabusa - @SecurityYamato)",
         help_template = "\nHayabusa v2.13.0 - Dev Build\n{author-with-newline}\n{usage-heading}\n  {usage}\n\n{all-args}",
         term_width = 400,
-        disable_help_flag = true,
         display_order = 451
     )]
     /// Set default output profile
@@ -841,7 +833,6 @@ pub enum Action {
         author = "Yamato Security (https://github.com/Yamato-Security/hayabusa - @SecurityYamato)",
         help_template = "\nHayabusa v2.13.0 - Dev Build\n{author-with-newline}\n{usage-heading}\n  {usage}\n\n{all-args}",
         term_width = 400,
-        disable_help_flag = true,
         display_order = 290
     )]
     /// Print computer name metrics
@@ -1528,6 +1519,10 @@ pub struct CommonOptions {
     /// Quiet mode: do not display the launch banner
     #[arg(help_heading = Some("Display Settings"), short, long, global = true, display_order = 430)]
     pub quiet: bool,
+
+    /// Show the help menu
+    #[clap(help_heading = Some("General Options"), short = 'h', long = "help", action = ArgAction::Help, display_order = 340, required = false)]
+    pub help: Option<bool>,
 }
 
 #[derive(Args, Clone, Debug)]
@@ -1662,8 +1657,7 @@ pub struct ComputerMetricsOption {
 #[clap(
     author = "Yamato Security (https://github.com/Yamato-Security/hayabusa - @SecurityYamato)",
     help_template = "\nHayabusa v2.13.0 - Dev Build\n{author-with-newline}\n{usage-heading}\n  hayabusa.exe <COMMAND> [OPTIONS]\n  hayabusa.exe help <COMMAND>\n\n{all-args}{options}",
-    term_width = 400,
-    disable_help_flag = true
+    term_width = 400
 )]
 pub struct Config {
     #[command(subcommand)]
@@ -2693,6 +2687,7 @@ mod tests {
                     common_options: CommonOptions {
                         no_color: false,
                         quiet: false,
+                        help: None,
                     },
                     detect_common_options: DetectCommonOption {
                         evtx_file_ext: None,
@@ -2766,6 +2761,7 @@ mod tests {
                     common_options: CommonOptions {
                         no_color: false,
                         quiet: false,
+                        help: None,
                     },
                     detect_common_options: DetectCommonOption {
                         evtx_file_ext: None,
@@ -2812,6 +2808,7 @@ mod tests {
                 common_options: CommonOptions {
                     no_color: false,
                     quiet: false,
+                    help: None,
                 },
                 input_args: InputOption {
                     directory: None,
@@ -2858,6 +2855,7 @@ mod tests {
                 common_options: CommonOptions {
                     no_color: false,
                     quiet: false,
+                    help: None,
                 },
                 input_args: InputOption {
                     directory: None,
@@ -2901,6 +2899,7 @@ mod tests {
                 common_options: CommonOptions {
                     no_color: false,
                     quiet: false,
+                    help: None,
                 },
                 input_args: InputOption {
                     directory: None,
@@ -2947,6 +2946,7 @@ mod tests {
                 common_options: CommonOptions {
                     no_color: false,
                     quiet: false,
+                    help: None,
                 },
                 input_args: InputOption {
                     directory: None,
