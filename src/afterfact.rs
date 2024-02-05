@@ -385,22 +385,30 @@ fn emit_csv<W: std::io::Write>(
                 // 標準出力の場合
                 if plus_header {
                     // ヘッダーのみを出力
-                    write_color_buffer(
+                    _get_serialized_disp_output(
                         &disp_wtr,
-                        get_writable_color(None, stored_static.common_options.no_color),
-                        &_get_serialized_disp_output(
-                            profile,
-                            true,
-                            (&output_replacer, &output_replaced_maps),
-                            (&output_remover, &removed_replaced_maps),
+                        profile,
+                        true,
+                        (&output_replacer, &output_replaced_maps),
+                        (&output_remover, &removed_replaced_maps),
+                        stored_static.common_options.no_color,
+                        get_writable_color(
+                            _get_output_color(
+                                &color_map,
+                                LEVEL_FULL.get(detect_info.level.as_str()).unwrap_or(&""),
+                            ),
+                            stored_static.common_options.no_color,
                         ),
-                        false,
-                    )
-                    .ok();
+                    );
                     plus_header = false;
                 }
-                write_color_buffer(
+                _get_serialized_disp_output(
                     &disp_wtr,
+                    &detect_info.ext_field,
+                    false,
+                    (&output_replacer, &output_replaced_maps),
+                    (&output_remover, &removed_replaced_maps),
+                    stored_static.common_options.no_color,
                     get_writable_color(
                         _get_output_color(
                             &color_map,
@@ -408,17 +416,7 @@ fn emit_csv<W: std::io::Write>(
                         ),
                         stored_static.common_options.no_color,
                     ),
-                    &_get_serialized_disp_output(
-                        &detect_info.ext_field,
-                        false,
-                        (&output_replacer, &output_replaced_maps),
-                        (&output_remover, &removed_replaced_maps),
-                    )
-                    .split_whitespace()
-                    .join(" "),
-                    true,
-                )
-                .ok();
+                );
             } else if jsonl_output_flag {
                 // JSONL output format
                 let result = output_json_str(
@@ -898,11 +896,14 @@ enum ColPos {
 }
 
 fn _get_serialized_disp_output(
+    disp_wtr: &BufferWriter,
     data: &Vec<(CompactString, Profile)>,
     header: bool,
     (output_replacer, output_replaced_maps): (&AhoCorasick, &HashMap<&str, &str>),
     (output_remover, removed_replaced_maps): (&AhoCorasick, &HashMap<&str, &str>),
-) -> String {
+    no_color: bool,
+    level_color: Option<Color>,
+) {
     let data_length = data.len();
     let mut ret = Nested::<String>::new();
     if header {
@@ -915,85 +916,125 @@ fn _get_serialized_disp_output(
                 ret.push(_format_cellpos(&d.0, ColPos::Other))
             }
         }
+        let mut disp_serializer = WriterBuilder::new()
+            .double_quote(false)
+            .quote_style(QuoteStyle::Never)
+            .delimiter(b'|')
+            .has_headers(false)
+            .from_writer(vec![]);
+
+        disp_serializer
+            .write_record(ret.iter().collect::<Vec<_>>())
+            .ok();
+
+        write_color_buffer(
+            disp_wtr,
+            get_writable_color(None, no_color),
+            &String::from_utf8(disp_serializer.into_inner().unwrap_or_default())
+                .unwrap_or_default()
+                .replace('|', "·")
+                .replace('🦅', "|"),
+            false,
+        )
+        .ok();
     } else {
         for (i, d) in data.iter().enumerate() {
-            if i == 0 {
-                ret.push(
-                    _format_cellpos(
-                        &output_remover
-                            .replace_all(
-                                &output_replacer
-                                    .replace_all(
-                                        &d.1.to_value(),
-                                        &output_replaced_maps.values().collect_vec(),
-                                    )
-                                    .split_whitespace()
-                                    .join(" "),
-                                &removed_replaced_maps.values().collect_vec(),
-                            )
-                            .split_ascii_whitespace()
-                            .join(" "),
-                        ColPos::First,
-                    )
-                    .replace('|', "🦅"),
-                )
+            let col_pos = if i == 0 {
+                ColPos::First
             } else if i == data_length - 1 {
-                ret.push(
-                    _format_cellpos(
-                        &output_remover
-                            .replace_all(
-                                &output_replacer
-                                    .replace_all(
-                                        &d.1.to_value(),
-                                        &output_replaced_maps.values().collect_vec(),
-                                    )
-                                    .split_whitespace()
-                                    .join(" "),
-                                &removed_replaced_maps.values().collect_vec(),
-                            )
-                            .split_ascii_whitespace()
-                            .join(" "),
-                        ColPos::Last,
-                    )
-                    .replace('|', "🦅"),
-                )
+                ColPos::Last
             } else {
-                ret.push(
-                    _format_cellpos(
-                        &output_remover
+                ColPos::Other
+            };
+            let display_contents = _format_cellpos(
+                &output_remover
+                    .replace_all(
+                        &output_replacer
                             .replace_all(
-                                &output_replacer
-                                    .replace_all(
-                                        &d.1.to_value(),
-                                        &output_replaced_maps.values().collect_vec(),
-                                    )
-                                    .split_whitespace()
-                                    .join(" "),
-                                &removed_replaced_maps.values().collect_vec(),
+                                &d.1.to_value(),
+                                &output_replaced_maps.values().collect_vec(),
                             )
-                            .split_ascii_whitespace()
+                            .split_whitespace()
                             .join(" "),
-                        ColPos::Other,
+                        &removed_replaced_maps.values().collect_vec(),
                     )
-                    .replace('|', "🦅"),
+                    .split_ascii_whitespace()
+                    .join(" "),
+                col_pos,
+            );
+            let output_color_and_contents = match d.1 {
+                Profile::Timestamp(_) => {
+                    vec![vec![(
+                        display_contents,
+                        get_writable_color(level_color, no_color),
+                    )]]
+                }
+                Profile::Level(_) => {
+                    vec![vec![(
+                        display_contents,
+                        get_writable_color(level_color, no_color),
+                    )]]
+                }
+                Profile::AllFieldInfo(_) | Profile::Details(_) | Profile::ExtraFieldInfo(_) => {
+                    let mut output_str_char_pair = vec![];
+                    for c in display_contents.split('¦') {
+                        if let Some((field, val)) = c.split_once(':') {
+                            let mut field_val_col_pair = vec![];
+                            field_val_col_pair.push((
+                                format!("{field}: "),
+                                get_writable_color(Some(Color::Rgb(255, 158, 61)), no_color),
+                            ));
+
+                            field_val_col_pair.push((
+                                output_remover
+                                    .replace_all(
+                                        &output_replacer
+                                            .replace_all(
+                                                val,
+                                                &output_replaced_maps.values().collect_vec(),
+                                            )
+                                            .split_whitespace()
+                                            .join(" "),
+                                        &removed_replaced_maps.values().collect_vec(),
+                                    )
+                                    .split_ascii_whitespace()
+                                    .join(" "),
+                                get_writable_color(Some(Color::Rgb(0, 255, 255)), no_color),
+                            ));
+                            output_str_char_pair.push(field_val_col_pair);
+                        }
+                    }
+                    output_str_char_pair
+                }
+                _ => {
+                    vec![vec![(display_contents, None)]]
+                }
+            };
+
+            let col_cnt = output_color_and_contents.len();
+            for (field_idx, col_contents) in output_color_and_contents.iter().enumerate() {
+                for (c, color) in col_contents {
+                    write_color_buffer(disp_wtr, *color, c, false).ok();
+                }
+                if field_idx != col_cnt - 1 {
+                    write_color_buffer(disp_wtr, None, " ¦ ", false).ok();
+                }
+            }
+
+            if i != data_length - 1 {
+                write_color_buffer(
+                    disp_wtr,
+                    get_writable_color(Some(Color::Rgb(255, 158, 61)), no_color),
+                    "·",
+                    false,
                 )
+                .ok();
+            } else {
+                //1レコード分の最後の要素の改行
+                println!();
             }
         }
     }
-    let mut disp_serializer = WriterBuilder::new()
-        .double_quote(false)
-        .quote_style(QuoteStyle::Never)
-        .delimiter(b'|')
-        .has_headers(false)
-        .from_writer(vec![]);
-
-    disp_serializer
-        .write_record(ret.iter().collect::<Vec<_>>())
-        .ok();
-    String::from_utf8(disp_serializer.into_inner().unwrap_or_default())
-        .unwrap_or_default()
-        .replace('|', "·")
-        .replace('🦅', "|")
 }
 
 /// return str position in output file
