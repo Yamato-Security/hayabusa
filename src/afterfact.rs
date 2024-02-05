@@ -1951,10 +1951,10 @@ fn _output_html_computer_by_mitre_attck(html_output_stock: &mut Nested<String>) 
 
 #[cfg(test)]
 mod tests {
-    use crate::afterfact::Colors;
-    use crate::afterfact::_get_serialized_disp_output;
+    use super::set_output_color;
     use crate::afterfact::emit_csv;
     use crate::afterfact::format_time;
+    use crate::afterfact::Colors;
     use crate::detections::configs::load_eventkey_alias;
     use crate::detections::configs::Action;
     use crate::detections::configs::CommonOptions;
@@ -1971,8 +1971,6 @@ mod tests {
     use crate::detections::message::DetectInfo;
     use crate::detections::utils;
     use crate::options::profile::{load_profile, Profile};
-    use aho_corasick::AhoCorasickBuilder;
-    use aho_corasick::MatchKind;
     use chrono::NaiveDateTime;
     use chrono::{Local, TimeZone, Utc};
     use compact_str::CompactString;
@@ -1982,8 +1980,6 @@ mod tests {
     use std::fs::{read_to_string, remove_file};
     use std::io;
     use std::path::Path;
-
-    use super::set_output_color;
 
     #[test]
     fn test_emit_csv_output() {
@@ -3688,168 +3684,6 @@ mod tests {
             }
         };
         assert!(remove_file("./test_multiple_data_in_details.json").is_ok());
-    }
-
-    #[test]
-    fn test_emit_csv_display() {
-        let test_title = "test_title2";
-        let test_level = "medium";
-        let test_computername = "testcomputer2";
-        let test_eventid = "2222";
-        let test_channel = "Sysmon";
-        let output = "displaytest";
-        let test_recinfo = "testinfo";
-        let test_recid = "22222";
-        let test_naivetime =
-            NaiveDateTime::parse_from_str("1996-02-27T01:05:01Z", "%Y-%m-%dT%H:%M:%SZ").unwrap();
-        let test_timestamp = Utc.from_local_datetime(&test_naivetime).unwrap();
-        let expect_header = "Timestamp · Computer · Channel · EventID · Level · RecordID · RuleTitle · Details · RecordInformation\n";
-        let expect_tz = test_timestamp.with_timezone(&Local);
-
-        let expect_no_header = expect_tz.format("%Y-%m-%d %H:%M:%S%.3f %:z").to_string()
-            + " · "
-            + test_computername
-            + " · "
-            + test_channel
-            + " · "
-            + test_eventid
-            + " · "
-            + test_level
-            + " · "
-            + test_recid
-            + " · "
-            + test_title
-            + " · "
-            + output
-            + " · "
-            + test_recinfo
-            + "\n";
-        let output_option = OutputOption {
-            input_args: InputOption {
-                directory: None,
-                filepath: None,
-                live_analysis: false,
-                recover_records: false,
-                timeline_offset: None,
-            },
-            profile: None,
-            enable_deprecated_rules: false,
-            exclude_status: None,
-            min_level: "informational".to_string(),
-            exact_level: None,
-            enable_noisy_rules: false,
-            end_timeline: None,
-            start_timeline: None,
-            eid_filter: false,
-            european_time: false,
-            iso_8601: false,
-            rfc_2822: false,
-            rfc_3339: false,
-            us_military_time: false,
-            us_time: false,
-            utc: false,
-            visualize_timeline: false,
-            rules: Path::new("./rules").to_path_buf(),
-            html_report: None,
-            no_summary: false,
-            common_options: CommonOptions {
-                no_color: false,
-                quiet: false,
-            },
-            detect_common_options: DetectCommonOption {
-                evtx_file_ext: None,
-                thread_number: None,
-                quiet_errors: false,
-                config: Path::new("./rules/config").to_path_buf(),
-                verbose: false,
-                json_input: false,
-                include_computer: None,
-                exclude_computer: None,
-            },
-            enable_unsupported_rules: false,
-            clobber: false,
-            proven_rules: false,
-            include_tag: None,
-            exclude_tag: None,
-            include_category: None,
-            exclude_category: None,
-            include_eid: None,
-            exclude_eid: None,
-            no_field: false,
-            no_pwsh_field_extraction: false,
-            remove_duplicate_data: false,
-            remove_duplicate_detections: false,
-            no_wizard: true,
-        };
-        let data: Vec<(CompactString, Profile)> = vec![
-            (
-                CompactString::new("Timestamp"),
-                Profile::Timestamp(format_time(&test_timestamp, false, &output_option).into()),
-            ),
-            (
-                CompactString::new("Computer"),
-                Profile::Computer(test_computername.into()),
-            ),
-            (
-                CompactString::new("Channel"),
-                Profile::Channel(test_channel.into()),
-            ),
-            (
-                CompactString::new("EventID"),
-                Profile::EventID(test_eventid.into()),
-            ),
-            (
-                CompactString::new("Level"),
-                Profile::Level(test_level.into()),
-            ),
-            (
-                CompactString::new("RecordID"),
-                Profile::RecordID(test_recid.into()),
-            ),
-            (
-                CompactString::new("RuleTitle"),
-                Profile::RuleTitle(test_title.into()),
-            ),
-            (
-                CompactString::new("Details"),
-                Profile::Details(output.into()),
-            ),
-            (
-                CompactString::new("RecordInformation"),
-                Profile::AllFieldInfo(test_recinfo.into()),
-            ),
-        ];
-        let output_replaced_maps: HashMap<&str, &str> =
-            HashMap::from_iter(vec![("🛂r", "\r"), ("🛂n", "\n"), ("🛂t", "\t")]);
-        let removed_replaced_maps: HashMap<&str, &str> =
-            HashMap::from_iter(vec![("\n", " "), ("\r", " "), ("\t", " ")]);
-        let output_replacer = AhoCorasickBuilder::new()
-            .match_kind(MatchKind::LeftmostLongest)
-            .build(output_replaced_maps.keys())
-            .unwrap();
-        let output_remover = AhoCorasickBuilder::new()
-            .match_kind(MatchKind::LeftmostLongest)
-            .build(removed_replaced_maps.keys())
-            .unwrap();
-
-        assert_eq!(
-            _get_serialized_disp_output(
-                &data,
-                true,
-                (&output_replacer, &output_replaced_maps),
-                (&output_remover, &removed_replaced_maps)
-            ),
-            expect_header
-        );
-        assert_eq!(
-            _get_serialized_disp_output(
-                &data,
-                false,
-                (&output_replacer, &output_replaced_maps),
-                (&output_remover, &removed_replaced_maps)
-            ),
-            expect_no_header
-        );
     }
 
     fn check_hashmap_data(
