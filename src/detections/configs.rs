@@ -1521,7 +1521,7 @@ pub struct CommonOptions {
     pub quiet: bool,
 
     /// Show the help menu
-    #[clap(help_heading = Some("General Options"), short = 'h', long = "help", action = ArgAction::Help, display_order = 80, required = false)]
+    #[clap(help_heading = Some("General Options"), short = 'h', long = "help", action = ArgAction::Help, display_order = 340, required = false)]
     pub help: Option<bool>,
 }
 
