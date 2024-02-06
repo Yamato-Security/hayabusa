@@ -963,7 +963,7 @@ fn _get_serialized_disp_output(
                 col_pos,
             );
             let output_color_and_contents = match d.1 {
-                Profile::Timestamp(_) | Profile::Level(_) => {
+                Profile::Timestamp(_) | Profile::Level(_) | Profile::RuleTitle(_) => {
                     vec![vec![(
                         display_contents,
                         get_writable_color(level_color, no_color),
