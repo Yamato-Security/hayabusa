@@ -347,6 +347,7 @@ mod tests {
                 common_options: CommonOptions {
                     no_color: false,
                     quiet: false,
+                    help: None,
                 },
                 detect_common_options: DetectCommonOption {
                     json_input: false,
