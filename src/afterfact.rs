@@ -1026,6 +1026,7 @@ fn _get_serialized_disp_output(
             } else {
                 //1レコード分の最後の要素の改行
                 println!();
+                println!();
             }
         }
     }
