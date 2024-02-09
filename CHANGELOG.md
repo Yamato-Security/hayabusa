@@ -14,7 +14,7 @@
 - Added support for parsing JSON input when the data is inside an array. (#1248) (@hitenkoku)
 - Changed the `‖` separator into a `·` separator to make it easier to read and render properly on older terminals. (#1258) (@YamatoSecurity)
 - Added back `-h --help` option to General Options. (#1255) (@hitenkoku)
-- Changed the `Details` output in `json-timeline` command from alphabetical order to the original order. 
+- Changed the `Details` output in `json-timeline` command from alphabetical order to the original order.
 - Skiped loading detection rules when running to command which is no need to load rule. (#1263) (@hitenkoku)
 - Changed standard output color rule in `csv-timeline` command. (#1271) (@hitenkoku)
 
@@ -22,6 +22,7 @@
 
 - Removed newline characters in `search` command output. (#1253) (@hitenkoku)
 - Fixed progress bar and wizard colored output when `--no-color` option is used. (#1256) (@hitenkoku)
+- Fixed a panic when the local timezone was not able to be identified. This was fixed in the `chrono` crate version 0.4.32. (#1273)
 
 **Other:**
 
