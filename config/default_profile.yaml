@@ -1,10 +1,10 @@
 ---
 Timestamp: "%Timestamp%"
+RuleTitle: "%RuleTitle%"
+Level: "%Level%"
 Computer: "%Computer%"
 Channel: "%Channel%"
 EventID: "%EventID%"
-Level: "%Level%"
 RecordID: "%RecordID%"
-RuleTitle: "%RuleTitle%"
 Details: "%Details%"
 ExtraFieldInfo: "%ExtraFieldInfo%"

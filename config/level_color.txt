@@ -1,5 +1,5 @@
 level,colorcode
 critical,ff0000
-high,ffff00
-medium,00ffff
+high,ffc100
+medium,ffff00
 low,00ff00
