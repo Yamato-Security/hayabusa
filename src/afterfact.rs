@@ -218,7 +218,7 @@ fn emit_csv<W: std::io::Write>(
     displayflag: bool,
     color_map: HashMap<CompactString, Colors>,
     (all_record_cnt, recover_records_cnt): (u128, u128),
-    profile: &Vec<(CompactString, Profile)>,
+    profile: &[(CompactString, Profile)],
     stored_static: &StoredStatic,
     tl_start_end_time: (&Option<DateTime<Utc>>, &Option<DateTime<Utc>>),
 ) -> io::Result<()> {
@@ -897,7 +897,7 @@ enum ColPos {
 
 fn _get_serialized_disp_output(
     disp_wtr: &BufferWriter,
-    data: &Vec<(CompactString, Profile)>,
+    data: &[(CompactString, Profile)],
     header: bool,
     (output_replacer, output_replaced_maps): (&AhoCorasick, &HashMap<&str, &str>),
     (output_remover, removed_replaced_maps): (&AhoCorasick, &HashMap<&str, &str>),
@@ -975,24 +975,27 @@ fn _get_serialized_disp_output(
                         if let Some((field, val)) = c.split_once(':') {
                             let mut field_val_col_pair = vec![];
                             field_val_col_pair.push((
-                                format!("{field}: "),
+                                format!(" {}: ", field.trim()),
                                 get_writable_color(Some(Color::Rgb(255, 158, 61)), no_color),
                             ));
 
                             field_val_col_pair.push((
-                                output_remover
-                                    .replace_all(
-                                        &output_replacer
-                                            .replace_all(
-                                                val,
-                                                &output_replaced_maps.values().collect_vec(),
-                                            )
-                                            .split_whitespace()
-                                            .join(" "),
-                                        &removed_replaced_maps.values().collect_vec(),
-                                    )
-                                    .split_ascii_whitespace()
-                                    .join(" "),
+                                format!(
+                                    "{} ",
+                                    output_remover
+                                        .replace_all(
+                                            &output_replacer
+                                                .replace_all(
+                                                    val,
+                                                    &output_replaced_maps.values().collect_vec(),
+                                                )
+                                                .split_whitespace()
+                                                .join(" "),
+                                            &removed_replaced_maps.values().collect_vec(),
+                                        )
+                                        .split_ascii_whitespace()
+                                        .join(" ")
+                                ),
                                 get_writable_color(Some(Color::Rgb(0, 255, 255)), no_color),
                             ));
                             output_str_char_pair.push(field_val_col_pair);
@@ -1011,7 +1014,7 @@ fn _get_serialized_disp_output(
                     write_color_buffer(disp_wtr, *color, c, false).ok();
                 }
                 if field_idx != col_cnt - 1 {
-                    write_color_buffer(disp_wtr, None, " ¦ ", false).ok();
+                    write_color_buffer(disp_wtr, None, "¦", false).ok();
                 }
             }
 
