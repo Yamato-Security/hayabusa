@@ -1637,8 +1637,8 @@ pub fn output_json_str(
                     let mut children_output_order = vec![];
                     for contents in details_target_stock.iter() {
                         let (key, value) = contents.split_once(':').unwrap_or_default();
-                        let output_key = _convert_valid_json_str(&[key], false);
-                        let fmted_val = _convert_valid_json_str(&[value.trim_start()], false);
+                        let output_key = _convert_valid_json_str(&[key.trim()], false);
+                        let fmted_val = _convert_valid_json_str(&[value.trim()], false);
                         if let RawEntryMut::Vacant(_) = children_output_stock
                             .raw_entry_mut()
                             .from_key(output_key.as_str())
