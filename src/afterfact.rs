@@ -218,7 +218,7 @@ fn emit_csv<W: std::io::Write>(
     displayflag: bool,
     color_map: HashMap<CompactString, Colors>,
     (all_record_cnt, recover_records_cnt): (u128, u128),
-    profile: &Vec<(CompactString, Profile)>,
+    profile: &[(CompactString, Profile)],
     stored_static: &StoredStatic,
     tl_start_end_time: (&Option<DateTime<Utc>>, &Option<DateTime<Utc>>),
 ) -> io::Result<()> {
@@ -385,22 +385,30 @@ fn emit_csv<W: std::io::Write>(
                 // 標準出力の場合
                 if plus_header {
                     // ヘッダーのみを出力
-                    write_color_buffer(
+                    _get_serialized_disp_output(
                         &disp_wtr,
-                        get_writable_color(None, stored_static.common_options.no_color),
-                        &_get_serialized_disp_output(
-                            profile,
-                            true,
-                            (&output_replacer, &output_replaced_maps),
-                            (&output_remover, &removed_replaced_maps),
+                        profile,
+                        true,
+                        (&output_replacer, &output_replaced_maps),
+                        (&output_remover, &removed_replaced_maps),
+                        stored_static.common_options.no_color,
+                        get_writable_color(
+                            _get_output_color(
+                                &color_map,
+                                LEVEL_FULL.get(detect_info.level.as_str()).unwrap_or(&""),
+                            ),
+                            stored_static.common_options.no_color,
                         ),
-                        false,
-                    )
-                    .ok();
+                    );
                     plus_header = false;
                 }
-                write_color_buffer(
+                _get_serialized_disp_output(
                     &disp_wtr,
+                    &detect_info.ext_field,
+                    false,
+                    (&output_replacer, &output_replaced_maps),
+                    (&output_remover, &removed_replaced_maps),
+                    stored_static.common_options.no_color,
                     get_writable_color(
                         _get_output_color(
                             &color_map,
@@ -408,17 +416,7 @@ fn emit_csv<W: std::io::Write>(
                         ),
                         stored_static.common_options.no_color,
                     ),
-                    &_get_serialized_disp_output(
-                        &detect_info.ext_field,
-                        false,
-                        (&output_replacer, &output_replaced_maps),
-                        (&output_remover, &removed_replaced_maps),
-                    )
-                    .split_whitespace()
-                    .join(" "),
-                    true,
-                )
-                .ok();
+                );
             } else if jsonl_output_flag {
                 // JSONL output format
                 let result = output_json_str(
@@ -898,11 +896,14 @@ enum ColPos {
 }
 
 fn _get_serialized_disp_output(
-    data: &Vec<(CompactString, Profile)>,
+    disp_wtr: &BufferWriter,
+    data: &[(CompactString, Profile)],
     header: bool,
     (output_replacer, output_replaced_maps): (&AhoCorasick, &HashMap<&str, &str>),
     (output_remover, removed_replaced_maps): (&AhoCorasick, &HashMap<&str, &str>),
-) -> String {
+    no_color: bool,
+    level_color: Option<Color>,
+) {
     let data_length = data.len();
     let mut ret = Nested::<String>::new();
     if header {
@@ -915,85 +916,123 @@ fn _get_serialized_disp_output(
                 ret.push(_format_cellpos(&d.0, ColPos::Other))
             }
         }
+        let mut disp_serializer = WriterBuilder::new()
+            .double_quote(false)
+            .quote_style(QuoteStyle::Never)
+            .delimiter(b'|')
+            .has_headers(false)
+            .from_writer(vec![]);
+
+        disp_serializer
+            .write_record(ret.iter().collect::<Vec<_>>())
+            .ok();
+
+        write_color_buffer(
+            disp_wtr,
+            get_writable_color(None, no_color),
+            &String::from_utf8(disp_serializer.into_inner().unwrap_or_default())
+                .unwrap_or_default()
+                .replace('|', "·")
+                .replace('🦅', "|"),
+            false,
+        )
+        .ok();
     } else {
         for (i, d) in data.iter().enumerate() {
-            if i == 0 {
-                ret.push(
-                    _format_cellpos(
-                        &output_remover
-                            .replace_all(
-                                &output_replacer
-                                    .replace_all(
-                                        &d.1.to_value(),
-                                        &output_replaced_maps.values().collect_vec(),
-                                    )
-                                    .split_whitespace()
-                                    .join(" "),
-                                &removed_replaced_maps.values().collect_vec(),
-                            )
-                            .split_ascii_whitespace()
-                            .join(" "),
-                        ColPos::First,
-                    )
-                    .replace('|', "🦅"),
-                )
+            let col_pos = if i == 0 {
+                ColPos::First
             } else if i == data_length - 1 {
-                ret.push(
-                    _format_cellpos(
-                        &output_remover
-                            .replace_all(
-                                &output_replacer
-                                    .replace_all(
-                                        &d.1.to_value(),
-                                        &output_replaced_maps.values().collect_vec(),
-                                    )
-                                    .split_whitespace()
-                                    .join(" "),
-                                &removed_replaced_maps.values().collect_vec(),
-                            )
-                            .split_ascii_whitespace()
-                            .join(" "),
-                        ColPos::Last,
-                    )
-                    .replace('|', "🦅"),
-                )
+                ColPos::Last
             } else {
-                ret.push(
-                    _format_cellpos(
-                        &output_remover
+                ColPos::Other
+            };
+            let display_contents = _format_cellpos(
+                &output_remover
+                    .replace_all(
+                        &output_replacer
                             .replace_all(
-                                &output_replacer
-                                    .replace_all(
-                                        &d.1.to_value(),
-                                        &output_replaced_maps.values().collect_vec(),
-                                    )
-                                    .split_whitespace()
-                                    .join(" "),
-                                &removed_replaced_maps.values().collect_vec(),
+                                &d.1.to_value(),
+                                &output_replaced_maps.values().collect_vec(),
                             )
-                            .split_ascii_whitespace()
+                            .split_whitespace()
                             .join(" "),
-                        ColPos::Other,
+                        &removed_replaced_maps.values().collect_vec(),
                     )
-                    .replace('|', "🦅"),
+                    .split_ascii_whitespace()
+                    .join(" "),
+                col_pos,
+            );
+            let output_color_and_contents = match d.1 {
+                Profile::Timestamp(_) | Profile::Level(_) | Profile::RuleTitle(_) => {
+                    vec![vec![(
+                        display_contents,
+                        get_writable_color(level_color, no_color),
+                    )]]
+                }
+                Profile::AllFieldInfo(_) | Profile::Details(_) | Profile::ExtraFieldInfo(_) => {
+                    let mut output_str_char_pair = vec![];
+                    for c in display_contents.split('¦') {
+                        if let Some((field, val)) = c.split_once(':') {
+                            let mut field_val_col_pair = vec![];
+                            field_val_col_pair.push((
+                                format!(" {}: ", field.trim()),
+                                get_writable_color(Some(Color::Rgb(255, 158, 61)), no_color),
+                            ));
+
+                            field_val_col_pair.push((
+                                format!(
+                                    "{} ",
+                                    output_remover
+                                        .replace_all(
+                                            &output_replacer
+                                                .replace_all(
+                                                    val,
+                                                    &output_replaced_maps.values().collect_vec(),
+                                                )
+                                                .split_whitespace()
+                                                .join(" "),
+                                            &removed_replaced_maps.values().collect_vec(),
+                                        )
+                                        .split_ascii_whitespace()
+                                        .join(" ")
+                                ),
+                                get_writable_color(Some(Color::Rgb(0, 255, 255)), no_color),
+                            ));
+                            output_str_char_pair.push(field_val_col_pair);
+                        }
+                    }
+                    output_str_char_pair
+                }
+                _ => {
+                    vec![vec![(display_contents, None)]]
+                }
+            };
+
+            let col_cnt = output_color_and_contents.len();
+            for (field_idx, col_contents) in output_color_and_contents.iter().enumerate() {
+                for (c, color) in col_contents {
+                    write_color_buffer(disp_wtr, *color, c, false).ok();
+                }
+                if field_idx != col_cnt - 1 {
+                    write_color_buffer(disp_wtr, None, "¦", false).ok();
+                }
+            }
+
+            if i != data_length - 1 {
+                write_color_buffer(
+                    disp_wtr,
+                    get_writable_color(Some(Color::Rgb(255, 158, 61)), no_color),
+                    "·",
+                    false,
                 )
+                .ok();
+            } else {
+                //1レコード分の最後の要素の改行
+                println!();
+                println!();
             }
         }
     }
-    let mut disp_serializer = WriterBuilder::new()
-        .double_quote(false)
-        .quote_style(QuoteStyle::Never)
-        .delimiter(b'|')
-        .has_headers(false)
-        .from_writer(vec![]);
-
-    disp_serializer
-        .write_record(ret.iter().collect::<Vec<_>>())
-        .ok();
-    String::from_utf8(disp_serializer.into_inner().unwrap_or_default())
-        .unwrap_or_default()
-        .replace('|', "·")
-        .replace('🦅', "|")
 }
 
 /// return str position in output file
@@ -1910,10 +1949,10 @@ fn _output_html_computer_by_mitre_attck(html_output_stock: &mut Nested<String>) 
 
 #[cfg(test)]
 mod tests {
-    use crate::afterfact::Colors;
-    use crate::afterfact::_get_serialized_disp_output;
+    use super::set_output_color;
     use crate::afterfact::emit_csv;
     use crate::afterfact::format_time;
+    use crate::afterfact::Colors;
     use crate::detections::configs::load_eventkey_alias;
     use crate::detections::configs::Action;
     use crate::detections::configs::CommonOptions;
@@ -1930,8 +1969,6 @@ mod tests {
     use crate::detections::message::DetectInfo;
     use crate::detections::utils;
     use crate::options::profile::{load_profile, Profile};
-    use aho_corasick::AhoCorasickBuilder;
-    use aho_corasick::MatchKind;
     use chrono::NaiveDateTime;
     use chrono::{Local, TimeZone, Utc};
     use compact_str::CompactString;
@@ -1941,8 +1978,6 @@ mod tests {
     use std::fs::{read_to_string, remove_file};
     use std::io;
     use std::path::Path;
-
-    use super::set_output_color;
 
     #[test]
     fn test_emit_csv_output() {
@@ -3657,169 +3692,6 @@ mod tests {
             }
         };
         assert!(remove_file("./test_multiple_data_in_details.json").is_ok());
-    }
-
-    #[test]
-    fn test_emit_csv_display() {
-        let test_title = "test_title2";
-        let test_level = "medium";
-        let test_computername = "testcomputer2";
-        let test_eventid = "2222";
-        let test_channel = "Sysmon";
-        let output = "displaytest";
-        let test_recinfo = "testinfo";
-        let test_recid = "22222";
-        let test_naivetime =
-            NaiveDateTime::parse_from_str("1996-02-27T01:05:01Z", "%Y-%m-%dT%H:%M:%SZ").unwrap();
-        let test_timestamp = Utc.from_local_datetime(&test_naivetime).unwrap();
-        let expect_header = "Timestamp · Computer · Channel · EventID · Level · RecordID · RuleTitle · Details · RecordInformation\n";
-        let expect_tz = test_timestamp.with_timezone(&Local);
-
-        let expect_no_header = expect_tz.format("%Y-%m-%d %H:%M:%S%.3f %:z").to_string()
-            + " · "
-            + test_computername
-            + " · "
-            + test_channel
-            + " · "
-            + test_eventid
-            + " · "
-            + test_level
-            + " · "
-            + test_recid
-            + " · "
-            + test_title
-            + " · "
-            + output
-            + " · "
-            + test_recinfo
-            + "\n";
-        let output_option = OutputOption {
-            input_args: InputOption {
-                directory: None,
-                filepath: None,
-                live_analysis: false,
-                recover_records: false,
-                timeline_offset: None,
-            },
-            profile: None,
-            enable_deprecated_rules: false,
-            exclude_status: None,
-            min_level: "informational".to_string(),
-            exact_level: None,
-            enable_noisy_rules: false,
-            end_timeline: None,
-            start_timeline: None,
-            eid_filter: false,
-            european_time: false,
-            iso_8601: false,
-            rfc_2822: false,
-            rfc_3339: false,
-            us_military_time: false,
-            us_time: false,
-            utc: false,
-            visualize_timeline: false,
-            rules: Path::new("./rules").to_path_buf(),
-            html_report: None,
-            no_summary: false,
-            common_options: CommonOptions {
-                no_color: false,
-                quiet: false,
-                help: None,
-            },
-            detect_common_options: DetectCommonOption {
-                evtx_file_ext: None,
-                thread_number: None,
-                quiet_errors: false,
-                config: Path::new("./rules/config").to_path_buf(),
-                verbose: false,
-                json_input: false,
-                include_computer: None,
-                exclude_computer: None,
-            },
-            enable_unsupported_rules: false,
-            clobber: false,
-            proven_rules: false,
-            include_tag: None,
-            exclude_tag: None,
-            include_category: None,
-            exclude_category: None,
-            include_eid: None,
-            exclude_eid: None,
-            no_field: false,
-            no_pwsh_field_extraction: false,
-            remove_duplicate_data: false,
-            remove_duplicate_detections: false,
-            no_wizard: true,
-        };
-        let data: Vec<(CompactString, Profile)> = vec![
-            (
-                CompactString::new("Timestamp"),
-                Profile::Timestamp(format_time(&test_timestamp, false, &output_option).into()),
-            ),
-            (
-                CompactString::new("Computer"),
-                Profile::Computer(test_computername.into()),
-            ),
-            (
-                CompactString::new("Channel"),
-                Profile::Channel(test_channel.into()),
-            ),
-            (
-                CompactString::new("EventID"),
-                Profile::EventID(test_eventid.into()),
-            ),
-            (
-                CompactString::new("Level"),
-                Profile::Level(test_level.into()),
-            ),
-            (
-                CompactString::new("RecordID"),
-                Profile::RecordID(test_recid.into()),
-            ),
-            (
-                CompactString::new("RuleTitle"),
-                Profile::RuleTitle(test_title.into()),
-            ),
-            (
-                CompactString::new("Details"),
-                Profile::Details(output.into()),
-            ),
-            (
-                CompactString::new("RecordInformation"),
-                Profile::AllFieldInfo(test_recinfo.into()),
-            ),
-        ];
-        let output_replaced_maps: HashMap<&str, &str> =
-            HashMap::from_iter(vec![("🛂r", "\r"), ("🛂n", "\n"), ("🛂t", "\t")]);
-        let removed_replaced_maps: HashMap<&str, &str> =
-            HashMap::from_iter(vec![("\n", " "), ("\r", " "), ("\t", " ")]);
-        let output_replacer = AhoCorasickBuilder::new()
-            .match_kind(MatchKind::LeftmostLongest)
-            .build(output_replaced_maps.keys())
-            .unwrap();
-        let output_remover = AhoCorasickBuilder::new()
-            .match_kind(MatchKind::LeftmostLongest)
-            .build(removed_replaced_maps.keys())
-            .unwrap();
-
-        assert_eq!(
-            _get_serialized_disp_output(
-                &data,
-                true,
-                (&output_replacer, &output_replaced_maps),
-                (&output_remover, &removed_replaced_maps)
-            ),
-            expect_header
-        );
-        assert_eq!(
-            _get_serialized_disp_output(
-                &data,
-                false,
-                (&output_replacer, &output_replaced_maps),
-                (&output_remover, &removed_replaced_maps)
-            ),
-            expect_no_header
-        );
     }
 
     fn check_hashmap_data(

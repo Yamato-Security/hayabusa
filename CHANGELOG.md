@@ -1,30 +1,25 @@
 # Changes
 
-## 2.13.0 [2024/XX/XX] "XXX Release"
-
-**New Features:**
-
-- XXX
+## 2.13.0 [2024/02/11] "Year Of The Dragon Release"
 
 **Enhancements:**
 
 - Adjusted the `search` command's Filter option to be an exact match and support wildcard characters. (#1240) (@hitenkoku)
-- Any time there is a change in a detection rule, it will be displayed when running the `update-rules` command. Previously, only rules that updated their `modified:` field would be displayed. (#1243) (@hitenkoku)
+- Any time there is a change in a detection rule, it will be displayed when running the `update-rules` command. Previously, only rules that updated their `modified` field would be displayed. (#1243) (@hitenkoku)
 - The `json-timeline` command now outputs in JSON format when outputting to the terminal. (#1197) (@hitenkoku)
 - Added support for parsing JSON input when the data is inside an array. (#1248) (@hitenkoku)
 - Changed the `‖` separator into a `·` separator to make it easier to read and render properly on older terminals. (#1258) (@YamatoSecurity)
-- Added back `-h --help` option to General Options. (#1255) (@hitenkoku)
-- Changed the `Details` output in `json-timeline` command from alphabetical order to the original order. 
-- Skiped loading detection rules when running to command which is no need to load rule. (#1263) (@hitenkoku)
+- Added a `-h, --help` option to General Options for all commands. (#1255) (@hitenkoku)
+- Changed the `Details` output in the `json-timeline` command from alphabetical order to the original order.
+- Loading detection rules is now skipped when running commands that do not need them. (#1263) (@hitenkoku)
+- Improved the standard output colors in the `csv-timeline` command. (#1271) (@hitenkoku)
+- Refactoring and performance enhancements. (#1268, #1260) (@hach1yon)
 
 **Bug Fixes:**
 
-- Removed newline characters in `search` command output. (#1253) (@hitenkoku)
-- Fixed progress bar and wizard colored output when `--no-color` option is used. (#1256) (@hitenkoku)
-
-**Other:**
-
-- XXX
+- Removed newline characters in the `search` command output. (#1253) (@hitenkoku)
+- Fixed the progress bar and wizard colored output when the `--no-color` option is used. (#1256) (@hitenkoku)
+- Fixed a panic when the local timezone was not able to be identified. This was fixed in the `chrono` crate version 0.4.32. (#1273)
 
 ## 2.12.0 [2023/12/23] "SECCON Christmas Release"
 
