@@ -8,7 +8,7 @@
 
 **バグ修正:**
 
-- `search` コマンドのJSON出力でAllFieldInfoフィールドの情報が出力されなくなっていたのを修正した。 (#1251) (@hitenkoku)
+- `search` コマンドのJSON出力で`AllFieldInfo`フィールドの情報が出力されなくなっていたのを修正した。 (#1251) (@hitenkoku)
 
 ## 2.13.0 [2024/02/11] "Year Of The Dragon Release"
 

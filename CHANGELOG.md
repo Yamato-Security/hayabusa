@@ -8,7 +8,7 @@
 
 **Bug Fixes:**
 
-- Fixed JSON output of `search` command is missing AllFieldInfo field. (#1251) (@hitenkoku)
+- JSON output of the `search` command was missing the `AllFieldInfo` field. (#1251) (@hitenkoku)
 
 ## 2.13.0 [2024/02/11] "Year Of The Dragon Release"
 
