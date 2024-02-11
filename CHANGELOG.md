@@ -1,5 +1,15 @@
 # Changes
 
+## 2.XX.X [2024/XX/XX] "XXX"
+
+**Enhancements:**
+
+- XXX
+
+**Bug Fixes:**
+
+- XXX
+
 ## 2.13.0 [2024/02/11] "Year Of The Dragon Release"
 
 **Enhancements:**
