@@ -308,9 +308,6 @@ pub struct LeafSelectionNode {
     pub matcher: Option<Box<dyn matchers::LeafMatcher>>,
 }
 
-unsafe impl Sync for LeafSelectionNode {}
-unsafe impl Send for LeafSelectionNode {}
-
 impl LeafSelectionNode {
     pub fn new(keys: Nested<String>, value_yaml: Yaml) -> LeafSelectionNode {
         LeafSelectionNode {

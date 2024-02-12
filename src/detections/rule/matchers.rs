@@ -15,7 +15,7 @@ use downcast_rs::Downcast;
 //
 // 新規にLeafMatcherを実装するクラスを作成した場合、
 // LeafSelectionNodeのget_matchersクラスの戻り値の配列に新規作成したクラスのインスタンスを追加する。
-pub trait LeafMatcher: Downcast {
+pub trait LeafMatcher: Downcast + Send + Sync {
     /// 指定されたkey_listにマッチするLeafMatcherであるかどうか判定する。
     fn is_target_key(&self, key_list: &Nested<String>) -> bool;
 
