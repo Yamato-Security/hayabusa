@@ -39,9 +39,6 @@ impl Debug for RuleNode {
     }
 }
 
-unsafe impl Sync for RuleNode {}
-unsafe impl Send for RuleNode {}
-
 impl RuleNode {
     pub fn new(rule_path: String, yaml_data: Yaml) -> RuleNode {
         RuleNode {
