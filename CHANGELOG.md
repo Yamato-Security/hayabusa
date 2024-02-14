@@ -4,7 +4,7 @@
 
 **Enhancements:**
 
-- XXX
+- Added `--include-status` option: You can specify rules based on their `status`. (#1193) (@hitenkoku)
 
 **Bug Fixes:**
 

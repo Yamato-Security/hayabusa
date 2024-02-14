@@ -1303,7 +1303,7 @@ impl App {
                 stored_static.output_option.as_mut().unwrap().exclude_tag =
                     Some(exclude_tags.to_owned());
             }
-        } else {
+        } else if stored_static.include_status.is_empty() {
             stored_static.include_status.insert("*".into());
         }
 
@@ -2100,6 +2100,7 @@ mod tests {
                     remove_duplicate_data: false,
                     remove_duplicate_detections: false,
                     no_wizard: true,
+                    include_status: None,
                 },
                 geo_ip: None,
                 output: None,
@@ -2147,7 +2148,7 @@ mod tests {
         stored_static.config.action = None;
         stored_static.html_report_flag = true;
         app.exec(&mut config_reader.app, &mut stored_static);
-        let expect_general_contents = vec![
+        let expect_general_contents = [
             format!("- Command line: {}", std::env::args().join(" ")),
             format!("- Start time: {}", Local::now().format("%Y/%m/%d %H:%M")),
         ];
@@ -2264,6 +2265,7 @@ mod tests {
                 remove_duplicate_data: false,
                 remove_duplicate_detections: false,
                 no_wizard: true,
+                include_status: None,
             },
             geo_ip: None,
             output: Some(Path::new("overwrite.csv").to_path_buf()),
@@ -2349,6 +2351,7 @@ mod tests {
                 remove_duplicate_data: false,
                 remove_duplicate_detections: false,
                 no_wizard: true,
+                include_status: None,
             },
             geo_ip: None,
             output: Some(Path::new("overwrite.csv").to_path_buf()),
@@ -2432,6 +2435,7 @@ mod tests {
                 remove_duplicate_data: false,
                 remove_duplicate_detections: false,
                 no_wizard: true,
+                include_status: None,
             },
             geo_ip: None,
             output: Some(Path::new("overwrite.json").to_path_buf()),
@@ -2517,6 +2521,7 @@ mod tests {
                 remove_duplicate_data: false,
                 remove_duplicate_detections: false,
                 no_wizard: true,
+                include_status: None,
             },
             geo_ip: None,
             output: Some(Path::new("overwrite.json").to_path_buf()),

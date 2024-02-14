@@ -530,6 +530,32 @@ impl StoredStatic {
             Some(Action::ComputerMetrics(opt)) => opt.input_args.timeline_offset.clone(),
             _ => None,
         };
+        let include_status: HashSet<CompactString> = match &input_config.as_ref().unwrap().action {
+            Some(Action::CsvTimeline(opt)) => opt
+                .output_options
+                .include_status
+                .as_ref()
+                .unwrap_or(&vec![])
+                .iter()
+                .map(|x| x.into())
+                .collect(),
+            Some(Action::JsonTimeline(opt)) => opt
+                .output_options
+                .include_status
+                .as_ref()
+                .unwrap_or(&vec![])
+                .iter()
+                .map(|x| x.into())
+                .collect(),
+            Some(Action::PivotKeywordsList(opt)) => opt
+                .include_status
+                .as_ref()
+                .unwrap_or(&vec![])
+                .iter()
+                .map(|x| x.into())
+                .collect(),
+            _ => HashSet::default(),
+        };
 
         let mut ret = StoredStatic {
             config: input_config.as_ref().unwrap().to_owned(),
@@ -645,7 +671,7 @@ impl StoredStatic {
             no_pwsh_field_extraction: no_pwsh_field_extraction_flag,
             enable_recover_records,
             timeline_offset,
-            include_status: HashSet::new(),
+            include_status,
         };
         ret.profiles = load_profile(
             check_setting_path(
@@ -1200,11 +1226,15 @@ pub struct PivotKeywordOption {
     pub enable_unsupported_rules: bool,
 
     /// Do not load rules according to status (ex: experimental) (ex: stable,test)
-    #[arg(help_heading = Some("Filtering"), long = "exclude-status", value_name = "STATUS...", requires = "no_wizard", use_value_delimiter = true, value_delimiter = ',', display_order = 316)]
+    #[arg(help_heading = Some("Filtering"), long = "exclude-status", value_name = "STATUS...", requires = "no_wizard", conflicts_with = "include_status",use_value_delimiter = true, value_delimiter = ',', display_order = 316)]
     pub exclude_status: Option<Vec<String>>,
 
+    /// Only load rules with specific status (ex: experimental) (ex: stable,test)
+    #[arg(help_heading = Some("Filtering"), long = "include-status", value_name = "STATUS...", requires = "no_wizard", conflicts_with = "exclude_status", use_value_delimiter = true, value_delimiter = ',', display_order = 353)]
+    pub include_status: Option<Vec<String>>,
+
     /// Only load rules with specific tags (ex: attack.execution,attack.discovery)
-    #[arg(help_heading = Some("Filtering"), long = "include-tag", value_name = "TAG...", requires = "no_wizard", conflicts_with = "exclude_tag", use_value_delimiter = true, value_delimiter = ',', display_order = 353)]
+    #[arg(help_heading = Some("Filtering"), long = "include-tag", value_name = "TAG...", requires = "no_wizard", conflicts_with = "exclude_tag", use_value_delimiter = true, value_delimiter = ',', display_order = 354)]
     pub include_tag: Option<Vec<String>>,
 
     /// Do not load rules with specific tags (ex: sysmon)
@@ -1352,11 +1382,15 @@ pub struct OutputOption {
     pub enable_unsupported_rules: bool,
 
     /// Do not load rules according to status (ex: experimental) (ex: stable,test)
-    #[arg(help_heading = Some("Filtering"), long = "exclude-status", value_name = "STATUS...", requires = "no_wizard", use_value_delimiter = true, value_delimiter = ',', display_order = 316)]
+    #[arg(help_heading = Some("Filtering"), long = "exclude-status", value_name = "STATUS...", requires = "no_wizard", conflicts_with = "include_status", use_value_delimiter = true, value_delimiter = ',', display_order = 316)]
     pub exclude_status: Option<Vec<String>>,
 
+    /// Only load rules with specific status (ex: experimental) (ex: stable,test)
+    #[arg(help_heading = Some("Filtering"), long = "include-status", value_name = "STATUS...", requires = "no_wizard", conflicts_with = "exclude_status", use_value_delimiter = true, value_delimiter = ',', display_order = 353)]
+    pub include_status: Option<Vec<String>>,
+
     /// Only load rules with specific tags (ex: attack.execution,attack.discovery)
-    #[arg(help_heading = Some("Filtering"), long = "include-tag", value_name = "TAG...", requires = "no_wizard", conflicts_with = "exclude_tag", use_value_delimiter = true, value_delimiter = ',', display_order = 353)]
+    #[arg(help_heading = Some("Filtering"), long = "include-tag", value_name = "TAG...", requires = "no_wizard", conflicts_with = "exclude_tag", use_value_delimiter = true, value_delimiter = ',', display_order = 354)]
     pub include_tag: Option<Vec<String>>,
 
     /// Only load rules with specified logsource categories (ex: process_creation,pipe_created)
@@ -2180,6 +2214,7 @@ fn extract_output_options(config: &Config) -> Option<OutputOption> {
             remove_duplicate_data: false,
             remove_duplicate_detections: false,
             no_wizard: option.no_wizard,
+            include_status: option.include_status.clone(),
         }),
         Action::EidMetrics(option) => Some(OutputOption {
             input_args: option.input_args.clone(),
@@ -2219,6 +2254,7 @@ fn extract_output_options(config: &Config) -> Option<OutputOption> {
             remove_duplicate_data: false,
             remove_duplicate_detections: false,
             no_wizard: true,
+            include_status: None,
         }),
         Action::LogonSummary(option) => Some(OutputOption {
             input_args: option.input_args.clone(),
@@ -2258,6 +2294,7 @@ fn extract_output_options(config: &Config) -> Option<OutputOption> {
             remove_duplicate_data: false,
             remove_duplicate_detections: false,
             no_wizard: true,
+            include_status: None,
         }),
         Action::ComputerMetrics(option) => Some(OutputOption {
             input_args: option.input_args.clone(),
@@ -2306,6 +2343,7 @@ fn extract_output_options(config: &Config) -> Option<OutputOption> {
             remove_duplicate_data: false,
             remove_duplicate_detections: false,
             no_wizard: true,
+            include_status: None,
         }),
         Action::Search(option) => Some(OutputOption {
             input_args: option.input_args.clone(),
@@ -2354,6 +2392,7 @@ fn extract_output_options(config: &Config) -> Option<OutputOption> {
             remove_duplicate_data: false,
             remove_duplicate_detections: false,
             no_wizard: true,
+            include_status: None,
         }),
         Action::SetDefaultProfile(option) => Some(OutputOption {
             input_args: InputOption {
@@ -2408,6 +2447,7 @@ fn extract_output_options(config: &Config) -> Option<OutputOption> {
             remove_duplicate_data: false,
             remove_duplicate_detections: false,
             no_wizard: true,
+            include_status: None,
         }),
         Action::UpdateRules(option) => Some(OutputOption {
             input_args: InputOption {
@@ -2462,6 +2502,7 @@ fn extract_output_options(config: &Config) -> Option<OutputOption> {
             remove_duplicate_data: false,
             remove_duplicate_detections: false,
             no_wizard: true,
+            include_status: None,
         }),
         _ => None,
     }
@@ -2713,6 +2754,7 @@ mod tests {
                     remove_duplicate_data: false,
                     remove_duplicate_detections: false,
                     no_wizard: true,
+                    include_status: None,
                 },
                 geo_ip: None,
                 output: None,
@@ -2787,6 +2829,7 @@ mod tests {
                     remove_duplicate_data: false,
                     remove_duplicate_detections: false,
                     no_wizard: true,
+                    include_status: None,
                 },
                 geo_ip: None,
                 output: None,
@@ -2980,6 +3023,7 @@ mod tests {
                 no_wizard: true,
                 include_tag: None,
                 exclude_tag: None,
+                include_status: None,
             })),
             debug: false,
         }));
