@@ -2754,6 +2754,7 @@ mod tests {
                     remove_duplicate_data: false,
                     remove_duplicate_detections: false,
                     no_wizard: true,
+                    include_status: None,
                 },
                 geo_ip: None,
                 output: None,
@@ -2828,6 +2829,7 @@ mod tests {
                     remove_duplicate_data: false,
                     remove_duplicate_detections: false,
                     no_wizard: true,
+                    include_status: None,
                 },
                 geo_ip: None,
                 output: None,
@@ -3021,6 +3023,7 @@ mod tests {
                 no_wizard: true,
                 include_tag: None,
                 exclude_tag: None,
+                include_status: None,
             })),
             debug: false,
         }));

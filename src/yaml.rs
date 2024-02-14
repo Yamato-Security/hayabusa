@@ -765,6 +765,7 @@ mod tests {
                     remove_duplicate_data: false,
                     remove_duplicate_detections: false,
                     no_wizard: true,
+                    include_status: None,
                 },
                 geo_ip: None,
                 output: None,
