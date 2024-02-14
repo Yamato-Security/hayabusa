@@ -1230,11 +1230,11 @@ pub struct PivotKeywordOption {
     pub exclude_status: Option<Vec<String>>,
 
     /// Only load rules with specific status (ex: experimental) (ex: stable,test)
-    #[arg(help_heading = Some("Filtering"), long = "include-status", value_name = "STATUS...", requires = "no_wizard", conflicts_with = "exclude_status", use_value_delimiter = true, value_delimiter = ',', display_order = 316)]
+    #[arg(help_heading = Some("Filtering"), long = "include-status", value_name = "STATUS...", requires = "no_wizard", conflicts_with = "exclude_status", use_value_delimiter = true, value_delimiter = ',', display_order = 353)]
     pub include_status: Option<Vec<String>>,
 
     /// Only load rules with specific tags (ex: attack.execution,attack.discovery)
-    #[arg(help_heading = Some("Filtering"), long = "include-tag", value_name = "TAG...", requires = "no_wizard", conflicts_with = "exclude_tag", use_value_delimiter = true, value_delimiter = ',', display_order = 353)]
+    #[arg(help_heading = Some("Filtering"), long = "include-tag", value_name = "TAG...", requires = "no_wizard", conflicts_with = "exclude_tag", use_value_delimiter = true, value_delimiter = ',', display_order = 354)]
     pub include_tag: Option<Vec<String>>,
 
     /// Do not load rules with specific tags (ex: sysmon)
@@ -1386,11 +1386,11 @@ pub struct OutputOption {
     pub exclude_status: Option<Vec<String>>,
 
     /// Only load rules with specific status (ex: experimental) (ex: stable,test)
-    #[arg(help_heading = Some("Filtering"), long = "include-status", value_name = "STATUS...", requires = "no_wizard", conflicts_with = "exclude_status", use_value_delimiter = true, value_delimiter = ',', display_order = 316)]
+    #[arg(help_heading = Some("Filtering"), long = "include-status", value_name = "STATUS...", requires = "no_wizard", conflicts_with = "exclude_status", use_value_delimiter = true, value_delimiter = ',', display_order = 353)]
     pub include_status: Option<Vec<String>>,
 
     /// Only load rules with specific tags (ex: attack.execution,attack.discovery)
-    #[arg(help_heading = Some("Filtering"), long = "include-tag", value_name = "TAG...", requires = "no_wizard", conflicts_with = "exclude_tag", use_value_delimiter = true, value_delimiter = ',', display_order = 353)]
+    #[arg(help_heading = Some("Filtering"), long = "include-tag", value_name = "TAG...", requires = "no_wizard", conflicts_with = "exclude_tag", use_value_delimiter = true, value_delimiter = ',', display_order = 354)]
     pub include_tag: Option<Vec<String>>,
 
     /// Only load rules with specified logsource categories (ex: process_creation,pipe_created)
