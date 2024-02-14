@@ -1020,7 +1020,7 @@ impl App {
             || stored_static.search_flag
             || stored_static.computer_metrics_flag
             || stored_static.output_option.as_ref().unwrap().no_wizard)
-        {
+            {
             let mut rule_counter_wizard_map = HashMap::new();
             yaml::count_rules(
                 &stored_static.output_option.as_ref().unwrap().rules,
@@ -1303,7 +1303,7 @@ impl App {
                 stored_static.output_option.as_mut().unwrap().exclude_tag =
                     Some(exclude_tags.to_owned());
             }
-        } else {
+        } else if stored_static.include_status.is_empty() {
             stored_static.include_status.insert("*".into());
         }
 
