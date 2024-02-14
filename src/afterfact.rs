@@ -3226,7 +3226,7 @@ mod tests {
             println!("message: {detect_infos:?}");
         }
 
-        let expect_target = vec![
+        let expect_target = [
             vec![
                 (
                     "Timestamp",
@@ -3607,8 +3607,7 @@ mod tests {
                 Profile::Computer(test_computername.into());
         }
 
-        let expect_target = vec![
-            vec![
+        let expect_target = [vec![
                 (
                     "Timestamp",
                     CompactString::from(
@@ -3662,8 +3661,7 @@ mod tests {
                     "Tags",
                     CompactString::from("[\n        \"".to_string() + test_attack + "\"\n    ]"),
                 ),
-            ]
-        ];
+            ]];
         let mut expect_str = String::default();
         for (target_idx, target) in expect_target.iter().enumerate() {
             let mut expect_json = "{\n".to_string();

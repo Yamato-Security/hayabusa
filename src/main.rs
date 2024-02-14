@@ -1020,7 +1020,7 @@ impl App {
             || stored_static.search_flag
             || stored_static.computer_metrics_flag
             || stored_static.output_option.as_ref().unwrap().no_wizard)
-            {
+        {
             let mut rule_counter_wizard_map = HashMap::new();
             yaml::count_rules(
                 &stored_static.output_option.as_ref().unwrap().rules,
@@ -2148,7 +2148,7 @@ mod tests {
         stored_static.config.action = None;
         stored_static.html_report_flag = true;
         app.exec(&mut config_reader.app, &mut stored_static);
-        let expect_general_contents = vec![
+        let expect_general_contents = [
             format!("- Command line: {}", std::env::args().join(" ")),
             format!("- Start time: {}", Local::now().format("%Y/%m/%d %H:%M")),
         ];
