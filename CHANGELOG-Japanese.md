@@ -5,6 +5,7 @@
 **改善:**
 
 - 指定した`status`のルールのみを利用する`--include-status`オプションを追加した。 (#1193) (@hitenkoku)
+- 未使用のクレートを削除した。(@YamatoSecurity)
 
 **バグ修正:**
 

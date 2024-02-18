@@ -8,53 +8,47 @@ rust-version = "1.76.0"
 include = ["src/**/*", "LICENSE.txt", "README.md", "CHANGELOG.md"]
 
 [dependencies]
-itertools = "*"
-dashmap = "*"
-clap = { version = "4.*", features = ["derive", "cargo", "color"]}
-evtx = { git = "https://github.com/Yamato-Security/hayabusa-evtx.git" , features = ["fast-alloc"] , rev = "6f1b0e3" } # 0.8.7 2024/02/10 update
-quick-xml = {version = "0.*", features = ["serialize"] }
-serde = { version = "1.*", features = ["derive"] }
-serde_json = { version = "1.0"}
-serde_derive = "1.*"
-regex = "1"
-csv = "1.3.*"
+aho-corasick = "*"
 base64 = "*"
-flate2 = "1.*"
-lazy_static = "1.4.*"
+bytesize = "1.*"
 chrono = "0.4.*"
-yaml-rust = "0.4.*"
-tokio = { version = "1", features = ["full"] }
-num_cpus = "1.*"
+cidr-utils = "0.5.*"
+clap = { version = "4.*", features = ["derive", "cargo", "color"]}
+comfy-table = "7.*"
+compact_str = "0.7.*"
+console = "0.15.*"
+csv = "1.3.*"
+dashmap = "*"
+dialoguer = "*"
 downcast-rs = "1.*"
-indicatif = "*"
+evtx = { git = "https://github.com/Yamato-Security/hayabusa-evtx.git" , features = ["fast-alloc"] , rev = "e592a9a" } # 0.8.8 2024/02/18 update
+git2 = "0.*"
 hashbrown = "0.14.*"
 hex = "0.4.*"
-git2 = "0.*"
-termcolor = "*"
-krapslog = "0.5"
-terminal_size = "*"
-bytesize = "1.*"
-lock_api = "0.4.*"
-crossbeam-utils = "0.8.*"
-num-format = "*"
-comfy-table = "7.*"
-pulldown-cmark = { version = "0.9.*", default-features = false, features = ["simd"] }
 horrorshow = "0.8.*"
-mimalloc = { version = "*", default-features = false }
-libmimalloc-sys = { version = "*",  features = ["extended"] }
-nested="*"
-compact_str = "0.7.*"
-ureq = "*"
-mockall = "*"
-maxminddb = "0.*"
-cidr-utils = "0.5.*"
-aho-corasick = "*"
-memchr = "2.*"
-num = "0.4.0"
 indexmap = "2.*"
-dialoguer = "*"
+indicatif = "*"
+itertools = "*"
+krapslog = "0.5"
+lazy_static = "1.4.*"
+libmimalloc-sys = { version = "*",  features = ["extended"] }
+maxminddb = "0.*"
+memchr = "2.*"
+mimalloc = { version = "*", default-features = false }
+nested="*"
+num = "0.4.0"
+num-format = "*"
+pulldown-cmark = { version = "0.9.*", default-features = false, features = ["simd"] }
+regex = "1"
+serde = { version = "1.*", features = ["derive"] }
+serde_derive = "1.*"
+serde_json = { version = "1.0"}
+termcolor = "*"
+terminal_size = "*"
+tokio = { version = "1", features = ["full"] }
+ureq = "*"
 wildmatch = "2.*"
-console = "0.15.*"
+yaml-rust = "0.4.*"
 
 [profile.dev]
 debug = 0
@@ -64,9 +58,6 @@ rand = "0.8.*"
 
 [target.'cfg(windows)'.dependencies]
 is_elevated = "0.1.*"
-
-[target.'cfg(unix)'.dependencies] #Mac and Linux
-openssl = { version = "*", features = ["vendored"] }  #vendored is needed to compile statically.
 
 [profile.release]
 lto = true
