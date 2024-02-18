@@ -5,6 +5,7 @@
 **Enhancements:**
 
 - Added `--include-status` option: You can specify rules based on their `status`. (#1193) (@hitenkoku)
+- Removed unused crates. (@YamatoSecurity)
 
 **Bug Fixes:**
 
