@@ -59,6 +59,9 @@ rand = "0.8.*"
 [target.'cfg(windows)'.dependencies]
 is_elevated = "0.1.*"
 
+[target.'cfg(unix)'.dependencies] #Mac and Linux
+openssl = { version = "*", features = ["vendored"] }  #vendored is needed to compile statically.
+
 [profile.release]
 lto = true
 strip = "symbols"
