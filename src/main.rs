@@ -1615,7 +1615,8 @@ impl App {
                 || stored_static.search_flag)
             {
                 // ruleファイルの検知
-                detection = detection.start(&self.rt, records_per_detect);
+                let (detection_tmp, log_records) = detection.start(&self.rt, records_per_detect);
+                detection = detection_tmp;
             }
         }
         tl.total_record_cnt += record_cnt;
@@ -1794,7 +1795,8 @@ impl App {
                 || stored_static.search_flag)
             {
                 // ruleファイルの検知
-                detection = detection.start(&self.rt, records_per_detect);
+                let (detection_tmp, log_records) = detection.start(&self.rt, records_per_detect);
+                detection = detection_tmp;
             }
         }
         tl.total_record_cnt += record_cnt;

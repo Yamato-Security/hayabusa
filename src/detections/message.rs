@@ -26,6 +26,9 @@ use termcolor::{BufferWriter, ColorChoice};
 use super::configs::EventKeyAliasConfig;
 use super::utils::remove_sp_char;
 
+/*  
+ * This struct express log record
+*/
 #[derive(Debug, Clone, PartialEq, Eq, Default)]
 pub struct DetectInfo {
     pub rulepath: CompactString,
@@ -113,7 +116,7 @@ pub fn insert_message(detect_info: DetectInfo, event_time: DateTime<Utc>) {
 pub fn insert(
     event_record: &Value,
     output: CompactString,
-    mut detect_info: DetectInfo,
+    detect_info: DetectInfo,
     time: DateTime<Utc>,
     profile_converter: &HashMap<&str, Profile>,
     (is_agg, is_json_timeline): (bool, bool),
@@ -123,6 +126,22 @@ pub fn insert(
         &Option<FieldDataMap>,
     ),
 ) {
+    let detect_info = create_message(&event_record, output, detect_info, profile_converter, (is_agg, is_json_timeline), (eventkey_alias, field_data_map_key, field_data_map));
+    insert_message(detect_info, time)
+}
+
+pub fn create_message(    
+    event_record: &Value,
+    output: CompactString,
+    mut detect_info: DetectInfo,
+    profile_converter: &HashMap<&str, Profile>,
+    (is_agg, is_json_timeline): (bool, bool),
+    (eventkey_alias, field_data_map_key, field_data_map): (
+        &EventKeyAliasConfig,
+        &FieldDataMapKey,
+        &Option<FieldDataMap>,
+    ),) -> DetectInfo
+{
     let mut record_details_info_map = HashMap::new();
     let mut sp_removed_details_in_record = vec![];
     if !is_agg {
@@ -274,7 +293,8 @@ pub fn insert(
     }
     detect_info.ext_field = replaced_profiles;
     detect_info.details_convert_map = record_details_info_map;
-    insert_message(detect_info, time)
+
+    return detect_info;
 }
 
 /// メッセージ内の%で囲まれた箇所をエイリアスとしてレコード情報を参照して置き換える関数
