@@ -66,7 +66,11 @@ impl Detection {
         Detection { rules: rule_nodes }
     }
 
-    pub fn start(self, rt: &Runtime, records: Vec<EvtxRecordInfo>) -> (Self, Vec<(DetectInfo, DateTime<Utc>)>) {
+    pub fn start(
+        self,
+        rt: &Runtime,
+        records: Vec<EvtxRecordInfo>,
+    ) -> (Self, Vec<(DetectInfo, DateTime<Utc>)>) {
         rt.block_on(self.execute_rules(records))
     }
 
@@ -158,7 +162,10 @@ impl Detection {
     }
 
     // 複数のイベントレコードに対して、複数のルールを1個実行します。
-    async fn execute_rules(mut self, records: Vec<EvtxRecordInfo>) -> (Self, Vec<(DetectInfo, DateTime<Utc>)>) {
+    async fn execute_rules(
+        mut self,
+        records: Vec<EvtxRecordInfo>,
+    ) -> (Self, Vec<(DetectInfo, DateTime<Utc>)>) {
         let records_arc = Arc::new(records);
         // // 各rule毎にスレッドを作成して、スレッドを起動する。
         let rules = self.rules;
@@ -189,11 +196,18 @@ impl Detection {
         (self, all_log_records)
     }
 
-    pub fn add_aggcondition_msges(self, rt: &Runtime, stored_static: &StoredStatic) -> Vec<(DetectInfo, DateTime<Utc>)> {
+    pub fn add_aggcondition_msges(
+        self,
+        rt: &Runtime,
+        stored_static: &StoredStatic,
+    ) -> Vec<(DetectInfo, DateTime<Utc>)> {
         return rt.block_on(self.add_aggcondition_msg(stored_static));
     }
 
-    async fn add_aggcondition_msg(&self, stored_static: &StoredStatic) -> Vec<(DetectInfo, DateTime<Utc>)> {
+    async fn add_aggcondition_msg(
+        &self,
+        stored_static: &StoredStatic,
+    ) -> Vec<(DetectInfo, DateTime<Utc>)> {
         let mut ret = vec![];
         for rule in &self.rules {
             if !rule.has_agg_condition() {
@@ -209,7 +223,10 @@ impl Detection {
     }
 
     // 複数のイベントレコードに対して、ルールを1個実行します。
-    fn execute_rule(mut rule: RuleNode, records: Arc<Vec<EvtxRecordInfo>>) -> (RuleNode, Vec<(DetectInfo, DateTime<Utc>)>)  {
+    fn execute_rule(
+        mut rule: RuleNode,
+        records: Arc<Vec<EvtxRecordInfo>>,
+    ) -> (RuleNode, Vec<(DetectInfo, DateTime<Utc>)>) {
         let agg_condition = rule.has_agg_condition();
         let binding = STORED_STATIC.read().unwrap();
         let stored_static = binding.as_ref().unwrap();
@@ -233,23 +250,23 @@ impl Detection {
 
             // aggregation conditionが存在しない場合はそのまま出力対応を行う
             if !agg_condition {
-                ret.push(Detection::create_log_record(&rule, record_info, stored_static));
+                ret.push(Detection::create_log_record(
+                    &rule,
+                    record_info,
+                    stored_static,
+                ));
             }
         }
 
-        return (rule, ret);        
-    }
-
-    /// TODO
-    /// This method is no longer used but I remained it for testcases.
-    /// We should refactor it and remove later.
-    fn insert_message(rule: &RuleNode, record_info: &EvtxRecordInfo, stored_static: &StoredStatic) {
-        let (detect_info, time) = Detection::create_log_record(rule, record_info, stored_static);
-        message::insert_message(detect_info, time);
+        return (rule, ret);
     }
 
     /// create log record
-    fn create_log_record(rule: &RuleNode, record_info: &EvtxRecordInfo, stored_static: &StoredStatic) -> (DetectInfo, DateTime<Utc>) {
+    fn create_log_record(
+        rule: &RuleNode,
+        record_info: &EvtxRecordInfo,
+        stored_static: &StoredStatic,
+    ) -> (DetectInfo, DateTime<Utc>) {
         let tag_info: &Nested<String> = &Detection::get_tag_info(rule);
         let rec_id = if stored_static
             .profiles
@@ -751,15 +768,14 @@ impl Detection {
         return (detect_info, time);
     }
 
-    fn insert_agg_message(rule: &RuleNode, agg_result: AggResult, stored_static: &StoredStatic) {
-        let (detect_info, time) = Detection::create_agg_log_record(rule, agg_result, stored_static);
-        message::insert_message(detect_info, time);
-    }
-
     /// TODO
     /// This method is no longer used but I remained it for testcases.
     /// We should refactor it and remove later.
-    fn create_agg_log_record(rule: &RuleNode, agg_result: AggResult, stored_static: &StoredStatic) -> (DetectInfo, DateTime<Utc>) {
+    fn create_agg_log_record(
+        rule: &RuleNode,
+        agg_result: AggResult,
+        stored_static: &StoredStatic,
+    ) -> (DetectInfo, DateTime<Utc>) {
         let tag_info: &Nested<String> = &Detection::get_tag_info(rule);
         let output = Detection::create_count_output(rule, &agg_result);
 
@@ -967,7 +983,14 @@ impl Detection {
 
         let field_data_map_key = FieldDataMapKey::default();
 
-        let detect_info = message::create_message(&Value::default(), CompactString::new(rule.yaml["details"].as_str().unwrap_or("-")), detect_info, &profile_converter, (true, is_json_timeline), (eventkey_alias, &field_data_map_key, &None));
+        let detect_info = message::create_message(
+            &Value::default(),
+            CompactString::new(rule.yaml["details"].as_str().unwrap_or("-")),
+            detect_info,
+            &profile_converter,
+            (true, is_json_timeline),
+            (eventkey_alias, &field_data_map_key, &None),
+        );
         return (detect_info, agg_result.start_timedate);
     }
 
@@ -1596,7 +1619,14 @@ mod tests {
 
             let input_evtxrecord =
                 utils::create_rec_info(event, test_filepath.to_owned(), &keys, &false, &false);
-            Detection::insert_message(&dummy_rule, &input_evtxrecord, &stored_static);
+            {
+                let rule = &dummy_rule;
+                let record_info = &input_evtxrecord;
+                let stored_static = &stored_static;
+                let (detect_info, time) =
+                    Detection::create_log_record(rule, record_info, stored_static);
+                message::insert_message(detect_info, time);
+            };
             let multi = message::MESSAGES.get(&expect_time).unwrap();
             let (_, detect_infos) = multi.pair();
             assert!(detect_infos.len() == 1);
@@ -1734,7 +1764,14 @@ mod tests {
 
             let input_evtxrecord =
                 utils::create_rec_info(event, test_filepath.to_owned(), &keys, &false, &false);
-            Detection::insert_message(&dummy_rule, &input_evtxrecord, &stored_static);
+            {
+                let rule = &dummy_rule;
+                let record_info = &input_evtxrecord;
+                let stored_static = &stored_static;
+                let (detect_info, time) =
+                    Detection::create_log_record(rule, record_info, stored_static);
+                message::insert_message(detect_info, time);
+            };
             let multi = message::MESSAGES.get(&expect_time).unwrap();
             let (_, detect_infos) = multi.pair();
             assert!(detect_infos.len() == 1);
@@ -1885,7 +1922,14 @@ mod tests {
             let keys = detections::rule::get_detection_keys(&rule_node);
             let input_evtxrecord =
                 utils::create_rec_info(event, test_filepath.to_owned(), &keys, &false, &false);
-            Detection::insert_message(&rule_node, &input_evtxrecord, &stored_static.clone());
+            {
+                let rule = &rule_node;
+                let record_info = &input_evtxrecord;
+                let stored_static: &StoredStatic = &stored_static.clone();
+                let (detect_info, time) =
+                    Detection::create_log_record(rule, record_info, stored_static);
+                message::insert_message(detect_info, time);
+            };
             let multi = message::MESSAGES.get(&expect_time).unwrap();
             let (_, detect_infos) = multi.pair();
             assert!(detect_infos.len() == 1);
@@ -2033,7 +2077,14 @@ mod tests {
             let keys = detections::rule::get_detection_keys(&rule_node);
             let input_evtxrecord =
                 utils::create_rec_info(event, test_filepath.to_owned(), &keys, &false, &false);
-            Detection::insert_message(&rule_node, &input_evtxrecord, &stored_static.clone());
+            {
+                let rule = &rule_node;
+                let record_info = &input_evtxrecord;
+                let stored_static: &StoredStatic = &stored_static.clone();
+                let (detect_info, time) =
+                    Detection::create_log_record(rule, record_info, stored_static);
+                message::insert_message(detect_info, time);
+            };
             let multi = message::MESSAGES.get(&expect_time).unwrap();
             let (_, detect_infos) = multi.pair();
             assert!(detect_infos.len() == 1);

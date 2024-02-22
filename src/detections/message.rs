@@ -26,7 +26,7 @@ use termcolor::{BufferWriter, ColorChoice};
 use super::configs::EventKeyAliasConfig;
 use super::utils::remove_sp_char;
 
-/*  
+/*
  * This struct express log record
 */
 #[derive(Debug, Clone, PartialEq, Eq, Default)]
@@ -126,11 +126,18 @@ pub fn insert(
         &Option<FieldDataMap>,
     ),
 ) {
-    let detect_info = create_message(&event_record, output, detect_info, profile_converter, (is_agg, is_json_timeline), (eventkey_alias, field_data_map_key, field_data_map));
+    let detect_info = create_message(
+        &event_record,
+        output,
+        detect_info,
+        profile_converter,
+        (is_agg, is_json_timeline),
+        (eventkey_alias, field_data_map_key, field_data_map),
+    );
     insert_message(detect_info, time)
 }
 
-pub fn create_message(    
+pub fn create_message(
     event_record: &Value,
     output: CompactString,
     mut detect_info: DetectInfo,
@@ -140,8 +147,8 @@ pub fn create_message(
         &EventKeyAliasConfig,
         &FieldDataMapKey,
         &Option<FieldDataMap>,
-    ),) -> DetectInfo
-{
+    ),
+) -> DetectInfo {
     let mut record_details_info_map = HashMap::new();
     let mut sp_removed_details_in_record = vec![];
     if !is_agg {
