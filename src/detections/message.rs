@@ -1,4 +1,8 @@
 extern crate lazy_static;
+use crate::afterfact::{
+    emit_output_record, set_output_color, DISPLAY_FLAG, JSONL_OUTPUT_FLAG,
+    JSON_OUTPUT_FLAG, OUTPUT_DISP_AND_FILE_WRITER, PLUS_HEADER, REMOVE_DUPLICATE_DATA_FLAG,
+};
 use crate::detections::configs::CURRENT_EXE_PATH;
 use crate::detections::field_data_map::{convert_field_data, FieldDataMap, FieldDataMapKey};
 use crate::detections::utils::{self, get_serde_number_to_string, write_color_buffer};
@@ -6,9 +10,11 @@ use crate::options::profile::Profile::{
     self, AllFieldInfo, Details, ExtraFieldInfo, Literal, SrcASN, SrcCity, SrcCountry, TgtASN,
     TgtCity, TgtCountry,
 };
+use aho_corasick::{AhoCorasickBuilder, MatchKind};
 use chrono::{DateTime, Local, Utc};
 use compact_str::CompactString;
 use dashmap::DashMap;
+
 use hashbrown::HashMap;
 use hashbrown::HashSet;
 use itertools::Itertools;
@@ -16,14 +22,15 @@ use lazy_static::lazy_static;
 use nested::Nested;
 use regex::Regex;
 use serde_json::Value;
-use std::env;
+
 use std::fs::{create_dir, File};
 use std::io::{self, BufWriter, Write};
 use std::path::Path;
 use std::sync::Mutex;
+use std::env;
 use termcolor::{BufferWriter, ColorChoice};
 
-use super::configs::EventKeyAliasConfig;
+use super::configs::{EventKeyAliasConfig, STORED_STATIC};
 use super::utils::remove_sp_char;
 
 #[derive(Debug, Clone, PartialEq, Eq, Default)]
@@ -102,11 +109,67 @@ pub fn create_output_filter_config(
 }
 
 /// メッセージの設定を行う関数。aggcondition対応のためrecordではなく出力をする対象時間がDatetime形式での入力としている
-pub fn insert_message(detect_info: DetectInfo, event_time: DateTime<Utc>) {
-    MESSAGEKEYS.lock().unwrap().insert(event_time);
-    let mut v = MESSAGES.entry(event_time).or_default();
-    let (_, info) = v.pair_mut();
-    info.push(detect_info);
+pub fn insert_message(
+    detect_info: DetectInfo,
+    event_time: DateTime<Utc>,
+    (low_memory_flag, multiline_flag): (bool, bool),
+) {
+    if low_memory_flag {
+        let binding = STORED_STATIC.read().unwrap();
+        let stored_static = binding.as_ref().unwrap();
+        let color_map = set_output_color(stored_static.common_options.no_color);
+        let mut static_wtr = OUTPUT_DISP_AND_FILE_WRITER.write().unwrap();
+
+        let output_replaced_maps: HashMap<&str, &str> =
+            HashMap::from_iter(vec![("🛂r", "\r"), ("🛂n", "\n"), ("🛂t", "\t")]);
+        let mut removed_replaced_maps: HashMap<&str, &str> =
+            HashMap::from_iter(vec![("\n", " "), ("\r", " "), ("\t", " ")]);
+        if multiline_flag {
+            removed_replaced_maps.insert("🛂🛂", "\r\n");
+            removed_replaced_maps.insert(" ¦ ", "\r\n");
+        }
+
+        let output_replacer = AhoCorasickBuilder::new()
+            .match_kind(MatchKind::LeftmostLongest)
+            .build(output_replaced_maps.keys())
+            .unwrap();
+        let output_remover = AhoCorasickBuilder::new()
+            .match_kind(MatchKind::LeftmostLongest)
+            .build(removed_replaced_maps.keys())
+            .unwrap();
+        emit_output_record(
+            &detect_info,
+            &event_time,
+            stored_static.output_option.as_ref().unwrap(),
+            (
+                *DISPLAY_FLAG.read().unwrap(),
+                *JSON_OUTPUT_FLAG.read().unwrap(),
+                *JSONL_OUTPUT_FLAG.read().unwrap(),
+                *REMOVE_DUPLICATE_DATA_FLAG.read().unwrap(),
+                stored_static.low_memory_flag,
+            ),
+            *PLUS_HEADER.read().unwrap(),
+            stored_static.profiles.as_ref().unwrap(),
+            &BufferWriter::stdout(ColorChoice::Always),
+            static_wtr.as_mut().unwrap(),
+            (stored_static.common_options.no_color, &color_map),
+            (
+                &output_replacer,
+                &output_remover,
+                &output_replaced_maps,
+                &removed_replaced_maps,
+            ),
+        )
+        .ok();
+        if *PLUS_HEADER.read().unwrap() {
+            *PLUS_HEADER.write().unwrap() = false;
+        }
+    } else {
+        MESSAGEKEYS.lock().unwrap().insert(event_time);
+        let mut v = MESSAGES.entry(event_time).or_default();
+        let (_, info) = v.pair_mut();
+        info.push(detect_info);
+    }
 }
 
 /// メッセージを設定 TODO 要リファクタリング
@@ -274,7 +337,13 @@ pub fn insert(
     }
     detect_info.ext_field = replaced_profiles;
     detect_info.details_convert_map = record_details_info_map;
-    insert_message(detect_info, time)
+    let binding = STORED_STATIC.read().unwrap();
+    let stored_static = binding.as_ref().unwrap();
+    insert_message(
+        detect_info,
+        time,
+        (stored_static.low_memory_flag, stored_static.multiline_flag),
+    );
 }
 
 /// メッセージ内の%で囲まれた箇所をエイリアスとしてレコード情報を参照して置き換える関数

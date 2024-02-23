@@ -90,6 +90,7 @@ pub struct StoredStatic {
     pub no_pwsh_field_extraction: bool,
     pub enable_recover_records: bool,
     pub timeline_offset: Option<String>,
+    pub low_memory_flag: bool,
 }
 impl StoredStatic {
     /// main.rsでパースした情報からデータを格納する関数
@@ -556,6 +557,11 @@ impl StoredStatic {
                 .collect(),
             _ => HashSet::default(),
         };
+        let low_memory_flag = match &input_config.as_ref().unwrap().action {
+            Some(Action::CsvTimeline(opt)) => opt.output_options.low_memory_mode,
+            Some(Action::JsonTimeline(opt)) => opt.output_options.low_memory_mode,
+            _ => false,
+        };
 
         let mut ret = StoredStatic {
             config: input_config.as_ref().unwrap().to_owned(),
@@ -672,6 +678,7 @@ impl StoredStatic {
             enable_recover_records,
             timeline_offset,
             include_status,
+            low_memory_flag,
         };
         ret.profiles = load_profile(
             check_setting_path(
@@ -1542,6 +1549,10 @@ pub struct OutputOption {
     /// Do not ask questions. Scan for all events and alerts.
     #[arg(help_heading = Some("General Options"), short = 'w', long = "no-wizard", display_order = 400)]
     pub no_wizard: bool,
+
+    /// low-memory-mode
+    #[arg(help_heading = Some("General Options"), long = "low-memory-mode", display_order = 380)]
+    pub low_memory_mode: bool,
 }
 
 #[derive(Copy, Args, Clone, Debug)]
@@ -2215,6 +2226,7 @@ fn extract_output_options(config: &Config) -> Option<OutputOption> {
             remove_duplicate_detections: false,
             no_wizard: option.no_wizard,
             include_status: option.include_status.clone(),
+            low_memory_mode: false,
         }),
         Action::EidMetrics(option) => Some(OutputOption {
             input_args: option.input_args.clone(),
@@ -2255,6 +2267,7 @@ fn extract_output_options(config: &Config) -> Option<OutputOption> {
             remove_duplicate_detections: false,
             no_wizard: true,
             include_status: None,
+            low_memory_mode: false,
         }),
         Action::LogonSummary(option) => Some(OutputOption {
             input_args: option.input_args.clone(),
@@ -2295,6 +2308,7 @@ fn extract_output_options(config: &Config) -> Option<OutputOption> {
             remove_duplicate_detections: false,
             no_wizard: true,
             include_status: None,
+            low_memory_mode: false,
         }),
         Action::ComputerMetrics(option) => Some(OutputOption {
             input_args: option.input_args.clone(),
@@ -2344,6 +2358,7 @@ fn extract_output_options(config: &Config) -> Option<OutputOption> {
             remove_duplicate_detections: false,
             no_wizard: true,
             include_status: None,
+            low_memory_mode: false,
         }),
         Action::Search(option) => Some(OutputOption {
             input_args: option.input_args.clone(),
@@ -2393,6 +2408,7 @@ fn extract_output_options(config: &Config) -> Option<OutputOption> {
             remove_duplicate_detections: false,
             no_wizard: true,
             include_status: None,
+            low_memory_mode: false,
         }),
         Action::SetDefaultProfile(option) => Some(OutputOption {
             input_args: InputOption {
@@ -2448,6 +2464,7 @@ fn extract_output_options(config: &Config) -> Option<OutputOption> {
             remove_duplicate_detections: false,
             no_wizard: true,
             include_status: None,
+            low_memory_mode: false,
         }),
         Action::UpdateRules(option) => Some(OutputOption {
             input_args: InputOption {
@@ -2503,6 +2520,7 @@ fn extract_output_options(config: &Config) -> Option<OutputOption> {
             remove_duplicate_detections: false,
             no_wizard: true,
             include_status: None,
+            low_memory_mode: false,
         }),
         _ => None,
     }

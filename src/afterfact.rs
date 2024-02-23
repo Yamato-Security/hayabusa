@@ -2,7 +2,7 @@ use crate::detections::configs::{
     Action, OutputOption, StoredStatic, CONTROL_CHAT_REPLACE_MAP, CURRENT_EXE_PATH, GEOIP_DB_PARSER,
 };
 use crate::detections::message::{
-    self, AlertMessage, COMPUTER_MITRE_ATTCK_MAP, LEVEL_FULL, MESSAGEKEYS,
+    self, AlertMessage, DetectInfo, COMPUTER_MITRE_ATTCK_MAP, LEVEL_FULL, MESSAGEKEYS,
 };
 use crate::detections::utils::{
     self, format_time, get_writable_color, output_and_data_stack_for_html, write_color_buffer,
@@ -17,14 +17,16 @@ use comfy_table::modifiers::UTF8_ROUND_CORNERS;
 use comfy_table::presets::UTF8_FULL;
 use compact_str::CompactString;
 use hashbrown::hash_map::RawEntryMut;
+use lazy_static::lazy_static;
 use terminal_size::terminal_size;
 
-use csv::{QuoteStyle, WriterBuilder};
+use csv::{QuoteStyle, Writer, WriterBuilder};
 use itertools::Itertools;
 use krapslog::{build_sparkline, build_time_markers};
 use nested::Nested;
 use std::path::{Path, PathBuf};
 use std::str::FromStr;
+use std::sync::RwLock;
 use yaml_rust::YamlLoader;
 
 use comfy_table::*;
@@ -39,6 +41,45 @@ use std::fs::File;
 use std::process;
 use termcolor::{BufferWriter, Color, ColorChoice, ColorSpec, WriteColor};
 use terminal_size::Width;
+
+lazy_static! {
+    pub static ref LEVEL_MAP: HashMap<CompactString, u128> = HashMap::from([
+        (CompactString::from("INFORMATIONAL"), 1),
+        (CompactString::from("LOW"), 2),
+        (CompactString::from("MEDIUM"), 3),
+        (CompactString::from("HIGH"), 4),
+        (CompactString::from("CRITICAL"), 5),
+    ]);
+    pub static ref AUTHOR_LIST_CACHE :RwLock<HashMap<CompactString, Nested<String>>> = RwLock::new(HashMap::new());
+    pub static ref DETECT_RULE_AUTHORS: RwLock<HashMap<CompactString, CompactString>> = RwLock::new(HashMap::new());
+    pub static ref DETECTED_RULE_FILES: RwLock<HashSet<CompactString>> = RwLock::new(HashSet::new());
+    pub static ref RULE_TITLE_PATH_MAP: RwLock<HashMap<CompactString, CompactString>> = RwLock::new(HashMap::new());
+    pub static ref RULE_AUTHOR_COUNTER: RwLock<HashMap<CompactString, i128>> = RwLock::new(HashMap::new());
+    pub static ref DETECTED_RULE_IDS: RwLock<HashSet<CompactString>> = RwLock::new(HashSet::new());
+    pub static ref DETECTED_COMPUTER_AND_RULE_NAMES: RwLock<HashSet<CompactString>> = RwLock::new(HashSet::new());
+    // level is divided by "Critical","High","Medium","Low","Informational","Undefined".
+    pub static ref TOTAL_DETECT_COUNTS_BY_LEVEL: RwLock<Vec<u128>> = RwLock::new(vec![0; 6]);
+    pub static ref UNIQUE_DETECT_COUNTS_BY_LEVEL: RwLock<Vec<u128>> = RwLock::new(vec![0; 6]);
+    pub static ref DETECT_COUNTS_BY_DATE_AND_LEVEL: RwLock<HashMap<CompactString, HashMap<CompactString, i128>>> =
+        RwLock::new(HashMap::new());
+    pub static ref DETECT_COUNTS_BY_COMPUTER_AND_LEVEL: RwLock<HashMap<
+        CompactString,
+        HashMap<CompactString, i128>,
+    >> = RwLock::new(HashMap::new());
+    pub static ref DETECT_COUNTS_BY_RULE_AND_LEVEL: RwLock<HashMap<CompactString, HashMap<CompactString, i128>>> =
+        RwLock::new(HashMap::new());
+    pub static ref PREV_DETECT_INFOS: RwLock<HashSet<Vec<(CompactString, Profile)>>> = RwLock::new(HashSet::new());
+    // remove duplicate dataのための前レコード分の情報を保持する変数
+    pub static ref PREV_MESSAGE: RwLock<HashMap<CompactString, Profile>> = RwLock::new(HashMap::new());
+    pub static ref PREV_DETAILS_CONVERT_MAP: RwLock<HashMap<CompactString, Vec<CompactString>>> = RwLock::new(HashMap::new());
+    pub static ref DETECTED_RECORD_IDSET:RwLock<HashSet<CompactString>> = RwLock::new(HashSet::new());
+    pub static ref PLUS_HEADER: RwLock<bool> = RwLock::new(true);
+    pub static ref DISPLAY_FLAG: RwLock<bool> = RwLock::new(false);
+    pub static ref JSON_OUTPUT_FLAG: RwLock<bool> = RwLock::new(false);
+    pub static ref JSONL_OUTPUT_FLAG: RwLock<bool> = RwLock::new(false);
+    pub static ref REMOVE_DUPLICATE_DATA_FLAG: RwLock<bool> = RwLock::new(false);
+    pub static ref OUTPUT_DISP_AND_FILE_WRITER: RwLock< Option<Writer<Box<dyn io::Write + Send + Sync>>>> = RwLock::new(None);
+}
 
 #[derive(Debug)]
 pub struct Colors {
@@ -185,7 +226,9 @@ pub fn after_fact(
     };
 
     let mut displayflag = false;
-    let mut target: Box<dyn io::Write> = if let Some(path) = &output_option {
+    let target: Box<dyn io::Write> = if stored_static.low_memory_flag {
+        Box::new(BufWriter::new(io::stdout()))
+    } else if let Some(path) = &output_option {
         // output to file
         match File::create(path) {
             Ok(file) => Box::new(BufWriter::new(file)),
@@ -201,7 +244,7 @@ pub fn after_fact(
     };
     let color_map = set_output_color(no_color_flag);
     if let Err(err) = emit_csv(
-        &mut target,
+        target,
         displayflag,
         color_map,
         (all_record_cnt as u128, recover_records_cnt as u128),
@@ -213,8 +256,257 @@ pub fn after_fact(
     }
 }
 
+pub fn emit_output_record<W: std::io::Write>(
+    detect_info: &DetectInfo,
+    time: &DateTime<Utc>,
+    output_option: &OutputOption,
+    (displayflag, json_output_flag, jsonl_output_flag, remove_duplicate_data_flag, low_memory_flag): (bool, bool, bool, bool, bool),
+    plus_header: bool,
+    profile: &[(CompactString, Profile)],
+    disp_wtr: &BufferWriter,
+    wtr: &mut Writer<W>,
+    (no_color, color_map): (bool, &HashMap<CompactString, Colors>),
+    (output_replacer, output_remover, output_replaced_maps, removed_replaced_maps): (
+        &AhoCorasick,
+        &AhoCorasick,
+        &HashMap<&str, &str>,
+        &HashMap<&str, &str>,
+    ),
+) -> io::Result<()> {
+    if output_option.remove_duplicate_detections {
+        let fields: Vec<(CompactString, Profile)> = detect_info
+            .ext_field
+            .iter()
+            .filter(|(_, profile)| !matches!(profile, Profile::EvtxFile(_)))
+            .map(|x| x.to_owned())
+            .collect();
+        if PREV_DETECT_INFOS.read().unwrap().get(&fields).is_some() {
+            return Ok(());
+        }
+        PREV_DETECT_INFOS.write().unwrap().insert(fields);
+    }
+    if !detect_info.is_condition {
+        DETECTED_RECORD_IDSET
+            .write()
+            .unwrap()
+            .insert(CompactString::from(format!(
+                "{}_{}",
+                time, detect_info.eventid
+            )));
+    }
+    if displayflag && !(json_output_flag || jsonl_output_flag) {
+        // 標準出力の場合
+        if plus_header {
+            // ヘッダーのみを出力
+            _get_serialized_disp_output(
+                disp_wtr,
+                profile,
+                true,
+                (output_replacer, output_replaced_maps),
+                (output_remover, removed_replaced_maps),
+                no_color,
+                get_writable_color(
+                    _get_output_color(
+                        color_map,
+                        LEVEL_FULL.get(detect_info.level.as_str()).unwrap_or(&""),
+                    ),
+                    no_color,
+                ),
+                low_memory_flag,
+            );
+        }
+        _get_serialized_disp_output(
+            disp_wtr,
+            &detect_info.ext_field,
+            false,
+            (output_replacer, output_replaced_maps),
+            (output_remover, removed_replaced_maps),
+            no_color,
+            get_writable_color(
+                _get_output_color(
+                    color_map,
+                    LEVEL_FULL.get(detect_info.level.as_str()).unwrap_or(&""),
+                ),
+                no_color,
+            ),
+            low_memory_flag,
+        );
+    } else if jsonl_output_flag {
+        // JSONL output format
+        let result = output_json_str(
+            &detect_info.ext_field,
+            PREV_MESSAGE.read().unwrap().to_owned(),
+            jsonl_output_flag,
+            GEOIP_DB_PARSER.read().unwrap().is_some(),
+            remove_duplicate_data_flag,
+            detect_info.is_condition,
+            &[
+                &detect_info.details_convert_map,
+                &PREV_DETAILS_CONVERT_MAP.read().unwrap(),
+            ],
+        );
+        *PREV_MESSAGE.write().unwrap() = result.1;
+        *PREV_DETAILS_CONVERT_MAP.write().unwrap() = detect_info.details_convert_map.clone();
+        if displayflag {
+            write_color_buffer(disp_wtr, None, &format!("{{ {} }}", &result.0), true).ok();
+        } else {
+            wtr.write_field(format!("{{ {} }}", &result.0))?;
+        }
+    } else if json_output_flag {
+        // JSON output
+        let result = output_json_str(
+            &detect_info.ext_field,
+            PREV_MESSAGE.read().unwrap().to_owned(),
+            jsonl_output_flag,
+            GEOIP_DB_PARSER.read().unwrap().is_some(),
+            remove_duplicate_data_flag,
+            detect_info.is_condition,
+            &[
+                &detect_info.details_convert_map,
+                &PREV_DETAILS_CONVERT_MAP.read().unwrap(),
+            ],
+        );
+        *PREV_MESSAGE.write().unwrap() = result.1;
+        *PREV_DETAILS_CONVERT_MAP.write().unwrap() = detect_info.details_convert_map.clone();
+        if displayflag {
+            write_color_buffer(disp_wtr, None, &format!("{{\n{}\n}}", &result.0), true).ok();
+        } else {
+            wtr.write_field("{")?;
+            wtr.write_field(&result.0)?;
+            wtr.write_field("}")?;
+        }
+    } else {
+        // csv output format
+        if plus_header {
+            wtr.flush()?;
+        }
+        wtr.write_record(detect_info.ext_field.iter().map(|x| {
+            match x.1 {
+                Profile::Details(_) | Profile::AllFieldInfo(_) | Profile::ExtraFieldInfo(_) => {
+                    let ret = if remove_duplicate_data_flag
+                        && x.1.to_value()
+                            == PREV_MESSAGE
+                                .read()
+                                .unwrap()
+                                .get(&x.0)
+                                .unwrap_or(&Profile::Literal("-".into()))
+                                .to_value()
+                    {
+                        "DUP".to_string()
+                    } else {
+                        output_remover.replace_all(
+                            &output_replacer
+                                .replace_all(
+                                    &x.1.to_value(),
+                                    &output_replaced_maps.values().collect_vec(),
+                                )
+                                .split_whitespace()
+                                .join(" "),
+                            &removed_replaced_maps.values().collect_vec(),
+                        )
+                    };
+                    PREV_MESSAGE
+                        .write()
+                        .unwrap()
+                        .insert(x.0.clone(), x.1.clone());
+                    ret
+                }
+                _ => output_remover.replace_all(
+                    &output_replacer
+                        .replace_all(
+                            &x.1.to_value(),
+                            &output_replaced_maps.values().collect_vec(),
+                        )
+                        .split_whitespace()
+                        .join(" "),
+                    &removed_replaced_maps.values().collect_vec(),
+                ),
+            }
+        }))?;
+    }
+    // 各種集計作業
+    if !output_option.no_summary {
+        let level_suffix = get_level_suffix(detect_info.level.as_str());
+        let author_list = AUTHOR_LIST_CACHE
+            .write()
+            .unwrap()
+            .entry(detect_info.rulepath.clone())
+            .or_insert_with(|| extract_author_name(&detect_info.rulepath))
+            .clone();
+        let author_str = author_list.iter().join(", ");
+        DETECT_RULE_AUTHORS
+            .write()
+            .unwrap()
+            .insert(detect_info.rulepath.to_owned(), author_str.into());
+
+        let mut detected_rule_files = DETECTED_RULE_FILES.write().unwrap();
+        let mut detected_rule_ids = DETECTED_RULE_IDS.write().unwrap();
+        let mut detected_computer_and_rule_names =
+            DETECTED_COMPUTER_AND_RULE_NAMES.write().unwrap();
+
+        if !detected_rule_files.contains(&detect_info.rulepath) {
+            detected_rule_files.insert(detect_info.rulepath.to_owned());
+            for author in author_list.iter() {
+                *RULE_AUTHOR_COUNTER
+                    .write()
+                    .unwrap()
+                    .entry(CompactString::from(author))
+                    .or_insert(0) += 1;
+            }
+        }
+
+        if !detected_rule_ids.contains(&detect_info.ruleid) {
+            detected_rule_ids.insert(detect_info.ruleid.to_owned());
+            UNIQUE_DETECT_COUNTS_BY_LEVEL.write().unwrap()[level_suffix] += 1;
+        }
+
+        let computer_rule_check_key = CompactString::from(format!(
+            "{}|{}",
+            &detect_info.computername, &detect_info.rulepath
+        ));
+        if !detected_computer_and_rule_names.contains(&computer_rule_check_key) {
+            detected_computer_and_rule_names.insert(computer_rule_check_key);
+            countup_aggregation(
+                &mut DETECT_COUNTS_BY_COMPUTER_AND_LEVEL.write().unwrap(),
+                &detect_info.level,
+                &detect_info.computername,
+            );
+        }
+        RULE_TITLE_PATH_MAP.write().unwrap().insert(
+            detect_info.ruletitle.to_owned(),
+            detect_info.rulepath.to_owned(),
+        );
+
+        countup_aggregation(
+            &mut DETECT_COUNTS_BY_DATE_AND_LEVEL.write().unwrap(),
+            &detect_info.level,
+            &format_time(time, true, output_option),
+        );
+
+        countup_aggregation(
+            &mut DETECT_COUNTS_BY_RULE_AND_LEVEL.write().unwrap(),
+            &detect_info.level,
+            &detect_info.ruletitle,
+        );
+        TOTAL_DETECT_COUNTS_BY_LEVEL.write().unwrap()[level_suffix] += 1;
+    }
+    wtr.flush()?;
+    Ok(())
+}
+
+fn get_level_suffix(level_str: &str) -> usize {
+    *LEVEL_MAP
+        .get(&CompactString::from(
+            LEVEL_FULL
+                .get(level_str)
+                .unwrap_or(&"undefined")
+                .to_uppercase(),
+        ))
+        .unwrap_or(&0) as usize
+}
+
 fn emit_csv<W: std::io::Write>(
-    writer: &mut W,
+    writer: W,
     displayflag: bool,
     color_map: HashMap<CompactString, Colors>,
     (all_record_cnt, recover_records_cnt): (u128, u128),
@@ -279,62 +571,12 @@ fn emit_csv<W: std::io::Write>(
 
     disp_wtr_buf.set_color(ColorSpec::new().set_fg(None)).ok();
 
-    // level is divided by "Critical","High","Medium","Low","Informational","Undefined".
-    let mut total_detect_counts_by_level: Vec<u128> = vec![0; 6];
-    let mut unique_detect_counts_by_level: Vec<u128> = vec![0; 6];
-    let mut detected_rule_files: HashSet<CompactString> = HashSet::new();
-    let mut detected_rule_ids: HashSet<CompactString> = HashSet::new();
-    let mut detected_computer_and_rule_names: HashSet<CompactString> = HashSet::new();
-    let mut detect_counts_by_date_and_level: HashMap<CompactString, HashMap<CompactString, i128>> =
-        HashMap::new();
-    let mut detect_counts_by_computer_and_level: HashMap<
-        CompactString,
-        HashMap<CompactString, i128>,
-    > = HashMap::new();
-    let mut detect_counts_by_rule_and_level: HashMap<CompactString, HashMap<CompactString, i128>> =
-        HashMap::new();
-    let mut rule_title_path_map: HashMap<CompactString, CompactString> = HashMap::new();
-    let mut detect_rule_authors: HashMap<CompactString, CompactString> = HashMap::new();
-    let mut rule_author_counter: HashMap<CompactString, i128> = HashMap::new();
-
-    let levels = ["crit", "high", "med ", "low ", "info", "undefined"];
-    // レベル別、日ごとの集計用変数の初期化
-    for level_init in levels {
-        detect_counts_by_date_and_level.insert(CompactString::from(level_init), HashMap::new());
-        detect_counts_by_computer_and_level.insert(CompactString::from(level_init), HashMap::new());
-        detect_counts_by_rule_and_level.insert(CompactString::from(level_init), HashMap::new());
-    }
     if displayflag {
         println!();
     }
     let mut timestamps: Vec<i64> = vec![0; MESSAGEKEYS.lock().unwrap().len()];
     let mut plus_header = true;
-    let mut detected_record_idset: HashSet<CompactString> = HashSet::new();
 
-    let level_map: HashMap<&str, u128> = HashMap::from([
-        ("INFORMATIONAL", 1),
-        ("LOW", 2),
-        ("MEDIUM", 3),
-        ("HIGH", 4),
-        ("CRITICAL", 5),
-    ]);
-
-    let get_level_suffix = |level_str: &str| {
-        *level_map
-            .get(
-                LEVEL_FULL
-                    .get(level_str)
-                    .unwrap_or(&"undefined")
-                    .to_uppercase()
-                    .as_str(),
-            )
-            .unwrap_or(&0) as usize
-    };
-    let mut author_list_cache: HashMap<CompactString, Nested<String>> = HashMap::new();
-
-    // remove duplicate dataのための前レコード分の情報を保持する変数
-    let mut prev_message: HashMap<CompactString, Profile> = HashMap::new();
-    let mut prev_details_convert_map: HashMap<CompactString, Vec<CompactString>> = HashMap::new();
     for (message_idx, time) in MESSAGEKEYS
         .lock()
         .unwrap()
@@ -344,9 +586,8 @@ fn emit_csv<W: std::io::Write>(
     {
         let multi = message::MESSAGES.get(time).unwrap();
         let (_, detect_infos) = multi.pair();
-        let mut prev_detect_infos = HashSet::new();
         timestamps[message_idx] = _get_timestamp(output_option, time);
-        for detect_info in detect_infos.iter().sorted_by(|a, b| {
+        for (idx, detect_info) in detect_infos.iter().enumerate().sorted_by(|(_, a), (_, b)| {
             Ord::cmp(
                 &format!(
                     "{}:{}:{}:{}",
@@ -364,196 +605,31 @@ fn emit_csv<W: std::io::Write>(
                 ),
             )
         }) {
-            if output_option.remove_duplicate_detections && detect_infos.len() > 1 {
-                let fields: Vec<&(CompactString, Profile)> = detect_info
-                    .ext_field
-                    .iter()
-                    .filter(|(_, profile)| !matches!(profile, Profile::EvtxFile(_)))
-                    .collect();
-                if prev_detect_infos.get(&fields).is_some() {
-                    continue;
-                }
-                prev_detect_infos.insert(fields);
-            }
-            if !detect_info.is_condition {
-                detected_record_idset.insert(CompactString::from(format!(
-                    "{}_{}",
-                    time, detect_info.eventid
-                )));
-            }
-            if displayflag && !(json_output_flag || jsonl_output_flag) {
-                // 標準出力の場合
-                if plus_header {
-                    // ヘッダーのみを出力
-                    _get_serialized_disp_output(
-                        &disp_wtr,
-                        profile,
-                        true,
-                        (&output_replacer, &output_replaced_maps),
-                        (&output_remover, &removed_replaced_maps),
-                        stored_static.common_options.no_color,
-                        get_writable_color(
-                            _get_output_color(
-                                &color_map,
-                                LEVEL_FULL.get(detect_info.level.as_str()).unwrap_or(&""),
-                            ),
-                            stored_static.common_options.no_color,
-                        ),
-                    );
-                    plus_header = false;
-                }
-                _get_serialized_disp_output(
-                    &disp_wtr,
-                    &detect_info.ext_field,
+            emit_output_record(
+                detect_info,
+                time,
+                output_option,
+                (
+                    displayflag,
+                    json_output_flag,
+                    jsonl_output_flag,
+                    remove_duplicate_data_flag,
                     false,
-                    (&output_replacer, &output_replaced_maps),
-                    (&output_remover, &removed_replaced_maps),
-                    stored_static.common_options.no_color,
-                    get_writable_color(
-                        _get_output_color(
-                            &color_map,
-                            LEVEL_FULL.get(detect_info.level.as_str()).unwrap_or(&""),
-                        ),
-                        stored_static.common_options.no_color,
-                    ),
-                );
-            } else if jsonl_output_flag {
-                // JSONL output format
-                let result = output_json_str(
-                    &detect_info.ext_field,
-                    prev_message,
-                    jsonl_output_flag,
-                    GEOIP_DB_PARSER.read().unwrap().is_some(),
-                    remove_duplicate_data_flag,
-                    detect_info.is_condition,
-                    &[&detect_info.details_convert_map, &prev_details_convert_map],
-                );
-                prev_message = result.1;
-                prev_details_convert_map = detect_info.details_convert_map.clone();
-                if displayflag {
-                    write_color_buffer(&disp_wtr, None, &format!("{{ {} }}", &result.0), true).ok();
-                } else {
-                    wtr.write_field(format!("{{ {} }}", &result.0))?;
-                }
-            } else if json_output_flag {
-                // JSON output
-                let result = output_json_str(
-                    &detect_info.ext_field,
-                    prev_message,
-                    jsonl_output_flag,
-                    GEOIP_DB_PARSER.read().unwrap().is_some(),
-                    remove_duplicate_data_flag,
-                    detect_info.is_condition,
-                    &[&detect_info.details_convert_map, &prev_details_convert_map],
-                );
-                prev_message = result.1;
-                prev_details_convert_map = detect_info.details_convert_map.clone();
-                if displayflag {
-                    write_color_buffer(&disp_wtr, None, &format!("{{\n{}\n}}", &result.0), true)
-                        .ok();
-                } else {
-                    wtr.write_field("{")?;
-                    wtr.write_field(&result.0)?;
-                    wtr.write_field("}")?;
-                }
-            } else {
-                // csv output format
-                if plus_header {
-                    wtr.write_record(detect_info.ext_field.iter().map(|x| x.0.trim()))?;
-                    plus_header = false;
-                }
-                wtr.write_record(detect_info.ext_field.iter().map(|x| {
-                    match x.1 {
-                        Profile::Details(_)
-                        | Profile::AllFieldInfo(_)
-                        | Profile::ExtraFieldInfo(_) => {
-                            let ret = if remove_duplicate_data_flag
-                                && x.1.to_value()
-                                    == prev_message
-                                        .get(&x.0)
-                                        .unwrap_or(&Profile::Literal("-".into()))
-                                        .to_value()
-                            {
-                                "DUP".to_string()
-                            } else {
-                                output_remover.replace_all(
-                                    &output_replacer
-                                        .replace_all(
-                                            &x.1.to_value(),
-                                            &output_replaced_maps.values().collect_vec(),
-                                        )
-                                        .split_whitespace()
-                                        .join(" "),
-                                    &removed_replaced_maps.values().collect_vec(),
-                                )
-                            };
-                            prev_message.insert(x.0.clone(), x.1.clone());
-                            ret
-                        }
-                        _ => output_remover.replace_all(
-                            &output_replacer
-                                .replace_all(
-                                    &x.1.to_value(),
-                                    &output_replaced_maps.values().collect_vec(),
-                                )
-                                .split_whitespace()
-                                .join(" "),
-                            &removed_replaced_maps.values().collect_vec(),
-                        ),
-                    }
-                }))?;
-            }
-            // 各種集計作業
-            if !output_option.no_summary {
-                let level_suffix = get_level_suffix(detect_info.level.as_str());
-                let author_list = author_list_cache
-                    .entry(detect_info.rulepath.clone())
-                    .or_insert_with(|| extract_author_name(&detect_info.rulepath))
-                    .clone();
-                let author_str = author_list.iter().join(", ");
-                detect_rule_authors.insert(detect_info.rulepath.to_owned(), author_str.into());
-
-                if !detected_rule_files.contains(&detect_info.rulepath) {
-                    detected_rule_files.insert(detect_info.rulepath.to_owned());
-                    for author in author_list.iter() {
-                        *rule_author_counter
-                            .entry(CompactString::from(author))
-                            .or_insert(0) += 1;
-                    }
-                }
-                if !detected_rule_ids.contains(&detect_info.ruleid) {
-                    detected_rule_ids.insert(detect_info.ruleid.to_owned());
-                    unique_detect_counts_by_level[level_suffix] += 1;
-                }
-
-                let computer_rule_check_key = CompactString::from(format!(
-                    "{}|{}",
-                    &detect_info.computername, &detect_info.rulepath
-                ));
-                if !detected_computer_and_rule_names.contains(&computer_rule_check_key) {
-                    detected_computer_and_rule_names.insert(computer_rule_check_key);
-                    countup_aggregation(
-                        &mut detect_counts_by_computer_and_level,
-                        &detect_info.level,
-                        &detect_info.computername,
-                    );
-                }
-                rule_title_path_map.insert(
-                    detect_info.ruletitle.to_owned(),
-                    detect_info.rulepath.to_owned(),
-                );
-
-                countup_aggregation(
-                    &mut detect_counts_by_date_and_level,
-                    &detect_info.level,
-                    &format_time(time, true, output_option),
-                );
-                countup_aggregation(
-                    &mut detect_counts_by_rule_and_level,
-                    &detect_info.level,
-                    &detect_info.ruletitle,
-                );
-                total_detect_counts_by_level[level_suffix] += 1;
+                ),
+                plus_header,
+                profile,
+                &disp_wtr,
+                &mut wtr,
+                (stored_static.common_options.no_color, &color_map),
+                (
+                    &output_replacer,
+                    &output_remover,
+                    &output_replaced_maps,
+                    &removed_replaced_maps,
+                ),
+            )?;
+            if idx == 0 {
+                plus_header = false;
             }
         }
     }
@@ -585,7 +661,7 @@ fn emit_csv<W: std::io::Write>(
         None => 100,
     };
 
-    if !output_option.no_summary && !rule_author_counter.is_empty() {
+    if !output_option.no_summary && !RULE_AUTHOR_COUNTER.read().unwrap().is_empty() {
         write_color_buffer(
             &disp_wtr,
             get_writable_color(
@@ -616,7 +692,10 @@ fn emit_csv<W: std::io::Write>(
         } else {
             6
         };
-        output_detected_rule_authors(rule_author_counter, table_column_num);
+        output_detected_rule_authors(
+            RULE_AUTHOR_COUNTER.read().unwrap().to_owned(),
+            table_column_num,
+        );
     }
 
     println!();
@@ -668,7 +747,8 @@ fn emit_csv<W: std::io::Write>(
             println!();
         }
 
-        let reducted_record_cnt: u128 = all_record_cnt - detected_record_idset.len() as u128;
+        let reducted_record_cnt: u128 =
+            all_record_cnt - DETECTED_RULE_IDS.read().unwrap().len() as u128;
         let reducted_percent = if all_record_cnt == 0 {
             0 as f64
         } else {
@@ -812,8 +892,8 @@ fn emit_csv<W: std::io::Write>(
         }
 
         _print_unique_results(
-            total_detect_counts_by_level,
-            unique_detect_counts_by_level,
+            TOTAL_DETECT_COUNTS_BY_LEVEL.read().unwrap().to_owned(),
+            UNIQUE_DETECT_COUNTS_BY_LEVEL.read().unwrap().to_owned(),
             (
                 CompactString::from("Total | Unique"),
                 CompactString::from("detections"),
@@ -826,7 +906,7 @@ fn emit_csv<W: std::io::Write>(
         println!();
 
         _print_detection_summary_by_date(
-            detect_counts_by_date_and_level,
+            DETECT_COUNTS_BY_DATE_AND_LEVEL.read().unwrap().to_owned(),
             &color_map,
             &level_abbr,
             &mut html_output_stock,
@@ -839,7 +919,10 @@ fn emit_csv<W: std::io::Write>(
         }
 
         _print_detection_summary_by_computer(
-            detect_counts_by_computer_and_level,
+            DETECT_COUNTS_BY_COMPUTER_AND_LEVEL
+                .read()
+                .unwrap()
+                .to_owned(),
             &color_map,
             &level_abbr,
             &mut html_output_stock,
@@ -851,9 +934,12 @@ fn emit_csv<W: std::io::Write>(
         }
 
         _print_detection_summary_tables(
-            detect_counts_by_rule_and_level,
+            DETECT_COUNTS_BY_RULE_AND_LEVEL.read().unwrap().to_owned(),
             &color_map,
-            (rule_title_path_map, detect_rule_authors),
+            (
+                RULE_TITLE_PATH_MAP.read().unwrap().to_owned(),
+                DETECT_RULE_AUTHORS.read().unwrap().to_owned(),
+            ),
             &level_abbr,
             &mut html_output_stock,
             stored_static,
@@ -903,6 +989,7 @@ fn _get_serialized_disp_output(
     (output_remover, removed_replaced_maps): (&AhoCorasick, &HashMap<&str, &str>),
     no_color: bool,
     level_color: Option<Color>,
+    low_memory_flag: bool,
 ) {
     let data_length = data.len();
     let mut ret = Nested::<String>::new();
@@ -1026,9 +1113,11 @@ fn _get_serialized_disp_output(
                     false,
                 )
                 .ok();
-            } else {
+            } else if !low_memory_flag {
                 //1レコード分の最後の要素の改行
                 println!();
+                println!();
+            } else {
                 println!();
             }
         }

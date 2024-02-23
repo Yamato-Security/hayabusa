@@ -4,15 +4,22 @@ extern crate maxminddb;
 extern crate serde;
 extern crate serde_derive;
 
+use aho_corasick::{AhoCorasickBuilder, MatchKind};
 use bytesize::ByteSize;
 use chrono::{DateTime, Datelike, Local, NaiveDateTime, Utc};
 use clap::Command;
 use compact_str::CompactString;
 use console::{style, Style};
+use csv::{QuoteStyle, WriterBuilder};
 use dialoguer::Confirm;
 use dialoguer::{theme::ColorfulTheme, Select};
 use evtx::{EvtxParser, ParserSettings, RecordAllocation};
 use hashbrown::{HashMap, HashSet};
+use hayabusa::afterfact::{
+    DETECT_COUNTS_BY_COMPUTER_AND_LEVEL, DETECT_COUNTS_BY_DATE_AND_LEVEL,
+    DETECT_COUNTS_BY_RULE_AND_LEVEL, DISPLAY_FLAG, JSONL_OUTPUT_FLAG, JSON_OUTPUT_FLAG,
+    OUTPUT_DISP_AND_FILE_WRITER, REMOVE_DUPLICATE_DATA_FLAG,
+};
 use hayabusa::debug::checkpoint_process_timer::CHECKPOINT;
 use hayabusa::detections::configs::{
     load_pivot_keywords, Action, ConfigReader, EventKeyAliasConfig, StoredStatic, TargetEventTime,
@@ -46,18 +53,19 @@ use std::borrow::BorrowMut;
 use std::ffi::{OsStr, OsString};
 use std::fmt::Display;
 use std::fmt::Write as _;
+use std::fs::OpenOptions;
 use std::io::{BufWriter, Write};
 use std::path::Path;
 use std::ptr::null_mut;
 use std::sync::Arc;
 use std::time::Duration;
-use std::u128;
 use std::{
     env,
     fs::{self, File},
     path::PathBuf,
     vec,
 };
+use std::{process, u128};
 use termcolor::{BufferWriter, Color, ColorChoice};
 use tokio::runtime::Runtime;
 use tokio::spawn;
@@ -304,6 +312,67 @@ impl App {
                         return;
                     }
                 }
+                let levels = ["crit", "high", "med ", "low ", "info", "undefined"];
+                // レベル別、日ごとの集計用変数の初期化
+                for level_init in levels {
+                    DETECT_COUNTS_BY_DATE_AND_LEVEL
+                        .write()
+                        .unwrap()
+                        .insert(CompactString::from(level_init), HashMap::new());
+                    DETECT_COUNTS_BY_COMPUTER_AND_LEVEL
+                        .write()
+                        .unwrap()
+                        .insert(CompactString::from(level_init), HashMap::new());
+                    DETECT_COUNTS_BY_RULE_AND_LEVEL
+                        .write()
+                        .unwrap()
+                        .insert(CompactString::from(level_init), HashMap::new());
+                }
+                if OUTPUT_DISP_AND_FILE_WRITER.read().unwrap().is_none() {
+                    let file = &stored_static.output_path;
+                    let target: Box<dyn std::io::Write + Send + Sync> = if let Some(path) = &file {
+                        // output to file
+                        let open_opt = OpenOptions::new().create(true).append(true).open(path);
+                        match open_opt {
+                            Ok(file) => Box::new(BufWriter::new(file)),
+                            Err(err) => {
+                                AlertMessage::alert(&format!("Failed to open file. {err}")).ok();
+                                process::exit(1);
+                            }
+                        }
+                    } else {
+                        *DISPLAY_FLAG.write().unwrap() = true;
+                        // stdoutput (termcolor crate color output is not csv writer)
+                        Box::new(BufWriter::new(std::io::stdout()))
+                    };
+                    *OUTPUT_DISP_AND_FILE_WRITER.write().unwrap() =
+                        match &stored_static.config.action.as_ref().unwrap() {
+                            Action::JsonTimeline(option) => {
+                                *JSON_OUTPUT_FLAG.write().unwrap() = true;
+                                *JSONL_OUTPUT_FLAG.write().unwrap() = option.jsonl_timeline;
+                                *REMOVE_DUPLICATE_DATA_FLAG.write().unwrap() =
+                                    option.output_options.remove_duplicate_data;
+                                Some(
+                                    WriterBuilder::new()
+                                        .delimiter(b'\n')
+                                        .double_quote(false)
+                                        .quote_style(QuoteStyle::Never)
+                                        .from_writer(target),
+                                )
+                            }
+                            Action::CsvTimeline(option) => {
+                                *REMOVE_DUPLICATE_DATA_FLAG.write().unwrap() =
+                                    option.output_options.remove_duplicate_data;
+                                Some(
+                                    WriterBuilder::new()
+                                        .quote_style(QuoteStyle::NonNumeric)
+                                        .from_writer(target),
+                                )
+                            }
+                            _ => None,
+                        };
+                }
+
                 self.analysis_start(&target_extensions, &time_filter, stored_static);
 
                 output_profile_name(&stored_static.output_option, false);
