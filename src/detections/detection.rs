@@ -70,7 +70,7 @@ impl Detection {
         self,
         rt: &Runtime,
         records: Vec<EvtxRecordInfo>,
-    ) -> (Self, Vec<(DetectInfo, DateTime<Utc>)>) {
+    ) -> (Self, Vec<DetectInfo>) {
         rt.block_on(self.execute_rules(records))
     }
 
@@ -165,11 +165,11 @@ impl Detection {
     async fn execute_rules(
         mut self,
         records: Vec<EvtxRecordInfo>,
-    ) -> (Self, Vec<(DetectInfo, DateTime<Utc>)>) {
+    ) -> (Self, Vec<DetectInfo>) {
         let records_arc = Arc::new(records);
         // // 各rule毎にスレッドを作成して、スレッドを起動する。
         let rules = self.rules;
-        let handles: Vec<JoinHandle<(RuleNode, Vec<(DetectInfo, DateTime<Utc>)>)>> = rules
+        let handles: Vec<JoinHandle<(RuleNode, Vec<DetectInfo>)>> = rules
             .into_iter()
             .map(|rule| {
                 let records_cloned = Arc::clone(&records_arc);
@@ -226,7 +226,7 @@ impl Detection {
     fn execute_rule(
         mut rule: RuleNode,
         records: Arc<Vec<EvtxRecordInfo>>,
-    ) -> (RuleNode, Vec<(DetectInfo, DateTime<Utc>)>) {
+    ) -> (RuleNode, Vec<DetectInfo>) {
         let agg_condition = rule.has_agg_condition();
         let binding = STORED_STATIC.read().unwrap();
         let stored_static = binding.as_ref().unwrap();
@@ -266,7 +266,7 @@ impl Detection {
         rule: &RuleNode,
         record_info: &EvtxRecordInfo,
         stored_static: &StoredStatic,
-    ) -> (DetectInfo, DateTime<Utc>) {
+    ) -> DetectInfo {
         let tag_info: &Nested<String> = &Detection::get_tag_info(rule);
         let rec_id = if stored_static
             .profiles
@@ -766,7 +766,7 @@ impl Detection {
             ),
         );
 
-        return (detect_info, time);
+        return detect_info;
     }
 
     /// TODO
@@ -1625,9 +1625,10 @@ mod tests {
                 let rule = &dummy_rule;
                 let record_info = &input_evtxrecord;
                 let stored_static = &stored_static;
-                let (detect_info, time) =
+                let detect_info =
                     Detection::create_log_record(rule, record_info, stored_static);
-                message::insert_message(detect_info, time);
+                let detect_time = detect_info.detected_time.clone();
+                message::insert_message(detect_info, detect_time);
             };
             let multi = message::MESSAGES.get(&expect_time).unwrap();
             let (_, detect_infos) = multi.pair();
@@ -1770,9 +1771,10 @@ mod tests {
                 let rule = &dummy_rule;
                 let record_info = &input_evtxrecord;
                 let stored_static = &stored_static;
-                let (detect_info, time) =
+                let detect_info =
                     Detection::create_log_record(rule, record_info, stored_static);
-                message::insert_message(detect_info, time);
+                let detected_time = detect_info.detected_time.clone();
+                message::insert_message(detect_info, detected_time);
             };
             let multi = message::MESSAGES.get(&expect_time).unwrap();
             let (_, detect_infos) = multi.pair();
@@ -1928,9 +1930,10 @@ mod tests {
                 let rule = &rule_node;
                 let record_info = &input_evtxrecord;
                 let stored_static: &StoredStatic = &stored_static.clone();
-                let (detect_info, time) =
+                let detect_info =
                     Detection::create_log_record(rule, record_info, stored_static);
-                message::insert_message(detect_info, time);
+                let detected_time = detect_info.detected_time.clone();
+                message::insert_message(detect_info, detected_time);
             };
             let multi = message::MESSAGES.get(&expect_time).unwrap();
             let (_, detect_infos) = multi.pair();
@@ -2083,9 +2086,10 @@ mod tests {
                 let rule = &rule_node;
                 let record_info = &input_evtxrecord;
                 let stored_static: &StoredStatic = &stored_static.clone();
-                let (detect_info, time) =
+                let detect_info =
                     Detection::create_log_record(rule, record_info, stored_static);
-                message::insert_message(detect_info, time);
+                let detected_time = detect_info.detected_time.clone();
+                message::insert_message(detect_info, detected_time);
             };
             let multi = message::MESSAGES.get(&expect_time).unwrap();
             let (_, detect_infos) = multi.pair();

@@ -13,13 +13,14 @@ use dialoguer::Confirm;
 use dialoguer::{theme::ColorfulTheme, Select};
 use evtx::{EvtxParser, ParserSettings, RecordAllocation};
 use hashbrown::{HashMap, HashSet};
+use hayabusa::afterfact::AfterfactInfo;
 use hayabusa::debug::checkpoint_process_timer::CHECKPOINT;
 use hayabusa::detections::configs::{
     load_pivot_keywords, Action, ConfigReader, EventKeyAliasConfig, StoredStatic, TargetEventTime,
     TargetIds, CURRENT_EXE_PATH, STORED_EKEY_ALIAS, STORED_STATIC,
 };
 use hayabusa::detections::detection::{self, EvtxRecordInfo};
-use hayabusa::detections::message::{self, AlertMessage, ERROR_LOG_STACK};
+use hayabusa::detections::message::{self, AlertMessage, DetectInfo, ERROR_LOG_STACK};
 use hayabusa::detections::rule::{get_detection_keys, RuleNode};
 use hayabusa::detections::utils::{
     check_setting_path, get_writable_color, output_and_data_stack_for_html, output_duration,
@@ -1404,12 +1405,11 @@ impl App {
         pb.enable_steady_tick(Duration::from_millis(300));
         self.rule_keys = self.get_all_keys(&rule_files);
         let mut detection = detection::Detection::new(rule_files);
-        let mut total_records: usize = 0;
-        let mut recover_records: usize = 0;
         let mut tl = Timeline::new();
 
         *STORED_EKEY_ALIAS.write().unwrap() = Some(stored_static.eventkey_alias.clone());
         *STORED_STATIC.write().unwrap() = Some(stored_static.clone());
+        let mut afterfact_info = AfterfactInfo::new();
         for evtx_file in evtx_files {
             let pb_msg = format!(
                 "{:?}",
@@ -1417,9 +1417,7 @@ impl App {
             );
             pb.set_message(pb_msg);
 
-            let cnt_tmp: usize;
-            let recover_cnt_tmp: usize;
-            (detection, cnt_tmp, tl, recover_cnt_tmp) = if evtx_file.extension().unwrap() == "json"
+            let (detection_tmp, cnt_tmp, tl_tmp, recover_cnt_tmp, mut detect_infos) = if evtx_file.extension().unwrap() == "json"
             {
                 self.analysis_json_file(
                     evtx_file,
@@ -1439,8 +1437,11 @@ impl App {
                     stored_static,
                 )
             };
-            total_records += cnt_tmp;
-            recover_records += recover_cnt_tmp;
+            detection = detection_tmp;
+            tl = tl_tmp;
+            afterfact_info.record_cnt += cnt_tmp as u128;
+            afterfact_info.recover_record_cnt += recover_cnt_tmp as u128;
+            afterfact_info.detect_infos.append(&mut detect_infos);
             pb.inc(1);
         }
         pb.finish_with_message(
@@ -1475,7 +1476,9 @@ impl App {
                 }
             }
 
-            after_fact(total_records, stored_static, tl, recover_records);
+            afterfact_info.tl_starttime = tl.stats.start_time;
+            afterfact_info.tl_endtime = tl.stats.end_time;
+            after_fact(stored_static, afterfact_info);
         }
         CHECKPOINT
             .lock()
@@ -1493,13 +1496,14 @@ impl App {
         mut tl: Timeline,
         target_event_ids: &TargetIds,
         stored_static: &StoredStatic,
-    ) -> (detection::Detection, usize, Timeline, usize) {
+    ) -> (detection::Detection, usize, Timeline, usize, Vec<DetectInfo>) {
         let path = evtx_filepath.display();
         let parser = self.evtx_to_jsons(&evtx_filepath, stored_static.enable_recover_records);
         let mut record_cnt = 0;
         let mut recover_records_cnt = 0;
+        let mut detect_infos:  Vec<DetectInfo> = vec![];
         if parser.is_none() {
-            return (detection, record_cnt, tl, 0);
+            return (detection, record_cnt, tl, 0, detect_infos);
         }
 
         let mut parser = parser.unwrap();
@@ -1615,18 +1619,13 @@ impl App {
                 || stored_static.search_flag)
             {
                 // ruleファイルの検知
-                let (detection_tmp, log_records) = detection.start(&self.rt, records_per_detect);
-                if stored_static.is_low_memory {
-                } else {
-                    for (detect_info, event_time) in log_records {
-                        message::insert_message(detect_info, event_time)
-                    }
-                }
+                let (detection_tmp, mut log_records) = detection.start(&self.rt, records_per_detect);
+                detect_infos.append(&mut log_records);
                 detection = detection_tmp;
             }
         }
         tl.total_record_cnt += record_cnt;
-        (detection, record_cnt, tl, recover_records_cnt)
+        (detection, record_cnt, tl, recover_records_cnt, detect_infos)
     }
 
     // JSON形式のイベントログファイルを1ファイル分解析する。
@@ -1638,7 +1637,7 @@ impl App {
         mut tl: Timeline,
         target_event_ids: &TargetIds,
         stored_static: &StoredStatic,
-    ) -> (detection::Detection, usize, Timeline, usize) {
+    ) -> (detection::Detection, usize, Timeline, usize, Vec<DetectInfo>) {
         let path = filepath.display();
         let mut record_cnt = 0;
         let recover_records_cnt = 0;
@@ -1653,6 +1652,7 @@ impl App {
             filename.to_string()
         };
         let jsonl_value_iter = utils::read_jsonl_to_value(&filepath);
+        let mut detect_infos: Vec<DetectInfo> = vec![];
         let mut records = match jsonl_value_iter {
             // JSONL形式の場合
             Ok(values) => values,
@@ -1663,7 +1663,7 @@ impl App {
                     Ok(values) => values,
                     Err(e) => {
                         AlertMessage::alert(&e).ok();
-                        return (detection, record_cnt, tl, recover_records_cnt);
+                        return (detection, record_cnt, tl, recover_records_cnt, detect_infos);
                     }
                 }
             }
@@ -1801,18 +1801,13 @@ impl App {
                 || stored_static.search_flag)
             {
                 // ruleファイルの検知
-                let (detection_tmp, log_records) = detection.start(&self.rt, records_per_detect);
-                if stored_static.is_low_memory {
-                } else {
-                    for (detect_info, event_time) in log_records {
-                        message::insert_message(detect_info, event_time)
-                    }
-                }
+                let (detection_tmp, mut log_records) = detection.start(&self.rt, records_per_detect);
+                detect_infos.append(&mut log_records);
                 detection = detection_tmp;
             }
         }
         tl.total_record_cnt += record_cnt;
-        (detection, record_cnt, tl, recover_records_cnt)
+        (detection, record_cnt, tl, recover_records_cnt, detect_infos)
     }
 
     async fn create_rec_infos(
@@ -2037,7 +2032,7 @@ mod tests {
     use chrono::Local;
     use hashbrown::HashSet;
     use hayabusa::{
-        detections::{
+         detections::{
             configs::{
                 Action, CommonOptions, ComputerMetricsOption, Config, ConfigReader,
                 CsvOutputOption, DetectCommonOption, EidMetricsOption, InputOption,
@@ -2047,9 +2042,7 @@ mod tests {
             detection,
             message::{MESSAGEKEYS, MESSAGES},
             rule::create_rule,
-        },
-        options::htmlreport::HTML_REPORTER,
-        timeline::timelines::Timeline,
+        }, options::htmlreport::HTML_REPORTER, timeline::timelines::Timeline
     };
     use itertools::Itertools;
     use yaml_rust::YamlLoader;
