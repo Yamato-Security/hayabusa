@@ -47,7 +47,7 @@ pub struct Colors {
 }
 
 /// level_color.txtファイルを読み込み対応する文字色のマッピングを返却する関数
-pub fn set_output_color(no_color_flag: bool) -> HashMap<CompactString, Colors> {
+pub fn create_output_color_map(no_color_flag: bool) -> HashMap<CompactString, Colors> {
     let read_result = utils::read_csv(
         utils::check_setting_path(
             &CURRENT_EXE_PATH.to_path_buf(),
@@ -199,7 +199,7 @@ pub fn after_fact(
         // stdoutput (termcolor crate color output is not csv writer)
         Box::new(BufWriter::new(io::stdout()))
     };
-    let color_map = set_output_color(no_color_flag);
+    let color_map = create_output_color_map(no_color_flag);
     if let Err(err) = emit_csv(
         &mut target,
         displayflag,
@@ -563,20 +563,6 @@ fn emit_csv<W: std::io::Write>(
     }
 
     disp_wtr_buf.clear();
-    let level_abbr: Nested<Vec<CompactString>> = Nested::from_iter(
-        [
-            [CompactString::from("critical"), CompactString::from("crit")].to_vec(),
-            [CompactString::from("high"), CompactString::from("high")].to_vec(),
-            [CompactString::from("medium"), CompactString::from("med ")].to_vec(),
-            [CompactString::from("low"), CompactString::from("low ")].to_vec(),
-            [
-                CompactString::from("informational"),
-                CompactString::from("info"),
-            ]
-            .to_vec(),
-        ]
-        .iter(),
-    );
 
     output_summary(
         stored_static,
@@ -2003,7 +1989,7 @@ fn _output_html_computer_by_mitre_attck(html_output_stock: &mut Nested<String>) 
 
 #[cfg(test)]
 mod tests {
-    use super::set_output_color;
+    use super::create_output_color_map;
     use crate::afterfact::emit_csv;
     use crate::afterfact::format_time;
     use crate::afterfact::Colors;
@@ -3771,7 +3757,7 @@ mod tests {
     /// To confirm that empty character color mapping data is returned when the no_color flag is given.
     fn test_set_output_color_no_color_flag() {
         let expect: HashMap<CompactString, Colors> = HashMap::new();
-        check_hashmap_data(set_output_color(true), expect);
+        check_hashmap_data(create_output_color_map(true), expect);
     }
 
     #[test]

@@ -1468,7 +1468,7 @@ impl App {
         {
             println!();
             let log_records = detection.add_aggcondition_msges(&self.rt, stored_static);
-            if (stored_static.is_low_memory) {
+            if stored_static.is_low_memory {
             } else {
                 for (detect_info, event_time) in log_records {
                     message::insert_message(detect_info, event_time);
