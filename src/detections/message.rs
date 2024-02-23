@@ -923,7 +923,7 @@ mod tests {
         for (event_time, detect_info, random_num) in sample_detects {
             let handle = thread::spawn(move || {
                 thread::sleep(Duration::from_micros(random_num));
-                insert_message(detect_info, event_time);
+                insert_message(detect_info, event_time, (false, false));
             });
             handles.push(handle);
         }
