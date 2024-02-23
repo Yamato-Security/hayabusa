@@ -23,7 +23,7 @@ use csv::{QuoteStyle, WriterBuilder};
 use itertools::Itertools;
 use krapslog::{build_sparkline, build_time_markers};
 use nested::Nested;
-use std::path::{Path, PathBuf};
+use std::path::Path;
 use std::str::FromStr;
 use yaml_rust::YamlLoader;
 
@@ -173,8 +173,6 @@ fn _print_timeline_hist(timestamps: &Vec<i64>, length: usize, side_margin_size: 
 
 pub fn after_fact(
     all_record_cnt: usize,
-    output_option: &Option<PathBuf>,
-    no_color_flag: bool,
     stored_static: &StoredStatic,
     tl: Timeline,
     recover_records_cnt: usize,
@@ -185,7 +183,7 @@ pub fn after_fact(
     };
 
     let mut displayflag = false;
-    let mut target: Box<dyn io::Write> = if let Some(path) = &output_option {
+    let mut target: Box<dyn io::Write> = if let Some(path) = &stored_static.output_path {
         // output to file
         match File::create(path) {
             Ok(file) => Box::new(BufWriter::new(file)),
@@ -199,7 +197,7 @@ pub fn after_fact(
         // stdoutput (termcolor crate color output is not csv writer)
         Box::new(BufWriter::new(io::stdout()))
     };
-    let color_map = create_output_color_map(no_color_flag);
+    let color_map = create_output_color_map(stored_static.common_options.no_color);
     if let Err(err) = emit_csv(
         &mut target,
         displayflag,

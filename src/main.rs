@@ -1475,14 +1475,7 @@ impl App {
                 }
             }
 
-            after_fact(
-                total_records,
-                &stored_static.output_path,
-                stored_static.common_options.no_color,
-                stored_static,
-                tl,
-                recover_records,
-            );
+            after_fact(total_records, stored_static, tl, recover_records);
         }
         CHECKPOINT
             .lock()
