@@ -1,7 +1,7 @@
 extern crate lazy_static;
 use crate::afterfact::{
-    emit_output_record, set_output_color, DISPLAY_FLAG, JSONL_OUTPUT_FLAG,
-    JSON_OUTPUT_FLAG, OUTPUT_DISP_AND_FILE_WRITER, PLUS_HEADER, REMOVE_DUPLICATE_DATA_FLAG,
+    emit_output_record, set_output_color, DISPLAY_FLAG, JSONL_OUTPUT_FLAG, JSON_OUTPUT_FLAG,
+    OUTPUT_DISP_AND_FILE_WRITER, PLUS_HEADER, REMOVE_DUPLICATE_DATA_FLAG,
 };
 use crate::detections::configs::CURRENT_EXE_PATH;
 use crate::detections::field_data_map::{convert_field_data, FieldDataMap, FieldDataMapKey};
@@ -23,11 +23,11 @@ use nested::Nested;
 use regex::Regex;
 use serde_json::Value;
 
+use std::env;
 use std::fs::{create_dir, File};
 use std::io::{self, BufWriter, Write};
 use std::path::Path;
 use std::sync::Mutex;
-use std::env;
 use termcolor::{BufferWriter, ColorChoice};
 
 use super::configs::{EventKeyAliasConfig, STORED_STATIC};

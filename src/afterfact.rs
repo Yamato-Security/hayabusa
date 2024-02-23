@@ -378,7 +378,7 @@ pub fn emit_output_record<W: std::io::Write>(
     } else {
         // csv output format
         if plus_header {
-            wtr.flush()?;
+            wtr.write_record(detect_info.ext_field.iter().map(|x| x.0.trim()))?;
         }
         wtr.write_record(detect_info.ext_field.iter().map(|x| {
             match x.1 {

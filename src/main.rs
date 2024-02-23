@@ -4,7 +4,6 @@ extern crate maxminddb;
 extern crate serde;
 extern crate serde_derive;
 
-use aho_corasick::{AhoCorasickBuilder, MatchKind};
 use bytesize::ByteSize;
 use chrono::{DateTime, Datelike, Local, NaiveDateTime, Utc};
 use clap::Command;
@@ -53,7 +52,6 @@ use std::borrow::BorrowMut;
 use std::ffi::{OsStr, OsString};
 use std::fmt::Display;
 use std::fmt::Write as _;
-use std::fs::OpenOptions;
 use std::io::{BufWriter, Write};
 use std::path::Path;
 use std::ptr::null_mut;
@@ -332,8 +330,7 @@ impl App {
                     let file = &stored_static.output_path;
                     let target: Box<dyn std::io::Write + Send + Sync> = if let Some(path) = &file {
                         // output to file
-                        let open_opt = OpenOptions::new().create(true).append(true).open(path);
-                        match open_opt {
+                        match File::create(path) {
                             Ok(file) => Box::new(BufWriter::new(file)),
                             Err(err) => {
                                 AlertMessage::alert(&format!("Failed to open file. {err}")).ok();
