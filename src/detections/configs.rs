@@ -90,6 +90,7 @@ pub struct StoredStatic {
     pub no_pwsh_field_extraction: bool,
     pub enable_recover_records: bool,
     pub timeline_offset: Option<String>,
+    pub is_low_memory: bool,
 }
 impl StoredStatic {
     /// main.rsでパースした情報からデータを格納する関数
@@ -558,6 +559,7 @@ impl StoredStatic {
         };
 
         let mut ret = StoredStatic {
+            is_low_memory: false,
             config: input_config.as_ref().unwrap().to_owned(),
             config_path: config_path.to_path_buf(),
             ch_config: create_output_filter_config(
@@ -692,6 +694,7 @@ impl StoredStatic {
             .unwrap(),
             Some(&ret),
         );
+        ret.is_low_memory = false;
         ret
     }
     /// detailsのdefault値をファイルから読み取る関数

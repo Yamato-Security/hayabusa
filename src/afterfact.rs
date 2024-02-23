@@ -37,7 +37,7 @@ use std::io::{self, BufWriter, Write};
 
 use std::fs::File;
 use std::process;
-use termcolor::{BufferWriter, Color, ColorChoice, ColorSpec, WriteColor};
+use termcolor::{Buffer, BufferWriter, Color, ColorChoice, ColorSpec, WriteColor};
 use terminal_size::Width;
 
 #[derive(Debug)]
@@ -124,7 +124,7 @@ fn _get_table_color(
 }
 
 /// print timeline histogram
-fn _print_timeline_hist(timestamps: Vec<i64>, length: usize, side_margin_size: usize) {
+fn _print_timeline_hist(timestamps: &Vec<i64>, length: usize, side_margin_size: usize) {
     if timestamps.is_empty() {
         return;
     }
@@ -156,8 +156,8 @@ fn _print_timeline_hist(timestamps: Vec<i64>, length: usize, side_margin_size: u
     let marker_num = min(timestamp_marker_max, 18);
 
     let (header_raw, footer_raw) =
-        build_time_markers(&timestamps, marker_num, length - (side_margin_size * 2));
-    let sparkline = build_sparkline(&timestamps, length - (side_margin_size * 2), 5_usize);
+        build_time_markers(timestamps, marker_num, length - (side_margin_size * 2));
+    let sparkline = build_sparkline(timestamps, length - (side_margin_size * 2), 5_usize);
     for header_str in header_raw.lines() {
         writeln!(wtr, "{}{}", " ".repeat(side_margin_size - 1), header_str).ok();
     }
@@ -239,8 +239,6 @@ fn emit_csv<W: std::io::Write>(
         .build(removed_replaced_maps.keys())
         .unwrap();
 
-    let mut html_output_stock = Nested::<String>::new();
-    let html_output_flag = stored_static.html_report_flag;
     let output_option = stored_static.output_option.as_ref().unwrap();
     let disp_wtr = BufferWriter::stdout(ColorChoice::Always);
     let mut disp_wtr_buf = disp_wtr.buffer();
@@ -580,14 +578,70 @@ fn emit_csv<W: std::io::Write>(
         .iter(),
     );
 
+    output_summary(
+        stored_static,
+        rule_author_counter,
+        &disp_wtr,
+        timestamps,
+        disp_wtr_buf,
+        tl_start_end_time,
+        all_record_cnt,
+        recover_records_cnt,
+        detected_record_idset,
+        total_detect_counts_by_level,
+        unique_detect_counts_by_level,
+        color_map,
+        detect_counts_by_date_and_level,
+        detect_counts_by_computer_and_level,
+        detect_counts_by_rule_and_level,
+        detect_rule_authors,
+        rule_title_path_map,
+    );
+
+    Ok(())
+}
+
+fn output_summary(
+    stored_static: &StoredStatic,
+    rule_author_counter: HashMap<CompactString, i128>,
+    disp_wtr: &BufferWriter,
+    timestamps: Vec<i64>,
+    mut disp_wtr_buf: Buffer,
+    tl_start_end_time: (&Option<DateTime<Utc>>, &Option<DateTime<Utc>>),
+    all_record_cnt: u128,
+    recover_records_cnt: u128,
+    detected_record_idset: HashSet<CompactString>,
+    total_detect_counts_by_level: Vec<u128>,
+    unique_detect_counts_by_level: Vec<u128>,
+    color_map: HashMap<CompactString, Colors>,
+    detect_counts_by_date_and_level: HashMap<CompactString, HashMap<CompactString, i128>>,
+    detect_counts_by_computer_and_level: HashMap<CompactString, HashMap<CompactString, i128>>,
+    detect_counts_by_rule_and_level: HashMap<CompactString, HashMap<CompactString, i128>>,
+    detect_rule_authors: HashMap<CompactString, CompactString>,
+    rule_title_path_map: HashMap<CompactString, CompactString>,
+) {
     let terminal_width = match terminal_size() {
         Some((Width(w), _)) => w as usize,
         None => 100,
     };
-
+    let level_abbr: Nested<Vec<CompactString>> = Nested::from_iter(
+        [
+            [CompactString::from("critical"), CompactString::from("crit")].to_vec(),
+            [CompactString::from("high"), CompactString::from("high")].to_vec(),
+            [CompactString::from("medium"), CompactString::from("med ")].to_vec(),
+            [CompactString::from("low"), CompactString::from("low ")].to_vec(),
+            [
+                CompactString::from("informational"),
+                CompactString::from("info"),
+            ]
+            .to_vec(),
+        ]
+        .iter(),
+    );
+    let output_option = stored_static.output_option.as_ref().unwrap();
     if !output_option.no_summary && !rule_author_counter.is_empty() {
         write_color_buffer(
-            &disp_wtr,
+            disp_wtr,
             get_writable_color(
                 Some(Color::Rgb(0, 255, 0)),
                 stored_static.common_options.no_color,
@@ -597,7 +651,7 @@ fn emit_csv<W: std::io::Write>(
         )
         .ok();
         write_color_buffer(
-            &disp_wtr,
+            disp_wtr,
             get_writable_color(None, stored_static.common_options.no_color),
             " ",
             true,
@@ -621,10 +675,11 @@ fn emit_csv<W: std::io::Write>(
 
     println!();
     if output_option.visualize_timeline {
-        _print_timeline_hist(timestamps, terminal_width, 3);
+        _print_timeline_hist(&timestamps, terminal_width, 3);
         println!();
     }
 
+    let mut html_output_stock = Nested::<String>::new();
     if !output_option.no_summary {
         disp_wtr_buf.clear();
         write_color_buffer(
@@ -801,7 +856,7 @@ fn emit_csv<W: std::io::Write>(
         }
         println!();
 
-        if html_output_flag {
+        if stored_static.html_report_flag {
             html_output_stock.push(format!("- Events with hits: {}", &saved_alerts_output));
             html_output_stock.push(format!("- Total events analyzed: {}", &all_record_output));
             html_output_stock.push(format!("- {reduction_output}"));
@@ -821,7 +876,7 @@ fn emit_csv<W: std::io::Write>(
             &color_map,
             &level_abbr,
             &mut html_output_stock,
-            html_output_flag,
+            stored_static.html_report_flag,
         );
         println!();
 
@@ -834,7 +889,7 @@ fn emit_csv<W: std::io::Write>(
         );
         println!();
         println!();
-        if html_output_flag {
+        if stored_static.html_report_flag {
             html_output_stock.push("");
         }
 
@@ -846,7 +901,7 @@ fn emit_csv<W: std::io::Write>(
             stored_static,
         );
         println!();
-        if html_output_flag {
+        if stored_static.html_report_flag {
             html_output_stock.push("");
         }
 
@@ -860,15 +915,14 @@ fn emit_csv<W: std::io::Write>(
             cmp::min((terminal_width / 2) - 15, 200),
         );
         println!();
-        if html_output_flag {
+        if stored_static.html_report_flag {
             html_output_stock.push("");
         }
     }
-    if html_output_flag {
+    if stored_static.html_report_flag {
         _output_html_computer_by_mitre_attck(&mut html_output_stock);
         htmlreport::add_md_data("Results Summary {#results_summary}", html_output_stock);
     }
-    Ok(())
 }
 
 fn countup_aggregation(

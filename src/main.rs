@@ -19,7 +19,7 @@ use hayabusa::detections::configs::{
     TargetIds, CURRENT_EXE_PATH, STORED_EKEY_ALIAS, STORED_STATIC,
 };
 use hayabusa::detections::detection::{self, EvtxRecordInfo};
-use hayabusa::detections::message::{AlertMessage, ERROR_LOG_STACK};
+use hayabusa::detections::message::{self, AlertMessage, ERROR_LOG_STACK};
 use hayabusa::detections::rule::{get_detection_keys, RuleNode};
 use hayabusa::detections::utils::{
     check_setting_path, get_writable_color, output_and_data_stack_for_html, output_duration,
@@ -1467,7 +1467,14 @@ impl App {
             || stored_static.computer_metrics_flag)
         {
             println!();
-            detection.add_aggcondition_msges(&self.rt, stored_static);
+            let log_records = detection.add_aggcondition_msges(&self.rt, stored_static);
+            if (stored_static.is_low_memory) {
+            } else {
+                for (detect_info, event_time) in log_records {
+                    message::insert_message(detect_info, event_time);
+                }
+            }
+
             after_fact(
                 total_records,
                 &stored_static.output_path,
@@ -1616,6 +1623,12 @@ impl App {
             {
                 // ruleファイルの検知
                 let (detection_tmp, log_records) = detection.start(&self.rt, records_per_detect);
+                if stored_static.is_low_memory {
+                } else {
+                    for (detect_info, event_time) in log_records {
+                        message::insert_message(detect_info, event_time)
+                    }
+                }
                 detection = detection_tmp;
             }
         }
@@ -1796,6 +1809,12 @@ impl App {
             {
                 // ruleファイルの検知
                 let (detection_tmp, log_records) = detection.start(&self.rt, records_per_detect);
+                if stored_static.is_low_memory {
+                } else {
+                    for (detect_info, event_time) in log_records {
+                        message::insert_message(detect_info, event_time)
+                    }
+                }
                 detection = detection_tmp;
             }
         }
