@@ -59,12 +59,34 @@ pub struct AdditionalAfterfact {
     pub detect_counts_by_rule_and_level: HashMap<CompactString, HashMap<CompactString, i128>>,
     pub detect_rule_authors: HashMap<CompactString, CompactString>,
     pub rule_title_path_map: HashMap<CompactString, CompactString>,
+    pub rule_author_counter: HashMap<CompactString, i128>,
+    pub timestamps: Vec<i64>,
 }
 
 impl AdditionalAfterfact {
-    /*     pub fn new() -> AdditionalAfterfact {
-        let (detect_counts_by_date_and_level, detect_counts_by_computer_and_level, detect_counts_by_rule_and_level) = AdditionalAfterfact::init_level_map();
-    } */
+    pub fn new() -> AdditionalAfterfact {
+        let (
+            detect_counts_by_date_and_level,
+            detect_counts_by_computer_and_level,
+            detect_counts_by_rule_and_level,
+        ) = AdditionalAfterfact::init_level_map();
+        AdditionalAfterfact {
+            tl_starttime: Option::None,
+            tl_endtime: Option::None,
+            all_record_cnt: 0,
+            recover_records_cnt: 0,
+            detected_record_idset: HashSet::new(),
+            total_detect_counts_by_level: vec![0; 6],
+            unique_detect_counts_by_level: vec![0; 6],
+            detect_counts_by_date_and_level: detect_counts_by_date_and_level,
+            detect_counts_by_computer_and_level: detect_counts_by_computer_and_level,
+            detect_counts_by_rule_and_level: detect_counts_by_rule_and_level,
+            detect_rule_authors: HashMap::new(),
+            rule_title_path_map: HashMap::new(),
+            rule_author_counter: HashMap::new(),
+            timestamps: vec![],
+        }
+    }
 
     pub fn init_level_map() -> (
         HashMap<CompactString, HashMap<CompactString, i128>>,
@@ -251,13 +273,18 @@ pub fn after_fact(
         // stdoutput (termcolor crate color output is not csv writer)
         Box::new(BufWriter::new(io::stdout()))
     };
+    let mut additinal_afterfact = AdditionalAfterfact::new();
+    additinal_afterfact.all_record_cnt = all_record_cnt as u128;
+    additinal_afterfact.recover_records_cnt = recover_records_cnt as u128;
+    additinal_afterfact.tl_starttime = tl.stats.start_time;
+    additinal_afterfact.tl_starttime = tl.stats.end_time;
+
     if let Err(err) = emit_csv(
         &mut target,
         displayflag,
-        (all_record_cnt as u128, recover_records_cnt as u128),
         stored_static.profiles.as_ref().unwrap(),
         stored_static,
-        (&tl.stats.start_time, &tl.stats.end_time),
+        additinal_afterfact,
     ) {
         fn_emit_csv_err(Box::new(err));
     }
@@ -266,10 +293,9 @@ pub fn after_fact(
 fn emit_csv<W: std::io::Write>(
     writer: &mut W,
     displayflag: bool,
-    (all_record_cnt, recover_records_cnt): (u128, u128),
     profile: &[(CompactString, Profile)],
     stored_static: &StoredStatic,
-    tl_start_end_time: (&Option<DateTime<Utc>>, &Option<DateTime<Utc>>),
+    mut additional_afterfact: AdditionalAfterfact,
 ) -> io::Result<()> {
     let output_replaced_maps: HashMap<&str, &str> =
         HashMap::from_iter(vec![("🛂r", "\r"), ("🛂n", "\n"), ("🛂t", "\t")]);
@@ -327,26 +353,13 @@ fn emit_csv<W: std::io::Write>(
     disp_wtr_buf.set_color(ColorSpec::new().set_fg(None)).ok();
 
     // level is divided by "Critical","High","Medium","Low","Informational","Undefined".
-    let mut total_detect_counts_by_level: Vec<u128> = vec![0; 6];
-    let mut unique_detect_counts_by_level: Vec<u128> = vec![0; 6];
     let mut detected_rule_files: HashSet<CompactString> = HashSet::new();
     let mut detected_rule_ids: HashSet<CompactString> = HashSet::new();
     let mut detected_computer_and_rule_names: HashSet<CompactString> = HashSet::new();
-    let mut rule_title_path_map: HashMap<CompactString, CompactString> = HashMap::new();
-    let mut detect_rule_authors: HashMap<CompactString, CompactString> = HashMap::new();
-    let mut rule_author_counter: HashMap<CompactString, i128> = HashMap::new();
-
-    let (
-        mut detect_counts_by_date_and_level,
-        mut detect_counts_by_computer_and_level,
-        mut detect_counts_by_rule_and_level,
-    ) = AdditionalAfterfact::init_level_map();
     if displayflag {
         println!();
     }
-    let mut timestamps: Vec<i64> = vec![0; MESSAGEKEYS.lock().unwrap().len()];
     let mut plus_header = true;
-    let mut detected_record_idset: HashSet<CompactString> = HashSet::new();
 
     let level_map: HashMap<&str, u128> = HashMap::from([
         ("INFORMATIONAL", 1),
@@ -373,7 +386,7 @@ fn emit_csv<W: std::io::Write>(
     let mut prev_message: HashMap<CompactString, Profile> = HashMap::new();
     let mut prev_details_convert_map: HashMap<CompactString, Vec<CompactString>> = HashMap::new();
     let color_map = create_output_color_map(stored_static.common_options.no_color);
-    for (message_idx, time) in MESSAGEKEYS
+    for (_, time) in MESSAGEKEYS
         .lock()
         .unwrap()
         .iter()
@@ -383,7 +396,9 @@ fn emit_csv<W: std::io::Write>(
         let multi = message::MESSAGES.get(time).unwrap();
         let (_, detect_infos) = multi.pair();
         let mut prev_detect_infos = HashSet::new();
-        timestamps[message_idx] = _get_timestamp(output_option, time);
+        additional_afterfact
+            .timestamps
+            .push(_get_timestamp(output_option, time));
         for detect_info in detect_infos.iter().sorted_by(|a, b| {
             Ord::cmp(
                 &format!(
@@ -412,12 +427,6 @@ fn emit_csv<W: std::io::Write>(
                     continue;
                 }
                 prev_detect_infos.insert(fields);
-            }
-            if !detect_info.is_condition {
-                detected_record_idset.insert(CompactString::from(format!(
-                    "{}_{}",
-                    time, detect_info.eventid
-                )));
             }
             if displayflag && !(json_output_flag || jsonl_output_flag) {
                 // 標準出力の場合
@@ -542,6 +551,15 @@ fn emit_csv<W: std::io::Write>(
                 }))?;
             }
             // 各種集計作業
+            if !detect_info.is_condition {
+                additional_afterfact
+                    .detected_record_idset
+                    .insert(CompactString::from(format!(
+                        "{}_{}",
+                        time, detect_info.eventid
+                    )));
+            }
+
             if !output_option.no_summary {
                 let level_suffix = get_level_suffix(detect_info.level.as_str());
                 let author_list = author_list_cache
@@ -549,19 +567,22 @@ fn emit_csv<W: std::io::Write>(
                     .or_insert_with(|| extract_author_name(&detect_info.rulepath))
                     .clone();
                 let author_str = author_list.iter().join(", ");
-                detect_rule_authors.insert(detect_info.rulepath.to_owned(), author_str.into());
+                additional_afterfact
+                    .detect_rule_authors
+                    .insert(detect_info.rulepath.to_owned(), author_str.into());
 
                 if !detected_rule_files.contains(&detect_info.rulepath) {
                     detected_rule_files.insert(detect_info.rulepath.to_owned());
                     for author in author_list.iter() {
-                        *rule_author_counter
+                        *additional_afterfact
+                            .rule_author_counter
                             .entry(CompactString::from(author))
                             .or_insert(0) += 1;
                     }
                 }
                 if !detected_rule_ids.contains(&detect_info.ruleid) {
                     detected_rule_ids.insert(detect_info.ruleid.to_owned());
-                    unique_detect_counts_by_level[level_suffix] += 1;
+                    additional_afterfact.unique_detect_counts_by_level[level_suffix] += 1;
                 }
 
                 let computer_rule_check_key = CompactString::from(format!(
@@ -571,27 +592,27 @@ fn emit_csv<W: std::io::Write>(
                 if !detected_computer_and_rule_names.contains(&computer_rule_check_key) {
                     detected_computer_and_rule_names.insert(computer_rule_check_key);
                     countup_aggregation(
-                        &mut detect_counts_by_computer_and_level,
+                        &mut additional_afterfact.detect_counts_by_computer_and_level,
                         &detect_info.level,
                         &detect_info.computername,
                     );
                 }
-                rule_title_path_map.insert(
+                additional_afterfact.rule_title_path_map.insert(
                     detect_info.ruletitle.to_owned(),
                     detect_info.rulepath.to_owned(),
                 );
 
                 countup_aggregation(
-                    &mut detect_counts_by_date_and_level,
+                    &mut additional_afterfact.detect_counts_by_date_and_level,
                     &detect_info.level,
                     &format_time(time, true, output_option),
                 );
                 countup_aggregation(
-                    &mut detect_counts_by_rule_and_level,
+                    &mut additional_afterfact.detect_counts_by_rule_and_level,
                     &detect_info.level,
                     &detect_info.ruletitle,
                 );
-                total_detect_counts_by_level[level_suffix] += 1;
+                additional_afterfact.total_detect_counts_by_level[level_suffix] += 1;
             }
         }
     }
@@ -606,21 +627,24 @@ fn emit_csv<W: std::io::Write>(
 
     output_additional_afterfact(
         stored_static,
-        rule_author_counter,
+        additional_afterfact.rule_author_counter,
         &disp_wtr,
-        timestamps,
+        additional_afterfact.timestamps,
         disp_wtr_buf,
-        tl_start_end_time,
-        all_record_cnt,
-        recover_records_cnt,
-        detected_record_idset,
-        total_detect_counts_by_level,
-        unique_detect_counts_by_level,
-        detect_counts_by_date_and_level,
-        detect_counts_by_computer_and_level,
-        detect_counts_by_rule_and_level,
-        detect_rule_authors,
-        rule_title_path_map,
+        (
+            &additional_afterfact.tl_starttime,
+            &additional_afterfact.tl_endtime,
+        ),
+        additional_afterfact.all_record_cnt,
+        additional_afterfact.recover_records_cnt,
+        additional_afterfact.detected_record_idset,
+        additional_afterfact.total_detect_counts_by_level,
+        additional_afterfact.unique_detect_counts_by_level,
+        additional_afterfact.detect_counts_by_date_and_level,
+        additional_afterfact.detect_counts_by_computer_and_level,
+        additional_afterfact.detect_counts_by_rule_and_level,
+        additional_afterfact.detect_rule_authors,
+        additional_afterfact.rule_title_path_map,
     );
 
     Ok(())
@@ -2031,6 +2055,7 @@ mod tests {
     use super::create_output_color_map;
     use crate::afterfact::emit_csv;
     use crate::afterfact::format_time;
+    use crate::afterfact::AdditionalAfterfact;
     use crate::afterfact::Colors;
     use crate::detections::configs::load_eventkey_alias;
     use crate::detections::configs::Action;
@@ -2373,13 +2398,17 @@ mod tests {
                 + "\"\n";
         let mut file: Box<dyn io::Write> = Box::new(File::create("./test_emit_csv.csv").unwrap());
 
+        let mut additional_afterfact = AdditionalAfterfact::new();
+        additional_afterfact.all_record_cnt = 1;
+        additional_afterfact.recover_records_cnt = 0;
+        additional_afterfact.tl_starttime = Some(expect_tz);
+        additional_afterfact.tl_endtime = Some(expect_tz);
         assert!(emit_csv(
             &mut file,
             false,
-            (1, 0),
             &output_profile,
             &stored_static,
-            (&Some(expect_tz), &Some(expect_tz))
+            additional_afterfact,
         )
         .is_ok());
         match read_to_string("./test_emit_csv.csv") {
@@ -2694,13 +2723,17 @@ mod tests {
         let mut file: Box<dyn io::Write> =
             Box::new(File::create("./test_emit_csv_multiline.csv").unwrap());
 
+        let mut additional_afterfact = AdditionalAfterfact::new();
+        additional_afterfact.all_record_cnt = 1;
+        additional_afterfact.recover_records_cnt = 0;
+        additional_afterfact.tl_starttime = Some(expect_tz);
+        additional_afterfact.tl_endtime = Some(expect_tz);
         assert!(emit_csv(
             &mut file,
             false,
-            (1, 0),
             &output_profile,
             &stored_static,
-            (&Some(expect_tz), &Some(expect_tz))
+            additional_afterfact,
         )
         .is_ok());
         match read_to_string("./test_emit_csv_multiline.csv") {
@@ -3024,13 +3057,17 @@ mod tests {
         let mut file: Box<dyn io::Write> =
             Box::new(File::create("./test_emit_csv_remove_duplicate.csv").unwrap());
 
+        let mut additional_afterfact = AdditionalAfterfact::new();
+        additional_afterfact.all_record_cnt = 1;
+        additional_afterfact.recover_records_cnt = 0;
+        additional_afterfact.tl_starttime = Some(expect_tz);
+        additional_afterfact.tl_endtime = Some(expect_tz);
         assert!(emit_csv(
             &mut file,
             false,
-            (1, 0),
             &output_profile,
             &stored_static,
-            (&Some(expect_tz), &Some(expect_tz))
+            additional_afterfact,
         )
         .is_ok());
         match read_to_string("./test_emit_csv_remove_duplicate.csv") {
@@ -3428,14 +3465,17 @@ mod tests {
 
         let mut file: Box<dyn io::Write> =
             Box::new(File::create("./test_emit_csv_remove_duplicate.json").unwrap());
-
+        let mut additional_afterfact = AdditionalAfterfact::new();
+        additional_afterfact.all_record_cnt = 1;
+        additional_afterfact.recover_records_cnt = 0;
+        additional_afterfact.tl_starttime = Some(expect_tz);
+        additional_afterfact.tl_endtime = Some(expect_tz);
         assert!(emit_csv(
             &mut file,
             false,
-            (1, 0),
             &output_profile,
             &stored_static,
-            (&Some(expect_tz), &Some(expect_tz))
+            additional_afterfact,
         )
         .is_ok());
         match read_to_string("./test_emit_csv_remove_duplicate.json") {
@@ -3758,13 +3798,17 @@ mod tests {
         let mut file: Box<dyn io::Write> =
             Box::new(File::create("./test_multiple_data_in_details.json").unwrap());
 
+        let mut additional_afterfact = AdditionalAfterfact::new();
+        additional_afterfact.all_record_cnt = 1;
+        additional_afterfact.recover_records_cnt = 0;
+        additional_afterfact.tl_starttime = Some(expect_tz);
+        additional_afterfact.tl_endtime = Some(expect_tz);
         assert!(emit_csv(
             &mut file,
             false,
-            (1, 0),
             &output_profile,
             &stored_static,
-            (&Some(expect_tz), &Some(expect_tz))
+            additional_afterfact,
         )
         .is_ok());
         match read_to_string("./test_multiple_data_in_details.json") {
@@ -4046,13 +4090,18 @@ mod tests {
         ];
         let mut file: Box<dyn io::Write> =
             Box::new(File::create("./test_emit_csv_json.json").unwrap());
+
+        let mut additional_afterfact = AdditionalAfterfact::new();
+        additional_afterfact.all_record_cnt = 1;
+        additional_afterfact.recover_records_cnt = 0;
+        additional_afterfact.tl_starttime = Some(expect_tz);
+        additional_afterfact.tl_endtime = Some(expect_tz);
         assert!(emit_csv(
             &mut file,
             false,
-            (1, 0),
             &output_profile,
             &stored_static,
-            (&Some(expect_tz), &Some(expect_tz))
+            additional_afterfact,
         )
         .is_ok());
         match read_to_string("./test_emit_csv_json.json") {
@@ -4316,13 +4365,18 @@ mod tests {
         ];
         let mut file: Box<dyn io::Write> =
             Box::new(File::create("./test_emit_csv_jsonl.jsonl").unwrap());
+
+        let mut additional_afterfact = AdditionalAfterfact::new();
+        additional_afterfact.all_record_cnt = 1;
+        additional_afterfact.recover_records_cnt = 0;
+        additional_afterfact.tl_starttime = Some(expect_tz);
+        additional_afterfact.tl_endtime = Some(expect_tz);
         assert!(emit_csv(
             &mut file,
             false,
-            (1, 0),
             &output_profile,
             &stored_static,
-            (&Some(expect_tz), &Some(expect_tz))
+            additional_afterfact,
         )
         .is_ok());
         match read_to_string("./test_emit_csv_jsonl.jsonl") {
