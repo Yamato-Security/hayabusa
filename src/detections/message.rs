@@ -31,6 +31,7 @@ use super::utils::remove_sp_char;
 */
 #[derive(Debug, Clone, PartialEq, Eq, Default)]
 pub struct DetectInfo {
+    pub detected_time: DateTime<Utc>,
     pub rulepath: CompactString,
     pub ruleid: CompactString,
     pub ruletitle: CompactString,
@@ -862,6 +863,7 @@ mod tests {
         let sample_event_time = Utc::now();
         for i in 1..2001 {
             let detect_info = DetectInfo {
+                detected_time: sample_event_time,
                 rulepath: CompactString::default(),
                 ruleid: CompactString::default(),
                 ruletitle: CompactString::default(),

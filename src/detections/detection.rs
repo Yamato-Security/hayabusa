@@ -731,6 +731,7 @@ impl Detection {
             }
         };
         let detect_info = DetectInfo {
+            detected_time: time,
             rulepath: CompactString::from(&rule.rulepath),
             ruleid: CompactString::from(rule.yaml["id"].as_str().unwrap_or("-")),
             ruletitle: CompactString::from(rule.yaml["title"].as_str().unwrap_or("-")),
@@ -962,6 +963,7 @@ impl Detection {
         }
         let str_level = level.as_str();
         let detect_info = DetectInfo {
+            detected_time: agg_result.start_timedate,
             rulepath: CompactString::from(&rule.rulepath),
             ruleid: CompactString::from(rule.yaml["id"].as_str().unwrap_or("-")),
             ruletitle: CompactString::from(rule.yaml["title"].as_str().unwrap_or("-")),

@@ -2274,6 +2274,7 @@ mod tests {
                 &event,
                 CompactString::new(output),
                 DetectInfo {
+                    detected_time: expect_time,
                     rulepath: CompactString::from(test_rulepath),
                     ruleid: test_rule_id.into(),
                     ruletitle: CompactString::from(test_title),
@@ -2297,6 +2298,7 @@ mod tests {
                 &event,
                 CompactString::new(output),
                 DetectInfo {
+                    detected_time: expect_time,
                     rulepath: CompactString::from(test_rulepath),
                     ruleid: test_rule_id.into(),
                     ruletitle: CompactString::from(test_title),
@@ -2610,6 +2612,7 @@ mod tests {
                 &event,
                 CompactString::new(output),
                 DetectInfo {
+                    detected_time: expect_time,
                     rulepath: CompactString::from(test_rulepath),
                     ruleid: test_rule_id.into(),
                     ruletitle: CompactString::from(test_title),
@@ -2633,6 +2636,7 @@ mod tests {
                 &event,
                 CompactString::new(output),
                 DetectInfo {
+                    detected_time: expect_time,
                     rulepath: CompactString::from(test_rulepath),
                     ruleid: test_rule_id.into(),
                     ruletitle: CompactString::from(test_title),
@@ -2936,6 +2940,7 @@ mod tests {
                 &event,
                 CompactString::new(output),
                 DetectInfo {
+                    detected_time: expect_time,
                     rulepath: CompactString::from(test_rulepath),
                     ruleid: test_rule_id.into(),
                     ruletitle: CompactString::from(test_title),
@@ -2959,6 +2964,7 @@ mod tests {
                 &event,
                 CompactString::new(output),
                 DetectInfo {
+                    detected_time: expect_time,
                     rulepath: CompactString::from(test_rulepath),
                     ruleid: test_rule_id.into(),
                     ruletitle: CompactString::from(test_title),
@@ -3272,6 +3278,7 @@ mod tests {
                 &event,
                 CompactString::new(output),
                 DetectInfo {
+                    detected_time: expect_time,
                     rulepath: CompactString::from(test_rulepath),
                     ruleid: test_rule_id.into(),
                     ruletitle: CompactString::from(test_title),
@@ -3295,6 +3302,7 @@ mod tests {
                 &event,
                 CompactString::new(output),
                 DetectInfo {
+                    detected_time: expect_time,
                     rulepath: CompactString::from(test_rulepath),
                     ruleid: test_rule_id.into(),
                     ruletitle: CompactString::from(test_title),
@@ -3680,6 +3688,7 @@ mod tests {
                 &event,
                 CompactString::new(output),
                 DetectInfo {
+                    detected_time: expect_time,
                     rulepath: CompactString::from(test_rulepath),
                     ruleid: test_rule_id.into(),
                     ruletitle: CompactString::from(test_title),
@@ -4031,6 +4040,7 @@ mod tests {
                 &event,
                 CompactString::new(output),
                 DetectInfo {
+                    detected_time: expect_time,
                     rulepath: CompactString::from(test_rulepath),
                     ruleid: test_rule_id.into(),
                     ruletitle: CompactString::from(test_title),
@@ -4306,6 +4316,7 @@ mod tests {
                 &event,
                 CompactString::new(output),
                 DetectInfo {
+                    detected_time: expect_time,
                     rulepath: CompactString::from(test_rulepath),
                     ruleid: test_rule_id.into(),
                     ruletitle: CompactString::from(test_title),
