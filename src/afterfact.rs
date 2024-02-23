@@ -38,6 +38,19 @@ use std::fs::File;
 use std::process;
 use termcolor::{Buffer, BufferWriter, Color, ColorChoice, ColorSpec, WriteColor};
 use terminal_size::Width;
+use lazy_static::lazy_static;
+
+lazy_static! {
+    // ここで字句解析するときに使う正規表現の一覧を定義する。
+    // ここはSigmaのGithubレポジトリにある、toos/sigma/parser/condition.pyのSigmaConditionTokenizerのtokendefsを参考にしています。
+    pub static ref LEVEL_MAP: HashMap<String, u128> = HashMap::from([
+        ("INFORMATIONAL".to_string(), 1),
+        ("LOW".to_string(), 2),
+        ("MEDIUM".to_string(), 3),
+        ("HIGH".to_string(), 4),
+        ("CRITICAL".to_string(), 5),
+    ]);
+}
 
 #[derive(Debug)]
 pub struct Colors {
@@ -120,6 +133,71 @@ impl AfterfactInfo {
             detect_counts_by_computer_and_level,
             detect_counts_by_rule_and_level,
         )
+    }
+
+    pub fn sort_detect_info(&mut self) {
+        self.detect_infos.sort_unstable_by(|a, b| {
+            let cmp_time = a.detected_time.cmp(&b.detected_time);
+            if cmp_time != Ordering::Equal {
+                return cmp_time;
+            }
+    
+            let a_level = get_level_suffix(a.level.as_str());
+            let b_level = get_level_suffix(b.level.as_str());
+            let level_cmp = a_level.cmp(&b_level);
+            if level_cmp != Ordering::Equal {
+                return level_cmp;
+            }
+    
+            let event_id_cmp = a.eventid.cmp(&b.eventid);
+            if event_id_cmp != Ordering::Equal {
+                return event_id_cmp;
+            }
+    
+            let rulepath_cmp = a.rulepath.cmp(&b.rulepath);
+            if rulepath_cmp != Ordering::Equal {
+                return rulepath_cmp;
+            }
+    
+            return a.computername.cmp(&b.computername);
+        });
+    }
+
+    pub fn get_removed_duplicate_detect_info_idx(&self, stored_static: &StoredStatic) -> Vec<usize> {
+        let output_option = stored_static.output_option.as_ref().unwrap();
+        if !output_option.remove_duplicate_detections {
+            return self.detect_infos.iter().enumerate().map(|(i,_)| i).collect();
+        }
+
+        // filtet duplicate event
+        let mut filtered_detect_infos = vec![];
+        let mut prev_detect_infos = HashSet::new();
+        for (i, detect_info) in self.detect_infos.iter().enumerate() {
+            if filtered_detect_infos.is_empty() {
+                filtered_detect_infos.push(i);
+                continue;
+            }
+
+            let prev_detect_info_idx = *filtered_detect_infos.last().unwrap();
+            let prev_detect_info = &self.detect_infos[prev_detect_info_idx];
+            if prev_detect_info.detected_time.cmp(&detect_info.detected_time) != Ordering::Equal {
+                filtered_detect_infos.push(i);
+                prev_detect_infos.clear();
+                continue;
+            }
+
+            let fields: Vec<&(CompactString, Profile)> = detect_info
+                .ext_field
+                .iter()
+                .filter(|(_, profile)| !matches!(profile, Profile::EvtxFile(_)))
+                .collect();
+            if prev_detect_infos.get(&fields).is_some() {
+                continue;
+            }
+            prev_detect_infos.insert(fields);
+            filtered_detect_infos.push(i);
+        }
+        return filtered_detect_infos;
     }
 }
 
@@ -252,7 +330,7 @@ pub fn after_fact(
     stored_static: &StoredStatic,
     afterfact_info: AfterfactInfo,
 ) {
-    let fn_emit_csv_err = |err: Box<dyn Error>| {
+    let fn_output_afterfact_err = |err: Box<dyn Error>| {
         AlertMessage::alert(&format!("Failed to write CSV. {err}")).ok();
         process::exit(1);
     };
@@ -273,18 +351,30 @@ pub fn after_fact(
         Box::new(BufWriter::new(io::stdout()))
     };
 
-    if let Err(err) = emit_csv(
+    if let Err(err) = output_afterfact(
         &mut target,
         displayflag,
         stored_static.profiles.as_ref().unwrap(),
         stored_static,
         afterfact_info,
     ) {
-        fn_emit_csv_err(Box::new(err));
+        fn_output_afterfact_err(Box::new(err));
     }
 }
 
-fn emit_csv<W: std::io::Write>(
+fn get_level_suffix(level_str: &str) -> usize {
+    *LEVEL_MAP
+    .get(
+        LEVEL_FULL
+            .get(level_str)
+            .unwrap_or(&"undefined")
+            .to_uppercase()
+            .as_str(),
+    )
+    .unwrap_or(&0) as usize
+}
+
+fn output_afterfact<W: std::io::Write>(
     writer: &mut W,
     displayflag: bool,
     profile: &[(CompactString, Profile)],
@@ -345,35 +435,10 @@ fn emit_csv<W: std::io::Write>(
     let mut wtr = tmp_wtr.unwrap();
 
     disp_wtr_buf.set_color(ColorSpec::new().set_fg(None)).ok();
-
-    // level is divided by "Critical","High","Medium","Low","Informational","Undefined".
-    let mut detected_rule_files: HashSet<CompactString> = HashSet::new();
-    let mut detected_rule_ids: HashSet<CompactString> = HashSet::new();
-    let mut detected_computer_and_rule_names: HashSet<CompactString> = HashSet::new();
     if displayflag {
         println!();
     }
     let mut plus_header = true;
-
-    let level_map: HashMap<&str, u128> = HashMap::from([
-        ("INFORMATIONAL", 1),
-        ("LOW", 2),
-        ("MEDIUM", 3),
-        ("HIGH", 4),
-        ("CRITICAL", 5),
-    ]);
-
-    let get_level_suffix = |level_str: &str| {
-        *level_map
-            .get(
-                LEVEL_FULL
-                    .get(level_str)
-                    .unwrap_or(&"undefined")
-                    .to_uppercase()
-                    .as_str(),
-            )
-            .unwrap_or(&0) as usize
-    };
     let mut author_list_cache: HashMap<CompactString, Nested<String>> = HashMap::new();
 
     // remove duplicate dataのための前レコード分の情報を保持する変数
@@ -381,63 +446,14 @@ fn emit_csv<W: std::io::Write>(
     let mut prev_details_convert_map: HashMap<CompactString, Vec<CompactString>> = HashMap::new();
     let color_map = create_output_color_map(stored_static.common_options.no_color);
 
-
-    additional_afterfact.detect_infos.sort_unstable_by(|a, b| {
-        let cmp_time = a.detected_time.cmp(&b.detected_time);
-        if cmp_time != Ordering::Equal {
-            return cmp_time;
-        }
-
-        let a_level = get_level_suffix(a.level.as_str());
-        let b_level = get_level_suffix(b.level.as_str());
-        let level_cmp = a_level.cmp(&b_level);
-        if level_cmp != Ordering::Equal {
-            return level_cmp;
-        }
-
-        let event_id_cmp = a.eventid.cmp(&b.eventid);
-        if event_id_cmp != Ordering::Equal {
-            return event_id_cmp;
-        }
-
-        let rulepath_cmp = a.rulepath.cmp(&b.rulepath);
-        if rulepath_cmp != Ordering::Equal {
-            return rulepath_cmp;
-        }
-
-        return a.computername.cmp(&b.computername);
-    });
+    additional_afterfact.sort_detect_info();
 
     // filtet duplicate event
-    let mut filtered_detect_infos = vec![];
-    let mut prev_detect_infos = HashSet::new();
-    for detect_info in additional_afterfact.detect_infos.iter() {
-        if filtered_detect_infos.is_empty() {
-            filtered_detect_infos.push(detect_info);
-            continue;
-        }
-
-        let prev_detect_info = filtered_detect_infos.last().unwrap();
-        if prev_detect_info.detected_time.cmp(&detect_info.detected_time) != Ordering::Equal {
-            filtered_detect_infos.push(detect_info);
-            prev_detect_infos.clear();
-            continue;
-        }
-
-        let fields: Vec<&(CompactString, Profile)> = detect_info
-            .ext_field
-            .iter()
-            .filter(|(_, profile)| !matches!(profile, Profile::EvtxFile(_)))
-            .collect();
-        if prev_detect_infos.get(&fields).is_some() {
-            continue;
-        }
-        prev_detect_infos.insert(fields);
-        filtered_detect_infos.push(detect_info);
-    }
+    let detect_infos_idxes = additional_afterfact.get_removed_duplicate_detect_info_idx(stored_static);
 
     // emit csv
-    for detect_info in filtered_detect_infos.iter() {
+    for idx in detect_infos_idxes.iter() {
+        let detect_info = &additional_afterfact.detect_infos[*idx];
         if displayflag && !(json_output_flag || jsonl_output_flag) {
             // 標準出力の場合
             if plus_header {
@@ -563,8 +579,11 @@ fn emit_csv<W: std::io::Write>(
     }
 
     // calculate statistic information
-    for detect_info in filtered_detect_infos.iter() {
-        // 各種集計作業
+    let mut detected_rule_files: HashSet<CompactString> = HashSet::new();
+    let mut detected_rule_ids: HashSet<CompactString> = HashSet::new();
+    let mut detected_computer_and_rule_names: HashSet<CompactString> = HashSet::new();
+    for idx in detect_infos_idxes.iter() {
+        let detect_info = &additional_afterfact.detect_infos[*idx];
         if !detect_info.is_condition {
             additional_afterfact
                 .detected_record_idset
@@ -2046,7 +2065,7 @@ fn _output_html_computer_by_mitre_attck(html_output_stock: &mut Nested<String>) 
 #[cfg(test)]
 mod tests {
     use super::create_output_color_map;
-    use crate::afterfact::emit_csv;
+    use crate::afterfact::output_afterfact;
     use crate::afterfact::format_time;
     use crate::afterfact::AfterfactInfo;
     use crate::afterfact::Colors;
@@ -2398,7 +2417,7 @@ mod tests {
         additional_afterfact.recover_record_cnt = 0;
         additional_afterfact.tl_starttime = Some(expect_tz);
         additional_afterfact.tl_endtime = Some(expect_tz);
-        assert!(emit_csv(
+        assert!(output_afterfact(
             &mut file,
             false,
             &output_profile,
@@ -2725,7 +2744,7 @@ mod tests {
         additional_afterfact.recover_record_cnt = 0;
         additional_afterfact.tl_starttime = Some(expect_tz);
         additional_afterfact.tl_endtime = Some(expect_tz);
-        assert!(emit_csv(
+        assert!(output_afterfact(
             &mut file,
             false,
             &output_profile,
@@ -3061,7 +3080,7 @@ mod tests {
         additional_afterfact.recover_record_cnt = 0;
         additional_afterfact.tl_starttime = Some(expect_tz);
         additional_afterfact.tl_endtime = Some(expect_tz);
-        assert!(emit_csv(
+        assert!(output_afterfact(
             &mut file,
             false,
             &output_profile,
@@ -3471,7 +3490,7 @@ mod tests {
         additional_afterfact.recover_record_cnt = 0;
         additional_afterfact.tl_starttime = Some(expect_tz);
         additional_afterfact.tl_endtime = Some(expect_tz);
-        assert!(emit_csv(
+        assert!(output_afterfact(
             &mut file,
             false,
             &output_profile,
@@ -3805,7 +3824,7 @@ mod tests {
         additional_afterfact.recover_record_cnt = 0;
         additional_afterfact.tl_starttime = Some(expect_tz);
         additional_afterfact.tl_endtime = Some(expect_tz);
-        assert!(emit_csv(
+        assert!(output_afterfact(
             &mut file,
             false,
             &output_profile,
@@ -4099,7 +4118,7 @@ mod tests {
         additional_afterfact.recover_record_cnt = 0;
         additional_afterfact.tl_starttime = Some(expect_tz);
         additional_afterfact.tl_endtime = Some(expect_tz);
-        assert!(emit_csv(
+        assert!(output_afterfact(
             &mut file,
             false,
             &output_profile,
@@ -4375,7 +4394,7 @@ mod tests {
         additional_afterfact.recover_record_cnt = 0;
         additional_afterfact.tl_starttime = Some(expect_tz);
         additional_afterfact.tl_endtime = Some(expect_tz);
-        assert!(emit_csv(
+        assert!(output_afterfact(
             &mut file,
             false,
             &output_profile,
