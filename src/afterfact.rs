@@ -197,11 +197,9 @@ pub fn after_fact(
         // stdoutput (termcolor crate color output is not csv writer)
         Box::new(BufWriter::new(io::stdout()))
     };
-    let color_map = create_output_color_map(stored_static.common_options.no_color);
     if let Err(err) = emit_csv(
         &mut target,
         displayflag,
-        color_map,
         (all_record_cnt as u128, recover_records_cnt as u128),
         stored_static.profiles.as_ref().unwrap(),
         stored_static,
@@ -214,7 +212,6 @@ pub fn after_fact(
 fn emit_csv<W: std::io::Write>(
     writer: &mut W,
     displayflag: bool,
-    color_map: HashMap<CompactString, Colors>,
     (all_record_cnt, recover_records_cnt): (u128, u128),
     profile: &[(CompactString, Profile)],
     stored_static: &StoredStatic,
@@ -331,6 +328,7 @@ fn emit_csv<W: std::io::Write>(
     // remove duplicate dataのための前レコード分の情報を保持する変数
     let mut prev_message: HashMap<CompactString, Profile> = HashMap::new();
     let mut prev_details_convert_map: HashMap<CompactString, Vec<CompactString>> = HashMap::new();
+    let color_map = create_output_color_map(stored_static.common_options.no_color);
     for (message_idx, time) in MESSAGEKEYS
         .lock()
         .unwrap()
@@ -574,7 +572,6 @@ fn emit_csv<W: std::io::Write>(
         detected_record_idset,
         total_detect_counts_by_level,
         unique_detect_counts_by_level,
-        color_map,
         detect_counts_by_date_and_level,
         detect_counts_by_computer_and_level,
         detect_counts_by_rule_and_level,
@@ -597,7 +594,6 @@ fn output_summary(
     detected_record_idset: HashSet<CompactString>,
     total_detect_counts_by_level: Vec<u128>,
     unique_detect_counts_by_level: Vec<u128>,
-    color_map: HashMap<CompactString, Colors>,
     detect_counts_by_date_and_level: HashMap<CompactString, HashMap<CompactString, i128>>,
     detect_counts_by_computer_and_level: HashMap<CompactString, HashMap<CompactString, i128>>,
     detect_counts_by_rule_and_level: HashMap<CompactString, HashMap<CompactString, i128>>,
@@ -850,6 +846,7 @@ fn output_summary(
             ));
         }
 
+        let color_map = create_output_color_map(stored_static.common_options.no_color);
         _print_unique_results(
             total_detect_counts_by_level,
             unique_detect_counts_by_level,
@@ -2335,7 +2332,6 @@ mod tests {
         assert!(emit_csv(
             &mut file,
             false,
-            HashMap::new(),
             (1, 0),
             &output_profile,
             &stored_static,
@@ -2657,7 +2653,6 @@ mod tests {
         assert!(emit_csv(
             &mut file,
             false,
-            HashMap::new(),
             (1, 0),
             &output_profile,
             &stored_static,
@@ -2988,7 +2983,6 @@ mod tests {
         assert!(emit_csv(
             &mut file,
             false,
-            HashMap::new(),
             (1, 0),
             &output_profile,
             &stored_static,
@@ -3394,7 +3388,6 @@ mod tests {
         assert!(emit_csv(
             &mut file,
             false,
-            HashMap::new(),
             (1, 0),
             &output_profile,
             &stored_static,
@@ -3724,7 +3717,6 @@ mod tests {
         assert!(emit_csv(
             &mut file,
             false,
-            HashMap::new(),
             (1, 0),
             &output_profile,
             &stored_static,
@@ -4013,7 +4005,6 @@ mod tests {
         assert!(emit_csv(
             &mut file,
             false,
-            HashMap::new(),
             (1, 0),
             &output_profile,
             &stored_static,
@@ -4284,7 +4275,6 @@ mod tests {
         assert!(emit_csv(
             &mut file,
             false,
-            HashMap::new(),
             (1, 0),
             &output_profile,
             &stored_static,
