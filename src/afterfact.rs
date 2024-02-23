@@ -625,48 +625,16 @@ fn emit_csv<W: std::io::Write>(
 
     disp_wtr_buf.clear();
 
-    output_additional_afterfact(
-        stored_static,
-        additional_afterfact.rule_author_counter,
-        &disp_wtr,
-        additional_afterfact.timestamps,
-        disp_wtr_buf,
-        (
-            &additional_afterfact.tl_starttime,
-            &additional_afterfact.tl_endtime,
-        ),
-        additional_afterfact.all_record_cnt,
-        additional_afterfact.recover_records_cnt,
-        additional_afterfact.detected_record_idset,
-        additional_afterfact.total_detect_counts_by_level,
-        additional_afterfact.unique_detect_counts_by_level,
-        additional_afterfact.detect_counts_by_date_and_level,
-        additional_afterfact.detect_counts_by_computer_and_level,
-        additional_afterfact.detect_counts_by_rule_and_level,
-        additional_afterfact.detect_rule_authors,
-        additional_afterfact.rule_title_path_map,
-    );
+    output_additional_afterfact(stored_static, &disp_wtr, disp_wtr_buf, additional_afterfact);
 
     Ok(())
 }
 
 fn output_additional_afterfact(
     stored_static: &StoredStatic,
-    rule_author_counter: HashMap<CompactString, i128>,
     disp_wtr: &BufferWriter,
-    timestamps: Vec<i64>,
     mut disp_wtr_buf: Buffer,
-    tl_start_end_time: (&Option<DateTime<Utc>>, &Option<DateTime<Utc>>),
-    all_record_cnt: u128,
-    recover_records_cnt: u128,
-    detected_record_idset: HashSet<CompactString>,
-    total_detect_counts_by_level: Vec<u128>,
-    unique_detect_counts_by_level: Vec<u128>,
-    detect_counts_by_date_and_level: HashMap<CompactString, HashMap<CompactString, i128>>,
-    detect_counts_by_computer_and_level: HashMap<CompactString, HashMap<CompactString, i128>>,
-    detect_counts_by_rule_and_level: HashMap<CompactString, HashMap<CompactString, i128>>,
-    detect_rule_authors: HashMap<CompactString, CompactString>,
-    rule_title_path_map: HashMap<CompactString, CompactString>,
+    additional_afterfact: AdditionalAfterfact,
 ) {
     let terminal_width = match terminal_size() {
         Some((Width(w), _)) => w as usize,
@@ -687,7 +655,7 @@ fn output_additional_afterfact(
         .iter(),
     );
     let output_option = stored_static.output_option.as_ref().unwrap();
-    if !output_option.no_summary && !rule_author_counter.is_empty() {
+    if !output_option.no_summary && !additional_afterfact.rule_author_counter.is_empty() {
         write_color_buffer(
             disp_wtr,
             get_writable_color(
@@ -718,12 +686,12 @@ fn output_additional_afterfact(
         } else {
             6
         };
-        output_detected_rule_authors(rule_author_counter, table_column_num);
+        output_detected_rule_authors(additional_afterfact.rule_author_counter, table_column_num);
     }
 
     println!();
     if output_option.visualize_timeline {
-        _print_timeline_hist(&timestamps, terminal_width, 3);
+        _print_timeline_hist(&additional_afterfact.timestamps, terminal_width, 3);
         println!();
     }
 
@@ -741,12 +709,12 @@ fn output_additional_afterfact(
         )
         .ok();
 
-        if tl_start_end_time.0.is_some() {
+        if additional_afterfact.tl_starttime.is_some() {
             output_and_data_stack_for_html(
                 &format!(
                     "First Timestamp: {}",
                     utils::format_time(
-                        &tl_start_end_time.0.unwrap(),
+                        &additional_afterfact.tl_starttime.unwrap(),
                         false,
                         stored_static.output_option.as_ref().unwrap()
                     )
@@ -755,12 +723,12 @@ fn output_additional_afterfact(
                 &stored_static.html_report_flag,
             );
         }
-        if tl_start_end_time.1.is_some() {
+        if additional_afterfact.tl_endtime.is_some() {
             output_and_data_stack_for_html(
                 &format!(
                     "Last Timestamp: {}",
                     utils::format_time(
-                        &tl_start_end_time.1.unwrap(),
+                        &additional_afterfact.tl_endtime.unwrap(),
                         false,
                         stored_static.output_option.as_ref().unwrap()
                     )
@@ -771,11 +739,12 @@ fn output_additional_afterfact(
             println!();
         }
 
-        let reducted_record_cnt: u128 = all_record_cnt - detected_record_idset.len() as u128;
-        let reducted_percent = if all_record_cnt == 0 {
+        let reducted_record_cnt: u128 = additional_afterfact.all_record_cnt
+            - additional_afterfact.detected_record_idset.len() as u128;
+        let reducted_percent = if additional_afterfact.all_record_cnt == 0 {
             0 as f64
         } else {
-            (reducted_record_cnt as f64) / (all_record_cnt as f64) * 100.0
+            (reducted_record_cnt as f64) / (additional_afterfact.all_record_cnt as f64) * 100.0
         };
         write_color_buffer(
             &disp_wtr,
@@ -811,8 +780,8 @@ fn output_additional_afterfact(
             false,
         )
         .ok();
-        let saved_alerts_output =
-            (all_record_cnt - reducted_record_cnt).to_formatted_string(&Locale::en);
+        let saved_alerts_output = (additional_afterfact.all_record_cnt - reducted_record_cnt)
+            .to_formatted_string(&Locale::en);
         write_color_buffer(
             &disp_wtr,
             get_writable_color(
@@ -831,7 +800,9 @@ fn output_additional_afterfact(
         )
         .ok();
 
-        let all_record_output = all_record_cnt.to_formatted_string(&Locale::en);
+        let all_record_output = additional_afterfact
+            .all_record_cnt
+            .to_formatted_string(&Locale::en);
         write_color_buffer(
             &disp_wtr,
             get_writable_color(
@@ -890,7 +861,9 @@ fn output_additional_afterfact(
                 false,
             )
             .ok();
-            let recovered_record_output = recover_records_cnt.to_formatted_string(&Locale::en);
+            let recovered_record_output = additional_afterfact
+                .recover_records_cnt
+                .to_formatted_string(&Locale::en);
             write_color_buffer(
                 &disp_wtr,
                 get_writable_color(
@@ -910,14 +883,16 @@ fn output_additional_afterfact(
             html_output_stock.push(format!("- {reduction_output}"));
             html_output_stock.push(format!(
                 "- Recovered events analyzed: {}",
-                &recover_records_cnt.to_formatted_string(&Locale::en)
+                &additional_afterfact
+                    .recover_records_cnt
+                    .to_formatted_string(&Locale::en)
             ));
         }
 
         let color_map = create_output_color_map(stored_static.common_options.no_color);
         _print_unique_results(
-            total_detect_counts_by_level,
-            unique_detect_counts_by_level,
+            additional_afterfact.total_detect_counts_by_level,
+            additional_afterfact.unique_detect_counts_by_level,
             (
                 CompactString::from("Total | Unique"),
                 CompactString::from("detections"),
@@ -930,7 +905,7 @@ fn output_additional_afterfact(
         println!();
 
         _print_detection_summary_by_date(
-            detect_counts_by_date_and_level,
+            additional_afterfact.detect_counts_by_date_and_level,
             &color_map,
             &level_abbr,
             &mut html_output_stock,
@@ -943,7 +918,7 @@ fn output_additional_afterfact(
         }
 
         _print_detection_summary_by_computer(
-            detect_counts_by_computer_and_level,
+            additional_afterfact.detect_counts_by_computer_and_level,
             &color_map,
             &level_abbr,
             &mut html_output_stock,
@@ -955,9 +930,12 @@ fn output_additional_afterfact(
         }
 
         _print_detection_summary_tables(
-            detect_counts_by_rule_and_level,
+            additional_afterfact.detect_counts_by_rule_and_level,
             &color_map,
-            (rule_title_path_map, detect_rule_authors),
+            (
+                additional_afterfact.rule_title_path_map,
+                additional_afterfact.detect_rule_authors,
+            ),
             &level_abbr,
             &mut html_output_stock,
             stored_static,
