@@ -46,6 +46,60 @@ pub struct Colors {
     pub table_color: comfy_table::Color,
 }
 
+pub struct AdditionalAfterfact {
+    pub tl_starttime: Option<DateTime<Utc>>,
+    pub tl_endtime: Option<DateTime<Utc>>,
+    pub all_record_cnt: u128,
+    pub recover_records_cnt: u128,
+    pub detected_record_idset: HashSet<CompactString>,
+    pub total_detect_counts_by_level: Vec<u128>,
+    pub unique_detect_counts_by_level: Vec<u128>,
+    pub detect_counts_by_date_and_level: HashMap<CompactString, HashMap<CompactString, i128>>,
+    pub detect_counts_by_computer_and_level: HashMap<CompactString, HashMap<CompactString, i128>>,
+    pub detect_counts_by_rule_and_level: HashMap<CompactString, HashMap<CompactString, i128>>,
+    pub detect_rule_authors: HashMap<CompactString, CompactString>,
+    pub rule_title_path_map: HashMap<CompactString, CompactString>,
+}
+
+impl AdditionalAfterfact {
+    /*     pub fn new() -> AdditionalAfterfact {
+        let (detect_counts_by_date_and_level, detect_counts_by_computer_and_level, detect_counts_by_rule_and_level) = AdditionalAfterfact::init_level_map();
+    } */
+
+    pub fn init_level_map() -> (
+        HashMap<CompactString, HashMap<CompactString, i128>>,
+        HashMap<CompactString, HashMap<CompactString, i128>>,
+        HashMap<CompactString, HashMap<CompactString, i128>>,
+    ) {
+        let levels = ["crit", "high", "med ", "low ", "info", "undefined"];
+        let mut detect_counts_by_date_and_level: HashMap<
+            CompactString,
+            HashMap<CompactString, i128>,
+        > = HashMap::new();
+        let mut detect_counts_by_computer_and_level: HashMap<
+            CompactString,
+            HashMap<CompactString, i128>,
+        > = HashMap::new();
+        let mut detect_counts_by_rule_and_level: HashMap<
+            CompactString,
+            HashMap<CompactString, i128>,
+        > = HashMap::new();
+        // レベル別、日ごとの集計用変数の初期化
+        for level_init in levels {
+            detect_counts_by_date_and_level.insert(CompactString::from(level_init), HashMap::new());
+            detect_counts_by_computer_and_level
+                .insert(CompactString::from(level_init), HashMap::new());
+            detect_counts_by_rule_and_level.insert(CompactString::from(level_init), HashMap::new());
+        }
+
+        (
+            detect_counts_by_date_and_level,
+            detect_counts_by_computer_and_level,
+            detect_counts_by_rule_and_level,
+        )
+    }
+}
+
 /// level_color.txtファイルを読み込み対応する文字色のマッピングを返却する関数
 pub fn create_output_color_map(no_color_flag: bool) -> HashMap<CompactString, Colors> {
     let read_result = utils::read_csv(
@@ -278,25 +332,15 @@ fn emit_csv<W: std::io::Write>(
     let mut detected_rule_files: HashSet<CompactString> = HashSet::new();
     let mut detected_rule_ids: HashSet<CompactString> = HashSet::new();
     let mut detected_computer_and_rule_names: HashSet<CompactString> = HashSet::new();
-    let mut detect_counts_by_date_and_level: HashMap<CompactString, HashMap<CompactString, i128>> =
-        HashMap::new();
-    let mut detect_counts_by_computer_and_level: HashMap<
-        CompactString,
-        HashMap<CompactString, i128>,
-    > = HashMap::new();
-    let mut detect_counts_by_rule_and_level: HashMap<CompactString, HashMap<CompactString, i128>> =
-        HashMap::new();
     let mut rule_title_path_map: HashMap<CompactString, CompactString> = HashMap::new();
     let mut detect_rule_authors: HashMap<CompactString, CompactString> = HashMap::new();
     let mut rule_author_counter: HashMap<CompactString, i128> = HashMap::new();
 
-    let levels = ["crit", "high", "med ", "low ", "info", "undefined"];
-    // レベル別、日ごとの集計用変数の初期化
-    for level_init in levels {
-        detect_counts_by_date_and_level.insert(CompactString::from(level_init), HashMap::new());
-        detect_counts_by_computer_and_level.insert(CompactString::from(level_init), HashMap::new());
-        detect_counts_by_rule_and_level.insert(CompactString::from(level_init), HashMap::new());
-    }
+    let (
+        mut detect_counts_by_date_and_level,
+        mut detect_counts_by_computer_and_level,
+        mut detect_counts_by_rule_and_level,
+    ) = AdditionalAfterfact::init_level_map();
     if displayflag {
         println!();
     }
@@ -560,7 +604,7 @@ fn emit_csv<W: std::io::Write>(
 
     disp_wtr_buf.clear();
 
-    output_summary(
+    output_additional_afterfact(
         stored_static,
         rule_author_counter,
         &disp_wtr,
@@ -582,7 +626,7 @@ fn emit_csv<W: std::io::Write>(
     Ok(())
 }
 
-fn output_summary(
+fn output_additional_afterfact(
     stored_static: &StoredStatic,
     rule_author_counter: HashMap<CompactString, i128>,
     disp_wtr: &BufferWriter,
