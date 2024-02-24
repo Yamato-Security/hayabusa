@@ -11,6 +11,7 @@ use itertools::Itertools;
 use num::FromPrimitive;
 use num_format::{Locale, ToFormattedString};
 use serde_json::Value;
+use std::cmp::Ordering;
 use std::fs::File;
 use std::io::BufWriter;
 use std::path::PathBuf;
@@ -72,10 +73,15 @@ pub fn computer_metrics_dsp_msg(
 
     // Write contents
     for ((computer_name, _), count) in result_list.into_iter().sorted_unstable_by(|a, b| {
-        Ord::cmp(
+        let count_cmp = Ord::cmp(
             &-i64::from_usize(*a.1).unwrap_or_default(),
             &-i64::from_usize(*b.1).unwrap_or_default(),
-        )
+        );
+        if count_cmp != Ordering::Equal {
+            return count_cmp;
+        }
+
+        a.0.cmp(b.0)
     }) {
         let count_str = if output.is_some() {
             format!("{count}")
@@ -201,7 +207,7 @@ mod tests {
 
         let header = ["\"Computer\"", "\"Events\""];
 
-        let expect = vec![vec!["\"HAYABUSA-DESKTOP\"", "1"], vec!["\"FALCON\"", "1"]];
+        let expect = vec![vec!["\"FALCON\"", "1"], vec!["\"HAYABUSA-DESKTOP\"", "1"]];
         let expect_str =
             header.join(",") + "\n" + &expect.join(&"\n").join(",").replace(",\n,", "\n") + "\n";
         match read_to_string("./test_computer_metrics.csv") {

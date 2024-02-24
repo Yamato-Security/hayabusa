@@ -1,15 +1,12 @@
 use crate::detections::configs::{
     Action, OutputOption, StoredStatic, CONTROL_CHAT_REPLACE_MAP, CURRENT_EXE_PATH, GEOIP_DB_PARSER,
 };
-use crate::detections::message::{
-    self, AlertMessage, COMPUTER_MITRE_ATTCK_MAP, LEVEL_FULL, MESSAGEKEYS,
-};
+use crate::detections::message::{AlertMessage, DetectInfo, COMPUTER_MITRE_ATTCK_MAP, LEVEL_FULL};
 use crate::detections::utils::{
     self, format_time, get_writable_color, output_and_data_stack_for_html, write_color_buffer,
 };
 use crate::options::htmlreport;
 use crate::options::profile::Profile;
-use crate::timeline::timelines::Timeline;
 use crate::yaml::ParseYaml;
 use aho_corasick::{AhoCorasick, AhoCorasickBuilder, MatchKind};
 use chrono::{DateTime, Local, TimeZone, Utc};
@@ -19,26 +16,39 @@ use compact_str::CompactString;
 use hashbrown::hash_map::RawEntryMut;
 use terminal_size::terminal_size;
 
-use csv::{QuoteStyle, WriterBuilder};
+use csv::{QuoteStyle, Writer, WriterBuilder};
 use itertools::Itertools;
 use krapslog::{build_sparkline, build_time_markers};
 use nested::Nested;
-use std::path::{Path, PathBuf};
+use std::path::Path;
 use std::str::FromStr;
 use yaml_rust::YamlLoader;
 
 use comfy_table::*;
 use hashbrown::{HashMap, HashSet};
 use num_format::{Locale, ToFormattedString};
-use std::cmp::{self, min};
+use std::cmp::{self, min, Ordering};
 use std::error::Error;
 
 use std::io::{self, BufWriter, Write};
 
+use lazy_static::lazy_static;
 use std::fs::File;
 use std::process;
-use termcolor::{BufferWriter, Color, ColorChoice, ColorSpec, WriteColor};
+use termcolor::{Buffer, BufferWriter, Color, ColorChoice, ColorSpec, WriteColor};
 use terminal_size::Width;
+
+lazy_static! {
+    // ここで字句解析するときに使う正規表現の一覧を定義する。
+    // ここはSigmaのGithubレポジトリにある、toos/sigma/parser/condition.pyのSigmaConditionTokenizerのtokendefsを参考にしています。
+    pub static ref LEVEL_MAP: HashMap<String, u128> = HashMap::from([
+        ("INFORMATIONAL".to_string(), 1),
+        ("LOW".to_string(), 2),
+        ("MEDIUM".to_string(), 3),
+        ("HIGH".to_string(), 4),
+        ("CRITICAL".to_string(), 5),
+    ]);
+}
 
 #[derive(Debug)]
 pub struct Colors {
@@ -46,8 +56,173 @@ pub struct Colors {
     pub table_color: comfy_table::Color,
 }
 
+pub struct AfterfactInfo {
+    pub detect_infos: Vec<DetectInfo>,
+    pub tl_starttime: Option<DateTime<Utc>>,
+    pub tl_endtime: Option<DateTime<Utc>>,
+    pub record_cnt: u128,
+    pub recover_record_cnt: u128,
+    pub detected_record_idset: HashSet<CompactString>,
+    pub total_detect_counts_by_level: Vec<u128>,
+    pub unique_detect_counts_by_level: Vec<u128>,
+    pub detect_counts_by_date_and_level: HashMap<CompactString, HashMap<CompactString, i128>>,
+    pub detect_counts_by_computer_and_level: HashMap<CompactString, HashMap<CompactString, i128>>,
+    pub detect_counts_by_rule_and_level: HashMap<CompactString, HashMap<CompactString, i128>>,
+    pub detect_rule_authors: HashMap<CompactString, CompactString>,
+    pub rule_title_path_map: HashMap<CompactString, CompactString>,
+    pub rule_author_counter: HashMap<CompactString, i128>,
+    pub timestamps: Vec<i64>,
+}
+
+struct InitLevelMapResult(
+    HashMap<CompactString, HashMap<CompactString, i128>>,
+    HashMap<CompactString, HashMap<CompactString, i128>>,
+    HashMap<CompactString, HashMap<CompactString, i128>>,
+);
+
+impl AfterfactInfo {
+    pub fn sort_detect_info(&mut self) {
+        self.detect_infos.sort_unstable_by(|a, b| {
+            let cmp_time = a.detected_time.cmp(&b.detected_time);
+            if cmp_time != Ordering::Equal {
+                return cmp_time;
+            }
+
+            let a_level = get_level_suffix(a.level.as_str());
+            let b_level = get_level_suffix(b.level.as_str());
+            let level_cmp = a_level.cmp(&b_level);
+            if level_cmp != Ordering::Equal {
+                return level_cmp;
+            }
+
+            let event_id_cmp = a.eventid.cmp(&b.eventid);
+            if event_id_cmp != Ordering::Equal {
+                return event_id_cmp;
+            }
+
+            let rulepath_cmp = a.rulepath.cmp(&b.rulepath);
+            if rulepath_cmp != Ordering::Equal {
+                return rulepath_cmp;
+            }
+
+            a.computername.cmp(&b.computername)
+        });
+    }
+
+    pub fn removed_duplicate_detect_infos(&mut self) {
+        // https://qiita.com/quasardtm/items/b54a48c1accd675e0bf1
+        let mut tmp_detect_infos = vec![];
+        std::mem::swap(&mut self.detect_infos, &mut tmp_detect_infos);
+
+        // filtet duplicate event
+        let mut filtered_detect_infos: std::collections::HashSet<usize> =
+            std::collections::HashSet::new();
+        {
+            let mut prev_detect_infos = HashSet::new();
+            for (i, detect_info) in tmp_detect_infos.iter().enumerate() {
+                if i == 0 {
+                    filtered_detect_infos.insert(i);
+                    continue;
+                }
+
+                let prev_detect_info = &tmp_detect_infos[i - 1];
+                if prev_detect_info
+                    .detected_time
+                    .cmp(&detect_info.detected_time)
+                    != Ordering::Equal
+                {
+                    filtered_detect_infos.insert(i);
+                    prev_detect_infos.clear();
+                    continue;
+                }
+
+                let fields: Vec<&(CompactString, Profile)> = detect_info
+                    .ext_field
+                    .iter()
+                    .filter(|(_, profile)| !matches!(profile, Profile::EvtxFile(_)))
+                    .collect();
+                if prev_detect_infos.get(&fields).is_some() {
+                    continue;
+                }
+                prev_detect_infos.insert(fields);
+                filtered_detect_infos.insert(i);
+            }
+        }
+
+        tmp_detect_infos = tmp_detect_infos
+            .into_iter()
+            .enumerate()
+            .filter_map(|(i, detect_info)| {
+                if filtered_detect_infos.contains(&i) {
+                    Some(detect_info)
+                } else {
+                    Option::None
+                }
+            })
+            .collect();
+
+        std::mem::swap(&mut self.detect_infos, &mut tmp_detect_infos);
+    }
+}
+
+impl Default for AfterfactInfo {
+    fn default() -> Self {
+        let InitLevelMapResult(
+            detect_counts_by_date_and_level,
+            detect_counts_by_computer_and_level,
+            detect_counts_by_rule_and_level,
+        ) = {
+            let levels = ["crit", "high", "med ", "low ", "info", "undefined"];
+            let mut detect_counts_by_date_and_level: HashMap<
+                CompactString,
+                HashMap<CompactString, i128>,
+            > = HashMap::new();
+            let mut detect_counts_by_computer_and_level: HashMap<
+                CompactString,
+                HashMap<CompactString, i128>,
+            > = HashMap::new();
+            let mut detect_counts_by_rule_and_level: HashMap<
+                CompactString,
+                HashMap<CompactString, i128>,
+            > = HashMap::new();
+            // レベル別、日ごとの集計用変数の初期化
+            for level_init in levels {
+                detect_counts_by_date_and_level
+                    .insert(CompactString::from(level_init), HashMap::new());
+                detect_counts_by_computer_and_level
+                    .insert(CompactString::from(level_init), HashMap::new());
+                detect_counts_by_rule_and_level
+                    .insert(CompactString::from(level_init), HashMap::new());
+            }
+
+            InitLevelMapResult(
+                detect_counts_by_date_and_level,
+                detect_counts_by_computer_and_level,
+                detect_counts_by_rule_and_level,
+            )
+        };
+        AfterfactInfo {
+            detect_infos: vec![],
+            tl_starttime: Option::None,
+            tl_endtime: Option::None,
+            record_cnt: 0,
+            recover_record_cnt: 0,
+            detected_record_idset: HashSet::new(),
+            total_detect_counts_by_level: vec![0; 6],
+            unique_detect_counts_by_level: vec![0; 6],
+            detect_counts_by_date_and_level,
+            detect_counts_by_computer_and_level,
+            detect_counts_by_rule_and_level,
+            detect_rule_authors: HashMap::new(),
+            rule_title_path_map: HashMap::new(),
+            rule_author_counter: HashMap::new(),
+            timestamps: vec![],
+        }
+    }
+}
+
 /// level_color.txtファイルを読み込み対応する文字色のマッピングを返却する関数
-pub fn set_output_color(no_color_flag: bool) -> HashMap<CompactString, Colors> {
+pub fn create_output_color_map(no_color_flag: bool) -> HashMap<CompactString, Colors> {
     let read_result = utils::read_csv(
         utils::check_setting_path(
             &CURRENT_EXE_PATH.to_path_buf(),
@@ -124,7 +299,7 @@ fn _get_table_color(
 }
 
 /// print timeline histogram
-fn _print_timeline_hist(timestamps: Vec<i64>, length: usize, side_margin_size: usize) {
+fn _print_timeline_hist(timestamps: &[i64], length: usize, side_margin_size: usize) {
     if timestamps.is_empty() {
         return;
     }
@@ -156,8 +331,8 @@ fn _print_timeline_hist(timestamps: Vec<i64>, length: usize, side_margin_size: u
     let marker_num = min(timestamp_marker_max, 18);
 
     let (header_raw, footer_raw) =
-        build_time_markers(&timestamps, marker_num, length - (side_margin_size * 2));
-    let sparkline = build_sparkline(&timestamps, length - (side_margin_size * 2), 5_usize);
+        build_time_markers(timestamps, marker_num, length - (side_margin_size * 2));
+    let sparkline = build_sparkline(timestamps, length - (side_margin_size * 2), 5_usize);
     for header_str in header_raw.lines() {
         writeln!(wtr, "{}{}", " ".repeat(side_margin_size - 1), header_str).ok();
     }
@@ -171,21 +346,14 @@ fn _print_timeline_hist(timestamps: Vec<i64>, length: usize, side_margin_size: u
     buf_wtr.print(&wtr).ok();
 }
 
-pub fn after_fact(
-    all_record_cnt: usize,
-    output_option: &Option<PathBuf>,
-    no_color_flag: bool,
-    stored_static: &StoredStatic,
-    tl: Timeline,
-    recover_records_cnt: usize,
-) {
-    let fn_emit_csv_err = |err: Box<dyn Error>| {
+pub fn after_fact(stored_static: &StoredStatic, afterfact_info: AfterfactInfo) {
+    let fn_output_afterfact_err = |err: Box<dyn Error>| {
         AlertMessage::alert(&format!("Failed to write CSV. {err}")).ok();
         process::exit(1);
     };
 
     let mut displayflag = false;
-    let mut target: Box<dyn io::Write> = if let Some(path) = &output_option {
+    let mut target: Box<dyn io::Write> = if let Some(path) = &stored_static.output_path {
         // output to file
         match File::create(path) {
             Ok(file) => Box::new(BufWriter::new(file)),
@@ -199,28 +367,142 @@ pub fn after_fact(
         // stdoutput (termcolor crate color output is not csv writer)
         Box::new(BufWriter::new(io::stdout()))
     };
-    let color_map = set_output_color(no_color_flag);
-    if let Err(err) = emit_csv(
+
+    if let Err(err) = output_afterfact(
         &mut target,
         displayflag,
-        color_map,
-        (all_record_cnt as u128, recover_records_cnt as u128),
         stored_static.profiles.as_ref().unwrap(),
         stored_static,
-        (&tl.stats.start_time, &tl.stats.end_time),
+        afterfact_info,
     ) {
-        fn_emit_csv_err(Box::new(err));
+        fn_output_afterfact_err(Box::new(err));
     }
 }
 
-fn emit_csv<W: std::io::Write>(
+fn get_level_suffix(level_str: &str) -> usize {
+    *LEVEL_MAP
+        .get(
+            LEVEL_FULL
+                .get(level_str)
+                .unwrap_or(&"undefined")
+                .to_uppercase()
+                .as_str(),
+        )
+        .unwrap_or(&0) as usize
+}
+
+struct AfterfactWriter {
+    disp_wtr: BufferWriter,
+    disp_wtr_buf: Buffer,
+}
+
+struct EmitCsvOption {
+    json_output_flag: bool,
+    jsonl_output_flag: bool,
+    remove_duplicate_data_flag: bool,
+}
+
+fn init_writer<'a, W: std::io::Write>(
+    writer: &'a mut W,
+    stored_static: &StoredStatic,
+) -> (AfterfactWriter, EmitCsvOption, Option<Writer<&'a mut W>>) {
+    let disp_wtr = BufferWriter::stdout(ColorChoice::Always);
+    let mut disp_wtr_buf = disp_wtr.buffer();
+    let mut emit_csv_opt = EmitCsvOption {
+        json_output_flag: false,
+        jsonl_output_flag: false,
+        remove_duplicate_data_flag: false,
+    };
+
+    let tmp_wtr = match &stored_static.config.action.as_ref().unwrap() {
+        Action::JsonTimeline(option) => {
+            emit_csv_opt.json_output_flag = true;
+            emit_csv_opt.jsonl_output_flag = option.jsonl_timeline;
+            emit_csv_opt.remove_duplicate_data_flag = option.output_options.remove_duplicate_data;
+            Some(
+                WriterBuilder::new()
+                    .delimiter(b'\n')
+                    .double_quote(false)
+                    .quote_style(QuoteStyle::Never)
+                    .from_writer(writer),
+            )
+        }
+        Action::CsvTimeline(option) => {
+            emit_csv_opt.remove_duplicate_data_flag = option.output_options.remove_duplicate_data;
+            Some(
+                WriterBuilder::new()
+                    .quote_style(QuoteStyle::NonNumeric)
+                    .from_writer(writer),
+            )
+        }
+        _ => None,
+    };
+
+    disp_wtr_buf.set_color(ColorSpec::new().set_fg(None)).ok();
+
+    // emit csv
+    let artifact_writer = AfterfactWriter {
+        disp_wtr,
+        disp_wtr_buf,
+    };
+    (artifact_writer, emit_csv_opt, tmp_wtr)
+}
+
+fn output_afterfact<W: std::io::Write>(
     writer: &mut W,
     displayflag: bool,
-    color_map: HashMap<CompactString, Colors>,
-    (all_record_cnt, recover_records_cnt): (u128, u128),
     profile: &[(CompactString, Profile)],
     stored_static: &StoredStatic,
-    tl_start_end_time: (&Option<DateTime<Utc>>, &Option<DateTime<Utc>>),
+    mut afterfact_info: AfterfactInfo,
+) -> io::Result<()> {
+    let (mut artifact_writer, emit_csv_opt, tmp_wtr) = init_writer(writer, stored_static);
+    if tmp_wtr.is_none() {
+        return Ok(());
+    }
+    if displayflag {
+        println!();
+    }
+
+    // sort and filter detect infos
+    afterfact_info.sort_detect_info();
+    if stored_static
+        .output_option
+        .as_ref()
+        .unwrap()
+        .remove_duplicate_detections
+    {
+        afterfact_info.removed_duplicate_detect_infos();
+    }
+
+    let wtr = tmp_wtr.unwrap();
+    emit_csv(
+        stored_static,
+        &artifact_writer,
+        wtr,
+        &afterfact_info,
+        profile,
+        displayflag,
+        &emit_csv_opt,
+    )?;
+
+    // calculate statistic information
+    afterfact_info = calc_statistic_info(afterfact_info, stored_static);
+
+    artifact_writer.disp_wtr_buf.clear();
+
+    output_additional_afterfact(stored_static, artifact_writer, &afterfact_info);
+
+    Ok(())
+}
+
+fn emit_csv<W: std::io::Write>(
+    stored_static: &StoredStatic,
+    artifact_writer: &AfterfactWriter,
+    mut wtr: Writer<&mut W>,
+    afterfact_info: &AfterfactInfo,
+    profile: &[(CompactString, Profile)],
+    displayflag: bool,
+    emit_csv_opt: &EmitCsvOption,
 ) -> io::Result<()> {
     let output_replaced_maps: HashMap<&str, &str> =
         HashMap::from_iter(vec![("🛂r", "\r"), ("🛂n", "\n"), ("🛂t", "\t")]);
@@ -239,173 +521,20 @@ fn emit_csv<W: std::io::Write>(
         .build(removed_replaced_maps.keys())
         .unwrap();
 
-    let mut html_output_stock = Nested::<String>::new();
-    let html_output_flag = stored_static.html_report_flag;
-    let output_option = stored_static.output_option.as_ref().unwrap();
-    let disp_wtr = BufferWriter::stdout(ColorChoice::Always);
-    let mut disp_wtr_buf = disp_wtr.buffer();
-    let mut json_output_flag = false;
-    let mut jsonl_output_flag = false;
-    let mut remove_duplicate_data_flag = false;
-
-    let tmp_wtr = match &stored_static.config.action.as_ref().unwrap() {
-        Action::JsonTimeline(option) => {
-            json_output_flag = true;
-            jsonl_output_flag = option.jsonl_timeline;
-            remove_duplicate_data_flag = option.output_options.remove_duplicate_data;
-            Some(
-                WriterBuilder::new()
-                    .delimiter(b'\n')
-                    .double_quote(false)
-                    .quote_style(QuoteStyle::Never)
-                    .from_writer(writer),
-            )
-        }
-        Action::CsvTimeline(option) => {
-            remove_duplicate_data_flag = option.output_options.remove_duplicate_data;
-            Some(
-                WriterBuilder::new()
-                    .quote_style(QuoteStyle::NonNumeric)
-                    .from_writer(writer),
-            )
-        }
-        _ => None,
-    };
-    //CsvTimeLineとJsonTimeLine以外はこの関数は呼ばれないが、matchをつかうためにこの処理を追加した。
-    if tmp_wtr.is_none() {
-        return Ok(());
-    }
-    let mut wtr = tmp_wtr.unwrap();
-
-    disp_wtr_buf.set_color(ColorSpec::new().set_fg(None)).ok();
-
-    // level is divided by "Critical","High","Medium","Low","Informational","Undefined".
-    let mut total_detect_counts_by_level: Vec<u128> = vec![0; 6];
-    let mut unique_detect_counts_by_level: Vec<u128> = vec![0; 6];
-    let mut detected_rule_files: HashSet<CompactString> = HashSet::new();
-    let mut detected_rule_ids: HashSet<CompactString> = HashSet::new();
-    let mut detected_computer_and_rule_names: HashSet<CompactString> = HashSet::new();
-    let mut detect_counts_by_date_and_level: HashMap<CompactString, HashMap<CompactString, i128>> =
-        HashMap::new();
-    let mut detect_counts_by_computer_and_level: HashMap<
-        CompactString,
-        HashMap<CompactString, i128>,
-    > = HashMap::new();
-    let mut detect_counts_by_rule_and_level: HashMap<CompactString, HashMap<CompactString, i128>> =
-        HashMap::new();
-    let mut rule_title_path_map: HashMap<CompactString, CompactString> = HashMap::new();
-    let mut detect_rule_authors: HashMap<CompactString, CompactString> = HashMap::new();
-    let mut rule_author_counter: HashMap<CompactString, i128> = HashMap::new();
-
-    let levels = ["crit", "high", "med ", "low ", "info", "undefined"];
-    // レベル別、日ごとの集計用変数の初期化
-    for level_init in levels {
-        detect_counts_by_date_and_level.insert(CompactString::from(level_init), HashMap::new());
-        detect_counts_by_computer_and_level.insert(CompactString::from(level_init), HashMap::new());
-        detect_counts_by_rule_and_level.insert(CompactString::from(level_init), HashMap::new());
-    }
-    if displayflag {
-        println!();
-    }
-    let mut timestamps: Vec<i64> = vec![0; MESSAGEKEYS.lock().unwrap().len()];
     let mut plus_header = true;
-    let mut detected_record_idset: HashSet<CompactString> = HashSet::new();
-
-    let level_map: HashMap<&str, u128> = HashMap::from([
-        ("INFORMATIONAL", 1),
-        ("LOW", 2),
-        ("MEDIUM", 3),
-        ("HIGH", 4),
-        ("CRITICAL", 5),
-    ]);
-
-    let get_level_suffix = |level_str: &str| {
-        *level_map
-            .get(
-                LEVEL_FULL
-                    .get(level_str)
-                    .unwrap_or(&"undefined")
-                    .to_uppercase()
-                    .as_str(),
-            )
-            .unwrap_or(&0) as usize
-    };
-    let mut author_list_cache: HashMap<CompactString, Nested<String>> = HashMap::new();
-
     // remove duplicate dataのための前レコード分の情報を保持する変数
     let mut prev_message: HashMap<CompactString, Profile> = HashMap::new();
     let mut prev_details_convert_map: HashMap<CompactString, Vec<CompactString>> = HashMap::new();
-    for (message_idx, time) in MESSAGEKEYS
-        .lock()
-        .unwrap()
-        .iter()
-        .sorted_unstable()
-        .enumerate()
-    {
-        let multi = message::MESSAGES.get(time).unwrap();
-        let (_, detect_infos) = multi.pair();
-        let mut prev_detect_infos = HashSet::new();
-        timestamps[message_idx] = _get_timestamp(output_option, time);
-        for detect_info in detect_infos.iter().sorted_by(|a, b| {
-            Ord::cmp(
-                &format!(
-                    "{}:{}:{}:{}",
-                    get_level_suffix(a.level.as_str()),
-                    a.eventid,
-                    a.rulepath,
-                    a.computername
-                ),
-                &format!(
-                    "{}:{}:{}:{}",
-                    get_level_suffix(b.level.as_str()),
-                    b.eventid,
-                    b.rulepath,
-                    b.computername
-                ),
-            )
-        }) {
-            if output_option.remove_duplicate_detections && detect_infos.len() > 1 {
-                let fields: Vec<&(CompactString, Profile)> = detect_info
-                    .ext_field
-                    .iter()
-                    .filter(|(_, profile)| !matches!(profile, Profile::EvtxFile(_)))
-                    .collect();
-                if prev_detect_infos.get(&fields).is_some() {
-                    continue;
-                }
-                prev_detect_infos.insert(fields);
-            }
-            if !detect_info.is_condition {
-                detected_record_idset.insert(CompactString::from(format!(
-                    "{}_{}",
-                    time, detect_info.eventid
-                )));
-            }
-            if displayflag && !(json_output_flag || jsonl_output_flag) {
-                // 標準出力の場合
-                if plus_header {
-                    // ヘッダーのみを出力
-                    _get_serialized_disp_output(
-                        &disp_wtr,
-                        profile,
-                        true,
-                        (&output_replacer, &output_replaced_maps),
-                        (&output_remover, &removed_replaced_maps),
-                        stored_static.common_options.no_color,
-                        get_writable_color(
-                            _get_output_color(
-                                &color_map,
-                                LEVEL_FULL.get(detect_info.level.as_str()).unwrap_or(&""),
-                            ),
-                            stored_static.common_options.no_color,
-                        ),
-                    );
-                    plus_header = false;
-                }
+    let color_map = create_output_color_map(stored_static.common_options.no_color);
+    for detect_info in afterfact_info.detect_infos.iter() {
+        if displayflag && !(emit_csv_opt.json_output_flag || emit_csv_opt.jsonl_output_flag) {
+            // 標準出力の場合
+            if plus_header {
+                // ヘッダーのみを出力
                 _get_serialized_disp_output(
-                    &disp_wtr,
-                    &detect_info.ext_field,
-                    false,
+                    &artifact_writer.disp_wtr,
+                    profile,
+                    true,
                     (&output_replacer, &output_replaced_maps),
                     (&output_remover, &removed_replaced_maps),
                     stored_static.common_options.no_color,
@@ -417,144 +546,117 @@ fn emit_csv<W: std::io::Write>(
                         stored_static.common_options.no_color,
                     ),
                 );
-            } else if jsonl_output_flag {
-                // JSONL output format
-                let result = output_json_str(
-                    &detect_info.ext_field,
-                    prev_message,
-                    jsonl_output_flag,
-                    GEOIP_DB_PARSER.read().unwrap().is_some(),
-                    remove_duplicate_data_flag,
-                    detect_info.is_condition,
-                    &[&detect_info.details_convert_map, &prev_details_convert_map],
-                );
-                prev_message = result.1;
-                prev_details_convert_map = detect_info.details_convert_map.clone();
-                if displayflag {
-                    write_color_buffer(&disp_wtr, None, &format!("{{ {} }}", &result.0), true).ok();
-                } else {
-                    wtr.write_field(format!("{{ {} }}", &result.0))?;
-                }
-            } else if json_output_flag {
-                // JSON output
-                let result = output_json_str(
-                    &detect_info.ext_field,
-                    prev_message,
-                    jsonl_output_flag,
-                    GEOIP_DB_PARSER.read().unwrap().is_some(),
-                    remove_duplicate_data_flag,
-                    detect_info.is_condition,
-                    &[&detect_info.details_convert_map, &prev_details_convert_map],
-                );
-                prev_message = result.1;
-                prev_details_convert_map = detect_info.details_convert_map.clone();
-                if displayflag {
-                    write_color_buffer(&disp_wtr, None, &format!("{{\n{}\n}}", &result.0), true)
-                        .ok();
-                } else {
-                    wtr.write_field("{")?;
-                    wtr.write_field(&result.0)?;
-                    wtr.write_field("}")?;
-                }
+                plus_header = false;
+            }
+            _get_serialized_disp_output(
+                &artifact_writer.disp_wtr,
+                &detect_info.ext_field,
+                false,
+                (&output_replacer, &output_replaced_maps),
+                (&output_remover, &removed_replaced_maps),
+                stored_static.common_options.no_color,
+                get_writable_color(
+                    _get_output_color(
+                        &color_map,
+                        LEVEL_FULL.get(detect_info.level.as_str()).unwrap_or(&""),
+                    ),
+                    stored_static.common_options.no_color,
+                ),
+            );
+        } else if emit_csv_opt.jsonl_output_flag {
+            // JSONL output format
+            let result = output_json_str(
+                &detect_info.ext_field,
+                prev_message,
+                emit_csv_opt.jsonl_output_flag,
+                GEOIP_DB_PARSER.read().unwrap().is_some(),
+                emit_csv_opt.remove_duplicate_data_flag,
+                detect_info.is_condition,
+                &[&detect_info.details_convert_map, &prev_details_convert_map],
+            );
+            prev_message = result.1;
+            prev_details_convert_map = detect_info.details_convert_map.clone();
+            if displayflag {
+                write_color_buffer(
+                    &artifact_writer.disp_wtr,
+                    None,
+                    &format!("{{ {} }}", &result.0),
+                    true,
+                )
+                .ok();
             } else {
-                // csv output format
-                if plus_header {
-                    wtr.write_record(detect_info.ext_field.iter().map(|x| x.0.trim()))?;
-                    plus_header = false;
-                }
-                wtr.write_record(detect_info.ext_field.iter().map(|x| {
-                    match x.1 {
-                        Profile::Details(_)
-                        | Profile::AllFieldInfo(_)
-                        | Profile::ExtraFieldInfo(_) => {
-                            let ret = if remove_duplicate_data_flag
-                                && x.1.to_value()
-                                    == prev_message
-                                        .get(&x.0)
-                                        .unwrap_or(&Profile::Literal("-".into()))
-                                        .to_value()
-                            {
-                                "DUP".to_string()
-                            } else {
-                                output_remover.replace_all(
-                                    &output_replacer
-                                        .replace_all(
-                                            &x.1.to_value(),
-                                            &output_replaced_maps.values().collect_vec(),
-                                        )
-                                        .split_whitespace()
-                                        .join(" "),
-                                    &removed_replaced_maps.values().collect_vec(),
-                                )
-                            };
-                            prev_message.insert(x.0.clone(), x.1.clone());
-                            ret
-                        }
-                        _ => output_remover.replace_all(
-                            &output_replacer
-                                .replace_all(
-                                    &x.1.to_value(),
-                                    &output_replaced_maps.values().collect_vec(),
-                                )
-                                .split_whitespace()
-                                .join(" "),
-                            &removed_replaced_maps.values().collect_vec(),
-                        ),
-                    }
-                }))?;
+                wtr.write_field(format!("{{ {} }}", &result.0))?;
             }
-            // 各種集計作業
-            if !output_option.no_summary {
-                let level_suffix = get_level_suffix(detect_info.level.as_str());
-                let author_list = author_list_cache
-                    .entry(detect_info.rulepath.clone())
-                    .or_insert_with(|| extract_author_name(&detect_info.rulepath))
-                    .clone();
-                let author_str = author_list.iter().join(", ");
-                detect_rule_authors.insert(detect_info.rulepath.to_owned(), author_str.into());
-
-                if !detected_rule_files.contains(&detect_info.rulepath) {
-                    detected_rule_files.insert(detect_info.rulepath.to_owned());
-                    for author in author_list.iter() {
-                        *rule_author_counter
-                            .entry(CompactString::from(author))
-                            .or_insert(0) += 1;
-                    }
-                }
-                if !detected_rule_ids.contains(&detect_info.ruleid) {
-                    detected_rule_ids.insert(detect_info.ruleid.to_owned());
-                    unique_detect_counts_by_level[level_suffix] += 1;
-                }
-
-                let computer_rule_check_key = CompactString::from(format!(
-                    "{}|{}",
-                    &detect_info.computername, &detect_info.rulepath
-                ));
-                if !detected_computer_and_rule_names.contains(&computer_rule_check_key) {
-                    detected_computer_and_rule_names.insert(computer_rule_check_key);
-                    countup_aggregation(
-                        &mut detect_counts_by_computer_and_level,
-                        &detect_info.level,
-                        &detect_info.computername,
-                    );
-                }
-                rule_title_path_map.insert(
-                    detect_info.ruletitle.to_owned(),
-                    detect_info.rulepath.to_owned(),
-                );
-
-                countup_aggregation(
-                    &mut detect_counts_by_date_and_level,
-                    &detect_info.level,
-                    &format_time(time, true, output_option),
-                );
-                countup_aggregation(
-                    &mut detect_counts_by_rule_and_level,
-                    &detect_info.level,
-                    &detect_info.ruletitle,
-                );
-                total_detect_counts_by_level[level_suffix] += 1;
+        } else if emit_csv_opt.json_output_flag {
+            // JSON output
+            let result = output_json_str(
+                &detect_info.ext_field,
+                prev_message,
+                emit_csv_opt.jsonl_output_flag,
+                GEOIP_DB_PARSER.read().unwrap().is_some(),
+                emit_csv_opt.remove_duplicate_data_flag,
+                detect_info.is_condition,
+                &[&detect_info.details_convert_map, &prev_details_convert_map],
+            );
+            prev_message = result.1;
+            prev_details_convert_map = detect_info.details_convert_map.clone();
+            if displayflag {
+                write_color_buffer(
+                    &artifact_writer.disp_wtr,
+                    None,
+                    &format!("{{\n{}\n}}", &result.0),
+                    true,
+                )
+                .ok();
+            } else {
+                wtr.write_field("{")?;
+                wtr.write_field(&result.0)?;
+                wtr.write_field("}")?;
             }
+        } else {
+            // csv output format
+            if plus_header {
+                wtr.write_record(detect_info.ext_field.iter().map(|x| x.0.trim()))?;
+                plus_header = false;
+            }
+            wtr.write_record(detect_info.ext_field.iter().map(|x| {
+                match x.1 {
+                    Profile::Details(_) | Profile::AllFieldInfo(_) | Profile::ExtraFieldInfo(_) => {
+                        let ret = if emit_csv_opt.remove_duplicate_data_flag
+                            && x.1.to_value()
+                                == prev_message
+                                    .get(&x.0)
+                                    .unwrap_or(&Profile::Literal("-".into()))
+                                    .to_value()
+                        {
+                            "DUP".to_string()
+                        } else {
+                            output_remover.replace_all(
+                                &output_replacer
+                                    .replace_all(
+                                        &x.1.to_value(),
+                                        &output_replaced_maps.values().collect_vec(),
+                                    )
+                                    .split_whitespace()
+                                    .join(" "),
+                                &removed_replaced_maps.values().collect_vec(),
+                            )
+                        };
+                        prev_message.insert(x.0.clone(), x.1.clone());
+                        ret
+                    }
+                    _ => output_remover.replace_all(
+                        &output_replacer
+                            .replace_all(
+                                &x.1.to_value(),
+                                &output_replaced_maps.values().collect_vec(),
+                            )
+                            .split_whitespace()
+                            .join(" "),
+                        &removed_replaced_maps.values().collect_vec(),
+                    ),
+                }
+            }))?;
         }
     }
 
@@ -564,7 +666,95 @@ fn emit_csv<W: std::io::Write>(
         wtr.flush()?;
     }
 
-    disp_wtr_buf.clear();
+    Ok(())
+}
+
+fn calc_statistic_info(
+    mut afterfact_info: AfterfactInfo,
+    stored_static: &StoredStatic,
+) -> AfterfactInfo {
+    let mut detected_rule_files: HashSet<CompactString> = HashSet::new();
+    let mut detected_rule_ids: HashSet<CompactString> = HashSet::new();
+    let mut detected_computer_and_rule_names: HashSet<CompactString> = HashSet::new();
+    let mut author_list_cache: HashMap<CompactString, Nested<String>> = HashMap::new();
+    let output_option = stored_static.output_option.as_ref().unwrap();
+    for detect_info in afterfact_info.detect_infos.iter() {
+        if !detect_info.is_condition {
+            afterfact_info
+                .detected_record_idset
+                .insert(CompactString::from(format!(
+                    "{}_{}",
+                    detect_info.detected_time, detect_info.eventid
+                )));
+        }
+
+        if !output_option.no_summary {
+            let level_suffix = get_level_suffix(detect_info.level.as_str());
+            let author_list = author_list_cache
+                .entry(detect_info.rulepath.clone())
+                .or_insert_with(|| extract_author_name(&detect_info.rulepath))
+                .clone();
+            let author_str = author_list.iter().join(", ");
+            afterfact_info
+                .detect_rule_authors
+                .insert(detect_info.rulepath.to_owned(), author_str.into());
+
+            if !detected_rule_files.contains(&detect_info.rulepath) {
+                detected_rule_files.insert(detect_info.rulepath.to_owned());
+                for author in author_list.iter() {
+                    *afterfact_info
+                        .rule_author_counter
+                        .entry(CompactString::from(author))
+                        .or_insert(0) += 1;
+                }
+            }
+            if !detected_rule_ids.contains(&detect_info.ruleid) {
+                detected_rule_ids.insert(detect_info.ruleid.to_owned());
+                afterfact_info.unique_detect_counts_by_level[level_suffix] += 1;
+            }
+
+            let computer_rule_check_key = CompactString::from(format!(
+                "{}|{}",
+                &detect_info.computername, &detect_info.rulepath
+            ));
+            if !detected_computer_and_rule_names.contains(&computer_rule_check_key) {
+                detected_computer_and_rule_names.insert(computer_rule_check_key);
+                countup_aggregation(
+                    &mut afterfact_info.detect_counts_by_computer_and_level,
+                    &detect_info.level,
+                    &detect_info.computername,
+                );
+            }
+            afterfact_info.rule_title_path_map.insert(
+                detect_info.ruletitle.to_owned(),
+                detect_info.rulepath.to_owned(),
+            );
+
+            countup_aggregation(
+                &mut afterfact_info.detect_counts_by_date_and_level,
+                &detect_info.level,
+                &format_time(&detect_info.detected_time, true, output_option),
+            );
+            countup_aggregation(
+                &mut afterfact_info.detect_counts_by_rule_and_level,
+                &detect_info.level,
+                &detect_info.ruletitle,
+            );
+            afterfact_info.total_detect_counts_by_level[level_suffix] += 1;
+        }
+    }
+    afterfact_info
+}
+
+fn output_additional_afterfact(
+    stored_static: &StoredStatic,
+    mut afterfact_writer: AfterfactWriter,
+    afterfact_info: &AfterfactInfo,
+) {
+    let terminal_width = match terminal_size() {
+        Some((Width(w), _)) => w as usize,
+        None => 100,
+    };
     let level_abbr: Nested<Vec<CompactString>> = Nested::from_iter(
         [
             [CompactString::from("critical"), CompactString::from("crit")].to_vec(),
@@ -579,15 +769,10 @@ fn emit_csv<W: std::io::Write>(
         ]
         .iter(),
     );
-
-    let terminal_width = match terminal_size() {
-        Some((Width(w), _)) => w as usize,
-        None => 100,
-    };
-
-    if !output_option.no_summary && !rule_author_counter.is_empty() {
+    let output_option = stored_static.output_option.as_ref().unwrap();
+    if !output_option.no_summary && !afterfact_info.rule_author_counter.is_empty() {
         write_color_buffer(
-            &disp_wtr,
+            &afterfact_writer.disp_wtr,
             get_writable_color(
                 Some(Color::Rgb(0, 255, 0)),
                 stored_static.common_options.no_color,
@@ -597,7 +782,7 @@ fn emit_csv<W: std::io::Write>(
         )
         .ok();
         write_color_buffer(
-            &disp_wtr,
+            &afterfact_writer.disp_wtr,
             get_writable_color(None, stored_static.common_options.no_color),
             " ",
             true,
@@ -616,19 +801,20 @@ fn emit_csv<W: std::io::Write>(
         } else {
             6
         };
-        output_detected_rule_authors(rule_author_counter, table_column_num);
+        output_detected_rule_authors(&afterfact_info.rule_author_counter, table_column_num);
     }
 
     println!();
     if output_option.visualize_timeline {
-        _print_timeline_hist(timestamps, terminal_width, 3);
+        _print_timeline_hist(&afterfact_info.timestamps, terminal_width, 3);
         println!();
     }
 
+    let mut html_output_stock = Nested::<String>::new();
     if !output_option.no_summary {
-        disp_wtr_buf.clear();
+        afterfact_writer.disp_wtr_buf.clear();
         write_color_buffer(
-            &disp_wtr,
+            &afterfact_writer.disp_wtr,
             get_writable_color(
                 Some(Color::Rgb(0, 255, 0)),
                 stored_static.common_options.no_color,
@@ -638,12 +824,12 @@ fn emit_csv<W: std::io::Write>(
         )
         .ok();
 
-        if tl_start_end_time.0.is_some() {
+        if afterfact_info.tl_starttime.is_some() {
             output_and_data_stack_for_html(
                 &format!(
                     "First Timestamp: {}",
                     utils::format_time(
-                        &tl_start_end_time.0.unwrap(),
+                        &afterfact_info.tl_starttime.unwrap(),
                         false,
                         stored_static.output_option.as_ref().unwrap()
                     )
@@ -652,12 +838,12 @@ fn emit_csv<W: std::io::Write>(
                 &stored_static.html_report_flag,
             );
         }
-        if tl_start_end_time.1.is_some() {
+        if afterfact_info.tl_endtime.is_some() {
             output_and_data_stack_for_html(
                 &format!(
                     "Last Timestamp: {}",
                     utils::format_time(
-                        &tl_start_end_time.1.unwrap(),
+                        &afterfact_info.tl_endtime.unwrap(),
                         false,
                         stored_static.output_option.as_ref().unwrap()
                     )
@@ -668,14 +854,15 @@ fn emit_csv<W: std::io::Write>(
             println!();
         }
 
-        let reducted_record_cnt: u128 = all_record_cnt - detected_record_idset.len() as u128;
-        let reducted_percent = if all_record_cnt == 0 {
+        let reducted_record_cnt: u128 =
+            afterfact_info.record_cnt - afterfact_info.detected_record_idset.len() as u128;
+        let reducted_percent = if afterfact_info.record_cnt == 0 {
             0 as f64
         } else {
-            (reducted_record_cnt as f64) / (all_record_cnt as f64) * 100.0
+            (reducted_record_cnt as f64) / (afterfact_info.record_cnt as f64) * 100.0
         };
         write_color_buffer(
-            &disp_wtr,
+            &afterfact_writer.disp_wtr,
             get_writable_color(
                 Some(Color::Rgb(255, 255, 0)),
                 stored_static.common_options.no_color,
@@ -685,14 +872,14 @@ fn emit_csv<W: std::io::Write>(
         )
         .ok();
         write_color_buffer(
-            &disp_wtr,
+            &afterfact_writer.disp_wtr,
             get_writable_color(None, stored_static.common_options.no_color),
             " / ",
             false,
         )
         .ok();
         write_color_buffer(
-            &disp_wtr,
+            &afterfact_writer.disp_wtr,
             get_writable_color(
                 Some(Color::Rgb(0, 255, 255)),
                 stored_static.common_options.no_color,
@@ -702,16 +889,16 @@ fn emit_csv<W: std::io::Write>(
         )
         .ok();
         write_color_buffer(
-            &disp_wtr,
+            &afterfact_writer.disp_wtr,
             get_writable_color(None, stored_static.common_options.no_color),
             ": ",
             false,
         )
         .ok();
         let saved_alerts_output =
-            (all_record_cnt - reducted_record_cnt).to_formatted_string(&Locale::en);
+            (afterfact_info.record_cnt - reducted_record_cnt).to_formatted_string(&Locale::en);
         write_color_buffer(
-            &disp_wtr,
+            &afterfact_writer.disp_wtr,
             get_writable_color(
                 Some(Color::Rgb(255, 255, 0)),
                 stored_static.common_options.no_color,
@@ -721,16 +908,16 @@ fn emit_csv<W: std::io::Write>(
         )
         .ok();
         write_color_buffer(
-            &disp_wtr,
+            &afterfact_writer.disp_wtr,
             get_writable_color(None, stored_static.common_options.no_color),
             " / ",
             false,
         )
         .ok();
 
-        let all_record_output = all_record_cnt.to_formatted_string(&Locale::en);
+        let all_record_output = afterfact_info.record_cnt.to_formatted_string(&Locale::en);
         write_color_buffer(
-            &disp_wtr,
+            &afterfact_writer.disp_wtr,
             get_writable_color(
                 Some(Color::Rgb(0, 255, 255)),
                 stored_static.common_options.no_color,
@@ -740,7 +927,7 @@ fn emit_csv<W: std::io::Write>(
         )
         .ok();
         write_color_buffer(
-            &disp_wtr,
+            &afterfact_writer.disp_wtr,
             get_writable_color(None, stored_static.common_options.no_color),
             " (",
             false,
@@ -752,7 +939,7 @@ fn emit_csv<W: std::io::Write>(
             reducted_percent
         );
         write_color_buffer(
-            &disp_wtr,
+            &afterfact_writer.disp_wtr,
             get_writable_color(
                 Some(Color::Rgb(0, 255, 0)),
                 stored_static.common_options.no_color,
@@ -763,7 +950,7 @@ fn emit_csv<W: std::io::Write>(
         .ok();
 
         write_color_buffer(
-            &disp_wtr,
+            &afterfact_writer.disp_wtr,
             get_writable_color(None, stored_static.common_options.no_color),
             ")",
             true,
@@ -771,7 +958,7 @@ fn emit_csv<W: std::io::Write>(
         .ok();
         if stored_static.enable_recover_records {
             write_color_buffer(
-                &disp_wtr,
+                &afterfact_writer.disp_wtr,
                 get_writable_color(
                     Some(Color::Rgb(0, 255, 255)),
                     stored_static.common_options.no_color,
@@ -781,15 +968,17 @@ fn emit_csv<W: std::io::Write>(
             )
             .ok();
             write_color_buffer(
-                &disp_wtr,
+                &afterfact_writer.disp_wtr,
                 get_writable_color(None, stored_static.common_options.no_color),
                 ": ",
                 false,
             )
             .ok();
-            let recovered_record_output = recover_records_cnt.to_formatted_string(&Locale::en);
+            let recovered_record_output = afterfact_info
+                .recover_record_cnt
+                .to_formatted_string(&Locale::en);
             write_color_buffer(
-                &disp_wtr,
+                &afterfact_writer.disp_wtr,
                 get_writable_color(
                     Some(Color::Rgb(0, 255, 255)),
                     stored_static.common_options.no_color,
@@ -801,19 +990,22 @@ fn emit_csv<W: std::io::Write>(
         }
         println!();
 
-        if html_output_flag {
+        if stored_static.html_report_flag {
             html_output_stock.push(format!("- Events with hits: {}", &saved_alerts_output));
             html_output_stock.push(format!("- Total events analyzed: {}", &all_record_output));
             html_output_stock.push(format!("- {reduction_output}"));
             html_output_stock.push(format!(
                 "- Recovered events analyzed: {}",
-                &recover_records_cnt.to_formatted_string(&Locale::en)
+                &afterfact_info
+                    .recover_record_cnt
+                    .to_formatted_string(&Locale::en)
             ));
         }
 
+        let color_map = create_output_color_map(stored_static.common_options.no_color);
         _print_unique_results(
-            total_detect_counts_by_level,
-            unique_detect_counts_by_level,
+            &afterfact_info.total_detect_counts_by_level,
+            &afterfact_info.unique_detect_counts_by_level,
             (
                 CompactString::from("Total | Unique"),
                 CompactString::from("detections"),
@@ -821,12 +1013,12 @@ fn emit_csv<W: std::io::Write>(
             &color_map,
             &level_abbr,
             &mut html_output_stock,
-            html_output_flag,
+            stored_static.html_report_flag,
         );
         println!();
 
         _print_detection_summary_by_date(
-            detect_counts_by_date_and_level,
+            &afterfact_info.detect_counts_by_date_and_level,
             &color_map,
             &level_abbr,
             &mut html_output_stock,
@@ -834,41 +1026,43 @@ fn emit_csv<W: std::io::Write>(
         );
         println!();
         println!();
-        if html_output_flag {
+        if stored_static.html_report_flag {
             html_output_stock.push("");
         }
 
         _print_detection_summary_by_computer(
-            detect_counts_by_computer_and_level,
+            &afterfact_info.detect_counts_by_computer_and_level,
             &color_map,
             &level_abbr,
             &mut html_output_stock,
             stored_static,
         );
         println!();
-        if html_output_flag {
+        if stored_static.html_report_flag {
             html_output_stock.push("");
         }
 
         _print_detection_summary_tables(
-            detect_counts_by_rule_and_level,
+            &afterfact_info.detect_counts_by_rule_and_level,
             &color_map,
-            (rule_title_path_map, detect_rule_authors),
+            (
+                &afterfact_info.rule_title_path_map,
+                &afterfact_info.detect_rule_authors,
+            ),
             &level_abbr,
             &mut html_output_stock,
             stored_static,
             cmp::min((terminal_width / 2) - 15, 200),
         );
         println!();
-        if html_output_flag {
+        if stored_static.html_report_flag {
             html_output_stock.push("");
         }
     }
-    if html_output_flag {
+    if stored_static.html_report_flag {
         _output_html_computer_by_mitre_attck(&mut html_output_stock);
         htmlreport::add_md_data("Results Summary {#results_summary}", html_output_stock);
     }
-    Ok(())
 }
 
 fn countup_aggregation(
@@ -1046,8 +1240,8 @@ fn _format_cellpos(colval: &str, column: ColPos) -> String {
 
 /// output info which unique detection count and all detection count information(separated by level and total) to stdout.
 fn _print_unique_results(
-    mut counts_by_level: Vec<u128>,
-    mut unique_counts_by_level: Vec<u128>,
+    counts_by_level: &[u128],
+    unique_counts_by_level: &[u128],
     head_and_tail_word: (CompactString, CompactString),
     color_map: &HashMap<CompactString, Colors>,
     level_abbr: &Nested<Vec<CompactString>>,
@@ -1055,8 +1249,8 @@ fn _print_unique_results(
     html_output_flag: bool,
 ) {
     // the order in which are registered and the order of levels to be displayed are reversed
-    counts_by_level.reverse();
-    unique_counts_by_level.reverse();
+    let mut counts_by_level_rev = counts_by_level.iter().rev();
+    let mut unique_counts_by_level_rev = unique_counts_by_level.iter().rev();
 
     let total_count = counts_by_level.iter().sum::<u128>();
     let unique_total_count = unique_counts_by_level.iter().sum::<u128>();
@@ -1079,13 +1273,15 @@ fn _print_unique_results(
     let mut unique_detect_md = vec!["- Unique detections:".to_string()];
 
     for (i, level_name) in level_abbr.iter().enumerate() {
+        let count_by_level = *counts_by_level_rev.next().unwrap();
+        let unique_count_by_level = *unique_counts_by_level_rev.next().unwrap();
         if "undefined" == level_name[0] {
             continue;
         }
         let percent = if total_count == 0 {
             0 as f64
         } else {
-            (counts_by_level[i] as f64) / (total_count as f64) * 100.0
+            (count_by_level as f64) / (total_count as f64) * 100.0
         };
         let unique_percent = if unique_total_count == 0 {
             0 as f64
@@ -1096,13 +1292,13 @@ fn _print_unique_results(
             total_detect_md.push(format!(
                 "    - {}: {} ({:.2}%)",
                 level_name[0],
-                counts_by_level[i].to_formatted_string(&Locale::en),
+                count_by_level.to_formatted_string(&Locale::en),
                 percent
             ));
             unique_detect_md.push(format!(
                 "    - {}: {} ({:.2}%)",
                 level_name[0],
-                unique_counts_by_level[i].to_formatted_string(&Locale::en),
+                unique_count_by_level.to_formatted_string(&Locale::en),
                 unique_percent
             ));
         }
@@ -1111,9 +1307,9 @@ fn _print_unique_results(
             head_and_tail_word.0,
             level_name[0],
             head_and_tail_word.1,
-            counts_by_level[i].to_formatted_string(&Locale::en),
+            count_by_level.to_formatted_string(&Locale::en),
             percent,
-            unique_counts_by_level[i].to_formatted_string(&Locale::en),
+            unique_count_by_level.to_formatted_string(&Locale::en),
             unique_percent
         );
         write_color_buffer(
@@ -1132,7 +1328,7 @@ fn _print_unique_results(
 
 /// 各レベル毎で最も高い検知数を出した日付を出力する
 fn _print_detection_summary_by_date(
-    detect_counts_by_date: HashMap<CompactString, HashMap<CompactString, i128>>,
+    detect_counts_by_date: &HashMap<CompactString, HashMap<CompactString, i128>>,
     color_map: &HashMap<CompactString, Colors>,
     level_abbr: &Nested<Vec<CompactString>>,
     html_output_stock: &mut Nested<String>,
@@ -1188,7 +1384,7 @@ fn _print_detection_summary_by_date(
 
 /// 各レベル毎で最も高い検知数を出したコンピュータ名を出力する
 fn _print_detection_summary_by_computer(
-    detect_counts_by_computer: HashMap<CompactString, HashMap<CompactString, i128>>,
+    detect_counts_by_computer: &HashMap<CompactString, HashMap<CompactString, i128>>,
     color_map: &HashMap<CompactString, Colors>,
     level_abbr: &Nested<Vec<CompactString>>,
     html_output_stock: &mut Nested<String>,
@@ -1258,11 +1454,11 @@ fn _print_detection_summary_by_computer(
 
 /// 各レベルごとで検出数が多かったルールを表形式で出力する関数
 fn _print_detection_summary_tables(
-    detect_counts_by_rule_and_level: HashMap<CompactString, HashMap<CompactString, i128>>,
+    detect_counts_by_rule_and_level: &HashMap<CompactString, HashMap<CompactString, i128>>,
     color_map: &HashMap<CompactString, Colors>,
     (rule_title_path_map, rule_detect_author_map): (
-        HashMap<CompactString, CompactString>,
-        HashMap<CompactString, CompactString>,
+        &HashMap<CompactString, CompactString>,
+        &HashMap<CompactString, CompactString>,
     ),
     level_abbr: &Nested<Vec<CompactString>>,
     html_output_stock: &mut Nested<String>,
@@ -1825,7 +2021,7 @@ pub fn output_json_str(
 
 /// output detected rule author name function.
 fn output_detected_rule_authors(
-    rule_author_counter: HashMap<CompactString, i128>,
+    rule_author_counter: &HashMap<CompactString, i128>,
     table_column_num: usize,
 ) {
     let mut sorted_authors: Vec<(&CompactString, &i128)> = rule_author_counter.iter().collect();
@@ -1949,9 +2145,10 @@ fn _output_html_computer_by_mitre_attck(html_output_stock: &mut Nested<String>) 
 
 #[cfg(test)]
 mod tests {
-    use super::set_output_color;
-    use crate::afterfact::emit_csv;
+    use super::create_output_color_map;
     use crate::afterfact::format_time;
+    use crate::afterfact::output_afterfact;
+    use crate::afterfact::AfterfactInfo;
     use crate::afterfact::Colors;
     use crate::detections::configs::load_eventkey_alias;
     use crate::detections::configs::Action;
@@ -1981,6 +2178,7 @@ mod tests {
 
     #[test]
     fn test_emit_csv_output() {
+        let mut additional_afterfact = AfterfactInfo::default();
         let mock_ch_filter = message::create_output_filter_config(
             "test_files/config/channel_abbreviations.txt",
             true,
@@ -2078,8 +2276,6 @@ mod tests {
         )
         .unwrap_or_default();
         {
-            let messages = &message::MESSAGES;
-            messages.clear();
             let val = r#"
                 {
                     "Event": {
@@ -2188,10 +2384,11 @@ mod tests {
                 .to_str()
                 .unwrap(),
             );
-            message::insert(
+            let detect_info = message::create_message(
                 &event,
                 CompactString::new(output),
                 DetectInfo {
+                    detected_time: expect_time,
                     rulepath: CompactString::from(test_rulepath),
                     ruleid: test_rule_id.into(),
                     ruletitle: CompactString::from(test_title),
@@ -2203,18 +2400,19 @@ mod tests {
                     is_condition: false,
                     details_convert_map: HashMap::default(),
                 },
-                expect_time,
                 &profile_converter,
                 (false, false),
                 (&eventkey_alias, &FieldDataMapKey::default(), &None),
             );
+            additional_afterfact.detect_infos.push(detect_info);
             *profile_converter.get_mut("Computer").unwrap() =
                 Profile::Computer(test_computername.into());
 
-            message::insert(
+            let detect_info = message::create_message(
                 &event,
                 CompactString::new(output),
                 DetectInfo {
+                    detected_time: expect_time,
                     rulepath: CompactString::from(test_rulepath),
                     ruleid: test_rule_id.into(),
                     ruletitle: CompactString::from(test_title),
@@ -2226,15 +2424,11 @@ mod tests {
                     is_condition: false,
                     details_convert_map: HashMap::default(),
                 },
-                expect_time,
                 &profile_converter,
                 (false, false),
                 (&eventkey_alias, &FieldDataMapKey::default(), &None),
             );
-            let multi = message::MESSAGES.get(&expect_time).unwrap();
-            let (_, detect_infos) = multi.pair();
-
-            println!("message: {detect_infos:?}");
+            additional_afterfact.detect_infos.push(detect_info);
         }
         let expect =
             "\"Timestamp\",\"Computer\",\"Channel\",\"Level\",\"EventID\",\"MitreAttack\",\"RecordID\",\"RuleTitle\",\"Details\",\"RecordInformation\",\"RuleFile\",\"EvtxFile\",\"Tags\"\n\""
@@ -2294,14 +2488,16 @@ mod tests {
                 + "\"\n";
         let mut file: Box<dyn io::Write> = Box::new(File::create("./test_emit_csv.csv").unwrap());
 
-        assert!(emit_csv(
+        additional_afterfact.record_cnt = 1;
+        additional_afterfact.recover_record_cnt = 0;
+        additional_afterfact.tl_starttime = Some(expect_tz);
+        additional_afterfact.tl_endtime = Some(expect_tz);
+        assert!(output_afterfact(
             &mut file,
             false,
-            HashMap::new(),
-            (1, 0),
             &output_profile,
             &stored_static,
-            (&Some(expect_tz), &Some(expect_tz))
+            additional_afterfact,
         )
         .is_ok());
         match read_to_string("./test_emit_csv.csv") {
@@ -2315,6 +2511,7 @@ mod tests {
 
     #[test]
     fn test_emit_csv_output_with_multiline_opt() {
+        let mut additional_afterfact = AfterfactInfo::default();
         let mock_ch_filter = message::create_output_filter_config(
             "test_files/config/channel_abbreviations.txt",
             true,
@@ -2412,8 +2609,6 @@ mod tests {
         )
         .unwrap_or_default();
         {
-            let messages = &message::MESSAGES;
-            messages.clear();
             let val = r#"
                 {
                     "Event": {
@@ -2521,10 +2716,11 @@ mod tests {
                 .to_str()
                 .unwrap(),
             );
-            message::insert(
+            let detect_info = message::create_message(
                 &event,
                 CompactString::new(output),
                 DetectInfo {
+                    detected_time: expect_time,
                     rulepath: CompactString::from(test_rulepath),
                     ruleid: test_rule_id.into(),
                     ruletitle: CompactString::from(test_title),
@@ -2536,18 +2732,19 @@ mod tests {
                     is_condition: false,
                     details_convert_map: HashMap::default(),
                 },
-                expect_time,
                 &profile_converter,
                 (false, false),
                 (&eventkey_alias, &FieldDataMapKey::default(), &None),
             );
+            additional_afterfact.detect_infos.push(detect_info);
             *profile_converter.get_mut("Computer").unwrap() =
                 Profile::Computer(test_computername.into());
 
-            message::insert(
+            let detect_info = message::create_message(
                 &event,
                 CompactString::new(output),
                 DetectInfo {
+                    detected_time: expect_time,
                     rulepath: CompactString::from(test_rulepath),
                     ruleid: test_rule_id.into(),
                     ruletitle: CompactString::from(test_title),
@@ -2559,15 +2756,11 @@ mod tests {
                     is_condition: false,
                     details_convert_map: HashMap::default(),
                 },
-                expect_time,
                 &profile_converter,
                 (false, false),
                 (&eventkey_alias, &FieldDataMapKey::default(), &None),
             );
-            let multi = message::MESSAGES.get(&expect_time).unwrap();
-            let (_, detect_infos) = multi.pair();
-
-            println!("message: {detect_infos:?}");
+            additional_afterfact.detect_infos.push(detect_info);
         }
         let expect =
             "\"Timestamp\",\"Computer\",\"Channel\",\"EventID\",\"Level\",\"Tags\",\"RecordID\",\"RuleTitle\",\"Details\",\"AllFieldInfo\"\n\""
@@ -2616,14 +2809,16 @@ mod tests {
         let mut file: Box<dyn io::Write> =
             Box::new(File::create("./test_emit_csv_multiline.csv").unwrap());
 
-        assert!(emit_csv(
+        additional_afterfact.record_cnt = 1;
+        additional_afterfact.recover_record_cnt = 0;
+        additional_afterfact.tl_starttime = Some(expect_tz);
+        additional_afterfact.tl_endtime = Some(expect_tz);
+        assert!(output_afterfact(
             &mut file,
             false,
-            HashMap::new(),
-            (1, 0),
             &output_profile,
             &stored_static,
-            (&Some(expect_tz), &Some(expect_tz))
+            additional_afterfact,
         )
         .is_ok());
         match read_to_string("./test_emit_csv_multiline.csv") {
@@ -2637,6 +2832,7 @@ mod tests {
 
     #[test]
     fn test_emit_csv_output_with_remove_duplicate_opt() {
+        let mut additional_afterfact = AfterfactInfo::default();
         let mock_ch_filter = message::create_output_filter_config(
             "test_files/config/channel_abbreviations.txt",
             true,
@@ -2734,8 +2930,6 @@ mod tests {
         )
         .unwrap_or_default();
         {
-            let messages = &message::MESSAGES;
-            messages.clear();
             let val = r#"
                 {
                     "Event": {
@@ -2844,10 +3038,11 @@ mod tests {
                 .to_str()
                 .unwrap(),
             );
-            message::insert(
+            let detect_info = message::create_message(
                 &event,
                 CompactString::new(output),
                 DetectInfo {
+                    detected_time: expect_time,
                     rulepath: CompactString::from(test_rulepath),
                     ruleid: test_rule_id.into(),
                     ruletitle: CompactString::from(test_title),
@@ -2859,18 +3054,19 @@ mod tests {
                     is_condition: false,
                     details_convert_map: HashMap::default(),
                 },
-                expect_time,
                 &profile_converter,
                 (false, false),
                 (&eventkey_alias, &FieldDataMapKey::default(), &None),
             );
+            additional_afterfact.detect_infos.push(detect_info);
             *profile_converter.get_mut("Computer").unwrap() =
                 Profile::Computer(test_computername.into());
 
-            message::insert(
+            let detect_info = message::create_message(
                 &event,
                 CompactString::new(output),
                 DetectInfo {
+                    detected_time: expect_time,
                     rulepath: CompactString::from(test_rulepath),
                     ruleid: test_rule_id.into(),
                     ruletitle: CompactString::from(test_title),
@@ -2882,15 +3078,11 @@ mod tests {
                     is_condition: false,
                     details_convert_map: HashMap::default(),
                 },
-                expect_time,
                 &profile_converter,
                 (false, false),
                 (&eventkey_alias, &FieldDataMapKey::default(), &None),
             );
-            let multi = message::MESSAGES.get(&expect_time).unwrap();
-            let (_, detect_infos) = multi.pair();
-
-            println!("message: {detect_infos:?}");
+            additional_afterfact.detect_infos.push(detect_info);
         }
         let expect =
             "\"Timestamp\",\"Computer\",\"Channel\",\"Level\",\"EventID\",\"MitreAttack\",\"RecordID\",\"RuleTitle\",\"Details\",\"RecordInformation\",\"RuleFile\",\"EvtxFile\",\"Tags\"\n\""
@@ -2947,14 +3139,16 @@ mod tests {
         let mut file: Box<dyn io::Write> =
             Box::new(File::create("./test_emit_csv_remove_duplicate.csv").unwrap());
 
-        assert!(emit_csv(
+        additional_afterfact.record_cnt = 1;
+        additional_afterfact.recover_record_cnt = 0;
+        additional_afterfact.tl_starttime = Some(expect_tz);
+        additional_afterfact.tl_endtime = Some(expect_tz);
+        assert!(output_afterfact(
             &mut file,
             false,
-            HashMap::new(),
-            (1, 0),
             &output_profile,
             &stored_static,
-            (&Some(expect_tz), &Some(expect_tz))
+            additional_afterfact,
         )
         .is_ok());
         match read_to_string("./test_emit_csv_remove_duplicate.csv") {
@@ -2968,6 +3162,7 @@ mod tests {
 
     #[test]
     fn test_emit_json_output_with_remove_duplicate_opt() {
+        let mut additional_afterfact = AfterfactInfo::default();
         let mock_ch_filter = message::create_output_filter_config(
             "test_files/config/channel_abbreviations.txt",
             true,
@@ -3065,8 +3260,6 @@ mod tests {
         )
         .unwrap_or_default();
         {
-            let messages = &message::MESSAGES;
-            messages.clear();
             let val = r#"
                 {
                     "Event": {
@@ -3177,10 +3370,11 @@ mod tests {
             );
             let details_convert_map: HashMap<CompactString, Vec<CompactString>> =
                 HashMap::from_iter([("#AllFieldInfo".into(), vec![test_recinfo.into()])]);
-            message::insert(
+            let detect_info = message::create_message(
                 &event,
                 CompactString::new(output),
                 DetectInfo {
+                    detected_time: expect_time,
                     rulepath: CompactString::from(test_rulepath),
                     ruleid: test_rule_id.into(),
                     ruletitle: CompactString::from(test_title),
@@ -3192,18 +3386,19 @@ mod tests {
                     is_condition: false,
                     details_convert_map,
                 },
-                expect_time,
                 &profile_converter,
                 (false, true),
                 (&eventkey_alias, &FieldDataMapKey::default(), &None),
             );
+            additional_afterfact.detect_infos.push(detect_info);
             *profile_converter.get_mut("Computer").unwrap() =
                 Profile::Computer(test_computername.into());
 
-            message::insert(
+            let detect_info2 = message::create_message(
                 &event,
                 CompactString::new(output),
                 DetectInfo {
+                    detected_time: expect_time,
                     rulepath: CompactString::from(test_rulepath),
                     ruleid: test_rule_id.into(),
                     ruletitle: CompactString::from(test_title),
@@ -3215,15 +3410,11 @@ mod tests {
                     is_condition: false,
                     details_convert_map: HashMap::default(),
                 },
-                expect_time,
                 &profile_converter,
                 (false, true),
                 (&eventkey_alias, &FieldDataMapKey::default(), &None),
             );
-            let multi = message::MESSAGES.get(&expect_time).unwrap();
-            let (_, detect_infos) = multi.pair();
-
-            println!("message: {detect_infos:?}");
+            additional_afterfact.detect_infos.push(detect_info2);
         }
 
         let expect_target = [
@@ -3352,15 +3543,16 @@ mod tests {
 
         let mut file: Box<dyn io::Write> =
             Box::new(File::create("./test_emit_csv_remove_duplicate.json").unwrap());
-
-        assert!(emit_csv(
+        additional_afterfact.record_cnt = 1;
+        additional_afterfact.recover_record_cnt = 0;
+        additional_afterfact.tl_starttime = Some(expect_tz);
+        additional_afterfact.tl_endtime = Some(expect_tz);
+        assert!(output_afterfact(
             &mut file,
             false,
-            HashMap::new(),
-            (1, 0),
             &output_profile,
             &stored_static,
-            (&Some(expect_tz), &Some(expect_tz))
+            additional_afterfact,
         )
         .is_ok());
         match read_to_string("./test_emit_csv_remove_duplicate.json") {
@@ -3374,6 +3566,7 @@ mod tests {
 
     #[test]
     fn test_emit_json_output_with_multiple_data_in_details() {
+        let mut additional_afterfact = AfterfactInfo::default();
         let mock_ch_filter = message::create_output_filter_config(
             "test_files/config/channel_abbreviations.txt",
             true,
@@ -3470,8 +3663,6 @@ mod tests {
         )
         .unwrap_or_default();
         {
-            let messages = &message::MESSAGES;
-            messages.clear();
             let val = r#"
                 {
                     "Event": {
@@ -3583,10 +3774,11 @@ mod tests {
             );
             let details_convert_map: HashMap<CompactString, Vec<CompactString>> =
                 HashMap::from_iter([("#AllFieldInfo".into(), vec![test_recinfo.into()])]);
-            message::insert(
+            let detect_info = message::create_message(
                 &event,
                 CompactString::new(output),
                 DetectInfo {
+                    detected_time: expect_time,
                     rulepath: CompactString::from(test_rulepath),
                     ruleid: test_rule_id.into(),
                     ruletitle: CompactString::from(test_title),
@@ -3598,11 +3790,11 @@ mod tests {
                     is_condition: false,
                     details_convert_map,
                 },
-                expect_time,
                 &profile_converter,
                 (false, true),
                 (&eventkey_alias, &FieldDataMapKey::default(), &None),
             );
+            additional_afterfact.detect_infos.push(detect_info);
             *profile_converter.get_mut("Computer").unwrap() =
                 Profile::Computer(test_computername.into());
         }
@@ -3683,14 +3875,16 @@ mod tests {
         let mut file: Box<dyn io::Write> =
             Box::new(File::create("./test_multiple_data_in_details.json").unwrap());
 
-        assert!(emit_csv(
+        additional_afterfact.record_cnt = 1;
+        additional_afterfact.recover_record_cnt = 0;
+        additional_afterfact.tl_starttime = Some(expect_tz);
+        additional_afterfact.tl_endtime = Some(expect_tz);
+        assert!(output_afterfact(
             &mut file,
             false,
-            HashMap::new(),
-            (1, 0),
             &output_profile,
             &stored_static,
-            (&Some(expect_tz), &Some(expect_tz))
+            additional_afterfact,
         )
         .is_ok());
         match read_to_string("./test_multiple_data_in_details.json") {
@@ -3717,11 +3911,12 @@ mod tests {
     /// To confirm that empty character color mapping data is returned when the no_color flag is given.
     fn test_set_output_color_no_color_flag() {
         let expect: HashMap<CompactString, Colors> = HashMap::new();
-        check_hashmap_data(set_output_color(true), expect);
+        check_hashmap_data(create_output_color_map(true), expect);
     }
 
     #[test]
     fn test_emit_csv_json_output() {
+        let mut additional_afterfact = AfterfactInfo::default();
         let mock_ch_filter = message::create_output_filter_config(
             "test_files/config/channel_abbreviations.txt",
             true,
@@ -3927,14 +4122,13 @@ mod tests {
                 .to_str()
                 .unwrap(),
             );
-            let messages = &message::MESSAGES;
-            messages.clear();
             let details_convert_map: HashMap<CompactString, Vec<CompactString>> =
                 HashMap::from_iter([("#AllFieldInfo".into(), vec![test_recinfo.into()])]);
-            message::insert(
+            let message_detect_info = message::create_message(
                 &event,
                 CompactString::new(output),
                 DetectInfo {
+                    detected_time: expect_time,
                     rulepath: CompactString::from(test_rulepath),
                     ruleid: test_rule_id.into(),
                     ruletitle: CompactString::from(test_title),
@@ -3946,11 +4140,11 @@ mod tests {
                     is_condition: false,
                     details_convert_map,
                 },
-                expect_time,
                 &profile_converter,
                 (false, true),
                 (&eventkey_alias, &FieldDataMapKey::default(), &None),
             );
+            additional_afterfact.detect_infos.push(message_detect_info);
             *profile_converter.get_mut("Computer").unwrap() =
                 Profile::Computer(test_computername.into());
         }
@@ -3972,14 +4166,17 @@ mod tests {
         ];
         let mut file: Box<dyn io::Write> =
             Box::new(File::create("./test_emit_csv_json.json").unwrap());
-        assert!(emit_csv(
+
+        additional_afterfact.record_cnt = 1;
+        additional_afterfact.recover_record_cnt = 0;
+        additional_afterfact.tl_starttime = Some(expect_tz);
+        additional_afterfact.tl_endtime = Some(expect_tz);
+        assert!(output_afterfact(
             &mut file,
             false,
-            HashMap::new(),
-            (1, 0),
             &output_profile,
             &stored_static,
-            (&Some(expect_tz), &Some(expect_tz))
+            additional_afterfact,
         )
         .is_ok());
         match read_to_string("./test_emit_csv_json.json") {
@@ -3993,6 +4190,7 @@ mod tests {
 
     #[test]
     fn test_emit_csv_jsonl_output() {
+        let mut additional_afterfact = AfterfactInfo::default();
         let mock_ch_filter = message::create_output_filter_config(
             "test_files/config/channel_abbreviations.txt",
             true,
@@ -4200,12 +4398,12 @@ mod tests {
                 .to_str()
                 .unwrap(),
             );
-            let messages = &message::MESSAGES;
-            messages.clear();
-            message::insert(
+
+            let message_detect_info = message::create_message(
                 &event,
                 CompactString::new(output),
                 DetectInfo {
+                    detected_time: expect_time,
                     rulepath: CompactString::from(test_rulepath),
                     ruleid: test_rule_id.into(),
                     ruletitle: CompactString::from(test_title),
@@ -4217,11 +4415,11 @@ mod tests {
                     is_condition: false,
                     details_convert_map,
                 },
-                expect_time,
                 &profile_converter,
                 (false, true),
                 (&eventkey_alias, &FieldDataMapKey::default(), &None),
             );
+            additional_afterfact.detect_infos.push(message_detect_info);
             *profile_converter.get_mut("Computer").unwrap() =
                 Profile::Computer(test_computername.into());
         }
@@ -4243,14 +4441,17 @@ mod tests {
         ];
         let mut file: Box<dyn io::Write> =
             Box::new(File::create("./test_emit_csv_jsonl.jsonl").unwrap());
-        assert!(emit_csv(
+
+        additional_afterfact.record_cnt = 1;
+        additional_afterfact.recover_record_cnt = 0;
+        additional_afterfact.tl_starttime = Some(expect_tz);
+        additional_afterfact.tl_endtime = Some(expect_tz);
+        assert!(output_afterfact(
             &mut file,
             false,
-            HashMap::new(),
-            (1, 0),
             &output_profile,
             &stored_static,
-            (&Some(expect_tz), &Some(expect_tz))
+            additional_afterfact,
         )
         .is_ok());
         match read_to_string("./test_emit_csv_jsonl.jsonl") {

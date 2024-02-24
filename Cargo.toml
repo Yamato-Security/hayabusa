@@ -51,7 +51,7 @@ wildmatch = "2.*"
 yaml-rust = "0.4.*"
 
 [profile.dev]
-debug = 0
+debug-assertions = false
 
 [dev-dependencies]
 rand = "0.8.*"

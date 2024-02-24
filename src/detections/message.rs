@@ -26,8 +26,12 @@ use termcolor::{BufferWriter, ColorChoice};
 use super::configs::EventKeyAliasConfig;
 use super::utils::remove_sp_char;
 
+/*
+ * This struct express log record
+*/
 #[derive(Debug, Clone, PartialEq, Eq, Default)]
 pub struct DetectInfo {
+    pub detected_time: DateTime<Utc>,
     pub rulepath: CompactString,
     pub ruleid: CompactString,
     pub ruletitle: CompactString,
@@ -44,8 +48,6 @@ pub struct AlertMessage {}
 
 lazy_static! {
     #[derive(Debug,PartialEq, Eq, Ord, PartialOrd)]
-    pub static ref MESSAGES: DashMap<DateTime<Utc>, Vec<DetectInfo>> = DashMap::new();
-    pub static ref MESSAGEKEYS: Mutex<HashSet<DateTime<Utc>>> = Mutex::new(HashSet::new());
     pub static ref ALIASREGEX: Regex = Regex::new(r"%[a-zA-Z0-9-_\[\]]+%").unwrap();
     pub static ref SUFFIXREGEX: Regex = Regex::new(r"\[([0-9]+)\]").unwrap();
     pub static ref ERROR_LOG_STACK: Mutex<Nested<String>> = Mutex::new(Nested::<String>::new());
@@ -101,20 +103,10 @@ pub fn create_output_filter_config(
     ret
 }
 
-/// メッセージの設定を行う関数。aggcondition対応のためrecordではなく出力をする対象時間がDatetime形式での入力としている
-pub fn insert_message(detect_info: DetectInfo, event_time: DateTime<Utc>) {
-    MESSAGEKEYS.lock().unwrap().insert(event_time);
-    let mut v = MESSAGES.entry(event_time).or_default();
-    let (_, info) = v.pair_mut();
-    info.push(detect_info);
-}
-
-/// メッセージを設定 TODO 要リファクタリング
-pub fn insert(
+pub fn create_message(
     event_record: &Value,
     output: CompactString,
     mut detect_info: DetectInfo,
-    time: DateTime<Utc>,
     profile_converter: &HashMap<&str, Profile>,
     (is_agg, is_json_timeline): (bool, bool),
     (eventkey_alias, field_data_map_key, field_data_map): (
@@ -122,7 +114,7 @@ pub fn insert(
         &FieldDataMapKey,
         &Option<FieldDataMap>,
     ),
-) {
+) -> DetectInfo {
     let mut record_details_info_map = HashMap::new();
     let mut sp_removed_details_in_record = vec![];
     if !is_agg {
@@ -274,7 +266,8 @@ pub fn insert(
     }
     detect_info.ext_field = replaced_profiles;
     detect_info.details_convert_map = record_details_info_map;
-    insert_message(detect_info, time)
+
+    detect_info
 }
 
 /// メッセージ内の%で囲まれた箇所をエイリアスとしてレコード情報を参照して置き換える関数
@@ -369,14 +362,6 @@ pub fn parse_message(
     (return_message, details_key_and_value)
 }
 
-/// メッセージを返す
-pub fn get(time: DateTime<Utc>) -> Vec<DetectInfo> {
-    match MESSAGES.get(&time) {
-        Some(v) => v.to_vec(),
-        None => Vec::new(),
-    }
-}
-
 pub fn get_event_time(event_record: &Value, json_input_flag: bool) -> Option<DateTime<Utc>> {
     let system_time = if json_input_flag {
         &event_record["Event"]["System"]["@timestamp"]
@@ -446,16 +431,12 @@ impl AlertMessage {
 mod tests {
     use crate::detections::configs::{load_eventkey_alias, StoredStatic, CURRENT_EXE_PATH};
     use crate::detections::field_data_map::FieldDataMapKey;
-    use crate::detections::message::{get, insert_message, AlertMessage, DetectInfo};
-    use crate::detections::message::{parse_message, MESSAGES};
+    use crate::detections::message::{parse_message, AlertMessage};
     use crate::detections::utils;
-    use chrono::Utc;
+
     use compact_str::CompactString;
     use hashbrown::HashMap;
-    use rand::Rng;
     use serde_json::Value;
-    use std::thread;
-    use std::time::Duration;
 
     use super::create_output_filter_config;
 
@@ -474,7 +455,6 @@ mod tests {
     #[test]
     /// outputで指定されているキー(eventkey_alias.txt内で設定済み)から対象のレコード内の情報でメッセージをパースしているか確認する関数
     fn test_parse_message() {
-        MESSAGES.clear();
         let json_str = r#"
         {
             "Event": {
@@ -517,7 +497,6 @@ mod tests {
 
     #[test]
     fn test_parse_message_auto_search() {
-        MESSAGES.clear();
         let json_str = r#"
         {
             "Event": {
@@ -555,7 +534,6 @@ mod tests {
     #[test]
     /// outputで指定されているキーが、eventkey_alias.txt内で設定されていない場合の出力テスト
     fn test_parse_message_not_exist_key_in_output() {
-        MESSAGES.clear();
         let json_str = r#"
         {
             "Event": {
@@ -597,7 +575,6 @@ mod tests {
     #[test]
     /// output test when no exist info in target record output and described key-value data in eventkey_alias.txt
     fn test_parse_message_not_exist_value_in_record() {
-        MESSAGES.clear();
         let json_str = r#"
         {
             "Event": {
@@ -639,7 +616,6 @@ mod tests {
     #[test]
     /// output test when no exist info in target record output and described key-value data in eventkey_alias.txt
     fn test_parse_message_multiple_no_suffix_in_record() {
-        MESSAGES.clear();
         let json_str = r#"
         {
             "Event": {
@@ -686,7 +662,6 @@ mod tests {
     #[test]
     /// output test when no exist info in target record output and described key-value data in eventkey_alias.txt
     fn test_parse_message_multiple_with_suffix_in_record() {
-        MESSAGES.clear();
         let json_str = r#"
         {
             "Event": {
@@ -733,7 +708,6 @@ mod tests {
     #[test]
     /// output test when no exist info in target record output and described key-value data in eventkey_alias.txt
     fn test_parse_message_multiple_no_exist_in_record() {
-        MESSAGES.clear();
         let json_str = r#"
         {
             "Event": {
@@ -823,48 +797,5 @@ mod tests {
         for (k, v) in expected.iter() {
             assert!(actual.get(k).unwrap_or(&CompactString::default()) == v);
         }
-    }
-
-    #[test]
-    fn test_insert_message_race_condition() {
-        MESSAGES.clear();
-
-        // Setup test detect_info before starting threads.
-        let mut sample_detects = vec![];
-        let mut rng = rand::thread_rng();
-        let sample_event_time = Utc::now();
-        for i in 1..2001 {
-            let detect_info = DetectInfo {
-                rulepath: CompactString::default(),
-                ruleid: CompactString::default(),
-                ruletitle: CompactString::default(),
-                level: CompactString::default(),
-                computername: CompactString::default(),
-                eventid: CompactString::from(i.to_string()),
-                detail: CompactString::default(),
-                ext_field: vec![],
-                is_condition: false,
-                details_convert_map: HashMap::default(),
-            };
-            sample_detects.push((sample_event_time, detect_info, rng.gen_range(0..10)));
-        }
-
-        // Starting threads and randomly insert_message in parallel.
-        let mut handles = vec![];
-        for (event_time, detect_info, random_num) in sample_detects {
-            let handle = thread::spawn(move || {
-                thread::sleep(Duration::from_micros(random_num));
-                insert_message(detect_info, event_time);
-            });
-            handles.push(handle);
-        }
-
-        // Wait for all threads execution completion.
-        for handle in handles {
-            handle.join().unwrap();
-        }
-
-        // Expect all sample_detects to be included, but the len() size will be different each time I run it
-        assert_eq!(get(sample_event_time).len(), 2000)
     }
 }
