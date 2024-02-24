@@ -201,7 +201,7 @@ mod tests {
 
         let header = ["\"Computer\"", "\"Events\""];
 
-        let expect = vec![vec!["\"HAYABUSA-DESKTOP\"", "1"], vec!["\"FALCON\"", "1"]];
+        let expect = vec![vec!["\"FALCON\"", "1"], vec!["\"HAYABUSA-DESKTOP\"", "1"]];
         let expect_str =
             header.join(",") + "\n" + &expect.join(&"\n").join(",").replace(",\n,", "\n") + "\n";
         match read_to_string("./test_computer_metrics.csv") {
