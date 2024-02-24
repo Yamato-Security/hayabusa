@@ -449,7 +449,6 @@ fn output_afterfact<W: std::io::Write>(
         println!();
     }
     let mut plus_header = true;
-    let mut author_list_cache: HashMap<CompactString, Nested<String>> = HashMap::new();
 
     // remove duplicate dataのための前レコード分の情報を保持する変数
     let mut prev_message: HashMap<CompactString, Profile> = HashMap::new();
@@ -587,9 +586,32 @@ fn output_afterfact<W: std::io::Write>(
     }
 
     // calculate statistic information
+    additional_afterfact = calc_statistic_info(additional_afterfact, stored_static);
+
+    if displayflag {
+        println!();
+    } else {
+        wtr.flush()?;
+    }
+
+    disp_wtr_buf.clear();
+
+    output_additional_afterfact(
+        stored_static,
+        &disp_wtr,
+        disp_wtr_buf,
+        &additional_afterfact,
+    );
+
+    Ok(())
+}
+
+fn calc_statistic_info( mut additional_afterfact: AfterfactInfo,stored_static: &StoredStatic,) -> AfterfactInfo {
     let mut detected_rule_files: HashSet<CompactString> = HashSet::new();
     let mut detected_rule_ids: HashSet<CompactString> = HashSet::new();
     let mut detected_computer_and_rule_names: HashSet<CompactString> = HashSet::new();
+    let mut author_list_cache: HashMap<CompactString, Nested<String>> = HashMap::new();
+    let output_option = stored_static.output_option.as_ref().unwrap();
     for detect_info in additional_afterfact.detect_infos.iter() {
         if !detect_info.is_condition {
             additional_afterfact
@@ -655,23 +677,7 @@ fn output_afterfact<W: std::io::Write>(
             additional_afterfact.total_detect_counts_by_level[level_suffix] += 1;
         }
     }
-
-    if displayflag {
-        println!();
-    } else {
-        wtr.flush()?;
-    }
-
-    disp_wtr_buf.clear();
-
-    output_additional_afterfact(
-        stored_static,
-        &disp_wtr,
-        disp_wtr_buf,
-        &additional_afterfact,
-    );
-
-    Ok(())
+    return additional_afterfact; 
 }
 
 fn output_additional_afterfact(
