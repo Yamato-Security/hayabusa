@@ -167,12 +167,7 @@ impl AfterfactInfo {
     ) -> Vec<usize> {
         let output_option = stored_static.output_option.as_ref().unwrap();
         if !output_option.remove_duplicate_detections {
-            return self
-                .detect_infos
-                .iter()
-                .enumerate()
-                .map(|(i, _)| i)
-                .collect();
+            return (0..self.detect_infos.len()).collect();
         }
 
         // filtet duplicate event
