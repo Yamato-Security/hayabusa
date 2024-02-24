@@ -16,7 +16,7 @@ use compact_str::CompactString;
 use hashbrown::hash_map::RawEntryMut;
 use terminal_size::terminal_size;
 
-use csv::{QuoteStyle, WriterBuilder};
+use csv::{QuoteStyle, Writer, WriterBuilder};
 use itertools::Itertools;
 use krapslog::{build_sparkline, build_time_markers};
 use nested::Nested;
@@ -161,15 +161,14 @@ impl AfterfactInfo {
         });
     }
 
-    pub fn removed_duplicate_detect_infos(
-        &mut self
-    ) {
+    pub fn removed_duplicate_detect_infos(&mut self) {
         // https://qiita.com/quasardtm/items/b54a48c1accd675e0bf1
         let mut tmp_detect_infos = vec![];
         std::mem::swap(&mut self.detect_infos, &mut tmp_detect_infos);
 
         // filtet duplicate event
-        let mut filtered_detect_infos:std::collections::HashSet<usize> = std::collections::HashSet::new();
+        let mut filtered_detect_infos: std::collections::HashSet<usize> =
+            std::collections::HashSet::new();
         {
             let mut prev_detect_infos = HashSet::new();
             for (i, detect_info) in tmp_detect_infos.iter().enumerate() {
@@ -177,8 +176,8 @@ impl AfterfactInfo {
                     filtered_detect_infos.insert(i);
                     continue;
                 }
-    
-                let prev_detect_info = &tmp_detect_infos[i-1];
+
+                let prev_detect_info = &tmp_detect_infos[i - 1];
                 if prev_detect_info
                     .detected_time
                     .cmp(&detect_info.detected_time)
@@ -188,7 +187,7 @@ impl AfterfactInfo {
                     prev_detect_infos.clear();
                     continue;
                 }
-    
+
                 let fields: Vec<&(CompactString, Profile)> = detect_info
                     .ext_field
                     .iter()
@@ -202,13 +201,17 @@ impl AfterfactInfo {
             }
         }
 
-        tmp_detect_infos = tmp_detect_infos.into_iter().enumerate().filter_map(|(i, detect_info)| {
-            if filtered_detect_infos.contains(&i) {
-                return Some(detect_info);
-            } else {
-                return Option::None;
-            }
-        }).collect();
+        tmp_detect_infos = tmp_detect_infos
+            .into_iter()
+            .enumerate()
+            .filter_map(|(i, detect_info)| {
+                if filtered_detect_infos.contains(&i) {
+                    return Some(detect_info);
+                } else {
+                    return Option::None;
+                }
+            })
+            .collect();
 
         std::mem::swap(&mut self.detect_infos, &mut tmp_detect_infos);
     }
@@ -339,7 +342,7 @@ fn _print_timeline_hist(timestamps: &Vec<i64>, length: usize, side_margin_size: 
     buf_wtr.print(&wtr).ok();
 }
 
-pub fn after_fact(stored_static: &StoredStatic, afterfact_info: AfterfactInfo) {
+pub fn after_fact(stored_static: &StoredStatic, mut afterfact_info: AfterfactInfo) {
     let fn_output_afterfact_err = |err: Box<dyn Error>| {
         AlertMessage::alert(&format!("Failed to write CSV. {err}")).ok();
         process::exit(1);
@@ -384,12 +387,118 @@ fn get_level_suffix(level_str: &str) -> usize {
         .unwrap_or(&0) as usize
 }
 
+struct AfterfactWriter {
+    disp_wtr: BufferWriter,
+    disp_wtr_buf: Buffer,
+}
+
+struct EmitCsvOption {
+    json_output_flag: bool,
+    jsonl_output_flag: bool,
+    remove_duplicate_data_flag: bool,
+}
+
+fn init_writer<'a, W: std::io::Write>(
+    writer: &'a mut W,
+    stored_static: &StoredStatic,
+) -> (AfterfactWriter, EmitCsvOption, Option<Writer<&'a mut W>>) {
+    let disp_wtr = BufferWriter::stdout(ColorChoice::Always);
+    let mut disp_wtr_buf = disp_wtr.buffer();
+    let mut emit_csv_opt = EmitCsvOption {
+        json_output_flag: false,
+        jsonl_output_flag: false,
+        remove_duplicate_data_flag: false,
+    };
+
+    let tmp_wtr = match &stored_static.config.action.as_ref().unwrap() {
+        Action::JsonTimeline(option) => {
+            emit_csv_opt.json_output_flag = true;
+            emit_csv_opt.jsonl_output_flag = option.jsonl_timeline;
+            emit_csv_opt.remove_duplicate_data_flag = option.output_options.remove_duplicate_data;
+            Some(
+                WriterBuilder::new()
+                    .delimiter(b'\n')
+                    .double_quote(false)
+                    .quote_style(QuoteStyle::Never)
+                    .from_writer(writer),
+            )
+        }
+        Action::CsvTimeline(option) => {
+            emit_csv_opt.remove_duplicate_data_flag = option.output_options.remove_duplicate_data;
+            Some(
+                WriterBuilder::new()
+                    .quote_style(QuoteStyle::NonNumeric)
+                    .from_writer(writer),
+            )
+        }
+        _ => None,
+    };
+
+    disp_wtr_buf.set_color(ColorSpec::new().set_fg(None)).ok();
+
+    // emit csv
+    let artifact_writer = AfterfactWriter {
+        disp_wtr: disp_wtr,
+        disp_wtr_buf: disp_wtr_buf,
+    };
+    (artifact_writer, emit_csv_opt, tmp_wtr)
+}
+
 fn output_afterfact<W: std::io::Write>(
     writer: &mut W,
     displayflag: bool,
     profile: &[(CompactString, Profile)],
     stored_static: &StoredStatic,
-    mut additional_afterfact: AfterfactInfo,
+    mut afterfact_info: AfterfactInfo,
+) -> io::Result<()> {
+    let (mut artifact_writer, emit_csv_opt, tmp_wtr) = init_writer(writer, stored_static);
+    if tmp_wtr.is_none() {
+        return Ok(());
+    }
+    if displayflag {
+        println!();
+    }
+
+    // sort and filter detect infos
+    afterfact_info.sort_detect_info();
+    if stored_static
+        .output_option
+        .as_ref()
+        .unwrap()
+        .remove_duplicate_detections
+    {
+        afterfact_info.removed_duplicate_detect_infos();
+    }
+
+    let wtr = tmp_wtr.unwrap();
+    emit_csv(
+        stored_static,
+        &artifact_writer,
+        wtr,
+        &afterfact_info,
+        profile,
+        displayflag,
+        &emit_csv_opt,
+    )?;
+
+    // calculate statistic information
+    afterfact_info = calc_statistic_info(afterfact_info, stored_static);
+
+    artifact_writer.disp_wtr_buf.clear();
+
+    output_additional_afterfact(stored_static, artifact_writer, &afterfact_info);
+
+    Ok(())
+}
+
+fn emit_csv<W: std::io::Write>(
+    stored_static: &StoredStatic,
+    artifact_writer: &AfterfactWriter,
+    mut wtr: Writer<&mut W>,
+    afterfact_info: &AfterfactInfo,
+    profile: &[(CompactString, Profile)],
+    displayflag: bool,
+    emit_csv_opt: &EmitCsvOption,
 ) -> io::Result<()> {
     let output_replaced_maps: HashMap<&str, &str> =
         HashMap::from_iter(vec![("🛂r", "\r"), ("🛂n", "\n"), ("🛂t", "\t")]);
@@ -408,68 +517,18 @@ fn output_afterfact<W: std::io::Write>(
         .build(removed_replaced_maps.keys())
         .unwrap();
 
-    let output_option = stored_static.output_option.as_ref().unwrap();
-    let disp_wtr = BufferWriter::stdout(ColorChoice::Always);
-    let mut disp_wtr_buf = disp_wtr.buffer();
-    let mut json_output_flag = false;
-    let mut jsonl_output_flag = false;
-    let mut remove_duplicate_data_flag = false;
-
-    let tmp_wtr = match &stored_static.config.action.as_ref().unwrap() {
-        Action::JsonTimeline(option) => {
-            json_output_flag = true;
-            jsonl_output_flag = option.jsonl_timeline;
-            remove_duplicate_data_flag = option.output_options.remove_duplicate_data;
-            Some(
-                WriterBuilder::new()
-                    .delimiter(b'\n')
-                    .double_quote(false)
-                    .quote_style(QuoteStyle::Never)
-                    .from_writer(writer),
-            )
-        }
-        Action::CsvTimeline(option) => {
-            remove_duplicate_data_flag = option.output_options.remove_duplicate_data;
-            Some(
-                WriterBuilder::new()
-                    .quote_style(QuoteStyle::NonNumeric)
-                    .from_writer(writer),
-            )
-        }
-        _ => None,
-    };
-    //CsvTimeLineとJsonTimeLine以外はこの関数は呼ばれないが、matchをつかうためにこの処理を追加した。
-    if tmp_wtr.is_none() {
-        return Ok(());
-    }
-    let mut wtr = tmp_wtr.unwrap();
-
-    disp_wtr_buf.set_color(ColorSpec::new().set_fg(None)).ok();
-    if displayflag {
-        println!();
-    }
     let mut plus_header = true;
-
     // remove duplicate dataのための前レコード分の情報を保持する変数
     let mut prev_message: HashMap<CompactString, Profile> = HashMap::new();
     let mut prev_details_convert_map: HashMap<CompactString, Vec<CompactString>> = HashMap::new();
     let color_map = create_output_color_map(stored_static.common_options.no_color);
-
-    additional_afterfact.sort_detect_info();
-
-    // filtet duplicate event
-    if output_option.remove_duplicate_detections {
-        additional_afterfact.removed_duplicate_detect_infos();
-    }
-
-    // emit csv
-    for detect_info in additional_afterfact.detect_infos.iter() {
-        if displayflag && !(json_output_flag || jsonl_output_flag) {
+    for detect_info in afterfact_info.detect_infos.iter() {
+        if displayflag && !(emit_csv_opt.json_output_flag || emit_csv_opt.jsonl_output_flag) {
             // 標準出力の場合
             if plus_header {
                 // ヘッダーのみを出力
                 _get_serialized_disp_output(
-                    &disp_wtr,
+                    &artifact_writer.disp_wtr,
                     profile,
                     true,
                     (&output_replacer, &output_replaced_maps),
@@ -486,7 +545,7 @@ fn output_afterfact<W: std::io::Write>(
                 plus_header = false;
             }
             _get_serialized_disp_output(
-                &disp_wtr,
+                &artifact_writer.disp_wtr,
                 &detect_info.ext_field,
                 false,
                 (&output_replacer, &output_replaced_maps),
@@ -500,39 +559,51 @@ fn output_afterfact<W: std::io::Write>(
                     stored_static.common_options.no_color,
                 ),
             );
-        } else if jsonl_output_flag {
+        } else if emit_csv_opt.jsonl_output_flag {
             // JSONL output format
             let result = output_json_str(
                 &detect_info.ext_field,
                 prev_message,
-                jsonl_output_flag,
+                emit_csv_opt.jsonl_output_flag,
                 GEOIP_DB_PARSER.read().unwrap().is_some(),
-                remove_duplicate_data_flag,
+                emit_csv_opt.remove_duplicate_data_flag,
                 detect_info.is_condition,
                 &[&detect_info.details_convert_map, &prev_details_convert_map],
             );
             prev_message = result.1;
             prev_details_convert_map = detect_info.details_convert_map.clone();
             if displayflag {
-                write_color_buffer(&disp_wtr, None, &format!("{{ {} }}", &result.0), true).ok();
+                write_color_buffer(
+                    &artifact_writer.disp_wtr,
+                    None,
+                    &format!("{{ {} }}", &result.0),
+                    true,
+                )
+                .ok();
             } else {
                 wtr.write_field(format!("{{ {} }}", &result.0))?;
             }
-        } else if json_output_flag {
+        } else if emit_csv_opt.json_output_flag {
             // JSON output
             let result = output_json_str(
                 &detect_info.ext_field,
                 prev_message,
-                jsonl_output_flag,
+                emit_csv_opt.jsonl_output_flag,
                 GEOIP_DB_PARSER.read().unwrap().is_some(),
-                remove_duplicate_data_flag,
+                emit_csv_opt.remove_duplicate_data_flag,
                 detect_info.is_condition,
                 &[&detect_info.details_convert_map, &prev_details_convert_map],
             );
             prev_message = result.1;
             prev_details_convert_map = detect_info.details_convert_map.clone();
             if displayflag {
-                write_color_buffer(&disp_wtr, None, &format!("{{\n{}\n}}", &result.0), true).ok();
+                write_color_buffer(
+                    &artifact_writer.disp_wtr,
+                    None,
+                    &format!("{{\n{}\n}}", &result.0),
+                    true,
+                )
+                .ok();
             } else {
                 wtr.write_field("{")?;
                 wtr.write_field(&result.0)?;
@@ -547,7 +618,7 @@ fn output_afterfact<W: std::io::Write>(
             wtr.write_record(detect_info.ext_field.iter().map(|x| {
                 match x.1 {
                     Profile::Details(_) | Profile::AllFieldInfo(_) | Profile::ExtraFieldInfo(_) => {
-                        let ret = if remove_duplicate_data_flag
+                        let ret = if emit_csv_opt.remove_duplicate_data_flag
                             && x.1.to_value()
                                 == prev_message
                                     .get(&x.0)
@@ -585,36 +656,27 @@ fn output_afterfact<W: std::io::Write>(
         }
     }
 
-    // calculate statistic information
-    additional_afterfact = calc_statistic_info(additional_afterfact, stored_static);
-
     if displayflag {
         println!();
     } else {
         wtr.flush()?;
     }
 
-    disp_wtr_buf.clear();
-
-    output_additional_afterfact(
-        stored_static,
-        &disp_wtr,
-        disp_wtr_buf,
-        &additional_afterfact,
-    );
-
     Ok(())
 }
 
-fn calc_statistic_info( mut additional_afterfact: AfterfactInfo,stored_static: &StoredStatic,) -> AfterfactInfo {
+fn calc_statistic_info(
+    mut afterfact_info: AfterfactInfo,
+    stored_static: &StoredStatic,
+) -> AfterfactInfo {
     let mut detected_rule_files: HashSet<CompactString> = HashSet::new();
     let mut detected_rule_ids: HashSet<CompactString> = HashSet::new();
     let mut detected_computer_and_rule_names: HashSet<CompactString> = HashSet::new();
     let mut author_list_cache: HashMap<CompactString, Nested<String>> = HashMap::new();
     let output_option = stored_static.output_option.as_ref().unwrap();
-    for detect_info in additional_afterfact.detect_infos.iter() {
+    for detect_info in afterfact_info.detect_infos.iter() {
         if !detect_info.is_condition {
-            additional_afterfact
+            afterfact_info
                 .detected_record_idset
                 .insert(CompactString::from(format!(
                     "{}_{}",
@@ -629,14 +691,14 @@ fn calc_statistic_info( mut additional_afterfact: AfterfactInfo,stored_static: &
                 .or_insert_with(|| extract_author_name(&detect_info.rulepath))
                 .clone();
             let author_str = author_list.iter().join(", ");
-            additional_afterfact
+            afterfact_info
                 .detect_rule_authors
                 .insert(detect_info.rulepath.to_owned(), author_str.into());
 
             if !detected_rule_files.contains(&detect_info.rulepath) {
                 detected_rule_files.insert(detect_info.rulepath.to_owned());
                 for author in author_list.iter() {
-                    *additional_afterfact
+                    *afterfact_info
                         .rule_author_counter
                         .entry(CompactString::from(author))
                         .or_insert(0) += 1;
@@ -644,7 +706,7 @@ fn calc_statistic_info( mut additional_afterfact: AfterfactInfo,stored_static: &
             }
             if !detected_rule_ids.contains(&detect_info.ruleid) {
                 detected_rule_ids.insert(detect_info.ruleid.to_owned());
-                additional_afterfact.unique_detect_counts_by_level[level_suffix] += 1;
+                afterfact_info.unique_detect_counts_by_level[level_suffix] += 1;
             }
 
             let computer_rule_check_key = CompactString::from(format!(
@@ -654,37 +716,36 @@ fn calc_statistic_info( mut additional_afterfact: AfterfactInfo,stored_static: &
             if !detected_computer_and_rule_names.contains(&computer_rule_check_key) {
                 detected_computer_and_rule_names.insert(computer_rule_check_key);
                 countup_aggregation(
-                    &mut additional_afterfact.detect_counts_by_computer_and_level,
+                    &mut afterfact_info.detect_counts_by_computer_and_level,
                     &detect_info.level,
                     &detect_info.computername,
                 );
             }
-            additional_afterfact.rule_title_path_map.insert(
+            afterfact_info.rule_title_path_map.insert(
                 detect_info.ruletitle.to_owned(),
                 detect_info.rulepath.to_owned(),
             );
 
             countup_aggregation(
-                &mut additional_afterfact.detect_counts_by_date_and_level,
+                &mut afterfact_info.detect_counts_by_date_and_level,
                 &detect_info.level,
                 &format_time(&detect_info.detected_time, true, output_option),
             );
             countup_aggregation(
-                &mut additional_afterfact.detect_counts_by_rule_and_level,
+                &mut afterfact_info.detect_counts_by_rule_and_level,
                 &detect_info.level,
                 &detect_info.ruletitle,
             );
-            additional_afterfact.total_detect_counts_by_level[level_suffix] += 1;
+            afterfact_info.total_detect_counts_by_level[level_suffix] += 1;
         }
     }
-    return additional_afterfact; 
+    return afterfact_info;
 }
 
 fn output_additional_afterfact(
     stored_static: &StoredStatic,
-    disp_wtr: &BufferWriter,
-    mut disp_wtr_buf: Buffer,
-    additional_afterfact: &AfterfactInfo,
+    mut afterfact_writer: AfterfactWriter,
+    afterfact_info: &AfterfactInfo,
 ) {
     let terminal_width = match terminal_size() {
         Some((Width(w), _)) => w as usize,
@@ -705,9 +766,9 @@ fn output_additional_afterfact(
         .iter(),
     );
     let output_option = stored_static.output_option.as_ref().unwrap();
-    if !output_option.no_summary && !additional_afterfact.rule_author_counter.is_empty() {
+    if !output_option.no_summary && !afterfact_info.rule_author_counter.is_empty() {
         write_color_buffer(
-            disp_wtr,
+            &afterfact_writer.disp_wtr,
             get_writable_color(
                 Some(Color::Rgb(0, 255, 0)),
                 stored_static.common_options.no_color,
@@ -717,7 +778,7 @@ fn output_additional_afterfact(
         )
         .ok();
         write_color_buffer(
-            disp_wtr,
+            &afterfact_writer.disp_wtr,
             get_writable_color(None, stored_static.common_options.no_color),
             " ",
             true,
@@ -736,20 +797,20 @@ fn output_additional_afterfact(
         } else {
             6
         };
-        output_detected_rule_authors(&additional_afterfact.rule_author_counter, table_column_num);
+        output_detected_rule_authors(&afterfact_info.rule_author_counter, table_column_num);
     }
 
     println!();
     if output_option.visualize_timeline {
-        _print_timeline_hist(&additional_afterfact.timestamps, terminal_width, 3);
+        _print_timeline_hist(&afterfact_info.timestamps, terminal_width, 3);
         println!();
     }
 
     let mut html_output_stock = Nested::<String>::new();
     if !output_option.no_summary {
-        disp_wtr_buf.clear();
+        afterfact_writer.disp_wtr_buf.clear();
         write_color_buffer(
-            &disp_wtr,
+            &afterfact_writer.disp_wtr,
             get_writable_color(
                 Some(Color::Rgb(0, 255, 0)),
                 stored_static.common_options.no_color,
@@ -759,12 +820,12 @@ fn output_additional_afterfact(
         )
         .ok();
 
-        if additional_afterfact.tl_starttime.is_some() {
+        if afterfact_info.tl_starttime.is_some() {
             output_and_data_stack_for_html(
                 &format!(
                     "First Timestamp: {}",
                     utils::format_time(
-                        &additional_afterfact.tl_starttime.unwrap(),
+                        &afterfact_info.tl_starttime.unwrap(),
                         false,
                         stored_static.output_option.as_ref().unwrap()
                     )
@@ -773,12 +834,12 @@ fn output_additional_afterfact(
                 &stored_static.html_report_flag,
             );
         }
-        if additional_afterfact.tl_endtime.is_some() {
+        if afterfact_info.tl_endtime.is_some() {
             output_and_data_stack_for_html(
                 &format!(
                     "Last Timestamp: {}",
                     utils::format_time(
-                        &additional_afterfact.tl_endtime.unwrap(),
+                        &afterfact_info.tl_endtime.unwrap(),
                         false,
                         stored_static.output_option.as_ref().unwrap()
                     )
@@ -789,15 +850,15 @@ fn output_additional_afterfact(
             println!();
         }
 
-        let reducted_record_cnt: u128 = additional_afterfact.record_cnt
-            - additional_afterfact.detected_record_idset.len() as u128;
-        let reducted_percent = if additional_afterfact.record_cnt == 0 {
+        let reducted_record_cnt: u128 =
+            afterfact_info.record_cnt - afterfact_info.detected_record_idset.len() as u128;
+        let reducted_percent = if afterfact_info.record_cnt == 0 {
             0 as f64
         } else {
-            (reducted_record_cnt as f64) / (additional_afterfact.record_cnt as f64) * 100.0
+            (reducted_record_cnt as f64) / (afterfact_info.record_cnt as f64) * 100.0
         };
         write_color_buffer(
-            &disp_wtr,
+            &afterfact_writer.disp_wtr,
             get_writable_color(
                 Some(Color::Rgb(255, 255, 0)),
                 stored_static.common_options.no_color,
@@ -807,14 +868,14 @@ fn output_additional_afterfact(
         )
         .ok();
         write_color_buffer(
-            &disp_wtr,
+            &afterfact_writer.disp_wtr,
             get_writable_color(None, stored_static.common_options.no_color),
             " / ",
             false,
         )
         .ok();
         write_color_buffer(
-            &disp_wtr,
+            &afterfact_writer.disp_wtr,
             get_writable_color(
                 Some(Color::Rgb(0, 255, 255)),
                 stored_static.common_options.no_color,
@@ -824,16 +885,16 @@ fn output_additional_afterfact(
         )
         .ok();
         write_color_buffer(
-            &disp_wtr,
+            &afterfact_writer.disp_wtr,
             get_writable_color(None, stored_static.common_options.no_color),
             ": ",
             false,
         )
         .ok();
-        let saved_alerts_output = (additional_afterfact.record_cnt - reducted_record_cnt)
-            .to_formatted_string(&Locale::en);
+        let saved_alerts_output =
+            (afterfact_info.record_cnt - reducted_record_cnt).to_formatted_string(&Locale::en);
         write_color_buffer(
-            &disp_wtr,
+            &afterfact_writer.disp_wtr,
             get_writable_color(
                 Some(Color::Rgb(255, 255, 0)),
                 stored_static.common_options.no_color,
@@ -843,18 +904,16 @@ fn output_additional_afterfact(
         )
         .ok();
         write_color_buffer(
-            &disp_wtr,
+            &afterfact_writer.disp_wtr,
             get_writable_color(None, stored_static.common_options.no_color),
             " / ",
             false,
         )
         .ok();
 
-        let all_record_output = additional_afterfact
-            .record_cnt
-            .to_formatted_string(&Locale::en);
+        let all_record_output = afterfact_info.record_cnt.to_formatted_string(&Locale::en);
         write_color_buffer(
-            &disp_wtr,
+            &afterfact_writer.disp_wtr,
             get_writable_color(
                 Some(Color::Rgb(0, 255, 255)),
                 stored_static.common_options.no_color,
@@ -864,7 +923,7 @@ fn output_additional_afterfact(
         )
         .ok();
         write_color_buffer(
-            &disp_wtr,
+            &afterfact_writer.disp_wtr,
             get_writable_color(None, stored_static.common_options.no_color),
             " (",
             false,
@@ -876,7 +935,7 @@ fn output_additional_afterfact(
             reducted_percent
         );
         write_color_buffer(
-            &disp_wtr,
+            &afterfact_writer.disp_wtr,
             get_writable_color(
                 Some(Color::Rgb(0, 255, 0)),
                 stored_static.common_options.no_color,
@@ -887,7 +946,7 @@ fn output_additional_afterfact(
         .ok();
 
         write_color_buffer(
-            &disp_wtr,
+            &afterfact_writer.disp_wtr,
             get_writable_color(None, stored_static.common_options.no_color),
             ")",
             true,
@@ -895,7 +954,7 @@ fn output_additional_afterfact(
         .ok();
         if stored_static.enable_recover_records {
             write_color_buffer(
-                &disp_wtr,
+                &afterfact_writer.disp_wtr,
                 get_writable_color(
                     Some(Color::Rgb(0, 255, 255)),
                     stored_static.common_options.no_color,
@@ -905,17 +964,17 @@ fn output_additional_afterfact(
             )
             .ok();
             write_color_buffer(
-                &disp_wtr,
+                &afterfact_writer.disp_wtr,
                 get_writable_color(None, stored_static.common_options.no_color),
                 ": ",
                 false,
             )
             .ok();
-            let recovered_record_output = additional_afterfact
+            let recovered_record_output = afterfact_info
                 .recover_record_cnt
                 .to_formatted_string(&Locale::en);
             write_color_buffer(
-                &disp_wtr,
+                &afterfact_writer.disp_wtr,
                 get_writable_color(
                     Some(Color::Rgb(0, 255, 255)),
                     stored_static.common_options.no_color,
@@ -933,7 +992,7 @@ fn output_additional_afterfact(
             html_output_stock.push(format!("- {reduction_output}"));
             html_output_stock.push(format!(
                 "- Recovered events analyzed: {}",
-                &additional_afterfact
+                &afterfact_info
                     .recover_record_cnt
                     .to_formatted_string(&Locale::en)
             ));
@@ -941,8 +1000,8 @@ fn output_additional_afterfact(
 
         let color_map = create_output_color_map(stored_static.common_options.no_color);
         _print_unique_results(
-            &additional_afterfact.total_detect_counts_by_level,
-            &additional_afterfact.unique_detect_counts_by_level,
+            &afterfact_info.total_detect_counts_by_level,
+            &afterfact_info.unique_detect_counts_by_level,
             (
                 CompactString::from("Total | Unique"),
                 CompactString::from("detections"),
@@ -955,7 +1014,7 @@ fn output_additional_afterfact(
         println!();
 
         _print_detection_summary_by_date(
-            &additional_afterfact.detect_counts_by_date_and_level,
+            &afterfact_info.detect_counts_by_date_and_level,
             &color_map,
             &level_abbr,
             &mut html_output_stock,
@@ -968,7 +1027,7 @@ fn output_additional_afterfact(
         }
 
         _print_detection_summary_by_computer(
-            &additional_afterfact.detect_counts_by_computer_and_level,
+            &afterfact_info.detect_counts_by_computer_and_level,
             &color_map,
             &level_abbr,
             &mut html_output_stock,
@@ -980,11 +1039,11 @@ fn output_additional_afterfact(
         }
 
         _print_detection_summary_tables(
-            &additional_afterfact.detect_counts_by_rule_and_level,
+            &afterfact_info.detect_counts_by_rule_and_level,
             &color_map,
             (
-                &additional_afterfact.rule_title_path_map,
-                &additional_afterfact.detect_rule_authors,
+                &afterfact_info.rule_title_path_map,
+                &afterfact_info.detect_rule_authors,
             ),
             &level_abbr,
             &mut html_output_stock,
