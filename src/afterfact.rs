@@ -3539,7 +3539,6 @@ mod tests {
 
         let mut file: Box<dyn io::Write> =
             Box::new(File::create("./test_emit_csv_remove_duplicate.json").unwrap());
-        let mut additional_afterfact = AfterfactInfo::new();
         additional_afterfact.record_cnt = 1;
         additional_afterfact.recover_record_cnt = 0;
         additional_afterfact.tl_starttime = Some(expect_tz);
