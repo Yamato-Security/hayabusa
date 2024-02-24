@@ -342,7 +342,7 @@ fn _print_timeline_hist(timestamps: &Vec<i64>, length: usize, side_margin_size: 
     buf_wtr.print(&wtr).ok();
 }
 
-pub fn after_fact(stored_static: &StoredStatic, mut afterfact_info: AfterfactInfo) {
+pub fn after_fact(stored_static: &StoredStatic, afterfact_info: AfterfactInfo) {
     let fn_output_afterfact_err = |err: Box<dyn Error>| {
         AlertMessage::alert(&format!("Failed to write CSV. {err}")).ok();
         process::exit(1);
