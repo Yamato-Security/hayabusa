@@ -66,11 +66,7 @@ impl Detection {
         Detection { rules: rule_nodes }
     }
 
-    pub fn start(
-        self,
-        rt: &Runtime,
-        records: Vec<EvtxRecordInfo>,
-    ) -> (Self, Vec<DetectInfo>) {
+    pub fn start(self, rt: &Runtime, records: Vec<EvtxRecordInfo>) -> (Self, Vec<DetectInfo>) {
         rt.block_on(self.execute_rules(records))
     }
 
@@ -162,10 +158,7 @@ impl Detection {
     }
 
     // 複数のイベントレコードに対して、複数のルールを1個実行します。
-    async fn execute_rules(
-        mut self,
-        records: Vec<EvtxRecordInfo>,
-    ) -> (Self, Vec<DetectInfo>) {
+    async fn execute_rules(mut self, records: Vec<EvtxRecordInfo>) -> (Self, Vec<DetectInfo>) {
         let records_arc = Arc::new(records);
         // // 各rule毎にスレッドを作成して、スレッドを起動する。
         let rules = self.rules;
@@ -204,10 +197,7 @@ impl Detection {
         return rt.block_on(self.add_aggcondition_msg(stored_static));
     }
 
-    async fn add_aggcondition_msg(
-        &self,
-        stored_static: &StoredStatic,
-    ) -> Vec<DetectInfo> {
+    async fn add_aggcondition_msg(&self, stored_static: &StoredStatic) -> Vec<DetectInfo> {
         let mut ret = vec![];
         for rule in &self.rules {
             if !rule.has_agg_condition() {
@@ -1615,8 +1605,7 @@ mod tests {
                 let rule = &dummy_rule;
                 let record_info = &input_evtxrecord;
                 let stored_static = &stored_static;
-                let detect_info =
-                    Detection::create_log_record(rule, record_info, stored_static);
+                let detect_info = Detection::create_log_record(rule, record_info, stored_static);
 
                 let expect_geo_ip_data: Vec<(CompactString, Profile)> = vec![
                     ("SrcASN".into(), Profile::SrcASN("Bredband2 AB".into())),
@@ -1634,7 +1623,6 @@ mod tests {
                     assert!(ext_field.contains(expect));
                 }
             };
-
         }
     }
 
@@ -1753,8 +1741,7 @@ mod tests {
                 let rule = &dummy_rule;
                 let record_info = &input_evtxrecord;
                 let stored_static = &stored_static;
-                let detect_info =
-                    Detection::create_log_record(rule, record_info, stored_static);
+                let detect_info = Detection::create_log_record(rule, record_info, stored_static);
                 let expect_geo_ip_data: Vec<(CompactString, Profile)> = vec![
                     ("SrcASN".into(), Profile::SrcASN("-".into())),
                     ("SrcCountry".into(), Profile::SrcCountry("-".into())),
@@ -1766,7 +1753,7 @@ mod tests {
                 let ext_field = detect_info.ext_field.clone();
                 for expect in expect_geo_ip_data.iter() {
                     assert!(ext_field.contains(expect));
-                }  
+                }
             };
         }
     }
@@ -1902,12 +1889,13 @@ mod tests {
                 let rule = &rule_node;
                 let record_info = &input_evtxrecord;
                 let stored_static: &StoredStatic = &stored_static.clone();
-                let detect_info =
-                    Detection::create_log_record(rule, record_info, stored_static);
+                let detect_info = Detection::create_log_record(rule, record_info, stored_static);
 
                 let expect_extra_field_data: Vec<(CompactString, Profile)> = vec![(
                     "ExtraFieldInfo".into(),
-                    Profile::ExtraFieldInfo("CommandRLine: hoge ¦ DestAddress: 2.125.160.216".into()),
+                    Profile::ExtraFieldInfo(
+                        "CommandRLine: hoge ¦ DestAddress: 2.125.160.216".into(),
+                    ),
                 )];
                 let ext_field = detect_info.ext_field.clone();
                 for expect in expect_extra_field_data.iter() {
@@ -2049,8 +2037,7 @@ mod tests {
                 let rule = &rule_node;
                 let record_info = &input_evtxrecord;
                 let stored_static: &StoredStatic = &stored_static.clone();
-                let detect_info =
-                    Detection::create_log_record(rule, record_info, stored_static);
+                let detect_info = Detection::create_log_record(rule, record_info, stored_static);
 
                 println!("{:?}", detect_info.ext_field);
                 assert!(detect_info.ext_field.iter().any(|x| x

@@ -1417,26 +1417,26 @@ impl App {
             );
             pb.set_message(pb_msg);
 
-            let (detection_tmp, cnt_tmp, tl_tmp, recover_cnt_tmp, mut detect_infos) = if evtx_file.extension().unwrap() == "json"
-            {
-                self.analysis_json_file(
-                    evtx_file,
-                    detection,
-                    time_filter,
-                    tl.to_owned(),
-                    target_event_ids,
-                    stored_static,
-                )
-            } else {
-                self.analysis_file(
-                    evtx_file,
-                    detection,
-                    time_filter,
-                    tl.to_owned(),
-                    target_event_ids,
-                    stored_static,
-                )
-            };
+            let (detection_tmp, cnt_tmp, tl_tmp, recover_cnt_tmp, mut detect_infos) =
+                if evtx_file.extension().unwrap() == "json" {
+                    self.analysis_json_file(
+                        evtx_file,
+                        detection,
+                        time_filter,
+                        tl.to_owned(),
+                        target_event_ids,
+                        stored_static,
+                    )
+                } else {
+                    self.analysis_file(
+                        evtx_file,
+                        detection,
+                        time_filter,
+                        tl.to_owned(),
+                        target_event_ids,
+                        stored_static,
+                    )
+                };
             detection = detection_tmp;
             tl = tl_tmp;
             afterfact_info.record_cnt += cnt_tmp as u128;
@@ -1491,12 +1491,18 @@ impl App {
         mut tl: Timeline,
         target_event_ids: &TargetIds,
         stored_static: &StoredStatic,
-    ) -> (detection::Detection, usize, Timeline, usize, Vec<DetectInfo>) {
+    ) -> (
+        detection::Detection,
+        usize,
+        Timeline,
+        usize,
+        Vec<DetectInfo>,
+    ) {
         let path = evtx_filepath.display();
         let parser = self.evtx_to_jsons(&evtx_filepath, stored_static.enable_recover_records);
         let mut record_cnt = 0;
         let mut recover_records_cnt = 0;
-        let mut detect_infos:  Vec<DetectInfo> = vec![];
+        let mut detect_infos: Vec<DetectInfo> = vec![];
         if parser.is_none() {
             return (detection, record_cnt, tl, 0, detect_infos);
         }
@@ -1614,7 +1620,8 @@ impl App {
                 || stored_static.search_flag)
             {
                 // ruleファイルの検知
-                let (detection_tmp, mut log_records) = detection.start(&self.rt, records_per_detect);
+                let (detection_tmp, mut log_records) =
+                    detection.start(&self.rt, records_per_detect);
                 detect_infos.append(&mut log_records);
                 detection = detection_tmp;
             }
@@ -1632,7 +1639,13 @@ impl App {
         mut tl: Timeline,
         target_event_ids: &TargetIds,
         stored_static: &StoredStatic,
-    ) -> (detection::Detection, usize, Timeline, usize, Vec<DetectInfo>) {
+    ) -> (
+        detection::Detection,
+        usize,
+        Timeline,
+        usize,
+        Vec<DetectInfo>,
+    ) {
         let path = filepath.display();
         let mut record_cnt = 0;
         let recover_records_cnt = 0;
@@ -1796,7 +1809,8 @@ impl App {
                 || stored_static.search_flag)
             {
                 // ruleファイルの検知
-                let (detection_tmp, mut log_records) = detection.start(&self.rt, records_per_detect);
+                let (detection_tmp, mut log_records) =
+                    detection.start(&self.rt, records_per_detect);
                 detect_infos.append(&mut log_records);
                 detection = detection_tmp;
             }
@@ -2027,7 +2041,7 @@ mod tests {
     use chrono::Local;
     use hashbrown::HashSet;
     use hayabusa::{
-         detections::{
+        detections::{
             configs::{
                 Action, CommonOptions, ComputerMetricsOption, Config, ConfigReader,
                 CsvOutputOption, DetectCommonOption, EidMetricsOption, InputOption,
@@ -2036,7 +2050,9 @@ mod tests {
             },
             detection,
             rule::create_rule,
-        }, options::htmlreport::HTML_REPORTER, timeline::timelines::Timeline
+        },
+        options::htmlreport::HTML_REPORTER,
+        timeline::timelines::Timeline,
     };
     use itertools::Itertools;
     use yaml_rust::YamlLoader;

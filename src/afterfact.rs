@@ -1,9 +1,7 @@
 use crate::detections::configs::{
     Action, OutputOption, StoredStatic, CONTROL_CHAT_REPLACE_MAP, CURRENT_EXE_PATH, GEOIP_DB_PARSER,
 };
-use crate::detections::message::{
-    AlertMessage, DetectInfo, COMPUTER_MITRE_ATTCK_MAP, LEVEL_FULL
-};
+use crate::detections::message::{AlertMessage, DetectInfo, COMPUTER_MITRE_ATTCK_MAP, LEVEL_FULL};
 use crate::detections::utils::{
     self, format_time, get_writable_color, output_and_data_stack_for_html, write_color_buffer,
 };
@@ -34,11 +32,11 @@ use std::error::Error;
 
 use std::io::{self, BufWriter, Write};
 
+use lazy_static::lazy_static;
 use std::fs::File;
 use std::process;
 use termcolor::{Buffer, BufferWriter, Color, ColorChoice, ColorSpec, WriteColor};
 use terminal_size::Width;
-use lazy_static::lazy_static;
 
 lazy_static! {
     // ここで字句解析するときに使う正規表現の一覧を定義する。
@@ -141,32 +139,40 @@ impl AfterfactInfo {
             if cmp_time != Ordering::Equal {
                 return cmp_time;
             }
-    
+
             let a_level = get_level_suffix(a.level.as_str());
             let b_level = get_level_suffix(b.level.as_str());
             let level_cmp = a_level.cmp(&b_level);
             if level_cmp != Ordering::Equal {
                 return level_cmp;
             }
-    
+
             let event_id_cmp = a.eventid.cmp(&b.eventid);
             if event_id_cmp != Ordering::Equal {
                 return event_id_cmp;
             }
-    
+
             let rulepath_cmp = a.rulepath.cmp(&b.rulepath);
             if rulepath_cmp != Ordering::Equal {
                 return rulepath_cmp;
             }
-    
+
             return a.computername.cmp(&b.computername);
         });
     }
 
-    pub fn get_removed_duplicate_detect_info_idx(&self, stored_static: &StoredStatic) -> Vec<usize> {
+    pub fn get_removed_duplicate_detect_info_idx(
+        &self,
+        stored_static: &StoredStatic,
+    ) -> Vec<usize> {
         let output_option = stored_static.output_option.as_ref().unwrap();
         if !output_option.remove_duplicate_detections {
-            return self.detect_infos.iter().enumerate().map(|(i,_)| i).collect();
+            return self
+                .detect_infos
+                .iter()
+                .enumerate()
+                .map(|(i, _)| i)
+                .collect();
         }
 
         // filtet duplicate event
@@ -180,7 +186,11 @@ impl AfterfactInfo {
 
             let prev_detect_info_idx = *filtered_detect_infos.last().unwrap();
             let prev_detect_info = &self.detect_infos[prev_detect_info_idx];
-            if prev_detect_info.detected_time.cmp(&detect_info.detected_time) != Ordering::Equal {
+            if prev_detect_info
+                .detected_time
+                .cmp(&detect_info.detected_time)
+                != Ordering::Equal
+            {
                 filtered_detect_infos.push(i);
                 prev_detect_infos.clear();
                 continue;
@@ -326,10 +336,7 @@ fn _print_timeline_hist(timestamps: &Vec<i64>, length: usize, side_margin_size: 
     buf_wtr.print(&wtr).ok();
 }
 
-pub fn after_fact(
-    stored_static: &StoredStatic,
-    afterfact_info: AfterfactInfo,
-) {
+pub fn after_fact(stored_static: &StoredStatic, afterfact_info: AfterfactInfo) {
     let fn_output_afterfact_err = |err: Box<dyn Error>| {
         AlertMessage::alert(&format!("Failed to write CSV. {err}")).ok();
         process::exit(1);
@@ -364,14 +371,14 @@ pub fn after_fact(
 
 fn get_level_suffix(level_str: &str) -> usize {
     *LEVEL_MAP
-    .get(
-        LEVEL_FULL
-            .get(level_str)
-            .unwrap_or(&"undefined")
-            .to_uppercase()
-            .as_str(),
-    )
-    .unwrap_or(&0) as usize
+        .get(
+            LEVEL_FULL
+                .get(level_str)
+                .unwrap_or(&"undefined")
+                .to_uppercase()
+                .as_str(),
+        )
+        .unwrap_or(&0) as usize
 }
 
 fn output_afterfact<W: std::io::Write>(
@@ -449,7 +456,8 @@ fn output_afterfact<W: std::io::Write>(
     additional_afterfact.sort_detect_info();
 
     // filtet duplicate event
-    let detect_infos_idxes = additional_afterfact.get_removed_duplicate_detect_info_idx(stored_static);
+    let detect_infos_idxes =
+        additional_afterfact.get_removed_duplicate_detect_info_idx(stored_static);
 
     // emit csv
     for idx in detect_infos_idxes.iter() {
@@ -522,8 +530,7 @@ fn output_afterfact<W: std::io::Write>(
             prev_message = result.1;
             prev_details_convert_map = detect_info.details_convert_map.clone();
             if displayflag {
-                write_color_buffer(&disp_wtr, None, &format!("{{\n{}\n}}", &result.0), true)
-                    .ok();
+                write_color_buffer(&disp_wtr, None, &format!("{{\n{}\n}}", &result.0), true).ok();
             } else {
                 wtr.write_field("{")?;
                 wtr.write_field(&result.0)?;
@@ -537,9 +544,7 @@ fn output_afterfact<W: std::io::Write>(
             }
             wtr.write_record(detect_info.ext_field.iter().map(|x| {
                 match x.1 {
-                    Profile::Details(_)
-                    | Profile::AllFieldInfo(_)
-                    | Profile::ExtraFieldInfo(_) => {
+                    Profile::Details(_) | Profile::AllFieldInfo(_) | Profile::ExtraFieldInfo(_) => {
                         let ret = if remove_duplicate_data_flag
                             && x.1.to_value()
                                 == prev_message
@@ -657,7 +662,12 @@ fn output_afterfact<W: std::io::Write>(
 
     disp_wtr_buf.clear();
 
-    output_additional_afterfact(stored_static, &disp_wtr, disp_wtr_buf, &additional_afterfact);
+    output_additional_afterfact(
+        stored_static,
+        &disp_wtr,
+        disp_wtr_buf,
+        &additional_afterfact,
+    );
 
     Ok(())
 }
@@ -2065,8 +2075,8 @@ fn _output_html_computer_by_mitre_attck(html_output_stock: &mut Nested<String>) 
 #[cfg(test)]
 mod tests {
     use super::create_output_color_map;
-    use crate::afterfact::output_afterfact;
     use crate::afterfact::format_time;
+    use crate::afterfact::output_afterfact;
     use crate::afterfact::AfterfactInfo;
     use crate::afterfact::Colors;
     use crate::detections::configs::load_eventkey_alias;
@@ -4086,7 +4096,6 @@ mod tests {
         ];
         let mut file: Box<dyn io::Write> =
             Box::new(File::create("./test_emit_csv_json.json").unwrap());
-
 
         additional_afterfact.record_cnt = 1;
         additional_afterfact.recover_record_cnt = 0;
