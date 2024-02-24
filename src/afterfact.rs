@@ -162,56 +162,52 @@ impl AfterfactInfo {
     }
 
     pub fn get_removed_duplicate_detect_info_idx(
-        mut self,
+        &self,
         stored_static: &StoredStatic,
-    ) -> Self {
+    ) -> Vec<usize> {
         let output_option = stored_static.output_option.as_ref().unwrap();
         if !output_option.remove_duplicate_detections {
-            return self;
+            return self
+                .detect_infos
+                .iter()
+                .enumerate()
+                .map(|(i, _)| i)
+                .collect();
         }
 
         // filtet duplicate event
-        let mut filtered_detect_infos:std::collections::HashSet<usize> = std::collections::HashSet::new();
-        {
-            let mut prev_detect_infos = HashSet::new();
-            for (i, detect_info) in self.detect_infos.iter().enumerate() {
-                if i == 0 {
-                    filtered_detect_infos.insert(i);
-                    continue;
-                }
-    
-                let prev_detect_info = &self.detect_infos[i-1];
-                if prev_detect_info
-                    .detected_time
-                    .cmp(&detect_info.detected_time)
-                    != Ordering::Equal
-                {
-                    filtered_detect_infos.insert(i);
-                    prev_detect_infos.clear();
-                    continue;
-                }
-    
-                let fields: Vec<&(CompactString, Profile)> = detect_info
-                    .ext_field
-                    .iter()
-                    .filter(|(_, profile)| !matches!(profile, Profile::EvtxFile(_)))
-                    .collect();
-                if prev_detect_infos.get(&fields).is_some() {
-                    continue;
-                }
-                prev_detect_infos.insert(fields);
-                filtered_detect_infos.insert(i);
+        let mut filtered_detect_infos = vec![];
+        let mut prev_detect_infos = HashSet::new();
+        for (i, detect_info) in self.detect_infos.iter().enumerate() {
+            if filtered_detect_infos.is_empty() {
+                filtered_detect_infos.push(i);
+                continue;
             }
-        }
 
-        self.detect_infos = self.detect_infos.into_iter().enumerate().filter_map(|(i, detect_info)| {
-            if filtered_detect_infos.contains(&i) {
-                return Some(detect_info);
-            } else {
-                return Option::None;
+            let prev_detect_info_idx = *filtered_detect_infos.last().unwrap();
+            let prev_detect_info = &self.detect_infos[prev_detect_info_idx];
+            if prev_detect_info
+                .detected_time
+                .cmp(&detect_info.detected_time)
+                != Ordering::Equal
+            {
+                filtered_detect_infos.push(i);
+                prev_detect_infos.clear();
+                continue;
             }
-        }).collect();
-        return self;
+
+            let fields: Vec<&(CompactString, Profile)> = detect_info
+                .ext_field
+                .iter()
+                .filter(|(_, profile)| !matches!(profile, Profile::EvtxFile(_)))
+                .collect();
+            if prev_detect_infos.get(&fields).is_some() {
+                continue;
+            }
+            prev_detect_infos.insert(fields);
+            filtered_detect_infos.push(i);
+        }
+        return filtered_detect_infos;
     }
 }
 
@@ -460,10 +456,12 @@ fn output_afterfact<W: std::io::Write>(
     additional_afterfact.sort_detect_info();
 
     // filtet duplicate event
-    additional_afterfact = additional_afterfact.get_removed_duplicate_detect_info_idx(stored_static);
+    let detect_infos_idxes =
+        additional_afterfact.get_removed_duplicate_detect_info_idx(stored_static);
 
     // emit csv
-    for detect_info in additional_afterfact.detect_infos.iter() {
+    for idx in detect_infos_idxes.iter() {
+        let detect_info = &additional_afterfact.detect_infos[*idx];
         if displayflag && !(json_output_flag || jsonl_output_flag) {
             // 標準出力の場合
             if plus_header {
@@ -589,7 +587,8 @@ fn output_afterfact<W: std::io::Write>(
     let mut detected_rule_files: HashSet<CompactString> = HashSet::new();
     let mut detected_rule_ids: HashSet<CompactString> = HashSet::new();
     let mut detected_computer_and_rule_names: HashSet<CompactString> = HashSet::new();
-    for detect_info in additional_afterfact.detect_infos.iter() {
+    for idx in detect_infos_idxes.iter() {
+        let detect_info = &additional_afterfact.detect_infos[*idx];
         if !detect_info.is_condition {
             additional_afterfact
                 .detected_record_idset
