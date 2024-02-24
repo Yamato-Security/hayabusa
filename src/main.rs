@@ -1409,7 +1409,7 @@ impl App {
 
         *STORED_EKEY_ALIAS.write().unwrap() = Some(stored_static.eventkey_alias.clone());
         *STORED_STATIC.write().unwrap() = Some(stored_static.clone());
-        let mut afterfact_info = AfterfactInfo::new();
+        let mut afterfact_info = AfterfactInfo::default();
         for evtx_file in evtx_files {
             let pb_msg = format!(
                 "{:?}",

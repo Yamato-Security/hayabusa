@@ -81,60 +81,6 @@ struct InitLevelMapResult(
 );
 
 impl AfterfactInfo {
-    pub fn new() -> AfterfactInfo {
-        let InitLevelMapResult(
-            detect_counts_by_date_and_level,
-            detect_counts_by_computer_and_level,
-            detect_counts_by_rule_and_level,
-        ) = {
-            let levels = ["crit", "high", "med ", "low ", "info", "undefined"];
-            let mut detect_counts_by_date_and_level: HashMap<
-                CompactString,
-                HashMap<CompactString, i128>,
-            > = HashMap::new();
-            let mut detect_counts_by_computer_and_level: HashMap<
-                CompactString,
-                HashMap<CompactString, i128>,
-            > = HashMap::new();
-            let mut detect_counts_by_rule_and_level: HashMap<
-                CompactString,
-                HashMap<CompactString, i128>,
-            > = HashMap::new();
-            // レベル別、日ごとの集計用変数の初期化
-            for level_init in levels {
-                detect_counts_by_date_and_level
-                    .insert(CompactString::from(level_init), HashMap::new());
-                detect_counts_by_computer_and_level
-                    .insert(CompactString::from(level_init), HashMap::new());
-                detect_counts_by_rule_and_level
-                    .insert(CompactString::from(level_init), HashMap::new());
-            }
-
-            InitLevelMapResult(
-                detect_counts_by_date_and_level,
-                detect_counts_by_computer_and_level,
-                detect_counts_by_rule_and_level,
-            )
-        };
-        AfterfactInfo {
-            detect_infos: vec![],
-            tl_starttime: Option::None,
-            tl_endtime: Option::None,
-            record_cnt: 0,
-            recover_record_cnt: 0,
-            detected_record_idset: HashSet::new(),
-            total_detect_counts_by_level: vec![0; 6],
-            unique_detect_counts_by_level: vec![0; 6],
-            detect_counts_by_date_and_level,
-            detect_counts_by_computer_and_level,
-            detect_counts_by_rule_and_level,
-            detect_rule_authors: HashMap::new(),
-            rule_title_path_map: HashMap::new(),
-            rule_author_counter: HashMap::new(),
-            timestamps: vec![],
-        }
-    }
-
     pub fn sort_detect_info(&mut self) {
         self.detect_infos.sort_unstable_by(|a, b| {
             let cmp_time = a.detected_time.cmp(&b.detected_time);
@@ -216,6 +162,62 @@ impl AfterfactInfo {
             .collect();
 
         std::mem::swap(&mut self.detect_infos, &mut tmp_detect_infos);
+    }
+}
+
+impl Default for AfterfactInfo {
+    fn default() -> Self {
+        let InitLevelMapResult(
+            detect_counts_by_date_and_level,
+            detect_counts_by_computer_and_level,
+            detect_counts_by_rule_and_level,
+        ) = {
+            let levels = ["crit", "high", "med ", "low ", "info", "undefined"];
+            let mut detect_counts_by_date_and_level: HashMap<
+                CompactString,
+                HashMap<CompactString, i128>,
+            > = HashMap::new();
+            let mut detect_counts_by_computer_and_level: HashMap<
+                CompactString,
+                HashMap<CompactString, i128>,
+            > = HashMap::new();
+            let mut detect_counts_by_rule_and_level: HashMap<
+                CompactString,
+                HashMap<CompactString, i128>,
+            > = HashMap::new();
+            // レベル別、日ごとの集計用変数の初期化
+            for level_init in levels {
+                detect_counts_by_date_and_level
+                    .insert(CompactString::from(level_init), HashMap::new());
+                detect_counts_by_computer_and_level
+                    .insert(CompactString::from(level_init), HashMap::new());
+                detect_counts_by_rule_and_level
+                    .insert(CompactString::from(level_init), HashMap::new());
+            }
+
+            InitLevelMapResult(
+                detect_counts_by_date_and_level,
+                detect_counts_by_computer_and_level,
+                detect_counts_by_rule_and_level,
+            )
+        };
+        AfterfactInfo {
+            detect_infos: vec![],
+            tl_starttime: Option::None,
+            tl_endtime: Option::None,
+            record_cnt: 0,
+            recover_record_cnt: 0,
+            detected_record_idset: HashSet::new(),
+            total_detect_counts_by_level: vec![0; 6],
+            unique_detect_counts_by_level: vec![0; 6],
+            detect_counts_by_date_and_level,
+            detect_counts_by_computer_and_level,
+            detect_counts_by_rule_and_level,
+            detect_rule_authors: HashMap::new(),
+            rule_title_path_map: HashMap::new(),
+            rule_author_counter: HashMap::new(),
+            timestamps: vec![],
+        }
     }
 }
 
@@ -2176,7 +2178,7 @@ mod tests {
 
     #[test]
     fn test_emit_csv_output() {
-        let mut additional_afterfact = AfterfactInfo::new();
+        let mut additional_afterfact = AfterfactInfo::default();
         let mock_ch_filter = message::create_output_filter_config(
             "test_files/config/channel_abbreviations.txt",
             true,
@@ -2509,7 +2511,7 @@ mod tests {
 
     #[test]
     fn test_emit_csv_output_with_multiline_opt() {
-        let mut additional_afterfact = AfterfactInfo::new();
+        let mut additional_afterfact = AfterfactInfo::default();
         let mock_ch_filter = message::create_output_filter_config(
             "test_files/config/channel_abbreviations.txt",
             true,
@@ -2830,7 +2832,7 @@ mod tests {
 
     #[test]
     fn test_emit_csv_output_with_remove_duplicate_opt() {
-        let mut additional_afterfact = AfterfactInfo::new();
+        let mut additional_afterfact = AfterfactInfo::default();
         let mock_ch_filter = message::create_output_filter_config(
             "test_files/config/channel_abbreviations.txt",
             true,
@@ -3160,7 +3162,7 @@ mod tests {
 
     #[test]
     fn test_emit_json_output_with_remove_duplicate_opt() {
-        let mut additional_afterfact = AfterfactInfo::new();
+        let mut additional_afterfact = AfterfactInfo::default();
         let mock_ch_filter = message::create_output_filter_config(
             "test_files/config/channel_abbreviations.txt",
             true,
@@ -3564,7 +3566,7 @@ mod tests {
 
     #[test]
     fn test_emit_json_output_with_multiple_data_in_details() {
-        let mut additional_afterfact = AfterfactInfo::new();
+        let mut additional_afterfact = AfterfactInfo::default();
         let mock_ch_filter = message::create_output_filter_config(
             "test_files/config/channel_abbreviations.txt",
             true,
@@ -3914,7 +3916,7 @@ mod tests {
 
     #[test]
     fn test_emit_csv_json_output() {
-        let mut additional_afterfact = AfterfactInfo::new();
+        let mut additional_afterfact = AfterfactInfo::default();
         let mock_ch_filter = message::create_output_filter_config(
             "test_files/config/channel_abbreviations.txt",
             true,
@@ -4188,7 +4190,7 @@ mod tests {
 
     #[test]
     fn test_emit_csv_jsonl_output() {
-        let mut additional_afterfact = AfterfactInfo::new();
+        let mut additional_afterfact = AfterfactInfo::default();
         let mock_ch_filter = message::create_output_filter_config(
             "test_files/config/channel_abbreviations.txt",
             true,
