@@ -74,13 +74,48 @@ pub struct AfterfactInfo {
     pub timestamps: Vec<i64>,
 }
 
+struct InitLevelMapResult(
+    HashMap<CompactString, HashMap<CompactString, i128>>,
+    HashMap<CompactString, HashMap<CompactString, i128>>,
+    HashMap<CompactString, HashMap<CompactString, i128>>,
+);
+
 impl AfterfactInfo {
     pub fn new() -> AfterfactInfo {
-        let (
+        let InitLevelMapResult(
             detect_counts_by_date_and_level,
             detect_counts_by_computer_and_level,
             detect_counts_by_rule_and_level,
-        ) = AfterfactInfo::init_level_map();
+        ) = {
+            let levels = ["crit", "high", "med ", "low ", "info", "undefined"];
+            let mut detect_counts_by_date_and_level: HashMap<
+                CompactString,
+                HashMap<CompactString, i128>,
+            > = HashMap::new();
+            let mut detect_counts_by_computer_and_level: HashMap<
+                CompactString,
+                HashMap<CompactString, i128>,
+            > = HashMap::new();
+            let mut detect_counts_by_rule_and_level: HashMap<
+                CompactString,
+                HashMap<CompactString, i128>,
+            > = HashMap::new();
+            // レベル別、日ごとの集計用変数の初期化
+            for level_init in levels {
+                detect_counts_by_date_and_level
+                    .insert(CompactString::from(level_init), HashMap::new());
+                detect_counts_by_computer_and_level
+                    .insert(CompactString::from(level_init), HashMap::new());
+                detect_counts_by_rule_and_level
+                    .insert(CompactString::from(level_init), HashMap::new());
+            }
+
+            InitLevelMapResult(
+                detect_counts_by_date_and_level,
+                detect_counts_by_computer_and_level,
+                detect_counts_by_rule_and_level,
+            )
+        };
         AfterfactInfo {
             detect_infos: vec![],
             tl_starttime: Option::None,
@@ -90,47 +125,14 @@ impl AfterfactInfo {
             detected_record_idset: HashSet::new(),
             total_detect_counts_by_level: vec![0; 6],
             unique_detect_counts_by_level: vec![0; 6],
-            detect_counts_by_date_and_level: detect_counts_by_date_and_level,
-            detect_counts_by_computer_and_level: detect_counts_by_computer_and_level,
-            detect_counts_by_rule_and_level: detect_counts_by_rule_and_level,
+            detect_counts_by_date_and_level,
+            detect_counts_by_computer_and_level,
+            detect_counts_by_rule_and_level,
             detect_rule_authors: HashMap::new(),
             rule_title_path_map: HashMap::new(),
             rule_author_counter: HashMap::new(),
             timestamps: vec![],
         }
-    }
-
-    pub fn init_level_map() -> (
-        HashMap<CompactString, HashMap<CompactString, i128>>,
-        HashMap<CompactString, HashMap<CompactString, i128>>,
-        HashMap<CompactString, HashMap<CompactString, i128>>,
-    ) {
-        let levels = ["crit", "high", "med ", "low ", "info", "undefined"];
-        let mut detect_counts_by_date_and_level: HashMap<
-            CompactString,
-            HashMap<CompactString, i128>,
-        > = HashMap::new();
-        let mut detect_counts_by_computer_and_level: HashMap<
-            CompactString,
-            HashMap<CompactString, i128>,
-        > = HashMap::new();
-        let mut detect_counts_by_rule_and_level: HashMap<
-            CompactString,
-            HashMap<CompactString, i128>,
-        > = HashMap::new();
-        // レベル別、日ごとの集計用変数の初期化
-        for level_init in levels {
-            detect_counts_by_date_and_level.insert(CompactString::from(level_init), HashMap::new());
-            detect_counts_by_computer_and_level
-                .insert(CompactString::from(level_init), HashMap::new());
-            detect_counts_by_rule_and_level.insert(CompactString::from(level_init), HashMap::new());
-        }
-
-        (
-            detect_counts_by_date_and_level,
-            detect_counts_by_computer_and_level,
-            detect_counts_by_rule_and_level,
-        )
     }
 
     pub fn sort_detect_info(&mut self) {
@@ -157,7 +159,7 @@ impl AfterfactInfo {
                 return rulepath_cmp;
             }
 
-            return a.computername.cmp(&b.computername);
+            a.computername.cmp(&b.computername)
         });
     }
 
@@ -206,9 +208,9 @@ impl AfterfactInfo {
             .enumerate()
             .filter_map(|(i, detect_info)| {
                 if filtered_detect_infos.contains(&i) {
-                    return Some(detect_info);
+                    Some(detect_info)
                 } else {
-                    return Option::None;
+                    Option::None
                 }
             })
             .collect();
@@ -295,7 +297,7 @@ fn _get_table_color(
 }
 
 /// print timeline histogram
-fn _print_timeline_hist(timestamps: &Vec<i64>, length: usize, side_margin_size: usize) {
+fn _print_timeline_hist(timestamps: &[i64], length: usize, side_margin_size: usize) {
     if timestamps.is_empty() {
         return;
     }
@@ -438,8 +440,8 @@ fn init_writer<'a, W: std::io::Write>(
 
     // emit csv
     let artifact_writer = AfterfactWriter {
-        disp_wtr: disp_wtr,
-        disp_wtr_buf: disp_wtr_buf,
+        disp_wtr,
+        disp_wtr_buf,
     };
     (artifact_writer, emit_csv_opt, tmp_wtr)
 }
@@ -739,7 +741,7 @@ fn calc_statistic_info(
             afterfact_info.total_detect_counts_by_level[level_suffix] += 1;
         }
     }
-    return afterfact_info;
+    afterfact_info
 }
 
 fn output_additional_afterfact(
@@ -1236,8 +1238,8 @@ fn _format_cellpos(colval: &str, column: ColPos) -> String {
 
 /// output info which unique detection count and all detection count information(separated by level and total) to stdout.
 fn _print_unique_results(
-    counts_by_level: &Vec<u128>,
-    unique_counts_by_level: &Vec<u128>,
+    counts_by_level: &[u128],
+    unique_counts_by_level: &[u128],
     head_and_tail_word: (CompactString, CompactString),
     color_map: &HashMap<CompactString, Colors>,
     level_abbr: &Nested<Vec<CompactString>>,

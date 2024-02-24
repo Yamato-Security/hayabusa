@@ -209,7 +209,7 @@ impl Detection {
             }
         }
 
-        return ret;
+        ret
     }
 
     // 複数のイベントレコードに対して、ルールを1個実行します。
@@ -248,7 +248,7 @@ impl Detection {
             }
         }
 
-        return (rule, ret);
+        (rule, ret)
     }
 
     /// create log record
@@ -743,7 +743,8 @@ impl Detection {
             is_condition: false,
             details_convert_map: HashMap::default(),
         };
-        let detect_info = message::create_message(
+
+        message::create_message(
             &record_info.record,
             CompactString::new(details_fmt_str),
             detect_info,
@@ -754,9 +755,7 @@ impl Detection {
                 &field_data_map_key,
                 &stored_static.field_data_map,
             ),
-        );
-
-        return detect_info;
+        )
     }
 
     fn create_agg_log_record(
@@ -980,7 +979,7 @@ impl Detection {
             (true, is_json_timeline),
             (eventkey_alias, &field_data_map_key, &None),
         );
-        return detect_info;
+        detect_info
     }
 
     /// rule内のtagsの内容を配列として返却する関数

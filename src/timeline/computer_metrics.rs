@@ -81,7 +81,7 @@ pub fn computer_metrics_dsp_msg(
             return count_cmp;
         }
 
-        return a.0.cmp(b.0);
+        a.0.cmp(b.0)
     }) {
         let count_str = if output.is_some() {
             format!("{count}")

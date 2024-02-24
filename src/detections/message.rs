@@ -267,7 +267,7 @@ pub fn create_message(
     detect_info.ext_field = replaced_profiles;
     detect_info.details_convert_map = record_details_info_map;
 
-    return detect_info;
+    detect_info
 }
 
 /// メッセージ内の%で囲まれた箇所をエイリアスとしてレコード情報を参照して置き換える関数
