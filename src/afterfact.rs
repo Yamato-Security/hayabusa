@@ -2097,6 +2097,7 @@ mod tests {
 
     #[test]
     fn test_emit_csv_output() {
+        let mut additional_afterfact = AfterfactInfo::new();
         let mock_ch_filter = message::create_output_filter_config(
             "test_files/config/channel_abbreviations.txt",
             true,
@@ -2194,8 +2195,6 @@ mod tests {
         )
         .unwrap_or_default();
         {
-            let messages = &message::MESSAGES;
-            messages.clear();
             let val = r#"
                 {
                     "Event": {
@@ -2304,7 +2303,7 @@ mod tests {
                 .to_str()
                 .unwrap(),
             );
-            message::insert(
+            let detect_info = message::create_message(
                 &event,
                 CompactString::new(output),
                 DetectInfo {
@@ -2320,15 +2319,15 @@ mod tests {
                     is_condition: false,
                     details_convert_map: HashMap::default(),
                 },
-                expect_time,
                 &profile_converter,
                 (false, false),
                 (&eventkey_alias, &FieldDataMapKey::default(), &None),
             );
+            additional_afterfact.detect_infos.push(detect_info);
             *profile_converter.get_mut("Computer").unwrap() =
                 Profile::Computer(test_computername.into());
 
-            message::insert(
+            let detect_info = message::create_message(
                 &event,
                 CompactString::new(output),
                 DetectInfo {
@@ -2344,15 +2343,11 @@ mod tests {
                     is_condition: false,
                     details_convert_map: HashMap::default(),
                 },
-                expect_time,
                 &profile_converter,
                 (false, false),
                 (&eventkey_alias, &FieldDataMapKey::default(), &None),
             );
-            let multi = message::MESSAGES.get(&expect_time).unwrap();
-            let (_, detect_infos) = multi.pair();
-
-            println!("message: {detect_infos:?}");
+            additional_afterfact.detect_infos.push(detect_info);
         }
         let expect =
             "\"Timestamp\",\"Computer\",\"Channel\",\"Level\",\"EventID\",\"MitreAttack\",\"RecordID\",\"RuleTitle\",\"Details\",\"RecordInformation\",\"RuleFile\",\"EvtxFile\",\"Tags\"\n\""
@@ -2412,7 +2407,6 @@ mod tests {
                 + "\"\n";
         let mut file: Box<dyn io::Write> = Box::new(File::create("./test_emit_csv.csv").unwrap());
 
-        let mut additional_afterfact = AfterfactInfo::new();
         additional_afterfact.record_cnt = 1;
         additional_afterfact.recover_record_cnt = 0;
         additional_afterfact.tl_starttime = Some(expect_tz);
@@ -2436,6 +2430,7 @@ mod tests {
 
     #[test]
     fn test_emit_csv_output_with_multiline_opt() {
+        let mut additional_afterfact = AfterfactInfo::new();
         let mock_ch_filter = message::create_output_filter_config(
             "test_files/config/channel_abbreviations.txt",
             true,
@@ -2533,8 +2528,6 @@ mod tests {
         )
         .unwrap_or_default();
         {
-            let messages = &message::MESSAGES;
-            messages.clear();
             let val = r#"
                 {
                     "Event": {
@@ -2642,7 +2635,7 @@ mod tests {
                 .to_str()
                 .unwrap(),
             );
-            message::insert(
+            let detect_info = message::create_message(
                 &event,
                 CompactString::new(output),
                 DetectInfo {
@@ -2658,15 +2651,15 @@ mod tests {
                     is_condition: false,
                     details_convert_map: HashMap::default(),
                 },
-                expect_time,
                 &profile_converter,
                 (false, false),
                 (&eventkey_alias, &FieldDataMapKey::default(), &None),
             );
+            additional_afterfact.detect_infos.push(detect_info);
             *profile_converter.get_mut("Computer").unwrap() =
                 Profile::Computer(test_computername.into());
 
-            message::insert(
+            let detect_info = message::create_message(
                 &event,
                 CompactString::new(output),
                 DetectInfo {
@@ -2682,15 +2675,11 @@ mod tests {
                     is_condition: false,
                     details_convert_map: HashMap::default(),
                 },
-                expect_time,
                 &profile_converter,
                 (false, false),
                 (&eventkey_alias, &FieldDataMapKey::default(), &None),
             );
-            let multi = message::MESSAGES.get(&expect_time).unwrap();
-            let (_, detect_infos) = multi.pair();
-
-            println!("message: {detect_infos:?}");
+            additional_afterfact.detect_infos.push(detect_info);
         }
         let expect =
             "\"Timestamp\",\"Computer\",\"Channel\",\"EventID\",\"Level\",\"Tags\",\"RecordID\",\"RuleTitle\",\"Details\",\"AllFieldInfo\"\n\""
@@ -2739,7 +2728,6 @@ mod tests {
         let mut file: Box<dyn io::Write> =
             Box::new(File::create("./test_emit_csv_multiline.csv").unwrap());
 
-        let mut additional_afterfact = AfterfactInfo::new();
         additional_afterfact.record_cnt = 1;
         additional_afterfact.recover_record_cnt = 0;
         additional_afterfact.tl_starttime = Some(expect_tz);
@@ -2763,6 +2751,7 @@ mod tests {
 
     #[test]
     fn test_emit_csv_output_with_remove_duplicate_opt() {
+        let mut additional_afterfact = AfterfactInfo::new();
         let mock_ch_filter = message::create_output_filter_config(
             "test_files/config/channel_abbreviations.txt",
             true,
@@ -2860,8 +2849,6 @@ mod tests {
         )
         .unwrap_or_default();
         {
-            let messages = &message::MESSAGES;
-            messages.clear();
             let val = r#"
                 {
                     "Event": {
@@ -2970,7 +2957,7 @@ mod tests {
                 .to_str()
                 .unwrap(),
             );
-            message::insert(
+            let detect_info = message::create_message(
                 &event,
                 CompactString::new(output),
                 DetectInfo {
@@ -2986,15 +2973,15 @@ mod tests {
                     is_condition: false,
                     details_convert_map: HashMap::default(),
                 },
-                expect_time,
                 &profile_converter,
                 (false, false),
                 (&eventkey_alias, &FieldDataMapKey::default(), &None),
             );
+            additional_afterfact.detect_infos.push(detect_info);
             *profile_converter.get_mut("Computer").unwrap() =
                 Profile::Computer(test_computername.into());
 
-            message::insert(
+            let detect_info = message::create_message(
                 &event,
                 CompactString::new(output),
                 DetectInfo {
@@ -3010,15 +2997,11 @@ mod tests {
                     is_condition: false,
                     details_convert_map: HashMap::default(),
                 },
-                expect_time,
                 &profile_converter,
                 (false, false),
                 (&eventkey_alias, &FieldDataMapKey::default(), &None),
             );
-            let multi = message::MESSAGES.get(&expect_time).unwrap();
-            let (_, detect_infos) = multi.pair();
-
-            println!("message: {detect_infos:?}");
+            additional_afterfact.detect_infos.push(detect_info);
         }
         let expect =
             "\"Timestamp\",\"Computer\",\"Channel\",\"Level\",\"EventID\",\"MitreAttack\",\"RecordID\",\"RuleTitle\",\"Details\",\"RecordInformation\",\"RuleFile\",\"EvtxFile\",\"Tags\"\n\""
@@ -3075,7 +3058,6 @@ mod tests {
         let mut file: Box<dyn io::Write> =
             Box::new(File::create("./test_emit_csv_remove_duplicate.csv").unwrap());
 
-        let mut additional_afterfact = AfterfactInfo::new();
         additional_afterfact.record_cnt = 1;
         additional_afterfact.recover_record_cnt = 0;
         additional_afterfact.tl_starttime = Some(expect_tz);
@@ -3099,6 +3081,7 @@ mod tests {
 
     #[test]
     fn test_emit_json_output_with_remove_duplicate_opt() {
+        let mut additional_afterfact = AfterfactInfo::new();
         let mock_ch_filter = message::create_output_filter_config(
             "test_files/config/channel_abbreviations.txt",
             true,
@@ -3196,8 +3179,6 @@ mod tests {
         )
         .unwrap_or_default();
         {
-            let messages = &message::MESSAGES;
-            messages.clear();
             let val = r#"
                 {
                     "Event": {
@@ -3308,7 +3289,7 @@ mod tests {
             );
             let details_convert_map: HashMap<CompactString, Vec<CompactString>> =
                 HashMap::from_iter([("#AllFieldInfo".into(), vec![test_recinfo.into()])]);
-            message::insert(
+            let detect_info = message::create_message(
                 &event,
                 CompactString::new(output),
                 DetectInfo {
@@ -3324,15 +3305,15 @@ mod tests {
                     is_condition: false,
                     details_convert_map,
                 },
-                expect_time,
                 &profile_converter,
                 (false, true),
                 (&eventkey_alias, &FieldDataMapKey::default(), &None),
             );
+            additional_afterfact.detect_infos.push(detect_info);
             *profile_converter.get_mut("Computer").unwrap() =
                 Profile::Computer(test_computername.into());
 
-            message::insert(
+            let detect_info2 = message::create_message(
                 &event,
                 CompactString::new(output),
                 DetectInfo {
@@ -3348,15 +3329,11 @@ mod tests {
                     is_condition: false,
                     details_convert_map: HashMap::default(),
                 },
-                expect_time,
                 &profile_converter,
                 (false, true),
                 (&eventkey_alias, &FieldDataMapKey::default(), &None),
             );
-            let multi = message::MESSAGES.get(&expect_time).unwrap();
-            let (_, detect_infos) = multi.pair();
-
-            println!("message: {detect_infos:?}");
+            additional_afterfact.detect_infos.push(detect_info2);
         }
 
         let expect_target = [
@@ -3509,6 +3486,7 @@ mod tests {
 
     #[test]
     fn test_emit_json_output_with_multiple_data_in_details() {
+        let mut additional_afterfact = AfterfactInfo::new();
         let mock_ch_filter = message::create_output_filter_config(
             "test_files/config/channel_abbreviations.txt",
             true,
@@ -3605,8 +3583,6 @@ mod tests {
         )
         .unwrap_or_default();
         {
-            let messages = &message::MESSAGES;
-            messages.clear();
             let val = r#"
                 {
                     "Event": {
@@ -3718,7 +3694,7 @@ mod tests {
             );
             let details_convert_map: HashMap<CompactString, Vec<CompactString>> =
                 HashMap::from_iter([("#AllFieldInfo".into(), vec![test_recinfo.into()])]);
-            message::insert(
+            let detect_info = message::create_message(
                 &event,
                 CompactString::new(output),
                 DetectInfo {
@@ -3734,11 +3710,11 @@ mod tests {
                     is_condition: false,
                     details_convert_map,
                 },
-                expect_time,
                 &profile_converter,
                 (false, true),
                 (&eventkey_alias, &FieldDataMapKey::default(), &None),
             );
+            additional_afterfact.detect_infos.push(detect_info);
             *profile_converter.get_mut("Computer").unwrap() =
                 Profile::Computer(test_computername.into());
         }
@@ -3819,7 +3795,6 @@ mod tests {
         let mut file: Box<dyn io::Write> =
             Box::new(File::create("./test_multiple_data_in_details.json").unwrap());
 
-        let mut additional_afterfact = AfterfactInfo::new();
         additional_afterfact.record_cnt = 1;
         additional_afterfact.recover_record_cnt = 0;
         additional_afterfact.tl_starttime = Some(expect_tz);
@@ -3861,6 +3836,7 @@ mod tests {
 
     #[test]
     fn test_emit_csv_json_output() {
+        let mut additional_afterfact = AfterfactInfo::new();
         let mock_ch_filter = message::create_output_filter_config(
             "test_files/config/channel_abbreviations.txt",
             true,
@@ -4066,11 +4042,9 @@ mod tests {
                 .to_str()
                 .unwrap(),
             );
-            let messages = &message::MESSAGES;
-            messages.clear();
             let details_convert_map: HashMap<CompactString, Vec<CompactString>> =
                 HashMap::from_iter([("#AllFieldInfo".into(), vec![test_recinfo.into()])]);
-            message::insert(
+            let message_detect_info = message::create_message(
                 &event,
                 CompactString::new(output),
                 DetectInfo {
@@ -4086,11 +4060,11 @@ mod tests {
                     is_condition: false,
                     details_convert_map,
                 },
-                expect_time,
                 &profile_converter,
                 (false, true),
                 (&eventkey_alias, &FieldDataMapKey::default(), &None),
             );
+            additional_afterfact.detect_infos.push(message_detect_info);
             *profile_converter.get_mut("Computer").unwrap() =
                 Profile::Computer(test_computername.into());
         }
@@ -4113,7 +4087,7 @@ mod tests {
         let mut file: Box<dyn io::Write> =
             Box::new(File::create("./test_emit_csv_json.json").unwrap());
 
-        let mut additional_afterfact = AfterfactInfo::new();
+
         additional_afterfact.record_cnt = 1;
         additional_afterfact.recover_record_cnt = 0;
         additional_afterfact.tl_starttime = Some(expect_tz);
@@ -4137,6 +4111,7 @@ mod tests {
 
     #[test]
     fn test_emit_csv_jsonl_output() {
+        let mut additional_afterfact = AfterfactInfo::new();
         let mock_ch_filter = message::create_output_filter_config(
             "test_files/config/channel_abbreviations.txt",
             true,
@@ -4344,9 +4319,8 @@ mod tests {
                 .to_str()
                 .unwrap(),
             );
-            let messages = &message::MESSAGES;
-            messages.clear();
-            message::insert(
+
+            let message_detect_info = message::create_message(
                 &event,
                 CompactString::new(output),
                 DetectInfo {
@@ -4362,11 +4336,11 @@ mod tests {
                     is_condition: false,
                     details_convert_map,
                 },
-                expect_time,
                 &profile_converter,
                 (false, true),
                 (&eventkey_alias, &FieldDataMapKey::default(), &None),
             );
+            additional_afterfact.detect_infos.push(message_detect_info);
             *profile_converter.get_mut("Computer").unwrap() =
                 Profile::Computer(test_computername.into());
         }
@@ -4389,7 +4363,6 @@ mod tests {
         let mut file: Box<dyn io::Write> =
             Box::new(File::create("./test_emit_csv_jsonl.jsonl").unwrap());
 
-        let mut additional_afterfact = AfterfactInfo::new();
         additional_afterfact.record_cnt = 1;
         additional_afterfact.recover_record_cnt = 0;
         additional_afterfact.tl_starttime = Some(expect_tz);

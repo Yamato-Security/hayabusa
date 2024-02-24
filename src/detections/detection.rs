@@ -10,7 +10,7 @@ use crate::options::profile::Profile::{
     RuleID, RuleModifiedDate, RuleTitle, SrcASN, SrcCity, SrcCountry, Status, TgtASN, TgtCity,
     TgtCountry, Timestamp,
 };
-use chrono::{DateTime, TimeZone, Utc};
+use chrono::{TimeZone, Utc};
 use compact_str::CompactString;
 use itertools::Itertools;
 use nested::Nested;
@@ -200,14 +200,14 @@ impl Detection {
         self,
         rt: &Runtime,
         stored_static: &StoredStatic,
-    ) -> Vec<(DetectInfo, DateTime<Utc>)> {
+    ) -> Vec<DetectInfo> {
         return rt.block_on(self.add_aggcondition_msg(stored_static));
     }
 
     async fn add_aggcondition_msg(
         &self,
         stored_static: &StoredStatic,
-    ) -> Vec<(DetectInfo, DateTime<Utc>)> {
+    ) -> Vec<DetectInfo> {
         let mut ret = vec![];
         for rule in &self.rules {
             if !rule.has_agg_condition() {
@@ -769,14 +769,11 @@ impl Detection {
         return detect_info;
     }
 
-    /// TODO
-    /// This method is no longer used but I remained it for testcases.
-    /// We should refactor it and remove later.
     fn create_agg_log_record(
         rule: &RuleNode,
         agg_result: AggResult,
         stored_static: &StoredStatic,
-    ) -> (DetectInfo, DateTime<Utc>) {
+    ) -> DetectInfo {
         let tag_info: &Nested<String> = &Detection::get_tag_info(rule);
         let output = Detection::create_count_output(rule, &agg_result);
 
@@ -993,7 +990,7 @@ impl Detection {
             (true, is_json_timeline),
             (eventkey_alias, &field_data_map_key, &None),
         );
-        return (detect_info, agg_result.start_timedate);
+        return detect_info;
     }
 
     /// rule内のtagsの内容を配列として返却する関数
@@ -1230,14 +1227,12 @@ mod tests {
     use crate::detections::configs::CURRENT_EXE_PATH;
     use crate::detections::configs::STORED_EKEY_ALIAS;
     use crate::detections::detection::Detection;
-    use crate::detections::message;
     use crate::detections::rule::create_rule;
     use crate::detections::rule::AggResult;
     use crate::detections::rule::RuleNode;
     use crate::detections::utils;
     use crate::filter;
     use crate::options::profile::Profile;
-    use chrono::NaiveDateTime;
     use chrono::TimeZone;
     use chrono::Utc;
     use compact_str::CompactString;
@@ -1509,9 +1504,6 @@ mod tests {
     fn test_insert_message_with_geoip() {
         let test_filepath: &str = "test.evtx";
         let test_rulepath: &str = "test-rule.yml";
-        let expect_naivetime =
-            NaiveDateTime::parse_from_str("1996-02-27T01:05:01Z", "%Y-%m-%dT%H:%M:%SZ").unwrap();
-        let expect_time = Utc.from_local_datetime(&expect_naivetime).unwrap();
         let dummy_action = Action::CsvTimeline(CsvOutputOption {
             output_options: OutputOption {
                 input_args: InputOption {
@@ -1594,8 +1586,6 @@ mod tests {
             );
             *STORED_EKEY_ALIAS.write().unwrap() = Some(eventkey_alias);
 
-            let messages = &message::MESSAGES;
-            messages.clear();
             let val = r#"
             {
                 "Event": {
@@ -1627,27 +1617,24 @@ mod tests {
                 let stored_static = &stored_static;
                 let detect_info =
                     Detection::create_log_record(rule, record_info, stored_static);
-                let detect_time = detect_info.detected_time.clone();
-                message::insert_message(detect_info, detect_time);
+
+                let expect_geo_ip_data: Vec<(CompactString, Profile)> = vec![
+                    ("SrcASN".into(), Profile::SrcASN("Bredband2 AB".into())),
+                    ("SrcCountry".into(), Profile::SrcCountry("Sweden".into())),
+                    ("SrcCity".into(), Profile::SrcCity("Linköping".into())),
+                    ("TgtASN".into(), Profile::TgtASN("-".into())),
+                    (
+                        "TgtCountry".into(),
+                        Profile::TgtCountry("United Kingdom".into()),
+                    ),
+                    ("TgtCity".into(), Profile::TgtCity("Boxford".into())),
+                ];
+                let ext_field = detect_info.ext_field.clone();
+                for expect in expect_geo_ip_data.iter() {
+                    assert!(ext_field.contains(expect));
+                }
             };
-            let multi = message::MESSAGES.get(&expect_time).unwrap();
-            let (_, detect_infos) = multi.pair();
-            assert!(detect_infos.len() == 1);
-            let expect_geo_ip_data: Vec<(CompactString, Profile)> = vec![
-                ("SrcASN".into(), Profile::SrcASN("Bredband2 AB".into())),
-                ("SrcCountry".into(), Profile::SrcCountry("Sweden".into())),
-                ("SrcCity".into(), Profile::SrcCity("Linköping".into())),
-                ("TgtASN".into(), Profile::TgtASN("-".into())),
-                (
-                    "TgtCountry".into(),
-                    Profile::TgtCountry("United Kingdom".into()),
-                ),
-                ("TgtCity".into(), Profile::TgtCity("Boxford".into())),
-            ];
-            let ext_field = detect_infos[0].ext_field.clone();
-            for expect in expect_geo_ip_data.iter() {
-                assert!(ext_field.contains(expect));
-            }
+
         }
     }
 
@@ -1655,9 +1642,6 @@ mod tests {
     fn test_filtered_insert_message_with_geoip() {
         let test_filepath: &str = "test.evtx";
         let test_rulepath: &str = "test-rule.yml";
-        let expect_naivetime =
-            NaiveDateTime::parse_from_str("1996-02-27T01:05:01Z", "%Y-%m-%dT%H:%M:%SZ").unwrap();
-        let expect_time = Utc.from_local_datetime(&expect_naivetime).unwrap();
         let dummy_action = Action::CsvTimeline(CsvOutputOption {
             output_options: OutputOption {
                 input_args: InputOption {
@@ -1740,8 +1724,6 @@ mod tests {
             );
             *STORED_EKEY_ALIAS.write().unwrap() = Some(eventkey_alias);
 
-            let messages = &message::MESSAGES;
-            messages.clear();
             let val = r#"
             {
                 "Event": {
@@ -1773,33 +1755,25 @@ mod tests {
                 let stored_static = &stored_static;
                 let detect_info =
                     Detection::create_log_record(rule, record_info, stored_static);
-                let detected_time = detect_info.detected_time.clone();
-                message::insert_message(detect_info, detected_time);
+                let expect_geo_ip_data: Vec<(CompactString, Profile)> = vec![
+                    ("SrcASN".into(), Profile::SrcASN("-".into())),
+                    ("SrcCountry".into(), Profile::SrcCountry("-".into())),
+                    ("SrcCity".into(), Profile::SrcCity("-".into())),
+                    ("TgtASN".into(), Profile::TgtASN("-".into())),
+                    ("TgtCountry".into(), Profile::TgtCountry("-".into())),
+                    ("TgtCity".into(), Profile::TgtCity("-".into())),
+                ];
+                let ext_field = detect_info.ext_field.clone();
+                for expect in expect_geo_ip_data.iter() {
+                    assert!(ext_field.contains(expect));
+                }  
             };
-            let multi = message::MESSAGES.get(&expect_time).unwrap();
-            let (_, detect_infos) = multi.pair();
-            assert!(detect_infos.len() == 1);
-            let expect_geo_ip_data: Vec<(CompactString, Profile)> = vec![
-                ("SrcASN".into(), Profile::SrcASN("-".into())),
-                ("SrcCountry".into(), Profile::SrcCountry("-".into())),
-                ("SrcCity".into(), Profile::SrcCity("-".into())),
-                ("TgtASN".into(), Profile::TgtASN("-".into())),
-                ("TgtCountry".into(), Profile::TgtCountry("-".into())),
-                ("TgtCity".into(), Profile::TgtCity("-".into())),
-            ];
-            let ext_field = detect_infos[0].ext_field.clone();
-            for expect in expect_geo_ip_data.iter() {
-                assert!(ext_field.contains(expect));
-            }
         }
     }
 
     #[test]
     fn test_insert_message_extra_field_info() {
         let test_filepath: &str = "test.evtx";
-        let expect_naivetime =
-            NaiveDateTime::parse_from_str("1996-02-27T01:05:01Z", "%Y-%m-%dT%H:%M:%SZ").unwrap();
-        let expect_time = Utc.from_local_datetime(&expect_naivetime).unwrap();
         let dummy_action = Action::CsvTimeline(CsvOutputOption {
             output_options: OutputOption {
                 input_args: InputOption {
@@ -1886,8 +1860,6 @@ mod tests {
             );
             *STORED_EKEY_ALIAS.write().unwrap() = Some(eventkey_alias);
 
-            let messages = &message::MESSAGES;
-            messages.clear();
             let val = r#"
             {
                 "Event": {
@@ -1932,29 +1904,22 @@ mod tests {
                 let stored_static: &StoredStatic = &stored_static.clone();
                 let detect_info =
                     Detection::create_log_record(rule, record_info, stored_static);
-                let detected_time = detect_info.detected_time.clone();
-                message::insert_message(detect_info, detected_time);
+
+                let expect_extra_field_data: Vec<(CompactString, Profile)> = vec![(
+                    "ExtraFieldInfo".into(),
+                    Profile::ExtraFieldInfo("CommandRLine: hoge ¦ DestAddress: 2.125.160.216".into()),
+                )];
+                let ext_field = detect_info.ext_field.clone();
+                for expect in expect_extra_field_data.iter() {
+                    assert!(ext_field.contains(expect));
+                }
             };
-            let multi = message::MESSAGES.get(&expect_time).unwrap();
-            let (_, detect_infos) = multi.pair();
-            assert!(detect_infos.len() == 1);
-            let expect_extra_field_data: Vec<(CompactString, Profile)> = vec![(
-                "ExtraFieldInfo".into(),
-                Profile::ExtraFieldInfo("CommandRLine: hoge ¦ DestAddress: 2.125.160.216".into()),
-            )];
-            let ext_field = detect_infos[0].ext_field.clone();
-            for expect in expect_extra_field_data.iter() {
-                assert!(ext_field.contains(expect));
-            }
         }
     }
 
     #[test]
     fn test_insert_message_multiline_ruleauthor() {
         let test_filepath: &str = "test.evtx";
-        let expect_naivetime =
-            NaiveDateTime::parse_from_str("1996-02-27T01:05:01Z", "%Y-%m-%dT%H:%M:%SZ").unwrap();
-        let expect_time = Utc.from_local_datetime(&expect_naivetime).unwrap();
         let dummy_action = Action::CsvTimeline(CsvOutputOption {
             output_options: OutputOption {
                 input_args: InputOption {
@@ -2042,8 +2007,6 @@ mod tests {
             );
             *STORED_EKEY_ALIAS.write().unwrap() = Some(eventkey_alias);
 
-            let messages = &message::MESSAGES;
-            messages.clear();
             let val = r#"
             {
                 "Event": {
@@ -2088,18 +2051,14 @@ mod tests {
                 let stored_static: &StoredStatic = &stored_static.clone();
                 let detect_info =
                     Detection::create_log_record(rule, record_info, stored_static);
-                let detected_time = detect_info.detected_time.clone();
-                message::insert_message(detect_info, detected_time);
-            };
-            let multi = message::MESSAGES.get(&expect_time).unwrap();
-            let (_, detect_infos) = multi.pair();
-            assert!(detect_infos.len() == 1);
-            println!("{:?}", detect_infos[0].ext_field);
-            assert!(detect_infos[0].ext_field.iter().any(|x| x
-                == &(
-                    CompactString::from("RuleAuthor"),
-                    Profile::RuleAuthor("Test🛂🛂Test2🛂🛂Test3🛂🛂Test4".into())
-                )));
+
+                println!("{:?}", detect_info.ext_field);
+                assert!(detect_info.ext_field.iter().any(|x| x
+                    == &(
+                        CompactString::from("RuleAuthor"),
+                        Profile::RuleAuthor("Test🛂🛂Test2🛂🛂Test3🛂🛂Test4".into())
+                    )));
+            }
         }
     }
 }
