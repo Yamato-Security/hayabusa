@@ -6,6 +6,7 @@
 
 - Added `--include-status` option: You can specify rules based on their `status`. (#1193) (@hitenkoku)
 - Removed unused crates. (@YamatoSecurity)
+- Adjusted JSON input file exported from Splunk. (#1083) (@hitenkoku)
 
 **Bug Fixes:**
 
