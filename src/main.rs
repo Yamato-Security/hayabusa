@@ -1687,8 +1687,13 @@ impl App {
                 }
                 record_cnt += 1;
                 let mut data = next_rec.unwrap();
+                let is_splunk_json = data["Event"]["EventData"]["result"].is_object();
                 // ChannelなどのデータはEvent -> Systemに存在する必要があるが、他処理のことも考え、Event -> EventDataのデータをそのまま投入する形にした。cloneを利用しているのはCopy trait実装がserde_json::Valueにないため
 
+                if is_splunk_json {
+                    data["Event"]["System"] = data["Event"]["EventData"]["result"].clone();
+                    data["Event"]["EventData"] = data["Event"]["EventData"]["result"].clone();
+                }
                 if data["Event"]["EventData"].is_object() {
                     data["Event"]["System"] = data["Event"]["EventData"].clone();
                 } else if data["Event"]["EventData"].is_array() {
@@ -1699,19 +1704,28 @@ impl App {
                     .as_object_mut()
                     .unwrap()
                     .insert("EventRecordID".to_string(), Value::from(1));
+                data["Event"]["System"]["EventRecordID"] =
+                    data["Event"]["EventData"]["RecordNumber"].clone();
                 data["Event"]["System"].as_object_mut().unwrap().insert(
                     "Provider_attributes".to_string(),
                     Value::Object(Map::from_iter(vec![("Name".to_string(), Value::from(1))])),
                 );
-
-                data["Event"]["System"]["EventRecordID"] =
-                    data["Event"]["EventData"]["RecordNumber"].clone();
-                data["Event"]["System"]["Provider_attributes"]["Name"] =
-                    data["Event"]["EventData"]["SourceName"].clone();
                 data["Event"]["UserData"] = data["Event"]["EventData"].clone();
-                // Computer名に対応する内容はHostnameであることがわかったためデータをクローンして投入
-                data["Event"]["System"]["Computer"] =
-                    data["Event"]["EventData"]["Hostname"].clone();
+
+                if is_splunk_json {
+                    data["Event"]["EventData"]["@timestamp"] =
+                        data["Event"]["EventData"]["_time"].clone();
+                    data["Event"]["System"]["@timestamp"] =
+                        data["Event"]["EventData"]["_time"].clone();
+                    data["Event"]["System"]["Provider_attributes"]["Name"] =
+                        data["Event"]["EventData"]["Name"].clone();
+                } else {
+                    data["Event"]["System"]["Provider_attributes"]["Name"] =
+                        data["Event"]["EventData"]["SourceName"].clone();
+                    // Computer名に対応する内容はHostnameであることがわかったためデータをクローンして投入
+                    data["Event"]["System"]["Computer"] =
+                        data["Event"]["EventData"]["Hostname"].clone();
+                }
 
                 if stored_static.computer_metrics_flag {
                     countup_event_by_computer(&data, &stored_static.eventkey_alias, &mut tl);
@@ -1758,13 +1772,18 @@ impl App {
                 } else {
                     &data["Event"]["EventData"]["@timestamp"]
                 };
+                let time_fmt = if is_splunk_json {
+                    "%Y-%m-%dT%H:%M:%S%.3f%:z"
+                } else {
+                    "%Y-%m-%dT%H:%M:%S%.3fZ"
+                };
                 // EventID側の条件との条件の混同を防ぐため時間でのフィルタリングの条件分岐を分離した
                 let timestamp = match NaiveDateTime::parse_from_str(
                     &target_timestamp
                         .to_string()
                         .replace("\\\"", "")
                         .replace('"', ""),
-                    "%Y-%m-%dT%H:%M:%S%.3fZ",
+                    time_fmt,
                 ) {
                     Ok(without_timezone_datetime) => Some(
                         DateTime::<Utc>::from_naive_utc_and_offset(without_timezone_datetime, Utc),
@@ -1773,7 +1792,7 @@ impl App {
                         AlertMessage::alert(&format!(
                             "timestamp parse error. filepath:{},{} {}",
                             path,
-                            &data["Event"]["EventData"]["@timestamp"]
+                            &target_timestamp
                                 .to_string()
                                 .replace("\\\"", "")
                                 .replace('"', ""),
