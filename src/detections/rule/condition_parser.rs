@@ -91,7 +91,7 @@ impl ConditionToken {
         };
     }
 
-    pub fn to_condition_token(token: String) -> ConditionToken {
+    pub fn to_condition_token(token: &str) -> ConditionToken {
         if token == "(" {
             ConditionToken::LeftParenthesis
         } else if token == ")" {
@@ -105,7 +105,7 @@ impl ConditionToken {
         } else if token == "or" {
             ConditionToken::Or
         } else {
-            ConditionToken::SelectionReference(token)
+            ConditionToken::SelectionReference(token.to_string())
         }
     }
 }
@@ -130,7 +130,7 @@ impl ConditionCompiler {
         let captured = self::RE_PIPE.captures(condition_str.as_str());
         let replaced_condition = if let Some(cap) = captured {
             let captured = cap.get(0).unwrap().as_str();
-            condition_str.replacen(captured, "", 1)
+            condition_str.replace(captured, "")
         } else {
             condition_str.to_string()
         };
@@ -191,28 +191,28 @@ impl ConditionCompiler {
 
     /// 字句解析を行う
     fn tokenize(&self, condition_str: &str) -> Result<Vec<ConditionToken>, String> {
-        let mut cur_condition_str = condition_str.to_string();
+        let mut cur_condition_str = condition_str;
 
         let mut tokens = Vec::new();
         while !cur_condition_str.is_empty() {
             let captured = self::CONDITION_REGEXMAP.iter().find_map(|regex| {
-                return regex.captures(cur_condition_str.as_str());
+                return regex.captures(cur_condition_str);
             });
             if captured.is_none() {
                 // トークンにマッチしないのはありえないという方針でパースしています。
                 return Result::Err("An unusable character was found.".to_string());
             }
 
-            let mached_str = captured.unwrap().get(0).unwrap().as_str();
-            let token = ConditionToken::to_condition_token(mached_str.to_string());
+            let matched_str = captured.unwrap().get(0).unwrap().as_str();
+            let token = ConditionToken::to_condition_token(matched_str);
             if let ConditionToken::Space = token {
                 // 空白は特に意味ないので、読み飛ばす。
-                cur_condition_str = cur_condition_str.replacen(mached_str, "", 1);
+                cur_condition_str = &cur_condition_str[matched_str.len()..];
                 continue;
             }
 
             tokens.push(token);
-            cur_condition_str = cur_condition_str.replacen(mached_str, "", 1);
+            cur_condition_str = &cur_condition_str[matched_str.len()..];
         }
 
         Result::Ok(tokens)
