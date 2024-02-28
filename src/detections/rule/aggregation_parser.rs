@@ -88,29 +88,29 @@ impl AggegationConditionCompiler {
         &self,
         condition_str: String,
     ) -> Result<Vec<AggregationConditionToken>, String> {
-        let mut cur_condition_str = condition_str;
+        let mut cur_condition_str = condition_str.as_str();
 
         let mut tokens = Vec::new();
         while !cur_condition_str.is_empty() {
             let captured = self::AGGREGATION_REGEXMAP.iter().find_map(|regex| {
-                return regex.captures(cur_condition_str.as_str());
+                return regex.captures(cur_condition_str);
             });
             if captured.is_none() {
                 // トークンにマッチしないのはありえないという方針でパースしています。
                 return Result::Err("An unusable character was found.".to_string());
             }
 
-            let mached_str = captured.unwrap().get(0).unwrap().as_str();
-            let token = self.to_enum(mached_str.to_string());
+            let matched_str = captured.unwrap().get(0).unwrap().as_str();
+            let token = self.to_enum(matched_str);
 
             if let AggregationConditionToken::Space = token {
                 // 空白は特に意味ないので、読み飛ばす。
-                cur_condition_str = cur_condition_str.replacen(mached_str, "", 1);
+                cur_condition_str = &cur_condition_str[matched_str.len()..];
                 continue;
             }
 
             tokens.push(token);
-            cur_condition_str = cur_condition_str.replacen(mached_str, "", 1);
+            cur_condition_str = &cur_condition_str[matched_str.len()..];
         }
 
         Result::Ok(tokens)
@@ -226,7 +226,7 @@ impl AggegationConditionCompiler {
     }
 
     /// 文字列をConditionTokenに変換する。
-    fn to_enum(&self, token: String) -> AggregationConditionToken {
+    fn to_enum(&self, token: &str) -> AggregationConditionToken {
         if token.starts_with("count(") {
             let count_field = token
                 .replacen("count(", "", 1)
@@ -248,7 +248,7 @@ impl AggegationConditionCompiler {
         } else if token == ">" {
             AggregationConditionToken::GT
         } else {
-            AggregationConditionToken::Keyword(token)
+            AggregationConditionToken::Keyword(token.to_string())
         }
     }
 }

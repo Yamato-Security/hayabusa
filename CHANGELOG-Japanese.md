@@ -7,6 +7,7 @@
 - 指定した`status`のルールのみを利用する`--include-status`オプションを追加した。 (#1193) (@hitenkoku)
 - 未使用のクレートを削除した。(@YamatoSecurity)
 - SplunkからエクスポートしたJSONファイルの入力に対応した。 (#1083) (@hitenkoku)
+- パフォーマンスの改善 (#1277, #1278) (@fukusuket)
 
 **バグ修正:**
 
