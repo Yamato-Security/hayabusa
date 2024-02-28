@@ -1,7 +1,6 @@
 Hayabusa was possible thanks to the following people (in alphabetical order):
 
 Akira Nishikawa (@nishikawaakira): First lead developer (core hayabusa rule support, etc...)
-DustInDark/Hitenkoku: Current lead developer (Too many features to count.)
 Fukusuke Takahashi (fukusuket): Core developer (Too many bug fixes to count, hayabusa converter upgrades, new features, etc...)
 Garigariganzy (@garigariganzy31): Developer (Event ID metrics implementation, etc...)
 ItiB (@itiB_S144):  Core developer (sigmac hayabusa backend, search command, etc...)

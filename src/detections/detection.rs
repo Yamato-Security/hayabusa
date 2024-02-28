@@ -276,11 +276,12 @@ impl Detection {
         let ch_str =
             &get_serde_number_to_string(&record_info.record["Event"]["System"]["Channel"], false)
                 .unwrap_or_default();
-        let provider = &get_serde_number_to_string(
+        let provider = get_serde_number_to_string(
             &record_info.record["Event"]["System"]["Provider_attributes"]["Name"],
             false,
         )
-        .unwrap_or_default();
+        .unwrap_or_default()
+        .replace('\'', "");
         let eid =
             get_serde_number_to_string(&record_info.record["Event"]["System"]["EventID"], false)
                 .unwrap_or_else(|| "-".into());
