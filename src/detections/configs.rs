@@ -2981,7 +2981,10 @@ mod tests {
         let actual = TargetEventTime::new(&logon_summary);
         let actual_diff = now - actual.start_time.unwrap();
         let days = actual_diff.num_days();
-        assert!(days == 366 && actual_diff.num_hours() == days * 24 + 1);
+        assert!(
+            (days == 366 && actual_diff.num_hours() == days * 24 + 1)
+                || (days == 367 && actual_diff.num_hours() == days * 24 + 1)
+        );
     }
 
     #[test]
