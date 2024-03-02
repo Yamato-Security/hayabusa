@@ -72,6 +72,13 @@ pub struct AfterfactInfo {
     pub rule_title_path_map: HashMap<CompactString, CompactString>,
     pub rule_author_counter: HashMap<CompactString, i128>,
     pub timestamps: Vec<i64>,
+    pub has_displayed_header: bool,
+    pub detected_rule_files: HashSet<CompactString>,
+    pub detected_rule_ids: HashSet<CompactString>,
+    pub detected_computer_and_rule_names: HashSet<CompactString>,
+    pub author_list_cache: HashMap<CompactString, Nested<String>>,
+    pub prev_message: HashMap<CompactString, Profile>,
+    pub prev_details_convert_map: HashMap<CompactString, Vec<CompactString>>,
 }
 
 struct InitLevelMapResult(
@@ -217,6 +224,13 @@ impl Default for AfterfactInfo {
             rule_title_path_map: HashMap::new(),
             rule_author_counter: HashMap::new(),
             timestamps: vec![],
+            has_displayed_header: false,
+            detected_rule_files: HashSet::new(),
+            detected_rule_ids: HashSet::new(),
+            detected_computer_and_rule_names: HashSet::new(),
+            author_list_cache: HashMap::new(),
+            prev_message: HashMap::new(),
+            prev_details_convert_map: HashMap::new(),
         }
     }
 }
@@ -416,7 +430,6 @@ fn output_afterfact<W: std::io::Write>(
     stored_static: &StoredStatic,
     mut afterfact_info: AfterfactInfo,
 ) -> io::Result<()> {
-    let mut artifact_writer = init_writer();
     if displayflag {
         println!();
     }
@@ -432,18 +445,18 @@ fn output_afterfact<W: std::io::Write>(
         afterfact_info.removed_duplicate_detect_infos();
     }
 
+    let mut artifact_writer = init_writer();
     emit_csv(
         stored_static,
         &artifact_writer,
         writer,
-        &afterfact_info,
+        &mut afterfact_info,
         profile,
         displayflag,
     )?;
 
     // calculate statistic information
     afterfact_info = calc_statistic_info(afterfact_info, stored_static);
-
     artifact_writer.disp_wtr_buf.clear();
 
     output_additional_afterfact(stored_static, artifact_writer, &afterfact_info);
@@ -455,7 +468,7 @@ fn emit_csv<W: std::io::Write>(
     stored_static: &StoredStatic,
     artifact_writer: &AfterfactWriter,
     writer: &mut W,
-    afterfact_info: &AfterfactInfo,
+    afterfact_info: &mut AfterfactInfo,
     profile: &[(CompactString, Profile)],
     displayflag: bool,
 ) -> io::Result<()> {
@@ -476,10 +489,7 @@ fn emit_csv<W: std::io::Write>(
         .build(removed_replaced_maps.keys())
         .unwrap();
 
-    let mut plus_header = true;
     // remove duplicate dataのための前レコード分の情報を保持する変数
-    let mut prev_message: HashMap<CompactString, Profile> = HashMap::new();
-    let mut prev_details_convert_map: HashMap<CompactString, Vec<CompactString>> = HashMap::new();
     let color_map = create_output_color_map(stored_static.common_options.no_color);
     let (json_output_flag, jsonl_output_flag, remove_duplicate_data, wtr) =
         match &stored_static.config.action.as_ref().unwrap() {
@@ -517,7 +527,7 @@ fn emit_csv<W: std::io::Write>(
     for detect_info in afterfact_info.detect_infos.iter() {
         if displayflag && !(json_output_flag || jsonl_output_flag) {
             // 標準出力の場合
-            if plus_header {
+            if !afterfact_info.has_displayed_header {
                 // ヘッダーのみを出力
                 _get_serialized_disp_output(
                     &artifact_writer.disp_wtr,
@@ -534,7 +544,7 @@ fn emit_csv<W: std::io::Write>(
                         stored_static.common_options.no_color,
                     ),
                 );
-                plus_header = false;
+                afterfact_info.has_displayed_header = true;
             }
             _get_serialized_disp_output(
                 &artifact_writer.disp_wtr,
@@ -554,16 +564,14 @@ fn emit_csv<W: std::io::Write>(
         } else if jsonl_output_flag {
             // JSONL output format
             let result = output_json_str(
-                &detect_info.ext_field,
-                prev_message,
+                detect_info,
+                afterfact_info,
                 jsonl_output_flag,
                 GEOIP_DB_PARSER.read().unwrap().is_some(),
                 remove_duplicate_data,
-                detect_info.is_condition,
-                &[&detect_info.details_convert_map, &prev_details_convert_map],
             );
-            prev_message = result.1;
-            prev_details_convert_map = detect_info.details_convert_map.clone();
+            afterfact_info.prev_message = result.1;
+            afterfact_info.prev_details_convert_map = detect_info.details_convert_map.clone();
             if displayflag {
                 write_color_buffer(
                     &artifact_writer.disp_wtr,
@@ -578,16 +586,14 @@ fn emit_csv<W: std::io::Write>(
         } else if json_output_flag {
             // JSON output
             let result = output_json_str(
-                &detect_info.ext_field,
-                prev_message,
+                detect_info,
+                afterfact_info,
                 jsonl_output_flag,
                 GEOIP_DB_PARSER.read().unwrap().is_some(),
                 remove_duplicate_data,
-                detect_info.is_condition,
-                &[&detect_info.details_convert_map, &prev_details_convert_map],
             );
-            prev_message = result.1;
-            prev_details_convert_map = detect_info.details_convert_map.clone();
+            afterfact_info.prev_message = result.1;
+            afterfact_info.prev_details_convert_map = detect_info.details_convert_map.clone();
             if displayflag {
                 write_color_buffer(
                     &artifact_writer.disp_wtr,
@@ -603,16 +609,17 @@ fn emit_csv<W: std::io::Write>(
             }
         } else {
             // csv output format
-            if plus_header {
+            if !afterfact_info.has_displayed_header {
                 wtr.write_record(detect_info.ext_field.iter().map(|x| x.0.trim()))?;
-                plus_header = false;
+                afterfact_info.has_displayed_header = true;
             }
             wtr.write_record(detect_info.ext_field.iter().map(|x| {
                 match x.1 {
                     Profile::Details(_) | Profile::AllFieldInfo(_) | Profile::ExtraFieldInfo(_) => {
                         let ret = if remove_duplicate_data
                             && x.1.to_value()
-                                == prev_message
+                                == afterfact_info
+                                    .prev_message
                                     .get(&x.0)
                                     .unwrap_or(&Profile::Literal("-".into()))
                                     .to_value()
@@ -630,7 +637,7 @@ fn emit_csv<W: std::io::Write>(
                                 &removed_replaced_maps.values().collect_vec(),
                             )
                         };
-                        prev_message.insert(x.0.clone(), x.1.clone());
+                        afterfact_info.prev_message.insert(x.0.clone(), x.1.clone());
                         ret
                     }
                     _ => output_remover.replace_all(
@@ -661,10 +668,6 @@ fn calc_statistic_info(
     mut afterfact_info: AfterfactInfo,
     stored_static: &StoredStatic,
 ) -> AfterfactInfo {
-    let mut detected_rule_files: HashSet<CompactString> = HashSet::new();
-    let mut detected_rule_ids: HashSet<CompactString> = HashSet::new();
-    let mut detected_computer_and_rule_names: HashSet<CompactString> = HashSet::new();
-    let mut author_list_cache: HashMap<CompactString, Nested<String>> = HashMap::new();
     let output_option = stored_static.output_option.as_ref().unwrap();
     for detect_info in afterfact_info.detect_infos.iter() {
         if !detect_info.is_condition {
@@ -678,7 +681,8 @@ fn calc_statistic_info(
 
         if !output_option.no_summary {
             let level_suffix = get_level_suffix(detect_info.level.as_str());
-            let author_list = author_list_cache
+            let author_list = afterfact_info
+                .author_list_cache
                 .entry(detect_info.rulepath.clone())
                 .or_insert_with(|| extract_author_name(&detect_info.rulepath))
                 .clone();
@@ -687,8 +691,13 @@ fn calc_statistic_info(
                 .detect_rule_authors
                 .insert(detect_info.rulepath.to_owned(), author_str.into());
 
-            if !detected_rule_files.contains(&detect_info.rulepath) {
-                detected_rule_files.insert(detect_info.rulepath.to_owned());
+            if !afterfact_info
+                .detected_rule_files
+                .contains(&detect_info.rulepath)
+            {
+                afterfact_info
+                    .detected_rule_files
+                    .insert(detect_info.rulepath.to_owned());
                 for author in author_list.iter() {
                     *afterfact_info
                         .rule_author_counter
@@ -696,8 +705,13 @@ fn calc_statistic_info(
                         .or_insert(0) += 1;
                 }
             }
-            if !detected_rule_ids.contains(&detect_info.ruleid) {
-                detected_rule_ids.insert(detect_info.ruleid.to_owned());
+            if !afterfact_info
+                .detected_rule_ids
+                .contains(&detect_info.ruleid)
+            {
+                afterfact_info
+                    .detected_rule_ids
+                    .insert(detect_info.ruleid.to_owned());
                 afterfact_info.unique_detect_counts_by_level[level_suffix] += 1;
             }
 
@@ -705,8 +719,13 @@ fn calc_statistic_info(
                 "{}|{}",
                 &detect_info.computername, &detect_info.rulepath
             ));
-            if !detected_computer_and_rule_names.contains(&computer_rule_check_key) {
-                detected_computer_and_rule_names.insert(computer_rule_check_key);
+            if !afterfact_info
+                .detected_computer_and_rule_names
+                .contains(&computer_rule_check_key)
+            {
+                afterfact_info
+                    .detected_computer_and_rule_names
+                    .insert(computer_rule_check_key);
                 countup_aggregation(
                     &mut afterfact_info.detect_counts_by_computer_and_level,
                     &detect_info.level,
@@ -1706,20 +1725,19 @@ fn _convert_valid_json_str(input: &[&str], concat_flag: bool) -> String {
 
 /// JSONに出力する1検知分のオブジェクトの文字列を出力する関数
 pub fn output_json_str(
-    ext_field: &[(CompactString, Profile)],
-    prev_message: HashMap<CompactString, Profile>,
+    detect_info: &DetectInfo,
+    afterfact_info: &mut AfterfactInfo,
     jsonl_output_flag: bool,
     is_included_geo_ip: bool,
     remove_duplicate_flag: bool,
-    is_condition: bool,
-    details_infos: &[&HashMap<CompactString, Vec<CompactString>>],
 ) -> (String, HashMap<CompactString, Profile>) {
     let mut target: Vec<String> = vec![];
     let mut target_ext_field = Vec::new();
-    let ext_field_map: HashMap<CompactString, Profile> = HashMap::from_iter(ext_field.to_owned());
-    let mut next_prev_message = prev_message.clone();
+    let ext_field_map: HashMap<CompactString, Profile> =
+        HashMap::from_iter(detect_info.ext_field.to_owned());
+    let mut next_prev_message = afterfact_info.prev_message.clone();
     if remove_duplicate_flag {
-        for (field_name, profile) in ext_field.iter() {
+        for (field_name, profile) in detect_info.ext_field.iter() {
             match profile {
                 Profile::Details(_) | Profile::AllFieldInfo(_) | Profile::ExtraFieldInfo(_) => {
                     let details_key = match profile {
@@ -1730,14 +1748,17 @@ pub fn output_json_str(
                     };
 
                     let empty = vec![];
-                    let now = details_infos[0]
+                    let now = detect_info
+                        .details_convert_map
                         .get(format!("#{details_key}").as_str())
                         .unwrap_or(&empty);
-                    let prev = details_infos[1]
+                    let prev = afterfact_info
+                        .prev_details_convert_map
                         .get(format!("#{details_key}").as_str())
                         .unwrap_or(&empty);
                     let dup_flag = (!profile.to_value().is_empty()
-                        && prev_message
+                        && afterfact_info
+                            .prev_message
                             .get(field_name)
                             .unwrap_or(&Profile::Literal("".into()))
                             .to_value()
@@ -1760,7 +1781,7 @@ pub fn output_json_str(
             }
         }
     } else {
-        target_ext_field = ext_field.to_owned();
+        target_ext_field = detect_info.ext_field.to_owned();
     }
     let key_add_to_details = [
         "SrcASN",
@@ -1825,14 +1846,15 @@ pub fn output_json_str(
                         Profile::ExtraFieldInfo(_) => "ExtraFieldInfo",
                         _ => "",
                     };
-                    let details_target_stocks =
-                        details_infos[0].get(&CompactString::from(format!("#{details_key}")));
+                    let details_target_stocks = detect_info
+                        .details_convert_map
+                        .get(&CompactString::from(format!("#{details_key}")));
                     if details_target_stocks.is_none() {
                         continue;
                     }
                     let details_target_stock = details_target_stocks.unwrap();
                     // aggregation conditionの場合は分解せずにそのまま出力する
-                    if is_condition {
+                    if detect_info.is_condition {
                         let details_val =
                             if details_target_stock.is_empty() || details_target_stock[0] == "-" {
                                 "-".into()
