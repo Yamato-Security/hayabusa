@@ -520,7 +520,13 @@ You should now be able to run hayabusa.
 
 ### `computer-metrics` command
 
-You can use the `computer-metrics` command to print out the total number and percentage of Event IDs seperated by Channels.
+You can use the `computer-metrics` command to check how many events there are according to each computer defined in the `Computer` field.
+Be aware that you cannot completely rely on the `Computer` field for separating events by their original computer.
+Windows 11 will sometimes use completely different `Computer` names when saving to event logs.
+Also, Windows 10 will sometimes record the `Computer` name in all upper-case and sometimes all lower-case.
+This command does not use any detection rules so will analyze all events.
+This is a good command to run to quickly see which computers have the most logs.
+With this information, you can then use the `--include-computer` or `--exclude-computer` options when creating your timelines to make your timeline generation more efficient.
 
 ```
 Usage: computer-metrics <INPUT> [OPTIONS]
