@@ -406,9 +406,7 @@ fn init_writer(stored_static: &StoredStatic) -> AfterfactWriter {
             .quote_style(QuoteStyle::Never)
             .from_writer(target),
         Action::CsvTimeline(_) => WriterBuilder::new()
-            .delimiter(b'\n')
-            .double_quote(false)
-            .quote_style(QuoteStyle::Never)
+            .quote_style(QuoteStyle::NonNumeric)
             .from_writer(target),
         _ => panic!("unknown action is specified!!"),
     };
