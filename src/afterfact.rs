@@ -16,7 +16,7 @@ use compact_str::CompactString;
 use hashbrown::hash_map::RawEntryMut;
 use terminal_size::terminal_size;
 
-use csv::{QuoteStyle, WriterBuilder};
+use csv::{QuoteStyle, Writer, WriterBuilder};
 use itertools::Itertools;
 use krapslog::{build_sparkline, build_time_markers};
 use nested::Nested;
@@ -57,7 +57,6 @@ pub struct Colors {
 }
 
 pub struct AfterfactInfo {
-    pub detect_infos: Vec<DetectInfo>,
     pub tl_starttime: Option<DateTime<Utc>>,
     pub tl_endtime: Option<DateTime<Utc>>,
     pub record_cnt: u128,
@@ -86,91 +85,6 @@ struct InitLevelMapResult(
     HashMap<CompactString, HashMap<CompactString, i128>>,
     HashMap<CompactString, HashMap<CompactString, i128>>,
 );
-
-impl AfterfactInfo {
-    pub fn sort_detect_info(&mut self) {
-        self.detect_infos.sort_unstable_by(|a, b| {
-            let cmp_time = a.detected_time.cmp(&b.detected_time);
-            if cmp_time != Ordering::Equal {
-                return cmp_time;
-            }
-
-            let a_level = get_level_suffix(a.level.as_str());
-            let b_level = get_level_suffix(b.level.as_str());
-            let level_cmp = a_level.cmp(&b_level);
-            if level_cmp != Ordering::Equal {
-                return level_cmp;
-            }
-
-            let event_id_cmp = a.eventid.cmp(&b.eventid);
-            if event_id_cmp != Ordering::Equal {
-                return event_id_cmp;
-            }
-
-            let rulepath_cmp = a.rulepath.cmp(&b.rulepath);
-            if rulepath_cmp != Ordering::Equal {
-                return rulepath_cmp;
-            }
-
-            a.computername.cmp(&b.computername)
-        });
-    }
-
-    pub fn removed_duplicate_detect_infos(&mut self) {
-        // https://qiita.com/quasardtm/items/b54a48c1accd675e0bf1
-        let mut tmp_detect_infos = vec![];
-        std::mem::swap(&mut self.detect_infos, &mut tmp_detect_infos);
-
-        // filtet duplicate event
-        let mut filtered_detect_infos: std::collections::HashSet<usize> =
-            std::collections::HashSet::new();
-        {
-            let mut prev_detect_infos = HashSet::new();
-            for (i, detect_info) in tmp_detect_infos.iter().enumerate() {
-                if i == 0 {
-                    filtered_detect_infos.insert(i);
-                    continue;
-                }
-
-                let prev_detect_info = &tmp_detect_infos[i - 1];
-                if prev_detect_info
-                    .detected_time
-                    .cmp(&detect_info.detected_time)
-                    != Ordering::Equal
-                {
-                    filtered_detect_infos.insert(i);
-                    prev_detect_infos.clear();
-                    continue;
-                }
-
-                let fields: Vec<&(CompactString, Profile)> = detect_info
-                    .ext_field
-                    .iter()
-                    .filter(|(_, profile)| !matches!(profile, Profile::EvtxFile(_)))
-                    .collect();
-                if prev_detect_infos.get(&fields).is_some() {
-                    continue;
-                }
-                prev_detect_infos.insert(fields);
-                filtered_detect_infos.insert(i);
-            }
-        }
-
-        tmp_detect_infos = tmp_detect_infos
-            .into_iter()
-            .enumerate()
-            .filter_map(|(i, detect_info)| {
-                if filtered_detect_infos.contains(&i) {
-                    Some(detect_info)
-                } else {
-                    Option::None
-                }
-            })
-            .collect();
-
-        std::mem::swap(&mut self.detect_infos, &mut tmp_detect_infos);
-    }
-}
 
 impl Default for AfterfactInfo {
     fn default() -> Self {
@@ -209,7 +123,6 @@ impl Default for AfterfactInfo {
             )
         };
         AfterfactInfo {
-            detect_infos: vec![],
             tl_starttime: Option::None,
             tl_endtime: Option::None,
             record_cnt: 0,
@@ -233,6 +146,68 @@ impl Default for AfterfactInfo {
             prev_details_convert_map: HashMap::new(),
         }
     }
+}
+
+pub fn sort_detect_info(detect_infos: &mut [DetectInfo]) {
+    detect_infos.sort_unstable_by(|a, b| {
+        let cmp_time = a.detected_time.cmp(&b.detected_time);
+        if cmp_time != Ordering::Equal {
+            return cmp_time;
+        }
+
+        let a_level = get_level_suffix(a.level.as_str());
+        let b_level = get_level_suffix(b.level.as_str());
+        let level_cmp = a_level.cmp(&b_level);
+        if level_cmp != Ordering::Equal {
+            return level_cmp;
+        }
+
+        let event_id_cmp = a.eventid.cmp(&b.eventid);
+        if event_id_cmp != Ordering::Equal {
+            return event_id_cmp;
+        }
+
+        let rulepath_cmp = a.rulepath.cmp(&b.rulepath);
+        if rulepath_cmp != Ordering::Equal {
+            return rulepath_cmp;
+        }
+
+        a.computername.cmp(&b.computername)
+    });
+}
+
+pub fn get_duplicate_idxes(detect_infos: &mut [DetectInfo]) -> HashSet<usize> {
+    // filtet duplicate event
+    let mut filtered_detect_infos = HashSet::new();
+    let mut prev_detect_infos = HashSet::new();
+    for (i, detect_info) in detect_infos.iter().enumerate() {
+        if i == 0 {
+            continue;
+        }
+
+        let prev_detect_info = &detect_infos[i - 1];
+        if prev_detect_info
+            .detected_time
+            .cmp(&detect_info.detected_time)
+            != Ordering::Equal
+        {
+            prev_detect_infos.clear();
+            continue;
+        }
+
+        let fields: Vec<&(CompactString, Profile)> = detect_info
+            .ext_field
+            .iter()
+            .filter(|(_, profile)| !matches!(profile, Profile::EvtxFile(_)))
+            .collect();
+        if prev_detect_infos.get(&fields).is_some() {
+            filtered_detect_infos.insert(i);
+            continue;
+        }
+        prev_detect_infos.insert(fields);
+    }
+
+    filtered_detect_infos
 }
 
 /// level_color.txtファイルを読み込み対応する文字色のマッピングを返却する関数
@@ -360,31 +335,21 @@ fn _print_timeline_hist(timestamps: &[i64], length: usize, side_margin_size: usi
     buf_wtr.print(&wtr).ok();
 }
 
-pub fn after_fact(stored_static: &StoredStatic, afterfact_info: AfterfactInfo) {
+pub fn after_fact(
+    detect_infos: &mut [DetectInfo],
+    stored_static: &StoredStatic,
+    afterfact_info: AfterfactInfo,
+) {
     let fn_output_afterfact_err = |err: Box<dyn Error>| {
         AlertMessage::alert(&format!("Failed to write CSV. {err}")).ok();
         process::exit(1);
     };
 
-    let mut displayflag = false;
-    let mut target: Box<dyn io::Write> = if let Some(path) = &stored_static.output_path {
-        // output to file
-        match File::create(path) {
-            Ok(file) => Box::new(BufWriter::new(file)),
-            Err(err) => {
-                AlertMessage::alert(&format!("Failed to open file. {err}")).ok();
-                process::exit(1);
-            }
-        }
-    } else {
-        displayflag = true;
-        // stdoutput (termcolor crate color output is not csv writer)
-        Box::new(BufWriter::new(io::stdout()))
-    };
+    let mut afterfact_writer = init_writer(stored_static);
 
     if let Err(err) = output_afterfact(
-        &mut target,
-        displayflag,
+        detect_infos,
+        &mut afterfact_writer,
         stored_static.profiles.as_ref().unwrap(),
         stored_static,
         afterfact_info,
@@ -408,69 +373,109 @@ fn get_level_suffix(level_str: &str) -> usize {
 struct AfterfactWriter {
     disp_wtr: BufferWriter,
     disp_wtr_buf: Buffer,
+    csv_writer: Writer<Box<dyn io::Write>>,
+    display_flag: bool,
 }
 
-fn init_writer() -> AfterfactWriter {
+fn init_writer(stored_static: &StoredStatic) -> AfterfactWriter {
     let disp_wtr = BufferWriter::stdout(ColorChoice::Always);
     let mut disp_wtr_buf = disp_wtr.buffer();
 
     disp_wtr_buf.set_color(ColorSpec::new().set_fg(None)).ok();
 
+    let mut display_flag = false;
+    let target: Box<dyn io::Write> = if let Some(path) = &stored_static.output_path {
+        // output to file
+        match File::create(path) {
+            Ok(file) => Box::new(BufWriter::new(file)),
+            Err(err) => {
+                AlertMessage::alert(&format!("Failed to open file. {err}")).ok();
+                process::exit(1);
+            }
+        }
+    } else {
+        display_flag = true;
+        // stdoutput (termcolor crate color output is not csv writer)
+        Box::new(BufWriter::new(io::stdout()))
+    };
+
+    let writer = match &stored_static.config.action.as_ref().unwrap() {
+        Action::JsonTimeline(_) => WriterBuilder::new()
+            .delimiter(b'\n')
+            .double_quote(false)
+            .quote_style(QuoteStyle::Never)
+            .from_writer(target),
+        Action::CsvTimeline(_) => WriterBuilder::new()
+            .delimiter(b'\n')
+            .double_quote(false)
+            .quote_style(QuoteStyle::Never)
+            .from_writer(target),
+        _ => panic!("unknown action is specified!!"),
+    };
+
     // emit csv
     AfterfactWriter {
         disp_wtr,
         disp_wtr_buf,
+        csv_writer: writer,
+        display_flag,
     }
 }
 
-fn output_afterfact<W: std::io::Write>(
-    writer: &mut W,
-    displayflag: bool,
+fn output_afterfact(
+    detect_infos: &mut [DetectInfo],
+    afterfact_writer: &mut AfterfactWriter,
     profile: &[(CompactString, Profile)],
     stored_static: &StoredStatic,
     mut afterfact_info: AfterfactInfo,
 ) -> io::Result<()> {
-    if displayflag {
+    if afterfact_writer.display_flag {
         println!();
     }
 
     // sort and filter detect infos
-    afterfact_info.sort_detect_info();
-    if stored_static
+    sort_detect_info(detect_infos);
+    let duplicate_idxes = if stored_static
         .output_option
         .as_ref()
         .unwrap()
         .remove_duplicate_detections
     {
-        afterfact_info.removed_duplicate_detect_infos();
-    }
+        get_duplicate_idxes(detect_infos)
+    } else {
+        HashSet::new()
+    };
 
-    let mut artifact_writer = init_writer();
     emit_csv(
+        detect_infos,
+        &duplicate_idxes,
         stored_static,
-        &artifact_writer,
-        writer,
+        afterfact_writer,
         &mut afterfact_info,
         profile,
-        displayflag,
     )?;
 
     // calculate statistic information
-    afterfact_info = calc_statistic_info(afterfact_info, stored_static);
-    artifact_writer.disp_wtr_buf.clear();
+    afterfact_info = calc_statistic_info(
+        detect_infos,
+        &duplicate_idxes,
+        afterfact_info,
+        stored_static,
+    );
+    afterfact_writer.disp_wtr_buf.clear();
 
-    output_additional_afterfact(stored_static, artifact_writer, &afterfact_info);
+    output_additional_afterfact(stored_static, afterfact_writer, &afterfact_info);
 
     Ok(())
 }
 
-fn emit_csv<W: std::io::Write>(
+fn emit_csv(
+    detect_infos: &[DetectInfo],
+    duplicate_idxes: &HashSet<usize>,
     stored_static: &StoredStatic,
-    artifact_writer: &AfterfactWriter,
-    writer: &mut W,
+    afterfact_writer: &mut AfterfactWriter,
     afterfact_info: &mut AfterfactInfo,
     profile: &[(CompactString, Profile)],
-    displayflag: bool,
 ) -> io::Result<()> {
     let output_replaced_maps: HashMap<&str, &str> =
         HashMap::from_iter(vec![("🛂r", "\r"), ("🛂n", "\n"), ("🛂t", "\t")]);
@@ -491,46 +496,29 @@ fn emit_csv<W: std::io::Write>(
 
     // remove duplicate dataのための前レコード分の情報を保持する変数
     let color_map = create_output_color_map(stored_static.common_options.no_color);
-    let (json_output_flag, jsonl_output_flag, remove_duplicate_data, wtr) =
+    let (json_output_flag, jsonl_output_flag, remove_duplicate_data) =
         match &stored_static.config.action.as_ref().unwrap() {
             Action::JsonTimeline(option) => (
                 true,
                 option.jsonl_timeline,
                 option.output_options.remove_duplicate_data,
-                Some(
-                    WriterBuilder::new()
-                        .delimiter(b'\n')
-                        .double_quote(false)
-                        .quote_style(QuoteStyle::Never)
-                        .from_writer(writer),
-                ),
             ),
-            Action::CsvTimeline(option) => (
-                false,
-                false,
-                option.output_options.remove_duplicate_data,
-                Some(
-                    WriterBuilder::new()
-                        .delimiter(b'\n')
-                        .double_quote(false)
-                        .quote_style(QuoteStyle::Never)
-                        .from_writer(writer),
-                ),
-            ),
-            _ => (false, false, false, None),
+            Action::CsvTimeline(option) => {
+                (false, false, option.output_options.remove_duplicate_data)
+            }
+            _ => (false, false, false),
         };
-    if wtr.is_none() {
-        return Ok(());
-    }
 
-    let mut wtr = wtr.unwrap();
-    for detect_info in afterfact_info.detect_infos.iter() {
-        if displayflag && !(json_output_flag || jsonl_output_flag) {
+    for (i, detect_info) in detect_infos.iter().enumerate() {
+        if duplicate_idxes.contains(&i) {
+            continue;
+        }
+        if afterfact_writer.display_flag && !(json_output_flag || jsonl_output_flag) {
             // 標準出力の場合
             if !afterfact_info.has_displayed_header {
                 // ヘッダーのみを出力
                 _get_serialized_disp_output(
-                    &artifact_writer.disp_wtr,
+                    &afterfact_writer.disp_wtr,
                     profile,
                     true,
                     (&output_replacer, &output_replaced_maps),
@@ -547,7 +535,7 @@ fn emit_csv<W: std::io::Write>(
                 afterfact_info.has_displayed_header = true;
             }
             _get_serialized_disp_output(
-                &artifact_writer.disp_wtr,
+                &afterfact_writer.disp_wtr,
                 &detect_info.ext_field,
                 false,
                 (&output_replacer, &output_replaced_maps),
@@ -572,16 +560,18 @@ fn emit_csv<W: std::io::Write>(
             );
             afterfact_info.prev_message = result.1;
             afterfact_info.prev_details_convert_map = detect_info.details_convert_map.clone();
-            if displayflag {
+            if afterfact_writer.display_flag {
                 write_color_buffer(
-                    &artifact_writer.disp_wtr,
+                    &afterfact_writer.disp_wtr,
                     None,
                     &format!("{{ {} }}", &result.0),
                     true,
                 )
                 .ok();
             } else {
-                wtr.write_field(format!("{{ {} }}", &result.0))?;
+                afterfact_writer
+                    .csv_writer
+                    .write_field(format!("{{ {} }}", &result.0))?;
             }
         } else if json_output_flag {
             // JSON output
@@ -594,82 +584,93 @@ fn emit_csv<W: std::io::Write>(
             );
             afterfact_info.prev_message = result.1;
             afterfact_info.prev_details_convert_map = detect_info.details_convert_map.clone();
-            if displayflag {
+            if afterfact_writer.display_flag {
                 write_color_buffer(
-                    &artifact_writer.disp_wtr,
+                    &afterfact_writer.disp_wtr,
                     None,
                     &format!("{{\n{}\n}}", &result.0),
                     true,
                 )
                 .ok();
             } else {
-                wtr.write_field("{")?;
-                wtr.write_field(&result.0)?;
-                wtr.write_field("}")?;
+                afterfact_writer.csv_writer.write_field("{")?;
+                afterfact_writer.csv_writer.write_field(&result.0)?;
+                afterfact_writer.csv_writer.write_field("}")?;
             }
         } else {
             // csv output format
             if !afterfact_info.has_displayed_header {
-                wtr.write_record(detect_info.ext_field.iter().map(|x| x.0.trim()))?;
+                afterfact_writer
+                    .csv_writer
+                    .write_record(detect_info.ext_field.iter().map(|x| x.0.trim()))?;
                 afterfact_info.has_displayed_header = true;
             }
-            wtr.write_record(detect_info.ext_field.iter().map(|x| {
-                match x.1 {
-                    Profile::Details(_) | Profile::AllFieldInfo(_) | Profile::ExtraFieldInfo(_) => {
-                        let ret = if remove_duplicate_data
-                            && x.1.to_value()
-                                == afterfact_info
-                                    .prev_message
-                                    .get(&x.0)
-                                    .unwrap_or(&Profile::Literal("-".into()))
-                                    .to_value()
-                        {
-                            "DUP".to_string()
-                        } else {
-                            output_remover.replace_all(
-                                &output_replacer
-                                    .replace_all(
-                                        &x.1.to_value(),
-                                        &output_replaced_maps.values().collect_vec(),
-                                    )
-                                    .split_whitespace()
-                                    .join(" "),
-                                &removed_replaced_maps.values().collect_vec(),
-                            )
-                        };
-                        afterfact_info.prev_message.insert(x.0.clone(), x.1.clone());
-                        ret
+            afterfact_writer
+                .csv_writer
+                .write_record(detect_info.ext_field.iter().map(|x| {
+                    match x.1 {
+                        Profile::Details(_)
+                        | Profile::AllFieldInfo(_)
+                        | Profile::ExtraFieldInfo(_) => {
+                            let ret = if remove_duplicate_data
+                                && x.1.to_value()
+                                    == afterfact_info
+                                        .prev_message
+                                        .get(&x.0)
+                                        .unwrap_or(&Profile::Literal("-".into()))
+                                        .to_value()
+                            {
+                                "DUP".to_string()
+                            } else {
+                                output_remover.replace_all(
+                                    &output_replacer
+                                        .replace_all(
+                                            &x.1.to_value(),
+                                            &output_replaced_maps.values().collect_vec(),
+                                        )
+                                        .split_whitespace()
+                                        .join(" "),
+                                    &removed_replaced_maps.values().collect_vec(),
+                                )
+                            };
+                            afterfact_info.prev_message.insert(x.0.clone(), x.1.clone());
+                            ret
+                        }
+                        _ => output_remover.replace_all(
+                            &output_replacer
+                                .replace_all(
+                                    &x.1.to_value(),
+                                    &output_replaced_maps.values().collect_vec(),
+                                )
+                                .split_whitespace()
+                                .join(" "),
+                            &removed_replaced_maps.values().collect_vec(),
+                        ),
                     }
-                    _ => output_remover.replace_all(
-                        &output_replacer
-                            .replace_all(
-                                &x.1.to_value(),
-                                &output_replaced_maps.values().collect_vec(),
-                            )
-                            .split_whitespace()
-                            .join(" "),
-                        &removed_replaced_maps.values().collect_vec(),
-                    ),
-                }
-            }))?;
+                }))?;
         }
     }
 
-    if displayflag {
+    if afterfact_writer.display_flag {
         println!();
     } else {
-        wtr.flush()?;
+        afterfact_writer.csv_writer.flush()?;
     }
 
     Ok(())
 }
 
 fn calc_statistic_info(
+    detect_infos: &[DetectInfo],
+    duplicate_idxes: &HashSet<usize>,
     mut afterfact_info: AfterfactInfo,
     stored_static: &StoredStatic,
 ) -> AfterfactInfo {
     let output_option = stored_static.output_option.as_ref().unwrap();
-    for detect_info in afterfact_info.detect_infos.iter() {
+    for (i, detect_info) in detect_infos.iter().enumerate() {
+        if duplicate_idxes.contains(&i) {
+            continue;
+        }
         if !detect_info.is_condition {
             afterfact_info
                 .detected_record_idset
@@ -755,7 +756,7 @@ fn calc_statistic_info(
 
 fn output_additional_afterfact(
     stored_static: &StoredStatic,
-    mut afterfact_writer: AfterfactWriter,
+    afterfact_writer: &mut AfterfactWriter,
     afterfact_info: &AfterfactInfo,
 ) {
     let terminal_width = match terminal_size() {
@@ -2157,6 +2158,7 @@ fn _output_html_computer_by_mitre_attck(html_output_stock: &mut Nested<String>) 
 mod tests {
     use super::create_output_color_map;
     use crate::afterfact::format_time;
+    use crate::afterfact::init_writer;
     use crate::afterfact::output_afterfact;
     use crate::afterfact::AfterfactInfo;
     use crate::afterfact::Colors;
@@ -2181,14 +2183,13 @@ mod tests {
     use compact_str::CompactString;
     use hashbrown::HashMap;
     use serde_json::Value;
-    use std::fs::File;
     use std::fs::{read_to_string, remove_file};
-    use std::io;
     use std::path::Path;
 
     #[test]
     fn test_emit_csv_output() {
         let mut additional_afterfact = AfterfactInfo::default();
+        let mut detect_infos = vec![];
         let mock_ch_filter = message::create_output_filter_config(
             "test_files/config/channel_abbreviations.txt",
             true,
@@ -2414,7 +2415,7 @@ mod tests {
                 (false, false),
                 (&eventkey_alias, &FieldDataMapKey::default(), &None),
             );
-            additional_afterfact.detect_infos.push(detect_info);
+            detect_infos.push(detect_info);
             *profile_converter.get_mut("Computer").unwrap() =
                 Profile::Computer(test_computername.into());
 
@@ -2438,7 +2439,7 @@ mod tests {
                 (false, false),
                 (&eventkey_alias, &FieldDataMapKey::default(), &None),
             );
-            additional_afterfact.detect_infos.push(detect_info);
+            detect_infos.push(detect_info);
         }
         let expect =
             "\"Timestamp\",\"Computer\",\"Channel\",\"Level\",\"EventID\",\"MitreAttack\",\"RecordID\",\"RuleTitle\",\"Details\",\"RecordInformation\",\"RuleFile\",\"EvtxFile\",\"Tags\"\n\""
@@ -2496,15 +2497,16 @@ mod tests {
                 + "\",\""
                 + test_attack
                 + "\"\n";
-        let mut file: Box<dyn io::Write> = Box::new(File::create("./test_emit_csv.csv").unwrap());
 
         additional_afterfact.record_cnt = 1;
         additional_afterfact.recover_record_cnt = 0;
         additional_afterfact.tl_starttime = Some(expect_tz);
         additional_afterfact.tl_endtime = Some(expect_tz);
+        let mut writer = init_writer(&stored_static);
+
         assert!(output_afterfact(
-            &mut file,
-            false,
+            &mut detect_infos,
+            &mut writer,
             &output_profile,
             &stored_static,
             additional_afterfact,
@@ -2522,6 +2524,7 @@ mod tests {
     #[test]
     fn test_emit_csv_output_with_multiline_opt() {
         let mut additional_afterfact = AfterfactInfo::default();
+        let mut detect_infos = vec![];
         let mock_ch_filter = message::create_output_filter_config(
             "test_files/config/channel_abbreviations.txt",
             true,
@@ -2746,7 +2749,7 @@ mod tests {
                 (false, false),
                 (&eventkey_alias, &FieldDataMapKey::default(), &None),
             );
-            additional_afterfact.detect_infos.push(detect_info);
+            detect_infos.push(detect_info);
             *profile_converter.get_mut("Computer").unwrap() =
                 Profile::Computer(test_computername.into());
 
@@ -2770,7 +2773,7 @@ mod tests {
                 (false, false),
                 (&eventkey_alias, &FieldDataMapKey::default(), &None),
             );
-            additional_afterfact.detect_infos.push(detect_info);
+            detect_infos.push(detect_info);
         }
         let expect =
             "\"Timestamp\",\"Computer\",\"Channel\",\"EventID\",\"Level\",\"Tags\",\"RecordID\",\"RuleTitle\",\"Details\",\"AllFieldInfo\"\n\""
@@ -2816,16 +2819,15 @@ mod tests {
                 + "\",\""
                 + &test_recinfo.replace(" ¦ ", "\r\n")
                 + "\"\n";
-        let mut file: Box<dyn io::Write> =
-            Box::new(File::create("./test_emit_csv_multiline.csv").unwrap());
 
         additional_afterfact.record_cnt = 1;
         additional_afterfact.recover_record_cnt = 0;
         additional_afterfact.tl_starttime = Some(expect_tz);
         additional_afterfact.tl_endtime = Some(expect_tz);
+        let mut writer = init_writer(&stored_static);
         assert!(output_afterfact(
-            &mut file,
-            false,
+            &mut detect_infos,
+            &mut writer,
             &output_profile,
             &stored_static,
             additional_afterfact,
@@ -2843,6 +2845,7 @@ mod tests {
     #[test]
     fn test_emit_csv_output_with_remove_duplicate_opt() {
         let mut additional_afterfact = AfterfactInfo::default();
+        let mut detect_infos = vec![];
         let mock_ch_filter = message::create_output_filter_config(
             "test_files/config/channel_abbreviations.txt",
             true,
@@ -3068,7 +3071,7 @@ mod tests {
                 (false, false),
                 (&eventkey_alias, &FieldDataMapKey::default(), &None),
             );
-            additional_afterfact.detect_infos.push(detect_info);
+            detect_infos.push(detect_info);
             *profile_converter.get_mut("Computer").unwrap() =
                 Profile::Computer(test_computername.into());
 
@@ -3092,7 +3095,7 @@ mod tests {
                 (false, false),
                 (&eventkey_alias, &FieldDataMapKey::default(), &None),
             );
-            additional_afterfact.detect_infos.push(detect_info);
+            detect_infos.push(detect_info);
         }
         let expect =
             "\"Timestamp\",\"Computer\",\"Channel\",\"Level\",\"EventID\",\"MitreAttack\",\"RecordID\",\"RuleTitle\",\"Details\",\"RecordInformation\",\"RuleFile\",\"EvtxFile\",\"Tags\"\n\""
@@ -3146,16 +3149,15 @@ mod tests {
                 + "\",\""
                 + test_attack
                 + "\"\n";
-        let mut file: Box<dyn io::Write> =
-            Box::new(File::create("./test_emit_csv_remove_duplicate.csv").unwrap());
 
         additional_afterfact.record_cnt = 1;
         additional_afterfact.recover_record_cnt = 0;
         additional_afterfact.tl_starttime = Some(expect_tz);
         additional_afterfact.tl_endtime = Some(expect_tz);
+        let mut writer = init_writer(&stored_static);
         assert!(output_afterfact(
-            &mut file,
-            false,
+            &mut detect_infos,
+            &mut writer,
             &output_profile,
             &stored_static,
             additional_afterfact,
@@ -3173,6 +3175,7 @@ mod tests {
     #[test]
     fn test_emit_json_output_with_remove_duplicate_opt() {
         let mut additional_afterfact = AfterfactInfo::default();
+        let mut detect_infos = vec![];
         let mock_ch_filter = message::create_output_filter_config(
             "test_files/config/channel_abbreviations.txt",
             true,
@@ -3400,7 +3403,7 @@ mod tests {
                 (false, true),
                 (&eventkey_alias, &FieldDataMapKey::default(), &None),
             );
-            additional_afterfact.detect_infos.push(detect_info);
+            detect_infos.push(detect_info);
             *profile_converter.get_mut("Computer").unwrap() =
                 Profile::Computer(test_computername.into());
 
@@ -3424,7 +3427,7 @@ mod tests {
                 (false, true),
                 (&eventkey_alias, &FieldDataMapKey::default(), &None),
             );
-            additional_afterfact.detect_infos.push(detect_info2);
+            detect_infos.push(detect_info2);
         }
 
         let expect_target = [
@@ -3551,15 +3554,14 @@ mod tests {
             expect_str = expect_str.to_string() + &expect_json;
         }
 
-        let mut file: Box<dyn io::Write> =
-            Box::new(File::create("./test_emit_csv_remove_duplicate.json").unwrap());
         additional_afterfact.record_cnt = 1;
         additional_afterfact.recover_record_cnt = 0;
         additional_afterfact.tl_starttime = Some(expect_tz);
         additional_afterfact.tl_endtime = Some(expect_tz);
+        let mut writer = init_writer(&stored_static);
         assert!(output_afterfact(
-            &mut file,
-            false,
+            &mut detect_infos,
+            &mut writer,
             &output_profile,
             &stored_static,
             additional_afterfact,
@@ -3577,6 +3579,7 @@ mod tests {
     #[test]
     fn test_emit_json_output_with_multiple_data_in_details() {
         let mut additional_afterfact = AfterfactInfo::default();
+        let mut detect_infos = vec![];
         let mock_ch_filter = message::create_output_filter_config(
             "test_files/config/channel_abbreviations.txt",
             true,
@@ -3804,7 +3807,7 @@ mod tests {
                 (false, true),
                 (&eventkey_alias, &FieldDataMapKey::default(), &None),
             );
-            additional_afterfact.detect_infos.push(detect_info);
+            detect_infos.push(detect_info);
             *profile_converter.get_mut("Computer").unwrap() =
                 Profile::Computer(test_computername.into());
         }
@@ -3882,16 +3885,14 @@ mod tests {
             expect_str = expect_str.to_string() + &expect_json;
         }
 
-        let mut file: Box<dyn io::Write> =
-            Box::new(File::create("./test_multiple_data_in_details.json").unwrap());
-
         additional_afterfact.record_cnt = 1;
         additional_afterfact.recover_record_cnt = 0;
         additional_afterfact.tl_starttime = Some(expect_tz);
         additional_afterfact.tl_endtime = Some(expect_tz);
+        let mut writer = init_writer(&stored_static);
         assert!(output_afterfact(
-            &mut file,
-            false,
+            &mut detect_infos,
+            &mut writer,
             &output_profile,
             &stored_static,
             additional_afterfact,
@@ -3927,6 +3928,7 @@ mod tests {
     #[test]
     fn test_emit_csv_json_output() {
         let mut additional_afterfact = AfterfactInfo::default();
+        let mut detect_infos = vec![];
         let mock_ch_filter = message::create_output_filter_config(
             "test_files/config/channel_abbreviations.txt",
             true,
@@ -4154,7 +4156,7 @@ mod tests {
                 (false, true),
                 (&eventkey_alias, &FieldDataMapKey::default(), &None),
             );
-            additional_afterfact.detect_infos.push(message_detect_info);
+            detect_infos.push(message_detect_info);
             *profile_converter.get_mut("Computer").unwrap() =
                 Profile::Computer(test_computername.into());
         }
@@ -4174,16 +4176,15 @@ mod tests {
             "\"EvtxFile\": \"test.evtx\",",
             "\"Tags\": [\n        \"execution/txxxx.yyy\"\n    ]",
         ];
-        let mut file: Box<dyn io::Write> =
-            Box::new(File::create("./test_emit_csv_json.json").unwrap());
 
         additional_afterfact.record_cnt = 1;
         additional_afterfact.recover_record_cnt = 0;
         additional_afterfact.tl_starttime = Some(expect_tz);
         additional_afterfact.tl_endtime = Some(expect_tz);
+        let mut writer = init_writer(&stored_static);
         assert!(output_afterfact(
-            &mut file,
-            false,
+            &mut detect_infos,
+            &mut writer,
             &output_profile,
             &stored_static,
             additional_afterfact,
@@ -4201,6 +4202,7 @@ mod tests {
     #[test]
     fn test_emit_csv_jsonl_output() {
         let mut additional_afterfact = AfterfactInfo::default();
+        let mut detect_infos = vec![];
         let mock_ch_filter = message::create_output_filter_config(
             "test_files/config/channel_abbreviations.txt",
             true,
@@ -4429,7 +4431,7 @@ mod tests {
                 (false, true),
                 (&eventkey_alias, &FieldDataMapKey::default(), &None),
             );
-            additional_afterfact.detect_infos.push(message_detect_info);
+            detect_infos.push(message_detect_info);
             *profile_converter.get_mut("Computer").unwrap() =
                 Profile::Computer(test_computername.into());
         }
@@ -4449,16 +4451,15 @@ mod tests {
             "\"EvtxFile\": \"test.evtx\",",
             "\"Tags\": [\"execution/txxxx.yyy\"]",
         ];
-        let mut file: Box<dyn io::Write> =
-            Box::new(File::create("./test_emit_csv_jsonl.jsonl").unwrap());
 
         additional_afterfact.record_cnt = 1;
         additional_afterfact.recover_record_cnt = 0;
         additional_afterfact.tl_starttime = Some(expect_tz);
         additional_afterfact.tl_endtime = Some(expect_tz);
+        let mut writer = init_writer(&stored_static);
         assert!(output_afterfact(
-            &mut file,
-            false,
+            &mut detect_infos,
+            &mut writer,
             &output_profile,
             &stored_static,
             additional_afterfact,

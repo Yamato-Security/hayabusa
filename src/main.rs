@@ -1410,6 +1410,7 @@ impl App {
         *STORED_EKEY_ALIAS.write().unwrap() = Some(stored_static.eventkey_alias.clone());
         *STORED_STATIC.write().unwrap() = Some(stored_static.clone());
         let mut afterfact_info = AfterfactInfo::default();
+        let mut all_detect_infos = vec![];
         for evtx_file in evtx_files {
             let pb_msg = format!(
                 "{:?}",
@@ -1441,7 +1442,7 @@ impl App {
             tl = tl_tmp;
             afterfact_info.record_cnt += cnt_tmp as u128;
             afterfact_info.recover_record_cnt += recover_cnt_tmp as u128;
-            afterfact_info.detect_infos.append(&mut detect_infos);
+            all_detect_infos.append(&mut detect_infos);
             pb.inc(1);
         }
         pb.finish_with_message(
@@ -1469,11 +1470,11 @@ impl App {
         {
             println!();
             let mut log_records = detection.add_aggcondition_msges(&self.rt, stored_static);
-            afterfact_info.detect_infos.append(&mut log_records);
+            all_detect_infos.append(&mut log_records);
 
             afterfact_info.tl_starttime = tl.stats.start_time;
             afterfact_info.tl_endtime = tl.stats.end_time;
-            after_fact(stored_static, afterfact_info);
+            after_fact(&mut all_detect_infos, stored_static, afterfact_info);
         }
         CHECKPOINT
             .lock()
