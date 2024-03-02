@@ -108,10 +108,19 @@ impl EventMetrics {
                     without_timezone_datetime,
                     Utc,
                 )),
-                Err(e) => {
-                    AlertMessage::alert(&format!("timestamp parse error. input: {evttime} {e}"))
-                        .ok();
-                    None
+                Err(_) => {
+                    match NaiveDateTime::parse_from_str(evttime, "%Y-%m-%dT%H:%M:%S%.3f%:z") {
+                        Ok(splunk_json_datetime) => Some(
+                            DateTime::<Utc>::from_naive_utc_and_offset(splunk_json_datetime, Utc),
+                        ),
+                        Err(e) => {
+                            AlertMessage::alert(&format!(
+                                "timestamp parse error. input: {evttime} {e}"
+                            ))
+                            .ok();
+                            None
+                        }
+                    }
                 }
             };
             if timestamp.is_none() {
