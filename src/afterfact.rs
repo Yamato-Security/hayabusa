@@ -350,7 +350,6 @@ pub fn after_fact(
     if let Err(err) = output_afterfact(
         detect_infos,
         &mut afterfact_writer,
-        stored_static.profiles.as_ref().unwrap(),
         stored_static,
         afterfact_info,
     ) {
@@ -423,7 +422,6 @@ fn init_writer(stored_static: &StoredStatic) -> AfterfactWriter {
 fn output_afterfact(
     detect_infos: &mut [DetectInfo],
     afterfact_writer: &mut AfterfactWriter,
-    profile: &[(CompactString, Profile)],
     stored_static: &StoredStatic,
     mut afterfact_info: AfterfactInfo,
 ) -> io::Result<()> {
@@ -450,7 +448,6 @@ fn output_afterfact(
         stored_static,
         afterfact_writer,
         &mut afterfact_info,
-        profile,
     )?;
 
     // calculate statistic information
@@ -473,7 +470,6 @@ fn emit_csv(
     stored_static: &StoredStatic,
     afterfact_writer: &mut AfterfactWriter,
     afterfact_info: &mut AfterfactInfo,
-    profile: &[(CompactString, Profile)],
 ) -> io::Result<()> {
     let output_replaced_maps: HashMap<&str, &str> =
         HashMap::from_iter(vec![("🛂r", "\r"), ("🛂n", "\n"), ("🛂t", "\t")]);
@@ -507,6 +503,7 @@ fn emit_csv(
             _ => (false, false, false),
         };
 
+    let profile = stored_static.profiles.as_ref().unwrap();
     for (i, detect_info) in detect_infos.iter().enumerate() {
         if duplicate_idxes.contains(&i) {
             continue;
@@ -2505,7 +2502,6 @@ mod tests {
         assert!(output_afterfact(
             &mut detect_infos,
             &mut writer,
-            &output_profile,
             &stored_static,
             additional_afterfact,
         )
@@ -2612,13 +2608,21 @@ mod tests {
             action: Some(dummy_action),
             debug: false,
         });
-        let stored_static = StoredStatic::create_static_data(dummy_config);
+        let mut stored_static = StoredStatic::create_static_data(dummy_config);
         let output_profile: Vec<(CompactString, Profile)> = load_profile(
             "test_files/config/default_profile.yaml",
             "test_files/config/profiles.yaml",
             Some(&stored_static),
         )
         .unwrap_or_default();
+        stored_static.profiles = Option::Some(
+            load_profile(
+                "test_files/config/default_profile.yaml",
+                "test_files/config/profiles.yaml",
+                Some(&stored_static),
+            )
+            .unwrap_or_default(),
+        );
         {
             let val = r#"
                 {
@@ -2826,7 +2830,6 @@ mod tests {
         assert!(output_afterfact(
             &mut detect_infos,
             &mut writer,
-            &output_profile,
             &stored_static,
             additional_afterfact,
         )
@@ -3156,7 +3159,6 @@ mod tests {
         assert!(output_afterfact(
             &mut detect_infos,
             &mut writer,
-            &output_profile,
             &stored_static,
             additional_afterfact,
         )
@@ -3560,7 +3562,6 @@ mod tests {
         assert!(output_afterfact(
             &mut detect_infos,
             &mut writer,
-            &output_profile,
             &stored_static,
             additional_afterfact,
         )
@@ -3891,7 +3892,6 @@ mod tests {
         assert!(output_afterfact(
             &mut detect_infos,
             &mut writer,
-            &output_profile,
             &stored_static,
             additional_afterfact,
         )
@@ -4183,7 +4183,6 @@ mod tests {
         assert!(output_afterfact(
             &mut detect_infos,
             &mut writer,
-            &output_profile,
             &stored_static,
             additional_afterfact,
         )
@@ -4458,7 +4457,6 @@ mod tests {
         assert!(output_afterfact(
             &mut detect_infos,
             &mut writer,
-            &output_profile,
             &stored_static,
             additional_afterfact,
         )
