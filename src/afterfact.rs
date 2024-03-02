@@ -16,7 +16,7 @@ use compact_str::CompactString;
 use hashbrown::hash_map::RawEntryMut;
 use terminal_size::terminal_size;
 
-use csv::{QuoteStyle, Writer, WriterBuilder};
+use csv::{QuoteStyle, WriterBuilder};
 use itertools::Itertools;
 use krapslog::{build_sparkline, build_time_markers};
 use nested::Nested;
@@ -396,56 +396,17 @@ struct AfterfactWriter {
     disp_wtr_buf: Buffer,
 }
 
-struct EmitCsvOption {
-    json_output_flag: bool,
-    jsonl_output_flag: bool,
-    remove_duplicate_data_flag: bool,
-}
-
-fn init_writer<'a, W: std::io::Write>(
-    writer: &'a mut W,
-    stored_static: &StoredStatic,
-) -> (AfterfactWriter, EmitCsvOption, Option<Writer<&'a mut W>>) {
+fn init_writer() -> AfterfactWriter {
     let disp_wtr = BufferWriter::stdout(ColorChoice::Always);
     let mut disp_wtr_buf = disp_wtr.buffer();
-    let mut emit_csv_opt = EmitCsvOption {
-        json_output_flag: false,
-        jsonl_output_flag: false,
-        remove_duplicate_data_flag: false,
-    };
-
-    let tmp_wtr = match &stored_static.config.action.as_ref().unwrap() {
-        Action::JsonTimeline(option) => {
-            emit_csv_opt.json_output_flag = true;
-            emit_csv_opt.jsonl_output_flag = option.jsonl_timeline;
-            emit_csv_opt.remove_duplicate_data_flag = option.output_options.remove_duplicate_data;
-            Some(
-                WriterBuilder::new()
-                    .delimiter(b'\n')
-                    .double_quote(false)
-                    .quote_style(QuoteStyle::Never)
-                    .from_writer(writer),
-            )
-        }
-        Action::CsvTimeline(option) => {
-            emit_csv_opt.remove_duplicate_data_flag = option.output_options.remove_duplicate_data;
-            Some(
-                WriterBuilder::new()
-                    .quote_style(QuoteStyle::NonNumeric)
-                    .from_writer(writer),
-            )
-        }
-        _ => None,
-    };
 
     disp_wtr_buf.set_color(ColorSpec::new().set_fg(None)).ok();
 
     // emit csv
-    let artifact_writer = AfterfactWriter {
+    AfterfactWriter {
         disp_wtr,
         disp_wtr_buf,
-    };
-    (artifact_writer, emit_csv_opt, tmp_wtr)
+    }
 }
 
 fn output_afterfact<W: std::io::Write>(
@@ -455,10 +416,7 @@ fn output_afterfact<W: std::io::Write>(
     stored_static: &StoredStatic,
     mut afterfact_info: AfterfactInfo,
 ) -> io::Result<()> {
-    let (mut artifact_writer, emit_csv_opt, tmp_wtr) = init_writer(writer, stored_static);
-    if tmp_wtr.is_none() {
-        return Ok(());
-    }
+    let mut artifact_writer = init_writer();
     if displayflag {
         println!();
     }
@@ -474,15 +432,13 @@ fn output_afterfact<W: std::io::Write>(
         afterfact_info.removed_duplicate_detect_infos();
     }
 
-    let wtr = tmp_wtr.unwrap();
     emit_csv(
         stored_static,
         &artifact_writer,
-        wtr,
+        writer,
         &afterfact_info,
         profile,
         displayflag,
-        &emit_csv_opt,
     )?;
 
     // calculate statistic information
@@ -498,11 +454,10 @@ fn output_afterfact<W: std::io::Write>(
 fn emit_csv<W: std::io::Write>(
     stored_static: &StoredStatic,
     artifact_writer: &AfterfactWriter,
-    mut wtr: Writer<&mut W>,
+    writer: &mut W,
     afterfact_info: &AfterfactInfo,
     profile: &[(CompactString, Profile)],
     displayflag: bool,
-    emit_csv_opt: &EmitCsvOption,
 ) -> io::Result<()> {
     let output_replaced_maps: HashMap<&str, &str> =
         HashMap::from_iter(vec![("🛂r", "\r"), ("🛂n", "\n"), ("🛂t", "\t")]);
@@ -526,8 +481,41 @@ fn emit_csv<W: std::io::Write>(
     let mut prev_message: HashMap<CompactString, Profile> = HashMap::new();
     let mut prev_details_convert_map: HashMap<CompactString, Vec<CompactString>> = HashMap::new();
     let color_map = create_output_color_map(stored_static.common_options.no_color);
+    let (json_output_flag, jsonl_output_flag, remove_duplicate_data, wtr) =
+        match &stored_static.config.action.as_ref().unwrap() {
+            Action::JsonTimeline(option) => (
+                true,
+                option.jsonl_timeline,
+                option.output_options.remove_duplicate_data,
+                Some(
+                    WriterBuilder::new()
+                        .delimiter(b'\n')
+                        .double_quote(false)
+                        .quote_style(QuoteStyle::Never)
+                        .from_writer(writer),
+                ),
+            ),
+            Action::CsvTimeline(option) => (
+                false,
+                false,
+                option.output_options.remove_duplicate_data,
+                Some(
+                    WriterBuilder::new()
+                        .delimiter(b'\n')
+                        .double_quote(false)
+                        .quote_style(QuoteStyle::Never)
+                        .from_writer(writer),
+                ),
+            ),
+            _ => (false, false, false, None),
+        };
+    if wtr.is_none() {
+        return Ok(());
+    }
+
+    let mut wtr = wtr.unwrap();
     for detect_info in afterfact_info.detect_infos.iter() {
-        if displayflag && !(emit_csv_opt.json_output_flag || emit_csv_opt.jsonl_output_flag) {
+        if displayflag && !(json_output_flag || jsonl_output_flag) {
             // 標準出力の場合
             if plus_header {
                 // ヘッダーのみを出力
@@ -563,14 +551,14 @@ fn emit_csv<W: std::io::Write>(
                     stored_static.common_options.no_color,
                 ),
             );
-        } else if emit_csv_opt.jsonl_output_flag {
+        } else if jsonl_output_flag {
             // JSONL output format
             let result = output_json_str(
                 &detect_info.ext_field,
                 prev_message,
-                emit_csv_opt.jsonl_output_flag,
+                jsonl_output_flag,
                 GEOIP_DB_PARSER.read().unwrap().is_some(),
-                emit_csv_opt.remove_duplicate_data_flag,
+                remove_duplicate_data,
                 detect_info.is_condition,
                 &[&detect_info.details_convert_map, &prev_details_convert_map],
             );
@@ -587,14 +575,14 @@ fn emit_csv<W: std::io::Write>(
             } else {
                 wtr.write_field(format!("{{ {} }}", &result.0))?;
             }
-        } else if emit_csv_opt.json_output_flag {
+        } else if json_output_flag {
             // JSON output
             let result = output_json_str(
                 &detect_info.ext_field,
                 prev_message,
-                emit_csv_opt.jsonl_output_flag,
+                jsonl_output_flag,
                 GEOIP_DB_PARSER.read().unwrap().is_some(),
-                emit_csv_opt.remove_duplicate_data_flag,
+                remove_duplicate_data,
                 detect_info.is_condition,
                 &[&detect_info.details_convert_map, &prev_details_convert_map],
             );
@@ -622,7 +610,7 @@ fn emit_csv<W: std::io::Write>(
             wtr.write_record(detect_info.ext_field.iter().map(|x| {
                 match x.1 {
                     Profile::Details(_) | Profile::AllFieldInfo(_) | Profile::ExtraFieldInfo(_) => {
-                        let ret = if emit_csv_opt.remove_duplicate_data_flag
+                        let ret = if remove_duplicate_data
                             && x.1.to_value()
                                 == prev_message
                                     .get(&x.0)
