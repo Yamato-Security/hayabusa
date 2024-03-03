@@ -148,235 +148,14 @@ impl Default for AfterfactInfo {
     }
 }
 
-pub fn sort_detect_info(detect_infos: &mut [DetectInfo]) {
-    detect_infos.sort_unstable_by(|a, b| {
-        let cmp_time = a.detected_time.cmp(&b.detected_time);
-        if cmp_time != Ordering::Equal {
-            return cmp_time;
-        }
-
-        let a_level = get_level_suffix(a.level.as_str());
-        let b_level = get_level_suffix(b.level.as_str());
-        let level_cmp = a_level.cmp(&b_level);
-        if level_cmp != Ordering::Equal {
-            return level_cmp;
-        }
-
-        let event_id_cmp = a.eventid.cmp(&b.eventid);
-        if event_id_cmp != Ordering::Equal {
-            return event_id_cmp;
-        }
-
-        let rulepath_cmp = a.rulepath.cmp(&b.rulepath);
-        if rulepath_cmp != Ordering::Equal {
-            return rulepath_cmp;
-        }
-
-        a.computername.cmp(&b.computername)
-    });
-}
-
-pub fn get_duplicate_idxes(detect_infos: &mut [DetectInfo]) -> HashSet<usize> {
-    // filtet duplicate event
-    let mut filtered_detect_infos = HashSet::new();
-    let mut prev_detect_infos = HashSet::new();
-    for (i, detect_info) in detect_infos.iter().enumerate() {
-        if i == 0 {
-            continue;
-        }
-
-        let prev_detect_info = &detect_infos[i - 1];
-        if prev_detect_info
-            .detected_time
-            .cmp(&detect_info.detected_time)
-            != Ordering::Equal
-        {
-            prev_detect_infos.clear();
-            continue;
-        }
-
-        let fields: Vec<&(CompactString, Profile)> = detect_info
-            .ext_field
-            .iter()
-            .filter(|(_, profile)| !matches!(profile, Profile::EvtxFile(_)))
-            .collect();
-        if prev_detect_infos.get(&fields).is_some() {
-            filtered_detect_infos.insert(i);
-            continue;
-        }
-        prev_detect_infos.insert(fields);
-    }
-
-    filtered_detect_infos
-}
-
-/// level_color.txtファイルを読み込み対応する文字色のマッピングを返却する関数
-pub fn create_output_color_map(no_color_flag: bool) -> HashMap<CompactString, Colors> {
-    let read_result = utils::read_csv(
-        utils::check_setting_path(
-            &CURRENT_EXE_PATH.to_path_buf(),
-            "config/level_color.txt",
-            true,
-        )
-        .unwrap()
-        .to_str()
-        .unwrap(),
-    );
-    let mut color_map: HashMap<CompactString, Colors> = HashMap::new();
-    if no_color_flag {
-        return color_map;
-    }
-    let color_map_contents = match read_result {
-        Ok(c) => c,
-        Err(e) => {
-            // color情報がない場合は通常の白色の出力が出てくるのみで動作への影響を与えない為warnとして処理する
-            AlertMessage::warn(&e).ok();
-            return color_map;
-        }
-    };
-    color_map_contents.iter().for_each(|line| {
-        if line.len() != 2 {
-            return;
-        }
-        let empty = &"".to_string();
-        let level = CompactString::new(line.first().unwrap_or(empty).to_lowercase());
-        let convert_color_result = hex::decode(line.get(1).unwrap_or(empty).trim());
-        if convert_color_result.is_err() {
-            AlertMessage::warn(&format!(
-                "Failed hex convert in level_color.txt. Color output is disabled. Input Line: {}",
-                line.join(",")
-            ))
-            .ok();
-            return;
-        }
-        let color_code = convert_color_result.unwrap();
-        if level.is_empty() || color_code.len() < 3 {
-            return;
-        }
-        color_map.insert(
-            level,
-            Colors {
-                output_color: termcolor::Color::Rgb(color_code[0], color_code[1], color_code[2]),
-                table_color: comfy_table::Color::Rgb {
-                    r: color_code[0],
-                    g: color_code[1],
-                    b: color_code[2],
-                },
-            },
-        );
-    });
-    color_map
-}
-
-fn _get_output_color(color_map: &HashMap<CompactString, Colors>, level: &str) -> Option<Color> {
-    let mut color = None;
-    if let Some(c) = color_map.get(&CompactString::from(level.to_lowercase())) {
-        color = Some(c.output_color);
-    }
-    color
-}
-
-fn _get_table_color(
-    color_map: &HashMap<CompactString, Colors>,
-    level: &str,
-) -> Option<comfy_table::Color> {
-    let mut color = None;
-    if let Some(c) = color_map.get(&CompactString::from(level.to_lowercase())) {
-        color = Some(c.table_color);
-    }
-    color
-}
-
-/// print timeline histogram
-fn _print_timeline_hist(timestamps: &[i64], length: usize, side_margin_size: usize) {
-    if timestamps.is_empty() {
-        return;
-    }
-
-    let buf_wtr = BufferWriter::stdout(ColorChoice::Always);
-    let mut wtr = buf_wtr.buffer();
-    wtr.set_color(ColorSpec::new().set_fg(None)).ok();
-
-    if timestamps.len() < 5 {
-        writeln!(
-            wtr,
-            "Detection Frequency Timeline could not be displayed as there needs to be more than 5 events.",
-        )
-        .ok();
-        buf_wtr.print(&wtr).ok();
-        return;
-    }
-
-    let title = "Detection Frequency Timeline";
-    let header_row_space = (length - title.len()) / 2;
-    writeln!(wtr, "{}{}", " ".repeat(header_row_space), title).ok();
-    println!();
-
-    let timestamp_marker_max = if timestamps.len() < 2 {
-        0
-    } else {
-        timestamps.len() - 2
-    };
-    let marker_num = min(timestamp_marker_max, 18);
-
-    let (header_raw, footer_raw) =
-        build_time_markers(timestamps, marker_num, length - (side_margin_size * 2));
-    let sparkline = build_sparkline(timestamps, length - (side_margin_size * 2), 5_usize);
-    for header_str in header_raw.lines() {
-        writeln!(wtr, "{}{}", " ".repeat(side_margin_size - 1), header_str).ok();
-    }
-    for line in sparkline.lines() {
-        writeln!(wtr, "{}{}", " ".repeat(side_margin_size - 1), line).ok();
-    }
-    for footer_str in footer_raw.lines() {
-        writeln!(wtr, "{}{}", " ".repeat(side_margin_size - 1), footer_str).ok();
-    }
-
-    buf_wtr.print(&wtr).ok();
-}
-
-pub fn after_fact(
-    detect_infos: &mut [DetectInfo],
-    stored_static: &StoredStatic,
-    afterfact_info: AfterfactInfo,
-) {
-    let fn_output_afterfact_err = |err: Box<dyn Error>| {
-        AlertMessage::alert(&format!("Failed to write CSV. {err}")).ok();
-        process::exit(1);
-    };
-
-    let mut afterfact_writer = init_writer(stored_static);
-
-    if let Err(err) = output_afterfact(
-        detect_infos,
-        &mut afterfact_writer,
-        stored_static,
-        afterfact_info,
-    ) {
-        fn_output_afterfact_err(Box::new(err));
-    }
-}
-
-fn get_level_suffix(level_str: &str) -> usize {
-    *LEVEL_MAP
-        .get(
-            LEVEL_FULL
-                .get(level_str)
-                .unwrap_or(&"undefined")
-                .to_uppercase()
-                .as_str(),
-        )
-        .unwrap_or(&0) as usize
-}
-
-struct AfterfactWriter {
+pub struct AfterfactWriter {
     disp_wtr: BufferWriter,
     disp_wtr_buf: Buffer,
     csv_writer: Writer<Box<dyn io::Write>>,
     display_flag: bool,
 }
 
-fn init_writer(stored_static: &StoredStatic) -> AfterfactWriter {
+pub fn init_writer(stored_static: &StoredStatic) -> AfterfactWriter {
     let disp_wtr = BufferWriter::stdout(ColorChoice::Always);
     let mut disp_wtr_buf = disp_wtr.buffer();
 
@@ -407,7 +186,7 @@ fn init_writer(stored_static: &StoredStatic) -> AfterfactWriter {
         Action::CsvTimeline(_) => WriterBuilder::new()
             .quote_style(QuoteStyle::NonNumeric)
             .from_writer(target),
-        _ => panic!("unknown action is specified!!"),
+        _ => WriterBuilder::new().from_writer(target),
     };
 
     // emit csv
@@ -419,11 +198,54 @@ fn init_writer(stored_static: &StoredStatic) -> AfterfactWriter {
     }
 }
 
-fn output_afterfact(
+pub fn output_afterfact(
     detect_infos: &mut [DetectInfo],
     afterfact_writer: &mut AfterfactWriter,
     stored_static: &StoredStatic,
-    mut afterfact_info: AfterfactInfo,
+    afterfact_info: &mut AfterfactInfo,
+) {
+    let ret = output_afterfact_inner(
+        detect_infos,
+        afterfact_writer,
+        stored_static,
+        afterfact_info,
+    );
+    if ret.is_err() {
+        output_afterfact_err(Box::new(ret.err().unwrap()));
+    }
+}
+
+pub fn emit_csv(
+    detect_infos: &[DetectInfo],
+    duplicate_idxes: &HashSet<usize>,
+    stored_static: &StoredStatic,
+    afterfact_writer: &mut AfterfactWriter,
+    afterfact_info: &mut AfterfactInfo,
+) {
+    let result = emit_csv_inner(
+        detect_infos,
+        duplicate_idxes,
+        stored_static,
+        afterfact_writer,
+        afterfact_info,
+    );
+    if result.is_err() {
+        output_afterfact_err(Box::new(result.err().unwrap()));
+    }
+
+    calc_statistic_info(detect_infos, duplicate_idxes, afterfact_info, stored_static);
+}
+
+fn output_afterfact_err(err: Box<dyn Error>) {
+    AlertMessage::alert(&format!("Failed to write CSV. {err}")).ok();
+    process::exit(1);
+}
+
+fn output_afterfact_inner(
+    detect_infos: &mut [DetectInfo],
+    afterfact_writer: &mut AfterfactWriter,
+    stored_static: &StoredStatic,
+    afterfact_info: &mut AfterfactInfo,
 ) -> io::Result<()> {
     if afterfact_writer.display_flag {
         println!();
@@ -442,16 +264,16 @@ fn output_afterfact(
         HashSet::new()
     };
 
-    emit_csv(
+    emit_csv_inner(
         detect_infos,
         &duplicate_idxes,
         stored_static,
         afterfact_writer,
-        &mut afterfact_info,
+        afterfact_info,
     )?;
 
     // calculate statistic information
-    afterfact_info = calc_statistic_info(
+    calc_statistic_info(
         detect_infos,
         &duplicate_idxes,
         afterfact_info,
@@ -459,12 +281,12 @@ fn output_afterfact(
     );
     afterfact_writer.disp_wtr_buf.clear();
 
-    output_additional_afterfact(stored_static, afterfact_writer, &afterfact_info);
+    output_additional_afterfact(stored_static, afterfact_writer, afterfact_info);
 
     Ok(())
 }
 
-fn emit_csv(
+fn emit_csv_inner(
     detect_infos: &[DetectInfo],
     duplicate_idxes: &HashSet<usize>,
     stored_static: &StoredStatic,
@@ -658,9 +480,9 @@ fn emit_csv(
 fn calc_statistic_info(
     detect_infos: &[DetectInfo],
     duplicate_idxes: &HashSet<usize>,
-    mut afterfact_info: AfterfactInfo,
+    afterfact_info: &mut AfterfactInfo,
     stored_static: &StoredStatic,
-) -> AfterfactInfo {
+) {
     let output_option = stored_static.output_option.as_ref().unwrap();
     for (i, detect_info) in detect_infos.iter().enumerate() {
         if duplicate_idxes.contains(&i) {
@@ -746,10 +568,9 @@ fn calc_statistic_info(
             afterfact_info.total_detect_counts_by_level[level_suffix] += 1;
         }
     }
-    afterfact_info
 }
 
-fn output_additional_afterfact(
+pub fn output_additional_afterfact(
     stored_static: &StoredStatic,
     afterfact_writer: &mut AfterfactWriter,
     afterfact_info: &AfterfactInfo,
@@ -1066,6 +887,205 @@ fn output_additional_afterfact(
         _output_html_computer_by_mitre_attck(&mut html_output_stock);
         htmlreport::add_md_data("Results Summary {#results_summary}", html_output_stock);
     }
+}
+
+pub fn sort_detect_info(detect_infos: &mut [DetectInfo]) {
+    detect_infos.sort_unstable_by(|a, b| {
+        let cmp_time = a.detected_time.cmp(&b.detected_time);
+        if cmp_time != Ordering::Equal {
+            return cmp_time;
+        }
+
+        let a_level = get_level_suffix(a.level.as_str());
+        let b_level = get_level_suffix(b.level.as_str());
+        let level_cmp = a_level.cmp(&b_level);
+        if level_cmp != Ordering::Equal {
+            return level_cmp;
+        }
+
+        let event_id_cmp = a.eventid.cmp(&b.eventid);
+        if event_id_cmp != Ordering::Equal {
+            return event_id_cmp;
+        }
+
+        let rulepath_cmp = a.rulepath.cmp(&b.rulepath);
+        if rulepath_cmp != Ordering::Equal {
+            return rulepath_cmp;
+        }
+
+        a.computername.cmp(&b.computername)
+    });
+}
+
+fn get_level_suffix(level_str: &str) -> usize {
+    *LEVEL_MAP
+        .get(
+            LEVEL_FULL
+                .get(level_str)
+                .unwrap_or(&"undefined")
+                .to_uppercase()
+                .as_str(),
+        )
+        .unwrap_or(&0) as usize
+}
+
+pub fn get_duplicate_idxes(detect_infos: &mut [DetectInfo]) -> HashSet<usize> {
+    // filtet duplicate event
+    let mut filtered_detect_infos = HashSet::new();
+    let mut prev_detect_infos = HashSet::new();
+    for (i, detect_info) in detect_infos.iter().enumerate() {
+        if i == 0 {
+            continue;
+        }
+
+        let prev_detect_info = &detect_infos[i - 1];
+        if prev_detect_info
+            .detected_time
+            .cmp(&detect_info.detected_time)
+            != Ordering::Equal
+        {
+            prev_detect_infos.clear();
+            continue;
+        }
+
+        let fields: Vec<&(CompactString, Profile)> = detect_info
+            .ext_field
+            .iter()
+            .filter(|(_, profile)| !matches!(profile, Profile::EvtxFile(_)))
+            .collect();
+        if prev_detect_infos.get(&fields).is_some() {
+            filtered_detect_infos.insert(i);
+            continue;
+        }
+        prev_detect_infos.insert(fields);
+    }
+
+    filtered_detect_infos
+}
+
+/// level_color.txtファイルを読み込み対応する文字色のマッピングを返却する関数
+pub fn create_output_color_map(no_color_flag: bool) -> HashMap<CompactString, Colors> {
+    let read_result = utils::read_csv(
+        utils::check_setting_path(
+            &CURRENT_EXE_PATH.to_path_buf(),
+            "config/level_color.txt",
+            true,
+        )
+        .unwrap()
+        .to_str()
+        .unwrap(),
+    );
+    let mut color_map: HashMap<CompactString, Colors> = HashMap::new();
+    if no_color_flag {
+        return color_map;
+    }
+    let color_map_contents = match read_result {
+        Ok(c) => c,
+        Err(e) => {
+            // color情報がない場合は通常の白色の出力が出てくるのみで動作への影響を与えない為warnとして処理する
+            AlertMessage::warn(&e).ok();
+            return color_map;
+        }
+    };
+    color_map_contents.iter().for_each(|line| {
+        if line.len() != 2 {
+            return;
+        }
+        let empty = &"".to_string();
+        let level = CompactString::new(line.first().unwrap_or(empty).to_lowercase());
+        let convert_color_result = hex::decode(line.get(1).unwrap_or(empty).trim());
+        if convert_color_result.is_err() {
+            AlertMessage::warn(&format!(
+                "Failed hex convert in level_color.txt. Color output is disabled. Input Line: {}",
+                line.join(",")
+            ))
+            .ok();
+            return;
+        }
+        let color_code = convert_color_result.unwrap();
+        if level.is_empty() || color_code.len() < 3 {
+            return;
+        }
+        color_map.insert(
+            level,
+            Colors {
+                output_color: termcolor::Color::Rgb(color_code[0], color_code[1], color_code[2]),
+                table_color: comfy_table::Color::Rgb {
+                    r: color_code[0],
+                    g: color_code[1],
+                    b: color_code[2],
+                },
+            },
+        );
+    });
+    color_map
+}
+
+fn _get_output_color(color_map: &HashMap<CompactString, Colors>, level: &str) -> Option<Color> {
+    let mut color = None;
+    if let Some(c) = color_map.get(&CompactString::from(level.to_lowercase())) {
+        color = Some(c.output_color);
+    }
+    color
+}
+
+fn _get_table_color(
+    color_map: &HashMap<CompactString, Colors>,
+    level: &str,
+) -> Option<comfy_table::Color> {
+    let mut color = None;
+    if let Some(c) = color_map.get(&CompactString::from(level.to_lowercase())) {
+        color = Some(c.table_color);
+    }
+    color
+}
+
+/// print timeline histogram
+fn _print_timeline_hist(timestamps: &[i64], length: usize, side_margin_size: usize) {
+    if timestamps.is_empty() {
+        return;
+    }
+
+    let buf_wtr = BufferWriter::stdout(ColorChoice::Always);
+    let mut wtr = buf_wtr.buffer();
+    wtr.set_color(ColorSpec::new().set_fg(None)).ok();
+
+    if timestamps.len() < 5 {
+        writeln!(
+            wtr,
+            "Detection Frequency Timeline could not be displayed as there needs to be more than 5 events.",
+        )
+        .ok();
+        buf_wtr.print(&wtr).ok();
+        return;
+    }
+
+    let title = "Detection Frequency Timeline";
+    let header_row_space = (length - title.len()) / 2;
+    writeln!(wtr, "{}{}", " ".repeat(header_row_space), title).ok();
+    println!();
+
+    let timestamp_marker_max = if timestamps.len() < 2 {
+        0
+    } else {
+        timestamps.len() - 2
+    };
+    let marker_num = min(timestamp_marker_max, 18);
+
+    let (header_raw, footer_raw) =
+        build_time_markers(timestamps, marker_num, length - (side_margin_size * 2));
+    let sparkline = build_sparkline(timestamps, length - (side_margin_size * 2), 5_usize);
+    for header_str in header_raw.lines() {
+        writeln!(wtr, "{}{}", " ".repeat(side_margin_size - 1), header_str).ok();
+    }
+    for line in sparkline.lines() {
+        writeln!(wtr, "{}{}", " ".repeat(side_margin_size - 1), line).ok();
+    }
+    for footer_str in footer_raw.lines() {
+        writeln!(wtr, "{}{}", " ".repeat(side_margin_size - 1), footer_str).ok();
+    }
+
+    buf_wtr.print(&wtr).ok();
 }
 
 fn countup_aggregation(
@@ -2154,7 +2174,7 @@ mod tests {
     use super::create_output_color_map;
     use crate::afterfact::format_time;
     use crate::afterfact::init_writer;
-    use crate::afterfact::output_afterfact;
+    use crate::afterfact::output_afterfact_inner;
     use crate::afterfact::AfterfactInfo;
     use crate::afterfact::Colors;
     use crate::detections::configs::load_eventkey_alias;
@@ -2499,11 +2519,11 @@ mod tests {
         additional_afterfact.tl_endtime = Some(expect_tz);
         let mut writer = init_writer(&stored_static);
 
-        assert!(output_afterfact(
+        assert!(output_afterfact_inner(
             &mut detect_infos,
             &mut writer,
             &stored_static,
-            additional_afterfact,
+            &mut additional_afterfact,
         )
         .is_ok());
         match read_to_string("./test_emit_csv.csv") {
@@ -2827,11 +2847,11 @@ mod tests {
         additional_afterfact.tl_starttime = Some(expect_tz);
         additional_afterfact.tl_endtime = Some(expect_tz);
         let mut writer = init_writer(&stored_static);
-        assert!(output_afterfact(
+        assert!(output_afterfact_inner(
             &mut detect_infos,
             &mut writer,
             &stored_static,
-            additional_afterfact,
+            &mut additional_afterfact,
         )
         .is_ok());
         match read_to_string("./test_emit_csv_multiline.csv") {
@@ -3156,11 +3176,11 @@ mod tests {
         additional_afterfact.tl_starttime = Some(expect_tz);
         additional_afterfact.tl_endtime = Some(expect_tz);
         let mut writer = init_writer(&stored_static);
-        assert!(output_afterfact(
+        assert!(output_afterfact_inner(
             &mut detect_infos,
             &mut writer,
             &stored_static,
-            additional_afterfact,
+            &mut additional_afterfact,
         )
         .is_ok());
         match read_to_string("./test_emit_csv_remove_duplicate.csv") {
@@ -3559,11 +3579,11 @@ mod tests {
         additional_afterfact.tl_starttime = Some(expect_tz);
         additional_afterfact.tl_endtime = Some(expect_tz);
         let mut writer = init_writer(&stored_static);
-        assert!(output_afterfact(
+        assert!(output_afterfact_inner(
             &mut detect_infos,
             &mut writer,
             &stored_static,
-            additional_afterfact,
+            &mut additional_afterfact,
         )
         .is_ok());
         match read_to_string("./test_emit_csv_remove_duplicate.json") {
@@ -3889,11 +3909,11 @@ mod tests {
         additional_afterfact.tl_starttime = Some(expect_tz);
         additional_afterfact.tl_endtime = Some(expect_tz);
         let mut writer = init_writer(&stored_static);
-        assert!(output_afterfact(
+        assert!(output_afterfact_inner(
             &mut detect_infos,
             &mut writer,
             &stored_static,
-            additional_afterfact,
+            &mut additional_afterfact,
         )
         .is_ok());
         match read_to_string("./test_multiple_data_in_details.json") {
@@ -4180,11 +4200,11 @@ mod tests {
         additional_afterfact.tl_starttime = Some(expect_tz);
         additional_afterfact.tl_endtime = Some(expect_tz);
         let mut writer = init_writer(&stored_static);
-        assert!(output_afterfact(
+        assert!(output_afterfact_inner(
             &mut detect_infos,
             &mut writer,
             &stored_static,
-            additional_afterfact,
+            &mut additional_afterfact,
         )
         .is_ok());
         match read_to_string("./test_emit_csv_json.json") {
@@ -4454,11 +4474,11 @@ mod tests {
         additional_afterfact.tl_starttime = Some(expect_tz);
         additional_afterfact.tl_endtime = Some(expect_tz);
         let mut writer = init_writer(&stored_static);
-        assert!(output_afterfact(
+        assert!(output_afterfact_inner(
             &mut detect_infos,
             &mut writer,
             &stored_static,
-            additional_afterfact,
+            &mut additional_afterfact,
         )
         .is_ok());
         match read_to_string("./test_emit_csv_jsonl.jsonl") {

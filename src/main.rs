@@ -13,7 +13,7 @@ use dialoguer::Confirm;
 use dialoguer::{theme::ColorfulTheme, Select};
 use evtx::{EvtxParser, ParserSettings, RecordAllocation};
 use hashbrown::{HashMap, HashSet};
-use hayabusa::afterfact::AfterfactInfo;
+use hayabusa::afterfact::{self, AfterfactInfo, AfterfactWriter};
 use hayabusa::debug::checkpoint_process_timer::CHECKPOINT;
 use hayabusa::detections::configs::{
     load_pivot_keywords, Action, ConfigReader, EventKeyAliasConfig, StoredStatic, TargetEventTime,
@@ -22,6 +22,7 @@ use hayabusa::detections::configs::{
 use hayabusa::detections::detection::{self, EvtxRecordInfo};
 use hayabusa::detections::message::{AlertMessage, DetectInfo, ERROR_LOG_STACK};
 use hayabusa::detections::rule::{get_detection_keys, RuleNode};
+use hayabusa::detections::utils;
 use hayabusa::detections::utils::{
     check_setting_path, get_writable_color, output_and_data_stack_for_html, output_duration,
     output_profile_name,
@@ -32,7 +33,6 @@ use hayabusa::options::pivot::PIVOT_KEYWORD;
 use hayabusa::options::profile::set_default_profile;
 use hayabusa::options::{level_tuning::LevelTuning, update::Update};
 use hayabusa::timeline::computer_metrics::countup_event_by_computer;
-use hayabusa::{afterfact::after_fact, detections::utils};
 use hayabusa::{detections::configs, timeline::timelines::Timeline};
 use hayabusa::{detections::utils::write_color_buffer, filter};
 use hayabusa::{options, yaml};
@@ -1411,6 +1411,7 @@ impl App {
         *STORED_STATIC.write().unwrap() = Some(stored_static.clone());
         let mut afterfact_info = AfterfactInfo::default();
         let mut all_detect_infos = vec![];
+        let mut afterfact_writer = afterfact::init_writer(stored_static);
         for evtx_file in evtx_files {
             let pb_msg = format!(
                 "{:?}",
@@ -1427,6 +1428,8 @@ impl App {
                         tl.to_owned(),
                         target_event_ids,
                         stored_static,
+                        &mut afterfact_writer,
+                        &mut afterfact_info,
                     )
                 } else {
                     self.analysis_file(
@@ -1436,6 +1439,8 @@ impl App {
                         tl.to_owned(),
                         target_event_ids,
                         stored_static,
+                        &mut afterfact_writer,
+                        &mut afterfact_info,
                     )
                 };
             detection = detection_tmp;
@@ -1471,10 +1476,24 @@ impl App {
             println!();
             let mut log_records = detection.add_aggcondition_msges(&self.rt, stored_static);
             all_detect_infos.append(&mut log_records);
-
             afterfact_info.tl_starttime = tl.stats.start_time;
             afterfact_info.tl_endtime = tl.stats.end_time;
-            after_fact(&mut all_detect_infos, stored_static, afterfact_info);
+
+            // output afterfact
+            if stored_static.is_low_memory {
+                afterfact::output_additional_afterfact(
+                    stored_static,
+                    &mut afterfact_writer,
+                    &afterfact_info,
+                );
+            } else {
+                afterfact::output_afterfact(
+                    &mut all_detect_infos,
+                    &mut afterfact_writer,
+                    stored_static,
+                    &mut afterfact_info,
+                );
+            }
         }
         CHECKPOINT
             .lock()
@@ -1492,6 +1511,8 @@ impl App {
         mut tl: Timeline,
         target_event_ids: &TargetIds,
         stored_static: &StoredStatic,
+        afterfact_writer: &mut AfterfactWriter,
+        afterfact_info: &mut AfterfactInfo,
     ) -> (
         detection::Detection,
         usize,
@@ -1620,10 +1641,21 @@ impl App {
                 || stored_static.logon_summary_flag
                 || stored_static.search_flag)
             {
-                // ruleファイルの検知
+                // detect event record by rule file
                 let (detection_tmp, mut log_records) =
                     detection.start(&self.rt, records_per_detect);
-                detect_infos.append(&mut log_records);
+                if stored_static.is_low_memory {
+                    let empty_ids = HashSet::new();
+                    afterfact::emit_csv(
+                        &detect_infos,
+                        &empty_ids,
+                        stored_static,
+                        afterfact_writer,
+                        afterfact_info,
+                    );
+                } else {
+                    detect_infos.append(&mut log_records);
+                }
                 detection = detection_tmp;
             }
         }
@@ -1640,6 +1672,8 @@ impl App {
         mut tl: Timeline,
         target_event_ids: &TargetIds,
         stored_static: &StoredStatic,
+        afterfact_writer: &mut AfterfactWriter,
+        afterfact_info: &mut AfterfactInfo,
     ) -> (
         detection::Detection,
         usize,
@@ -1831,7 +1865,18 @@ impl App {
                 // ruleファイルの検知
                 let (detection_tmp, mut log_records) =
                     detection.start(&self.rt, records_per_detect);
-                detect_infos.append(&mut log_records);
+                if stored_static.is_low_memory {
+                    let empty_ids = HashSet::new();
+                    afterfact::emit_csv(
+                        &detect_infos,
+                        &empty_ids,
+                        stored_static,
+                        afterfact_writer,
+                        afterfact_info,
+                    );
+                } else {
+                    detect_infos.append(&mut log_records);
+                }
                 detection = detection_tmp;
             }
         }
@@ -2061,6 +2106,7 @@ mod tests {
     use chrono::Local;
     use hashbrown::HashSet;
     use hayabusa::{
+        afterfact::{self, AfterfactInfo},
         detections::{
             configs::{
                 Action, CommonOptions, ComputerMetricsOption, Config, ConfigReader,
@@ -2225,6 +2271,8 @@ mod tests {
         let target_time_filter = TargetEventTime::new(&stored_static);
         let tl = Timeline::default();
         let target_event_ids = TargetIds::default();
+        let mut afterfact_info = AfterfactInfo::default();
+        let mut afterfact_writer = afterfact::init_writer(&stored_static);
 
         let actual = app.analysis_json_file(
             Path::new("test_files/evtx/test.jsonl").to_path_buf(),
@@ -2233,6 +2281,8 @@ mod tests {
             tl,
             &target_event_ids,
             &stored_static,
+            &mut afterfact_writer,
+            &mut afterfact_info,
         );
         assert_eq!(actual.1, 2);
         // TODO add check
@@ -2629,6 +2679,7 @@ mod tests {
 
         // テストファイルの削除
         remove_file("overwrite-metric.csv").ok();
+        remove_file("overwrite-metric").ok();
     }
 
     #[test]
@@ -2792,7 +2843,7 @@ mod tests {
         let meta = fs::metadata("overwrite-metric-successful.csv").unwrap();
         assert_ne!(meta.len(), 0);
         // テストファイルの削除
-        remove_file("overwrite-metric-successful.csv").ok();
+        remove_file("overwrite-metric-successful").ok();
     }
 
     #[test]
@@ -2834,6 +2885,7 @@ mod tests {
         let meta = fs::metadata("overwrite-computer-metrics.csv").unwrap();
         assert_eq!(meta.len(), 0);
         // テストファイルの削除
+        remove_file("overwrite-computer-metrics").ok();
         remove_file("overwrite-computer-metrics.csv").ok();
     }
 
@@ -2906,6 +2958,8 @@ mod tests {
         let target_time_filter = TargetEventTime::new(&stored_static);
         let tl = Timeline::default();
         let target_event_ids = TargetIds::default();
+        let mut afterfact_info = AfterfactInfo::default();
+        let mut afterfact_writer = afterfact::init_writer(&stored_static);
 
         let actual = app.analysis_json_file(
             Path::new("test_files/evtx/test.jsonl").to_path_buf(),
@@ -2914,6 +2968,8 @@ mod tests {
             tl,
             &target_event_ids,
             &stored_static,
+            &mut afterfact_writer,
+            &mut afterfact_info,
         );
         assert_eq!(actual.1, 2);
         assert_eq!(actual.4.len(), 1);
@@ -2946,6 +3002,8 @@ mod tests {
         let target_time_filter = TargetEventTime::new(&stored_static);
         let tl = Timeline::default();
         let target_event_ids = TargetIds::default();
+        let mut afterfact_info = AfterfactInfo::default();
+        let mut afterfact_writer = afterfact::init_writer(&stored_static);
 
         let actual = app.analysis_json_file(
             Path::new("test_files/evtx/test.jsonl").to_path_buf(),
@@ -2954,6 +3012,8 @@ mod tests {
             tl,
             &target_event_ids,
             &stored_static,
+            &mut afterfact_writer,
+            &mut afterfact_info,
         );
         assert_eq!(actual.1, 2);
         assert_eq!(actual.4.len(), 0);
