@@ -87,11 +87,14 @@ Hayabusa is a **Windows event log fast forensics timeline generator** and **thre
   - [Analysis Commands](#analysis-commands-1)
     - [`computer-metrics` command](#computer-metrics-command)
       - [`computer-metrics` command examples](#computer-metrics-command-examples)
+      - [`computer-metrics` screenshot](#computer-metrics-screenshot)
     - [`eid-metrics` command](#eid-metrics-command)
       - [`eid-metrics` command examples](#eid-metrics-command-examples)
       - [`eid-metrics` command config file](#eid-metrics-command-config-file)
+      - [`eid-metrics` screenshot](#eid-metrics-screenshot)
     - [`logon-summary` command](#logon-summary-command)
       - [`logon-summary` command examples](#logon-summary-command-examples)
+      - [`logon-summary` screenshots](#logon-summary-screenshots)
     - [`pivot-keywords-list` command](#pivot-keywords-list-command)
       - [`pivot-keywords-list` command examples](#pivot-keywords-list-command-examples)
       - [`pivot-keywords-list` config file](#pivot-keywords-list-config-file)
@@ -520,13 +523,13 @@ You should now be able to run hayabusa.
 
 ### `computer-metrics` command
 
-You can use the `computer-metrics` command to check how many events there are according to each computer defined in the `Computer` field.
+You can use the `computer-metrics` command to check how many events there are according to each computer defined in the `<System><Computer>` field.
 Be aware that you cannot completely rely on the `Computer` field for separating events by their original computer.
 Windows 11 will sometimes use completely different `Computer` names when saving to event logs.
-Also, Windows 10 will sometimes record the `Computer` name in all upper-case and sometimes all lower-case.
+Also, Windows 10 will sometimes record the `Computer` name in all lowercase.
 This command does not use any detection rules so will analyze all events.
 This is a good command to run to quickly see which computers have the most logs.
-With this information, you can then use the `--include-computer` or `--exclude-computer` options when creating your timelines to make your timeline generation more efficient.
+With this information, you can then use the `--include-computer` or `--exclude-computer` options when creating your timelines to make your timeline generation more efficient by creating multiple timelines according to computer or exclude events from certain computers.
 
 ```
 Usage: computer-metrics <INPUT> [OPTIONS]
@@ -562,10 +565,14 @@ General Options:
 * Print computer name metrics from a directory: `hayabusa.exe computer-metrics -d ../logs`
 * Save results to a CSV file: `hayabusa.exe computer-metrics -d ../logs -o computer-metrics.csv`
 
+#### `computer-metrics` screenshot
+
+![computer-metrics screenshot](screenshots/ComputerMetrics.png)
 
 ### `eid-metrics` command
 
-You can use the `eid-metrics` command to print out the total number and percentage of Event IDs seperated by Channels.
+You can use the `eid-metrics` command to print out the total number and percentage of event IDs (`EventID` field) seperated by channels.
+This command does not use any detection rules so will scan all events.
 
 ```
 Usage: eid-metrics <INPUT> [OPTIONS]
@@ -626,6 +633,9 @@ Microsoft-Windows-Sysmon/Operational,3,Network Connection.
 Microsoft-Windows-Sysmon/Operational,4,Sysmon Service State Changed.
 ```
 
+#### `eid-metrics` screenshot
+
+![eid-metrics screenshot](screenshots/EID-Metrics.png)
 
 ### `logon-summary` command
 
@@ -679,6 +689,11 @@ Time Format:
 * Print logon summary: `hayabusa.exe logon-summary -f Security.evtx`
 * Save logon summary results: `hayabusa.exe logon-summary -d ../logs -o logon-summary.csv`
 
+#### `logon-summary` screenshots
+
+![logon-summary successful logons screenshot](screenshots/LogonSummarySuccessfulLogons.png)
+
+![logon-summary failed logons screenshot](screenshots/LogonSummaryFailedLogons.png)
 
 ### `pivot-keywords-list` command
 
