@@ -42,7 +42,6 @@ use itertools::Itertools;
 use libmimalloc_sys::mi_stats_print_out;
 use mimalloc::MiMalloc;
 use nested::Nested;
-use openssl::x509::store;
 use serde_json::{Map, Value};
 use std::borrow::BorrowMut;
 use std::ffi::{OsStr, OsString};
@@ -1430,23 +1429,17 @@ impl App {
             let (detection_tmp, cnt_tmp, tl_tmp, recover_cnt_tmp, mut detect_infos) =
                 if evtx_file.extension().unwrap() == "json" {
                     self.analysis_json_file(
-                        evtx_file,
+                        (evtx_file, time_filter, target_event_ids, stored_static),
                         detection,
-                        time_filter,
                         tl.to_owned(),
-                        target_event_ids,
-                        stored_static,
                         &mut afterfact_writer,
                         &mut afterfact_info,
                     )
                 } else {
                     self.analysis_file(
-                        evtx_file,
+                        (evtx_file, time_filter, target_event_ids, stored_static),
                         detection,
-                        time_filter,
                         tl.to_owned(),
-                        target_event_ids,
-                        stored_static,
                         &mut afterfact_writer,
                         &mut afterfact_info,
                     )
@@ -1515,12 +1508,14 @@ impl App {
     // Windowsイベントログファイルを1ファイル分解析する。
     fn analysis_file(
         &self,
-        evtx_filepath: PathBuf,
+        (evtx_filepath, time_filter, target_event_ids, stored_static): (
+            PathBuf,
+            &TargetEventTime,
+            &TargetIds,
+            &StoredStatic,
+        ),
         mut detection: detection::Detection,
-        time_filter: &TargetEventTime,
         mut tl: Timeline,
-        target_event_ids: &TargetIds,
-        stored_static: &StoredStatic,
         afterfact_writer: &mut AfterfactWriter,
         afterfact_info: &mut AfterfactInfo,
     ) -> (
@@ -1676,12 +1671,14 @@ impl App {
     // JSON形式のイベントログファイルを1ファイル分解析する。
     fn analysis_json_file(
         &self,
-        filepath: PathBuf,
+        (filepath, time_filter, target_event_ids, stored_static): (
+            PathBuf,
+            &TargetEventTime,
+            &TargetIds,
+            &StoredStatic,
+        ),
         mut detection: detection::Detection,
-        time_filter: &TargetEventTime,
         mut tl: Timeline,
-        target_event_ids: &TargetIds,
-        stored_static: &StoredStatic,
         afterfact_writer: &mut AfterfactWriter,
         afterfact_info: &mut AfterfactInfo,
     ) -> (
@@ -2285,12 +2282,14 @@ mod tests {
         let mut afterfact_writer = afterfact::init_writer(&stored_static);
 
         let actual = app.analysis_json_file(
-            Path::new("test_files/evtx/test.jsonl").to_path_buf(),
+            (
+                Path::new("test_files/evtx/test.jsonl").to_path_buf(),
+                &target_time_filter,
+                &target_event_ids,
+                &stored_static,
+            ),
             detection,
-            &target_time_filter,
             tl,
-            &target_event_ids,
-            &stored_static,
             &mut afterfact_writer,
             &mut afterfact_info,
         );
@@ -2972,12 +2971,14 @@ mod tests {
         let mut afterfact_writer = afterfact::init_writer(&stored_static);
 
         let actual = app.analysis_json_file(
-            Path::new("test_files/evtx/test.jsonl").to_path_buf(),
+            (
+                Path::new("test_files/evtx/test.jsonl").to_path_buf(),
+                &target_time_filter,
+                &target_event_ids,
+                &stored_static,
+            ),
             detection,
-            &target_time_filter,
             tl,
-            &target_event_ids,
-            &stored_static,
             &mut afterfact_writer,
             &mut afterfact_info,
         );
@@ -3016,12 +3017,14 @@ mod tests {
         let mut afterfact_writer = afterfact::init_writer(&stored_static);
 
         let actual = app.analysis_json_file(
-            Path::new("test_files/evtx/test.jsonl").to_path_buf(),
+            (
+                Path::new("test_files/evtx/test.jsonl").to_path_buf(),
+                &target_time_filter,
+                &target_event_ids,
+                &stored_static,
+            ),
             detection,
-            &target_time_filter,
             tl,
-            &target_event_ids,
-            &stored_static,
             &mut afterfact_writer,
             &mut afterfact_info,
         );
