@@ -1623,6 +1623,8 @@ To create the most forensic evidence and detect with the highest accuracy, you n
 
 ## English
 
+* 2023/12/11 [Unleashing the Hayabusa Feathers: My Top Features Revealed!](https://detect.fyi/hunting-with-hayabusa-tool-showcase-aafef7434413) by Christian Henriksen
+* 2023/10/16 [Incident response and threat hunting using hayabusa tool](https://mahim-firoj.medium.com/incident-response-and-threat-hunting-using-hayabusa-tool-383da273183a) by Md. Mahim Bin Firoj
 * 2023/03/21 [Find Threats in Event Logs with Hayabusa](https://blog.ecapuano.com/p/find-threats-in-event-logs-with-hayabusa) by [Eric Capuano](https://twitter.com/eric_capuano)
 * 2023/03/14 [Rust Performance Guide for Hayabusa Developers](doc/RustPerformance-English.md) by Fukusuke Takahashi
 * 2022/06/19 [Velociraptor Walkthrough and Hayabusa Integration](https://www.youtube.com/watch?v=Q1IoGX--814) by [Eric Capuano](https://twitter.com/eric_capuano)
@@ -1630,6 +1632,7 @@ To create the most forensic evidence and detect with the highest accuracy, you n
 
 ## Japanese
 
+* 2024/01/24 [LME × Hayabusa　－　Windowsイベントログの集約と解析の効率化](https://jpn.nec.com/cybersecurity/blog/240126/index.html) by NEC Security Blog
 * 2023/09/29 [Fast Forensics with Hayabusa and Splunk](https://jpn.nec.com/cybersecurity/blog/230929/index.html) by NEC Security Blog
 * 2023/09/13 [Windows Event Log Analysis with Hayabusa](https://engineers.ffri.jp/entry/2023/09/13/130750) by FFRI
 * 2022/03/14 [Rust Performance Guide for Hayabusa Developers](doc/RustPerformance-Japanese.md) by Fukusuke Takahashi

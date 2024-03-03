@@ -1623,6 +1623,8 @@ Windows機での悪性な活動を検知する為には、デフォルトのロ�
 
 ## 英語
 
+* 2023/12/11 Christian Henriksen氏による[Unleashing the Hayabusa Feathers: My Top Features Revealed!](https://detect.fyi/hunting-with-hayabusa-tool-showcase-aafef7434413)
+* 2023/10/16 Md. Mahim Bin Firoj氏による[Incident response and threat hunting using hayabusa tool](https://mahim-firoj.medium.com/incident-response-and-threat-hunting-using-hayabusa-tool-383da273183a)
 * 2023/03/21 [Eric Capuano](https://twitter.com/eric_capuano)氏による[Find Threats in Event Logs with Hayabusa](https://blog.ecapuano.com/p/find-threats-in-event-logs-with-hayabusa)
 * 2023/03/14 Fukusuke Takahashi氏による[Hayabusa開発者向けRustパフォーマンスガイド](doc/RustPerformance-English.md)
 * 2022/06/19 [Eric Capuano](https://twitter.com/eric_capuano)氏による[VelociraptorチュートリアルとHayabusaの統合方法](https://www.youtube.com/watch?v=Q1IoGX--814)
@@ -1630,6 +1632,7 @@ Windows機での悪性な活動を検知する為には、デフォルトのロ�
 
 ## 日本語
 
+* 2024/01/24 NECセキュリティブログ: [LME × Hayabusa　－　Windowsイベントログの集約と解析の効率化](https://jpn.nec.com/cybersecurity/blog/240126/index.html)
 * 2023/09/29 NECセキュリティブログ: [HayabusaとSplunkによるファストフォレンジック効率化](https://jpn.nec.com/cybersecurity/blog/230929/index.html)
 * 2023/09/13 FFRIセキュリティブログ: [HayabusaによるWindowsイベントログ解析](https://engineers.ffri.jp/entry/2023/09/13/130750)
 * 2023/03/14 Fukusuke Takahashi氏による[Hayabusa開発者向けRustパフォーマンスガイド](doc/RustPerformance-Japanese.md)
