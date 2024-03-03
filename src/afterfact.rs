@@ -152,7 +152,7 @@ pub struct AfterfactWriter {
     disp_wtr: BufferWriter,
     disp_wtr_buf: Buffer,
     csv_writer: Writer<Box<dyn io::Write>>,
-    display_flag: bool,
+    pub display_flag: bool,
 }
 
 pub fn init_writer(stored_static: &StoredStatic) -> AfterfactWriter {
@@ -222,6 +222,10 @@ pub fn emit_csv(
     afterfact_writer: &mut AfterfactWriter,
     afterfact_info: &mut AfterfactInfo,
 ) {
+    if detect_infos.is_empty() {
+        return;
+    }
+
     let result = emit_csv_inner(
         detect_infos,
         duplicate_idxes,
@@ -468,9 +472,7 @@ fn emit_csv_inner(
         }
     }
 
-    if afterfact_writer.display_flag {
-        println!();
-    } else {
+    if !afterfact_writer.display_flag {
         afterfact_writer.csv_writer.flush()?;
     }
 
@@ -575,6 +577,10 @@ pub fn output_additional_afterfact(
     afterfact_writer: &mut AfterfactWriter,
     afterfact_info: &AfterfactInfo,
 ) {
+    if afterfact_writer.display_flag {
+        println!();
+    }
+
     let terminal_width = match terminal_size() {
         Some((Width(w), _)) => w as usize,
         None => 100,

@@ -42,6 +42,7 @@ use itertools::Itertools;
 use libmimalloc_sys::mi_stats_print_out;
 use mimalloc::MiMalloc;
 use nested::Nested;
+use openssl::x509::store;
 use serde_json::{Map, Value};
 use std::borrow::BorrowMut;
 use std::ffi::{OsStr, OsString};
@@ -1402,7 +1403,12 @@ impl App {
         )
         .with_tab_width(55);
         pb.set_style(progress_style);
-        pb.enable_steady_tick(Duration::from_millis(300));
+        // I tried progress bar with low memory option(output log on detection) but it seemts that progress bar didn't go well with low memory option.
+        // I disabled progress bar if low memory option is specified.
+        let is_show_progress = !stored_static.is_low_memory || stored_static.output_path.is_some();
+        if is_show_progress {
+            pb.enable_steady_tick(Duration::from_millis(300));
+        }
         self.rule_keys = self.get_all_keys(&rule_files);
         let mut detection = detection::Detection::new(rule_files);
         let mut tl = Timeline::new();
@@ -1413,11 +1419,13 @@ impl App {
         let mut all_detect_infos = vec![];
         let mut afterfact_writer = afterfact::init_writer(stored_static);
         for evtx_file in evtx_files {
-            let pb_msg = format!(
-                "{:?}",
-                &evtx_file.to_str().unwrap_or_default().replace('\\', "/")
-            );
-            pb.set_message(pb_msg);
+            if is_show_progress {
+                let pb_msg = format!(
+                    "{:?}",
+                    &evtx_file.to_str().unwrap_or_default().replace('\\', "/")
+                );
+                pb.set_message(pb_msg);
+            }
 
             let (detection_tmp, cnt_tmp, tl_tmp, recover_cnt_tmp, mut detect_infos) =
                 if evtx_file.extension().unwrap() == "json" {
@@ -1448,7 +1456,9 @@ impl App {
             afterfact_info.record_cnt += cnt_tmp as u128;
             afterfact_info.recover_record_cnt += recover_cnt_tmp as u128;
             all_detect_infos.append(&mut detect_infos);
-            pb.inc(1);
+            if is_show_progress {
+                pb.inc(1);
+            }
         }
         pb.finish_with_message(
             "Scanning finished. Please wait while the results are being saved.\r\n",
@@ -1647,7 +1657,7 @@ impl App {
                 if stored_static.is_low_memory {
                     let empty_ids = HashSet::new();
                     afterfact::emit_csv(
-                        &detect_infos,
+                        &log_records,
                         &empty_ids,
                         stored_static,
                         afterfact_writer,
@@ -1868,7 +1878,7 @@ impl App {
                 if stored_static.is_low_memory {
                     let empty_ids = HashSet::new();
                     afterfact::emit_csv(
-                        &detect_infos,
+                        &log_records,
                         &empty_ids,
                         stored_static,
                         afterfact_writer,
