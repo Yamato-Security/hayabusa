@@ -78,6 +78,7 @@ fn main() {
     let mut config_reader = ConfigReader::new();
     // コマンドのパース情報を作成してstatic変数に格納する
     let mut stored_static = StoredStatic::create_static_data(config_reader.config);
+    //stored_static.is_low_memory = true;
     config_reader.config = None;
     let mut app = App::new(stored_static.thread_number);
     app.exec(&mut config_reader.app, &mut stored_static);
