@@ -87,11 +87,14 @@ Hayabusaは、日本の[Yamato Security](https://yamatosecurity.connpass.com/)�
   - [分析コマンド](#分析コマンド-1)
     - [`computer-metrics`コマンド](#computer-metricsコマンド)
       - [`computer-metrics`コマンドの使用例](#computer-metricsコマンドの使用例)
+      - [`computer-metrics`のスクリーンショット](#computer-metricsのスクリーンショット)
     - [`eid-metrics`コマンド](#eid-metricsコマンド)
       - [`eid-metrics`コマンドの使用例](#eid-metricsコマンドの使用例)
       - [`eid-metrics`コマンドの設定ファイル](#eid-metricsコマンドの設定ファイル)
+      - [`eid-metrics`のスクリーンショット](#eid-metricsのスクリーンショット)
     - [`logon-summary`コマンド](#logon-summaryコマンド)
       - [`logon-summary`コマンドの使用例](#logon-summaryコマンドの使用例)
+      - [`logon-summary`のスクリーンショット](#logon-summaryのスクリーンショット)
     - [`pivot-keywords-list`コマンド](#pivot-keywords-listコマンド)
       - [`pivot-keywords-list`コマンドの使用例](#pivot-keywords-listコマンドの使用例)
       - [`pivot-keywords-list`の設定ファイル](#pivot-keywords-listの設定ファイル)
@@ -520,7 +523,13 @@ macOSの環境設定から「セキュリティとプライバシー」を開き
 
 ### `computer-metrics`コマンド
 
-`computer-metrics`コマンドを使用すると、イベントIDの総数や割合をチャンネルごとに分けて表示することができます。
+`computer-metrics`コマンドを使うと、`<System><Computer>`フィールドで定義された各コンピュータに応じたイベントの数をチェックすることができます。
+`Computer`フィールドを完全に頼りにしてイベントを元のコンピュータ別に分けることはできないことに注意してください。
+Windows 11ではイベントログに保存するときにまったく異なる`Computer`の名前を使うことがあります。
+また、Windows 10では`Computer`の名前がすべて小文字で記録されることもあります。
+このコマンドは検知ルールを使わないので、すべてのイベントを分析します。
+このコマンドは、どのコンピュータに最も多くのログが記録されているかを素早く確認するのに適しています。
+この情報があれば、タイムラインを生成する際に`--include-computer`または`--exclude-computer`オプションを使い、コンピュータ別に複数のタイムラインを生成したり、特定のコンピュータからのイベントを除外したりすることで、タイムライン生成をより効率的にすることができます。
 
 ```
 Usage: computer-metrics <INPUT> [OPTIONS]
@@ -556,10 +565,14 @@ General Options:
 * ディレクトリに対してイベントIDの統計情報を出力する: `hayabusa.exe computer-metrics -d ../logs`
 * 結果をCSVファイルに保存する: `hayabusa.exe computer-metrics -d ../logs -o computer-metrics.csv`
 
+#### `computer-metrics`のスクリーンショット
+
+![computer-metrics screenshot](screenshots/ComputerMetrics.png)
 
 ### `eid-metrics`コマンド
 
-`eid-metrics`コマンドを使用すると、イベントIDの総数や割合をチャンネルごとに分けて表示することができます。
+`eid-metrics`コマンドを使用すると、イベントID(`<System><EventID>`フィールド)の総数や割合をチャンネルごとに分けて表示することができます。
+このコマンドは検知ルールを使用しないので、すべてのイベントをスキャンします。
 
 ```
 Usage: eid-metrics <INPUT> [OPTIONS]
@@ -620,6 +633,9 @@ Microsoft-Windows-Sysmon/Operational,3,Network Connection.
 Microsoft-Windows-Sysmon/Operational,4,Sysmon Service State Changed.
 ```
 
+#### `eid-metrics`のスクリーンショット
+
+![eid-metrics screenshot](screenshots/EID-Metrics.png)
 
 ### `logon-summary`コマンド
 
@@ -673,6 +689,11 @@ Time Format:
 * ログオンサマリの出力: `hayabusa.exe logon-summary -f Security.evtx`
 * ログオンサマリ結果を保存する: `hayabusa.exe logon-summary -d ../logs -o logon-summary.csv`
 
+#### `logon-summary`のスクリーンショット
+
+![logon-summary successful logons screenshot](screenshots/LogonSummarySuccessfulLogons.png)
+
+![logon-summary failed logons screenshot](screenshots/LogonSummaryFailedLogons.png)
 
 ### `pivot-keywords-list`コマンド
 
@@ -1602,6 +1623,8 @@ Windows機での悪性な活動を検知する為には、デフォルトのロ�
 
 ## 英語
 
+* 2023/12/11 Christian Henriksen氏による[Unleashing the Hayabusa Feathers: My Top Features Revealed!](https://detect.fyi/hunting-with-hayabusa-tool-showcase-aafef7434413)
+* 2023/10/16 Md. Mahim Bin Firoj氏による[Incident response and threat hunting using hayabusa tool](https://mahim-firoj.medium.com/incident-response-and-threat-hunting-using-hayabusa-tool-383da273183a)
 * 2023/03/21 [Eric Capuano](https://twitter.com/eric_capuano)氏による[Find Threats in Event Logs with Hayabusa](https://blog.ecapuano.com/p/find-threats-in-event-logs-with-hayabusa)
 * 2023/03/14 Fukusuke Takahashi氏による[Hayabusa開発者向けRustパフォーマンスガイド](doc/RustPerformance-English.md)
 * 2022/06/19 [Eric Capuano](https://twitter.com/eric_capuano)氏による[VelociraptorチュートリアルとHayabusaの統合方法](https://www.youtube.com/watch?v=Q1IoGX--814)
@@ -1609,6 +1632,7 @@ Windows機での悪性な活動を検知する為には、デフォルトのロ�
 
 ## 日本語
 
+* 2024/01/24 NECセキュリティブログ: [LME × Hayabusa　－　Windowsイベントログの集約と解析の効率化](https://jpn.nec.com/cybersecurity/blog/240126/index.html)
 * 2023/09/29 NECセキュリティブログ: [HayabusaとSplunkによるファストフォレンジック効率化](https://jpn.nec.com/cybersecurity/blog/230929/index.html)
 * 2023/09/13 FFRIセキュリティブログ: [HayabusaによるWindowsイベントログ解析](https://engineers.ffri.jp/entry/2023/09/13/130750)
 * 2023/03/14 Fukusuke Takahashi氏による[Hayabusa開発者向けRustパフォーマンスガイド](doc/RustPerformance-Japanese.md)
