@@ -78,7 +78,7 @@ fn main() {
     let mut config_reader = ConfigReader::new();
     // コマンドのパース情報を作成してstatic変数に格納する
     let mut stored_static = StoredStatic::create_static_data(config_reader.config);
-    //stored_static.is_low_memory = true;
+    stored_static.is_low_memory = true;
     config_reader.config = None;
     let mut app = App::new(stored_static.thread_number);
     app.exec(&mut config_reader.app, &mut stored_static);
@@ -1479,7 +1479,18 @@ impl App {
         {
             println!();
             let mut log_records = detection.add_aggcondition_msges(&self.rt, stored_static);
-            all_detect_infos.append(&mut log_records);
+            if stored_static.is_low_memory {
+                let empty_ids = HashSet::new();
+                afterfact::emit_csv(
+                    &log_records,
+                    &empty_ids,
+                    stored_static,
+                    &mut afterfact_writer,
+                    &mut afterfact_info,
+                );
+            } else {
+                all_detect_infos.append(&mut log_records);
+            }
             afterfact_info.tl_starttime = tl.stats.start_time;
             afterfact_info.tl_endtime = tl.stats.end_time;
 
