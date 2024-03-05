@@ -1,6 +1,7 @@
+use crate::afterfact::AfterfactInfo;
 use crate::detections::configs::{OutputOption, ALLFIELDINFO_SPECIAL_CHARS};
 use crate::detections::field_data_map::FieldDataMapKey;
-use crate::detections::message;
+use crate::detections::message::{self, DetectInfo};
 use crate::detections::utils::format_time;
 use crate::{
     afterfact::output_json_str,
@@ -455,41 +456,47 @@ pub fn search_result_dsp_msg(
                     .map(CompactString::from)
                     .collect_vec(),
             );
+            let mut detect_info = DetectInfo::default();
+            detect_info.ext_field.push((
+                CompactString::from("Timestamp"),
+                Profile::Timestamp(timestamp.clone().into()),
+            ));
+            detect_info.ext_field.push((
+                CompactString::from("Hostname"),
+                Profile::Computer(hostname.clone().into()),
+            ));
+            detect_info.ext_field.push((
+                CompactString::from("Channel"),
+                Profile::Channel(abbr_channel.clone().into()),
+            ));
+            detect_info.ext_field.push((
+                CompactString::from("Event ID"),
+                Profile::EventID(event_id.clone().into()),
+            ));
+            detect_info.ext_field.push((
+                CompactString::from("Record ID"),
+                Profile::RecordID(record_id.clone().into()),
+            ));
+            detect_info.ext_field.push((
+                CompactString::from("EventTitle"),
+                Profile::Literal(event_title.clone().into()),
+            ));
+            detect_info.ext_field.push((
+                CompactString::from("AllFieldInfo"),
+                Profile::AllFieldInfo(all_field_info.into()),
+            ));
+            detect_info.ext_field.push((
+                CompactString::from("EvtxFile"),
+                Profile::EvtxFile(evtx_file.into()),
+            ));
+            detect_info.details_convert_map = detail_infos;
+            let mut afterfact_info = AfterfactInfo::default();
             let (output_json_str_ret, _) = output_json_str(
-                &vec![
-                    (
-                        "Timestamp".into(),
-                        Profile::Timestamp(timestamp.clone().into()),
-                    ),
-                    (
-                        "Hostname".into(),
-                        Profile::Computer(hostname.clone().into()),
-                    ),
-                    (
-                        "Channel".into(),
-                        Profile::Channel(abbr_channel.clone().into()),
-                    ),
-                    ("Event ID".into(), Profile::EventID(event_id.clone().into())),
-                    (
-                        "Record ID".into(),
-                        Profile::RecordID(record_id.clone().into()),
-                    ),
-                    (
-                        "EventTitle".into(),
-                        Profile::Literal(event_title.clone().into()),
-                    ),
-                    (
-                        "AllFieldInfo".into(),
-                        Profile::AllFieldInfo(all_field_info.into()),
-                    ),
-                    ("EvtxFile".into(), Profile::EvtxFile(evtx_file.into())),
-                ],
-                HashMap::new(),
+                &detect_info,
+                &mut afterfact_info,
                 jsonl_output,
                 false,
                 false,
-                false,
-                &[&detail_infos, &HashMap::default()],
             );
 
             file_wtr
