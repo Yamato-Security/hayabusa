@@ -785,7 +785,7 @@ mod tests {
             &dummy_stored_static,
         );
         // Event column is defined in rules/config/channel_eid_info.txt
-        let expect_records = vec![vec!["1", "100.0%", "Sec", "4625", "Logon failure"]];
+        let expect_records = [["1", "100.0%", "Sec", "4625", "Logon failure"]];
         let expect = "Total,%,Channel,ID,Event\n".to_owned()
             + &expect_records.join(&"\n").join(",").replace(",\n,", "\n")
             + "\n";
@@ -909,7 +909,7 @@ mod tests {
         ];
 
         // Login Successful csv output test
-        let expect_success_records = vec![vec![
+        let expect_success_records = [[
             "1",
             "testuser",
             "HAYABUSA-DESKTOP",
@@ -933,7 +933,7 @@ mod tests {
 
         // Login Failed csv output test
         header[0] = "Failed";
-        let expect_failed_records = vec![vec![
+        let expect_failed_records = [[
             "1",
             "testuser",
             "HAYABUSA-DESKTOP",
