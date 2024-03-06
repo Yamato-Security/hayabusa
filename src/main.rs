@@ -24,8 +24,7 @@ use hayabusa::detections::message::{AlertMessage, DetectInfo, ERROR_LOG_STACK};
 use hayabusa::detections::rule::{get_detection_keys, RuleNode};
 use hayabusa::detections::utils;
 use hayabusa::detections::utils::{
-    check_setting_path, get_writable_color, output_and_data_stack_for_html, output_duration,
-    output_profile_name,
+    check_setting_path, get_writable_color, output_and_data_stack_for_html, output_profile_name,
 };
 use hayabusa::options::htmlreport::{self, HTML_REPORTER};
 use hayabusa::options::pivot::create_output;
@@ -721,9 +720,14 @@ impl App {
         }
 
         // 処理時間の出力
-        let analysis_end_time: DateTime<Local> = Local::now();
-        let analysis_duration = analysis_end_time.signed_duration_since(analysis_start_time);
-        let elapsed_output_str = format!("Elapsed time: {}", output_duration(analysis_duration));
+        let elapsed_output_str = format!(
+            "Elapsed time: {}",
+            CHECKPOINT
+                .lock()
+                .as_mut()
+                .unwrap()
+                .calculate_all_stocked_results()
+        );
         output_and_data_stack_for_html(
             &elapsed_output_str,
             "General Overview {#general_overview}",
@@ -1023,6 +1027,11 @@ impl App {
             || stored_static.computer_metrics_flag
             || stored_static.output_option.as_ref().unwrap().no_wizard)
         {
+            CHECKPOINT
+                .lock()
+                .as_mut()
+                .unwrap()
+                .rap_checkpoint("Rule Parse Processing Time");
             let mut rule_counter_wizard_map = HashMap::new();
             yaml::count_rules(
                 &stored_static.output_option.as_ref().unwrap().rules,
@@ -1268,6 +1277,12 @@ impl App {
                 }
             }
 
+            CHECKPOINT
+                .lock()
+                .as_mut()
+                .unwrap()
+                .set_checkpoint(Local::now());
+
             if let Some(noisy_cnt) = exclude_noisy_cnt.get("noisy") {
                 // noisy rules load prompt
                 let prompt_fmt = format!("Include noisy rules? ({} rules)", noisy_cnt);
@@ -1375,7 +1390,12 @@ impl App {
                 .lock()
                 .as_mut()
                 .unwrap()
-                .rap_check_point("Rule Parse Processing Time");
+                .rap_checkpoint("Rule Parse Processing Time");
+            CHECKPOINT
+                .lock()
+                .as_mut()
+                .unwrap()
+                .set_checkpoint(Local::now());
             let unused_rules_option = stored_static.logon_summary_flag
                 || stored_static.search_flag
                 || stored_static.computer_metrics_flag
@@ -1461,7 +1481,13 @@ impl App {
             .lock()
             .as_mut()
             .unwrap()
-            .rap_check_point("Analysis Processing Time");
+            .rap_checkpoint("Analysis Processing Time");
+        CHECKPOINT
+            .lock()
+            .as_mut()
+            .unwrap()
+            .set_checkpoint(Local::now());
+
         if stored_static.metrics_flag {
             tl.tm_stats_dsp_msg(event_timeline_config, stored_static);
         } else if stored_static.logon_summary_flag {
@@ -1514,7 +1540,12 @@ impl App {
             .lock()
             .as_mut()
             .unwrap()
-            .rap_check_point("Output Processing Time");
+            .rap_checkpoint("Output Processing Time");
+        CHECKPOINT
+            .lock()
+            .as_mut()
+            .unwrap()
+            .set_checkpoint(Local::now());
     }
 
     // Windowsイベントログファイルを1ファイル分解析する。

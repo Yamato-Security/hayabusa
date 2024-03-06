@@ -12,7 +12,7 @@ use nested::Nested;
 use std::path::{Path, PathBuf};
 use std::thread::available_parallelism;
 
-use chrono::{Duration, Local};
+use chrono::Local;
 use termcolor::{Color, ColorChoice};
 
 use tokio::runtime::{Builder, Runtime};
@@ -694,10 +694,8 @@ pub fn is_filtered_by_computer_name(
     false
 }
 
-///Durationから出力文字列を作成する関数。絶対値での秒数から算出してhh:mm:ss.fffの形式で出力する。
-pub fn output_duration(d: Duration) -> String {
-    let mut s = d.num_seconds();
-    let mut ms = d.num_milliseconds() - 1000 * s;
+///指定された秒数とミリ秒数から出力文字列を作成する関数。絶対値での秒数から算出してhh:mm:ss.fffの形式で出力する。
+pub fn output_duration((mut s, mut ms): (i64, i64)) -> String {
     if s < 0 {
         s = -s;
         ms = -ms;
@@ -1164,7 +1162,15 @@ mod tests {
             .unwrap()
             .and_hms_milli_opt(1, 23, 45, 678)
             .unwrap();
-        assert_eq!(output_duration(time1 - time2), "25:11:03.322".to_string());
-        assert_eq!(output_duration(time2 - time1), "25:11:03.322".to_string());
+        let duration = time1 - time2;
+        let s = duration.num_seconds();
+        let ms = duration.num_milliseconds() - 1000 * s;
+
+        assert_eq!(output_duration((s, ms)), "25:11:03.322".to_string());
+
+        let duration = time2 - time1;
+        let s = duration.num_seconds();
+        let ms = duration.num_milliseconds() - 1000 * s;
+        assert_eq!(output_duration((s, ms)), "25:11:03.322".to_string());
     }
 }
