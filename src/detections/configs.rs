@@ -1535,15 +1535,16 @@ pub struct OutputOption {
 
     /// Duplicate field data will be replaced with "DUP"
     #[arg(
-            help_heading = Some("Output"),
+            help_heading = Some("General Options"),
             short = 'R',
             long = "remove-duplicate-data",
+            conflicts_with = "low_memory_mode",
             display_order = 440
         )]
     pub remove_duplicate_data: bool,
 
     /// Remove duplicate detections (default: disabled)
-    #[arg(help_heading = Some("Output"), short = 'X', long = "remove-duplicate-detections", display_order = 441)]
+    #[arg(help_heading = Some("General Options"), short = 'X', long = "remove-duplicate-detections", conflicts_with = "low_memory_mode", display_order = 441)]
     pub remove_duplicate_detections: bool,
 
     /// Do not ask questions. Scan for all events and alerts.
