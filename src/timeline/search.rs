@@ -352,11 +352,11 @@ pub fn search_result_dsp_msg(
 ) {
     let header = vec![
         "Timestamp",
+        "EventTitle",
         "Hostname",
         "Channel",
         "Event ID",
         "Record ID",
-        "EventTitle",
         "AllFieldInfo",
         "EvtxFile",
     ];
@@ -436,11 +436,11 @@ pub fn search_result_dsp_msg(
         };
         let record_data = vec![
             timestamp.as_str(),
+            event_title.as_str(),
             hostname.as_str(),
             abbr_channel.as_str(),
             event_id.as_str(),
             record_id.as_str(),
-            event_title.as_str(),
             all_field_info.as_str(),
             evtx_file.as_str(),
         ];
@@ -538,7 +538,7 @@ pub fn search_result_dsp_msg(
                             .ok();
                         }
                     }
-                } else if record_field_idx == 0 || record_field_idx == 5 {
+                } else if record_field_idx == 0 || record_field_idx == 1 {
                     //タイムスタンプとイベントタイトルは同じ色で表示
                     write_color_buffer(
                         disp_wtr.as_mut().unwrap(),
@@ -568,5 +568,6 @@ pub fn search_result_dsp_msg(
                 }
             }
         }
+        println!();
     }
 }
