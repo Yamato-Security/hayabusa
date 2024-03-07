@@ -1550,8 +1550,8 @@ pub struct OutputOption {
     #[arg(help_heading = Some("General Options"), short = 'w', long = "no-wizard", display_order = 400)]
     pub no_wizard: bool,
 
-    /// low-memory-mode
-    #[arg(help_heading = Some("General Options"), long = "low-memory-mode", display_order = 380)]
+    /// Scan with the minimal amount of memory by not sorting events
+    #[arg(help_heading = Some("General Options"), short='s', long = "low-memory-mode", display_order = 380)]
     pub low_memory_mode: bool,
 }
 
