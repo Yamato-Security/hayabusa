@@ -1075,6 +1075,7 @@ mod tests {
                     remove_duplicate_detections: false,
                     no_wizard: true,
                     include_status: None,
+                    low_memory_mode: false,
                 },
                 geo_ip: None,
                 output: None,
