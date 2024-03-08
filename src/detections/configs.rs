@@ -698,7 +698,6 @@ impl StoredStatic {
             .unwrap(),
             Some(&ret),
         );
-        ret.is_low_memory = false;
         ret
     }
     /// detailsのdefault値をファイルから読み取る関数
