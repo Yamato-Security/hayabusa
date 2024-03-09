@@ -1,15 +1,19 @@
 # Changes
 
-## 2.XX.X [2024/XX/XX] "XXX"
+## 2.14.0 [2024/03/30] "BSides Tokyo Release"
+
+**New Features:**
+
+- Added `--include-status` option: You can specify rules based on their `status`. (#1193) (@hitenkoku)
+- Added a `-s, --low-memory-mode` option that uses up to 95% less memory. However, in order to do this, Hayabusa cannot sort results nor use `-R, --remove-duplicate-data` and/or `-X, --remove-duplicate-detections` in combination.  (#1254) (@hach1yon @hitenkoku)
 
 **Enhancements:**
 
-- Added `--include-status` option: You can specify rules based on their `status`. (#1193) (@hitenkoku)
 - Removed unused crates. (@YamatoSecurity)
 - JSON input now supports the format exported from Splunk. (#1083) (@hitenkoku)
 - Performance enchancements. (#1277, #1278) (@fukusuket)
 - Reordered `search` result fields to look similar to the `csv-timeline` command results. (#1297) (@hitenkoku)
-- Added master piece character in eggs ascii art. R,I,P, lovely master weared gas mask. (#1304) (@hitenkoku)
+- Added master piece character in ascii art eggs. R.I.P. lovely master hidden behind the gas mask. (#1304) (@hitenkoku)
 
 **Bug Fixes:**
 

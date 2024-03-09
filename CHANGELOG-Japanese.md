@@ -1,15 +1,19 @@
 # 変更点
 
-## 2.XX.X [2024/XX/XX] "XXX"
+## 2.14.0 [2024/03/30] "BSides Tokyo Release"
+
+**新機能:**
+
+- 指定した`status`のルールのみを利用する`--include-status`オプションを追加した。 (#1193) (@hitenkoku)
+- メモリ使用量を最大95%削減する`-s, --low-memory-mode`(低メモリモード)オプションを追加した。ただし、そのためには結果をソートしたり、`-R, --remove-duplicate-data`または`-X, --remove-duplicate-detections`を併用したりすることはできない。(#1254) (@hach1yon @hitenkoku)
 
 **改善:**
 
-- 指定した`status`のルールのみを利用する`--include-status`オプションを追加した。 (#1193) (@hitenkoku)
 - 未使用のクレートを削除した。(@YamatoSecurity)
 - SplunkからエクスポートしたJSONファイルの入力に対応した。 (#1083) (@hitenkoku)
 - パフォーマンスの改善 (#1277, #1278) (@fukusuket)
 - `csv-timeline`コマンドの結果と同様になるようにするために、`search`コマンドの結果の表示順番を変更した。 (#1297) (@hitenkoku)
-- イースターエッグに最強のキャラクターを追加しました。 (#1304) (@hitenkoku)
+- イースターエッグに最強のキャラクターを追加した。 (#1304) (@hitenkoku)
 
 **バグ修正:**
 
