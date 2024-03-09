@@ -8,6 +8,7 @@
 - 未使用のクレートを削除した。(@YamatoSecurity)
 - SplunkからエクスポートしたJSONファイルの入力に対応した。 (#1083) (@hitenkoku)
 - パフォーマンスの改善 (#1277, #1278) (@fukusuket)
+- `csv-timeline`コマンドの結果と同様になるようにするために、`search`コマンドの結果の表示順番を変更した。 (#1297) (@hitenkoku)
 
 **バグ修正:**
 

@@ -8,6 +8,7 @@
 - Removed unused crates. (@YamatoSecurity)
 - JSON input now supports the format exported from Splunk. (#1083) (@hitenkoku)
 - Performance enchancements. (#1277, #1278) (@fukusuket)
+- Reordered `search` result fields to look similar to the `csv-timeline` command results. (#1297) (@hitenkoku)
 
 **Bug Fixes:**
 

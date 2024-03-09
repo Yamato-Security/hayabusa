@@ -436,8 +436,11 @@ impl Timeline {
                 .ok();
             } else {
                 sammsges.push(format!(
-                    "\n\nTotal findings: {}\n",
-                    self.event_search.search_result.len()
+                    "\nTotal findings: {}",
+                    self.event_search
+                        .search_result
+                        .len()
+                        .to_formatted_string(&Locale::en)
                 ));
             }
             let search_result = self.event_search.search_result.clone();

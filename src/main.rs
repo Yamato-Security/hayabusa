@@ -390,7 +390,6 @@ impl App {
                     "Saved results",
                     &stored_static.html_report_flag,
                 );
-                println!();
             }
             Action::ComputerMetrics(_) => {
                 if let Some(path) = &stored_static.output_path {
