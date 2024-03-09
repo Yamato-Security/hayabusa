@@ -557,9 +557,12 @@ impl StoredStatic {
                 .collect(),
             _ => HashSet::default(),
         };
-
+        let is_low_memory = match &input_config.as_ref().unwrap().action {
+            Some(Action::CsvTimeline(opt)) => opt.output_options.low_memory_mode,
+            Some(Action::JsonTimeline(opt)) => opt.output_options.low_memory_mode,
+            _ => false,
+        };
         let mut ret = StoredStatic {
-            is_low_memory: false,
             config: input_config.as_ref().unwrap().to_owned(),
             config_path: config_path.to_path_buf(),
             ch_config: create_output_filter_config(
@@ -674,6 +677,7 @@ impl StoredStatic {
             enable_recover_records,
             timeline_offset,
             include_status,
+            is_low_memory,
         };
         ret.profiles = load_profile(
             check_setting_path(
@@ -694,7 +698,6 @@ impl StoredStatic {
             .unwrap(),
             Some(&ret),
         );
-        ret.is_low_memory = false;
         ret
     }
     /// detailsのdefault値をファイルから読み取る関数
@@ -914,7 +917,7 @@ impl Action {
 #[derive(Args, Clone, Debug)]
 pub struct DetectCommonOption {
     /// Scan JSON formatted logs instead of .evtx (.json or .jsonl)
-    #[arg(help_heading = Some("Input"), short = 'J', long = "JSON-input", conflicts_with = "live_analysis", display_order = 390)]
+    #[arg(help_heading = Some("General Options"), short = 'J', long = "JSON-input", conflicts_with = "live_analysis", display_order = 390)]
     pub json_input: bool,
 
     /// Specify additional evtx file extensions (ex: evtx_data)
@@ -1534,17 +1537,22 @@ pub struct OutputOption {
             help_heading = Some("Output"),
             short = 'R',
             long = "remove-duplicate-data",
+            conflicts_with = "low_memory_mode",
             display_order = 440
         )]
     pub remove_duplicate_data: bool,
 
     /// Remove duplicate detections (default: disabled)
-    #[arg(help_heading = Some("Output"), short = 'X', long = "remove-duplicate-detections", display_order = 441)]
+    #[arg(help_heading = Some("Output"), short = 'X', long = "remove-duplicate-detections", conflicts_with = "low_memory_mode", display_order = 441)]
     pub remove_duplicate_detections: bool,
 
     /// Do not ask questions. Scan for all events and alerts.
     #[arg(help_heading = Some("General Options"), short = 'w', long = "no-wizard", display_order = 400)]
     pub no_wizard: bool,
+
+    /// Scan with the minimal amount of memory by not sorting events
+    #[arg(help_heading = Some("General Options"), short='s', long = "low-memory-mode", display_order = 380)]
+    pub low_memory_mode: bool,
 }
 
 #[derive(Copy, Args, Clone, Debug)]
@@ -1578,7 +1586,7 @@ pub struct InputOption {
     pub live_analysis: bool,
 
     /// Carve evtx records from slack space (default: disabled)
-    #[arg(help_heading = Some("Input"), short = 'x', long = "recover-records", conflicts_with = "json_input", display_order = 440)]
+    #[arg(help_heading = Some("General Options"), short = 'x', long = "recover-records", conflicts_with = "json_input", display_order = 440)]
     pub recover_records: bool,
 
     /// Scan recent events based on an offset (ex: 1y, 3M, 30d, 24h, 30m)
@@ -1648,7 +1656,7 @@ pub struct ComputerMetricsOption {
     pub common_options: CommonOptions,
 
     /// Scan JSON formatted logs instead of .evtx (.json or .jsonl)
-    #[arg(help_heading = Some("Input"), short = 'J', long = "JSON-input", conflicts_with = "live_analysis", display_order = 390)]
+    #[arg(help_heading = Some("General Options"), short = 'J', long = "JSON-input", conflicts_with = "live_analysis", display_order = 390)]
     pub json_input: bool,
 
     /// Specify additional evtx file extensions (ex: evtx_data)
@@ -2218,6 +2226,7 @@ fn extract_output_options(config: &Config) -> Option<OutputOption> {
             remove_duplicate_detections: false,
             no_wizard: option.no_wizard,
             include_status: option.include_status.clone(),
+            low_memory_mode: false,
         }),
         Action::EidMetrics(option) => Some(OutputOption {
             input_args: option.input_args.clone(),
@@ -2258,6 +2267,7 @@ fn extract_output_options(config: &Config) -> Option<OutputOption> {
             remove_duplicate_detections: false,
             no_wizard: true,
             include_status: None,
+            low_memory_mode: false,
         }),
         Action::LogonSummary(option) => Some(OutputOption {
             input_args: option.input_args.clone(),
@@ -2298,6 +2308,7 @@ fn extract_output_options(config: &Config) -> Option<OutputOption> {
             remove_duplicate_detections: false,
             no_wizard: true,
             include_status: None,
+            low_memory_mode: false,
         }),
         Action::ComputerMetrics(option) => Some(OutputOption {
             input_args: option.input_args.clone(),
@@ -2347,6 +2358,7 @@ fn extract_output_options(config: &Config) -> Option<OutputOption> {
             remove_duplicate_detections: false,
             no_wizard: true,
             include_status: None,
+            low_memory_mode: false,
         }),
         Action::Search(option) => Some(OutputOption {
             input_args: option.input_args.clone(),
@@ -2396,6 +2408,7 @@ fn extract_output_options(config: &Config) -> Option<OutputOption> {
             remove_duplicate_detections: false,
             no_wizard: true,
             include_status: None,
+            low_memory_mode: false,
         }),
         Action::SetDefaultProfile(option) => Some(OutputOption {
             input_args: InputOption {
@@ -2451,6 +2464,7 @@ fn extract_output_options(config: &Config) -> Option<OutputOption> {
             remove_duplicate_detections: false,
             no_wizard: true,
             include_status: None,
+            low_memory_mode: false,
         }),
         Action::UpdateRules(option) => Some(OutputOption {
             input_args: InputOption {
@@ -2506,6 +2520,7 @@ fn extract_output_options(config: &Config) -> Option<OutputOption> {
             remove_duplicate_detections: false,
             no_wizard: true,
             include_status: None,
+            low_memory_mode: false,
         }),
         _ => None,
     }
@@ -2758,6 +2773,7 @@ mod tests {
                     remove_duplicate_detections: false,
                     no_wizard: true,
                     include_status: None,
+                    low_memory_mode: false,
                 },
                 geo_ip: None,
                 output: None,
@@ -2833,6 +2849,7 @@ mod tests {
                     remove_duplicate_detections: false,
                     no_wizard: true,
                     include_status: None,
+                    low_memory_mode: false,
                 },
                 geo_ip: None,
                 output: None,

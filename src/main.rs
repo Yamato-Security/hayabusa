@@ -77,7 +77,6 @@ fn main() {
     let mut config_reader = ConfigReader::new();
     // コマンドのパース情報を作成してstatic変数に格納する
     let mut stored_static = StoredStatic::create_static_data(config_reader.config);
-    //stored_static.is_low_memory = true;
     config_reader.config = None;
     let mut app = App::new(stored_static.thread_number);
     app.exec(&mut config_reader.app, &mut stored_static);
@@ -2233,6 +2232,7 @@ mod tests {
                     remove_duplicate_detections: false,
                     no_wizard: true,
                     include_status: None,
+                    low_memory_mode: false,
                 },
                 geo_ip: None,
                 output: None,
@@ -2404,6 +2404,7 @@ mod tests {
                 remove_duplicate_detections: false,
                 no_wizard: true,
                 include_status: None,
+                low_memory_mode: false,
             },
             geo_ip: None,
             output: Some(Path::new("overwrite.csv").to_path_buf()),
@@ -2489,6 +2490,7 @@ mod tests {
                 remove_duplicate_detections: false,
                 no_wizard: true,
                 include_status: None,
+                low_memory_mode: false,
             },
             geo_ip: None,
             output: Some(Path::new("overwrite.csv").to_path_buf()),
@@ -2573,6 +2575,7 @@ mod tests {
                 remove_duplicate_detections: false,
                 no_wizard: true,
                 include_status: None,
+                low_memory_mode: false,
             },
             geo_ip: None,
             output: Some(Path::new("overwrite.json").to_path_buf()),
@@ -2658,6 +2661,7 @@ mod tests {
                 remove_duplicate_detections: false,
                 no_wizard: true,
                 include_status: None,
+                low_memory_mode: false,
             },
             geo_ip: None,
             output: Some(Path::new("overwrite.json").to_path_buf()),
