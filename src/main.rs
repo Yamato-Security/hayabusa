@@ -2090,6 +2090,7 @@ impl App {
         let mut eggs: HashMap<&str, (&str, Color)> = HashMap::new();
         eggs.insert("01/01", ("art/happynewyear.txt", Color::Rgb(255, 0, 0))); // Red
         eggs.insert("02/22", ("art/ninja.txt", Color::Rgb(0, 171, 240))); // Cerulean
+        eggs.insert("05/09", ("art/goku.txt", Color::Rgb(243, 156, 22))); // Middle Washed Orange
         eggs.insert("08/08", ("art/takoyaki.txt", Color::Rgb(181, 101, 29))); // Light Brown
         eggs.insert("10/31", ("art/halloween.txt", Color::Rgb(255, 87, 51))); // Pumpkin Orange
         eggs.insert("12/24", ("art/christmas.txt", Color::Rgb(70, 192, 22))); // Green
