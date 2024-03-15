@@ -128,9 +128,15 @@ mod tests {
             stocked_results: Vec::new(),
         };
         actual.rap_checkpoint("Test");
-        actual.set_checkpoint(now.checked_add_signed(TimeDelta::seconds(1)).unwrap());
+        actual.set_checkpoint(
+            now.checked_add_signed(TimeDelta::try_seconds(1).unwrap_or_default())
+                .unwrap(),
+        );
         actual.rap_checkpoint("Test2");
-        actual.set_checkpoint(now.checked_add_signed(TimeDelta::seconds(1)).unwrap());
+        actual.set_checkpoint(
+            now.checked_add_signed(TimeDelta::try_seconds(1).unwrap_or_default())
+                .unwrap(),
+        );
         assert!(actual.prev_checkpoint.is_some());
         assert_eq!(actual.stocked_results.len(), 2);
         assert!(actual.stocked_results[0].output_str == "Test");
