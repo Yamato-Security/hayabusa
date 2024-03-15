@@ -1849,10 +1849,20 @@ impl TargetEventTime {
                         .checked_sub_months(Months::new(time_num[0] * 12))
                         .and_then(|dt| dt.checked_sub_months(Months::new(time_num[1])))
                         .and_then(|dt| dt.checked_sub_days(Days::new(time_num[2].into())))
-                        .and_then(|dt| dt.checked_sub_signed(Duration::hours(time_num[3].into())))
-                        .and_then(|dt| dt.checked_sub_signed(Duration::minutes(time_num[4].into())))
                         .and_then(|dt| {
-                            dt.checked_sub_signed(Duration::seconds(time_num[5].into()))
+                            dt.checked_sub_signed(
+                                Duration::try_hours(time_num[3].into()).unwrap_or_default(),
+                            )
+                        })
+                        .and_then(|dt| {
+                            dt.checked_sub_signed(
+                                Duration::try_minutes(time_num[4].into()).unwrap_or_default(),
+                            )
+                        })
+                        .and_then(|dt| {
+                            dt.checked_sub_signed(
+                                Duration::try_seconds(time_num[5].into()).unwrap_or_default(),
+                            )
                         });
                     if let Some(start_time) = target_start_time {
                         Some(start_time.format("%Y-%m-%d %H:%M:%S %z").to_string())
