@@ -41,6 +41,7 @@ use itertools::Itertools;
 use libmimalloc_sys::mi_stats_print_out;
 use mimalloc::MiMalloc;
 use nested::Nested;
+use num_format::{Locale, ToFormattedString};
 use serde_json::{Map, Value};
 use std::borrow::BorrowMut;
 use std::ffi::{OsStr, OsString};
@@ -993,7 +994,10 @@ impl App {
         write_color_buffer(
             &BufferWriter::stdout(ColorChoice::Always),
             None,
-            &format!("Total event log files: {:?}", evtx_files.len()),
+            &format!(
+                "Total event log files: {}",
+                evtx_files.len().to_formatted_string(&Locale::en)
+            ),
             true,
         )
         .ok();
@@ -1135,11 +1139,11 @@ impl App {
                 })
                 .collect_vec();
             let selection_status_items = &[
-                format!("1. Core ({} rules) ( status: test, stable | level: high, critical )", sections_rule_cnt[0].iter().map(|(_, cnt)| cnt).sum::<i128>() - sections_rule_cnt[0].get("excluded").unwrap_or(&0)),
-                format!("2. Core+ ({} rules) ( status: test, stable | level: medium, high, critical )", sections_rule_cnt[1].iter().map(|(_, cnt)| cnt).sum::<i128>() - sections_rule_cnt[1].get("excluded").unwrap_or(&0)),
-                format!("3. Core++ ({} rules) ( status: experimental, test, stable | level: medium, high, critical )", sections_rule_cnt[2].iter().map(|(_, cnt)| cnt).sum::<i128>() - sections_rule_cnt[2].get("excluded").unwrap_or(&0)),
-                format!("4. All alert rules ({} rules) ( status: * | level: low+ )", sections_rule_cnt[3].iter().map(|(_, cnt)| cnt).sum::<i128>() - sections_rule_cnt[3].get("excluded").unwrap_or(&0)),
-                format!("5. All event and alert rules ({} rules) ( status: * | level: informational+ )", sections_rule_cnt[4].iter().map(|(_, cnt)| cnt).sum::<i128>() - sections_rule_cnt[4].get("excluded").unwrap_or(&0))
+                format!("1. Core ({} rules) ( status: test, stable | level: high, critical )", (sections_rule_cnt[0].iter().map(|(_, cnt)| cnt).sum::<i128>() - sections_rule_cnt[0].get("excluded").unwrap_or(&0)).to_formatted_string(&Locale::en)),
+                format!("2. Core+ ({} rules) ( status: test, stable | level: medium, high, critical )", (sections_rule_cnt[1].iter().map(|(_, cnt)| cnt).sum::<i128>() - sections_rule_cnt[1].get("excluded").unwrap_or(&0)).to_formatted_string(&Locale::en)),
+                format!("3. Core++ ({} rules) ( status: experimental, test, stable | level: medium, high, critical )", (sections_rule_cnt[2].iter().map(|(_, cnt)| cnt).sum::<i128>() - sections_rule_cnt[2].get("excluded").unwrap_or(&0)).to_formatted_string(&Locale::en)),
+                format!("4. All alert rules ({} rules) ( status: * | level: low+ )", (sections_rule_cnt[3].iter().map(|(_, cnt)| cnt).sum::<i128>() - sections_rule_cnt[3].get("excluded").unwrap_or(&0)).to_formatted_string(&Locale::en)),
+                format!("5. All event and alert rules ({} rules) ( status: * | level: informational+ )", (sections_rule_cnt[4].iter().map(|(_, cnt)| cnt).sum::<i128>() - sections_rule_cnt[4].get("excluded").unwrap_or(&0)).to_formatted_string(&Locale::en))
             ];
 
             let color_theme = if stored_static.common_options.no_color {
@@ -1212,7 +1216,10 @@ impl App {
             // If anything other than "4. All alert rules" or "5. All event and alert rules" was selected, ask questions about tags.
             if selected_index < 3 {
                 if let Some(et_cnt) = tags_cnt.get("detection.emerging_threats") {
-                    let prompt_fmt = format!("Include Emerging Threats rules? ({} rules)", et_cnt);
+                    let prompt_fmt = format!(
+                        "Include Emerging Threats rules? ({} rules)",
+                        et_cnt.to_formatted_string(&Locale::en)
+                    );
                     let et_rules_load_flag = Confirm::with_theme(&color_theme)
                         .with_prompt(prompt_fmt)
                         .default(true)
@@ -1225,7 +1232,10 @@ impl App {
                     }
                 }
                 if let Some(th_cnt) = tags_cnt.get("detection.threat_hunting") {
-                    let prompt_fmt = format!("Include Threat Hunting rules? ({} rules)", th_cnt);
+                    let prompt_fmt = format!(
+                        "Include Threat Hunting rules? ({} rules)",
+                        th_cnt.to_formatted_string(&Locale::en)
+                    );
                     let th_rules_load_flag = Confirm::with_theme(&color_theme)
                         .with_prompt(prompt_fmt)
                         .default(false)
@@ -1241,7 +1251,10 @@ impl App {
                 // If "4. All alert rules" or "5. All event and alert rules" was selected, ask questions about deprecated and unsupported rules.
                 if let Some(dep_cnt) = exclude_noisy_cnt.get("deprecated") {
                     // deprecated rules load prompt
-                    let prompt_fmt = format!("Include deprecated rules? ({} rules)", dep_cnt);
+                    let prompt_fmt = format!(
+                        "Include deprecated rules? ({} rules)",
+                        dep_cnt.to_formatted_string(&Locale::en)
+                    );
                     let dep_rules_load_flag = Confirm::with_theme(&color_theme)
                         .with_prompt(prompt_fmt)
                         .default(false)
@@ -1258,7 +1271,10 @@ impl App {
                 }
                 if let Some(unsup_cnt) = exclude_noisy_cnt.get("unsupported") {
                     // unsupported rules load prompt
-                    let prompt_fmt = format!("Include unsupported rules? ({} rules)", unsup_cnt);
+                    let prompt_fmt = format!(
+                        "Include unsupported rules? ({} rules)",
+                        unsup_cnt.to_formatted_string(&Locale::en)
+                    );
                     let unsupported_rules_load_flag = Confirm::with_theme(&color_theme)
                         .with_prompt(prompt_fmt)
                         .default(false)
@@ -1283,7 +1299,10 @@ impl App {
 
             if let Some(noisy_cnt) = exclude_noisy_cnt.get("noisy") {
                 // noisy rules load prompt
-                let prompt_fmt = format!("Include noisy rules? ({} rules)", noisy_cnt);
+                let prompt_fmt = format!(
+                    "Include noisy rules? ({} rules)",
+                    noisy_cnt.to_formatted_string(&Locale::en)
+                );
                 let noisy_rules_load_flag = Confirm::with_theme(&color_theme)
                     .with_prompt(prompt_fmt)
                     .default(false)
@@ -1300,7 +1319,10 @@ impl App {
             }
 
             if let Some(sysmon_cnt) = tags_cnt.get("sysmon") {
-                let prompt_fmt = format!("Include sysmon rules? ({} rules)", sysmon_cnt);
+                let prompt_fmt = format!(
+                    "Include sysmon rules? ({} rules)",
+                    sysmon_cnt.to_formatted_string(&Locale::en)
+                );
                 let sysmon_rules_load_flag = Confirm::with_theme(&color_theme)
                     .with_prompt(prompt_fmt)
                     .default(true)
@@ -1325,7 +1347,10 @@ impl App {
         if stored_static.html_report_flag {
             let mut output_data = Nested::<String>::new();
             let mut html_report_data = Nested::<String>::from_iter(vec![
-                format!("- Analyzed event files: {}", evtx_files.len()),
+                format!(
+                    "- Analyzed event files: {}",
+                    evtx_files.len().to_formatted_string(&Locale::en)
+                ),
                 format!("- {total_size_output}"),
             ]);
             if let Some(status_report) = status_append_output {
