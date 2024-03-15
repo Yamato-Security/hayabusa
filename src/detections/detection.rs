@@ -14,6 +14,7 @@ use chrono::{TimeZone, Utc};
 use compact_str::CompactString;
 use itertools::Itertools;
 use nested::Nested;
+use num_format::{Locale, ToFormattedString};
 use std::default::Default;
 use termcolor::{BufferWriter, Color, ColorChoice};
 use yaml_rust::Yaml;
@@ -1082,7 +1083,7 @@ impl Detection {
                 let output_str = format!(
                     "{} rules: {}{}",
                     make_ascii_titlecase(key),
-                    value,
+                    value.to_formatted_string(&Locale::en),
                     disable_flag
                 );
                 println!("{output_str}");
@@ -1127,7 +1128,7 @@ impl Detection {
                 let output_str = format!(
                     "{} rules: {} ({:.2}%){}",
                     make_ascii_titlecase(key),
-                    value,
+                    value.to_formatted_string(&Locale::en),
                     rate,
                     disabled_flag
                 );
@@ -1149,7 +1150,7 @@ impl Detection {
         let mut sorted_rc: Vec<(&CompactString, &u128)> = rc.iter().collect();
         sorted_rc.sort_by(|a, b| a.0.cmp(b.0));
         sorted_rc.into_iter().for_each(|(key, value)| {
-            let output_str = format!("{key} rules: {value}");
+            let output_str = format!("{key} rules: {}", value.to_formatted_string(&Locale::en));
             write_color_buffer(
                 &BufferWriter::stdout(ColorChoice::Always),
                 None,
@@ -1162,8 +1163,10 @@ impl Detection {
             }
         });
 
-        let tmp_total_detect_output =
-            format!("Total enabled detection rules: {total_loaded_rule_cnt}");
+        let tmp_total_detect_output = format!(
+            "Total enabled detection rules: {}",
+            total_loaded_rule_cnt.to_formatted_string(&Locale::en)
+        );
         println!("{tmp_total_detect_output}");
         println!();
         output_profile_name(&stored_static.output_option, true);
