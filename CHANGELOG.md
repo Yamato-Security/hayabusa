@@ -14,6 +14,7 @@
 - Performance enchancements. (#1277, #1278) (@fukusuket)
 - Reordered `search` result fields to look similar to the `csv-timeline` command results. (#1297) (@hitenkoku)
 - Added master piece character in ascii art eggs. R.I.P. lovely master hidden behind the gas mask. (#1304) (@hitenkoku)
+- Unified help option format in `computer-metrics` command with other commands. (#1314) (@hitenkoku)
 
 **Bug Fixes:**
 
