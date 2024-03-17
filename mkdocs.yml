@@ -1,0 +1,86 @@
+site_name: Hayabusa
+site_author: Yamato Security
+repo_name: yamato-security/hayabusa
+docs_dir: "mkdocs/"
+site_dir: "site/"
+site_url: "https://Yamato-Security.github.io/hayabusa/"
+
+theme:
+  name: "material"
+  icon:
+    repo: fontawesome/brands/github
+  palette:
+    # Palette toggle for automatic mode
+    - media: "(prefers-color-scheme)"
+      toggle:
+        icon: material/brightness-auto
+        name: Switch to light mode
+
+    # Palette toggle for light mode
+    - media: "(prefers-color-scheme: light)"
+      scheme: default
+      toggle:
+        icon: material/brightness-7
+        name: Switch to dark mode
+
+    # Palette toggle for dark mode
+    - media: "(prefers-color-scheme: dark)"
+      scheme: slate
+      toggle:
+        icon: material/brightness-4
+        name: Switch to system preference
+
+  features:
+    - navigation.tabs
+    - navigation.instant
+    - navigation.top
+    - search.suggest
+    - content.action.edit
+
+nav:
+  - "Hayabusa": https://Yamato-Security.github.io/hayabusa/
+  - "Hayabusa Rules": https://github.com/Yamato-Security/hayabusa-rules
+  - "Takajo": https://github.com/Yamato-Security/takajo
+
+extra:
+  social:
+    - icon: fontawesome/brands/github-alt
+      link: https://github.com/Yamato-Security
+    - icon: fontawesome/brands/twitter
+      link: https://twitter.com/SecurityYamato
+  alternate:
+    - name: en - English
+      link: https://Yamato-Security.github.io/hayabusa/en
+      lang: en
+    - name: ja - 日本語
+      link: https://Yamato-Security.github.io/hayabusa/ja
+      lang: ja
+
+markdown_extensions:
+  - admonition
+  - toc:
+      permalink: true
+  - pymdownx.betterem:
+      smart_enable: all
+  - pymdownx.details
+  - pymdownx.highlight
+  - pymdownx.superfences
+  - pymdownx.inlinehilite
+  - pymdownx.caret
+  - pymdownx.critic
+  - pymdownx.details
+  - pymdownx.magiclink
+  - pymdownx.mark
+  - pymdownx.smartsymbols
+  - pymdownx.tasklist:
+      custom_checkbox: true
+  - pymdownx.tabbed
+  - pymdownx.tilde
+  - md_in_html
+  - pymdownx.keys
+
+plugins:
+  - search: {}
+
+copyright: |
+  &copy; 2024 <a href="https://github.com/Yamato-Security"  target="_blank" rel="noopener">Yamato Security</a>

@@ -1,0 +1,75 @@
+INHERIT: mkdocs.yml
+
+site_name: 隼
+docs_dir: "mkdocs/ja/"
+site_dir: "site/ja/"
+site_url: "https://Yamato-Security.github.io/hayabusa/ja/"
+theme:
+  name: material
+  language: ja
+  palette:
+    - media: "(prefers-color-scheme: dark)"
+      scheme: default
+      primary: teal
+      accent: amber
+      toggle:
+        icon: material/lightbulb
+        name: Karanlık moda geç
+    - media: "(prefers-color-scheme: light)"
+      scheme: slate
+      primary: teal
+      accent: amber
+      toggle:
+        icon: material/lightbulb-outline
+        name: Aydınlık moda geç
+  features:
+    - search.suggest
+    - search.highlight
+    #  - navigation.indexes
+    #  - navigation.sections
+    #  - navigation.tabs
+    #  - navigation.tabs.sticky
+    - navigation.path
+    #  - navigation.top
+    #  - navigation.expand
+    - content.code.copy
+  icon:
+    repo: fontawesome/brands/git-alt
+plugins:
+  - search:
+      lang: tr
+extra:
+  version:
+    provider: mike
+  social:
+    - icon: fontawesome/brands/github-alt
+      link: https://github.com/Yamato-Security
+    - icon: fontawesome/brands/twitter
+      link: https://twitter.com/berkantsahn
+    - icon: fontawesome/brands/linkedin
+      link: https://linkedin.com/in/berkantsahn
+  alternate:
+    - name: tr - Türkçe
+      link: https://berkantsahn.github.io/mkdocs-sample/tr/
+      lang: tr
+    - name: en - English
+      link: https://berkantsahn.github.io/mkdocs-sample/en/
+      lang: en
+extra_javascript:
+  - https://polyfill.io/v3/polyfill.min.js #?features=es6
+  - https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js
+markdown_extensions:
+  - abbr
+  - pymdownx.highlight:
+      anchor_linenums: true
+  - pymdownx.inlinehilite
+  - pymdownx.snippets
+  - admonition
+  - pymdownx.arithmatex:
+      generic: true
+  - footnotes
+  - pymdownx.details
+  - pymdownx.superfences
+  - pymdownx.mark
+copyright: |
+  &copy; 2024 <a href="https://github.com/Yamato-Security"  target="_blank" rel="noopener">Yamato Security</a>
