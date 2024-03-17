@@ -927,7 +927,7 @@ impl Action {
 #[derive(Args, Clone, Debug)]
 pub struct DetectCommonOption {
     /// Scan JSON formatted logs instead of .evtx (.json or .jsonl)
-    #[arg(help_heading = Some("General Options"), short = 'J', long = "JSON-input", conflicts_with = "live_analysis", display_order = 390)]
+    #[arg(help_heading = Some("General Options"), short = 'J', long = "JSON-input", conflicts_with = "live_analysis", display_order = 360)]
     pub json_input: bool,
 
     /// Specify additional evtx file extensions (ex: evtx_data)
@@ -956,7 +956,7 @@ pub struct DetectCommonOption {
         default_value = "./rules/config",
         hide_default_value = true,
         value_name = "DIR",
-        display_order = 441
+        display_order = 442
     )]
     pub config: PathBuf,
 
@@ -1081,7 +1081,7 @@ pub struct SearchOption {
             default_value = "./rules/config",
             hide_default_value = true,
             value_name = "DIR",
-            display_order = 441
+            display_order = 442
         )]
     pub config: PathBuf,
 
@@ -1148,7 +1148,7 @@ pub struct UpdateOption {
         hide_default_value = true,
         value_name = "DIR/FILE",
         requires = "no_wizard",
-        display_order = 440
+        display_order = 441
     )]
     pub rules: PathBuf,
 }
@@ -1518,7 +1518,7 @@ pub struct OutputOption {
         hide_default_value = true,
         value_name = "DIR/FILE",
         requires = "no_wizard",
-        display_order = 440
+        display_order = 441
     )]
     pub rules: PathBuf,
 
@@ -1695,7 +1695,7 @@ pub struct ComputerMetricsOption {
         default_value = "./rules/config",
         hide_default_value = true,
         value_name = "DIR",
-        display_order = 441
+        display_order = 442
     )]
     pub config: PathBuf,
 
