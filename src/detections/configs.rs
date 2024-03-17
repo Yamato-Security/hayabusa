@@ -776,7 +776,8 @@ pub enum Action {
         author = "Yamato Security (https://github.com/Yamato-Security/hayabusa - @SecurityYamato)",
         help_template = "\nHayabusa v2.14.0 - Dev Build\n{author-with-newline}\n{usage-heading}\n  hayabusa.exe csv-timeline <INPUT> [OPTIONS]\n\n{all-args}",
         term_width = 400,
-        display_order = 290
+        display_order = 290,
+        disable_help_flag = true
     )]
     /// Save the timeline in CSV format.
     CsvTimeline(CsvOutputOption),
@@ -785,7 +786,8 @@ pub enum Action {
         author = "Yamato Security (https://github.com/Yamato-Security/hayabusa - @SecurityYamato)",
         help_template = "\nHayabusa v2.14.0 - Dev Build\n{author-with-newline}\n{usage-heading}\n  hayabusa.exe json-timeline <INPUT> [OPTIONS]\n\n{all-args}",
         term_width = 400,
-        display_order = 360
+        display_order = 360,
+        disable_help_flag = true
     )]
     /// Save the timeline in JSON/JSONL format.
     JsonTimeline(JSONOutputOption),
@@ -794,7 +796,8 @@ pub enum Action {
         author = "Yamato Security (https://github.com/Yamato-Security/hayabusa - @SecurityYamato)",
         help_template = "\nHayabusa v2.14.0 - Dev Build\n{author-with-newline}\n{usage-heading}\n  hayabusa.exe logon-summary <INPUT> [OPTIONS]\n\n{all-args}",
         term_width = 400,
-        display_order = 383
+        display_order = 383,
+        disable_help_flag = true
     )]
     /// Print a summary of successful and failed logons
     LogonSummary(LogonSummaryOption),
@@ -803,7 +806,8 @@ pub enum Action {
         author = "Yamato Security (https://github.com/Yamato-Security/hayabusa - @SecurityYamato)",
         help_template = "\nHayabusa v2.14.0 - Dev Build\n{author-with-newline}\n{usage-heading}\n  hayabusa.exe eid-metrics <INPUT> [OPTIONS]\n\n{all-args}",
         term_width = 400,
-        display_order = 310
+        display_order = 310,
+        disable_help_flag = true
     )]
     /// Print event ID metrics
     EidMetrics(EidMetricsOption),
@@ -812,7 +816,8 @@ pub enum Action {
         author = "Yamato Security (https://github.com/Yamato-Security/hayabusa - @SecurityYamato)",
         help_template = "\nHayabusa v2.14.0 - Dev Build\n{author-with-newline}\n{usage-heading}\n  hayabusa.exe pivot-keywords-list <INPUT> [OPTIONS]\n\n{all-args}",
         term_width = 400,
-        display_order = 420
+        display_order = 420,
+        disable_help_flag = true
     )]
     /// Create a list of pivot keywords
     PivotKeywordsList(PivotKeywordOption),
@@ -821,7 +826,8 @@ pub enum Action {
         author = "Yamato Security (https://github.com/Yamato-Security/hayabusa - @SecurityYamato)",
         help_template = "\nHayabusa v2.14.0 - Dev Build\n{author-with-newline}\n{usage-heading}\n  hayabusa.exe search <INPUT> <--keywords \"<KEYWORDS>\" OR --regex \"<REGEX>\"> [OPTIONS]\n\n{all-args}",
         term_width = 400,
-        display_order = 450
+        display_order = 450,
+        disable_help_flag = true
     )]
     /// Search all events by keyword(s) or regular expression
     Search(SearchOption),
@@ -830,7 +836,8 @@ pub enum Action {
         author = "Yamato Security (https://github.com/Yamato-Security/hayabusa - @SecurityYamato)",
         help_template = "\nHayabusa v2.14.0 - Dev Build\n{author-with-newline}\n{usage-heading}\n  {usage}\n\n{all-args}",
         term_width = 400,
-        display_order = 470
+        display_order = 470,
+        disable_help_flag = true
     )]
     /// Update to the latest rules in the hayabusa-rules github repository
     UpdateRules(UpdateOption),
@@ -839,7 +846,8 @@ pub enum Action {
         author = "Yamato Security (https://github.com/Yamato-Security/hayabusa - @SecurityYamato)",
         help_template = "\nHayabusa v2.14.0 - Dev Build\n{author-with-newline}\n{usage-heading}\n  {usage}\n\n{all-args}",
         term_width = 400,
-        display_order = 380
+        display_order = 380,
+        disable_help_flag = true
     )]
     /// Tune alert levels (default: ./rules/config/level_tuning.txt)
     LevelTuning(LevelTuningOption),
@@ -848,7 +856,8 @@ pub enum Action {
         author = "Yamato Security (https://github.com/Yamato-Security/hayabusa - @SecurityYamato)",
         help_template = "\nHayabusa v2.14.0 - Dev Build\n{author-with-newline}\n{usage-heading}\n  {usage}\n\n{all-args}",
         term_width = 400,
-        display_order = 451
+        display_order = 451,
+        disable_help_flag = true
     )]
     /// Set default output profile
     SetDefaultProfile(DefaultProfileOption),
@@ -865,7 +874,8 @@ pub enum Action {
         author = "Yamato Security (https://github.com/Yamato-Security/hayabusa - @SecurityYamato)",
         help_template = "\nHayabusa v2.14.0 - Dev Build\n{author-with-newline}\n{usage-heading}\n  hayabusa.exe computer-metrics <INPUT> [OPTIONS]\n\n{all-args}",
         term_width = 400,
-        display_order = 290
+        display_order = 290,
+        disable_help_flag = true
     )]
     /// Print computer name metrics
     ComputerMetrics(ComputerMetricsOption),
@@ -917,7 +927,7 @@ impl Action {
 #[derive(Args, Clone, Debug)]
 pub struct DetectCommonOption {
     /// Scan JSON formatted logs instead of .evtx (.json or .jsonl)
-    #[arg(help_heading = Some("General Options"), short = 'J', long = "JSON-input", conflicts_with = "live_analysis", display_order = 390)]
+    #[arg(help_heading = Some("General Options"), short = 'J', long = "JSON-input", conflicts_with = "live_analysis", display_order = 360)]
     pub json_input: bool,
 
     /// Specify additional evtx file extensions (ex: evtx_data)
@@ -946,7 +956,7 @@ pub struct DetectCommonOption {
         default_value = "./rules/config",
         hide_default_value = true,
         value_name = "DIR",
-        display_order = 441
+        display_order = 442
     )]
     pub config: PathBuf,
 
@@ -1071,7 +1081,7 @@ pub struct SearchOption {
             default_value = "./rules/config",
             hide_default_value = true,
             value_name = "DIR",
-            display_order = 441
+            display_order = 442
         )]
     pub config: PathBuf,
 
@@ -1138,7 +1148,7 @@ pub struct UpdateOption {
         hide_default_value = true,
         value_name = "DIR/FILE",
         requires = "no_wizard",
-        display_order = 440
+        display_order = 441
     )]
     pub rules: PathBuf,
 }
@@ -1508,7 +1518,7 @@ pub struct OutputOption {
         hide_default_value = true,
         value_name = "DIR/FILE",
         requires = "no_wizard",
-        display_order = 440
+        display_order = 441
     )]
     pub rules: PathBuf,
 
@@ -1685,7 +1695,7 @@ pub struct ComputerMetricsOption {
         default_value = "./rules/config",
         hide_default_value = true,
         value_name = "DIR",
-        display_order = 441
+        display_order = 442
     )]
     pub config: PathBuf,
 
@@ -1702,7 +1712,8 @@ pub struct ComputerMetricsOption {
 #[clap(
     author = "Yamato Security (https://github.com/Yamato-Security/hayabusa - @SecurityYamato)",
     help_template = "\nHayabusa v2.14.0 - Dev Build\n{author-with-newline}\n{usage-heading}\n  hayabusa.exe <COMMAND> [OPTIONS]\n  hayabusa.exe help <COMMAND>\n\n{all-args}{options}",
-    term_width = 400
+    term_width = 400,
+    disable_help_flag = true
 )]
 pub struct Config {
     #[command(subcommand)]

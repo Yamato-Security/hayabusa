@@ -20,6 +20,7 @@
 
 - JSON output of the `search` command was missing the `AllFieldInfo` field. (#1251) (@hitenkoku)
 - The time the user took to choose options in the scan wizard was included in elapsed time so we now exclude that. (#1291) (@hitenkoku)
+- Fixed `-h, --help` option is being displayed multiple times. (#1309) (@hitenkoku)
 
 ## 2.13.0 [2024/02/11] "Year Of The Dragon Release"
 
