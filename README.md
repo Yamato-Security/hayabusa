@@ -262,6 +262,7 @@ You can learn how to analyze JSON-formatted results with `jq` [here](doc/Analysi
 * Event de-duplication when outputting. (Useful when recovery records is enabled or when you include backed up evtx files, evtx files from VSS, etc...)
 * Scan setting wizard to help choose which rules to enable easier. (In order to reduce false positives, etc...)
 * PowerShell classic log field parsing and extraction.
+* Low memory mode. (Note: this is possible by not sorting results. Good for running on agents or big data.)
 
 # Downloads
 
@@ -538,8 +539,16 @@ Input:
   -d, --directory <DIR>  Directory of multiple .evtx files
   -f, --file <FILE>      File path to one .evtx file
   -l, --live-analysis    Analyze the local C:\Windows\System32\winevt\Logs folder
-  -J, --JSON-input       Scan JSON formatted logs instead of .evtx (.json or .jsonl)
-  -x, --recover-records  Carve evtx records from slack space (default: disabled)
+
+General Options:
+  -C, --clobber                        Overwrite files when saving
+  -h, --help                           Show the help menu
+  -J, --JSON-input                     Scan JSON formatted logs instead of .evtx (.json or .jsonl)
+  -Q, --quiet-errors                   Quiet errors mode: do not save error logs
+  -x, --recover-records                Carve evtx records from slack space (default: disabled)
+  -c, --rules-config <DIR>             Specify custom rule config directory (default: ./rules/config)
+      --target-file-ext <FILE-EXT...>  Specify additional evtx file extensions (ex: evtx_data)
+  -t, --threads <NUMBER>               Number of threads (default: optimal number for performance)
 
 Filtering:
       --timeline-offset <OFFSET>  Scan recent events based on an offset (ex: 1y, 3M, 30d, 24h, 30m)
@@ -551,13 +560,6 @@ Display Settings:
       --no-color  Disable color output
   -q, --quiet     Quiet mode: do not display the launch banner
   -v, --verbose   Output verbose information
-
-General Options:
-  -C, --clobber                        Overwrite files when saving
-  -Q, --quiet-errors                   Quiet errors mode: do not save error logs
-  -c, --rules-config <DIR>             Specify custom rule config directory (default: ./rules/config)
-      --target-file-ext <FILE-EXT...>  Specify additional evtx file extensions (ex: evtx_data)
-  -t, --threads <NUMBER>               Number of threads (default: optimal number for performance)
 ```
 
 #### `computer-metrics` command examples
@@ -581,8 +583,16 @@ Input:
   -d, --directory <DIR>  Directory of multiple .evtx files
   -f, --file <FILE>      File path to one .evtx file
   -l, --live-analysis    Analyze the local C:\Windows\System32\winevt\Logs folder
-  -J, --JSON-input       Scan JSON formatted logs instead of .evtx (.json or .jsonl)
-  -x, --recover-records  Carve evtx records from slack space (default: disabled)
+
+General Options:
+  -C, --clobber                        Overwrite files when saving
+  -h, --help                           Show the help menu
+  -J, --JSON-input                     Scan JSON formatted logs instead of .evtx (.json or .jsonl)
+  -Q, --quiet-errors                   Quiet errors mode: do not save error logs
+  -x, --recover-records                Carve evtx records from slack space (default: disabled)
+  -c, --rules-config <DIR>             Specify custom rule config directory (default: ./rules/config)
+      --target-file-ext <FILE-EXT...>  Specify additional evtx file extensions (ex: evtx_data)
+  -t, --threads <NUMBER>               Number of threads (default: optimal number for performance)
 
 Filtering:
       --exclude-computer <COMPUTER...>  Do not scan specified computer names (ex: ComputerA) (ex: ComputerA,ComputerB)
@@ -596,13 +606,6 @@ Display Settings:
       --no-color  Disable color output
   -q, --quiet     Quiet mode: do not display the launch banner
   -v, --verbose   Output verbose information
-
-General Options:
-  -C, --clobber                        Overwrite files when saving
-  -Q, --quiet-errors                   Quiet errors mode: do not save error logs
-  -c, --rules-config <DIR>             Specify custom rule config directory (default: ./rules/config)
-      --target-file-ext <FILE-EXT...>  Specify additional evtx file extensions (ex: evtx_data)
-  -t, --threads <NUMBER>               Number of threads (default: optimal number for performance)
 
 Time Format:
       --European-time     Output timestamp in European time format (ex: 22-02-2022 22:00:00.123 +02:00)
@@ -649,8 +652,16 @@ Input:
   -d, --directory <DIR>  Directory of multiple .evtx files
   -f, --file <FILE>      File path to one .evtx file
   -l, --live-analysis    Analyze the local C:\Windows\System32\winevt\Logs folder
-  -J, --JSON-input       Scan JSON formatted logs instead of .evtx (.json or .jsonl)
-  -x, --recover-records  Carve evtx records from slack space (default: disabled)
+
+General Options:
+  -C, --clobber                        Overwrite files when saving
+  -h, --help                           Show the help menu
+  -J, --JSON-input                     Scan JSON formatted logs instead of .evtx (.json or .jsonl)
+  -Q, --quiet-errors                   Quiet errors mode: do not save error logs
+  -x, --recover-records                Carve evtx records from slack space (default: disabled)
+  -c, --rules-config <DIR>             Specify custom rule config directory (default: ./rules/config)
+      --target-file-ext <FILE-EXT...>  Specify additional evtx file extensions (ex: evtx_data)
+  -t, --threads <NUMBER>               Number of threads (default: optimal number for performance)
 
 Filtering:
       --exclude-computer <COMPUTER...>  Do not scan specified computer names (ex: ComputerA) (ex: ComputerA,ComputerB)
@@ -666,13 +677,6 @@ Display Settings:
       --no-color  Disable color output
   -q, --quiet     Quiet mode: do not display the launch banner
   -v, --verbose   Output verbose information
-
-General Options:
-  -C, --clobber                        Overwrite files when saving
-  -Q, --quiet-errors                   Quiet errors mode: do not save error logs
-  -c, --rules-config <DIR>             Specify custom rule config directory (default: ./rules/config)
-      --target-file-ext <FILE-EXT...>  Specify additional evtx file extensions (ex: evtx_data)
-  -t, --threads <NUMBER>               Number of threads (default: optimal number for performance)
 
 Time Format:
       --European-time     Output timestamp in European time format (ex: 22-02-2022 22:00:00.123 +02:00)
@@ -710,8 +714,17 @@ Input:
   -d, --directory <DIR>  Directory of multiple .evtx files
   -f, --file <FILE>      File path to one .evtx file
   -l, --live-analysis    Analyze the local C:\Windows\System32\winevt\Logs folder
-  -J, --JSON-input       Scan JSON formatted logs instead of .evtx (.json or .jsonl)
-  -x, --recover-records  Carve evtx records from slack space (default: disabled)
+
+General Options:
+  -C, --clobber                        Overwrite files when saving
+  -h, --help                           Show the help menu
+  -J, --JSON-input                     Scan JSON formatted logs instead of .evtx (.json or .jsonl)
+  -w, --no-wizard                      Do not ask questions. Scan for all events and alerts
+  -Q, --quiet-errors                   Quiet errors mode: do not save error logs
+  -x, --recover-records                Carve evtx records from slack space (default: disabled)
+  -c, --rules-config <DIR>             Specify custom rule config directory (default: ./rules/config)
+      --target-file-ext <FILE-EXT...>  Specify additional evtx file extensions (ex: evtx_data)
+  -t, --threads <NUMBER>               Number of threads (default: optimal number for performance)
 
 Filtering:
   -E, --EID-filter                      Scan only common EIDs for faster speed (./rules/config/target_event_IDs.txt)
@@ -725,6 +738,7 @@ Filtering:
       --exclude-tag <TAG...>            Do not load rules with specific tags (ex: sysmon)
       --include-computer <COMPUTER...>  Scan only specified computer names (ex: ComputerA) (ex: ComputerA,ComputerB)
       --include-eid <EID...>            Scan only specified EIDs for faster speed (ex: 1) (ex: 1,4688)
+      --include-status <STATUS...>      Only load rules with specific status (ex: experimental) (ex: stable,test)
       --include-tag <TAG...>            Only load rules with specific tags (ex: attack.execution,attack.discovery)
   -m, --min-level <LEVEL>               Minimum level for rules to load (default: informational)
       --timeline-end <DATE>             End time of the event logs to load (ex: "2022-02-22 23:59:59 +09:00")
@@ -738,13 +752,6 @@ Display Settings:
       --no-color  Disable color output
   -q, --quiet     Quiet mode: do not display the launch banner
   -v, --verbose   Output verbose information
-
-General Options:
-  -C, --clobber                        Overwrite files when saving
-  -Q, --quiet-errors                   Quiet errors mode: do not save error logs
-  -c, --rules-config <DIR>             Specify custom rule config directory (default: ./rules/config)
-      --target-file-ext <FILE-EXT...>  Specify additional evtx file extensions (ex: evtx_data)
-  -t, --threads <NUMBER>               Number of threads (default: optimal number for performance)
 ```
 
 #### `pivot-keywords-list` command examples
@@ -779,11 +786,19 @@ Display Settings:
   -q, --quiet     Quiet mode: do not display the launch banner
   -v, --verbose   Output verbose information
 
+General Options:
+  -C, --clobber                        Overwrite files when saving
+  -h, --help                           Show the help menu
+  -Q, --quiet-errors                   Quiet errors mode: do not save error logs
+  -x, --recover-records                Carve evtx records from slack space (default: disabled)
+  -c, --rules-config <DIR>             Specify custom rule config directory (default: ./rules/config)
+      --target-file-ext <FILE-EXT...>  Specify additional evtx file extensions (ex: evtx_data)
+  -t, --threads <NUMBER>               Number of threads (default: optimal number for performance)
+
 Input:
   -d, --directory <DIR>  Directory of multiple .evtx files
   -f, --file <FILE>      File path to one .evtx file
   -l, --live-analysis    Analyze the local C:\Windows\System32\winevt\Logs folder
-  -x, --recover-records  Carve evtx records from slack space (default: disabled)
 
 Filtering:
   -a, --and-logic                 Search keywords with AND logic (default: OR)
@@ -798,13 +813,6 @@ Output:
   -L, --JSONL-output   Save the search results in JSONL format (ex: -L -o results.jsonl)
   -M, --multiline      Output event field information in multiple rows for CSV output
   -o, --output <FILE>  Save the search results in CSV format (ex: search.csv)
-
-General Options:
-  -C, --clobber                        Overwrite files when saving
-  -Q, --quiet-errors                   Quiet errors mode: do not save error logs
-  -c, --rules-config <DIR>             Specify custom rule config directory (default: ./rules/config)
-      --target-file-ext <FILE-EXT...>  Specify additional evtx file extensions (ex: evtx_data)
-  -t, --threads <NUMBER>               Number of threads (default: optimal number for performance)
 
 Time Format:
       --European-time     Output timestamp in European time format (ex: 22-02-2022 22:00:00.123 +02:00)
@@ -870,8 +878,19 @@ Input:
   -d, --directory <DIR>  Directory of multiple .evtx files
   -f, --file <FILE>      File path to one .evtx file
   -l, --live-analysis    Analyze the local C:\Windows\System32\winevt\Logs folder
-  -J, --JSON-input       Scan JSON formatted logs instead of .evtx (.json or .jsonl)
-  -x, --recover-records  Carve evtx records from slack space (default: disabled)
+
+General Options:
+  -C, --clobber                        Overwrite files when saving
+  -h, --help                           Show the help menu
+  -J, --JSON-input                     Scan JSON formatted logs instead of .evtx (.json or .jsonl)
+  -s, --low-memory-mode                Scan with the minimal amount of memory by not sorting events
+  -w, --no-wizard                      Do not ask questions. Scan for all events and alerts
+  -Q, --quiet-errors                   Quiet errors mode: do not save error logs
+  -x, --recover-records                Carve evtx records from slack space (default: disabled)
+  -r, --rules <DIR/FILE>               Specify a custom rule directory or file (default: ./rules)
+  -c, --rules-config <DIR>             Specify custom rule config directory (default: ./rules/config)
+      --target-file-ext <FILE-EXT...>  Specify additional evtx file extensions (ex: evtx_data)
+  -t, --threads <NUMBER>               Number of threads (default: optimal number for performance)
 
 Filtering:
   -E, --EID-filter                      Scan only common EIDs for faster speed (./rules/config/target_event_IDs.txt)
@@ -887,6 +906,7 @@ Filtering:
       --include-category <CATEGORY...>  Only load rules with specified logsource categories (ex: process_creation,pipe_created)
       --include-computer <COMPUTER...>  Scan only specified computer names (ex: ComputerA) (ex: ComputerA,ComputerB)
       --include-eid <EID...>            Scan only specified EIDs for faster speed (ex: 1) (ex: 1,4688)
+      --include-status <STATUS...>      Only load rules with specific status (ex: experimental) (ex: stable,test)
       --include-tag <TAG...>            Only load rules with specific tags (ex: attack.execution,attack.discovery)
   -m, --min-level <LEVEL>               Minimum level for rules to load (default: informational)
   -P, --proven-rules                    Scan with only proven rules for faster speed (./rules/config/proven_rules.txt)
@@ -912,15 +932,6 @@ Display Settings:
   -v, --verbose             Output verbose information
   -T, --visualize-timeline  Output event frequency timeline (terminal needs to support unicode)
 
-General Options:
-  -C, --clobber                        Overwrite files when saving
-  -w, --no-wizard                      Do not ask questions. Scan for all events and alerts
-  -Q, --quiet-errors                   Quiet errors mode: do not save error logs
-  -r, --rules <DIR/FILE>               Specify a custom rule directory or file (default: ./rules)
-  -c, --rules-config <DIR>             Specify custom rule config directory (default: ./rules/config)
-      --target-file-ext <FILE-EXT...>  Specify additional evtx file extensions (ex: evtx_data)
-  -t, --threads <NUMBER>               Number of threads (default: optimal number for performance)
-
 Time Format:
       --European-time     Output timestamp in European time format (ex: 22-02-2022 22:00:00.123 +02:00)
       --ISO-8601          Output timestamp in ISO-8601 format (ex: 2022-02-22T10:10:10.1234567Z) (Always UTC)
@@ -933,10 +944,12 @@ Time Format:
 
 #### `csv-timeline` command examples
 
-* Run hayabusa against one Windows event log file with default `standard` profile:
+* Run hayabusa against one Windows event log file with default `standard` profile and `--low-memory-mode`:
+
+> Note: Results will not be sorted when using `-s, --low-memory-mode`. This is because the results are outputted to screen or saved to a file as soon as they are detected and then memory for the detection is freed. This results in a significant reduction of memory (up to 95%) and is useful when running Hayabusa as an agent or scanning large amounts of data. However, because results are not saved in memory, it is not possible to use `-R, --remove-duplicate-data` or `-X, --remove-duplicate-detections` when enabling low memory mode.
 
 ```
-hayabusa.exe csv-timeline -f eventlog.evtx
+hayabusa.exe csv-timeline -f eventlog.evtx --low-memory-mode
 ```
 
 * Run hayabusa against the sample-evtx directory with multiple Windows event log files with the verbose profile:
@@ -1130,8 +1143,19 @@ Input:
   -d, --directory <DIR>  Directory of multiple .evtx files
   -f, --file <FILE>      File path to one .evtx file
   -l, --live-analysis    Analyze the local C:\Windows\System32\winevt\Logs folder
-  -J, --JSON-input       Scan JSON formatted logs instead of .evtx (.json or .jsonl)
-  -x, --recover-records  Carve evtx records from slack space (default: disabled)
+
+General Options:
+  -C, --clobber                        Overwrite files when saving
+  -h, --help                           Show the help menu
+  -J, --JSON-input                     Scan JSON formatted logs instead of .evtx (.json or .jsonl)
+  -s, --low-memory-mode                Scan with the minimal amount of memory by not sorting events
+  -w, --no-wizard                      Do not ask questions. Scan for all events and alerts
+  -Q, --quiet-errors                   Quiet errors mode: do not save error logs
+  -x, --recover-records                Carve evtx records from slack space (default: disabled)
+  -r, --rules <DIR/FILE>               Specify a custom rule directory or file (default: ./rules)
+  -c, --rules-config <DIR>             Specify custom rule config directory (default: ./rules/config)
+      --target-file-ext <FILE-EXT...>  Specify additional evtx file extensions (ex: evtx_data)
+  -t, --threads <NUMBER>               Number of threads (default: optimal number for performance)
 
 Filtering:
   -E, --EID-filter                      Scan only common EIDs for faster speed (./rules/config/target_event_IDs.txt)
@@ -1147,6 +1171,7 @@ Filtering:
       --include-category <CATEGORY...>  Only load rules with specified logsource categories (ex: process_creation,pipe_created)
       --include-computer <COMPUTER...>  Scan only specified computer names (ex: ComputerA) (ex: ComputerA,ComputerB)
       --include-eid <EID...>            Scan only specified EIDs for faster speed (ex: 1) (ex: 1,4688)
+      --include-status <STATUS...>      Only load rules with specific status (ex: experimental) (ex: stable,test)
       --include-tag <TAG...>            Only load rules with specific tags (ex: attack.execution,attack.discovery)
   -m, --min-level <LEVEL>               Minimum level for rules to load (default: informational)
   -P, --proven-rules                    Scan with only proven rules for faster speed (./rules/config/proven_rules.txt)
@@ -1171,15 +1196,6 @@ Display Settings:
   -q, --quiet               Quiet mode: do not display the launch banner
   -v, --verbose             Output verbose information
   -T, --visualize-timeline  Output event frequency timeline (terminal needs to support unicode)
-
-General Options:
-  -C, --clobber                        Overwrite files when saving
-  -w, --no-wizard                      Do not ask questions. Scan for all events and alerts
-  -Q, --quiet-errors                   Quiet errors mode: do not save error logs
-  -r, --rules <DIR/FILE>               Specify a custom rule directory or file (default: ./rules)
-  -c, --rules-config <DIR>             Specify custom rule config directory (default: ./rules/config)
-      --target-file-ext <FILE-EXT...>  Specify additional evtx file extensions (ex: evtx_data)
-  -t, --threads <NUMBER>               Number of threads (default: optimal number for performance)
 
 Time Format:
       --European-time     Output timestamp in European time format (ex: 22-02-2022 22:00:00.123 +02:00)

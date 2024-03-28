@@ -262,6 +262,7 @@ JSON形式の結果を`jq`で解析する方法については、[こちら](/do
 * 出力時のイベント重複排除。(レコード復元が有効になっている場合や、バックアップされたevtxファイル、VSSから抽出されたevtxファイルなどが含まれている場合に便利。)
 * スキャン設定ウィザードにより、有効にするルールの選択が容易に。(誤検出を減らすためなど。）
 * PowerShell classicログのフィールドパースと抽出。
+* 低メモリモード。(注意: 結果をソートしないことで可能。エージェントやビッグデータでの実行に適している。)
 
 # ダウンロード
 
@@ -535,29 +536,30 @@ Windows 11ではイベントログに保存するときにまったく異なる`
 Usage: computer-metrics <INPUT> [OPTIONS]
 
 Input:
-  -d, --directory <DIR>        .evtxファイルを持つディレクトリのパス
-  -f, --file <FILE>            1つの.evtxファイルに対して解析を行う
-  -l, --live-analysis          ローカル端末のC:\Windows\System32\winevt\Logsフォルダを解析する
-  -J, --JSON-input             .evtxファイルの代わりにJSON形式のログファイル(.jsonまたは.jsonl)をスキャンする
-  -x, --recover-records        空ページからevtxレコードをカービングする (デフォルト: 無効)
+  -d, --directory <DIR>  .evtxファイルを持つディレクトリのパス
+  -f, --file <FILE>      1つの.evtxファイルに対して解析を行う
+  -l, --live-analysis    ローカル端末のC:\Windows\System32\winevt\Logsフォルダを解析する
+
+General Options:
+  -C, --clobber                        結果ファイルを上書きする
+  -h, --help                           ヘルプメニューを表示する
+  -J, --JSON-input                     .evtxファイルの代わりにJSON形式のログファイル(.jsonまたは.jsonl)をスキャンする
+  -Q, --quiet-errors                   Quiet errorsモード: エラーログを保存しない
+  -x, --recover-records                空ページからevtxレコードをカービングする (デフォルト: 無効)
+  -c, --rules-config <DIR>             ルールフォルダのコンフィグディレクトリ (デフォルト: ./rules/config)
+      --target-file-ext <FILE-EXT...>  evtx以外の拡張子を解析対象に追加する。 (例１: evtx_data 例２: evtx1,evtx2)
+  -t, --threads <NUMBER>               スレッド数 (デフォルト: パフォーマンスに最適な数値)
 
 Filtering:
       --timeline-offset <OFFSET>  オフセットに基づく最近のイベントのスキャン (例: 1y, 3M, 30d, 24h, 30m)
 
 Output:
-  -o, --output <FILE>       イベントIDに基づくイベントの合計と割合の集計を出力する (例: computer-metrics.csv)
+  -o, --output <FILE>  イベントIDに基づくイベントの合計と割合の集計を出力する (例: computer-metrics.csv)
 
 Display Settings:
-      --no-color       カラーで出力しない
-  -q, --quiet          Quietモード: 起動バナーを表示しない
-  -v, --verbose        詳細な情報を出力する
-
-General Options:
-  -C, --clobber                          結果ファイルを上書きする
-  -Q, --quiet-errors                     Quiet errorsモード: エラーログを保存しない
-  -c, --rules-config <DIR>               ルールフォルダのコンフィグディレクトリ (デフォルト: ./rules/config)
-      --target-file-ext <FILE-EXT...>  evtx以外の拡張子を解析対象に追加する。 (例１: evtx_data 例２: evtx1,evtx2)
-  -t, --threads <NUMBER>                 スレッド数 (デフォルト: パフォーマンスに最適な数値)
+      --no-color  カラーで出力しない
+  -q, --quiet     Quietモード: 起動バナーを表示しない
+  -v, --verbose   詳細な情報を出力する               
 ```
 
 #### `computer-metrics`コマンドの使用例
@@ -581,8 +583,16 @@ Input:
   -d, --directory <DIR>        .evtxファイルを持つディレクトリのパス
   -f, --file <FILE>            1つの.evtxファイルに対して解析を行う
   -l, --live-analysis          ローカル端末のC:\Windows\System32\winevt\Logsフォルダを解析する
-  -J, --JSON-input             .evtxファイルの代わりにJSON形式のログファイル(.jsonまたは.jsonl)をスキャンする
-  -x, --recover-records        空ページからevtxレコードをカービングする (デフォルト: 無効)
+
+General Options:
+  -C, --clobber                        結果ファイルを上書きする
+  -h, --help                           ヘルプメニューを
+  -J, --JSON-input                     .evtxファイルの代わりにJSON形式のログファイル(.jsonまたは.jsonl)をスキャンする
+  -Q, --quiet-errors                   Quiet errorsモード: エラーログを保存しない
+  -x, --recover-records                空ページからevtxレコードをカービングする (デフォルト: 無効)
+  -c, --rules-config <DIR>             ルールフォルダのコンフィグディレクトリ (デフォルト: ./rules/config)
+      --target-file-ext <FILE-EXT...>  evtx以外の拡張子を解析対象に追加する。 (例１: evtx_data 例２: evtx1,evtx2)
+  -t, --threads <NUMBER>               スレッド数 (デフォルト: パフォーマンスに最適な数値)
 
 Filtering:
       --exclude-computer <COMPUTER...>  特定のコンピュータ名をスキャンしない (例: ComputerA) (例: ComputerA,ComputerB)
@@ -590,19 +600,12 @@ Filtering:
       --timeline-offset <OFFSET>        オフセットに基づく最近のイベントのスキャン (例: 1y, 3M, 30d, 24h, 30m)
 
 Output:
-  -o, --output <FILE>       イベントIDに基づくイベントの合計と割合の集計を出力する (例: eid-metrics.csv)
+  -o, --output <FILE>  イベントIDに基づくイベントの合計と割合の集計を出力する (例: eid-metrics.csv)
 
 Display Settings:
-      --no-color       カラーで出力しない
-  -q, --quiet          Quietモード: 起動バナーを表示しない
-  -v, --verbose        詳細な情報を出力する
-
-General Options:
-  -C, --clobber                          結果ファイルを上書きする
-  -Q, --quiet-errors                     Quiet errorsモード: エラーログを保存しない
-  -c, --rules-config <DIR>               ルールフォルダのコンフィグディレクトリ (デフォルト: ./rules/config)
-      --target-file-ext <FILE-EXT...>    evtx以外の拡張子を解析対象に追加する。 (例１: evtx_data 例２: evtx1,evtx2)
-  -t, --threads <NUMBER>                 スレッド数 (デフォルト: パフォーマンスに最適な数値)
+      --no-color  カラーで出力しない
+  -q, --quiet     Quietモード: 起動バナーを表示しない
+  -v, --verbose   詳細な情報を出力する
 
 Time Format:
       --European-time     ヨーロッパ形式で日付と時刻を出力する (例: 22-02-2022 22:00:00.123 +02:00)
@@ -649,8 +652,16 @@ Input:
   -d, --directory <DIR>        .evtxファイルを持つディレクトリのパス
   -f, --file <FILE>            1つの.evtxファイルに対して解析を行う
   -l, --live-analysis          ローカル端末のC:\Windows\System32\winevt\Logsフォルダを解析する
-  -J, --JSON-input             .evtxファイルの代わりにJSON形式のログファイル(.jsonまたは.jsonl)をスキャンする
-  -x, --recover-records        空ページからevtxレコードをカービングする (デフォルト: 無効)
+
+General Options:
+  -C, --clobber                        結果ファイルを上書きする
+  -h, --help                           ヘルプメニューを表示する
+  -J, --JSON-input                     .evtxファイルの代わりにJSON形式のログファイル(.jsonまたは.jsonl)をスキャンする
+  -Q, --quiet-errors                   Quiet errorsモード: エラーログを保存しない
+  -x, --recover-records                空ページからevtxレコードをカービングする (デフォルト: 無効)
+  -c, --rules-config <DIR>             ルールフォルダのコンフィグディレクトリ (デフォルト: ./rules/config)
+      --target-file-ext <FILE-EXT...>  evtx以外の拡張子を解析対象に追加する (例１: evtx_data 例２:evtx1,evtx2)
+  -t, --threads <NUMBER>               スレッド数 (デフォルト: パフォーマンスに最適な数値)
 
 Filtering:
       --exclude-computer <COMPUTER...>  特定のコンピュータ名をスキャンしない (例: ComputerA) (例: ComputerA,ComputerB)
@@ -663,16 +674,9 @@ Output:
   -o, --output <FILENAME-PREFIX>  ログオンサマリをCSV形式で２つのファイルに保存する (例: -o logon-summary.csv)
 
 Display Settings:
-      --no-color            カラーで出力しない
-  -q, --quiet               Quietモード: 起動バナーを表示しない
-  -v, --verbose             詳細な情報を出力する
-
-General Options:
-  -C, --clobber                          結果ファイルを上書きする
-  -Q, --quiet-errors                     Quiet errorsモード: エラーログを保存しない
-  -c, --rules-config <DIR>               ルールフォルダのコンフィグディレクトリ (デフォルト: ./rules/config)
-      --target-file-ext <FILE-EXT...>    evtx以外の拡張子を解析対象に追加する (例１: evtx_data 例２:evtx1,evtx2)
-  -t, --threads <NUMBER>                 スレッド数 (デフォルト: パフォーマンスに最適な数値)
+      --no-color  カラーで出力しない
+  -q, --quiet     Quietモード: 起動バナーを表示しない
+  -v, --verbose   詳細な情報を出力する
 
 Time Format:
       --European-time     ヨーロッパ形式で日付と時刻を出力する (例: 22-02-2022 22:00:00.123 +02:00)
@@ -710,8 +714,17 @@ Input:
   -d, --directory <DIR>        .evtxファイルを持つディレクトリのパス
   -f, --file <FILE>            1つの.evtxファイルに対して解析を行う
   -l, --live-analysis          ローカル端末のC:\Windows\System32\winevt\Logsフォルダを解析する
-  -J, --JSON-input             .evtxファイルの代わりにJSON形式のログファイル(.jsonまたは.jsonl)をスキャンする
-  -x, --recover-records        空ページからevtxレコードをカービングする (デフォルト: 無効)
+
+General Options:
+  -C, --clobber                        結果ファイルを上書きする
+  -h, --help                           ヘルプメニューを表示する
+  -J, --JSON-input                     .evtxファイルの代わりにJSON形式のログファイル(.jsonまたは.jsonl)をスキャンする
+  -w, --no-wizard                      Do not ask questions. Scan for all events and alerts
+  -Q, --quiet-errors                   Quiet errorsモード: エラーログを保存しない
+  -x, --recover-records                空ページからevtxレコードをカービングする (デフォルト: 無効)
+  -c, --rules-config <DIR>             ルールフォルダのコンフィグディレクトリ (デフォルト: ./rules/config)
+      --target-file-ext <FILE-EXT...>  evtx以外の拡張子を解析対象に追加する。 (例１: evtx_data 例２: evtx1,evtx2)
+  -t, --threads <NUMBER>               スレッド数 (デフォルト: パフォーマンスに最適な数値)
 
 Filtering:
   -E, --EID-filter                      速度を上げるため主なEIDだけスキャンする (コンフィグファイル: ./rules/config/target_event_IDs.txt)
@@ -725,6 +738,7 @@ Filtering:
       --include-computer <COMPUTER...>  特定のコンピュータ名のみをスキャンする (例: ComputerA) (例: ComputerA,ComputerB)
       --exclude-tag <TAG...>            特定のタグを持つルールをロードしない (例: sysmon)
       --include-eid <EID...>            指定したEIDのみをスキャンして高速化する (例 1) (例: 1,4688)
+      --include-status <STATUS...>      特定のステータスを持つルールのみをロードする (例: expermimental) (例: stable,test)
       --include-tag <TAG...>            特定のタグを持つルールのみをロードする (例１: attack.execution,attack.discovery) (例２: wmi)
   -m, --min-level <LEVEL>               結果出力をするルールの最低レベル (デフォルト: informational)
       --timeline-end <DATE>             解析対象とするイベントログの終了時刻 (例: "2022-02-22 23:59:59 +09:00")
@@ -732,19 +746,12 @@ Filtering:
       --timeline-start <DATE>           解析対象とするイベントログの開始時刻 (例: "2020-02-22 00:00:00 +09:00")
 
 Output:
-  -o, --output <FILE>       ピボットキーワードの一覧を複数ファイルに出力する (例: pivot-keywords.txt)
+  -o, --output <FILENAME-PREFIX>  ピボットキーワードの一覧を複数ファイルに出力する (例: PivotKeywords)
 
 Display Settings:
-      --no-color       カラーで出力しない
-  -q, --quiet          Quietモード: 起動バナーを表示しない
-  -v, --verbose        詳細な情報を出力する
-
-General Options:
-  -C, --clobber                          結果ファイルを上書きする
-  -Q, --quiet-errors                     Quiet errorsモード: エラーログを保存しない
-  -c, --rules-config <DIR>               ルールフォルダのコンフィグディレクトリ (デフォルト: ./rules/config)
-      --target-file-ext <FILE-EXT...>    evtx以外の拡張子を解析対象に追加する。 (例１: evtx_data 例２: evtx1,evtx2)
-  -t, --threads <NUMBER>                 スレッド数 (デフォルト: パフォーマンスに最適な数値)
+      --no-color  カラーで出力しない
+  -q, --quiet     Quietモード: 起動バナーを表示しない
+  -v, --verbose   詳細な情報を出力する               
 ```
 
 #### `pivot-keywords-list`コマンドの使用例
@@ -779,12 +786,20 @@ Display Settings:
   -q, --quiet     Quietモード: 起動バナーを表示しない
   -v, --verbose   詳細な情報を出力する
 
+General Options:
+  -C, --clobber                          結果ファイルを上書きする
+  -h, --help                             ヘルプメニューを表示する
+  -Q, --quiet-errors                     Quiet errorsモード: エラーログを保存しない
+  -x, --recover-records                  空ページからevtxレコードをカービングする (デフォルト: 無効)
+  -c, --rules-config <DIR>               ルールフォルダのコンフィグディレクトリ (デフォルト: ./rules/config)
+      --target-file-ext <FILE-EXT...>    evtx以外の拡張子を解析対象に追加する (例１: evtx_data 例２:evtx1,evtx2)
+  -t, --threads <NUMBER>                 スレッド数 (デフォルト: パフォーマンスに最適な数値)
+
 Input:
   -d, --directory <DIR>        .evtxファイルを持つディレクトリのパス
   -f, --file <FILE>            1つの.evtxファイルに対して解析を行う
   -l, --live-analysis          ローカル端末のC:\Windows\System32\winevt\Logsフォルダを解析する
-  -x, --recover-records        空ページからevtxレコードをカービングする (デフォルト: 無効)
-
+  
 Filtering:
   -a, --and-logic                    ANDロジックでキーワード検索を行う (デフォルト: OR)
   -F, --filter <FILTER...>           特定のフィールドでフィルタする
@@ -798,13 +813,6 @@ Output:
   -L, --JSONL-output   JSONL形式で検索結果を保存 (例: -L -o results.jsonl)
   -M, --multiline      イベントフィールド情報を複数の行に出力する
   -o, --output <FILE>  ログオンサマリをCSV形式で保存する (例: search.csv)
-
-General Options:
-  -C, --clobber                          結果ファイルを上書きする
-  -Q, --quiet-errors                     Quiet errorsモード: エラーログを保存しない
-  -c, --rules-config <DIR>               ルールフォルダのコンフィグディレクトリ (デフォルト: ./rules/config)
-      --target-file-ext <FILE-EXT...>    evtx以外の拡張子を解析対象に追加する (例１: evtx_data 例２:evtx1,evtx2)
-  -t, --threads <NUMBER>                 スレッド数 (デフォルト: パフォーマンスに最適な数値)
 
 Time Format:
       --European-time     ヨーロッパ形式で日付と時刻を出力する (例: 22-02-2022 22:00:00.123 +02:00)
@@ -870,8 +878,19 @@ Input:
   -d, --directory <DIR>    .evtxファイルを持つディレクトリのパス
   -f, --file <FILE>        1つの.evtxファイルに対して解析を行う
   -l, --live-analysis      ローカル端末のC:\Windows\System32\winevt\Logsフォルダを解析する
-  -J, --JSON-input         .evtxファイルの代わりにJSON形式のログファイル(.jsonまたは.jsonl)をスキャンする
-  -x, --recover-records    空ページからevtxレコードをカービングする (デフォルト: 無効)
+
+General Options:
+  -C, --clobber                          結果ファイルを上書きする
+  -h, --help                             ヘルプメニューを表示する
+  -J, --JSON-input                       .evtxファイルの代わりにJSON形式のログファイル(.jsonまたは.jsonl)をスキャンする
+  -s, --low-memory-mode                  イベントをソートしないことで、最小限のメモリでスキャンする
+  -w, --no-wizard                        質問はしない。すべてのイベントとアラートをスキャンする
+  -Q, --quiet-errors                     Quiet errorsモード: エラーログを保存しない
+  -x, --recover-records                  空ページからevtxレコードをカービングする (デフォルト: 無効)
+  -r, --rules <DIR/FILE>                 ルールファイルまたはルールファイルを持つディレクトリ (デフォルト: ./rules)
+  -c, --rules-config <DIR>               ルールフォルダのコンフィグディレクトリ (デフォルト: ./rules/config)
+      --target-file-ext <FILE-EXT...>    evtx以外の拡張子を解析対象に追加する。 (例１: evtx_data 例２: evtx1,evtx2)
+  -t, --threads <NUMBER>                 スレッド数 (デフォルト: パフォーマンスに最適な数値)
 
 Filtering:
   -E, --EID-filter                      速度を上げるため主なEIDだけスキャンする (コンフィグファイル: ./rules/config/target_event_IDs.txt)
@@ -887,6 +906,7 @@ Filtering:
       --include-category <CATEGORY...>  特定のlogsourceカテゴリを持つルールのみをロードする (例: process_creation,pipe_created)
       --include-computer <COMPUTER...>  特定のコンピュータ名のみをスキャンする (例: ComputerA) (例: ComputerA,ComputerB)
       --include-eid <EID...>            指定したEIDのみをスキャンして高速化する (例: 1) (例: 1,4688)
+      --include-status <STATUS...>      特定のステータスを持つルールのみをロードする (例: expermimental) (例: stable,test)
       --include-tag <TAG...>            特定のタグを持つルールのみをロードする (例１: attack.execution,attack.discovery) (例２: wmi)
   -m, --min-level <LEVEL>               結果出力をするルールの最低レベル (デフォルト: informational)
   -P, --proven-rules                    実績のあるルールだけでスキャンし、高速化する (./rules/config/proven_rules.txt)
@@ -912,15 +932,6 @@ Display Settings:
   -v, --verbose             詳細な情報を出力する
   -T, --visualize-timeline  検知頻度タイムラインを出力する（ターミナルはUnicodeに対応する必要がある）
 
-General Options:
-  -C, --clobber                          結果ファイルを上書きする
-  -w, --no-wizard                        質問はしない。すべてのイベントとアラートをスキャンする
-  -Q, --quiet-errors                     Quiet errorsモード: エラーログを保存しない
-  -r, --rules <DIR/FILE>                 ルールファイルまたはルールファイルを持つディレクトリ (デフォルト: ./rules)
-  -c, --rules-config <DIR>               ルールフォルダのコンフィグディレクトリ (デフォルト: ./rules/config)
-      --target-file-ext <FILE-EXT...>    evtx以外の拡張子を解析対象に追加する。 (例１: evtx_data 例２: evtx1,evtx2)
-  -t, --threads <NUMBER>                 スレッド数 (デフォルト: パフォーマンスに最適な数値)
-
 Time Format:
       --European-time     ヨーロッパ形式で日付と時刻を出力する (例: 22-02-2022 22:00:00.123 +02:00)
       --ISO-8601          ISO-8601形式で日付と時刻を出力する (例: 2022-02-22T10:10:10.1234567Z) (UTC時刻)
@@ -933,10 +944,12 @@ Time Format:
 
 #### `csv-timeline`コマンドの使用例
 
-* デフォルトの`standard`プロファイルで１つのWindowsイベントログファイルに対してHayabusaを実行する:
+* デフォルトの`standard`プロファイルと`--low-memory-mode`で１つのWindowsイベントログファイルに対してHayabusaを実行する:
+
+> 注意: `-s, --low-memory-mode`を使用した場合、結果はソートされません。 検知されるとすぐに結果が画面に出力されるかファイルに保存され、検知のためのメモリが解放されるためです。この結果、メモリが大幅に削減され（最大95％）、Hayabusaをエージェントとして実行する場合や大量のデータをスキャンする場合に有効です。ただし、検知結果はメモリ上に保存されないため、低メモリモードを有効にした場合、`-R, --remove-duplicate-data`や`-X, --remove-duplicate-detections`を併用することはできません。
 
 ```
-hayabusa.exe csv-timeline -f eventlog.evtx
+hayabusa.exe csv-timeline -f eventlog.evtx --low-memory-mode
 ```
 
 * `verbose`プロファイルで複数のWindowsイベントログファイルのあるsample-evtxディレクトリに対して、Hayabusaを実行する:
@@ -1130,8 +1143,19 @@ Input:
   -d, --directory <DIR>    .evtxファイルを持つディレクトリのパス
   -f, --file <FILE>        1つの.evtxファイルに対して解析を行う
   -l, --live-analysis      ローカル端末のC:\Windows\System32\winevt\Logsフォルダを解析する
-  -J, --JSON-input         .evtxファイルの代わりにJSON形式のログファイル(.jsonまたは.jsonl)をスキャンする
-  -x, --recover-records    空ページからevtxレコードをカービングする (デフォルト: 無効)
+
+General Options:
+  -C, --clobber                          結果ファイルを上書きする
+  -h, --help                             ヘルプ
+  -J, --JSON-input                       .evtxファイルの代わりにJSON形式のログファイル(.jsonまたは.jsonl)をスキャンする
+  -s, --low-memory-mode                  イベントをソートしないことで、最小限のメモリでスキャンする
+  -w, --no-wizard                        質問はしない。すべてのイベントとアラートをスキャンする
+  -Q, --quiet-errors                     Quiet errorsモード: エラーログを保存しない
+  -x, --recover-records                  空ページからevtxレコードをカービングする (デフォルト: 無効)
+  -r, --rules <DIR/FILE>                 ルールファイルまたはルールファイルを持つディレクトリ (デフォルト: ./rules)
+  -c, --rules-config <DIR>               ルールフォルダのコンフィグディレクトリ (デフォルト: ./rules/config)
+      --target-file-ext <FILE-EXT...>    evtx以外の拡張子を解析対象に追加する。 (例１: evtx_data 例２: evtx1,evtx2)
+  -t, --threads <NUMBER>                 スレッド数 (デフォルト: パフォーマンスに最適な数値)
 
 Filtering:
   -E, --EID-filter                      速度を上げるため主なEIDだけスキャンする (コンフィグファイル: ./rules/config/target_event_IDs.txt)
@@ -1147,6 +1171,7 @@ Filtering:
       --include-category <CATEGORY...>  特定のlogsourceカテゴリを持つルールのみをロードする (例: process_creation,pipe_created)
       --include-computer <COMPUTER...>  特定のコンピュータ名のみをスキャンする (例: ComputerA) (例: ComputerA,ComputerB)
       --include-eid <EID...>            指定したEIDのみをスキャンして高速化する (例: 1) (例: 1,4688)
+      --include-status <STATUS...>      特定のステータスを持つルールのみをロードする (例: expermimental) (例: stable,test)
       --include-tag <TAG...>            特定のタグを持つルールのみをロードする (例１: attack.execution,attack.discovery) (例２: wmi)
   -m, --min-level <LEVEL>               結果出力をするルールの最低レベル (デフォルト: informational)
   -P, --proven-rules                    実績のあるルールだけでスキャンし、高速化する (./rules/config/proven_rules.txt)
@@ -1158,6 +1183,7 @@ Output:
   -G, --GeoIP <MAXMIND-DB-DIR>       IPアドレスのGeoIP(ASN、都市、国)情報を追加する
   -H, --HTML-report <FILE>           HTML形式で詳細な結果を出力する (例: results.html)
   -L, --JSONL-output                 タイムラインをJSONL形式で保存する (例: -L -o results.jsonl)
+  -M, --multiline                    イベントフィールド情報を複数の行に出力する
   -F, --no-field-data-mapping        フィールドデータのマッピングを無効にする
       --no-pwsh-field-extraction     PowerShell Classicログフィールド抽出の無効化
   -o, --output <FILE>                タイムラインを保存する (例: results.csv)
@@ -1171,15 +1197,6 @@ Display Settings:
   -q, --quiet               Quietモード: 起動バナーを表示しない
   -v, --verbose             詳細な情報を出力する
   -T, --visualize-timeline  検知頻度タイムラインを出力する（ターミナルはUnicodeに対応する必要がある）
-
-General Options:
-  -C, --clobber                          結果ファイルを上書きする
-  -w, --no-wizard                        質問はしない。すべてのイベントとアラートをスキャンする
-  -Q, --quiet-errors                     Quiet errorsモード: エラーログを保存しない
-  -r, --rules <DIR/FILE>                 ルールファイルまたはルールファイルを持つディレクトリ (デフォルト: ./rules)
-  -c, --rules-config <DIR>               ルールフォルダのコンフィグディレクトリ (デフォルト: ./rules/config)
-      --target-file-ext <FILE-EXT...>    evtx以外の拡張子を解析対象に追加する。 (例１: evtx_data 例２：evtx1,evtx2)
-  -t, --threads <NUMBER>                 スレッド数 (デフォルト: パフォーマンスに最適な数値)
 
 Time Format:
       --European-time     ヨーロッパ形式で日付と時刻を出力する (例: 22-02-2022 22:00:00.123 +02:00)
