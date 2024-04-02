@@ -490,6 +490,7 @@ fn calc_statistic_info(
         if duplicate_idxes.contains(&i) {
             continue;
         }
+        afterfact_info.timestamps.push(detect_info.detected_time.timestamp());
         if !detect_info.is_condition {
             afterfact_info
                 .detected_record_idset
