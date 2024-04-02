@@ -1,5 +1,11 @@
 # Changes
 
+## x.x.x [xxxx/xx/xx]
+
+**Bug Fixes:**
+
+- `-T` detection frequency timeline was not usable in version 2.14.0. (#1322) (@fukusuket)
+
 ## 2.14.0 [2024/03/30] "BSides Tokyo Release"
 
 **New Features:**
