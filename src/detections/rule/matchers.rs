@@ -981,7 +981,7 @@ mod tests {
         // Channel
         {
             // LeafSelectionNodeが正しく読み込めることを確認
-            let child_node = detection_childs[0] as &dyn SelectionNode; //  TODO キャストしないとエラーでるけど、このキャストよく分からん。
+            let child_node = detection_childs[0];
             assert!(child_node.is::<LeafSelectionNode>());
             let child_node = child_node.downcast_ref::<LeafSelectionNode>().unwrap();
             assert_eq!(child_node.get_key(), "Channel");
