@@ -2797,7 +2797,7 @@ mod tests {
     }
 
     #[test]
-    fn test_all_only_true() {
+    fn test_all_only_detect_case() {
         let rule_str = r"
         enabled: true
         detection:
@@ -2828,7 +2828,7 @@ mod tests {
     }
 
     #[test]
-    fn test_all_only_false() {
+    fn test_all_only_no_detect_case() {
         let rule_str = r#"
         enabled: true
         detection:
@@ -2859,7 +2859,37 @@ mod tests {
     }
 
     #[test]
-    fn test_all_only_or_false() {
+    fn test_all_only_detected_and_selection_false() {
+        let rule_str = r#"
+        enabled: true
+        detection:
+            selection1:
+                '|all':
+                    - 'Sysmon/Operational'
+                    - 'indows\'
+            selection2:
+                - 'dummy'
+            condition: selection1 and selection2
+        "#;
+
+        let record_json_str = r#"
+        {
+          "Event": {
+            "System": {
+              "EventID": 1,
+              "Channel": "Microsoft-Windows-Sysmon/Operational"
+            },
+            "EventData": {
+              "CurrentDirectory": "C:\\Windows\\system32\\"
+            }
+          }
+        }"#;
+
+        check_select(rule_str, record_json_str, false);
+    }
+
+    #[test]
+    fn test_all_only_not_detect_and_selection_false() {
         let rule_str = r#"
         enabled: true
         detection:
