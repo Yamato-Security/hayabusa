@@ -345,7 +345,7 @@ impl LeafMatcher for DefaultMatcher {
         let pattern = yaml_value.unwrap();
         // Pipeが指定されていればパースする
         let emp = String::default();
-        // 一つ目はただのキーで、2つめ以jj降がpipe
+        // 一つ目はただのキーで、2つめ以降がpipe
 
         let mut keys_all: Vec<&str> = key_list.get(0).unwrap_or(&emp).split('|').collect(); // key_listが空はあり得ない
 
@@ -458,10 +458,47 @@ impl LeafMatcher for DefaultMatcher {
                     self.fast_match = Some(fastmatches);
                 }
             } else if self.pipes[0] == PipeElement::Contains && self.pipes[1] == PipeElement::All
-            // |contains|allの場合、事前の分岐でAndNodeとしているのでここではcontainsのみとして取り扱う
+            // |contains|allの場合、事前の分岐でAndSelectionNodeとしているのでここではcontainsのみとして取り扱う
             {
                 self.fast_match =
                     Self::convert_to_fast_match(format!("*{pattern}*").as_str(), true);
+            } else if self.pipes[0] == PipeElement::Contains
+                && self.pipes[1] == PipeElement::Windash
+            {
+                // |contains|windashの場合
+                let mut fastmatches =
+                    Self::convert_to_fast_match(format!("*{pattern}*").as_str(), true)
+                        .unwrap_or_default();
+                fastmatches.extend(
+                    Self::convert_to_fast_match(
+                        format!("*{}*", pattern.replacen('-', "/", 1)).as_str(),
+                        true,
+                    )
+                    .unwrap_or_default(),
+                );
+                if !fastmatches.is_empty() {
+                    self.fast_match = Some(fastmatches);
+                }
+            }
+        } else if n == 3 {
+            if self.pipes.contains(&PipeElement::Contains)
+                && self.pipes.contains(&PipeElement::All)
+                && self.pipes.contains(&PipeElement::Windash)
+            // |contains|all|windashの場合、事前の分岐でAndSelectionNodeとしているのでここではcontainsとwindashのみとして取り扱う
+            {
+                let mut fastmatches =
+                    Self::convert_to_fast_match(format!("*{pattern}*").as_str(), true)
+                        .unwrap_or_default();
+                fastmatches.extend(
+                    Self::convert_to_fast_match(
+                        format!("*{}*", pattern.replacen('-', "/", 1)).as_str(),
+                        true,
+                    )
+                    .unwrap_or_default(),
+                );
+                if !fastmatches.is_empty() {
+                    self.fast_match = Some(fastmatches);
+                }
             }
         } else {
             let errmsg = format!(
@@ -600,6 +637,7 @@ enum PipeElement {
     EqualsField(String),
     Endswithfield(String),
     Base64offset,
+    Windash,
     Cidr(Result<IpCidr, IpCidrError>),
     All,
     AllOnly,
@@ -615,6 +653,7 @@ impl PipeElement {
             "equalsfield" => Option::Some(PipeElement::EqualsField(pattern.to_string())),
             "endswithfield" => Option::Some(PipeElement::Endswithfield(pattern.to_string())),
             "base64offset" => Option::Some(PipeElement::Base64offset),
+            "windash" => Option::Some(PipeElement::Windash),
             "cidr" => Option::Some(PipeElement::Cidr(IpCidr::from_str(pattern))),
             "all" => Option::Some(PipeElement::All),
             "allOnly" => Option::Some(PipeElement::AllOnly),
@@ -942,7 +981,7 @@ mod tests {
         // Channel
         {
             // LeafSelectionNodeが正しく読み込めることを確認
-            let child_node = detection_childs[0] as &dyn SelectionNode; //  TODO キャストしないとエラーでるけど、このキャストよく分からん。
+            let child_node = detection_childs[0];
             assert!(child_node.is::<LeafSelectionNode>());
             let child_node = child_node.downcast_ref::<LeafSelectionNode>().unwrap();
             assert_eq!(child_node.get_key(), "Channel");
@@ -2758,7 +2797,7 @@ mod tests {
     }
 
     #[test]
-    fn test_all_only_true() {
+    fn test_all_only_detect_case() {
         let rule_str = r"
         enabled: true
         detection:
@@ -2789,7 +2828,7 @@ mod tests {
     }
 
     #[test]
-    fn test_all_only_false() {
+    fn test_all_only_no_detect_case() {
         let rule_str = r#"
         enabled: true
         detection:
@@ -2820,7 +2859,37 @@ mod tests {
     }
 
     #[test]
-    fn test_all_only_or_false() {
+    fn test_all_only_detected_and_selection_false() {
+        let rule_str = r#"
+        enabled: true
+        detection:
+            selection1:
+                '|all':
+                    - 'Sysmon/Operational'
+                    - 'indows\'
+            selection2:
+                - 'dummy'
+            condition: selection1 and selection2
+        "#;
+
+        let record_json_str = r#"
+        {
+          "Event": {
+            "System": {
+              "EventID": 1,
+              "Channel": "Microsoft-Windows-Sysmon/Operational"
+            },
+            "EventData": {
+              "CurrentDirectory": "C:\\Windows\\system32\\"
+            }
+          }
+        }"#;
+
+        check_select(rule_str, record_json_str, false);
+    }
+
+    #[test]
+    fn test_all_only_not_detect_and_selection_false() {
         let rule_str = r#"
         enabled: true
         detection:
@@ -2848,5 +2917,85 @@ mod tests {
         }"#;
 
         check_select(rule_str, record_json_str, false);
+    }
+
+    #[test]
+    fn test_contains_windash() {
+        let rule_str = r#"
+        enabled: true
+        detection:
+            selection1:
+                'CommandLine|contains|windash': '-addstore'
+            condition: selection1
+        "#;
+
+        let record_json_str = r#"
+        {
+          "Event": {
+            "System": {
+              "EventID": 1,
+              "Channel": "Microsoft-Windows-Sysmon/Operational"
+            },
+            "EventData": {
+              "CommandLine": "test /addstore"
+            }
+          }
+        }"#;
+
+        let record_json_str2 = r#"
+        {
+          "Event": {
+            "System": {
+              "EventID": 1,
+              "Channel": "Microsoft-Windows-Sysmon/Operational"
+            },
+            "EventData": {
+              "CommandLine": "test -addstore"
+            }
+          }
+        }"#;
+        check_select(rule_str, record_json_str, true);
+        check_select(rule_str, record_json_str2, true);
+    }
+
+    #[test]
+    fn test_contains_all_windash() {
+        let rule_str = r#"
+        enabled: true
+        detection:
+            selection1:
+                'CommandLine|contains|all|windash':
+                    - '-addstore'
+                    - '-test-test'
+            condition: selection1
+        "#;
+
+        let record_json_str = r#"
+        {
+          "Event": {
+            "System": {
+              "EventID": 1,
+              "Channel": "Microsoft-Windows-Sysmon/Operational"
+            },
+            "EventData": {
+              "CommandLine": "test -test-test /addstore"
+            }
+          }
+        }"#;
+
+        let record_json_str2 = r#"
+        {
+          "Event": {
+            "System": {
+              "EventID": 1,
+              "Channel": "Microsoft-Windows-Sysmon/Operational"
+            },
+            "EventData": {
+              "CommandLine": "test /test/test -addstore"
+            }
+          }
+        }"#;
+        check_select(rule_str, record_json_str, true);
+        check_select(rule_str, record_json_str2, false);
     }
 }
