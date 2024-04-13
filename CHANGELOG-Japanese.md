@@ -4,7 +4,7 @@
 
 **改善:**
 
-- Sigmaルールの `windash` (`|contains|windash`と`contains|all|windash`)に対応した。 (#1319) (@hitenkoku)
+- Sigmaルールの `windash` (`|contains|windash:`と`|contains|all|windash:`)に対応した。 (#1319) (@hitenkoku)
 
 **バグ修正:**
 

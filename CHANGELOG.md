@@ -4,7 +4,7 @@
 
 **Enhancements:**
 
-- Added support for `'windash':`  keyword (ex. `|contains|windash`, `contains|all|windash`) in sigma rules. (#1319) (@hitenkoku)
+- Added support for `windash` keyword (ex. `|contains|windash:`, `|contains|all|windash:`) in sigma rules. (#1319) (@hitenkoku)
 
 **Bug Fixes:**
 
