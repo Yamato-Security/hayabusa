@@ -2918,4 +2918,84 @@ mod tests {
 
         check_select(rule_str, record_json_str, false);
     }
+
+    #[test]
+    fn test_contains_windash() {
+        let rule_str = r#"
+        enabled: true
+        detection:
+            selection1:
+                'CommandLine|contains|windash': '-addstore'
+            condition: selection1
+        "#;
+
+        let record_json_str = r#"
+        {
+          "Event": {
+            "System": {
+              "EventID": 1,
+              "Channel": "Microsoft-Windows-Sysmon/Operational"
+            },
+            "EventData": {
+              "CommandLine": "test /addstore"
+            }
+          }
+        }"#;
+
+        let record_json_str2 = r#"
+        {
+          "Event": {
+            "System": {
+              "EventID": 1,
+              "Channel": "Microsoft-Windows-Sysmon/Operational"
+            },
+            "EventData": {
+              "CommandLine": "test -addstore"
+            }
+          }
+        }"#;
+        check_select(rule_str, record_json_str, true);
+        check_select(rule_str, record_json_str2, true);
+    }
+
+    #[test]
+    fn test_contains_all_windash() {
+        let rule_str = r#"
+        enabled: true
+        detection:
+            selection1:
+                'CommandLine|contains|all|windash':
+                    - '-addstore'
+                    - '-test-test'
+            condition: selection1
+        "#;
+
+        let record_json_str = r#"
+        {
+          "Event": {
+            "System": {
+              "EventID": 1,
+              "Channel": "Microsoft-Windows-Sysmon/Operational"
+            },
+            "EventData": {
+              "CommandLine": "test -test-test /addstore"
+            }
+          }
+        }"#;
+
+        let record_json_str2 = r#"
+        {
+          "Event": {
+            "System": {
+              "EventID": 1,
+              "Channel": "Microsoft-Windows-Sysmon/Operational"
+            },
+            "EventData": {
+              "CommandLine": "test /test/test -addstore"
+            }
+          }
+        }"#;
+        check_select(rule_str, record_json_str, true);
+        check_select(rule_str, record_json_str2, false);
+    }
 }
