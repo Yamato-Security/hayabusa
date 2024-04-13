@@ -2,6 +2,10 @@
 
 ## x.x.x [xxxx/xx/xx]
 
+**改善:**
+
+- Sigmaルールの `windash` (`|contains|windash`と`contains|all|windash`)に対応した。 (#1319) (@hitenkoku)
+
 **バグ修正:**
 
 - バージョン2.14.0では、`-T`の検知頻度タイムライン出力は使用できなかった。 (#1322) (@fukusuket)

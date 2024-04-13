@@ -2,6 +2,10 @@
 
 ## x.x.x [xxxx/xx/xx]
 
+**Enhancements:**
+
+- Added support for `'windash':`  keyword (ex. `|contains|windash`, `contains|all|windash`) in sigma rules. (#1319) (@hitenkoku)
+
 **Bug Fixes:**
 
 - `-T` detection frequency timeline was not usable in version 2.14.0. (#1322) (@fukusuket)
