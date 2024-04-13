@@ -345,7 +345,7 @@ impl LeafMatcher for DefaultMatcher {
         let pattern = yaml_value.unwrap();
         // Pipeが指定されていればパースする
         let emp = String::default();
-        // 一つ目はただのキーで、2つめ以jj降がpipe
+        // 一つ目はただのキーで、2つめ以降がpipe
 
         let mut keys_all: Vec<&str> = key_list.get(0).unwrap_or(&emp).split('|').collect(); // key_listが空はあり得ない
 
@@ -458,10 +458,47 @@ impl LeafMatcher for DefaultMatcher {
                     self.fast_match = Some(fastmatches);
                 }
             } else if self.pipes[0] == PipeElement::Contains && self.pipes[1] == PipeElement::All
-            // |contains|allの場合、事前の分岐でAndNodeとしているのでここではcontainsのみとして取り扱う
+            // |contains|allの場合、事前の分岐でAndSelectionNodeとしているのでここではcontainsのみとして取り扱う
             {
                 self.fast_match =
                     Self::convert_to_fast_match(format!("*{pattern}*").as_str(), true);
+            } else if self.pipes[0] == PipeElement::Contains
+                && self.pipes[1] == PipeElement::Windash
+            {
+                // |contains|windashの場合
+                let mut fastmatches =
+                    Self::convert_to_fast_match(format!("*{pattern}*").as_str(), true)
+                        .unwrap_or_default();
+                fastmatches.extend(
+                    Self::convert_to_fast_match(
+                        format!("*{}*", pattern.replacen('-', "/", 1)).as_str(),
+                        true,
+                    )
+                    .unwrap_or_default(),
+                );
+                if !fastmatches.is_empty() {
+                    self.fast_match = Some(fastmatches);
+                }
+            }
+        } else if n == 3 {
+            if self.pipes.contains(&PipeElement::Contains)
+                && self.pipes.contains(&PipeElement::All)
+                && self.pipes.contains(&PipeElement::Windash)
+            // |contains|all|windashの場合、事前の分岐でAndSelectionNodeとしているのでここではcontainsとwindashのみとして取り扱う
+            {
+                let mut fastmatches =
+                    Self::convert_to_fast_match(format!("*{pattern}*").as_str(), true)
+                        .unwrap_or_default();
+                fastmatches.extend(
+                    Self::convert_to_fast_match(
+                        format!("*{}*", pattern.replacen('-', "/", 1)).as_str(),
+                        true,
+                    )
+                    .unwrap_or_default(),
+                );
+                if !fastmatches.is_empty() {
+                    self.fast_match = Some(fastmatches);
+                }
             }
         } else {
             let errmsg = format!(
@@ -600,6 +637,7 @@ enum PipeElement {
     EqualsField(String),
     Endswithfield(String),
     Base64offset,
+    Windash,
     Cidr(Result<IpCidr, IpCidrError>),
     All,
     AllOnly,
@@ -615,6 +653,7 @@ impl PipeElement {
             "equalsfield" => Option::Some(PipeElement::EqualsField(pattern.to_string())),
             "endswithfield" => Option::Some(PipeElement::Endswithfield(pattern.to_string())),
             "base64offset" => Option::Some(PipeElement::Base64offset),
+            "windash" => Option::Some(PipeElement::Windash),
             "cidr" => Option::Some(PipeElement::Cidr(IpCidr::from_str(pattern))),
             "all" => Option::Some(PipeElement::All),
             "allOnly" => Option::Some(PipeElement::AllOnly),
