@@ -197,7 +197,7 @@ enum FastMatch {
 /// デフォルトのマッチクラス
 /// ワイルドカードの処理やパイプ
 pub struct DefaultMatcher {
-    re: Option<Regex>,
+    re: Option<Vec<Regex>>,
     fast_match: Option<Vec<FastMatch>>,
     pipes: Vec<PipeElement>,
     key_list: Nested<String>,
@@ -220,7 +220,7 @@ impl DefaultMatcher {
 
     /// このmatcherの正規表現とマッチするかどうか判定します。
     fn is_regex_fullmatch(&self, value: &str) -> bool {
-        return self.re.as_ref().unwrap().is_match(value);
+        return self.re.as_ref().unwrap().iter().any(|x| x.is_match(value));
     }
 
     /// Hayabusaのルールファイルのフィールド名とそれに続いて指定されるパイプを、正規表現形式の文字列に変換します。
@@ -342,7 +342,8 @@ impl LeafMatcher for DefaultMatcher {
             );
             return Result::Err(vec![errmsg]);
         }
-        let pattern = yaml_value.unwrap();
+        let mut pattern = Vec::new();
+        pattern.push(yaml_value.unwrap());
         // Pipeが指定されていればパースする
         let emp = String::default();
         // 一つ目はただのキーで、2つめ以降がpipe
@@ -362,7 +363,7 @@ impl LeafMatcher for DefaultMatcher {
 
         let mut err_msges = vec![];
         for key in keys_without_head.iter() {
-            let pipe_element = PipeElement::new(key, &pattern, key_list);
+            let pipe_element = PipeElement::new(key, &pattern[0], key_list);
             match pipe_element {
                 Ok(element) => {
                     self.pipes.push(element);
@@ -378,21 +379,21 @@ impl LeafMatcher for DefaultMatcher {
         let n = self.pipes.len();
         if n == 0 {
             // パイプがないケース
-            self.fast_match = Self::convert_to_fast_match(&pattern, true);
+            self.fast_match = Self::convert_to_fast_match(&pattern[0], true);
         } else if n == 1 {
             // パイプがあるケース
             self.fast_match = match &self.pipes[0] {
                 PipeElement::Startswith => {
-                    Self::convert_to_fast_match(format!("{pattern}*").as_str(), true)
+                    Self::convert_to_fast_match(format!("{}*", pattern[0]).as_str(), true)
                 }
                 PipeElement::Endswith => {
-                    Self::convert_to_fast_match(format!("*{pattern}").as_str(), true)
+                    Self::convert_to_fast_match(format!("*{}", pattern[0]).as_str(), true)
                 }
                 PipeElement::Contains => {
-                    Self::convert_to_fast_match(format!("*{pattern}*").as_str(), true)
+                    Self::convert_to_fast_match(format!("*{}*", pattern[0]).as_str(), true)
                 }
                 PipeElement::AllOnly => {
-                    Self::convert_to_fast_match(format!("allOnly*{pattern}*").as_str(), true)
+                    Self::convert_to_fast_match(format!("allOnly*{}*", pattern[0]).as_str(), true)
                 }
                 _ => None,
             };
@@ -400,7 +401,7 @@ impl LeafMatcher for DefaultMatcher {
             if self.pipes[0] == PipeElement::Base64offset && self.pipes[1] == PipeElement::Contains
             {
                 // |base64offset|containsの場合
-                let val = pattern.as_str();
+                let val = pattern[0].as_str();
                 let val_byte = val.as_bytes();
                 let mut fastmatches = vec![];
                 for i in 0..3 {
@@ -461,17 +462,18 @@ impl LeafMatcher for DefaultMatcher {
             // |contains|allの場合、事前の分岐でAndSelectionNodeとしているのでここではcontainsのみとして取り扱う
             {
                 self.fast_match =
-                    Self::convert_to_fast_match(format!("*{pattern}*").as_str(), true);
+                    Self::convert_to_fast_match(format!("*{}*", pattern[0]).as_str(), true);
             } else if self.pipes[0] == PipeElement::Contains
                 && self.pipes[1] == PipeElement::Windash
             {
                 // |contains|windashの場合
                 let mut fastmatches =
-                    Self::convert_to_fast_match(format!("*{pattern}*").as_str(), true)
+                    Self::convert_to_fast_match(format!("*{}*", pattern[0]).as_str(), true)
                         .unwrap_or_default();
+                pattern.push(pattern[0].replacen('-', "/", 1));
                 fastmatches.extend(
                     Self::convert_to_fast_match(
-                        format!("*{}*", pattern.replacen('-', "/", 1)).as_str(),
+                        format!("*{}*", pattern[0].replacen('-', "/", 1)).as_str(),
                         true,
                     )
                     .unwrap_or_default(),
@@ -487,11 +489,12 @@ impl LeafMatcher for DefaultMatcher {
             // |contains|all|windashの場合、事前の分岐でAndSelectionNodeとしているのでここではcontainsとwindashのみとして取り扱う
             {
                 let mut fastmatches =
-                    Self::convert_to_fast_match(format!("*{pattern}*").as_str(), true)
+                    Self::convert_to_fast_match(format!("*{}*", pattern[0]).as_str(), true)
                         .unwrap_or_default();
+                pattern.push(pattern[0].replacen('-', "/", 1));
                 fastmatches.extend(
                     Self::convert_to_fast_match(
-                        format!("*{}*", pattern.replacen('-', "/", 1)).as_str(),
+                        format!("*{}*", pattern[0].replacen('-', "/", 1)).as_str(),
                         true,
                     )
                     .unwrap_or_default(),
@@ -534,20 +537,22 @@ impl LeafMatcher for DefaultMatcher {
                 self.pipes.push(PipeElement::Wildcard);
             }
 
-            let pattern = DefaultMatcher::from_pattern_to_regex_str(pattern, &self.pipes);
-            // Pipeで処理されたパターンを正規表現に変換
-            let re_result = Regex::new(&pattern);
-            if re_result.is_err() {
-                let errmsg = format!(
-                    "Cannot parse regex. [regex:{}, key:{}]",
-                    pattern,
-                    utils::concat_selection_key(key_list)
-                );
-                return Result::Err(vec![errmsg]);
+            let mut re_result_vec = vec![];
+            for p in pattern {
+                let pattern = DefaultMatcher::from_pattern_to_regex_str(p, &self.pipes);
+                // Pipeで処理されたパターンを正規表現に変換
+                if let Ok(re_result) = Regex::new(&pattern) {
+                    re_result_vec.push(re_result);
+                } else {
+                    let errmsg = format!(
+                        "Cannot parse regex. [regex:{pattern}, key:{}]",
+                        utils::concat_selection_key(key_list)
+                    );
+                    return Result::Err(vec![errmsg]);
+                }
             }
-            self.re = re_result.ok();
+            self.re = Some(re_result_vec);
         }
-
         Result::Ok(())
     }
 
@@ -599,7 +604,12 @@ impl LeafMatcher for DefaultMatcher {
         let event_value_str = event_value.unwrap();
         if self.key_list.is_empty() {
             // この場合ただのgrep検索なので、ただ正規表現に一致するかどうか調べればよいだけ
-            return self.re.as_ref().unwrap().is_match(event_value_str);
+            return self
+                .re
+                .as_ref()
+                .unwrap()
+                .iter()
+                .any(|x| x.is_match(event_value_str));
         } else if let Some(fast_matcher) = &self.fast_match {
             let fast_match_result = if fast_matcher.len() == 1 {
                 match &fast_matcher[0] {

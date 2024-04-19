@@ -9,6 +9,7 @@
 **Bug Fixes:**
 
 - `-T` detection frequency timeline was not usable in version 2.14.0. (#1322) (@fukusuket)
+- Fixed `windash` not working when there is a wildcard. (#1327) (@hitenkoku)
 
 ## 2.14.0 [2024/03/30] "BSides Tokyo Release"
 
