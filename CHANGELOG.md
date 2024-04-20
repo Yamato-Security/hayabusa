@@ -1,10 +1,11 @@
 # Changes
 
-## x.x.x [xxxx/xx/xx]
+## 2.15.0 [2024/04/20] "Sonic Release"
 
 **Enhancements:**
 
-- Added support for `windash` keyword (ex. `|contains|windash:`, `|contains|all|windash:`) in sigma rules. (#1319) (@hitenkoku)
+- Added support for `windash` field modifier (ex. `|contains|windash:`, `|contains|all|windash:`) in sigma rules. (#1319) (@hitenkoku)
+  - https://sigmahq.io/docs/basics/modifiers.html#windash
 
 **Bug Fixes:**
 

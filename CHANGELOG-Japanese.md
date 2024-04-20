@@ -1,10 +1,11 @@
 # 変更点
 
-## x.x.x [xxxx/xx/xx]
+## 2.15.0 [2024/04/20] "Sonic Release"
 
 **改善:**
 
-- Sigmaルールの `windash` (`|contains|windash:`と`|contains|all|windash:`)に対応した。 (#1319) (@hitenkoku)
+- Sigmaルールの `windash`フィールド修飾子 (例: `|contains|windash:`と`|contains|all|windash:`)に対応した。 (#1319) (@hitenkoku)
+  - https://sigmahq.io/docs/basics/modifiers.html#windash
 
 **バグ修正:**
 
