@@ -1,10 +1,12 @@
 # Changes
 
-## x.x.x [xxxx/xx/xx]
+## 2.15.0 [2024/04/20] "Sonic Release"
 
 **Enhancements:**
 
-- Added support for `windash` keyword (ex. `|contains|windash:`, `|contains|all|windash:`) in sigma rules. (#1319) (@hitenkoku)
+- Added support for `windash` field modifier (ex. `|contains|windash:`, `|contains|all|windash:`) in sigma rules. (#1319) (@hitenkoku)
+  - https://sigmahq.io/docs/basics/modifiers.html#windash
+  - Note: currently on the backend we convert the use of `windash` in rules so they are compatibile with previous versions of Hayabusa, however, around the end of May we will start to keep the use of `windash` as-is so please update to this version before then or else you will recieve rule parsing errors if you update rules.
 
 **Bug Fixes:**
 
