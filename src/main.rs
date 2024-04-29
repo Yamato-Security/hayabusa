@@ -1445,8 +1445,8 @@ impl App {
                     (rule_files.len()).to_formatted_string(&Locale::en)
                 );
                 println!("{rules_after_channel_filter}");
+                println!();
             }
-            println!();
             output_profile_name(&stored_static.output_option, true);
             println!();
             println!("Scanning in progress. Please wait.");
