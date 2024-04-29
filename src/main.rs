@@ -26,6 +26,7 @@ use hayabusa::detections::utils;
 use hayabusa::detections::utils::{
     check_setting_path, get_writable_color, output_and_data_stack_for_html, output_profile_name,
 };
+use hayabusa::filter::filter_rules_by_evtx_channel;
 use hayabusa::options::htmlreport::{self, HTML_REPORTER};
 use hayabusa::options::pivot::create_output;
 use hayabusa::options::pivot::PIVOT_KEYWORD;
@@ -1452,6 +1453,8 @@ impl App {
         if is_show_progress {
             pb.enable_steady_tick(Duration::from_millis(300));
         }
+        let filtered_rulepathes = filter_rules_by_evtx_channel(&evtx_files, &rule_files);
+        rule_files.retain(|r| filtered_rulepathes.contains(&r.rulepath));
         self.rule_keys = self.get_all_keys(&rule_files);
         let mut detection = detection::Detection::new(rule_files);
         let mut tl = Timeline::new();
