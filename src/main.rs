@@ -1439,8 +1439,7 @@ impl App {
                 );
                 println!("{evtx_files_after_channel_filter}");
             }
-            if !stored_static.enable_all_rules
-            {
+            if !stored_static.enable_all_rules {
                 rule_files.retain(|r| channel_filter.rulepathes.contains(&r.rulepath));
                 let rules_after_channel_filter = format!(
                     "Detection rules loaded after channel filter: {}",
