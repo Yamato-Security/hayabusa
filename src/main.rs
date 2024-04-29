@@ -1378,7 +1378,7 @@ impl App {
             .unwrap()
             .min_level
             .to_uppercase();
-
+        println!();
         if !(stored_static.logon_summary_flag
             || stored_static.search_flag
             || stored_static.metrics_flag
@@ -1394,6 +1394,7 @@ impl App {
         } else if stored_static.computer_metrics_flag {
             println!("Currently scanning for computer metrics. Please wait.");
         }
+        println!();
 
         let mut rule_files = vec![];
         if !(stored_static.logon_summary_flag
