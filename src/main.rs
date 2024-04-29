@@ -1432,18 +1432,24 @@ impl App {
                 return;
             }
             let mut channel_filter = create_channel_filter(&evtx_files, &rule_files);
-            evtx_files.retain(|e| channel_filter.scanable_rule_exists(e));
-            let evtx_files_after_channel_filter = format!(
-                "Evtx files loaded after channel filter: {}",
-                (evtx_files.len()).to_formatted_string(&Locale::en)
-            );
-            println!("{evtx_files_after_channel_filter}");
-            rule_files.retain(|r| channel_filter.rulepathes.contains(&r.rulepath));
-            let rules_after_channel_filter = format!(
-                "Detection rules loaded after channel filter: {}",
-                (rule_files.len()).to_formatted_string(&Locale::en)
-            );
-            println!("{rules_after_channel_filter}");
+            if !stored_static.scan_all_evtx_files {
+                evtx_files.retain(|e| channel_filter.scanable_rule_exists(e));
+                let evtx_files_after_channel_filter = format!(
+                    "Evtx files loaded after channel filter: {}",
+                    (evtx_files.len()).to_formatted_string(&Locale::en)
+                );
+                println!("{evtx_files_after_channel_filter}");
+            }
+            if !stored_static.enable_all_rules
+                && stored_static.output_option.as_ref().unwrap().rules == PathBuf::from("./rules")
+            {
+                rule_files.retain(|r| channel_filter.rulepathes.contains(&r.rulepath));
+                let rules_after_channel_filter = format!(
+                    "Detection rules loaded after channel filter: {}",
+                    (rule_files.len()).to_formatted_string(&Locale::en)
+                );
+                println!("{rules_after_channel_filter}");
+            }
             println!();
             output_profile_name(&stored_static.output_option, true);
             println!();
