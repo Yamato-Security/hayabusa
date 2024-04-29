@@ -87,17 +87,23 @@ impl RuleExclude {
 
 fn peek_channel_from_evtx_first_record(
     evtx_files: &Vec<PathBuf>,
-) -> Result<HashSet<String>, Box<dyn std::error::Error>> {
-    let mut channels = HashSet::new();
+) -> Result<HashMap<String, Vec<PathBuf>>, Box<dyn std::error::Error>> {
+    let mut channels = HashMap::new();
     for path in evtx_files {
         let mut parser = EvtxParser::from_path(path)?;
         let mut records = parser.records_json_value();
         match records.next() {
-            Some(Ok(rec)) => channels.insert(
-                rec.data["Event"]["System"]["Channel"]
-                    .to_string()
-                    .replace('"', ""),
-            ),
+            Some(Ok(rec)) => {
+                let key = rec.data["Event"]["System"]["Channel"]
+                    .as_str()
+                    .unwrap_or("")
+                    .trim_matches('"')
+                    .to_string();
+                channels
+                    .entry(key)
+                    .or_insert_with(Vec::new)
+                    .push(path.to_path_buf());
+            }
             _ => continue,
         };
     }
@@ -107,52 +113,90 @@ fn peek_channel_from_evtx_first_record(
 fn extract_channel_from_rules(
     rule_files: &Vec<RuleNode>,
     evtx_channels: &HashSet<String>,
-) -> Vec<String> {
+) -> (Vec<String>, Vec<String>) {
     fn visit_value(
         key: &str,
         value: &Yaml,
         evtx_channels: &HashSet<String>,
-        stacked_channels: &mut Vec<String>,
+        intersection_channels: &mut Vec<String>,
     ) {
         match *value {
             Yaml::String(ref s) => {
                 if key == "Channel" && evtx_channels.contains(s) {
-                    stacked_channels.push(s.clone());
+                    intersection_channels.push(s.clone());
                 }
             }
             Yaml::Hash(ref map) => {
                 for (k, v) in map {
-                    visit_value(k.as_str().unwrap(), v, evtx_channels, stacked_channels);
+                    visit_value(k.as_str().unwrap(), v, evtx_channels, intersection_channels);
                 }
             }
             Yaml::Array(ref seq) => {
                 for v in seq {
-                    visit_value(key, v, evtx_channels, stacked_channels);
+                    visit_value(key, v, evtx_channels, intersection_channels);
                 }
             }
             _ => {}
         }
     }
-    let mut stacked_channels = vec![];
+    let mut intersection_channels = vec![];
     let mut filtered_rulespathes = vec![];
     for rule in rule_files {
-        let before_visit_len = stacked_channels.len();
-        visit_value("", &rule.yaml, evtx_channels, &mut stacked_channels);
-        if before_visit_len < stacked_channels.len() {
+        let before_visit_len = intersection_channels.len();
+        visit_value("", &rule.yaml, evtx_channels, &mut intersection_channels);
+        if before_visit_len < intersection_channels.len() {
             filtered_rulespathes.push(rule.rulepath.to_string());
         }
     }
-    filtered_rulespathes
+    (filtered_rulespathes, intersection_channels)
 }
 
-pub fn filter_rules_by_evtx_channel(
+pub struct ChannelFilter {
+    pub rulepathes: Vec<String>,
+    pub intersec_channels: HashSet<String>, // evtxとruleのchannelの積集合
+    pub evtx_channels_map: HashMap<String, Vec<PathBuf>>, // key=channel, val=evtxパスのリスト
+}
+
+impl ChannelFilter {
+    pub fn new() -> ChannelFilter {
+        ChannelFilter {
+            rulepathes: vec![],
+            intersec_channels: HashSet::new(),
+            evtx_channels_map: HashMap::new(),
+        }
+    }
+
+    pub fn scanable_rule_exists(&mut self, path: &PathBuf) -> bool {
+        for (channel, rulepathes) in &self.evtx_channels_map {
+            if rulepathes.contains(path) && self.intersec_channels.contains(channel) {
+                return true;
+            }
+        }
+        false
+    }
+}
+
+impl Default for ChannelFilter {
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
+pub fn create_channel_filter(
     evtx_files: &Vec<PathBuf>,
     rule_nodes: &Vec<RuleNode>,
-) -> Vec<String> {
+) -> ChannelFilter {
     let channels = peek_channel_from_evtx_first_record(evtx_files);
     match channels {
-        Ok(ch) => extract_channel_from_rules(rule_nodes, &ch),
-        _ => vec![],
+        Ok(ch) => {
+            let (x, y) = extract_channel_from_rules(rule_nodes, &ch.keys().cloned().collect());
+            ChannelFilter {
+                rulepathes: x,
+                intersec_channels: y.into_iter().collect(),
+                evtx_channels_map: ch,
+            }
+        }
+        _ => ChannelFilter::new(),
     }
 }
 
@@ -161,6 +205,20 @@ mod tests {
     use super::*;
     use std::path::PathBuf;
     use yaml_rust::YamlLoader;
+
+    #[test]
+    fn test_channel_filter_scanable_rule_exists() {
+        let mut channel_filter = ChannelFilter::new();
+        channel_filter
+            .evtx_channels_map
+            .insert("channel1".to_string(), vec![PathBuf::from("path1")]);
+        channel_filter
+            .intersec_channels
+            .insert("channel1".to_string());
+
+        assert!(channel_filter.scanable_rule_exists(&PathBuf::from("path1")));
+        assert!(!channel_filter.scanable_rule_exists(&PathBuf::from("path2")));
+    }
 
     #[test]
     fn test_peek_channel_from_evtx_first_record_invalid_evtx() {
@@ -181,7 +239,7 @@ mod tests {
         let rule = RuleNode::new("test_files/evtx/test1.evtx".to_string(), test_yaml_data);
         let rule_files = vec![rule];
         let evtx_channels = HashSet::from_iter(vec!["Microsoft-Windows-Sysmon/Operational".into()]);
-        let result = extract_channel_from_rules(&rule_files, &evtx_channels);
+        let (result, _) = extract_channel_from_rules(&rule_files, &evtx_channels);
         assert_eq!(result, vec!["test_files/evtx/test1.evtx"]);
     }
 
@@ -197,7 +255,7 @@ mod tests {
         let rule = RuleNode::new("test_files/evtx/test1.evtx".to_string(), test_yaml_data);
         let rule_files = vec![rule];
         let evtx_channels = HashSet::from_iter(vec!["Microsoft-Windows-Sysmon/Operational".into()]);
-        let result = extract_channel_from_rules(&rule_files, &evtx_channels);
+        let (result, _) = extract_channel_from_rules(&rule_files, &evtx_channels);
         assert_eq!(result.len(), 0);
     }
 
@@ -215,7 +273,7 @@ mod tests {
         let rule = RuleNode::new("test_files/evtx/test1.evtx".to_string(), test_yaml_data);
         let rule_files = vec![rule];
         let evtx_channels = HashSet::from_iter(vec!["Microsoft-Windows-Sysmon/Operational".into()]);
-        let result = extract_channel_from_rules(&rule_files, &evtx_channels);
+        let (result, _) = extract_channel_from_rules(&rule_files, &evtx_channels);
         assert_eq!(result, vec!["test_files/evtx/test1.evtx"]);
     }
 
@@ -233,7 +291,7 @@ mod tests {
         let rule = RuleNode::new("test_files/evtx/test1.evtx".to_string(), test_yaml_data);
         let rule_files = vec![rule];
         let evtx_channels = HashSet::from_iter(vec!["Microsoft-Windows-Sysmon/Operational".into()]);
-        let result = extract_channel_from_rules(&rule_files, &evtx_channels);
+        let (result, _) = extract_channel_from_rules(&rule_files, &evtx_channels);
         assert_eq!(result.len(), 0);
     }
 
@@ -249,7 +307,7 @@ mod tests {
         let test_yaml_data = rule_yaml.next().unwrap();
         let rule = RuleNode::new("test_files/evtx/test1.evtx".to_string(), test_yaml_data);
         let rule_nodes = vec![rule];
-        let result = filter_rules_by_evtx_channel(&evtx_files, &rule_nodes);
-        assert_eq!(result.len(), 0);
+        let result = create_channel_filter(&evtx_files, &rule_nodes);
+        assert_eq!(result.rulepathes.len(), 0);
     }
 }
