@@ -1379,7 +1379,6 @@ impl App {
             .min_level
             .to_uppercase();
 
-        println!();
         if !(stored_static.logon_summary_flag
             || stored_static.search_flag
             || stored_static.metrics_flag
