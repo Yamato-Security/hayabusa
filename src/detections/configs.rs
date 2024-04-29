@@ -91,6 +91,8 @@ pub struct StoredStatic {
     pub enable_recover_records: bool,
     pub timeline_offset: Option<String>,
     pub is_low_memory: bool,
+    pub enable_all_rules: bool,
+    pub scan_all_evtx_files: bool,
 }
 impl StoredStatic {
     /// main.rsでパースした情報からデータを格納する関数
@@ -562,6 +564,16 @@ impl StoredStatic {
             Some(Action::JsonTimeline(opt)) => opt.output_options.low_memory_mode,
             _ => false,
         };
+        let enable_all_rules = match &input_config.as_ref().unwrap().action {
+            Some(Action::CsvTimeline(opt)) => opt.output_options.enable_all_rules,
+            Some(Action::JsonTimeline(opt)) => opt.output_options.enable_all_rules,
+            _ => false,
+        };
+        let scan_all_evtx_files = match &input_config.as_ref().unwrap().action {
+            Some(Action::CsvTimeline(opt)) => opt.output_options.scan_all_evtx_files,
+            Some(Action::JsonTimeline(opt)) => opt.output_options.scan_all_evtx_files,
+            _ => false,
+        };
         let mut ret = StoredStatic {
             config: input_config.as_ref().unwrap().to_owned(),
             config_path: config_path.to_path_buf(),
@@ -678,6 +690,8 @@ impl StoredStatic {
             timeline_offset,
             include_status,
             is_low_memory,
+            enable_all_rules,
+            scan_all_evtx_files,
         };
         ret.profiles = load_profile(
             check_setting_path(
@@ -1563,6 +1577,14 @@ pub struct OutputOption {
     /// Scan with the minimal amount of memory by not sorting events
     #[arg(help_heading = Some("General Options"), short='s', long = "low-memory-mode", display_order = 380)]
     pub low_memory_mode: bool,
+
+    /// Enable all rules
+    #[arg(help_heading = Some("Filtering"), long = "enable-all-rules", display_order = 300)]
+    pub enable_all_rules: bool,
+
+    /// Scan all evtx files
+    #[arg(help_heading = Some("Filtering"), long = "scan-all-evtx-files", display_order = 470)]
+    pub scan_all_evtx_files: bool,
 }
 
 #[derive(Copy, Args, Clone, Debug)]
@@ -2248,6 +2270,8 @@ fn extract_output_options(config: &Config) -> Option<OutputOption> {
             no_wizard: option.no_wizard,
             include_status: option.include_status.clone(),
             low_memory_mode: false,
+            enable_all_rules: false,
+            scan_all_evtx_files: false,
         }),
         Action::EidMetrics(option) => Some(OutputOption {
             input_args: option.input_args.clone(),
@@ -2289,6 +2313,8 @@ fn extract_output_options(config: &Config) -> Option<OutputOption> {
             no_wizard: true,
             include_status: None,
             low_memory_mode: false,
+            enable_all_rules: false,
+            scan_all_evtx_files: false,
         }),
         Action::LogonSummary(option) => Some(OutputOption {
             input_args: option.input_args.clone(),
@@ -2330,6 +2356,8 @@ fn extract_output_options(config: &Config) -> Option<OutputOption> {
             no_wizard: true,
             include_status: None,
             low_memory_mode: false,
+            enable_all_rules: false,
+            scan_all_evtx_files: false,
         }),
         Action::ComputerMetrics(option) => Some(OutputOption {
             input_args: option.input_args.clone(),
@@ -2380,6 +2408,8 @@ fn extract_output_options(config: &Config) -> Option<OutputOption> {
             no_wizard: true,
             include_status: None,
             low_memory_mode: false,
+            enable_all_rules: false,
+            scan_all_evtx_files: false,
         }),
         Action::Search(option) => Some(OutputOption {
             input_args: option.input_args.clone(),
@@ -2430,6 +2460,8 @@ fn extract_output_options(config: &Config) -> Option<OutputOption> {
             no_wizard: true,
             include_status: None,
             low_memory_mode: false,
+            enable_all_rules: false,
+            scan_all_evtx_files: false,
         }),
         Action::SetDefaultProfile(option) => Some(OutputOption {
             input_args: InputOption {
@@ -2486,6 +2518,8 @@ fn extract_output_options(config: &Config) -> Option<OutputOption> {
             no_wizard: true,
             include_status: None,
             low_memory_mode: false,
+            enable_all_rules: false,
+            scan_all_evtx_files: false,
         }),
         Action::UpdateRules(option) => Some(OutputOption {
             input_args: InputOption {
@@ -2542,6 +2576,8 @@ fn extract_output_options(config: &Config) -> Option<OutputOption> {
             no_wizard: true,
             include_status: None,
             low_memory_mode: false,
+            enable_all_rules: false,
+            scan_all_evtx_files: false,
         }),
         _ => None,
     }
@@ -2795,6 +2831,8 @@ mod tests {
                     no_wizard: true,
                     include_status: None,
                     low_memory_mode: false,
+                    enable_all_rules: false,
+                    scan_all_evtx_files: false,
                 },
                 geo_ip: None,
                 output: None,
@@ -2871,6 +2909,8 @@ mod tests {
                     no_wizard: true,
                     include_status: None,
                     low_memory_mode: false,
+                    enable_all_rules: false,
+                    scan_all_evtx_files: false,
                 },
                 geo_ip: None,
                 output: None,

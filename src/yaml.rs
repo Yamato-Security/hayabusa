@@ -767,6 +767,8 @@ mod tests {
                     no_wizard: true,
                     include_status: None,
                     low_memory_mode: false,
+                    enable_all_rules: false,
+                    scan_all_evtx_files: false,
                 },
                 geo_ip: None,
                 output: None,
