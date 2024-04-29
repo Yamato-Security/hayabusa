@@ -1445,6 +1445,10 @@ impl App {
             );
             println!("{rules_after_channel_filter}");
             println!();
+            output_profile_name(&stored_static.output_option, true);
+            println!();
+            println!("Scanning in progress. Please wait.");
+            println!();
         }
 
         let template = if stored_static.common_options.no_color {

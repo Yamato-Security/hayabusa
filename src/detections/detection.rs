@@ -1,9 +1,7 @@
 extern crate csv;
 
 use crate::detections::configs::Action;
-use crate::detections::utils::{
-    create_recordinfos, format_time, output_profile_name, write_color_buffer,
-};
+use crate::detections::utils::{create_recordinfos, format_time, write_color_buffer};
 use crate::options::profile::Profile::{
     self, Channel, Computer, EventID, EvtxFile, Level, MitreTactics, MitreTags, OtherTags,
     Provider, RecordID, RecoveredRecord, RenderedMessage, RuleAuthor, RuleCreationDate, RuleFile,
@@ -1168,10 +1166,6 @@ impl Detection {
             total_loaded_rule_cnt.to_formatted_string(&Locale::en)
         );
         println!("{tmp_total_detect_output}");
-        println!();
-        output_profile_name(&stored_static.output_option, true);
-        println!();
-        println!("Scanning in progress. Please wait.");
         println!();
         if stored_static.html_report_flag {
             html_report_stock.push(format!("- {tmp_total_detect_output}"));
