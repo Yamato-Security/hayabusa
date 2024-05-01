@@ -4,8 +4,8 @@
 
 **新機能:**
 
-- By default now, only rules that are applicable to loaded evtx files will be enabled. This is based on the `Channel` field in `.evtx` file and `.yml` rule. For example, if a `Security.evtx` was being scanned, then only rules that have `Channel: Security` defined will be used against this file. This gives a speed benefit of `TODO`. If you think there are multiple channels being used in a single `.evtx` file or you want to use rules that do not have the `Channel` field defined in order to scan all `.evtx` files regardless of the channel, then you can turn off this filtering with the `-A, --enable-all-rules` option in `csv-timeline` and `json-timeline`.  (#1317) (@fukusuket)
-- By default now, `.evtx` files that have applicable rules will be loaded. So for example, if you are scanning a directory of various event logs but only enable a rule that is looking for `Channel: Security` then Hayabusa will ignore all non-security event logs. This gives a speed benefit of `TODO`. If you want to load all `.evtx` files regardless of channel, then you can turn off this filtering with the `-a, --scan-all-evtx-files` option in `csv-timeline` and `json-timeline`. (#1318) (@fukusuket)
+- デフォルトでは、`.evtx`ファイルに適用可能なルールのみ有効になる。これは、`.evtx`ファイルと.ymlルールの`Channel`フィールドに基づく。例えば、Security.evtx がスキャンされている場合、`Channel: Security`が定義されているルールのみがこのファイルに対して使用される。これにより、`TODO` の高速化が得られる。1つの`.evtx`ファイルで複数のチャネルが使用されている場合や、チャネルが定義されていないルールを使用して、チャネルに関係なくすべての`.evtx`ファイルをスキャンしたい場合は、`csv-timeline` と `json-timeline` の `-A、--enable-all-rules` オプションでこのフィルタリングをオフにすることができる。（#1317）(@fukusuket)
+- デフォルトでは、適用可能なルールを持つ`.evtx`ファイルのみ読み込む。たとえば、さまざまなイベントログのディレクトリをスキャンしている場合でも、 `Channel: Security` を探すルールのみを有効にした場合、Hayabusaは`Security`以外のすべてのイベントログを無視します。これにより、`TODO` の高速化が得られる。チャネルに関係なくすべての`.evtx`ファイルを読み込みたい場合は、`csv-timeline` と `json-timeline` の `-a、--scan-all-evtx-files` オプションでこのフィルタリングをオフにすることができる。(#1318) (@fukusuket)
 
 ## 2.15.0 [2024/04/20] "Sonic Release"
 
