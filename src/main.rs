@@ -1431,7 +1431,7 @@ impl App {
                 return;
             }
             if !stored_static.scan_all_evtx_files && !stored_static.enable_all_rules {
-                println!("Enabling the channel filter. Please wait.");
+                println!("Creating the channel filter. Please wait.");
                 println!();
                 let mut channel_filter = create_channel_filter(&evtx_files, &rule_files);
                 if !stored_static.scan_all_evtx_files {
