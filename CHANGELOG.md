@@ -1,5 +1,12 @@
 # Changes
 
+## x.x.x [xxxx/xx/xx]
+
+**New Features:**
+
+- By default now, only rules that are applicable to loaded evtx files will be enabled. This is based on the `Channel` field in `.evtx` file and `.yml` rule. For example, if a `Security.evtx` was being scanned, then only rules that have `Channel: Security` defined will be used against this file. This gives a speed benefit of `TODO`. If you think there are multiple channels being used in a single `.evtx` file or you want to use rules that do not have the `Channel` field defined in order to scan all `.evtx` files regardless of the channel, then you can turn off this filtering with the `-A, --enable-all-rules` option in `csv-timeline` and `json-timeline`.  (#1317) (@fukusuket)
+- By default now, `.evtx` files that have applicable rules will be loaded. So for example, if you are scanning a directory of various event logs but only enable a rule that is looking for `Channel: Security` then Hayabusa will ignore all non-security event logs. This gives a speed benefit of `TODO`. If you want to load all `.evtx` files regardless of channel, then you can turn off this filtering with the `-a, --scan-all-evtx-files` option in `csv-timeline` and `json-timeline`. (#1318) (@fukusuket)
+
 ## 2.15.0 [2024/04/20] "Sonic Release"
 
 **Enhancements:**
