@@ -26,6 +26,7 @@ use hayabusa::detections::utils;
 use hayabusa::detections::utils::{
     check_setting_path, get_writable_color, output_and_data_stack_for_html, output_profile_name,
 };
+use hayabusa::filter::create_channel_filter;
 use hayabusa::options::htmlreport::{self, HTML_REPORTER};
 use hayabusa::options::pivot::create_output;
 use hayabusa::options::pivot::PIVOT_KEYWORD;
@@ -977,7 +978,7 @@ impl App {
 
     fn analysis_files(
         &mut self,
-        evtx_files: Vec<PathBuf>,
+        mut evtx_files: Vec<PathBuf>,
         time_filter: &TargetEventTime,
         stored_static: &mut StoredStatic,
     ) {
@@ -1377,7 +1378,6 @@ impl App {
             .unwrap()
             .min_level
             .to_uppercase();
-
         println!();
         if !(stored_static.logon_summary_flag
             || stored_static.search_flag
@@ -1430,6 +1430,32 @@ impl App {
                     .ok();
                 return;
             }
+            if !stored_static.scan_all_evtx_files && !stored_static.enable_all_rules {
+                println!("Creating the channel filter. Please wait.");
+                println!();
+                let mut channel_filter = create_channel_filter(&evtx_files, &rule_files);
+                if !stored_static.scan_all_evtx_files {
+                    evtx_files.retain(|e| channel_filter.scanable_rule_exists(e));
+                    let evtx_files_after_channel_filter = format!(
+                        "Evtx files loaded after channel filter: {}",
+                        (evtx_files.len()).to_formatted_string(&Locale::en)
+                    );
+                    println!("{evtx_files_after_channel_filter}");
+                }
+                if !stored_static.enable_all_rules {
+                    rule_files.retain(|r| channel_filter.rulepathes.contains(&r.rulepath));
+                    let rules_after_channel_filter = format!(
+                        "Detection rules enabled after channel filter: {}",
+                        (rule_files.len()).to_formatted_string(&Locale::en)
+                    );
+                    println!("{rules_after_channel_filter}");
+                    println!();
+                }
+            }
+            output_profile_name(&stored_static.output_option, true);
+            println!();
+            println!("Scanning in progress. Please wait.");
+            println!();
         }
 
         let template = if stored_static.common_options.no_color {
@@ -1452,6 +1478,7 @@ impl App {
         if is_show_progress {
             pb.enable_steady_tick(Duration::from_millis(300));
         }
+
         self.rule_keys = self.get_all_keys(&rule_files);
         let mut detection = detection::Detection::new(rule_files);
         let mut tl = Timeline::new();
@@ -2259,6 +2286,8 @@ mod tests {
                     no_wizard: true,
                     include_status: None,
                     low_memory_mode: false,
+                    enable_all_rules: false,
+                    scan_all_evtx_files: false,
                 },
                 geo_ip: None,
                 output: None,
@@ -2431,6 +2460,8 @@ mod tests {
                 no_wizard: true,
                 include_status: None,
                 low_memory_mode: false,
+                enable_all_rules: false,
+                scan_all_evtx_files: false,
             },
             geo_ip: None,
             output: Some(Path::new("overwrite.csv").to_path_buf()),
@@ -2517,6 +2548,8 @@ mod tests {
                 no_wizard: true,
                 include_status: None,
                 low_memory_mode: false,
+                enable_all_rules: false,
+                scan_all_evtx_files: false,
             },
             geo_ip: None,
             output: Some(Path::new("overwrite.csv").to_path_buf()),
@@ -2602,6 +2635,8 @@ mod tests {
                 no_wizard: true,
                 include_status: None,
                 low_memory_mode: false,
+                enable_all_rules: false,
+                scan_all_evtx_files: false,
             },
             geo_ip: None,
             output: Some(Path::new("overwrite.json").to_path_buf()),
@@ -2688,6 +2723,8 @@ mod tests {
                 no_wizard: true,
                 include_status: None,
                 low_memory_mode: false,
+                enable_all_rules: false,
+                scan_all_evtx_files: false,
             },
             geo_ip: None,
             output: Some(Path::new("overwrite.json").to_path_buf()),

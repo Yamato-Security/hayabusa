@@ -1,9 +1,7 @@
 extern crate csv;
 
 use crate::detections::configs::Action;
-use crate::detections::utils::{
-    create_recordinfos, format_time, output_profile_name, write_color_buffer,
-};
+use crate::detections::utils::{create_recordinfos, format_time, write_color_buffer};
 use crate::options::profile::Profile::{
     self, Channel, Computer, EventID, EvtxFile, Level, MitreTactics, MitreTags, OtherTags,
     Provider, RecordID, RecoveredRecord, RenderedMessage, RuleAuthor, RuleCreationDate, RuleFile,
@@ -1164,14 +1162,10 @@ impl Detection {
         });
 
         let tmp_total_detect_output = format!(
-            "Total enabled detection rules: {}",
+            "Total detection rules: {}",
             total_loaded_rule_cnt.to_formatted_string(&Locale::en)
         );
         println!("{tmp_total_detect_output}");
-        println!();
-        output_profile_name(&stored_static.output_option, true);
-        println!();
-        println!("Scanning in progress. Please wait.");
         println!();
         if stored_static.html_report_flag {
             html_report_stock.push(format!("- {tmp_total_detect_output}"));
@@ -1296,6 +1290,8 @@ mod tests {
                     no_wizard: true,
                     include_status: None,
                     low_memory_mode: false,
+                    enable_all_rules: false,
+                    scan_all_evtx_files: false,
                 },
                 geo_ip: None,
                 output: None,
@@ -1558,6 +1554,8 @@ mod tests {
                 no_wizard: true,
                 include_status: None,
                 low_memory_mode: false,
+                enable_all_rules: false,
+                scan_all_evtx_files: false,
             },
             geo_ip: Some(Path::new("test_files/mmdb").to_path_buf()),
             output: Some(Path::new("./test_emit_csv.csv").to_path_buf()),
@@ -1695,6 +1693,8 @@ mod tests {
                 no_wizard: true,
                 include_status: None,
                 low_memory_mode: false,
+                enable_all_rules: false,
+                scan_all_evtx_files: false,
             },
             geo_ip: Some(Path::new("test_files/mmdb").to_path_buf()),
             output: Some(Path::new("./test_emit_csv.csv").to_path_buf()),
@@ -1827,6 +1827,8 @@ mod tests {
                 no_wizard: true,
                 include_status: None,
                 low_memory_mode: false,
+                enable_all_rules: false,
+                scan_all_evtx_files: false,
             },
             geo_ip: None,
             output: Some(Path::new("./test_emit_csv.csv").to_path_buf()),
@@ -1975,6 +1977,8 @@ mod tests {
                 no_wizard: true,
                 include_status: None,
                 low_memory_mode: false,
+                enable_all_rules: false,
+                scan_all_evtx_files: false,
             },
             geo_ip: None,
             output: Some(Path::new("./test_emit_csv.csv").to_path_buf()),

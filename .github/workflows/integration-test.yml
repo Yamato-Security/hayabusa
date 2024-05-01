@@ -17,13 +17,13 @@ jobs:
 
     steps:
       - name: Checkout main
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
         with:
           submodules: recursive
           path: main
 
       - name: Checkout hayabusa-sample-evtx repo
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
         with:
           repository: Yamato-Security/hayabusa-sample-evtx
           path: hayabusa-sample-evtx

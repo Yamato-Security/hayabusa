@@ -1,5 +1,15 @@
 # 変更点
 
+## x.x.x [xxxx/xx/xx]
+
+**新機能:**
+
+- デフォルトでは、`.evtx`ファイルに適用可能なルールのみ有効になる。これは、`.evtx`ファイルと`.yml`ルールの`Channel`フィールドに基づく。例えば、`Security.evtx`がスキャンされている場合、`Channel: Security`が定義されているルールのみがこのファイルに対して使用される。ベンチマークでは、単一の`evtx`ファイルをスキャンする場合、パフォーマンスが約20％向上される。1つの`.evtx`ファイルで複数のチャネルが使用されている場合や、チャネルが定義されていないルールを使用して、チャネルに関係なくすべての`.evtx`ファイルをスキャンしたい場合は、`csv-timeline` と `json-timeline` の `-A、--enable-all-rules` オプションでこのフィルタリングをオフにすることができる。（#1317）(@fukusuket)
+  - 現在のところ、`Channel`が定義されておらず、すべての`.evtx`ファイルをスキャンすることを意図している検知ルールは以下の2つだけ:
+    - [Possible Hidden Shellcode](https://github.com/Yamato-Security/hayabusa-rules/blob/main/hayabusa/builtin/UnkwnChannEID_Med_PossibleHiddenShellcode.yml)
+    - [Mimikatz Use](https://github.com/SigmaHQ/sigma/blob/master/rules/windows/builtin/win_alert_mimikatz_keywords.yml)
+- デフォルトでは、適用可能なルールを持つ`.evtx`ファイルのみ読み込む。たとえば、さまざまなイベントログのディレクトリをスキャンしている場合でも、 `Channel: Security` を探すルールのみを有効にした場合、Hayabusaは`Security`以外のすべてのイベントログを無視します。ベンチマークでは、通常のスキャンで約10％、単一のルールでスキャンする場合は最大60％以上のパフォーマンス向上が得られる。チャネルに関係なくすべての`.evtx`ファイルを読み込みたい場合は、`csv-timeline` と `json-timeline` の `-a、--scan-all-evtx-files` オプションでこのフィルタリングをオフにすることができる。(#1318) (@fukusuket)
+
 ## 2.15.0 [2024/04/20] "Sonic Release"
 
 **改善:**

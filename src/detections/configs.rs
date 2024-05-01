@@ -91,6 +91,8 @@ pub struct StoredStatic {
     pub enable_recover_records: bool,
     pub timeline_offset: Option<String>,
     pub is_low_memory: bool,
+    pub enable_all_rules: bool,
+    pub scan_all_evtx_files: bool,
 }
 impl StoredStatic {
     /// main.rsでパースした情報からデータを格納する関数
@@ -562,6 +564,16 @@ impl StoredStatic {
             Some(Action::JsonTimeline(opt)) => opt.output_options.low_memory_mode,
             _ => false,
         };
+        let enable_all_rules = match &input_config.as_ref().unwrap().action {
+            Some(Action::CsvTimeline(opt)) => opt.output_options.enable_all_rules,
+            Some(Action::JsonTimeline(opt)) => opt.output_options.enable_all_rules,
+            _ => false,
+        };
+        let scan_all_evtx_files = match &input_config.as_ref().unwrap().action {
+            Some(Action::CsvTimeline(opt)) => opt.output_options.scan_all_evtx_files,
+            Some(Action::JsonTimeline(opt)) => opt.output_options.scan_all_evtx_files,
+            _ => false,
+        };
         let mut ret = StoredStatic {
             config: input_config.as_ref().unwrap().to_owned(),
             config_path: config_path.to_path_buf(),
@@ -678,6 +690,8 @@ impl StoredStatic {
             timeline_offset,
             include_status,
             is_low_memory,
+            enable_all_rules,
+            scan_all_evtx_files,
         };
         ret.profiles = load_profile(
             check_setting_path(
@@ -774,7 +788,7 @@ fn check_thread_number(config: &Config) -> Option<usize> {
 pub enum Action {
     #[clap(
         author = "Yamato Security (https://github.com/Yamato-Security/hayabusa - @SecurityYamato)",
-        help_template = "\nHayabusa v2.15.0 - Sonic Release\n{author-with-newline}\n{usage-heading}\n  hayabusa.exe csv-timeline <INPUT> [OPTIONS]\n\n{all-args}",
+        help_template = "\nHayabusa v2.16.0 - Dev Build\n{author-with-newline}\n{usage-heading}\n  hayabusa.exe csv-timeline <INPUT> [OPTIONS]\n\n{all-args}",
         term_width = 400,
         display_order = 290,
         disable_help_flag = true
@@ -784,7 +798,7 @@ pub enum Action {
 
     #[clap(
         author = "Yamato Security (https://github.com/Yamato-Security/hayabusa - @SecurityYamato)",
-        help_template = "\nHayabusa v2.15.0 - Sonic Release\n{author-with-newline}\n{usage-heading}\n  hayabusa.exe json-timeline <INPUT> [OPTIONS]\n\n{all-args}",
+        help_template = "\nHayabusa v2.16.0 - Dev Build\n{author-with-newline}\n{usage-heading}\n  hayabusa.exe json-timeline <INPUT> [OPTIONS]\n\n{all-args}",
         term_width = 400,
         display_order = 360,
         disable_help_flag = true
@@ -794,7 +808,7 @@ pub enum Action {
 
     #[clap(
         author = "Yamato Security (https://github.com/Yamato-Security/hayabusa - @SecurityYamato)",
-        help_template = "\nHayabusa v2.15.0 - Sonic Release\n{author-with-newline}\n{usage-heading}\n  hayabusa.exe logon-summary <INPUT> [OPTIONS]\n\n{all-args}",
+        help_template = "\nHayabusa v2.16.0 - Dev Build\n{author-with-newline}\n{usage-heading}\n  hayabusa.exe logon-summary <INPUT> [OPTIONS]\n\n{all-args}",
         term_width = 400,
         display_order = 383,
         disable_help_flag = true
@@ -804,7 +818,7 @@ pub enum Action {
 
     #[clap(
         author = "Yamato Security (https://github.com/Yamato-Security/hayabusa - @SecurityYamato)",
-        help_template = "\nHayabusa v2.15.0 - Sonic Release\n{author-with-newline}\n{usage-heading}\n  hayabusa.exe eid-metrics <INPUT> [OPTIONS]\n\n{all-args}",
+        help_template = "\nHayabusa v2.16.0 - Dev Build\n{author-with-newline}\n{usage-heading}\n  hayabusa.exe eid-metrics <INPUT> [OPTIONS]\n\n{all-args}",
         term_width = 400,
         display_order = 310,
         disable_help_flag = true
@@ -814,7 +828,7 @@ pub enum Action {
 
     #[clap(
         author = "Yamato Security (https://github.com/Yamato-Security/hayabusa - @SecurityYamato)",
-        help_template = "\nHayabusa v2.15.0 - Sonic Release\n{author-with-newline}\n{usage-heading}\n  hayabusa.exe pivot-keywords-list <INPUT> [OPTIONS]\n\n{all-args}",
+        help_template = "\nHayabusa v2.16.0 - Dev Build\n{author-with-newline}\n{usage-heading}\n  hayabusa.exe pivot-keywords-list <INPUT> [OPTIONS]\n\n{all-args}",
         term_width = 400,
         display_order = 420,
         disable_help_flag = true
@@ -824,7 +838,7 @@ pub enum Action {
 
     #[clap(
         author = "Yamato Security (https://github.com/Yamato-Security/hayabusa - @SecurityYamato)",
-        help_template = "\nHayabusa v2.15.0 - Sonic Release\n{author-with-newline}\n{usage-heading}\n  hayabusa.exe search <INPUT> <--keywords \"<KEYWORDS>\" OR --regex \"<REGEX>\"> [OPTIONS]\n\n{all-args}",
+        help_template = "\nHayabusa v2.16.0 - Dev Build\n{author-with-newline}\n{usage-heading}\n  hayabusa.exe search <INPUT> <--keywords \"<KEYWORDS>\" OR --regex \"<REGEX>\"> [OPTIONS]\n\n{all-args}",
         term_width = 400,
         display_order = 450,
         disable_help_flag = true
@@ -834,7 +848,7 @@ pub enum Action {
 
     #[clap(
         author = "Yamato Security (https://github.com/Yamato-Security/hayabusa - @SecurityYamato)",
-        help_template = "\nHayabusa v2.15.0 - Sonic Release\n{author-with-newline}\n{usage-heading}\n  {usage}\n\n{all-args}",
+        help_template = "\nHayabusa v2.16.0 - Dev Build\n{author-with-newline}\n{usage-heading}\n  {usage}\n\n{all-args}",
         term_width = 400,
         display_order = 470,
         disable_help_flag = true
@@ -844,7 +858,7 @@ pub enum Action {
 
     #[clap(
         author = "Yamato Security (https://github.com/Yamato-Security/hayabusa - @SecurityYamato)",
-        help_template = "\nHayabusa v2.15.0 - Sonic Release\n{author-with-newline}\n{usage-heading}\n  {usage}\n\n{all-args}",
+        help_template = "\nHayabusa v2.16.0 - Dev Build\n{author-with-newline}\n{usage-heading}\n  {usage}\n\n{all-args}",
         term_width = 400,
         display_order = 380,
         disable_help_flag = true
@@ -854,7 +868,7 @@ pub enum Action {
 
     #[clap(
         author = "Yamato Security (https://github.com/Yamato-Security/hayabusa - @SecurityYamato)",
-        help_template = "\nHayabusa v2.15.0 - Sonic Release\n{author-with-newline}\n{usage-heading}\n  {usage}\n\n{all-args}",
+        help_template = "\nHayabusa v2.16.0 - Dev Build\n{author-with-newline}\n{usage-heading}\n  {usage}\n\n{all-args}",
         term_width = 400,
         display_order = 451,
         disable_help_flag = true
@@ -872,7 +886,7 @@ pub enum Action {
 
     #[clap(
         author = "Yamato Security (https://github.com/Yamato-Security/hayabusa - @SecurityYamato)",
-        help_template = "\nHayabusa v2.15.0 - Sonic Release\n{author-with-newline}\n{usage-heading}\n  hayabusa.exe computer-metrics <INPUT> [OPTIONS]\n\n{all-args}",
+        help_template = "\nHayabusa v2.16.0 - Dev Build\n{author-with-newline}\n{usage-heading}\n  hayabusa.exe computer-metrics <INPUT> [OPTIONS]\n\n{all-args}",
         term_width = 400,
         display_order = 290,
         disable_help_flag = true
@@ -1109,8 +1123,8 @@ pub struct SearchOption {
     #[arg(help_heading = Some("Time Format"), long = "European-time", display_order = 50)]
     pub european_time: bool,
 
-    /// Output timestamp in ISO-8601 format (ex: 2022-02-22T10:10:10.1234567Z) (Always UTC)
-    #[arg(help_heading = Some("Time Format"), long = "ISO-8601", display_order = 90)]
+    /// Output timestamp in original ISO-8601 format (ex: 2022-02-22T10:10:10.1234567Z) (Always UTC)
+    #[arg(help_heading = Some("Time Format"), short = 'O', long = "ISO-8601", display_order = 90)]
     pub iso_8601: bool,
 
     /// Output timestamp in RFC 2822 format (ex: Fri, 22 Feb 2022 22:00:00 -0600)
@@ -1190,8 +1204,8 @@ pub struct EidMetricsOption {
     #[arg(help_heading = Some("Time Format"), long = "European-time", display_order = 50)]
     pub european_time: bool,
 
-    /// Output timestamp in ISO-8601 format (ex: 2022-02-22T10:10:10.1234567Z) (Always UTC)
-    #[arg(help_heading = Some("Time Format"), long = "ISO-8601", display_order = 90)]
+    /// Output timestamp in original ISO-8601 format (ex: 2022-02-22T10:10:10.1234567Z) (Always UTC)
+    #[arg(help_heading = Some("Time Format"), short = 'O', long = "ISO-8601", display_order = 90)]
     pub iso_8601: bool,
 
     /// Output timestamp in RFC 2822 format (ex: Fri, 22 Feb 2022 22:00:00 -0600)
@@ -1338,8 +1352,8 @@ pub struct LogonSummaryOption {
     #[arg(help_heading = Some("Time Format"), long = "European-time", display_order = 50)]
     pub european_time: bool,
 
-    /// Output timestamp in ISO-8601 format (ex: 2022-02-22T10:10:10.1234567Z) (Always UTC)
-    #[arg(help_heading = Some("Time Format"), long = "ISO-8601", display_order = 90)]
+    /// Output timestamp in original ISO-8601 format (ex: 2022-02-22T10:10:10.1234567Z) (Always UTC)
+    #[arg(help_heading = Some("Time Format"), short = 'O', long = "ISO-8601", display_order = 90)]
     pub iso_8601: bool,
 
     /// Output timestamp in RFC 2822 format (ex: Fri, 22 Feb 2022 22:00:00 -0600)
@@ -1481,8 +1495,8 @@ pub struct OutputOption {
     #[arg(help_heading = Some("Time Format"), long = "European-time", display_order = 50)]
     pub european_time: bool,
 
-    /// Output timestamp in ISO-8601 format (ex: 2022-02-22T10:10:10.1234567Z) (Always UTC)
-    #[arg(help_heading = Some("Time Format"), long = "ISO-8601", display_order = 90)]
+    /// Output timestamp in original ISO-8601 format (ex: 2022-02-22T10:10:10.1234567Z) (Always UTC)
+    #[arg(help_heading = Some("Time Format"), short = 'O', long = "ISO-8601", display_order = 90)]
     pub iso_8601: bool,
 
     /// Output timestamp in RFC 2822 format (ex: Fri, 22 Feb 2022 22:00:00 -0600)
@@ -1563,6 +1577,14 @@ pub struct OutputOption {
     /// Scan with the minimal amount of memory by not sorting events
     #[arg(help_heading = Some("General Options"), short='s', long = "low-memory-mode", display_order = 380)]
     pub low_memory_mode: bool,
+
+    /// Enable all rules regardless of loaded evtx files
+    #[arg(help_heading = Some("Filtering"), short='A', long = "enable-all-rules", display_order = 300)]
+    pub enable_all_rules: bool,
+
+    /// Scan all evtx files regardless of loaded rules
+    #[arg(help_heading = Some("Filtering"), short='a', long = "scan-all-evtx-files", display_order = 450)]
+    pub scan_all_evtx_files: bool,
 }
 
 #[derive(Copy, Args, Clone, Debug)]
@@ -1711,7 +1733,7 @@ pub struct ComputerMetricsOption {
 #[derive(Parser, Clone, Debug)]
 #[clap(
     author = "Yamato Security (https://github.com/Yamato-Security/hayabusa - @SecurityYamato)",
-    help_template = "\nHayabusa v2.15.0 - Sonic Release\n{author-with-newline}\n{usage-heading}\n  hayabusa.exe <COMMAND> [OPTIONS]\n  hayabusa.exe help <COMMAND>\n\n{all-args}{options}",
+    help_template = "\nHayabusa v2.16.0 - Dev Build\n{author-with-newline}\n{usage-heading}\n  hayabusa.exe <COMMAND> [OPTIONS]\n  hayabusa.exe help <COMMAND> or hayabusa.exe <COMMAND> -h\n\n{all-args}{options}",
     term_width = 400,
     disable_help_flag = true
 )]
@@ -2248,6 +2270,8 @@ fn extract_output_options(config: &Config) -> Option<OutputOption> {
             no_wizard: option.no_wizard,
             include_status: option.include_status.clone(),
             low_memory_mode: false,
+            enable_all_rules: false,
+            scan_all_evtx_files: false,
         }),
         Action::EidMetrics(option) => Some(OutputOption {
             input_args: option.input_args.clone(),
@@ -2289,6 +2313,8 @@ fn extract_output_options(config: &Config) -> Option<OutputOption> {
             no_wizard: true,
             include_status: None,
             low_memory_mode: false,
+            enable_all_rules: false,
+            scan_all_evtx_files: false,
         }),
         Action::LogonSummary(option) => Some(OutputOption {
             input_args: option.input_args.clone(),
@@ -2330,6 +2356,8 @@ fn extract_output_options(config: &Config) -> Option<OutputOption> {
             no_wizard: true,
             include_status: None,
             low_memory_mode: false,
+            enable_all_rules: false,
+            scan_all_evtx_files: false,
         }),
         Action::ComputerMetrics(option) => Some(OutputOption {
             input_args: option.input_args.clone(),
@@ -2380,6 +2408,8 @@ fn extract_output_options(config: &Config) -> Option<OutputOption> {
             no_wizard: true,
             include_status: None,
             low_memory_mode: false,
+            enable_all_rules: false,
+            scan_all_evtx_files: false,
         }),
         Action::Search(option) => Some(OutputOption {
             input_args: option.input_args.clone(),
@@ -2430,6 +2460,8 @@ fn extract_output_options(config: &Config) -> Option<OutputOption> {
             no_wizard: true,
             include_status: None,
             low_memory_mode: false,
+            enable_all_rules: false,
+            scan_all_evtx_files: false,
         }),
         Action::SetDefaultProfile(option) => Some(OutputOption {
             input_args: InputOption {
@@ -2486,6 +2518,8 @@ fn extract_output_options(config: &Config) -> Option<OutputOption> {
             no_wizard: true,
             include_status: None,
             low_memory_mode: false,
+            enable_all_rules: false,
+            scan_all_evtx_files: false,
         }),
         Action::UpdateRules(option) => Some(OutputOption {
             input_args: InputOption {
@@ -2542,6 +2576,8 @@ fn extract_output_options(config: &Config) -> Option<OutputOption> {
             no_wizard: true,
             include_status: None,
             low_memory_mode: false,
+            enable_all_rules: false,
+            scan_all_evtx_files: false,
         }),
         _ => None,
     }
@@ -2795,6 +2831,8 @@ mod tests {
                     no_wizard: true,
                     include_status: None,
                     low_memory_mode: false,
+                    enable_all_rules: false,
+                    scan_all_evtx_files: false,
                 },
                 geo_ip: None,
                 output: None,
@@ -2871,6 +2909,8 @@ mod tests {
                     no_wizard: true,
                     include_status: None,
                     low_memory_mode: false,
+                    enable_all_rules: false,
+                    scan_all_evtx_files: false,
                 },
                 geo_ip: None,
                 output: None,
