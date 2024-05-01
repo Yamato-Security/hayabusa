@@ -122,8 +122,17 @@ fn extract_channel_from_rules(
     ) {
         match *value {
             Yaml::String(ref s) => {
-                if key == "Channel" && evtx_channels.contains(s) {
-                    intersection_channels.push(s.clone());
+                if key == "Channel" {
+                    if s.contains('*') {
+                        // SigmaルールでChannelにワイルドカードが使われた場合
+                        for ch in evtx_channels {
+                            if ch.contains(s.trim_matches('*')) {
+                                intersection_channels.push(ch.to_string());
+                            }
+                        }
+                    } else if evtx_channels.contains(s) {
+                        intersection_channels.push(s.clone());
+                    }
                 }
             }
             Yaml::Hash(ref map) => {
@@ -239,6 +248,25 @@ mod tests {
         let rule = RuleNode::new("test_files/evtx/test1.evtx".to_string(), test_yaml_data);
         let rule_files = vec![rule];
         let evtx_channels = HashSet::from_iter(vec!["Microsoft-Windows-Sysmon/Operational".into()]);
+        let (result, _) = extract_channel_from_rules(&rule_files, &evtx_channels);
+        assert_eq!(result, vec!["test_files/evtx/test1.evtx"]);
+    }
+
+    #[test]
+    fn test_extract_channel_from_rules_hash_wildcard_match() {
+        let rule_str = r#"
+        detection:
+            selection1:
+                Channel: 'Microsoft-Windows-Security-Mitigations*'
+        "#;
+        let mut rule_yaml = YamlLoader::load_from_str(rule_str).unwrap().into_iter();
+        let test_yaml_data = rule_yaml.next().unwrap();
+        let rule = RuleNode::new("test_files/evtx/test1.evtx".to_string(), test_yaml_data);
+        let rule_files = vec![rule];
+        let evtx_channels = HashSet::from_iter(vec![
+            "Microsoft-Windows-Security-Mitigations%4KernelMode.evtx".into(),
+            "Microsoft-Windows-Security-Mitigations%4UserMode.evtx".into(),
+        ]);
         let (result, _) = extract_channel_from_rules(&rule_files, &evtx_channels);
         assert_eq!(result, vec!["test_files/evtx/test1.evtx"]);
     }
