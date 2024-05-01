@@ -212,7 +212,7 @@ mod tests {
             "- Test rules: 783 (26.70%)".to_string(),
             "- Hayabusa rules: 138".to_string(),
             "- Sigma rules: 2,795".to_string(),
-            "- Total enabled detection rules: 2,933".to_string(),
+            "- Total detection rules: 2,933".to_string(),
             "- Elapsed time: 00:00:29.035".to_string(),
             "".to_string(),
         ]);
@@ -541,7 +541,7 @@ mod tests {
             "- Test rules: 783 (26.70%)".to_string(),
             "- Hayabusa rules: 138".to_string(),
             "- Sigma rules: 2795".to_string(),
-            "- Total enabled detection rules: 2933".to_string(),
+            "- Total detection rules: 2933".to_string(),
             "- Elapsed time: 00:00:29.035".to_string(),
             "".to_string(),
         ]);
@@ -595,7 +595,7 @@ mod tests {
             "- Test rules: 783 (26.70%)".to_string(),
             "- Hayabusa rules: 138".to_string(),
             "- Sigma rules: 2795".to_string(),
-            "- Total enabled detection rules: 2933".to_string(),
+            "- Total detection rules: 2933".to_string(),
             "- Elapsed time: 00:00:29.035".to_string(),
             "".to_string(),
         ]);

@@ -1162,7 +1162,7 @@ impl Detection {
         });
 
         let tmp_total_detect_output = format!(
-            "Total enabled detection rules: {}",
+            "Total detection rules: {}",
             total_loaded_rule_cnt.to_formatted_string(&Locale::en)
         );
         println!("{tmp_total_detect_output}");

@@ -1442,7 +1442,7 @@ impl App {
             if !stored_static.enable_all_rules {
                 rule_files.retain(|r| channel_filter.rulepathes.contains(&r.rulepath));
                 let rules_after_channel_filter = format!(
-                    "Detection rules loaded after channel filter: {}",
+                    "Detection rules enabled after channel filter: {}",
                     (rule_files.len()).to_formatted_string(&Locale::en)
                 );
                 println!("{rules_after_channel_filter}");
