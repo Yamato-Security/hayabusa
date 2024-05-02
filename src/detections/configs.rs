@@ -1607,7 +1607,7 @@ pub struct CommonOptions {
 pub struct InputOption {
     /// Directory of multiple .evtx files
     #[arg(help_heading = Some("Input"), short = 'd', long, value_name = "DIR", conflicts_with_all = ["filepath", "live_analysis"], display_order = 300)]
-    pub directory: Option<PathBuf>,
+    pub directory: Option<Vec<PathBuf>>,
 
     /// File path to one .evtx file
     #[arg(help_heading = Some("Input"), short = 'f', long = "file", value_name = "FILE", conflicts_with_all = ["directory", "live_analysis"], display_order = 320)]
