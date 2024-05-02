@@ -53,7 +53,6 @@ use std::path::Path;
 use std::ptr::null_mut;
 use std::sync::Arc;
 use std::time::Duration;
-use std::u128;
 use std::{
     env,
     fs::{self, File},
@@ -784,18 +783,21 @@ impl App {
                 time_filter,
                 stored_static.borrow_mut(),
             );
-        } else if let Some(directory) = &stored_static
+        } else if let Some(directories) = &stored_static
             .output_option
             .as_ref()
             .unwrap()
             .input_args
             .directory
         {
-            let evtx_files = Self::collect_evtxfiles(
-                directory.as_os_str().to_str().unwrap(),
-                target_extensions,
-                stored_static,
-            );
+            let mut evtx_files = Vec::new();
+            for directory in directories {
+                evtx_files.extend(Self::collect_evtxfiles(
+                    directory.as_os_str().to_str().unwrap(),
+                    target_extensions,
+                    stored_static,
+                ));
+            }
             if evtx_files.is_empty() {
                 AlertMessage::alert("No .evtx files were found.").ok();
                 return;

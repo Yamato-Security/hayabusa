@@ -332,10 +332,10 @@ pub fn create_rec_info(
 
         if !*no_pwsh_field_extraction {
             if key == "EventID" {
-                event_id = val.clone();
+                event_id.clone_from(&val);
             }
             if key == "Channel" {
-                channel = val.clone();
+                channel.clone_from(&val);
             }
         }
         key_2_values.insert(key.to_string(), val.unwrap());

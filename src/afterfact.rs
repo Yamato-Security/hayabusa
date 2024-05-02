@@ -380,7 +380,9 @@ fn emit_csv_inner(
                 remove_duplicate_data,
             );
             afterfact_info.prev_message = result.1;
-            afterfact_info.prev_details_convert_map = detect_info.details_convert_map.clone();
+            afterfact_info
+                .prev_details_convert_map
+                .clone_from(&detect_info.details_convert_map);
             if afterfact_writer.display_flag {
                 write_color_buffer(
                     &afterfact_writer.disp_wtr,
@@ -404,7 +406,9 @@ fn emit_csv_inner(
                 remove_duplicate_data,
             );
             afterfact_info.prev_message = result.1;
-            afterfact_info.prev_details_convert_map = detect_info.details_convert_map.clone();
+            afterfact_info
+                .prev_details_convert_map
+                .clone_from(&detect_info.details_convert_map);
             if afterfact_writer.display_flag {
                 write_color_buffer(
                     &afterfact_writer.disp_wtr,
@@ -1806,7 +1810,7 @@ pub fn output_json_str(
             }
         }
     } else {
-        target_ext_field = detect_info.ext_field.to_owned();
+        target_ext_field.clone_from(&detect_info.ext_field);
     }
     let key_add_to_details = [
         "SrcASN",
