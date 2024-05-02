@@ -10,6 +10,10 @@
     - [Mimikatz Use](https://github.com/SigmaHQ/sigma/blob/master/rules/windows/builtin/win_alert_mimikatz_keywords.yml)
 - By default now, `.evtx` files that have applicable rules will be loaded. So for example, if you are scanning a directory of various event logs but only enable a rule that is looking for `Channel: Security` then Hayabusa will ignore all non-security event logs. In our benchmarks, this gives a speed benefit of around 10% with normal scans and up to 60%+ performance increase when scanning with a single rule. If you want to load all `.evtx` files regardless of channel, then you can turn off this filtering with the `-a, --scan-all-evtx-files` option in `csv-timeline` and `json-timeline`. (#1318) (@fukusuket)
 
+**Enhancements:**
+
+- Adjusted multiple specifiy `directory` option. (#1335) (@hitenkoku)
+
 ## 2.15.0 [2024/04/20] "Sonic Release"
 
 **Enhancements:**
