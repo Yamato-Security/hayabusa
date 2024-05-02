@@ -12,7 +12,7 @@
 
 **Enhancements:**
 
-- Adjusted multiple specifiy `directory` option. (#1335) (@hitenkoku)
+- You can now specify multiple directories with the `-d, --directory` option. (#1335) (@hitenkoku)
 
 ## 2.15.0 [2024/04/20] "Sonic Release"
 
