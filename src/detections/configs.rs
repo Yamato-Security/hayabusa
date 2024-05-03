@@ -1,4 +1,5 @@
 use crate::detections::field_data_map::{create_field_data_map, FieldDataMap};
+use clap_complete::Shell;
 use crate::detections::message::AlertMessage;
 use crate::detections::utils;
 use crate::options::geoip_search::GeoIPSearch;
@@ -7,7 +8,7 @@ use crate::options::pivot::PIVOT_KEYWORD;
 use crate::options::profile::{load_profile, Profile};
 use aho_corasick::{AhoCorasick, AhoCorasickBuilder, MatchKind};
 use chrono::{DateTime, Days, Duration, Local, Months, Utc};
-use clap::{ArgAction, ArgGroup, Args, ColorChoice, Command, CommandFactory, Parser, Subcommand};
+use clap::{ValueHint, ArgAction, ArgGroup, Args, ColorChoice, Command, CommandFactory, Parser, Subcommand};
 use compact_str::CompactString;
 use hashbrown::{HashMap, HashSet};
 use itertools::Itertools;
@@ -111,6 +112,7 @@ impl StoredStatic {
             _ => false,
         };
         let common_options = match &input_config.as_ref().unwrap().action {
+            Some(Action::AutoComplete(opt)) => opt.common_options,
             Some(Action::CsvTimeline(opt)) => opt.output_options.common_options,
             Some(Action::JsonTimeline(opt)) => opt.output_options.common_options,
             Some(Action::LevelTuning(opt)) => opt.common_options,
@@ -884,6 +886,10 @@ pub enum Action {
     /// List the output profiles
     ListProfiles(CommonOptions),
 
+    #[clap(display_order = 383)]
+    /// Make the auto complete 
+    AutoComplete(AutoCompleteOptions),
+
     #[clap(
         author = "Yamato Security (https://github.com/Yamato-Security/hayabusa - @SecurityYamato)",
         help_template = "\nHayabusa v2.17.0 - Dev Build\n{author-with-newline}\n{usage-heading}\n  hayabusa.exe computer-metrics <INPUT> [OPTIONS]\n\n{all-args}",
@@ -911,6 +917,7 @@ impl Action {
                 Action::ListProfiles(_) => 9,
                 Action::Search(_) => 10,
                 Action::ComputerMetrics(_) => 11,
+                Action::AutoComplete(_) => 12,
             }
         } else {
             100
@@ -931,11 +938,21 @@ impl Action {
                 Action::ListProfiles(_) => "list-profiles",
                 Action::Search(_) => "search",
                 Action::ComputerMetrics(_) => "computer-metrics",
+                Action::AutoComplete(_) => "auto-complete",
             }
         } else {
             ""
         }
     }
+}
+
+#[derive(Args, Clone, Debug)]
+pub struct AutoCompleteOptions {
+    #[clap(flatten)]
+    pub common_options: CommonOptions,
+
+    #[clap(long,short)]
+    pub shell: Shell,
 }
 
 #[derive(Args, Clone, Debug)]
@@ -945,7 +962,7 @@ pub struct DetectCommonOption {
     pub json_input: bool,
 
     /// Specify additional evtx file extensions (ex: evtx_data)
-    #[arg(help_heading = Some("General Options"), long = "target-file-ext", value_name = "FILE-EXT...", use_value_delimiter = true, value_delimiter = ',', display_order = 460)]
+    #[arg(help_heading = Some("General Options"), long = "target-file-ext", value_name = "FILE-EXT...", use_value_delimiter = true, value_delimiter = ',', display_order = 460, value_hint(ValueHint::FilePath))]
     pub evtx_file_ext: Option<Vec<String>>,
 
     /// Number of threads (default: optimal number for performance)
@@ -971,7 +988,7 @@ pub struct DetectCommonOption {
         hide_default_value = true,
         value_name = "DIR",
         display_order = 442
-    )]
+    , value_hint(ValueHint::FilePath))]
     pub config: PathBuf,
 
     /// Output verbose information

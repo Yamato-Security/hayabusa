@@ -57,6 +57,7 @@ use hayabusa::detections::utils::{
     check_setting_path, get_writable_color, output_and_data_stack_for_html, output_profile_name,
 };
 use hayabusa::filter::create_channel_filter;
+use hayabusa::options::auto_complete::print_completer;
 use hayabusa::options::htmlreport::{self, HTML_REPORTER};
 use hayabusa::options::pivot::create_output;
 use hayabusa::options::pivot::PIVOT_KEYWORD;
@@ -352,6 +353,11 @@ impl App {
                 self.print_contributors();
                 return;
             }
+
+            Action::AutoComplete(options) => {
+                print_completer(options.shell, app);
+            }
+
             Action::LogonSummary(_) => {
                 let mut target_output_path = Nested::<String>::new();
                 if let Some(path) = &stored_static.output_path {
