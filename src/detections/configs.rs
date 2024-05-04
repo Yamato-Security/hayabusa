@@ -983,7 +983,7 @@ pub struct DetectCommonOption {
         default_value = "./rules/config",
         hide_default_value = true,
         value_name = "DIR",
-        display_order = 442 , 
+        display_order = 442, 
         value_hint(ValueHint::FilePath))]
     pub config: PathBuf,
 
