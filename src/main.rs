@@ -56,7 +56,7 @@ use hayabusa::detections::utils::{
     check_setting_path, get_writable_color, output_and_data_stack_for_html, output_profile_name,
 };
 use hayabusa::filter::create_channel_filter;
-use hayabusa::options::auto_complete::{print_completer, select_shell};
+use hayabusa::options::auto_complete::auto_complete;
 use hayabusa::options::htmlreport::{self, HTML_REPORTER};
 use hayabusa::options::pivot::create_output;
 use hayabusa::options::pivot::PIVOT_KEYWORD;
@@ -157,8 +157,7 @@ impl App {
 
         //ロゴと時間が表示さないように実行したい
         if let Action::AutoComplete(_) = &stored_static.config.action.as_ref().unwrap() {
-            let shell = select_shell();
-            print_completer(shell, app);
+            auto_complete(app);
             return;
         }
 
