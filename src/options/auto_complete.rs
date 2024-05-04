@@ -1,7 +1,12 @@
 use clap_complete::{generate, Generator, Shell};
 use dialoguer::Select;
 
-pub fn select_shell() -> Shell {
+pub fn auto_complete(app: &mut clap::Command) {
+    let shell = select_shell();
+    print_completer(shell, app);
+}
+
+fn select_shell() -> Shell {
     let items:Vec<Shell> = vec![Shell::Bash, Shell::Elvish, Shell::Fish, Shell::PowerShell, Shell::Zsh];
 
     let selection = Select::new()
@@ -12,7 +17,7 @@ pub fn select_shell() -> Shell {
 
     items[selection]
 }
-pub fn print_completer<G: Generator>(generator: G, app: &mut clap::Command) {
+fn print_completer<G: Generator>(generator: G, app: &mut clap::Command) {
     let name = app.get_name().to_owned();
 
     generate(generator, app, name, &mut std::io::stdout());
