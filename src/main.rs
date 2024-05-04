@@ -46,8 +46,7 @@ use tokio::task::JoinHandle;
 use hayabusa::afterfact::{self, AfterfactInfo, AfterfactWriter};
 use hayabusa::debug::checkpoint_process_timer::CHECKPOINT;
 use hayabusa::detections::configs::{
-    load_pivot_keywords, Action, ConfigReader, EventKeyAliasConfig, StoredStatic, TargetEventTime,
-    TargetIds, CURRENT_EXE_PATH, STORED_EKEY_ALIAS, STORED_STATIC,
+    load_pivot_keywords, Action, ConfigReader, EventKeyAliasConfig, StoredStatic, TargetEventTime, TargetIds, CURRENT_EXE_PATH, STORED_EKEY_ALIAS, STORED_STATIC
 };
 use hayabusa::detections::detection::{self, EvtxRecordInfo};
 use hayabusa::detections::message::{AlertMessage, DetectInfo, ERROR_LOG_STACK};
@@ -57,7 +56,7 @@ use hayabusa::detections::utils::{
     check_setting_path, get_writable_color, output_and_data_stack_for_html, output_profile_name,
 };
 use hayabusa::filter::create_channel_filter;
-use hayabusa::options::auto_complete::print_completer;
+use hayabusa::options::auto_complete::{print_completer, select_shell};
 use hayabusa::options::htmlreport::{self, HTML_REPORTER};
 use hayabusa::options::pivot::create_output;
 use hayabusa::options::pivot::PIVOT_KEYWORD;
@@ -155,6 +154,14 @@ impl App {
             println!();
             return;
         }
+
+        //ロゴと時間が表示さないように実行したい
+        if let Action::AutoComplete(_) = &stored_static.config.action.as_ref().unwrap() {
+            let shell = select_shell();
+            print_completer(shell, app);
+            return;
+        }
+
         if !stored_static.common_options.quiet {
             self.output_logo(stored_static);
             write_color_buffer(&BufferWriter::stdout(ColorChoice::Always), None, "", true).ok();
@@ -354,8 +361,8 @@ impl App {
                 return;
             }
 
-            Action::AutoComplete(options) => {
-                print_completer(options.shell, app);
+            Action::AutoComplete(_) => {
+                panic!("This should not be called here.");
             }
 
             Action::LogonSummary(_) => {

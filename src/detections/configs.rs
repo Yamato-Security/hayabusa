@@ -1,5 +1,4 @@
 use crate::detections::field_data_map::{create_field_data_map, FieldDataMap};
-use clap_complete::Shell;
 use crate::detections::message::AlertMessage;
 use crate::detections::utils;
 use crate::options::geoip_search::GeoIPSearch;
@@ -950,9 +949,6 @@ impl Action {
 pub struct AutoCompleteOptions {
     #[clap(flatten)]
     pub common_options: CommonOptions,
-
-    #[clap(long,short)]
-    pub shell: Shell,
 }
 
 #[derive(Args, Clone, Debug)]
@@ -987,8 +983,8 @@ pub struct DetectCommonOption {
         default_value = "./rules/config",
         hide_default_value = true,
         value_name = "DIR",
-        display_order = 442
-    , value_hint(ValueHint::FilePath))]
+        display_order = 442 , 
+        value_hint(ValueHint::FilePath))]
     pub config: PathBuf,
 
     /// Output verbose information
