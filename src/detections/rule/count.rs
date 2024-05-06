@@ -24,7 +24,7 @@ pub fn count(
     quiet_errors_flag: bool,
     json_input_flag: bool,
 ) {
-    let key = create_count_key(
+    let key: String = create_count_key(
         rule,
         record,
         verbose_flag,
@@ -138,16 +138,37 @@ pub fn create_count_key(
     let agg_condition = rule.get_agg_condition().unwrap();
     if agg_condition._by_field_name.is_some() {
         let by_field_key = agg_condition._by_field_name.as_ref().unwrap();
-        get_alias_value_in_record(
-            rule,
-            by_field_key,
-            record,
-            true,
-            verbose_flag,
-            quiet_errors_flag,
-            eventkey_alias,
-        )
-        .unwrap_or_else(|| "_".to_string())
+        if by_field_key.contains(',') {
+            let mut res = String::default();
+            for key in by_field_key.split(',') {
+                res.push_str(
+                    &get_alias_value_in_record(
+                        rule,
+                        key.trim(),
+                        record,
+                        true,
+                        verbose_flag,
+                        quiet_errors_flag,
+                        eventkey_alias,
+                    )
+                    .unwrap_or_else(|| "_".to_string()),
+                );
+                res.push(',');
+            }
+            res.pop();
+            res
+        } else {
+            get_alias_value_in_record(
+                rule,
+                by_field_key,
+                record,
+                true,
+                verbose_flag,
+                quiet_errors_flag,
+                eventkey_alias,
+            )
+            .unwrap_or_else(|| "_".to_string())
+        }
     } else {
         "_".to_string()
     }
