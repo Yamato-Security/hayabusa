@@ -13,6 +13,7 @@
 **Enhancements:**
 
 - You can now specify multiple directories with the `-d, --directory` option. (#1335) (@hitenkoku)
+- You can now specify multiple groups with `count` and the output has been updated. Ex: `count() by IpAddress,SubStatus,LogonType >= 2` (#1339) (@fukusuket)
 
 ## 2.15.0 [2024/04/20] "Sonic Release"
 

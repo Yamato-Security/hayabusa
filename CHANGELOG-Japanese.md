@@ -13,6 +13,7 @@
 **改善:**
 
 - `-d, --directory`オプションで複数のフォルダを指定できるようにした。 (#1335) (@hitenkoku)
+- `count`で複数のグループを指定できるようにした。また、出力される結果を更新した。例: `count() by IpAddress,SubStatus,LogonType >= 2` (#1339) (@fukusuket)
 
 ## 2.15.0 [2024/04/20] "Sonic Release"
 
