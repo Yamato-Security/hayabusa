@@ -973,7 +973,7 @@ impl Detection {
 
         let detect_info = message::create_message(
             &Value::default(),
-            CompactString::new(rule.yaml["details"].as_str().unwrap_or("-")),
+            CompactString::from(detect_info.detail.as_str()),
             detect_info,
             &profile_converter,
             (true, is_json_timeline),
