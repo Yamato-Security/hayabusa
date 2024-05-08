@@ -941,7 +941,7 @@ impl Action {
 #[derive(Args, Clone, Debug)]
 pub struct DetectCommonOption {
     /// Scan JSON formatted logs instead of .evtx (.json or .jsonl)
-    #[arg(help_heading = Some("General Options"), short = 'J', long = "JSON-input", conflicts_with = "live_analysis", display_order = 360)]
+    #[arg(help_heading = Some("General Options"), short = 'J', long = "JSON-input", conflicts_with = "live_analysis", requires="enable_all_rules", display_order = 360)]
     pub json_input: bool,
 
     /// Specify additional evtx file extensions (ex: evtx_data)
