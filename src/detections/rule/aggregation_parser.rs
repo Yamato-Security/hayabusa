@@ -13,7 +13,7 @@ lazy_static! {
         Regex::new(r"^>=").unwrap(),
         Regex::new(r"^<").unwrap(),
         Regex::new(r"^>").unwrap(),
-        Regex::new(r"^\w+").unwrap(),
+        Regex::new(r"^(\s*\w+\s*,)+\s*\w+|^\w+").unwrap(),
     ];
     pub static ref RE_PIPE: Regex = Regex::new(r"\|.*").unwrap();
 }
@@ -304,6 +304,34 @@ mod tests {
 
         let result = result.unwrap();
         assert_eq!("iiibbb".to_string(), result._by_field_name.unwrap());
+        assert!(result._field_name.is_none());
+        assert_eq!(27, result._cmp_num);
+        assert!(matches!(result._cmp_op, AggregationConditionToken::GT));
+    }
+
+    #[test]
+    fn test_aggegation_condition_compiler_count_by_multiple_fieilds() {
+        let compiler = AggegationConditionCompiler::new();
+        let result = compiler.compile("select1 or select2 | count() by iiibbb,aaabbb > 27");
+        assert!(result.is_ok());
+        let result = result.unwrap();
+        assert!(result.is_some());
+        let result = result.unwrap();
+        assert_eq!("iiibbb,aaabbb".to_string(), result._by_field_name.unwrap());
+        assert!(result._field_name.is_none());
+        assert_eq!(27, result._cmp_num);
+        assert!(matches!(result._cmp_op, AggregationConditionToken::GT));
+    }
+
+    #[test]
+    fn test_aggegation_condition_compiler_count_by_multiple_fieilds_with_space() {
+        let compiler = AggegationConditionCompiler::new();
+        let result = compiler.compile("select1 or select2 | count() by iiibbb, aaabbb > 27");
+        assert!(result.is_ok());
+        let result = result.unwrap();
+        assert!(result.is_some());
+        let result = result.unwrap();
+        assert_eq!("iiibbb, aaabbb".to_string(), result._by_field_name.unwrap());
         assert!(result._field_name.is_none());
         assert_eq!(27, result._cmp_num);
         assert!(matches!(result._cmp_op, AggregationConditionToken::GT));

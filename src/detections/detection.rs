@@ -973,7 +973,7 @@ impl Detection {
 
         let detect_info = message::create_message(
             &Value::default(),
-            CompactString::new(rule.yaml["details"].as_str().unwrap_or("-")),
+            CompactString::from(detect_info.detail.as_str()),
             detect_info,
             &profile_converter,
             (true, is_json_timeline),
@@ -1001,30 +1001,14 @@ impl Detection {
 
     ///aggregation conditionのcount部分の検知出力文の文字列を返す関数
     fn create_count_output(rule: &RuleNode, agg_result: &AggResult) -> CompactString {
-        // 条件式部分の出力
-        let mut ret: String = "[condition] ".to_string();
-        // この関数が呼び出されている段階で既にaggregation conditionは存在する前提なのでunwrap前の確認は行わない
-        let agg_condition = rule.get_agg_condition().unwrap();
-        let exist_timeframe = rule.yaml["detection"]["timeframe"].as_str().unwrap_or("") != "";
+        let mut ret: String = "".to_string();
         // この関数が呼び出されている段階で既にaggregation conditionは存在する前提なのでagg_conditionの配列の長さは2となる
-        ret.push_str(
-            rule.yaml["detection"]["condition"]
-                .as_str()
-                .unwrap()
-                .split('|')
-                .nth(1)
-                .unwrap_or_default()
-                .trim(),
-        );
-        if exist_timeframe {
-            ret.push_str(" in timeframe");
-        }
-
-        write!(ret, " [result] count:{}", agg_result.data).ok();
+        let agg_condition = rule.get_agg_condition().unwrap();
+        write!(ret, "Count:{}", agg_result.data).ok();
         if agg_condition._field_name.is_some() {
             write!(
                 ret,
-                " {}:{}",
+                " ¦ {}:{}",
                 agg_condition._field_name.as_ref().unwrap(),
                 agg_result.field_values.join("/")
             )
@@ -1032,25 +1016,30 @@ impl Detection {
         }
 
         if agg_condition._by_field_name.is_some() {
-            write!(
-                ret,
-                " {}:{}",
-                agg_condition._by_field_name.as_ref().unwrap(),
-                agg_result.key
-            )
-            .ok();
-        }
-
-        if exist_timeframe {
-            write!(
-                ret,
-                " timeframe:{}",
-                rule.yaml["detection"]["timeframe"].as_str().unwrap()
-            )
-            .ok();
+            let field_name = agg_condition._by_field_name.as_ref().unwrap();
+            if field_name.contains(',') {
+                write!(
+                    ret,
+                    " ¦ {}",
+                    Self::zip_and_concat_strings(field_name, &agg_result.key)
+                )
+                .ok();
+            } else {
+                write!(ret, " ¦ {}:{}", field_name, agg_result.key).ok();
+            }
         }
 
         CompactString::from(ret)
+    }
+
+    fn zip_and_concat_strings(s1: &str, s2: &str) -> String {
+        let v1: Vec<&str> = s1.split(',').collect();
+        let v2: Vec<&str> = s2.split(',').collect();
+        v1.into_iter()
+            .zip(v2)
+            .map(|(s1, s2)| format!("{}:{}", s1, s2))
+            .collect::<Vec<String>>()
+            .join(" ¦ ")
     }
 
     pub fn print_rule_load_info(
@@ -1337,7 +1326,7 @@ mod tests {
         let test = rule_yaml.next().unwrap();
         let mut rule_node = create_rule("testpath".to_string(), test);
         rule_node.init(&create_dummy_stored_static()).ok();
-        let expected_output = "[condition] count() >= 1 [result] count:2";
+        let expected_output = "Count:2";
         assert_eq!(
             Detection::create_count_output(&rule_node, &agg_result),
             expected_output
@@ -1364,7 +1353,7 @@ mod tests {
         let test = rule_yaml.next().unwrap();
         let mut rule_node = create_rule("testpath".to_string(), test);
         rule_node.init(&create_dummy_stored_static()).ok();
-        let expected_output = "[condition] count() >= 1 [result] count:2";
+        let expected_output = "Count:2";
         assert_eq!(
             Detection::create_count_output(&rule_node, &agg_result),
             expected_output
@@ -1392,8 +1381,7 @@ mod tests {
         let test = rule_yaml.next().unwrap();
         let mut rule_node = create_rule("testpath".to_string(), test);
         rule_node.init(&create_dummy_stored_static()).ok();
-        let expected_output =
-            "[condition] count() >= 1 in timeframe [result] count:2 timeframe:15m";
+        let expected_output = "Count:2";
         assert_eq!(
             Detection::create_count_output(&rule_node, &agg_result),
             expected_output
@@ -1423,7 +1411,7 @@ mod tests {
         let test = rule_yaml.next().unwrap();
         let mut rule_node = create_rule("testpath".to_string(), test);
         rule_node.init(&create_dummy_stored_static()).ok();
-        let expected_output = "[condition] count(EventID) >= 1 [result] count:2 EventID:7040/9999";
+        let expected_output = "Count:2 ¦ EventID:7040/9999";
         assert_eq!(
             Detection::create_count_output(&rule_node, &agg_result),
             expected_output
@@ -1453,7 +1441,7 @@ mod tests {
         let test = rule_yaml.next().unwrap();
         let mut rule_node = create_rule("testpath".to_string(), test);
         rule_node.init(&create_dummy_stored_static()).ok();
-        let expected_output = "[condition] count(EventID) by process >= 1 [result] count:2 EventID:0000/1111 process:lsass.exe";
+        let expected_output = "Count:2 ¦ EventID:0000/1111 ¦ process:lsass.exe";
         assert_eq!(
             Detection::create_count_output(&rule_node, &agg_result),
             expected_output
@@ -1482,8 +1470,7 @@ mod tests {
         let test = rule_yaml.next().unwrap();
         let mut rule_node = create_rule("testpath".to_string(), test);
         rule_node.init(&create_dummy_stored_static()).ok();
-        let expected_output =
-            "[condition] count() by process >= 1 [result] count:2 process:lsass.exe";
+        let expected_output = "Count:2 ¦ process:lsass.exe";
         assert_eq!(
             Detection::create_count_output(&rule_node, &agg_result),
             expected_output
