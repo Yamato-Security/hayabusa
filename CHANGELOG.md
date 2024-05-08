@@ -13,7 +13,7 @@
 **Enhancements:**
 
 - You can now specify multiple directories with the `-d, --directory` option. (#1335) (@hitenkoku)
-- You can now specify multiple groups with `count` and the output has been updated. Ex: `count() by IpAddress,SubStatus,LogonType >= 2` (#1339) (@fukusuket)
+- You can now specify multiple groups with `count`. Ex: `count() by IpAddress,SubStatus,LogonType >= 2` Also, the output has been updated. Ex: `[condition] count(TargetUserName) by IpAddress > 3 in timeframe [result] count: 4 TargetUserName:tanaka/Administrator/adsyncadmin/suzuki IpAddress:- timeframe:5m` -> `Count: 4 ¦ TargetUserName: tanaka/Administrator/adsyncadmin/suzuki ¦ IpAddress: -` (#1339) (@fukusuket)
 
 ## 2.15.0 [2024/04/20] "Sonic Release"
 
