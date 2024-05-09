@@ -308,7 +308,8 @@ impl App {
                 if stored_static.json_input_flag
                     && (stored_static.scan_all_evtx_files || stored_static.enable_all_rules)
                 {
-                    AlertMessage::alert("It is not necessary to specify -A, --enable-all-rules or -a, --scan-all-evtx-files with -J, --JSON-input because the channel filter only works with EVTX files.").ok();
+                    AlertMessage::alert("It is not necessary to specify -A (--enable-all-rules) or -a (--scan-all-evtx-files) with -J (--JSON-input) because the default channel filter only works with EVTX files.").ok();
+                    println!();
                     return;
                 }
                 self.analysis_start(&target_extensions, &time_filter, stored_static);
@@ -849,7 +850,7 @@ impl App {
                     .starts_with('.')
                 {
                     AlertMessage::alert(
-                        "--filepath only accepts .evtx files. Hidden files are ignored.",
+                        "-f (--filepath) only accepts .evtx files. Hidden files are ignored. If you want to input event logs in JSON format, please specify -J (--JSON-input).",
                     )
                     .ok();
                     return;
