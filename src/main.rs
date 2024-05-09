@@ -305,6 +305,12 @@ impl App {
                         return;
                     }
                 }
+                if stored_static.json_input_flag
+                    && (stored_static.scan_all_evtx_files || stored_static.enable_all_rules)
+                {
+                    AlertMessage::alert("It is not necessary to specify -A, --enable-all-rules or -a, --scan-all-evtx-files with -J, --JSON-input because the channel filter only works with EVTX files.").ok();
+                    return;
+                }
                 self.analysis_start(&target_extensions, &time_filter, stored_static);
 
                 output_profile_name(&stored_static.output_option, false);
