@@ -1432,7 +1432,10 @@ impl App {
                     .ok();
                 return;
             }
-            if !stored_static.scan_all_evtx_files && !stored_static.enable_all_rules {
+            if !stored_static.json_input_flag
+                && !stored_static.scan_all_evtx_files
+                && !stored_static.enable_all_rules
+            {
                 println!("Creating the channel filter. Please wait.");
                 println!();
                 let mut channel_filter = create_channel_filter(&evtx_files, &rule_files);
