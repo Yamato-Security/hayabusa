@@ -305,6 +305,13 @@ impl App {
                         return;
                     }
                 }
+                if stored_static.json_input_flag
+                    && (stored_static.scan_all_evtx_files || stored_static.enable_all_rules)
+                {
+                    AlertMessage::alert("It is not necessary to specify -A (--enable-all-rules) or -a (--scan-all-evtx-files) with -J (--JSON-input) because the default channel filter only works with EVTX files.").ok();
+                    println!();
+                    return;
+                }
                 self.analysis_start(&target_extensions, &time_filter, stored_static);
 
                 output_profile_name(&stored_static.output_option, false);
@@ -843,7 +850,7 @@ impl App {
                     .starts_with('.')
                 {
                     AlertMessage::alert(
-                        "--filepath only accepts .evtx files. Hidden files are ignored.",
+                        "-f (--filepath) only accepts .evtx files. Hidden files are ignored. If you want to input event logs in JSON format, please specify -J (--JSON-input).",
                     )
                     .ok();
                     return;
@@ -1432,7 +1439,10 @@ impl App {
                     .ok();
                 return;
             }
-            if !stored_static.scan_all_evtx_files && !stored_static.enable_all_rules {
+            if !stored_static.json_input_flag
+                && !stored_static.scan_all_evtx_files
+                && !stored_static.enable_all_rules
+            {
                 println!("Creating the channel filter. Please wait.");
                 println!();
                 let mut channel_filter = create_channel_filter(&evtx_files, &rule_files);

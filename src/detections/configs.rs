@@ -1578,11 +1578,11 @@ pub struct OutputOption {
     #[arg(help_heading = Some("General Options"), short='s', long = "low-memory-mode", display_order = 380)]
     pub low_memory_mode: bool,
 
-    /// Enable all rules regardless of loaded evtx files
+    /// Enable all rules regardless of loaded evtx files (disable channel filter for rules)
     #[arg(help_heading = Some("Filtering"), short='A', long = "enable-all-rules", display_order = 300)]
     pub enable_all_rules: bool,
 
-    /// Scan all evtx files regardless of loaded rules
+    /// Scan all evtx files regardless of loaded rules (disable channel filter for evtx files)
     #[arg(help_heading = Some("Filtering"), short='a', long = "scan-all-evtx-files", display_order = 450)]
     pub scan_all_evtx_files: bool,
 }

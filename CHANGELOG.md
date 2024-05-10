@@ -9,6 +9,7 @@
     - [Possible Hidden Shellcode](https://github.com/Yamato-Security/hayabusa-rules/blob/main/hayabusa/builtin/UnkwnChannEID_Med_PossibleHiddenShellcode.yml)
     - [Mimikatz Use](https://github.com/SigmaHQ/sigma/blob/master/rules/windows/builtin/win_alert_mimikatz_keywords.yml)
 - By default now, `.evtx` files that have applicable rules will be loaded. So for example, if you are scanning a directory of various event logs but only enable a rule that is looking for `Channel: Security` then Hayabusa will ignore all non-security event logs. In our benchmarks, this gives a speed benefit of around 10% with normal scans and up to 60%+ performance increase when scanning with a single rule. If you want to load all `.evtx` files regardless of channel, then you can turn off this filtering with the `-a, --scan-all-evtx-files` option in `csv-timeline` and `json-timeline`. (#1318) (@fukusuket)
+- Note: Channel filtering only works with .evtx files and you will receive an error if you try to load event logs from a JSON file with `-J, --json-input` and also specify `-A` or `-a`. (#1345) (@fukusuket)
 
 **Enhancements:**
 
