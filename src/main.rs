@@ -1957,10 +1957,9 @@ impl App {
                         splunk_api_record["Event"]["EventData"]["@timestamp"] = splunk_api_record
                             ["Event"]["System"]["TimeCreated"]["@SystemTime"]
                             .clone();
-                        data["Event"]["System"]["@timestamp"] = splunk_api_record["Event"]
-                            ["System"]["TimeCreated"]["@SystemTime"]
+                        splunk_api_record["Event"]["System"]["@timestamp"] = splunk_api_record
+                            ["Event"]["System"]["TimeCreated"]["@SystemTime"]
                             .clone();
-
                         if stored_static.computer_metrics_flag {
                             // computer-metricsコマンドでは検知は行わないためカウントのみ行い次のレコードを確認する
                             countup_event_by_computer(
