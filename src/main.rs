@@ -43,7 +43,6 @@ use libmimalloc_sys::mi_stats_print_out;
 use mimalloc::MiMalloc;
 use nested::Nested;
 use num_format::{Locale, ToFormattedString};
-use quickxml_to_serde::{xml_str_to_json, Config};
 use serde_json::{Map, Value};
 use std::borrow::BorrowMut;
 use std::ffi::{OsStr, OsString};
@@ -1921,45 +1920,64 @@ impl App {
                     let field_value = tmp_data.as_array().unwrap_or(&empty);
                     let fields_key = tmp_data_value.as_array().unwrap_or(&empty);
                     record_cnt += field_value.len();
-                    let mut rows_raw_idx = 0;
-                    for (idx, name) in fields_key.iter().enumerate() {
-                        if name != "_raw" {
-                            continue;
-                        }
-                        rows_raw_idx = idx;
-                        break;
-                    }
                     for splunk_api_rec in field_value {
-                        let mut splunk_api_record = xml_str_to_json(
-                            splunk_api_rec[rows_raw_idx].as_str().unwrap_or_default(),
-                            &Config::new_with_defaults(),
-                        )
-                        .unwrap_or_default();
+                        let mut splunk_api_record = Value::Null;
                         for (v_idx, row_name) in fields_key.iter().enumerate() {
                             if let Some(row) = row_name.as_str() {
                                 // splunk api jsonの場合はrowsとfieldsのデータをEventDataに投入する。rawデータがはレコード情報がそのまま入っているのでその情報を投入したうえでsplunk api json関連のレコード類を投入する
+                                splunk_api_record["Event"]["System"][row.to_string()] =
+                                    splunk_api_rec[v_idx].clone();
                                 splunk_api_record["Event"]["EventData"][row.to_string()] =
                                     splunk_api_rec[v_idx].clone();
                             }
                         }
-
-                        {
-                            let system = splunk_api_record["Event"]["System"]
-                                .as_object()
-                                .unwrap()
-                                .clone();
-                            for (k, v) in system {
-                                splunk_api_record["Event"]["EventData"][k] = v.clone();
+                        let timestamp = match NaiveDateTime::parse_from_str(
+                            &splunk_api_record["Event"]["System"]["SystemTime"]
+                                .to_string()
+                                .replace("\\\"", "")
+                                .replace(['"', '\''], ""),
+                            "%Y-%m-%dT%H:%M:%S%.9fZ",
+                        ) {
+                            Ok(without_timezone_datetime) => {
+                                DateTime::<Utc>::from_naive_utc_and_offset(
+                                    without_timezone_datetime,
+                                    Utc,
+                                )
+                                .format("%Y-%m-%dT%H:%M:%S%.3fZ")
                             }
-                        }
+                            Err(e) => {
+                                AlertMessage::warn(&format!(
+                                    "timestamp parse error. filepath:{},{} {}",
+                                    path,
+                                    &splunk_api_record["Event"]["System"]["SystemTime"]
+                                        .to_string()
+                                        .replace("\\\"", "")
+                                        .replace('"', ""),
+                                    e
+                                ))
+                                .ok();
+                                DateTime::<Utc>::default().format("%Y-%m-%dT%H:%M:%S%.3fZ")
+                            }
+                        };
+
                         splunk_api_record["Event"]["UserData"] =
                             splunk_api_record["Event"]["EventData"].clone();
-                        splunk_api_record["Event"]["EventData"]["@timestamp"] = splunk_api_record
-                            ["Event"]["System"]["TimeCreated"]["@SystemTime"]
-                            .clone();
-                        splunk_api_record["Event"]["System"]["@timestamp"] = splunk_api_record
-                            ["Event"]["System"]["TimeCreated"]["@SystemTime"]
-                            .clone();
+                        splunk_api_record["Event"]["EventData"]["@timestamp"] =
+                            Value::String(timestamp.to_string());
+                        splunk_api_record["Event"]["System"]["@timestamp"] =
+                            splunk_api_record["Event"]["EventData"]["@timestamp"].clone();
+                        splunk_api_record["Event"]["System"]
+                            .as_object_mut()
+                            .unwrap()
+                            .insert(
+                                "Provider_attributes".to_string(),
+                                Value::Object(Map::from_iter(vec![(
+                                    "Name".to_string(),
+                                    Value::from(1),
+                                )])),
+                            );
+                        splunk_api_record["Event"]["System"]["Provider_attributes"]["Name"] =
+                            splunk_api_record["Event"]["EventData"]["Name"].clone();
                         if stored_static.computer_metrics_flag {
                             // computer-metricsコマンドでは検知は行わないためカウントのみ行い次のレコードを確認する
                             countup_event_by_computer(
