@@ -1822,7 +1822,7 @@ impl App {
             &target_timestamp
                 .to_string()
                 .replace("\\\"", "")
-                .replace('"', ""),
+                .replace(['"', '\''], ""),
             time_fmt,
         ) {
             Ok(without_timezone_datetime) => Some(DateTime::<Utc>::from_naive_utc_and_offset(
@@ -1993,7 +1993,7 @@ impl App {
                                 target_event_ids,
                                 stored_static,
                             ),
-                            (false, true),
+                            (is_splunk_json, is_splunk_api_json),
                             &splunk_api_record,
                         ) {
                             records_per_detect.push((splunk_api_record.to_owned(), false));
@@ -2050,7 +2050,7 @@ impl App {
                         target_event_ids,
                         stored_static,
                     ),
-                    (true, false),
+                    (is_splunk_json, is_splunk_api_json),
                     &data,
                 ) {
                     records_per_detect.push((data.to_owned(), false));
