@@ -13,6 +13,7 @@
 **Enhancements:**
 
 - You can now specify multiple directories with the `-d, --directory` option. (#1335) (@hitenkoku)
+- You can now analyze Splunk logs exported from the REST API. (#1083) (@hitenkoku)
 
 ## 2.15.0 [2024/04/20] "Sonic Release"
 
