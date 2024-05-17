@@ -9,11 +9,13 @@
     - [Possible Hidden Shellcode](https://github.com/Yamato-Security/hayabusa-rules/blob/main/hayabusa/builtin/UnkwnChannEID_Med_PossibleHiddenShellcode.yml)
     - [Mimikatz Use](https://github.com/SigmaHQ/sigma/blob/master/rules/windows/builtin/win_alert_mimikatz_keywords.yml)
 - デフォルトでは、適用可能なルールを持つ`.evtx`ファイルのみ読み込む。たとえば、さまざまなイベントログのディレクトリをスキャンしている場合でも、 `Channel: Security` を探すルールのみを有効にした場合、Hayabusaは`Security`以外のすべてのイベントログを無視します。ベンチマークでは、通常のスキャンで約10％、単一のルールでスキャンする場合は最大60％以上のパフォーマンス向上が得られる。チャネルに関係なくすべての`.evtx`ファイルを読み込みたい場合は、`csv-timeline` と `json-timeline` の `-a、--scan-all-evtx-files` オプションでこのフィルタリングをオフにすることができる。(#1318) (@fukusuket)
+- 注意: チャンネルフィルタリングは .evtx ファイルにのみ適用され、`-J, --json-input`オプションを使用してイベントログをJSONファイルから読み込む際に`-A`または`-a`を指定するとエラーが発生する。(#1345) (@fukusuket)
 
 **改善:**
 
 - `-d, --directory`オプションで複数のフォルダを指定できるようにした。 (#1335) (@hitenkoku)
 - REST APIからエクスポートされたSplunkログを分析できるようになった。 (#1083) (@hitenkoku)
+- `count`で複数のグループを指定できるようにした。例: `count() by IpAddress,SubStatus,LogonType >= 2`。また、出力される結果を更新した。例: `[condition] count(TargetUserName) by IpAddress > 3 in timeframe [result] count: 4 TargetUserName:tanaka/Administrator/adsyncadmin/suzuki IpAddress:- timeframe:5m` -> `Count: 4 ¦ TargetUserName: tanaka/Administrator/adsyncadmin/suzuki ¦ IpAddress: -` (#1339) (@fukusuket)
 
 ## 2.15.0 [2024/04/20] "Sonic Release"
 
