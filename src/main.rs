@@ -1773,6 +1773,92 @@ impl App {
         (detection, record_cnt, tl, recover_records_cnt, detect_infos)
     }
 
+    // 時刻およびチャンネルによるフィルタリングを行い、フィルタリングされた場合はtrueを返す。
+    fn is_filtered_record(
+        &self,
+        (path, time_filter, target_event_ids, stored_static): (
+            &str,
+            &TargetEventTime,
+            &TargetIds,
+            &StoredStatic,
+        ),
+        (is_splunk_json, is_splunk_api_json): (bool, bool),
+        data: &Value,
+    ) -> bool {
+        // Computer名がinclude_computerで指定されたものに合致しないまたはexclude_computerで指定されたものに合致した場合はフィルタリングする。
+        if utils::is_filtered_by_computer_name(
+            utils::get_event_value("Event.System.Computer", data, &stored_static.eventkey_alias),
+            (
+                &stored_static.include_computer,
+                &stored_static.exclude_computer,
+            ),
+        ) {
+            return true;
+        }
+
+        // EventIDがinclude_eidで指定されたものに合致しないまたはexclude_eidで指定されたものに合致した場合、EventID Filter optionが指定されていないかつtarget_eventids.txtで指定されたEventIDではない場合はフィルタリングする。
+        if self.is_filtered_by_eid(
+            data,
+            &stored_static.eventkey_alias,
+            (&stored_static.include_eid, &stored_static.exclude_eid),
+            stored_static.output_option.as_ref().unwrap().eid_filter,
+            target_event_ids,
+        ) {
+            return true;
+        }
+
+        // channelがnullである場合はフィルタリングする。
+        if !self._is_valid_channel(
+            data,
+            &stored_static.eventkey_alias,
+            "Event.EventData.Channel",
+        ) {
+            return true;
+        }
+        let target_timestamp = if data["Event"]["EventData"]["@timestamp"].is_null() {
+            &data["Event"]["EventData"]["TimeGenerated"]
+        } else {
+            &data["Event"]["EventData"]["@timestamp"]
+        };
+        let time_fmt = if is_splunk_json {
+            "%Y-%m-%dT%H:%M:%S%.3f%:z"
+        } else if is_splunk_api_json {
+            "%Y-%m-%dT%H:%M:%S%.9fZ"
+        } else {
+            "%Y-%m-%dT%H:%M:%S%.3fZ"
+        };
+        // EventID側の条件との条件の混同を防ぐため時間でのフィルタリングの条件分岐を分離した
+        let timestamp = match NaiveDateTime::parse_from_str(
+            &target_timestamp
+                .to_string()
+                .replace("\\\"", "")
+                .replace(['"', '\''], ""),
+            time_fmt,
+        ) {
+            Ok(without_timezone_datetime) => Some(DateTime::<Utc>::from_naive_utc_and_offset(
+                without_timezone_datetime,
+                Utc,
+            )),
+            Err(e) => {
+                AlertMessage::alert(&format!(
+                    "timestamp parse error. filepath:{},{} {}",
+                    path,
+                    &target_timestamp
+                        .to_string()
+                        .replace("\\\"", "")
+                        .replace('"', ""),
+                    e
+                ))
+                .ok();
+                None
+            }
+        };
+        if !time_filter.is_target(&timestamp) {
+            return true;
+        }
+        false
+    }
+
     // JSON形式のイベントログファイルを1ファイル分解析する。
     fn analysis_json_file(
         &self,
@@ -1796,6 +1882,7 @@ impl App {
         let path = filepath.display();
         let mut record_cnt = 0;
         let recover_records_cnt = 0;
+        let mut is_splunk_api_json;
         let filename = filepath.to_str().unwrap_or_default();
         let filepath = if filename.starts_with("./") {
             check_setting_path(&CURRENT_EXE_PATH.to_path_buf(), filename, true)
@@ -1832,15 +1919,102 @@ impl App {
                 if next_rec.is_none() {
                     break;
                 }
-                record_cnt += 1;
                 let mut data = next_rec.unwrap();
                 let is_splunk_json = data["Event"]["EventData"]["result"].is_object();
+                is_splunk_api_json = !data["Event"]["EventData"]["rows"].is_null();
                 // ChannelなどのデータはEvent -> Systemに存在する必要があるが、他処理のことも考え、Event -> EventDataのデータをそのまま投入する形にした。cloneを利用しているのはCopy trait実装がserde_json::Valueにないため
+                if is_splunk_api_json {
+                    let tmp_data = data["Event"]["EventData"]["rows"].clone();
+                    let tmp_data_value = data["Event"]["EventData"]["fields"].clone();
+                    let empty = vec![];
+                    let field_value = tmp_data.as_array().unwrap_or(&empty);
+                    let fields_key = tmp_data_value.as_array().unwrap_or(&empty);
+                    record_cnt += field_value.len();
+                    for splunk_api_rec in field_value {
+                        let mut splunk_api_record = Value::Null;
+                        for (v_idx, row_name) in fields_key.iter().enumerate() {
+                            if let Some(row) = row_name.as_str() {
+                                // splunk api jsonの場合はrowsとfieldsのデータをEventDataに投入する。rawデータがはレコード情報がそのまま入っているのでその情報を投入したうえでsplunk api json関連のレコード類を投入する
+                                splunk_api_record["Event"]["System"][row.to_string()] =
+                                    splunk_api_rec[v_idx].clone();
+                                splunk_api_record["Event"]["EventData"][row.to_string()] =
+                                    splunk_api_rec[v_idx].clone();
+                            }
+                        }
+                        let timestamp = match NaiveDateTime::parse_from_str(
+                            &splunk_api_record["Event"]["System"]["SystemTime"]
+                                .to_string()
+                                .replace("\\\"", "")
+                                .replace(['"', '\''], ""),
+                            "%Y-%m-%dT%H:%M:%S%.9fZ",
+                        ) {
+                            Ok(without_timezone_datetime) => {
+                                DateTime::<Utc>::from_naive_utc_and_offset(
+                                    without_timezone_datetime,
+                                    Utc,
+                                )
+                                .format("%Y-%m-%dT%H:%M:%S%.3fZ")
+                            }
+                            Err(e) => {
+                                AlertMessage::warn(&format!(
+                                    "timestamp parse error. filepath:{},{} {}",
+                                    path,
+                                    &splunk_api_record["Event"]["System"]["SystemTime"]
+                                        .to_string()
+                                        .replace("\\\"", "")
+                                        .replace('"', ""),
+                                    e
+                                ))
+                                .ok();
+                                DateTime::<Utc>::default().format("%Y-%m-%dT%H:%M:%S%.3fZ")
+                            }
+                        };
 
-                if is_splunk_json {
+                        splunk_api_record["Event"]["UserData"] =
+                            splunk_api_record["Event"]["EventData"].clone();
+                        splunk_api_record["Event"]["EventData"]["@timestamp"] =
+                            Value::String(timestamp.to_string());
+                        splunk_api_record["Event"]["System"]["@timestamp"] =
+                            splunk_api_record["Event"]["EventData"]["@timestamp"].clone();
+                        splunk_api_record["Event"]["System"]
+                            .as_object_mut()
+                            .unwrap()
+                            .insert(
+                                "Provider_attributes".to_string(),
+                                Value::Object(Map::from_iter(vec![(
+                                    "Name".to_string(),
+                                    Value::from(1),
+                                )])),
+                            );
+                        splunk_api_record["Event"]["System"]["Provider_attributes"]["Name"] =
+                            splunk_api_record["Event"]["EventData"]["Name"].clone();
+                        if stored_static.computer_metrics_flag {
+                            // computer-metricsコマンドでは検知は行わないためカウントのみ行い次のレコードを確認する
+                            countup_event_by_computer(
+                                &splunk_api_record,
+                                &stored_static.eventkey_alias,
+                                &mut tl,
+                            );
+                        }
+                        if !self.is_filtered_record(
+                            (
+                                filepath.as_str(),
+                                time_filter,
+                                target_event_ids,
+                                stored_static,
+                            ),
+                            (is_splunk_json, is_splunk_api_json),
+                            &splunk_api_record,
+                        ) {
+                            records_per_detect.push((splunk_api_record.to_owned(), false));
+                        }
+                    }
+                    continue;
+                } else if is_splunk_json {
                     data["Event"]["System"] = data["Event"]["EventData"]["result"].clone();
                     data["Event"]["EventData"] = data["Event"]["EventData"]["result"].clone();
                 }
+                record_cnt += 1;
                 if data["Event"]["EventData"].is_object() {
                     data["Event"]["System"] = data["Event"]["EventData"].clone();
                 } else if data["Event"]["EventData"].is_array() {
@@ -1879,81 +2053,18 @@ impl App {
                     // computer-metricsコマンドでは検知は行わないためカウントのみ行い次のレコードを確認する
                     continue;
                 }
-
-                // Computer名がinclude_computerで指定されたものに合致しないまたはexclude_computerで指定されたものに合致した場合はフィルタリングする。
-                if utils::is_filtered_by_computer_name(
-                    utils::get_event_value(
-                        "Event.System.Computer",
-                        &data,
-                        &stored_static.eventkey_alias,
-                    ),
+                if !self.is_filtered_record(
                     (
-                        &stored_static.include_computer,
-                        &stored_static.exclude_computer,
+                        filepath.as_str(),
+                        time_filter,
+                        target_event_ids,
+                        stored_static,
                     ),
-                ) {
-                    continue;
-                }
-
-                // EventIDがinclude_eidで指定されたものに合致しないまたはexclude_eidで指定されたものに合致した場合、EventID Filter optionが指定されていないかつtarget_eventids.txtで指定されたEventIDではない場合はフィルタリングする。
-                if self.is_filtered_by_eid(
+                    (is_splunk_json, is_splunk_api_json),
                     &data,
-                    &stored_static.eventkey_alias,
-                    (&stored_static.include_eid, &stored_static.exclude_eid),
-                    stored_static.output_option.as_ref().unwrap().eid_filter,
-                    target_event_ids,
                 ) {
-                    continue;
+                    records_per_detect.push((data.to_owned(), false));
                 }
-
-                // channelがnullである場合はフィルタリングする。
-                if !self._is_valid_channel(
-                    &data,
-                    &stored_static.eventkey_alias,
-                    "Event.EventData.Channel",
-                ) {
-                    continue;
-                }
-                let target_timestamp = if data["Event"]["EventData"]["@timestamp"].is_null() {
-                    &data["Event"]["EventData"]["TimeGenerated"]
-                } else {
-                    &data["Event"]["EventData"]["@timestamp"]
-                };
-                let time_fmt = if is_splunk_json {
-                    "%Y-%m-%dT%H:%M:%S%.3f%:z"
-                } else {
-                    "%Y-%m-%dT%H:%M:%S%.3fZ"
-                };
-                // EventID側の条件との条件の混同を防ぐため時間でのフィルタリングの条件分岐を分離した
-                let timestamp = match NaiveDateTime::parse_from_str(
-                    &target_timestamp
-                        .to_string()
-                        .replace("\\\"", "")
-                        .replace('"', ""),
-                    time_fmt,
-                ) {
-                    Ok(without_timezone_datetime) => Some(
-                        DateTime::<Utc>::from_naive_utc_and_offset(without_timezone_datetime, Utc),
-                    ),
-                    Err(e) => {
-                        AlertMessage::alert(&format!(
-                            "timestamp parse error. filepath:{},{} {}",
-                            path,
-                            &target_timestamp
-                                .to_string()
-                                .replace("\\\"", "")
-                                .replace('"', ""),
-                            e
-                        ))
-                        .ok();
-                        None
-                    }
-                };
-                if !time_filter.is_target(&timestamp) {
-                    continue;
-                }
-
-                records_per_detect.push((data.to_owned(), false));
             }
             if records_per_detect.is_empty() {
                 break;

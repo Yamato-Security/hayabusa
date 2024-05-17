@@ -14,6 +14,7 @@
 **改善:**
 
 - `-d, --directory`オプションで複数のフォルダを指定できるようにした。 (#1335) (@hitenkoku)
+- REST APIからエクスポートされたSplunkログを分析できるようになった。 (#1083) (@hitenkoku)
 - `count`で複数のグループを指定できるようにした。例: `count() by IpAddress,SubStatus,LogonType >= 2`。また、出力される結果を更新した。例: `[condition] count(TargetUserName) by IpAddress > 3 in timeframe [result] count: 4 TargetUserName:tanaka/Administrator/adsyncadmin/suzuki IpAddress:- timeframe:5m` -> `Count: 4 ¦ TargetUserName: tanaka/Administrator/adsyncadmin/suzuki ¦ IpAddress: -` (#1339) (@fukusuket)
 
 ## 2.15.0 [2024/04/20] "Sonic Release"
