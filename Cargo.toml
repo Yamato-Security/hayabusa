@@ -4,7 +4,7 @@ version = "2.16.0-dev"
 repository = "https://github.com/Yamato-Security/hayabusa"
 authors = ["Yamato Security @SecurityYamato"]
 edition = "2021"
-rust-version = "1.77.2"
+rust-version = "1.78.0"
 include = ["src/**/*", "LICENSE.txt", "README.md", "CHANGELOG.md"]
 
 [dependencies]
@@ -65,3 +65,4 @@ openssl = { version = "*", features = ["vendored"] }  #vendored is needed to com
 [profile.release]
 lto = true
 strip = "symbols"
+overflow-checks = true
