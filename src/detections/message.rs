@@ -194,7 +194,7 @@ pub fn create_message(
                     if is_json_timeline {
                         record_details_info_map
                             .insert("#ExtraFieldInfo".into(), vec![CompactString::from("-")]);
-                        replaced_profiles.push((key.to_owned(), ExtraFieldInfo("".into())));
+                        replaced_profiles.push((key.to_owned(), ExtraFieldInfo("-".into())));
                     } else {
                         replaced_profiles.push((key.to_owned(), ExtraFieldInfo("-".into())));
                     }
@@ -230,7 +230,7 @@ pub fn create_message(
                     .collect();
                 if is_json_timeline {
                     record_details_info_map.insert("#ExtraFieldInfo".into(), extra_field_vec);
-                    replaced_profiles.push((key.to_owned(), ExtraFieldInfo("".into())));
+                    replaced_profiles.push((key.to_owned(), ExtraFieldInfo("-".into())));
                 } else if extra_field_vec.is_empty() {
                     replaced_profiles.push((key.to_owned(), ExtraFieldInfo("-".into())));
                 } else {

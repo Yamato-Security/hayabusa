@@ -806,7 +806,7 @@ impl Detection {
                     profile_converter.insert(key.as_str(), EventID("-".into()));
                 }
                 RecordID(_) => {
-                    profile_converter.insert(key.as_str(), RecordID("".into()));
+                    profile_converter.insert(key.as_str(), RecordID("-".into()));
                 }
                 RuleTitle(_) => {
                     profile_converter.insert(
