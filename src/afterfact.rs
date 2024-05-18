@@ -1231,7 +1231,11 @@ fn _get_serialized_disp_output(
                             output_str_char_pair.push(field_val_col_pair);
                         }
                     }
-                    output_str_char_pair
+                    if output_str_char_pair.is_empty() {
+                        vec![vec![(display_contents, None)]]
+                    } else {
+                        output_str_char_pair
+                    }
                 }
                 _ => {
                     vec![vec![(display_contents, None)]]
