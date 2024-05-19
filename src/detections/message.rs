@@ -314,6 +314,7 @@ pub fn parse_message(
                 .unwrap_or(tmp_event_record)
                 .get((suffix - 1) as usize)
                 .unwrap_or(tmp_event_record);
+            field = target_str;
         }
         let hash_value = get_serde_number_to_string(tmp_event_record, false);
         if hash_value.is_some() {

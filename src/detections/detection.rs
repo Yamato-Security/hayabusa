@@ -716,8 +716,9 @@ impl Detection {
             FieldDataMapKey::default()
         } else {
             FieldDataMapKey {
-                channel: CompactString::from(ch_str.clone().to_lowercase()),
+                channel: CompactString::from(ch_str.to_lowercase()),
                 event_id: eid.clone(),
+                provider: CompactString::from(provider.to_lowercase()),
             }
         };
         let detect_info = DetectInfo {

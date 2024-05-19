@@ -17,10 +17,11 @@ pub enum FieldDataConverter {
     ReplaceStr((AhoCorasick, Vec<String>)),
 }
 
-#[derive(Debug, Eq, Hash, PartialEq, Default, Clone)]
+#[derive(Debug, Default, Clone, PartialEq, Eq, Hash)]
 pub struct FieldDataMapKey {
     pub channel: CompactString,
     pub event_id: CompactString,
+    pub provider: CompactString,
 }
 
 impl FieldDataMapKey {
@@ -37,6 +38,12 @@ impl FieldDataMapKey {
                     .as_i64()
                     .unwrap_or_default()
                     .to_string(),
+            ),
+            provider: CompactString::from(
+                yaml_data["Provider_Name"]
+                    .as_str()
+                    .unwrap_or_default()
+                    .to_lowercase(),
             ),
         }
     }
@@ -189,6 +196,7 @@ mod tests {
         let key = FieldDataMapKey {
             channel: CompactString::from("Security".to_lowercase()),
             event_id: CompactString::from("4625".to_string()),
+            provider: CompactString::from(""),
         };
         map.insert(key.clone(), HashMap::new());
         let r = convert_field_data(&map, &key, "", "");
