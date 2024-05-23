@@ -482,7 +482,7 @@ fn _collect_recordinfo<'a>(
             // 一番子の要素の値しか収集しない
             let strval = value_to_string(cur_value);
             if let Some(strval) = strval {
-                let strval = strval.chars().fold(String::default(), |mut acc, c| {
+                let mut strval = strval.chars().fold(String::default(), |mut acc, c| {
                     if (c.is_control() || c.is_ascii_whitespace())
                         && !['\r', '\n', '\t'].contains(&c)
                     {
@@ -495,26 +495,21 @@ fn _collect_recordinfo<'a>(
                 if arr_index > 0 {
                     let (field_data_map, field_data_map_key) = filed_data_converter;
                     let i = arr_index + 1;
-                    let field = format!("{parent_key}[{i}]",).to_string();
+                    let field = format!("{parent_key}[{i}]",).to_lowercase();
                     if let Some(map) = field_data_map {
                         let converted_str = convert_field_data(
                             map,
                             field_data_map_key,
-                            field.to_lowercase().as_str(),
+                            field.as_str(),
                             strval.as_str(),
                             org_value,
                         );
                         if let Some(converted_str) = converted_str {
-                            output.insert((parent_key.to_string(), converted_str.to_string()));
-                        } else {
-                            output.insert((parent_key.to_string(), strval));
+                            strval = converted_str.to_string();
                         }
-                    } else {
-                        output.insert((parent_key.to_string(), strval));
                     }
-                } else {
-                    output.insert((parent_key.to_string(), strval));
                 }
+                output.insert((parent_key.to_string(), strval));
             }
         }
     }
