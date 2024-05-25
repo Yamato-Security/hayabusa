@@ -393,7 +393,15 @@ pub fn create_recordinfos(
     field_data_map: &Option<FieldDataMap>,
 ) -> Vec<CompactString> {
     let mut output = HashSet::new();
-    _collect_recordinfo(&mut vec![], "", record, &mut output);
+    _collect_recordinfo(
+        &mut vec![],
+        "",
+        0,
+        record,
+        record,
+        &mut output,
+        (field_data_map, field_data_map_key),
+    );
 
     let mut output_vec: Vec<&(String, String)> = output.iter().collect();
     // 同じレコードなら毎回同じ出力になるようにソートしておく
@@ -411,7 +419,7 @@ pub fn create_recordinfos(
         .map(|(key, value)| {
             if let Some(map) = field_data_map.as_ref() {
                 if let Some(converted_str) =
-                    convert_field_data(map, field_data_map_key, &key.to_lowercase(), value)
+                    convert_field_data(map, field_data_map_key, &key.to_lowercase(), value, record)
                 {
                     let val = remove_sp_char(converted_str);
                     return format!("{key}: {val}",).into();
@@ -429,13 +437,24 @@ pub fn create_recordinfos(
 fn _collect_recordinfo<'a>(
     keys: &mut Vec<&'a str>,
     parent_key: &'a str,
-    value: &'a Value,
+    arr_index: usize,
+    org_value: &'a Value,
+    cur_value: &'a Value,
     output: &mut HashSet<(String, String)>,
+    filed_data_converter: (&Option<FieldDataMap>, &FieldDataMapKey),
 ) {
-    match value {
+    match cur_value {
         Value::Array(ary) => {
-            for sub_value in ary {
-                _collect_recordinfo(keys, parent_key, sub_value, output);
+            for (i, sub_value) in ary.iter().enumerate() {
+                _collect_recordinfo(
+                    keys,
+                    parent_key,
+                    i,
+                    org_value,
+                    sub_value,
+                    output,
+                    filed_data_converter,
+                );
             }
         }
         Value::Object(obj) => {
@@ -452,7 +471,7 @@ fn _collect_recordinfo<'a>(
                     continue;
                 }
 
-                _collect_recordinfo(keys, key, value, output);
+                _collect_recordinfo(keys, key, 0, org_value, value, output, filed_data_converter);
             }
             if !parent_key.is_empty() {
                 keys.pop();
@@ -461,9 +480,9 @@ fn _collect_recordinfo<'a>(
         Value::Null => (),
         _ => {
             // 一番子の要素の値しか収集しない
-            let strval = value_to_string(value);
+            let strval = value_to_string(cur_value);
             if let Some(strval) = strval {
-                let strval = strval.chars().fold(String::default(), |mut acc, c| {
+                let mut strval = strval.chars().fold(String::default(), |mut acc, c| {
                     if (c.is_control() || c.is_ascii_whitespace())
                         && !['\r', '\n', '\t'].contains(&c)
                     {
@@ -473,6 +492,23 @@ fn _collect_recordinfo<'a>(
                     };
                     acc
                 });
+                if arr_index > 0 {
+                    let (field_data_map, field_data_map_key) = filed_data_converter;
+                    let i = arr_index + 1;
+                    let field = format!("{parent_key}[{i}]",).to_lowercase();
+                    if let Some(map) = field_data_map {
+                        let converted_str = convert_field_data(
+                            map,
+                            field_data_map_key,
+                            field.as_str(),
+                            strval.as_str(),
+                            org_value,
+                        );
+                        if let Some(converted_str) = converted_str {
+                            strval = converted_str.to_string();
+                        }
+                    }
+                }
                 output.insert((parent_key.to_string(), strval));
             }
         }
