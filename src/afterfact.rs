@@ -1886,48 +1886,43 @@ pub fn output_json_str(
                         continue;
                     }
                     let details_target_stock = details_target_stocks.unwrap();
-                    // aggregation conditionの場合は分解せずにそのまま出力する
-                    if detect_info.is_condition {
-                        let details_val =
-                            if details_target_stock.is_empty() || details_target_stock[0] == "-" {
-                                "-".into()
-                            } else {
-                                details_target_stock[0].clone()
-                            };
-                        output_stock.push(_create_json_output_format(
-                            key,
-                            &details_val,
-                            key.starts_with('\"'),
-                            details_val.starts_with('\"'),
-                            4,
-                        ));
-                        if jsonl_output_flag {
-                            target.push(output_stock.join(""));
-                        } else {
-                            target.push(output_stock.join("\n"));
-                        }
-                        continue;
-                    } else {
-                        output_stock.push(format!("    \"{key}\": {{"));
-                    };
                     let mut children_output_stock: HashMap<CompactString, Vec<CompactString>> =
                         HashMap::new();
                     let mut children_output_order = vec![];
-                    for contents in details_target_stock.iter() {
-                        let (key, value) = contents.split_once(':').unwrap_or_default();
-                        let output_key = _convert_valid_json_str(&[key.trim()], false);
-                        let fmted_val = _convert_valid_json_str(&[value.trim()], false);
-                        if let RawEntryMut::Vacant(_) = children_output_stock
-                            .raw_entry_mut()
-                            .from_key(output_key.as_str())
-                        {
-                            children_output_order.push(output_key.clone());
+                    if detect_info.is_condition {
+                        if details_target_stock[0] == "-" {
+                            output_stock.push(_create_json_output_format(
+                                key,
+                                details_target_stock[0].as_str(),
+                                key.starts_with('\"'),
+                                details_target_stock[0].starts_with('\"'),
+                                4,
+                            ));
+                            if jsonl_output_flag {
+                                target.push(output_stock.join(""));
+                            } else {
+                                target.push(output_stock.join("\n"));
+                            }
+                            continue;
                         }
-                        children_output_stock
-                            .entry(output_key.into())
-                            .or_insert(vec![])
-                            .push(fmted_val.into());
+                        let splitted_agg_details = details_target_stock[0]
+                            .split(" ¦ ")
+                            .map(|x| x.into())
+                            .collect_vec();
+                        process_target_stock(
+                            &splitted_agg_details,
+                            &mut children_output_stock,
+                            &mut children_output_order,
+                        );
+                    } else {
+                        process_target_stock(
+                            details_target_stock,
+                            &mut children_output_stock,
+                            &mut children_output_order,
+                        );
                     }
+                    output_stock.push(format!("    \"{key}\": {{"));
+
                     // ルール内での表示順に合わせた表示順を戻した配列
                     let mut sorted_children_output_stock: Vec<(
                         &CompactString,
@@ -2062,6 +2057,27 @@ pub fn output_json_str(
     }
 }
 
+fn process_target_stock(
+    details_target_stock: &[CompactString],
+    children_output_stock: &mut HashMap<CompactString, Vec<CompactString>>,
+    children_output_order: &mut Vec<CompactString>,
+) {
+    for contents in details_target_stock.iter() {
+        let (key, value) = contents.split_once(':').unwrap_or_default();
+        let output_key = _convert_valid_json_str(&[key.trim()], false);
+        let fmted_val = _convert_valid_json_str(&[value.trim()], false);
+        if let RawEntryMut::Vacant(_) = children_output_stock
+            .raw_entry_mut()
+            .from_key(output_key.as_str())
+        {
+            children_output_order.push(output_key.clone().into());
+        }
+        children_output_stock
+            .entry(output_key.into())
+            .or_insert(vec![])
+            .push(fmted_val.into());
+    }
+}
 /// output detected rule author name function.
 fn output_detected_rule_authors(
     rule_author_counter: &HashMap<CompactString, i128>,

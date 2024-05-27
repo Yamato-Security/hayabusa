@@ -18,6 +18,9 @@
 - `count`で複数のグループを指定できるようにした。例: `count() by IpAddress,SubStatus,LogonType >= 2`。また、出力される結果を更新した。例: `[condition] count(TargetUserName) by IpAddress > 3 in timeframe [result] count: 4 TargetUserName:tanaka/Administrator/adsyncadmin/suzuki IpAddress:- timeframe:5m` -> `Count: 4 ¦ TargetUserName: tanaka/Administrator/adsyncadmin/suzuki ¦ IpAddress: -` (#1339) (@fukusuket)
 - リリースモードでのオーバーフローチェックを有効にした。(#1348) (@YamatoSecurity)
 - フィールドデータマッピングファイル(`rules/config/data_mapping/*.yaml`)で任意の`Provider_Name`フィールドを指定できるようにし、`Data[x]`表記に対応した。(#1350) (@fukusuket)
+- カウントルールのJSON出力で、フィールド情報が分離されるようになった。 (#1342) (@fukusuket)
+  - 以前: `"Details": "[condition] count() by IpAddress >= 5 in timeframe [result] count:3558 IpAddress:192.168.198.149 timeframe:5m"`
+  - 現在: `"Details": { "Count": 3558, "IpAddress": "192.168.198.149" }`
 
 ## 2.15.0 [2024/04/20] "Sonic Release"
 

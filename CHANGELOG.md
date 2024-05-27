@@ -18,6 +18,9 @@
 - You can now specify multiple groups with `count`. Ex: `count() by IpAddress,SubStatus,LogonType >= 2` Also, the output has been updated. Ex: `[condition] count(TargetUserName) by IpAddress > 3 in timeframe [result] count: 4 TargetUserName:tanaka/Administrator/adsyncadmin/suzuki IpAddress:- timeframe:5m` -> `Count: 4 ¦ TargetUserName: tanaka/Administrator/adsyncadmin/suzuki ¦ IpAddress: -` (#1339) (@fukusuket)
 - Enabled overflow checks in release mode. (#1348) (@YamatoSecurity)
 - Added support for specifying an optional `Provider_Name` field in field data mapping files (`rules/config/data_mapping/*.yaml`) as well as support for `Data[x]` notation. (#1350) (@fukusuket)
+- JSON output in count rules now separates field information. (#1342) (@fukusuket)
+  - Before: `"Details": "[condition] count() by IpAddress >= 5 in timeframe [result] count:3558 IpAddress:192.168.198.149 timeframe:5m"`
+  - After: `"Details": { "Count": 3558, "IpAddress": "192.168.198.149" }`
 
 ## 2.15.0 [2024/04/20] "Sonic Release"
 
