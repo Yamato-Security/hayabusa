@@ -4,46 +4,6 @@ extern crate maxminddb;
 extern crate serde;
 extern crate serde_derive;
 
-use bytesize::ByteSize;
-use chrono::{DateTime, Datelike, Local, NaiveDateTime, Utc};
-use clap::Command;
-use compact_str::CompactString;
-use console::{style, Style};
-use dialoguer::Confirm;
-use dialoguer::{theme::ColorfulTheme, Select};
-use evtx::{EvtxParser, ParserSettings, RecordAllocation};
-use hashbrown::{HashMap, HashSet};
-use hayabusa::afterfact::{self, AfterfactInfo, AfterfactWriter};
-use hayabusa::debug::checkpoint_process_timer::CHECKPOINT;
-use hayabusa::detections::configs::{
-    load_pivot_keywords, Action, ConfigReader, EventKeyAliasConfig, StoredStatic, TargetEventTime,
-    TargetIds, CURRENT_EXE_PATH, STORED_EKEY_ALIAS, STORED_STATIC,
-};
-use hayabusa::detections::detection::{self, EvtxRecordInfo};
-use hayabusa::detections::message::{AlertMessage, DetectInfo, ERROR_LOG_STACK};
-use hayabusa::detections::rule::{get_detection_keys, RuleNode};
-use hayabusa::detections::utils;
-use hayabusa::detections::utils::{
-    check_setting_path, get_writable_color, output_and_data_stack_for_html, output_profile_name,
-};
-use hayabusa::filter::create_channel_filter;
-use hayabusa::options::htmlreport::{self, HTML_REPORTER};
-use hayabusa::options::pivot::create_output;
-use hayabusa::options::pivot::PIVOT_KEYWORD;
-use hayabusa::options::profile::set_default_profile;
-use hayabusa::options::{level_tuning::LevelTuning, update::Update};
-use hayabusa::timeline::computer_metrics::countup_event_by_computer;
-use hayabusa::{detections::configs, timeline::timelines::Timeline};
-use hayabusa::{detections::utils::write_color_buffer, filter};
-use hayabusa::{options, yaml};
-use indicatif::ProgressBar;
-use indicatif::{ProgressDrawTarget, ProgressStyle};
-use itertools::Itertools;
-use libmimalloc_sys::mi_stats_print_out;
-use mimalloc::MiMalloc;
-use nested::Nested;
-use num_format::{Locale, ToFormattedString};
-use serde_json::{Map, Value};
 use std::borrow::BorrowMut;
 use std::ffi::{OsStr, OsString};
 use std::fmt::Display;
@@ -59,11 +19,53 @@ use std::{
     path::PathBuf,
     vec,
 };
+
+use bytesize::ByteSize;
+use chrono::{DateTime, Datelike, Local, NaiveDateTime, Utc};
+use clap::Command;
+use compact_str::CompactString;
+use console::{style, Style};
+use dialoguer::Confirm;
+use dialoguer::{theme::ColorfulTheme, Select};
+use evtx::{EvtxParser, ParserSettings, RecordAllocation};
+use hashbrown::{HashMap, HashSet};
+use indicatif::ProgressBar;
+use indicatif::{ProgressDrawTarget, ProgressStyle};
+use itertools::Itertools;
+use libmimalloc_sys::mi_stats_print_out;
+use mimalloc::MiMalloc;
+use nested::Nested;
+use num_format::{Locale, ToFormattedString};
+use serde_json::{Map, Value};
 use termcolor::{BufferWriter, Color, ColorChoice};
 use tokio::runtime::Runtime;
 use tokio::spawn;
 use tokio::task::JoinHandle;
 
+use hayabusa::afterfact::{self, AfterfactInfo, AfterfactWriter};
+use hayabusa::debug::checkpoint_process_timer::CHECKPOINT;
+use hayabusa::detections::configs::{
+    load_pivot_keywords, Action, ConfigReader, EventKeyAliasConfig, StoredStatic, TargetEventTime,
+    TargetIds, CURRENT_EXE_PATH, STORED_EKEY_ALIAS, STORED_STATIC,
+};
+use hayabusa::detections::detection::{self, EvtxRecordInfo};
+use hayabusa::detections::message::{AlertMessage, DetectInfo, ERROR_LOG_STACK};
+use hayabusa::detections::rule::correlation_parser::parse_correlation_rules;
+use hayabusa::detections::rule::{get_detection_keys, RuleNode};
+use hayabusa::detections::utils;
+use hayabusa::detections::utils::{
+    check_setting_path, get_writable_color, output_and_data_stack_for_html, output_profile_name,
+};
+use hayabusa::filter::create_channel_filter;
+use hayabusa::options::htmlreport::{self, HTML_REPORTER};
+use hayabusa::options::pivot::create_output;
+use hayabusa::options::pivot::PIVOT_KEYWORD;
+use hayabusa::options::profile::set_default_profile;
+use hayabusa::options::{level_tuning::LevelTuning, update::Update};
+use hayabusa::timeline::computer_metrics::countup_event_by_computer;
+use hayabusa::{detections::configs, timeline::timelines::Timeline};
+use hayabusa::{detections::utils::write_color_buffer, filter};
+use hayabusa::{options, yaml};
 #[cfg(target_os = "windows")]
 use is_elevated::is_elevated;
 
@@ -1455,7 +1457,10 @@ impl App {
                     println!("{evtx_files_after_channel_filter}");
                 }
                 if !stored_static.enable_all_rules {
-                    rule_files.retain(|r| channel_filter.rulepathes.contains(&r.rulepath));
+                    rule_files.retain(|r| {
+                        channel_filter.rulepathes.contains(&r.rulepath)
+                            || !r.yaml["correlation"].is_badvalue()
+                    });
                     let rules_after_channel_filter = format!(
                         "Detection rules enabled after channel filter: {}",
                         (rule_files.len()).to_formatted_string(&Locale::en)
@@ -1464,6 +1469,7 @@ impl App {
                     println!();
                 }
             }
+            rule_files = parse_correlation_rules(rule_files, stored_static);
             output_profile_name(&stored_static.output_option, true);
             println!();
             println!("Scanning in progress. Please wait.");
@@ -2326,9 +2332,11 @@ mod tests {
         path::Path,
     };
 
-    use crate::App;
     use chrono::Local;
     use hashbrown::HashSet;
+    use itertools::Itertools;
+    use yaml_rust::YamlLoader;
+
     use hayabusa::{
         afterfact::{self, AfterfactInfo},
         detections::{
@@ -2344,8 +2352,8 @@ mod tests {
         options::htmlreport::HTML_REPORTER,
         timeline::timelines::Timeline,
     };
-    use itertools::Itertools;
-    use yaml_rust::YamlLoader;
+
+    use crate::App;
 
     fn create_dummy_stored_static() -> StoredStatic {
         StoredStatic::create_static_data(Some(Config {
