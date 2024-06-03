@@ -4,12 +4,12 @@ use yaml_rust::Yaml;
 
 use crate::detections::configs::StoredStatic;
 use crate::detections::message::{AlertMessage, ERROR_LOG_STACK};
+use crate::detections::rule::{DetectionNode, RuleNode};
 use crate::detections::rule::aggregation_parser::{
     AggregationConditionToken, AggregationParseInfo,
 };
 use crate::detections::rule::count::TimeFrameInfo;
 use crate::detections::rule::selectionnodes::OrSelectionNode;
-use crate::detections::rule::{DetectionNode, RuleNode};
 
 fn is_related_rule(rule_node: &RuleNode, id_or_title: &str) -> bool {
     if let Some(hash) = rule_node.yaml.as_hash() {
@@ -107,7 +107,7 @@ fn get_group_by_from_yaml(yaml: &Yaml) -> Result<String, Box<dyn Error>> {
         group_by.push(group);
     }
 
-    Ok(group_by.join("_"))
+    Ok(group_by.join(","))
 }
 fn parse_tframe(value: String) -> Result<TimeFrameInfo, Box<dyn Error>> {
     let ttype;
