@@ -3,6 +3,7 @@ use std::error::Error;
 use yaml_rust::Yaml;
 
 use crate::detections::configs::StoredStatic;
+use crate::detections::message::{AlertMessage, ERROR_LOG_STACK};
 use crate::detections::rule::aggregation_parser::{
     AggregationConditionToken, AggregationParseInfo,
 };
@@ -31,7 +32,9 @@ fn parse_condition(yaml: &Yaml) -> Result<(AggregationConditionToken, i64), Box<
         if let Some(condition) = hash.get(&Yaml::String("condition".to_string())) {
             if let Some(condition_hash) = condition.as_hash() {
                 if let Some((key, value)) = condition_hash.into_iter().next() {
-                    let key_str = key.as_str().ok_or("Failed to convert key to string")?;
+                    let key_str = key
+                        .as_str()
+                        .ok_or("Failed to convert condition key to string")?;
                     let token = match key_str {
                         "eq" => AggregationConditionToken::EQ,
                         "lte" => AggregationConditionToken::LE,
@@ -40,7 +43,9 @@ fn parse_condition(yaml: &Yaml) -> Result<(AggregationConditionToken, i64), Box<
                         "gt" => AggregationConditionToken::GT,
                         _ => return Err(format!("Invalid condition token: {}", key_str).into()),
                     };
-                    let value_num = value.as_i64().ok_or("Failed to convert value to i64")?;
+                    let value_num = value
+                        .as_i64()
+                        .ok_or("Failed to convert condition value to i64")?;
                     return Ok((token, value_num));
                 }
             }
@@ -151,25 +156,53 @@ fn create_detection(
 ) -> Result<DetectionNode, Box<dyn Error>> {
     let condition = parse_condition(&rule_node.yaml["correlation"])?;
     let group_by = get_group_by_from_yaml(&rule_node.yaml)?;
-    let timespan = rule_node.yaml["correlation"]["timespan"].as_str().unwrap();
-    let time_frame = parse_tframe(timespan.to_string())?;
-    let nodes = to_or_selection_node(related_rule_nodes);
-    let agg_info = AggregationParseInfo {
-        _field_name: None,
-        _by_field_name: Some(group_by),
-        _cmp_op: condition.0,
-        _cmp_num: condition.1,
-    };
-    Ok(DetectionNode::new_with_data(
-        Some(Box::new(nodes)),
-        Some(agg_info),
-        Some(time_frame),
-    ))
+    let timespan = rule_node.yaml["correlation"]["timespan"].as_str();
+    match timespan {
+        None => Err("Failed to get 'timespan'".into()),
+        Some(timespan) => {
+            let time_frame = parse_tframe(timespan.to_string())?;
+            let nodes = to_or_selection_node(related_rule_nodes);
+            let agg_info = AggregationParseInfo {
+                _field_name: None,
+                _by_field_name: Some(group_by),
+                _cmp_op: condition.0,
+                _cmp_num: condition.1,
+            };
+            Ok(DetectionNode::new_with_data(
+                Some(Box::new(nodes)),
+                Some(agg_info),
+                Some(time_frame),
+            ))
+        }
+    }
+}
+
+fn error_log(
+    rule_path: &str,
+    reason: &str,
+    stored_static: &StoredStatic,
+    parseerror_count: &mut u128,
+) {
+    let msg = format!(
+        "Failed to parse rule. (FilePath : {}) {}",
+        rule_path, reason
+    );
+    if stored_static.verbose_flag {
+        AlertMessage::alert(msg.as_str()).ok();
+    }
+    if !stored_static.quiet_errors_flag {
+        ERROR_LOG_STACK
+            .lock()
+            .unwrap()
+            .push(format!("[WARN] {msg}"));
+    }
+    *parseerror_count += 1;
 }
 
 pub fn parse_correlation_rules(
     rule_nodes: Vec<RuleNode>,
     stored_static: &StoredStatic,
+    parseerror_count: &mut u128,
 ) -> Vec<RuleNode> {
     let (correlation_rules, other_rules): (Vec<RuleNode>, Vec<RuleNode>) = rule_nodes
         .into_iter()
@@ -177,10 +210,40 @@ pub fn parse_correlation_rules(
     let mut parsed_rules: Vec<RuleNode> = correlation_rules
         .into_iter()
         .map(|rule_node| {
-            let related_rules_ids = get_related_rules_id(&rule_node.yaml).unwrap();
+            if rule_node.yaml["correlation"]["type"].as_str() != Some("event_count") {
+                let m = "The type of correlations rule only supports event_count.";
+                error_log(&rule_node.rulepath, m, stored_static, parseerror_count);
+                return rule_node;
+            }
+            let related_rules_ids = get_related_rules_id(&rule_node.yaml);
+            let related_rules_ids = match related_rules_ids {
+                Ok(related_rules_ids) => related_rules_ids,
+                Err(_) => {
+                    let m = "Related rule not found.";
+                    error_log(&rule_node.rulepath, m, stored_static, parseerror_count);
+                    return rule_node;
+                }
+            };
+            if related_rules_ids.is_empty() {
+                let m = "Related rule not found.";
+                error_log(&rule_node.rulepath, m, stored_static, parseerror_count);
+                return rule_node;
+            }
             let related_rules =
                 create_related_rule_nodes(related_rules_ids, &other_rules, stored_static);
-            let detection = create_detection(&rule_node, related_rules).unwrap();
+            let detection = create_detection(&rule_node, related_rules);
+            let detection = match detection {
+                Ok(detection) => detection,
+                Err(e) => {
+                    error_log(
+                        &rule_node.rulepath,
+                        e.to_string().as_str(),
+                        stored_static,
+                        parseerror_count,
+                    );
+                    return rule_node;
+                }
+            };
             RuleNode::new_with_detection(rule_node.rulepath, rule_node.yaml, detection)
         })
         .collect();

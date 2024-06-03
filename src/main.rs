@@ -50,7 +50,6 @@ use hayabusa::detections::configs::{
 };
 use hayabusa::detections::detection::{self, EvtxRecordInfo};
 use hayabusa::detections::message::{AlertMessage, DetectInfo, ERROR_LOG_STACK};
-use hayabusa::detections::rule::correlation_parser::parse_correlation_rules;
 use hayabusa::detections::rule::{get_detection_keys, RuleNode};
 use hayabusa::detections::utils;
 use hayabusa::detections::utils::{
@@ -1469,7 +1468,6 @@ impl App {
                     println!();
                 }
             }
-            rule_files = parse_correlation_rules(rule_files, stored_static);
             output_profile_name(&stored_static.output_option, true);
             println!();
             println!("Scanning in progress. Please wait.");

@@ -20,6 +20,7 @@ use crate::detections::configs::Action;
 use crate::detections::configs::STORED_EKEY_ALIAS;
 use crate::detections::field_data_map::FieldDataMapKey;
 use crate::detections::message::{AlertMessage, DetectInfo, ERROR_LOG_STACK, TAGS_CONFIG};
+use crate::detections::rule::correlation_parser::parse_correlation_rules;
 use crate::detections::rule::{self, AggResult, RuleNode};
 use crate::detections::utils::{create_recordinfos, format_time, write_color_buffer};
 use crate::detections::utils::{get_serde_number_to_string, make_ascii_titlecase};
@@ -134,12 +135,13 @@ impl Detection {
             None
         };
         // parse rule files
-        let ret = rulefile_loader
+        let mut ret = rulefile_loader
             .files
             .into_iter()
             .map(|rule_file_tuple| rule::create_rule(rule_file_tuple.0, rule_file_tuple.1))
             .filter_map(return_if_success)
             .collect();
+        ret = parse_correlation_rules(ret, stored_static, &mut parseerror_count);
         if !(stored_static.logon_summary_flag
             || stored_static.search_flag
             || stored_static.metrics_flag
