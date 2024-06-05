@@ -10,6 +10,7 @@
     - [Mimikatz Use](https://github.com/SigmaHQ/sigma/blob/master/rules/windows/builtin/win_alert_mimikatz_keywords.yml)
 - デフォルトでは、適用可能なルールを持つ`.evtx`ファイルのみ読み込む。たとえば、さまざまなイベントログのディレクトリをスキャンしている場合でも、 `Channel: Security` を探すルールのみを有効にした場合、Hayabusaは`Security`以外のすべてのイベントログを無視します。ベンチマークでは、通常のスキャンで約10％、単一のルールでスキャンする場合は最大60％以上のパフォーマンス向上が得られる。チャネルに関係なくすべての`.evtx`ファイルを読み込みたい場合は、`csv-timeline` と `json-timeline` の `-a、--scan-all-evtx-files` オプションでこのフィルタリングをオフにすることができる。(#1318) (@fukusuket)
 - 注意: チャンネルフィルタリングは .evtx ファイルにのみ適用され、`-J, --json-input`オプションを使用してイベントログをJSONファイルから読み込む際に`-A`または`-a`を指定するとエラーが発生する。(#1345) (@fukusuket)
+- Sigma CorrelationのEvent Countに対応した。 (#1337) (@fukusuket)
 
 **改善:**
 

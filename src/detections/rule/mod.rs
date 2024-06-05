@@ -1,31 +1,32 @@
 extern crate regex;
 
-use chrono::{DateTime, Utc};
-
-use hashbrown::HashMap;
-use nested::Nested;
 use std::{fmt::Debug, sync::Arc, vec};
 
+use chrono::{DateTime, Utc};
+use hashbrown::HashMap;
+use nested::Nested;
 use yaml_rust::Yaml;
-
-mod matchers;
-mod selectionnodes;
-use self::selectionnodes::{LeafSelectionNode, SelectionNode};
-mod aggregation_parser;
-use self::aggregation_parser::AggregationParseInfo;
-
-mod condition_parser;
-mod count;
-use self::count::{AggRecordTimeInfo, TimeFrameInfo};
 
 use super::configs::{EventKeyAliasConfig, StoredStatic};
 use super::detection::EvtxRecordInfo;
+
+use self::aggregation_parser::AggregationParseInfo;
+use self::count::{AggRecordTimeInfo, TimeFrameInfo};
+use self::selectionnodes::{LeafSelectionNode, SelectionNode};
+
+mod aggregation_parser;
+mod condition_parser;
+pub mod correlation_parser;
+mod count;
+mod matchers;
+mod selectionnodes;
 
 pub fn create_rule(rulepath: String, yaml: Yaml) -> RuleNode {
     RuleNode::new(rulepath, yaml)
 }
 
-/// Ruleファイルを表すノード
+/// Ruleファイルを表すノ
+/// ード
 pub struct RuleNode {
     pub rulepath: String,
     pub yaml: Yaml,
@@ -49,8 +50,24 @@ impl RuleNode {
         }
     }
 
+    fn new_with_detection(
+        rule_path: String,
+        yaml_data: Yaml,
+        detection: DetectionNode,
+    ) -> RuleNode {
+        RuleNode {
+            rulepath: rule_path,
+            yaml: yaml_data,
+            detection,
+            countdata: HashMap::new(),
+        }
+    }
+
     pub fn init(&mut self, stored_static: &StoredStatic) -> Result<(), Vec<String>> {
         let mut errmsgs: Vec<String> = vec![];
+        if !&self.yaml["correlation"].is_badvalue() {
+            return Result::Ok(());
+        }
 
         // detection node initialization
         let detection_result = self.detection.init(&self.yaml["detection"], stored_static);
@@ -155,6 +172,19 @@ impl DetectionNode {
             condition: Option::None,
             aggregation_condition: Option::None,
             timeframe: Option::None,
+        }
+    }
+
+    pub fn new_with_data(
+        condition: Option<Box<dyn SelectionNode>>,
+        aggregation_condition: Option<AggregationParseInfo>,
+        timeframe: Option<TimeFrameInfo>,
+    ) -> DetectionNode {
+        DetectionNode {
+            name_to_selection: HashMap::new(),
+            condition,
+            aggregation_condition,
+            timeframe,
         }
     }
 
@@ -376,7 +406,8 @@ impl AggResult {
 mod tests {
     use std::path::Path;
 
-    use super::RuleNode;
+    use yaml_rust::YamlLoader;
+
     use crate::detections::{
         self,
         configs::{
@@ -386,7 +417,8 @@ mod tests {
         rule::create_rule,
         utils,
     };
-    use yaml_rust::YamlLoader;
+
+    use super::RuleNode;
 
     fn create_dummy_stored_static() -> StoredStatic {
         StoredStatic::create_static_data(Some(Config {
