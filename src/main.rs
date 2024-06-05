@@ -43,6 +43,7 @@ use libmimalloc_sys::mi_stats_print_out;
 use mimalloc::MiMalloc;
 use nested::Nested;
 use num_format::{Locale, ToFormattedString};
+use rust_embed::Embed;
 use serde_json::{Map, Value};
 use std::borrow::BorrowMut;
 use std::ffi::{OsStr, OsString};
@@ -63,6 +64,15 @@ use termcolor::{BufferWriter, Color, ColorChoice};
 use tokio::runtime::Runtime;
 use tokio::spawn;
 use tokio::task::JoinHandle;
+
+#[derive(Embed)]
+#[folder = "art/"]
+struct Arts;
+
+#[derive(Embed)]
+#[folder = "./"]
+#[include = "contributors.txt"]
+struct Contributors;
 
 #[cfg(target_os = "windows")]
 use is_elevated::is_elevated;
@@ -966,23 +976,16 @@ impl App {
     }
 
     fn print_contributors(&self) {
-        match fs::read_to_string(
-            utils::check_setting_path(&CURRENT_EXE_PATH.to_path_buf(), "contributors.txt", true)
-                .unwrap(),
-        ) {
-            Ok(contents) => {
-                write_color_buffer(
-                    &BufferWriter::stdout(ColorChoice::Always),
-                    None,
-                    &contents,
-                    true,
-                )
-                .ok();
-            }
-            Err(err) => {
-                AlertMessage::alert(&format!("{err}")).ok();
-            }
-        }
+        let contributors = Contributors::get("contributors.txt").unwrap();
+        let content = std::str::from_utf8(contributors.data.as_ref()).unwrap_or_default();
+
+        write_color_buffer(
+            &BufferWriter::stdout(ColorChoice::Always),
+            None,
+            &content,
+            true,
+        )
+        .ok();
     }
 
     fn analysis_files(
@@ -2263,20 +2266,19 @@ impl App {
     /// output easter egg arts
     fn output_eggs(&self, exec_datestr: &str) {
         let mut eggs: HashMap<&str, (&str, Color)> = HashMap::new();
-        eggs.insert("01/01", ("art/happynewyear.txt", Color::Rgb(255, 0, 0))); // Red
-        eggs.insert("02/22", ("art/ninja.txt", Color::Rgb(0, 171, 240))); // Cerulean
-        eggs.insert("05/09", ("art/goku.txt", Color::Rgb(243, 156, 22))); // Middle Washed Orange
-        eggs.insert("08/08", ("art/takoyaki.txt", Color::Rgb(181, 101, 29))); // Light Brown
-        eggs.insert("10/31", ("art/halloween.txt", Color::Rgb(255, 87, 51))); // Pumpkin Orange
-        eggs.insert("12/24", ("art/christmas.txt", Color::Rgb(70, 192, 22))); // Green
-        eggs.insert("12/25", ("art/christmas.txt", Color::Rgb(70, 192, 22))); // Green
+        eggs.insert("01/01", ("happynewyear.txt", Color::Rgb(255, 0, 0))); // Red
+        eggs.insert("02/22", ("ninja.txt", Color::Rgb(0, 171, 240))); // Cerulean
+        eggs.insert("05/09", ("goku.txt", Color::Rgb(243, 156, 22))); // Middle Washed Orange
+        eggs.insert("08/08", ("takoyaki.txt", Color::Rgb(181, 101, 29))); // Light Brown
+        eggs.insert("10/31", ("halloween.txt", Color::Rgb(255, 87, 51))); // Pumpkin Orange
+        eggs.insert("12/24", ("christmas.txt", Color::Rgb(70, 192, 22))); // Green
+        eggs.insert("12/25", ("christmas.txt", Color::Rgb(70, 192, 22))); // Green
 
         match eggs.get(exec_datestr) {
             None => {}
             Some((path, color)) => {
-                let egg_path =
-                    utils::check_setting_path(&CURRENT_EXE_PATH.to_path_buf(), path, true).unwrap();
-                let content = fs::read_to_string(egg_path).unwrap_or_default();
+                let art = Arts::get(path).unwrap();
+                let content = std::str::from_utf8(art.data.as_ref()).unwrap_or_default();
                 write_color_buffer(
                     &BufferWriter::stdout(ColorChoice::Always),
                     Some(color.to_owned()),

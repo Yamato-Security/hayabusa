@@ -6,12 +6,17 @@ use horrorshow::prelude::*;
 use lazy_static::lazy_static;
 use nested::Nested;
 use pulldown_cmark::{html, Options, Parser};
-use std::fs::{create_dir, read_to_string, File};
-use std::io::{BufWriter, Read, Write};
+use rust_embed::Embed;
+use std::fs::{create_dir, File};
+use std::io::{BufWriter, Write};
 use std::path::Path;
 use std::sync::RwLock;
 
 use crate::detections::configs::{Action, Config};
+
+#[derive(Embed)]
+#[folder = "config/html_report/"]
+struct HtmlReportsConfig;
 
 lazy_static! {
     pub static ref HTML_REPORTER: RwLock<HtmlReporter> = RwLock::new(HtmlReporter::new());
@@ -110,9 +115,13 @@ pub fn create_html_file(input_html: String, path_str: &str) {
     }
 
     let mut html_writer = BufWriter::new(File::create(path).unwrap());
-    let img_b64 = img_to_base64("./config/html_report/logo.png");
-    let favicon_b64 = img_to_base64("./config/html_report/favicon.png");
-    let css_data = read_to_string("./config/html_report/hayabusa_report.css").unwrap_or_default();
+    let img_b64 = img_to_base64("logo.png");
+    let favicon_b64 = img_to_base64("favicon.png");
+    let css_data = if let Some(emb_css_data) = HtmlReportsConfig::get("hayabusa_report.css") {
+        String::from_utf8(emb_css_data.data.to_vec()).unwrap_or_default()
+    } else {
+        String::default()
+    };
 
     let html_data = format!(
         "{}",
@@ -154,20 +163,18 @@ fn get_file_type(hex: &str) -> &str {
 }
 
 fn img_to_base64(path: &str) -> String {
-    let open_result = File::open(path);
-    if open_result.is_err() {
-        return String::default();
-    }
-    let mut file = open_result.unwrap();
-    let mut vec = Vec::new();
-    let _ = file.read_to_end(&mut vec);
-    let hex = hex::encode(&vec);
-    let file_type = get_file_type(&hex);
-    if file_type.is_empty() {
-        String::default()
+    if let Some(file) = HtmlReportsConfig::get(path) {
+        let vec = file.data.as_ref();
+        let hex = hex::encode(vec);
+        let file_type = get_file_type(&hex);
+        if file_type.is_empty() {
+            String::default()
+        } else {
+            let file = general_purpose::STANDARD.encode(vec).replace("\r\n", "");
+            format!("data:image/{file_type};base64,{file}",)
+        }
     } else {
-        let file = general_purpose::STANDARD.encode(&vec).replace("\r\n", "");
-        format!("data:image/{file_type};base64,{file}",)
+        return String::default();
     }
 }
 
@@ -566,8 +573,8 @@ mod tests {
         );
 
         let css_contents = read_to_string("./config/html_report/hayabusa_report.css").unwrap();
-        let favicon_img = img_to_base64("./config/html_report/favicon.png");
-        let logo_img = img_to_base64("./config/html_report/logo.png");
+        let favicon_img = img_to_base64("favicon.png");
+        let logo_img = img_to_base64("logo.png");
         let header = format!(
             r#"<!DOCTYPE html><html><head><meta charset="UTF-8"><style type="text/css">{css_contents}</style><link rel="icon" type="image/png" href="{favicon_img}"></head><body><section><img id="logo" src="{logo_img}">"#
         );
