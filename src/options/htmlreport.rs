@@ -174,7 +174,7 @@ fn img_to_base64(path: &str) -> String {
             format!("data:image/{file_type};base64,{file}",)
         }
     } else {
-        return String::default();
+        String::default()
     }
 }
 
