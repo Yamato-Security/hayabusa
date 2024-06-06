@@ -984,7 +984,7 @@ impl App {
         write_color_buffer(
             &BufferWriter::stdout(ColorChoice::Always),
             None,
-            &content,
+            content,
             true,
         )
         .ok();
