@@ -26,28 +26,53 @@ fn is_related_rule(rule_node: &RuleNode, id_or_title: &str) -> bool {
     }
     false
 }
+fn find_condition_field_value(
+    rule_type: Option<&Yaml>,
+    pair: Vec<(&Yaml, &Yaml)>,
+) -> Option<String> {
+    for (key, value) in pair {
+        if let Some(key_str) = key.as_str() {
+            if key_str == "field" && rule_type == Some(&Yaml::String("value_count".to_string())) {
+                return value.as_str().map(|s| s.to_string());
+            }
+        }
+    }
+    None
+}
 
-fn parse_condition(yaml: &Yaml) -> Result<(AggregationConditionToken, i64), Box<dyn Error>> {
+fn process_condition_pairs(
+    pair: Vec<(&Yaml, &Yaml)>,
+    field: Option<String>,
+) -> Result<(AggregationConditionToken, i64, Option<String>), Box<dyn Error>> {
+    for (key, value) in pair {
+        if let Some(key_str) = key.as_str() {
+            let token = match key_str {
+                "eq" => AggregationConditionToken::EQ,
+                "lte" => AggregationConditionToken::LE,
+                "gte" => AggregationConditionToken::GE,
+                "lt" => AggregationConditionToken::LT,
+                "gt" => AggregationConditionToken::GT,
+                _ => continue,
+            };
+            let value_num = value
+                .as_i64()
+                .ok_or("Failed to convert condition value to i64")?;
+            return Ok((token, value_num, field.clone()));
+        }
+    }
+    Err("Failed to match any condition".into())
+}
+
+fn parse_condition(
+    yaml: &Yaml,
+) -> Result<(AggregationConditionToken, i64, Option<String>), Box<dyn Error>> {
     if let Some(hash) = yaml.as_hash() {
+        let rule_type = hash.get(&Yaml::String("type".to_string()));
         if let Some(condition) = hash.get(&Yaml::String("condition".to_string())) {
             if let Some(condition_hash) = condition.as_hash() {
-                if let Some((key, value)) = condition_hash.into_iter().next() {
-                    let key_str = key
-                        .as_str()
-                        .ok_or("Failed to convert condition key to string")?;
-                    let token = match key_str {
-                        "eq" => AggregationConditionToken::EQ,
-                        "lte" => AggregationConditionToken::LE,
-                        "gte" => AggregationConditionToken::GE,
-                        "lt" => AggregationConditionToken::LT,
-                        "gt" => AggregationConditionToken::GT,
-                        _ => return Err(format!("Invalid condition token: {}", key_str).into()),
-                    };
-                    let value_num = value
-                        .as_i64()
-                        .ok_or("Failed to convert condition value to i64")?;
-                    return Ok((token, value_num));
-                }
+                let pair: Vec<(&Yaml, &Yaml)> = condition_hash.iter().collect();
+                let field = find_condition_field_value(rule_type, pair.clone());
+                return process_condition_pairs(pair, field);
             }
         }
     }
@@ -163,7 +188,7 @@ fn create_detection(
             let time_frame = parse_tframe(timespan.to_string())?;
             let nodes = to_or_selection_node(related_rule_nodes);
             let agg_info = AggregationParseInfo {
-                _field_name: None,
+                _field_name: condition.2,
                 _by_field_name: Some(group_by),
                 _cmp_op: condition.0,
                 _cmp_num: condition.1,
@@ -210,8 +235,9 @@ pub fn parse_correlation_rules(
     let mut parsed_rules: Vec<RuleNode> = correlation_rules
         .into_iter()
         .map(|rule_node| {
-            if rule_node.yaml["correlation"]["type"].as_str() != Some("event_count") {
-                let m = "The type of correlations rule only supports event_count.";
+            let rule_type = rule_node.yaml["correlation"]["type"].as_str();
+            if rule_type != Some("event_count") && rule_type != Some("value_count") {
+                let m = "The type of correlations rule only supports event_count/value_count.";
                 error_log(&rule_node.rulepath, m, stored_static, parseerror_count);
                 return rule_node;
             }
@@ -266,7 +292,7 @@ mod tests {
         let yaml = &YamlLoader::load_from_str(yaml_str).unwrap()[0];
         let result = parse_condition(yaml);
         assert!(result.is_ok());
-        let (_, value) = result.unwrap();
+        let (_, value, _) = result.unwrap();
         assert_eq!(value, 3);
     }
 
@@ -313,5 +339,70 @@ mod tests {
         assert_eq!(result.len(), 2);
         assert_eq!(result[0], "e87bd730-df45-4ae9-85de-6c75369c5d29");
         assert_eq!(result[1], "8afa97ce-a217-4f7c-aced-3e320a57756d");
+    }
+
+    #[test]
+    fn test_find_field_value() {
+        let yaml_str = r#"
+        field: "test_field"
+        other_key: "other_value"
+        "#;
+        let yaml = &YamlLoader::load_from_str(yaml_str).unwrap()[0];
+        let pair: Vec<(&Yaml, &Yaml)> = yaml.as_hash().unwrap().iter().collect();
+        let result =
+            find_condition_field_value(Some(&Yaml::String("value_count".to_string())), pair);
+        assert_eq!(result, Some("test_field".to_string()));
+    }
+
+    #[test]
+    fn test_find_field_value_no_field() {
+        let yaml_str = r#"
+        other_key: "other_value"
+        another_key: "another_value"
+        "#;
+        let yaml = &YamlLoader::load_from_str(yaml_str).unwrap()[0];
+        let pair: Vec<(&Yaml, &Yaml)> = yaml.as_hash().unwrap().iter().collect();
+        let result =
+            find_condition_field_value(Some(&Yaml::String("value_count".to_string())), pair);
+        assert_eq!(result, None);
+    }
+
+    #[test]
+    fn test_process_condition_pairs_valid() {
+        let yaml_str = r#"
+        eq: 3
+        other_key: "other_value"
+        "#;
+        let yaml = &YamlLoader::load_from_str(yaml_str).unwrap()[0];
+        let pair: Vec<(&Yaml, &Yaml)> = yaml.as_hash().unwrap().iter().collect();
+        let result = process_condition_pairs(pair, Some("test_field".to_string()));
+        assert!(result.is_ok());
+        let (_, value, field) = result.unwrap();
+        assert_eq!(value, 3);
+        assert_eq!(field, Some("test_field".to_string()));
+    }
+
+    #[test]
+    fn test_process_condition_pairs_invalid_token() {
+        let yaml_str = r#"
+        invalid_token: 3
+        other_key: "other_value"
+        "#;
+        let yaml = &YamlLoader::load_from_str(yaml_str).unwrap()[0];
+        let pair: Vec<(&Yaml, &Yaml)> = yaml.as_hash().unwrap().iter().collect();
+        let result = process_condition_pairs(pair, Some("test_field".to_string()));
+        assert!(result.is_err());
+    }
+
+    #[test]
+    fn test_process_condition_pairs_invalid_value() {
+        let yaml_str = r#"
+        eq: invalid_value
+        other_key: "other_value"
+        "#;
+        let yaml = &YamlLoader::load_from_str(yaml_str).unwrap()[0];
+        let pair: Vec<(&Yaml, &Yaml)> = yaml.as_hash().unwrap().iter().collect();
+        let result = process_condition_pairs(pair, Some("test_field".to_string()));
+        assert!(result.is_err());
     }
 }
