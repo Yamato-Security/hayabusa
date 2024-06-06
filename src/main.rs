@@ -4,6 +4,22 @@ extern crate maxminddb;
 extern crate serde;
 extern crate serde_derive;
 
+use std::borrow::BorrowMut;
+use std::ffi::{OsStr, OsString};
+use std::fmt::Display;
+use std::fmt::Write as _;
+use std::io::{BufWriter, Write};
+use std::path::Path;
+use std::ptr::null_mut;
+use std::sync::Arc;
+use std::time::Duration;
+use std::{
+    env,
+    fs::{self, File},
+    path::PathBuf,
+    vec,
+};
+
 use bytesize::ByteSize;
 use chrono::{DateTime, Datelike, Local, NaiveDateTime, Utc};
 use clap::Command;
@@ -13,6 +29,19 @@ use dialoguer::Confirm;
 use dialoguer::{theme::ColorfulTheme, Select};
 use evtx::{EvtxParser, ParserSettings, RecordAllocation};
 use hashbrown::{HashMap, HashSet};
+use indicatif::ProgressBar;
+use indicatif::{ProgressDrawTarget, ProgressStyle};
+use itertools::Itertools;
+use libmimalloc_sys::mi_stats_print_out;
+use mimalloc::MiMalloc;
+use nested::Nested;
+use num_format::{Locale, ToFormattedString};
+use serde_json::{Map, Value};
+use termcolor::{BufferWriter, Color, ColorChoice};
+use tokio::runtime::Runtime;
+use tokio::spawn;
+use tokio::task::JoinHandle;
+
 use hayabusa::afterfact::{self, AfterfactInfo, AfterfactWriter};
 use hayabusa::debug::checkpoint_process_timer::CHECKPOINT;
 use hayabusa::detections::configs::{
@@ -1458,7 +1487,10 @@ impl App {
                     println!("{evtx_files_after_channel_filter}");
                 }
                 if !stored_static.enable_all_rules {
-                    rule_files.retain(|r| channel_filter.rulepathes.contains(&r.rulepath));
+                    rule_files.retain(|r| {
+                        channel_filter.rulepathes.contains(&r.rulepath)
+                            || !r.yaml["correlation"].is_badvalue()
+                    });
                     let rules_after_channel_filter = format!(
                         "Detection rules enabled after channel filter: {}",
                         (rule_files.len()).to_formatted_string(&Locale::en)
@@ -2328,9 +2360,11 @@ mod tests {
         path::Path,
     };
 
-    use crate::App;
     use chrono::Local;
     use hashbrown::HashSet;
+    use itertools::Itertools;
+    use yaml_rust::YamlLoader;
+
     use hayabusa::{
         afterfact::{self, AfterfactInfo},
         detections::{
@@ -2346,8 +2380,8 @@ mod tests {
         options::htmlreport::HTML_REPORTER,
         timeline::timelines::Timeline,
     };
-    use itertools::Itertools;
-    use yaml_rust::YamlLoader;
+
+    use crate::App;
 
     fn create_dummy_stored_static() -> StoredStatic {
         StoredStatic::create_static_data(Some(Config {
