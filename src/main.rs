@@ -2251,9 +2251,8 @@ impl App {
 
     /// output logo
     fn output_logo(&self, stored_static: &StoredStatic) {
-        let fp = utils::check_setting_path(&CURRENT_EXE_PATH.to_path_buf(), "art/logo.txt", true)
-            .unwrap();
-        let content = fs::read_to_string(fp).unwrap_or_default();
+        let logo = Arts::get("logo.txt").unwrap();
+        let content = std::str::from_utf8(logo.data.as_ref()).unwrap_or_default();
         let output_color = if stored_static.common_options.no_color {
             None
         } else {
@@ -2262,7 +2261,7 @@ impl App {
         write_color_buffer(
             &BufferWriter::stdout(ColorChoice::Always),
             output_color,
-            &content,
+            content,
             true,
         )
         .ok();
