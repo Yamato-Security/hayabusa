@@ -65,34 +65,7 @@ use hayabusa::timeline::computer_metrics::countup_event_by_computer;
 use hayabusa::{detections::configs, timeline::timelines::Timeline};
 use hayabusa::{detections::utils::write_color_buffer, filter};
 use hayabusa::{options, yaml};
-use indicatif::ProgressBar;
-use indicatif::{ProgressDrawTarget, ProgressStyle};
-use itertools::Itertools;
-use libmimalloc_sys::mi_stats_print_out;
-use mimalloc::MiMalloc;
-use nested::Nested;
-use num_format::{Locale, ToFormattedString};
 use rust_embed::Embed;
-use serde_json::{Map, Value};
-use std::borrow::BorrowMut;
-use std::ffi::{OsStr, OsString};
-use std::fmt::Display;
-use std::fmt::Write as _;
-use std::io::{BufWriter, Write};
-use std::path::Path;
-use std::ptr::null_mut;
-use std::sync::Arc;
-use std::time::Duration;
-use std::{
-    env,
-    fs::{self, File},
-    path::PathBuf,
-    vec,
-};
-use termcolor::{BufferWriter, Color, ColorChoice};
-use tokio::runtime::Runtime;
-use tokio::spawn;
-use tokio::task::JoinHandle;
 
 #[derive(Embed)]
 #[folder = "art/"]
