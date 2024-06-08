@@ -49,6 +49,7 @@ tokio = { version = "1", features = ["full"] }
 ureq = "*"
 wildmatch = "2.*"
 yaml-rust = "0.4.*"
+rust-embed={version = "8.4.0", features = ["include-exclude", "debug-embed"]}
 
 [profile.dev]
 debug-assertions = false
