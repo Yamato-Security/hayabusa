@@ -1,6 +1,6 @@
 [package]
 name = "hayabusa"
-version = "2.16.0-dev"
+version = "2.16.0"
 repository = "https://github.com/Yamato-Security/hayabusa"
 authors = ["Yamato Security @SecurityYamato"]
 edition = "2021"
@@ -21,7 +21,7 @@ csv = "1.3.*"
 dashmap = "*"
 dialoguer = "*"
 downcast-rs = "1.*"
-evtx = { git = "https://github.com/Yamato-Security/hayabusa-evtx.git" , features = ["fast-alloc"] , rev = "15f9f4a" } # 0.8.8 2024/04/20 update
+evtx = { git = "https://github.com/Yamato-Security/hayabusa-evtx.git" , features = ["fast-alloc"] , rev = "9aa3e14" } # 0.8.8 2024/06/09 update
 git2 = "0.*"
 hashbrown = "0.14.*"
 hex = "0.4.*"
@@ -66,4 +66,4 @@ openssl = { version = "*", features = ["vendored"] }  #vendored is needed to com
 [profile.release]
 lto = true
 strip = "symbols"
-overflow-checks = true
+overflow-checks = false

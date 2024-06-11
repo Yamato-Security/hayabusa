@@ -1,10 +1,10 @@
 # Changes
 
-## x.x.x [xxxx/xx/xx]
+## 2.16.0 [2024/06/11]
 
 **New Features:**
 
-- By default now, only rules that are applicable to loaded evtx files will be enabled. This is based on the `Channel` field in `.evtx` file and `.yml` rule. For example, if `Security.evtx` was being scanned, then only rules that have `Channel: Security` defined will be used against this file. In our benchmarks, this gives a speed benefit of around 20% when scanning single `evtx` files. If you think there are multiple channels being used in a single `.evtx` file or you want to use rules that do not have the `Channel` field defined in order to scan all `.evtx` files regardless of the channel, then you can turn off this filtering with the `-A, --enable-all-rules` option in `csv-timeline` and `json-timeline`.  (#1317) (@fukusuket)
+- By default now, only rules that are applicable to loaded evtx files will be enabled. This is based on the `Channel` field in `.evtx` file and `.yml` rule. For example, if `Security.evtx` was being scanned, then only rules that have `Channel: Security` defined will be used against this file. In our benchmarks, this usually gives a speed benefit of around 20% when scanning single `evtx` files but can give up a 10x speed performance depending on the file. If you think there are multiple channels being used in a single `.evtx` file or you want to use rules that do not have the `Channel` field defined in order to scan all `.evtx` files regardless of the channel, then you can turn off this filtering with the `-A, --enable-all-rules` option in `csv-timeline` and `json-timeline`.  (#1317) (@fukusuket)
   - Currently, the only two detection rules that do not have `Channel` defined and are intended to scan all `.evtx` files are the following:
     - [Possible Hidden Shellcode](https://github.com/Yamato-Security/hayabusa-rules/blob/main/hayabusa/builtin/UnkwnChannEID_Med_PossibleHiddenShellcode.yml)
     - [Mimikatz Use](https://github.com/SigmaHQ/sigma/blob/master/rules/windows/builtin/win_alert_mimikatz_keywords.yml)
