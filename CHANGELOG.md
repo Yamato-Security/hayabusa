@@ -1,10 +1,10 @@
 # Changes
 
-## x.x.x [xxxx/xx/xx]
+## 2.16.0 [2024/06/11]
 
 **New Features:**
 
-- By default now, only rules that are applicable to loaded evtx files will be enabled. This is based on the `Channel` field in `.evtx` file and `.yml` rule. For example, if `Security.evtx` was being scanned, then only rules that have `Channel: Security` defined will be used against this file. In our benchmarks, this gives a speed benefit of around 20% when scanning single `evtx` files. If you think there are multiple channels being used in a single `.evtx` file or you want to use rules that do not have the `Channel` field defined in order to scan all `.evtx` files regardless of the channel, then you can turn off this filtering with the `-A, --enable-all-rules` option in `csv-timeline` and `json-timeline`.  (#1317) (@fukusuket)
+- By default now, only rules that are applicable to loaded evtx files will be enabled. This is based on the `Channel` field in `.evtx` file and `.yml` rule. For example, if `Security.evtx` was being scanned, then only rules that have `Channel: Security` defined will be used against this file. In our benchmarks, this usually gives a speed benefit of around 20% when scanning single `evtx` files but can give up a 10x speed performance depending on the file. If you think there are multiple channels being used in a single `.evtx` file or you want to use rules that do not have the `Channel` field defined in order to scan all `.evtx` files regardless of the channel, then you can turn off this filtering with the `-A, --enable-all-rules` option in `csv-timeline` and `json-timeline`.  (#1317) (@fukusuket)
   - Currently, the only two detection rules that do not have `Channel` defined and are intended to scan all `.evtx` files are the following:
     - [Possible Hidden Shellcode](https://github.com/Yamato-Security/hayabusa-rules/blob/main/hayabusa/builtin/UnkwnChannEID_Med_PossibleHiddenShellcode.yml)
     - [Mimikatz Use](https://github.com/SigmaHQ/sigma/blob/master/rules/windows/builtin/win_alert_mimikatz_keywords.yml)
@@ -18,7 +18,6 @@
 - You can now specify multiple directories with the `-d, --directory` option. (#1335) (@hitenkoku)
 - You can now analyze Splunk logs exported from the REST API. (#1083) (@hitenkoku)
 - You can now specify multiple groups with `count`. Ex: `count() by IpAddress,SubStatus,LogonType >= 2` Also, the output has been updated. Ex: `[condition] count(TargetUserName) by IpAddress > 3 in timeframe [result] count: 4 TargetUserName:tanaka/Administrator/adsyncadmin/suzuki IpAddress:- timeframe:5m` -> `Count: 4 ¦ TargetUserName: tanaka/Administrator/adsyncadmin/suzuki ¦ IpAddress: -` (#1339) (@fukusuket)
-- Enabled overflow checks in release mode. (#1348) (@YamatoSecurity)
 - Added support for specifying an optional `Provider_Name` field in field data mapping files (`rules/config/data_mapping/*.yaml`) as well as support for `Data[x]` notation. (#1350) (@fukusuket)
 - JSON output in count rules now separates field information. (#1342) (@fukusuket)
   - Before: `"Details": "[condition] count() by IpAddress >= 5 in timeframe [result] count:3558 IpAddress:192.168.198.149 timeframe:5m"`
