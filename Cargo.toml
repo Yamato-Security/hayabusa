@@ -66,4 +66,3 @@ openssl = { version = "*", features = ["vendored"] }  #vendored is needed to com
 [profile.release]
 lto = true
 strip = "symbols"
-overflow-checks = false
