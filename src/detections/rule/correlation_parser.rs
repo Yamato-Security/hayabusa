@@ -23,6 +23,11 @@ fn is_related_rule(rule_node: &RuleNode, id_or_title: &str) -> bool {
                 return true;
             }
         }
+        if let Some(title) = hash.get(&Yaml::String("name".to_string())) {
+            if title.as_str() == Some(id_or_title) {
+                return true;
+            }
+        }
     }
     false
 }
