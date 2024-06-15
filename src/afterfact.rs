@@ -2431,6 +2431,7 @@ mod tests {
                 DetectInfo {
                     detected_time: expect_time,
                     rulepath: CompactString::from(test_rulepath),
+                    authors: CompactString::default(),
                     ruleid: test_rule_id.into(),
                     ruletitle: CompactString::from(test_title),
                     level: CompactString::from(test_level),
@@ -2455,6 +2456,7 @@ mod tests {
                 DetectInfo {
                     detected_time: expect_time,
                     rulepath: CompactString::from(test_rulepath),
+                    authors: CompactString::default(),
                     ruleid: test_rule_id.into(),
                     ruletitle: CompactString::from(test_title),
                     level: CompactString::from(test_level),
@@ -2778,6 +2780,7 @@ mod tests {
                 DetectInfo {
                     detected_time: expect_time,
                     rulepath: CompactString::from(test_rulepath),
+                    authors: CompactString::default(),
                     ruleid: test_rule_id.into(),
                     ruletitle: CompactString::from(test_title),
                     level: CompactString::from(test_level),
@@ -2811,6 +2814,7 @@ mod tests {
                     ext_field: output_profile.to_owned(),
                     is_condition: false,
                     details_convert_map: HashMap::default(),
+                    authors: CompactString::default(),
                 },
                 &profile_converter,
                 (false, false),
@@ -3105,6 +3109,7 @@ mod tests {
                 DetectInfo {
                     detected_time: expect_time,
                     rulepath: CompactString::from(test_rulepath),
+                    authors: CompactString::default(),
                     ruleid: test_rule_id.into(),
                     ruletitle: CompactString::from(test_title),
                     level: CompactString::from(test_level),
@@ -3129,6 +3134,7 @@ mod tests {
                 DetectInfo {
                     detected_time: expect_time,
                     rulepath: CompactString::from(test_rulepath),
+                    authors: CompactString::default(),
                     ruleid: test_rule_id.into(),
                     ruletitle: CompactString::from(test_title),
                     level: CompactString::from(test_level),
@@ -3442,6 +3448,7 @@ mod tests {
                 DetectInfo {
                     detected_time: expect_time,
                     rulepath: CompactString::from(test_rulepath),
+                    authors: CompactString::default(),
                     ruleid: test_rule_id.into(),
                     ruletitle: CompactString::from(test_title),
                     level: CompactString::from(test_level),
@@ -3466,6 +3473,7 @@ mod tests {
                 DetectInfo {
                     detected_time: expect_time,
                     rulepath: CompactString::from(test_rulepath),
+                    authors: CompactString::default(),
                     ruleid: test_rule_id.into(),
                     ruletitle: CompactString::from(test_title),
                     level: CompactString::from(test_level),
@@ -3851,6 +3859,7 @@ mod tests {
                 DetectInfo {
                     detected_time: expect_time,
                     rulepath: CompactString::from(test_rulepath),
+                    authors: CompactString::default(),
                     ruleid: test_rule_id.into(),
                     ruletitle: CompactString::from(test_title),
                     level: CompactString::from(test_level),
@@ -4205,6 +4214,7 @@ mod tests {
                 DetectInfo {
                     detected_time: expect_time,
                     rulepath: CompactString::from(test_rulepath),
+                    authors: CompactString::default(),
                     ruleid: test_rule_id.into(),
                     ruletitle: CompactString::from(test_title),
                     level: CompactString::from(test_level),
@@ -4485,6 +4495,7 @@ mod tests {
                 DetectInfo {
                     detected_time: expect_time,
                     rulepath: CompactString::from(test_rulepath),
+                    authors: CompactString::default(),
                     ruleid: test_rule_id.into(),
                     ruletitle: CompactString::from(test_title),
                     level: CompactString::from(test_level),

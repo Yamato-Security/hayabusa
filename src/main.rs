@@ -2567,7 +2567,9 @@ mod tests {
                 us_time: false,
                 utc: false,
                 visualize_timeline: false,
-                rules: Some(Path::new("./test_files/rules/yaml/test_json_detect.yml").to_path_buf()),
+                rules: Some(
+                    Path::new("./test_files/rules/yaml/test_json_detect.yml").to_path_buf(),
+                ),
                 html_report: None,
                 no_summary: true,
                 common_options: CommonOptions {
@@ -2742,7 +2744,9 @@ mod tests {
                 us_time: false,
                 utc: false,
                 visualize_timeline: false,
-                rules: Some(Path::new("./test_files/rules/yaml/test_json_detect.yml").to_path_buf()),
+                rules: Some(
+                    Path::new("./test_files/rules/yaml/test_json_detect.yml").to_path_buf(),
+                ),
                 html_report: None,
                 no_summary: true,
                 common_options: CommonOptions {
