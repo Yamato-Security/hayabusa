@@ -508,7 +508,7 @@ mod tests {
                     remove_duplicate_detections: false,
                     no_wizard: true,
                     include_status: None,
-                    low_memory_mode: false,
+                    sort_events: false,
                     enable_all_rules: false,
                     scan_all_evtx_files: false,
                 },
