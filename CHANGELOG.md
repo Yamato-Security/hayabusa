@@ -5,6 +5,7 @@
 **Enchancements:**
 
 - Support for the newer version 0.6.x `cidr-utils` crate. (#1366) (@hitenkoku)
+- Added support for Sigma correlation rule's `name` lookup. (#1363) (@fukusuket)
 
 ## 2.16.0 [2024/06/11]
 
