@@ -812,7 +812,7 @@ mod tests {
                     us_time: false,
                     utc: false,
                     visualize_timeline: false,
-                    rules: Path::new("./rules").to_path_buf(),
+                    rules: Some(Path::new("./rules").to_path_buf()),
                     html_report: None,
                     no_summary: false,
                     common_options: CommonOptions {
@@ -863,7 +863,7 @@ mod tests {
         let dummy_stored_static = create_dummy_stored_static();
         let mut yaml = yaml::ParseYaml::new(&dummy_stored_static);
         let _ = &yaml.read_dir(
-            "test_files/rules/yaml/1.yml",
+            &Some("test_files/rules/yaml/1.yml"),
             &String::default(),
             "",
             &exclude_ids,
@@ -880,7 +880,7 @@ mod tests {
         let dummy_stored_static = create_dummy_stored_static();
         let mut yaml = yaml::ParseYaml::new(&dummy_stored_static);
         let _ = &yaml.read_dir(
-            "test_files/rules/yaml/",
+            &Some("test_files/rules/yaml/"),
             &String::default(),
             "",
             &exclude_ids,
@@ -920,7 +920,7 @@ mod tests {
         let dummy_stored_static = create_dummy_stored_static();
         let mut yaml = yaml::ParseYaml::new(&dummy_stored_static);
         yaml.read_dir(
-            path,
+            &Some(path),
             "",
             "",
             &filter::exclude_ids(&dummy_stored_static),
@@ -936,7 +936,7 @@ mod tests {
         let path = Path::new("test_files/rules/level_yaml");
         let mut yaml = yaml::ParseYaml::new(&dummy_stored_static);
         yaml.read_dir(
-            path,
+            &Some(path),
             "INFORMATIONAL",
             "",
             &filter::exclude_ids(&dummy_stored_static),
@@ -951,7 +951,7 @@ mod tests {
         let dummy_stored_static = create_dummy_stored_static();
         let mut yaml = yaml::ParseYaml::new(&dummy_stored_static);
         yaml.read_dir(
-            path,
+            &Some(path),
             "LOW",
             "",
             &filter::exclude_ids(&dummy_stored_static),
@@ -966,7 +966,7 @@ mod tests {
         let dummy_stored_static = create_dummy_stored_static();
         let mut yaml = yaml::ParseYaml::new(&dummy_stored_static);
         yaml.read_dir(
-            path,
+            &Some(path),
             "MEDIUM",
             "",
             &filter::exclude_ids(&dummy_stored_static),
@@ -981,7 +981,7 @@ mod tests {
         let dummy_stored_static = create_dummy_stored_static();
         let mut yaml = yaml::ParseYaml::new(&dummy_stored_static);
         yaml.read_dir(
-            path,
+            &Some(path),
             "HIGH",
             "",
             &filter::exclude_ids(&dummy_stored_static),
@@ -996,7 +996,7 @@ mod tests {
         let dummy_stored_static = create_dummy_stored_static();
         let mut yaml = yaml::ParseYaml::new(&dummy_stored_static);
         yaml.read_dir(
-            path,
+            &Some(path),
             "CRITICAL",
             "",
             &filter::exclude_ids(&dummy_stored_static),
@@ -1011,7 +1011,7 @@ mod tests {
         let dummy_stored_static = create_dummy_stored_static();
         let mut yaml = yaml::ParseYaml::new(&dummy_stored_static);
         yaml.read_dir(
-            path,
+            &Some(path),
             "",
             "",
             &filter::exclude_ids(&dummy_stored_static),
@@ -1026,7 +1026,7 @@ mod tests {
         let dummy_stored_static = create_dummy_stored_static();
         let mut yaml = yaml::ParseYaml::new(&dummy_stored_static);
         yaml.read_dir(
-            path,
+            &Some(path),
             "",
             "",
             &filter::exclude_ids(&dummy_stored_static),
@@ -1042,7 +1042,7 @@ mod tests {
         dummy_stored_static.include_status = HashSet::from_iter(vec![CompactString::from("*")]);
         let mut yaml = yaml::ParseYaml::new(&dummy_stored_static);
         let exclude_ids = RuleExclude::new();
-        yaml.read_dir(path, "", "", &exclude_ids, &dummy_stored_static)
+        yaml.read_dir(&Some(path), "", "", &exclude_ids, &dummy_stored_static)
             .unwrap();
         assert_eq!(yaml.rule_load_cnt.get("excluded").unwrap().to_owned(), 0);
     }
@@ -1053,7 +1053,7 @@ mod tests {
         dummy_stored_static.include_status = HashSet::from_iter(vec![CompactString::from("*")]);
         let mut yaml = yaml::ParseYaml::new(&dummy_stored_static);
         let exclude_ids = RuleExclude::new();
-        yaml.read_dir(path, "", "", &exclude_ids, &dummy_stored_static)
+        yaml.read_dir(&Some(path), "", "", &exclude_ids, &dummy_stored_static)
             .unwrap();
         assert_eq!(
             yaml.rule_status_cnt.get("deprecated").unwrap().to_owned(),
@@ -1068,7 +1068,7 @@ mod tests {
         dummy_stored_static.include_status = HashSet::from_iter(vec![CompactString::from("*")]);
         let mut yaml = yaml::ParseYaml::new(&dummy_stored_static);
         let exclude_ids = RuleExclude::new();
-        yaml.read_dir(path, "", "", &exclude_ids, &dummy_stored_static)
+        yaml.read_dir(&Some(path), "", "", &exclude_ids, &dummy_stored_static)
             .unwrap();
         assert_eq!(
             yaml.rule_status_cnt.get("unsupported").unwrap().to_owned(),
@@ -1082,7 +1082,7 @@ mod tests {
         let path = Path::new("test_files/rules/level_yaml");
         let mut yaml = yaml::ParseYaml::new(&dummy_stored_static);
         yaml.read_dir(
-            path,
+            &Some(path),
             "",
             "INFORMATIONAL",
             &filter::exclude_ids(&dummy_stored_static),
@@ -1098,7 +1098,7 @@ mod tests {
         let dummy_stored_static = create_dummy_stored_static();
         let mut yaml = yaml::ParseYaml::new(&dummy_stored_static);
         yaml.read_dir(
-            path,
+            &Some(path),
             "",
             "LOW",
             &filter::exclude_ids(&dummy_stored_static),
@@ -1114,7 +1114,7 @@ mod tests {
         let dummy_stored_static = create_dummy_stored_static();
         let mut yaml = yaml::ParseYaml::new(&dummy_stored_static);
         yaml.read_dir(
-            path,
+            &Some(path),
             "",
             "MEDIUM",
             &filter::exclude_ids(&dummy_stored_static),
@@ -1130,7 +1130,7 @@ mod tests {
         let dummy_stored_static = create_dummy_stored_static();
         let mut yaml = yaml::ParseYaml::new(&dummy_stored_static);
         yaml.read_dir(
-            path,
+            &Some(path),
             "",
             "HIGH",
             &filter::exclude_ids(&dummy_stored_static),
@@ -1146,7 +1146,7 @@ mod tests {
         let dummy_stored_static = create_dummy_stored_static();
         let mut yaml = yaml::ParseYaml::new(&dummy_stored_static);
         yaml.read_dir(
-            path,
+            &Some(path),
             "",
             "CRITICAL",
             &filter::exclude_ids(&dummy_stored_static),
@@ -1167,7 +1167,7 @@ mod tests {
             .include_tag = Some(vec!["tag1".to_string(), "tag2".to_string()]);
         let mut yaml = yaml::ParseYaml::new(&dummy_stored_static);
         yaml.read_dir(
-            path,
+            &Some(path),
             "",
             "",
             &filter::exclude_ids(&dummy_stored_static),
@@ -1188,7 +1188,7 @@ mod tests {
             .include_category = Some(vec!["test_category1".to_string()]);
         let mut yaml = yaml::ParseYaml::new(&dummy_stored_static);
         yaml.read_dir(
-            path,
+            &Some(path),
             "",
             "",
             &filter::exclude_ids(&dummy_stored_static),
@@ -1212,7 +1212,7 @@ mod tests {
         ]);
         let mut yaml = yaml::ParseYaml::new(&dummy_stored_static);
         yaml.read_dir(
-            path,
+            &Some(path),
             "",
             "",
             &filter::exclude_ids(&dummy_stored_static),
@@ -1233,7 +1233,7 @@ mod tests {
             .include_category = Some(vec!["not found".to_string()]);
         let mut yaml = yaml::ParseYaml::new(&dummy_stored_static);
         yaml.read_dir(
-            path,
+            &Some(path),
             "",
             "",
             &filter::exclude_ids(&dummy_stored_static),
@@ -1254,7 +1254,7 @@ mod tests {
             .exclude_category = Some(vec!["test_category1".to_string()]);
         let mut yaml = yaml::ParseYaml::new(&dummy_stored_static);
         yaml.read_dir(
-            path,
+            &Some(path),
             "",
             "",
             &filter::exclude_ids(&dummy_stored_static),
@@ -1278,7 +1278,7 @@ mod tests {
         ]);
         let mut yaml = yaml::ParseYaml::new(&dummy_stored_static);
         yaml.read_dir(
-            path,
+            &Some(path),
             "",
             "",
             &filter::exclude_ids(&dummy_stored_static),
@@ -1299,7 +1299,7 @@ mod tests {
             .exclude_category = Some(vec!["not found".to_string()]);
         let mut yaml = yaml::ParseYaml::new(&dummy_stored_static);
         yaml.read_dir(
-            path,
+            &Some(path),
             "",
             "",
             &filter::exclude_ids(&dummy_stored_static),

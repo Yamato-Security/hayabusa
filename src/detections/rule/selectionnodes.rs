@@ -543,7 +543,7 @@ mod tests {
                     us_time: false,
                     utc: false,
                     visualize_timeline: false,
-                    rules: Path::new("./rules").to_path_buf(),
+                    rules: Some(Path::new("./rules").to_path_buf()),
                     html_report: None,
                     no_summary: false,
                     common_options: CommonOptions {

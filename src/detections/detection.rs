@@ -1249,7 +1249,7 @@ mod tests {
                     us_time: false,
                     utc: false,
                     visualize_timeline: false,
-                    rules: Path::new("./rules").to_path_buf(),
+                    rules: Some(Path::new("./rules").to_path_buf()),
                     html_report: None,
                     no_summary: false,
                     common_options: CommonOptions {
@@ -1302,7 +1302,7 @@ mod tests {
         let cole = Detection::parse_rule_files(
             level,
             "",
-            opt_rule_path,
+            Some(opt_rule_path),
             &filter::exclude_ids(&dummy_stored_static),
             &dummy_stored_static,
         );
@@ -1511,7 +1511,7 @@ mod tests {
                 us_time: false,
                 utc: false,
                 visualize_timeline: false,
-                rules: Path::new("./rules").to_path_buf(),
+                rules: Some(Path::new("./rules").to_path_buf()),
                 html_report: None,
                 no_summary: true,
                 common_options: CommonOptions {
@@ -1650,7 +1650,7 @@ mod tests {
                 us_time: false,
                 utc: false,
                 visualize_timeline: false,
-                rules: Path::new("./rules").to_path_buf(),
+                rules: Some(Path::new("./rules").to_path_buf()),
                 html_report: None,
                 no_summary: true,
                 common_options: CommonOptions {
@@ -1784,7 +1784,7 @@ mod tests {
                 us_time: false,
                 utc: false,
                 visualize_timeline: false,
-                rules: Path::new("./rules").to_path_buf(),
+                rules: Some(Path::new("./rules").to_path_buf()),
                 html_report: None,
                 no_summary: true,
                 common_options: CommonOptions {
@@ -1934,7 +1934,7 @@ mod tests {
                 us_time: false,
                 utc: false,
                 visualize_timeline: false,
-                rules: Path::new("./rules").to_path_buf(),
+                rules: Some(Path::new("./rules").to_path_buf()),
                 html_report: None,
                 no_summary: true,
                 common_options: CommonOptions {
