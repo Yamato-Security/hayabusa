@@ -1523,18 +1523,17 @@ pub struct OutputOption {
     #[arg(help_heading = Some("Display Settings"), short = 'T', long = "visualize-timeline", display_order = 490)]
     pub visualize_timeline: bool,
 
-    /// Specify a custom rule directory or file (default: ./rules)
+    /// Specify a custom rule directory or file (default: embedded hayabusa rules)
     #[arg(
         help_heading = Some("General Options"),
         short = 'r',
         long,
-        default_value = "./rules",
         hide_default_value = true,
         value_name = "DIR/FILE",
         requires = "no_wizard",
         display_order = 441
     )]
-    pub rules: PathBuf,
+    pub rules: Option<PathBuf>,
 
     /// Save Results Summary details to an HTML report (ex: results.html)
     #[arg(help_heading = Some("Output"), short = 'H', long="HTML-report", conflicts_with = "no_summary", value_name = "FILE", display_order = 80, requires = "output")]
@@ -2249,7 +2248,7 @@ fn extract_output_options(config: &Config) -> Option<OutputOption> {
             us_time: false,
             utc: false,
             visualize_timeline: false,
-            rules: Path::new("./rules").to_path_buf(),
+            rules: Some(Path::new("./rules").to_path_buf()),
             html_report: None,
             no_summary: false,
             common_options: option.common_options,
@@ -2292,7 +2291,7 @@ fn extract_output_options(config: &Config) -> Option<OutputOption> {
             us_time: option.us_time,
             utc: option.utc,
             visualize_timeline: false,
-            rules: Path::new("./rules").to_path_buf(),
+            rules: None,
             html_report: None,
             no_summary: false,
             common_options: option.common_options,
@@ -2335,7 +2334,7 @@ fn extract_output_options(config: &Config) -> Option<OutputOption> {
             us_time: option.us_time,
             utc: option.utc,
             visualize_timeline: false,
-            rules: Path::new("./rules").to_path_buf(),
+            rules: None,
             html_report: None,
             no_summary: false,
             common_options: option.common_options,
@@ -2395,7 +2394,7 @@ fn extract_output_options(config: &Config) -> Option<OutputOption> {
             us_time: false,
             utc: false,
             visualize_timeline: false,
-            rules: Path::new("./rules").to_path_buf(),
+            rules: None,
             html_report: None,
             no_summary: false,
             clobber: option.clobber,
@@ -2429,7 +2428,7 @@ fn extract_output_options(config: &Config) -> Option<OutputOption> {
             us_time: option.us_time,
             utc: option.utc,
             visualize_timeline: false,
-            rules: Path::new("./rules").to_path_buf(),
+            rules: None,
             html_report: None,
             no_summary: false,
             common_options: option.common_options,
@@ -2488,7 +2487,7 @@ fn extract_output_options(config: &Config) -> Option<OutputOption> {
             us_time: false,
             utc: false,
             visualize_timeline: false,
-            rules: Path::new("./rules").to_path_buf(),
+            rules: None,
             html_report: None,
             no_summary: false,
             common_options: option.common_options,
@@ -2546,7 +2545,7 @@ fn extract_output_options(config: &Config) -> Option<OutputOption> {
             us_time: false,
             utc: false,
             visualize_timeline: false,
-            rules: Path::new("./rules").to_path_buf(),
+            rules: Some(Path::new("./rules").to_path_buf()),
             html_report: None,
             no_summary: false,
             common_options: option.common_options,

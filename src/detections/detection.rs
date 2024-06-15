@@ -74,14 +74,14 @@ impl Detection {
     pub fn parse_rule_files(
         min_level: &str,
         target_level: &str,
-        rulespath: &Path,
+        rulespath: Option<&Path>,
         exclude_ids: &filter::RuleExclude,
         stored_static: &StoredStatic,
     ) -> Vec<RuleNode> {
         // ルールファイルのパースを実行
         let mut rulefile_loader = ParseYaml::new(stored_static);
         let result_readdir = rulefile_loader.read_dir(
-            rulespath,
+            &rulespath,
             min_level,
             target_level,
             exclude_ids,

@@ -274,12 +274,6 @@ impl App {
 
         match &stored_static.config.action.as_ref().unwrap() {
             Action::CsvTimeline(_) | Action::JsonTimeline(_) => {
-                // カレントディレクトリ以外からの実行の際にrulesオプションの指定がないとエラーが発生することを防ぐための処理
-                if stored_static.output_option.as_ref().unwrap().rules == Path::new("./rules") {
-                    stored_static.output_option.as_mut().unwrap().rules =
-                        utils::check_setting_path(&CURRENT_EXE_PATH.to_path_buf(), "rules", true)
-                            .unwrap();
-                }
                 // rule configのフォルダ、ファイルを確認してエラーがあった場合は終了とする
                 if let Err(e) = utils::check_rule_config(&stored_static.config_path) {
                     AlertMessage::alert(&e).ok();
@@ -654,23 +648,26 @@ impl App {
                         .to_string()
                 };
 
-                let rules_path = if stored_static.output_option.as_ref().is_some() {
-                    stored_static
+                let rules_path: CompactString = if stored_static.output_option.as_ref().is_some() {
+                    let path = stored_static
                         .output_option
                         .as_ref()
                         .unwrap()
                         .rules
-                        .as_os_str()
-                        .to_str()
-                        .unwrap()
+                        .clone()
+                        .unwrap_or_default();
+
+                    path.as_os_str().to_str().unwrap().into()
                 } else {
-                    "./rules"
+                    "./rules".into()
                 };
 
                 if Path::new(&level_tuning_config_path).exists() {
-                    if let Err(err) =
-                        LevelTuning::run(&level_tuning_config_path, rules_path, stored_static)
-                    {
+                    if let Err(err) = LevelTuning::run(
+                        &level_tuning_config_path,
+                        rules_path.as_str(),
+                        stored_static,
+                    ) {
                         AlertMessage::alert(&err).ok();
                     }
                 } else {
@@ -1419,7 +1416,12 @@ impl App {
             rule_files = detection::Detection::parse_rule_files(
                 &level,
                 &target_level,
-                &stored_static.output_option.as_ref().unwrap().rules,
+                stored_static
+                    .output_option
+                    .as_ref()
+                    .unwrap()
+                    .rules
+                    .as_deref(),
                 &filter::exclude_ids(stored_static),
                 stored_static,
             );

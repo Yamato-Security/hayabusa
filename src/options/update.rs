@@ -186,7 +186,7 @@ impl Update {
         // level in read_dir is hard code to check all rules.
         rulefile_loader
             .read_dir(
-                rule_folder_path,
+                &Some(rule_folder_path),
                 "INFORMATIONAL",
                 "",
                 &filter::RuleExclude::new(),
