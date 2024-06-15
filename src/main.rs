@@ -1439,7 +1439,15 @@ impl App {
                 || stored_static.search_flag
                 || stored_static.computer_metrics_flag
                 || stored_static.metrics_flag;
-            if !unused_rules_option && rule_files.is_empty() {
+            if !unused_rules_option
+                && rule_files.is_empty()
+                && stored_static
+                    .output_option
+                    .as_ref()
+                    .unwrap()
+                    .rules
+                    .is_some()
+            {
                 AlertMessage::alert(
                         "No rules were loaded. Please download the latest rules with the update-rules command.\r\n",
                     )

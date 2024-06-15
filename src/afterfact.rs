@@ -7,7 +7,6 @@ use crate::detections::utils::{
 };
 use crate::options::htmlreport;
 use crate::options::profile::Profile;
-use crate::yaml::ParseYaml;
 use aho_corasick::{AhoCorasick, AhoCorasickBuilder, MatchKind};
 use chrono::{DateTime, Local, TimeZone, Utc};
 use comfy_table::modifiers::UTF8_ROUND_CORNERS;
@@ -20,9 +19,7 @@ use csv::{QuoteStyle, Writer, WriterBuilder};
 use itertools::Itertools;
 use krapslog::{build_sparkline, build_time_markers};
 use nested::Nested;
-use std::path::Path;
 use std::str::FromStr;
-use yaml_rust::YamlLoader;
 
 use comfy_table::*;
 use hashbrown::{HashMap, HashSet};
@@ -511,7 +508,7 @@ fn calc_statistic_info(
             let author_list = afterfact_info
                 .author_list_cache
                 .entry(detect_info.rulepath.clone())
-                .or_insert_with(|| extract_author_name(&detect_info.rulepath))
+                .or_insert_with(|| extract_author_name(&detect_info.authors))
                 .clone();
             let author_str = author_list.iter().join(", ");
             afterfact_info
@@ -2133,45 +2130,24 @@ fn output_detected_rule_authors(
     println!("{tb}");
 }
 
-/// 与えられたyaml_pathからauthorの名前を抽出して配列で返却する関数
-fn extract_author_name(yaml_path: &str) -> Nested<String> {
-    let contents = match ParseYaml::read_file(Path::new(&yaml_path).to_path_buf()) {
-        Ok(yaml) => Some(yaml),
-        Err(e) => {
-            AlertMessage::alert(&e).ok();
-            None
-        }
-    };
-    if contents.is_none() {
-        // 対象のファイルが存在しなかった場合は空配列を返す(検知しているルールに対して行うため、ここは通る想定はないが、ファイルが検知途中で削除された場合などを考慮して追加)
-        return Nested::new();
+/// 与えられたauthorsの文字列からそれぞれの名前を抽出して配列で返却する関数
+fn extract_author_name(authors: &str) -> Nested<String> {
+    let mut ret = Nested::<String>::new();
+    for author in authors.split(',').map(|s| {
+        // 各要素の括弧以降の記載は名前としないためtmpの一番最初の要素のみを参照する
+        // データの中にdouble quote と single quoteが入っているためここで除外する
+        s.split('(').next().unwrap_or_default().to_string()
+    }) {
+        ret.extend(author.split(';'));
     }
-    for yaml in YamlLoader::load_from_str(&contents.unwrap())
-        .unwrap_or_default()
-        .into_iter()
-    {
-        if let Some(author) = yaml["author"].as_str() {
-            let mut ret = Nested::<String>::new();
-            for author in author.split(',').map(|s| {
-                // 各要素の括弧以降の記載は名前としないためtmpの一番最初の要素のみを参照する
-                // データの中にdouble quote と single quoteが入っているためここで除外する
-                s.split('(').next().unwrap_or_default().to_string()
-            }) {
-                ret.extend(author.split(';'));
-            }
 
-            return ret
-                .iter()
-                .map(|r| {
-                    r.split('/')
-                        .map(|p| p.trim().replace(['"', '\''], ""))
-                        .collect::<String>()
-                })
-                .collect();
-        };
-    }
-    // ここまで来た場合は要素がない場合なので空配列を返す
-    Nested::new()
+    ret.iter()
+        .map(|r| {
+            r.split('/')
+                .map(|p| p.trim().replace(['"', '\''], ""))
+                .collect::<String>()
+        })
+        .collect()
 }
 
 ///MITRE ATTCKのTacticsの属性を持つルールに検知したコンピュータ名をhtml出力するための文字列をhtml_output_stockに追加する関数

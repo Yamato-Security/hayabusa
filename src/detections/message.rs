@@ -33,6 +33,7 @@ use super::utils::remove_sp_char;
 pub struct DetectInfo {
     pub detected_time: DateTime<Utc>,
     pub rulepath: CompactString,
+    pub authors: CompactString,
     pub ruleid: CompactString,
     pub ruletitle: CompactString,
     pub level: CompactString,
