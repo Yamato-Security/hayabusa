@@ -560,8 +560,8 @@ impl StoredStatic {
             _ => HashSet::default(),
         };
         let is_low_memory = match &input_config.as_ref().unwrap().action {
-            Some(Action::CsvTimeline(opt)) => opt.output_options.low_memory_mode,
-            Some(Action::JsonTimeline(opt)) => opt.output_options.low_memory_mode,
+            Some(Action::CsvTimeline(opt)) => !opt.output_options.sort_events,
+            Some(Action::JsonTimeline(opt)) => !opt.output_options.sort_events,
             _ => false,
         };
         let enable_all_rules = match &input_config.as_ref().unwrap().action {
@@ -945,7 +945,7 @@ pub struct DetectCommonOption {
     pub json_input: bool,
 
     /// Specify additional evtx file extensions (ex: evtx_data)
-    #[arg(help_heading = Some("General Options"), long = "target-file-ext", value_name = "FILE-EXT...", use_value_delimiter = true, value_delimiter = ',', display_order = 450)]
+    #[arg(help_heading = Some("General Options"), long = "target-file-ext", value_name = "FILE-EXT...", use_value_delimiter = true, value_delimiter = ',', display_order = 460)]
     pub evtx_file_ext: Option<Vec<String>>,
 
     /// Number of threads (default: optimal number for performance)
@@ -1070,7 +1070,7 @@ pub struct SearchOption {
     pub output: Option<PathBuf>,
 
     /// Specify additional evtx file extensions (ex: evtx_data)
-    #[arg(help_heading = Some("General Options"), long = "target-file-ext", value_name = "FILE-EXT...", use_value_delimiter = true, value_delimiter = ',', display_order = 450)]
+    #[arg(help_heading = Some("General Options"), long = "target-file-ext", value_name = "FILE-EXT...", use_value_delimiter = true, value_delimiter = ',', display_order = 460)]
     pub evtx_file_ext: Option<Vec<String>>,
 
     /// Number of threads (default: optimal number for performance)
@@ -1561,22 +1561,22 @@ pub struct OutputOption {
             help_heading = Some("Output"),
             short = 'R',
             long = "remove-duplicate-data",
-            conflicts_with = "low_memory_mode",
+            requires = "sort-events",
             display_order = 440
         )]
     pub remove_duplicate_data: bool,
 
     /// Remove duplicate detections (default: disabled)
-    #[arg(help_heading = Some("Output"), short = 'X', long = "remove-duplicate-detections", conflicts_with = "low_memory_mode", display_order = 441)]
+    #[arg(help_heading = Some("Output"), short = 'X', long = "remove-duplicate-detections", requires = "sort-events", display_order = 441)]
     pub remove_duplicate_detections: bool,
 
     /// Do not ask questions. Scan for all events and alerts.
     #[arg(help_heading = Some("General Options"), short = 'w', long = "no-wizard", display_order = 400)]
     pub no_wizard: bool,
 
-    /// Scan with the minimal amount of memory by not sorting events
-    #[arg(help_heading = Some("General Options"), short='s', long = "low-memory-mode", display_order = 380)]
-    pub low_memory_mode: bool,
+    /// Sort events before saving the file. (warning: this uses much more memory!)
+    #[arg(help_heading = Some("General Options"), short='s', long = "sort-events", display_order = 451)]
+    pub sort_events: bool,
 
     /// Enable all rules regardless of loaded evtx files (disable channel filter for rules)
     #[arg(help_heading = Some("Filtering"), short='A', long = "enable-all-rules", display_order = 300)]
@@ -2269,7 +2269,7 @@ fn extract_output_options(config: &Config) -> Option<OutputOption> {
             remove_duplicate_detections: false,
             no_wizard: option.no_wizard,
             include_status: option.include_status.clone(),
-            low_memory_mode: false,
+            sort_events: false,
             enable_all_rules: false,
             scan_all_evtx_files: false,
         }),
@@ -2312,7 +2312,7 @@ fn extract_output_options(config: &Config) -> Option<OutputOption> {
             remove_duplicate_detections: false,
             no_wizard: true,
             include_status: None,
-            low_memory_mode: false,
+            sort_events: false,
             enable_all_rules: false,
             scan_all_evtx_files: false,
         }),
@@ -2355,7 +2355,7 @@ fn extract_output_options(config: &Config) -> Option<OutputOption> {
             remove_duplicate_detections: false,
             no_wizard: true,
             include_status: None,
-            low_memory_mode: false,
+            sort_events: false,
             enable_all_rules: false,
             scan_all_evtx_files: false,
         }),
@@ -2407,7 +2407,7 @@ fn extract_output_options(config: &Config) -> Option<OutputOption> {
             remove_duplicate_detections: false,
             no_wizard: true,
             include_status: None,
-            low_memory_mode: false,
+            sort_events: false,
             enable_all_rules: false,
             scan_all_evtx_files: false,
         }),
@@ -2459,7 +2459,7 @@ fn extract_output_options(config: &Config) -> Option<OutputOption> {
             remove_duplicate_detections: false,
             no_wizard: true,
             include_status: None,
-            low_memory_mode: false,
+            sort_events: false,
             enable_all_rules: false,
             scan_all_evtx_files: false,
         }),
@@ -2517,7 +2517,7 @@ fn extract_output_options(config: &Config) -> Option<OutputOption> {
             remove_duplicate_detections: false,
             no_wizard: true,
             include_status: None,
-            low_memory_mode: false,
+            sort_events: false,
             enable_all_rules: false,
             scan_all_evtx_files: false,
         }),
@@ -2575,7 +2575,7 @@ fn extract_output_options(config: &Config) -> Option<OutputOption> {
             remove_duplicate_detections: false,
             no_wizard: true,
             include_status: None,
-            low_memory_mode: false,
+            sort_events: false,
             enable_all_rules: false,
             scan_all_evtx_files: false,
         }),
@@ -2830,7 +2830,7 @@ mod tests {
                     remove_duplicate_detections: false,
                     no_wizard: true,
                     include_status: None,
-                    low_memory_mode: false,
+                    sort_events: false,
                     enable_all_rules: false,
                     scan_all_evtx_files: false,
                 },
@@ -2908,7 +2908,7 @@ mod tests {
                     remove_duplicate_detections: false,
                     no_wizard: true,
                     include_status: None,
-                    low_memory_mode: false,
+                    sort_events: false,
                     enable_all_rules: false,
                     scan_all_evtx_files: false,
                 },
