@@ -1,5 +1,11 @@
 # Changes
 
+## x.x.x [xxxx/xx/xx]
+
+**Enchancements:**
+
+- Support for the newer version 0.6.x `cidr-utils` crate. (#1366) (@hitenkoku)
+
 ## 2.16.0 [2024/06/11]
 
 **New Features:**
