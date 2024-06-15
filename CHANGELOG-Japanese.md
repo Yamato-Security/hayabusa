@@ -1,5 +1,12 @@
 # 変更点
 
+## x.x.x [xxxx/xx/xx]
+
+**改善:**
+
+- `cidr-utils`クレートを新バージョン0.6.xに対応した。 (#1366) (@hitenkoku)
+- Sigma correlationルールの`name`ルックアップに対応した。 (#1363) (@fukusuket)
+
 ## 2.16.0 [2024/06/11]
 
 **新機能:**
