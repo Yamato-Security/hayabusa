@@ -60,24 +60,7 @@ impl GeoIPSearch {
         let private_cidr = if target_ip.is_ipv4() {
             vec![
                 IpCidr::from_str("10/8").unwrap(),
-                // 172.16.0.0/12 private IP address is not defined "172.16/12"
-                IpCidr::from_str("172.16").unwrap(),
-                IpCidr::from_str("172.17").unwrap(),
-                IpCidr::from_str("172.18").unwrap(),
-                IpCidr::from_str("172.19").unwrap(),
-                IpCidr::from_str("172.20").unwrap(),
-                IpCidr::from_str("172.20").unwrap(),
-                IpCidr::from_str("172.21").unwrap(),
-                IpCidr::from_str("172.22").unwrap(),
-                IpCidr::from_str("172.23").unwrap(),
-                IpCidr::from_str("172.24").unwrap(),
-                IpCidr::from_str("172.25").unwrap(),
-                IpCidr::from_str("172.26").unwrap(),
-                IpCidr::from_str("172.27").unwrap(),
-                IpCidr::from_str("172.28").unwrap(),
-                IpCidr::from_str("172.29").unwrap(),
-                IpCidr::from_str("172.30").unwrap(),
-                IpCidr::from_str("172.31").unwrap(),
+                IpCidr::from_str("172.16/12").unwrap(),
                 IpCidr::from_str("192.168/16").unwrap(),
             ]
         } else {
@@ -86,12 +69,12 @@ impl GeoIPSearch {
                 IpCidr::from_str("2000::/3").unwrap(),  // IPv6 Global Unicast
                 IpCidr::from_str("FE80::/10").unwrap(), // IPv6 Link Local Unicast
                 IpCidr::from_str("FC00::/7").unwrap(),  // IPv6 Unique Local Address
-                IpCidr::from_str("FD00::/7").unwrap(),  // IPv6 Unique Local Address
+                IpCidr::from_str("FD00::/8").unwrap(),  // IPv6 Unique Local Address
                 IpCidr::from_str("FF00::/8").unwrap(),  // IPv6 Multicast Address
             ]
         };
         for cidr in private_cidr {
-            if cidr.contains(*target_ip) {
+            if cidr.contains(target_ip) {
                 return true;
             }
         }
