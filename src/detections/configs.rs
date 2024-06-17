@@ -1561,13 +1561,13 @@ pub struct OutputOption {
             help_heading = Some("Output"),
             short = 'R',
             long = "remove-duplicate-data",
-            requires = "sort-events",
+            requires = "sort_events",
             display_order = 440
         )]
     pub remove_duplicate_data: bool,
 
     /// Remove duplicate detections (default: disabled)
-    #[arg(help_heading = Some("Output"), short = 'X', long = "remove-duplicate-detections", requires = "sort-events", display_order = 441)]
+    #[arg(help_heading = Some("Output"), short = 'X', long = "remove-duplicate-detections", requires = "sort_events", display_order = 441)]
     pub remove_duplicate_detections: bool,
 
     /// Do not ask questions. Scan for all events and alerts.
