@@ -1,5 +1,6 @@
 use base64::{engine::general_purpose, Engine as _};
-use cidr_utils::cidr::{IpCidr, IpCidrError};
+use cidr_utils::cidr::errors::NetworkParseError;
+use cidr_utils::cidr::IpCidr;
 use nested::Nested;
 use regex::Regex;
 use std::net::IpAddr;
@@ -568,7 +569,7 @@ impl LeafMatcher for DefaultMatcher {
                     let event_value_str = event_value.unwrap_or(&val);
                     let event_ip = IpAddr::from_str(event_value_str);
                     match event_ip {
-                        Ok(target_ip) => Some(matcher_ip.contains(target_ip)),
+                        Ok(target_ip) => Some(matcher_ip.contains(&target_ip)),
                         Err(_) => Some(false), //IPアドレス以外の形式のとき
                     }
                 }
@@ -648,7 +649,7 @@ enum PipeElement {
     Endswithfield(String),
     Base64offset,
     Windash,
-    Cidr(Result<IpCidr, IpCidrError>),
+    Cidr(Result<IpCidr, NetworkParseError>),
     All,
     AllOnly,
 }
