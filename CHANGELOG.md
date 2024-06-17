@@ -2,10 +2,12 @@
 
 ## x.x.x [xxxx/xx/xx]
 
-**Enchancements:**
+**Enhancements:**
 
 - Support for the newer version 0.6.x `cidr-utils` crate. (#1366) (@hitenkoku)
 - Added support for Sigma correlation rule's `name` lookup. (#1363) (@fukusuket)
+- Enabled low memory mode by default. `-s, --low-memory-mode` is now `-s, --sort-events` - Sort events before outputting results. (warning: this uses much more memory!). (#1361) (@hitenkoku)
+  - Note: you need to enable sorting in order to use  `-R, --remove-duplicate-data` and `-X, --remove-duplicate-detections`.
 
 ## 2.16.0 [2024/06/11]
 
