@@ -1,5 +1,14 @@
 # 変更点
 
+## x.x.x [xxxx/xx/xx]
+
+**改善:**
+
+- `cidr-utils`クレートを新バージョン0.6.xに対応した。 (#1366) (@hitenkoku)
+- Sigma correlationルールの`name`ルックアップに対応した。 (#1363) (@fukusuket)
+- デフォルトで低メモリモードを有効にした。`-s, --low-memory-mode`は、`-s, --sort-events` - 出力/保存する前に結果をソートする。(注意: より多くのメモリを消費する。）(#1361) (@hitenkoku)
+  - 注意: `-R, --remove-duplicate-data`または`-X, --remove-duplicate-detections`を使用するには、ソートを有効にする必要がある。
+
 ## 2.16.0 [2024/06/11]
 
 **新機能:**
