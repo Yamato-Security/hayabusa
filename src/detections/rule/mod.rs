@@ -176,12 +176,13 @@ impl DetectionNode {
     }
 
     pub fn new_with_data(
+        name_to_selection: HashMap<String, Arc<Box<dyn SelectionNode>>>,
         condition: Option<Box<dyn SelectionNode>>,
         aggregation_condition: Option<AggregationParseInfo>,
         timeframe: Option<TimeFrameInfo>,
     ) -> DetectionNode {
         DetectionNode {
-            name_to_selection: HashMap::new(),
+            name_to_selection,
             condition,
             aggregation_condition,
             timeframe,

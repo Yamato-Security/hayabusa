@@ -36,6 +36,7 @@ use libmimalloc_sys::mi_stats_print_out;
 use mimalloc::MiMalloc;
 use nested::Nested;
 use num_format::{Locale, ToFormattedString};
+use rust_embed::Embed;
 use serde_json::{Map, Value};
 use termcolor::{BufferWriter, Color, ColorChoice};
 use tokio::runtime::Runtime;
@@ -65,7 +66,8 @@ use hayabusa::timeline::computer_metrics::countup_event_by_computer;
 use hayabusa::{detections::configs, timeline::timelines::Timeline};
 use hayabusa::{detections::utils::write_color_buffer, filter};
 use hayabusa::{options, yaml};
-use rust_embed::Embed;
+#[cfg(target_os = "windows")]
+use is_elevated::is_elevated;
 
 #[derive(Embed)]
 #[folder = "art/"]
@@ -75,9 +77,6 @@ struct Arts;
 #[folder = "./"]
 #[include = "contributors.txt"]
 struct Contributors;
-
-#[cfg(target_os = "windows")]
-use is_elevated::is_elevated;
 
 #[global_allocator]
 static GLOBAL: MiMalloc = MiMalloc;
