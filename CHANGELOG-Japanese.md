@@ -5,9 +5,10 @@
 **改善:**
 
 - `cidr-utils`クレートを新バージョン0.6.xに対応した。 (#1366) (@hitenkoku)
-- Sigma correlationルールの`name`ルックアップに対応した。 (#1363) (@fukusuket)
+- Sigma相関ルールの`name`ルックアップに対応した。 (#1363) (@fukusuket)
 - デフォルトで低メモリモードを有効にした。`-s, --low-memory-mode`は、`-s, --sort-events` - 出力/保存する前に結果をソートする。(注意: より多くのメモリを消費する。）(#1361) (@hitenkoku)
   - 注意: `-R, --remove-duplicate-data`または`-X, --remove-duplicate-detections`を使用するには、ソートを有効にする必要がある。
+- Sigma相関ルールが参照しているルールは、デフォルトで結果を出力しないようにした。`generate: true`を指定すると、出力される。 (#1367) (@fukusuket)
 
 ## 2.16.0 [2024/06/11]
 
@@ -19,8 +20,8 @@
     - [Mimikatz Use](https://github.com/SigmaHQ/sigma/blob/master/rules/windows/builtin/win_alert_mimikatz_keywords.yml)
 - デフォルトでは、適用可能なルールを持つ`.evtx`ファイルのみ読み込む。たとえば、さまざまなイベントログのディレクトリをスキャンしている場合でも、 `Channel: Security` を探すルールのみを有効にした場合、Hayabusaは`Security`以外のすべてのイベントログを無視します。ベンチマークでは、通常のスキャンで約10％、単一のルールでスキャンする場合は最大60％以上のパフォーマンス向上が得られる。チャネルに関係なくすべての`.evtx`ファイルを読み込みたい場合は、`csv-timeline` と `json-timeline` の `-a、--scan-all-evtx-files` オプションでこのフィルタリングをオフにすることができる。(#1318) (@fukusuket)
 - 注意: チャンネルフィルタリングは .evtx ファイルにのみ適用され、`-J, --json-input`オプションを使用してイベントログをJSONファイルから読み込む際に`-A`または`-a`を指定するとエラーが発生する。(#1345) (@fukusuket)
-- Sigma CorrelationのEvent Countに対応した。 (#1337) (@fukusuket)
-- Sigma CorrelationのValue Countに対応した。 (#1338) (@fukusuket)
+- Sigma相関ルールのEvent Countに対応した。 (#1337) (@fukusuket)
+- Sigma相関ルールのValue Countに対応した。 (#1338) (@fukusuket)
 
 **改善:**
 

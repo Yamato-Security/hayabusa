@@ -8,6 +8,7 @@
 - Added support for Sigma correlation rule's `name` lookup. (#1363) (@fukusuket)
 - Enabled low memory mode by default. `-s, --low-memory-mode` is now `-s, --sort-events` - Sort events before outputting results. (warning: this uses much more memory!). (#1361) (@hitenkoku)
   - Note: you need to enable sorting in order to use  `-R, --remove-duplicate-data` and `-X, --remove-duplicate-detections`.
+- Sigma correlation reference rules now do not output alerts by default. You can enable them by adding `generate: true`. (#1367) (@fukusuket)
 
 ## 2.16.0 [2024/06/11]
 
