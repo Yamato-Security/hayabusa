@@ -1,3 +1,30 @@
+use std::cmp::{self, min, Ordering};
+use std::error::Error;
+use std::fs::File;
+use std::io::{self, BufWriter, Write};
+use std::path::Path;
+use std::process;
+use std::str::FromStr;
+
+use aho_corasick::{AhoCorasick, AhoCorasickBuilder, MatchKind};
+use chrono::{DateTime, Local, TimeZone, Utc};
+use comfy_table::modifiers::UTF8_ROUND_CORNERS;
+use comfy_table::presets::UTF8_FULL;
+use comfy_table::*;
+use compact_str::CompactString;
+use csv::{QuoteStyle, Writer, WriterBuilder};
+use hashbrown::hash_map::RawEntryMut;
+use hashbrown::{HashMap, HashSet};
+use itertools::Itertools;
+use krapslog::{build_sparkline, build_time_markers};
+use lazy_static::lazy_static;
+use nested::Nested;
+use num_format::{Locale, ToFormattedString};
+use termcolor::{Buffer, BufferWriter, Color, ColorChoice, ColorSpec, WriteColor};
+use terminal_size::terminal_size;
+use terminal_size::Width;
+use yaml_rust::YamlLoader;
+
 use crate::detections::configs::{
     Action, OutputOption, StoredStatic, CONTROL_CHAT_REPLACE_MAP, CURRENT_EXE_PATH, GEOIP_DB_PARSER,
 };
@@ -8,35 +35,6 @@ use crate::detections::utils::{
 use crate::options::htmlreport;
 use crate::options::profile::Profile;
 use crate::yaml::ParseYaml;
-use aho_corasick::{AhoCorasick, AhoCorasickBuilder, MatchKind};
-use chrono::{DateTime, Local, TimeZone, Utc};
-use comfy_table::modifiers::UTF8_ROUND_CORNERS;
-use comfy_table::presets::UTF8_FULL;
-use compact_str::CompactString;
-use hashbrown::hash_map::RawEntryMut;
-use terminal_size::terminal_size;
-
-use csv::{QuoteStyle, Writer, WriterBuilder};
-use itertools::Itertools;
-use krapslog::{build_sparkline, build_time_markers};
-use nested::Nested;
-use std::path::Path;
-use std::str::FromStr;
-use yaml_rust::YamlLoader;
-
-use comfy_table::*;
-use hashbrown::{HashMap, HashSet};
-use num_format::{Locale, ToFormattedString};
-use std::cmp::{self, min, Ordering};
-use std::error::Error;
-
-use std::io::{self, BufWriter, Write};
-
-use lazy_static::lazy_static;
-use std::fs::File;
-use std::process;
-use termcolor::{Buffer, BufferWriter, Color, ColorChoice, ColorSpec, WriteColor};
-use terminal_size::Width;
 
 lazy_static! {
     // ここで字句解析するときに使う正規表現の一覧を定義する。
@@ -497,14 +495,12 @@ fn calc_statistic_info(
         afterfact_info
             .timestamps
             .push(detect_info.detected_time.timestamp());
-        if !detect_info.is_condition {
-            afterfact_info
-                .detected_record_idset
-                .insert(CompactString::from(format!(
-                    "{}_{}",
-                    detect_info.detected_time, detect_info.eventid
-                )));
-        }
+        afterfact_info
+            .detected_record_idset
+            .insert(CompactString::from(format!(
+                "{}_{}",
+                detect_info.detected_time, detect_info.eventid
+            )));
 
         if !output_option.no_summary {
             let level_suffix = get_level_suffix(detect_info.level.as_str());
@@ -2204,7 +2200,15 @@ fn _output_html_computer_by_mitre_attck(html_output_stock: &mut Nested<String>) 
 
 #[cfg(test)]
 mod tests {
-    use super::create_output_color_map;
+    use std::fs::{read_to_string, remove_file};
+    use std::path::Path;
+
+    use chrono::NaiveDateTime;
+    use chrono::{Local, TimeZone, Utc};
+    use compact_str::CompactString;
+    use hashbrown::HashMap;
+    use serde_json::Value;
+
     use crate::afterfact::format_time;
     use crate::afterfact::init_writer;
     use crate::afterfact::output_afterfact_inner;
@@ -2226,13 +2230,8 @@ mod tests {
     use crate::detections::message::DetectInfo;
     use crate::detections::utils;
     use crate::options::profile::{load_profile, Profile};
-    use chrono::NaiveDateTime;
-    use chrono::{Local, TimeZone, Utc};
-    use compact_str::CompactString;
-    use hashbrown::HashMap;
-    use serde_json::Value;
-    use std::fs::{read_to_string, remove_file};
-    use std::path::Path;
+
+    use super::create_output_color_map;
 
     #[test]
     fn test_emit_csv_output() {
