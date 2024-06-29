@@ -9,6 +9,9 @@
 - Enabled low memory mode by default. `-s, --low-memory-mode` is now `-s, --sort-events` - Sort events before outputting results. (warning: this uses much more memory!). (#1361) (@hitenkoku)
   - Note: you need to enable sorting in order to use  `-R, --remove-duplicate-data` and `-X, --remove-duplicate-detections`.
 - Sigma correlation reference rules now do not output alerts by default. You can enable them by adding `generate: true`. (#1367) (@fukusuket)
+- `Data` fields are now displayed as indexed strings instead of as all `Data` fields or in an array for JSON. (#1371) (@fukusuket)
+  - Before: `"Data": ["17514", "Multiprocessor Free", "Service Pack 1"]`
+  - After: `"Data[3]": "17514", "Data[4]": "Multiprocessor Free", "Data[5]": "Service Pack 1"`
 
 ## 2.16.0 [2024/06/11]
 
