@@ -2,26 +2,26 @@ extern crate base64;
 extern crate csv;
 extern crate regex;
 
-use std::{fs, io};
 use std::cmp::Ordering;
-use std::fs::{File, read_to_string};
-use std::io::{BufRead, BufReader};
+use std::fs::{read_to_string, File};
 use std::io::prelude::*;
+use std::io::{BufRead, BufReader};
 use std::path::{Path, PathBuf};
 use std::str;
 use std::string::String;
 use std::thread::available_parallelism;
 use std::vec;
+use std::{fs, io};
 
-use chrono::{DateTime, TimeZone, Utc};
 use chrono::Local;
+use chrono::{DateTime, TimeZone, Utc};
 use compact_str::{CompactString, ToCompactString};
 use hashbrown::{HashMap, HashSet};
 use itertools::Itertools;
 use memchr::memmem;
 use nested::Nested;
 use regex::Regex;
-use serde_json::{Error, json, Map, Value};
+use serde_json::{json, Error, Map, Value};
 use termcolor::{BufferWriter, ColorSpec, WriteColor};
 use termcolor::{Color, ColorChoice};
 use tokio::runtime::{Builder, Runtime};
@@ -778,6 +778,7 @@ mod tests {
     use regex::Regex;
     use serde_json::Value;
 
+    use crate::detections::field_data_map::FieldDataMapKey;
     use crate::{
         detections::{
             configs::{
@@ -788,7 +789,6 @@ mod tests {
         },
         options::htmlreport::HTML_REPORTER,
     };
-    use crate::detections::field_data_map::FieldDataMapKey;
 
     use super::{output_duration, output_profile_name};
 
