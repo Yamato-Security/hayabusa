@@ -2,41 +2,38 @@ extern crate base64;
 extern crate csv;
 extern crate regex;
 
-use crate::detections::configs::CURRENT_EXE_PATH;
-use crate::options::htmlreport;
-
-use compact_str::{CompactString, ToCompactString};
-use hashbrown::{HashMap, HashSet};
-use itertools::Itertools;
-use nested::Nested;
-use std::path::{Path, PathBuf};
-use std::thread::available_parallelism;
-
-use chrono::Local;
-use termcolor::{Color, ColorChoice};
-
-use tokio::runtime::{Builder, Runtime};
-
-use chrono::{DateTime, TimeZone, Utc};
-use regex::Regex;
-use serde_json::{json, Error, Map, Value};
 use std::cmp::Ordering;
 use std::fs::{read_to_string, File};
 use std::io::prelude::*;
 use std::io::{BufRead, BufReader};
+use std::path::{Path, PathBuf};
 use std::str;
 use std::string::String;
+use std::thread::available_parallelism;
 use std::vec;
 use std::{fs, io};
+
+use chrono::Local;
+use chrono::{DateTime, TimeZone, Utc};
+use compact_str::{CompactString, ToCompactString};
+use hashbrown::{HashMap, HashSet};
+use itertools::Itertools;
+use memchr::memmem;
+use nested::Nested;
+use regex::Regex;
+use serde_json::{json, Error, Map, Value};
 use termcolor::{BufferWriter, ColorSpec, WriteColor};
+use termcolor::{Color, ColorChoice};
+use tokio::runtime::{Builder, Runtime};
+
+use crate::detections::configs::CURRENT_EXE_PATH;
+use crate::detections::field_data_map::{convert_field_data, FieldDataMap, FieldDataMapKey};
+use crate::detections::field_extract::extract_fields;
+use crate::options::htmlreport;
 
 use super::configs::{EventKeyAliasConfig, OutputOption, STORED_EKEY_ALIAS};
 use super::detection::EvtxRecordInfo;
 use super::message::AlertMessage;
-
-use crate::detections::field_data_map::{convert_field_data, FieldDataMap, FieldDataMapKey};
-use crate::detections::field_extract::extract_fields;
-use memchr::memmem;
 
 pub fn concat_selection_key(key_list: &Nested<String>) -> String {
     return key_list
@@ -396,7 +393,7 @@ pub fn create_recordinfos(
     _collect_recordinfo(
         &mut vec![],
         "",
-        0,
+        -1,
         record,
         record,
         &mut output,
@@ -437,7 +434,7 @@ pub fn create_recordinfos(
 fn _collect_recordinfo<'a>(
     keys: &mut Vec<&'a str>,
     parent_key: &'a str,
-    arr_index: usize,
+    arr_index: i8,
     org_value: &'a Value,
     cur_value: &'a Value,
     output: &mut HashSet<(String, String)>,
@@ -449,7 +446,7 @@ fn _collect_recordinfo<'a>(
                 _collect_recordinfo(
                     keys,
                     parent_key,
-                    i,
+                    i as i8,
                     org_value,
                     sub_value,
                     output,
@@ -471,7 +468,15 @@ fn _collect_recordinfo<'a>(
                     continue;
                 }
 
-                _collect_recordinfo(keys, key, 0, org_value, value, output, filed_data_converter);
+                _collect_recordinfo(
+                    keys,
+                    key,
+                    -1,
+                    org_value,
+                    value,
+                    output,
+                    filed_data_converter,
+                );
             }
             if !parent_key.is_empty() {
                 keys.pop();
@@ -492,10 +497,10 @@ fn _collect_recordinfo<'a>(
                     };
                     acc
                 });
-                if arr_index > 0 {
+                let key = if arr_index >= 0 {
                     let (field_data_map, field_data_map_key) = filed_data_converter;
                     let i = arr_index + 1;
-                    let field = format!("{parent_key}[{i}]",).to_lowercase();
+                    let field = format!("{parent_key}[{i}]").to_lowercase();
                     if let Some(map) = field_data_map {
                         let converted_str = convert_field_data(
                             map,
@@ -508,8 +513,11 @@ fn _collect_recordinfo<'a>(
                             strval = converted_str.to_string();
                         }
                     }
-                }
-                output.insert((parent_key.to_string(), strval));
+                    format!("{parent_key}[{i}]")
+                } else {
+                    parent_key.to_string()
+                };
+                output.insert((key, strval));
             }
         }
     }
@@ -763,6 +771,13 @@ pub fn remove_sp_char(record_value: CompactString) -> CompactString {
 mod tests {
     use std::path::Path;
 
+    use chrono::NaiveDate;
+    use compact_str::CompactString;
+    use hashbrown::{HashMap, HashSet};
+    use nested::Nested;
+    use regex::Regex;
+    use serde_json::Value;
+
     use crate::detections::field_data_map::FieldDataMapKey;
     use crate::{
         detections::{
@@ -774,12 +789,6 @@ mod tests {
         },
         options::htmlreport::HTML_REPORTER,
     };
-    use chrono::NaiveDate;
-    use compact_str::CompactString;
-    use hashbrown::{HashMap, HashSet};
-    use nested::Nested;
-    use regex::Regex;
-    use serde_json::Value;
 
     use super::{output_duration, output_profile_name};
 
@@ -833,7 +842,7 @@ mod tests {
             Ok(record) => {
                 let ret = utils::create_recordinfos(&record, &FieldDataMapKey::default(), &None);
                 // Systemは除外される/属性(_attributesも除外される)/key順に並ぶ
-                let expected = "Binary: hogehoge ¦ Data:  ¦ Data: Data1 ¦ Data: DataData2 ¦ Data: DataDataData3"
+                let expected = "Binary: hogehoge ¦ Data[1]: Data1 ¦ Data[2]: DataData2 ¦ Data[3]:  ¦ Data[4]: DataDataData3"
                     .to_string();
                 assert_eq!(ret.join(" ¦ "), expected);
             }

@@ -9,6 +9,9 @@
 - デフォルトで低メモリモードを有効にした。`-s, --low-memory-mode`は、`-s, --sort-events` - 出力/保存する前に結果をソートする。(注意: より多くのメモリを消費する。）(#1361) (@hitenkoku)
   - 注意: `-R, --remove-duplicate-data`または`-X, --remove-duplicate-detections`を使用するには、ソートを有効にする必要がある。
 - Sigma相関ルールが参照しているルールは、デフォルトで結果を出力しないようにした。`generate: true`を指定すると、出力される。 (#1367) (@fukusuket)
+- `Data`フィールドは、すべて`Data`フィールドとして、またはJSONの配列としてではなく、インデックス化された文字列として表示されるようになった。(#1371) (@fukusuket)
+  - 前: `"Data": ["17514", "Multiprocessor Free", "Service Pack 1"]`
+  - 後: `"Data[3]": "17514", "Data[4]": "Multiprocessor Free", "Data[5]": "Service Pack 1"`
 
 ## 2.16.0 [2024/06/11]
 
