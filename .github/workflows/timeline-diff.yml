@@ -1,0 +1,57 @@
+name: Check CSV timeline and JSON timeline Diff
+
+on:
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    env:
+      BRANCH_NAME: ${{ github.head_ref }}
+
+    steps:
+      - name: Checkout main
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.ref }}
+          submodules: recursive
+          fetch-depth: 0
+
+      - name: Checkout hayabusa-sample-evtx repo
+        uses: actions/checkout@v4
+        with:
+          repository: Yamato-Security/hayabusa-sample-evtx
+          path: hayabusa-sample-evtx
+
+      - name: Set up Rust
+        uses: dtolnay/rust-toolchain@stable
+
+      - name: Run on dev branch
+        run: |
+          cargo run --release -- update-rules -q
+          cargo run --release -- csv-timeline -d ./hayabusa-sample-evtx -o dev.csv -p super-verbose -q -w -D -n -u
+          cargo run --release -- json-timeline -d ./hayabusa-sample-evtx -o dev.jsonl -L -p super-verbose -q -w -D -n -u
+
+      - name: Run on main branch
+        run: |
+          git checkout main
+          cargo run --release -- update-rules -q
+          cargo run --release -- csv-timeline -d ./hayabusa-sample-evtx -o main.csv -p super-verbose -q -w -D -n -u
+          cargo run --release -- json-timeline -d ./hayabusa-sample-evtx -o main.jsonl -L -p super-verbose -q -w -D -n -u
+
+
+      - name: Check CSV Timeline diff
+        run: |
+          diff main.csv dev.csv
+          if [ $? -ne 0 ]; then
+            echo "CSV files are different"
+            exit 1
+          fi
+
+      - name: Check JSONL Timeline diff
+        run: |
+          diff main.jsonl dev.jsonl
+          if [ $? -ne 0 ]; then
+            echo "JSON files are different"
+            exit 1
+          fi
