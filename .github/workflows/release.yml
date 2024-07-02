@@ -1,0 +1,111 @@
+name: Release
+
+on:
+  workflow_dispatch:
+    inputs:
+      release_ver:
+        required: true
+        default: "x.x.x"
+
+env:
+  CARGO_TERM_COLOR: always
+
+jobs:
+  release:
+    strategy:
+      fail-fast: false
+      matrix:
+        info:
+          - {
+              os: "ubuntu-latest",
+              target: "aarch64-unknown-linux-gnu",
+              bin: "hayabusa-${{github.event.inputs.release_ver}}-lin-aarch64-gnu",
+              cross: false,
+            }
+          - {
+              os: "ubuntu-latest",
+              target: "x86_64-unknown-linux-gnu",
+              bin: "hayabusa-${{github.event.inputs.release_ver}}-lin-intel-gnu",
+              cross: false,
+            }
+          - {
+              os: "ubuntu-latest",
+              target: "x86_64-unknown-linux-musl",
+              bin: "hayabusa-${{github.event.inputs.release_ver}}-lin-intel-musl",
+              cross: true,
+            }
+          - { 
+            os: "macOS-latest", 
+            target: "x86_64-apple-darwin", 
+            bin: "hayabusa-${{github.event.inputs.release_ver}}-mac-intel",
+            cross: false }
+          - { 
+            os: "macOS-latest", 
+            target: "aarch64-apple-darwin", 
+            bin: "hayabusa-${{github.event.inputs.release_ver}}-mac-arm",
+            cross: false 
+          }
+          - {
+              os: "windows-latest",
+              target: "x86_64-pc-windows-msvc",
+              bin: "hayabusa-${{github.event.inputs.release_ver}}-win-x64.exe",
+              cross: false,
+            }
+          - {
+              os: "windows-latest",
+              target: "i686-pc-windows-msvc",
+              bin: "hayabusa-${{github.event.inputs.release_ver}}-win-x86.exe",
+              cross: true,
+            }
+    runs-on: ${{ matrix.info.os }}
+    steps:
+      - uses: actions/checkout@v3
+        with:
+          submodules: recursive
+      - name: Set up Rust toolchain
+        if: ${{ steps.skip_check.outputs.should_skip != 'true' }}
+        uses: dtolnay/rust-toolchain@stable
+        with:
+          toolchain: stable
+          components: rustfmt, clippy
+          targets: ${{ matrix.info.target }}
+      - name: Enable Rust cache
+        if: ${{ steps.skip_check.outputs.should_skip != 'true' }}
+        uses: Swatinem/rust-cache@6fd3edff6979b79f87531400ad694fb7f2c84b1f #2.1.0
+      - name: Release Build
+        if: ${{ steps.skip_check.outputs.should_skip != 'true' }}
+        uses: ClementTsang/cargo-action@v0.0.3
+        with:
+          command: build
+          args: --release --no-run --locked ${{ matrix.features }} --target=${{ matrix.info.target }}
+          use-cross: ${{ matrix.info.cross }}
+          cross-version: 0.2.4
+        env:
+          RUST_BACKTRACE: full
+      - name: Package and Zip - Windows
+        if: matrix.info.os == 'windows-latest'
+        run: |
+          mkdir -p artifacts
+          Copy-Item -Path target/release/hayabusa.exe -Destination artifacts/${{ matrix.info.bin }}
+          Compress-Archive -Path artifacts/* -DestinationPath artifacts/${{ matrix.info.bin }}.zip -Force
+      - name: Package and Zip - Unix
+        if: matrix.info.os != 'windows-latest'
+        run: |
+          mkdir -p artifacts
+          cp target/release/hayabusa artifacts/${{ matrix.info.bin }}
+          zip -j artifacts/${{ matrix.info.bin }}.zip artifacts/*
+      - name: cargo clean
+        run: |
+          cargo clean
+      - name: update rules
+        run: |
+          artifacts/${{matrix.info.bin}} update-rules
+      - name: remove tmp file
+        run: |
+          rm -rf .cargo .github doc screenshots src test_files .codecov.yml .env.example .gitignore .gitmodules Cargo.lock Cargo.toml
+      - name: Upload Artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: release-artifact
+          path: |
+            artifacts/*.zip
