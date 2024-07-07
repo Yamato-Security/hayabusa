@@ -381,8 +381,6 @@ pub struct AggResult {
     pub field_values: Vec<String>,
     ///検知したブロックの最初のレコードの時間
     pub start_timedate: DateTime<Utc>,
-    ///条件式の情報
-    pub condition_op_num: String,
 }
 
 impl AggResult {
@@ -391,14 +389,12 @@ impl AggResult {
         key_name: String,
         field_value: Vec<String>,
         event_start_timedate: DateTime<Utc>,
-        condition_op_number: String,
     ) -> AggResult {
         AggResult {
             data: count_data,
             key: key_name,
             field_values: field_value,
             start_timedate: event_start_timedate,
-            condition_op_num: condition_op_number,
         }
     }
 }

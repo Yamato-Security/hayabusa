@@ -1313,7 +1313,7 @@ mod tests {
     fn test_output_aggregation_output_with_output() {
         let default_time = Utc.with_ymd_and_hms(1977, 1, 1, 0, 0, 0).unwrap();
         let agg_result: AggResult =
-            AggResult::new(2, "_".to_string(), vec![], default_time, ">= 1".to_string());
+            AggResult::new(2, "_".to_string(), vec![], default_time);
         let rule_str = r#"
         enabled: true
         detection:
@@ -1341,7 +1341,7 @@ mod tests {
     fn test_output_aggregation_output_no_filed_by() {
         let default_time = Utc.with_ymd_and_hms(1977, 1, 1, 0, 0, 0).unwrap();
         let agg_result: AggResult =
-            AggResult::new(2, "_".to_string(), vec![], default_time, ">= 1".to_string());
+            AggResult::new(2, "_".to_string(), vec![], default_time);
         let rule_str = r#"
         enabled: true
         detection:
@@ -1368,7 +1368,7 @@ mod tests {
     fn test_output_aggregation_output_with_timeframe() {
         let default_time = Utc.with_ymd_and_hms(1977, 1, 1, 0, 0, 0).unwrap();
         let agg_result: AggResult =
-            AggResult::new(2, "_".to_string(), vec![], default_time, ">= 1".to_string());
+            AggResult::new(2, "_".to_string(), vec![], default_time);
         let rule_str = r#"
         enabled: true
         detection:
@@ -1400,7 +1400,6 @@ mod tests {
             "_".to_string(),
             vec!["7040".to_owned(), "9999".to_owned()],
             default_time,
-            ">= 1".to_string(),
         );
         let rule_str = r#"
         enabled: true
@@ -1430,7 +1429,6 @@ mod tests {
             "lsass.exe".to_string(),
             vec!["0000".to_owned(), "1111".to_owned()],
             default_time,
-            ">= 1".to_string(),
         );
         let rule_str = r#"
         enabled: true
@@ -1459,7 +1457,6 @@ mod tests {
             "lsass.exe".to_string(),
             vec![],
             default_time,
-            ">= 1".to_string(),
         );
         let rule_str = r#"
         enabled: true
