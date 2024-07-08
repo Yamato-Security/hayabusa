@@ -742,7 +742,7 @@ impl Detection {
             eventid: eid,
             detail: CompactString::default(),
             ext_field: stored_static.profiles.as_ref().unwrap().to_owned(),
-            is_condition: false,
+            agg_result: None,
             details_convert_map: HashMap::default(),
         };
 
@@ -965,7 +965,7 @@ impl Detection {
             eventid: CompactString::from("-"),
             detail: output,
             ext_field: stored_static.profiles.as_ref().unwrap().to_owned(),
-            is_condition: true,
+            agg_result: Some(agg_result),
             details_convert_map: HashMap::default(),
         };
         let binding = STORED_EKEY_ALIAS.read().unwrap();
@@ -1313,7 +1313,7 @@ mod tests {
     fn test_output_aggregation_output_with_output() {
         let default_time = Utc.with_ymd_and_hms(1977, 1, 1, 0, 0, 0).unwrap();
         let agg_result: AggResult =
-            AggResult::new(2, "_".to_string(), vec![], default_time);
+            AggResult::new(2, "_".to_string(), vec![], default_time, vec![]);
         let rule_str = r#"
         enabled: true
         detection:
@@ -1341,7 +1341,7 @@ mod tests {
     fn test_output_aggregation_output_no_filed_by() {
         let default_time = Utc.with_ymd_and_hms(1977, 1, 1, 0, 0, 0).unwrap();
         let agg_result: AggResult =
-            AggResult::new(2, "_".to_string(), vec![], default_time);
+            AggResult::new(2, "_".to_string(), vec![], default_time, vec![]);
         let rule_str = r#"
         enabled: true
         detection:
@@ -1368,7 +1368,7 @@ mod tests {
     fn test_output_aggregation_output_with_timeframe() {
         let default_time = Utc.with_ymd_and_hms(1977, 1, 1, 0, 0, 0).unwrap();
         let agg_result: AggResult =
-            AggResult::new(2, "_".to_string(), vec![], default_time);
+            AggResult::new(2, "_".to_string(), vec![], default_time, vec![]);
         let rule_str = r#"
         enabled: true
         detection:
@@ -1400,6 +1400,7 @@ mod tests {
             "_".to_string(),
             vec!["7040".to_owned(), "9999".to_owned()],
             default_time,
+            vec![],
         );
         let rule_str = r#"
         enabled: true
@@ -1429,6 +1430,7 @@ mod tests {
             "lsass.exe".to_string(),
             vec!["0000".to_owned(), "1111".to_owned()],
             default_time,
+            vec![],
         );
         let rule_str = r#"
         enabled: true
@@ -1452,12 +1454,8 @@ mod tests {
     #[test]
     fn test_output_aggregation_output_with_by() {
         let default_time = Utc.with_ymd_and_hms(1977, 1, 1, 0, 0, 0).unwrap();
-        let agg_result: AggResult = AggResult::new(
-            2,
-            "lsass.exe".to_string(),
-            vec![],
-            default_time,
-        );
+        let agg_result: AggResult =
+            AggResult::new(2, "lsass.exe".to_string(), vec![], default_time, vec![]);
         let rule_str = r#"
         enabled: true
         detection:

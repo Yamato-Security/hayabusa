@@ -495,15 +495,26 @@ fn calc_statistic_info(
         afterfact_info
             .timestamps
             .push(detect_info.detected_time.timestamp());
-        if !detect_info.is_condition {
-            afterfact_info
-                .detected_record_idset
-                .insert(CompactString::from(format!(
-                    "{}_{}",
-                    detect_info.detected_time, detect_info.eventid
-                )));
+        match &detect_info.agg_result {
+            None => {
+                afterfact_info
+                    .detected_record_idset
+                    .insert(CompactString::from(format!(
+                        "{}_{}",
+                        detect_info.detected_time, detect_info.eventid
+                    )));
+            }
+            Some(agg_result) => {
+                agg_result.agg_record_time_info.iter().for_each(|a| {
+                    afterfact_info
+                        .detected_record_idset
+                        .insert(CompactString::from(format!(
+                            "{}_{}",
+                            a.record_time, a.record_event_id
+                        )));
+                });
+            }
         }
-
         if !output_option.no_summary {
             let level_suffix = get_level_suffix(detect_info.level.as_str());
             let author_list = afterfact_info
@@ -1887,7 +1898,7 @@ pub fn output_json_str(
                     let mut children_output_stock: HashMap<CompactString, Vec<CompactString>> =
                         HashMap::new();
                     let mut children_output_order = vec![];
-                    if detect_info.is_condition {
+                    if detect_info.agg_result.is_some() {
                         if details_target_stock[0] == "-" {
                             output_stock.push(_create_json_output_format(
                                 key,
@@ -2463,7 +2474,7 @@ mod tests {
                     eventid: CompactString::from(test_eventid),
                     detail: CompactString::default(),
                     ext_field: output_profile.to_owned(),
-                    is_condition: false,
+                    agg_result: None,
                     details_convert_map: HashMap::default(),
                 },
                 &profile_converter,
@@ -2487,7 +2498,7 @@ mod tests {
                     eventid: CompactString::from(test_eventid),
                     detail: CompactString::default(),
                     ext_field: output_profile.to_owned(),
-                    is_condition: false,
+                    agg_result: None,
                     details_convert_map: HashMap::default(),
                 },
                 &profile_converter,
@@ -2810,7 +2821,7 @@ mod tests {
                     eventid: CompactString::from(test_eventid),
                     detail: CompactString::default(),
                     ext_field: output_profile.to_owned(),
-                    is_condition: false,
+                    agg_result: None,
                     details_convert_map: HashMap::default(),
                 },
                 &profile_converter,
@@ -2834,7 +2845,7 @@ mod tests {
                     eventid: CompactString::from(test_eventid),
                     detail: CompactString::default(),
                     ext_field: output_profile.to_owned(),
-                    is_condition: false,
+                    agg_result: None,
                     details_convert_map: HashMap::default(),
                 },
                 &profile_converter,
@@ -3137,7 +3148,7 @@ mod tests {
                     eventid: CompactString::from(test_eventid),
                     detail: CompactString::default(),
                     ext_field: output_profile.to_owned(),
-                    is_condition: false,
+                    agg_result: None,
                     details_convert_map: HashMap::default(),
                 },
                 &profile_converter,
@@ -3161,7 +3172,7 @@ mod tests {
                     eventid: CompactString::from(test_eventid),
                     detail: CompactString::default(),
                     ext_field: output_profile.to_owned(),
-                    is_condition: false,
+                    agg_result: None,
                     details_convert_map: HashMap::default(),
                 },
                 &profile_converter,
@@ -3474,7 +3485,7 @@ mod tests {
                     eventid: CompactString::from(test_eventid),
                     detail: CompactString::default(),
                     ext_field: output_profile.to_owned(),
-                    is_condition: false,
+                    agg_result: None,
                     details_convert_map,
                 },
                 &profile_converter,
@@ -3498,7 +3509,7 @@ mod tests {
                     eventid: CompactString::from(test_eventid),
                     detail: CompactString::default(),
                     ext_field: output_profile.to_owned(),
-                    is_condition: false,
+                    agg_result: None,
                     details_convert_map: HashMap::default(),
                 },
                 &profile_converter,
@@ -3883,7 +3894,7 @@ mod tests {
                     eventid: CompactString::from(test_eventid),
                     detail: CompactString::default(),
                     ext_field: output_profile.to_owned(),
-                    is_condition: false,
+                    agg_result: None,
                     details_convert_map,
                 },
                 &profile_converter,
@@ -4237,7 +4248,7 @@ mod tests {
                     eventid: CompactString::from(test_eventid),
                     detail: CompactString::default(),
                     ext_field: output_profile.to_owned(),
-                    is_condition: false,
+                    agg_result: None,
                     details_convert_map,
                 },
                 &profile_converter,
@@ -4517,7 +4528,7 @@ mod tests {
                     eventid: CompactString::from(test_eventid),
                     detail: CompactString::default(),
                     ext_field: output_profile.to_owned(),
-                    is_condition: false,
+                    agg_result: None,
                     details_convert_map,
                 },
                 &profile_converter,

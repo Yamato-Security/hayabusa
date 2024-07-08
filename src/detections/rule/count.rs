@@ -50,13 +50,7 @@ pub fn count(
         STORED_EKEY_ALIAS.read().unwrap().as_ref().unwrap(),
     )
     .unwrap_or_default();
-    let default_time = Utc.with_ymd_and_hms(1977, 1, 1, 0, 0, 0).unwrap();
-    countup(
-        rule,
-        key,
-        field_value,
-        message::get_event_time(record, json_input_flag).unwrap_or(default_time),
-    );
+    countup(rule, key, field_value, record, json_input_flag);
 }
 
 ///count byの条件に合致する検知済みレコードの数を増やすための関数
@@ -64,12 +58,24 @@ pub fn countup(
     rule: &mut RuleNode,
     key: String,
     field_value: String,
-    record_time_value: DateTime<Utc>,
+    record: &Value,
+    json_input_flag: bool,
 ) {
+    let default_time = Utc.with_ymd_and_hms(1977, 1, 1, 0, 0, 0).unwrap();
+    let record_time_value =
+        message::get_event_time(record, json_input_flag).unwrap_or(default_time);
+    let event_id = utils::get_event_value(
+        &utils::get_event_id_key(),
+        record,
+        STORED_EKEY_ALIAS.read().unwrap().as_ref().unwrap(),
+    )
+    .unwrap();
+    let event_id = event_id.to_string();
     let value_map = rule.countdata.entry(key).or_default();
     value_map.push(AggRecordTimeInfo {
         field_record_value: field_value,
         record_time: record_time_value,
+        record_event_id: event_id,
     });
 }
 
@@ -188,11 +194,12 @@ pub fn aggregation_condition_select(
     ret
 }
 
-#[derive(Clone, Debug)]
+#[derive(Debug, Clone, PartialEq, Eq, Default)]
 /// countの括弧内の情報とレコードの情報を所持する構造体
 pub struct AggRecordTimeInfo {
     pub field_record_value: String,
     pub record_time: DateTime<Utc>,
+    pub record_event_id: String,
 }
 
 #[derive(Debug)]
@@ -318,13 +325,7 @@ trait CountStrategy {
     /**
      * AggResultを作成します。
      */
-    fn create_agg_result(
-        &mut self,
-        left: i64,
-        datas: &[AggRecordTimeInfo],
-        cnt: i64,
-        key: &str,
-    ) -> AggResult;
+    fn create_agg_result(&mut self, datas: &[AggRecordTimeInfo], cnt: i64, key: &str) -> AggResult;
 }
 
 /**
@@ -376,7 +377,6 @@ impl CountStrategy for FieldStrategy {
 
     fn create_agg_result(
         &mut self,
-        left: i64,
         datas: &[AggRecordTimeInfo],
         _cnt: i64,
         key: &str,
@@ -386,7 +386,8 @@ impl CountStrategy for FieldStrategy {
             values.len() as i64,
             key.to_string(),
             values,
-            datas[left as usize].record_time,
+            datas.first().unwrap().record_time,
+            datas.to_vec(),
         )
     }
 }
@@ -419,18 +420,13 @@ impl CountStrategy for NoFieldStrategy {
         self.cnt
     }
 
-    fn create_agg_result(
-        &mut self,
-        left: i64,
-        datas: &[AggRecordTimeInfo],
-        cnt: i64,
-        key: &str,
-    ) -> AggResult {
+    fn create_agg_result(&mut self, datas: &[AggRecordTimeInfo], cnt: i64, key: &str) -> AggResult {
         let ret = AggResult::new(
             cnt,
             key.to_string(),
             vec![],
-            datas[left as usize].record_time,
+            datas.first().unwrap().record_time,
+            datas.to_vec(),
         );
         self.cnt = 0; //cntを初期化
         ret
@@ -506,7 +502,7 @@ pub fn judge_timeframe(
         let cnt = counter.count();
         if select_aggcon(cnt, rule) {
             // 条件を満たすtimeframeが見つかった
-            ret.push(counter.create_agg_result(left, &datas, cnt, key));
+            ret.push(counter.create_agg_result(&datas[left as usize..right as usize], cnt, key));
             left = right;
         } else {
             // 条件を満たさなかったので、rightとleftを+1ずらす
@@ -675,6 +671,7 @@ mod tests {
             "_".to_string(),
             vec![],
             Utc.with_ymd_and_hms(1977, 1, 1, 0, 0, 0).unwrap(),
+            vec![],
         )];
         check_count(
             rule_str,
@@ -727,12 +724,14 @@ mod tests {
                 "_".to_string(),
                 vec![],
                 Utc.with_ymd_and_hms(1977, 1, 1, 0, 0, 0).unwrap(),
+                vec![],
             ),
             AggResult::new(
                 1,
                 "_".to_string(),
                 vec![],
                 Utc.with_ymd_and_hms(1996, 2, 27, 1, 5, 1).unwrap(),
+                vec![],
             ),
         ];
         check_count(
@@ -765,6 +764,7 @@ mod tests {
             "_".to_string(),
             vec!["System".to_owned()],
             Utc.with_ymd_and_hms(1977, 1, 1, 0, 0, 0).unwrap(),
+            vec![],
         );
         check_count(
             rule_str,
@@ -814,12 +814,14 @@ mod tests {
                 "System".to_owned(),
                 vec!["7040".to_owned()],
                 Utc.with_ymd_and_hms(1977, 1, 1, 0, 0, 0).unwrap(),
+                vec![],
             ),
             AggResult::new(
                 1,
                 "Test".to_owned(),
                 vec!["9999".to_owned()],
                 Utc.with_ymd_and_hms(1996, 2, 27, 1, 5, 1).unwrap(),
+                vec![],
             ),
         ];
         check_count(
@@ -870,12 +872,14 @@ mod tests {
                 "Windows Event Log".to_owned(),
                 vec!["7040".to_owned()],
                 Utc.with_ymd_and_hms(1977, 1, 1, 0, 0, 0).unwrap(),
+                vec![],
             ),
             AggResult::new(
                 1,
                 "Test".to_owned(),
                 vec!["9999".to_owned()],
                 Utc.with_ymd_and_hms(1977, 1, 1, 0, 5, 0).unwrap(),
+                vec![],
             ),
         ];
         check_count(
@@ -988,6 +992,7 @@ mod tests {
             "System".to_owned(),
             vec!["7040".to_owned(), "9999".to_owned()],
             Utc.with_ymd_and_hms(1977, 1, 1, 0, 0, 0).unwrap(),
+            vec![],
         )];
         check_count(
             rule_str,
@@ -1037,6 +1042,7 @@ mod tests {
             "System".to_owned(),
             vec!["7040".to_owned(), "9999".to_owned()],
             default_time,
+            vec![],
         )];
         check_count(
             rule_str,
@@ -1066,6 +1072,7 @@ mod tests {
                 "_".to_owned(),
                 vec!["1".to_owned(), "2".to_owned(), "3".to_owned()],
                 default_time,
+                vec![],
             )];
             check_count(&rule_str, &recs, expected_count, expected_agg_result);
         }
@@ -1099,6 +1106,7 @@ mod tests {
                 "_".to_owned(),
                 vec!["1".to_owned(), "2".to_owned(), "3".to_owned()],
                 default_time,
+                vec![],
             )];
             check_count(&rule_str, &recs, expected_count, expected_agg_result);
         }
@@ -1132,6 +1140,7 @@ mod tests {
                 "_".to_owned(),
                 vec!["1".to_owned(), "2".to_owned(), "3".to_owned()],
                 default_time,
+                vec![],
             )];
             check_count(&rule_str, &recs, expected_count, expected_agg_result);
         }
@@ -1147,6 +1156,7 @@ mod tests {
                 "_".to_owned(),
                 vec!["1".to_owned(), "2".to_owned(), "3".to_owned()],
                 default_time,
+                vec![],
             )];
             check_count(&rule_str, &recs, expected_count, expected_agg_result);
         }
@@ -1170,6 +1180,7 @@ mod tests {
                 "_".to_owned(),
                 vec!["1".to_owned(), "2".to_owned(), "3".to_owned()],
                 default_time,
+                vec![],
             )];
             check_count(&rule_str, &recs, expected_count, expected_agg_result);
         }
@@ -1203,6 +1214,7 @@ mod tests {
                 "_".to_owned(),
                 vec!["1".to_owned(), "2".to_owned(), "3".to_owned()],
                 default_time,
+                vec![],
             )];
             check_count(&rule_str, &recs, expected_count, expected_agg_result);
         }
@@ -1236,6 +1248,7 @@ mod tests {
                 "_".to_owned(),
                 vec!["1".to_owned(), "2".to_owned(), "3".to_owned()],
                 default_time,
+                vec![],
             )];
             check_count(&rule_str, &recs, expected_count, expected_agg_result);
         }
@@ -1275,6 +1288,7 @@ mod tests {
                 "_".to_owned(),
                 vec!["1".to_owned(), "2".to_owned(), "3".to_owned()],
                 default_time,
+                vec![],
             )];
             check_count(&rule_str, &recs, expected_count, expected_agg_result);
         }
@@ -1314,6 +1328,7 @@ mod tests {
                 "_".to_owned(),
                 vec!["1".to_owned(), "2".to_owned(), "3".to_owned()],
                 default_time,
+                vec![],
             )];
             check_count(&rule_str, &recs, expected_count, expected_agg_result);
         }
@@ -1361,6 +1376,7 @@ mod tests {
                 "_".to_owned(),
                 vec!["1".to_owned()],
                 default_time,
+                vec![],
             )];
             check_count(&rule_str, &recs, expected_count, expected_agg_result);
         }
@@ -1382,6 +1398,7 @@ mod tests {
                 "Windows Event Log".to_owned(),
                 vec!["1".to_owned()],
                 default_time,
+                vec![],
             )];
             check_count(&rule_str, &recs, expected_count, expected_agg_result);
         }
@@ -1419,6 +1436,7 @@ mod tests {
             "_".to_owned(),
             vec!["1".to_owned(), "2".to_owned(), "3".to_owned()],
             Utc.with_ymd_and_hms(1977, 1, 9, 1, 30, 0).unwrap(),
+            vec![],
         )];
         check_count(&rule_str, &recs, expected_count, expected_agg_result);
     }
@@ -1469,6 +1487,7 @@ mod tests {
                     "4".to_owned(),
                 ],
                 Utc.with_ymd_and_hms(1977, 1, 9, 1, 30, 0).unwrap(),
+                vec![],
             )];
 
             check_count(&rule_str, &recs, expected_count, expected_agg_result);
@@ -1496,6 +1515,7 @@ mod tests {
                 "_".to_owned(),
                 vec!["1".to_owned(), "2".to_owned(), "3".to_owned()],
                 Utc.with_ymd_and_hms(1977, 1, 9, 1, 30, 0).unwrap(),
+                vec![],
             )];
 
             check_count(&rule_str, &recs, expected_count, expected_agg_result);
@@ -1545,6 +1565,7 @@ mod tests {
                         "4".to_owned(),
                     ],
                     Utc.with_ymd_and_hms(1977, 1, 9, 1, 30, 0).unwrap(),
+                    vec![],
                 ),
                 AggResult::new(
                     4,
@@ -1556,6 +1577,7 @@ mod tests {
                         "4".to_owned(),
                     ],
                     Utc.with_ymd_and_hms(1977, 1, 9, 5, 30, 0).unwrap(),
+                    vec![],
                 ),
                 AggResult::new(
                     4,
@@ -1567,6 +1589,7 @@ mod tests {
                         "4".to_owned(),
                     ],
                     Utc.with_ymd_and_hms(1977, 1, 9, 9, 30, 0).unwrap(),
+                    vec![],
                 ),
             ];
 
@@ -1604,6 +1627,7 @@ mod tests {
                 "_".to_owned(),
                 vec!["2".to_owned(), "3".to_owned(), "4".to_owned()],
                 Utc.with_ymd_and_hms(1977, 1, 9, 3, 30, 0).unwrap(),
+                vec![],
             ),
             AggResult::new(
                 4,
@@ -1615,6 +1639,7 @@ mod tests {
                     "5".to_owned(),
                 ],
                 Utc.with_ymd_and_hms(1977, 1, 9, 20, 00, 0).unwrap(),
+                vec![],
             ),
         ];
         check_count(&rule_str, &recs, expected_count, expected_agg_result);
