@@ -69,7 +69,7 @@ pub fn countup(
         STORED_EKEY_ALIAS.read().unwrap().as_ref().unwrap(),
     )
     .unwrap();
-    let event_id = event_id.to_string();
+    let event_id = event_id.to_string().trim_matches('\"').to_string();
     let computer = utils::get_event_value(
         "Event.System.Computer",
         record,
