@@ -22,6 +22,7 @@ use crate::detections::configs::STORED_EKEY_ALIAS;
 use crate::detections::field_data_map::FieldDataMapKey;
 use crate::detections::message::{AlertMessage, DetectInfo, ERROR_LOG_STACK, TAGS_CONFIG};
 use crate::detections::rule::correlation_parser::parse_correlation_rules;
+use crate::detections::rule::count::AggRecordTimeInfo;
 use crate::detections::rule::{self, AggResult, RuleNode};
 use crate::detections::utils::{create_recordinfos, format_time, write_color_buffer};
 use crate::detections::utils::{get_serde_number_to_string, make_ascii_titlecase};
@@ -792,18 +793,10 @@ impl Detection {
                     profile_converter.insert(
                         key.as_str(),
                         Computer(
-                            agg_result
-                                .agg_record_time_info
-                                .iter()
-                                .map(|x| x.computer.clone())
-                                .collect::<HashSet<_>>() // HashSetに変換して重複を削除
-                                .iter()
-                                .cloned()
-                                .collect::<Vec<_>>()
-                                .iter()
-                                .sorted()
-                                .join(" ¦ ")
-                                .into(),
+                            Detection::join_agg_values(&agg_result.agg_record_time_info, |x| {
+                                x.computer.clone()
+                            })
+                            .into(),
                         ),
                     );
                 }
@@ -811,18 +804,10 @@ impl Detection {
                     profile_converter.insert(
                         key.as_str(),
                         Channel(
-                            agg_result
-                                .agg_record_time_info
-                                .iter()
-                                .map(|x| x.channel.clone())
-                                .collect::<HashSet<_>>() // HashSetに変換して重複を削除
-                                .iter()
-                                .cloned()
-                                .collect::<Vec<_>>()
-                                .iter()
-                                .sorted()
-                                .join(" ¦ ")
-                                .into(),
+                            Detection::join_agg_values(&agg_result.agg_record_time_info, |x| {
+                                x.channel.clone()
+                            })
+                            .into(),
                         ),
                     );
                 }
@@ -840,18 +825,10 @@ impl Detection {
                     profile_converter.insert(
                         key.as_str(),
                         EventID(
-                            agg_result
-                                .agg_record_time_info
-                                .iter()
-                                .map(|x| x.event_id.clone())
-                                .collect::<HashSet<_>>() // HashSetに変換して重複を削除
-                                .iter()
-                                .cloned()
-                                .collect::<Vec<_>>()
-                                .iter()
-                                .sorted()
-                                .join(" ¦ ")
-                                .into(),
+                            Detection::join_agg_values(&agg_result.agg_record_time_info, |x| {
+                                x.event_id.clone()
+                            })
+                            .into(),
                         ),
                     );
                 }
@@ -1032,6 +1009,24 @@ impl Detection {
         detect_info
     }
 
+    fn join_agg_values<F>(
+        agg_record_time_infos: &[AggRecordTimeInfo],
+        extractor: F,
+    ) -> CompactString
+    where
+        F: Fn(&AggRecordTimeInfo) -> String,
+    {
+        agg_record_time_infos
+            .iter()
+            .map(&extractor)
+            .collect::<HashSet<_>>() // Convert to HashSet to remove duplicates
+            .into_iter()
+            .collect::<Vec<_>>() // Convert back to Vec to sort
+            .iter()
+            .sorted()
+            .join(" ¦ ")
+            .into() // Convert to CompactString
+    }
     /// rule内のtagsの内容を配列として返却する関数
     fn get_tag_info(rule: &RuleNode) -> Nested<String> {
         Nested::from_iter(
