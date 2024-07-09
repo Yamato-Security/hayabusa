@@ -800,7 +800,8 @@ impl Detection {
                                 .iter()
                                 .cloned()
                                 .collect::<Vec<_>>()
-                                .iter().sorted()
+                                .iter()
+                                .sorted()
                                 .join(" ¦ ")
                                 .into(),
                         ),
@@ -818,7 +819,8 @@ impl Detection {
                                 .iter()
                                 .cloned()
                                 .collect::<Vec<_>>()
-                                .iter().sorted()
+                                .iter()
+                                .sorted()
                                 .join(" ¦ ")
                                 .into(),
                         ),
@@ -846,7 +848,8 @@ impl Detection {
                                 .iter()
                                 .cloned()
                                 .collect::<Vec<_>>()
-                                .iter().sorted()
+                                .iter()
+                                .sorted()
                                 .join(" ¦ ")
                                 .into(),
                         ),
