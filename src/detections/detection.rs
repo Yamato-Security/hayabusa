@@ -1,5 +1,6 @@
 extern crate csv;
 
+use std::collections::HashSet;
 use std::default::Default;
 use std::fmt::Write;
 use std::path::Path;
@@ -771,7 +772,6 @@ impl Detection {
         let mut profile_converter: HashMap<&str, Profile> = HashMap::new();
         let level = rule.yaml["level"].as_str().unwrap_or("-").to_string();
         let tags_config_values: Vec<&CompactString> = TAGS_CONFIG.values().collect();
-
         let is_json_timeline = matches!(stored_static.config.action, Some(Action::JsonTimeline(_)));
         for (key, profile) in stored_static.profiles.as_ref().unwrap().iter() {
             match profile {
@@ -789,10 +789,38 @@ impl Detection {
                     );
                 }
                 Computer(_) => {
-                    profile_converter.insert(key.as_str(), Computer("-".into()));
+                    profile_converter.insert(
+                        key.as_str(),
+                        Computer(
+                            agg_result
+                                .agg_record_time_info
+                                .iter()
+                                .map(|x| x.computer.clone())
+                                .collect::<HashSet<_>>() // HashSetに変換して重複を削除
+                                .iter()
+                                .cloned()
+                                .collect::<Vec<_>>()
+                                .join(" ¦ ")
+                                .into(),
+                        ),
+                    );
                 }
                 Channel(_) => {
-                    profile_converter.insert(key.as_str(), Channel("-".into()));
+                    profile_converter.insert(
+                        key.as_str(),
+                        Channel(
+                            agg_result
+                                .agg_record_time_info
+                                .iter()
+                                .map(|x| x.channel.clone())
+                                .collect::<HashSet<_>>() // HashSetに変換して重複を削除
+                                .iter()
+                                .cloned()
+                                .collect::<Vec<_>>()
+                                .join(" ¦ ")
+                                .into(),
+                        ),
+                    );
                 }
                 Level(_) => {
                     let str_level = level.as_str();
@@ -805,7 +833,21 @@ impl Detection {
                     profile_converter.insert(key.as_str(), Level(prof_level.to_string().into()));
                 }
                 EventID(_) => {
-                    profile_converter.insert(key.as_str(), EventID("-".into()));
+                    profile_converter.insert(
+                        key.as_str(),
+                        EventID(
+                            agg_result
+                                .agg_record_time_info
+                                .iter()
+                                .map(|x| x.event_id.clone())
+                                .collect::<HashSet<_>>() // HashSetに変換して重複を削除
+                                .iter()
+                                .cloned()
+                                .collect::<Vec<_>>()
+                                .join(" ¦ ")
+                                .into(),
+                        ),
+                    );
                 }
                 RecordID(_) => {
                     profile_converter.insert(key.as_str(), RecordID("-".into()));

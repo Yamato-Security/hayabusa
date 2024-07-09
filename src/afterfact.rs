@@ -508,10 +508,7 @@ fn calc_statistic_info(
                 agg_result.agg_record_time_info.iter().for_each(|a| {
                     afterfact_info
                         .detected_record_idset
-                        .insert(CompactString::from(format!(
-                            "{}_{}",
-                            a.record_time, a.record_event_id
-                        )));
+                        .insert(CompactString::from(format!("{}_{}", a.time, a.event_id)));
                 });
             }
         }
@@ -550,42 +547,68 @@ fn calc_statistic_info(
                     .insert(detect_info.ruleid.to_owned());
                 afterfact_info.unique_detect_counts_by_level[level_suffix] += 1;
             }
-
-            let computer_rule_check_key = CompactString::from(format!(
-                "{}|{}",
-                &detect_info.computername, &detect_info.rulepath
-            ));
-            if !afterfact_info
-                .detected_computer_and_rule_names
-                .contains(&computer_rule_check_key)
-            {
-                afterfact_info
-                    .detected_computer_and_rule_names
-                    .insert(computer_rule_check_key);
-                countup_aggregation(
-                    &mut afterfact_info.detect_counts_by_computer_and_level,
-                    &detect_info.level,
-                    &detect_info.computername,
-                );
+            match &detect_info.agg_result {
+                None => {
+                    update_afterfact_aggregations(
+                        detect_info,
+                        &detect_info.computername,
+                        afterfact_info,
+                        output_option,
+                    );
+                }
+                Some(agg_result) => {
+                    for a in agg_result.agg_record_time_info.iter() {
+                        update_afterfact_aggregations(
+                            detect_info,
+                            &CompactString::from(a.computer.clone()),
+                            afterfact_info,
+                            output_option,
+                        );
+                    }
+                }
             }
-            afterfact_info.rule_title_path_map.insert(
-                detect_info.ruletitle.to_owned(),
-                detect_info.rulepath.to_owned(),
-            );
-
-            countup_aggregation(
-                &mut afterfact_info.detect_counts_by_date_and_level,
-                &detect_info.level,
-                &format_time(&detect_info.detected_time, true, output_option),
-            );
-            countup_aggregation(
-                &mut afterfact_info.detect_counts_by_rule_and_level,
-                &detect_info.level,
-                &detect_info.ruletitle,
-            );
-            afterfact_info.total_detect_counts_by_level[level_suffix] += 1;
         }
     }
+}
+
+fn update_afterfact_aggregations(
+    detect_info: &DetectInfo,
+    computername: &CompactString,
+    afterfact_info: &mut AfterfactInfo,
+    output_option: &OutputOption,
+) {
+    let computer_rule_check_key =
+        CompactString::from(format!("{}|{}", computername, &detect_info.rulepath));
+    if !afterfact_info
+        .detected_computer_and_rule_names
+        .contains(&computer_rule_check_key)
+    {
+        afterfact_info
+            .detected_computer_and_rule_names
+            .insert(computer_rule_check_key);
+        countup_aggregation(
+            &mut afterfact_info.detect_counts_by_computer_and_level,
+            &detect_info.level,
+            computername,
+        );
+    }
+    afterfact_info.rule_title_path_map.insert(
+        detect_info.ruletitle.to_owned(),
+        detect_info.rulepath.to_owned(),
+    );
+
+    countup_aggregation(
+        &mut afterfact_info.detect_counts_by_date_and_level,
+        &detect_info.level,
+        &format_time(&detect_info.detected_time, true, output_option),
+    );
+    countup_aggregation(
+        &mut afterfact_info.detect_counts_by_rule_and_level,
+        &detect_info.level,
+        &detect_info.ruletitle,
+    );
+    let level_suffix = get_level_suffix(detect_info.level.as_str());
+    afterfact_info.total_detect_counts_by_level[level_suffix] += 1;
 }
 
 pub fn output_additional_afterfact(

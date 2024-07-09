@@ -17,7 +17,7 @@ use self::selectionnodes::{LeafSelectionNode, SelectionNode};
 mod aggregation_parser;
 mod condition_parser;
 pub mod correlation_parser;
-mod count;
+pub(crate) mod count;
 mod matchers;
 mod selectionnodes;
 

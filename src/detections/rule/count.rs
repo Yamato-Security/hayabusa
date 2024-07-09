@@ -62,20 +62,35 @@ pub fn countup(
     json_input_flag: bool,
 ) {
     let default_time = Utc.with_ymd_and_hms(1977, 1, 1, 0, 0, 0).unwrap();
-    let record_time_value =
-        message::get_event_time(record, json_input_flag).unwrap_or(default_time);
+    let time = message::get_event_time(record, json_input_flag).unwrap_or(default_time);
     let event_id = utils::get_event_value(
-        &utils::get_event_id_key(),
+        "Event.System.EventID",
         record,
         STORED_EKEY_ALIAS.read().unwrap().as_ref().unwrap(),
     )
     .unwrap();
     let event_id = event_id.to_string();
+    let computer = utils::get_event_value(
+        "Event.System.Computer",
+        record,
+        STORED_EKEY_ALIAS.read().unwrap().as_ref().unwrap(),
+    )
+    .unwrap();
+    let computer = computer.to_string().trim_matches('\"').to_string();
+    let channel = utils::get_event_value(
+        "Event.System.Channel",
+        record,
+        STORED_EKEY_ALIAS.read().unwrap().as_ref().unwrap(),
+    )
+    .unwrap();
+    let channel = channel.to_string().trim_matches('\"').to_string();
     let value_map = rule.countdata.entry(key).or_default();
     value_map.push(AggRecordTimeInfo {
-        field_record_value: field_value,
-        record_time: record_time_value,
-        record_event_id: event_id,
+        field_value,
+        time,
+        event_id,
+        computer,
+        channel,
     });
 }
 
@@ -197,9 +212,11 @@ pub fn aggregation_condition_select(
 #[derive(Debug, Clone, PartialEq, Eq, Default)]
 /// countの括弧内の情報とレコードの情報を所持する構造体
 pub struct AggRecordTimeInfo {
-    pub field_record_value: String,
-    pub record_time: DateTime<Utc>,
-    pub record_event_id: String,
+    pub field_value: String,
+    pub time: DateTime<Utc>,
+    pub event_id: String,
+    pub computer: String,
+    pub channel: String,
 }
 
 #[derive(Debug)]
@@ -341,7 +358,7 @@ impl CountStrategy for FieldStrategy {
             return;
         }
 
-        let value = &datas[idx as usize].field_record_value;
+        let value = &datas[idx as usize].field_value;
         let key_val = self.value_2_cnt.get_key_value_mut(value);
         if let Some(kv) = key_val {
             let (_, val) = kv;
@@ -356,7 +373,7 @@ impl CountStrategy for FieldStrategy {
             return;
         }
 
-        let record_value = &datas[idx as usize].field_record_value;
+        let record_value = &datas[idx as usize].field_value;
         let key_val = self.value_2_cnt.get_key_value_mut(record_value);
         if key_val.is_none() {
             return;
@@ -386,7 +403,7 @@ impl CountStrategy for FieldStrategy {
             values.len() as i64,
             key.to_string(),
             values,
-            datas.first().unwrap().record_time,
+            datas.first().unwrap().time,
             datas.to_vec(),
         )
     }
@@ -425,7 +442,7 @@ impl CountStrategy for NoFieldStrategy {
             cnt,
             key.to_string(),
             vec![],
-            datas.first().unwrap().record_time,
+            datas.first().unwrap().time,
             datas.to_vec(),
         );
         self.cnt = 0; //cntを初期化
@@ -445,11 +462,11 @@ fn _create_counter(rule: &RuleNode) -> Box<dyn CountStrategy> {
 }
 
 fn _get_timestamp(idx: i64, datas: &[AggRecordTimeInfo]) -> i64 {
-    datas[idx as usize].record_time.timestamp()
+    datas[idx as usize].time.timestamp()
 }
 
 fn _get_timestamp_subsec_nano(idx: i64, datas: &[AggRecordTimeInfo]) -> u32 {
-    datas[idx as usize].record_time.timestamp_subsec_nanos()
+    datas[idx as usize].time.timestamp_subsec_nanos()
 }
 
 // data[left]からdata[right-1]までのデータがtimeframeに収まっているか判定する
@@ -479,11 +496,11 @@ pub fn judge_timeframe(
 
     // AggRecordTimeInfoを時間順がソートされている前提で処理を進める
     let mut datas = time_datas.to_owned();
-    datas.sort_by(|a, b| a.record_time.cmp(&b.record_time));
+    datas.sort_by(|a, b| a.time.cmp(&b.time));
 
     // timeframeの設定がルールにない時は最初と最後の要素の時間差をtimeframeに設定する。
-    let def_frame = datas.last().unwrap().record_time.timestamp()
-        - datas.first().unwrap().record_time.timestamp();
+    let def_frame =
+        datas.last().unwrap().time.timestamp() - datas.first().unwrap().time.timestamp();
     let frame = get_sec_timeframe(rule, stored_static).unwrap_or(def_frame);
 
     // left <= i < rightの範囲にあるdata[i]がtimeframe内にあるデータであると考える
