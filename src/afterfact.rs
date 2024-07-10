@@ -547,22 +547,32 @@ fn calc_statistic_info(
                     .insert(detect_info.ruleid.to_owned());
                 afterfact_info.unique_detect_counts_by_level[level_suffix] += 1;
             }
-            let computer_rule_check_key = CompactString::from(format!(
-                "{}|{}",
-                detect_info.computername, &detect_info.rulepath
-            ));
-            if !afterfact_info
-                .detected_computer_and_rule_names
-                .contains(&computer_rule_check_key)
-            {
-                afterfact_info
+            let computer_names = match &detect_info.agg_result {
+                None => vec![detect_info.computername.clone()],
+                Some(agg) => agg.agg_record_time_info.iter().map(|a| CompactString::from(a.computer.clone()))            .collect::<std::collections::HashSet<_>>() // Convert to HashSet to remove duplicates
+                    .into_iter()
+                    .sorted()
+                    .collect()
+            };
+            for computername in &computer_names {
+                let computer_rule_check_key = CompactString::from(format!(
+                    "{}|{}",
+                    computername, &detect_info.rulepath
+                ));
+                println!("{:?}", computer_rule_check_key);
+                if !afterfact_info
                     .detected_computer_and_rule_names
-                    .insert(computer_rule_check_key);
-                countup_aggregation(
-                    &mut afterfact_info.detect_counts_by_computer_and_level,
-                    &detect_info.level,
-                    &detect_info.computername,
-                );
+                    .contains(&computer_rule_check_key)
+                {
+                    afterfact_info
+                        .detected_computer_and_rule_names
+                        .insert(computer_rule_check_key);
+                    countup_aggregation(
+                        &mut afterfact_info.detect_counts_by_computer_and_level,
+                        &detect_info.level,
+                        computername,
+                    );
+                }
             }
             afterfact_info.rule_title_path_map.insert(
                 detect_info.ruletitle.to_owned(),
