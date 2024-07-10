@@ -1,9 +1,11 @@
 use crate::detections::configs::EventKeyAliasConfig;
 use crate::detections::configs::StoredStatic;
 use crate::detections::configs::STORED_EKEY_ALIAS;
+use crate::detections::detection::EvtxRecordInfo;
 use crate::detections::message;
 use crate::detections::message::AlertMessage;
 use crate::detections::message::ERROR_LOG_STACK;
+use crate::detections::rule::aggregation_parser::AggregationConditionToken;
 use crate::detections::rule::AggResult;
 use crate::detections::rule::RuleNode;
 use chrono::{DateTime, TimeZone, Utc};
@@ -12,21 +14,19 @@ use serde_json::Value;
 use std::num::ParseIntError;
 use std::path::Path;
 
-use crate::detections::rule::aggregation_parser::AggregationConditionToken;
-
 use crate::detections::utils;
 
 /// 検知された際にカウント情報を投入する関数
 pub fn count(
     rule: &mut RuleNode,
-    record: &Value,
+    evtx_rec: &EvtxRecordInfo,
     verbose_flag: bool,
     quiet_errors_flag: bool,
     json_input_flag: bool,
 ) {
     let key: String = create_count_key(
         rule,
-        record,
+        &evtx_rec.record,
         verbose_flag,
         quiet_errors_flag,
         STORED_EKEY_ALIAS.read().unwrap().as_ref().unwrap(),
@@ -43,14 +43,14 @@ pub fn count(
     let field_value = get_alias_value_in_record(
         rule,
         field_name,
-        record,
+        &evtx_rec.record,
         false,
         verbose_flag,
         quiet_errors_flag,
         STORED_EKEY_ALIAS.read().unwrap().as_ref().unwrap(),
     )
     .unwrap_or_default();
-    countup(rule, key, field_value, record, json_input_flag);
+    countup(rule, key, field_value, evtx_rec, json_input_flag);
 }
 
 ///count byの条件に合致する検知済みレコードの数を増やすための関数
@@ -58,9 +58,10 @@ pub fn countup(
     rule: &mut RuleNode,
     key: String,
     field_value: String,
-    record: &Value,
+    evtx_rec: &EvtxRecordInfo,
     json_input_flag: bool,
 ) {
+    let record = &evtx_rec.record;
     let default_time = Utc.with_ymd_and_hms(1977, 1, 1, 0, 0, 0).unwrap();
     let time = message::get_event_time(record, json_input_flag).unwrap_or(default_time);
     let event_id = utils::get_event_value(
@@ -84,6 +85,7 @@ pub fn countup(
     )
     .unwrap();
     let channel = channel.to_string().trim_matches('\"').to_string();
+    let evtx_file_path = evtx_rec.evtx_filepath.to_string();
     let value_map = rule.countdata.entry(key).or_default();
     value_map.push(AggRecordTimeInfo {
         field_value,
@@ -91,6 +93,7 @@ pub fn countup(
         event_id,
         computer,
         channel,
+        evtx_file_path,
     });
 }
 
@@ -217,6 +220,7 @@ pub struct AggRecordTimeInfo {
     pub event_id: String,
     pub computer: String,
     pub channel: String,
+    pub evtx_file_path: String,
 }
 
 #[derive(Debug)]

@@ -94,7 +94,7 @@ impl RuleNode {
         if result && self.has_agg_condition() {
             count::count(
                 self,
-                &event_record.record,
+                event_record,
                 verbose_flag,
                 quiet_errors_flag,
                 json_input_flag,

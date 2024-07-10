@@ -858,7 +858,15 @@ impl Detection {
                     profile_converter.insert(key.as_str(), RuleFile(rule_path.into()));
                 }
                 EvtxFile(_) => {
-                    profile_converter.insert(key.as_str(), EvtxFile("-".into()));
+                    profile_converter.insert(
+                        key.as_str(),
+                        EvtxFile(
+                            Detection::join_agg_values(&agg_result.agg_record_time_info, |x| {
+                                x.evtx_file_path.clone()
+                            })
+                            .into(),
+                        ),
+                    );
                 }
                 MitreTactics(_) => {
                     let tactics = tag_info
@@ -1021,11 +1029,9 @@ impl Detection {
             .map(&extractor)
             .collect::<HashSet<_>>() // Convert to HashSet to remove duplicates
             .into_iter()
-            .collect::<Vec<_>>() // Convert back to Vec to sort
-            .iter()
             .sorted()
             .join(" ¦ ")
-            .into() // Convert to CompactString
+            .into()
     }
     /// rule内のtagsの内容を配列として返却する関数
     fn get_tag_info(rule: &RuleNode) -> Nested<String> {
