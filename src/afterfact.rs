@@ -549,16 +549,18 @@ fn calc_statistic_info(
             }
             let computer_names = match &detect_info.agg_result {
                 None => vec![detect_info.computername.clone()],
-                Some(agg) => agg.agg_record_time_info.iter().map(|a| CompactString::from(a.computer.clone()))            .collect::<std::collections::HashSet<_>>() // Convert to HashSet to remove duplicates
+                Some(agg) => agg
+                    .agg_record_time_info
+                    .iter()
+                    .map(|a| CompactString::from(a.computer.clone()))
+                    .collect::<std::collections::HashSet<_>>() // Convert to HashSet to remove duplicates
                     .into_iter()
                     .sorted()
-                    .collect()
+                    .collect(),
             };
             for computername in &computer_names {
-                let computer_rule_check_key = CompactString::from(format!(
-                    "{}|{}",
-                    computername, &detect_info.rulepath
-                ));
+                let computer_rule_check_key =
+                    CompactString::from(format!("{}|{}", computername, &detect_info.rulepath));
                 println!("{:?}", computer_rule_check_key);
                 if !afterfact_info
                     .detected_computer_and_rule_names
