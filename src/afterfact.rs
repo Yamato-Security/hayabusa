@@ -561,7 +561,6 @@ fn calc_statistic_info(
             for computername in &computer_names {
                 let computer_rule_check_key =
                     CompactString::from(format!("{}|{}", computername, &detect_info.rulepath));
-                println!("{:?}", computer_rule_check_key);
                 if !afterfact_info
                     .detected_computer_and_rule_names
                     .contains(&computer_rule_check_key)
