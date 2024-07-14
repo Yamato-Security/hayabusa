@@ -12,6 +12,11 @@
 - `Data` fields are now displayed as indexed strings instead of as all `Data` fields or in an array for JSON. (#1371) (@fukusuket)
   - Before: `"Data": ["17514", "Multiprocessor Free", "Service Pack 1"]`
   - After: `"Data[3]": "17514", "Data[4]": "Multiprocessor Free", "Data[5]": "Service Pack 1"`
+- Aggregation rule alerts now show `Channel` and `EventID` information even when there are multiple results. (#1342) (@fukusuket)
+
+**Bug Fixes:**
+- Sigma correlation rule count was not showing up in `Events with hits`. (#1373) (@fukusuket)
+- Aggregation condition rule count was not showing up in `Events with hits`. (#1375) (@fukusuket)
 
 ## 2.16.0 [2024/06/11]
 
