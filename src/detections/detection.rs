@@ -805,7 +805,14 @@ impl Detection {
                         key.as_str(),
                         Channel(
                             Detection::join_agg_values(&agg_result.agg_record_time_info, |x| {
-                                x.channel.clone()
+                                stored_static.disp_abbr_generic.replace_all(
+                                    stored_static
+                                        .ch_config
+                                        .get(&CompactString::from(&x.channel.to_ascii_lowercase()))
+                                        .unwrap_or(&CompactString::from(&x.channel))
+                                        .as_str(),
+                                    &stored_static.disp_abbr_general_values,
+                                )
                             })
                             .into(),
                         ),
