@@ -172,14 +172,6 @@ impl App {
             return;
         }
 
-        // 実行時のexeファイルのパスをベースに変更する必要があるためデフォルトの値であった場合はそのexeファイルと同一階層を探すようにする
-        if !CURRENT_EXE_PATH.join("config").exists() && !Path::new("./config").exists() {
-            AlertMessage::alert(
-                "Hayabusa could not find the config directory.\nPlease make sure that it is in the same directory as the hayabusa executable."
-            )
-            .ok();
-            return;
-        }
         // カレントディレクトリ以外からの実行の際にrules-configオプションの指定がないとエラーが発生することを防ぐための処理
         if stored_static.config_path == Path::new("./rules/config") {
             stored_static.config_path =
