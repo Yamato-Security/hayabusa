@@ -154,11 +154,6 @@ fn read_profile_data(profile_path: &str) -> Result<Vec<Yaml>, String> {
                 .to_str()
                 .unwrap_or_default(),
         );
-        println!("dbg {:?}", profile_path_buf);
-        println!(
-            "dbg {:?}",
-            std::str::from_utf8(default_profile_name_path.clone().unwrap().data.as_ref())
-        );
         // 通常のプロファイルファイルを読み込む場合
         if default_profile_name_path.is_some() {
             match YamlLoader::load_from_str(
