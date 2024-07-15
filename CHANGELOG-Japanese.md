@@ -12,6 +12,11 @@
 - `Data`フィールドは、すべて`Data`フィールドとして、またはJSONの配列としてではなく、インデックス化された文字列として表示されるようになった。(#1371) (@fukusuket)
   - 前: `"Data": ["17514", "Multiprocessor Free", "Service Pack 1"]`
   - 後: `"Data[3]": "17514", "Data[4]": "Multiprocessor Free", "Data[5]": "Service Pack 1"`
+- 集計ルールのアラートに、複数の結果がある場合でも`Channel`と`EventID`の情報が表示されるようにした。 (#1342) (@fukusuket)
+
+**バグ修正:**
+- Sigmaの相関ルールのカウントが`Events with hits`に表示されていなかった。(#1373) (@fukusuket)
+- 集計ルールのカウントが`Events with hits`に表示されていなかった。(#1375) (@fukusuket)
 
 ## 2.16.0 [2024/06/11]
 

@@ -1,5 +1,6 @@
 extern crate csv;
 
+use std::collections::HashSet;
 use std::default::Default;
 use std::fmt::Write;
 use std::path::Path;
@@ -21,6 +22,7 @@ use crate::detections::configs::STORED_EKEY_ALIAS;
 use crate::detections::field_data_map::FieldDataMapKey;
 use crate::detections::message::{AlertMessage, DetectInfo, ERROR_LOG_STACK, TAGS_CONFIG};
 use crate::detections::rule::correlation_parser::parse_correlation_rules;
+use crate::detections::rule::count::AggRecordTimeInfo;
 use crate::detections::rule::{self, AggResult, RuleNode};
 use crate::detections::utils::{create_recordinfos, format_time, write_color_buffer};
 use crate::detections::utils::{get_serde_number_to_string, make_ascii_titlecase};
@@ -742,7 +744,7 @@ impl Detection {
             eventid: eid,
             detail: CompactString::default(),
             ext_field: stored_static.profiles.as_ref().unwrap().to_owned(),
-            is_condition: false,
+            agg_result: None,
             details_convert_map: HashMap::default(),
         };
 
@@ -771,7 +773,6 @@ impl Detection {
         let mut profile_converter: HashMap<&str, Profile> = HashMap::new();
         let level = rule.yaml["level"].as_str().unwrap_or("-").to_string();
         let tags_config_values: Vec<&CompactString> = TAGS_CONFIG.values().collect();
-
         let is_json_timeline = matches!(stored_static.config.action, Some(Action::JsonTimeline(_)));
         for (key, profile) in stored_static.profiles.as_ref().unwrap().iter() {
             match profile {
@@ -789,10 +790,33 @@ impl Detection {
                     );
                 }
                 Computer(_) => {
-                    profile_converter.insert(key.as_str(), Computer("-".into()));
+                    profile_converter.insert(
+                        key.as_str(),
+                        Computer(
+                            Detection::join_agg_values(&agg_result.agg_record_time_info, |x| {
+                                x.computer.clone()
+                            })
+                            .into(),
+                        ),
+                    );
                 }
                 Channel(_) => {
-                    profile_converter.insert(key.as_str(), Channel("-".into()));
+                    profile_converter.insert(
+                        key.as_str(),
+                        Channel(
+                            Detection::join_agg_values(&agg_result.agg_record_time_info, |x| {
+                                stored_static.disp_abbr_generic.replace_all(
+                                    stored_static
+                                        .ch_config
+                                        .get(&CompactString::from(&x.channel.to_ascii_lowercase()))
+                                        .unwrap_or(&CompactString::from(&x.channel))
+                                        .as_str(),
+                                    &stored_static.disp_abbr_general_values,
+                                )
+                            })
+                            .into(),
+                        ),
+                    );
                 }
                 Level(_) => {
                     let str_level = level.as_str();
@@ -805,7 +829,15 @@ impl Detection {
                     profile_converter.insert(key.as_str(), Level(prof_level.to_string().into()));
                 }
                 EventID(_) => {
-                    profile_converter.insert(key.as_str(), EventID("-".into()));
+                    profile_converter.insert(
+                        key.as_str(),
+                        EventID(
+                            Detection::join_agg_values(&agg_result.agg_record_time_info, |x| {
+                                x.event_id.clone()
+                            })
+                            .into(),
+                        ),
+                    );
                 }
                 RecordID(_) => {
                     profile_converter.insert(key.as_str(), RecordID("-".into()));
@@ -833,7 +865,15 @@ impl Detection {
                     profile_converter.insert(key.as_str(), RuleFile(rule_path.into()));
                 }
                 EvtxFile(_) => {
-                    profile_converter.insert(key.as_str(), EvtxFile("-".into()));
+                    profile_converter.insert(
+                        key.as_str(),
+                        EvtxFile(
+                            Detection::join_agg_values(&agg_result.agg_record_time_info, |x| {
+                                x.evtx_file_path.clone()
+                            })
+                            .into(),
+                        ),
+                    );
                 }
                 MitreTactics(_) => {
                     let tactics = tag_info
@@ -965,7 +1005,7 @@ impl Detection {
             eventid: CompactString::from("-"),
             detail: output,
             ext_field: stored_static.profiles.as_ref().unwrap().to_owned(),
-            is_condition: true,
+            agg_result: Some(agg_result),
             details_convert_map: HashMap::default(),
         };
         let binding = STORED_EKEY_ALIAS.read().unwrap();
@@ -984,6 +1024,22 @@ impl Detection {
         detect_info
     }
 
+    fn join_agg_values<F>(
+        agg_record_time_infos: &[AggRecordTimeInfo],
+        extractor: F,
+    ) -> CompactString
+    where
+        F: Fn(&AggRecordTimeInfo) -> String,
+    {
+        agg_record_time_infos
+            .iter()
+            .map(&extractor)
+            .collect::<HashSet<_>>() // Convert to HashSet to remove duplicates
+            .into_iter()
+            .sorted()
+            .join(" ¦ ")
+            .into()
+    }
     /// rule内のtagsの内容を配列として返却する関数
     fn get_tag_info(rule: &RuleNode) -> Nested<String> {
         Nested::from_iter(
@@ -1313,7 +1369,7 @@ mod tests {
     fn test_output_aggregation_output_with_output() {
         let default_time = Utc.with_ymd_and_hms(1977, 1, 1, 0, 0, 0).unwrap();
         let agg_result: AggResult =
-            AggResult::new(2, "_".to_string(), vec![], default_time, ">= 1".to_string());
+            AggResult::new(2, "_".to_string(), vec![], default_time, vec![]);
         let rule_str = r#"
         enabled: true
         detection:
@@ -1341,7 +1397,7 @@ mod tests {
     fn test_output_aggregation_output_no_filed_by() {
         let default_time = Utc.with_ymd_and_hms(1977, 1, 1, 0, 0, 0).unwrap();
         let agg_result: AggResult =
-            AggResult::new(2, "_".to_string(), vec![], default_time, ">= 1".to_string());
+            AggResult::new(2, "_".to_string(), vec![], default_time, vec![]);
         let rule_str = r#"
         enabled: true
         detection:
@@ -1368,7 +1424,7 @@ mod tests {
     fn test_output_aggregation_output_with_timeframe() {
         let default_time = Utc.with_ymd_and_hms(1977, 1, 1, 0, 0, 0).unwrap();
         let agg_result: AggResult =
-            AggResult::new(2, "_".to_string(), vec![], default_time, ">= 1".to_string());
+            AggResult::new(2, "_".to_string(), vec![], default_time, vec![]);
         let rule_str = r#"
         enabled: true
         detection:
@@ -1400,7 +1456,7 @@ mod tests {
             "_".to_string(),
             vec!["7040".to_owned(), "9999".to_owned()],
             default_time,
-            ">= 1".to_string(),
+            vec![],
         );
         let rule_str = r#"
         enabled: true
@@ -1430,7 +1486,7 @@ mod tests {
             "lsass.exe".to_string(),
             vec!["0000".to_owned(), "1111".to_owned()],
             default_time,
-            ">= 1".to_string(),
+            vec![],
         );
         let rule_str = r#"
         enabled: true
@@ -1454,13 +1510,8 @@ mod tests {
     #[test]
     fn test_output_aggregation_output_with_by() {
         let default_time = Utc.with_ymd_and_hms(1977, 1, 1, 0, 0, 0).unwrap();
-        let agg_result: AggResult = AggResult::new(
-            2,
-            "lsass.exe".to_string(),
-            vec![],
-            default_time,
-            ">= 1".to_string(),
-        );
+        let agg_result: AggResult =
+            AggResult::new(2, "lsass.exe".to_string(), vec![], default_time, vec![]);
         let rule_str = r#"
         enabled: true
         detection:
