@@ -153,6 +153,8 @@ impl Detection {
                 &rulefile_loader.rulecounter,
                 &rulefile_loader.rule_load_cnt,
                 &rulefile_loader.rule_status_cnt,
+                &rulefile_loader.rule_cor_cnt,
+                &rulefile_loader.rule_cor_ref_cnt,
                 &parseerror_count,
                 stored_static,
             );
@@ -1104,6 +1106,8 @@ impl Detection {
         rc: &HashMap<CompactString, u128>,
         ld_rc: &HashMap<CompactString, u128>,
         st_rc: &HashMap<CompactString, u128>,
+        cor_rc: &HashMap<CompactString, u128>,
+        cor_ref_rc: &HashMap<CompactString, u128>,
         err_rc: &u128,
         stored_static: &StoredStatic,
     ) {
@@ -1146,8 +1150,9 @@ impl Detection {
             )
             .ok();
         }
-        println!();
-
+        if !ld_rc.is_empty() {
+            println!();
+        }
         let mut sorted_st_rc: Vec<(&CompactString, &u128)> = st_rc.iter().collect();
         let output_opt = stored_static.output_option.as_ref().unwrap();
         let enable_deprecated_flag = output_opt.enable_deprecated_rules;
@@ -1191,6 +1196,34 @@ impl Detection {
             }
         });
         println!();
+
+        let cor_total: u128 = cor_rc.values().sum();
+        let cor_ref_total: u128 = cor_ref_rc.values().sum();
+        if cor_total != 0 {
+            let col = format!(
+                "Correlation rules: {} ({:.2}%)",
+                cor_total.to_formatted_string(&Locale::en),
+                (cor_total as f64) / (total_loaded_rule_cnt as f64) * 100.0
+            );
+            write_color_buffer(&BufferWriter::stdout(ColorChoice::Always), None, &col, true).ok();
+            let col_ref = format!(
+                "Correlation referenced rules: {} ({:.2}%)",
+                cor_ref_total.to_formatted_string(&Locale::en),
+                (cor_ref_total as f64) / (total_loaded_rule_cnt as f64) * 100.0
+            );
+            write_color_buffer(
+                &BufferWriter::stdout(ColorChoice::Always),
+                None,
+                &col_ref,
+                true,
+            )
+            .ok();
+            if stored_static.html_report_flag {
+                html_report_stock.push(format!("- {col}"));
+                html_report_stock.push(format!("- {col_ref}"));
+            }
+            println!();
+        }
 
         let mut sorted_rc: Vec<(&CompactString, &u128)> = rc.iter().collect();
         sorted_rc.sort_by(|a, b| a.0.cmp(b.0));
