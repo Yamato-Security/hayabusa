@@ -16,6 +16,7 @@
 
 **Bug Fixes:**
 - Sigma correlation rule count was not showing up in `Events with hits`. (#1373) (@fukusuket)
+- Correlation rule count was not showing up in `Events with hits`. (#1374) (@fukusuket)
 - Aggregation condition rule count was not showing up in `Events with hits`. (#1375) (@fukusuket)
 
 ## 2.16.0 [2024/06/11]
