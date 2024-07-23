@@ -57,6 +57,7 @@ use hayabusa::detections::utils::{
     check_setting_path, get_writable_color, output_and_data_stack_for_html, output_profile_name,
 };
 use hayabusa::filter::create_channel_filter;
+use hayabusa::options::auto_complete::auto_complete;
 use hayabusa::options::htmlreport::{self, HTML_REPORTER};
 use hayabusa::options::pivot::create_output;
 use hayabusa::options::pivot::PIVOT_KEYWORD;
@@ -154,6 +155,13 @@ impl App {
             println!();
             return;
         }
+
+        //ロゴと時間が表示さないように実行したい
+        if let Action::AutoComplete(_) = &stored_static.config.action.as_ref().unwrap() {
+            auto_complete(app, stored_static.output_path.as_ref());
+            return;
+        }
+
         if !stored_static.common_options.quiet {
             self.output_logo(stored_static);
             write_color_buffer(&BufferWriter::stdout(ColorChoice::Always), None, "", true).ok();
@@ -352,6 +360,11 @@ impl App {
                 self.print_contributors();
                 return;
             }
+
+            Action::AutoComplete(_) => {
+                panic!("This should not be called here.");
+            }
+
             Action::LogonSummary(_) => {
                 let mut target_output_path = Nested::<String>::new();
                 if let Some(path) = &stored_static.output_path {
