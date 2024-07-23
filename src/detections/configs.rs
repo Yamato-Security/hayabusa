@@ -297,6 +297,7 @@ impl StoredStatic {
             Some(Action::LogonSummary(opt)) => opt.output.as_ref(),
             Some(Action::Search(opt)) => opt.output.as_ref(),
             Some(Action::ComputerMetrics(opt)) => opt.output.as_ref(),
+            Some(Action::AutoComplete(opt)) => opt.output.as_ref(),
             _ => None,
         };
         let general_ch_abbr = create_output_filter_config(
@@ -949,6 +950,10 @@ impl Action {
 pub struct AutoCompleteOptions {
     #[clap(flatten)]
     pub common_options: CommonOptions,
+
+    /// Save the auto complete in shell format (ex: auto-complete.sh)
+    #[arg(help_heading = Some("Output"), short = 'o', long, value_name = "FILE", display_order = 410)]
+    pub output: Option<PathBuf>,
 }
 
 #[derive(Args, Clone, Debug)]

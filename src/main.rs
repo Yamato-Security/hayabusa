@@ -155,7 +155,7 @@ impl App {
             return;
         }
 
-        //ロゴと時間が表示さないように実行したいので、この位置
+        //ロゴと時間が表示さないように実行したい
         if let Action::AutoComplete(_) = &stored_static.config.action.as_ref().unwrap() {
             auto_complete(app, stored_static.output_path.as_ref());
             return;
