@@ -46,7 +46,8 @@ use tokio::task::JoinHandle;
 use hayabusa::afterfact::{self, AfterfactInfo, AfterfactWriter};
 use hayabusa::debug::checkpoint_process_timer::CHECKPOINT;
 use hayabusa::detections::configs::{
-    load_pivot_keywords, Action, ConfigReader, EventKeyAliasConfig, StoredStatic, TargetEventTime, TargetIds, CURRENT_EXE_PATH, STORED_EKEY_ALIAS, STORED_STATIC
+    load_pivot_keywords, Action, ConfigReader, EventKeyAliasConfig, StoredStatic, TargetEventTime,
+    TargetIds, CURRENT_EXE_PATH, STORED_EKEY_ALIAS, STORED_STATIC,
 };
 use hayabusa::detections::detection::{self, EvtxRecordInfo};
 use hayabusa::detections::message::{AlertMessage, DetectInfo, ERROR_LOG_STACK};

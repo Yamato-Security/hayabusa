@@ -9,7 +9,7 @@ pub fn auto_complete(app: &mut clap::Command, output_path: Option<&PathBuf>) {
 }
 
 fn select_shell() -> Shell {
-    let items:Vec<Shell> = vec![Shell::Bash, Shell::Elvish, Shell::Fish, Shell::PowerShell];
+    let items: Vec<Shell> = vec![Shell::Bash, Shell::Elvish, Shell::Fish, Shell::PowerShell];
 
     let selection = Select::new()
         .with_prompt("Which shell are you using?")
@@ -19,7 +19,11 @@ fn select_shell() -> Shell {
 
     items[selection]
 }
-fn print_completer<G: Generator>(generator: G, app: &mut clap::Command, output_path: Option<&PathBuf>) {
+fn print_completer<G: Generator>(
+    generator: G,
+    app: &mut clap::Command,
+    output_path: Option<&PathBuf>,
+) {
     let mut name = "auto-complete".to_string();
     if output_path.is_some() {
         name = output_path.unwrap().to_str().unwrap().to_string();

@@ -7,7 +7,9 @@ use crate::options::pivot::PIVOT_KEYWORD;
 use crate::options::profile::{load_profile, Profile};
 use aho_corasick::{AhoCorasick, AhoCorasickBuilder, MatchKind};
 use chrono::{DateTime, Days, Duration, Local, Months, Utc};
-use clap::{ValueHint, ArgAction, ArgGroup, Args, ColorChoice, Command, CommandFactory, Parser, Subcommand};
+use clap::{
+    ArgAction, ArgGroup, Args, ColorChoice, Command, CommandFactory, Parser, Subcommand, ValueHint,
+};
 use compact_str::CompactString;
 use hashbrown::{HashMap, HashSet};
 use itertools::Itertools;
@@ -887,7 +889,7 @@ pub enum Action {
     ListProfiles(CommonOptions),
 
     #[clap(display_order = 383)]
-    /// Make the auto complete 
+    /// Make the auto complete
     AutoComplete(AutoCompleteOptions),
 
     #[clap(
@@ -988,7 +990,7 @@ pub struct DetectCommonOption {
         default_value = "./rules/config",
         hide_default_value = true,
         value_name = "DIR",
-        display_order = 442, 
+        display_order = 442,
         value_hint(ValueHint::FilePath))]
     pub config: PathBuf,
 
