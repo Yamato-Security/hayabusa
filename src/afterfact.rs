@@ -1908,13 +1908,7 @@ pub fn output_json_str(
                     let mut children_output_order = vec![];
                     if detect_info.agg_result.is_some() {
                         if details_target_stock[0] == "-" {
-                            output_stock.push(_create_json_output_format(
-                                key,
-                                details_target_stock[0].as_str(),
-                                key.starts_with('\"'),
-                                details_target_stock[0].starts_with('\"'),
-                                4,
-                            ));
+                            output_stock.push(format!("{}\"{}\": {{}}", " ".repeat(4), key));
                             if jsonl_output_flag {
                                 target.push(output_stock.join(""));
                             } else {
