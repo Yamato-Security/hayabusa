@@ -50,7 +50,7 @@ pub struct AlertMessage {}
 #[derive(Embed)]
 #[folder = "config"]
 #[include = "mitre_tactics.txt"]
-struct MITRETACTICS;
+struct Mitretactics;
 
 lazy_static! {
     #[derive(Debug,PartialEq, Eq, Ord, PartialOrd)]
@@ -88,20 +88,18 @@ pub fn create_output_filter_config(
     is_lower_case: bool,
 ) -> HashMap<CompactString, CompactString> {
     let mut ret: HashMap<CompactString, CompactString> = HashMap::new();
-    let read_result;
-    if path.starts_with("config/") {
-        let mitre_tactics = MITRETACTICS::get("mitre_tactics.txt").unwrap();
-        read_result =
-            utils::parse_csv(std::str::from_utf8(mitre_tactics.data.as_ref()).unwrap_or_default());
+    let read_result = if path.starts_with("config/") {
+        let mitre_tactics = Mitretactics::get("mitre_tactics.txt").unwrap();
+        utils::parse_csv(std::str::from_utf8(mitre_tactics.data.as_ref()).unwrap_or_default())
     } else {
-        read_result = match utils::read_csv(path) {
+        match utils::read_csv(path) {
             Ok(c) => c,
             Err(e) => {
                 AlertMessage::alert(&e).ok();
-                return HashMap::default();
+                Nested::new()
             }
-        };
-    }
+        }
+    };
     read_result.iter().for_each(|line| {
         let key = if is_lower_case {
             line[0].trim().to_ascii_lowercase()
