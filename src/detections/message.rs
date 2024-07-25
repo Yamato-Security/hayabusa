@@ -15,6 +15,7 @@ use itertools::Itertools;
 use lazy_static::lazy_static;
 use nested::Nested;
 use regex::Regex;
+use rust_embed::Embed;
 use serde_json::Value;
 use std::env;
 use std::fs::{create_dir, File};
@@ -45,6 +46,11 @@ pub struct DetectInfo {
 }
 
 pub struct AlertMessage {}
+
+#[derive(Embed)]
+#[folder = "config"]
+#[include = "mitre_tactics.txt"]
+struct MITRETACTICS;
 
 lazy_static! {
     #[derive(Debug,PartialEq, Eq, Ord, PartialOrd)]
@@ -82,13 +88,20 @@ pub fn create_output_filter_config(
     is_lower_case: bool,
 ) -> HashMap<CompactString, CompactString> {
     let mut ret: HashMap<CompactString, CompactString> = HashMap::new();
-    let read_result = match utils::read_csv(path) {
-        Ok(c) => c,
-        Err(e) => {
-            AlertMessage::alert(&e).ok();
-            return HashMap::default();
-        }
-    };
+    let read_result;
+    if path.starts_with("config/") {
+        let mitre_tactics = MITRETACTICS::get("mitre_tactics.txt").unwrap();
+        read_result =
+            utils::parse_csv(std::str::from_utf8(mitre_tactics.data.as_ref()).unwrap_or_default());
+    } else {
+        read_result = match utils::read_csv(path) {
+            Ok(c) => c,
+            Err(e) => {
+                AlertMessage::alert(&e).ok();
+                return HashMap::default();
+            }
+        };
+    }
     read_result.iter().for_each(|line| {
         let key = if is_lower_case {
             line[0].trim().to_ascii_lowercase()

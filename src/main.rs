@@ -1505,7 +1505,9 @@ impl App {
                     "{:?}",
                     &evtx_file.to_str().unwrap_or_default().replace('\\', "/")
                 );
-                pb.set_message(pb_msg);
+                if !pb_msg.is_empty() {
+                    pb.set_message(pb_msg);
+                }
             }
 
             let (detection_tmp, cnt_tmp, tl_tmp, recover_cnt_tmp, mut detect_infos) =
