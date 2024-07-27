@@ -673,6 +673,11 @@ impl App {
                 return;
             }
             Action::SetDefaultProfile(_) => {
+                let config_path = &CURRENT_EXE_PATH.to_path_buf().join("config");
+                if !config_path.exists() {
+                    println!("Default profile cannot be set due to the absence of a config folder. Please check config folder.");
+                    return;
+                }
                 if let Err(e) = set_default_profile(
                     check_setting_path(
                         &CURRENT_EXE_PATH.to_path_buf(),
