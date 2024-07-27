@@ -20,7 +20,7 @@ use yaml_rust::{Yaml, YamlEmitter, YamlLoader};
 
 #[derive(Embed)]
 #[folder = "config/"]
-#[include = "default_profile.yaml"]
+#[include = "*.yaml"]
 struct DefaultProfile;
 
 #[derive(Eq, PartialEq, Hash, Clone, Debug)]
