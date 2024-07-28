@@ -17,7 +17,7 @@ use self::selectionnodes::{LeafSelectionNode, SelectionNode};
 mod aggregation_parser;
 mod condition_parser;
 pub mod correlation_parser;
-mod count;
+pub(crate) mod count;
 mod matchers;
 mod selectionnodes;
 
@@ -94,7 +94,7 @@ impl RuleNode {
         if result && self.has_agg_condition() {
             count::count(
                 self,
-                &event_record.record,
+                event_record,
                 verbose_flag,
                 quiet_errors_flag,
                 json_input_flag,
@@ -370,7 +370,7 @@ impl DetectionNode {
     }
 }
 
-#[derive(Debug)]
+#[derive(Debug, Clone, PartialEq, Eq, Default)]
 /// countなどのaggregationの結果を出力する構造体
 pub struct AggResult {
     /// countなどの値
@@ -381,8 +381,8 @@ pub struct AggResult {
     pub field_values: Vec<String>,
     ///検知したブロックの最初のレコードの時間
     pub start_timedate: DateTime<Utc>,
-    ///条件式の情報
-    pub condition_op_num: String,
+    ///検知したブロックのレコードの全時間とEventID
+    pub agg_record_time_info: Vec<AggRecordTimeInfo>,
 }
 
 impl AggResult {
@@ -391,14 +391,14 @@ impl AggResult {
         key_name: String,
         field_value: Vec<String>,
         event_start_timedate: DateTime<Utc>,
-        condition_op_number: String,
+        agg_record_time_info: Vec<AggRecordTimeInfo>,
     ) -> AggResult {
         AggResult {
             data: count_data,
             key: key_name,
             field_values: field_value,
             start_timedate: event_start_timedate,
-            condition_op_num: condition_op_number,
+            agg_record_time_info,
         }
     }
 }

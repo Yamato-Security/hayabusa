@@ -14,6 +14,12 @@
   - After: `"Data[3]": "17514", "Data[4]": "Multiprocessor Free", "Data[5]": "Service Pack 1"`
 - The configuration files in the `config` folder are now also embedded in the binary to reduce the number of files in the release package. (#1370) (@hitenkoku)
   - Note: you will not be able to run the `set-default-profile` command without the `config` directory files as it relies on `config/default_profile.yaml`.
+- Aggregation rule alerts now show `Channel` and `EventID` information even when there are multiple results. (#1342) (@fukusuket)
+
+**Bug Fixes:**
+- Sigma correlation rule count was not showing up in `Events with hits`. (#1373) (@fukusuket)
+- Correlation rule count was not showing up in `Events with hits`. (#1374) (@fukusuket)
+- Aggregation condition rule count was not showing up in `Events with hits`. (#1375) (@fukusuket)
 
 ## 2.16.0 [2024/06/11]
 

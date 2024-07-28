@@ -13,13 +13,15 @@ use std::ffi::OsStr;
 use std::fs;
 use std::io::{self, BufReader, Read};
 use std::path::{Path, PathBuf};
-use yaml_rust::YamlLoader;
+use yaml_rust::{Yaml, YamlLoader};
 
 pub struct ParseYaml {
     pub files: Vec<(String, yaml_rust::Yaml)>,
     pub rulecounter: HashMap<CompactString, u128>,
     pub rule_load_cnt: HashMap<CompactString, u128>,
     pub rule_status_cnt: HashMap<CompactString, u128>,
+    pub rule_cor_cnt: HashMap<CompactString, u128>,
+    pub rule_cor_ref_cnt: HashMap<CompactString, u128>,
     pub errorrule_count: u128,
     pub exclude_status: HashSet<String>,
     pub level_map: HashMap<String, u128>,
@@ -41,6 +43,8 @@ impl ParseYaml {
                 ("deprecated".into(), 0_u128),
                 ("unsupported".into(), 0_u128),
             ]),
+            rule_cor_cnt: Default::default(),
+            rule_cor_ref_cnt: Default::default(),
             errorrule_count: 0,
             exclude_status: configs::convert_option_vecs_to_hs(exclude_status_vec.as_ref()),
             level_map: HashMap::from([
@@ -67,6 +71,31 @@ impl ParseYaml {
         Ok(file_content)
     }
 
+    fn update_correlation_counts(&mut self, yaml_docs: &Vec<Yaml>) {
+        for doc in yaml_docs {
+            if let Some(correlation) = doc["correlation"].as_hash() {
+                let entry = self
+                    .rule_cor_cnt
+                    .entry(CompactString::from("correlation"))
+                    .or_insert(0);
+                *entry += 1;
+                if let Some(rules) = correlation.get(&Yaml::String("rules".to_string())) {
+                    if let Some(rules_list) = rules.as_vec() {
+                        for rule in rules_list {
+                            if let Some(rule_str) = rule.as_str() {
+                                // Update rules count, storing each unique rule
+                                let rule_entry = self
+                                    .rule_cor_ref_cnt
+                                    .entry(CompactString::from(rule_str))
+                                    .or_insert(0);
+                                *rule_entry += 1;
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
     pub fn read_dir<P: AsRef<Path>>(
         &mut self,
         path: P,
@@ -137,30 +166,32 @@ impl ParseYaml {
             }
 
             // ここも個別のファイルの読み込みは即終了としない。
-            let yaml_contents = YamlLoader::load_from_str(&read_content.unwrap());
-            if yaml_contents.is_err() {
-                let errmsg = format!(
-                    "Failed to parse yml: {}\n{} ",
-                    path.as_ref().to_path_buf().display(),
-                    yaml_contents.unwrap_err()
-                );
-                if stored_static.verbose_flag {
-                    AlertMessage::warn(&errmsg)?;
+            match YamlLoader::load_from_str(&read_content.unwrap()) {
+                Ok(contents) => {
+                    Self::update_correlation_counts(self, &contents);
+                    yaml_docs.extend(contents.into_iter().map(|yaml_content| {
+                        let filepath = format!("{}", path.as_ref().to_path_buf().display());
+                        (filepath, yaml_content)
+                    }));
                 }
-                if !stored_static.quiet_errors_flag {
-                    ERROR_LOG_STACK
-                        .lock()
-                        .unwrap()
-                        .push(format!("[WARN] {errmsg}"));
+                Err(error) => {
+                    let errmsg = format!(
+                        "Failed to parse yml: {}\n{} ",
+                        path.as_ref().to_path_buf().display(),
+                        error
+                    );
+                    if stored_static.verbose_flag {
+                        AlertMessage::warn(&errmsg)?;
+                    }
+                    if !stored_static.quiet_errors_flag {
+                        ERROR_LOG_STACK
+                            .lock()
+                            .unwrap()
+                            .push(format!("[WARN] {errmsg}"));
+                    }
+                    self.errorrule_count += 1;
                 }
-                self.errorrule_count += 1;
-                return io::Result::Ok(String::default());
             }
-
-            yaml_docs.extend(yaml_contents.unwrap().into_iter().map(|yaml_content| {
-                let filepath = format!("{}", path.as_ref().to_path_buf().display());
-                (filepath, yaml_content)
-            }));
         } else {
             let mut entries = fs::read_dir(path)?;
             yaml_docs = entries.try_fold(vec![], |mut ret, entry| {
@@ -224,32 +255,35 @@ impl ParseYaml {
                 }
 
                 // ここも個別のファイルの読み込みは即終了としない。
-                let yaml_contents = YamlLoader::load_from_str(&read_content.unwrap());
-                if yaml_contents.is_err() {
-                    let errmsg = format!(
-                        "Failed to parse yml: {}\n{} ",
-                        entry.path().display(),
-                        yaml_contents.unwrap_err()
-                    );
-                    if stored_static.verbose_flag {
-                        AlertMessage::warn(&errmsg)?;
+                match YamlLoader::load_from_str(&read_content.unwrap()) {
+                    Ok(contents) => {
+                        Self::update_correlation_counts(self, &contents);
+                        let pair = contents.into_iter().map(|yaml_content| {
+                            let filepath = format!("{}", entry.path().display());
+                            (filepath, yaml_content)
+                        });
+                        ret.extend(pair);
+                        io::Result::Ok(ret)
                     }
-                    if !stored_static.quiet_errors_flag {
-                        ERROR_LOG_STACK
-                            .lock()
-                            .unwrap()
-                            .push(format!("[WARN] {errmsg}"));
+                    Err(error) => {
+                        let errmsg = format!(
+                            "Failed to parse yml: {}\n{} ",
+                            entry.path().display(),
+                            error
+                        );
+                        if stored_static.verbose_flag {
+                            AlertMessage::warn(&errmsg)?;
+                        }
+                        if !stored_static.quiet_errors_flag {
+                            ERROR_LOG_STACK
+                                .lock()
+                                .unwrap()
+                                .push(format!("[WARN] {errmsg}"));
+                        }
+                        self.errorrule_count += 1;
+                        io::Result::Ok(ret)
                     }
-                    self.errorrule_count += 1;
-                    return io::Result::Ok(ret);
                 }
-
-                let yaml_contents = yaml_contents.unwrap().into_iter().map(|yaml_content| {
-                    let filepath = format!("{}", entry.path().display());
-                    (filepath, yaml_content)
-                });
-                ret.extend(yaml_contents);
-                io::Result::Ok(ret)
             })?;
         }
         let exist_output_opt = stored_static.output_option.is_some();

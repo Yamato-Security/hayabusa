@@ -1,6 +1,9 @@
 extern crate lazy_static;
+use super::configs::EventKeyAliasConfig;
+use super::utils::remove_sp_char;
 use crate::detections::configs::CURRENT_EXE_PATH;
 use crate::detections::field_data_map::{convert_field_data, FieldDataMap, FieldDataMapKey};
+use crate::detections::rule::AggResult;
 use crate::detections::utils::{self, get_serde_number_to_string, write_color_buffer};
 use crate::options::profile::Profile::{
     self, AllFieldInfo, Details, ExtraFieldInfo, Literal, SrcASN, SrcCity, SrcCountry, TgtASN,
@@ -24,9 +27,6 @@ use std::path::Path;
 use std::sync::Mutex;
 use termcolor::{BufferWriter, ColorChoice};
 
-use super::configs::EventKeyAliasConfig;
-use super::utils::remove_sp_char;
-
 /*
  * This struct express log record
 */
@@ -41,7 +41,7 @@ pub struct DetectInfo {
     pub eventid: CompactString,
     pub detail: CompactString,
     pub ext_field: Vec<(CompactString, Profile)>,
-    pub is_condition: bool,
+    pub agg_result: Option<AggResult>,
     pub details_convert_map: HashMap<CompactString, Vec<CompactString>>,
 }
 

@@ -14,6 +14,12 @@
   - 後: `"Data[3]": "17514", "Data[4]": "Multiprocessor Free", "Data[5]": "Service Pack 1"`
 - リリースパッケージのファイル数を減らすために、`config`フォルダ内の設定ファイルもバイナリに埋め込まれるようにした。 (#1370) (@hitenkoku)
   - 注意: `set-default-profile`コマンドは、`config/default_profile.yaml`に依存しているので、`config`ディレクトリファイルがないと実行できない。
+- 集計ルールのアラートに、複数の結果がある場合でも`Channel`と`EventID`の情報が表示されるようにした。 (#1342) (@fukusuket)
+
+**バグ修正:**
+- Sigmaの相関ルールのカウントが`Events with hits`に表示されていなかった。(#1373) (@fukusuket)
+- 相関ルールのカウントが`Events with hits`に表示されていなかった。(#1374) (@fukusuket)
+- 集計ルールのカウントが`Events with hits`に表示されていなかった。(#1375) (@fukusuket)
 
 ## 2.16.0 [2024/06/11]
 

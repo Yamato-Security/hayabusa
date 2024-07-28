@@ -1,9 +1,11 @@
 use crate::detections::configs::EventKeyAliasConfig;
 use crate::detections::configs::StoredStatic;
 use crate::detections::configs::STORED_EKEY_ALIAS;
+use crate::detections::detection::EvtxRecordInfo;
 use crate::detections::message;
 use crate::detections::message::AlertMessage;
 use crate::detections::message::ERROR_LOG_STACK;
+use crate::detections::rule::aggregation_parser::AggregationConditionToken;
 use crate::detections::rule::AggResult;
 use crate::detections::rule::RuleNode;
 use chrono::{DateTime, TimeZone, Utc};
@@ -12,21 +14,19 @@ use serde_json::Value;
 use std::num::ParseIntError;
 use std::path::Path;
 
-use crate::detections::rule::aggregation_parser::AggregationConditionToken;
-
 use crate::detections::utils;
 
 /// 検知された際にカウント情報を投入する関数
 pub fn count(
     rule: &mut RuleNode,
-    record: &Value,
+    evtx_rec: &EvtxRecordInfo,
     verbose_flag: bool,
     quiet_errors_flag: bool,
     json_input_flag: bool,
 ) {
     let key: String = create_count_key(
         rule,
-        record,
+        &evtx_rec.record,
         verbose_flag,
         quiet_errors_flag,
         STORED_EKEY_ALIAS.read().unwrap().as_ref().unwrap(),
@@ -43,20 +43,14 @@ pub fn count(
     let field_value = get_alias_value_in_record(
         rule,
         field_name,
-        record,
+        &evtx_rec.record,
         false,
         verbose_flag,
         quiet_errors_flag,
         STORED_EKEY_ALIAS.read().unwrap().as_ref().unwrap(),
     )
     .unwrap_or_default();
-    let default_time = Utc.with_ymd_and_hms(1977, 1, 1, 0, 0, 0).unwrap();
-    countup(
-        rule,
-        key,
-        field_value,
-        message::get_event_time(record, json_input_flag).unwrap_or(default_time),
-    );
+    countup(rule, key, field_value, evtx_rec, json_input_flag);
 }
 
 ///count byの条件に合致する検知済みレコードの数を増やすための関数
@@ -64,12 +58,42 @@ pub fn countup(
     rule: &mut RuleNode,
     key: String,
     field_value: String,
-    record_time_value: DateTime<Utc>,
+    evtx_rec: &EvtxRecordInfo,
+    json_input_flag: bool,
 ) {
+    let record = &evtx_rec.record;
+    let default_time = Utc.with_ymd_and_hms(1977, 1, 1, 0, 0, 0).unwrap();
+    let time = message::get_event_time(record, json_input_flag).unwrap_or(default_time);
+    let event_id = utils::get_event_value(
+        "Event.System.EventID",
+        record,
+        STORED_EKEY_ALIAS.read().unwrap().as_ref().unwrap(),
+    )
+    .unwrap();
+    let event_id = event_id.to_string().trim_matches('\"').to_string();
+    let computer = utils::get_event_value(
+        "Event.System.Computer",
+        record,
+        STORED_EKEY_ALIAS.read().unwrap().as_ref().unwrap(),
+    )
+    .unwrap();
+    let computer = computer.to_string().trim_matches('\"').to_string();
+    let channel = utils::get_event_value(
+        "Event.System.Channel",
+        record,
+        STORED_EKEY_ALIAS.read().unwrap().as_ref().unwrap(),
+    )
+    .unwrap();
+    let channel = channel.to_string().trim_matches('\"').to_string();
+    let evtx_file_path = evtx_rec.evtx_filepath.to_string();
     let value_map = rule.countdata.entry(key).or_default();
     value_map.push(AggRecordTimeInfo {
-        field_record_value: field_value,
-        record_time: record_time_value,
+        field_value,
+        time,
+        event_id,
+        computer,
+        channel,
+        evtx_file_path,
     });
 }
 
@@ -188,41 +212,15 @@ pub fn aggregation_condition_select(
     ret
 }
 
-/// aggregation condition内での条件式を文字として返す関数
-pub fn get_str_agg_eq(rule: &RuleNode) -> String {
-    //この関数はaggregation ruleのパースが正常終了した後に呼ばれる想定のためOptionの判定は行わない
-    let agg_condition = rule.detection.aggregation_condition.as_ref().unwrap();
-    let mut ret: String = String::default();
-    match agg_condition._cmp_op {
-        AggregationConditionToken::EQ => {
-            ret.push_str("== ");
-        }
-        AggregationConditionToken::GE => {
-            ret.push_str(">= ");
-        }
-        AggregationConditionToken::LE => {
-            ret.push_str("<= ");
-        }
-        AggregationConditionToken::GT => {
-            ret.push_str("> ");
-        }
-        AggregationConditionToken::LT => {
-            ret.push_str("< ");
-        }
-        _ => {
-            //想定しない演算子のため、空白文字で対応するものがない
-            return "".to_string();
-        }
-    }
-    ret.push_str(&agg_condition._cmp_num.to_string());
-    ret
-}
-
-#[derive(Clone, Debug)]
+#[derive(Debug, Clone, PartialEq, Eq, Default)]
 /// countの括弧内の情報とレコードの情報を所持する構造体
 pub struct AggRecordTimeInfo {
-    pub field_record_value: String,
-    pub record_time: DateTime<Utc>,
+    pub field_value: String,
+    pub time: DateTime<Utc>,
+    pub event_id: String,
+    pub computer: String,
+    pub channel: String,
+    pub evtx_file_path: String,
 }
 
 #[derive(Debug)]
@@ -348,14 +346,7 @@ trait CountStrategy {
     /**
      * AggResultを作成します。
      */
-    fn create_agg_result(
-        &mut self,
-        left: i64,
-        datas: &[AggRecordTimeInfo],
-        cnt: i64,
-        key: &str,
-        rule: &RuleNode,
-    ) -> AggResult;
+    fn create_agg_result(&mut self, datas: &[AggRecordTimeInfo], cnt: i64, key: &str) -> AggResult;
 }
 
 /**
@@ -371,7 +362,7 @@ impl CountStrategy for FieldStrategy {
             return;
         }
 
-        let value = &datas[idx as usize].field_record_value;
+        let value = &datas[idx as usize].field_value;
         let key_val = self.value_2_cnt.get_key_value_mut(value);
         if let Some(kv) = key_val {
             let (_, val) = kv;
@@ -386,7 +377,7 @@ impl CountStrategy for FieldStrategy {
             return;
         }
 
-        let record_value = &datas[idx as usize].field_record_value;
+        let record_value = &datas[idx as usize].field_value;
         let key_val = self.value_2_cnt.get_key_value_mut(record_value);
         if key_val.is_none() {
             return;
@@ -407,19 +398,17 @@ impl CountStrategy for FieldStrategy {
 
     fn create_agg_result(
         &mut self,
-        left: i64,
         datas: &[AggRecordTimeInfo],
         _cnt: i64,
         key: &str,
-        rule: &RuleNode,
     ) -> AggResult {
         let values: Vec<String> = self.value_2_cnt.drain().map(|(key, _)| key).collect(); // drainで初期化
         AggResult::new(
             values.len() as i64,
             key.to_string(),
             values,
-            datas[left as usize].record_time,
-            get_str_agg_eq(rule),
+            datas.first().unwrap().time,
+            datas.to_vec(),
         )
     }
 }
@@ -452,20 +441,13 @@ impl CountStrategy for NoFieldStrategy {
         self.cnt
     }
 
-    fn create_agg_result(
-        &mut self,
-        left: i64,
-        datas: &[AggRecordTimeInfo],
-        cnt: i64,
-        key: &str,
-        rule: &RuleNode,
-    ) -> AggResult {
+    fn create_agg_result(&mut self, datas: &[AggRecordTimeInfo], cnt: i64, key: &str) -> AggResult {
         let ret = AggResult::new(
             cnt,
             key.to_string(),
             vec![],
-            datas[left as usize].record_time,
-            get_str_agg_eq(rule),
+            datas.first().unwrap().time,
+            datas.to_vec(),
         );
         self.cnt = 0; //cntを初期化
         ret
@@ -484,11 +466,11 @@ fn _create_counter(rule: &RuleNode) -> Box<dyn CountStrategy> {
 }
 
 fn _get_timestamp(idx: i64, datas: &[AggRecordTimeInfo]) -> i64 {
-    datas[idx as usize].record_time.timestamp()
+    datas[idx as usize].time.timestamp()
 }
 
 fn _get_timestamp_subsec_nano(idx: i64, datas: &[AggRecordTimeInfo]) -> u32 {
-    datas[idx as usize].record_time.timestamp_subsec_nanos()
+    datas[idx as usize].time.timestamp_subsec_nanos()
 }
 
 // data[left]からdata[right-1]までのデータがtimeframeに収まっているか判定する
@@ -518,11 +500,11 @@ pub fn judge_timeframe(
 
     // AggRecordTimeInfoを時間順がソートされている前提で処理を進める
     let mut datas = time_datas.to_owned();
-    datas.sort_by(|a, b| a.record_time.cmp(&b.record_time));
+    datas.sort_by(|a, b| a.time.cmp(&b.time));
 
     // timeframeの設定がルールにない時は最初と最後の要素の時間差をtimeframeに設定する。
-    let def_frame = datas.last().unwrap().record_time.timestamp()
-        - datas.first().unwrap().record_time.timestamp();
+    let def_frame =
+        datas.last().unwrap().time.timestamp() - datas.first().unwrap().time.timestamp();
     let frame = get_sec_timeframe(rule, stored_static).unwrap_or(def_frame);
 
     // left <= i < rightの範囲にあるdata[i]がtimeframe内にあるデータであると考える
@@ -541,7 +523,7 @@ pub fn judge_timeframe(
         let cnt = counter.count();
         if select_aggcon(cnt, rule) {
             // 条件を満たすtimeframeが見つかった
-            ret.push(counter.create_agg_result(left, &datas, cnt, key, rule));
+            ret.push(counter.create_agg_result(&datas[left as usize..right as usize], cnt, key));
             left = right;
         } else {
             // 条件を満たさなかったので、rightとleftを+1ずらす
@@ -710,7 +692,7 @@ mod tests {
             "_".to_string(),
             vec![],
             Utc.with_ymd_and_hms(1977, 1, 1, 0, 0, 0).unwrap(),
-            ">= 1".to_string(),
+            vec![],
         )];
         check_count(
             rule_str,
@@ -763,14 +745,14 @@ mod tests {
                 "_".to_string(),
                 vec![],
                 Utc.with_ymd_and_hms(1977, 1, 1, 0, 0, 0).unwrap(),
-                ">= 1".to_string(),
+                vec![],
             ),
             AggResult::new(
                 1,
                 "_".to_string(),
                 vec![],
                 Utc.with_ymd_and_hms(1996, 2, 27, 1, 5, 1).unwrap(),
-                ">= 1".to_string(),
+                vec![],
             ),
         ];
         check_count(
@@ -803,7 +785,7 @@ mod tests {
             "_".to_string(),
             vec!["System".to_owned()],
             Utc.with_ymd_and_hms(1977, 1, 1, 0, 0, 0).unwrap(),
-            ">= 1".to_string(),
+            vec![],
         );
         check_count(
             rule_str,
@@ -853,14 +835,14 @@ mod tests {
                 "System".to_owned(),
                 vec!["7040".to_owned()],
                 Utc.with_ymd_and_hms(1977, 1, 1, 0, 0, 0).unwrap(),
-                ">= 1".to_string(),
+                vec![],
             ),
             AggResult::new(
                 1,
                 "Test".to_owned(),
                 vec!["9999".to_owned()],
                 Utc.with_ymd_and_hms(1996, 2, 27, 1, 5, 1).unwrap(),
-                ">= 1".to_string(),
+                vec![],
             ),
         ];
         check_count(
@@ -911,14 +893,14 @@ mod tests {
                 "Windows Event Log".to_owned(),
                 vec!["7040".to_owned()],
                 Utc.with_ymd_and_hms(1977, 1, 1, 0, 0, 0).unwrap(),
-                ">= 1".to_string(),
+                vec![],
             ),
             AggResult::new(
                 1,
                 "Test".to_owned(),
                 vec!["9999".to_owned()],
                 Utc.with_ymd_and_hms(1977, 1, 1, 0, 5, 0).unwrap(),
-                ">= 1".to_string(),
+                vec![],
             ),
         ];
         check_count(
@@ -1031,7 +1013,7 @@ mod tests {
             "System".to_owned(),
             vec!["7040".to_owned(), "9999".to_owned()],
             Utc.with_ymd_and_hms(1977, 1, 1, 0, 0, 0).unwrap(),
-            ">= 2".to_string(),
+            vec![],
         )];
         check_count(
             rule_str,
@@ -1081,7 +1063,7 @@ mod tests {
             "System".to_owned(),
             vec!["7040".to_owned(), "9999".to_owned()],
             default_time,
-            ">= 1".to_string(),
+            vec![],
         )];
         check_count(
             rule_str,
@@ -1111,7 +1093,7 @@ mod tests {
                 "_".to_owned(),
                 vec!["1".to_owned(), "2".to_owned(), "3".to_owned()],
                 default_time,
-                ">= 3".to_string(),
+                vec![],
             )];
             check_count(&rule_str, &recs, expected_count, expected_agg_result);
         }
@@ -1145,7 +1127,7 @@ mod tests {
                 "_".to_owned(),
                 vec!["1".to_owned(), "2".to_owned(), "3".to_owned()],
                 default_time,
-                ">= 3".to_string(),
+                vec![],
             )];
             check_count(&rule_str, &recs, expected_count, expected_agg_result);
         }
@@ -1179,7 +1161,7 @@ mod tests {
                 "_".to_owned(),
                 vec!["1".to_owned(), "2".to_owned(), "3".to_owned()],
                 default_time,
-                ">= 3".to_string(),
+                vec![],
             )];
             check_count(&rule_str, &recs, expected_count, expected_agg_result);
         }
@@ -1195,7 +1177,7 @@ mod tests {
                 "_".to_owned(),
                 vec!["1".to_owned(), "2".to_owned(), "3".to_owned()],
                 default_time,
-                ">= 3".to_string(),
+                vec![],
             )];
             check_count(&rule_str, &recs, expected_count, expected_agg_result);
         }
@@ -1219,7 +1201,7 @@ mod tests {
                 "_".to_owned(),
                 vec!["1".to_owned(), "2".to_owned(), "3".to_owned()],
                 default_time,
-                ">= 3".to_string(),
+                vec![],
             )];
             check_count(&rule_str, &recs, expected_count, expected_agg_result);
         }
@@ -1253,7 +1235,7 @@ mod tests {
                 "_".to_owned(),
                 vec!["1".to_owned(), "2".to_owned(), "3".to_owned()],
                 default_time,
-                ">= 3".to_string(),
+                vec![],
             )];
             check_count(&rule_str, &recs, expected_count, expected_agg_result);
         }
@@ -1287,7 +1269,7 @@ mod tests {
                 "_".to_owned(),
                 vec!["1".to_owned(), "2".to_owned(), "3".to_owned()],
                 default_time,
-                ">= 3".to_string(),
+                vec![],
             )];
             check_count(&rule_str, &recs, expected_count, expected_agg_result);
         }
@@ -1327,7 +1309,7 @@ mod tests {
                 "_".to_owned(),
                 vec!["1".to_owned(), "2".to_owned(), "3".to_owned()],
                 default_time,
-                ">= 3".to_string(),
+                vec![],
             )];
             check_count(&rule_str, &recs, expected_count, expected_agg_result);
         }
@@ -1367,7 +1349,7 @@ mod tests {
                 "_".to_owned(),
                 vec!["1".to_owned(), "2".to_owned(), "3".to_owned()],
                 default_time,
-                ">= 3".to_string(),
+                vec![],
             )];
             check_count(&rule_str, &recs, expected_count, expected_agg_result);
         }
@@ -1415,7 +1397,7 @@ mod tests {
                 "_".to_owned(),
                 vec!["1".to_owned()],
                 default_time,
-                ">= 1".to_string(),
+                vec![],
             )];
             check_count(&rule_str, &recs, expected_count, expected_agg_result);
         }
@@ -1437,7 +1419,7 @@ mod tests {
                 "Windows Event Log".to_owned(),
                 vec!["1".to_owned()],
                 default_time,
-                ">= 1".to_string(),
+                vec![],
             )];
             check_count(&rule_str, &recs, expected_count, expected_agg_result);
         }
@@ -1475,7 +1457,7 @@ mod tests {
             "_".to_owned(),
             vec!["1".to_owned(), "2".to_owned(), "3".to_owned()],
             Utc.with_ymd_and_hms(1977, 1, 9, 1, 30, 0).unwrap(),
-            ">= 3".to_string(),
+            vec![],
         )];
         check_count(&rule_str, &recs, expected_count, expected_agg_result);
     }
@@ -1526,7 +1508,7 @@ mod tests {
                     "4".to_owned(),
                 ],
                 Utc.with_ymd_and_hms(1977, 1, 9, 1, 30, 0).unwrap(),
-                ">= 4".to_string(),
+                vec![],
             )];
 
             check_count(&rule_str, &recs, expected_count, expected_agg_result);
@@ -1554,7 +1536,7 @@ mod tests {
                 "_".to_owned(),
                 vec!["1".to_owned(), "2".to_owned(), "3".to_owned()],
                 Utc.with_ymd_and_hms(1977, 1, 9, 1, 30, 0).unwrap(),
-                ">= 3".to_string(),
+                vec![],
             )];
 
             check_count(&rule_str, &recs, expected_count, expected_agg_result);
@@ -1604,7 +1586,7 @@ mod tests {
                         "4".to_owned(),
                     ],
                     Utc.with_ymd_and_hms(1977, 1, 9, 1, 30, 0).unwrap(),
-                    ">= 4".to_string(),
+                    vec![],
                 ),
                 AggResult::new(
                     4,
@@ -1616,7 +1598,7 @@ mod tests {
                         "4".to_owned(),
                     ],
                     Utc.with_ymd_and_hms(1977, 1, 9, 5, 30, 0).unwrap(),
-                    ">= 4".to_string(),
+                    vec![],
                 ),
                 AggResult::new(
                     4,
@@ -1628,7 +1610,7 @@ mod tests {
                         "4".to_owned(),
                     ],
                     Utc.with_ymd_and_hms(1977, 1, 9, 9, 30, 0).unwrap(),
-                    ">= 4".to_string(),
+                    vec![],
                 ),
             ];
 
@@ -1666,7 +1648,7 @@ mod tests {
                 "_".to_owned(),
                 vec!["2".to_owned(), "3".to_owned(), "4".to_owned()],
                 Utc.with_ymd_and_hms(1977, 1, 9, 3, 30, 0).unwrap(),
-                ">= 3".to_string(),
+                vec![],
             ),
             AggResult::new(
                 4,
@@ -1678,7 +1660,7 @@ mod tests {
                     "5".to_owned(),
                 ],
                 Utc.with_ymd_and_hms(1977, 1, 9, 20, 00, 0).unwrap(),
-                ">= 3".to_string(),
+                vec![],
             ),
         ];
         check_count(&rule_str, &recs, expected_count, expected_agg_result);
@@ -1773,7 +1755,6 @@ mod tests {
         let mut expect_key = vec![];
         let mut expect_field_values = vec![];
         let mut expect_start_timedate = vec![];
-        let mut expect_condition_op_num = vec![];
         for expect_agg in expect_agg_results {
             let expect_count = expected_counts.get(&expect_agg.key).unwrap_or(&-1);
             //countupの関数が機能しているかを確認
@@ -1785,7 +1766,6 @@ mod tests {
             expect_key.push(expect_agg.key);
             expect_field_values.push(expect_agg.field_values);
             expect_start_timedate.push(expect_agg.start_timedate);
-            expect_condition_op_num.push(expect_agg.condition_op_num);
         }
         for agg_result in agg_results {
             println!("{}", &agg_result.start_timedate);
@@ -1801,7 +1781,6 @@ mod tests {
                 // field`要素の順番については以降の処理で関連しない
                 assert!(agg_result.field_values.contains(expect_field_value));
             }
-            assert_eq!(agg_result.condition_op_num, expect_condition_op_num[index]);
         }
     }
 }
