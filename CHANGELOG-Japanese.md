@@ -12,6 +12,8 @@
 - `Data`フィールドは、すべて`Data`フィールドとして、またはJSONの配列としてではなく、インデックス化された文字列として表示されるようになった。(#1371) (@fukusuket)
   - 前: `"Data": ["17514", "Multiprocessor Free", "Service Pack 1"]`
   - 後: `"Data[3]": "17514", "Data[4]": "Multiprocessor Free", "Data[5]": "Service Pack 1"`
+- リリースパッケージのファイル数を減らすために、`config`フォルダ内の設定ファイルもバイナリに埋め込まれるようにした。 (#1370) (@hitenkoku)
+  - 注意: `set-default-profile`コマンドは、`config/default_profile.yaml`に依存しているので、`config`ディレクトリファイルがないと実行できない。
 
 ## 2.16.0 [2024/06/11]
 

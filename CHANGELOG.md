@@ -12,6 +12,8 @@
 - `Data` fields are now displayed as indexed strings instead of as all `Data` fields or in an array for JSON. (#1371) (@fukusuket)
   - Before: `"Data": ["17514", "Multiprocessor Free", "Service Pack 1"]`
   - After: `"Data[3]": "17514", "Data[4]": "Multiprocessor Free", "Data[5]": "Service Pack 1"`
+- The configuration files in the `config` folder are now also embedded in the binary to reduce the number of files in the release package. (#1370) (@hitenkoku)
+  - Note: you will not be able to run the `set-default-profile` command without the `config` directory files as it relies on `config/default_profile.yaml`.
 
 ## 2.16.0 [2024/06/11]
 
