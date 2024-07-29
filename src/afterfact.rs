@@ -1002,13 +1002,17 @@ pub fn get_duplicate_idxes(detect_infos: &mut [DetectInfo]) -> HashSet<usize> {
 
 /// level_color.txtファイルを読み込み対応する文字色のマッピングを返却する関数
 pub fn create_output_color_map(no_color_flag: bool) -> HashMap<CompactString, Colors> {
-    let path = utils::check_setting_path(
-        &CURRENT_EXE_PATH.to_path_buf(),
-        "config/level_color.txt",
-        false,
-    );
-    let read_result = if let Some(config_path) = path {
-        utils::read_csv(config_path.to_str().unwrap())
+    let path = utils::check_setting_path(Path::new("."), "config/level_color.txt", false)
+        .unwrap_or_else(|| {
+            utils::check_setting_path(
+                &CURRENT_EXE_PATH.to_path_buf(),
+                "config/level_color.txt",
+                false,
+            )
+            .unwrap_or_default()
+        });
+    let read_result = if path.display().to_string().is_empty() {
+        utils::read_csv(path.to_str().unwrap())
     } else {
         let level_color = LevelColor::get("level_color.txt").unwrap();
         let embed_level_color =
