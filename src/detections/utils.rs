@@ -34,6 +34,12 @@ use crate::options::htmlreport;
 use super::configs::{EventKeyAliasConfig, OutputOption, STORED_EKEY_ALIAS};
 use super::detection::EvtxRecordInfo;
 use super::message::AlertMessage;
+use rust_embed::Embed;
+
+#[derive(Embed)]
+#[folder = "config"]
+#[include = "default_profile_name.txt"]
+pub struct DefaultProfileName;
 
 pub fn concat_selection_key(key_list: &Nested<String>) -> String {
     return key_list
@@ -166,13 +172,18 @@ pub fn read_csv(filename: &str) -> Result<Nested<Vec<String>>, String> {
         return Result::Err(format!("Cannot open file. [file:{filename}]"));
     }
     let mut contents: String = String::new();
-    let mut ret = Nested::<Vec<String>>::new();
     let read_res = f.unwrap().read_to_string(&mut contents);
     if let Err(e) = read_res {
         return Result::Err(e.to_string());
     }
 
-    let mut rdr = csv::ReaderBuilder::new().from_reader(contents.as_bytes());
+    let csv_res = parse_csv(&contents);
+    Result::Ok(csv_res)
+}
+
+pub fn parse_csv(file_contents: &str) -> Nested<Vec<String>> {
+    let mut ret = Nested::<Vec<String>>::new();
+    let mut rdr = csv::ReaderBuilder::new().from_reader(file_contents.as_bytes());
     rdr.records().for_each(|r| {
         if r.is_err() {
             return;
@@ -184,7 +195,7 @@ pub fn read_csv(filename: &str) -> Result<Nested<Vec<String>>, String> {
         ret.push(v);
     });
 
-    Result::Ok(ret)
+    ret
 }
 
 pub fn get_event_id_key() -> String {
@@ -691,7 +702,7 @@ pub fn output_profile_name(output_option: &Option<OutputOption>, stdout: bool) {
     // output profile name
     if let Some(profile_opt) = output_option {
         // default profile name check
-        let default_profile_name = read_to_string(
+        let default_profile_name = if let Ok(name) = read_to_string(
             check_setting_path(
                 &CURRENT_EXE_PATH.to_path_buf(),
                 "config/default_profile_name.txt",
@@ -700,8 +711,14 @@ pub fn output_profile_name(output_option: &Option<OutputOption>, stdout: bool) {
             .unwrap()
             .to_str()
             .unwrap(),
-        )
-        .unwrap_or("n/a".into());
+        ) {
+            name.trim().to_string()
+        } else {
+            let default_profile_name = DefaultProfileName::get("default_profile_name.txt").unwrap();
+            std::str::from_utf8(default_profile_name.data.as_ref())
+                .unwrap_or("n/a")
+                .to_string()
+        };
 
         // user input profile option
         let profile_name = profile_opt

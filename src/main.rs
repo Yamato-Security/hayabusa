@@ -172,14 +172,6 @@ impl App {
             return;
         }
 
-        // 実行時のexeファイルのパスをベースに変更する必要があるためデフォルトの値であった場合はそのexeファイルと同一階層を探すようにする
-        if !CURRENT_EXE_PATH.join("config").exists() && !Path::new("./config").exists() {
-            AlertMessage::alert(
-                "Hayabusa could not find the config directory.\nPlease make sure that it is in the same directory as the hayabusa executable."
-            )
-            .ok();
-            return;
-        }
         // カレントディレクトリ以外からの実行の際にrules-configオプションの指定がないとエラーが発生することを防ぐための処理
         if stored_static.config_path == Path::new("./rules/config") {
             stored_static.config_path =
@@ -681,6 +673,12 @@ impl App {
                 return;
             }
             Action::SetDefaultProfile(_) => {
+                let is_existed_config_path = CURRENT_EXE_PATH.to_path_buf().join("config").exists()
+                    || Path::new("config").exists();
+                if !is_existed_config_path {
+                    println!("Default profile cannot be set due to the absence of a config folder. Please check the config folder.");
+                    return;
+                }
                 if let Err(e) = set_default_profile(
                     check_setting_path(
                         &CURRENT_EXE_PATH.to_path_buf(),
@@ -701,8 +699,6 @@ impl App {
                     stored_static,
                 ) {
                     AlertMessage::alert(&e).ok();
-                } else {
-                    println!("Successfully updated the default profile.");
                 }
                 return;
             }
@@ -1513,7 +1509,9 @@ impl App {
                     "{:?}",
                     &evtx_file.to_str().unwrap_or_default().replace('\\', "/")
                 );
-                pb.set_message(pb_msg);
+                if !pb_msg.is_empty() {
+                    pb.set_message(pb_msg);
+                }
             }
 
             let (detection_tmp, cnt_tmp, tl_tmp, recover_cnt_tmp, mut detect_infos) =

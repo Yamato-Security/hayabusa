@@ -58,7 +58,7 @@ impl ParseYaml {
         }
     }
 
-    pub fn read_file(path: PathBuf) -> Result<String, String> {
+    pub fn read_file(path: &PathBuf) -> Result<String, String> {
         let mut file_content = String::new();
 
         let mut fr = fs::File::open(path)
@@ -145,7 +145,7 @@ impl ParseYaml {
             }
 
             // 個別のファイルの読み込みは即終了としない。
-            let read_content = Self::read_file(path.as_ref().to_path_buf());
+            let read_content = Self::read_file(&path.as_ref().to_path_buf());
             if read_content.is_err() {
                 let errmsg = format!(
                     "fail to read file: {}\n{} ",
@@ -234,7 +234,7 @@ impl ParseYaml {
                 }
 
                 // 個別のファイルの読み込みは即終了としない。
-                let read_content = Self::read_file(path);
+                let read_content = Self::read_file(&path);
                 if read_content.is_err() {
                     let errmsg = format!(
                         "fail to read file: {}\n{} ",
@@ -526,7 +526,7 @@ pub fn count_rules<P: AsRef<Path>>(
         }
 
         // 個別のファイルの読み込みは即終了としない。
-        let read_content = ParseYaml::read_file(path.as_ref().to_path_buf());
+        let read_content = ParseYaml::read_file(&path.as_ref().to_path_buf());
         if read_content.is_err() {
             return HashMap::default();
         }
@@ -582,7 +582,7 @@ pub fn count_rules<P: AsRef<Path>>(
                 }
 
                 // 個別のファイルの読み込みは即終了としない。
-                let read_content = ParseYaml::read_file(path);
+                let read_content = ParseYaml::read_file(&path);
                 if read_content.is_err() {
                     return io::Result::Ok(ret);
                 }
@@ -847,7 +847,7 @@ mod tests {
     #[test]
     fn test_read_yaml() {
         let path = Path::new("test_files/rules/yaml/1.yml");
-        let ret = ParseYaml::read_file(path.to_path_buf()).unwrap();
+        let ret = ParseYaml::read_file(&path.to_path_buf()).unwrap();
         let rule = YamlLoader::load_from_str(&ret).unwrap();
         for i in rule {
             if i["title"].as_str().unwrap() == "Sysmon Check command lines" {
@@ -863,7 +863,7 @@ mod tests {
     #[test]
     fn test_failed_read_yaml() {
         let path = Path::new("test_files/rules/yaml/error.yml");
-        let ret = ParseYaml::read_file(path.to_path_buf()).unwrap();
+        let ret = ParseYaml::read_file(&(path.to_path_buf())).unwrap();
         let rule = YamlLoader::load_from_str(&ret);
         assert!(rule.is_err());
     }
