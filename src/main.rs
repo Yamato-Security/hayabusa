@@ -673,8 +673,9 @@ impl App {
                 return;
             }
             Action::SetDefaultProfile(_) => {
-                let config_path = &CURRENT_EXE_PATH.to_path_buf().join("config");
-                if !config_path.exists() {
+                let is_existed_config_path = CURRENT_EXE_PATH.to_path_buf().join("config").exists()
+                    || Path::new("config").exists();
+                if !is_existed_config_path {
                     println!("Default profile cannot be set due to the absence of a config folder. Please check the config folder.");
                     return;
                 }
@@ -698,8 +699,6 @@ impl App {
                     stored_static,
                 ) {
                     AlertMessage::alert(&e).ok();
-                } else {
-                    println!("Successfully updated the default profile.");
                 }
                 return;
             }
