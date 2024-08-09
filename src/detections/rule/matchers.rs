@@ -3049,10 +3049,10 @@ mod tests {
           }
         }"#;
 
-        check_select(&rule_str_en_dash, record_json_str, true);
-        check_select(&rule_str_em_dash, record_json_str, true);
-        check_select(&rule_str_horizontal_bar, record_json_str, true);
-        check_select(&rule_str_horizontal_bar, record_json_str, true);
+        check_select(rule_str_en_dash, record_json_str, true);
+        check_select(rule_str_em_dash, record_json_str, true);
+        check_select(rule_str_horizontal_bar, record_json_str, true);
+        check_select(rule_str_horizontal_bar, record_json_str, true);
     }
 
     #[test]
