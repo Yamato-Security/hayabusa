@@ -618,12 +618,32 @@ impl LeafMatcher for DefaultMatcher {
                     FastMatch::StartsWith(s) => Self::starts_with_ignore_case(event_value_str, s),
                     FastMatch::EndsWith(s) => Self::ends_with_ignore_case(event_value_str, s),
                     FastMatch::Contains(s) | FastMatch::AllOnly(s) => {
-                        Some(utils::contains_str(&event_value_str.to_lowercase(), s))
+                        if self.pipes.contains(&PipeElement::Windash) {
+                            Some(utils::contains_str(
+                                &event_value_str
+                                    .replacen(['-', '–', '—', '―'], "/", 1)
+                                    .to_lowercase(),
+                                s,
+                            ))
+                        } else {
+                            Some(utils::contains_str(&event_value_str.to_lowercase(), s))
+                        }
                     }
                 }
             } else {
                 Some(fast_matcher.iter().any(|fm| match fm {
-                    FastMatch::Contains(s) => utils::contains_str(event_value_str, s),
+                    FastMatch::Contains(s) => {
+                        if self.pipes.contains(&PipeElement::Windash) {
+                            utils::contains_str(
+                                &event_value_str
+                                    .replacen(['-', '–', '—', '―'], "/", 1)
+                                    .to_lowercase(),
+                                s,
+                            )
+                        } else {
+                            utils::contains_str(event_value_str, s)
+                        }
+                    }
                     _ => false,
                 }))
             };
