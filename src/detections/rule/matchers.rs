@@ -3069,10 +3069,57 @@ mod tests {
           }
         }"#;
 
+        let record_json_str_en = r#"
+        {
+          "Event": {
+            "System": {
+              "EventID": 1,
+              "Channel": "Microsoft-Windows-Sysmon/Operational"
+            },
+            "EventData": {
+              "CommandLine": "test –addstore"
+            }
+          }
+        }"#;
+
+        let record_json_str_em = r#"
+        {
+          "Event": {
+            "System": {
+              "EventID": 1,
+              "Channel": "Microsoft-Windows-Sysmon/Operational"
+            },
+            "EventData": {
+              "CommandLine": "test —addstore"
+            }
+          }
+        }"#;
+
+        let record_json_str_horizontal = r#"
+        {
+          "Event": {
+            "System": {
+              "EventID": 1,
+              "Channel": "Microsoft-Windows-Sysmon/Operational"
+            },
+            "EventData": {
+              "CommandLine": "test ―addstore"
+            }
+          }
+        }"#;
+
         check_select(rule_str_en_dash, record_json_str, true);
+        check_select(rule_str_en_dash, record_json_str_en, true);
+        check_select(rule_str_en_dash, record_json_str_em, true);
+        check_select(rule_str_en_dash, record_json_str_horizontal, true);
         check_select(rule_str_em_dash, record_json_str, true);
+        check_select(rule_str_em_dash, record_json_str_en, true);
+        check_select(rule_str_em_dash, record_json_str_em, true);
+        check_select(rule_str_em_dash, record_json_str_horizontal, true);
         check_select(rule_str_horizontal_bar, record_json_str, true);
-        check_select(rule_str_horizontal_bar, record_json_str, true);
+        check_select(rule_str_horizontal_bar, record_json_str_en, true);
+        check_select(rule_str_horizontal_bar, record_json_str_em, true);
+        check_select(rule_str_horizontal_bar, record_json_str_horizontal, true);
     }
 
     #[test]
