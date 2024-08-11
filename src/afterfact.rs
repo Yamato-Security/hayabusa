@@ -1925,6 +1925,14 @@ pub fn output_json_str(
                             &mut children_output_stock,
                             &mut children_output_order,
                         );
+                    } else if details_target_stock.is_empty() {
+                        output_stock.push(format!("{}\"{}\": {{}}", " ".repeat(4), key));
+                        if jsonl_output_flag {
+                            target.push(output_stock.join(""));
+                        } else {
+                            target.push(output_stock.join("\n"));
+                        }
+                        continue;
                     } else {
                         process_target_stock(
                             details_target_stock,
