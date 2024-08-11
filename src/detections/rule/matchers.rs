@@ -474,7 +474,7 @@ impl LeafMatcher for DefaultMatcher {
                 pattern.push(pattern[0].replacen('-', "/", 1));
                 fastmatches.extend(
                     Self::convert_to_fast_match(
-                        format!("*{}*", pattern[0].replacen('-', "/", 1)).as_str(),
+                        format!("*{}*", pattern[0].replacen(['-', '–', '—', '―'], "/", 1)).as_str(),
                         true,
                     )
                     .unwrap_or_default(),
@@ -492,10 +492,10 @@ impl LeafMatcher for DefaultMatcher {
                 let mut fastmatches =
                     Self::convert_to_fast_match(format!("*{}*", pattern[0]).as_str(), true)
                         .unwrap_or_default();
-                pattern.push(pattern[0].replacen('-', "/", 1));
+                pattern.push(pattern[0].replacen(['-', '–', '—', '―'], "/", 1));
                 fastmatches.extend(
                     Self::convert_to_fast_match(
-                        format!("*{}*", pattern[0].replacen('-', "/", 1)).as_str(),
+                        format!("*{}*", pattern[0].replacen(['-', '–', '—', '―'], "/", 1)).as_str(),
                         true,
                     )
                     .unwrap_or_default(),
@@ -618,12 +618,32 @@ impl LeafMatcher for DefaultMatcher {
                     FastMatch::StartsWith(s) => Self::starts_with_ignore_case(event_value_str, s),
                     FastMatch::EndsWith(s) => Self::ends_with_ignore_case(event_value_str, s),
                     FastMatch::Contains(s) | FastMatch::AllOnly(s) => {
-                        Some(utils::contains_str(&event_value_str.to_lowercase(), s))
+                        if self.pipes.contains(&PipeElement::Windash) {
+                            Some(utils::contains_str(
+                                &event_value_str
+                                    .replacen(['-', '–', '—', '―'], "/", 1)
+                                    .to_lowercase(),
+                                s,
+                            ))
+                        } else {
+                            Some(utils::contains_str(&event_value_str.to_lowercase(), s))
+                        }
                     }
                 }
             } else {
                 Some(fast_matcher.iter().any(|fm| match fm {
-                    FastMatch::Contains(s) => utils::contains_str(event_value_str, s),
+                    FastMatch::Contains(s) => {
+                        if self.pipes.contains(&PipeElement::Windash) {
+                            utils::contains_str(
+                                &event_value_str
+                                    .replacen(['-', '–', '—', '―'], "/", 1)
+                                    .to_lowercase(),
+                                s,
+                            )
+                        } else {
+                            utils::contains_str(event_value_str, s)
+                        }
+                    }
                     _ => false,
                 }))
             };
@@ -3010,5 +3030,221 @@ mod tests {
         }"#;
         check_select(rule_str, record_json_str, true);
         check_select(rule_str, record_json_str2, false);
+    }
+
+    #[test]
+    fn test_contains_windash_multitype_dash() {
+        let rule_str_en_dash = r#"
+        enabled: true
+        detection:
+            selection1:
+                'CommandLine|contains|windash': '–addstore'
+            condition: selection1
+        "#;
+        let rule_str_em_dash = r#"
+        enabled: true
+        detection:
+            selection1:
+                'CommandLine|contains|windash': '—addstore'
+            condition: selection1
+        "#;
+        let rule_str_horizontal_bar = r#"
+        enabled: true
+        detection:
+            selection1:
+                'CommandLine|contains|windash': '―addstore'
+            condition: selection1
+        "#;
+
+        let record_json_str = r#"
+        {
+          "Event": {
+            "System": {
+              "EventID": 1,
+              "Channel": "Microsoft-Windows-Sysmon/Operational"
+            },
+            "EventData": {
+              "CommandLine": "test /addstore"
+            }
+          }
+        }"#;
+
+        let record_json_str_en = r#"
+        {
+          "Event": {
+            "System": {
+              "EventID": 1,
+              "Channel": "Microsoft-Windows-Sysmon/Operational"
+            },
+            "EventData": {
+              "CommandLine": "test –addstore"
+            }
+          }
+        }"#;
+
+        let record_json_str_em = r#"
+        {
+          "Event": {
+            "System": {
+              "EventID": 1,
+              "Channel": "Microsoft-Windows-Sysmon/Operational"
+            },
+            "EventData": {
+              "CommandLine": "test —addstore"
+            }
+          }
+        }"#;
+
+        let record_json_str_horizontal = r#"
+        {
+          "Event": {
+            "System": {
+              "EventID": 1,
+              "Channel": "Microsoft-Windows-Sysmon/Operational"
+            },
+            "EventData": {
+              "CommandLine": "test ―addstore"
+            }
+          }
+        }"#;
+
+        check_select(rule_str_en_dash, record_json_str, true);
+        check_select(rule_str_en_dash, record_json_str_en, true);
+        check_select(rule_str_en_dash, record_json_str_em, true);
+        check_select(rule_str_en_dash, record_json_str_horizontal, true);
+        check_select(rule_str_em_dash, record_json_str, true);
+        check_select(rule_str_em_dash, record_json_str_en, true);
+        check_select(rule_str_em_dash, record_json_str_em, true);
+        check_select(rule_str_em_dash, record_json_str_horizontal, true);
+        check_select(rule_str_horizontal_bar, record_json_str, true);
+        check_select(rule_str_horizontal_bar, record_json_str_en, true);
+        check_select(rule_str_horizontal_bar, record_json_str_em, true);
+        check_select(rule_str_horizontal_bar, record_json_str_horizontal, true);
+    }
+
+    #[test]
+    fn test_contains_all_windash_multitype_dash() {
+        let rule_str_en_dash = r#"
+        enabled: true
+        detection:
+            selection1:
+                'CommandLine|contains|all|windash':
+                    - '–addstore'
+                    - '–test–test'
+            condition: selection1
+        "#;
+
+        let rule_str_em_dash = r#"
+        enabled: true
+        detection:
+            selection1:
+                'CommandLine|contains|all|windash':
+                    - '—addstore'
+                    - '—test—test'
+            condition: selection1
+        "#;
+
+        let rule_str_horizontal_bar = r#"
+        enabled: true
+        detection:
+            selection1:
+                'CommandLine|contains|all|windash':
+                    - '―addstore'
+                    - '―test―test'
+            condition: selection1
+        "#;
+
+        let record_json_str_en_dash = r#"
+        {
+          "Event": {
+            "System": {
+              "EventID": 1,
+              "Channel": "Microsoft-Windows-Sysmon/Operational"
+            },
+            "EventData": {
+              "CommandLine": "test –test–test /addstore"
+            }
+          }
+        }"#;
+
+        let record_json_str_en_dash2 = r#"
+        {
+          "Event": {
+            "System": {
+              "EventID": 1,
+              "Channel": "Microsoft-Windows-Sysmon/Operational"
+            },
+            "EventData": {
+              "CommandLine": "test /test/test –addstore"
+            }
+          }
+        }"#;
+
+        let record_json_str_em_dash = r#"
+        {
+          "Event": {
+            "System": {
+              "EventID": 1,
+              "Channel": "Microsoft-Windows-Sysmon/Operational"
+            },
+            "EventData": {
+              "CommandLine": "test —test—test /addstore"
+            }
+          }
+        }"#;
+
+        let record_json_str_em_dash2 = r#"
+        {
+          "Event": {
+            "System": {
+              "EventID": 1,
+              "Channel": "Microsoft-Windows-Sysmon/Operational"
+            },
+            "EventData": {
+              "CommandLine": "test /test/test —addstore"
+            }
+          }
+        }"#;
+
+        let record_json_str_horizontal_bar = r#"
+        {
+          "Event": {
+            "System": {
+              "EventID": 1,
+              "Channel": "Microsoft-Windows-Sysmon/Operational"
+            },
+            "EventData": {
+              "CommandLine": "test ―test―test /addstore"
+            }
+          }
+        }"#;
+
+        let record_json_str_horizontal_bar2 = r#"
+        {
+          "Event": {
+            "System": {
+              "EventID": 1,
+              "Channel": "Microsoft-Windows-Sysmon/Operational"
+            },
+            "EventData": {
+              "CommandLine": "test /test/test ―addstore"
+            }
+          }
+        }"#;
+
+        check_select(rule_str_en_dash, record_json_str_en_dash, true);
+        check_select(rule_str_en_dash, record_json_str_en_dash2, false);
+        check_select(rule_str_em_dash, record_json_str_em_dash, true);
+        check_select(rule_str_em_dash, record_json_str_em_dash2, false);
+        check_select(
+            rule_str_horizontal_bar,
+            record_json_str_horizontal_bar,
+            true,
+        );
+        check_select(
+            rule_str_horizontal_bar,
+            record_json_str_horizontal_bar2,
+            false,
+        );
     }
 }
