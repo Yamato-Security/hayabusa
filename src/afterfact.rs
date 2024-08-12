@@ -1860,6 +1860,10 @@ pub fn output_json_str(
             ))
             && vec_data.is_empty()
         {
+            if matches!(profile, Profile::Details(_)) && val == "-" {
+                target.push(format!("{}\"{}\": {{}}", " ".repeat(4), key));
+                continue;
+            }
             let tmp_val: Vec<&str> = val.split(": ").collect();
             let output_val =
                 _convert_valid_json_str(&tmp_val, matches!(profile, Profile::AllFieldInfo(_)));
@@ -1907,14 +1911,8 @@ pub fn output_json_str(
                         HashMap::new();
                     let mut children_output_order = vec![];
                     if detect_info.agg_result.is_some() {
-                        if details_target_stock[0] == "-" {
-                            output_stock.push(_create_json_output_format(
-                                key,
-                                details_target_stock[0].as_str(),
-                                key.starts_with('\"'),
-                                details_target_stock[0].starts_with('\"'),
-                                4,
-                            ));
+                        if details_target_stock.is_empty() || details_target_stock[0] == "-" {
+                            output_stock.push(format!("{}\"{}\": {{}}", " ".repeat(4), key));
                             if jsonl_output_flag {
                                 target.push(output_stock.join(""));
                             } else {
@@ -1931,6 +1929,14 @@ pub fn output_json_str(
                             &mut children_output_stock,
                             &mut children_output_order,
                         );
+                    } else if details_target_stock.is_empty() {
+                        output_stock.push(format!("{}\"{}\": {{}}", " ".repeat(4), key));
+                        if jsonl_output_flag {
+                            target.push(output_stock.join(""));
+                        } else {
+                            target.push(output_stock.join("\n"));
+                        }
+                        continue;
                     } else {
                         process_target_stock(
                             details_target_stock,

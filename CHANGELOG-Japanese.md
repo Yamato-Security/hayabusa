@@ -13,6 +13,7 @@
   - 前: `"Data": ["17514", "Multiprocessor Free", "Service Pack 1"]`
   - 後: `"Data[3]": "17514", "Data[4]": "Multiprocessor Free", "Data[5]": "Service Pack 1"`
 - 集計ルールのアラートに、複数の結果がある場合でも`Channel`と`EventID`の情報が表示されるようにした。 (#1342) (@fukusuket)
+- JSONタイムラインで`Details`フィールドに情報がない場合、JSONがパースしやすくなるように、デフォルトで出力される`"-"`を`{}`に変更した。(#1386) (@hitenkoku)
 - シグネチャーバイパスを防ぐため、`-` (エンダッシュ)、`-` (エムダッシュ)、`―` (水平バー) 文字を `windash` 修飾子でサポートするようにした。(#1392) (@hitenkoku)
 
 **バグ修正:**
