@@ -1,6 +1,6 @@
 # 変更点
 
-## x.x.x [xxxx/xx/xx]
+## 2.17.0 [2024/08/23] "HITCON Community Release"
 
 **改善:**
 
@@ -8,12 +8,13 @@
 - Sigma相関ルールの`name`ルックアップに対応した。 (#1363) (@fukusuket)
 - デフォルトで低メモリモードを有効にした。`-s, --low-memory-mode`は、`-s, --sort-events` - 出力/保存する前に結果をソートする。(注意: より多くのメモリを消費する。）(#1361) (@hitenkoku)
   - 注意: `-R, --remove-duplicate-data`または`-X, --remove-duplicate-detections`を使用するには、ソートを有効にする必要がある。
-- Sigma相関ルールが参照しているルールは、デフォルトで結果を出力しないようにした。`generate: true`を指定すると、出力される。 (#1367) (@fukusuket)
+- Sigma相関ルールが参照しているルールは、デフォルトで結果を出力しないようにした。ルールに`generate: true`を指定すると、出力される。 (#1367) (@fukusuket)
 - `Data`フィールドは、すべて`Data`フィールドとして、またはJSONの配列としてではなく、インデックス化された文字列として表示されるようになった。(#1371) (@fukusuket)
   - 前: `"Data": ["17514", "Multiprocessor Free", "Service Pack 1"]`
   - 後: `"Data[3]": "17514", "Data[4]": "Multiprocessor Free", "Data[5]": "Service Pack 1"`
 - 集計ルールのアラートに、複数の結果がある場合でも`Channel`と`EventID`の情報が表示されるようにした。 (#1342) (@fukusuket)
 - `Details`フィールドに情報がない場合、JSONの解析を容易にするために、デフォルトで出力される`"-"`を`{}`に変更した。(#1386) (@hitenkoku)
+- シグネチャーバイパスを防ぐため、`-` (エンダッシュ)、`-` (エムダッシュ)、`―` (水平バー) 文字を `windash` 修飾子でサポートするようにした。(#1392) (@hitenkoku)
 
 **バグ修正:**
 - Sigmaの相関ルールのカウントが`Events with hits`に表示されていなかった。(#1373) (@fukusuket)

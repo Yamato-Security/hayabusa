@@ -1,6 +1,6 @@
 # Changes
 
-## x.x.x [xxxx/xx/xx]
+## 2.17.0 [2024/08/23] "HITCON Community Release"
 
 **Enhancements:**
 
@@ -8,19 +8,20 @@
 - Added support for Sigma correlation rule's `name` lookup. (#1363) (@fukusuket)
 - Enabled low memory mode by default. `-s, --low-memory-mode` is now `-s, --sort-events` - Sort events before outputting results. (warning: this uses much more memory!). (#1361) (@hitenkoku)
   - Note: you need to enable sorting in order to use  `-R, --remove-duplicate-data` and `-X, --remove-duplicate-detections`.
-- Sigma correlation reference rules now do not output alerts by default. You can enable them by adding `generate: true`. (#1367) (@fukusuket)
+- Sigma correlation reference rules now do not output alerts by default. You can enable them by adding `generate: true` to the rule. (#1367) (@fukusuket)
 - `Data` fields are now displayed as indexed strings instead of as all `Data` fields or in an array for JSON. (#1371) (@fukusuket)
   - Before: `"Data": ["17514", "Multiprocessor Free", "Service Pack 1"]`
   - After: `"Data[3]": "17514", "Data[4]": "Multiprocessor Free", "Data[5]": "Service Pack 1"`
 - Aggregation rule alerts now show `Channel` and `EventID` information even when there are multiple results. (#1342) (@fukusuket)
 - When there is no information in the `Details` field, we changed the default output of `"-"` to `{}` in order to make parsing the JSON easier. (#1386) (@hitenkoku)
+- Added support for the `–` (en dash), `—` (em dash), and `―` (horizontal bar) characters for the `windash` modifier to prevent signature bypass. (#1392) (@hitenkoku)
 
 **Bug Fixes:**
 - Sigma correlation rule count was not showing up in `Events with hits`. (#1373) (@fukusuket)
 - Correlation rule count was not showing up in `Events with hits`. (#1374) (@fukusuket)
 - Aggregation condition rule count was not showing up in `Events with hits`. (#1375) (@fukusuket)
 
-## 2.16.0 [2024/06/11]
+## 2.16.0 [2024/06/11] "FIRSTCON24 Release"
 
 **New Features:**
 
