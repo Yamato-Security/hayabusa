@@ -330,7 +330,7 @@ pub fn set_default_profile(
                                 .map(BufWriter::new)
                             {
                                 default_name_buf_wtr.write_all(profile_name.as_bytes()).ok();
-                                println!("Successfully updated the default profile.");
+                                println!("Successfully updated the default profile.\n");
                             }
                             Ok(())
                         }

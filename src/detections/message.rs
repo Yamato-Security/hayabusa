@@ -88,13 +88,15 @@ pub fn create_output_filter_config(
     is_lower_case: bool,
 ) -> HashMap<CompactString, CompactString> {
     let mut ret: HashMap<CompactString, CompactString> = HashMap::new();
-    let read_result = if path.starts_with("config/") {
-        let mitre_tactics = Mitretactics::get("mitre_tactics.txt").unwrap();
-        utils::parse_csv(std::str::from_utf8(mitre_tactics.data.as_ref()).unwrap_or_default())
-    } else {
-        match utils::read_csv(path) {
-            Ok(c) => c,
-            Err(e) => {
+    let read_result = match utils::read_csv(path) {
+        Ok(c) => c,
+        Err(e) => {
+            if path.contains("mitre_tactics.txt") {
+                let mitre_tactics = Mitretactics::get("mitre_tactics.txt").unwrap();
+                utils::parse_csv(
+                    std::str::from_utf8(mitre_tactics.data.as_ref()).unwrap_or_default(),
+                )
+            } else {
                 AlertMessage::alert(&e).ok();
                 Nested::new()
             }
