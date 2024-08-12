@@ -177,9 +177,7 @@ pub fn load_profile(
     profile_path: &str,
     opt_stored_static: Option<&StoredStatic>,
 ) -> Option<Vec<(CompactString, Profile)>> {
-    if opt_stored_static.as_ref().is_none() {
-        return None;
-    }
+    opt_stored_static.as_ref()?;
     let profile = if let Some(opt) = &opt_stored_static.as_ref().unwrap().output_option {
         &opt.profile
     } else {
