@@ -177,17 +177,6 @@ pub fn load_profile(
     profile_path: &str,
     opt_stored_static: Option<&StoredStatic>,
 ) -> Option<Vec<(CompactString, Profile)>> {
-    if Action::to_usize(opt_stored_static?.config.action.as_ref()) == 7 {
-        if let Err(e) = set_default_profile(
-            default_profile_path,
-            profile_path,
-            opt_stored_static.as_ref().unwrap(),
-        ) {
-            AlertMessage::alert(&e).ok();
-        } else {
-            println!("Successfully updated the default profile.");
-        }
-    }
 
     let profile = if let Some(opt) = &opt_stored_static.as_ref().unwrap().output_option {
         &opt.profile
@@ -341,6 +330,7 @@ pub fn set_default_profile(
                                 .map(BufWriter::new)
                             {
                                 default_name_buf_wtr.write_all(profile_name.as_bytes()).ok();
+                                println!("Successfully updated the default profile.");
                             }
                             Ok(())
                         }
