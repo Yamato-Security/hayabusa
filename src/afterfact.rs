@@ -2109,12 +2109,14 @@ fn output_detected_rule_authors(
     let mut sorted_authors: Vec<(&CompactString, &i128)> = rule_author_counter.iter().collect();
 
     sorted_authors.sort_by(|a, b| (-a.1).cmp(&(-b.1)));
-    let div = if sorted_authors.len() % 4 != 0 {
-        sorted_authors.len() / table_column_num + 1
+    let authors_num = sorted_authors.len();
+    let div = if authors_num <= table_column_num {
+        1
+    } else if authors_num % 4 != 0 {
+        authors_num / table_column_num + 1
     } else {
-        sorted_authors.len() / table_column_num
+        authors_num / table_column_num
     };
-
     let mut tb = Table::new();
     tb.load_preset(UTF8_FULL)
         .apply_modifier(UTF8_ROUND_CORNERS)

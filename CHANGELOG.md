@@ -20,6 +20,7 @@
 - Sigma correlation rule count was not showing up in `Events with hits`. (#1373) (@fukusuket)
 - Correlation rule count was not showing up in `Events with hits`. (#1374) (@fukusuket)
 - Aggregation condition rule count was not showing up in `Events with hits`. (#1375) (@fukusuket)
+- In rare cases, the list of rule authors would not be displayed to the terminal. (#1383) (@fukusuket)
 
 ## 2.16.0 [2024/06/11] "FIRSTCON24 Release"
 
