@@ -1011,16 +1011,17 @@ pub fn create_output_color_map(no_color_flag: bool) -> HashMap<CompactString, Co
             )
             .unwrap_or_default()
         });
-    let read_result = if path.display().to_string().is_empty() {
-        utils::read_csv(path.to_str().unwrap())
-    } else {
-        let level_color = LevelColor::get("level_color.txt").unwrap();
-        let embed_level_color =
-            parse_csv(std::str::from_utf8(level_color.data.as_ref()).unwrap_or_default());
-        if embed_level_color.is_empty() {
-            Err("Not found level_color.txt in embed resource.".to_string())
-        } else {
-            Ok(embed_level_color)
+    let read_result = match utils::read_csv(path.to_str().unwrap()) {
+        Ok(c) => Ok(c),
+        Err(_) => {
+            let level_color = LevelColor::get("level_color.txt").unwrap();
+            let embed_level_color =
+                parse_csv(std::str::from_utf8(level_color.data.as_ref()).unwrap_or_default());
+            if embed_level_color.is_empty() {
+                Err("Not found level_color.txt in embed resource.".to_string())
+            } else {
+                Ok(embed_level_color)
+            }
         }
     };
     let mut color_map: HashMap<CompactString, Colors> = HashMap::new();
