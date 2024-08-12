@@ -19,6 +19,7 @@
 - Sigmaの相関ルールのカウントが`Events with hits`に表示されていなかった。(#1373) (@fukusuket)
 - 相関ルールのカウントが`Events with hits`に表示されていなかった。(#1374) (@fukusuket)
 - 集計ルールのカウントが`Events with hits`に表示されていなかった。(#1375) (@fukusuket)
+- まれに、ルール作成者の一覧が表示されないことがあった。 (#1383) (@fukusuket)
 
 ## 2.16.0 [2024/06/11]
 
