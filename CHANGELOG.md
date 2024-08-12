@@ -13,7 +13,7 @@
   - Before: `"Data": ["17514", "Multiprocessor Free", "Service Pack 1"]`
   - After: `"Data[3]": "17514", "Data[4]": "Multiprocessor Free", "Data[5]": "Service Pack 1"`
 - Aggregation rule alerts now show `Channel` and `EventID` information even when there are multiple results. (#1342) (@fukusuket)
-- When there is no information in the `Details` field, we changed the default output of `"-"` to `{}` in order to make parsing the JSON easier. (#1386) (@hitenkoku)
+- In the JSON timeline, when there is no information in the `Details` field, we changed the default output of `"-"` to `{}` in order to make parsing easier. (#1386) (@hitenkoku)
 - Added support for the `–` (en dash), `—` (em dash), and `―` (horizontal bar) characters for the `windash` modifier to prevent signature bypass. (#1392) (@hitenkoku)
 
 **Bug Fixes:**
