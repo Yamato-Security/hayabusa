@@ -18,6 +18,7 @@ use itertools::Itertools;
 use lazy_static::lazy_static;
 use nested::Nested;
 use regex::Regex;
+use rust_embed::Embed;
 use serde_json::Value;
 use std::env;
 use std::fs::{create_dir, File};
@@ -45,6 +46,11 @@ pub struct DetectInfo {
 }
 
 pub struct AlertMessage {}
+
+#[derive(Embed)]
+#[folder = "config"]
+#[include = "mitre_tactics.txt"]
+struct Mitretactics;
 
 lazy_static! {
     #[derive(Debug,PartialEq, Eq, Ord, PartialOrd)]
@@ -85,8 +91,15 @@ pub fn create_output_filter_config(
     let read_result = match utils::read_csv(path) {
         Ok(c) => c,
         Err(e) => {
-            AlertMessage::alert(&e).ok();
-            return HashMap::default();
+            if path.contains("mitre_tactics.txt") {
+                let mitre_tactics = Mitretactics::get("mitre_tactics.txt").unwrap();
+                utils::parse_csv(
+                    std::str::from_utf8(mitre_tactics.data.as_ref()).unwrap_or_default(),
+                )
+            } else {
+                AlertMessage::alert(&e).ok();
+                Nested::new()
+            }
         }
     };
     read_result.iter().for_each(|line| {

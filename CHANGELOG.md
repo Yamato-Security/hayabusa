@@ -12,6 +12,8 @@
 - `Data` fields are now displayed as indexed strings instead of as all `Data` fields or in an array for JSON. (#1371) (@fukusuket)
   - Before: `"Data": ["17514", "Multiprocessor Free", "Service Pack 1"]`
   - After: `"Data[3]": "17514", "Data[4]": "Multiprocessor Free", "Data[5]": "Service Pack 1"`
+- The configuration files in the `config` folder are now also embedded in the binary to reduce the number of files in the release package. (#1370) (@hitenkoku)
+  - Note: you will not be able to run the `set-default-profile` command without the `config` directory files as it relies on `config/default_profile.yaml`.
 - Aggregation rule alerts now show `Channel` and `EventID` information even when there are multiple results. (#1342) (@fukusuket)
 - In the JSON timeline, when there is no information in the `Details` field, we changed the default output of `"-"` to `{}` in order to make parsing easier. (#1386) (@hitenkoku)
 - Added support for the `–` (en dash), `—` (em dash), and `―` (horizontal bar) characters for the `windash` modifier to prevent signature bypass. (#1392) (@hitenkoku)

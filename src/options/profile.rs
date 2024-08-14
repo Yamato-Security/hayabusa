@@ -11,11 +11,17 @@ use crate::yaml;
 use compact_str::CompactString;
 use itertools::Itertools;
 use nested::Nested;
+use rust_embed::Embed;
 use std::borrow::Cow;
 use std::fs::OpenOptions;
 use std::io::{BufWriter, Write};
 use std::path::Path;
 use yaml_rust::{Yaml, YamlEmitter, YamlLoader};
+
+#[derive(Embed)]
+#[folder = "config/"]
+#[include = "*.yaml"]
+struct DefaultProfile;
 
 #[derive(Eq, PartialEq, Hash, Clone, Debug)]
 pub enum Profile {
@@ -134,15 +140,34 @@ impl From<&str> for Profile {
 
 // 指定されたパスのprofileを読み込む処理
 fn read_profile_data(profile_path: &str) -> Result<Vec<Yaml>, String> {
-    if let Ok(loaded_profile) = yaml::ParseYaml::read_file(Path::new(profile_path).to_path_buf()) {
+    let profile_path_buf = Path::new(profile_path).to_path_buf();
+    if let Ok(loaded_profile) = yaml::ParseYaml::read_file(&profile_path_buf) {
         match YamlLoader::load_from_str(&loaded_profile) {
             Ok(profile_yml) => Ok(profile_yml),
             Err(e) => Err(format!("Parse error: {profile_path}. {e}")),
         }
     } else {
-        Err(format!(
-            "The profile file({profile_path}) does not exist. Please check your default profile."
-        ))
+        let default_profile_name_path = DefaultProfile::get(
+            profile_path_buf
+                .file_name()
+                .unwrap()
+                .to_str()
+                .unwrap_or_default(),
+        );
+        // 通常のプロファイルファイルを読み込む場合
+        if default_profile_name_path.is_some() {
+            match YamlLoader::load_from_str(
+                std::str::from_utf8(default_profile_name_path.unwrap().data.as_ref())
+                    .unwrap_or_default(),
+            ) {
+                Ok(profile_yml) => Ok(profile_yml),
+                Err(e) => Err(format!("Parse error: {profile_path}. {e}")),
+            }
+        } else {
+            Err(format!(
+                "The profile file({profile_path}) does not exist. Please check your default profile."
+            ))
+        }
     }
 }
 
@@ -152,18 +177,7 @@ pub fn load_profile(
     profile_path: &str,
     opt_stored_static: Option<&StoredStatic>,
 ) -> Option<Vec<(CompactString, Profile)>> {
-    if Action::to_usize(opt_stored_static?.config.action.as_ref()) == 7 {
-        if let Err(e) = set_default_profile(
-            default_profile_path,
-            profile_path,
-            opt_stored_static.as_ref().unwrap(),
-        ) {
-            AlertMessage::alert(&e).ok();
-        } else {
-            println!("Successfully updated the default profile.");
-        }
-    }
-
+    opt_stored_static.as_ref()?;
     let profile = if let Some(opt) = &opt_stored_static.as_ref().unwrap().output_option {
         &opt.profile
     } else {
@@ -316,6 +330,7 @@ pub fn set_default_profile(
                                 .map(BufWriter::new)
                             {
                                 default_name_buf_wtr.write_all(profile_name.as_bytes()).ok();
+                                println!("Successfully updated the default profile.\n");
                             }
                             Ok(())
                         }

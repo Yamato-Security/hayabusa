@@ -30,11 +30,13 @@ use crate::detections::configs::{
 };
 use crate::detections::message::{AlertMessage, DetectInfo, COMPUTER_MITRE_ATTCK_MAP, LEVEL_FULL};
 use crate::detections::utils::{
-    self, format_time, get_writable_color, output_and_data_stack_for_html, write_color_buffer,
+    self, format_time, get_writable_color, output_and_data_stack_for_html, parse_csv,
+    write_color_buffer,
 };
 use crate::options::htmlreport;
 use crate::options::profile::Profile;
 use crate::yaml::ParseYaml;
+use rust_embed::Embed;
 
 lazy_static! {
     // ここで字句解析するときに使う正規表現の一覧を定義する。
@@ -47,6 +49,11 @@ lazy_static! {
         ("CRITICAL".to_string(), 5),
     ]);
 }
+
+#[derive(Embed)]
+#[folder = "config"]
+#[include = "level_color.txt"]
+struct LevelColor;
 
 #[derive(Debug)]
 pub struct Colors {
@@ -995,16 +1002,28 @@ pub fn get_duplicate_idxes(detect_infos: &mut [DetectInfo]) -> HashSet<usize> {
 
 /// level_color.txtファイルを読み込み対応する文字色のマッピングを返却する関数
 pub fn create_output_color_map(no_color_flag: bool) -> HashMap<CompactString, Colors> {
-    let read_result = utils::read_csv(
-        utils::check_setting_path(
-            &CURRENT_EXE_PATH.to_path_buf(),
-            "config/level_color.txt",
-            true,
-        )
-        .unwrap()
-        .to_str()
-        .unwrap(),
-    );
+    let path = utils::check_setting_path(Path::new("."), "config/level_color.txt", false)
+        .unwrap_or_else(|| {
+            utils::check_setting_path(
+                &CURRENT_EXE_PATH.to_path_buf(),
+                "config/level_color.txt",
+                false,
+            )
+            .unwrap_or_default()
+        });
+    let read_result = match utils::read_csv(path.to_str().unwrap()) {
+        Ok(c) => Ok(c),
+        Err(_) => {
+            let level_color = LevelColor::get("level_color.txt").unwrap();
+            let embed_level_color =
+                parse_csv(std::str::from_utf8(level_color.data.as_ref()).unwrap_or_default());
+            if embed_level_color.is_empty() {
+                Err("Not found level_color.txt in embed resource.".to_string())
+            } else {
+                Ok(embed_level_color)
+            }
+        }
+    };
     let mut color_map: HashMap<CompactString, Colors> = HashMap::new();
     if no_color_flag {
         return color_map;
@@ -2160,7 +2179,7 @@ fn output_detected_rule_authors(
 
 /// 与えられたyaml_pathからauthorの名前を抽出して配列で返却する関数
 fn extract_author_name(yaml_path: &str) -> Nested<String> {
-    let contents = match ParseYaml::read_file(Path::new(&yaml_path).to_path_buf()) {
+    let contents = match ParseYaml::read_file(&Path::new(&yaml_path).to_path_buf()) {
         Ok(yaml) => Some(yaml),
         Err(e) => {
             AlertMessage::alert(&e).ok();
