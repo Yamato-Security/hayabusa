@@ -15,6 +15,7 @@
 - 集計ルールのアラートに、複数の結果がある場合でも`Channel`と`EventID`の情報が表示されるようにした。 (#1342) (@fukusuket)
 - JSONタイムラインで`Details`フィールドに情報がない場合、JSONがパースしやすくなるように、デフォルトで出力される`"-"`を`{}`に変更した。(#1386) (@hitenkoku)
 - シグネチャーバイパスを防ぐため、`-` (エンダッシュ)、`-` (エムダッシュ)、`―` (水平バー) 文字を `windash` 修飾子でサポートするようにした。(#1392) (@hitenkoku)
+- MITRE ATT&CKタグをSigmaバージョン2の形式に対応させた。(例: `defense_evasion` => `defense-evasion`) (@fukusuket)
 
 **バグ修正:**
 - Sigmaの相関ルールのカウントが`Events with hits`に表示されていなかった。(#1373) (@fukusuket)

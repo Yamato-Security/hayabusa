@@ -15,6 +15,7 @@
 - Aggregation rule alerts now show `Channel` and `EventID` information even when there are multiple results. (#1342) (@fukusuket)
 - In the JSON timeline, when there is no information in the `Details` field, we changed the default output of `"-"` to `{}` in order to make parsing easier. (#1386) (@hitenkoku)
 - Added support for the `–` (en dash), `—` (em dash), and `―` (horizontal bar) characters for the `windash` modifier to prevent signature bypass. (#1392) (@hitenkoku)
+- Updated the MITRE ATT&CK tags to support Sigma version 2 format. (Ex: `defense_evasion` => `defense-evasion`) (@fukusuket)
 
 **Bug Fixes:**
 - Sigma correlation rule count was not showing up in `Events with hits`. (#1373) (@fukusuket)
