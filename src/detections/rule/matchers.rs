@@ -354,10 +354,23 @@ impl LeafMatcher for DefaultMatcher {
         //all -> allOnlyの対応関係
         let mut change_map: HashMap<&str, &str> = HashMap::new();
         change_map.insert("all", "allOnly");
+        change_map.insert("i", "reignorecase");
+        change_map.insert("m", "remultiline");
+        change_map.insert("s", "resingleline");
 
         //先頭が｜の場合を検知して、all -> allOnlyに変更
         if keys_all[0].is_empty() && keys_all.len() == 2 && keys_all[1] == "all" {
             keys_all[1] = change_map["all"];
+        }
+        if keys_all.len() >= 3 && keys_all[1] == "re" {
+            if keys_all[2] == "i" {
+                keys_all[2] = change_map["i"];
+            } else if keys_all[2] == "m" {
+                keys_all[2] = change_map["m"];
+            } else if keys_all[2] == "s" {
+                keys_all[2] = change_map["s"];
+            }
+            keys_all.remove(1);
         }
 
         let keys_without_head = &keys_all[1..];
@@ -530,10 +543,15 @@ impl LeafMatcher for DefaultMatcher {
         if !is_eqfield {
             // 正規表現ではない場合、ワイルドカードであることを表す。
             // ワイルドカードは正規表現でマッチングするので、ワイルドカードを正規表現に変換するPipeを内部的に追加することにする。
-            let is_re = self
-                .pipes
-                .iter()
-                .any(|pipe_element| matches!(pipe_element, PipeElement::Re));
+            let is_re = self.pipes.iter().any(|pipe_element| {
+                matches!(
+                    pipe_element,
+                    PipeElement::Re
+                        | PipeElement::ReIgnoreCase
+                        | PipeElement::ReMultiLine
+                        | PipeElement::ReSingleLine
+                )
+            });
             if !is_re {
                 self.pipes.push(PipeElement::Wildcard);
             }
@@ -664,6 +682,9 @@ enum PipeElement {
     Endswith,
     Contains,
     Re,
+    ReIgnoreCase,
+    ReMultiLine,
+    ReSingleLine,
     Wildcard,
     EqualsField(String),
     Endswithfield(String),
@@ -681,6 +702,9 @@ impl PipeElement {
             "endswith" => Option::Some(PipeElement::Endswith),
             "contains" => Option::Some(PipeElement::Contains),
             "re" => Option::Some(PipeElement::Re),
+            "reignorecase" => Option::Some(PipeElement::ReIgnoreCase),
+            "resingleline" => Option::Some(PipeElement::ReSingleLine),
+            "remultiline" => Option::Some(PipeElement::ReMultiLine),
             "equalsfield" => Option::Some(PipeElement::EqualsField(pattern.to_string())),
             "endswithfield" => Option::Some(PipeElement::Endswithfield(pattern.to_string())),
             "base64offset" => Option::Some(PipeElement::Base64offset),
@@ -774,6 +798,9 @@ impl PipeElement {
             PipeElement::Contains => fn_add_asterisk_end(fn_add_asterisk_begin(pattern)),
             // WildCardは正規表現に変換する。
             PipeElement::Wildcard => PipeElement::pipe_pattern_wildcard(pattern),
+            PipeElement::ReIgnoreCase => "(?i)".to_string() + pattern.as_str(),
+            PipeElement::ReMultiLine => "(?m)".to_string() + pattern.as_str(),
+            PipeElement::ReSingleLine => "(?s)".to_string() + pattern.as_str(),
             _ => pattern,
         }
     }
@@ -3246,5 +3273,59 @@ mod tests {
             record_json_str_horizontal_bar2,
             false,
         );
+    }
+
+    #[test]
+    fn test_re_caseinsensitive_detect() {
+        let rule_str = r#"
+        enabled: true
+        detection:
+            selection:
+                Computer|re|i: ABC
+        details: 'command=%CommandLine%'
+        "#;
+
+        let record_json_str = r#"{
+            "Event": {"System": {"EventID": 4103, "Channel": "Security", "Computer": "abc"}},
+            "Event_attributes": {"xmlns": "http://schemas.microsoft.com/win/2004/08/events/event"}
+        }"#;
+
+        check_select(rule_str, record_json_str, true);
+    }
+
+    #[test]
+    fn test_re_multiline_detect() {
+        let rule_str = r#"
+        enabled: true
+        detection:
+            selection:
+                Computer|re|m: ^ABC$
+        details: 'command=%CommandLine%'
+        "#;
+
+        let record_json_str = r#"{
+            "Event": {"System": {"EventID": 4103, "Channel": "Security", "Computer": "ABC\nDEF"}},
+            "Event_attributes": {"xmlns": "http://schemas.microsoft.com/win/2004/08/events/event"}
+        }"#;
+
+        check_select(rule_str, record_json_str, true);
+    }
+
+    #[test]
+    fn test_re_singleline_detect() {
+        let rule_str = r#"
+        enabled: true
+        detection:
+            selection:
+                Computer|re|s: A.*F
+        details: 'command=%CommandLine%'
+        "#;
+
+        let record_json_str = r#"{
+            "Event": {"System": {"EventID": 4103, "Channel": "Security", "Computer": "ABC\nDEF"}},
+            "Event_attributes": {"xmlns": "http://schemas.microsoft.com/win/2004/08/events/event"}
+        }"#;
+
+        check_select(rule_str, record_json_str, true);
     }
 }
