@@ -560,9 +560,9 @@ impl LeafMatcher for DefaultMatcher {
     fn is_match(&self, event_value: Option<&String>, recinfo: &EvtxRecordInfo) -> bool {
         let pipe: &PipeElement = self.pipes.first().unwrap_or(&PipeElement::Wildcard);
         let match_result = match pipe {
-            PipeElement::EqualsField(_) | PipeElement::Endswithfield(_) => {
-                Some(pipe.is_eqfield_match(event_value, recinfo))
-            }
+            PipeElement::Exists(..)
+            | PipeElement::EqualsField(_)
+            | PipeElement::Endswithfield(_) => Some(pipe.is_eqfield_match(event_value, recinfo)),
             PipeElement::Cidr(ip_result) => match ip_result {
                 Ok(matcher_ip) => {
                     let val = String::default();
@@ -665,6 +665,7 @@ enum PipeElement {
     Contains,
     Re,
     Wildcard,
+    Exists(String, String),
     EqualsField(String),
     Endswithfield(String),
     Base64offset,
@@ -681,6 +682,7 @@ impl PipeElement {
             "endswith" => Option::Some(PipeElement::Endswith),
             "contains" => Option::Some(PipeElement::Contains),
             "re" => Option::Some(PipeElement::Re),
+            "exists" => Option::Some(PipeElement::Exists(key_list[0].split('|').collect::<Vec<&str>>()[0].to_string(), pattern.to_string())),
             "equalsfield" => Option::Some(PipeElement::EqualsField(pattern.to_string())),
             "endswithfield" => Option::Some(PipeElement::Endswithfield(pattern.to_string())),
             "base64offset" => Option::Some(PipeElement::Base64offset),
@@ -711,6 +713,9 @@ impl PipeElement {
 
     fn is_eqfield_match(&self, event_value: Option<&String>, recinfo: &EvtxRecordInfo) -> bool {
         match self {
+            PipeElement::Exists(eq_key, val) => {
+                val.to_lowercase() == recinfo.get_value(eq_key).is_some().to_string()
+            },
             PipeElement::EqualsField(eq_key) => {
                 let eq_value = recinfo.get_value(eq_key);
                 // Evtxのレコードに存在しないeventkeyを指定された場合はfalseにする
