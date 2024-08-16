@@ -682,7 +682,10 @@ impl PipeElement {
             "endswith" => Option::Some(PipeElement::Endswith),
             "contains" => Option::Some(PipeElement::Contains),
             "re" => Option::Some(PipeElement::Re),
-            "exists" => Option::Some(PipeElement::Exists(key_list[0].split('|').collect::<Vec<&str>>()[0].to_string(), pattern.to_string())),
+            "exists" => Option::Some(PipeElement::Exists(
+                key_list[0].split('|').collect::<Vec<&str>>()[0].to_string(),
+                pattern.to_string(),
+            )),
             "equalsfield" => Option::Some(PipeElement::EqualsField(pattern.to_string())),
             "endswithfield" => Option::Some(PipeElement::Endswithfield(pattern.to_string())),
             "base64offset" => Option::Some(PipeElement::Base64offset),
@@ -715,7 +718,7 @@ impl PipeElement {
         match self {
             PipeElement::Exists(eq_key, val) => {
                 val.to_lowercase() == recinfo.get_value(eq_key).is_some().to_string()
-            },
+            }
             PipeElement::EqualsField(eq_key) => {
                 let eq_value = recinfo.get_value(eq_key);
                 // Evtxのレコードに存在しないeventkeyを指定された場合はfalseにする
@@ -3330,5 +3333,4 @@ mod tests {
 
         check_select(rule_str, record_json_str, true);
     }
-
 }
