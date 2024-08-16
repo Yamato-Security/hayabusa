@@ -578,9 +578,9 @@ impl LeafMatcher for DefaultMatcher {
     fn is_match(&self, event_value: Option<&String>, recinfo: &EvtxRecordInfo) -> bool {
         let pipe: &PipeElement = self.pipes.first().unwrap_or(&PipeElement::Wildcard);
         let match_result = match pipe {
-            PipeElement::EqualsField(_) | PipeElement::Endswithfield(_) => {
-                Some(pipe.is_eqfield_match(event_value, recinfo))
-            }
+            PipeElement::Exists(..)
+            | PipeElement::EqualsField(_)
+            | PipeElement::Endswithfield(_) => Some(pipe.is_eqfield_match(event_value, recinfo)),
             PipeElement::Cidr(ip_result) => match ip_result {
                 Ok(matcher_ip) => {
                     let val = String::default();
@@ -686,6 +686,7 @@ enum PipeElement {
     ReMultiLine,
     ReSingleLine,
     Wildcard,
+    Exists(String, String),
     EqualsField(String),
     Endswithfield(String),
     Base64offset,
@@ -702,6 +703,10 @@ impl PipeElement {
             "endswith" => Option::Some(PipeElement::Endswith),
             "contains" => Option::Some(PipeElement::Contains),
             "re" => Option::Some(PipeElement::Re),
+            "exists" => Option::Some(PipeElement::Exists(
+                key_list[0].split('|').collect::<Vec<&str>>()[0].to_string(),
+                pattern.to_string(),
+            )),
             "reignorecase" => Option::Some(PipeElement::ReIgnoreCase),
             "resingleline" => Option::Some(PipeElement::ReSingleLine),
             "remultiline" => Option::Some(PipeElement::ReMultiLine),
@@ -735,6 +740,9 @@ impl PipeElement {
 
     fn is_eqfield_match(&self, event_value: Option<&String>, recinfo: &EvtxRecordInfo) -> bool {
         match self {
+            PipeElement::Exists(eq_key, val) => {
+                val.to_lowercase() == recinfo.get_value(eq_key).is_some().to_string()
+            }
             PipeElement::EqualsField(eq_key) => {
                 let eq_value = recinfo.get_value(eq_key);
                 // Evtxのレコードに存在しないeventkeyを指定された場合はfalseにする
@@ -3276,6 +3284,31 @@ mod tests {
     }
 
     #[test]
+    fn test_exists_true() {
+        let rule_str = r#"
+        enabled: true
+        detection:
+            selection1:
+                Channel|exists: true
+            condition: selection1
+        "#;
+
+        let record_json_str = r#"
+        {
+          "Event": {
+            "System": {
+              "EventID": 1,
+              "Channel": "Microsoft-Windows-Sysmon/Operational"
+            },
+            "EventData": {
+              "CurrentDirectory": "C:\\Windows\\system32\\"
+            }
+          }
+        }"#;
+        check_select(rule_str, record_json_str, true);
+    }
+
+    #[test]
     fn test_re_caseinsensitive_detect() {
         let rule_str = r#"
         enabled: true
@@ -3294,6 +3327,31 @@ mod tests {
     }
 
     #[test]
+    fn test_exists_null_true() {
+        let rule_str = r#"
+        enabled: true
+        detection:
+            selection1:
+                Channel|exists: true
+            condition: selection1
+        "#;
+
+        let record_json_str = r#"
+        {
+          "Event": {
+            "System": {
+              "EventID": 1,
+              "Channel": ""
+            },
+            "EventData": {
+              "CurrentDirectory": "C:\\Windows\\system32\\"
+            }
+          }
+        }"#;
+        check_select(rule_str, record_json_str, true);
+    }
+
+    #[test]
     fn test_re_multiline_detect() {
         let rule_str = r#"
         enabled: true
@@ -3308,6 +3366,31 @@ mod tests {
             "Event_attributes": {"xmlns": "http://schemas.microsoft.com/win/2004/08/events/event"}
         }"#;
 
+        check_select(rule_str, record_json_str, true);
+    }
+
+    #[test]
+    fn test_exists_false() {
+        let rule_str = r#"
+        enabled: true
+        detection:
+            selection1:
+                Dummy|exists: false
+            condition: selection1
+        "#;
+
+        let record_json_str = r#"
+        {
+          "Event": {
+            "System": {
+              "EventID": 1,
+              "Channel": ""
+            },
+            "EventData": {
+              "CurrentDirectory": "C:\\Windows\\system32\\"
+            }
+          }
+        }"#;
         check_select(rule_str, record_json_str, true);
     }
 
