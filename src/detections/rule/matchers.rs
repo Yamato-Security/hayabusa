@@ -495,6 +495,17 @@ impl LeafMatcher for DefaultMatcher {
                 if !fastmatches.is_empty() {
                     self.fast_match = Some(fastmatches);
                 }
+            } else if self.pipes[1] == PipeElement::Cased {
+                if self.pipes[0] == PipeElement::Startswith {
+                    self.fast_match =
+                        Self::convert_to_fast_match(&format!("{}*", pattern[0]), false);
+                } else if self.pipes[0] == PipeElement::Endswith {
+                    self.fast_match =
+                        Self::convert_to_fast_match(&format!("*{}", pattern[0]), false);
+                } else if self.pipes[0] == PipeElement::Contains {
+                    self.fast_match =
+                        Self::convert_to_fast_match(&format!("*{}*", pattern[0]), false);
+                }
             }
         } else if n == 3 {
             if self.pipes.contains(&PipeElement::Contains)
@@ -633,8 +644,20 @@ impl LeafMatcher for DefaultMatcher {
             let fast_match_result = if fast_matcher.len() == 1 {
                 match &fast_matcher[0] {
                     FastMatch::Exact(s) => Some(Self::eq_ignore_case(event_value_str, s)),
-                    FastMatch::StartsWith(s) => Self::starts_with_ignore_case(event_value_str, s),
-                    FastMatch::EndsWith(s) => Self::ends_with_ignore_case(event_value_str, s),
+                    FastMatch::StartsWith(s) => {
+                        if self.pipes.contains(&PipeElement::Cased) {
+                            Some(event_value_str.starts_with(s))
+                        } else {
+                            Self::starts_with_ignore_case(event_value_str, s)
+                        }
+                    }
+                    FastMatch::EndsWith(s) => {
+                        if self.pipes.contains(&PipeElement::Cased) {
+                            Some(event_value_str.ends_with(s))
+                        } else {
+                            Self::ends_with_ignore_case(event_value_str, s)
+                        }
+                    }
                     FastMatch::Contains(s) | FastMatch::AllOnly(s) => {
                         if self.pipes.contains(&PipeElement::Windash) {
                             Some(utils::contains_str(
@@ -643,6 +666,8 @@ impl LeafMatcher for DefaultMatcher {
                                     .to_lowercase(),
                                 s,
                             ))
+                        } else if self.pipes.contains(&PipeElement::Cased) {
+                            Some(utils::contains_str(event_value_str, s))
                         } else {
                             Some(utils::contains_str(&event_value_str.to_lowercase(), s))
                         }
@@ -694,6 +719,7 @@ enum PipeElement {
     Cidr(Result<IpCidr, NetworkParseError>),
     All,
     AllOnly,
+    Cased,
 }
 
 impl PipeElement {
@@ -717,6 +743,7 @@ impl PipeElement {
             "cidr" => Option::Some(PipeElement::Cidr(IpCidr::from_str(pattern))),
             "all" => Option::Some(PipeElement::All),
             "allOnly" => Option::Some(PipeElement::AllOnly),
+            "cased" => Option::Some(PipeElement::Cased),
             _ => Option::None,
         };
 
@@ -1668,6 +1695,70 @@ mod tests {
     }
 
     #[test]
+    fn test_detect_startswith_cased() {
+        // startswith|casedが正しく検知できることを確認
+        let rule_str = r#"
+        enabled: true
+        detection:
+            selection:
+                Channel: Security
+                EventID: 4732
+                TargetUserName|startswith|cased: "Administrators"
+        details: 'user added to local Administrators UserName: %MemberName% SID: %MemberSid%'
+        "#;
+
+        let record_json_str = r#"
+        {
+          "Event": {
+            "System": {
+              "EventID": 4732,
+              "Channel": "Security"
+            },
+            "EventData": {
+              "TargetUserName": "AdministratorsTest"
+            }
+          },
+          "Event_attributes": {
+            "xmlns": "http://schemas.microsoft.com/win/2004/08/events/event"
+          }
+        }"#;
+
+        check_select(rule_str, record_json_str, true);
+    }
+
+    #[test]
+    fn test_detect_startswith_cased2() {
+        // startswith|casedが正しく検知できることを確認
+        let rule_str = r#"
+        enabled: true
+        detection:
+            selection:
+                Channel: Security
+                EventID: 4732
+                TargetUserName|startswith|cased: "administrators"
+        details: 'user added to local Administrators UserName: %MemberName% SID: %MemberSid%'
+        "#;
+
+        let record_json_str = r#"
+        {
+          "Event": {
+            "System": {
+              "EventID": 4732,
+              "Channel": "Security"
+            },
+            "EventData": {
+              "TargetUserName": "AdministratorsTest"
+            }
+          },
+          "Event_attributes": {
+            "xmlns": "http://schemas.microsoft.com/win/2004/08/events/event"
+          }
+        }"#;
+
+        check_select(rule_str, record_json_str, false);
+    }
+
+    #[test]
     fn test_detect_endswith1() {
         // endswithが正しく検知できることを確認
         let rule_str = r#"
@@ -1762,6 +1853,99 @@ mod tests {
     }
 
     #[test]
+    fn test_detect_endswith_cased1() {
+        // endswith|casedが正しく検知できることを確認
+        let rule_str = r#"
+        enabled: true
+        detection:
+            selection:
+                Channel: Security
+                EventID: 4732
+                TargetUserName|endswith|cased: "Administrators"
+        details: 'user added to local Administrators UserName: %MemberName% SID: %MemberSid%'
+        "#;
+
+        let record_json_str = r#"
+        {
+          "Event": {
+            "System": {
+              "EventID": 4732,
+              "Channel": "Security"
+            },
+            "EventData": {
+              "TargetUserName": "AdministratorsTest"
+            }
+          },
+          "Event_attributes": {
+            "xmlns": "http://schemas.microsoft.com/win/2004/08/events/event"
+          }
+        }"#;
+        check_select(rule_str, record_json_str, false);
+    }
+
+    #[test]
+    fn test_detect_endswith_cased2() {
+        // endswith|casedが正しく検知できることを確認
+        let rule_str = r#"
+        enabled: true
+        detection:
+            selection:
+                Channel: Security
+                EventID: 4732
+                TargetUserName|endswith|cased: "test"
+        details: 'user added to local Administrators UserName: %MemberName% SID: %MemberSid%'
+        "#;
+
+        let record_json_str = r#"
+        {
+          "Event": {
+            "System": {
+              "EventID": 4732,
+              "Channel": "Security"
+            },
+            "EventData": {
+              "TargetUserName": "AdministratorsTest"
+            }
+          },
+          "Event_attributes": {
+            "xmlns": "http://schemas.microsoft.com/win/2004/08/events/event"
+          }
+        }"#;
+        check_select(rule_str, record_json_str, false);
+    }
+
+    #[test]
+    fn test_detect_endswith_cased3() {
+        // endswith|casedが正しく検知できることを確認
+        let rule_str = r#"
+        enabled: true
+        detection:
+            selection:
+                Channel: Security
+                EventID: 4732
+                TargetUserName|endswith|cased: "sTest"
+        details: 'user added to local Administrators UserName: %MemberName% SID: %MemberSid%'
+        "#;
+
+        let record_json_str = r#"
+        {
+          "Event": {
+            "System": {
+              "EventID": 4732,
+              "Channel": "Security"
+            },
+            "EventData": {
+              "TargetUserName": "AdministratorsTest"
+            }
+          },
+          "Event_attributes": {
+            "xmlns": "http://schemas.microsoft.com/win/2004/08/events/event"
+          }
+        }"#;
+        check_select(rule_str, record_json_str, true);
+    }
+
+    #[test]
     fn test_detect_contains1() {
         // containsが正しく検知できることを確認
         let rule_str = r#"
@@ -1853,6 +2037,70 @@ mod tests {
             "xmlns": "http://schemas.microsoft.com/win/2004/08/events/event"
           }
         }"#;
+        check_select(rule_str, record_json_str, false);
+    }
+
+    #[test]
+    fn test_detect_contains_cased1() {
+        // contains|casedが正しく検知できることを確認
+        let rule_str = r#"
+        enabled: true
+        detection:
+            selection:
+                Channel: Security
+                EventID: 4732
+                TargetUserName|contains|cased: "Administrators"
+        details: 'user added to local Administrators UserName: %MemberName% SID: %MemberSid%'
+        "#;
+
+        let record_json_str = r#"
+        {
+          "Event": {
+            "System": {
+              "EventID": 4732,
+              "Channel": "Security"
+            },
+            "EventData": {
+              "TargetUserName": "TestAdministratorsTest"
+            }
+          },
+          "Event_attributes": {
+            "xmlns": "http://schemas.microsoft.com/win/2004/08/events/event"
+          }
+        }"#;
+
+        check_select(rule_str, record_json_str, true);
+    }
+
+    #[test]
+    fn test_detect_contains_cased2() {
+        // contains|casedが正しく検知できることを確認
+        let rule_str = r#"
+        enabled: true
+        detection:
+            selection:
+                Channel: Security
+                EventID: 4732
+                TargetUserName|contains|cased: "MinistratorS"
+        details: 'user added to local Administrators UserName: %MemberName% SID: %MemberSid%'
+        "#;
+
+        let record_json_str = r#"
+        {
+          "Event": {
+            "System": {
+              "EventID": 4732,
+              "Channel": "Security"
+            },
+            "EventData": {
+              "TargetUserName": "TestministratorsTest"
+            }
+          },
+          "Event_attributes": {
+            "xmlns": "http://schemas.microsoft.com/win/2004/08/events/event"
+          }
+        }"#;
+
         check_select(rule_str, record_json_str, false);
     }
 

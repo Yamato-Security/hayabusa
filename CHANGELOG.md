@@ -10,6 +10,7 @@
     * `m`: (multi-line) match across multiple lines. `^` /`$` match the start/end of line.
     * `s`: (single-line) the dot character (`.`) matches all characters, including the newline character.
 - Support for the Sigma V2 `|exists` modifier. (#1400) (@hitenkoku)
+- Support for the Sigma V2 `|cased` modifier. (#1401) (@hitenkoku)
 
 **Enhancements:**
 
