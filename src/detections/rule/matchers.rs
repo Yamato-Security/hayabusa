@@ -3304,6 +3304,11 @@ mod tests {
               "CurrentDirectory": "C:\\Windows\\system32\\"
             }
           }
+        }"#;
+        check_select(rule_str, record_json_str, true);
+    }
+
+    #[test]
     fn test_re_caseinsensitive_detect() {
         let rule_str = r#"
         enabled: true
@@ -3342,6 +3347,11 @@ mod tests {
               "CurrentDirectory": "C:\\Windows\\system32\\"
             }
           }
+        }"#;
+        check_select(rule_str, record_json_str, true);
+    }
+
+    #[test]
     fn test_re_multiline_detect() {
         let rule_str = r#"
         enabled: true
@@ -3380,6 +3390,11 @@ mod tests {
               "CurrentDirectory": "C:\\Windows\\system32\\"
             }
           }
+        }"#;
+        check_select(rule_str, record_json_str, true);
+    }
+
+    #[test]
     fn test_re_singleline_detect() {
         let rule_str = r#"
         enabled: true
