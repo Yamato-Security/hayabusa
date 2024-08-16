@@ -1660,6 +1660,70 @@ mod tests {
     }
 
     #[test]
+    fn test_detect_startswith_cased() {
+        // startswith|casedが正しく検知できることを確認
+        let rule_str = r#"
+        enabled: true
+        detection:
+            selection:
+                Channel: Security
+                EventID: 4732
+                TargetUserName|startswith|cased: "Administrators"
+        details: 'user added to local Administrators UserName: %MemberName% SID: %MemberSid%'
+        "#;
+
+        let record_json_str = r#"
+        {
+          "Event": {
+            "System": {
+              "EventID": 4732,
+              "Channel": "Security"
+            },
+            "EventData": {
+              "TargetUserName": "AdministratorsTest"
+            }
+          },
+          "Event_attributes": {
+            "xmlns": "http://schemas.microsoft.com/win/2004/08/events/event"
+          }
+        }"#;
+
+        check_select(rule_str, record_json_str, true);
+    }
+
+    #[test]
+    fn test_detect_startswith_cased2() {
+        // startswith|casedが正しく検知できることを確認
+        let rule_str = r#"
+        enabled: true
+        detection:
+            selection:
+                Channel: Security
+                EventID: 4732
+                TargetUserName|startswith|cased: "administrators"
+        details: 'user added to local Administrators UserName: %MemberName% SID: %MemberSid%'
+        "#;
+
+        let record_json_str = r#"
+        {
+          "Event": {
+            "System": {
+              "EventID": 4732,
+              "Channel": "Security"
+            },
+            "EventData": {
+              "TargetUserName": "AdministratorsTest"
+            }
+          },
+          "Event_attributes": {
+            "xmlns": "http://schemas.microsoft.com/win/2004/08/events/event"
+          }
+        }"#;
+
+        check_select(rule_str, record_json_str, false);
+    }
+
+    #[test]
     fn test_detect_endswith1() {
         // endswithが正しく検知できることを確認
         let rule_str = r#"
@@ -1754,6 +1818,99 @@ mod tests {
     }
 
     #[test]
+    fn test_detect_endswith_cased1() {
+        // endswith|casedが正しく検知できることを確認
+        let rule_str = r#"
+        enabled: true
+        detection:
+            selection:
+                Channel: Security
+                EventID: 4732
+                TargetUserName|endswith|cased: "Administrators"
+        details: 'user added to local Administrators UserName: %MemberName% SID: %MemberSid%'
+        "#;
+
+        let record_json_str = r#"
+        {
+          "Event": {
+            "System": {
+              "EventID": 4732,
+              "Channel": "Security"
+            },
+            "EventData": {
+              "TargetUserName": "AdministratorsTest"
+            }
+          },
+          "Event_attributes": {
+            "xmlns": "http://schemas.microsoft.com/win/2004/08/events/event"
+          }
+        }"#;
+        check_select(rule_str, record_json_str, false);
+    }
+
+    #[test]
+    fn test_detect_endswith_cased2() {
+        // endswith|casedが正しく検知できることを確認
+        let rule_str = r#"
+        enabled: true
+        detection:
+            selection:
+                Channel: Security
+                EventID: 4732
+                TargetUserName|endswith|cased: "test"
+        details: 'user added to local Administrators UserName: %MemberName% SID: %MemberSid%'
+        "#;
+
+        let record_json_str = r#"
+        {
+          "Event": {
+            "System": {
+              "EventID": 4732,
+              "Channel": "Security"
+            },
+            "EventData": {
+              "TargetUserName": "AdministratorsTest"
+            }
+          },
+          "Event_attributes": {
+            "xmlns": "http://schemas.microsoft.com/win/2004/08/events/event"
+          }
+        }"#;
+        check_select(rule_str, record_json_str, false);
+    }
+
+    #[test]
+    fn test_detect_endswith_cased3() {
+        // endswith|casedが正しく検知できることを確認
+        let rule_str = r#"
+        enabled: true
+        detection:
+            selection:
+                Channel: Security
+                EventID: 4732
+                TargetUserName|endswith|cased: "sTest"
+        details: 'user added to local Administrators UserName: %MemberName% SID: %MemberSid%'
+        "#;
+
+        let record_json_str = r#"
+        {
+          "Event": {
+            "System": {
+              "EventID": 4732,
+              "Channel": "Security"
+            },
+            "EventData": {
+              "TargetUserName": "AdministratorsTest"
+            }
+          },
+          "Event_attributes": {
+            "xmlns": "http://schemas.microsoft.com/win/2004/08/events/event"
+          }
+        }"#;
+        check_select(rule_str, record_json_str, true);
+    }
+
+    #[test]
     fn test_detect_contains1() {
         // containsが正しく検知できることを確認
         let rule_str = r#"
@@ -1845,6 +2002,70 @@ mod tests {
             "xmlns": "http://schemas.microsoft.com/win/2004/08/events/event"
           }
         }"#;
+        check_select(rule_str, record_json_str, false);
+    }
+
+    #[test]
+    fn test_detect_contains_cased1() {
+        // contains|casedが正しく検知できることを確認
+        let rule_str = r#"
+        enabled: true
+        detection:
+            selection:
+                Channel: Security
+                EventID: 4732
+                TargetUserName|contains|cased: "Administrators"
+        details: 'user added to local Administrators UserName: %MemberName% SID: %MemberSid%'
+        "#;
+
+        let record_json_str = r#"
+        {
+          "Event": {
+            "System": {
+              "EventID": 4732,
+              "Channel": "Security"
+            },
+            "EventData": {
+              "TargetUserName": "TestAdministratorsTest"
+            }
+          },
+          "Event_attributes": {
+            "xmlns": "http://schemas.microsoft.com/win/2004/08/events/event"
+          }
+        }"#;
+
+        check_select(rule_str, record_json_str, true);
+    }
+
+    #[test]
+    fn test_detect_contains_cased2() {
+        // contains|casedが正しく検知できることを確認
+        let rule_str = r#"
+        enabled: true
+        detection:
+            selection:
+                Channel: Security
+                EventID: 4732
+                TargetUserName|contains|cased: "MinistratorS"
+        details: 'user added to local Administrators UserName: %MemberName% SID: %MemberSid%'
+        "#;
+
+        let record_json_str = r#"
+        {
+          "Event": {
+            "System": {
+              "EventID": 4732,
+              "Channel": "Security"
+            },
+            "EventData": {
+              "TargetUserName": "TestministratorsTest"
+            }
+          },
+          "Event_attributes": {
+            "xmlns": "http://schemas.microsoft.com/win/2004/08/events/event"
+          }
+        }"#;
+
         check_select(rule_str, record_json_str, false);
     }
 
