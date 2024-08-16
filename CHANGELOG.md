@@ -2,6 +2,14 @@
 
 ## 2.17.0 [2024/08/23] "HITCON Community Release"
 
+**New Features:**
+
+- Support for the Sigma V2 `|re` submodifers. (#1399) (@fukusuket)
+  - Reference: https://github.com/SigmaHQ/sigma-specification/blob/main/appendix/sigma-modifiers-appendix.md
+    * `i`: (insensitive) disable case-sensitive matching.
+    * `m`: (multi-line) match across multiple lines. `^` /`$` match the start/end of line.
+    * `s`: (single-line) the dot character (`.`) matches all characters, including the newline character.
+
 **Enhancements:**
 
 - Support for the newer version 0.6.x `cidr-utils` crate. (#1366) (@hitenkoku)
