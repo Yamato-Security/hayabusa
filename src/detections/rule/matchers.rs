@@ -482,6 +482,17 @@ impl LeafMatcher for DefaultMatcher {
                 if !fastmatches.is_empty() {
                     self.fast_match = Some(fastmatches);
                 }
+            } else if self.pipes[1] == PipeElement::Cased {
+                if self.pipes[0] == PipeElement::Startswith {
+                    self.fast_match =
+                        Self::convert_to_fast_match(&format!("{}*", pattern[0]), false);
+                } else if self.pipes[0] == PipeElement::Endswith {
+                    self.fast_match =
+                        Self::convert_to_fast_match(&format!("*{}", pattern[0]), false);
+                } else if self.pipes[0] == PipeElement::Contains {
+                    self.fast_match =
+                        Self::convert_to_fast_match(&format!("*{}*", pattern[0]), false);
+                }
             }
         } else if n == 3 {
             if self.pipes.contains(&PipeElement::Contains)
@@ -615,8 +626,20 @@ impl LeafMatcher for DefaultMatcher {
             let fast_match_result = if fast_matcher.len() == 1 {
                 match &fast_matcher[0] {
                     FastMatch::Exact(s) => Some(Self::eq_ignore_case(event_value_str, s)),
-                    FastMatch::StartsWith(s) => Self::starts_with_ignore_case(event_value_str, s),
-                    FastMatch::EndsWith(s) => Self::ends_with_ignore_case(event_value_str, s),
+                    FastMatch::StartsWith(s) => {
+                        if self.pipes.contains(&PipeElement::Cased) {
+                            Some(event_value_str.starts_with(s))
+                        } else {
+                            Self::starts_with_ignore_case(event_value_str, s)
+                        }
+                    }
+                    FastMatch::EndsWith(s) => {
+                        if self.pipes.contains(&PipeElement::Cased) {
+                            Some(event_value_str.ends_with(s))
+                        } else {
+                            Self::ends_with_ignore_case(event_value_str, s)
+                        }
+                    }
                     FastMatch::Contains(s) | FastMatch::AllOnly(s) => {
                         if self.pipes.contains(&PipeElement::Windash) {
                             Some(utils::contains_str(
@@ -625,6 +648,8 @@ impl LeafMatcher for DefaultMatcher {
                                     .to_lowercase(),
                                 s,
                             ))
+                        } else if self.pipes.contains(&PipeElement::Cased) {
+                            Some(utils::contains_str(event_value_str, s))
                         } else {
                             Some(utils::contains_str(&event_value_str.to_lowercase(), s))
                         }
@@ -672,6 +697,7 @@ enum PipeElement {
     Cidr(Result<IpCidr, NetworkParseError>),
     All,
     AllOnly,
+    Cased,
 }
 
 impl PipeElement {
@@ -688,6 +714,7 @@ impl PipeElement {
             "cidr" => Option::Some(PipeElement::Cidr(IpCidr::from_str(pattern))),
             "all" => Option::Some(PipeElement::All),
             "allOnly" => Option::Some(PipeElement::AllOnly),
+            "cased" => Option::Some(PipeElement::Cased),
             _ => Option::None,
         };
 
