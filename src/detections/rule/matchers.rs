@@ -3252,4 +3252,83 @@ mod tests {
             false,
         );
     }
+
+    #[test]
+    fn test_exists_true() {
+        let rule_str = r#"
+        enabled: true
+        detection:
+            selection1:
+                Channel|exists: true
+            condition: selection1
+        "#;
+
+        let record_json_str = r#"
+        {
+          "Event": {
+            "System": {
+              "EventID": 1,
+              "Channel": "Microsoft-Windows-Sysmon/Operational"
+            },
+            "EventData": {
+              "CurrentDirectory": "C:\\Windows\\system32\\"
+            }
+          }
+        }"#;
+
+        check_select(rule_str, record_json_str, true);
+    }
+
+    #[test]
+    fn test_exists_null_true() {
+        let rule_str = r#"
+        enabled: true
+        detection:
+            selection1:
+                Channel|exists: true
+            condition: selection1
+        "#;
+
+        let record_json_str = r#"
+        {
+          "Event": {
+            "System": {
+              "EventID": 1,
+              "Channel": ""
+            },
+            "EventData": {
+              "CurrentDirectory": "C:\\Windows\\system32\\"
+            }
+          }
+        }"#;
+
+        check_select(rule_str, record_json_str, true);
+    }
+
+    #[test]
+    fn test_exists_false() {
+        let rule_str = r#"
+        enabled: true
+        detection:
+            selection1:
+                Dummy|exists: false
+            condition: selection1
+        "#;
+
+        let record_json_str = r#"
+        {
+          "Event": {
+            "System": {
+              "EventID": 1,
+              "Channel": ""
+            },
+            "EventData": {
+              "CurrentDirectory": "C:\\Windows\\system32\\"
+            }
+          }
+        }"#;
+
+        check_select(rule_str, record_json_str, true);
+    }
+
 }
