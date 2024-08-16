@@ -2,6 +2,16 @@
 
 ## 2.17.0 [2024/08/23] "HITCON Community Release"
 
+**新機能:**
+
+- Sigma V2の`|re`のサブモディファイアに対応した。 submodifers. (#1399) (@fukusuket)
+  - 参考: https://github.com/SigmaHQ/sigma-specification/blob/main/appendix/sigma-modifiers-appendix.md
+    * `i`: (insensitive) 大文字小文字を区別しないマッチングを無効にする。
+    * `m`: (multi-line) 複数行にまたがってマッチする。`^` /`$` は行頭/行末にマッチする。
+    * `s`: (single-line) ドット文字 (`.`) は改行文字を含むすべての文字にマッチする。
+- Sigma V2の`|exists`モディファイアに対応した。 (#1400) (@hitenkoku)
+- Sigma V2の`|cased`モディファイアに対応した。 (#1401) (@hitenkoku)
+
 **改善:**
 
 - `cidr-utils`クレートを新バージョン0.6.xに対応した。 (#1366) (@hitenkoku)
