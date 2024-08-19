@@ -4,13 +4,13 @@
 
 **New Features:**
 
-- Support for the Sigma V2 `|re` submodifers. (#1399) (@fukusuket)
+- Support for the Sigma V2 `|re:` submodifers. (#1399) (@fukusuket)
   - Reference: https://github.com/SigmaHQ/sigma-specification/blob/main/appendix/sigma-modifiers-appendix.md
-    * `i`: (insensitive) disable case-sensitive matching.
-    * `m`: (multi-line) match across multiple lines. `^` /`$` match the start/end of line.
-    * `s`: (single-line) the dot character (`.`) matches all characters, including the newline character.
-- Support for the Sigma V2 `|exists` modifier. (#1400) (@hitenkoku)
-- Support for the Sigma V2 `|cased` modifier. (#1401) (@hitenkoku)
+    * `|re|i:`: (insensitive) disable case-sensitive matching.
+    * `|re|m:`: (multi-line) match across multiple lines. `^` /`$` match the start/end of line.
+    * `|re|s:`: (single-line) the dot character (`.`) matches all characters, including the newline character.
+- Support for the Sigma V2 `|exists:` modifier. (#1400) (@hitenkoku)
+- Support for the Sigma V2 `|cased:` modifier. (#1401) (@hitenkoku)
 
 **Enhancements:**
 
@@ -28,6 +28,7 @@
 - In the JSON timeline, when there is no information in the `Details` field, we changed the default output of `"-"` to `{}` in order to make parsing easier. (#1386) (@hitenkoku)
 - Added support for the `–` (en dash), `—` (em dash), and `―` (horizontal bar) characters for the `windash` modifier to prevent signature bypass. (#1392) (@hitenkoku)
 - Updated the MITRE ATT&CK tags to support Sigma version 2 format. (Ex: `defense_evasion` => `defense-evasion`) (@fukusuket)
+- Updated the `evtx` crate to the latest for enhancements and bug fixes.
 
 **Bug Fixes:**
 - Sigma correlation rule count was not showing up in `Events with hits`. (#1373) (@fukusuket)
