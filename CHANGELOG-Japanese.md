@@ -4,13 +4,13 @@
 
 **新機能:**
 
-- Sigma V2の`|re`のサブモディファイアに対応した。 submodifers. (#1399) (@fukusuket)
+- Sigma V2の`|re:`のサブモディファイアに対応した。 submodifers. (#1399) (@fukusuket)
   - 参考: https://github.com/SigmaHQ/sigma-specification/blob/main/appendix/sigma-modifiers-appendix.md
-    * `i`: (insensitive) 大文字小文字を区別しないマッチングを無効にする。
-    * `m`: (multi-line) 複数行にまたがってマッチする。`^` /`$` は行頭/行末にマッチする。
-    * `s`: (single-line) ドット文字 (`.`) は改行文字を含むすべての文字にマッチする。
-- Sigma V2の`|exists`モディファイアに対応した。 (#1400) (@hitenkoku)
-- Sigma V2の`|cased`モディファイアに対応した。 (#1401) (@hitenkoku)
+    * `|re|i:`: (insensitive) 大文字小文字を区別しないマッチングを無効にする。
+    * `|re|m:`: (multi-line) 複数行にまたがってマッチする。`^` /`$` は行頭/行末にマッチする。
+    * `|re|s:`: (single-line) ドット文字 (`.`) は改行文字を含むすべての文字にマッチする。
+- Sigma V2の`|exists:`モディファイアに対応した。 (#1400) (@hitenkoku)
+- Sigma V2の`|cased:`モディファイアに対応した。 (#1401) (@hitenkoku)
 
 **改善:**
 
@@ -28,6 +28,7 @@
 - JSONタイムラインで`Details`フィールドに情報がない場合、JSONがパースしやすくなるように、デフォルトで出力される`"-"`を`{}`に変更した。(#1386) (@hitenkoku)
 - シグネチャーバイパスを防ぐため、`-` (エンダッシュ)、`-` (エムダッシュ)、`―` (水平バー) 文字を `windash` 修飾子でサポートするようにした。(#1392) (@hitenkoku)
 - MITRE ATT&CKタグをSigmaバージョン2の形式に対応させた。(例: `defense_evasion` => `defense-evasion`) (@fukusuket)
+- `evtx`クレートを最新のものに更新し、機能改善とバグ修正を行った。
 
 **バグ修正:**
 - Sigmaの相関ルールのカウントが`Events with hits`に表示されていなかった。(#1373) (@fukusuket)
