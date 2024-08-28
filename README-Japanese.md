@@ -887,7 +887,7 @@ General Options:
   -C, --clobber                          結果ファイルを上書きする
   -h, --help                             ヘルプメニューを表示する
   -J, --JSON-input                       .evtxファイルの代わりにJSON形式のログファイル(.jsonまたは.jsonl)をスキャンする
-  -s, --low-memory-mode                  イベントをソートしないことで、最小限のメモリでスキャンする
+  -s, --sort-events                      ファイル保存前にイベントをソートする (警告: これは多くのメモリを使用する!)
   -w, --no-wizard                        質問はしない。すべてのイベントとアラートをスキャンする
   -Q, --quiet-errors                     Quiet errorsモード: エラーログを保存しない
   -x, --recover-records                  空ページからevtxレコードをカービングする (デフォルト: 無効)
@@ -948,12 +948,10 @@ Time Format:
 
 #### `csv-timeline`コマンドの使用例
 
-* デフォルトの`standard`プロファイルと`--low-memory-mode`で１つのWindowsイベントログファイルに対してHayabusaを実行する:
-
-> 注意: `-s, --low-memory-mode`を使用した場合、結果はソートされません。 検知されるとすぐに結果が画面に出力されるかファイルに保存され、検知のためのメモリが解放されるためです。この結果、メモリが大幅に削減され（最大95％）、Hayabusaをエージェントとして実行する場合や大量のデータをスキャンする場合に有効です。ただし、検知結果はメモリ上に保存されないため、低メモリモードを有効にした場合、`-R, --remove-duplicate-data`や`-X, --remove-duplicate-detections`を併用することはできません。
+* デフォルトの`standard`プロファイルで１つのWindowsイベントログファイルに対してHayabusaを実行する:
 
 ```
-hayabusa.exe csv-timeline -f eventlog.evtx --low-memory-mode
+hayabusa.exe csv-timeline -f eventlog.evtx 
 ```
 
 * `verbose`プロファイルで複数のWindowsイベントログファイルのあるsample-evtxディレクトリに対して、Hayabusaを実行する:
@@ -1152,7 +1150,7 @@ General Options:
   -C, --clobber                          結果ファイルを上書きする
   -h, --help                             ヘルプ
   -J, --JSON-input                       .evtxファイルの代わりにJSON形式のログファイル(.jsonまたは.jsonl)をスキャンする
-  -s, --low-memory-mode                  イベントをソートしないことで、最小限のメモリでスキャンする
+  -s, --sort-events                      ファイル保存前イベントをソートする (警告: これは多くのメモリを使用する!)
   -w, --no-wizard                        質問はしない。すべてのイベントとアラートをスキャンする
   -Q, --quiet-errors                     Quiet errorsモード: エラーログを保存しない
   -x, --recover-records                  空ページからevtxレコードをカービングする (デフォルト: 無効)
