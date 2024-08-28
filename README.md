@@ -887,7 +887,7 @@ General Options:
   -C, --clobber                        Overwrite files when saving
   -h, --help                           Show the help menu
   -J, --JSON-input                     Scan JSON formatted logs instead of .evtx (.json or .jsonl)
-  -s, --low-memory-mode                Scan with the minimal amount of memory by not sorting events
+  -s, --sort-events                    Sort events before saving the file. (warning: this uses much more memory!)
   -w, --no-wizard                      Do not ask questions. Scan for all events and alerts
   -Q, --quiet-errors                   Quiet errors mode: do not save error logs
   -x, --recover-records                Carve evtx records from slack space (default: disabled)
@@ -948,12 +948,10 @@ Time Format:
 
 #### `csv-timeline` command examples
 
-* Run hayabusa against one Windows event log file with default `standard` profile and `--low-memory-mode`:
-
-> Note: Results will not be sorted when using `-s, --low-memory-mode`. This is because the results are outputted to screen or saved to a file as soon as they are detected and then memory for the detection is freed. This results in a significant reduction of memory (up to 95%) and is useful when running Hayabusa as an agent or scanning large amounts of data. However, because results are not saved in memory, it is not possible to use `-R, --remove-duplicate-data` or `-X, --remove-duplicate-detections` when enabling low memory mode.
+* Run hayabusa against one Windows event log file with default `standard` profile:
 
 ```
-hayabusa.exe csv-timeline -f eventlog.evtx --low-memory-mode
+hayabusa.exe csv-timeline -f eventlog.evtx
 ```
 
 * Run hayabusa against the sample-evtx directory with multiple Windows event log files with the verbose profile:
@@ -1152,7 +1150,7 @@ General Options:
   -C, --clobber                        Overwrite files when saving
   -h, --help                           Show the help menu
   -J, --JSON-input                     Scan JSON formatted logs instead of .evtx (.json or .jsonl)
-  -s, --low-memory-mode                Scan with the minimal amount of memory by not sorting events
+  -s, --sort-events                    Sort events before saving the file. (warning: this uses much more memory!)
   -w, --no-wizard                      Do not ask questions. Scan for all events and alerts
   -Q, --quiet-errors                   Quiet errors mode: do not save error logs
   -x, --recover-records                Carve evtx records from slack space (default: disabled)
