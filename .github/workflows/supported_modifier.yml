@@ -1,4 +1,4 @@
-name: Pipeline for generating supported modifier markdown
+name: Pipeline for creating supported modifier markdown
 
 on:
   workflow_dispatch:
@@ -9,13 +9,13 @@ jobs:
   updateMarkDown:
     runs-on: ubuntu-latest
     steps:
-      - name: clone hayabusa repo
+      - name: Clone hayabusa repo
         uses: actions/checkout@v4
         with:
           ref: ${{ github.event.pull_request.head.sha }}
           path: hayabusa
 
-      - name: clone sigma
+      - name: Clone Sigma
         uses: actions/checkout@v4
         with:
           repository: SigmaHQ/sigma
@@ -23,23 +23,20 @@ jobs:
           token: ${{ secrets.GITHUB_TOKEN }} ## This is necessary for executing on a local machine by act(Local GitHub Action Runner). We have to specify the github token explicitly.
 
       - name: Set up Python
-        # This is the version of the action for setting up Python, not the Python version.
         uses: actions/setup-python@v5
         with:
-          # Semantic version range syntax or exact version of a Python version
           python-version: '3.x'
-          # Optional - x64 or x86 architecture, defaults to x64
           architecture: 'x64'
 
-      - name: setup Poetry
+      - name: Setup Poetry
         run: |
           curl -sSL https://install.python-poetry.org | python3 -
 
       - name: Create markdown
         run: |
-          cd hayabusa/doc/script
+          cd hayabusa/scripts/supported_modifiers_check
           poetry install --no-root
-          poetry run python supported-modifier.py ../../../sigma-repo ../SupportedSigmaFieldModifiers.md
+          poetry run python supported-modifier.py ../../../sigma-repo ../../doc/SupportedSigmaFieldModifiers.md
 
       - name: Create Text
         id: create-text
