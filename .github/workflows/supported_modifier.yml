@@ -39,7 +39,7 @@ jobs:
         run: |
           cd hayabusa/doc/script
           poetry install --no-root
-          poetry run python supported-modifier.py ../sigma-repo ../SupportedSigmaFieldModifiers.md
+          poetry run python supported-modifier.py ../../../../sigma-repo ../SupportedSigmaFieldModifiers.md
 
       - name: Create Text
         id: create-text
