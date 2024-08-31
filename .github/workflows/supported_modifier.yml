@@ -82,7 +82,7 @@ jobs:
 
       - name: upload change log
         if: env.change_exist == 'true'
-        uses: actions/upload-artifact@4
+        uses: actions/upload-artifact@v4
         with:
           name: changed_rule_log
           path: ${{ github.workspace }}/changed_rule.logs
