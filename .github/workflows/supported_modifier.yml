@@ -34,7 +34,7 @@ jobs:
 
       - name: Create markdown
         run: |
-          cd hayabusa/doc/script
+          cd hayabusa/scripts/supported_modifiers_check
           poetry install --no-root
           poetry run python supported-modifier.py ../../../sigma-repo ../SupportedSigmaFieldModifiers.md
 
