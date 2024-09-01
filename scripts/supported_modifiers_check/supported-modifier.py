@@ -81,7 +81,7 @@ if __name__ == '__main__':
 
     markdown_str = pd.DataFrame(result, columns=header).to_markdown(index=False)
     formatted_datetime = datetime.datetime.now().strftime('%Y/%m/%d')
-    markdown_str = f"{markdown_str}\n\nUpdated: {formatted_datetime}\nAuthor: Fukusuke Takahashi"
+    markdown_str = f"{markdown_str}\n\nUpdated: {formatted_datetime}  \nAuthor: Fukusuke Takahashi"
     Path(args.out_path).write_text(markdown_str)
     end_time = time.time()
     execution_time = end_time - start_time

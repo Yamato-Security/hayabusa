@@ -27,5 +27,5 @@
 |             0 |                0 | gte                   | No                 |
 |             0 |                0 | fieldref              | No                 |
 
-Updated: 2024/09/01
+Updated: 2024/09/01  
 Author: Fukusuke Takahashi
