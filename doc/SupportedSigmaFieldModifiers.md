@@ -1,31 +1,38 @@
-|   Sigma Count |   Hayabusa Count | Field Modifier        | Hayabusa Support   |
-|--------------:|-----------------:|:----------------------|:-------------------|
-|            13 |               13 | all                   | Yes                |
-|             7 |               11 | base64offsetǀcontains | Yes                |
-|            34 |               62 | cidr                  | Yes                |
-|          2738 |             4512 | contains              | Yes                |
-|           970 |             1653 | containsǀall          | Yes                |
-|             4 |                8 | containsǀallǀwindash  | Yes                |
-|             1 |                0 | containsǀexpand       | No                 |
-|            76 |              150 | containsǀwindash      | Yes                |
-|          2893 |             4683 | endswith              | Yes                |
-|             1 |                2 | endswithǀwindash      | Yes                |
-|             8 |                0 | expand                | No                 |
-|           165 |              237 | re                    | Yes                |
-|           436 |              542 | startswith            | Yes                |
-|             0 |                0 | exists                | Yes                |
-|             0 |                0 | cased                 | Yes                |
-|             0 |                0 | reǀi                  | Yes                |
-|             0 |                0 | reǀm                  | Yes                |
-|             0 |                0 | reǀs                  | Yes                |
-|             0 |                0 | base64ǀutf16le        | No                 |
-|             0 |                0 | base64ǀutf16be        | No                 |
-|             0 |                0 | base64ǀwide           | No                 |
-|             0 |                0 | lt                    | No                 |
-|             0 |                0 | lte                   | No                 |
-|             0 |                0 | gt                    | No                 |
-|             0 |                0 | gte                   | No                 |
-|             0 |                0 | fieldref              | No                 |
+# Hayabusa supported field modifiers
+| Field Modifier        |   Sigma Count |   Hayabusa Count |
+|:----------------------|--------------:|-----------------:|
+| all                   |            13 |                0 |
+| base64offsetǀcontains |             7 |                0 |
+| cased                 |             0 |                0 |
+| cidr                  |            34 |                0 |
+| contains              |          2738 |                9 |
+| containsǀall          |           970 |                0 |
+| containsǀallǀwindash  |             4 |                0 |
+| containsǀwindash      |            76 |                0 |
+| endswith              |          2893 |               34 |
+| endswithfield         |             0 |                0 |
+| endswithǀwindash      |             1 |                0 |
+| equalsfield           |             0 |                0 |
+| exists                |             0 |                0 |
+| re                    |           165 |                9 |
+| reǀi                  |             0 |                0 |
+| reǀm                  |             0 |                0 |
+| reǀs                  |             0 |                0 |
+| startswith            |           436 |                6 |
+
+# Hayabusa unsupported field modifiers
+| Field Modifier   |   Sigma Count |   Hayabusa Count |
+|:-----------------|--------------:|-----------------:|
+| base64ǀutf16be   |             0 |                0 |
+| base64ǀutf16le   |             0 |                0 |
+| base64ǀwide      |             0 |                0 |
+| containsǀexpand  |             1 |                0 |
+| expand           |             8 |                0 |
+| fieldref         |             0 |                0 |
+| gt               |             0 |                0 |
+| gte              |             0 |                0 |
+| lt               |             0 |                0 |
+| lte              |             0 |                0 |
 
 Updated: 2024/09/01  
 Author: Fukusuke Takahashi

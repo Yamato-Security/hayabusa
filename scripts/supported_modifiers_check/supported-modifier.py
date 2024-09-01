@@ -33,7 +33,7 @@ def add_missing_modifiers(counter: Counter) -> Counter:
     check_strings = [
         'all', 'startswith', 'endswith', 'contains', 'exists', 'cased', 'windash', 're', 're|i', 're|m', 're|s',
         'base64', 'base64offset', 'base64|utf16le', 'base64|utf16be', 'base64|utf16', 'base64|wide',
-        'lt', 'lte', 'gt', 'gte', 'cidr', 'expand', 'fieldref'
+        'lt', 'lte', 'gt', 'gte', 'cidr', 'expand', 'fieldref', 'equalsfield', 'endswithfield'
     ]
 
     for key in check_strings:
@@ -51,6 +51,8 @@ def get_yml_detection_counts(dir_path: str) -> Counter:
             contents = ruamel.yaml.YAML().load_all(f)
             for content in contents:
                 if content.get('logsource', {}).get('product') == 'windows':
+                    if content.get('ruletype', "") == "Sigma":
+                        continue
                     yml_detection_keys.extend(extract_keys_recursive(content.get('detection', {})))
     logging.info('Finished processing YAML files')
     return add_missing_modifiers(Counter(sorted(yml_detection_keys)))
@@ -67,24 +69,31 @@ if __name__ == '__main__':
 
     sigma_key_counter = get_yml_detection_counts(args.sigma_path)
     hayabusa_key_counter = get_yml_detection_counts(args.hayabusa_path)
-    header = ["Sigma Count", "Hayabusa Count", "Field Modifier", "Hayabusa Support"]
-    hayabusa_supported = {"all", "base64offset", "contains", "cidr", "windash", "endswith", "startswith", "re", "exists", "cased", "re", "re|i", "re|m", "re|s"}
+    header = ["Field Modifier", "Sigma Count", "Hayabusa Count"]
+    hayabusa_supported = {"all", "base64offset", "contains", "cidr", "windash", "endswith", "startswith", "re", "exists", "cased", "re", "re|i", "re|m", "re|s" , 'equalsfield', 'endswithfield'}
 
-    result = []
+    result_supported = []
+    result_unsupported = []
     for k, v in sigma_key_counter.items():
         modifiers = [x for x in str(k).split('|') if x]
         supported_modifier = all(map(lambda x: True if x in hayabusa_supported else False, modifiers))
         supported_modifier = "Yes" if supported_modifier else "No"
         supported_modifier = "Yes" if k in hayabusa_supported else supported_modifier
         hayabusa_count = hayabusa_key_counter.get(k, 0)
-        result.append([v, hayabusa_count, k.strip('|').replace('|', 'ǀ'), supported_modifier])
+        res = [k.strip('|').replace('|', 'ǀ'), v, hayabusa_count]
+        if supported_modifier == "Yes":
+            result_supported.append(res)
+        else:
+            result_unsupported.append(res)
 
-    markdown_str = pd.DataFrame(result, columns=header).to_markdown(index=False)
-    formatted_datetime = datetime.datetime.now().strftime('%Y/%m/%d')
-    markdown_str = f"{markdown_str}\n\nUpdated: {formatted_datetime}  \nAuthor: Fukusuke Takahashi"
+    markdown_str = "# Hayabusa supported field modifiers\n"
+    markdown_str = markdown_str + pd.DataFrame(sorted(result_supported), columns=header).to_markdown(index=False)
+    markdown_str = markdown_str + "\n\n# Hayabusa unsupported field modifiers\n"
+    markdown_str = markdown_str + pd.DataFrame(sorted(result_unsupported), columns=header).to_markdown(index=False)
+    markdown_str = f"{markdown_str}\n\nUpdated: {datetime.datetime.now().strftime('%Y/%m/%d')}  \nAuthor: Fukusuke Takahashi"
     Path(args.out_path).write_text(markdown_str)
+
     end_time = time.time()
     execution_time = end_time - start_time
-
     logging.info(f'Markdown report generated and saved to {args.out_path}')
     logging.info(f'Script execution completed in {execution_time:.2f} seconds')
