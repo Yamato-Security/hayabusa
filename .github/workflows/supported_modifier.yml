@@ -22,6 +22,14 @@ jobs:
           path: sigma-repo
           token: ${{ secrets.GITHUB_TOKEN }} ## This is necessary for executing on a local machine by act(Local GitHub Action Runner). We have to specify the github token explicitly.
 
+      - name: Clone hayabusa rule repo
+        uses: actions/checkout@v4
+        with:
+          repository: Yamato-Security/hayabusa-rules
+          path: hayabusa-rules-repo
+          token: ${{ secrets.GITHUB_TOKEN }} ## This is necessary for executing on a local machine by act(Local GitHub Action Runner). We have to specify the github token explicitly.
+
+
       - name: Set up Python
         uses: actions/setup-python@v5
         with:
@@ -36,7 +44,7 @@ jobs:
         run: |
           cd hayabusa/scripts/supported_modifiers_check
           poetry install --no-root
-          poetry run python supported-modifier.py ../../../sigma-repo ../../doc/SupportedSigmaFieldModifiers.md
+          poetry run python supported-modifier.py ../../../sigma-repo ../../../hayabusa-rules ../../doc/SupportedSigmaFieldModifiers.md
 
       - name: Create Text
         id: create-text
