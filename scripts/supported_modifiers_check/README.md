@@ -14,3 +14,8 @@ This script will create a markdown table of the field modifiers being used by Si
 ## Run Actions
 - Manual: https://github.com/fukusuket/hayabusa/actions/runs/10643011211/job/29506086051
 - Schedule: `cron: '0 20 * * *'`
+
+# Authors
+
+Fukusuke Takahashi
+Zach Mathis
