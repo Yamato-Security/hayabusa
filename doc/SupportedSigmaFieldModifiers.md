@@ -10,9 +10,9 @@
 | containsǀallǀwindash  |             4 |                0 |
 | containsǀwindash      |            76 |                0 |
 | endswith              |          2893 |               34 |
-| endswithfield         |             0 |                0 |
+| endswithfield         |             0 |                1 |
 | endswithǀwindash      |             1 |                0 |
-| equalsfield           |             0 |                0 |
+| equalsfield           |             0 |                1 |
 | exists                |             0 |                0 |
 | re                    |           165 |                9 |
 | reǀi                  |             0 |                0 |
@@ -34,5 +34,5 @@
 | lt               |             0 |                0 |
 | lte              |             0 |                0 |
 
-Updated: 2024/09/01  
+Updated: 2024/09/02  
 Author: Fukusuke Takahashi

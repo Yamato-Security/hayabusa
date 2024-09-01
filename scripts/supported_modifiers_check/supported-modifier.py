@@ -18,7 +18,7 @@ def extract_keys_recursive(d) -> list[str]:
     keys = []
     for k, v in d.items():
         if '|' in k:
-            k = re.sub(r'^.*?\|', '|', k)
+            k = re.sub(r'^.*?\|', '', k)
             keys.append(k)
         if isinstance(v, dict):
             keys.extend(extract_keys_recursive(v))
