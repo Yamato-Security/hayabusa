@@ -1,0 +1,2 @@
+version = 1
+approve.auto_approve_usernames = ["github-actions"]
