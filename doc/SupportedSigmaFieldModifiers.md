@@ -5,20 +5,20 @@
 | base64offsetǀcontains |             7 |                0 |
 | cased                 |             0 |                0 |
 | cidr                  |            34 |                0 |
-| contains              |          2738 |                9 |
+| contains              |          2737 |                0 |
 | containsǀall          |           970 |                0 |
 | containsǀallǀwindash  |             4 |                0 |
 | containsǀwindash      |            76 |                0 |
-| endswith              |          2893 |               34 |
-| endswithfield         |             0 |                1 |
+| endswith              |          2896 |                0 |
+| endswithfield         |             0 |                0 |
 | endswithǀwindash      |             1 |                0 |
-| equalsfield           |             0 |                1 |
+| equalsfield           |             0 |                0 |
 | exists                |             0 |                0 |
-| re                    |           165 |                9 |
+| re                    |           165 |                0 |
 | reǀi                  |             0 |                0 |
 | reǀm                  |             0 |                0 |
 | reǀs                  |             0 |                0 |
-| startswith            |           436 |                6 |
+| startswith            |           436 |                0 |
 
 # Hayabusa unsupported field modifiers
 | Field Modifier   |   Sigma Count |   Hayabusa Count |
@@ -34,5 +34,5 @@
 | lt               |             0 |                0 |
 | lte              |             0 |                0 |
 
-Updated: 2024/09/02  
+Updated: 2024/09/03  
 Author: Fukusuke Takahashi
