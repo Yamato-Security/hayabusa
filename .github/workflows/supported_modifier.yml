@@ -44,7 +44,7 @@ jobs:
         run: |
           cd hayabusa/scripts/supported_modifiers_check
           poetry install --no-root
-          poetry run python supported-modifier.py ../../../sigma-repo ../../../hayabusa-rules ../../doc/SupportedSigmaFieldModifiers.md
+          poetry run python supported-modifier.py ../../../sigma-repo ../../../hayabusa-rules-repo ../../doc/SupportedSigmaFieldModifiers.md
 
       - name: Create Text
         id: create-text
