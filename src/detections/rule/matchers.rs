@@ -591,6 +591,7 @@ impl LeafMatcher for DefaultMatcher {
         let match_result = match pipe {
             PipeElement::Exists(..)
             | PipeElement::EqualsField(_)
+            | PipeElement::FieldRef(_)
             | PipeElement::Endswithfield(_) => Some(pipe.is_eqfield_match(event_value, recinfo)),
             PipeElement::Cidr(ip_result) => match ip_result {
                 Ok(matcher_ip) => {
@@ -714,6 +715,7 @@ enum PipeElement {
     Exists(String, String),
     EqualsField(String),
     Endswithfield(String),
+    FieldRef(String),
     Base64offset,
     Windash,
     Cidr(Result<IpCidr, NetworkParseError>),
@@ -738,6 +740,7 @@ impl PipeElement {
             "remultiline" => Option::Some(PipeElement::ReMultiLine),
             "equalsfield" => Option::Some(PipeElement::EqualsField(pattern.to_string())),
             "endswithfield" => Option::Some(PipeElement::Endswithfield(pattern.to_string())),
+            "fieldref" => Option::Some(PipeElement::FieldRef(pattern.to_string())),
             "base64offset" => Option::Some(PipeElement::Base64offset),
             "windash" => Option::Some(PipeElement::Windash),
             "cidr" => Option::Some(PipeElement::Cidr(IpCidr::from_str(pattern))),
@@ -760,6 +763,7 @@ impl PipeElement {
     fn get_eqfield(&self) -> Option<&String> {
         match self {
             PipeElement::EqualsField(s) => Option::Some(s),
+            PipeElement::FieldRef(s) => Some(s),
             PipeElement::Endswithfield(s) => Option::Some(s),
             _ => Option::None,
         }
@@ -770,7 +774,7 @@ impl PipeElement {
             PipeElement::Exists(eq_key, val) => {
                 val.to_lowercase() == recinfo.get_value(eq_key).is_some().to_string()
             }
-            PipeElement::EqualsField(eq_key) => {
+            PipeElement::EqualsField(eq_key) | PipeElement::FieldRef(eq_key) => {
                 let eq_value = recinfo.get_value(eq_key);
                 // Evtxのレコードに存在しないeventkeyを指定された場合はfalseにする
                 if event_value.is_none() || eq_value.is_none() {
@@ -2424,6 +2428,43 @@ mod tests {
             "Event_attributes": {"xmlns": "http://schemas.microsoft.com/win/2004/08/events/event"}
         }"#;
 
+        check_select(rule_str, record_json_str, false);
+    }
+
+    #[test]
+    fn test_eq_field_ref() {
+        // fieldrefで正しく検知できることを確認
+        let rule_str = r#"
+        detection:
+            selection:
+                Channel|fieldref: Computer
+        details: 'command=%CommandLine%'
+        "#;
+
+        let record_json_str = r#"
+        {
+            "Event": {"System": {"EventID": 4103, "Channel": "Security", "Computer": "Security" }},
+            "Event_attributes": {"xmlns": "http://schemas.microsoft.com/win/2004/08/events/event"}
+        }"#;
+
+        check_select(rule_str, record_json_str, true);
+    }
+
+    #[test]
+    fn test_eq_field_ref_notdetect() {
+        // fieldrefの検知できないパターン
+        let rule_str = r#"
+        detection:
+            selection:
+                Channel|fieldref: Computer
+        details: 'command=%CommandLine%'
+        "#;
+
+        let record_json_str = r#"
+        {
+            "Event": {"System": {"EventID": 4103, "Channel": "Security", "Computer": "Powershell" }},
+            "Event_attributes": {"xmlns": "http://schemas.microsoft.com/win/2004/08/events/event"}
+        }"#;
         check_select(rule_str, record_json_str, false);
     }
 
