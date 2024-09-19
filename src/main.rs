@@ -541,11 +541,7 @@ impl App {
                     _ => None,
                 };
                 // エラーが出た場合はインターネット接続がそもそもできないなどの問題点もあるためエラー等の出力は行わない
-                let latest_version_data = if let Ok(data) = Update::get_latest_hayabusa_version() {
-                    data
-                } else {
-                    None
-                };
+                let latest_version_data = Update::get_latest_hayabusa_version().unwrap_or_default();
                 let now_version = &format!("v{}", env!("CARGO_PKG_VERSION"));
                 stored_static.include_status.insert("*".into());
                 match Update::update_rules(update_target.unwrap().to_str().unwrap(), stored_static)
