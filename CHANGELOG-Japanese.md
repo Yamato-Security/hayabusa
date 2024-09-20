@@ -1,5 +1,11 @@
 # 変更点
 
+## 2.18.0 [xxxx/xx/xx]
+
+**新機能:**
+
+- `fieldref`モディファイアに対応した。(#1409) (@hitenkoku)
+
 ## 2.17.0 [2024/08/23] "HITCON Community Release"
 
 **新機能:**
