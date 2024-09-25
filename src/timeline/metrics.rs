@@ -184,7 +184,7 @@ impl EventMetrics {
             let channel = if let Some(ch) =
                 utils::get_event_value("Channel", &record.record, &stored_static.eventkey_alias)
             {
-                ch.as_str().unwrap()
+                ch.as_str().unwrap_or_else(|| { "None" })
             } else {
                 "-"
             };
