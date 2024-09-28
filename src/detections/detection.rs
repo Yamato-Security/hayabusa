@@ -731,6 +731,7 @@ impl Detection {
             rulepath: CompactString::from(&rule.rulepath),
             ruleid: CompactString::from(rule.yaml["id"].as_str().unwrap_or("-")),
             ruletitle: CompactString::from(rule.yaml["title"].as_str().unwrap_or("-")),
+            ruleauther: CompactString::from(rule.yaml["author"].as_str().unwrap_or("-")),
             level: CompactString::from(
                 LEVEL_ABBR_MAP
                     .get(&level.as_str())
@@ -997,6 +998,7 @@ impl Detection {
             rulepath: CompactString::from(&rule.rulepath),
             ruleid: CompactString::from(rule.yaml["id"].as_str().unwrap_or("-")),
             ruletitle: CompactString::from(rule.yaml["title"].as_str().unwrap_or("-")),
+            ruleauther: CompactString::from(rule.yaml["author"].as_str().unwrap_or("-")),
             level: CompactString::from(
                 LEVEL_ABBR_MAP
                     .get(str_level)

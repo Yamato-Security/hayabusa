@@ -23,19 +23,17 @@ use num_format::{Locale, ToFormattedString};
 use termcolor::{Buffer, BufferWriter, Color, ColorChoice, ColorSpec, WriteColor};
 use terminal_size::terminal_size;
 use terminal_size::Width;
-use yaml_rust::YamlLoader;
 
 use crate::detections::configs::{
     Action, OutputOption, StoredStatic, CONTROL_CHAT_REPLACE_MAP, CURRENT_EXE_PATH, GEOIP_DB_PARSER,
 };
 use crate::detections::message::{AlertMessage, DetectInfo, COMPUTER_MITRE_ATTCK_MAP, LEVEL_FULL};
 use crate::detections::utils::{
-    self, format_time, get_writable_color, output_and_data_stack_for_html, parse_csv,
-    write_color_buffer,
+    self, check_setting_path, format_time, get_writable_color, output_and_data_stack_for_html,
+    parse_csv, write_color_buffer,
 };
 use crate::options::htmlreport;
 use crate::options::profile::Profile;
-use crate::yaml::ParseYaml;
 use rust_embed::Embed;
 
 lazy_static! {
@@ -524,7 +522,7 @@ fn calc_statistic_info(
             let author_list = afterfact_info
                 .author_list_cache
                 .entry(detect_info.rulepath.clone())
-                .or_insert_with(|| extract_author_name(&detect_info.rulepath))
+                .or_insert_with(|| extract_author_name(&detect_info.ruleauther))
                 .clone();
             let author_str = author_list.iter().join(", ");
             afterfact_info
@@ -1572,18 +1570,34 @@ fn _print_detection_summary_tables(
                 LEVEL_FULL.get(level[1].as_str()).unwrap(),
                 LEVEL_FULL.get(level[1].as_str()).unwrap()
             ));
+            let rule_path = stored_static.output_option.as_ref().unwrap().rules.clone();
+            let rule_encoded =
+                check_setting_path(&CURRENT_EXE_PATH.to_path_buf(), "encoded_rules.yml", true)
+                    .unwrap();
+            let is_encoded_rule = rule_encoded.exists() && rule_encoded.to_path_buf() == rule_path;
             for x in sorted_detections.iter() {
                 let not_found_str = CompactString::from_str("<Not Found Path>").unwrap();
                 let rule_path = rule_title_path_map.get(x.0).unwrap_or(&not_found_str);
-                html_output_stock.push(format!(
-                    "- [{}]({}) ({}) - {}",
-                    x.0,
-                    &rule_path.replace('\\', "/"),
-                    x.1.to_formatted_string(&Locale::en),
-                    rule_detect_author_map
-                        .get(rule_path)
-                        .unwrap_or(&not_found_str)
-                ));
+                if is_encoded_rule {
+                    html_output_stock.push(format!(
+                        "- {} ({}) - {}",
+                        x.0,
+                        x.1.to_formatted_string(&Locale::en),
+                        rule_detect_author_map
+                            .get(rule_path)
+                            .unwrap_or(&not_found_str)
+                    ));
+                } else {
+                    html_output_stock.push(format!(
+                        "- [{}]({}) ({}) - {}",
+                        x.0,
+                        &rule_path.replace('\\', "/"),
+                        x.1.to_formatted_string(&Locale::en),
+                        rule_detect_author_map
+                            .get(rule_path)
+                            .unwrap_or(&not_found_str)
+                    ));
+                }
             }
             html_output_stock.push("");
         }
@@ -2178,44 +2192,24 @@ fn output_detected_rule_authors(
 }
 
 /// 与えられたyaml_pathからauthorの名前を抽出して配列で返却する関数
-fn extract_author_name(yaml_path: &str) -> Nested<String> {
-    let contents = match ParseYaml::read_file(&Path::new(&yaml_path).to_path_buf()) {
-        Ok(yaml) => Some(yaml),
-        Err(e) => {
-            AlertMessage::alert(&e).ok();
-            None
-        }
-    };
-    if contents.is_none() {
-        // 対象のファイルが存在しなかった場合は空配列を返す(検知しているルールに対して行うため、ここは通る想定はないが、ファイルが検知途中で削除された場合などを考慮して追加)
-        return Nested::new();
+fn extract_author_name(author: &str) -> Nested<String> {
+    let mut ret = Nested::<String>::new();
+    for author in author.split(',').map(|s| {
+        // 各要素の括弧以降の記載は名前としないためtmpの一番最初の要素のみを参照する
+        // データの中にdouble quote と single quoteが入っているためここで除外する
+        s.split('(').next().unwrap_or_default().to_string()
+    }) {
+        ret.extend(author.split(';'));
     }
-    for yaml in YamlLoader::load_from_str(&contents.unwrap())
-        .unwrap_or_default()
-        .into_iter()
-    {
-        if let Some(author) = yaml["author"].as_str() {
-            let mut ret = Nested::<String>::new();
-            for author in author.split(',').map(|s| {
-                // 各要素の括弧以降の記載は名前としないためtmpの一番最初の要素のみを参照する
-                // データの中にdouble quote と single quoteが入っているためここで除外する
-                s.split('(').next().unwrap_or_default().to_string()
-            }) {
-                ret.extend(author.split(';'));
-            }
 
-            return ret
-                .iter()
-                .map(|r| {
-                    r.split('/')
-                        .map(|p| p.trim().replace(['"', '\''], ""))
-                        .collect::<String>()
-                })
-                .collect();
-        };
-    }
-    // ここまで来た場合は要素がない場合なので空配列を返す
-    Nested::new()
+    return ret
+        .iter()
+        .map(|r| {
+            r.split('/')
+                .map(|p| p.trim().replace(['"', '\''], ""))
+                .collect::<String>()
+        })
+        .collect();
 }
 
 ///MITRE ATTCKのTacticsの属性を持つルールに検知したコンピュータ名をhtml出力するための文字列をhtml_output_stockに追加する関数
@@ -2504,6 +2498,7 @@ mod tests {
                     rulepath: CompactString::from(test_rulepath),
                     ruleid: test_rule_id.into(),
                     ruletitle: CompactString::from(test_title),
+                    ruleauther: CompactString::from("test_author"),
                     level: CompactString::from(test_level),
                     computername: CompactString::from(test_computername2),
                     eventid: CompactString::from(test_eventid),
@@ -2528,6 +2523,7 @@ mod tests {
                     rulepath: CompactString::from(test_rulepath),
                     ruleid: test_rule_id.into(),
                     ruletitle: CompactString::from(test_title),
+                    ruleauther: CompactString::from("test_author"),
                     level: CompactString::from(test_level),
                     computername: CompactString::from(test_computername),
                     eventid: CompactString::from(test_eventid),
@@ -2851,6 +2847,7 @@ mod tests {
                     rulepath: CompactString::from(test_rulepath),
                     ruleid: test_rule_id.into(),
                     ruletitle: CompactString::from(test_title),
+                    ruleauther: CompactString::from("test_author"),
                     level: CompactString::from(test_level),
                     computername: CompactString::from(test_computername2),
                     eventid: CompactString::from(test_eventid),
@@ -2875,6 +2872,7 @@ mod tests {
                     rulepath: CompactString::from(test_rulepath),
                     ruleid: test_rule_id.into(),
                     ruletitle: CompactString::from(test_title),
+                    ruleauther: CompactString::from("test_author"),
                     level: CompactString::from(test_level),
                     computername: CompactString::from(test_computername),
                     eventid: CompactString::from(test_eventid),
@@ -3178,6 +3176,7 @@ mod tests {
                     rulepath: CompactString::from(test_rulepath),
                     ruleid: test_rule_id.into(),
                     ruletitle: CompactString::from(test_title),
+                    ruleauther: CompactString::from("test_author"),
                     level: CompactString::from(test_level),
                     computername: CompactString::from(test_computername2),
                     eventid: CompactString::from(test_eventid),
@@ -3202,6 +3201,7 @@ mod tests {
                     rulepath: CompactString::from(test_rulepath),
                     ruleid: test_rule_id.into(),
                     ruletitle: CompactString::from(test_title),
+                    ruleauther: CompactString::from("test_author"),
                     level: CompactString::from(test_level),
                     computername: CompactString::from(test_computername),
                     eventid: CompactString::from(test_eventid),
@@ -3515,6 +3515,7 @@ mod tests {
                     rulepath: CompactString::from(test_rulepath),
                     ruleid: test_rule_id.into(),
                     ruletitle: CompactString::from(test_title),
+                    ruleauther: CompactString::from("test_author"),
                     level: CompactString::from(test_level),
                     computername: CompactString::from(test_computername2),
                     eventid: CompactString::from(test_eventid),
@@ -3539,6 +3540,7 @@ mod tests {
                     rulepath: CompactString::from(test_rulepath),
                     ruleid: test_rule_id.into(),
                     ruletitle: CompactString::from(test_title),
+                    ruleauther: CompactString::from("test_author"),
                     level: CompactString::from(test_level),
                     computername: CompactString::from(test_computername),
                     eventid: CompactString::from(test_eventid),
@@ -3924,6 +3926,7 @@ mod tests {
                     rulepath: CompactString::from(test_rulepath),
                     ruleid: test_rule_id.into(),
                     ruletitle: CompactString::from(test_title),
+                    ruleauther: CompactString::from("test_author"),
                     level: CompactString::from(test_level),
                     computername: CompactString::from(test_computername),
                     eventid: CompactString::from(test_eventid),
@@ -4278,6 +4281,7 @@ mod tests {
                     rulepath: CompactString::from(test_rulepath),
                     ruleid: test_rule_id.into(),
                     ruletitle: CompactString::from(test_title),
+                    ruleauther: CompactString::from("test_author"),
                     level: CompactString::from(test_level),
                     computername: CompactString::from(test_computername2),
                     eventid: CompactString::from(test_eventid),
@@ -4558,6 +4562,7 @@ mod tests {
                     rulepath: CompactString::from(test_rulepath),
                     ruleid: test_rule_id.into(),
                     ruletitle: CompactString::from(test_title),
+                    ruleauther: CompactString::from("test_author"),
                     level: CompactString::from(test_level),
                     computername: CompactString::from(test_computername2),
                     eventid: CompactString::from(test_eventid),
