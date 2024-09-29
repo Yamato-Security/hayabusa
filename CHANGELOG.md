@@ -5,6 +5,7 @@
 **New Features:**
 
 - Support for the `fieldref` modifier. (#1409) (@hitenkoku)
+- Support for XOR encoded rules to minimize files put on the system as well as bypass anti-virus products that give false positives on rules. (#1419) (@fukusuket)
 
 ## 2.17.0 [2024/08/23] "HITCON Community Release"
 
