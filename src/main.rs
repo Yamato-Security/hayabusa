@@ -565,7 +565,7 @@ impl App {
                             write_color_buffer(
                                 &BufferWriter::stdout(ColorChoice::Always),
                                 None,
-                                "Rules(encoded_rules.yml) updated successfully.",
+                                "Rules file encoded_rules.yml updated successfully.",
                                 true,
                             )
                             .ok();
