@@ -71,6 +71,17 @@ impl ParseYaml {
         Ok(file_content)
     }
 
+    fn read_encoded_file(path: &PathBuf) -> Result<String, String> {
+        let mut fr = fs::File::open(path)
+            .map(BufReader::new)
+            .map_err(|e| e.to_string())?;
+        let mut encrypted_content = Vec::new();
+        let _ = fr.read_to_end(&mut encrypted_content);
+        let decode_content = encrypted_content.iter().map(|&b| b ^ 0xAA).collect(); // key: 0xAA
+        let decode_string = String::from_utf8(decode_content).expect("Invalid UTF-8 sequence");
+        Ok(decode_string)
+    }
+
     fn update_correlation_counts(&mut self, yaml_docs: &Vec<Yaml>) {
         for doc in yaml_docs {
             if let Some(correlation) = doc["correlation"].as_hash() {
@@ -96,6 +107,7 @@ impl ParseYaml {
             }
         }
     }
+
     pub fn read_dir<P: AsRef<Path>>(
         &mut self,
         path: P,
@@ -143,9 +155,20 @@ impl ParseYaml {
             {
                 return io::Result::Ok(String::default());
             }
-
             // 個別のファイルの読み込みは即終了としない。
-            let read_content = Self::read_file(&path.as_ref().to_path_buf());
+            let mut is_encoded = false;
+            let read_content = if path
+                .as_ref()
+                .to_path_buf()
+                .file_name()
+                .unwrap_or_else(|| OsStr::new(""))
+                == "encoded_rules.yml"
+            {
+                is_encoded = true;
+                Self::read_encoded_file(&path.as_ref().to_path_buf())
+            } else {
+                Self::read_file(&path.as_ref().to_path_buf())
+            };
             if read_content.is_err() {
                 let errmsg = format!(
                     "fail to read file: {}\n{} ",
@@ -170,7 +193,14 @@ impl ParseYaml {
                 Ok(contents) => {
                     Self::update_correlation_counts(self, &contents);
                     yaml_docs.extend(contents.into_iter().map(|yaml_content| {
-                        let filepath = format!("{}", path.as_ref().to_path_buf().display());
+                        let filepath = if is_encoded {
+                            yaml_content["rulefile"]
+                                .as_str()
+                                .unwrap_or_default()
+                                .to_string()
+                        } else {
+                            format!("{}", path.as_ref().to_path_buf().display())
+                        };
                         (filepath, yaml_content)
                     }));
                 }
@@ -526,7 +556,20 @@ pub fn count_rules<P: AsRef<Path>>(
         }
 
         // 個別のファイルの読み込みは即終了としない。
-        let read_content = ParseYaml::read_file(&path.as_ref().to_path_buf());
+        let mut is_encoded = false;
+        let read_content = if path
+            .as_ref()
+            .to_path_buf()
+            .file_name()
+            .unwrap_or_else(|| OsStr::new(""))
+            == "encoded_rules.yml"
+        {
+            is_encoded = true;
+            ParseYaml::read_encoded_file(&path.as_ref().to_path_buf())
+        } else {
+            ParseYaml::read_file(&path.as_ref().to_path_buf())
+        };
+
         if read_content.is_err() {
             return HashMap::default();
         }
@@ -538,7 +581,14 @@ pub fn count_rules<P: AsRef<Path>>(
         }
 
         yaml_docs.extend(yaml_contents.unwrap().into_iter().map(|yaml_content| {
-            let filepath = format!("{}", path.as_ref().to_path_buf().display());
+            let filepath = if is_encoded {
+                yaml_content["rulefile"]
+                    .as_str()
+                    .unwrap_or_default()
+                    .to_string()
+            } else {
+                format!("{}", path.as_ref().to_path_buf().display())
+            };
             (filepath, yaml_content)
         }));
     } else {
@@ -720,7 +770,6 @@ pub fn count_rules<P: AsRef<Path>>(
 
 #[cfg(test)]
 mod tests {
-
     use crate::detections::configs::Action;
     use crate::detections::configs::CommonOptions;
     use crate::detections::configs::Config;
@@ -736,7 +785,9 @@ mod tests {
     use compact_str::CompactString;
     use hashbrown::HashMap;
     use hashbrown::HashSet;
-    use std::path::Path;
+    use std::fs::File;
+    use std::io::Write;
+    use std::path::{Path, PathBuf};
     use yaml_rust::YamlLoader;
 
     fn create_dummy_stored_static() -> StoredStatic {
@@ -1262,5 +1313,24 @@ mod tests {
         )
         .unwrap();
         assert_eq!(yaml.files.len(), 5);
+    }
+
+    #[test]
+    fn test_read_encoded_file() {
+        let test_path = PathBuf::from("test_encoded_file");
+        let encoded_content: Vec<u8> = vec![
+            b'H' ^ 0xAA,
+            b'e' ^ 0xAA,
+            b'l' ^ 0xAA,
+            b'l' ^ 0xAA,
+            b'o' ^ 0xAA,
+        ];
+        let mut file = File::create(&test_path).expect("Failed to create test file");
+        file.write_all(&encoded_content)
+            .expect("Failed to write to test file");
+        let result = ParseYaml::read_encoded_file(&test_path);
+        std::fs::remove_file(&test_path).expect("Failed to delete test file");
+        assert!(result.is_ok());
+        assert_eq!(result.unwrap(), "Hello");
     }
 }

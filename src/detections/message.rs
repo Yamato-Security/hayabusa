@@ -36,6 +36,7 @@ pub struct DetectInfo {
     pub rulepath: CompactString,
     pub ruleid: CompactString,
     pub ruletitle: CompactString,
+    pub ruleauthor: CompactString,
     pub level: CompactString,
     pub computername: CompactString,
     pub eventid: CompactString,
