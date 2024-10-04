@@ -35,15 +35,28 @@ Hayabusa is a **Windows event log fast forensics timeline generator** and **thre
 # Companion Projects
 
 * [EnableWindowsLogSettings](https://github.com/Yamato-Security/EnableWindowsLogSettings) - Documentation and scripts to properly enable Windows event logs.
-* [Hayabusa Rules](https://github.com/Yamato-Security/hayabusa-rules) - Detection rules for hayabusa.
+* [Hayabusa Encoded Rules](https://github.com/Yamato-Security/hayabusa-encoded-rules) - The same as Hayabusa Rules repository but the rules and config files are stored in one file and XORed to prevent false positives from anti-virus.
+* [Hayabusa Rules](https://github.com/Yamato-Security/hayabusa-rules) - Hayabusa and curated Sigma detection rules used Hayabusa.
+* [Hayabusa EVTX](https://github.com/Yamato-Security/hayabusa-evtx) - A more maintained fork of the `evtx` crate.
 * [Hayabusa Sample EVTXs](https://github.com/Yamato-Security/hayabusa-sample-evtx) - Sample evtx files to use for testing hayabusa/sigma detection rules.
+* [Presentations](https://github.com/Yamato-Security/Presentations) - Presentations from talks that we have given about our tools and resources.
+* [Sigma to Hayabusa Converter](https://github.com/Yamato-Security/sigma-to-hayabusa-converter) - Curates upstream Windows event log based Sigma rules into an easier to use form.
 * [Takajo](https://github.com/Yamato-Security/takajo) - An analyzer for hayabusa results.
-* [WELA (Windows Event Log Analyzer)](https://github.com/Yamato-Security/WELA) - An analyzer for Windows event logs written in PowerShell.
+* [WELA (Windows Event Log Analyzer)](https://github.com/Yamato-Security/WELA) - An analyzer for Windows event logs written in PowerShell. (Deprecated and replaced by Takajo.)
+
+# Third-Party Projects That Use Hayabusa
+
+* [AllthingsTimesketch](https://github.com/blueteam0ps/AllthingsTimesketch) - A NodeRED workflow that imports Plaso and Hayabusa results into Timesketch.
+* [LimaCharlie](https://docs.limacharlie.io/docs/extensions-third-party-extensions-hayabusa) - Provides cloud-based security tools and infrastructure to fit your needs. 
+* [OpenRelik](https://openrelik.org/) - An open-source (Apache-2.0) platform designed to streamline collaborative digital forensic investigations.
+* [Splunk4DFIR](https://github.com/mf1d3l/Splunk4DFIR) - Quickly spin up a splunk instance with Docker to browse through logs and tools output during your investigations.
+* [Velociraptor](https://github.com/Velocidex/velociraptor) - A tool for collecting host based state information using The Velociraptor Query Language (VQL) queries.
 
 ## Table of Contents
 
 - [About Hayabusa](#about-hayabusa)
 - [Companion Projects](#companion-projects)
+- [Third-Party Projects That Use Hayabusa](#third-party-projects-that-use-hayabusa)
   - [Table of Contents](#table-of-contents)
   - [Main Goals](#main-goals)
     - [Threat Hunting and Enterprise-wide DFIR](#threat-hunting-and-enterprise-wide-dfir)
@@ -1589,7 +1602,7 @@ To our knowledge, hayabusa provides the greatest native support for sigma rules 
 
 # Other Windows Event Log Analyzers and Related Resources
 
-* [AllthingsTimesketch](https://github.com/blueteam0ps/AllthingsTimesketch) - A NodeRED workflow that imports Plaso and Hayabusa results into Timesketch.
+
 * [APT-Hunter](https://github.com/ahmedkhlief/APT-Hunter) - Attack detection tool written in Python.
 * [Awesome Event IDs](https://github.com/stuhli/awesome-event-ids) -  Collection of Event ID resources useful for Digital Forensics and Incident Response
 * [Chainsaw](https://github.com/countercept/chainsaw) - Another sigma-based attack detection tool written in Rust.
@@ -1613,7 +1626,6 @@ To our knowledge, hayabusa provides the greatest native support for sigma rules 
 * [SysmonTools](https://github.com/nshalabi/SysmonTools) - Configuration and off-line log visualization tool for Sysmon.
 * [Timeline Explorer](https://ericzimmerman.github.io/#!index.md) - The best CSV timeline analyzer by [Eric Zimmerman](https://twitter.com/ericrzimmerman).
 * [Windows Event Log Analysis - Analyst Reference](https://www.forwarddefense.com/media/attachments/2021/05/15/windows-event-log-analyst-reference.pdf) - by Forward Defense's Steve Anson.
-* [WELA (Windows Event Log Analyzer)](https://github.com/Yamato-Security/WELA) - The swiff-army knife for Windows event logs by [Yamato Security](https://github.com/Yamato-Security/)
 * [Zircolite](https://github.com/wagga40/Zircolite) - Sigma-based attack detection tool written in Python.
 
 # Windows Logging Recommendations
