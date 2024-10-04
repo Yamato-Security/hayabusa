@@ -35,15 +35,29 @@ Hayabusaは、日本の[Yamato Security](https://yamatosecurity.connpass.com/)�
 # 関連プロジェクト
 
 * [EnableWindowsLogSettings](https://github.com/Yamato-Security/EnableWindowsLogSettings) - Sigmaベースの脅威ハンティングと、Windowsイベントログのファストフォレンジックタイムライン生成ツール。
+* [Hayabusa Encoded Rules](https://github.com/Yamato-Security/hayabusa-encoded-rules) - Hayabusa Rulesリポジトリと同じだが、ルールと設定ファイルは1つのファイルに保存され、アンチウイルスによる誤検知を防ぐためにXORされる。
 * [Hayabusa Rules](https://github.com/Yamato-Security/hayabusa-rules/blob/main/README-Japanese.md) - Hayabusaのための検知ルール。
+* [Hayabusa EVTX](https://github.com/Yamato-Security/hayabusa-evtx) - `evtxクレート`のよりメンテナンスされたフォーク。
 * [Hayabusa Sample EVTXs](https://github.com/Yamato-Security/hayabusa-sample-evtx) - Hayabusa/Sigma検出ルールをテストするためのサンプルevtxファイル。
+* [Presentations](https://github.com/Yamato-Security/Presentations) - ツールやリソースについて行った講演のプレゼンテーション。
+* [Sigma to Hayabusa Converter](https://github.com/Yamato-Security/sigma-to-hayabusa-converter) - 上流のWindowsイベントログベースのSigmaルールを使いやすい形式にキュレーションする。
 * [Takajo](https://github.com/Yamato-Security/takajo/blob/main/README-Japanese.md) - Hayabusa結果の解析ツール。
-* [WELA (Windows Event Log Analyzer)](https://github.com/Yamato-Security/WELA/blob/main/README-Japanese.md) - PowerShellで書かれたWindowsイベントログの解析ツール。
+* [WELA (Windows Event Log Analyzer)](https://github.com/Yamato-Security/WELA/blob/main/README-Japanese.md) - PowerShellで書かれたWindowsイベントログの解析ツール。(非推奨となり、Takajoに置き換えられた)
+
+
+# Hayabusaを利用したサードパーティプロジェクト
+
+* [AllthingsTimesketch](https://github.com/blueteam0ps/AllthingsTimesketch) - PlasoとHayabusaの結果をTimesketchにインポートするNodeREDワークフロー
+* [LimaCharlie](https://docs.limacharlie.io/docs/extensions-third-party-extensions-hayabusa) - ニーズに合わせたクラウドベースのセキュリティツールとインフラを提供
+* [OpenRelik](https://openrelik.org/) - デジタル・フォレンジックの共同調査を効率化するために設計されたオープンソース（Apache-2.0）のプラットフォーム
+* [Splunk4DFIR](https://github.com/mf1d3l/Splunk4DFIR) - Dockerでsplunkインスタンスを素早く立ち上げ、調査中に出力されるログやツールを閲覧するためのツール
+* [Velociraptor](https://github.com/Velocidex/velociraptor) - Velociraptor Query Language (VQL)クエリを使用したホストベースの収集ツール
 
 ## 目次
 
 - [Hayabusa について](#hayabusa-について)
 - [関連プロジェクト](#関連プロジェクト)
+- [Hayabusaを利用したサードパーティプロジェクト](#Hayabusaを利用したサードパーティプロジェクト)
   - [目次](#目次)
   - [主な目的](#主な目的)
     - [スレット(脅威)ハンティングと企業向けの広範囲なDFIR](#スレット脅威ハンティングと企業向けの広範囲なdfir)
@@ -1590,7 +1604,6 @@ Hayabusaルールは、Windowsのイベントログ解析専用に設計され�
 
 # その他のWindowsイベントログ解析ツールおよび関連リソース
 
-* [AllthingsTimesketch](https://github.com/blueteam0ps/AllthingsTimesketch) - PlasoとHayabusaの結果をTimesketchにインポートするNodeREDワークフロー。
 * [APT-Hunter](https://github.com/ahmedkhlief/APT-Hunter) - Pythonで開発された攻撃検知ツール。
 * [Awesome Event IDs](https://github.com/stuhli/awesome-event-ids) -  フォレンジック調査とインシデント対応に役立つイベントIDのリソース。
 * [Chainsaw](https://github.com/countercept/chainsaw) - Rustで開発されたSigmaベースの攻撃検知ツール。
@@ -1614,7 +1627,6 @@ Hayabusaルールは、Windowsのイベントログ解析専用に設計され�
 * [SysmonTools](https://github.com/nshalabi/SysmonTools) - Sysmonの設定とオフライン可視化ツール。
 * [Timeline Explorer](https://ericzimmerman.github.io/#!index.md) - [Eric Zimmerman](https://twitter.com/ericrzimmerman) による最高のCSVタイムラインアナライザ。
 * [Windows Event Log Analysis - Analyst Reference](https://www.forwarddefense.com/media/attachments/2021/05/15/windows-event-log-analyst-reference.pdf) - Forward DefenseのSteve AnsonによるWindowsイベントログ解析の参考資料。
-* [WELA (Windows Event Log Analyzer)](https://github.com/Yamato-Security/WELA/) - [Yamato Security](https://github.com/Yamato-Security/)によるWindowsイベントログ解析のマルチツール。
 * [Zircolite](https://github.com/wagga40/Zircolite) - Pythonで書かれたSigmaベースの攻撃検知ツール。
 
 # Windowsイベントログ設定のススメ
