@@ -443,6 +443,14 @@ impl App {
                     .to_str()
                     .unwrap(),
                 );
+                if Path::new("./encoded_rules.yml").exists() {
+                    stored_static.output_option.as_mut().unwrap().rules = check_setting_path(
+                        &CURRENT_EXE_PATH.to_path_buf(),
+                        "encoded_rules.yml",
+                        true,
+                    )
+                    .unwrap();
+                }
 
                 // pivot 機能でファイルを出力する際に同名ファイルが既に存在していた場合はエラー文を出して終了する。
                 let mut error_flag = false;
