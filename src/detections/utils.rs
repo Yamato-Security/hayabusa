@@ -26,7 +26,7 @@ use termcolor::{BufferWriter, ColorSpec, WriteColor};
 use termcolor::{Color, ColorChoice};
 use tokio::runtime::{Builder, Runtime};
 
-use crate::detections::configs::CURRENT_EXE_PATH;
+use crate::detections::configs::{CURRENT_EXE_PATH, ONE_CONFIG_MAP};
 use crate::detections::field_data_map::{convert_field_data, FieldDataMap, FieldDataMapKey};
 use crate::detections::field_extract::extract_fields;
 use crate::options::htmlreport;
@@ -93,13 +93,24 @@ pub fn read_txt(filename: &str) -> Result<Nested<String>, String> {
     } else {
         filename.to_string()
     };
+    let re = Regex::new(r".*/").unwrap();
+    let one_config_path = &re.replace(filename, "").to_string();
+    if ONE_CONFIG_MAP.contains_key(one_config_path) {
+        return Ok(Nested::from_iter(
+            ONE_CONFIG_MAP
+                .get(one_config_path)
+                .unwrap()
+                .lines()
+                .map(|s| s.to_string()),
+        ));
+    }
     let f = File::open(filepath);
     if f.is_err() {
         let errmsg = format!("Cannot open file. [file:{filename}]");
-        return Result::Err(errmsg);
+        return Err(errmsg);
     }
     let reader = BufReader::new(f.unwrap());
-    Result::Ok(Nested::from_iter(
+    Ok(Nested::from_iter(
         reader.lines().map(|line| line.unwrap_or_default()),
     ))
 }
@@ -167,18 +178,24 @@ pub fn read_json_to_value(path: &str) -> Result<Box<dyn Iterator<Item = Value>>,
 }
 
 pub fn read_csv(filename: &str) -> Result<Nested<Vec<String>>, String> {
+    let re = Regex::new(r".*/").unwrap();
+    let one_config_path = &re.replace(filename, "").to_string();
+    if ONE_CONFIG_MAP.contains_key(one_config_path) {
+        let csv_res = parse_csv(ONE_CONFIG_MAP.get(one_config_path).unwrap());
+        return Ok(csv_res);
+    }
     let f = File::open(filename);
     if f.is_err() {
-        return Result::Err(format!("Cannot open file. [file:{filename}]"));
+        return Err(format!("Cannot open file. [file:{filename}]"));
     }
     let mut contents: String = String::new();
     let read_res = f.unwrap().read_to_string(&mut contents);
     if let Err(e) = read_res {
-        return Result::Err(e.to_string());
+        return Err(e.to_string());
     }
 
     let csv_res = parse_csv(&contents);
-    Result::Ok(csv_res)
+    Ok(csv_res)
 }
 
 pub fn parse_csv(file_contents: &str) -> Nested<Vec<String>> {
@@ -553,7 +570,10 @@ pub fn make_ascii_titlecase(s: &str) -> CompactString {
 
 /// base_path/path が存在するかを確認し、存在しなければカレントディレクトリを参照するpathを返す関数
 pub fn check_setting_path(base_path: &Path, path: &str, ignore_err: bool) -> Option<PathBuf> {
-    if base_path.join(path).exists() {
+    let re = Regex::new(r".*/").unwrap();
+    if ONE_CONFIG_MAP.contains_key(&re.replace(path, "").to_string()) {
+        Some(path.into())
+    } else if base_path.join(path).exists() {
         Some(base_path.join(path))
     } else if ignore_err {
         Some(Path::new(path).to_path_buf())
@@ -564,6 +584,20 @@ pub fn check_setting_path(base_path: &Path, path: &str, ignore_err: bool) -> Opt
 
 /// rule configのファイルの所在を確認する関数。
 pub fn check_rule_config(config_path: &PathBuf) -> Result<(), String> {
+    // 各種ファイルを確認する
+    let files = vec![
+        "channel_abbreviations.txt",
+        "target_event_IDs.txt",
+        "default_details.txt",
+        "level_tuning.txt",
+        "channel_eid_info.txt",
+        "eventkey_alias.txt",
+    ];
+    let all_keys_present = files.iter().all(|key| ONE_CONFIG_MAP.contains_key(*key));
+    if all_keys_present {
+        return Ok(());
+    }
+
     // rules/configのフォルダが存在するかを確認する
     let exist_rule_config_folder = if config_path == &CURRENT_EXE_PATH.to_path_buf() {
         check_setting_path(config_path, "rules/config", false).is_some()
@@ -574,15 +608,6 @@ pub fn check_rule_config(config_path: &PathBuf) -> Result<(), String> {
         return Err("The required rules and config files were not found. Please download them with the update-rules command.".to_string());
     }
 
-    // 各種ファイルを確認する
-    let files = vec![
-        "channel_abbreviations.txt",
-        "target_event_IDs.txt",
-        "default_details.txt",
-        "level_tuning.txt",
-        "channel_eid_info.txt",
-        "eventkey_alias.txt",
-    ];
     let mut not_exist_file = vec![];
     for file in &files {
         if check_setting_path(config_path, file, false).is_none() {

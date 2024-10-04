@@ -33,7 +33,7 @@ use hayabusa::afterfact::{self, AfterfactInfo, AfterfactWriter};
 use hayabusa::debug::checkpoint_process_timer::CHECKPOINT;
 use hayabusa::detections::configs::{
     load_pivot_keywords, Action, ConfigReader, EventKeyAliasConfig, StoredStatic, TargetEventTime,
-    TargetIds, CURRENT_EXE_PATH, STORED_EKEY_ALIAS, STORED_STATIC,
+    TargetIds, CURRENT_EXE_PATH, ONE_CONFIG_MAP, STORED_EKEY_ALIAS, STORED_STATIC,
 };
 use hayabusa::detections::detection::{self, EvtxRecordInfo};
 use hayabusa::detections::message::{AlertMessage, DetectInfo, ERROR_LOG_STACK};
@@ -572,6 +572,27 @@ impl App {
                         }
                         Err(_) => {
                             AlertMessage::alert("Failed to update rules.").ok();
+                        }
+                    }
+
+                    if !ONE_CONFIG_MAP.is_empty() {
+                        let url = "https://raw.githubusercontent.com/Yamato-Security/hayabusa-encoded-rules/refs/heads/main/rules_config_files.txt";
+                        match get(url).call() {
+                            Ok(res) => {
+                                let mut dst =
+                                    File::create(Path::new("./rules_config_files.txt")).unwrap();
+                                copy(&mut res.into_reader(), &mut dst).unwrap();
+                                write_color_buffer(
+                                    &BufferWriter::stdout(ColorChoice::Always),
+                                    None,
+                                    "Config file rules_config_files.txt updated successfully.",
+                                    true,
+                                )
+                                .ok();
+                            }
+                            Err(_) => {
+                                AlertMessage::alert("Failed to update config file.").ok();
+                            }
                         }
                     }
                 } else {

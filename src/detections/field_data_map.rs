@@ -1,3 +1,4 @@
+use crate::detections::configs::ONE_CONFIG_MAP;
 use crate::detections::field_data_map::FieldDataConverter::{HexToDecimal, ReplaceStr};
 use crate::detections::message::AlertMessage;
 use crate::detections::utils::get_serde_number_to_string;
@@ -165,6 +166,23 @@ fn load_yaml_files(dir_path: &Path) -> Result<Vec<Yaml>, String> {
 }
 
 pub fn create_field_data_map(dir_path: &Path) -> Option<FieldDataMap> {
+    let one_config_values: Vec<String> = ONE_CONFIG_MAP
+        .iter()
+        .filter(|(key, _)| key.contains(".yaml") && !key.contains("geoip_field_mapping.yaml"))
+        .map(|(_, value)| value.clone())
+        .collect();
+    if !one_config_values.is_empty() {
+        let yaml_contents: Vec<Yaml> = one_config_values
+            .iter()
+            .flat_map(|value| YamlLoader::load_from_str(value).unwrap_or_default())
+            .collect();
+        return Some(
+            yaml_contents
+                .into_iter()
+                .map(build_field_data_map)
+                .collect(),
+        );
+    }
     let yaml_data = load_yaml_files(dir_path);
     match yaml_data {
         Ok(y) => Some(y.into_iter().map(build_field_data_map).collect()),
