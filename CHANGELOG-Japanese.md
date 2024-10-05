@@ -4,10 +4,11 @@
 
 **新機能:**
 
-- `fieldref`モディファイアに対応した。(#1409) (@hitenkoku)
+- `fieldref`モディファイア(`equalsfield`モディファイアのエリアス)に対応した。(#1409) (@hitenkoku)
 - XORエンコードされたルールをサポートし、端末に置かれるファイルを最小限に抑えるとともに、ルールに過検知するアンチウイルス製品を回避する。(#1419) (@fukusuket)
   - リリースページで、この機能を設定済みのパッケージを含める予定。手動で設定したい場合は、[encoded_rules.yml](https://github.com/Yamato-Security/hayabusa-encoded-rules/raw/refs/heads/main/encoded_rules.yml)をダウンロードして、Hayabusaのルートフォルダに置いてください。このファイルは、hayabusa-rulesリポジトリ内のルールから作成されており、ルールが更新されるたびに自動的にアップデートされる。configディレクトリ以外のrulesフォルダ内のファイルは、まだ単一ファイルに含まれていないので削除してください。
   - 注意: -Hオプションで生成されるレポートは、ルールへのリンクを作成せず、ルール名だけが出力される。
+- `rules/config`の設定ファイルが単一のファイル[rules_config_files.txt](https://github.com/Yamato-Security/hayabusa-encoded-rules/raw/refs/heads/main/rules_config_files.txt)からロードされるようになり、ライブ調査のためにターゲットシステムに保存する必要があるファイル数が減った。(#1420) (@fukusuket)
 
 ## 2.17.0 [2024/08/23] "HITCON Community Release"
 
