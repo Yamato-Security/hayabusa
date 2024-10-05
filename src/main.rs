@@ -33,7 +33,7 @@ use hayabusa::afterfact::{self, AfterfactInfo, AfterfactWriter};
 use hayabusa::debug::checkpoint_process_timer::CHECKPOINT;
 use hayabusa::detections::configs::{
     load_pivot_keywords, Action, ConfigReader, EventKeyAliasConfig, StoredStatic, TargetEventTime,
-    TargetIds, CURRENT_EXE_PATH, STORED_EKEY_ALIAS, STORED_STATIC,
+    TargetIds, CURRENT_EXE_PATH, ONE_CONFIG_MAP, STORED_EKEY_ALIAS, STORED_STATIC,
 };
 use hayabusa::detections::detection::{self, EvtxRecordInfo};
 use hayabusa::detections::message::{AlertMessage, DetectInfo, ERROR_LOG_STACK};
@@ -168,6 +168,12 @@ impl App {
                 "The hayabusa version you ran does not match your PC architecture.\nPlease use the correct architecture. (Binary ending in -x64.exe for 64-bit and -x86.exe for 32-bit.)",
             )
             .ok();
+            println!();
+            return;
+        }
+
+        if Path::new("encoded_rules.yml").exists() && Path::new("rules").exists() {
+            println!("You have the rules directory and encoded_rules.yml in your path. Please delete one of them.");
             println!();
             return;
         }
@@ -443,6 +449,14 @@ impl App {
                     .to_str()
                     .unwrap(),
                 );
+                if Path::new("./encoded_rules.yml").exists() {
+                    stored_static.output_option.as_mut().unwrap().rules = check_setting_path(
+                        &CURRENT_EXE_PATH.to_path_buf(),
+                        "encoded_rules.yml",
+                        true,
+                    )
+                    .unwrap();
+                }
 
                 // pivot 機能でファイルを出力する際に同名ファイルが既に存在していた場合はエラー文を出して終了する。
                 let mut error_flag = false;
@@ -572,6 +586,27 @@ impl App {
                         }
                         Err(_) => {
                             AlertMessage::alert("Failed to update rules.").ok();
+                        }
+                    }
+
+                    if !ONE_CONFIG_MAP.is_empty() {
+                        let url = "https://raw.githubusercontent.com/Yamato-Security/hayabusa-encoded-rules/refs/heads/main/rules_config_files.txt";
+                        match get(url).call() {
+                            Ok(res) => {
+                                let mut dst =
+                                    File::create(Path::new("./rules_config_files.txt")).unwrap();
+                                copy(&mut res.into_reader(), &mut dst).unwrap();
+                                write_color_buffer(
+                                    &BufferWriter::stdout(ColorChoice::Always),
+                                    None,
+                                    "Config file rules_config_files.txt updated successfully.",
+                                    true,
+                                )
+                                .ok();
+                            }
+                            Err(_) => {
+                                AlertMessage::alert("Failed to update config file.").ok();
+                            }
                         }
                     }
                 } else {

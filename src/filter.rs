@@ -1,4 +1,4 @@
-use crate::detections::configs::{self, StoredStatic};
+use crate::detections::configs::{self, StoredStatic, ONE_CONFIG_MAP};
 use crate::detections::message::{AlertMessage, ERROR_LOG_STACK};
 use crate::detections::rule::RuleNode;
 use evtx::EvtxParser;
@@ -58,24 +58,34 @@ pub fn exclude_ids(stored_static: &StoredStatic) -> RuleExclude {
 
 impl RuleExclude {
     fn insert_ids(&mut self, filename: &str, stored_static: &StoredStatic) {
-        let f = File::open(filename);
-        if f.is_err() {
-            if stored_static.verbose_flag {
-                AlertMessage::warn(&format!("{filename} does not exist")).ok();
+        let re = Regex::new(r".*/").unwrap();
+        let one_config_path = &re.replace(filename, "").to_string();
+        let lines: Vec<String> = if ONE_CONFIG_MAP.contains_key(one_config_path) {
+            ONE_CONFIG_MAP
+                .get(one_config_path)
+                .unwrap()
+                .split('\n')
+                .map(|s| s.to_string())
+                .collect()
+        } else {
+            let f = File::open(filename);
+            if f.is_err() {
+                if stored_static.verbose_flag {
+                    AlertMessage::warn(&format!("{filename} does not exist")).ok();
+                }
+                if !stored_static.quiet_errors_flag {
+                    ERROR_LOG_STACK
+                        .lock()
+                        .unwrap()
+                        .push(format!("{filename} does not exist"));
+                }
+                return;
             }
-            if !stored_static.quiet_errors_flag {
-                ERROR_LOG_STACK
-                    .lock()
-                    .unwrap()
-                    .push(format!("{filename} does not exist"));
-            }
-            return;
-        }
-        let reader = BufReader::new(f.unwrap());
-        for v in reader.lines() {
-            let v = v.unwrap().split('#').collect::<Vec<&str>>()[0]
-                .trim()
-                .to_string();
+            let reader = BufReader::new(f.unwrap());
+            reader.lines().map_while(Result::ok).collect()
+        };
+        for v in lines {
+            let v = v.split('#').collect::<Vec<&str>>()[0].trim().to_string();
             if v.is_empty() || !configs::IDS_REGEX.is_match(&v) {
                 // 空行は無視する。IDの検証
                 continue;
