@@ -172,6 +172,12 @@ impl App {
             return;
         }
 
+        if Path::new("encoded_rules.yml").exists() && Path::new("rules").exists() {
+            println!("You have the rules directory and encoded_rules.yml in your path. Please delete one of them.");
+            println!();
+            return;
+        }
+
         // カレントディレクトリ以外からの実行の際にrules-configオプションの指定がないとエラーが発生することを防ぐための処理
         if stored_static.config_path == Path::new("./rules/config") {
             stored_static.config_path =
