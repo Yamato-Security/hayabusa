@@ -6,11 +6,13 @@ on:
       release_ver:
         required: true
         default: "2.x.x"
+        description: "Version of the release"
       branch_or_tag:
         required: true
         default: "main"
+        description: "Branch or Tag to checkout"
 jobs:
-  release:
+  upload:
     runs-on: ${{ matrix.info.os }}
     strategy:
       matrix:
@@ -68,6 +70,13 @@ jobs:
           ref: ${{ github.event.inputs.branch_or_tag }}
           submodules: 'true'
 
+      - name: Clone hayabusa rule repo
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.pull_request.head.sha }}
+          repository: Yamato-Security/hayabusa-rules
+          path: hayabusa-rules
+
       - name: Set up Rust toolchain
         uses: dtolnay/rust-toolchain@stable
         with:
@@ -87,7 +96,12 @@ jobs:
           mkdir -p release-binaries/logs
           Copy-Item -Path ./target/release/hayabusa.exe -Destination release-binaries/
           Copy-Item -Recurse -Path ./config -Destination release-binaries/
-          Copy-Item -Recurse -Path ./rules -Destination release-binaries/
+          Remove-Item -Path ./hayabusa-rules/.gitignore -Force
+          Remove-Item -Path ./hayabusa-rules/*.md -Force
+          Remove-Item -Path ./hayabusa-rules/.github -Recurse -Force
+          Remove-Item -Path ./hayabusa-rules/scripts -Recurse -Force
+          Remove-Item -Path ./hayabusa-rules/doc -Recurse -Force
+          Copy-Item -Recurse -Path ./hayabusa-rules/ -Destination release-binaries/rules -Force
           switch ("${{ matrix.info.os }}") {
               "windows-latest" { mv release-binaries/hayabusa.exe release-binaries/hayabusa-${{ github.event.inputs.release_ver }}-win-x64.exe }
               "windows-2022" { mv release-binaries/hayabusa.exe release-binaries/hayabusa-${{ github.event.inputs.release_ver }}-win-x86.exe }
@@ -116,7 +130,12 @@ jobs:
           cp ./target/release/hayabusa release-binaries/
           cp -r ./config release-binaries/config
           cp -r ./logs release-binaries/logs
-          cp -r ./rules release-binaries/rules
+          rm -f ./hayabusa-rules/.gitignore
+          rm -f ./hayabusa-rules/*.md
+          rm -rf ./hayabusa-rules/.github
+          rm -rf ./hayabusa-rules/scripts
+          rm -rf ./hayabusa-rules/doc
+          cp -r ./hayabusa-rules/. release-binaries/rules
           case ${{ matrix.info.os }} in
             'ubuntu-latest')
                 mv release-binaries/hayabusa release-binaries/hayabusa-${{ github.event.inputs.release_ver }}-lin-intel-x64-gnu ;;
@@ -157,12 +176,12 @@ jobs:
               echo "artifact_name=hayabusa-${{ github.event.inputs.release_ver }}-mac-intel" >> $GITHUB_OUTPUT ;;
           esac
 
-      - name: Upload Zip Artifacts
+      - name: Upload Artifacts
         uses: actions/upload-artifact@v4
         with:
           name: ${{ steps.set_artifact_name.outputs.artifact_name }}
-          path: |
-            release-binaries/*
+          path: release-binaries/*
+          include-hidden-files: true
 
       - name: Set Artifact Name(encoded_rule)
         if: contains(matrix.info.os, 'windows') == true
@@ -178,13 +197,13 @@ jobs:
               echo "artifact_name=hayabusa-${{ github.event.inputs.release_ver }}-win-arm-live-response" > $GITHUB_OUTPUT ;;
           esac
 
-      - name: Upload Zip Artifacts(encoded_rule)
+      - name: Upload Artifacts(encoded_rule)
         if: contains(matrix.info.os, 'windows') == true
         uses: actions/upload-artifact@v4
         with:
           name: ${{ steps.set_artifact_name_encoded_rule.outputs.artifact_name }}
-          path: |
-            release-binaries-encoded-rules/*
+          path: release-binaries-encoded-rules/*
+          include-hidden-files: true
 
       - name: Setup node
         if: matrix.info.os == 'macos-latest'
@@ -204,6 +223,48 @@ jobs:
         if: matrix.info.os == 'macos-latest'
         uses: actions/upload-artifact@v4
         with:
-          name: documents
+          name: hayabusa-documents
           path: |
             ./*.pdf
+
+  upload-all-platforms:
+    needs: upload
+    runs-on: ubuntu-latest
+    steps:
+      - name: Download All Artifacts
+        uses: actions/download-artifact@v4
+        with:
+          path: all-packages
+          pattern: hayabusa-*
+          merge-multiple: true
+      - run: |
+          rm -rf all-packages/encoded_rules.yml
+          rm -rf all-packages/rules_config_files.txt
+
+      - name: Upload Artifacts(all-platforms)
+        uses: actions/upload-artifact@v4
+        with:
+          name: hayabusa-${{ github.event.inputs.release_ver }}-all-platforms
+          path: all-packages/*
+          include-hidden-files: true
+
+  all-packages-zip:
+    needs: upload-all-platforms
+    runs-on: ubuntu-latest
+    steps:
+      - name: Download all artifacts
+        uses: actions/download-artifact@v4
+        with:
+          path: all-packages
+          pattern: hayabusa-*
+      - run: |
+          ls -lR all-packages
+          cd all-packages
+          for dir in */; do
+            zip -r "${dir%/}.zip" "$dir"
+          done
+      - name: Upload Zip Artifacts(all-packages)
+        uses: actions/upload-artifact@v4
+        with:
+          name: all-packages
+          path: all-packages/*.zip
