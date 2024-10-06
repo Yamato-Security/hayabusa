@@ -568,6 +568,8 @@ pub fn search_result_dsp_msg(
                 }
             }
         }
-        println!();
+        if output.is_none() {
+            println!();
+        }
     }
 }

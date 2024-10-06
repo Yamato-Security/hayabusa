@@ -10,6 +10,10 @@
   - 注意: -Hオプションで生成されるレポートは、ルールへのリンクを作成せず、ルール名だけが出力される。
 - `rules/config`の設定ファイルが単一のファイル[rules_config_files.txt](https://github.com/Yamato-Security/hayabusa-encoded-rules/raw/refs/heads/main/rules_config_files.txt)からロードされるようになり、ライブ調査のためにターゲットシステムに保存する必要があるファイル数が減った。(#1420) (@fukusuket)
 
+**バグ修正:**
+
+- `search`コマンドの`-o`オプションを使用した際に不要な改行が出力されていた。(#1425) (@fukusuket)
+
 ## 2.17.0 [2024/08/23] "HITCON Community Release"
 
 **新機能:**
