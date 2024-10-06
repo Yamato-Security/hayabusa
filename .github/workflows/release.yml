@@ -93,9 +93,9 @@ jobs:
         shell: pwsh
         run: |
           mkdir -p release-binaries
-          mkdir -p release-binaries/logs
           Copy-Item -Path ./target/release/hayabusa.exe -Destination release-binaries/
           Copy-Item -Recurse -Path ./config -Destination release-binaries/
+          Copy-Item -Recurse -Path ./logs -Destination release-binaries/
           Remove-Item -Path ./hayabusa-rules/.gitignore -Force
           Remove-Item -Path ./hayabusa-rules/*.md -Force
           Remove-Item -Path ./hayabusa-rules/.github -Recurse -Force
@@ -113,8 +113,8 @@ jobs:
         shell: pwsh
         run: |
           mkdir -p release-binaries-encoded-rules
-          mkdir -p release-binaries-encoded-rules/logs
           Copy-Item -Path ./target/release/hayabusa.exe -Destination release-binaries-encoded-rules/
+          Copy-Item -Recurse -Path ./logs -Destination release-binaries-encoded-rules/
           Invoke-WebRequest -Uri https://raw.githubusercontent.com/Yamato-Security/hayabusa-encoded-rules/refs/heads/main/encoded_rules.yml -OutFile release-binaries-encoded-rules/encoded_rules.yml
           Invoke-WebRequest -Uri https://raw.githubusercontent.com/Yamato-Security/hayabusa-encoded-rules/refs/heads/main/rules_config_files.txt -OutFile release-binaries-encoded-rules/rules_config_files.txt
           switch ("${{ matrix.info.os }}") {
