@@ -568,6 +568,5 @@ pub fn search_result_dsp_msg(
                 }
             }
         }
-        println!();
     }
 }
