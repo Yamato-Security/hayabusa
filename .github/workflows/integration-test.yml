@@ -42,22 +42,22 @@ jobs:
         run: cd main && cargo run --release -- computer-metrics -d ../hayabusa-sample-evtx -q
 
       - name: csv-timeline
-        run: cd main && cargo run --release -- csv-timeline -d ../hayabusa-sample-evtx -o out.csv -q -w
+        run: cd main && cargo run --release -- csv-timeline -d ../hayabusa-sample-evtx -o out.csv -q -w -D -n -u
 
       - name: csv-timeline(-p super-verbose)
-        run: cd main && cargo run --release -- csv-timeline -d ../hayabusa-sample-evtx -o out-s.csv -p super-verbose -q -w
+        run: cd main && cargo run --release -- csv-timeline -d ../hayabusa-sample-evtx -o out-s.csv -p super-verbose -q -w -D -n -u
 
       - name: eid-metrics
         run: cd main && cargo run --release -- eid-metrics -d ../hayabusa-sample-evtx -q
 
       - name: json-timeline
-        run: cd main && cargo run --release -- json-timeline -d ../hayabusa-sample-evtx -o out.json -q -w
+        run: cd main && cargo run --release -- json-timeline -d ../hayabusa-sample-evtx -o out.json -q -w -D -n -u
 
       - name: json-timeline(-p super-verbose)
-        run: cd main && cargo run --release -- json-timeline -d ../hayabusa-sample-evtx -o out-s.json -p super-verbose -q -w
+        run: cd main && cargo run --release -- json-timeline -d ../hayabusa-sample-evtx -o out-s.json -p super-verbose -q -w -D -n -u
 
       - name: json-timeline(-L)
-        run: cd main && cargo run --release -- json-timeline -d ../hayabusa-sample-evtx -o out.jsonl -q -L -w
+        run: cd main && cargo run --release -- json-timeline -d ../hayabusa-sample-evtx -o out.jsonl -q -L -w -D -n -u
 
       - name: level-tuning
         run: cd main && cargo run --release -- level-tuning -f ./rules/config/level_tuning.txt -q
@@ -79,3 +79,97 @@ jobs:
 
       - name: set-default-profile
         run: cd main && cargo run --release -- set-default-profile -p verbose -q
+
+  integration-test-encoded-rules:
+    runs-on: ${{ matrix.os }}
+
+    strategy:
+      matrix:
+        os: ['ubuntu-24.04', 'windows-2022']
+
+    steps:
+      - name: Checkout main
+        uses: actions/checkout@v4
+        with:
+          submodules: recursive
+          path: main
+
+      - name: Checkout hayabusa-sample-evtx repo
+        uses: actions/checkout@v4
+        with:
+          repository: Yamato-Security/hayabusa-sample-evtx
+          path: hayabusa-sample-evtx
+
+      - name: Set up Rust toolchain
+        if: ${{ steps.skip_check.outputs.should_skip != 'true' }}
+        uses: dtolnay/rust-toolchain@stable
+
+      - name: Download encoded rules and config files (Windows)
+        if: contains(matrix.os, 'windows') == true
+        shell: pwsh
+        run: |
+          cd main 
+          cargo build --release
+          Copy-Item -Path target\release\hayabusa.exe -Destination .\hayabusa.exe
+          Remove-Item -Path ./config -Recurse -Force
+          Remove-Item -Path ./rules -Recurse -Force
+          Invoke-WebRequest -Uri https://raw.githubusercontent.com/Yamato-Security/hayabusa-encoded-rules/refs/heads/main/encoded_rules.yml -OutFile encoded_rules.yml
+          Invoke-WebRequest -Uri https://raw.githubusercontent.com/Yamato-Security/hayabusa-encoded-rules/refs/heads/main/rules_config_files.txt -OutFile rules_config_files.txt
+
+      - name: Download encoded rules and config files (Ubuntu)
+        if: contains(matrix.os, 'ubuntu') == true
+        run: |
+          cd main
+          cargo build --release
+          cp target/release/hayabusa .
+          rm -rf ./config && rm -rf ./rules/
+          curl -O https://raw.githubusercontent.com/Yamato-Security/hayabusa-encoded-rules/refs/heads/main/encoded_rules.yml
+          curl -O https://raw.githubusercontent.com/Yamato-Security/hayabusa-encoded-rules/refs/heads/main/rules_config_files.txt
+
+      - name: help
+        run: cd main && ./hayabusa help
+
+      - name: update-rules
+        run: cd main && ./hayabusa update-rules -q
+
+      - name: computer-metrics
+        run: cd main && ./hayabusa computer-metrics -d ../hayabusa-sample-evtx -q
+
+      - name: csv-timeline
+        run: cd main && ./hayabusa csv-timeline -d ../hayabusa-sample-evtx -o out.csv -q -w -D -n -u
+
+      - name: csv-timeline(-p super-verbose)
+        run: cd main && ./hayabusa csv-timeline -d ../hayabusa-sample-evtx -o out-s.csv -p super-verbose -q -w -D -n -u
+
+      - name: eid-metrics
+        run: cd main && ./hayabusa eid-metrics -d ../hayabusa-sample-evtx -q
+
+      - name: json-timeline
+        run: cd main && ./hayabusa json-timeline -d ../hayabusa-sample-evtx -o out.json -q -w -D -n -u
+
+      - name: json-timeline(-p super-verbose)
+        run: cd main && ./hayabusa json-timeline -d ../hayabusa-sample-evtx -o out-s.json -p super-verbose -q -w -D -n -u
+
+      - name: json-timeline(-L)
+        run: cd main && ./hayabusa json-timeline -d ../hayabusa-sample-evtx -o out.jsonl -q -L -w -D -n -u
+
+      - name: level-tuning
+        run: cd main && ./hayabusa level-tuning -f ./rules/config/level_tuning.txt -q
+
+      - name: list-contributors
+        run: cd main && ./hayabusa list-contributors -q
+
+      - name: list-profiles
+        run: cd main && ./hayabusa list-profiles -q
+
+      - name: logon-summary
+        run: cd main && ./hayabusa logon-summary -d ../hayabusa-sample-evtx -q
+
+      - name: pivot-keywords-list
+        run: cd main && ./hayabusa pivot-keywords-list -d ../hayabusa-sample-evtx -o key -q -w
+
+      - name: search
+        run: cd main && ./hayabusa search -d ../hayabusa-sample-evtx -k mimikatz -o search.csv -q
+
+      - name: set-default-profile
+        run: cd main && ./hayabusa set-default-profile -p verbose -q
