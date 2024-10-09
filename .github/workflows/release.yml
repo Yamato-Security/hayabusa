@@ -75,6 +75,7 @@ jobs:
         with:
           ref: ${{ github.event.pull_request.head.sha }}
           repository: Yamato-Security/hayabusa-rules
+          fetch-depth: 0
           path: hayabusa-rules
 
       - name: Set up Rust toolchain
