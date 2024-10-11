@@ -362,15 +362,20 @@ impl LeafMatcher for DefaultMatcher {
         if keys_all[0].is_empty() && keys_all.len() == 2 && keys_all[1] == "all" {
             keys_all[1] = change_map["all"];
         }
-        if keys_all.len() >= 3 && keys_all[1] == "re" {
-            if keys_all[2] == "i" {
-                keys_all[2] = change_map["i"];
-            } else if keys_all[2] == "m" {
-                keys_all[2] = change_map["m"];
-            } else if keys_all[2] == "s" {
-                keys_all[2] = change_map["s"];
+        if keys_all.len() >= 3 {
+            if keys_all[1] == "re" {
+                if keys_all[2] == "i" {
+                    keys_all[2] = change_map["i"];
+                } else if keys_all[2] == "m" {
+                    keys_all[2] = change_map["m"];
+                } else if keys_all[2] == "s" {
+                    keys_all[2] = change_map["s"];
+                }
+                keys_all.remove(1);
+            } else if keys_all[1] == "fieldref" && keys_all[2] == "endswith" {
+                keys_all[1] = "fieldrefendswith";
+                keys_all.remove(2);
             }
-            keys_all.remove(1);
         }
 
         let keys_without_head = &keys_all[1..];
@@ -741,6 +746,7 @@ impl PipeElement {
             "equalsfield" => Option::Some(PipeElement::EqualsField(pattern.to_string())),
             "endswithfield" => Option::Some(PipeElement::Endswithfield(pattern.to_string())),
             "fieldref" => Option::Some(PipeElement::FieldRef(pattern.to_string())),
+            "fieldrefendswith" => Option::Some(PipeElement::Endswithfield(pattern.to_string())), // endswithfieldを廃止したらfieldrefに置き換え
             "base64offset" => Option::Some(PipeElement::Base64offset),
             "windash" => Option::Some(PipeElement::Windash),
             "cidr" => Option::Some(PipeElement::Cidr(IpCidr::from_str(pattern))),
@@ -2452,6 +2458,43 @@ mod tests {
 
     #[test]
     fn test_eq_field_ref_notdetect() {
+        // fieldrefの検知できないパターン
+        let rule_str = r#"
+        detection:
+            selection:
+                Channel|fieldref: Computer
+        details: 'command=%CommandLine%'
+        "#;
+
+        let record_json_str = r#"
+        {
+            "Event": {"System": {"EventID": 4103, "Channel": "Security", "Computer": "Powershell" }},
+            "Event_attributes": {"xmlns": "http://schemas.microsoft.com/win/2004/08/events/event"}
+        }"#;
+        check_select(rule_str, record_json_str, false);
+    }
+
+    #[test]
+    fn test_eq_field_ref_endswith() {
+        // fieldrefで正しく検知できることを確認
+        let rule_str = r#"
+        detection:
+            selection:
+                Channel|fieldref|endswith: Computer
+        details: 'command=%CommandLine%'
+        "#;
+
+        let record_json_str = r#"
+        {
+            "Event": {"System": {"EventID": 4103, "Channel": "Security", "Computer": "rity" }},
+            "Event_attributes": {"xmlns": "http://sc-allhemas.microsoft.com/win/2004/08/events/event"}
+        }"#;
+
+        check_select(rule_str, record_json_str, true);
+    }
+
+    #[test]
+    fn test_eq_field_ref_notdetect_endswith() {
         // fieldrefの検知できないパターン
         let rule_str = r#"
         detection:
