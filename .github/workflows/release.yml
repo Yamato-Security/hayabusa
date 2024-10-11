@@ -20,47 +20,34 @@ jobs:
           - {
             os: "windows-latest",
             target: "x86_64-pc-windows-msvc",
-            cross: false,
           }
           - {
             os: "windows-2022",
             target: "i686-pc-windows-msvc",
-            cross: true,
           }
           - {
             os: "windows-2019",
             target: "aarch64-pc-windows-msvc",
-            cross: true,
           }
           - {
             os: "ubuntu-latest",
             target: "x86_64-unknown-linux-gnu",
-            cross: false,
           }
           - {
             os: "ubuntu-24.04",
-            target: "aarch64-unknown-linux-gnu",
-            cross: true,
+            target: "x86_64-unknown-linux-musl",
           }
           - {
             os: "ubuntu-22.04",
-            target: "x86_64-unknown-linux-musl",
-            cross: true,
-          }
-          - {
-            os: "ubuntu-20.04",
-            target: "aarch64-unknown-linux-musl",
-            cross: true,
+            target: "aarch64-unknown-linux-gnu",
           }
           - {
             os: "macos-latest",
             target: "aarch64-apple-darwin",
-            cross: false
           }
           - {
             os: "macos-13",
             target: "x86_64-apple-darwin",
-            cross: false
           }
 
     steps:
@@ -84,10 +71,27 @@ jobs:
           toolchain: stable
           targets: ${{ matrix.info.target }}
 
+      - name: Install gcc-aarch64-linux-gnu
+        if: matrix.info.target == 'aarch64-unknown-linux-gnu'
+        run: |
+          sudo apt-get update
+          sudo apt-get install gcc-aarch64-linux-gnu
+          cat << EOF >> ./.cargo/config.toml
+          
+          [target.aarch64-unknown-linux-gnu]
+          linker = "aarch64-linux-gnu-gcc"
+          EOF
+
+      - name: Install x86_64-unknown-linux-musl
+        if: matrix.info.target == 'x86_64-unknown-linux-musl'
+        run: |
+          sudo apt-get update
+          sudo apt-get install musl-tools
+
       - name: Build Hayabusa binary
         run: |
           cargo run --release -- update-rules -q
-          cargo build --release
+          cargo build --release --target ${{ matrix.info.target }}
 
       - name: Package and Zip - Windows
         if: contains(matrix.info.os, 'windows') == true
@@ -141,6 +145,7 @@ jobs:
             'ubuntu-latest')
                 mv release-binaries/hayabusa release-binaries/hayabusa-${{ github.event.inputs.release_ver }}-lin-intel-x64-gnu ;;
             'ubuntu-24.04')
+                cp ./target/x86_64-unknown-linux-musl/release/hayabusa release-binaries/
                 mv release-binaries/hayabusa release-binaries/hayabusa-${{ github.event.inputs.release_ver }}-lin-intel-x64-musl ;;
             'ubuntu-22.04')
                 mv release-binaries/hayabusa release-binaries/hayabusa-${{ github.event.inputs.release_ver }}-lin-arm-x64-gnu ;;
