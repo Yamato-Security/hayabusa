@@ -2475,6 +2475,43 @@ mod tests {
     }
 
     #[test]
+    fn test_eq_field_ref_endswith() {
+        // fieldrefで正しく検知できることを確認
+        let rule_str = r#"
+        detection:
+            selection:
+                Channel|fieldref|endswith: Computer
+        details: 'command=%CommandLine%'
+        "#;
+
+        let record_json_str = r#"
+        {
+            "Event": {"System": {"EventID": 4103, "Channel": "Security", "Computer": "rity" }},
+            "Event_attributes": {"xmlns": "http://sc-allhemas.microsoft.com/win/2004/08/events/event"}
+        }"#;
+
+        check_select(rule_str, record_json_str, true);
+    }
+
+    #[test]
+    fn test_eq_field_ref_notdetect_endswith() {
+        // fieldrefの検知できないパターン
+        let rule_str = r#"
+        detection:
+            selection:
+                Channel|fieldref: Computer
+        details: 'command=%CommandLine%'
+        "#;
+
+        let record_json_str = r#"
+        {
+            "Event": {"System": {"EventID": 4103, "Channel": "Security", "Computer": "Powershell" }},
+            "Event_attributes": {"xmlns": "http://schemas.microsoft.com/win/2004/08/events/event"}
+        }"#;
+        check_select(rule_str, record_json_str, false);
+    }
+
+    #[test]
     fn test_eq_field() {
         // equalsfieldsで正しく検知できることを確認
         let rule_str = r#"
