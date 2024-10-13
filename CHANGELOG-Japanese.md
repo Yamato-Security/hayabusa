@@ -5,6 +5,7 @@
 **新機能:**
 
 - `fieldref`モディファイア(`equalsfield`モディファイアのエリアス)に対応した。(#1409) (@hitenkoku)
+- `fieldref|startswith`と`fieldref|contains`モディファイアに対応した。 (#1439) (@fukusuket)
 - `fieldref|endswith`モディファイアは、`endswithfield`をリプレースするためのエイリアスとして作成された。(#1437) (@fukusuket)
 - XORエンコードされたルールをサポートし、端末に置かれるファイルを最小限に抑えるとともに、ルールに過検知するアンチウイルス製品を回避する。(#1419) (@fukusuket)
   - リリースページで、この機能を設定済みのパッケージを含める予定。手動で設定したい場合は、[encoded_rules.yml](https://github.com/Yamato-Security/hayabusa-encoded-rules/raw/refs/heads/main/encoded_rules.yml)をダウンロードして、Hayabusaのルートフォルダに置いてください。このファイルは、hayabusa-rulesリポジトリ内のルールから作成されており、ルールが更新されるたびに自動的にアップデートされる。configディレクトリ以外のrulesフォルダ内のファイルは、まだ単一ファイルに含まれていないので削除してください。
