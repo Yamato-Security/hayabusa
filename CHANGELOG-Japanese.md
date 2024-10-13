@@ -15,6 +15,7 @@
 **バグ修正:**
 
 - `search`コマンドの`-o`オプションを使用した際に不要な改行が出力されていた。(#1425) (@fukusuket)
+- Sigma相関ルールの`group-by`フィールドは、必須だったが任意に変えた。(#1442) (@fukusuket)
 
 ## 2.17.0 [2024/08/23] "HITCON Community Release"
 
