@@ -122,27 +122,24 @@ fn get_related_rules_id(yaml: &Yaml) -> Result<Vec<String>, Box<dyn Error>> {
     Ok(rules)
 }
 
-fn get_group_by_from_yaml(yaml: &Yaml) -> Result<String, Box<dyn Error>> {
+fn get_group_by_from_yaml(yaml: &Yaml) -> Result<Option<String>, Box<dyn Error>> {
     let correlation = yaml["correlation"]
         .as_hash()
         .ok_or("Failed to get 'correlation'")?;
-    let group_by_yaml = correlation
-        .get(&Yaml::String("group-by".to_string()))
-        .ok_or("Failed to get 'group-by'")?;
+    let group_by_yaml = match correlation.get(&Yaml::String("group-by".to_string())) {
+        Some(value) => value,
+        None => return Ok(None),
+    };
 
     let mut group_by = Vec::new();
-    for group_by_yaml in group_by_yaml
-        .as_vec()
-        .ok_or("Failed to convert 'group-by' to Vec")?
-    {
-        let group = group_by_yaml
-            .as_str()
-            .ok_or("Failed to convert group to string")?
-            .to_string();
-        group_by.push(group);
+    if let Some(group_by_vec) = group_by_yaml.as_vec() {
+        for group_by_yaml in group_by_vec {
+            if let Some(group) = group_by_yaml.as_str() {
+                group_by.push(group.to_string());
+            }
+        }
     }
-
-    Ok(group_by.join(","))
+    Ok(Some(group_by.join(",")))
 }
 fn parse_tframe(value: String) -> Result<TimeFrameInfo, Box<dyn Error>> {
     let ttype;
@@ -202,7 +199,7 @@ fn create_detection(
             let nodes = to_or_selection_node(related_rule_nodes);
             let agg_info = AggregationParseInfo {
                 _field_name: condition.2,
-                _by_field_name: Some(group_by),
+                _by_field_name: group_by,
                 _cmp_op: condition.0,
                 _cmp_num: condition.1,
             };
