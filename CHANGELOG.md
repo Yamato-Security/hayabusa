@@ -15,7 +15,7 @@
 **Bug Fixes:**
 
 - Unneeded line breaks when using `-o` in the `search` command. (#1425) (@fukusuket)
-- Sigma correlation rules required the `group-by` field but now they are optional. (#1442) (@fukusuket)
+- Sigma correlation rules required the `group-by` field but now it is optional. (#1442) (@fukusuket)
 
 ## 2.17.0 [2024/08/23] "HITCON Community Release"
 
