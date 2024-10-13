@@ -375,6 +375,12 @@ impl LeafMatcher for DefaultMatcher {
             } else if keys_all[1] == "fieldref" && keys_all[2] == "endswith" {
                 keys_all[1] = "fieldrefendswith";
                 keys_all.remove(2);
+            } else if keys_all[1] == "fieldref" && keys_all[2] == "startswith" {
+                keys_all[1] = "fieldrefstartswith";
+                keys_all.remove(2);
+            } else if keys_all[1] == "fieldref" && keys_all[2] == "contains" {
+                keys_all[1] = "fieldrefcontains";
+                keys_all.remove(2);
             }
         }
 
@@ -553,7 +559,12 @@ impl LeafMatcher for DefaultMatcher {
         let is_eqfield = self.pipes.iter().any(|pipe_element| {
             matches!(
                 pipe_element,
-                PipeElement::EqualsField(_) | PipeElement::Endswithfield(_)
+                PipeElement::EqualsField(_)
+                    | PipeElement::Endswithfield(_)
+                    | PipeElement::FieldRef(_)
+                    | PipeElement::FieldRefEndswith(_)
+                    | PipeElement::FieldRefStartswith(_)
+                    | PipeElement::FieldRefContains(_)
             )
         });
         if !is_eqfield {
@@ -594,10 +605,6 @@ impl LeafMatcher for DefaultMatcher {
     fn is_match(&self, event_value: Option<&String>, recinfo: &EvtxRecordInfo) -> bool {
         let pipe: &PipeElement = self.pipes.first().unwrap_or(&PipeElement::Wildcard);
         let match_result = match pipe {
-            PipeElement::Exists(..)
-            | PipeElement::EqualsField(_)
-            | PipeElement::FieldRef(_)
-            | PipeElement::Endswithfield(_) => Some(pipe.is_eqfield_match(event_value, recinfo)),
             PipeElement::Cidr(ip_result) => match ip_result {
                 Ok(matcher_ip) => {
                     let val = String::default();
@@ -610,6 +617,13 @@ impl LeafMatcher for DefaultMatcher {
                 }
                 Err(_) => Some(false), //IPアドレス以外の形式のとき
             },
+            PipeElement::Exists(..)
+            | PipeElement::EqualsField(_)
+            | PipeElement::FieldRef(_)
+            | PipeElement::FieldRefStartswith(_)
+            | PipeElement::FieldRefContains(_)
+            | PipeElement::FieldRefEndswith(_)
+            | PipeElement::Endswithfield(_) => Some(pipe.is_eqfield_match(event_value, recinfo)),
             _ => None,
         };
         if let Some(result) = match_result {
@@ -721,6 +735,9 @@ enum PipeElement {
     EqualsField(String),
     Endswithfield(String),
     FieldRef(String),
+    FieldRefStartswith(String),
+    FieldRefEndswith(String),
+    FieldRefContains(String),
     Base64offset,
     Windash,
     Cidr(Result<IpCidr, NetworkParseError>),
@@ -732,28 +749,30 @@ enum PipeElement {
 impl PipeElement {
     fn new(key: &str, pattern: &str, key_list: &Nested<String>) -> Result<PipeElement, String> {
         let pipe_element = match key {
-            "startswith" => Option::Some(PipeElement::Startswith),
-            "endswith" => Option::Some(PipeElement::Endswith),
-            "contains" => Option::Some(PipeElement::Contains),
-            "re" => Option::Some(PipeElement::Re),
-            "exists" => Option::Some(PipeElement::Exists(
+            "startswith" => Some(PipeElement::Startswith),
+            "endswith" => Some(PipeElement::Endswith),
+            "contains" => Some(PipeElement::Contains),
+            "re" => Some(PipeElement::Re),
+            "exists" => Some(PipeElement::Exists(
                 key_list[0].split('|').collect::<Vec<&str>>()[0].to_string(),
                 pattern.to_string(),
             )),
-            "reignorecase" => Option::Some(PipeElement::ReIgnoreCase),
-            "resingleline" => Option::Some(PipeElement::ReSingleLine),
-            "remultiline" => Option::Some(PipeElement::ReMultiLine),
-            "equalsfield" => Option::Some(PipeElement::EqualsField(pattern.to_string())),
-            "endswithfield" => Option::Some(PipeElement::Endswithfield(pattern.to_string())),
-            "fieldref" => Option::Some(PipeElement::FieldRef(pattern.to_string())),
-            "fieldrefendswith" => Option::Some(PipeElement::Endswithfield(pattern.to_string())), // endswithfieldを廃止したらfieldrefに置き換え
-            "base64offset" => Option::Some(PipeElement::Base64offset),
-            "windash" => Option::Some(PipeElement::Windash),
-            "cidr" => Option::Some(PipeElement::Cidr(IpCidr::from_str(pattern))),
-            "all" => Option::Some(PipeElement::All),
-            "allOnly" => Option::Some(PipeElement::AllOnly),
-            "cased" => Option::Some(PipeElement::Cased),
-            _ => Option::None,
+            "reignorecase" => Some(PipeElement::ReIgnoreCase),
+            "resingleline" => Some(PipeElement::ReSingleLine),
+            "remultiline" => Some(PipeElement::ReMultiLine),
+            "equalsfield" => Some(PipeElement::EqualsField(pattern.to_string())),
+            "endswithfield" => Some(PipeElement::Endswithfield(pattern.to_string())),
+            "fieldref" => Some(PipeElement::FieldRef(pattern.to_string())),
+            "fieldrefstartswith" => Some(PipeElement::FieldRefStartswith(pattern.to_string())),
+            "fieldrefendswith" => Some(PipeElement::FieldRefEndswith(pattern.to_string())),
+            "fieldrefcontains" => Some(PipeElement::FieldRefContains(pattern.to_string())),
+            "base64offset" => Some(PipeElement::Base64offset),
+            "windash" => Some(PipeElement::Windash),
+            "cidr" => Some(PipeElement::Cidr(IpCidr::from_str(pattern))),
+            "all" => Some(PipeElement::All),
+            "allOnly" => Some(PipeElement::AllOnly),
+            "cased" => Some(PipeElement::Cased),
+            _ => None,
         };
 
         if let Some(elment) = pipe_element {
@@ -768,10 +787,13 @@ impl PipeElement {
 
     fn get_eqfield(&self) -> Option<&String> {
         match self {
-            PipeElement::EqualsField(s) => Option::Some(s),
-            PipeElement::FieldRef(s) => Some(s),
-            PipeElement::Endswithfield(s) => Option::Some(s),
-            _ => Option::None,
+            PipeElement::EqualsField(s)
+            | PipeElement::Endswithfield(s)
+            | PipeElement::FieldRef(s)
+            | PipeElement::FieldRefStartswith(s)
+            | PipeElement::FieldRefEndswith(s)
+            | PipeElement::FieldRefContains(s) => Some(s),
+            _ => None,
         }
     }
 
@@ -786,10 +808,18 @@ impl PipeElement {
                 if event_value.is_none() || eq_value.is_none() {
                     return false;
                 }
-
                 eq_value.unwrap().cmp(event_value.unwrap()) == Ordering::Equal
             }
-            PipeElement::Endswithfield(eq_key) => {
+            PipeElement::FieldRefStartswith(eq_key) => {
+                let starts_value = recinfo.get_value(eq_key);
+                if event_value.is_none() || starts_value.is_none() {
+                    return false;
+                }
+                let event_value = &event_value.unwrap().to_lowercase();
+                let starts_value = &starts_value.unwrap().to_lowercase();
+                event_value.starts_with(starts_value)
+            }
+            PipeElement::Endswithfield(eq_key) | PipeElement::FieldRefEndswith(eq_key) => {
                 let ends_value = recinfo.get_value(eq_key);
                 // Evtxのレコードに存在しないeventkeyを指定された場合はfalseにする
                 if event_value.is_none() || ends_value.is_none() {
@@ -799,6 +829,15 @@ impl PipeElement {
                 let event_value = &event_value.unwrap().to_lowercase();
                 let ends_value = &ends_value.unwrap().to_lowercase();
                 event_value.ends_with(ends_value)
+            }
+            PipeElement::FieldRefContains(eq_key) => {
+                let contains_value = recinfo.get_value(eq_key);
+                if event_value.is_none() || contains_value.is_none() {
+                    return false;
+                }
+                let event_value = &event_value.unwrap().to_lowercase();
+                let contains_value = &contains_value.unwrap().to_lowercase();
+                event_value.contains(contains_value)
             }
             _ => false,
         }
@@ -2500,6 +2539,80 @@ mod tests {
         detection:
             selection:
                 Channel|fieldref: Computer
+        details: 'command=%CommandLine%'
+        "#;
+
+        let record_json_str = r#"
+        {
+            "Event": {"System": {"EventID": 4103, "Channel": "Security", "Computer": "Powershell" }},
+            "Event_attributes": {"xmlns": "http://schemas.microsoft.com/win/2004/08/events/event"}
+        }"#;
+        check_select(rule_str, record_json_str, false);
+    }
+
+    #[test]
+    fn test_eq_field_ref_startswith() {
+        // fieldrefで正しく検知できることを確認
+        let rule_str = r#"
+        detection:
+            selection:
+                Channel|fieldref|startswith: Computer
+        details: 'command=%CommandLine%'
+        "#;
+
+        let record_json_str = r#"
+        {
+            "Event": {"System": {"EventID": 4103, "Channel": "Security", "Computer": "Sec" }},
+            "Event_attributes": {"xmlns": "http://sc-allhemas.microsoft.com/win/2004/08/events/event"}
+        }"#;
+
+        check_select(rule_str, record_json_str, true);
+    }
+
+    #[test]
+    fn test_eq_field_ref_notdetect_startswith() {
+        // fieldrefの検知できないパターン
+        let rule_str = r#"
+        detection:
+            selection:
+                Channel|fieldref|startswith: Computer
+        details: 'command=%CommandLine%'
+        "#;
+
+        let record_json_str = r#"
+        {
+            "Event": {"System": {"EventID": 4103, "Channel": "Security", "Computer": "Powershell" }},
+            "Event_attributes": {"xmlns": "http://schemas.microsoft.com/win/2004/08/events/event"}
+        }"#;
+        check_select(rule_str, record_json_str, false);
+    }
+
+    #[test]
+    fn test_eq_field_ref_contains() {
+        // fieldrefで正しく検知できることを確認
+        let rule_str = r#"
+        detection:
+            selection:
+                Channel|fieldref|contains: Computer
+        details: 'command=%CommandLine%'
+        "#;
+
+        let record_json_str = r#"
+        {
+            "Event": {"System": {"EventID": 4103, "Channel": "Security", "Computer": "cur" }},
+            "Event_attributes": {"xmlns": "http://sc-allhemas.microsoft.com/win/2004/08/events/event"}
+        }"#;
+
+        check_select(rule_str, record_json_str, true);
+    }
+
+    #[test]
+    fn test_eq_field_ref_notdetect_contains() {
+        // fieldrefの検知できないパターン
+        let rule_str = r#"
+        detection:
+            selection:
+                Channel|fieldref|contains: Computer
         details: 'command=%CommandLine%'
         "#;
 
