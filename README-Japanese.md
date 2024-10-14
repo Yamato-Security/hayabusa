@@ -57,7 +57,7 @@ Hayabusaは、日本の[Yamato Security](https://yamatosecurity.connpass.com/)�
 
 - [Hayabusa について](#hayabusa-について)
 - [関連プロジェクト](#関連プロジェクト)
-- [Hayabusaを利用したサードパーティプロジェクト](#Hayabusaを利用したサードパーティプロジェクト)
+- [Hayabusaを利用したサードパーティプロジェクト](#hayabusaを利用したサードパーティプロジェクト)
   - [目次](#目次)
   - [主な目的](#主な目的)
     - [スレット(脅威)ハンティングと企業向けの広範囲なDFIR](#スレット脅威ハンティングと企業向けの広範囲なdfir)
@@ -1689,7 +1689,7 @@ Sigmaルールの問題点（誤検出、バグ等々）を発見された方は
 
 # ライセンス
 
-Hayabusaは[GPLv3](https://www.gnu.org/licenses/gpl-3.0.en.html)で公開され、すべてのルールは[Detection Rule License (DRL) 1.1](https://github.com/SigmaHQ/sigma/blob/master/LICENSE.Detection.Rules.md)で公開されています。
+Hayabusaは[AGPLv3](https://gpl.mhatta.org/agpl.ja.html)で公開され、すべてのルールは[Detection Rule License (DRL) 1.1](https://github.com/SigmaHQ/sigma/blob/master/LICENSE.Detection.Rules.md)で公開されています。
 
 Hayabusaは、MaxMind社が作成したGeoLite2データを使用しており、[https://www.maxmind.com](https://www.maxmind.com)から入手可能です。
 
