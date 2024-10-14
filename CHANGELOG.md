@@ -18,6 +18,10 @@
 - Sigma correlation rules required the `group-by` field but now it is optional. (#1442) (@fukusuket)
 - Hayabusa will give an error message if the rules referenced by a correlation rule are not found. (#1444) (@fukusuket)
 
+**Other:**
+
+- License is changed from GPL-3.0 to AGPL-3.0. (@yamatosecurity)
+
 ## 2.17.0 [2024/08/23] "HITCON Community Release"
 
 **New Features:**
