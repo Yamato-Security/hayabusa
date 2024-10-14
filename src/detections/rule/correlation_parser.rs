@@ -184,7 +184,7 @@ fn create_related_rule_nodes(
         }
         if !any_referenced {
             let msg = format!("The referenced rule was not found: {}", id);
-            return Err(msg.into())
+            return Err(msg.into());
         }
     }
     Ok((related_rule_nodes, name_to_selection))
