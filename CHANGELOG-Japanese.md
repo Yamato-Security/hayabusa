@@ -18,6 +18,10 @@
 - Sigma相関ルールの`group-by`フィールドは、必須だったが任意に変えた。(#1442) (@fukusuket)
 - Hayabusaは、相関ルールで参照されているルールが見つからない場合、エラーメッセージを表示するようにした。 (#1444) (@fukusuket)
 
+**その他:**
+
+- ライセンスをGPL-3.0からAGPL-3.0に変えた。(@yamatosecurity)
+
 ## 2.17.0 [2024/08/23] "HITCON Community Release"
 
 **新機能:**
