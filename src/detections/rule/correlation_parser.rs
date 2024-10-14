@@ -168,20 +168,26 @@ fn create_related_rule_nodes(
     related_rules_ids: &Vec<String>,
     other_rules: &[RuleNode],
     stored_static: &StoredStatic,
-) -> (Vec<RuleNode>, Name2Selection) {
+) -> Result<(Vec<RuleNode>, Name2Selection), Box<dyn Error>> {
     let mut related_rule_nodes: Vec<RuleNode> = Vec::new();
     let mut name_to_selection: Name2Selection = HashMap::new();
     for id in related_rules_ids {
+        let mut any_referenced = false;
         for other_rule in other_rules {
             if is_referenced_rule(other_rule, id) {
+                any_referenced = true;
                 let mut node = RuleNode::new(other_rule.rulepath.clone(), other_rule.yaml.clone());
                 let _ = node.init(stored_static);
                 name_to_selection.extend(node.detection.name_to_selection.clone());
                 related_rule_nodes.push(node);
             }
         }
+        if !any_referenced {
+            let msg = format!("The referenced rule was not found: {}", id);
+            return Err(msg.into());
+        }
     }
-    (related_rule_nodes, name_to_selection)
+    Ok((related_rule_nodes, name_to_selection))
 }
 
 fn create_detection(
@@ -261,7 +267,18 @@ fn merge_referenced_rule(
         return rule;
     }
     let (referenced_rules, name_to_selection) =
-        create_related_rule_nodes(&referenced_ids, other_rules, stored_static);
+        match create_related_rule_nodes(&referenced_ids, other_rules, stored_static) {
+            Ok(result) => result,
+            Err(e) => {
+                error_log(
+                    &rule.rulepath,
+                    e.to_string().as_str(),
+                    stored_static,
+                    parse_error_count,
+                );
+                return rule;
+            }
+        };
     let is_not_referenced_rule = |rule_node: &RuleNode| {
         let id = rule_node.yaml["id"].as_str().unwrap_or_default();
         let title = rule_node.yaml["title"].as_str().unwrap_or_default();
