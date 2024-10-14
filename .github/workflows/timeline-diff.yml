@@ -10,7 +10,7 @@ jobs:
       BRANCH_NAME: ${{ github.head_ref }}
 
     steps:
-      - name: Checkout main
+      - name: Checkout dev-branch
         uses: actions/checkout@v4
         with:
           ref: ${{ github.event.ref }}
