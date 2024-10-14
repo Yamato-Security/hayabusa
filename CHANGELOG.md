@@ -17,6 +17,7 @@
 - Unneeded line breaks when using `-o` in the `search` command. (#1425) (@fukusuket)
 - Sigma correlation rules required the `group-by` field but now it is optional. (#1442) (@fukusuket)
 - Hayabusa will give an error message if the rules referenced by a correlation rule are not found. (#1444) (@fukusuket)
+- Field information was not being outputted when the `all-field-info` profiles were used. (#1450) (@fukusuket)
 
 **Other:**
 

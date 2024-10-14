@@ -171,7 +171,8 @@ pub fn create_message(
                     //Detailsの中身が何も入っていない場合はそのままの値を入れる
                     replaced_profiles.push((key.to_owned(), profile.to_owned()));
                 } else {
-                    replaced_profiles.push((key.to_owned(), Details(detect_info.detail.into())));
+                    replaced_profiles
+                        .push((key.to_owned(), Details(detect_info.detail.clone().into())));
 
                     // メモリの節約のためにDetailsの中身を空にする
                     detect_info.detail = CompactString::default();
@@ -180,7 +181,16 @@ pub fn create_message(
             AllFieldInfo(_) => {
                 exist_all_field_info_in_ext_field = true;
                 if is_agg {
-                    replaced_profiles.push((key.to_owned(), AllFieldInfo("-".into())));
+                    replaced_profiles.push((
+                        key.to_owned(),
+                        AllFieldInfo(detect_info.detail.clone().into()),
+                    ));
+                    if is_json_timeline {
+                        record_details_info_map.insert(
+                            "#AllFieldInfo".into(),
+                            vec![CompactString::new(detect_info.detail.clone())],
+                        );
+                    }
                 } else {
                     let recinfos = if let Some(c) = record_details_info_map.get("#AllFieldInfo") {
                         c.to_owned()
