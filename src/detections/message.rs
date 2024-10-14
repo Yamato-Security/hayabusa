@@ -185,6 +185,12 @@ pub fn create_message(
                         key.to_owned(),
                         AllFieldInfo(detect_info.detail.clone().into()),
                     ));
+                    if is_json_timeline {
+                        record_details_info_map.insert(
+                            "#AllFieldInfo".into(),
+                            vec![CompactString::new(detect_info.detail.clone())],
+                        );
+                    }
                 } else {
                     let recinfos = if let Some(c) = record_details_info_map.get("#AllFieldInfo") {
                         c.to_owned()
