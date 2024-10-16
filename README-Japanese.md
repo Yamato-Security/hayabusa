@@ -86,12 +86,6 @@ Hayabusaは、日本の[Yamato Security](https://yamatosecurity.connpass.com/)�
   - [Linuxでのコンパイルの注意点](#linuxでのコンパイルの注意点)
   - [LinuxのMUSLバイナリのクロスコンパイル](#linuxのmuslバイナリのクロスコンパイル)
 - [Hayabusaの実行](#hayabusaの実行)
-  - [スキャンウィザード](#スキャンウィザード)
-    - [Core ルール](#core-ルール)
-    - [Core+ ルール](#core-ルール-1)
-    - [Core++ ルール](#core-ルール-2)
-    - [Emerging Threats (ET) アドオンルール](#emerging-threats-et-アドオンルール)
-    - [Threat Hunting (TH) アドオンルール](#threat-hunting-th-アドオンルール)
   - [注意: アンチウィルス/EDRの誤検知と遅い初回実行](#注意-アンチウィルスedrの誤検知と遅い初回実行)
   - [Windows](#windows)
     - [パスにスペースが含まれるファイルまたはディレクトリをスキャンしようとするとエラーが発生した場合](#パスにスペースが含まれるファイルまたはディレクトリをスキャンしようとするとエラーが発生した場合)
@@ -120,6 +114,13 @@ Hayabusaは、日本の[Yamato Security](https://yamatosecurity.connpass.com/)�
       - [`search`コマンドの使用例](#searchコマンドの使用例)
       - [`search`の設定ファイル](#searchの設定ファイル)
   - [DFIRタイムラインコマンド](#dfirタイムラインコマンド)
+    - [スキャンウィザード](#スキャンウィザード)
+      - [Core ルール](#core-ルール)
+      - [Core+ ルール](#core-ルール-1)
+      - [Core++ ルール](#core-ルール-2)
+      - [Emerging Threats (ET) アドオンルール](#emerging-threats-et-アドオンルール)
+      - [Threat Hunting (TH) アドオンルール](#threat-hunting-th-アドオンルール)
+    - [Channel filtering](#channel-filtering)
     - [`csv-timeline`コマンド](#csv-timelineコマンド)
       - [`csv-timeline`コマンドの使用例](#csv-timelineコマンドの使用例)
       - [アドバンス - GeoIPのログエンリッチメント](#アドバンス---geoipのログエンリッチメント)
@@ -399,52 +400,6 @@ MUSLバイナリは`./target/x86_64-unknown-linux-musl/release/`ディレクト�
 MUSLバイナリはGNUバイナリより約15％遅いですが、より多くのLinuxバージョンとディストロで実行できます。
 
 # Hayabusaの実行
-
-## スキャンウィザード
-
-`csv-timeline`や`json-timeline`などのコマンドは、デフォルトでスキャンウィザードが有効になりました。
-これは、ユーザのニーズや好みに応じて、どの検知ルールを有効にするかを簡単に選択できるようにするためのものであります。
-読み込む検知ルールのセットは、Sigmaプロジェクトの公式リストに基づいています。
-詳細は[このブログ記事](https://blog.sigmahq.io/introducing-sigma-rule-packages-releases-76043ce42e81)で説明されています。
-`w, --no-wizard`オプションを追加することで、簡単にウィザードを無効にし、従来の方法でHayabusaを使用できます。
-
-### Core ルール
-
-`core`ルールセットは、ステータスが`test`または`stable`かつ、レベルが`high`または`critical`のルールを有効にします。
-これらは高品質のルールで、多くの誤検知は発生しないはずです。
-ルールのステータスが`test`または`stable`であるため、6ヶ月以上の間に誤検知が報告されていません。
-ルールは攻撃者の戦術、一般的な不審なアクティビティ、または悪意のある振る舞いに一致します。
-これは`--exclude-status deprecated,unsupported,experimental --min-level high`オプションを使用した場合と同じです。
-
-### Core+ ルール
-
-`core+`ルールセットは、ステータスが`test`または`stable`かつ、レベルが`medium`以上のルールを有効にします。
-`medium`ルールは、しばしば特定のアプリケーション、正当なユーザーの行動、または組織のスクリプトと一致するため、追加のチューニングが必要です。
-これは`--exclude-status deprecated,unsupported,experimental --min-level medium`オプションを使用した場合と同じです。
-
-### Core++ ルール
-
-`core++`ルールセットは、ステータスが`experimental`、`test`、`stable`のいずれかかつ、レベルが`medium`以上のルールを有効にします。
-これらのルールは最先端のものです。
-これらはSigmaHQプロジェクトで提供されているベースラインのevtxファイルに対して検証され、複数のエンジニアによってレビューされています。
-それ以外最初は、ほとんどテストされていません。
-これらは、できるだけ早く脅威を検出できる場合に使用しますが、誤検知のしきい値を高く保つのにコストがかかります。
-これは`--exclude-status deprecated,unsupported --min-level medium`オプションを使用した場合と同じです。
-
-### Emerging Threats (ET) アドオンルール
-
-`Emerging Threats (ET)`ルールセットは、`detection.emerging_threats`のタグを持つルールを有効にします。
-これらのルールは特定の脅威を対象とし、情報がまだほとんど入手できていない現在の脅威に特に役立ちます。
-これらのルールは多くの誤検知を生成しないはずですが、時間とともに関連性が低下します。
-これらのルールが無効になっている場合、`--exclude-tag detection.emerging_threats`オプションを使用した場合と同じです。
-ウィザードを無効にしてHayabusaを従来の方法で実行する場合、これらのルールはデフォルトで含まれます。
-
-### Threat Hunting (TH) アドオンルール
-
-`Threat Hunting (TH)`ルールセットは、`detection.threat_hunting`のタグを持つルールを有効にします。
-これらのルールは未知の悪意のあるアクティビティを検出するかもしれませんが、通常は誤検知が多くなります。
-これらのルールが無効になっている場合、`--exclude-tag detection.threat_hunting`オプションを使用した場合と同じです。
-ウィザードを無効にしてHayabusaを従来の方法で実行する場合、これらのルールはデフォルトで含まれます。
 
 ## 注意: アンチウィルス/EDRの誤検知と遅い初回実行
 
@@ -884,6 +839,83 @@ hayabusa.exe search -d ../hayabusa-sample-evtx -r ".*" -F WorkstationName:"kali"
 
 
 ## DFIRタイムラインコマンド
+
+### スキャンウィザード
+
+`csv-timeline`や`json-timeline`などのコマンドは、デフォルトでスキャンウィザードが有効になりました。
+これは、ユーザのニーズや好みに応じて、どの検知ルールを有効にするかを簡単に選択できるようにするためのものであります。
+読み込む検知ルールのセットは、Sigmaプロジェクトの公式リストに基づいています。
+詳細は[このブログ記事](https://blog.sigmahq.io/introducing-sigma-rule-packages-releases-76043ce42e81)で説明されています。
+`w, --no-wizard`オプションを追加することで、簡単にウィザードを無効にし、従来の方法でHayabusaを使用できます。
+
+#### Core ルール
+
+`core`ルールセットは、ステータスが`test`または`stable`かつ、レベルが`high`または`critical`のルールを有効にします。
+これらは高品質のルールで、多くの誤検知は発生しないはずです。
+ルールのステータスが`test`または`stable`であるため、6ヶ月以上の間に誤検知が報告されていません。
+ルールは攻撃者の戦術、一般的な不審なアクティビティ、または悪意のある振る舞いに一致します。
+これは`--exclude-status deprecated,unsupported,experimental --min-level high`オプションを使用した場合と同じです。
+
+#### Core+ ルール
+
+`core+`ルールセットは、ステータスが`test`または`stable`かつ、レベルが`medium`以上のルールを有効にします。
+`medium`ルールは、しばしば特定のアプリケーション、正当なユーザーの行動、または組織のスクリプトと一致するため、追加のチューニングが必要です。
+これは`--exclude-status deprecated,unsupported,experimental --min-level medium`オプションを使用した場合と同じです。
+
+#### Core++ ルール
+
+`core++`ルールセットは、ステータスが`experimental`、`test`、`stable`のいずれかかつ、レベルが`medium`以上のルールを有効にします。
+これらのルールは最先端のものです。
+これらはSigmaHQプロジェクトで提供されているベースラインのevtxファイルに対して検証され、複数のエンジニアによってレビューされています。
+それ以外最初は、ほとんどテストされていません。
+これらは、できるだけ早く脅威を検出できる場合に使用しますが、誤検知のしきい値を高く保つのにコストがかかります。
+これは`--exclude-status deprecated,unsupported --min-level medium`オプションを使用した場合と同じです。
+
+#### Emerging Threats (ET) アドオンルール
+
+`Emerging Threats (ET)`ルールセットは、`detection.emerging_threats`のタグを持つルールを有効にします。
+これらのルールは特定の脅威を対象とし、情報がまだほとんど入手できていない現在の脅威に特に役立ちます。
+これらのルールは多くの誤検知を生成しないはずですが、時間とともに関連性が低下します。
+これらのルールが無効になっている場合、`--exclude-tag detection.emerging_threats`オプションを使用した場合と同じです。
+ウィザードを無効にしてHayabusaを従来の方法で実行する場合、これらのルールはデフォルトで含まれます。
+
+#### Threat Hunting (TH) アドオンルール
+
+`Threat Hunting (TH)`ルールセットは、`detection.threat_hunting`のタグを持つルールを有効にします。
+これらのルールは未知の悪意のあるアクティビティを検出するかもしれませんが、通常は誤検知が多くなります。
+これらのルールが無効になっている場合、`--exclude-tag detection.threat_hunting`オプションを使用した場合と同じです。
+ウィザードを無効にしてHayabusaを従来の方法で実行する場合、これらのルールはデフォルトで含まれます。
+
+### Channel filtering
+
+As of Hayabusa v2.16.0, we enable a Channel-based filter when loading `.evtx` files and rules.
+The purpose is to make scanning as efficient as possible by only loading what is necessary.
+While it possible for there to be multiple providers in a single event log, it is not common to have multiple channels inside a single evtx file.
+(The only time we have seen this is when someone has artifically merged two different evtx files together for the [sample-evtx](https://github.com/Yamato-Security/hayabusa-sample-evtx) project.)
+We can use this to our advantage by first checking the `Channel` field in the first record of every `.evtx` file specified to be scanned.
+We also check which `.yml` rules use what channels specified in the `Channel` field of the rule.
+With these two lists, we only load rules that use channels that are actually present inside the `.evtx` files.
+
+So for example, if a user wants to scan `Security.evtx`, only rules that specify `Channel: Security` will be used.
+There is no point in loading other detection rules, for example rules that only look for events in the `Application` log, etc...
+Note that channel fields (Ex: `Channel: Security`) are not **explicitly** defined inside original Sigma rules.
+For Sigma rules, channel and event IDs fields are **implicitly** defined with `service` and `category` fields under `logsource`. (Ex: service: security`)
+When curating Sigma rules in the [hayabusa-rules](https://github.com/Yamato-Security/hayabusa-rules) repository, we deabstract the `logsource` field and explicitly define the channel and event ID fields.
+We explain how and why we do this in-depth [here](https://github.com/Yamato-Security/sigma-to-hayabusa-converter).
+
+Currently, there are only two detection rules that do not have `Channel` defined and are intended to scan all `.evtx` files are the following:
+    - [Possible Hidden Shellcode](https://github.com/Yamato-Security/hayabusa-rules/blob/main/hayabusa/builtin/UnkwnChannEID_Med_PossibleHiddenShellcode.yml)
+    - [Mimikatz Use](https://github.com/SigmaHQ/sigma/blob/master/rules/windows/builtin/win_alert_mimikatz_keywords.yml)
+
+If you want to use these two rules and scan all rules against loaded `.evtx` files then you will need to add the `-A, --enable-all-rules` option in the `csv-timeline` and `json-timeline` commands.
+In our benchmarks, the rules filtering usually gives a 20% to 10x speed improvement depending on what files are being scanned.
+
+Channel filtering is also used when loading `.evtx` files.
+For example, if you specify a rule that looks for events with a channel of `Security`, then there is no point in loading `.evtx` files that are not from the `Security` log.
+In our benchmarks, this gives a speed benefit of around 10% with normal scans and up to 60%+ performance increase when scanning with a single rule.
+If you are sure that multiple channels are being used inside a single `.evtx` file, for example someone used a tool to merge multiple `.evtx` files together, then you disable this filtering with the `-a, --scan-all-evtx-files` option in `csv-timeline` and `json-timeline` commands.
+
+> Note: Channel filtering only works with `.evtx` files and you will receive an error if you try to load event logs from a JSON file with `-J, --json-input` and also specify `-A` or `-a`.
 
 ### `csv-timeline`コマンド
 
