@@ -889,7 +889,7 @@ hayabusa.exe search -d ../hayabusa-sample-evtx -r ".*" -F WorkstationName:"kali"
 
 ### Channelフィルタリング
 
-Hayabusa v2.16.0以降、`.evtx`ファイルとルールを読み込む際にチャンネルベースのフィルタを有効にしています。
+Hayabusa v2.16.0以降、`.evtx`ファイルと`.yml`ルールを読み込む際にチャンネルベースのフィルタを有効にしています。
 これは、必要なものだけを読み込むことで、スキャンを可能な限り効率的に行うことを目的としています。
 単一のイベントログ内に複数のプロバイダが存在することはありますが、単一の.evtxファイル内に複数のチャンネルが含まれることは一般的ではありません。
 （これまで見かけた唯一の例は、異なる2つの.evtxファイルを人工的に結合した[sample-evtx](https://github.com/Yamato-Security/hayabusa-sample-evtx)プロジェクトです。）
