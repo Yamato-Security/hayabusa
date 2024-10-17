@@ -905,8 +905,8 @@ Sigmaルールでは、`logsource`の`service`や`category`フィールドでチ
 これをどのように、そしてなぜ行うのかについては、[こちら](https://github.com/Yamato-Security/sigma-to-hayabusa-converter)で詳しく説明しています。
 
 現在、`Channel`が定義されておらず、すべての`.evtx`ファイルをスキャンするためのルールは以下の2つだけです：
-    - [Possible Hidden Shellcode](https://github.com/Yamato-Security/hayabusa-rules/blob/main/hayabusa/builtin/UnkwnChannEID_Med_PossibleHiddenShellcode.yml)
-    - [Mimikatz Use](https://github.com/SigmaHQ/sigma/blob/master/rules/windows/builtin/win_alert_mimikatz_keywords.yml)
+- [Possible Hidden Shellcode](https://github.com/Yamato-Security/hayabusa-rules/blob/main/hayabusa/builtin/UnkwnChannEID_Med_PossibleHiddenShellcode.yml)
+- [Mimikatz Use](https://github.com/SigmaHQ/sigma/blob/master/rules/windows/builtin/win_alert_mimikatz_keywords.yml)
 
 これらの2つのルールを使用して、読み込んだすべての`.evtx`ファイルに対してルールをスキャンしたい場合は、`csv-timeline`および`json-timeline`コマンドで`-A, --enable-all-rules`オプションを追加する必要があります。
 ベンチマークでは、ルールフィルタリングにより、スキャンするファイルに応じて、速度が20%から10倍に向上することが確認されています。
