@@ -119,7 +119,7 @@ Hayabusa is a **Windows event log fast forensics timeline generator** and **thre
       - [Core++ Rules](#core-rules-2)
       - [Emerging Threats (ET) Add-On Rules](#emerging-threats-et-add-on-rules)
       - [Threat Hunting (TH) Add-On Rules](#threat-hunting-th-add-on-rules)
-    - [Channel filtering](#channel-filtering)
+    - [Channel-based event log and rules filtering](#channel-based-event-log-and-rules-filtering)
     - [`csv-timeline` command](#csv-timeline-command)
       - [`csv-timeline` command examples](#csv-timeline-command-examples)
       - [Advanced - GeoIP Log Enrichment](#advanced---geoip-log-enrichment)
@@ -886,7 +886,7 @@ These rules may detect unknown malicious activity, however, will typicially have
 When these rules are not enabled, it is the same as using the `--exclude-tag detection.threat_hunting` option.
 When running Hayabusa traditionally without the wizard, these rules will be included by default.
 
-### Channel filtering
+### Channel-based event log and rules filtering
 
 As of Hayabusa v2.16.0, we enable a Channel-based filter when loading `.evtx` files and `.yml` rules.
 The purpose is to make scanning as efficient as possible by only loading what is necessary.

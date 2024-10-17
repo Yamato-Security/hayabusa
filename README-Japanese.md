@@ -120,7 +120,7 @@ Hayabusaは、日本の[Yamato Security](https://yamatosecurity.connpass.com/)�
       - [Core++ ルール](#core-ルール-2)
       - [Emerging Threats (ET) アドオンルール](#emerging-threats-et-アドオンルール)
       - [Threat Hunting (TH) アドオンルール](#threat-hunting-th-アドオンルール)
-    - [Channelフィルタリング](#channelフィルタリング)
+    - [Channelベースのイベントログとルールフィルタリング](#channelベースのイベントログとルールフィルタリング)
     - [`csv-timeline`コマンド](#csv-timelineコマンド)
       - [`csv-timeline`コマンドの使用例](#csv-timelineコマンドの使用例)
       - [アドバンス - GeoIPのログエンリッチメント](#アドバンス---geoipのログエンリッチメント)
@@ -887,7 +887,7 @@ hayabusa.exe search -d ../hayabusa-sample-evtx -r ".*" -F WorkstationName:"kali"
 これらのルールが無効になっている場合、`--exclude-tag detection.threat_hunting`オプションを使用した場合と同じです。
 ウィザードを無効にしてHayabusaを従来の方法で実行する場合、これらのルールはデフォルトで含まれます。
 
-### Channelフィルタリング
+### Channelベースのイベントログとルールフィルタリング
 
 Hayabusa v2.16.0以降、`.evtx`ファイルと`.yml`ルールを読み込む際にチャンネルベースのフィルタを有効にしています。
 これは、必要なものだけを読み込むことで、スキャンを可能な限り効率的に行うことを目的としています。
