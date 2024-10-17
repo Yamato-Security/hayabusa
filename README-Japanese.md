@@ -120,7 +120,7 @@ Hayabusaは、日本の[Yamato Security](https://yamatosecurity.connpass.com/)�
       - [Core++ ルール](#core-ルール-2)
       - [Emerging Threats (ET) アドオンルール](#emerging-threats-et-アドオンルール)
       - [Threat Hunting (TH) アドオンルール](#threat-hunting-th-アドオンルール)
-    - [Channel filtering](#channel-filtering)
+    - [Channelフィルタリング](#channelフィルタリング)
     - [`csv-timeline`コマンド](#csv-timelineコマンド)
       - [`csv-timeline`コマンドの使用例](#csv-timelineコマンドの使用例)
       - [アドバンス - GeoIPのログエンリッチメント](#アドバンス---geoipのログエンリッチメント)
@@ -887,36 +887,36 @@ hayabusa.exe search -d ../hayabusa-sample-evtx -r ".*" -F WorkstationName:"kali"
 これらのルールが無効になっている場合、`--exclude-tag detection.threat_hunting`オプションを使用した場合と同じです。
 ウィザードを無効にしてHayabusaを従来の方法で実行する場合、これらのルールはデフォルトで含まれます。
 
-### Channel filtering
+### Channelフィルタリング
 
-As of Hayabusa v2.16.0, we enable a Channel-based filter when loading `.evtx` files and rules.
-The purpose is to make scanning as efficient as possible by only loading what is necessary.
-While it possible for there to be multiple providers in a single event log, it is not common to have multiple channels inside a single evtx file.
-(The only time we have seen this is when someone has artifically merged two different evtx files together for the [sample-evtx](https://github.com/Yamato-Security/hayabusa-sample-evtx) project.)
-We can use this to our advantage by first checking the `Channel` field in the first record of every `.evtx` file specified to be scanned.
-We also check which `.yml` rules use what channels specified in the `Channel` field of the rule.
-With these two lists, we only load rules that use channels that are actually present inside the `.evtx` files.
+Hayabusa v2.16.0以降、`.evtx`ファイルとルールを読み込む際にチャンネルベースのフィルタを有効にしています。
+これは、必要なものだけを読み込むことで、スキャンを可能な限り効率的に行うことを目的としています。
+単一のイベントログ内に複数のプロバイダが存在することはありますが、単一の.evtxファイル内に複数のチャンネルが含まれることは一般的ではありません。
+（これまで見かけた唯一の例は、異なる2つの.evtxファイルを人工的に結合した[sample-evtx](https://github.com/Yamato-Security/hayabusa-sample-evtx)プロジェクトです。）
+この特性を利用して、スキャン対象のすべての`.evtx`ファイルの最初のレコードで`Channel`フィールドを確認します。
+また、ルールの`Channel`フィールドに指定されたチャンネルを使用する`.yml`ルールも確認します。
+この2つのリストを基に、実際に`.evtx`ファイル内に存在するチャンネルを使用するルールだけを読み込みます。
 
-So for example, if a user wants to scan `Security.evtx`, only rules that specify `Channel: Security` will be used.
-There is no point in loading other detection rules, for example rules that only look for events in the `Application` log, etc...
-Note that channel fields (Ex: `Channel: Security`) are not **explicitly** defined inside original Sigma rules.
-For Sigma rules, channel and event IDs fields are **implicitly** defined with `service` and `category` fields under `logsource`. (Ex: service: security`)
-When curating Sigma rules in the [hayabusa-rules](https://github.com/Yamato-Security/hayabusa-rules) repository, we deabstract the `logsource` field and explicitly define the channel and event ID fields.
-We explain how and why we do this in-depth [here](https://github.com/Yamato-Security/sigma-to-hayabusa-converter).
+例えば、ユーザーが`Security.evtx`をスキャンしたい場合、`Channel: Security`を指定しているルールのみが使用されます。
+他の検出ルール、例えば`Application`ログのイベントのみを検出するルールなどを読み込む意味はありません。
+なお、チャンネルフィールド（例: `Channel: Security`）は、元のSigmaルールには**明示的**に定義されていません。
+Sigmaルールでは、`logsource`の`service`や`category`フィールドでチャンネルやイベントIDが**暗黙的**に定義されています（例: `service: security`）
+[hayabusa-rules](https://github.com/Yamato-Security/hayabusa-rules)リポジトリでSigmaルールを管理する際には、`logsource`フィールドを具体化し、チャンネルやイベントIDフィールドを明示的に定義しています。
+これをどのように、そしてなぜ行うのかについては、[こちら](https://github.com/Yamato-Security/sigma-to-hayabusa-converter)で詳しく説明しています。
 
-Currently, there are only two detection rules that do not have `Channel` defined and are intended to scan all `.evtx` files are the following:
+現在、`Channel`が定義されておらず、すべての`.evtx`ファイルをスキャンするためのルールは以下の2つだけです：
     - [Possible Hidden Shellcode](https://github.com/Yamato-Security/hayabusa-rules/blob/main/hayabusa/builtin/UnkwnChannEID_Med_PossibleHiddenShellcode.yml)
     - [Mimikatz Use](https://github.com/SigmaHQ/sigma/blob/master/rules/windows/builtin/win_alert_mimikatz_keywords.yml)
 
-If you want to use these two rules and scan all rules against loaded `.evtx` files then you will need to add the `-A, --enable-all-rules` option in the `csv-timeline` and `json-timeline` commands.
-In our benchmarks, the rules filtering usually gives a 20% to 10x speed improvement depending on what files are being scanned.
+これらの2つのルールを使用して、読み込んだすべての`.evtx`ファイルに対してルールをスキャンしたい場合は、`csv-timeline`および`json-timeline`コマンドで`-A, --enable-all-rules`オプションを追加する必要があります。
+ベンチマークでは、ルールフィルタリングにより、スキャンするファイルに応じて、速度が20%から10倍に向上することが確認されています。
 
-Channel filtering is also used when loading `.evtx` files.
-For example, if you specify a rule that looks for events with a channel of `Security`, then there is no point in loading `.evtx` files that are not from the `Security` log.
-In our benchmarks, this gives a speed benefit of around 10% with normal scans and up to 60%+ performance increase when scanning with a single rule.
-If you are sure that multiple channels are being used inside a single `.evtx` file, for example someone used a tool to merge multiple `.evtx` files together, then you disable this filtering with the `-a, --scan-all-evtx-files` option in `csv-timeline` and `json-timeline` commands.
+チャンネルフィルタリングは、`.evtx`ファイルを読み込む際にも使用されます。
+例えば、`Security`チャンネルのイベントを探すルールを指定している場合、`Security`ログではない`.evtx`ファイルを読み込む意味はありません。
+ベンチマークでは、通常のスキャンで約10%、単一のルールでスキャンする場合には最大60%以上の性能向上が見られました。
+1つの.evtxファイル内に複数のチャンネルが使用されている場合、例えば複数の`.evtx`ファイルがツールを使って結合された場合は、`csv-timeline`および`json-timeline`コマンドで`-a, --scan-all-evtx-files`オプションを使用してこのフィルタリングを無効にできます。
 
-> Note: Channel filtering only works with `.evtx` files and you will receive an error if you try to load event logs from a JSON file with `-J, --json-input` and also specify `-A` or `-a`.
+> 注意: チャンネルフィルタリングは.evtxファイルでのみ動作します。-J, --json-inputでJSONファイルからイベントログを読み込み、さらに-Aや-aを指定した場合、エラーが発生します。
 
 ### `csv-timeline`コマンド
 
