@@ -119,7 +119,7 @@ Hayabusa is a **Windows event log fast forensics timeline generator** and **thre
       - [Core++ Rules](#core-rules-2)
       - [Emerging Threats (ET) Add-On Rules](#emerging-threats-et-add-on-rules)
       - [Threat Hunting (TH) Add-On Rules](#threat-hunting-th-add-on-rules)
-    - [Channel filtering](#channel-filtering)
+    - [Channel-based event log and rules filtering](#channel-based-event-log-and-rules-filtering)
     - [`csv-timeline` command](#csv-timeline-command)
       - [`csv-timeline` command examples](#csv-timeline-command-examples)
       - [Advanced - GeoIP Log Enrichment](#advanced---geoip-log-enrichment)
@@ -886,9 +886,9 @@ These rules may detect unknown malicious activity, however, will typicially have
 When these rules are not enabled, it is the same as using the `--exclude-tag detection.threat_hunting` option.
 When running Hayabusa traditionally without the wizard, these rules will be included by default.
 
-### Channel filtering
+### Channel-based event log and rules filtering
 
-As of Hayabusa v2.16.0, we enable a Channel-based filter when loading `.evtx` files and rules.
+As of Hayabusa v2.16.0, we enable a Channel-based filter when loading `.evtx` files and `.yml` rules.
 The purpose is to make scanning as efficient as possible by only loading what is necessary.
 While it possible for there to be multiple providers in a single event log, it is not common to have multiple channels inside a single evtx file.
 (The only time we have seen this is when someone has artifically merged two different evtx files together for the [sample-evtx](https://github.com/Yamato-Security/hayabusa-sample-evtx) project.)
@@ -899,8 +899,8 @@ With these two lists, we only load rules that use channels that are actually pre
 So for example, if a user wants to scan `Security.evtx`, only rules that specify `Channel: Security` will be used.
 There is no point in loading other detection rules, for example rules that only look for events in the `Application` log, etc...
 Note that channel fields (Ex: `Channel: Security`) are not **explicitly** defined inside original Sigma rules.
-For Sigma rules, channel and event IDs fields are **implicitly** defined with `service` and `category` fields under `logsource`. (Ex: service: security`)
-When curating Sigma rules in the [hayabusa-rules](https://github.com/Yamato-Security/hayabusa-rules) repository, we deabstract the `logsource` field and explicitly define the channel and event ID fields.
+For Sigma rules, channel and event IDs fields are **implicitly** defined with `service` and `category` fields under `logsource`. (Ex: `service: security`)
+When curating Sigma rules in the [hayabusa-rules](https://github.com/Yamato-Security/hayabusa-rules) repository, we de-abstract the `logsource` field and explicitly define the channel and event ID fields.
 We explain how and why we do this in-depth [here](https://github.com/Yamato-Security/sigma-to-hayabusa-converter).
 
 Currently, there are only two detection rules that do not have `Channel` defined and are intended to scan all `.evtx` files are the following:
@@ -908,7 +908,7 @@ Currently, there are only two detection rules that do not have `Channel` defined
 - [Mimikatz Use](https://github.com/SigmaHQ/sigma/blob/master/rules/windows/builtin/win_alert_mimikatz_keywords.yml)
 
 If you want to use these two rules and scan all rules against loaded `.evtx` files then you will need to add the `-A, --enable-all-rules` option in the `csv-timeline` and `json-timeline` commands.
-In our benchmarks, the rules filtering usually gives a 20% to 10x speed improvement depending on what files are being scanned.
+In our benchmarks, the rules filtering usually gives a 20% to 10x speed improvement depending on what files are being scanned and of course uses less memory.
 
 Channel filtering is also used when loading `.evtx` files.
 For example, if you specify a rule that looks for events with a channel of `Security`, then there is no point in loading `.evtx` files that are not from the `Security` log.
