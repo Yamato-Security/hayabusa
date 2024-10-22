@@ -897,7 +897,7 @@ mod tests {
     #[test]
     fn test_check_regex() {
         let regexes: Vec<Regex> =
-            utils::read_txt("rules/config/regex/detectlist_suspicous_services.txt")
+            utils::read_txt("test_files/config/regex/detectlist_suspicous_services.txt")
                 .unwrap()
                 .iter()
                 .map(|regex_str| Regex::new(regex_str).unwrap())
@@ -913,7 +913,7 @@ mod tests {
     fn test_check_allowlist() {
         let commandline = "\"C:\\Program Files\\Google\\Update\\GoogleUpdate.exe\"";
         let allowlist: Vec<Regex> =
-            utils::read_txt("rules/config/regex/allowlist_legitimate_services.txt")
+            utils::read_txt("test_files/config/regex/allowlist_legitimate_services.txt")
                 .unwrap()
                 .iter()
                 .map(|allow_str| Regex::new(allow_str).unwrap())
