@@ -1,6 +1,6 @@
 # Changes
 
-## 2.18.0 [xxxx/xx/xx]
+## 2.18.0 [2024/10/23] - SecTor Release
 
 **New Features:**
 

@@ -1,0 +1,16 @@
+^cmd.exe /c echo [a-z]{6} > \\\\.\\pipe\\[a-z]{6}$
+powershell.*FromBase64String.*IO.Compression.GzipStream
+DownloadString\(.http
+.*(?i)mimikatz.*
+.*(?i)mimidvr.*
+Invoke-Mimikatz.ps
+PowerSploit.*ps1
+[a-zA-Z0-9/+=]{500}
+.*(?i)powershell.*
+.*(?i)cmd.*
+\\csc\.exe
+\\csc\.exe.*\\Appdata\\Local\\Temp\\[a-z0-9]{8}\.cmdline
+\\cvtres\.exe.*
+\\cvtres\.exe.*\\AppData\\Local\\Temp\\[A-Z0-9]{7}\.tmp
+^[a-zA-Z]{22}$
+^[a-zA-Z]{16}$

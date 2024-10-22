@@ -415,7 +415,7 @@ pub fn search_result_dsp_msg(
         let abbr_channel = stored_static.disp_abbr_generic.replace_all(
             stored_static
                 .ch_config
-                .get(&CompactString::from(channel.to_ascii_lowercase()))
+                .get(&channel.to_ascii_lowercase())
                 .unwrap_or(&channel)
                 .as_str(),
             &stored_static.disp_abbr_general_values,

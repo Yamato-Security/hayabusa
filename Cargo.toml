@@ -1,10 +1,10 @@
 [package]
 name = "hayabusa"
-version = "2.18.0-dev"
+version = "2.18.0"
 repository = "https://github.com/Yamato-Security/hayabusa"
 authors = ["Yamato Security @SecurityYamato"]
 edition = "2021"
-rust-version = "1.81.0"
+rust-version = "1.82.0"
 include = ["src/**/*", "LICENSE.txt", "README.md", "CHANGELOG.md"]
 
 [dependencies]
@@ -15,22 +15,22 @@ chrono = "0.4.*"
 cidr-utils = "0.6.*"
 clap = { version = "4.*", features = ["derive", "cargo", "color"]}
 comfy-table = "7.*"
-compact_str = "0.7.*"
+compact_str = "0.8.*"
 console = "0.15.*"
 csv = "1.3.*"
 dashmap = "*"
 dialoguer = "*"
 downcast-rs = "1.*"
-evtx = { git = "https://github.com/Yamato-Security/hayabusa-evtx.git" , features = ["fast-alloc"] , rev = "fa41de8" } # 0.8.10 2024/08/19 update
+evtx = { git = "https://github.com/Yamato-Security/hayabusa-evtx.git" , features = ["fast-alloc"] , rev = "5027622" } # 0.8.10 2024/10/21 update
 git2 = "0.*"
-hashbrown = "0.14.*"
+hashbrown = "0.15.*"
 hex = "0.4.*"
 horrorshow = "0.8.*"
 indexmap = "2.*"
 indicatif = "*"
 itertools = "*"
-krapslog = "0.5"
-lazy_static = "1.4.*"
+krapslog = "0.6"
+lazy_static = "1.5.*"
 libmimalloc-sys = { version = "*",  features = ["extended"] }
 maxminddb = "0.*"
 memchr = "2.*"
@@ -49,7 +49,7 @@ tokio = { version = "1", features = ["full"] }
 ureq = "*"
 wildmatch = "2.*"
 yaml-rust = "0.4.*"
-rust-embed={version = "8.4.0", features = ["include-exclude", "debug-embed"]}
+rust-embed={version = "8.5.0", features = ["include-exclude", "debug-embed"]}
 
 [profile.dev]
 debug-assertions = false

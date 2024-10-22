@@ -344,7 +344,7 @@ impl Detection {
                                 .replace_all(
                                     stored_static
                                         .ch_config
-                                        .get(&CompactString::from(ch_str.to_ascii_lowercase()))
+                                        .get(&ch_str.to_ascii_lowercase())
                                         .unwrap_or(ch_str)
                                         .as_str(),
                                     &stored_static.disp_abbr_general_values,
@@ -722,7 +722,7 @@ impl Detection {
             FieldDataMapKey::default()
         } else {
             FieldDataMapKey {
-                channel: CompactString::from(ch_str.clone().to_lowercase()),
+                channel: ch_str.clone().to_lowercase(),
                 event_id: eid.clone(),
             }
         };
@@ -1160,8 +1160,8 @@ impl Detection {
         let enable_deprecated_flag = output_opt.enable_deprecated_rules;
         let enable_unsupported_flag = output_opt.enable_unsupported_rules;
         let is_filtered_rule_flag = |x: &CompactString| {
-            x == &"deprecated" && !enable_deprecated_flag
-                || x == &"unsupported" && !enable_unsupported_flag
+            x == "deprecated" && !enable_deprecated_flag
+                || x == "unsupported" && !enable_unsupported_flag
         };
         let total_loaded_rule_cnt: u128 = sorted_st_rc
             .iter()
