@@ -288,7 +288,7 @@ JSON形式の結果を`jq`で解析する方法については、[こちら](/do
 
 [Releases](https://github.com/Yamato-Security/hayabusa/releases)ページからHayabusaの安定したバージョンでコンパイルされたバイナリが含まれている最新版もしくはソースコードをダウンロードできます。
 
-We provide binaries for the following architectures:
+以下のアーキテクチャ用のバイナリを提供している：
 - Linux ARM 64-bit GNU (`hayabusa-x.x.x-lin-aarch64-gnu`)
 - Linux Intel 64-bit GNU (`hayabusa-x.x.x-lin-x64-gnu`)
 - Linux Intel 64-bit MUSL (`hayabusa-x.x.x-lin-x64-musl`)
