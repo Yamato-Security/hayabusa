@@ -267,7 +267,9 @@ jobs:
           ls -lR all-packages
           cd all-packages
           for dir in */; do
-            zip -r "${dir%/}.zip" "$dir"
+            cd "$dir"
+            zip -r "../${dir%/}.zip" *
+            cd ..
           done
       - name: Upload Zip Artifacts(all-packages)
         uses: actions/upload-artifact@v4
