@@ -177,9 +177,9 @@ jobs:
             'ubuntu-20.04')
               echo "artifact_name=hayabusa-${{ github.event.inputs.release_ver }}-lin-aarch64-musl" >> $GITHUB_OUTPUT ;;
             'macos-latest')
-              echo "artifact_name=hayabusa-${{ github.event.inputs.release_ver }}-mac-arm" >> $GITHUB_OUTPUT ;;
+              echo "artifact_name=hayabusa-${{ github.event.inputs.release_ver }}-mac-aarch64" >> $GITHUB_OUTPUT ;;
             'macos-13')
-              echo "artifact_name=hayabusa-${{ github.event.inputs.release_ver }}-mac-intel" >> $GITHUB_OUTPUT ;;
+              echo "artifact_name=hayabusa-${{ github.event.inputs.release_ver }}-mac-x64" >> $GITHUB_OUTPUT ;;
           esac
 
       - name: Upload Artifacts
