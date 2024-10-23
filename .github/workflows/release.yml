@@ -110,7 +110,7 @@ jobs:
           switch ("${{ matrix.info.os }}") {
               "windows-latest" { mv release-binaries/hayabusa.exe release-binaries/hayabusa-${{ github.event.inputs.release_ver }}-win-x64.exe }
               "windows-2022" { mv release-binaries/hayabusa.exe release-binaries/hayabusa-${{ github.event.inputs.release_ver }}-win-x86.exe }
-              "windows-2019" { mv release-binaries/hayabusa.exe release-binaries/hayabusa-${{ github.event.inputs.release_ver }}-win-arm.exe }
+              "windows-2019" { mv release-binaries/hayabusa.exe release-binaries/hayabusa-${{ github.event.inputs.release_ver }}-win-aarch64.exe }
           }
 
       - name: Package and Zip(encoded_rule) - Windows
@@ -125,7 +125,7 @@ jobs:
           switch ("${{ matrix.info.os }}") {
               "windows-latest" { mv release-binaries-encoded-rules/hayabusa.exe release-binaries-encoded-rules/hayabusa-${{ github.event.inputs.release_ver }}-win-x64.exe }
               "windows-2022" { mv release-binaries-encoded-rules/hayabusa.exe release-binaries-encoded-rules/hayabusa-${{ github.event.inputs.release_ver }}-win-x86.exe }
-              "windows-2019" { mv release-binaries-encoded-rules/hayabusa.exe release-binaries-encoded-rules/hayabusa-${{ github.event.inputs.release_ver }}-win-arm.exe }
+              "windows-2019" { mv release-binaries-encoded-rules/hayabusa.exe release-binaries-encoded-rules/hayabusa-${{ github.event.inputs.release_ver }}-win-aarch64.exe }
           }
 
       - name: Package and Zip - Unix
@@ -143,14 +143,14 @@ jobs:
           cp -r ./hayabusa-rules/. release-binaries/rules
           case ${{ matrix.info.os }} in
             'ubuntu-latest')
-                mv release-binaries/hayabusa release-binaries/hayabusa-${{ github.event.inputs.release_ver }}-lin-intel-x64-gnu ;;
+                mv release-binaries/hayabusa release-binaries/hayabusa-${{ github.event.inputs.release_ver }}-lin-x64-gnu ;;
             'ubuntu-24.04')
                 cp ./target/x86_64-unknown-linux-musl/release/hayabusa release-binaries/
-                mv release-binaries/hayabusa release-binaries/hayabusa-${{ github.event.inputs.release_ver }}-lin-intel-x64-musl ;;
+                mv release-binaries/hayabusa release-binaries/hayabusa-${{ github.event.inputs.release_ver }}-lin-x64-musl ;;
             'ubuntu-22.04')
-                mv release-binaries/hayabusa release-binaries/hayabusa-${{ github.event.inputs.release_ver }}-lin-arm-x64-gnu ;;
+                mv release-binaries/hayabusa release-binaries/hayabusa-${{ github.event.inputs.release_ver }}-lin-aarch64-gnu ;;
             'ubuntu-20.04')
-                mv release-binaries/hayabusa release-binaries/hayabusa-${{ github.event.inputs.release_ver }}-lin-arm-x64-musl ;;
+                mv release-binaries/hayabusa release-binaries/hayabusa-${{ github.event.inputs.release_ver }}-lin-aarch64-musl ;;
             'macos-latest')
                 mv release-binaries/hayabusa release-binaries/hayabusa-${{ github.event.inputs.release_ver }}-mac-aarch64 ;;
             'macos-13')
@@ -167,19 +167,19 @@ jobs:
             'windows-2022')
               echo "artifact_name=hayabusa-${{ github.event.inputs.release_ver }}-win-x86" >> $GITHUB_OUTPUT ;;
             'windows-2019')
-              echo "artifact_name=hayabusa-${{ github.event.inputs.release_ver }}-win-arm" >> $GITHUB_OUTPUT ;;
+              echo "artifact_name=hayabusa-${{ github.event.inputs.release_ver }}-win-aarch64" >> $GITHUB_OUTPUT ;;
             'ubuntu-latest')
-              echo "artifact_name=hayabusa-${{ github.event.inputs.release_ver }}-linux-intel-gnu" >> $GITHUB_OUTPUT ;;
+              echo "artifact_name=hayabusa-${{ github.event.inputs.release_ver }}-lin-x64-gnu" >> $GITHUB_OUTPUT ;;
             'ubuntu-24.04')
-              echo "artifact_name=hayabusa-${{ github.event.inputs.release_ver }}-linux-intel-musl" >> $GITHUB_OUTPUT ;;
+              echo "artifact_name=hayabusa-${{ github.event.inputs.release_ver }}-lin-x64-musl" >> $GITHUB_OUTPUT ;;
             'ubuntu-22.04')
-              echo "artifact_name=hayabusa-${{ github.event.inputs.release_ver }}-linux-arm-gnu" >> $GITHUB_OUTPUT ;;
+              echo "artifact_name=hayabusa-${{ github.event.inputs.release_ver }}-lin-aarch64-gnu" >> $GITHUB_OUTPUT ;;
             'ubuntu-20.04')
-              echo "artifact_name=hayabusa-${{ github.event.inputs.release_ver }}-linux-arm-musl" >> $GITHUB_OUTPUT ;;
+              echo "artifact_name=hayabusa-${{ github.event.inputs.release_ver }}-lin-aarch64-musl" >> $GITHUB_OUTPUT ;;
             'macos-latest')
-              echo "artifact_name=hayabusa-${{ github.event.inputs.release_ver }}-mac-arm" >> $GITHUB_OUTPUT ;;
+              echo "artifact_name=hayabusa-${{ github.event.inputs.release_ver }}-mac-aarch64" >> $GITHUB_OUTPUT ;;
             'macos-13')
-              echo "artifact_name=hayabusa-${{ github.event.inputs.release_ver }}-mac-intel" >> $GITHUB_OUTPUT ;;
+              echo "artifact_name=hayabusa-${{ github.event.inputs.release_ver }}-mac-x64" >> $GITHUB_OUTPUT ;;
           esac
 
       - name: Upload Artifacts
@@ -200,7 +200,7 @@ jobs:
             'windows-2022')
               echo "artifact_name=hayabusa-${{ github.event.inputs.release_ver }}-win-x86-live-response" > $GITHUB_OUTPUT ;;
             'windows-2019')
-              echo "artifact_name=hayabusa-${{ github.event.inputs.release_ver }}-win-arm-live-response" > $GITHUB_OUTPUT ;;
+              echo "artifact_name=hayabusa-${{ github.event.inputs.release_ver }}-win-aarch64-live-response" > $GITHUB_OUTPUT ;;
           esac
 
       - name: Upload Artifacts(encoded_rule)
@@ -267,7 +267,9 @@ jobs:
           ls -lR all-packages
           cd all-packages
           for dir in */; do
-            zip -r "${dir%/}.zip" "$dir"
+            cd "$dir"
+            zip -r "../${dir%/}.zip" *
+            cd ..
           done
       - name: Upload Zip Artifacts(all-packages)
         uses: actions/upload-artifact@v4
