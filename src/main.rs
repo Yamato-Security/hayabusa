@@ -1607,9 +1607,6 @@ impl App {
                 pb.inc(1);
             }
         }
-        pb.finish_with_message(
-            "Scanning finished. Please wait while the results are being saved.\r\n",
-        );
         CHECKPOINT
             .lock()
             .as_mut()
@@ -1636,7 +1633,6 @@ impl App {
             || stored_static.pivot_keyword_list_flag
             || stored_static.computer_metrics_flag)
         {
-            println!();
             let mut log_records = detection.add_aggcondition_msges(&self.rt, stored_static);
             if stored_static.is_low_memory {
                 let empty_ids = HashSet::new();
@@ -1652,6 +1648,13 @@ impl App {
             }
             afterfact_info.tl_starttime = tl.stats.start_time;
             afterfact_info.tl_endtime = tl.stats.end_time;
+
+            let msg = if stored_static.output_path.is_some() {
+                "Scanning finished. Please wait while the results are being saved.\n"
+            } else {
+                "Scanning finished.\n"
+            };
+            pb.finish_with_message(msg);
 
             // output afterfact
             if stored_static.is_low_memory {
