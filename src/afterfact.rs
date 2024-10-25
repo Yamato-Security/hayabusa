@@ -482,7 +482,9 @@ fn emit_csv_inner(
     if !afterfact_writer.display_flag {
         afterfact_writer.csv_writer.flush()?;
     }
-
+    if json_output_flag && stored_static.output_path.is_none() {
+        println!()
+    }
     Ok(())
 }
 
