@@ -624,6 +624,24 @@ impl LeafMatcher for DefaultMatcher {
             | PipeElement::FieldRefContains(_)
             | PipeElement::FieldRefEndswith(_)
             | PipeElement::Endswithfield(_) => Some(pipe.is_eqfield_match(event_value, recinfo)),
+            PipeElement::Gt(_) | PipeElement::Lt(_) | PipeElement::Gte(_) | PipeElement::Lte(_) => {
+                let val = String::default();
+                let event_val_str = event_value.unwrap_or(&val);
+                let event_val_int = event_val_str.parse::<usize>();
+                match event_val_int {
+                    Ok(event_val) => {
+                        let cmp_result = match pipe {
+                            PipeElement::Gt(n) => event_val > *n,
+                            PipeElement::Lt(n) => event_val < *n,
+                            PipeElement::Gte(n) => event_val >= *n,
+                            PipeElement::Lte(n) => event_val <= *n,
+                            _ => false,
+                        };
+                        Some(cmp_result)
+                    }
+                    Err(_) => Some(false), //数値以外のとき
+                }
+            }
             _ => None,
         };
         if let Some(result) = match_result {
@@ -744,6 +762,10 @@ enum PipeElement {
     All,
     AllOnly,
     Cased,
+    Gt(usize),
+    Lt(usize),
+    Gte(usize),
+    Lte(usize),
 }
 
 impl PipeElement {
@@ -772,13 +794,49 @@ impl PipeElement {
             "all" => Some(PipeElement::All),
             "allOnly" => Some(PipeElement::AllOnly),
             "cased" => Some(PipeElement::Cased),
+            "gt" => match pattern.parse::<usize>() {
+                Ok(n) => Some(PipeElement::Gt(n)),
+                Err(_) => {
+                    return Err(format!(
+                        "gt value should be a number. key:{}",
+                        utils::concat_selection_key(key_list)
+                    ))
+                }
+            },
+            "lt" => match pattern.parse::<usize>() {
+                Ok(n) => Some(PipeElement::Lt(n)),
+                Err(_) => {
+                    return Err(format!(
+                        "lt value should be a number. key:{}",
+                        utils::concat_selection_key(key_list)
+                    ))
+                }
+            },
+            "gte" => match pattern.parse::<usize>() {
+                Ok(n) => Some(PipeElement::Gte(n)),
+                Err(_) => {
+                    return Err(format!(
+                        "gte value should be a number. key:{}",
+                        utils::concat_selection_key(key_list)
+                    ))
+                }
+            },
+            "lte" => match pattern.parse::<usize>() {
+                Ok(n) => Some(PipeElement::Lte(n)),
+                Err(_) => {
+                    return Err(format!(
+                        "lte value should be a number. key:{}",
+                        utils::concat_selection_key(key_list)
+                    ))
+                }
+            },
             _ => None,
         };
 
         if let Some(elment) = pipe_element {
-            Result::Ok(elment)
+            Ok(elment)
         } else {
-            Result::Err(format!(
+            Err(format!(
                 "An unknown pipe element was specified. key:{}",
                 utils::concat_selection_key(key_list)
             ))
@@ -3855,5 +3913,199 @@ mod tests {
         }"#;
 
         check_select(rule_str, record_json_str, true);
+    }
+
+    #[test]
+    fn test_ge() {
+        let rule_str = r"
+        enabled: true
+        detection:
+            selection:
+                EventID|gt: 1040
+            condition: selection
+        ";
+
+        let record_json_str = r#"
+        {
+          "Event": {
+            "System": {
+              "EventID": 1041
+            },
+            "EventData": {
+              "Data": "C:\\Windows\\hoge.exe"
+            }
+          }
+        }"#;
+
+        check_select(rule_str, record_json_str, true);
+    }
+
+    #[test]
+    fn test_ge_not() {
+        let rule_str = r"
+        enabled: true
+        detection:
+            selection:
+                EventID|gt: 1040
+            condition: selection
+        ";
+
+        let record_json_str = r#"
+        {
+          "Event": {
+            "System": {
+              "EventID": 1040
+            },
+            "EventData": {
+              "Data": "C:\\Windows\\hoge.exe"
+            }
+          }
+        }"#;
+
+        check_select(rule_str, record_json_str, false);
+    }
+
+    #[test]
+    fn test_lt() {
+        let rule_str = r"
+        enabled: true
+        detection:
+            selection:
+                EventID|lt: 1040
+            condition: selection
+        ";
+
+        let record_json_str = r#"
+        {
+          "Event": {
+            "System": {
+              "EventID": 1039
+            },
+            "EventData": {
+              "Data": "C:\\Windows\\hoge.exe"
+            }
+          }
+        }"#;
+
+        check_select(rule_str, record_json_str, true);
+    }
+    #[test]
+    fn test_lt_not() {
+        let rule_str = r"
+        enabled: true
+        detection:
+            selection:
+                EventID|lt: 1040
+            condition: selection
+        ";
+
+        let record_json_str = r#"
+        {
+          "Event": {
+            "System": {
+              "EventID": 1040
+            },
+            "EventData": {
+              "Data": "C:\\Windows\\hoge.exe"
+            }
+          }
+        }"#;
+        check_select(rule_str, record_json_str, false);
+    }
+
+    #[test]
+    fn test_gte() {
+        let rule_str = r"
+        enabled: true
+        detection:
+            selection:
+                EventID|gte: 1040
+            condition: selection
+        ";
+
+        let record_json_str = r#"
+        {
+          "Event": {
+            "System": {
+              "EventID": 1041
+            },
+            "EventData": {
+              "Data": "C:\\Windows\\hoge.exe"
+            }
+          }
+        }"#;
+
+        check_select(rule_str, record_json_str, true);
+    }
+    #[test]
+    fn test_gte_not() {
+        let rule_str = r"
+        enabled: true
+        detection:
+            selection:
+                EventID|gte: 1040
+            condition: selection
+        ";
+
+        let record_json_str = r#"
+        {
+          "Event": {
+            "System": {
+              "EventID": 1039
+            },
+            "EventData": {
+              "Data": "C:\\Windows\\hoge.exe"
+            }
+          }
+        }"#;
+        check_select(rule_str, record_json_str, false);
+    }
+
+    #[test]
+    fn test_lte() {
+        let rule_str = r"
+        enabled: true
+        detection:
+            selection:
+                EventID|lte: 1040
+            condition: selection
+        ";
+
+        let record_json_str = r#"
+        {
+          "Event": {
+            "System": {
+              "EventID": 1039
+            },
+            "EventData": {
+              "Data": "C:\\Windows\\hoge.exe"
+            }
+          }
+        }"#;
+
+        check_select(rule_str, record_json_str, true);
+    }
+    #[test]
+    fn test_lte_not() {
+        let rule_str = r"
+        enabled: true
+        detection:
+            selection:
+                EventID|lt: 1040
+            condition: selection
+        ";
+
+        let record_json_str = r#"
+        {
+          "Event": {
+            "System": {
+              "EventID": 1041
+            },
+            "EventData": {
+              "Data": "C:\\Windows\\hoge.exe"
+            }
+          }
+        }"#;
+        check_select(rule_str, record_json_str, false);
     }
 }
