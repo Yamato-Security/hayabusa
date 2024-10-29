@@ -447,7 +447,11 @@ impl SelectionNode for LeafSelectionNode {
         }
 
         let mut event_value = self.get_event_value(event_record);
-        if self.get_key() == "EventID" && !self.select_value.is_null() {
+        if self.get_key() == "EventID"
+            && !self.select_value.is_null()
+            && !self.key_list.is_empty()
+            && !self.key_list[0].contains("|")
+        {
             if let Some(event_id) = self.select_value.as_i64() {
                 // 正規表現は重いので、数値のEventIDのみ文字列完全一致で判定
                 return event_value.unwrap_or(&String::default()) == &event_id.to_string();

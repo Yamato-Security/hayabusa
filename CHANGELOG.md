@@ -2,6 +2,10 @@
 
 ## x.x.x [xxxx/xx/xx]
 
+**New Features:**
+
+- Support for the `gt`, `gte`, `lt`, `lte` field modifiers. (#1433) (@fukusuket)
+
 **Bug Fixes:**
 
 - Some results would be displayed after the progress bar when outputting results to the terminal with `csv-timeline` and `json-timeline`. (#1459) (@fukusuket)
