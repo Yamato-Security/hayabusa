@@ -428,7 +428,7 @@ mod tests {
     use crate::detections::rule::tests::parse_rule_from_str;
     use crate::detections::{self, utils};
     use std::path::Path;
-    use yaml_rust::YamlLoader;
+    use yaml_rust2::YamlLoader;
 
     const SIMPLE_RECORD_STR: &str = r#"
     {

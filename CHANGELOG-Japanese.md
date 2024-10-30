@@ -6,6 +6,10 @@
 
 - `gt`、`gte`、`lt`、`lte`のフィールドモディファイアに対応した。(#1433) (@fukusuket)
 
+**改善:**
+
+- `yaml-rust`クレートを`yaml-rust2`に更新した。 (#461) (@yamatosecurity)
+
 **バグ修正:**
 
 - `csv-timeline`と`json-timeline`コマンドで、結果をターミナルに出力すると、プログレスバーの後にいくつかの結果が表示されていた。 (#1459) (@fukusuket)

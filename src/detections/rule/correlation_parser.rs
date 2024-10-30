@@ -2,8 +2,8 @@ use std::error::Error;
 use std::sync::Arc;
 
 use hashbrown::HashMap;
-use yaml_rust::yaml::Hash;
-use yaml_rust::Yaml;
+use yaml_rust2::yaml::Hash;
+use yaml_rust2::Yaml;
 
 use crate::detections::configs::StoredStatic;
 use crate::detections::message::{AlertMessage, ERROR_LOG_STACK};
@@ -341,7 +341,7 @@ pub fn parse_correlation_rules(
 
 #[cfg(test)]
 mod tests {
-    use yaml_rust::YamlLoader;
+    use yaml_rust2::YamlLoader;
 
     use super::*;
 

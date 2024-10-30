@@ -2401,7 +2401,7 @@ mod tests {
     use chrono::Local;
     use hashbrown::HashSet;
     use itertools::Itertools;
-    use yaml_rust::YamlLoader;
+    use yaml_rust2::YamlLoader;
 
     use hayabusa::{
         afterfact::{self, AfterfactInfo},

@@ -9,7 +9,7 @@ use serde_json::Value;
 use std::fs;
 use std::path::Path;
 use std::string::String;
-use yaml_rust::{Yaml, YamlLoader};
+use yaml_rust2::{Yaml, YamlLoader};
 
 pub type FieldDataMap = HashMap<FieldDataMapKey, FieldDataMapEntry>;
 pub type FieldDataMapEntry = HashMap<String, FieldDataConverter>;
@@ -201,7 +201,7 @@ mod tests {
     use hashbrown::HashMap;
     use serde_json::Value;
     use std::path::Path;
-    use yaml_rust::{Yaml, YamlLoader};
+    use yaml_rust2::{Yaml, YamlLoader};
 
     fn build_yaml(s: &str) -> Yaml {
         YamlLoader::load_from_str(s)

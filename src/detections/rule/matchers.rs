@@ -6,7 +6,7 @@ use regex::Regex;
 use std::net::IpAddr;
 use std::str::FromStr;
 use std::{cmp::Ordering, collections::HashMap};
-use yaml_rust::Yaml;
+use yaml_rust2::Yaml;
 
 use crate::detections::{detection::EvtxRecordInfo, utils};
 use downcast_rs::Downcast;

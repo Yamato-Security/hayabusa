@@ -16,7 +16,7 @@ use std::borrow::Cow;
 use std::fs::OpenOptions;
 use std::io::{BufWriter, Write};
 use std::path::Path;
-use yaml_rust::{Yaml, YamlEmitter, YamlLoader};
+use yaml_rust2::{Yaml, YamlEmitter, YamlLoader};
 
 #[derive(Embed)]
 #[folder = "config/"]
