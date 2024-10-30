@@ -559,7 +559,7 @@ mod tests {
     use hashbrown::HashMap;
 
     use chrono::{TimeZone, Utc};
-    use yaml_rust::YamlLoader;
+    use yaml_rust2::YamlLoader;
 
     const SIMPLE_RECORD_STR: &str = r#"
     {

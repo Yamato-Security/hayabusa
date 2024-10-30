@@ -5,7 +5,7 @@ use std::{fmt::Debug, sync::Arc, vec};
 use chrono::{DateTime, Utc};
 use hashbrown::HashMap;
 use nested::Nested;
-use yaml_rust::Yaml;
+use yaml_rust2::Yaml;
 
 use super::configs::{EventKeyAliasConfig, StoredStatic};
 use super::detection::EvtxRecordInfo;
@@ -407,7 +407,7 @@ impl AggResult {
 mod tests {
     use std::path::Path;
 
-    use yaml_rust::YamlLoader;
+    use yaml_rust2::YamlLoader;
 
     use crate::detections::{
         self,

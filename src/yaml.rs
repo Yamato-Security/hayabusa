@@ -1,5 +1,5 @@
 extern crate serde_derive;
-extern crate yaml_rust;
+extern crate yaml_rust2;
 
 use crate::detections::configs::{self, StoredStatic};
 use crate::detections::message::AlertMessage;
@@ -13,10 +13,10 @@ use std::ffi::OsStr;
 use std::fs;
 use std::io::{self, BufReader, Read};
 use std::path::{Path, PathBuf};
-use yaml_rust::{Yaml, YamlLoader};
+use yaml_rust2::{Yaml, YamlLoader};
 
 pub struct ParseYaml {
-    pub files: Vec<(String, yaml_rust::Yaml)>,
+    pub files: Vec<(String, yaml_rust2::Yaml)>,
     pub rulecounter: HashMap<CompactString, u128>,
     pub rule_load_cnt: HashMap<CompactString, u128>,
     pub rule_status_cnt: HashMap<CompactString, u128>,
@@ -788,7 +788,7 @@ mod tests {
     use std::fs::File;
     use std::io::Write;
     use std::path::{Path, PathBuf};
-    use yaml_rust::YamlLoader;
+    use yaml_rust2::YamlLoader;
 
     fn create_dummy_stored_static() -> StoredStatic {
         StoredStatic::create_static_data(Some(Config {

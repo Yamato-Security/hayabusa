@@ -15,7 +15,7 @@ use num_format::{Locale, ToFormattedString};
 use serde_json::Value;
 use termcolor::{BufferWriter, Color, ColorChoice};
 use tokio::{runtime::Runtime, spawn, task::JoinHandle};
-use yaml_rust::Yaml;
+use yaml_rust2::Yaml;
 
 use crate::detections::configs::Action;
 use crate::detections::configs::STORED_EKEY_ALIAS;
@@ -1289,8 +1289,8 @@ mod tests {
     use chrono::Utc;
     use compact_str::CompactString;
     use serde_json::Value;
-    use yaml_rust::Yaml;
-    use yaml_rust::YamlLoader;
+    use yaml_rust2::Yaml;
+    use yaml_rust2::YamlLoader;
 
     use crate::detections;
     use crate::detections::configs::load_eventkey_alias;

@@ -3,7 +3,7 @@ use downcast_rs::Downcast;
 use nested::Nested;
 use serde_json::Value;
 use std::{sync::Arc, vec};
-use yaml_rust::Yaml;
+use yaml_rust2::Yaml;
 
 use super::matchers::{self, DefaultMatcher};
 

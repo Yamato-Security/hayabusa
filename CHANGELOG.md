@@ -6,6 +6,10 @@
 
 - Support for the `gt`, `gte`, `lt`, `lte` field modifiers. (#1433) (@fukusuket)
 
+**Enhancements:**
+
+- Updated the `yaml-rust` crate to `yaml-rust2`. (#461) (@yamatosecurity)
+
 **Bug Fixes:**
 
 - Some results would be displayed after the progress bar when outputting results to the terminal with `csv-timeline` and `json-timeline`. (#1459) (@fukusuket)

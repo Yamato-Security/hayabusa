@@ -8,7 +8,7 @@ use std::collections::HashSet;
 use std::fs::File;
 use std::io::{BufRead, BufReader};
 use std::path::PathBuf;
-use yaml_rust::Yaml;
+use yaml_rust2::Yaml;
 
 #[derive(Debug)]
 pub struct DataFilterRule {
@@ -223,7 +223,7 @@ pub fn create_channel_filter(
 mod tests {
     use super::*;
     use std::path::PathBuf;
-    use yaml_rust::YamlLoader;
+    use yaml_rust2::YamlLoader;
 
     #[test]
     fn test_channel_filter_scanable_rule_exists() {
