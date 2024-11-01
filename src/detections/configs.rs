@@ -43,6 +43,16 @@ lazy_static! {
         .unwrap();
     pub static ref ONE_CONFIG_MAP: HashMap<String, String> =
         read_one_config_file(Path::new("rules_config_files.txt")).unwrap_or_default();
+    pub static ref WINDASH_CHARACTERS: Vec<char> = load_windash_characters(
+        check_setting_path(
+            &CURRENT_EXE_PATH.to_path_buf(),
+            "rules/config/windash_characters.txt",
+            true,
+        )
+        .unwrap()
+        .to_str()
+        .unwrap(),
+    );
 }
 
 fn read_one_config_file(file_path: &Path) -> io::Result<HashMap<String, String>> {
@@ -2709,6 +2719,25 @@ fn create_control_chat_replace_map() -> HashMap<char, CompactString> {
         );
     }
     ret
+}
+
+pub fn load_windash_characters(file_path: &str) -> Vec<char> {
+    let mut characters = Vec::from(['-', '–', '—', '―']);
+    let file = File::open(file_path);
+    match file {
+        Ok(f) => {
+            characters = Vec::new();
+            let reader = io::BufReader::new(f);
+            for line in reader.lines() {
+                let line = line.unwrap();
+                if let Some(ch) = line.chars().next() {
+                    characters.push(ch);
+                }
+            }
+            characters
+        }
+        Err(_) => characters,
+    }
 }
 
 #[cfg(test)]

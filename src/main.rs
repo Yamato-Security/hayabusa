@@ -291,7 +291,6 @@ impl App {
                     AlertMessage::alert(&e).ok();
                     return;
                 }
-
                 if stored_static.profiles.is_none() {
                     return;
                 }
