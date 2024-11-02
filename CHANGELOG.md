@@ -13,6 +13,7 @@
 **Bug Fixes:**
 
 - Some results would be displayed after the progress bar when outputting results to the terminal with `csv-timeline` and `json-timeline`. (#1459) (@fukusuket)
+- The detailed field value results in aggregation rule alerts were not sorted so `csv-timeline` and `json-timeline` would not output completely exact results each time. (#1466) (@fukusuket)
 
 ## 2.18.0 [2024/10/23] - SecTor Release
 
