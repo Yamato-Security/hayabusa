@@ -2722,6 +2722,12 @@ fn create_control_chat_replace_map() -> HashMap<char, CompactString> {
 }
 
 pub fn load_windash_characters(file_path: &str) -> Vec<char> {
+    if let Some(contents) = ONE_CONFIG_MAP.get("windash_characters.txt") {
+        return contents
+            .lines()
+            .map(|line| line.chars().next().unwrap())
+            .collect();
+    }
     let mut characters = Vec::from(['-', '–', '—', '―']);
     let file = File::open(file_path);
     match file {
