@@ -1067,12 +1067,14 @@ impl Detection {
         // この関数が呼び出されている段階で既にaggregation conditionは存在する前提なのでagg_conditionの配列の長さは2となる
         let agg_condition = rule.get_agg_condition().unwrap();
         write!(ret, "Count:{}", agg_result.data).ok();
+        let mut sorted_filed_values = agg_result.field_values.clone();
+        sorted_filed_values.sort();
         if agg_condition._field_name.is_some() {
             write!(
                 ret,
                 " ¦ {}:{}",
                 agg_condition._field_name.as_ref().unwrap(),
-                agg_result.field_values.join("/")
+                sorted_filed_values.join("/")
             )
             .ok();
         }

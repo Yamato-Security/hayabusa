@@ -29,8 +29,8 @@ jobs:
       - name: Run on dev branch
         run: |
           cargo run --release -- update-rules -q
-          cargo run --release -- csv-timeline -d ./hayabusa-sample-evtx -o dev.csv -p super-verbose -q -w -D -n -u
-          cargo run --release -- json-timeline -d ./hayabusa-sample-evtx -o dev.jsonl -L -p super-verbose -q -w -D -n -u
+          cargo run --release -- csv-timeline -d ./hayabusa-sample-evtx -o dev.csv -p super-verbose -q -w -D -n -u -s
+          cargo run --release -- json-timeline -d ./hayabusa-sample-evtx -o dev.jsonl -L -p super-verbose -q -w -D -n -u -s
 
       - name: Run on dev branch(encoded_rules)
         run: |
@@ -41,8 +41,8 @@ jobs:
           curl -O https://raw.githubusercontent.com/Yamato-Security/hayabusa-encoded-rules/refs/heads/main/encoded_rules.yml
           curl -O https://raw.githubusercontent.com/Yamato-Security/hayabusa-encoded-rules/refs/heads/main/rules_config_files.txt
           ./hayabusa update-rules -q
-          ./hayabusa csv-timeline -d ./hayabusa-sample-evtx -o dev-encoded.csv -p super-verbose -q -w -D -n -u
-          ./hayabusa json-timeline -d ./hayabusa-sample-evtx -o dev-encoded.jsonl -L -p super-verbose -q -w -D -n -u
+          ./hayabusa csv-timeline -d ./hayabusa-sample-evtx -o dev-encoded.csv -p super-verbose -q -w -D -n -u -s
+          ./hayabusa json-timeline -d ./hayabusa-sample-evtx -o dev-encoded.jsonl -L -p super-verbose -q -w -D -n -u -s
           mv ../config ./
           mv ../rules ./
           mv encoded_rules.yml ../
