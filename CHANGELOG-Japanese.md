@@ -8,7 +8,8 @@
 
 **改善:**
 
-- `yaml-rust`クレートを`yaml-rust2`に更新した。 (#461) (@yamatosecurity)
+- `yaml-rust`クレートを`yaml-rust2`に更新した。(#461) (@yamatosecurity)
+- `windash`文字が、`rules/config/windash_characters.txt`から動的に読み込まれるようになった。(#1440) (@fukusuket)
 
 **バグ修正:**
 

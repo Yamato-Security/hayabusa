@@ -8,6 +8,7 @@ use std::str::FromStr;
 use std::{cmp::Ordering, collections::HashMap};
 use yaml_rust2::Yaml;
 
+use crate::detections::configs::WINDASH_CHARACTERS;
 use crate::detections::{detection::EvtxRecordInfo, utils};
 use downcast_rs::Downcast;
 
@@ -495,10 +496,10 @@ impl LeafMatcher for DefaultMatcher {
                 let mut fastmatches =
                     Self::convert_to_fast_match(format!("*{}*", pattern[0]).as_str(), true)
                         .unwrap_or_default();
-                pattern.push(pattern[0].replacen('-', "/", 1));
+                let windash_chars = WINDASH_CHARACTERS.as_slice();
                 fastmatches.extend(
                     Self::convert_to_fast_match(
-                        format!("*{}*", pattern[0].replacen(['-', '–', '—', '―'], "/", 1)).as_str(),
+                        format!("*{}*", pattern[0].replacen(windash_chars, "/", 1)).as_str(),
                         true,
                     )
                     .unwrap_or_default(),
@@ -527,10 +528,11 @@ impl LeafMatcher for DefaultMatcher {
                 let mut fastmatches =
                     Self::convert_to_fast_match(format!("*{}*", pattern[0]).as_str(), true)
                         .unwrap_or_default();
-                pattern.push(pattern[0].replacen(['-', '–', '—', '―'], "/", 1));
+                let windash_chars = WINDASH_CHARACTERS.as_slice();
+                pattern.push(pattern[0].replacen(windash_chars, "/", 1));
                 fastmatches.extend(
                     Self::convert_to_fast_match(
-                        format!("*{}*", pattern[0].replacen(['-', '–', '—', '―'], "/", 1)).as_str(),
+                        format!("*{}*", pattern[0].replacen(windash_chars, "/", 1)).as_str(),
                         true,
                     )
                     .unwrap_or_default(),
