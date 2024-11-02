@@ -9,6 +9,7 @@
 **Enhancements:**
 
 - Updated the `yaml-rust` crate to `yaml-rust2`. (#461) (@yamatosecurity)
+- `windash` characters are now being dynamically read from `rules/config/windash_characters.txt`. (#1440) (@fukusuket)
 
 **Bug Fixes:**
 
