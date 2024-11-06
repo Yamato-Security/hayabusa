@@ -9,7 +9,7 @@ jobs:
       issues: read
       pull-requests: read
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
         with:
           submodules: recursive
       - name: Install nightly toolchain
@@ -25,6 +25,6 @@ jobs:
           RUST_TEST_THREADS: 1
           CARGO_INCREMENTAL: "0"
         run: cargo llvm-cov --lcov --output-path /tmp/coverage.info
-      - uses: codecov/codecov-action@v3
+      - uses: codecov/codecov-action@v4
         with:
           directory: /tmp/
