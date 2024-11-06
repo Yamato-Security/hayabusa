@@ -15,6 +15,9 @@
 
 - `csv-timeline`と`json-timeline`コマンドで、結果をターミナルに出力すると、プログレスバーの後にいくつかの結果が表示されていた。 (#1459) (@fukusuket)
 - 集計ルールのアラートの詳細フィールド値の結果がソートされていないため、`csv-timeline`と`json-timeline`は、毎回完全に正確な結果を出力しなかった。 (#1466) (@fukusuket)
+- `hayabusa-evtx`クレートをバージョン`0.8.12`に更新した。 (@yamatosecurity)
+  - JSONフィールドの出力順序が元のXMLに従って保持されるようになった。 (omerbenamram/evtx #241)
+  - 属性と同じ名前を持つ複数のサブノードは上書きされ、最後の1つだけが出力されていた。 (omerbenamram/evtx #245)
 
 ## 2.18.0 [2024/10/23] - SecTor Release
 

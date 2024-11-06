@@ -15,6 +15,9 @@
 
 - Some results would be displayed after the progress bar when outputting results to the terminal with `csv-timeline` and `json-timeline`. (#1459) (@fukusuket)
 - The detailed field value results in aggregation rule alerts were not sorted so `csv-timeline` and `json-timeline` would not output completely exact results each time. (#1466) (@fukusuket)
+- Updated `hayabusa-evtx` crate to `0.8.12`. (@yamatosecurity)
+  - JSON field output order is now preserved according to the original XML. (omerbenamram/evtx #241)
+  - Multiple sub-nodes with attributes and the same name would be overwritten and only the last one kept. (omerbenamram/evtx #245)
 
 ## 2.18.0 [2024/10/23] - SecTor Release
 
