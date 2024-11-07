@@ -52,8 +52,8 @@ jobs:
         run: |
           git checkout main
           cargo run --release -- update-rules -q
-          cargo run --release -- csv-timeline -d ./hayabusa-sample-evtx -o main.csv -p super-verbose -q -w -D -n -u
-          cargo run --release -- json-timeline -d ./hayabusa-sample-evtx -o main.jsonl -L -p super-verbose -q -w -D -n -u
+          cargo run --release -- csv-timeline -t 1 -d ./hayabusa-sample-evtx -o main.csv -p super-verbose -q -w -D -n -u
+          cargo run --release -- json-timeline -t 1 -d ./hayabusa-sample-evtx -o main.jsonl -L -p super-verbose -q -w -D -n -u
 
       - name: Run on main branch(encoded_rules)
         run: |
