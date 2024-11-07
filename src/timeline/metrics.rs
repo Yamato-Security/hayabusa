@@ -5,9 +5,23 @@ use crate::detections::{
     message::AlertMessage,
     utils,
 };
+use crate::timeline::metrics::Channel::{RdsGtw, RdsLsm, Sec};
 use chrono::{DateTime, NaiveDate, NaiveDateTime, Utc};
 use compact_str::CompactString;
 use hashbrown::{HashMap, HashSet};
+
+#[derive(Debug, Clone, Eq, Hash, PartialEq)]
+pub struct LoginEvent {
+    pub channel: CompactString,
+    pub dst_user: CompactString,
+    pub dst_domain: CompactString,
+    pub hostname: CompactString,
+    pub logontype: CompactString,
+    pub src_user: CompactString,
+    pub src_domain: CompactString,
+    pub source_computer: CompactString,
+    pub source_ip: CompactString,
+}
 
 #[derive(Debug, Clone)]
 pub struct EventMetrics {
@@ -16,16 +30,7 @@ pub struct EventMetrics {
     pub start_time: Option<DateTime<Utc>>,
     pub end_time: Option<DateTime<Utc>>,
     pub stats_list: HashMap<(CompactString, CompactString), usize>,
-    pub stats_login_list: HashMap<
-        (
-            CompactString,
-            CompactString,
-            CompactString,
-            CompactString,
-            CompactString,
-        ),
-        [usize; 2],
-    >,
+    pub stats_login_list: HashMap<LoginEvent, [usize; 2]>,
 }
 /**
 * Windows Event Logの統計情報を出力する
@@ -37,16 +42,7 @@ impl EventMetrics {
         start_time: Option<DateTime<Utc>>,
         end_time: Option<DateTime<Utc>>,
         stats_list: HashMap<(CompactString, CompactString), usize>,
-        stats_login_list: HashMap<
-            (
-                CompactString,
-                CompactString,
-                CompactString,
-                CompactString,
-                CompactString,
-            ),
-            [usize; 2],
-        >,
+        stats_login_list: HashMap<LoginEvent, [usize; 2]>,
     ) -> EventMetrics {
         EventMetrics {
             total,
@@ -230,89 +226,176 @@ impl EventMetrics {
                     evtid.as_str().unwrap().parse::<i64>().unwrap_or_default()
                 };
 
-                if !(idnum == 4624 || idnum == 4625)
-                    || utils::get_serde_number_to_string(
-                        utils::get_event_value("Channel", &record.record, eventkey_alias)
-                            .unwrap_or(&serde_json::Value::Null),
-                        false,
-                    )
-                    .unwrap_or_else(|| "n/a".into())
-                    .replace(['"', '\''], "")
-                        != "Security"
-                {
-                    continue;
-                }
-
-                let username = CompactString::from(
-                    utils::get_serde_number_to_string(
-                        utils::get_event_value("TargetUserName", &record.record, eventkey_alias)
-                            .unwrap_or(&serde_json::Value::Null),
-                        false,
-                    )
-                    .unwrap_or_else(|| "n/a".into())
-                    .replace(['"', '\''], ""),
-                );
-                let logontype = utils::get_serde_number_to_string(
-                    utils::get_event_value("LogonType", &record.record, eventkey_alias)
-                        .unwrap_or(&serde_json::Value::Null),
-                    false,
-                )
-                .unwrap_or_else(|| "n/a".into())
-                .replace(['"', '\''], "");
-                let hostname = CompactString::from(
-                    utils::get_serde_number_to_string(
-                        utils::get_event_value("Computer", &record.record, eventkey_alias)
-                            .unwrap_or(&serde_json::Value::Null),
-                        false,
-                    )
-                    .unwrap_or_else(|| "n/a".into())
-                    .replace(['"', '\''], ""),
-                );
-
-                let source_computer = CompactString::from(
-                    utils::get_serde_number_to_string(
-                        utils::get_event_value("WorkstationName", &record.record, eventkey_alias)
-                            .unwrap_or(&serde_json::Value::Null),
-                        false,
-                    )
-                    .unwrap_or_else(|| "n/a".into())
-                    .replace(['"', '\''], ""),
-                );
-
-                let source_ip = CompactString::from(
-                    utils::get_serde_number_to_string(
-                        utils::get_event_value("IpAddress", &record.record, eventkey_alias)
-                            .unwrap_or(&serde_json::Value::Null),
-                        false,
-                    )
-                    .unwrap_or_else(|| "n/a".into())
-                    .replace(['"', '\''], ""),
-                );
-
-                let countlist: [usize; 2] = [0, 0];
-                // この段階でEventIDは4624もしくは4625となるのでこの段階で対応するカウンターを取得する
-                let count: &mut [usize; 2] = self
-                    .stats_login_list
-                    .entry((
-                        username,
-                        hostname,
-                        CompactString::from(
-                            *logontype_map
-                                .get(&logontype.as_str())
-                                .unwrap_or(&logontype.as_str()),
+                let channel = get_event_value_as_string("Channel", &record.record, eventkey_alias);
+                if let Some(channel) = is_target_event(idnum, &channel) {
+                    let channel_name = match channel {
+                        Sec => {
+                            if idnum == 4624 {
+                                CompactString::from("Sec 4624")
+                            } else {
+                                CompactString::from("Sec 4625")
+                            }
+                        }
+                        RdsLsm => CompactString::from("RDS-LSM 21"),
+                        RdsGtw => CompactString::from("RDS-GTW 302"),
+                    };
+                    let dst_user = match channel {
+                        Sec => get_event_value_as_string(
+                            "TargetUserName",
+                            &record.record,
+                            eventkey_alias,
                         ),
-                        source_computer,
-                        source_ip,
-                    ))
-                    .or_insert(countlist);
-                if idnum == 4624 {
-                    count[0] += 1;
-                } else if idnum == 4625 {
-                    count[1] += 1;
+                        RdsLsm => {
+                            let user_with_domain = get_event_value_as_string(
+                                "UserDataUser",
+                                &record.record,
+                                eventkey_alias,
+                            );
+                            let user = user_with_domain
+                                .rsplit('\\')
+                                .next()
+                                .unwrap_or(&user_with_domain);
+                            CompactString::from(user)
+                        }
+                        RdsGtw => {
+                            let user_with_domain = get_event_value_as_string(
+                                "RdsGtwUsername",
+                                &record.record,
+                                eventkey_alias,
+                            );
+                            let user = user_with_domain
+                                .rsplit('\\')
+                                .next()
+                                .unwrap_or(&user_with_domain);
+                            CompactString::from(user)
+                        }
+                    };
+
+                    let src_user = get_event_value_as_string(
+                        "SubjectUserName",
+                        &record.record,
+                        eventkey_alias,
+                    );
+                    let dst_domain = match channel {
+                        Sec => get_event_value_as_string(
+                            "TargetDomainName",
+                            &record.record,
+                            eventkey_alias,
+                        ),
+                        RdsLsm => {
+                            let user_with_domain = get_event_value_as_string(
+                                "UserDataUser",
+                                &record.record,
+                                eventkey_alias,
+                            );
+                            let domain = user_with_domain.rsplit_once('\\').map(|x| x.0);
+                            CompactString::from(domain.unwrap_or("-"))
+                        }
+                        RdsGtw => {
+                            let user_with_domain = get_event_value_as_string(
+                                "RdsGtwUserName",
+                                &record.record,
+                                eventkey_alias,
+                            );
+                            let domain = user_with_domain.rsplit_once('\\').map(|x| x.0);
+                            CompactString::from(domain.unwrap_or("-"))
+                        }
+                    };
+                    let src_domain = get_event_value_as_string(
+                        "SubjectDomainName",
+                        &record.record,
+                        eventkey_alias,
+                    );
+                    let logontype =
+                        get_event_value_as_string("LogonType", &record.record, eventkey_alias);
+                    let hostname =
+                        get_event_value_as_string("Computer", &record.record, eventkey_alias);
+                    let source_computer = get_event_value_as_string(
+                        "WorkstationName",
+                        &record.record,
+                        eventkey_alias,
+                    );
+                    let source_ip = match channel {
+                        Sec => {
+                            get_event_value_as_string("IpAddress", &record.record, eventkey_alias)
+                        }
+                        RdsLsm => get_event_value_as_string(
+                            "UserDataAddress",
+                            &record.record,
+                            eventkey_alias,
+                        ),
+                        RdsGtw => get_event_value_as_string(
+                            "RdsGtwIpAddress",
+                            &record.record,
+                            eventkey_alias,
+                        ),
+                    };
+
+                    let countlist: [usize; 2] = [0, 0];
+                    // この段階でEventIDは4624もしくは4625となるのでこの段階で対応するカウンターを取得する
+                    let count: &mut [usize; 2] = self
+                        .stats_login_list
+                        .entry(LoginEvent {
+                            channel: channel_name,
+                            dst_user,
+                            dst_domain,
+                            hostname,
+                            logontype: CompactString::from(
+                                *logontype_map
+                                    .get(&logontype.as_str())
+                                    .unwrap_or(&logontype.as_str()),
+                            ),
+                            src_user,
+                            src_domain,
+                            source_computer,
+                            source_ip,
+                        })
+                        .or_insert(countlist);
+                    if idnum == 4624 || idnum == 21 || idnum == 302 {
+                        count[0] += 1;
+                    } else if idnum == 4625 {
+                        count[1] += 1;
+                    }
                 }
             };
         }
     }
+}
+
+fn get_event_value_as_string(
+    key: &str,
+    record: &serde_json::Value,
+    eventkey_alias: &EventKeyAliasConfig,
+) -> CompactString {
+    CompactString::from(
+        utils::get_serde_number_to_string(
+            utils::get_event_value(key, record, eventkey_alias).unwrap_or(&serde_json::Value::Null),
+            false,
+        )
+        .unwrap_or_else(|| "-".into())
+        .replace(['"', '\''], ""),
+    )
+}
+
+enum Channel {
+    Sec,
+    RdsLsm,
+    RdsGtw,
+}
+
+fn is_target_event(idnum: i64, channel: &str) -> Option<Channel> {
+    if (idnum == 4624 || idnum == 4625) && channel == "Security" {
+        return Some(Sec);
+    }
+    if idnum == 21
+        && channel == "Microsoft-Windows-TerminalServices-LocalSessionManager/Operational"
+    {
+        return Some(RdsLsm);
+    }
+    if idnum == 302 && channel == "Microsoft-Windows-TerminalServices-Gateway/Operational" {
+        return Some(RdsGtw);
+    }
+    None
 }
 
 #[cfg(test)]
