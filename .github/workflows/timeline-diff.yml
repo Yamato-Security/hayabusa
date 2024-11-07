@@ -29,8 +29,8 @@ jobs:
       - name: Run on dev branch
         run: |
           cargo run --release -- update-rules -q
-          cargo run --release -- csv-timeline -d ./hayabusa-sample-evtx -o dev.csv -p super-verbose -q -w -D -n -u -s
-          cargo run --release -- json-timeline -d ./hayabusa-sample-evtx -o dev.jsonl -L -p super-verbose -q -w -D -n -u -s
+          cargo run --release -- csv-timeline -t 1 -d ./hayabusa-sample-evtx -o dev.csv -p super-verbose -q -w -D -n -u -s
+          cargo run --release -- json-timeline -t 1 -d ./hayabusa-sample-evtx -o dev.jsonl -L -p super-verbose -q -w -D -n -u -s
 
       - name: Run on dev branch(encoded_rules)
         run: |
@@ -41,8 +41,8 @@ jobs:
           curl -O https://raw.githubusercontent.com/Yamato-Security/hayabusa-encoded-rules/refs/heads/main/encoded_rules.yml
           curl -O https://raw.githubusercontent.com/Yamato-Security/hayabusa-encoded-rules/refs/heads/main/rules_config_files.txt
           ./hayabusa update-rules -q
-          ./hayabusa csv-timeline -d ./hayabusa-sample-evtx -o dev-encoded.csv -p super-verbose -q -w -D -n -u -s
-          ./hayabusa json-timeline -d ./hayabusa-sample-evtx -o dev-encoded.jsonl -L -p super-verbose -q -w -D -n -u -s
+          ./hayabusa csv-timeline -t 1 -d ./hayabusa-sample-evtx -o dev-encoded.csv -p super-verbose -q -w -D -n -u -s
+          ./hayabusa json-timeline -t 1 -d ./hayabusa-sample-evtx -o dev-encoded.jsonl -L -p super-verbose -q -w -D -n -u -s
           mv ../config ./
           mv ../rules ./
           mv encoded_rules.yml ../
@@ -64,8 +64,8 @@ jobs:
           curl -O https://raw.githubusercontent.com/Yamato-Security/hayabusa-encoded-rules/refs/heads/main/rules_config_files.txt
           cp target/release/hayabusa .
           ./hayabusa update-rules -q
-          ./hayabusa csv-timeline -d ./hayabusa-sample-evtx -o main-encoded.csv -p super-verbose -q -w -D -n -u
-          ./hayabusa json-timeline -d ./hayabusa-sample-evtx -o main-encoded.jsonl -L -p super-verbose -q -w -D -n -u
+          ./hayabusa csv-timeline -t 1 -d ./hayabusa-sample-evtx -o main-encoded.csv -p super-verbose -q -w -D -n -u
+          ./hayabusa json-timeline -t 1 -d ./hayabusa-sample-evtx -o main-encoded.jsonl -L -p super-verbose -q -w -D -n -u
           rm -rf encoded_rules.yml rules_config_files.txt hayabusa
 
       - name: Check CSV Timeline diff
