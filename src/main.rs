@@ -1253,7 +1253,7 @@ impl App {
                     prompt_prefix: Style::new().color256(51).apply_to("?".to_string()), // cyan
                     prompt_suffix: Style::new().color256(51).apply_to("›".to_string()), // cyan
                     defaults_style: Style::new().color256(51), // cyan
-                    hint_style: Style::new().color256(51), // cyan
+                    hint_style: Style::new().color256(51),   // cyan
                     success_prefix: Style::new().color256(46).apply_to("✔".to_string()), // green
                     success_suffix: Style::new().color256(15).apply_to("·".to_string()), // white
                     error_prefix: Style::new().color256(9).apply_to("✘".to_string()), // red
