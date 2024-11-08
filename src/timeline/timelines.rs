@@ -76,11 +76,7 @@ impl Timeline {
                 ),
             );
         } else if stored_static.logon_summary_flag {
-            self.stats.logon_stats_start(
-                records,
-                stored_static.logon_summary_flag,
-                &stored_static.eventkey_alias,
-            );
+            self.stats.logon_stats_start(records, stored_static);
         } else if stored_static.search_flag {
             self.event_search.search_start(
                 records,
@@ -344,9 +340,13 @@ impl Timeline {
         let header_column = make_ascii_titlecase(logon_res);
         let header = vec![
             header_column.as_str(),
+            "Event",
             "Target Account",
+            "Target Domain",
             "Target Computer",
             "Logon Type",
+            "Source Account",
+            "Source Domain",
             "Source Computer",
             "Source IP Address",
         ];
@@ -378,7 +378,8 @@ impl Timeline {
         logins_stats_tb
             .load_preset(UTF8_FULL)
             .apply_modifier(UTF8_ROUND_CORNERS);
-        logins_stats_tb.set_header(&header);
+        let h = &header;
+        logins_stats_tb.set_header([h[0], h[1], h[2], h[4], h[8], h[9]]);
         // 集計するログオン結果を設定
         let vnum = match logon_res {
             "successful" => 0,
@@ -388,7 +389,7 @@ impl Timeline {
         // 集計件数でソート
         let mut mapsorted: Vec<_> = self.stats.stats_login_list.iter().collect();
         mapsorted.sort_by(|x, y| y.1[vnum].cmp(&x.1[vnum]));
-        for ((username, hostname, logontype, source_computer, source_ip), values) in &mapsorted {
+        for (e, values) in &mapsorted {
             // 件数が"0"件は表示しない
             if values[vnum] == 0 {
                 continue;
@@ -396,16 +397,21 @@ impl Timeline {
                 let vnum_str = values[vnum].to_string();
                 let record_data = vec![
                     vnum_str.as_str(),
-                    username.as_str(),
-                    hostname.as_str(),
-                    logontype.as_str(),
-                    source_computer.as_str(),
-                    source_ip.as_str(),
+                    e.channel.as_str(),
+                    e.dst_user.as_str(),
+                    e.dst_domain.as_str(),
+                    e.hostname.as_str(),
+                    e.logontype.as_str(),
+                    e.src_user.as_str(),
+                    e.src_domain.as_str(),
+                    e.source_computer.as_str(),
+                    e.source_ip.as_str(),
                 ];
                 if let Some(ref mut w) = wtr {
                     w.write_record(&record_data).ok();
                 }
-                logins_stats_tb.add_row(record_data);
+                let r = record_data;
+                logins_stats_tb.add_row([r[0], r[1], r[2], r[4], r[8], r[9]]);
             }
         }
         // rowデータがない場合は、検出なしのメッセージを表示する
@@ -504,6 +510,7 @@ mod tests {
     use hashbrown::{HashMap, HashSet};
     use nested::Nested;
 
+    use crate::timeline::metrics::LoginEvent;
     use crate::{
         detections::{
             configs::{
@@ -525,7 +532,7 @@ mod tests {
     /// メトリクスコマンドの統計情報集計のテスト。 Testing of statistics aggregation for metrics commands.
     #[test]
     pub fn test_evt_logon_stats() {
-        let dummy_stored_static =
+        let mut dummy_stored_static =
             create_dummy_stored_static(Action::LogonSummary(LogonSummaryOption {
                 input_args: InputOption {
                     directory: None,
@@ -561,13 +568,12 @@ mod tests {
                 end_timeline: None,
                 start_timeline: None,
             }));
+        dummy_stored_static.logon_summary_flag = true;
         *STORED_EKEY_ALIAS.write().unwrap() = Some(dummy_stored_static.eventkey_alias.clone());
         let mut timeline = Timeline::default();
 
         // レコード情報がないときにはstats_time_cntは何も行わないことをテスト
-        timeline
-            .stats
-            .logon_stats_start(&[], true, &dummy_stored_static.eventkey_alias);
+        timeline.stats.logon_stats_start(&[], &dummy_stored_static);
 
         // テスト1: 対象となるTimestamp情報がない場合
         let no_timestamp_record_str = r#"{
@@ -591,7 +597,7 @@ mod tests {
         ));
         timeline
             .stats
-            .logon_stats_start(&input_datas, true, &dummy_stored_static.eventkey_alias);
+            .logon_stats_start(&input_datas, &dummy_stored_static);
         assert!(timeline.stats.start_time.is_none());
         assert!(timeline.stats.end_time.is_none());
 
@@ -652,40 +658,39 @@ mod tests {
             &false,
         ));
 
-        let mut expect: HashMap<
-            (
-                CompactString,
-                CompactString,
-                CompactString,
-                CompactString,
-                CompactString,
-            ),
-            [usize; 2],
-        > = HashMap::new();
+        let mut expect: HashMap<LoginEvent, [usize; 2]> = HashMap::new();
         expect.insert(
-            (
-                "testuser".into(),
-                "HAYABUSA-DESKTOP".into(),
-                "3 - Network".into(),
-                "HAYABUSA".into(),
-                "192.168.100.200".into(),
-            ),
+            LoginEvent {
+                channel: "Sec 4624".into(),
+                dst_user: "testuser".into(),
+                dst_domain: "-".into(),
+                hostname: "HAYABUSA-DESKTOP".into(),
+                logontype: "3 - Network".into(),
+                src_user: "-".into(),
+                src_domain: "-".into(),
+                source_computer: "HAYABUSA".into(),
+                source_ip: "192.168.100.200".into(),
+            },
             [1, 0],
         );
         expect.insert(
-            (
-                "testuser".into(),
-                "HAYABUSA-DESKTOP".into(),
-                "0 - System".into(),
-                "n/a".into(),
-                "n/a".into(),
-            ),
+            LoginEvent {
+                channel: "Sec 4625".into(),
+                dst_user: "testuser".into(),
+                dst_domain: "-".into(),
+                hostname: "HAYABUSA-DESKTOP".into(),
+                logontype: "0 - System".into(),
+                src_user: "-".into(),
+                src_domain: "-".into(),
+                source_computer: "-".into(),
+                source_ip: "-".into(),
+            },
             [0, 1],
         );
 
         timeline
             .stats
-            .logon_stats_start(&input_datas, true, &dummy_stored_static.eventkey_alias);
+            .logon_stats_start(&input_datas, &dummy_stored_static);
         assert_eq!(
             timeline.stats.start_time,
             Some(DateTime::<Utc>::from_naive_utc_and_offset(
@@ -804,7 +809,7 @@ mod tests {
 
     #[test]
     pub fn test_tm_logon_stats_dsp_msg() {
-        let dummy_stored_static =
+        let mut dummy_stored_static =
             create_dummy_stored_static(Action::LogonSummary(LogonSummaryOption {
                 input_args: InputOption {
                     directory: None,
@@ -840,13 +845,14 @@ mod tests {
                 end_timeline: None,
                 start_timeline: None,
             }));
+        dummy_stored_static.logon_summary_flag = true;
         *STORED_EKEY_ALIAS.write().unwrap() = Some(dummy_stored_static.eventkey_alias.clone());
         let mut timeline = Timeline::default();
         let mut input_datas = vec![];
         let tcreated_attribe_record_str = r#"{
             "Event": {
                 "System": {
-                    "EventID": "4624",
+                    "EventID": 4624,
                     "Channel": "Security",
                     "Computer":"HAYABUSA-DESKTOP",
                     "TimeCreated_attributes": {
@@ -899,14 +905,18 @@ mod tests {
 
         timeline
             .stats
-            .logon_stats_start(&input_datas, true, &dummy_stored_static.eventkey_alias);
+            .logon_stats_start(&input_datas, &dummy_stored_static);
 
         timeline.tm_logon_stats_dsp_msg(&dummy_stored_static);
         let mut header = [
             "Successful",
+            "Event",
             "Target Account",
+            "Target Domain",
             "Target Computer",
             "Logon Type",
+            "Source Account",
+            "Source Domain",
             "Source Computer",
             "Source IP Address",
         ];
@@ -914,9 +924,13 @@ mod tests {
         // Login Successful csv output test
         let expect_success_records = [[
             "1",
+            "Sec 4624",
             "testuser",
+            "-",
             "HAYABUSA-DESKTOP",
             "3 - Network",
+            "-",
+            "-",
             "HAYABUSA",
             "192.168.100.200",
         ]];
@@ -938,11 +952,15 @@ mod tests {
         header[0] = "Failed";
         let expect_failed_records = [[
             "1",
+            "Sec 4625",
             "testuser",
+            "-",
             "HAYABUSA-DESKTOP",
             "0 - System",
-            "n/a",
-            "n/a",
+            "-",
+            "-",
+            "-",
+            "-",
         ]];
         let expect_failed = header.join(",")
             + "\n"
