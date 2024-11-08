@@ -76,11 +76,7 @@ impl Timeline {
                 ),
             );
         } else if stored_static.logon_summary_flag {
-            self.stats.logon_stats_start(
-                records,
-                stored_static.logon_summary_flag,
-                &stored_static.eventkey_alias,
-            );
+            self.stats.logon_stats_start(records, stored_static);
         } else if stored_static.search_flag {
             self.event_search.search_start(
                 records,
@@ -536,7 +532,7 @@ mod tests {
     /// メトリクスコマンドの統計情報集計のテスト。 Testing of statistics aggregation for metrics commands.
     #[test]
     pub fn test_evt_logon_stats() {
-        let dummy_stored_static =
+        let mut dummy_stored_static =
             create_dummy_stored_static(Action::LogonSummary(LogonSummaryOption {
                 input_args: InputOption {
                     directory: None,
@@ -572,13 +568,12 @@ mod tests {
                 end_timeline: None,
                 start_timeline: None,
             }));
+        dummy_stored_static.logon_summary_flag = true;
         *STORED_EKEY_ALIAS.write().unwrap() = Some(dummy_stored_static.eventkey_alias.clone());
         let mut timeline = Timeline::default();
 
         // レコード情報がないときにはstats_time_cntは何も行わないことをテスト
-        timeline
-            .stats
-            .logon_stats_start(&[], true, &dummy_stored_static.eventkey_alias);
+        timeline.stats.logon_stats_start(&[], &dummy_stored_static);
 
         // テスト1: 対象となるTimestamp情報がない場合
         let no_timestamp_record_str = r#"{
@@ -602,7 +597,7 @@ mod tests {
         ));
         timeline
             .stats
-            .logon_stats_start(&input_datas, true, &dummy_stored_static.eventkey_alias);
+            .logon_stats_start(&input_datas, &dummy_stored_static);
         assert!(timeline.stats.start_time.is_none());
         assert!(timeline.stats.end_time.is_none());
 
@@ -695,7 +690,7 @@ mod tests {
 
         timeline
             .stats
-            .logon_stats_start(&input_datas, true, &dummy_stored_static.eventkey_alias);
+            .logon_stats_start(&input_datas, &dummy_stored_static);
         assert_eq!(
             timeline.stats.start_time,
             Some(DateTime::<Utc>::from_naive_utc_and_offset(
@@ -814,7 +809,7 @@ mod tests {
 
     #[test]
     pub fn test_tm_logon_stats_dsp_msg() {
-        let dummy_stored_static =
+        let mut dummy_stored_static =
             create_dummy_stored_static(Action::LogonSummary(LogonSummaryOption {
                 input_args: InputOption {
                     directory: None,
@@ -850,13 +845,14 @@ mod tests {
                 end_timeline: None,
                 start_timeline: None,
             }));
+        dummy_stored_static.logon_summary_flag = true;
         *STORED_EKEY_ALIAS.write().unwrap() = Some(dummy_stored_static.eventkey_alias.clone());
         let mut timeline = Timeline::default();
         let mut input_datas = vec![];
         let tcreated_attribe_record_str = r#"{
             "Event": {
                 "System": {
-                    "EventID": "4624",
+                    "EventID": 4624,
                     "Channel": "Security",
                     "Computer":"HAYABUSA-DESKTOP",
                     "TimeCreated_attributes": {
@@ -909,7 +905,7 @@ mod tests {
 
         timeline
             .stats
-            .logon_stats_start(&input_datas, true, &dummy_stored_static.eventkey_alias);
+            .logon_stats_start(&input_datas, &dummy_stored_static);
 
         timeline.tm_logon_stats_dsp_msg(&dummy_stored_static);
         let mut header = [

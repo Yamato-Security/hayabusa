@@ -1,4 +1,5 @@
 use crate::detections::message::ERROR_LOG_STACK;
+use crate::detections::utils::get_serde_number_to_string;
 use crate::detections::{
     configs::{EventKeyAliasConfig, StoredStatic},
     detection::EvtxRecordInfo,
@@ -72,20 +73,15 @@ impl EventMetrics {
         self.stats_eventid(records, stored_static, (include_computer, exclude_computer));
     }
 
-    pub fn logon_stats_start(
-        &mut self,
-        records: &[EvtxRecordInfo],
-        logon_summary_flag: bool,
-        eventkey_alias: &EventKeyAliasConfig,
-    ) {
+    pub fn logon_stats_start(&mut self, records: &[EvtxRecordInfo], stored_static: &StoredStatic) {
         // 引数でlogon-summaryオプションが指定されている時だけ、統計情報を出力する。
-        if !logon_summary_flag {
+        if !stored_static.logon_summary_flag {
             return;
         }
 
-        self.stats_time_cnt(records, eventkey_alias);
+        self.stats_time_cnt(records, &stored_static.eventkey_alias);
 
-        self.stats_login_eventid(records, eventkey_alias);
+        self.stats_login_eventid(records, stored_static);
     }
 
     fn stats_time_cnt(&mut self, records: &[EvtxRecordInfo], eventkey_alias: &EventKeyAliasConfig) {
@@ -199,11 +195,7 @@ impl EventMetrics {
         }
     }
     // Login event
-    fn stats_login_eventid(
-        &mut self,
-        records: &[EvtxRecordInfo],
-        eventkey_alias: &EventKeyAliasConfig,
-    ) {
+    fn stats_login_eventid(&mut self, records: &[EvtxRecordInfo], stored_static: &StoredStatic) {
         let logontype_map: HashMap<&str, &str> = HashMap::from([
             ("0", "0 - System"),
             ("2", "2 - Interactive"),
@@ -219,14 +211,38 @@ impl EventMetrics {
             ("13", "13 - CachedUnlock"),
         ]);
         for record in records.iter() {
-            if let Some(evtid) = utils::get_event_value("EventID", &record.record, eventkey_alias) {
+            if let Some(evtid) =
+                utils::get_event_value("EventID", &record.record, &stored_static.eventkey_alias)
+            {
                 let idnum: i64 = if evtid.is_number() {
                     evtid.as_i64().unwrap()
                 } else {
-                    evtid.as_str().unwrap().parse::<i64>().unwrap_or_default()
+                    let rec_id = get_serde_number_to_string(
+                        &record.record["Event"]["System"]["EventRecordID"],
+                        false,
+                    )
+                    .unwrap_or("n/a".into());
+                    let errmsg = format!(
+                        "Failed to parse EventID from EventFile: {}, EventRecordID: {}",
+                        &record.evtx_filepath, rec_id
+                    );
+                    if stored_static.verbose_flag {
+                        AlertMessage::alert(&errmsg).ok();
+                    }
+                    if !stored_static.quiet_errors_flag {
+                        ERROR_LOG_STACK
+                            .lock()
+                            .unwrap()
+                            .push(format!("[ERROR] {errmsg}"));
+                    }
+                    continue;
                 };
 
-                let channel = get_event_value_as_string("Channel", &record.record, eventkey_alias);
+                let channel = get_event_value_as_string(
+                    "Channel",
+                    &record.record,
+                    &stored_static.eventkey_alias,
+                );
                 if let Some(channel) = is_target_event(idnum, &channel) {
                     let channel_name = match channel {
                         Sec => {
@@ -243,13 +259,13 @@ impl EventMetrics {
                         Sec => get_event_value_as_string(
                             "TargetUserName",
                             &record.record,
-                            eventkey_alias,
+                            &stored_static.eventkey_alias,
                         ),
                         RdsLsm => {
                             let user_with_domain = get_event_value_as_string(
                                 "UserDataUser",
                                 &record.record,
-                                eventkey_alias,
+                                &stored_static.eventkey_alias,
                             );
                             let user = user_with_domain
                                 .rsplit('\\')
@@ -261,7 +277,7 @@ impl EventMetrics {
                             let user_with_domain = get_event_value_as_string(
                                 "RdsGtwUsername",
                                 &record.record,
-                                eventkey_alias,
+                                &stored_static.eventkey_alias,
                             );
                             let user = user_with_domain
                                 .rsplit('\\')
@@ -274,19 +290,19 @@ impl EventMetrics {
                     let src_user = get_event_value_as_string(
                         "SubjectUserName",
                         &record.record,
-                        eventkey_alias,
+                        &stored_static.eventkey_alias,
                     );
                     let dst_domain = match channel {
                         Sec => get_event_value_as_string(
                             "TargetDomainName",
                             &record.record,
-                            eventkey_alias,
+                            &stored_static.eventkey_alias,
                         ),
                         RdsLsm => {
                             let user_with_domain = get_event_value_as_string(
                                 "UserDataUser",
                                 &record.record,
-                                eventkey_alias,
+                                &stored_static.eventkey_alias,
                             );
                             let domain = user_with_domain.rsplit_once('\\').map(|x| x.0);
                             CompactString::from(domain.unwrap_or("-"))
@@ -295,7 +311,7 @@ impl EventMetrics {
                             let user_with_domain = get_event_value_as_string(
                                 "RdsGtwUserName",
                                 &record.record,
-                                eventkey_alias,
+                                &stored_static.eventkey_alias,
                             );
                             let domain = user_with_domain.rsplit_once('\\').map(|x| x.0);
                             CompactString::from(domain.unwrap_or("-"))
@@ -304,30 +320,38 @@ impl EventMetrics {
                     let src_domain = get_event_value_as_string(
                         "SubjectDomainName",
                         &record.record,
-                        eventkey_alias,
+                        &stored_static.eventkey_alias,
                     );
-                    let logontype =
-                        get_event_value_as_string("LogonType", &record.record, eventkey_alias);
-                    let hostname =
-                        get_event_value_as_string("Computer", &record.record, eventkey_alias);
+                    let logontype = get_event_value_as_string(
+                        "LogonType",
+                        &record.record,
+                        &stored_static.eventkey_alias,
+                    );
+                    let hostname = get_event_value_as_string(
+                        "Computer",
+                        &record.record,
+                        &stored_static.eventkey_alias,
+                    );
                     let source_computer = get_event_value_as_string(
                         "WorkstationName",
                         &record.record,
-                        eventkey_alias,
+                        &stored_static.eventkey_alias,
                     );
                     let source_ip = match channel {
-                        Sec => {
-                            get_event_value_as_string("IpAddress", &record.record, eventkey_alias)
-                        }
+                        Sec => get_event_value_as_string(
+                            "IpAddress",
+                            &record.record,
+                            &stored_static.eventkey_alias,
+                        ),
                         RdsLsm => get_event_value_as_string(
                             "UserDataAddress",
                             &record.record,
-                            eventkey_alias,
+                            &stored_static.eventkey_alias,
                         ),
                         RdsGtw => get_event_value_as_string(
                             "RdsGtwIpAddress",
                             &record.record,
-                            eventkey_alias,
+                            &stored_static.eventkey_alias,
                         ),
                     };
 
