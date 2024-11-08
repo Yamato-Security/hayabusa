@@ -1244,7 +1244,10 @@ impl App {
                     unpicked_item_prefix: style(" ".to_string()).for_stderr(),
                 }
             } else {
-                ColorfulTheme::default()
+                let mut c = ColorfulTheme::default();
+                c.active_item_style = Style::new().color256(14);
+                c.values_style = Style::new().color256(46);
+                c
             };
             let selected_index = Select::with_theme(&color_theme)
                 .with_prompt("Which set of detection rules would you like to load?")
