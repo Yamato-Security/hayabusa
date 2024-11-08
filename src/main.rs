@@ -1549,11 +1549,11 @@ impl App {
                 spinner, bar
             )
         };
-        
+
         let progress_style = ProgressStyle::with_template(&template) // Pass `&template` here
             .unwrap()
             .progress_chars("=> ");
-        
+
         let pb = ProgressBar::with_draw_target(
             Some(evtx_files.len() as u64),
             ProgressDrawTarget::stdout_with_hz(10),
@@ -2329,7 +2329,7 @@ impl App {
         let output_color = if stored_static.common_options.no_color {
             None
         } else {
-            Some(Color::Rgb(0,255,0))
+            Some(Color::Rgb(0, 255, 0))
         };
         write_color_buffer(
             &BufferWriter::stdout(ColorChoice::Always),
