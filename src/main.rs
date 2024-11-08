@@ -1245,15 +1245,15 @@ impl App {
                 }
             } else {
                 ColorfulTheme {
-                    active_item_prefix: Style::new().color256(51).apply_to("❯".to_string()),  // cyan
-                    checked_item_prefix: Style::new().color256(46).apply_to("✔".to_string()),  // green
+                    active_item_prefix: Style::new().color256(51).apply_to("❯".to_string()), // cyan
+                    checked_item_prefix: Style::new().color256(46).apply_to("✔".to_string()), // green
                     picked_item_prefix: Style::new().color256(51).apply_to("❯".to_string()), // cyan
-                    active_item_style: Style::new().color256(51), // cyan
+                    active_item_style: Style::new().color256(51),                            // cyan
                     values_style: Style::new().color256(46), // green
-                    prompt_prefix: Style::new().color256(51).apply_to("?".to_string()),  // cyan
+                    prompt_prefix: Style::new().color256(51).apply_to("?".to_string()), // cyan
                     prompt_suffix: Style::new().color256(51).apply_to("›".to_string()), // cyan
                     success_prefix: Style::new().color256(46).apply_to("✔".to_string()), // green
-                    success_suffix: Style::new().color256(15).apply_to("·".to_string()),  // white
+                    success_suffix: Style::new().color256(15).apply_to("·".to_string()), // white
                     error_prefix: Style::new().color256(9).apply_to("✘".to_string()), // red
                     ..Default::default()
                 }
