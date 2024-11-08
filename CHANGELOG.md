@@ -10,9 +10,11 @@
 
 - Updated the `yaml-rust` crate to `yaml-rust2`. (#461) (@yamatosecurity)
 - `windash` characters are now being dynamically read from `rules/config/windash_characters.txt`. (#1440) (@fukusuket)
+- `logon-summary` command now displays logon information from RDP events. Note: Hayabusa will output more detailed information when saving to a file. (#1468) (@fukusuket)
 
 **Bug Fixes:**
 
+- `logon-summary` command would sometimes crash with corrupted logs. (#1477) (@fukusuket)
 - Some results would be displayed after the progress bar when outputting results to the terminal with `csv-timeline` and `json-timeline`. (#1459) (@fukusuket)
 - The detailed field value results in aggregation rule alerts were not sorted so `csv-timeline` and `json-timeline` would not output completely exact results each time. (#1466) (@fukusuket)
 - Updated `hayabusa-evtx` crate to `0.8.12`. (@yamatosecurity)
