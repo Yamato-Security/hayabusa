@@ -11,6 +11,7 @@
 - `yaml-rust`クレートを`yaml-rust2`に更新した。(#461) (@yamatosecurity)
 - `windash`文字が、`rules/config/windash_characters.txt`から動的に読み込まれるようになった。(#1440) (@fukusuket)
 - `logon-summary`コマンドがRDPイベントからのログオン情報を表示するようになった。注意: ファイルに保存する場合、Hayabusaはより詳細な情報を出力する。(#1468) (@fukusuket)
+- 見やすくなるように色を更新した。 (#1480) (@yamatosecurity)
 
 **バグ修正:**
 

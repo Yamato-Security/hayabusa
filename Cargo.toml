@@ -9,11 +9,13 @@ include = ["src/**/*", "LICENSE.txt", "README.md", "CHANGELOG.md"]
 
 [dependencies]
 aho-corasick = "*"
+ansi_term = "0.*"
 base64 = "*"
 bytesize = "1.*"
 chrono = "0.4.*"
 cidr-utils = "0.6.*"
 clap = { version = "4.*", features = ["derive", "cargo", "color"]}
+colored = "2"
 comfy-table = "7.*"
 compact_str = "0.8.*"
 console = "0.15.*"
