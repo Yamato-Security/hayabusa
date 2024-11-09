@@ -20,6 +20,7 @@
 - `hayabusa-evtx`クレートをバージョン`0.8.12`に更新した。(@yamatosecurity)
   - JSONフィールドの出力順序が元のXMLに従って保持されるようになった。(omerbenamram/evtx #241)
   - 属性と同じ名前を持つ複数のサブノードは上書きされ、最後の1つだけが出力されていた。(omerbenamram/evtx #245)
+- `logon-summary`と`eid-metrics`が複数のプログレスバーを出力することがあった。 #1479 (@fukusuket)
 
 ## 2.18.0 [2024/10/23] - SecTor Release
 
