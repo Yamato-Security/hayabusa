@@ -1248,12 +1248,12 @@ impl App {
                     active_item_prefix: Style::new().color256(214).apply_to("❯".to_string()), // orange
                     checked_item_prefix: Style::new().color256(46).apply_to("✔".to_string()), // green
                     picked_item_prefix: Style::new().color256(214).apply_to("❯".to_string()), // orange
-                    active_item_style: Style::new().color256(51),                            // cyan
-                    values_style: Style::new().color256(46), // green
+                    active_item_style: Style::new().color256(51), // cyan
+                    values_style: Style::new().color256(46),      // green
                     prompt_prefix: Style::new().color256(214).apply_to("?".to_string()), // orange
                     prompt_suffix: Style::new().color256(15).apply_to("›".to_string()), // cyan
-                    defaults_style: Style::new().color256(51), // cyan
-                    hint_style: Style::new().color256(214),   // orange
+                    defaults_style: Style::new().color256(51),    // cyan
+                    hint_style: Style::new().color256(214),       // orange
                     success_prefix: Style::new().color256(46).apply_to("✔".to_string()), // green
                     success_suffix: Style::new().color256(15).apply_to("·".to_string()), // white
                     error_prefix: Style::new().color256(9).apply_to("✘".to_string()), // red
