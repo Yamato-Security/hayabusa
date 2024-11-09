@@ -1914,7 +1914,7 @@ impl App {
             )),
             Err(e) => {
                 AlertMessage::alert(&format!(
-                    "timestamp parse error. filepath:{},{} {}",
+                    "Timestamp parse error. Filepath: {},{} {}",
                     path,
                     &target_timestamp
                         .to_string()
@@ -2030,7 +2030,7 @@ impl App {
                             }
                             Err(e) => {
                                 AlertMessage::warn(&format!(
-                                    "timestamp parse error. filepath:{},{} {}",
+                                    "Timestamp parse error. Filepath: {},{} {}",
                                     path,
                                     &splunk_api_record["Event"]["System"]["SystemTime"]
                                         .to_string()
