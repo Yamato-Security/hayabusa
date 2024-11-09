@@ -11,6 +11,7 @@
 - Updated the `yaml-rust` crate to `yaml-rust2`. (#461) (@yamatosecurity)
 - `windash` characters are now being dynamically read from `rules/config/windash_characters.txt`. (#1440) (@fukusuket)
 - `logon-summary` command now displays logon information from RDP events. Note: Hayabusa will output more detailed information when saving to a file. (#1468) (@fukusuket)
+- The colors were updated to make it easier to read. (#1480) (@yamatosecurity)
 
 **Bug Fixes:**
 

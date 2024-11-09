@@ -23,6 +23,7 @@ use std::{
 use bytesize::ByteSize;
 use chrono::{DateTime, Datelike, Local, NaiveDateTime, Utc};
 use clap::Command;
+use colored::Colorize;
 use compact_str::CompactString;
 use console::{style, Style};
 use dialoguer::Confirm;
@@ -779,7 +780,7 @@ impl App {
                 for profile in profile_list.iter() {
                     write_color_buffer(
                         &BufferWriter::stdout(ColorChoice::Always),
-                        Some(Color::Green),
+                        Some(Color::Rgb(0, 255, 0)),
                         &format!("- {:<25}", &format!("{}:", profile[0])),
                         false,
                     )
@@ -1243,7 +1244,21 @@ impl App {
                     unpicked_item_prefix: style(" ".to_string()).for_stderr(),
                 }
             } else {
-                ColorfulTheme::default()
+                ColorfulTheme {
+                    active_item_prefix: Style::new().color256(214).apply_to("❯".to_string()), // orange
+                    checked_item_prefix: Style::new().color256(46).apply_to("✔".to_string()), // green
+                    picked_item_prefix: Style::new().color256(214).apply_to("❯".to_string()), // orange
+                    active_item_style: Style::new().color256(51), // cyan
+                    values_style: Style::new().color256(46),      // green
+                    prompt_prefix: Style::new().color256(214).apply_to("?".to_string()), // orange
+                    prompt_suffix: Style::new().color256(15).apply_to("›".to_string()), // cyan
+                    defaults_style: Style::new().color256(51),    // cyan
+                    hint_style: Style::new().color256(214),       // orange
+                    success_prefix: Style::new().color256(46).apply_to("✔".to_string()), // green
+                    success_suffix: Style::new().color256(15).apply_to("·".to_string()), // white
+                    error_prefix: Style::new().color256(9).apply_to("✘".to_string()), // red
+                    ..Default::default()
+                }
             };
             let selected_index = Select::with_theme(&color_theme)
                 .with_prompt("Which set of detection rules would you like to load?")
@@ -1539,20 +1554,27 @@ impl App {
         }
 
         let template = if stored_static.common_options.no_color {
-            "[{elapsed_precise}] {human_pos} / {human_len} {spinner} [{bar:40}] {percent}%\r\n\r\n{msg}"
+            "[{elapsed_precise}] {human_pos} / {human_len} {spinner} [{bar:40}] {percent}%\r\n\r\n{msg}".to_string()
         } else {
-            "[{elapsed_precise}] {human_pos} / {human_len} {spinner:.green} [{bar:40.green}] {percent}%\r\n\r\n{msg}"
+            let spinner = "{spinner}".truecolor(0, 255, 0).to_string();
+            let bar = "{bar:40}".truecolor(0, 255, 0).to_string();
+            format!(
+                "[{{elapsed_precise}}] {{human_pos}} / {{human_len}} {} [{}] {{percent}}%\r\n\r\n{{msg}}",
+                spinner, bar
+            )
         };
-        let progress_style = ProgressStyle::with_template(template)
+
+        let progress_style = ProgressStyle::with_template(&template) // Pass `&template` here
             .unwrap()
             .progress_chars("=> ");
+
         let pb = ProgressBar::with_draw_target(
             Some(evtx_files.len() as u64),
             ProgressDrawTarget::stdout_with_hz(10),
         )
         .with_tab_width(55);
         pb.set_style(progress_style);
-        // I tried progress bar with low memory option(output log on detection) but it seemts that progress bar didn't go well with low memory option.
+        // I tried progress bar with low memory option(output log on detection) but it seems that progress bar didn't go well with low memory option.
         // I disabled progress bar if low memory option is specified.
         let is_show_progress = !stored_static.is_low_memory || stored_static.output_path.is_some();
         if is_show_progress {
@@ -2321,7 +2343,7 @@ impl App {
         let output_color = if stored_static.common_options.no_color {
             None
         } else {
-            Some(Color::Green)
+            Some(Color::Rgb(0, 255, 0))
         };
         write_color_buffer(
             &BufferWriter::stdout(ColorChoice::Always),
