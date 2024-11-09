@@ -62,7 +62,7 @@ impl EventMetrics {
         (include_computer, exclude_computer): (&HashSet<CompactString>, &HashSet<CompactString>),
     ) {
         // recordsから、 最初のレコードの時刻と最後のレコードの時刻、レコードの総数を取得する
-        self.stats_time_cnt(records, &stored_static.eventkey_alias);
+        self.stats_time_cnt(records, stored_static);
 
         // 引数でmetricsオプションが指定されている時だけ、統計情報を出力する。
         if !stored_static.metrics_flag {
@@ -79,12 +79,12 @@ impl EventMetrics {
             return;
         }
 
-        self.stats_time_cnt(records, &stored_static.eventkey_alias);
+        self.stats_time_cnt(records, stored_static);
 
         self.stats_login_eventid(records, stored_static);
     }
 
-    fn stats_time_cnt(&mut self, records: &[EvtxRecordInfo], eventkey_alias: &EventKeyAliasConfig) {
+    fn stats_time_cnt(&mut self, records: &[EvtxRecordInfo], stored_static: &StoredStatic) {
         if records.is_empty() {
             return;
         }
@@ -106,10 +106,16 @@ impl EventMetrics {
                             DateTime::<Utc>::from_naive_utc_and_offset(splunk_json_datetime, Utc),
                         ),
                         Err(e) => {
-                            AlertMessage::alert(&format!(
-                                "timestamp parse error. input: {evttime} {e}"
-                            ))
-                            .ok();
+                            let errmsg = format!("timestamp parse error. input: {evttime} {e}");
+                            if stored_static.verbose_flag {
+                                AlertMessage::alert(&errmsg).ok();
+                            }
+                            if !stored_static.quiet_errors_flag {
+                                ERROR_LOG_STACK
+                                    .lock()
+                                    .unwrap()
+                                    .push(format!("[ERROR] {errmsg}"));
+                            }
                             None
                         }
                     }
@@ -140,14 +146,17 @@ impl EventMetrics {
             if let Some(evttime) = utils::get_event_value(
                 "Event.System.TimeCreated_attributes.SystemTime",
                 &record.record,
-                eventkey_alias,
+                &stored_static.eventkey_alias,
             )
             .map(|evt_value| evt_value.to_string().replace("\\\"", "").replace('"', ""))
             {
                 check_start_end_time(&evttime);
-            } else if let Some(evttime) =
-                utils::get_event_value("Event.System.@timestamp", &record.record, eventkey_alias)
-                    .map(|evt_value| evt_value.to_string().replace("\\\"", "").replace('"', ""))
+            } else if let Some(evttime) = utils::get_event_value(
+                "Event.System.@timestamp",
+                &record.record,
+                &stored_static.eventkey_alias,
+            )
+            .map(|evt_value| evt_value.to_string().replace("\\\"", "").replace('"', ""))
             {
                 check_start_end_time(&evttime);
             };
