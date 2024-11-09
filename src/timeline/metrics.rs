@@ -106,7 +106,8 @@ impl EventMetrics {
                             DateTime::<Utc>::from_naive_utc_and_offset(splunk_json_datetime, Utc),
                         ),
                         Err(e) => {
-                            let errmsg = format!("Timestamp parse error.\nInput: {evttime}\nError: {e}\n");
+                            let errmsg =
+                                format!("Timestamp parse error.\nInput: {evttime}\nError: {e}\n");
                             if stored_static.verbose_flag {
                                 AlertMessage::alert(&errmsg).ok();
                             }
