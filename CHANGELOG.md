@@ -5,6 +5,7 @@
 **New Features:**
 
 - Support for the `gt`, `gte`, `lt`, `lte` field modifiers. (#1433) (@fukusuket)
+- New `log-metrics` command to get information about `.evtx` files. (computer names, event count, first timestamp, last timestamp, channels, providers) (#1474) (@fukusuket)
 
 **Enhancements:**
 
