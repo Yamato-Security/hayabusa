@@ -2044,31 +2044,10 @@ impl TargetEventTime {
                 );
                 Self::set(parse_success_flag, start_time, end_time)
             }
-            Action::ComputerMetrics(_) => {
-                let start_time = if timeline_offset.is_some() {
-                    get_time(
-                        timeline_offset.as_ref(),
-                        "Invalid timeline offset. Please use one of the following formats: 1y, 3M, 30d, 24h, 30m",
-                        &mut parse_success_flag,
-                    )
-                } else {
-                    None
-                };
-                Self::set(parse_success_flag, start_time, None)
-            }
-            Action::EidMetrics(_) => {
-                let start_time = if timeline_offset.is_some() {
-                    get_time(
-                        timeline_offset.as_ref(),
-                        "Invalid timeline offset. Please use one of the following formats: 1y, 3M, 30d, 24h, 30m",
-                        &mut parse_success_flag,
-                    )
-                } else {
-                    None
-                };
-                Self::set(parse_success_flag, start_time, None)
-            }
-            Action::Search(_) => {
+            Action::LogMetrics(_)
+            | Action::EidMetrics(_)
+            | Action::ComputerMetrics(_)
+            | Action::Search(_) => {
                 let start_time = if timeline_offset.is_some() {
                     get_time(
                         timeline_offset.as_ref(),

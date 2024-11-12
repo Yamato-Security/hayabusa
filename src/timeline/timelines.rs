@@ -550,7 +550,11 @@ impl Timeline {
                         ]);
                     }
                 }
-                println!("{tb}");
+                if log_metrics.is_empty() {
+                    println!("No matches found.");
+                } else {
+                    println!("{tb}");
+                }
             }
         }
     }
