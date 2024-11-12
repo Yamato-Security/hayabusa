@@ -477,6 +477,7 @@ mod tests {
     use hashbrown::{HashMap, HashSet};
     use nested::Nested;
 
+    use crate::detections::configs::TimeFormatOptions;
     use crate::{
         detections::{
             configs::{
@@ -522,13 +523,15 @@ mod tests {
                     include_computer: None,
                     exclude_computer: None,
                 },
-                european_time: false,
-                iso_8601: false,
-                rfc_2822: false,
-                rfc_3339: false,
-                us_military_time: false,
-                us_time: false,
-                utc: false,
+                time_format_options: TimeFormatOptions {
+                    european_time: false,
+                    iso_8601: false,
+                    rfc_2822: false,
+                    rfc_3339: false,
+                    us_military_time: false,
+                    us_time: false,
+                    utc: false,
+                },
                 output: None,
                 clobber: false,
             }));

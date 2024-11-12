@@ -1072,6 +1072,37 @@ pub struct DefaultProfileOption {
 }
 
 #[derive(Args, Clone, Debug)]
+pub struct TimeFormatOptions {
+    /// Output timestamp in European time format (ex: 22-02-2022 22:00:00.123 +02:00)
+    #[arg(help_heading = Some("Time Format"), long = "European-time", display_order = 50)]
+    pub european_time: bool,
+
+    /// Output timestamp in original ISO-8601 format (ex: 2022-02-22T10:10:10.1234567Z) (Always UTC)
+    #[arg(help_heading = Some("Time Format"), short = 'O', long = "ISO-8601", display_order = 90)]
+    pub iso_8601: bool,
+
+    /// Output timestamp in RFC 2822 format (ex: Fri, 22 Feb 2022 22:00:00 -0600)
+    #[arg(help_heading = Some("Time Format"), long = "RFC-2822", display_order = 180)]
+    pub rfc_2822: bool,
+
+    /// Output timestamp in RFC 3339 format (ex: 2022-02-22 22:00:00.123456-06:00)
+    #[arg(help_heading = Some("Time Format"), long = "RFC-3339", display_order = 180)]
+    pub rfc_3339: bool,
+
+    /// Output timestamp in US military time format (ex: 02-22-2022 22:00:00.123 -06:00)
+    #[arg(help_heading = Some("Time Format"), long = "US-military-time", display_order = 210)]
+    pub us_military_time: bool,
+
+    /// Output timestamp in US time format (ex: 02-22-2022 10:00:00.123 PM -06:00)
+    #[arg(help_heading = Some("Time Format"), long = "US-time", display_order = 210)]
+    pub us_time: bool,
+
+    /// Output time in UTC format (default: local time)
+    #[arg(help_heading = Some("Time Format"), short = 'U', long = "UTC", display_order = 210)]
+    pub utc: bool,
+}
+
+#[derive(Args, Clone, Debug)]
 #[clap(group(ArgGroup::new("search_input_filtering").args(["keywords", "regex"]).required(true)))]
 pub struct SearchOption {
     #[clap(flatten)]
@@ -1193,33 +1224,8 @@ pub struct SearchOption {
     #[arg(help_heading = Some("Output"), short = 'L', long = "JSONL-output", conflicts_with_all = ["jsonl_output", "multiline"], requires = "output", display_order = 100)]
     pub jsonl_output: bool,
 
-    /// Output timestamp in European time format (ex: 22-02-2022 22:00:00.123 +02:00)
-    #[arg(help_heading = Some("Time Format"), long = "European-time", display_order = 50)]
-    pub european_time: bool,
-
-    /// Output timestamp in original ISO-8601 format (ex: 2022-02-22T10:10:10.1234567Z) (Always UTC)
-    #[arg(help_heading = Some("Time Format"), short = 'O', long = "ISO-8601", display_order = 90)]
-    pub iso_8601: bool,
-
-    /// Output timestamp in RFC 2822 format (ex: Fri, 22 Feb 2022 22:00:00 -0600)
-    #[arg(help_heading = Some("Time Format"), long = "RFC-2822", display_order = 180)]
-    pub rfc_2822: bool,
-
-    /// Output timestamp in RFC 3339 format (ex: 2022-02-22 22:00:00.123456-06:00)
-    #[arg(help_heading = Some("Time Format"), long = "RFC-3339", display_order = 180)]
-    pub rfc_3339: bool,
-
-    /// Output timestamp in US military time format (ex: 02-22-2022 22:00:00.123 -06:00)
-    #[arg(help_heading = Some("Time Format"), long = "US-military-time", display_order = 210)]
-    pub us_military_time: bool,
-
-    /// Output timestamp in US time format (ex: 02-22-2022 10:00:00.123 PM -06:00)
-    #[arg(help_heading = Some("Time Format"), long = "US-time", display_order = 210)]
-    pub us_time: bool,
-
-    /// Output time in UTC format (default: local time)
-    #[arg(help_heading = Some("Time Format"), short = 'U', long = "UTC", display_order = 210)]
-    pub utc: bool,
+    #[clap(flatten)]
+    pub time_format_options: TimeFormatOptions,
 }
 
 #[derive(Args, Clone, Debug)]
@@ -1274,33 +1280,8 @@ pub struct EidMetricsOption {
     #[clap(flatten)]
     pub detect_common_options: DetectCommonOption,
 
-    /// Output timestamp in European time format (ex: 22-02-2022 22:00:00.123 +02:00)
-    #[arg(help_heading = Some("Time Format"), long = "European-time", display_order = 50)]
-    pub european_time: bool,
-
-    /// Output timestamp in original ISO-8601 format (ex: 2022-02-22T10:10:10.1234567Z) (Always UTC)
-    #[arg(help_heading = Some("Time Format"), short = 'O', long = "ISO-8601", display_order = 90)]
-    pub iso_8601: bool,
-
-    /// Output timestamp in RFC 2822 format (ex: Fri, 22 Feb 2022 22:00:00 -0600)
-    #[arg(help_heading = Some("Time Format"), long = "RFC-2822", display_order = 180)]
-    pub rfc_2822: bool,
-
-    /// Output timestamp in RFC 3339 format (ex: 2022-02-22 22:00:00.123456-06:00)
-    #[arg(help_heading = Some("Time Format"), long = "RFC-3339", display_order = 180)]
-    pub rfc_3339: bool,
-
-    /// Output timestamp in US military time format (ex: 02-22-2022 22:00:00.123 -06:00)
-    #[arg(help_heading = Some("Time Format"), long = "US-military-time", display_order = 210)]
-    pub us_military_time: bool,
-
-    /// Output timestamp in US time format (ex: 02-22-2022 10:00:00.123 PM -06:00)
-    #[arg(help_heading = Some("Time Format"), long = "US-time", display_order = 210)]
-    pub us_time: bool,
-
-    /// Output time in UTC format (default: local time)
-    #[arg(help_heading = Some("Time Format"), short = 'U', long = "UTC", display_order = 210)]
-    pub utc: bool,
+    #[clap(flatten)]
+    pub time_format_options: TimeFormatOptions,
 
     /// Overwrite files when saving
     #[arg(help_heading = Some("General Options"), short='C', long = "clobber", display_order = 290, requires = "output")]
@@ -1422,33 +1403,8 @@ pub struct LogonSummaryOption {
     #[clap(flatten)]
     pub detect_common_options: DetectCommonOption,
 
-    /// Output timestamp in European time format (ex: 22-02-2022 22:00:00.123 +02:00)
-    #[arg(help_heading = Some("Time Format"), long = "European-time", display_order = 50)]
-    pub european_time: bool,
-
-    /// Output timestamp in original ISO-8601 format (ex: 2022-02-22T10:10:10.1234567Z) (Always UTC)
-    #[arg(help_heading = Some("Time Format"), short = 'O', long = "ISO-8601", display_order = 90)]
-    pub iso_8601: bool,
-
-    /// Output timestamp in RFC 2822 format (ex: Fri, 22 Feb 2022 22:00:00 -0600)
-    #[arg(help_heading = Some("Time Format"), long = "RFC-2822", display_order = 180)]
-    pub rfc_2822: bool,
-
-    /// Output timestamp in RFC 3339 format (ex: 2022-02-22 22:00:00.123456-06:00)
-    #[arg(help_heading = Some("Time Format"), long = "RFC-3339", display_order = 180)]
-    pub rfc_3339: bool,
-
-    /// Output timestamp in US military time format (ex: 02-22-2022 22:00:00.123 -06:00)
-    #[arg(help_heading = Some("Time Format"), long = "US-military-time", display_order = 210)]
-    pub us_military_time: bool,
-
-    /// Output timestamp in US time format (ex: 02-22-2022 10:00:00.123 PM -06:00)
-    #[arg(help_heading = Some("Time Format"), long = "US-time", display_order = 210)]
-    pub us_time: bool,
-
-    /// Output time in UTC format (default: local time)
-    #[arg(help_heading = Some("Time Format"), short = 'U', long = "UTC", display_order = 210)]
-    pub utc: bool,
+    #[clap(flatten)]
+    pub time_format_options: TimeFormatOptions,
 
     /// Overwrite files when saving
     #[arg(help_heading = Some("General Options"), short='C', long = "clobber", display_order = 290, requires = "output")]
@@ -1565,33 +1521,8 @@ pub struct OutputOption {
     #[clap(flatten)]
     pub detect_common_options: DetectCommonOption,
 
-    /// Output timestamp in European time format (ex: 22-02-2022 22:00:00.123 +02:00)
-    #[arg(help_heading = Some("Time Format"), long = "European-time", display_order = 50)]
-    pub european_time: bool,
-
-    /// Output timestamp in original ISO-8601 format (ex: 2022-02-22T10:10:10.1234567Z) (Always UTC)
-    #[arg(help_heading = Some("Time Format"), short = 'O', long = "ISO-8601", display_order = 90)]
-    pub iso_8601: bool,
-
-    /// Output timestamp in RFC 2822 format (ex: Fri, 22 Feb 2022 22:00:00 -0600)
-    #[arg(help_heading = Some("Time Format"), long = "RFC-2822", display_order = 180)]
-    pub rfc_2822: bool,
-
-    /// Output timestamp in RFC 3339 format (ex: 2022-02-22 22:00:00.123456-06:00)
-    #[arg(help_heading = Some("Time Format"), long = "RFC-3339", display_order = 180)]
-    pub rfc_3339: bool,
-
-    /// Output timestamp in US military time format (ex: 02-22-2022 22:00:00.123 -06:00)
-    #[arg(help_heading = Some("Time Format"), long = "US-military-time", display_order = 210)]
-    pub us_military_time: bool,
-
-    /// Output timestamp in US time format (ex: 02-22-2022 10:00:00.123 PM -06:00)
-    #[arg(help_heading = Some("Time Format"), long = "US-time", display_order = 210)]
-    pub us_time: bool,
-
-    /// Output time in UTC format (default: local time)
-    #[arg(help_heading = Some("Time Format"), short = 'U', long = "UTC", display_order = 210)]
-    pub utc: bool,
+    #[clap(flatten)]
+    pub time_format_options: TimeFormatOptions,
 
     /// Output event frequency timeline (terminal needs to support unicode)
     #[arg(help_heading = Some("Display Settings"), short = 'T', long = "visualize-timeline", display_order = 490)]
@@ -1819,33 +1750,8 @@ pub struct LogMetricsOption {
     #[clap(flatten)]
     pub detect_common_options: DetectCommonOption,
 
-    /// Output timestamp in European time format (ex: 22-02-2022 22:00:00.123 +02:00)
-    #[arg(help_heading = Some("Time Format"), long = "European-time", display_order = 50)]
-    pub european_time: bool,
-
-    /// Output timestamp in original ISO-8601 format (ex: 2022-02-22T10:10:10.1234567Z) (Always UTC)
-    #[arg(help_heading = Some("Time Format"), short = 'O', long = "ISO-8601", display_order = 90)]
-    pub iso_8601: bool,
-
-    /// Output timestamp in RFC 2822 format (ex: Fri, 22 Feb 2022 22:00:00 -0600)
-    #[arg(help_heading = Some("Time Format"), long = "RFC-2822", display_order = 180)]
-    pub rfc_2822: bool,
-
-    /// Output timestamp in RFC 3339 format (ex: 2022-02-22 22:00:00.123456-06:00)
-    #[arg(help_heading = Some("Time Format"), long = "RFC-3339", display_order = 180)]
-    pub rfc_3339: bool,
-
-    /// Output timestamp in US military time format (ex: 02-22-2022 22:00:00.123 -06:00)
-    #[arg(help_heading = Some("Time Format"), long = "US-military-time", display_order = 210)]
-    pub us_military_time: bool,
-
-    /// Output timestamp in US time format (ex: 02-22-2022 10:00:00.123 PM -06:00)
-    #[arg(help_heading = Some("Time Format"), long = "US-time", display_order = 210)]
-    pub us_time: bool,
-
-    /// Output time in UTC format (default: local time)
-    #[arg(help_heading = Some("Time Format"), short = 'U', long = "UTC", display_order = 210)]
-    pub utc: bool,
+    #[clap(flatten)]
+    pub time_format_options: TimeFormatOptions,
 
     /// Overwrite files when saving
     #[arg(help_heading = Some("General Options"), short='C', long = "clobber", display_order = 290, requires = "output")]
@@ -2334,13 +2240,7 @@ fn extract_search_options(config: &Config) -> Option<SearchOption> {
             clobber: option.clobber,
             json_output: option.json_output,
             jsonl_output: option.jsonl_output,
-            european_time: option.european_time,
-            iso_8601: option.iso_8601,
-            rfc_2822: option.rfc_2822,
-            rfc_3339: option.rfc_3339,
-            us_military_time: option.us_military_time,
-            us_time: option.us_time,
-            utc: option.utc,
+            time_format_options: option.time_format_options.clone(),
             and_logic: option.and_logic,
         }),
         _ => None,
@@ -2363,13 +2263,15 @@ fn extract_output_options(config: &Config) -> Option<OutputOption> {
             end_timeline: option.end_timeline.clone(),
             start_timeline: option.start_timeline.clone(),
             eid_filter: option.eid_filter,
-            european_time: false,
-            iso_8601: false,
-            rfc_2822: false,
-            rfc_3339: false,
-            us_military_time: false,
-            us_time: false,
-            utc: false,
+            time_format_options: TimeFormatOptions {
+                european_time: false,
+                iso_8601: false,
+                rfc_2822: false,
+                rfc_3339: false,
+                us_military_time: false,
+                us_time: false,
+                utc: false,
+            },
             visualize_timeline: false,
             rules: Path::new("./rules").to_path_buf(),
             html_report: None,
@@ -2406,13 +2308,7 @@ fn extract_output_options(config: &Config) -> Option<OutputOption> {
             end_timeline: None,
             start_timeline: None,
             eid_filter: false,
-            european_time: option.european_time,
-            iso_8601: option.iso_8601,
-            rfc_2822: option.rfc_2822,
-            rfc_3339: option.rfc_3339,
-            us_military_time: option.us_military_time,
-            us_time: option.us_time,
-            utc: option.utc,
+            time_format_options: option.time_format_options.clone(),
             visualize_timeline: false,
             rules: Path::new("./rules").to_path_buf(),
             html_report: None,
@@ -2449,13 +2345,7 @@ fn extract_output_options(config: &Config) -> Option<OutputOption> {
             end_timeline: None,
             start_timeline: None,
             eid_filter: false,
-            european_time: option.european_time,
-            iso_8601: option.iso_8601,
-            rfc_2822: option.rfc_2822,
-            rfc_3339: option.rfc_3339,
-            us_military_time: option.us_military_time,
-            us_time: option.us_time,
-            utc: option.utc,
+            time_format_options: option.time_format_options.clone(),
             visualize_timeline: false,
             rules: Path::new("./rules").to_path_buf(),
             html_report: None,
@@ -2509,13 +2399,15 @@ fn extract_output_options(config: &Config) -> Option<OutputOption> {
                 include_computer: None,
                 exclude_computer: None,
             },
-            european_time: false,
-            iso_8601: false,
-            rfc_2822: false,
-            rfc_3339: false,
-            us_military_time: false,
-            us_time: false,
-            utc: false,
+            time_format_options: TimeFormatOptions {
+                european_time: false,
+                iso_8601: false,
+                rfc_2822: false,
+                rfc_3339: false,
+                us_military_time: false,
+                us_time: false,
+                utc: false,
+            },
             visualize_timeline: false,
             rules: Path::new("./rules").to_path_buf(),
             html_report: None,
@@ -2552,13 +2444,7 @@ fn extract_output_options(config: &Config) -> Option<OutputOption> {
             proven_rules: false,
             exclude_tag: None,
             detect_common_options: option.detect_common_options.clone(),
-            european_time: false,
-            iso_8601: false,
-            rfc_2822: false,
-            rfc_3339: false,
-            us_military_time: false,
-            us_time: false,
-            utc: false,
+            time_format_options: option.time_format_options.clone(),
             visualize_timeline: false,
             rules: Path::new("./rules").to_path_buf(),
             html_report: None,
@@ -2586,13 +2472,7 @@ fn extract_output_options(config: &Config) -> Option<OutputOption> {
             end_timeline: None,
             start_timeline: None,
             eid_filter: false,
-            european_time: option.european_time,
-            iso_8601: option.iso_8601,
-            rfc_2822: option.rfc_2822,
-            rfc_3339: option.rfc_3339,
-            us_military_time: option.us_military_time,
-            us_time: option.us_time,
-            utc: option.utc,
+            time_format_options: option.time_format_options.clone(),
             visualize_timeline: false,
             rules: Path::new("./rules").to_path_buf(),
             html_report: None,
@@ -2645,13 +2525,15 @@ fn extract_output_options(config: &Config) -> Option<OutputOption> {
             end_timeline: None,
             start_timeline: None,
             eid_filter: false,
-            european_time: false,
-            iso_8601: false,
-            rfc_2822: false,
-            rfc_3339: false,
-            us_military_time: false,
-            us_time: false,
-            utc: false,
+            time_format_options: TimeFormatOptions {
+                european_time: false,
+                iso_8601: false,
+                rfc_2822: false,
+                rfc_3339: false,
+                us_military_time: false,
+                us_time: false,
+                utc: false,
+            },
             visualize_timeline: false,
             rules: Path::new("./rules").to_path_buf(),
             html_report: None,
@@ -2703,13 +2585,15 @@ fn extract_output_options(config: &Config) -> Option<OutputOption> {
             end_timeline: None,
             start_timeline: None,
             eid_filter: false,
-            european_time: false,
-            iso_8601: false,
-            rfc_2822: false,
-            rfc_3339: false,
-            us_military_time: false,
-            us_time: false,
-            utc: false,
+            time_format_options: TimeFormatOptions {
+                european_time: false,
+                iso_8601: false,
+                rfc_2822: false,
+                rfc_3339: false,
+                us_military_time: false,
+                us_time: false,
+                utc: false,
+            },
             visualize_timeline: false,
             rules: Path::new("./rules").to_path_buf(),
             html_report: None,
@@ -2867,7 +2751,7 @@ mod tests {
     use super::{
         create_control_chat_replace_map, Action, CommonOptions, Config, CsvOutputOption,
         DetectCommonOption, InputOption, JSONOutputOption, OutputOption, StoredStatic,
-        TargetEventTime,
+        TargetEventTime, TimeFormatOptions,
     };
     use crate::detections::configs::{
         self, EidMetricsOption, LogonSummaryOption, PivotKeywordOption, SearchOption,
@@ -2979,13 +2863,15 @@ mod tests {
                     end_timeline: None,
                     start_timeline: None,
                     eid_filter: false,
-                    european_time: false,
-                    iso_8601: false,
-                    rfc_2822: false,
-                    rfc_3339: false,
-                    us_military_time: false,
-                    us_time: false,
-                    utc: false,
+                    time_format_options: TimeFormatOptions {
+                        european_time: false,
+                        iso_8601: false,
+                        rfc_2822: false,
+                        rfc_3339: false,
+                        us_military_time: false,
+                        us_time: false,
+                        utc: false,
+                    },
                     visualize_timeline: false,
                     rules: Path::new("./rules").to_path_buf(),
                     html_report: None,
@@ -3057,13 +2943,15 @@ mod tests {
                     end_timeline: None,
                     start_timeline: None,
                     eid_filter: false,
-                    european_time: false,
-                    iso_8601: false,
-                    rfc_2822: false,
-                    rfc_3339: false,
-                    us_military_time: false,
-                    us_time: false,
-                    utc: false,
+                    time_format_options: TimeFormatOptions {
+                        european_time: false,
+                        iso_8601: false,
+                        rfc_2822: false,
+                        rfc_3339: false,
+                        us_military_time: false,
+                        us_time: false,
+                        utc: false,
+                    },
                     visualize_timeline: false,
                     rules: Path::new("./rules").to_path_buf(),
                     html_report: None,
@@ -3145,13 +3033,15 @@ mod tests {
                 clobber: true,
                 json_output: false,
                 jsonl_output: false,
-                european_time: false,
-                iso_8601: false,
-                rfc_2822: false,
-                rfc_3339: false,
-                us_military_time: false,
-                us_time: false,
-                utc: false,
+                time_format_options: TimeFormatOptions {
+                    european_time: false,
+                    iso_8601: false,
+                    rfc_2822: false,
+                    rfc_3339: false,
+                    us_military_time: false,
+                    us_time: false,
+                    utc: false,
+                },
             })),
             debug: false,
         }));
@@ -3179,13 +3069,15 @@ mod tests {
                     timeline_offset: Some("1h1m".to_string()),
                 },
                 clobber: true,
-                european_time: false,
-                iso_8601: false,
-                rfc_2822: false,
-                rfc_3339: false,
-                us_military_time: false,
-                us_time: false,
-                utc: false,
+                time_format_options: TimeFormatOptions {
+                    european_time: false,
+                    iso_8601: false,
+                    rfc_2822: false,
+                    rfc_3339: false,
+                    us_military_time: false,
+                    us_time: false,
+                    utc: false,
+                },
                 detect_common_options: DetectCommonOption {
                     evtx_file_ext: None,
                     thread_number: None,
@@ -3223,13 +3115,15 @@ mod tests {
                     timeline_offset: Some("1y1d1h".to_string()),
                 },
                 clobber: true,
-                european_time: false,
-                iso_8601: false,
-                rfc_2822: false,
-                rfc_3339: false,
-                us_military_time: false,
-                us_time: false,
-                utc: false,
+                time_format_options: TimeFormatOptions {
+                    european_time: false,
+                    iso_8601: false,
+                    rfc_2822: false,
+                    rfc_3339: false,
+                    us_military_time: false,
+                    us_time: false,
+                    utc: false,
+                },
                 detect_common_options: DetectCommonOption {
                     evtx_file_ext: None,
                     thread_number: None,

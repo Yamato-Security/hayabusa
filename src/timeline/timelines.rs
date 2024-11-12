@@ -125,7 +125,11 @@ impl Timeline {
                         utils::format_time(
                             &self.stats.start_time.unwrap(),
                             false,
-                            stored_static.output_option.as_ref().unwrap()
+                            &stored_static
+                                .output_option
+                                .as_ref()
+                                .unwrap()
+                                .time_format_options
                         )
                     ));
                 }
@@ -135,7 +139,11 @@ impl Timeline {
                         utils::format_time(
                             &self.stats.end_time.unwrap(),
                             false,
-                            stored_static.output_option.as_ref().unwrap()
+                            &stored_static
+                                .output_option
+                                .as_ref()
+                                .unwrap()
+                                .time_format_options
                         )
                     ));
                 }
@@ -238,7 +246,11 @@ impl Timeline {
                     utils::format_time(
                         &self.stats.start_time.unwrap(),
                         false,
-                        stored_static.output_option.as_ref().unwrap()
+                        &stored_static
+                            .output_option
+                            .as_ref()
+                            .unwrap()
+                            .time_format_options
                     )
                 ));
             }
@@ -248,7 +260,11 @@ impl Timeline {
                     utils::format_time(
                         &self.stats.end_time.unwrap(),
                         false,
-                        stored_static.output_option.as_ref().unwrap()
+                        &stored_static
+                            .output_option
+                            .as_ref()
+                            .unwrap()
+                            .time_format_options
                     )
                 ));
             }
@@ -511,7 +527,9 @@ impl Timeline {
                 let mut wrt = WriterBuilder::new().from_writer(file);
                 let _ = wrt.write_record(header);
                 for rec in &mut *log_metrics {
-                    let _ = wrt.write_record(Self::create_record_array(rec, stored_static, "¦"));
+                    if let Some(r) = Self::create_record_array(rec, stored_static, "¦") {
+                        let _ = wrt.write_record(r);
+                    }
                 }
             } else {
                 let mut tb = Table::new();
@@ -520,16 +538,17 @@ impl Timeline {
                     .set_content_arrangement(ContentArrangement::DynamicFullWidth)
                     .set_header(&header);
                 for rec in &mut *log_metrics {
-                    let r = Self::create_record_array(rec, stored_static, "\n");
-                    tb.add_row(vec![
-                        Cell::new(r[0].to_string()),
-                        Cell::new(r[1].to_string()),
-                        Cell::new(r[2].to_string()),
-                        Cell::new(r[3].to_string()),
-                        Cell::new(r[4].to_string()),
-                        Cell::new(r[5].to_string()),
-                        Cell::new(r[6].to_string()),
-                    ]);
+                    if let Some(r) = Self::create_record_array(rec, stored_static, "\n") {
+                        tb.add_row(vec![
+                            Cell::new(r[0].to_string()),
+                            Cell::new(r[1].to_string()),
+                            Cell::new(r[2].to_string()),
+                            Cell::new(r[3].to_string()),
+                            Cell::new(r[4].to_string()),
+                            Cell::new(r[5].to_string()),
+                            Cell::new(r[6].to_string()),
+                        ]);
+                    }
                 }
                 println!("{tb}");
             }
@@ -540,7 +559,7 @@ impl Timeline {
         rec: &LogMetrics,
         stored_static: &StoredStatic,
         sep: &str,
-    ) -> [String; 7] {
+    ) -> Option<[String; 7]> {
         let ab_ch: Vec<String> = rec
             .channels
             .iter()
@@ -551,15 +570,33 @@ impl Timeline {
             .iter()
             .map(|ch| replace_provider_abbr(stored_static, &CompactString::from(ch)))
             .collect();
-        [
+        Some([
             rec.filename.to_string(),
             rec.computers.iter().sorted().join(sep),
             rec.event_count.to_formatted_string(&Locale::en),
-            rec.first_timestamp.unwrap_or_default().to_string(),
-            rec.last_timestamp.unwrap_or_default().to_string(),
+            utils::format_time(
+                &rec.first_timestamp.unwrap_or_default(),
+                false,
+                &stored_static
+                    .output_option
+                    .as_ref()
+                    .unwrap()
+                    .time_format_options,
+            )
+            .into(),
+            utils::format_time(
+                &rec.last_timestamp.unwrap_or_default(),
+                false,
+                &stored_static
+                    .output_option
+                    .as_ref()
+                    .unwrap()
+                    .time_format_options,
+            )
+            .into(),
             ab_ch.iter().sorted().join(sep),
             ab_provider.iter().sorted().join(sep),
-        ]
+        ])
     }
 }
 
@@ -596,6 +633,7 @@ mod tests {
     use hashbrown::{HashMap, HashSet};
     use nested::Nested;
 
+    use crate::detections::configs::TimeFormatOptions;
     use crate::timeline::metrics::LoginEvent;
     use crate::{
         detections::{
@@ -642,13 +680,15 @@ mod tests {
                     include_computer: None,
                     exclude_computer: None,
                 },
-                european_time: false,
-                iso_8601: false,
-                rfc_2822: false,
-                rfc_3339: false,
-                us_military_time: false,
-                us_time: false,
-                utc: false,
+                time_format_options: TimeFormatOptions {
+                    european_time: false,
+                    iso_8601: false,
+                    rfc_2822: false,
+                    rfc_3339: false,
+                    us_military_time: false,
+                    us_time: false,
+                    utc: false,
+                },
                 output: None,
                 clobber: false,
                 end_timeline: None,
@@ -828,13 +868,15 @@ mod tests {
                     include_computer: None,
                     exclude_computer: None,
                 },
-                european_time: false,
-                iso_8601: false,
-                rfc_2822: false,
-                rfc_3339: false,
-                us_military_time: false,
-                us_time: false,
-                utc: false,
+                time_format_options: TimeFormatOptions {
+                    european_time: false,
+                    iso_8601: false,
+                    rfc_2822: false,
+                    rfc_3339: false,
+                    us_military_time: false,
+                    us_time: false,
+                    utc: false,
+                },
                 output: Some(Path::new("./test_tm_stats.csv").to_path_buf()),
                 clobber: false,
             }));
@@ -919,13 +961,15 @@ mod tests {
                     include_computer: None,
                     exclude_computer: None,
                 },
-                european_time: false,
-                iso_8601: false,
-                rfc_2822: false,
-                rfc_3339: false,
-                us_military_time: false,
-                us_time: false,
-                utc: false,
+                time_format_options: TimeFormatOptions {
+                    european_time: false,
+                    iso_8601: false,
+                    rfc_2822: false,
+                    rfc_3339: false,
+                    us_military_time: false,
+                    us_time: false,
+                    utc: false,
+                },
                 output: Some(Path::new("./test_tm_logon_stats").to_path_buf()),
                 clobber: false,
                 end_timeline: None,

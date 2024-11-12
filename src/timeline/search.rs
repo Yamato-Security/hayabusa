@@ -284,7 +284,11 @@ fn extract_search_event_info(
     let default_time = Utc.with_ymd_and_hms(1970, 1, 1, 0, 0, 0).unwrap();
     let timestamp_datetime = message::get_event_time(&record.record, false).unwrap_or(default_time);
 
-    let timestamp = format_time(&timestamp_datetime, false, output_option);
+    let timestamp = format_time(
+        &timestamp_datetime,
+        false,
+        &output_option.time_format_options,
+    );
 
     let hostname = CompactString::from(
         utils::get_serde_number_to_string(

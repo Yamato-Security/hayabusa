@@ -409,6 +409,8 @@ mod tests {
 
     use yaml_rust2::YamlLoader;
 
+    use super::RuleNode;
+    use crate::detections::configs::TimeFormatOptions;
     use crate::detections::{
         self,
         configs::{
@@ -418,8 +420,6 @@ mod tests {
         rule::create_rule,
         utils,
     };
-
-    use super::RuleNode;
 
     fn create_dummy_stored_static() -> StoredStatic {
         StoredStatic::create_static_data(Some(Config {
@@ -441,13 +441,15 @@ mod tests {
                     end_timeline: None,
                     start_timeline: None,
                     eid_filter: false,
-                    european_time: false,
-                    iso_8601: false,
-                    rfc_2822: false,
-                    rfc_3339: false,
-                    us_military_time: false,
-                    us_time: false,
-                    utc: false,
+                    time_format_options: TimeFormatOptions {
+                        european_time: false,
+                        iso_8601: false,
+                        rfc_2822: false,
+                        rfc_3339: false,
+                        us_military_time: false,
+                        us_time: false,
+                        utc: false,
+                    },
                     visualize_timeline: false,
                     rules: Path::new("./rules").to_path_buf(),
                     html_report: None,
