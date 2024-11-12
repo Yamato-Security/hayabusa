@@ -500,7 +500,7 @@ impl Timeline {
             let header = vec![
                 "Filename",
                 "Computers",
-                "Event Count",
+                "Events",
                 "First Timestamp",
                 "Last Timestamp",
                 "Channels",
@@ -511,7 +511,7 @@ impl Timeline {
                 let mut wrt = WriterBuilder::new().from_writer(file);
                 let _ = wrt.write_record(header);
                 for rec in &mut *log_metrics {
-                    let _ = wrt.write_record(Self::create_record_array(rec, stored_static));
+                    let _ = wrt.write_record(Self::create_record_array(rec, stored_static, "¦"));
                 }
             } else {
                 let mut tb = Table::new();
@@ -520,7 +520,7 @@ impl Timeline {
                     .set_content_arrangement(ContentArrangement::DynamicFullWidth)
                     .set_header(&header);
                 for rec in &mut *log_metrics {
-                    let r = Self::create_record_array(rec, stored_static);
+                    let r = Self::create_record_array(rec, stored_static, "\n");
                     tb.add_row(vec![
                         Cell::new(r[0].to_string()),
                         Cell::new(r[1].to_string()),
@@ -536,7 +536,11 @@ impl Timeline {
         }
     }
 
-    fn create_record_array(rec: &LogMetrics, stored_static: &StoredStatic) -> [String; 7] {
+    fn create_record_array(
+        rec: &LogMetrics,
+        stored_static: &StoredStatic,
+        sep: &str,
+    ) -> [String; 7] {
         let ab_ch: Vec<String> = rec
             .channels
             .iter()
@@ -549,12 +553,12 @@ impl Timeline {
             .collect();
         [
             rec.filename.to_string(),
-            rec.computers.iter().sorted().join(","),
+            rec.computers.iter().sorted().join(sep),
             rec.event_count.to_formatted_string(&Locale::en),
             rec.first_timestamp.unwrap_or_default().to_string(),
             rec.last_timestamp.unwrap_or_default().to_string(),
-            ab_ch.iter().sorted().join(","),
-            ab_provider.iter().sorted().join(","),
+            ab_ch.iter().sorted().join(sep),
+            ab_provider.iter().sorted().join(sep),
         ]
     }
 }
