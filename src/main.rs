@@ -1615,6 +1615,16 @@ impl App {
                 pb.inc(1);
             }
         }
+        let is_timeline_cmd = !(stored_static.metrics_flag
+            || stored_static.logon_summary_flag
+            || stored_static.search_flag
+            || stored_static.pivot_keyword_list_flag
+            || stored_static.computer_metrics_flag
+            || stored_static.log_metrics_flag);
+
+        if !is_timeline_cmd {
+            pb.finish_with_message("Scanning finished.");
+        }
         CHECKPOINT
             .lock()
             .as_mut()
@@ -1637,13 +1647,7 @@ impl App {
         } else if stored_static.log_metrics_flag {
             tl.log_metrics_dsp_msg(stored_static)
         }
-        if !(stored_static.metrics_flag
-            || stored_static.logon_summary_flag
-            || stored_static.search_flag
-            || stored_static.pivot_keyword_list_flag
-            || stored_static.computer_metrics_flag
-            || stored_static.log_metrics_flag)
-        {
+        if is_timeline_cmd {
             let mut log_records = detection.add_aggcondition_msges(&self.rt, stored_static);
             if stored_static.is_low_memory {
                 let empty_ids = HashSet::new();
