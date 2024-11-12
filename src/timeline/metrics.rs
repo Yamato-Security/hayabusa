@@ -6,10 +6,12 @@ use crate::detections::{
     message::AlertMessage,
     utils,
 };
+use crate::timeline::log_metrics::LogMetrics;
 use crate::timeline::metrics::Channel::{RdsGtw, RdsLsm, Sec};
 use chrono::{DateTime, NaiveDate, NaiveDateTime, Utc};
 use compact_str::CompactString;
 use hashbrown::{HashMap, HashSet};
+use std::path::Path;
 
 #[derive(Debug, Clone, Eq, Hash, PartialEq)]
 pub struct LoginEvent {
@@ -32,6 +34,7 @@ pub struct EventMetrics {
     pub end_time: Option<DateTime<Utc>>,
     pub stats_list: HashMap<(CompactString, CompactString), usize>,
     pub stats_login_list: HashMap<LoginEvent, [usize; 2]>,
+    pub stats_logfile: Vec<LogMetrics>,
 }
 /**
 * Windows Event Logの統計情報を出力する
@@ -52,6 +55,7 @@ impl EventMetrics {
             end_time,
             stats_list,
             stats_login_list,
+            stats_logfile: Vec::new(),
         }
     }
 
@@ -78,10 +82,43 @@ impl EventMetrics {
         if !stored_static.logon_summary_flag {
             return;
         }
+        self.stats_time_cnt(records, stored_static);
+        self.stats_login_eventid(records, stored_static);
+    }
+
+    pub fn logfile_stats_start(
+        &mut self,
+        records: &[EvtxRecordInfo],
+        stored_static: &StoredStatic,
+    ) {
+        if !stored_static.log_metrics_flag {
+            return;
+        }
 
         self.stats_time_cnt(records, stored_static);
-
-        self.stats_login_eventid(records, stored_static);
+        let filename = Path::new(self.filepath.as_str())
+            .file_name()
+            .unwrap_or_default()
+            .to_str()
+            .unwrap_or_default();
+        if let Some(existing_lm) = self.stats_logfile.iter_mut().find(|lm| {
+            lm.filename == filename
+                && lm.computers.contains(
+                    get_event_value_as_string(
+                        "Computer",
+                        &records[0].record,
+                        &stored_static.eventkey_alias,
+                    )
+                    .to_string()
+                    .trim_matches('"'),
+                )
+        }) {
+            existing_lm.update(records, stored_static, self.start_time, self.end_time);
+        } else {
+            let mut lm = LogMetrics::new(filename);
+            lm.update(records, stored_static, self.start_time, self.end_time);
+            self.stats_logfile.push(lm);
+        }
     }
 
     fn stats_time_cnt(&mut self, records: &[EvtxRecordInfo], stored_static: &StoredStatic) {
@@ -440,6 +477,7 @@ mod tests {
     use hashbrown::{HashMap, HashSet};
     use nested::Nested;
 
+    use crate::detections::configs::TimeFormatOptions;
     use crate::{
         detections::{
             configs::{
@@ -485,13 +523,15 @@ mod tests {
                     include_computer: None,
                     exclude_computer: None,
                 },
-                european_time: false,
-                iso_8601: false,
-                rfc_2822: false,
-                rfc_3339: false,
-                us_military_time: false,
-                us_time: false,
-                utc: false,
+                time_format_options: TimeFormatOptions {
+                    european_time: false,
+                    iso_8601: false,
+                    rfc_2822: false,
+                    rfc_3339: false,
+                    us_military_time: false,
+                    us_time: false,
+                    utc: false,
+                },
                 output: None,
                 clobber: false,
             }));

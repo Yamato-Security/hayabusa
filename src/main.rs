@@ -395,7 +395,10 @@ impl App {
                 }
                 println!();
             }
-            Action::EidMetrics(_) | Action::Search(_) => {
+            Action::EidMetrics(_)
+            | Action::ComputerMetrics(_)
+            | Action::LogMetrics(_)
+            | Action::Search(_) => {
                 if let Some(path) = &stored_static.output_path {
                     if !(stored_static.output_option.as_ref().unwrap().clobber)
                         && utils::check_file_expect_not_exist(
@@ -415,28 +418,6 @@ impl App {
                     "Saved results",
                     &stored_static.html_report_flag,
                 );
-            }
-            Action::ComputerMetrics(_) => {
-                if let Some(path) = &stored_static.output_path {
-                    if !(stored_static.output_option.as_ref().unwrap().clobber)
-                        && utils::check_file_expect_not_exist(
-                            path.as_path(),
-                            format!(
-                                " The file {} already exists. Please specify a different filename or add the -C, --clobber option to overwrite.\n",
-                                path.as_os_str().to_str().unwrap()
-                            ),
-                        )
-                    {
-                        return;
-                    }
-                }
-                self.analysis_start(&target_extensions, &time_filter, stored_static);
-                output_saved_file(
-                    &stored_static.output_path,
-                    "Saved results",
-                    &stored_static.html_report_flag,
-                );
-                println!();
             }
             Action::PivotKeywordsList(_) => {
                 load_pivot_keywords(
@@ -1103,6 +1084,7 @@ impl App {
             || stored_static.logon_summary_flag
             || stored_static.search_flag
             || stored_static.computer_metrics_flag
+            || stored_static.log_metrics_flag
             || stored_static.output_option.as_ref().unwrap().no_wizard)
         {
             CHECKPOINT
@@ -1471,7 +1453,8 @@ impl App {
         if !(stored_static.logon_summary_flag
             || stored_static.search_flag
             || stored_static.metrics_flag
-            || stored_static.computer_metrics_flag)
+            || stored_static.computer_metrics_flag
+            || stored_static.log_metrics_flag)
         {
             println!("Loading detection rules. Please wait.");
         } else if stored_static.logon_summary_flag {
@@ -1482,6 +1465,8 @@ impl App {
             println!("Currently scanning for event ID metrics. Please wait.");
         } else if stored_static.computer_metrics_flag {
             println!("Currently scanning for computer metrics. Please wait.");
+        } else if stored_static.log_metrics_flag {
+            println!("Currently scanning for log metrics. Please wait.");
         }
         println!();
 
@@ -1489,7 +1474,8 @@ impl App {
         if !(stored_static.logon_summary_flag
             || stored_static.search_flag
             || stored_static.metrics_flag
-            || stored_static.computer_metrics_flag)
+            || stored_static.computer_metrics_flag
+            || stored_static.log_metrics_flag)
         {
             rule_files = detection::Detection::parse_rule_files(
                 &level,
@@ -1511,7 +1497,8 @@ impl App {
             let unused_rules_option = stored_static.logon_summary_flag
                 || stored_static.search_flag
                 || stored_static.computer_metrics_flag
-                || stored_static.metrics_flag;
+                || stored_static.metrics_flag
+                || stored_static.log_metrics_flag;
             if !unused_rules_option && rule_files.is_empty() {
                 AlertMessage::alert(
                         "No rules were loaded. Please download the latest rules with the update-rules command.\r\n",
@@ -1647,12 +1634,15 @@ impl App {
             tl.search_dsp_msg(event_timeline_config, stored_static);
         } else if stored_static.computer_metrics_flag {
             tl.computer_metrics_dsp_msg(stored_static)
+        } else if stored_static.log_metrics_flag {
+            tl.log_metrics_dsp_msg(stored_static)
         }
         if !(stored_static.metrics_flag
             || stored_static.logon_summary_flag
             || stored_static.search_flag
             || stored_static.pivot_keyword_list_flag
-            || stored_static.computer_metrics_flag)
+            || stored_static.computer_metrics_flag
+            || stored_static.log_metrics_flag)
         {
             let mut log_records = detection.add_aggcondition_msges(&self.rt, stored_static);
             if stored_static.is_low_memory {
@@ -2178,6 +2168,7 @@ impl App {
             // 以下のコマンドの際にはルールにかけない
             if !(stored_static.metrics_flag
                 || stored_static.logon_summary_flag
+                || stored_static.log_metrics_flag
                 || stored_static.search_flag)
             {
                 // ruleファイルの検知
@@ -2424,6 +2415,8 @@ mod tests {
     use itertools::Itertools;
     use yaml_rust2::YamlLoader;
 
+    use crate::App;
+    use hayabusa::detections::configs::TimeFormatOptions;
     use hayabusa::{
         afterfact::{self, AfterfactInfo},
         detections::{
@@ -2439,8 +2432,6 @@ mod tests {
         options::htmlreport::HTML_REPORTER,
         timeline::timelines::Timeline,
     };
-
-    use crate::App;
 
     fn create_dummy_stored_static() -> StoredStatic {
         StoredStatic::create_static_data(Some(Config {
@@ -2462,13 +2453,15 @@ mod tests {
                     end_timeline: None,
                     start_timeline: None,
                     eid_filter: false,
-                    european_time: false,
-                    iso_8601: false,
-                    rfc_2822: false,
-                    rfc_3339: false,
-                    us_military_time: false,
-                    us_time: false,
-                    utc: false,
+                    time_format_options: TimeFormatOptions {
+                        european_time: false,
+                        iso_8601: false,
+                        rfc_2822: false,
+                        rfc_3339: false,
+                        us_military_time: false,
+                        us_time: false,
+                        utc: false,
+                    },
                     visualize_timeline: false,
                     rules: Path::new("./rules").to_path_buf(),
                     html_report: None,
@@ -2636,13 +2629,15 @@ mod tests {
                 end_timeline: None,
                 start_timeline: None,
                 eid_filter: false,
-                european_time: false,
-                iso_8601: false,
-                rfc_2822: false,
-                rfc_3339: false,
-                us_military_time: false,
-                us_time: false,
-                utc: false,
+                time_format_options: TimeFormatOptions {
+                    european_time: false,
+                    iso_8601: false,
+                    rfc_2822: false,
+                    rfc_3339: false,
+                    us_military_time: false,
+                    us_time: false,
+                    utc: false,
+                },
                 visualize_timeline: false,
                 rules: Path::new("./test_files/rules/yaml/test_json_detect.yml").to_path_buf(),
                 html_report: None,
@@ -2724,13 +2719,15 @@ mod tests {
                 end_timeline: None,
                 start_timeline: None,
                 eid_filter: false,
-                european_time: false,
-                iso_8601: false,
-                rfc_2822: false,
-                rfc_3339: false,
-                us_military_time: false,
-                us_time: false,
-                utc: false,
+                time_format_options: TimeFormatOptions {
+                    european_time: false,
+                    iso_8601: false,
+                    rfc_2822: false,
+                    rfc_3339: false,
+                    us_military_time: false,
+                    us_time: false,
+                    utc: false,
+                },
                 visualize_timeline: false,
                 rules: Path::new("test_files/rules/yaml/test_json_detect.yml").to_path_buf(),
                 html_report: None,
@@ -2811,13 +2808,15 @@ mod tests {
                 end_timeline: None,
                 start_timeline: None,
                 eid_filter: false,
-                european_time: false,
-                iso_8601: false,
-                rfc_2822: false,
-                rfc_3339: false,
-                us_military_time: false,
-                us_time: false,
-                utc: false,
+                time_format_options: TimeFormatOptions {
+                    european_time: false,
+                    iso_8601: false,
+                    rfc_2822: false,
+                    rfc_3339: false,
+                    us_military_time: false,
+                    us_time: false,
+                    utc: false,
+                },
                 visualize_timeline: false,
                 rules: Path::new("./test_files/rules/yaml/test_json_detect.yml").to_path_buf(),
                 html_report: None,
@@ -2899,13 +2898,15 @@ mod tests {
                 end_timeline: None,
                 start_timeline: None,
                 eid_filter: false,
-                european_time: false,
-                iso_8601: false,
-                rfc_2822: false,
-                rfc_3339: false,
-                us_military_time: false,
-                us_time: false,
-                utc: false,
+                time_format_options: TimeFormatOptions {
+                    european_time: false,
+                    iso_8601: false,
+                    rfc_2822: false,
+                    rfc_3339: false,
+                    us_military_time: false,
+                    us_time: false,
+                    utc: false,
+                },
                 visualize_timeline: false,
                 rules: Path::new("test_files/rules/yaml/test_json_detect.yml").to_path_buf(),
                 html_report: None,
@@ -2992,13 +2993,15 @@ mod tests {
                 include_computer: None,
                 exclude_computer: None,
             },
-            european_time: false,
-            iso_8601: false,
-            rfc_2822: false,
-            rfc_3339: false,
-            us_military_time: false,
-            us_time: false,
-            utc: false,
+            time_format_options: TimeFormatOptions {
+                european_time: false,
+                iso_8601: false,
+                rfc_2822: false,
+                rfc_3339: false,
+                us_military_time: false,
+                us_time: false,
+                utc: false,
+            },
             clobber: false,
         });
         let config = Some(Config {
@@ -3047,13 +3050,15 @@ mod tests {
                 include_computer: None,
                 exclude_computer: None,
             },
-            european_time: false,
-            iso_8601: false,
-            rfc_2822: false,
-            rfc_3339: false,
-            us_military_time: false,
-            us_time: false,
-            utc: false,
+            time_format_options: TimeFormatOptions {
+                european_time: false,
+                iso_8601: false,
+                rfc_2822: false,
+                rfc_3339: false,
+                us_military_time: false,
+                us_time: false,
+                utc: false,
+            },
             clobber: true,
         });
         let config = Some(Config {
@@ -3100,13 +3105,15 @@ mod tests {
                 include_computer: None,
                 exclude_computer: None,
             },
-            european_time: false,
-            iso_8601: false,
-            rfc_2822: false,
-            rfc_3339: false,
-            us_military_time: false,
-            us_time: false,
-            utc: false,
+            time_format_options: TimeFormatOptions {
+                european_time: false,
+                iso_8601: false,
+                rfc_2822: false,
+                rfc_3339: false,
+                us_military_time: false,
+                us_time: false,
+                utc: false,
+            },
             clobber: false,
             end_timeline: None,
             start_timeline: None,
@@ -3156,13 +3163,15 @@ mod tests {
                 include_computer: None,
                 exclude_computer: None,
             },
-            european_time: false,
-            iso_8601: false,
-            rfc_2822: false,
-            rfc_3339: false,
-            us_military_time: false,
-            us_time: false,
-            utc: false,
+            time_format_options: TimeFormatOptions {
+                european_time: false,
+                iso_8601: false,
+                rfc_2822: false,
+                rfc_3339: false,
+                us_military_time: false,
+                us_time: false,
+                utc: false,
+            },
             clobber: true,
             end_timeline: None,
             start_timeline: None,

@@ -25,7 +25,8 @@ use terminal_size::terminal_size;
 use terminal_size::Width;
 
 use crate::detections::configs::{
-    Action, OutputOption, StoredStatic, CONTROL_CHAT_REPLACE_MAP, CURRENT_EXE_PATH, GEOIP_DB_PARSER,
+    Action, StoredStatic, TimeFormatOptions, CONTROL_CHAT_REPLACE_MAP, CURRENT_EXE_PATH,
+    GEOIP_DB_PARSER,
 };
 use crate::detections::message::{AlertMessage, DetectInfo, COMPUTER_MITRE_ATTCK_MAP, LEVEL_FULL};
 use crate::detections::utils::{
@@ -590,7 +591,11 @@ fn calc_statistic_info(
             countup_aggregation(
                 &mut afterfact_info.detect_counts_by_date_and_level,
                 &detect_info.level,
-                &format_time(&detect_info.detected_time, true, output_option),
+                &format_time(
+                    &detect_info.detected_time,
+                    true,
+                    &output_option.time_format_options,
+                ),
             );
             countup_aggregation(
                 &mut afterfact_info.detect_counts_by_rule_and_level,
@@ -692,7 +697,11 @@ pub fn output_additional_afterfact(
                     utils::format_time(
                         &afterfact_info.tl_starttime.unwrap(),
                         false,
-                        stored_static.output_option.as_ref().unwrap()
+                        &stored_static
+                            .output_option
+                            .as_ref()
+                            .unwrap()
+                            .time_format_options
                     )
                 ),
                 "Results Summary {#results_summary}",
@@ -706,7 +715,11 @@ pub fn output_additional_afterfact(
                     utils::format_time(
                         &afterfact_info.tl_endtime.unwrap(),
                         false,
-                        stored_static.output_option.as_ref().unwrap()
+                        &stored_static
+                            .output_option
+                            .as_ref()
+                            .unwrap()
+                            .time_format_options
                     )
                 ),
                 "Results Summary {#results_summary}",
@@ -1669,7 +1682,7 @@ fn _print_detection_summary_tables(
 }
 
 /// get timestamp to input datetime.
-fn _get_timestamp(output_option: &OutputOption, time: &DateTime<Utc>) -> i64 {
+fn _get_timestamp(output_option: &TimeFormatOptions, time: &DateTime<Utc>) -> i64 {
     if output_option.utc || output_option.iso_8601 {
         time.timestamp()
     } else {
@@ -2258,7 +2271,6 @@ mod tests {
     use crate::afterfact::output_afterfact_inner;
     use crate::afterfact::AfterfactInfo;
     use crate::afterfact::Colors;
-    use crate::detections::configs::load_eventkey_alias;
     use crate::detections::configs::Action;
     use crate::detections::configs::CommonOptions;
     use crate::detections::configs::Config;
@@ -2269,6 +2281,7 @@ mod tests {
     use crate::detections::configs::OutputOption;
     use crate::detections::configs::StoredStatic;
     use crate::detections::configs::CURRENT_EXE_PATH;
+    use crate::detections::configs::{load_eventkey_alias, TimeFormatOptions};
     use crate::detections::field_data_map::FieldDataMapKey;
     use crate::detections::message;
     use crate::detections::message::DetectInfo;
@@ -2320,13 +2333,15 @@ mod tests {
                 end_timeline: None,
                 start_timeline: None,
                 eid_filter: false,
-                european_time: false,
-                iso_8601: false,
-                rfc_2822: false,
-                rfc_3339: false,
-                us_military_time: false,
-                us_time: false,
-                utc: false,
+                time_format_options: TimeFormatOptions {
+                    european_time: false,
+                    iso_8601: false,
+                    rfc_2822: false,
+                    rfc_3339: false,
+                    us_military_time: false,
+                    us_time: false,
+                    utc: false,
+                },
                 visualize_timeline: false,
                 rules: Path::new("./rules").to_path_buf(),
                 html_report: None,
@@ -2413,13 +2428,15 @@ mod tests {
                 end_timeline: None,
                 start_timeline: None,
                 eid_filter: false,
-                european_time: false,
-                iso_8601: false,
-                rfc_2822: false,
-                rfc_3339: false,
-                us_military_time: false,
-                us_time: false,
-                utc: false,
+                time_format_options: TimeFormatOptions {
+                    european_time: false,
+                    iso_8601: false,
+                    rfc_2822: false,
+                    rfc_3339: false,
+                    us_military_time: false,
+                    us_time: false,
+                    utc: false,
+                },
                 visualize_timeline: false,
                 rules: Path::new("./rules").to_path_buf(),
                 html_report: None,
@@ -2465,7 +2482,9 @@ mod tests {
             let mut profile_converter: HashMap<&str, Profile> = HashMap::from([
                 (
                     "Timestamp",
-                    Profile::Timestamp(format_time(&expect_time, false, &output_option).into()),
+                    Profile::Timestamp(
+                        format_time(&expect_time, false, &output_option.time_format_options).into(),
+                    ),
                 ),
                 ("Computer", Profile::Computer(test_computername2.into())),
                 ("Channel", Profile::Channel(ch.into())),
@@ -2662,13 +2681,15 @@ mod tests {
                 end_timeline: None,
                 start_timeline: None,
                 eid_filter: false,
-                european_time: false,
-                iso_8601: false,
-                rfc_2822: false,
-                rfc_3339: false,
-                us_military_time: false,
-                us_time: false,
-                utc: false,
+                time_format_options: TimeFormatOptions {
+                    european_time: false,
+                    iso_8601: false,
+                    rfc_2822: false,
+                    rfc_3339: false,
+                    us_military_time: false,
+                    us_time: false,
+                    utc: false,
+                },
                 visualize_timeline: false,
                 rules: Path::new("./rules").to_path_buf(),
                 html_report: None,
@@ -2765,13 +2786,15 @@ mod tests {
                 end_timeline: None,
                 start_timeline: None,
                 eid_filter: false,
-                european_time: false,
-                iso_8601: false,
-                rfc_2822: false,
-                rfc_3339: false,
-                us_military_time: false,
-                us_time: false,
-                utc: false,
+                time_format_options: TimeFormatOptions {
+                    european_time: false,
+                    iso_8601: false,
+                    rfc_2822: false,
+                    rfc_3339: false,
+                    us_military_time: false,
+                    us_time: false,
+                    utc: false,
+                },
                 visualize_timeline: false,
                 rules: Path::new("./rules").to_path_buf(),
                 html_report: None,
@@ -2817,7 +2840,9 @@ mod tests {
             let mut profile_converter: HashMap<&str, Profile> = HashMap::from([
                 (
                     "Timestamp",
-                    Profile::Timestamp(format_time(&expect_time, false, &output_option).into()),
+                    Profile::Timestamp(
+                        format_time(&expect_time, false, &output_option.time_format_options).into(),
+                    ),
                 ),
                 ("Computer", Profile::Computer(test_computername2.into())),
                 ("Channel", Profile::Channel(ch.into())),
@@ -2998,13 +3023,15 @@ mod tests {
                 end_timeline: None,
                 start_timeline: None,
                 eid_filter: false,
-                european_time: false,
-                iso_8601: false,
-                rfc_2822: false,
-                rfc_3339: false,
-                us_military_time: false,
-                us_time: false,
-                utc: false,
+                time_format_options: TimeFormatOptions {
+                    european_time: false,
+                    iso_8601: false,
+                    rfc_2822: false,
+                    rfc_3339: false,
+                    us_military_time: false,
+                    us_time: false,
+                    utc: false,
+                },
                 visualize_timeline: false,
                 rules: Path::new("./rules").to_path_buf(),
                 html_report: None,
@@ -3091,13 +3118,15 @@ mod tests {
                 end_timeline: None,
                 start_timeline: None,
                 eid_filter: false,
-                european_time: false,
-                iso_8601: false,
-                rfc_2822: false,
-                rfc_3339: false,
-                us_military_time: false,
-                us_time: false,
-                utc: false,
+                time_format_options: TimeFormatOptions {
+                    european_time: false,
+                    iso_8601: false,
+                    rfc_2822: false,
+                    rfc_3339: false,
+                    us_military_time: false,
+                    us_time: false,
+                    utc: false,
+                },
                 visualize_timeline: false,
                 rules: Path::new("./rules").to_path_buf(),
                 html_report: None,
@@ -3143,7 +3172,9 @@ mod tests {
             let mut profile_converter: HashMap<&str, Profile> = HashMap::from([
                 (
                     "Timestamp",
-                    Profile::Timestamp(format_time(&expect_time, false, &output_option).into()),
+                    Profile::Timestamp(
+                        format_time(&expect_time, false, &output_option.time_format_options).into(),
+                    ),
                 ),
                 ("Computer", Profile::Computer(test_computername2.into())),
                 ("Channel", Profile::Channel(ch.into())),
@@ -3335,13 +3366,15 @@ mod tests {
                 end_timeline: None,
                 start_timeline: None,
                 eid_filter: false,
-                european_time: false,
-                iso_8601: false,
-                rfc_2822: false,
-                rfc_3339: false,
-                us_military_time: false,
-                us_time: false,
-                utc: false,
+                time_format_options: TimeFormatOptions {
+                    european_time: false,
+                    iso_8601: false,
+                    rfc_2822: false,
+                    rfc_3339: false,
+                    us_military_time: false,
+                    us_time: false,
+                    utc: false,
+                },
                 visualize_timeline: false,
                 rules: Path::new("./rules").to_path_buf(),
                 html_report: None,
@@ -3428,13 +3461,15 @@ mod tests {
                 end_timeline: None,
                 start_timeline: None,
                 eid_filter: false,
-                european_time: false,
-                iso_8601: false,
-                rfc_2822: false,
-                rfc_3339: false,
-                us_military_time: false,
-                us_time: false,
-                utc: false,
+                time_format_options: TimeFormatOptions {
+                    european_time: false,
+                    iso_8601: false,
+                    rfc_2822: false,
+                    rfc_3339: false,
+                    us_military_time: false,
+                    us_time: false,
+                    utc: false,
+                },
                 visualize_timeline: false,
                 rules: Path::new("./rules").to_path_buf(),
                 html_report: None,
@@ -3480,7 +3515,9 @@ mod tests {
             let mut profile_converter: HashMap<&str, Profile> = HashMap::from([
                 (
                     "Timestamp",
-                    Profile::Timestamp(format_time(&expect_time, false, &output_option).into()),
+                    Profile::Timestamp(
+                        format_time(&expect_time, false, &output_option.time_format_options).into(),
+                    ),
                 ),
                 ("Computer", Profile::Computer(test_computername2.into())),
                 ("Channel", Profile::Channel(ch.into())),
@@ -3745,13 +3782,15 @@ mod tests {
                 end_timeline: None,
                 start_timeline: None,
                 eid_filter: false,
-                european_time: false,
-                iso_8601: false,
-                rfc_2822: false,
-                rfc_3339: false,
-                us_military_time: false,
-                us_time: false,
-                utc: false,
+                time_format_options: TimeFormatOptions {
+                    european_time: false,
+                    iso_8601: false,
+                    rfc_2822: false,
+                    rfc_3339: false,
+                    us_military_time: false,
+                    us_time: false,
+                    utc: false,
+                },
                 visualize_timeline: false,
                 rules: Path::new("./rules").to_path_buf(),
                 html_report: None,
@@ -3839,13 +3878,15 @@ mod tests {
                 end_timeline: None,
                 start_timeline: None,
                 eid_filter: false,
-                european_time: false,
-                iso_8601: false,
-                rfc_2822: false,
-                rfc_3339: false,
-                us_military_time: false,
-                us_time: false,
-                utc: false,
+                time_format_options: TimeFormatOptions {
+                    european_time: false,
+                    iso_8601: false,
+                    rfc_2822: false,
+                    rfc_3339: false,
+                    us_military_time: false,
+                    us_time: false,
+                    utc: false,
+                },
                 visualize_timeline: false,
                 rules: Path::new("./rules").to_path_buf(),
                 html_report: None,
@@ -3891,7 +3932,9 @@ mod tests {
             let mut profile_converter: HashMap<&str, Profile> = HashMap::from([
                 (
                     "Timestamp",
-                    Profile::Timestamp(format_time(&expect_time, false, &output_option).into()),
+                    Profile::Timestamp(
+                        format_time(&expect_time, false, &output_option.time_format_options).into(),
+                    ),
                 ),
                 ("Computer", Profile::Computer(test_computername.into())),
                 ("Channel", Profile::Channel(ch.into())),
@@ -4100,13 +4143,15 @@ mod tests {
                 end_timeline: None,
                 start_timeline: None,
                 eid_filter: false,
-                european_time: false,
-                iso_8601: false,
-                rfc_2822: false,
-                rfc_3339: false,
-                us_military_time: false,
-                us_time: false,
-                utc: false,
+                time_format_options: TimeFormatOptions {
+                    european_time: false,
+                    iso_8601: false,
+                    rfc_2822: false,
+                    rfc_3339: false,
+                    us_military_time: false,
+                    us_time: false,
+                    utc: false,
+                },
                 visualize_timeline: false,
                 rules: Path::new("./rules").to_path_buf(),
                 html_report: None,
@@ -4194,13 +4239,15 @@ mod tests {
                 end_timeline: None,
                 start_timeline: None,
                 eid_filter: false,
-                european_time: false,
-                iso_8601: false,
-                rfc_2822: false,
-                rfc_3339: false,
-                us_military_time: false,
-                us_time: false,
-                utc: true,
+                time_format_options: TimeFormatOptions {
+                    european_time: false,
+                    iso_8601: false,
+                    rfc_2822: false,
+                    rfc_3339: false,
+                    us_military_time: false,
+                    us_time: false,
+                    utc: true,
+                },
                 visualize_timeline: false,
                 rules: Path::new("./rules").to_path_buf(),
                 html_report: None,
@@ -4246,7 +4293,9 @@ mod tests {
             let mut profile_converter: HashMap<&str, Profile> = HashMap::from([
                 (
                     "Timestamp",
-                    Profile::Timestamp(format_time(&expect_time, false, &output_option).into()),
+                    Profile::Timestamp(
+                        format_time(&expect_time, false, &output_option.time_format_options).into(),
+                    ),
                 ),
                 ("Computer", Profile::Computer(test_computername2.into())),
                 ("Channel", Profile::Channel(ch.into())),
@@ -4380,13 +4429,15 @@ mod tests {
                 end_timeline: None,
                 start_timeline: None,
                 eid_filter: false,
-                european_time: false,
-                iso_8601: false,
-                rfc_2822: false,
-                rfc_3339: false,
-                us_military_time: false,
-                us_time: false,
-                utc: false,
+                time_format_options: TimeFormatOptions {
+                    european_time: false,
+                    iso_8601: false,
+                    rfc_2822: false,
+                    rfc_3339: false,
+                    us_military_time: false,
+                    us_time: false,
+                    utc: false,
+                },
                 visualize_timeline: false,
                 rules: Path::new("./rules").to_path_buf(),
                 html_report: None,
@@ -4474,13 +4525,15 @@ mod tests {
                 end_timeline: None,
                 start_timeline: None,
                 eid_filter: false,
-                european_time: false,
-                iso_8601: false,
-                rfc_2822: false,
-                rfc_3339: false,
-                us_military_time: false,
-                us_time: false,
-                utc: true,
+                time_format_options: TimeFormatOptions {
+                    european_time: false,
+                    iso_8601: false,
+                    rfc_2822: false,
+                    rfc_3339: false,
+                    us_military_time: false,
+                    us_time: false,
+                    utc: true,
+                },
                 visualize_timeline: false,
                 rules: Path::new("./rules").to_path_buf(),
                 html_report: None,
@@ -4526,7 +4579,9 @@ mod tests {
             let mut profile_converter: HashMap<&str, Profile> = HashMap::from([
                 (
                     "Timestamp",
-                    Profile::Timestamp(format_time(&expect_time, false, &output_option).into()),
+                    Profile::Timestamp(
+                        format_time(&expect_time, false, &output_option.time_format_options).into(),
+                    ),
                 ),
                 ("Computer", Profile::Computer(test_computername2.into())),
                 ("Channel", Profile::Channel(ch.into())),

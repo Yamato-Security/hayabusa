@@ -26,7 +26,7 @@ use termcolor::{BufferWriter, ColorSpec, WriteColor};
 use termcolor::{Color, ColorChoice};
 use tokio::runtime::{Builder, Runtime};
 
-use crate::detections::configs::{CURRENT_EXE_PATH, ONE_CONFIG_MAP};
+use crate::detections::configs::{TimeFormatOptions, CURRENT_EXE_PATH, ONE_CONFIG_MAP};
 use crate::detections::field_data_map::{convert_field_data, FieldDataMap, FieldDataMapKey};
 use crate::detections::field_extract::extract_fields;
 use crate::options::htmlreport;
@@ -628,7 +628,7 @@ pub fn check_rule_config(config_path: &PathBuf) -> Result<(), String> {
 pub fn format_time(
     time: &DateTime<Utc>,
     date_only: bool,
-    output_option: &OutputOption,
+    output_option: &TimeFormatOptions,
 ) -> CompactString {
     if !(output_option.utc || output_option.iso_8601) {
         format_rfc(&time.with_timezone(&Local), date_only, output_option)
@@ -641,7 +641,7 @@ pub fn format_time(
 fn format_rfc<Tz: TimeZone>(
     time: &DateTime<Tz>,
     date_only: bool,
-    time_args: &OutputOption,
+    time_args: &TimeFormatOptions,
 ) -> CompactString
 where
     Tz::Offset: std::fmt::Display,
@@ -820,6 +820,8 @@ mod tests {
     use regex::Regex;
     use serde_json::Value;
 
+    use super::{output_duration, output_profile_name};
+    use crate::detections::configs::TimeFormatOptions;
     use crate::detections::field_data_map::FieldDataMapKey;
     use crate::{
         detections::{
@@ -831,8 +833,6 @@ mod tests {
         },
         options::htmlreport::HTML_REPORTER,
     };
-
-    use super::{output_duration, output_profile_name};
 
     #[test]
     fn test_create_recordinfos() {
@@ -1121,13 +1121,15 @@ mod tests {
                     end_timeline: None,
                     start_timeline: None,
                     eid_filter: false,
-                    european_time: false,
-                    iso_8601: false,
-                    rfc_2822: false,
-                    rfc_3339: false,
-                    us_military_time: false,
-                    us_time: false,
-                    utc: false,
+                    time_format_options: TimeFormatOptions {
+                        european_time: false,
+                        iso_8601: false,
+                        rfc_2822: false,
+                        rfc_3339: false,
+                        us_military_time: false,
+                        us_time: false,
+                        utc: false,
+                    },
                     visualize_timeline: false,
                     rules: Path::new("./rules").to_path_buf(),
                     html_report: Some(Path::new("dummy.html").to_path_buf()),

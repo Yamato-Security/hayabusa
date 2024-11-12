@@ -542,7 +542,6 @@ mod tests {
     use std::path::Path;
 
     use crate::detections;
-    use crate::detections::configs::Action;
     use crate::detections::configs::CommonOptions;
     use crate::detections::configs::Config;
     use crate::detections::configs::CsvOutputOption;
@@ -551,6 +550,7 @@ mod tests {
     use crate::detections::configs::OutputOption;
     use crate::detections::configs::StoredStatic;
     use crate::detections::configs::STORED_EKEY_ALIAS;
+    use crate::detections::configs::{Action, TimeFormatOptions};
     use crate::detections::rule::create_rule;
     use crate::detections::rule::AggResult;
     use crate::detections::utils;
@@ -598,13 +598,15 @@ mod tests {
                     end_timeline: None,
                     start_timeline: None,
                     eid_filter: false,
-                    european_time: false,
-                    iso_8601: false,
-                    rfc_2822: false,
-                    rfc_3339: false,
-                    us_military_time: false,
-                    us_time: false,
-                    utc: false,
+                    time_format_options: TimeFormatOptions {
+                        european_time: false,
+                        iso_8601: false,
+                        rfc_2822: false,
+                        rfc_3339: false,
+                        us_military_time: false,
+                        us_time: false,
+                        utc: false,
+                    },
                     visualize_timeline: false,
                     rules: Path::new("./rules").to_path_buf(),
                     html_report: None,

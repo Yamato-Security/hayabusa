@@ -147,7 +147,8 @@ impl Detection {
         if !(stored_static.logon_summary_flag
             || stored_static.search_flag
             || stored_static.metrics_flag
-            || stored_static.computer_metrics_flag)
+            || stored_static.computer_metrics_flag
+            || stored_static.log_metrics_flag)
         {
             Detection::print_rule_load_info(
                 &rulefile_loader.rulecounter,
@@ -317,7 +318,11 @@ impl Detection {
                             format_time(
                                 &time,
                                 false,
-                                stored_static.output_option.as_ref().unwrap(),
+                                &stored_static
+                                    .output_option
+                                    .as_ref()
+                                    .unwrap()
+                                    .time_format_options,
                             )
                             .into(),
                         ),
@@ -786,7 +791,11 @@ impl Detection {
                             format_time(
                                 &agg_result.start_timedate,
                                 false,
-                                stored_static.output_option.as_ref().unwrap(),
+                                &stored_static
+                                    .output_option
+                                    .as_ref()
+                                    .unwrap()
+                                    .time_format_options,
                             )
                             .into(),
                         ),
@@ -1295,7 +1304,6 @@ mod tests {
     use yaml_rust2::YamlLoader;
 
     use crate::detections;
-    use crate::detections::configs::load_eventkey_alias;
     use crate::detections::configs::Action;
     use crate::detections::configs::CommonOptions;
     use crate::detections::configs::Config;
@@ -1306,6 +1314,7 @@ mod tests {
     use crate::detections::configs::StoredStatic;
     use crate::detections::configs::CURRENT_EXE_PATH;
     use crate::detections::configs::STORED_EKEY_ALIAS;
+    use crate::detections::configs::{load_eventkey_alias, TimeFormatOptions};
     use crate::detections::detection::Detection;
     use crate::detections::rule::create_rule;
     use crate::detections::rule::AggResult;
@@ -1334,13 +1343,15 @@ mod tests {
                     end_timeline: None,
                     start_timeline: None,
                     eid_filter: false,
-                    european_time: false,
-                    iso_8601: false,
-                    rfc_2822: false,
-                    rfc_3339: false,
-                    us_military_time: false,
-                    us_time: false,
-                    utc: false,
+                    time_format_options: TimeFormatOptions {
+                        european_time: false,
+                        iso_8601: false,
+                        rfc_2822: false,
+                        rfc_3339: false,
+                        us_military_time: false,
+                        us_time: false,
+                        utc: false,
+                    },
                     visualize_timeline: false,
                     rules: Path::new("./rules").to_path_buf(),
                     html_report: None,
@@ -1591,13 +1602,15 @@ mod tests {
                 end_timeline: None,
                 start_timeline: None,
                 eid_filter: false,
-                european_time: false,
-                iso_8601: false,
-                rfc_2822: false,
-                rfc_3339: false,
-                us_military_time: false,
-                us_time: false,
-                utc: false,
+                time_format_options: TimeFormatOptions {
+                    european_time: false,
+                    iso_8601: false,
+                    rfc_2822: false,
+                    rfc_3339: false,
+                    us_military_time: false,
+                    us_time: false,
+                    utc: false,
+                },
                 visualize_timeline: false,
                 rules: Path::new("./rules").to_path_buf(),
                 html_report: None,
@@ -1730,13 +1743,15 @@ mod tests {
                 end_timeline: None,
                 start_timeline: None,
                 eid_filter: false,
-                european_time: false,
-                iso_8601: false,
-                rfc_2822: false,
-                rfc_3339: false,
-                us_military_time: false,
-                us_time: false,
-                utc: false,
+                time_format_options: TimeFormatOptions {
+                    european_time: false,
+                    iso_8601: false,
+                    rfc_2822: false,
+                    rfc_3339: false,
+                    us_military_time: false,
+                    us_time: false,
+                    utc: false,
+                },
                 visualize_timeline: false,
                 rules: Path::new("./rules").to_path_buf(),
                 html_report: None,
@@ -1864,13 +1879,15 @@ mod tests {
                 end_timeline: None,
                 start_timeline: None,
                 eid_filter: false,
-                european_time: false,
-                iso_8601: false,
-                rfc_2822: false,
-                rfc_3339: false,
-                us_military_time: false,
-                us_time: false,
-                utc: false,
+                time_format_options: TimeFormatOptions {
+                    european_time: false,
+                    iso_8601: false,
+                    rfc_2822: false,
+                    rfc_3339: false,
+                    us_military_time: false,
+                    us_time: false,
+                    utc: false,
+                },
                 visualize_timeline: false,
                 rules: Path::new("./rules").to_path_buf(),
                 html_report: None,
@@ -2014,13 +2031,15 @@ mod tests {
                 end_timeline: None,
                 start_timeline: None,
                 eid_filter: false,
-                european_time: false,
-                iso_8601: false,
-                rfc_2822: false,
-                rfc_3339: false,
-                us_military_time: false,
-                us_time: false,
-                utc: false,
+                time_format_options: TimeFormatOptions {
+                    european_time: false,
+                    iso_8601: false,
+                    rfc_2822: false,
+                    rfc_3339: false,
+                    us_military_time: false,
+                    us_time: false,
+                    utc: false,
+                },
                 visualize_timeline: false,
                 rules: Path::new("./rules").to_path_buf(),
                 html_report: None,

@@ -421,7 +421,7 @@ impl ConditionCompiler {
 mod tests {
     use crate::detections::configs::{
         Action, CommonOptions, Config, CsvOutputOption, DetectCommonOption, InputOption,
-        OutputOption, StoredStatic, STORED_EKEY_ALIAS,
+        OutputOption, StoredStatic, TimeFormatOptions, STORED_EKEY_ALIAS,
     };
     use crate::detections::rule::condition_parser::ConditionCompiler;
     use crate::detections::rule::create_rule;
@@ -467,13 +467,15 @@ mod tests {
                     end_timeline: None,
                     start_timeline: None,
                     eid_filter: false,
-                    european_time: false,
-                    iso_8601: false,
-                    rfc_2822: false,
-                    rfc_3339: false,
-                    us_military_time: false,
-                    us_time: false,
-                    utc: false,
+                    time_format_options: TimeFormatOptions {
+                        european_time: false,
+                        iso_8601: false,
+                        rfc_2822: false,
+                        rfc_3339: false,
+                        us_military_time: false,
+                        us_time: false,
+                        utc: false,
+                    },
                     visualize_timeline: false,
                     rules: Path::new("./rules").to_path_buf(),
                     html_report: None,

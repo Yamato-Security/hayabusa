@@ -1,8 +1,3 @@
-use std::cmp;
-use std::fs::File;
-use std::io::BufWriter;
-use std::path::PathBuf;
-
 use crate::detections::configs::{Action, EventInfoConfig, StoredStatic};
 use crate::detections::detection::EvtxRecordInfo;
 use crate::detections::message::AlertMessage;
@@ -19,6 +14,10 @@ use csv::WriterBuilder;
 use downcast_rs::__std::process;
 use nested::Nested;
 use num_format::{Locale, ToFormattedString};
+use std::cmp;
+use std::fs::File;
+use std::io::BufWriter;
+use std::path::PathBuf;
 use termcolor::{BufferWriter, Color, ColorChoice};
 use terminal_size::terminal_size;
 use terminal_size::Width;
@@ -26,7 +25,9 @@ use terminal_size::Width;
 use super::computer_metrics;
 use super::metrics::EventMetrics;
 use super::search::EventSearch;
+use crate::timeline::log_metrics::LogMetrics;
 use hashbrown::{HashMap, HashSet};
+use itertools::Itertools;
 
 #[derive(Debug, Clone)]
 pub struct Timeline {
@@ -77,6 +78,8 @@ impl Timeline {
             );
         } else if stored_static.logon_summary_flag {
             self.stats.logon_stats_start(records, stored_static);
+        } else if stored_static.log_metrics_flag {
+            self.stats.logfile_stats_start(records, stored_static);
         } else if stored_static.search_flag {
             self.event_search.search_start(
                 records,
@@ -122,7 +125,11 @@ impl Timeline {
                         utils::format_time(
                             &self.stats.start_time.unwrap(),
                             false,
-                            stored_static.output_option.as_ref().unwrap()
+                            &stored_static
+                                .output_option
+                                .as_ref()
+                                .unwrap()
+                                .time_format_options
                         )
                     ));
                 }
@@ -132,7 +139,11 @@ impl Timeline {
                         utils::format_time(
                             &self.stats.end_time.unwrap(),
                             false,
-                            stored_static.output_option.as_ref().unwrap()
+                            &stored_static
+                                .output_option
+                                .as_ref()
+                                .unwrap()
+                                .time_format_options
                         )
                     ));
                 }
@@ -235,7 +246,11 @@ impl Timeline {
                     utils::format_time(
                         &self.stats.start_time.unwrap(),
                         false,
-                        stored_static.output_option.as_ref().unwrap()
+                        &stored_static
+                            .output_option
+                            .as_ref()
+                            .unwrap()
+                            .time_format_options
                     )
                 ));
             }
@@ -245,7 +260,11 @@ impl Timeline {
                     utils::format_time(
                         &self.stats.end_time.unwrap(),
                         false,
-                        stored_static.output_option.as_ref().unwrap()
+                        &stored_static
+                            .output_option
+                            .as_ref()
+                            .unwrap()
+                            .time_format_options
                     )
                 ));
             }
@@ -275,14 +294,7 @@ impl Timeline {
             // イベント情報取得(eventtitleなど)
             // channel_eid_info.txtに登録あるものは情報設定
             // 出力メッセージ1行作成
-            let ch = stored_static.disp_abbr_generic.replace_all(
-                stored_static
-                    .ch_config
-                    .get(fmted_channel.as_str())
-                    .unwrap_or(fmted_channel)
-                    .as_str(),
-                &stored_static.disp_abbr_general_values,
-            );
+            let ch = replace_channel_abbr(stored_static, fmted_channel);
 
             if event_timeline_config
                 .get_event_id(fmted_channel, event_id)
@@ -496,6 +508,144 @@ impl Timeline {
             }
         }
     }
+
+    pub fn log_metrics_dsp_msg(&mut self, stored_static: &StoredStatic) {
+        if let Action::LogMetrics(opt) = &stored_static.config.action.as_ref().unwrap() {
+            let log_metrics = &mut self.stats.stats_logfile;
+            log_metrics.sort_by(|a, b| a.event_count.cmp(&b.event_count).reverse());
+            let header = vec![
+                "Filename",
+                "Computers",
+                "Events",
+                "First Timestamp",
+                "Last Timestamp",
+                "Channels",
+                "Providers",
+            ];
+            if let Some(path) = &opt.output {
+                let file = File::create(path).expect("Failed to create output file");
+                let mut wrt = WriterBuilder::new().from_writer(file);
+                let _ = wrt.write_record(header);
+                for rec in &mut *log_metrics {
+                    if let Some(r) = Self::create_record_array(rec, stored_static, " ¦") {
+                        let _ = wrt.write_record(r);
+                    }
+                }
+            } else {
+                let mut tb = Table::new();
+                tb.load_preset(UTF8_FULL)
+                    .apply_modifier(UTF8_ROUND_CORNERS)
+                    .set_content_arrangement(ContentArrangement::DynamicFullWidth)
+                    .set_header(&header);
+                for rec in &mut *log_metrics {
+                    if let Some(r) = Self::create_record_array(rec, stored_static, "\n") {
+                        tb.add_row(vec![
+                            Cell::new(r[0].to_string()),
+                            Cell::new(r[1].to_string()),
+                            Cell::new(r[2].to_string()),
+                            Cell::new(r[3].to_string()),
+                            Cell::new(r[4].to_string()),
+                            Cell::new(r[5].to_string()),
+                            Cell::new(r[6].to_string()),
+                        ]);
+                    }
+                }
+                if log_metrics.is_empty() {
+                    println!("No matches found.");
+                } else {
+                    println!("{tb}");
+                }
+            }
+        }
+    }
+
+    fn create_record_array(
+        rec: &LogMetrics,
+        stored_static: &StoredStatic,
+        sep: &str,
+    ) -> Option<[String; 7]> {
+        let include_computer = &stored_static.include_computer;
+        let exclude_computer = &stored_static.exclude_computer;
+        if !include_computer.is_empty()
+            && rec
+                .computers
+                .iter()
+                .all(|comp| !include_computer.contains(&CompactString::from(comp)))
+        {
+            return None;
+        }
+        if !exclude_computer.is_empty()
+            && rec
+                .computers
+                .iter()
+                .any(|comp| exclude_computer.contains(&CompactString::from(comp)))
+        {
+            return None;
+        }
+        let sep = if stored_static.multiline_flag {
+            "\n"
+        } else {
+            sep
+        };
+        let ab_ch: Vec<String> = rec
+            .channels
+            .iter()
+            .map(|ch| replace_channel_abbr(stored_static, &CompactString::from(ch)))
+            .collect();
+        let ab_provider: Vec<String> = rec
+            .providers
+            .iter()
+            .map(|ch| replace_provider_abbr(stored_static, &CompactString::from(ch)))
+            .collect();
+        Some([
+            rec.filename.to_string(),
+            rec.computers.iter().sorted().join(sep),
+            rec.event_count.to_formatted_string(&Locale::en),
+            utils::format_time(
+                &rec.first_timestamp.unwrap_or_default(),
+                false,
+                &stored_static
+                    .output_option
+                    .as_ref()
+                    .unwrap()
+                    .time_format_options,
+            )
+            .into(),
+            utils::format_time(
+                &rec.last_timestamp.unwrap_or_default(),
+                false,
+                &stored_static
+                    .output_option
+                    .as_ref()
+                    .unwrap()
+                    .time_format_options,
+            )
+            .into(),
+            ab_ch.iter().sorted().join(sep),
+            ab_provider.iter().sorted().join(sep),
+        ])
+    }
+}
+
+fn replace_channel_abbr(stored_static: &StoredStatic, fmted_channel: &CompactString) -> String {
+    stored_static.disp_abbr_generic.replace_all(
+        stored_static
+            .ch_config
+            .get(&fmted_channel.to_ascii_lowercase())
+            .unwrap_or(fmted_channel)
+            .as_str(),
+        &stored_static.disp_abbr_general_values,
+    )
+}
+
+fn replace_provider_abbr(stored_static: &StoredStatic, fmted_provider: &CompactString) -> String {
+    stored_static.disp_abbr_generic.replace_all(
+        stored_static
+            .provider_abbr_config
+            .get(fmted_provider)
+            .unwrap_or(fmted_provider),
+        &stored_static.disp_abbr_general_values,
+    )
 }
 
 #[cfg(test)]
@@ -510,6 +660,7 @@ mod tests {
     use hashbrown::{HashMap, HashSet};
     use nested::Nested;
 
+    use crate::detections::configs::TimeFormatOptions;
     use crate::timeline::metrics::LoginEvent;
     use crate::{
         detections::{
@@ -556,13 +707,15 @@ mod tests {
                     include_computer: None,
                     exclude_computer: None,
                 },
-                european_time: false,
-                iso_8601: false,
-                rfc_2822: false,
-                rfc_3339: false,
-                us_military_time: false,
-                us_time: false,
-                utc: false,
+                time_format_options: TimeFormatOptions {
+                    european_time: false,
+                    iso_8601: false,
+                    rfc_2822: false,
+                    rfc_3339: false,
+                    us_military_time: false,
+                    us_time: false,
+                    utc: false,
+                },
                 output: None,
                 clobber: false,
                 end_timeline: None,
@@ -742,13 +895,15 @@ mod tests {
                     include_computer: None,
                     exclude_computer: None,
                 },
-                european_time: false,
-                iso_8601: false,
-                rfc_2822: false,
-                rfc_3339: false,
-                us_military_time: false,
-                us_time: false,
-                utc: false,
+                time_format_options: TimeFormatOptions {
+                    european_time: false,
+                    iso_8601: false,
+                    rfc_2822: false,
+                    rfc_3339: false,
+                    us_military_time: false,
+                    us_time: false,
+                    utc: false,
+                },
                 output: Some(Path::new("./test_tm_stats.csv").to_path_buf()),
                 clobber: false,
             }));
@@ -833,13 +988,15 @@ mod tests {
                     include_computer: None,
                     exclude_computer: None,
                 },
-                european_time: false,
-                iso_8601: false,
-                rfc_2822: false,
-                rfc_3339: false,
-                us_military_time: false,
-                us_time: false,
-                utc: false,
+                time_format_options: TimeFormatOptions {
+                    european_time: false,
+                    iso_8601: false,
+                    rfc_2822: false,
+                    rfc_3339: false,
+                    us_military_time: false,
+                    us_time: false,
+                    utc: false,
+                },
                 output: Some(Path::new("./test_tm_logon_stats").to_path_buf()),
                 clobber: false,
                 end_timeline: None,
