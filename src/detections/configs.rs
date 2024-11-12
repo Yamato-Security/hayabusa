@@ -599,9 +599,7 @@ impl StoredStatic {
         };
         let time_offset = match &input_config.as_ref().unwrap().action {
             Some(Action::CsvTimeline(opt)) => opt.output_options.input_args.time_offset.clone(),
-            Some(Action::JsonTimeline(opt)) => {
-                opt.output_options.input_args.time_offset.clone()
-            }
+            Some(Action::JsonTimeline(opt)) => opt.output_options.input_args.time_offset.clone(),
             Some(Action::EidMetrics(opt)) => opt.input_args.time_offset.clone(),
             Some(Action::LogonSummary(opt)) => opt.input_args.time_offset.clone(),
             Some(Action::PivotKeywordsList(opt)) => opt.input_args.time_offset.clone(),
@@ -1890,80 +1888,76 @@ impl TargetEventTime {
                 }
             };
 
-        let get_time_offset =
-            |time_offset: &Option<String>, parse_success_flag: &mut bool| {
-                if let Some(timeline_offline) = time_offset {
-                    let timekey = ['y', 'M', 'd', 'h', 'm', 's'];
-                    let mut time_num = [0, 0, 0, 0, 0, 0];
-                    for (idx, key) in timekey.iter().enumerate() {
-                        let mut timekey_splitter = timeline_offline.split(*key);
-                        let mix_check = timekey_splitter.next();
-                        let mixed_checker: Vec<&str> =
-                            mix_check.unwrap_or_default().split(timekey).collect();
-                        let target_num = if mixed_checker.is_empty() {
-                            mix_check.unwrap()
-                        } else {
-                            mixed_checker[mixed_checker.len() - 1]
-                        };
-                        if target_num.is_empty() {
-                            continue;
-                        }
-                        if let Ok(num) = target_num.parse::<u32>() {
-                            time_num[idx] = num;
-                        } else {
-                            AlertMessage::alert(
+        let get_time_offset = |time_offset: &Option<String>, parse_success_flag: &mut bool| {
+            if let Some(timeline_offline) = time_offset {
+                let timekey = ['y', 'M', 'd', 'h', 'm', 's'];
+                let mut time_num = [0, 0, 0, 0, 0, 0];
+                for (idx, key) in timekey.iter().enumerate() {
+                    let mut timekey_splitter = timeline_offline.split(*key);
+                    let mix_check = timekey_splitter.next();
+                    let mixed_checker: Vec<&str> =
+                        mix_check.unwrap_or_default().split(timekey).collect();
+                    let target_num = if mixed_checker.is_empty() {
+                        mix_check.unwrap()
+                    } else {
+                        mixed_checker[mixed_checker.len() - 1]
+                    };
+                    if target_num.is_empty() {
+                        continue;
+                    }
+                    if let Ok(num) = target_num.parse::<u32>() {
+                        time_num[idx] = num;
+                    } else {
+                        AlertMessage::alert(
                             "Invalid timeline offset. Please use one of the following formats: 1y, 3M, 30d, 24h, 30m",
                         )
                         .ok();
-                            *parse_success_flag = false;
-                            return None;
-                        }
-                    }
-                    if time_num.iter().all(|&x| x == 0) {
-                        AlertMessage::alert(
-                        "Invalid timeline offset. Please use one of the following formats: 1y, 3M, 30d, 24h, 30m",
-                    )
-                    .ok();
                         *parse_success_flag = false;
                         return None;
                     }
-                    let target_start_time = Local::now()
-                        .checked_sub_months(Months::new(time_num[0] * 12))
-                        .and_then(|dt| dt.checked_sub_months(Months::new(time_num[1])))
-                        .and_then(|dt| dt.checked_sub_days(Days::new(time_num[2].into())))
-                        .and_then(|dt| {
-                            dt.checked_sub_signed(
-                                Duration::try_hours(time_num[3].into()).unwrap_or_default(),
-                            )
-                        })
-                        .and_then(|dt| {
-                            dt.checked_sub_signed(
-                                Duration::try_minutes(time_num[4].into()).unwrap_or_default(),
-                            )
-                        })
-                        .and_then(|dt| {
-                            dt.checked_sub_signed(
-                                Duration::try_seconds(time_num[5].into()).unwrap_or_default(),
-                            )
-                        });
-                    if let Some(start_time) = target_start_time {
-                        Some(start_time.format("%Y-%m-%d %H:%M:%S %z").to_string())
-                    } else {
-                        AlertMessage::alert(
-                            "timeline-offset field: the timestamp value is too large.",
+                }
+                if time_num.iter().all(|&x| x == 0) {
+                    AlertMessage::alert(
+                        "Invalid timeline offset. Please use one of the following formats: 1y, 3M, 30d, 24h, 30m",
+                    )
+                    .ok();
+                    *parse_success_flag = false;
+                    return None;
+                }
+                let target_start_time = Local::now()
+                    .checked_sub_months(Months::new(time_num[0] * 12))
+                    .and_then(|dt| dt.checked_sub_months(Months::new(time_num[1])))
+                    .and_then(|dt| dt.checked_sub_days(Days::new(time_num[2].into())))
+                    .and_then(|dt| {
+                        dt.checked_sub_signed(
+                            Duration::try_hours(time_num[3].into()).unwrap_or_default(),
                         )
-                        .ok();
-                        *parse_success_flag = false;
-                        None
-                    }
+                    })
+                    .and_then(|dt| {
+                        dt.checked_sub_signed(
+                            Duration::try_minutes(time_num[4].into()).unwrap_or_default(),
+                        )
+                    })
+                    .and_then(|dt| {
+                        dt.checked_sub_signed(
+                            Duration::try_seconds(time_num[5].into()).unwrap_or_default(),
+                        )
+                    });
+                if let Some(start_time) = target_start_time {
+                    Some(start_time.format("%Y-%m-%d %H:%M:%S %z").to_string())
                 } else {
+                    AlertMessage::alert("timeline-offset field: the timestamp value is too large.")
+                        .ok();
+                    *parse_success_flag = false;
                     None
                 }
-            };
+            } else {
+                None
+            }
+        };
 
         let mut parse_success_flag = true;
-        let time_offset =
-            get_time_offset(&stored_static.time_offset, &mut parse_success_flag);
+        let time_offset = get_time_offset(&stored_static.time_offset, &mut parse_success_flag);
         match &stored_static.config.action.as_ref().unwrap() {
             Action::CsvTimeline(option) => {
                 let start_time = if time_offset.is_some() {
