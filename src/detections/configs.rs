@@ -441,6 +441,14 @@ impl StoredStatic {
                 .iter()
                 .map(CompactString::from)
                 .collect(),
+            Some(Action::LogMetrics(opt)) => opt
+                .detect_common_options
+                .include_computer
+                .as_ref()
+                .unwrap_or(&vec![])
+                .iter()
+                .map(CompactString::from)
+                .collect(),
             _ => HashSet::default(),
         };
         let exclude_computer: HashSet<CompactString> = match &input_config.as_ref().unwrap().action
@@ -480,6 +488,14 @@ impl StoredStatic {
                 .map(CompactString::from)
                 .collect(),
             Some(Action::LogonSummary(opt)) => opt
+                .detect_common_options
+                .exclude_computer
+                .as_ref()
+                .unwrap_or(&vec![])
+                .iter()
+                .map(CompactString::from)
+                .collect(),
+            Some(Action::LogMetrics(opt)) => opt
                 .detect_common_options
                 .exclude_computer
                 .as_ref()

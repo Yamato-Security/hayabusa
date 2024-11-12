@@ -560,6 +560,24 @@ impl Timeline {
         stored_static: &StoredStatic,
         sep: &str,
     ) -> Option<[String; 7]> {
+        let include_computer = &stored_static.include_computer;
+        let exclude_computer = &stored_static.exclude_computer;
+        if !include_computer.is_empty()
+            && rec
+                .computers
+                .iter()
+                .all(|comp| !include_computer.contains(&CompactString::from(comp)))
+        {
+            return None;
+        }
+        if !exclude_computer.is_empty()
+            && rec
+                .computers
+                .iter()
+                .any(|comp| exclude_computer.contains(&CompactString::from(comp)))
+        {
+            return None;
+        }
         let ab_ch: Vec<String> = rec
             .channels
             .iter()
