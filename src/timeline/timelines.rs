@@ -1,8 +1,3 @@
-use std::cmp;
-use std::fs::File;
-use std::io::BufWriter;
-use std::path::PathBuf;
-
 use crate::detections::configs::{Action, EventInfoConfig, StoredStatic};
 use crate::detections::detection::EvtxRecordInfo;
 use crate::detections::message::AlertMessage;
@@ -19,6 +14,10 @@ use csv::WriterBuilder;
 use downcast_rs::__std::process;
 use nested::Nested;
 use num_format::{Locale, ToFormattedString};
+use std::cmp;
+use std::fs::File;
+use std::io::BufWriter;
+use std::path::PathBuf;
 use termcolor::{BufferWriter, Color, ColorChoice};
 use terminal_size::terminal_size;
 use terminal_size::Width;
@@ -26,7 +25,9 @@ use terminal_size::Width;
 use super::computer_metrics;
 use super::metrics::EventMetrics;
 use super::search::EventSearch;
+use crate::timeline::log_metrics::LogMetrics;
 use hashbrown::{HashMap, HashSet};
+use itertools::Itertools;
 
 #[derive(Debug, Clone)]
 pub struct Timeline {
@@ -77,6 +78,8 @@ impl Timeline {
             );
         } else if stored_static.logon_summary_flag {
             self.stats.logon_stats_start(records, stored_static);
+        } else if stored_static.log_metrics_flag {
+            self.stats.logfile_stats_start(records, stored_static);
         } else if stored_static.search_flag {
             self.event_search.search_start(
                 records,
@@ -275,14 +278,7 @@ impl Timeline {
             // イベント情報取得(eventtitleなど)
             // channel_eid_info.txtに登録あるものは情報設定
             // 出力メッセージ1行作成
-            let ch = stored_static.disp_abbr_generic.replace_all(
-                stored_static
-                    .ch_config
-                    .get(fmted_channel.as_str())
-                    .unwrap_or(fmted_channel)
-                    .as_str(),
-                &stored_static.disp_abbr_general_values,
-            );
+            let ch = replace_channel_abbr(stored_static, fmted_channel);
 
             if event_timeline_config
                 .get_event_id(fmted_channel, event_id)
@@ -496,6 +492,92 @@ impl Timeline {
             }
         }
     }
+
+    pub fn log_metrics_dsp_msg(&mut self, stored_static: &StoredStatic) {
+        if let Action::LogMetrics(opt) = &stored_static.config.action.as_ref().unwrap() {
+            let log_metrics = &mut self.stats.stats_logfile;
+            log_metrics.sort_by(|a, b| a.event_count.cmp(&b.event_count).reverse());
+            let header = vec![
+                "Filename",
+                "Computers",
+                "Event Count",
+                "First Timestamp",
+                "Last Timestamp",
+                "Channels",
+                "Providers",
+            ];
+            if let Some(path) = &opt.output {
+                let file = File::create(path).expect("Failed to create output file");
+                let mut wrt = WriterBuilder::new().from_writer(file);
+                let _ = wrt.write_record(header);
+                for rec in &mut *log_metrics {
+                    let _ = wrt.write_record(Self::create_record_array(rec, stored_static));
+                }
+            } else {
+                let mut tb = Table::new();
+                tb.load_preset(UTF8_FULL)
+                    .apply_modifier(UTF8_ROUND_CORNERS)
+                    .set_content_arrangement(ContentArrangement::DynamicFullWidth)
+                    .set_header(&header);
+                for rec in &mut *log_metrics {
+                    let r = Self::create_record_array(rec, stored_static);
+                    tb.add_row(vec![
+                        Cell::new(r[0].to_string()),
+                        Cell::new(r[1].to_string()),
+                        Cell::new(r[2].to_string()),
+                        Cell::new(r[3].to_string()),
+                        Cell::new(r[4].to_string()),
+                        Cell::new(r[5].to_string()),
+                        Cell::new(r[6].to_string()),
+                    ]);
+                }
+                println!("{tb}");
+            }
+        }
+    }
+
+    fn create_record_array(rec: &LogMetrics, stored_static: &StoredStatic) -> [String; 7] {
+        let ab_ch: Vec<String> = rec
+            .channels
+            .iter()
+            .map(|ch| replace_channel_abbr(stored_static, &CompactString::from(ch)))
+            .collect();
+        let ab_provider: Vec<String> = rec
+            .providers
+            .iter()
+            .map(|ch| replace_provider_abbr(stored_static, &CompactString::from(ch)))
+            .collect();
+        [
+            rec.filename.to_string(),
+            rec.computers.iter().sorted().join(","),
+            rec.event_count.to_formatted_string(&Locale::en),
+            rec.first_timestamp.unwrap_or_default().to_string(),
+            rec.last_timestamp.unwrap_or_default().to_string(),
+            ab_ch.iter().sorted().join(","),
+            ab_provider.iter().sorted().join(","),
+        ]
+    }
+}
+
+fn replace_channel_abbr(stored_static: &StoredStatic, fmted_channel: &CompactString) -> String {
+    stored_static.disp_abbr_generic.replace_all(
+        stored_static
+            .ch_config
+            .get(fmted_channel.as_str())
+            .unwrap_or(fmted_channel)
+            .as_str(),
+        &stored_static.disp_abbr_general_values,
+    )
+}
+
+fn replace_provider_abbr(stored_static: &StoredStatic, fmted_provider: &CompactString) -> String {
+    stored_static.disp_abbr_generic.replace_all(
+        stored_static
+            .provider_abbr_config
+            .get(fmted_provider)
+            .unwrap_or(fmted_provider),
+        &stored_static.disp_abbr_general_values,
+    )
 }
 
 #[cfg(test)]
