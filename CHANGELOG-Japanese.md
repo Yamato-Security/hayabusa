@@ -24,6 +24,10 @@
   - 属性と同じ名前を持つ複数のサブノードは上書きされ、最後の1つだけが出力されていた。(omerbenamram/evtx #245)
 - `logon-summary`と`eid-metrics`が複数のプログレスバーを出力することがあった。 #1479 (@fukusuket)
 
+**その他:**
+
+- `timeline-offset`オプションは、`--time-offset`に名前変更された。 (#1490) (@yamatosecurity)
+
 ## 2.18.0 [2024/10/23] - SecTor Release
 
 **新機能:**
