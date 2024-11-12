@@ -23,8 +23,6 @@
   - JSON field output order is now preserved according to the original XML. (omerbenamram/evtx #241)
   - Multiple sub-nodes with attributes and the same name would be overwritten and only the last one kept. (omerbenamram/evtx #245)
 - `logon-summary` and `eid-metrics` would sometimes output multiple progress bars. #1479 (@fukusuket)
-- The progress bar would not complete to 100% in the `eid-metrics`, `logon-summary` and `computer-metrics` commands. (#1487) (@fukusuket)
-- The last line of the terminal table in the `metrics` command would sometimes not get outputted. (#1486) (fukusuket)
 
 ## 2.18.0 [2024/10/23] - SecTor Release
 
