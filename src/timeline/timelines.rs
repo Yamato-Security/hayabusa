@@ -631,7 +631,7 @@ fn replace_channel_abbr(stored_static: &StoredStatic, fmted_channel: &CompactStr
     stored_static.disp_abbr_generic.replace_all(
         stored_static
             .ch_config
-            .get(fmted_channel.as_str())
+            .get(&fmted_channel.to_ascii_lowercase())
             .unwrap_or(fmted_channel)
             .as_str(),
         &stored_static.disp_abbr_general_values,
