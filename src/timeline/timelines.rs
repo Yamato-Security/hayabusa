@@ -582,6 +582,11 @@ impl Timeline {
         {
             return None;
         }
+        let sep = if stored_static.multiline_flag {
+            "\n"
+        } else {
+            sep
+        };
         let ab_ch: Vec<String> = rec
             .channels
             .iter()

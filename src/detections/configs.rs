@@ -373,6 +373,7 @@ impl StoredStatic {
         let multiline_flag = match &input_config.as_ref().unwrap().action {
             Some(Action::CsvTimeline(opt)) => opt.multiline,
             Some(Action::Search(opt)) => opt.multiline,
+            Some(Action::LogMetrics(opt)) => opt.multiline,
             _ => false,
         };
         let proven_rule_flag = match &input_config.as_ref().unwrap().action {
@@ -1768,6 +1769,10 @@ pub struct LogMetricsOption {
 
     #[clap(flatten)]
     pub time_format_options: TimeFormatOptions,
+
+    /// Output event field information in multiple rows for CSV output
+    #[arg(help_heading = Some("Output"), short = 'M', long="multiline", display_order = 390)]
+    pub multiline: bool,
 
     /// Overwrite files when saving
     #[arg(help_heading = Some("General Options"), short='C', long = "clobber", display_order = 290, requires = "output")]
