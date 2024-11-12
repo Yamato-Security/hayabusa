@@ -135,7 +135,7 @@ mod tests {
                     filepath: Some(Path::new("./dummy.evtx").to_path_buf()),
                     live_analysis: false,
                     recover_records: false,
-                    timeline_offset: None,
+                    time_offset: None,
                 },
                 common_options: CommonOptions {
                     no_color: false,

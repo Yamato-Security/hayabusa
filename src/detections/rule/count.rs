@@ -587,7 +587,7 @@ mod tests {
                         filepath: None,
                         live_analysis: false,
                         recover_records: false,
-                        timeline_offset: None,
+                        time_offset: None,
                     },
                     profile: None,
                     enable_deprecated_rules: false,
