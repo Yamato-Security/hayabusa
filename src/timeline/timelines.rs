@@ -527,7 +527,7 @@ impl Timeline {
                 let mut wrt = WriterBuilder::new().from_writer(file);
                 let _ = wrt.write_record(header);
                 for rec in &mut *log_metrics {
-                    if let Some(r) = Self::create_record_array(rec, stored_static, "¦") {
+                    if let Some(r) = Self::create_record_array(rec, stored_static, " ¦") {
                         let _ = wrt.write_record(r);
                     }
                 }
