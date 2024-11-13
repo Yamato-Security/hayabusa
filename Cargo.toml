@@ -40,6 +40,7 @@ nested="*"
 num = "0.4.0"
 num-format = "*"
 pulldown-cmark = { version = "0.9.*", default-features = false, features = ["simd"] }
+rand = "0.8.*"
 regex = "1"
 serde = { version = "1.*", features = ["derive"] }
 serde_derive = "1.*"
