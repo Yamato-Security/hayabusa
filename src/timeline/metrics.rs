@@ -113,10 +113,10 @@ impl EventMetrics {
                     .trim_matches('"'),
                 )
         }) {
-            existing_lm.update(records, stored_static, self.start_time, self.end_time);
+            existing_lm.update(records, stored_static);
         } else {
             let mut lm = LogMetrics::new(filename);
-            lm.update(records, stored_static, self.start_time, self.end_time);
+            lm.update(records, stored_static);
             self.stats_logfile.push(lm);
         }
     }
