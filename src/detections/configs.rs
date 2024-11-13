@@ -133,7 +133,7 @@ pub struct StoredStatic {
     pub field_data_map: Option<FieldDataMap>,
     pub no_pwsh_field_extraction: bool,
     pub enable_recover_records: bool,
-    pub timeline_offset: Option<String>,
+    pub time_offset: Option<String>,
     pub is_low_memory: bool,
     pub enable_all_rules: bool,
     pub scan_all_evtx_files: bool,
@@ -597,17 +597,15 @@ impl StoredStatic {
             Some(Action::LogMetrics(opt)) => opt.input_args.recover_records,
             _ => false,
         };
-        let timeline_offset = match &input_config.as_ref().unwrap().action {
-            Some(Action::CsvTimeline(opt)) => opt.output_options.input_args.timeline_offset.clone(),
-            Some(Action::JsonTimeline(opt)) => {
-                opt.output_options.input_args.timeline_offset.clone()
-            }
-            Some(Action::EidMetrics(opt)) => opt.input_args.timeline_offset.clone(),
-            Some(Action::LogonSummary(opt)) => opt.input_args.timeline_offset.clone(),
-            Some(Action::PivotKeywordsList(opt)) => opt.input_args.timeline_offset.clone(),
-            Some(Action::Search(opt)) => opt.input_args.timeline_offset.clone(),
-            Some(Action::ComputerMetrics(opt)) => opt.input_args.timeline_offset.clone(),
-            Some(Action::LogMetrics(opt)) => opt.input_args.timeline_offset.clone(),
+        let time_offset = match &input_config.as_ref().unwrap().action {
+            Some(Action::CsvTimeline(opt)) => opt.output_options.input_args.time_offset.clone(),
+            Some(Action::JsonTimeline(opt)) => opt.output_options.input_args.time_offset.clone(),
+            Some(Action::EidMetrics(opt)) => opt.input_args.time_offset.clone(),
+            Some(Action::LogonSummary(opt)) => opt.input_args.time_offset.clone(),
+            Some(Action::PivotKeywordsList(opt)) => opt.input_args.time_offset.clone(),
+            Some(Action::Search(opt)) => opt.input_args.time_offset.clone(),
+            Some(Action::ComputerMetrics(opt)) => opt.input_args.time_offset.clone(),
+            Some(Action::LogMetrics(opt)) => opt.input_args.time_offset.clone(),
             _ => None,
         };
         let include_status: HashSet<CompactString> = match &input_config.as_ref().unwrap().action {
@@ -765,7 +763,7 @@ impl StoredStatic {
             field_data_map,
             no_pwsh_field_extraction: no_pwsh_field_extraction_flag,
             enable_recover_records,
-            timeline_offset,
+            time_offset,
             include_status,
             is_low_memory,
             enable_all_rules,
@@ -1644,8 +1642,8 @@ pub struct InputOption {
     pub recover_records: bool,
 
     /// Scan recent events based on an offset (ex: 1y, 3M, 30d, 24h, 30m)
-    #[arg(help_heading = Some("Filtering"), long = "timeline-offset", value_name = "OFFSET", conflicts_with = "start_timeline", display_order = 460)]
-    pub timeline_offset: Option<String>,
+    #[arg(help_heading = Some("Filtering"), long = "time-offset", value_name = "OFFSET", conflicts_with = "start_timeline", display_order = 460)]
+    pub time_offset: Option<String>,
 }
 
 #[derive(Args, Clone, Debug)]
@@ -1890,85 +1888,81 @@ impl TargetEventTime {
                 }
             };
 
-        let get_timeline_offset =
-            |timeline_offset: &Option<String>, parse_success_flag: &mut bool| {
-                if let Some(timeline_offline) = timeline_offset {
-                    let timekey = ['y', 'M', 'd', 'h', 'm', 's'];
-                    let mut time_num = [0, 0, 0, 0, 0, 0];
-                    for (idx, key) in timekey.iter().enumerate() {
-                        let mut timekey_splitter = timeline_offline.split(*key);
-                        let mix_check = timekey_splitter.next();
-                        let mixed_checker: Vec<&str> =
-                            mix_check.unwrap_or_default().split(timekey).collect();
-                        let target_num = if mixed_checker.is_empty() {
-                            mix_check.unwrap()
-                        } else {
-                            mixed_checker[mixed_checker.len() - 1]
-                        };
-                        if target_num.is_empty() {
-                            continue;
-                        }
-                        if let Ok(num) = target_num.parse::<u32>() {
-                            time_num[idx] = num;
-                        } else {
-                            AlertMessage::alert(
+        let get_time_offset = |time_offset: &Option<String>, parse_success_flag: &mut bool| {
+            if let Some(timeline_offline) = time_offset {
+                let timekey = ['y', 'M', 'd', 'h', 'm', 's'];
+                let mut time_num = [0, 0, 0, 0, 0, 0];
+                for (idx, key) in timekey.iter().enumerate() {
+                    let mut timekey_splitter = timeline_offline.split(*key);
+                    let mix_check = timekey_splitter.next();
+                    let mixed_checker: Vec<&str> =
+                        mix_check.unwrap_or_default().split(timekey).collect();
+                    let target_num = if mixed_checker.is_empty() {
+                        mix_check.unwrap()
+                    } else {
+                        mixed_checker[mixed_checker.len() - 1]
+                    };
+                    if target_num.is_empty() {
+                        continue;
+                    }
+                    if let Ok(num) = target_num.parse::<u32>() {
+                        time_num[idx] = num;
+                    } else {
+                        AlertMessage::alert(
                             "Invalid timeline offset. Please use one of the following formats: 1y, 3M, 30d, 24h, 30m",
                         )
                         .ok();
-                            *parse_success_flag = false;
-                            return None;
-                        }
-                    }
-                    if time_num.iter().all(|&x| x == 0) {
-                        AlertMessage::alert(
-                        "Invalid timeline offset. Please use one of the following formats: 1y, 3M, 30d, 24h, 30m",
-                    )
-                    .ok();
                         *parse_success_flag = false;
                         return None;
                     }
-                    let target_start_time = Local::now()
-                        .checked_sub_months(Months::new(time_num[0] * 12))
-                        .and_then(|dt| dt.checked_sub_months(Months::new(time_num[1])))
-                        .and_then(|dt| dt.checked_sub_days(Days::new(time_num[2].into())))
-                        .and_then(|dt| {
-                            dt.checked_sub_signed(
-                                Duration::try_hours(time_num[3].into()).unwrap_or_default(),
-                            )
-                        })
-                        .and_then(|dt| {
-                            dt.checked_sub_signed(
-                                Duration::try_minutes(time_num[4].into()).unwrap_or_default(),
-                            )
-                        })
-                        .and_then(|dt| {
-                            dt.checked_sub_signed(
-                                Duration::try_seconds(time_num[5].into()).unwrap_or_default(),
-                            )
-                        });
-                    if let Some(start_time) = target_start_time {
-                        Some(start_time.format("%Y-%m-%d %H:%M:%S %z").to_string())
-                    } else {
-                        AlertMessage::alert(
-                            "timeline-offset field: the timestamp value is too large.",
+                }
+                if time_num.iter().all(|&x| x == 0) {
+                    AlertMessage::alert(
+                        "Invalid timeline offset. Please use one of the following formats: 1y, 3M, 30d, 24h, 30m",
+                    )
+                    .ok();
+                    *parse_success_flag = false;
+                    return None;
+                }
+                let target_start_time = Local::now()
+                    .checked_sub_months(Months::new(time_num[0] * 12))
+                    .and_then(|dt| dt.checked_sub_months(Months::new(time_num[1])))
+                    .and_then(|dt| dt.checked_sub_days(Days::new(time_num[2].into())))
+                    .and_then(|dt| {
+                        dt.checked_sub_signed(
+                            Duration::try_hours(time_num[3].into()).unwrap_or_default(),
                         )
-                        .ok();
-                        *parse_success_flag = false;
-                        None
-                    }
+                    })
+                    .and_then(|dt| {
+                        dt.checked_sub_signed(
+                            Duration::try_minutes(time_num[4].into()).unwrap_or_default(),
+                        )
+                    })
+                    .and_then(|dt| {
+                        dt.checked_sub_signed(
+                            Duration::try_seconds(time_num[5].into()).unwrap_or_default(),
+                        )
+                    });
+                if let Some(start_time) = target_start_time {
+                    Some(start_time.format("%Y-%m-%d %H:%M:%S %z").to_string())
                 } else {
+                    AlertMessage::alert("timeline-offset field: the timestamp value is too large.")
+                        .ok();
+                    *parse_success_flag = false;
                     None
                 }
-            };
+            } else {
+                None
+            }
+        };
 
         let mut parse_success_flag = true;
-        let timeline_offset =
-            get_timeline_offset(&stored_static.timeline_offset, &mut parse_success_flag);
+        let time_offset = get_time_offset(&stored_static.time_offset, &mut parse_success_flag);
         match &stored_static.config.action.as_ref().unwrap() {
             Action::CsvTimeline(option) => {
-                let start_time = if timeline_offset.is_some() {
+                let start_time = if time_offset.is_some() {
                     get_time(
-                        timeline_offset.as_ref(),
+                        time_offset.as_ref(),
                         "Invalid timeline offset. Please use one of the following formats: 1y, 3M, 30d, 24h, 30m",
                         &mut parse_success_flag,
                     )
@@ -1987,9 +1981,9 @@ impl TargetEventTime {
                 Self::set(parse_success_flag, start_time, end_time)
             }
             Action::JsonTimeline(option) => {
-                let start_time = if timeline_offset.is_some() {
+                let start_time = if time_offset.is_some() {
                     get_time(
-                        timeline_offset.as_ref(),
+                        time_offset.as_ref(),
                         "Invalid timeline offset. Please use one of the following formats: 1y, 3M, 30d, 24h, 30m",
                         &mut parse_success_flag,
                     )
@@ -2008,9 +2002,9 @@ impl TargetEventTime {
                 Self::set(parse_success_flag, start_time, end_time)
             }
             Action::PivotKeywordsList(option) => {
-                let start_time = if timeline_offset.is_some() {
+                let start_time = if time_offset.is_some() {
                     get_time(
-                        timeline_offset.as_ref(),
+                        time_offset.as_ref(),
                         "Invalid timeline offset. Please use one of the following formats: 1y, 3M, 30d, 24h, 30m",
                         &mut parse_success_flag,
                     )
@@ -2029,9 +2023,9 @@ impl TargetEventTime {
                 Self::set(parse_success_flag, start_time, end_time)
             }
             Action::LogonSummary(option) => {
-                let start_time = if timeline_offset.is_some() {
+                let start_time = if time_offset.is_some() {
                     get_time(
-                        timeline_offset.as_ref(),
+                        time_offset.as_ref(),
                         "Invalid timeline offset. Please use one of the following formats: 1y, 3M, 30d, 24h, 30m",
                         &mut parse_success_flag,
                     )
@@ -2053,9 +2047,9 @@ impl TargetEventTime {
             | Action::EidMetrics(_)
             | Action::ComputerMetrics(_)
             | Action::Search(_) => {
-                let start_time = if timeline_offset.is_some() {
+                let start_time = if time_offset.is_some() {
                     get_time(
-                        timeline_offset.as_ref(),
+                        time_offset.as_ref(),
                         "Invalid timeline offset. Please use one of the following formats: 1y, 3M, 30d, 24h, 30m",
                         &mut parse_success_flag,
                     )
@@ -2514,7 +2508,7 @@ fn extract_output_options(config: &Config) -> Option<OutputOption> {
                 filepath: None,
                 live_analysis: false,
                 recover_records: false,
-                timeline_offset: None,
+                time_offset: None,
             },
             enable_deprecated_rules: false,
             enable_noisy_rules: false,
@@ -2574,7 +2568,7 @@ fn extract_output_options(config: &Config) -> Option<OutputOption> {
                 filepath: None,
                 live_analysis: false,
                 recover_records: false,
-                timeline_offset: None,
+                time_offset: None,
             },
             enable_deprecated_rules: true,
             enable_noisy_rules: true,
@@ -2843,7 +2837,7 @@ mod tests {
     }
 
     #[test]
-    fn test_timeline_offset_csv() {
+    fn test_time_offset_csv() {
         let csv_timeline = StoredStatic::create_static_data(Some(Config {
             action: Some(Action::CsvTimeline(CsvOutputOption {
                 output_options: OutputOption {
@@ -2852,7 +2846,7 @@ mod tests {
                         filepath: None,
                         live_analysis: false,
                         recover_records: false,
-                        timeline_offset: Some("1d".to_string()),
+                        time_offset: Some("1d".to_string()),
                     },
                     profile: None,
                     enable_deprecated_rules: false,
@@ -2923,7 +2917,7 @@ mod tests {
     }
 
     #[test]
-    fn test_timeline_offset_json() {
+    fn test_time_offset_json() {
         let json_timeline = StoredStatic::create_static_data(Some(Config {
             action: Some(Action::JsonTimeline(JSONOutputOption {
                 output_options: OutputOption {
@@ -2932,7 +2926,7 @@ mod tests {
                         filepath: None,
                         live_analysis: false,
                         recover_records: false,
-                        timeline_offset: Some("1y".to_string()),
+                        time_offset: Some("1y".to_string()),
                     },
                     profile: None,
                     enable_deprecated_rules: false,
@@ -3003,7 +2997,7 @@ mod tests {
     }
 
     #[test]
-    fn test_timeline_offset_search() {
+    fn test_time_offset_search() {
         let json_timeline = StoredStatic::create_static_data(Some(Config {
             action: Some(Action::Search(SearchOption {
                 output: None,
@@ -3017,7 +3011,7 @@ mod tests {
                     filepath: None,
                     live_analysis: false,
                     recover_records: false,
-                    timeline_offset: Some("1h".to_string()),
+                    time_offset: Some("1h".to_string()),
                 },
                 keywords: Some(vec!["mimikatz".to_string()]),
                 regex: None,
@@ -3052,7 +3046,7 @@ mod tests {
     }
 
     #[test]
-    fn test_timeline_offset_eid_metrics() {
+    fn test_time_offset_eid_metrics() {
         let eid_metrics = StoredStatic::create_static_data(Some(Config {
             action: Some(Action::EidMetrics(EidMetricsOption {
                 output: None,
@@ -3066,7 +3060,7 @@ mod tests {
                     filepath: None,
                     live_analysis: false,
                     recover_records: false,
-                    timeline_offset: Some("1h1m".to_string()),
+                    time_offset: Some("1h1m".to_string()),
                 },
                 clobber: true,
                 time_format_options: TimeFormatOptions {
@@ -3098,7 +3092,7 @@ mod tests {
     }
 
     #[test]
-    fn test_timeline_offset_logon_summary() {
+    fn test_time_offset_logon_summary() {
         let logon_summary = StoredStatic::create_static_data(Some(Config {
             action: Some(Action::LogonSummary(LogonSummaryOption {
                 output: None,
@@ -3112,7 +3106,7 @@ mod tests {
                     filepath: None,
                     live_analysis: false,
                     recover_records: false,
-                    timeline_offset: Some("1y1d1h".to_string()),
+                    time_offset: Some("1y1d1h".to_string()),
                 },
                 clobber: true,
                 time_format_options: TimeFormatOptions {
@@ -3150,7 +3144,7 @@ mod tests {
     }
 
     #[test]
-    fn test_timeline_offset_pivot() {
+    fn test_time_offset_pivot() {
         let pivot_keywords_list = StoredStatic::create_static_data(Some(Config {
             action: Some(Action::PivotKeywordsList(PivotKeywordOption {
                 output: None,
@@ -3164,7 +3158,7 @@ mod tests {
                     filepath: None,
                     live_analysis: false,
                     recover_records: false,
-                    timeline_offset: Some("1y1M1s".to_string()),
+                    time_offset: Some("1y1M1s".to_string()),
                 },
                 clobber: true,
                 detect_common_options: DetectCommonOption {

@@ -506,7 +506,7 @@ mod tests {
                     filepath: None,
                     live_analysis: false,
                     recover_records: false,
-                    timeline_offset: None,
+                    time_offset: None,
                 },
                 common_options: CommonOptions {
                     no_color: false,

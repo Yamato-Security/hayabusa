@@ -24,6 +24,10 @@
   - Multiple sub-nodes with attributes and the same name would be overwritten and only the last one kept. (omerbenamram/evtx #245)
 - `logon-summary` and `eid-metrics` would sometimes output multiple progress bars. #1479 (@fukusuket)
 
+**Other:**
+
+- The `--timeline-offset` option has been renamed to `--time-offset`. (#1490) (@yamatosecurity)
+
 ## 2.18.0 [2024/10/23] - SecTor Release
 
 **New Features:**
