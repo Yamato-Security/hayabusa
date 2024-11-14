@@ -8,7 +8,7 @@ use std::borrow::BorrowMut;
 use std::ffi::{OsStr, OsString};
 use std::fmt::Display;
 use std::fmt::Write as _;
-use std::io::{copy, BufWriter, Write};
+use std::io::{copy, BufRead, BufWriter, Write};
 use std::path::Path;
 use std::ptr::null_mut;
 use std::sync::Arc;
@@ -16,6 +16,7 @@ use std::time::Duration;
 use std::{
     env,
     fs::{self, File},
+    io,
     path::PathBuf,
     vec,
 };
@@ -62,6 +63,7 @@ use libmimalloc_sys::mi_stats_print_out;
 use mimalloc::MiMalloc;
 use nested::Nested;
 use num_format::{Locale, ToFormattedString};
+use rand::seq::SliceRandom;
 use rust_embed::Embed;
 use serde_json::{Map, Value};
 use termcolor::{BufferWriter, Color, ColorChoice};
@@ -221,7 +223,7 @@ impl App {
             .ok();
             println!();
         }
-
+        let _ = self.output_open_close_message("opening_messages.txt", stored_static);
         write_color_buffer(
             &BufferWriter::stdout(ColorChoice::Always),
             None,
@@ -616,7 +618,6 @@ impl App {
                         }
                     }
                 }
-                println!();
                 let split_now_version = &now_version
                     .replace("-dev", "")
                     .split('.')
@@ -647,8 +648,9 @@ impl App {
                         true,
                     )
                     .ok();
-                    println!();
                 }
+                println!();
+                let _ = self.output_open_close_message("closing_messages.txt", stored_static);
                 return;
             }
             Action::LevelTuning(option) => {
@@ -717,6 +719,7 @@ impl App {
                     )
                     .ok();
                 }
+                let _ = self.output_open_close_message("closing_messages.txt", stored_static);
                 return;
             }
             Action::SetDefaultProfile(_) => {
@@ -747,6 +750,7 @@ impl App {
                 ) {
                     AlertMessage::alert(&e).ok();
                 }
+                let _ = self.output_open_close_message("closing_messages.txt", stored_static);
                 return;
             }
             Action::ListProfiles(_) => {
@@ -774,7 +778,7 @@ impl App {
                     )
                     .ok();
                 }
-                println!();
+                let _ = self.output_open_close_message("closing_messages.txt", stored_static);
                 return;
             }
         }
@@ -807,6 +811,8 @@ impl App {
         if ERROR_LOG_STACK.lock().unwrap().len() > 0 {
             AlertMessage::create_error_log(stored_static.quiet_errors_flag);
         }
+        println!();
+        let _ = self.output_open_close_message("closing_messages.txt", stored_static);
 
         // Debugフラグをつけていた時にはメモリ利用情報などの統計情報を画面に出力する
         if stored_static.config.debug {
@@ -817,7 +823,6 @@ impl App {
                 mi_stats_print_out(None, null_mut());
             }
         }
-        println!();
     }
 
     fn analysis_start(
@@ -2374,6 +2379,37 @@ impl App {
                 .ok();
             }
         }
+    }
+
+    fn output_open_close_message(
+        &self,
+        file_path: &str,
+        stored_static: &StoredStatic,
+    ) -> io::Result<()> {
+        if stored_static.common_options.quiet {
+            return Ok(());
+        }
+        let checked_path = check_setting_path(
+            &CURRENT_EXE_PATH.to_path_buf(),
+            format!("rules/config/{}", file_path).as_str(),
+            true,
+        );
+        if let Some(f) = checked_path {
+            if f.exists() {
+                let file = File::open(f)?;
+                let lines: Vec<String> =
+                    io::BufReader::new(file).lines().collect::<Result<_, _>>()?;
+                if let Some(random_line) = lines.choose(&mut rand::thread_rng()) {
+                    println!("{}\n", random_line);
+                }
+            } else if let Some(contents) = ONE_CONFIG_MAP.get(file_path) {
+                let lines: Vec<&str> = contents.lines().collect();
+                if let Some(random_line) = lines.choose(&mut rand::thread_rng()) {
+                    println!("{}\n", random_line);
+                }
+            }
+        }
+        Ok(())
     }
 
     /// check architecture

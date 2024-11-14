@@ -245,7 +245,6 @@ impl Update {
             )
             .ok();
         }
-        println!();
         for (key, value) in &update_count_by_rule_type {
             println!("Updated {key} rules: {value}");
         }
