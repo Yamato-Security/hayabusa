@@ -1828,7 +1828,12 @@ impl App {
             || stored_static.log_metrics_flag);
 
         if !is_timeline_cmd {
-            pb.finish_with_message("Scanning finished.");
+            let msg = if stored_static.common_options.no_color {
+                style("Scanning finished.\n").color256(15).to_string()
+            } else {
+                style("Scanning finished.\n").color256(214).to_string()
+            };
+            pb.finish_with_message(msg);
         }
         CHECKPOINT
             .lock()
@@ -1870,13 +1875,22 @@ impl App {
             afterfact_info.tl_endtime = tl.stats.end_time;
 
             let msg = if stored_static.output_path.is_some() {
-                style("Scanning finished. Please wait while the results are being saved.\n")
-                    .color256(214)
+                if stored_static.common_options.no_color {
+                    style("Scanning finished. Please wait while the results are being saved.\n")
+                        .color256(15)
+                        .to_string()
+                } else {
+                    style("Scanning finished. Please wait while the results are being saved.\n")
+                        .color256(214)
+                        .to_string()
+                }
+            } else if stored_static.common_options.no_color {
+                style("Scanning finished.\n").color256(15).to_string()
             } else {
-                style("Scanning finished.\n").color256(214)
+                style("Scanning finished.\n").color256(214).to_string()
             };
             // Convert the ColoredString to a String before passing it
-            pb.finish_with_message(msg.to_string());
+            pb.finish_with_message(msg);
 
             // output afterfact
             if stored_static.is_low_memory {
