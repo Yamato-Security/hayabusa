@@ -1147,7 +1147,10 @@ impl Detection {
                 let val = format!("{}{}", value.to_formatted_string(&Locale::en), disable_flag);
                 write_color_buffer(
                     &BufferWriter::stdout(ColorChoice::Always),
-                    Some(Color::Rgb(0, 255, 0)),
+                    get_writable_color(
+                        Some(Color::Rgb(0, 255, 0)),
+                        stored_static.common_options.no_color,
+                    ),
                     key.as_str(),
                     false,
                 )
@@ -1208,7 +1211,10 @@ impl Detection {
                 );
                 write_color_buffer(
                     &BufferWriter::stdout(ColorChoice::Always),
-                    Some(Color::Rgb(0, 255, 0)),
+                    get_writable_color(
+                        Some(Color::Rgb(0, 255, 0)),
+                        stored_static.common_options.no_color,
+                    ),
                     key.as_str(),
                     false,
                 )

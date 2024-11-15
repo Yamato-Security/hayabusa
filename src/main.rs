@@ -1606,7 +1606,10 @@ impl App {
             println!();
             write_color_buffer(
                 &BufferWriter::stdout(ColorChoice::Always),
-                Some(Color::Rgb(255, 175, 0)),
+                get_writable_color(
+                    Some(Color::Rgb(255, 175, 0)),
+                    stored_static.common_options.no_color,
+                ),
                 wait_message,
                 true,
             )
@@ -1656,7 +1659,10 @@ impl App {
             {
                 write_color_buffer(
                     &BufferWriter::stdout(ColorChoice::Always),
-                    Some(Color::Rgb(255, 175, 0)),
+                    get_writable_color(
+                        Some(Color::Rgb(255, 175, 0)),
+                        stored_static.common_options.no_color,
+                    ),
                     "Creating the channel filter. Please wait.",
                     true,
                 )
