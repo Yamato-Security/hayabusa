@@ -534,6 +534,7 @@ mod tests {
                 },
                 output: None,
                 clobber: false,
+                disable_abbreviations: false,
             }));
 
         let mut timeline = Timeline::new();

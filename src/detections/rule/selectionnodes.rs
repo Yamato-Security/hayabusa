@@ -590,6 +590,7 @@ mod tests {
                 geo_ip: None,
                 output: None,
                 multiline: false,
+                disable_abbreviations: false,
             })),
             debug: false,
         }))

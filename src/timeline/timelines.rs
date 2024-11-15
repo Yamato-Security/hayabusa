@@ -906,6 +906,7 @@ mod tests {
                 },
                 output: Some(Path::new("./test_tm_stats.csv").to_path_buf()),
                 clobber: false,
+                disable_abbreviations: false,
             }));
         *STORED_EKEY_ALIAS.write().unwrap() = Some(dummy_stored_static.eventkey_alias.clone());
         let mut timeline = Timeline::default();

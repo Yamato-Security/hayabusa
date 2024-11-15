@@ -41,6 +41,9 @@ jobs:
       - name: computer-metrics
         run: cd main && cargo run --release -- computer-metrics -d ../hayabusa-sample-evtx -q
 
+      - name: computer-metrics(-o)
+        run: cd main && cargo run --release -- computer-metrics -d ../hayabusa-sample-evtx -q -o out.csv -C
+
       - name: csv-timeline
         run: cd main && cargo run --release -- csv-timeline -d ../hayabusa-sample-evtx -o out.csv -q -w -D -n -u
 
@@ -49,6 +52,9 @@ jobs:
 
       - name: eid-metrics
         run: cd main && cargo run --release -- eid-metrics -d ../hayabusa-sample-evtx -q
+
+      - name: eid-metrics(-o)
+        run: cd main && cargo run --release -- eid-metrics -d ../hayabusa-sample-evtx -q -o out.csv -C
 
       - name: json-timeline
         run: cd main && cargo run --release -- json-timeline -d ../hayabusa-sample-evtx -o out.json -q -w -D -n -u
@@ -68,13 +74,25 @@ jobs:
       - name: list-profiles
         run: cd main && cargo run --release -- list-profiles -q
 
+      - name: log-metrics
+        run: cd main && cargo run --release -- log-metrics -d ../hayabusa-sample-evtx -q
+
+      - name: log-metrics(-o)
+        run: cd main && cargo run --release -- log-metrics -d ../hayabusa-sample-evtx -q -o out.csv -C
+
       - name: logon-summary
         run: cd main && cargo run --release -- logon-summary -d ../hayabusa-sample-evtx -q
+
+      - name: logon-summary(-o)
+        run: cd main && cargo run --release -- logon-summary -d ../hayabusa-sample-evtx -q -o out.csv -C
 
       - name: pivot-keywords-list
         run: cd main && cargo run --release -- pivot-keywords-list -d ../hayabusa-sample-evtx -o key -q -w
 
       - name: search
+        run: cd main && cargo run --release -- search -d ../hayabusa-sample-evtx -k mimikatz -q
+
+      - name: search(-o)
         run: cd main && cargo run --release -- search -d ../hayabusa-sample-evtx -k mimikatz -o search.csv -q
 
       - name: set-default-profile

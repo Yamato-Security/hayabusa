@@ -6,6 +6,7 @@
 
 - Support for the `gt`, `gte`, `lt`, `lte` field modifiers. (#1433) (@fukusuket)
 - New `log-metrics` command to get information about `.evtx` files. (computer names, event count, first timestamp, last timestamp, channels, providers) (#1474) (@fukusuket)
+- New `-b, --disable-abbreviations` command to disable `Channel` and `Provider` abbreviations for when you want to check the original values. (#1485) (@fukusuket)
 
 **Enhancements:**
 

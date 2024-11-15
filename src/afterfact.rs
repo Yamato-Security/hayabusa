@@ -2297,6 +2297,7 @@ mod tests {
         let mock_ch_filter = message::create_output_filter_config(
             "test_files/config/channel_abbreviations.txt",
             true,
+            false,
         );
         let test_filepath: &str = "test.evtx";
         let test_rulepath: &str = "test-rule.yml";
@@ -2383,6 +2384,7 @@ mod tests {
             geo_ip: None,
             output: Some(Path::new("./test_emit_csv.csv").to_path_buf()),
             multiline: false,
+            disable_abbreviations: false,
         });
         let dummy_config = Some(Config {
             action: Some(dummy_action),
@@ -2645,6 +2647,7 @@ mod tests {
         let mock_ch_filter = message::create_output_filter_config(
             "test_files/config/channel_abbreviations.txt",
             true,
+            false,
         );
         let test_filepath: &str = "test.evtx";
         let test_rulepath: &str = "test-rule.yml";
@@ -2731,6 +2734,7 @@ mod tests {
             geo_ip: None,
             output: Some(Path::new("./test_emit_csv_multiline.csv").to_path_buf()),
             multiline: true,
+            disable_abbreviations: false,
         });
         let dummy_config = Some(Config {
             action: Some(dummy_action),
@@ -2987,6 +2991,7 @@ mod tests {
         let mock_ch_filter = message::create_output_filter_config(
             "test_files/config/channel_abbreviations.txt",
             true,
+            false,
         );
         let test_filepath: &str = "test.evtx";
         let test_rulepath: &str = "test-rule.yml";
@@ -3073,6 +3078,7 @@ mod tests {
             geo_ip: None,
             output: Some(Path::new("./test_emit_csv_remove_duplicate.csv").to_path_buf()),
             multiline: false,
+            disable_abbreviations: false,
         });
         let dummy_config = Some(Config {
             action: Some(dummy_action),
@@ -3330,6 +3336,7 @@ mod tests {
         let mock_ch_filter = message::create_output_filter_config(
             "test_files/config/channel_abbreviations.txt",
             true,
+            false,
         );
         let test_filepath: &str = "test.evtx";
         let test_rulepath: &str = "test-rule.yml";
@@ -3416,6 +3423,7 @@ mod tests {
             geo_ip: None,
             output: Some(Path::new("./test_emit_csv_remove_duplicate.json").to_path_buf()),
             jsonl_timeline: false,
+            disable_abbreviations: false,
         });
         let dummy_config = Some(Config {
             action: Some(dummy_action),
@@ -3747,6 +3755,7 @@ mod tests {
         let mock_ch_filter = message::create_output_filter_config(
             "test_files/config/channel_abbreviations.txt",
             true,
+            false,
         );
         let test_filepath: &str = "test.evtx";
         let test_rulepath: &str = "test-rule.yml";
@@ -3832,6 +3841,7 @@ mod tests {
             geo_ip: None,
             output: Some(Path::new("./test_multiple_data_in_details.json").to_path_buf()),
             jsonl_timeline: false,
+            disable_abbreviations: false,
         });
         let dummy_config = Some(Config {
             action: Some(dummy_action),
@@ -4108,6 +4118,7 @@ mod tests {
         let mock_ch_filter = message::create_output_filter_config(
             "test_files/config/channel_abbreviations.txt",
             true,
+            false,
         );
         let test_filepath: &str = "test.evtx";
         let test_rulepath: &str = "test-rule.yml";
@@ -4193,6 +4204,7 @@ mod tests {
             geo_ip: None,
             output: Some(Path::new("./test_emit_csv_json.json").to_path_buf()),
             jsonl_timeline: false,
+            disable_abbreviations: false,
         });
 
         let dummy_config = Some(Config {
@@ -4394,6 +4406,7 @@ mod tests {
         let mock_ch_filter = message::create_output_filter_config(
             "test_files/config/channel_abbreviations.txt",
             true,
+            false,
         );
         let test_filepath: &str = "test.evtx";
         let test_rulepath: &str = "test-rule.yml";
@@ -4479,6 +4492,7 @@ mod tests {
             geo_ip: None,
             output: Some(Path::new("./test_emit_csv_jsonl.jsonl").to_path_buf()),
             jsonl_timeline: true,
+            disable_abbreviations: false,
         });
 
         let dummy_config = Some(Config {
