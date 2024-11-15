@@ -184,8 +184,7 @@ impl App {
         // カレントディレクトリ以外からの実行の際にrules-configオプションの指定がないとエラーが発生することを防ぐための処理
         if stored_static.config_path == Path::new("./rules/config") {
             stored_static.config_path =
-                utils::check_setting_path(&CURRENT_EXE_PATH.to_path_buf(), "rules/config", true)
-                    .unwrap();
+                check_setting_path(&CURRENT_EXE_PATH.to_path_buf(), "rules/config", true).unwrap();
         }
 
         let time_filter = TargetEventTime::new(stored_static);
@@ -196,7 +195,10 @@ impl App {
         if stored_static.metrics_flag {
             write_color_buffer(
                 &BufferWriter::stdout(ColorChoice::Always),
-                None,
+                get_writable_color(
+                    Some(Color::Rgb(255, 175, 0)),
+                    stored_static.common_options.no_color,
+                ),
                 "Generating Event ID Metrics",
                 true,
             )
@@ -206,7 +208,10 @@ impl App {
         if stored_static.logon_summary_flag {
             write_color_buffer(
                 &BufferWriter::stdout(ColorChoice::Always),
-                None,
+                get_writable_color(
+                    Some(Color::Rgb(255, 175, 0)),
+                    stored_static.common_options.no_color,
+                ),
                 "Generating Logon Summary",
                 true,
             )
@@ -216,7 +221,10 @@ impl App {
         if stored_static.search_flag {
             write_color_buffer(
                 &BufferWriter::stdout(ColorChoice::Always),
-                None,
+                get_writable_color(
+                    Some(Color::Rgb(255, 175, 0)),
+                    stored_static.common_options.no_color,
+                ),
                 "Searching...",
                 true,
             )
@@ -226,12 +234,19 @@ impl App {
         let _ = self.output_open_close_message("opening_messages.txt", stored_static);
         write_color_buffer(
             &BufferWriter::stdout(ColorChoice::Always),
-            None,
-            &format!(
-                "Start time: {}\n",
-                analysis_start_time.format("%Y/%m/%d %H:%M")
+            get_writable_color(
+                Some(Color::Rgb(0, 255, 0)),
+                stored_static.common_options.no_color,
             ),
-            true,
+            "Start time: ",
+            false,
+        )
+        .ok();
+        write_color_buffer(
+            &BufferWriter::stdout(ColorChoice::Always),
+            None,
+            &format!("{}\n", analysis_start_time.format("%Y/%m/%d %H:%M")),
+            false,
         )
         .ok();
         CHECKPOINT
@@ -334,7 +349,11 @@ impl App {
                 }
                 self.analysis_start(&target_extensions, &time_filter, stored_static);
 
-                output_profile_name(&stored_static.output_option, false);
+                output_profile_name(
+                    &stored_static.output_option,
+                    false,
+                    stored_static.common_options.no_color,
+                );
                 output_saved_file(
                     &stored_static.output_path,
                     "Saved file",
@@ -471,7 +490,7 @@ impl App {
                     //ファイル出力の場合
                     pivot_key_unions.iter().for_each(|(key, pivot_keyword)| {
                         let mut f = BufWriter::new(
-                            fs::File::create(
+                            File::create(
                                 pivot_file.as_path().display().to_string() + "-" + key + ".txt",
                             )
                             .unwrap(),
@@ -511,12 +530,14 @@ impl App {
                     let output = "\nThe following pivot keywords were found:\n";
                     write_color_buffer(
                         &BufferWriter::stdout(ColorChoice::Always),
-                        None,
+                        get_writable_color(
+                            Some(Color::Rgb(255, 175, 0)),
+                            stored_static.common_options.no_color,
+                        ),
                         output,
                         true,
                     )
                     .ok();
-
                     pivot_key_unions.iter().for_each(|(key, pivot_keyword)| {
                         create_output(
                             String::default(),
@@ -561,7 +582,10 @@ impl App {
                             copy(&mut res.into_reader(), &mut dst).unwrap();
                             write_color_buffer(
                                 &BufferWriter::stdout(ColorChoice::Always),
-                                None,
+                                get_writable_color(
+                                    Some(Color::Rgb(255, 175, 0)),
+                                    stored_static.common_options.no_color,
+                                ),
                                 "Rules file encoded_rules.yml updated successfully.",
                                 true,
                             )
@@ -581,7 +605,10 @@ impl App {
                                 copy(&mut res.into_reader(), &mut dst).unwrap();
                                 write_color_buffer(
                                     &BufferWriter::stdout(ColorChoice::Always),
-                                    None,
+                                    get_writable_color(
+                                        Some(Color::Rgb(255, 175, 0)),
+                                        stored_static.common_options.no_color,
+                                    ),
                                     "Config file rules_config_files.txt updated successfully.",
                                     true,
                                 )
@@ -601,7 +628,10 @@ impl App {
                             if output != "You currently have the latest rules." {
                                 write_color_buffer(
                                     &BufferWriter::stdout(ColorChoice::Always),
-                                    None,
+                                    get_writable_color(
+                                        Some(Color::Rgb(255, 175, 0)),
+                                        stored_static.common_options.no_color,
+                                    ),
                                     "Rules updated successfully.",
                                     true,
                                 )
@@ -633,7 +663,10 @@ impl App {
                 if split_latest_version > split_now_version {
                     write_color_buffer(
                         &BufferWriter::stdout(ColorChoice::Always),
-                        None,
+                        get_writable_color(
+                            Some(Color::Rgb(255, 175, 0)),
+                            stored_static.common_options.no_color,
+                        ),
                         &format!(
                             "There is a new version of Hayabusa: {}",
                             latest_version_data.unwrap().replace('\"', "")
@@ -643,7 +676,10 @@ impl App {
                     .ok();
                     write_color_buffer(
                         &BufferWriter::stdout(ColorChoice::Always),
-                        None,
+                        get_writable_color(
+                            Some(Color::Rgb(255, 175, 0)),
+                            stored_static.common_options.no_color,
+                        ),
                         "You can download it at https://github.com/Yamato-Security/hayabusa/releases",
                         true,
                     )
@@ -654,36 +690,23 @@ impl App {
                 return;
             }
             Action::LevelTuning(option) => {
-                let level_tuning_config_path = if option.level_tuning.to_str().unwrap()
-                    != "./rules/config/level_tuning.txt"
-                {
-                    utils::check_setting_path(
-                        option
-                            .level_tuning
-                            .parent()
-                            .unwrap_or_else(|| Path::new("")),
-                        option
-                            .level_tuning
-                            .file_name()
-                            .unwrap()
-                            .to_str()
-                            .unwrap_or_default(),
-                        false,
-                    )
-                    .unwrap_or_else(|| {
-                        utils::check_setting_path(
-                            &CURRENT_EXE_PATH.to_path_buf(),
-                            "rules/config/level_tuning.txt",
-                            true,
+                let level_tuning_config_path =
+                    if option.level_tuning.to_str().unwrap() != "./rules/config/level_tuning.txt" {
+                        check_setting_path(
+                            option
+                                .level_tuning
+                                .parent()
+                                .unwrap_or_else(|| Path::new("")),
+                            option
+                                .level_tuning
+                                .file_name()
+                                .unwrap()
+                                .to_str()
+                                .unwrap_or_default(),
+                            false,
                         )
-                        .unwrap()
-                    })
-                    .display()
-                    .to_string()
-                } else {
-                    utils::check_setting_path(&stored_static.config_path, "level_tuning.txt", false)
                         .unwrap_or_else(|| {
-                            utils::check_setting_path(
+                            check_setting_path(
                                 &CURRENT_EXE_PATH.to_path_buf(),
                                 "rules/config/level_tuning.txt",
                                 true,
@@ -692,7 +715,19 @@ impl App {
                         })
                         .display()
                         .to_string()
-                };
+                    } else {
+                        check_setting_path(&stored_static.config_path, "level_tuning.txt", false)
+                            .unwrap_or_else(|| {
+                                check_setting_path(
+                                    &CURRENT_EXE_PATH.to_path_buf(),
+                                    "rules/config/level_tuning.txt",
+                                    true,
+                                )
+                                .unwrap()
+                            })
+                            .display()
+                            .to_string()
+                    };
 
                 let rules_path = if stored_static.output_option.as_ref().is_some() {
                     stored_static
@@ -757,7 +792,10 @@ impl App {
                 let profile_list = options::profile::get_profile_list("config/profiles.yaml");
                 write_color_buffer(
                     &BufferWriter::stdout(ColorChoice::Always),
-                    None,
+                    get_writable_color(
+                        Some(Color::Rgb(255, 175, 0)),
+                        stored_static.common_options.no_color,
+                    ),
                     "List of available profiles:",
                     true,
                 )
@@ -784,14 +822,28 @@ impl App {
         }
 
         // 処理時間の出力
-        let elapsed_output_str = format!(
-            "Elapsed time: {}",
-            CHECKPOINT
-                .lock()
-                .as_mut()
-                .unwrap()
-                .calculate_all_stocked_results()
-        );
+        let elapsed_output_str = CHECKPOINT
+            .lock()
+            .as_mut()
+            .unwrap()
+            .calculate_all_stocked_results();
+        write_color_buffer(
+            &BufferWriter::stdout(ColorChoice::Always),
+            get_writable_color(
+                Some(Color::Rgb(0, 255, 0)),
+                stored_static.common_options.no_color,
+            ),
+            "Elapsed time: ",
+            false,
+        )
+        .ok();
+        write_color_buffer(
+            &BufferWriter::stdout(ColorChoice::Always),
+            None,
+            elapsed_output_str.as_str(),
+            true,
+        )
+        .ok();
         output_and_data_stack_for_html(
             &elapsed_output_str,
             "General Overview {#general_overview}",
@@ -800,9 +852,57 @@ impl App {
         match stored_static.config.action {
             Some(Action::CsvTimeline(_)) | Some(Action::JsonTimeline(_)) => {
                 println!();
-                println!("Please report any issues with Hayabusa rules to: https://github.com/Yamato-Security/hayabusa-rules/issues");
-                println!("Please report any false positives with Sigma rules to: https://github.com/SigmaHQ/sigma/issues");
-                println!("Please submit new Sigma rules with pull requests to: https://github.com/SigmaHQ/sigma/pulls");
+                write_color_buffer(
+                    &BufferWriter::stdout(ColorChoice::Always),
+                    get_writable_color(
+                        Some(Color::Rgb(0, 255, 0)),
+                        stored_static.common_options.no_color,
+                    ),
+                    "Please report any issues with Hayabusa rules to: ",
+                    false,
+                )
+                .ok();
+                write_color_buffer(
+                    &BufferWriter::stdout(ColorChoice::Always),
+                    get_writable_color(None, stored_static.common_options.no_color),
+                    "https://github.com/Yamato-Security/hayabusa-rules/issues",
+                    true,
+                )
+                .ok();
+                write_color_buffer(
+                    &BufferWriter::stdout(ColorChoice::Always),
+                    get_writable_color(
+                        Some(Color::Rgb(0, 255, 0)),
+                        stored_static.common_options.no_color,
+                    ),
+                    "Please report any false positives with Sigma rules to: ",
+                    false,
+                )
+                .ok();
+                write_color_buffer(
+                    &BufferWriter::stdout(ColorChoice::Always),
+                    get_writable_color(None, stored_static.common_options.no_color),
+                    "https://github.com/SigmaHQ/sigma/issues",
+                    true,
+                )
+                .ok();
+                write_color_buffer(
+                    &BufferWriter::stdout(ColorChoice::Always),
+                    get_writable_color(
+                        Some(Color::Rgb(0, 255, 0)),
+                        stored_static.common_options.no_color,
+                    ),
+                    "Please submit new Sigma rules with pull requests to: ",
+                    false,
+                )
+                .ok();
+                write_color_buffer(
+                    &BufferWriter::stdout(ColorChoice::Always),
+                    None,
+                    "https://github.com/SigmaHQ/sigma/pulls",
+                    true,
+                )
+                .ok();
             }
             _ => {}
         }
@@ -1055,11 +1155,19 @@ impl App {
             .to_uppercase();
         write_color_buffer(
             &BufferWriter::stdout(ColorChoice::Always),
-            None,
-            &format!(
-                "Total event log files: {}",
-                evtx_files.len().to_formatted_string(&Locale::en)
+            get_writable_color(
+                Some(Color::Rgb(0, 255, 0)),
+                stored_static.common_options.no_color,
             ),
+            "Total event log files: ",
+            false,
+        )
+        .ok();
+        let log_files = &evtx_files.len().to_formatted_string(&Locale::en);
+        write_color_buffer(
+            &BufferWriter::stdout(ColorChoice::Always),
+            None,
+            log_files,
             true,
         )
         .ok();
@@ -1082,8 +1190,24 @@ impl App {
             };
             total_file_size += ByteSize::b(file_size);
         }
-        let total_size_output = format!("Total file size: {}", total_file_size.to_string_as(false));
-        println!("{total_size_output}");
+        write_color_buffer(
+            &BufferWriter::stdout(ColorChoice::Always),
+            get_writable_color(
+                Some(Color::Rgb(0, 255, 0)),
+                stored_static.common_options.no_color,
+            ),
+            "Total file size: ",
+            false,
+        )
+        .ok();
+        let total_size = total_file_size.to_string_as(false);
+        write_color_buffer(
+            &BufferWriter::stdout(ColorChoice::Always),
+            None,
+            &total_file_size.to_string_as(false),
+            true,
+        )
+        .ok();
         let mut status_append_output = None;
         if !(stored_static.metrics_flag
             || stored_static.logon_summary_flag
@@ -1112,8 +1236,13 @@ impl App {
                 ("CRITICAL", 5),
             ]);
             println!();
-            println!("Scan wizard:");
-            println!();
+            write_color_buffer(
+                &BufferWriter::stdout(ColorChoice::Always),
+                Some(Color::Rgb(0, 255, 0)),
+                "Scan wizard:",
+                true,
+            )
+            .ok();
             let calcurate_wizard_rule_count = |exclude_noisytarget_flag: bool,
                                                exclude_noisy_status: Vec<&str>,
                                                min_level: &str,
@@ -1428,7 +1557,7 @@ impl App {
                     "- Analyzed event files: {}",
                     evtx_files.len().to_formatted_string(&Locale::en)
                 ),
-                format!("- {total_size_output}"),
+                format!("- {total_size}"),
             ]);
             if let Some(status_report) = status_append_output {
                 html_report_data.push(format!("- Selected deteciton rule set: {status_report}"));
@@ -1454,24 +1583,34 @@ impl App {
             .unwrap()
             .min_level
             .to_uppercase();
-        println!();
+        let mut wait_message = "";
         if !(stored_static.logon_summary_flag
             || stored_static.search_flag
             || stored_static.metrics_flag
             || stored_static.computer_metrics_flag
             || stored_static.log_metrics_flag)
         {
-            println!("Loading detection rules. Please wait.");
+            wait_message = "Loading detection rules. Please wait.";
         } else if stored_static.logon_summary_flag {
-            println!("Currently scanning for the logon summary. Please wait.");
+            wait_message = "Currently scanning for the logon summary. Please wait.";
         } else if stored_static.search_flag {
-            println!("Currently searching. Please wait.");
+            wait_message = "Currently searching. Please wait.";
         } else if stored_static.metrics_flag {
-            println!("Currently scanning for event ID metrics. Please wait.");
+            wait_message = "Currently scanning for event ID metrics. Please wait.";
         } else if stored_static.computer_metrics_flag {
-            println!("Currently scanning for computer metrics. Please wait.");
+            wait_message = "Currently scanning for computer metrics. Please wait.";
         } else if stored_static.log_metrics_flag {
-            println!("Currently scanning for log metrics. Please wait.");
+            wait_message = "Currently scanning for log metrics. Please wait.";
+        }
+        if !wait_message.is_empty() {
+            println!();
+            write_color_buffer(
+                &BufferWriter::stdout(ColorChoice::Always),
+                Some(Color::Rgb(255, 175, 0)),
+                wait_message,
+                true,
+            )
+            .ok();
         }
         println!();
 
@@ -1515,33 +1654,78 @@ impl App {
                 && !stored_static.scan_all_evtx_files
                 && !stored_static.enable_all_rules
             {
-                println!("Creating the channel filter. Please wait.");
+                write_color_buffer(
+                    &BufferWriter::stdout(ColorChoice::Always),
+                    Some(Color::Rgb(255, 175, 0)),
+                    "Creating the channel filter. Please wait.",
+                    true,
+                )
+                .ok();
                 println!();
                 let mut channel_filter = create_channel_filter(&evtx_files, &rule_files);
                 if !stored_static.scan_all_evtx_files {
                     evtx_files.retain(|e| channel_filter.scanable_rule_exists(e));
-                    let evtx_files_after_channel_filter = format!(
-                        "Evtx files loaded after channel filter: {}",
-                        (evtx_files.len()).to_formatted_string(&Locale::en)
-                    );
-                    println!("{evtx_files_after_channel_filter}");
+                    write_color_buffer(
+                        &BufferWriter::stdout(ColorChoice::Always),
+                        get_writable_color(
+                            Some(Color::Rgb(0, 255, 0)),
+                            stored_static.common_options.no_color,
+                        ),
+                        "Evtx files loaded after channel filter: ",
+                        false,
+                    )
+                    .ok();
+                    write_color_buffer(
+                        &BufferWriter::stdout(ColorChoice::Always),
+                        None,
+                        evtx_files.len().to_formatted_string(&Locale::en).as_str(),
+                        true,
+                    )
+                    .ok();
                 }
                 if !stored_static.enable_all_rules {
                     rule_files.retain(|r| {
                         channel_filter.rulepathes.contains(&r.rulepath)
                             || !r.yaml["correlation"].is_badvalue()
                     });
-                    let rules_after_channel_filter = format!(
-                        "Detection rules enabled after channel filter: {}",
-                        (rule_files.len()).to_formatted_string(&Locale::en)
-                    );
-                    println!("{rules_after_channel_filter}");
+                    let rules_after_channel_filter =
+                        rule_files.len().to_formatted_string(&Locale::en);
+                    write_color_buffer(
+                        &BufferWriter::stdout(ColorChoice::Always),
+                        get_writable_color(
+                            Some(Color::Rgb(0, 255, 0)),
+                            stored_static.common_options.no_color,
+                        ),
+                        "Detection rules enabled after channel filter: ",
+                        false,
+                    )
+                    .ok();
+                    write_color_buffer(
+                        &BufferWriter::stdout(ColorChoice::Always),
+                        None,
+                        rules_after_channel_filter.as_str(),
+                        true,
+                    )
+                    .ok();
                     println!();
                 }
             }
-            output_profile_name(&stored_static.output_option, true);
+            output_profile_name(
+                &stored_static.output_option,
+                true,
+                stored_static.common_options.no_color,
+            );
             println!();
-            println!("Scanning in progress. Please wait.");
+            write_color_buffer(
+                &BufferWriter::stdout(ColorChoice::Always),
+                get_writable_color(
+                    Some(Color::Rgb(255, 175, 0)),
+                    stored_static.common_options.no_color,
+                ),
+                "Scanning in progress. Please wait.",
+                true,
+            )
+            .ok();
             println!();
         }
 
@@ -1675,7 +1859,6 @@ impl App {
                 "Scanning finished.\n"
             };
             pb.finish_with_message(msg);
-
             // output afterfact
             if stored_static.is_low_memory {
                 afterfact::output_additional_afterfact(
@@ -2400,12 +2583,32 @@ impl App {
                 let lines: Vec<String> =
                     io::BufReader::new(file).lines().collect::<Result<_, _>>()?;
                 if let Some(random_line) = lines.choose(&mut rand::thread_rng()) {
-                    println!("{}\n", random_line);
+                    write_color_buffer(
+                        &BufferWriter::stdout(ColorChoice::Always),
+                        get_writable_color(
+                            Some(Color::Rgb(255, 175, 0)),
+                            stored_static.common_options.no_color,
+                        ),
+                        random_line,
+                        true,
+                    )
+                    .ok();
+                    println!()
                 }
             } else if let Some(contents) = ONE_CONFIG_MAP.get(file_path) {
                 let lines: Vec<&str> = contents.lines().collect();
                 if let Some(random_line) = lines.choose(&mut rand::thread_rng()) {
-                    println!("{}\n", random_line);
+                    write_color_buffer(
+                        &BufferWriter::stdout(ColorChoice::Always),
+                        get_writable_color(
+                            Some(Color::Rgb(255, 175, 0)),
+                            stored_static.common_options.no_color,
+                        ),
+                        random_line,
+                        true,
+                    )
+                    .ok();
+                    println!()
                 }
             }
         }

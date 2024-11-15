@@ -704,17 +704,9 @@ pub fn output_and_data_stack_for_html(
     section_name: &str,
     html_report_flag: &bool,
 ) {
-    write_color_buffer(
-        &BufferWriter::stdout(ColorChoice::Always),
-        None,
-        output_str,
-        true,
-    )
-    .ok();
-
     if *html_report_flag {
         let mut output_data = Nested::<String>::new();
-        output_data.extend(vec![format!("- {output_str}")]);
+        output_data.extend(vec![format!("- Elapsed time: {output_str}")]);
         htmlreport::add_md_data(section_name, output_data);
     }
 }
@@ -723,7 +715,7 @@ pub fn contains_str(input: &str, check: &str) -> bool {
     memmem::find(input.as_bytes(), check.as_bytes()).is_some()
 }
 
-pub fn output_profile_name(output_option: &Option<OutputOption>, stdout: bool) {
+pub fn output_profile_name(output_option: &Option<OutputOption>, stdout: bool, no_color: bool) {
     // output profile name
     if let Some(profile_opt) = output_option {
         // default profile name check
@@ -740,7 +732,7 @@ pub fn output_profile_name(output_option: &Option<OutputOption>, stdout: bool) {
             name.trim().to_string()
         } else {
             let default_profile_name = DefaultProfileName::get("default_profile_name.txt").unwrap();
-            std::str::from_utf8(default_profile_name.data.as_ref())
+            str::from_utf8(default_profile_name.data.as_ref())
                 .unwrap_or("n/a")
                 .to_string()
         };
@@ -750,10 +742,23 @@ pub fn output_profile_name(output_option: &Option<OutputOption>, stdout: bool) {
             .profile
             .as_ref()
             .unwrap_or(&default_profile_name);
-        let output_saved_str = format!("Output profile: {profile_name}");
         if stdout {
-            println!("{output_saved_str}");
+            write_color_buffer(
+                &BufferWriter::stdout(ColorChoice::Always),
+                get_writable_color(Some(Color::Rgb(0, 255, 0)), no_color),
+                "Output profile: ",
+                false,
+            )
+            .ok();
+            write_color_buffer(
+                &BufferWriter::stdout(ColorChoice::Always),
+                None,
+                profile_name,
+                true,
+            )
+            .ok();
         }
+        let output_saved_str = format!("Output profile: {profile_name}");
         // profileの表示位置とHTMLの出力順が異なるため引数で管理をした
         if !stdout && profile_opt.html_report.is_some() {
             htmlreport::add_md_data(
@@ -1175,8 +1180,8 @@ mod tests {
             })),
             debug: false,
         }));
-        output_profile_name(&stored_static.output_option, true);
-        output_profile_name(&stored_static.output_option, false);
+        output_profile_name(&stored_static.output_option, true, false);
+        output_profile_name(&stored_static.output_option, false, false);
         let expect: HashMap<&str, Nested<String>> = HashMap::from_iter(vec![
             ("Results Summary {#results_summary}", Nested::new()),
             (
