@@ -442,7 +442,7 @@ impl App {
             }
             Action::PivotKeywordsList(_) => {
                 load_pivot_keywords(
-                    utils::check_setting_path(
+                    check_setting_path(
                         &CURRENT_EXE_PATH.to_path_buf(),
                         "rules/config/pivot_keywords.txt",
                         true,
@@ -507,9 +507,19 @@ impl App {
                         )
                         .unwrap();
                     });
-                    let mut output =
-                        "Pivot keyword results were saved to the following files:\n".to_string();
-
+                    println!();
+                    println!();
+                    write_color_buffer(
+                        &BufferWriter::stdout(ColorChoice::Always),
+                        get_writable_color(
+                            Some(Color::Rgb(0, 255, 0)),
+                            stored_static.common_options.no_color,
+                        ),
+                        "Pivot keyword results were saved to the following files: ",
+                        true,
+                    )
+                    .ok();
+                    let mut output = "".to_string();
                     pivot_key_unions.iter().for_each(|(key, _)| {
                         writeln!(
                             output,
@@ -520,18 +530,18 @@ impl App {
                     });
                     write_color_buffer(
                         &BufferWriter::stdout(ColorChoice::Always),
-                        None,
-                        &output,
+                        get_writable_color(None, stored_static.common_options.no_color),
+                        output.as_str(),
                         true,
                     )
                     .ok();
                 } else {
                     //標準出力の場合
-                    let output = "\nThe following pivot keywords were found:\n";
+                    let output = "The following pivot keywords were found:";
                     write_color_buffer(
                         &BufferWriter::stdout(ColorChoice::Always),
                         get_writable_color(
-                            Some(Color::Rgb(255, 175, 0)),
+                            Some(Color::Rgb(0, 255, 0)),
                             stored_static.common_options.no_color,
                         ),
                         output,
