@@ -1,7 +1,9 @@
 use crate::detections::configs::{Action, EventInfoConfig, StoredStatic};
 use crate::detections::detection::EvtxRecordInfo;
 use crate::detections::message::AlertMessage;
-use crate::detections::utils::{self, make_ascii_titlecase, write_color_buffer};
+use crate::detections::utils::{
+    self, get_writable_color, make_ascii_titlecase, write_color_buffer,
+};
 use crate::timeline::search::search_result_dsp_msg;
 use comfy_table::modifiers::UTF8_ROUND_CORNERS;
 use comfy_table::presets::UTF8_FULL;
@@ -483,7 +485,6 @@ impl Timeline {
         if let Action::ComputerMetrics(computer_metrics_option) =
             &stored_static.config.action.as_ref().unwrap()
         {
-            let mut sammsges: Nested<String> = Nested::new();
             if self.stats.stats_list.is_empty() {
                 write_color_buffer(
                     &BufferWriter::stdout(ColorChoice::Always),
@@ -493,18 +494,29 @@ impl Timeline {
                 )
                 .ok();
             } else {
-                sammsges.push(format!(
-                    "\nTotal computers: {}",
-                    self.stats.stats_list.len().to_formatted_string(&Locale::en)
-                ));
-            }
-            println!();
-            computer_metrics::computer_metrics_dsp_msg(
-                &self.stats.stats_list,
-                &computer_metrics_option.output,
-            );
-            for msgprint in sammsges.iter() {
-                println!("{}", msgprint);
+                println!();
+                println!();
+                computer_metrics::computer_metrics_dsp_msg(
+                    &self.stats.stats_list,
+                    &computer_metrics_option.output,
+                );
+                write_color_buffer(
+                    &BufferWriter::stdout(ColorChoice::Always),
+                    get_writable_color(
+                        Some(Color::Rgb(0, 255, 0)),
+                        stored_static.common_options.no_color,
+                    ),
+                    "Total computers: ",
+                    false,
+                )
+                .ok();
+                write_color_buffer(
+                    &BufferWriter::stdout(ColorChoice::Always),
+                    None,
+                    &self.stats.stats_list.len().to_formatted_string(&Locale::en),
+                    true,
+                )
+                .ok();
             }
         }
     }
