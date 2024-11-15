@@ -6,7 +6,7 @@ Garigariganzy (@garigariganzy31): Developer (Event ID metrics implementation, et
 ItiB (@itiB_S144):  Core developer (sigmac hayabusa backend, search command, etc...)
 James Takai / hachiyone(@hach1yon): Second lead developer (Tokio multi-threading, sigma aggregation logic, sigmac backend, rule creation, sigma count implementation etc…)
 Kazuminn (@k47_um1n): Core Developer (Many features.)
-Matthew Seyer: adding the ability to carve out records
+Matthew Seyer: Adding the ability to carve out records
 Tsubokku (@ytsuboi0322): Translations
 Yusuke Matsui (@apt773): AD hacking working group leader, rule testing, documentation, research, support, etc...
 Zach Mathis (@yamatosecurity, Yamato Security Founder): Project leader, tool and concept design, rule creation and tuning, etc…
