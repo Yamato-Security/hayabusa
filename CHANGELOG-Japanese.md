@@ -6,7 +6,12 @@
 
 - `gt`、`gte`、`lt`、`lte`のフィールドモディファイアに対応した。(#1433) (@fukusuket)
 - 新しい`log-metrics`コマンドで`.evtx`ファイルの情報を取得できるようになった。(コンピュータ名、イベント数、最初のタイムスタンプ、最後のタイムスタンプ、チャネル、プロバイダ) (#1474) (@fukusuket)
-- 新しい`-b, --disable-abbreviations`コマンドは、`Channel`と`Provider`の略称を無効にする。元の値を確認したい時に便利。 (#1485) (@fukusuket)
+- 以下のコマンドに`Channel`と`Provider`の略称を無効にする`-b, --disable-abbreviations`オプションを追加した。元の値を確認したい時に便利。 (#1485) (@fukusuket)
+  * csv-timeline
+  * json-timeline
+  * eid-metrics
+  * log-metrics
+  * search
 
 **改善:**
 
@@ -15,6 +20,7 @@
 - `logon-summary`コマンドがRDPイベントからのログオン情報を表示するようになった。注意: ファイルに保存する場合、Hayabusaはより詳細な情報を出力する。(#1468) (@fukusuket)
 - 見やすくなるように色を更新した。 (#1480) (@yamatosecurity)
 - 実行開始と終了のメッセージを出力するようにした。 (#1492) (@fukusuket)
+- 出力に新しい配色を追加した。 (#1491) (@fukusuket)
 
 **バグ修正:**
 

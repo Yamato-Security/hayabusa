@@ -6,7 +6,12 @@
 
 - Support for the `gt`, `gte`, `lt`, `lte` field modifiers. (#1433) (@fukusuket)
 - New `log-metrics` command to get information about `.evtx` files. (computer names, event count, first timestamp, last timestamp, channels, providers) (#1474) (@fukusuket)
-- New `-b, --disable-abbreviations` command to disable `Channel` and `Provider` abbreviations for when you want to check the original values. (#1485) (@fukusuket)
+- New `-b, --disable-abbreviations` options for the following commands to disable `Channel` and `Provider` abbreviations for when you want to check the original values. (#1485) (@fukusuket)
+  * csv-timeline
+  * json-timeline
+  * eid-metrics
+  * log-metrics
+  * search
 
 **Enhancements:**
 
@@ -15,6 +20,7 @@
 - `logon-summary` command now displays logon information from RDP events. Note: Hayabusa will output more detailed information when saving to a file. (#1468) (@fukusuket)
 - The colors were updated to make it easier to read. (#1480) (@yamatosecurity)
 - Added start and finish messages of the day. (#1492) (@fukusuket)
+- New color scheme added to output. (#1491) (@fukusuket)
 
 **Bug Fixes:**
 
