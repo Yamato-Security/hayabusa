@@ -1870,7 +1870,8 @@ impl App {
             afterfact_info.tl_endtime = tl.stats.end_time;
 
             let msg = if stored_static.output_path.is_some() {
-                style("Scanning finished. Please wait while the results are being saved.\n").color256(214)
+                style("Scanning finished. Please wait while the results are being saved.\n")
+                    .color256(214)
             } else {
                 style("Scanning finished.\n").color256(214)
             };
