@@ -232,6 +232,11 @@ impl App {
             println!();
         }
         let _ = self.output_open_close_message("opening_messages.txt", stored_static);
+        if let Action::ListContributors(_) = &stored_static.config.action.as_ref().unwrap() {
+            self.print_contributors();
+            return;
+        }
+
         write_color_buffer(
             &BufferWriter::stdout(ColorChoice::Always),
             get_writable_color(
@@ -375,10 +380,6 @@ impl App {
                             .unwrap_or(""),
                     )
                 }
-            }
-            Action::ListContributors(_) => {
-                self.print_contributors();
-                return;
             }
             Action::LogonSummary(_) => {
                 let mut target_output_path = Nested::<String>::new();
@@ -830,6 +831,7 @@ impl App {
                 let _ = self.output_open_close_message("closing_messages.txt", stored_static);
                 return;
             }
+            _ => {}
         }
 
         // 処理時間の出力
