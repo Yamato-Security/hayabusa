@@ -803,7 +803,7 @@ impl App {
                 write_color_buffer(
                     &BufferWriter::stdout(ColorChoice::Always),
                     get_writable_color(
-                        Some(Color::Rgb(255, 175, 0)),
+                        Some(Color::Rgb(0, 255, 0)),
                         stored_static.common_options.no_color,
                     ),
                     "List of available profiles:",
