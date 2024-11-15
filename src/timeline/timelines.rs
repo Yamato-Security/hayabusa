@@ -272,10 +272,32 @@ impl Timeline {
             }
 
             for msgprint in sammsges.iter() {
-                println!("{msgprint}");
+                let mut parts = msgprint.splitn(2, ':');
+                let first_part = parts.next().unwrap_or_default();
+                let second_part = format!(": {}", parts.next().unwrap_or_default());
+                write_color_buffer(
+                    &BufferWriter::stdout(ColorChoice::Always),
+                    get_writable_color(
+                        Some(Color::Rgb(0, 255, 0)),
+                        stored_static.common_options.no_color,
+                    ),
+                    first_part,
+                    false,
+                )
+                .ok();
+                write_color_buffer(
+                    &BufferWriter::stdout(ColorChoice::Always),
+                    None,
+                    second_part.as_str(),
+                    true,
+                )
+                .ok();
             }
 
-            self.tm_loginstats_tb_set_msg(&logon_summary_option.output);
+            self.tm_loginstats_tb_set_msg(
+                &logon_summary_option.output,
+                stored_static.common_options.no_color,
+            );
         }
     }
 
@@ -328,9 +350,16 @@ impl Timeline {
     }
 
     /// ユーザ毎のログイン統計情報出力メッセージ生成
-    fn tm_loginstats_tb_set_msg(&self, output: &Option<PathBuf>) {
+    fn tm_loginstats_tb_set_msg(&self, output: &Option<PathBuf>, no_color: bool) {
         if output.is_none() {
-            println!("Logon Summary:\n");
+            write_color_buffer(
+                &BufferWriter::stdout(ColorChoice::Always),
+                get_writable_color(Some(Color::Rgb(0, 255, 0)), no_color),
+                "Logon Summary:",
+                true,
+            )
+            .ok();
+            write_color_buffer(&BufferWriter::stdout(ColorChoice::Always), None, "", false).ok();
         }
         if self.stats.stats_login_list.is_empty() {
             let mut loginmsges: Vec<String> = Vec::new();
@@ -341,16 +370,16 @@ impl Timeline {
                 println!("{msgprint}");
             }
         } else {
-            self.tm_loginstats_tb_dsp_msg("successful", output);
+            self.tm_loginstats_tb_dsp_msg("successful", output, no_color);
             if output.is_none() {
                 println!("\n\n");
             }
-            self.tm_loginstats_tb_dsp_msg("failed", output);
+            self.tm_loginstats_tb_dsp_msg("failed", output, no_color);
         }
     }
 
     /// ユーザ毎のログイン統計情報出力
-    fn tm_loginstats_tb_dsp_msg(&self, logon_res: &str, output: &Option<PathBuf>) {
+    fn tm_loginstats_tb_dsp_msg(&self, logon_res: &str, output: &Option<PathBuf>, no_color: bool) {
         let header_column = make_ascii_titlecase(logon_res);
         let header = vec![
             header_column.as_str(),
@@ -366,7 +395,15 @@ impl Timeline {
         ];
         let target;
         if output.is_none() {
-            println!("{} Logons:", make_ascii_titlecase(logon_res));
+            let msg = format!("{} Logons:", make_ascii_titlecase(logon_res));
+            write_color_buffer(
+                &BufferWriter::stdout(ColorChoice::Always),
+                get_writable_color(Some(Color::Rgb(0, 255, 0)), no_color),
+                msg.as_str(),
+                true,
+            )
+            .ok();
+            write_color_buffer(&BufferWriter::stdout(ColorChoice::Always), None, "", false).ok();
         }
         let mut wtr = if let Some(csv_path) = output {
             let file_name = csv_path.as_path().display().to_string() + "-" + logon_res + ".csv";
