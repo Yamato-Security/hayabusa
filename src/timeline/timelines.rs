@@ -479,7 +479,6 @@ impl Timeline {
         event_timeline_config: &EventInfoConfig,
         stored_static: &StoredStatic,
     ) {
-        let mut sammsges: Vec<String> = Vec::new();
         if let Action::Search(search_summary_option) =
             &stored_static.config.action.as_ref().unwrap()
         {
@@ -491,14 +490,6 @@ impl Timeline {
                     true,
                 )
                 .ok();
-            } else {
-                sammsges.push(format!(
-                    "\nTotal findings: {}",
-                    self.event_search
-                        .search_result
-                        .len()
-                        .to_formatted_string(&Locale::en)
-                ));
             }
             let search_result = self.event_search.search_result.clone();
             search_result_dsp_msg(
@@ -511,9 +502,27 @@ impl Timeline {
                     search_summary_option.jsonl_output,
                 ),
             );
-            for msgprint in sammsges.iter() {
-                println!("{}", msgprint);
-            }
+            write_color_buffer(
+                &BufferWriter::stdout(ColorChoice::Always),
+                get_writable_color(
+                    Some(Color::Rgb(0, 255, 0)),
+                    stored_static.common_options.no_color,
+                ),
+                "Total findings: ",
+                false,
+            )
+            .ok();
+            write_color_buffer(
+                &BufferWriter::stdout(ColorChoice::Always),
+                None,
+                self.event_search
+                    .search_result
+                    .len()
+                    .to_formatted_string(&Locale::en)
+                    .as_str(),
+                true,
+            )
+            .ok();
         }
     }
 
