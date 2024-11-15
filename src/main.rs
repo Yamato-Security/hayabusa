@@ -1870,11 +1870,13 @@ impl App {
             afterfact_info.tl_endtime = tl.stats.end_time;
 
             let msg = if stored_static.output_path.is_some() {
-                "Scanning finished. Please wait while the results are being saved.\n"
+                style("Scanning finished. Please wait while the results are being saved.\n").color256(214)
             } else {
-                "Scanning finished.\n"
+                style("Scanning finished.\n").color256(214)
             };
-            pb.finish_with_message(msg);
+            // Convert the ColoredString to a String before passing it
+            pb.finish_with_message(msg.to_string());
+
             // output afterfact
             if stored_static.is_low_memory {
                 afterfact::output_additional_afterfact(
