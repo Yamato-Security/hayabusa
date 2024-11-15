@@ -62,7 +62,8 @@ lazy_static! {
         utils::check_setting_path(&CURRENT_EXE_PATH.to_path_buf(), "config/mitre_tactics.txt", true)
             .unwrap().to_str()
             .unwrap(),
-        true
+        true,
+        false
     );
     pub static ref COMPUTER_MITRE_ATTCK_MAP : DashMap<CompactString, Vec<CompactString>> = DashMap::new();
     pub static ref LEVEL_ABBR_MAP:HashMap<&'static str, &'static str> = HashMap::from_iter(vec![
@@ -87,8 +88,12 @@ lazy_static! {
 pub fn create_output_filter_config(
     path: &str,
     is_lower_case: bool,
+    disable_abbreviation: bool,
 ) -> HashMap<CompactString, CompactString> {
     let mut ret: HashMap<CompactString, CompactString> = HashMap::new();
+    if disable_abbreviation {
+        return ret;
+    }
     let read_result = match utils::read_csv(path) {
         Ok(c) => c,
         Err(e) => {
@@ -780,7 +785,8 @@ mod tests {
     #[test]
     /// test of loading output filter config by mitre_tactics.txt
     fn test_load_mitre_tactics_log() {
-        let actual = create_output_filter_config("test_files/config/mitre_tactics.txt", true);
+        let actual =
+            create_output_filter_config("test_files/config/mitre_tactics.txt", true, false);
         let expected: HashMap<CompactString, CompactString> = HashMap::from([
             ("attack.impact".into(), "Impact".into()),
             ("xxx".into(), "yyy".into()),
@@ -792,9 +798,9 @@ mod tests {
     /// loading test to channel_abbrevations.txt
     fn test_load_abbrevations() {
         let actual =
-            create_output_filter_config("test_files/config/channel_abbreviations.txt", true);
+            create_output_filter_config("test_files/config/channel_abbreviations.txt", true, false);
         let actual2 =
-            create_output_filter_config("test_files/config/channel_abbreviations.txt", true);
+            create_output_filter_config("test_files/config/channel_abbreviations.txt", true, false);
         let expected: HashMap<CompactString, CompactString> = HashMap::from([
             ("security".into(), "Sec".into()),
             ("xxx".into(), "yyy".into()),

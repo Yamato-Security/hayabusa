@@ -2543,6 +2543,7 @@ mod tests {
                 geo_ip: None,
                 output: None,
                 multiline: false,
+                disable_abbreviations: false,
             })),
             debug: false,
         }))
@@ -2719,6 +2720,7 @@ mod tests {
             geo_ip: None,
             output: Some(Path::new("overwrite.csv").to_path_buf()),
             multiline: false,
+            disable_abbreviations: false,
         });
         let config = Some(Config {
             action: Some(action),
@@ -2809,6 +2811,7 @@ mod tests {
             geo_ip: None,
             output: Some(Path::new("overwrite.csv").to_path_buf()),
             multiline: false,
+            disable_abbreviations: false,
         });
         let config = Some(Config {
             action: Some(action),
@@ -2898,6 +2901,7 @@ mod tests {
             geo_ip: None,
             output: Some(Path::new("overwrite.json").to_path_buf()),
             jsonl_timeline: false,
+            disable_abbreviations: false,
         });
         let config = Some(Config {
             action: Some(action),
@@ -2988,6 +2992,7 @@ mod tests {
             geo_ip: None,
             output: Some(Path::new("overwrite.json").to_path_buf()),
             jsonl_timeline: false,
+            disable_abbreviations: false,
         });
         let config = Some(Config {
             action: Some(action),
@@ -3043,6 +3048,7 @@ mod tests {
                 utc: false,
             },
             clobber: false,
+            disable_abbreviations: false,
         });
         let config = Some(Config {
             action: Some(action),
@@ -3100,6 +3106,7 @@ mod tests {
                 utc: false,
             },
             clobber: true,
+            disable_abbreviations: false,
         });
         let config = Some(Config {
             action: Some(action),

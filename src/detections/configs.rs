@@ -356,10 +356,19 @@ impl StoredStatic {
             Some(Action::LogMetrics(opt)) => opt.output.as_ref(),
             _ => None,
         };
+        let disable_abbreviation = match &input_config.as_ref().unwrap().action {
+            Some(Action::CsvTimeline(opt)) => opt.disable_abbreviations,
+            Some(Action::JsonTimeline(opt)) => opt.disable_abbreviations,
+            Some(Action::EidMetrics(opt)) => opt.disable_abbreviations,
+            Some(Action::Search(opt)) => opt.disable_abbreviations,
+            Some(Action::LogMetrics(opt)) => opt.disable_abbreviations,
+            _ => false,
+        };
+
         let general_ch_abbr = create_output_filter_config(
-            utils::check_setting_path(config_path, "generic_abbreviations.txt", false)
+            check_setting_path(config_path, "generic_abbreviations.txt", false)
                 .unwrap_or_else(|| {
-                    utils::check_setting_path(
+                    check_setting_path(
                         &CURRENT_EXE_PATH.to_path_buf(),
                         "rules/config/generic_abbreviations.txt",
                         true,
@@ -369,6 +378,7 @@ impl StoredStatic {
                 .to_str()
                 .unwrap(),
             false,
+            disable_abbreviation,
         );
         let multiline_flag = match &input_config.as_ref().unwrap().action {
             Some(Action::CsvTimeline(opt)) => opt.multiline,
@@ -653,9 +663,9 @@ impl StoredStatic {
             config: input_config.as_ref().unwrap().to_owned(),
             config_path: config_path.to_path_buf(),
             ch_config: create_output_filter_config(
-                utils::check_setting_path(config_path, "channel_abbreviations.txt", false)
+                check_setting_path(config_path, "channel_abbreviations.txt", false)
                     .unwrap_or_else(|| {
-                        utils::check_setting_path(
+                        check_setting_path(
                             &CURRENT_EXE_PATH.to_path_buf(),
                             "rules/config/channel_abbreviations.txt",
                             true,
@@ -665,6 +675,7 @@ impl StoredStatic {
                     .to_str()
                     .unwrap(),
                 true,
+                disable_abbreviation,
             ),
             disp_abbr_generic: AhoCorasickBuilder::new()
                 .ascii_case_insensitive(true)
@@ -673,9 +684,9 @@ impl StoredStatic {
                 .unwrap(),
             disp_abbr_general_values: general_ch_abbr.values().map(|x| x.to_owned()).collect_vec(),
             provider_abbr_config: create_output_filter_config(
-                utils::check_setting_path(config_path, "provider_abbreviations.txt", false)
+                check_setting_path(config_path, "provider_abbreviations.txt", false)
                     .unwrap_or_else(|| {
-                        utils::check_setting_path(
+                        check_setting_path(
                             &CURRENT_EXE_PATH.to_path_buf(),
                             "rules/config/provider_abbreviations.txt",
                             true,
@@ -685,11 +696,12 @@ impl StoredStatic {
                     .to_str()
                     .unwrap(),
                 false,
+                disable_abbreviation,
             ),
             default_details: Self::get_default_details(
-                utils::check_setting_path(config_path, "default_details.txt", false)
+                check_setting_path(config_path, "default_details.txt", false)
                     .unwrap_or_else(|| {
-                        utils::check_setting_path(
+                        check_setting_path(
                             &CURRENT_EXE_PATH.to_path_buf(),
                             "rules/config/default_details.txt",
                             true,
@@ -700,9 +712,9 @@ impl StoredStatic {
                     .unwrap(),
             ),
             eventkey_alias: load_eventkey_alias(
-                utils::check_setting_path(config_path, "eventkey_alias.txt", false)
+                check_setting_path(config_path, "eventkey_alias.txt", false)
                     .unwrap_or_else(|| {
-                        utils::check_setting_path(
+                        check_setting_path(
                             &CURRENT_EXE_PATH.to_path_buf(),
                             "rules/config/eventkey_alias.txt",
                             true,
@@ -726,9 +738,9 @@ impl StoredStatic {
             profiles: None,
             thread_number: check_thread_number(input_config.as_ref().unwrap()),
             event_timeline_config: load_eventcode_info(
-                utils::check_setting_path(config_path, "channel_eid_info.txt", false)
+                check_setting_path(config_path, "channel_eid_info.txt", false)
                     .unwrap_or_else(|| {
-                        utils::check_setting_path(
+                        check_setting_path(
                             &CURRENT_EXE_PATH.to_path_buf(),
                             "rules/config/channel_eid_info.txt",
                             true,
@@ -739,9 +751,9 @@ impl StoredStatic {
                     .unwrap(),
             ),
             target_eventids: load_target_ids(
-                utils::check_setting_path(config_path, "target_event_IDs.txt", false)
+                check_setting_path(config_path, "target_event_IDs.txt", false)
                     .unwrap_or_else(|| {
-                        utils::check_setting_path(
+                        check_setting_path(
                             &CURRENT_EXE_PATH.to_path_buf(),
                             "rules/config/target_event_IDs.txt",
                             true,
@@ -1241,6 +1253,10 @@ pub struct SearchOption {
 
     #[clap(flatten)]
     pub time_format_options: TimeFormatOptions,
+
+    /// Disable abbreviations
+    #[arg(help_heading = Some("General Options"), short='b', long = "disable-abbreviations", display_order = 300)]
+    pub disable_abbreviations: bool,
 }
 
 #[derive(Args, Clone, Debug)]
@@ -1301,6 +1317,10 @@ pub struct EidMetricsOption {
     /// Overwrite files when saving
     #[arg(help_heading = Some("General Options"), short='C', long = "clobber", display_order = 290, requires = "output")]
     pub clobber: bool,
+
+    /// Disable abbreviations
+    #[arg(help_heading = Some("General Options"), short='b', long = "disable-abbreviations", display_order = 300)]
+    pub disable_abbreviations: bool,
 }
 
 #[derive(Args, Clone, Debug)]
@@ -1669,6 +1689,10 @@ pub struct CsvOutputOption {
     /// Save the timeline in CSV format (ex: results.csv)
     #[arg(help_heading = Some("Output"), short = 'o', long, value_name = "FILE", display_order = 410)]
     pub output: Option<PathBuf>,
+
+    /// Disable abbreviations
+    #[arg(help_heading = Some("General Options"), short='b', long = "disable-abbreviations", display_order = 300)]
+    pub disable_abbreviations: bool,
 }
 
 #[derive(Args, Clone, Debug)]
@@ -1693,6 +1717,10 @@ pub struct JSONOutputOption {
         display_order = 70
     )]
     pub geo_ip: Option<PathBuf>,
+
+    /// Disable abbreviations
+    #[arg(help_heading = Some("General Options"), short='b', long = "disable-abbreviations", display_order = 300)]
+    pub disable_abbreviations: bool,
 }
 
 #[derive(Args, Clone, Debug)]
@@ -1775,6 +1803,10 @@ pub struct LogMetricsOption {
     /// Overwrite files when saving
     #[arg(help_heading = Some("General Options"), short='C', long = "clobber", display_order = 290, requires = "output")]
     pub clobber: bool,
+
+    /// Disable abbreviations
+    #[arg(help_heading = Some("General Options"), short='b', long = "disable-abbreviations", display_order = 300)]
+    pub disable_abbreviations: bool,
 }
 
 #[derive(Parser, Clone, Debug)]
@@ -2236,6 +2268,7 @@ fn extract_search_options(config: &Config) -> Option<SearchOption> {
             jsonl_output: option.jsonl_output,
             time_format_options: option.time_format_options.clone(),
             and_logic: option.and_logic,
+            disable_abbreviations: option.disable_abbreviations,
         }),
         _ => None,
     }
@@ -2907,6 +2940,7 @@ mod tests {
                 geo_ip: None,
                 output: None,
                 multiline: false,
+                disable_abbreviations: false,
             })),
             debug: false,
         }));
@@ -2987,6 +3021,7 @@ mod tests {
                 geo_ip: None,
                 output: None,
                 jsonl_timeline: false,
+                disable_abbreviations: false,
             })),
             debug: false,
         }));
@@ -3036,6 +3071,7 @@ mod tests {
                     us_time: false,
                     utc: false,
                 },
+                disable_abbreviations: false,
             })),
             debug: false,
         }));
@@ -3082,6 +3118,7 @@ mod tests {
                     include_computer: None,
                     exclude_computer: None,
                 },
+                disable_abbreviations: false,
             })),
             debug: false,
         }));

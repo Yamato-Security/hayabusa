@@ -561,6 +561,7 @@ mod tests {
                 geo_ip: None,
                 output: None,
                 multiline: false,
+                disable_abbreviations: false,
             }));
         *GEOIP_DB_PARSER.write().unwrap() = None;
         assert_eq!(
@@ -644,6 +645,7 @@ mod tests {
                 geo_ip: None,
                 output: None,
                 multiline: false,
+                disable_abbreviations: false,
             }));
 
         let expect: Vec<(CompactString, Profile)> = vec![
@@ -757,6 +759,7 @@ mod tests {
                 geo_ip: None,
                 output: None,
                 multiline: false,
+                disable_abbreviations: false,
             }));
         //両方のファイルが存在しない場合
         assert_eq!(
