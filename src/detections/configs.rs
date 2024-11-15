@@ -1255,7 +1255,7 @@ pub struct SearchOption {
     pub time_format_options: TimeFormatOptions,
 
     /// Disable abbreviations
-    #[arg(help_heading = Some("General Options"), short='b', long = "disable-abbreviations", display_order = 300)]
+    #[arg(help_heading = Some("Output"), short='b', long = "disable-abbreviations", display_order = 60)]
     pub disable_abbreviations: bool,
 }
 
@@ -1319,7 +1319,7 @@ pub struct EidMetricsOption {
     pub clobber: bool,
 
     /// Disable abbreviations
-    #[arg(help_heading = Some("General Options"), short='b', long = "disable-abbreviations", display_order = 300)]
+    #[arg(help_heading = Some("Output"), short='b', long = "disable-abbreviations", display_order = 60)]
     pub disable_abbreviations: bool,
 }
 
@@ -1691,7 +1691,7 @@ pub struct CsvOutputOption {
     pub output: Option<PathBuf>,
 
     /// Disable abbreviations
-    #[arg(help_heading = Some("General Options"), short='b', long = "disable-abbreviations", display_order = 300)]
+    #[arg(help_heading = Some("Output"), short='b', long = "disable-abbreviations", display_order = 60)]
     pub disable_abbreviations: bool,
 }
 
@@ -1719,7 +1719,7 @@ pub struct JSONOutputOption {
     pub geo_ip: Option<PathBuf>,
 
     /// Disable abbreviations
-    #[arg(help_heading = Some("General Options"), short='b', long = "disable-abbreviations", display_order = 300)]
+    #[arg(help_heading = Some("Output"), short='b', long = "disable-abbreviations", display_order = 60)]
     pub disable_abbreviations: bool,
 }
 
@@ -1805,7 +1805,7 @@ pub struct LogMetricsOption {
     pub clobber: bool,
 
     /// Disable abbreviations
-    #[arg(help_heading = Some("General Options"), short='b', long = "disable-abbreviations", display_order = 300)]
+    #[arg(help_heading = Some("Output"), short='b', long = "disable-abbreviations", display_order = 60)]
     pub disable_abbreviations: bool,
 }
 
