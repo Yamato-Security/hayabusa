@@ -195,7 +195,26 @@ impl Timeline {
             self.tm_stats_set_msg(mapsorted, event_timeline_config, stored_static);
 
         for msgprint in sammsges.iter() {
-            println!("{msgprint}");
+            let mut parts = msgprint.splitn(2, ':');
+            let first_part = parts.next().unwrap_or_default();
+            let second_part = format!(": {}", parts.next().unwrap_or_default());
+            write_color_buffer(
+                &BufferWriter::stdout(ColorChoice::Always),
+                get_writable_color(
+                    Some(Color::Rgb(0, 255, 0)),
+                    stored_static.common_options.no_color,
+                ),
+                first_part,
+                false,
+            )
+            .ok();
+            write_color_buffer(
+                &BufferWriter::stdout(ColorChoice::Always),
+                None,
+                second_part.as_str(),
+                true,
+            )
+            .ok();
         }
         if wtr.is_some() {
             for msg in stats_msges.iter() {
