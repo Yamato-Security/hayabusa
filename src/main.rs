@@ -826,6 +826,7 @@ impl App {
                     )
                     .ok();
                 }
+                println!();
                 let _ = self.output_open_close_message("closing_messages.txt", stored_static);
                 return;
             }
