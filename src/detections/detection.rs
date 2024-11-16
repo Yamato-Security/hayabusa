@@ -1,11 +1,5 @@
 extern crate csv;
 
-use std::collections::HashSet;
-use std::default::Default;
-use std::fmt::Write;
-use std::path::Path;
-use std::sync::Arc;
-
 use chrono::{TimeZone, Utc};
 use compact_str::CompactString;
 use hashbrown::HashMap;
@@ -13,6 +7,11 @@ use itertools::Itertools;
 use nested::Nested;
 use num_format::{Locale, ToFormattedString};
 use serde_json::Value;
+use std::collections::HashSet;
+use std::default::Default;
+use std::fmt::Write;
+use std::path::Path;
+use std::sync::Arc;
 use termcolor::{BufferWriter, Color, ColorChoice};
 use tokio::{runtime::Runtime, spawn, task::JoinHandle};
 use yaml_rust2::Yaml;
@@ -24,7 +23,9 @@ use crate::detections::message::{AlertMessage, DetectInfo, ERROR_LOG_STACK, TAGS
 use crate::detections::rule::correlation_parser::parse_correlation_rules;
 use crate::detections::rule::count::AggRecordTimeInfo;
 use crate::detections::rule::{self, AggResult, RuleNode};
-use crate::detections::utils::{create_recordinfos, format_time, write_color_buffer};
+use crate::detections::utils::{
+    create_recordinfos, format_time, get_writable_color, write_color_buffer,
+};
 use crate::detections::utils::{get_serde_number_to_string, make_ascii_titlecase};
 use crate::filter;
 use crate::options::htmlreport;
@@ -1142,14 +1143,27 @@ impl Detection {
                     ""
                 };
                 //タイトルに利用するものはascii文字であることを前提として1文字目を大文字にするように変更する
-                let output_str = format!(
-                    "{} rules: {}{}",
-                    make_ascii_titlecase(key),
-                    value.to_formatted_string(&Locale::en),
-                    disable_flag
-                );
-                println!("{output_str}");
+                let key = format!("{} rules: ", make_ascii_titlecase(key));
+                let val = format!("{}{}", value.to_formatted_string(&Locale::en), disable_flag);
+                write_color_buffer(
+                    &BufferWriter::stdout(ColorChoice::Always),
+                    get_writable_color(
+                        Some(Color::Rgb(0, 255, 0)),
+                        stored_static.common_options.no_color,
+                    ),
+                    key.as_str(),
+                    false,
+                )
+                .ok();
+                write_color_buffer(
+                    &BufferWriter::stdout(ColorChoice::Always),
+                    None,
+                    val.as_str(),
+                    true,
+                )
+                .ok();
                 if stored_static.html_report_flag {
+                    let output_str = format!("{}{}", key, val);
                     html_report_stock.push(format!("- {output_str}"));
                 }
             }
@@ -1188,22 +1202,32 @@ impl Detection {
                 } else {
                     ""
                 };
-                let output_str = format!(
-                    "{} rules: {} ({:.2}%){}",
-                    make_ascii_titlecase(key),
+                let key = format!("{} rules: ", make_ascii_titlecase(key));
+                let val = format!(
+                    "{} ({:.2}%){}",
                     value.to_formatted_string(&Locale::en),
                     rate,
                     disabled_flag
                 );
-                //タイトルに利用するものはascii文字であることを前提として1文字目を大文字にするように変更する
+                write_color_buffer(
+                    &BufferWriter::stdout(ColorChoice::Always),
+                    get_writable_color(
+                        Some(Color::Rgb(0, 255, 0)),
+                        stored_static.common_options.no_color,
+                    ),
+                    key.as_str(),
+                    false,
+                )
+                .ok();
                 write_color_buffer(
                     &BufferWriter::stdout(ColorChoice::Always),
                     None,
-                    &output_str,
+                    val.as_str(),
                     true,
                 )
                 .ok();
                 if stored_static.html_report_flag {
+                    let output_str = format!("{}{}", key, val);
                     html_report_stock.push(format!("- {output_str}"));
                 }
             }
@@ -1213,24 +1237,54 @@ impl Detection {
         let cor_total: u128 = cor_rc.values().sum();
         let cor_ref_total: u128 = cor_ref_rc.values().sum();
         if cor_total != 0 {
-            let col = format!(
-                "Correlation rules: {} ({:.2}%)",
+            let key = "Correlation rules: ";
+            let val = format!(
+                "{} ({:.2}%)",
                 cor_total.to_formatted_string(&Locale::en),
                 (cor_total as f64) / (total_loaded_rule_cnt as f64) * 100.0
             );
-            write_color_buffer(&BufferWriter::stdout(ColorChoice::Always), None, &col, true).ok();
-            let col_ref = format!(
-                "Correlation referenced rules: {} ({:.2}%)",
+            write_color_buffer(
+                &BufferWriter::stdout(ColorChoice::Always),
+                get_writable_color(
+                    Some(Color::Rgb(0, 255, 0)),
+                    stored_static.common_options.no_color,
+                ),
+                key,
+                false,
+            )
+            .ok();
+            write_color_buffer(
+                &BufferWriter::stdout(ColorChoice::Always),
+                get_writable_color(None, stored_static.common_options.no_color),
+                val.as_str(),
+                true,
+            )
+            .ok();
+            let col = format!("{}{}", key, val);
+            let key = "Correlation referenced rules: ";
+            let val = format!(
+                "{} ({:.2}%)",
                 cor_ref_total.to_formatted_string(&Locale::en),
                 (cor_ref_total as f64) / (total_loaded_rule_cnt as f64) * 100.0
             );
             write_color_buffer(
                 &BufferWriter::stdout(ColorChoice::Always),
+                get_writable_color(
+                    Some(Color::Rgb(0, 255, 0)),
+                    stored_static.common_options.no_color,
+                ),
+                key,
+                false,
+            )
+            .ok();
+            write_color_buffer(
+                &BufferWriter::stdout(ColorChoice::Always),
                 None,
-                &col_ref,
+                val.as_str(),
                 true,
             )
             .ok();
+            let col_ref = format!("{}{}", key, val);
             if stored_static.html_report_flag {
                 html_report_stock.push(format!("- {col}"));
                 html_report_stock.push(format!("- {col_ref}"));
@@ -1241,24 +1295,52 @@ impl Detection {
         let mut sorted_rc: Vec<(&CompactString, &u128)> = rc.iter().collect();
         sorted_rc.sort_by(|a, b| a.0.cmp(b.0));
         sorted_rc.into_iter().for_each(|(key, value)| {
-            let output_str = format!("{key} rules: {}", value.to_formatted_string(&Locale::en));
+            let key = format!("{key} rules: ");
+            let val = value.to_formatted_string(&Locale::en);
+            write_color_buffer(
+                &BufferWriter::stdout(ColorChoice::Always),
+                get_writable_color(
+                    Some(Color::Rgb(0, 255, 0)),
+                    stored_static.common_options.no_color,
+                ),
+                key.as_str(),
+                false,
+            )
+            .ok();
             write_color_buffer(
                 &BufferWriter::stdout(ColorChoice::Always),
                 None,
-                &output_str,
+                val.as_str(),
                 true,
             )
             .ok();
             if stored_static.html_report_flag {
-                html_report_stock.push(format!("- {output_str}"));
+                html_report_stock.push(format!("- {key}{val}"));
             }
         });
-
+        let key = "Total detection rules: ";
+        let val = total_loaded_rule_cnt.to_formatted_string(&Locale::en);
         let tmp_total_detect_output = format!(
             "Total detection rules: {}",
             total_loaded_rule_cnt.to_formatted_string(&Locale::en)
         );
-        println!("{tmp_total_detect_output}");
+        write_color_buffer(
+            &BufferWriter::stdout(ColorChoice::Always),
+            get_writable_color(
+                Some(Color::Rgb(0, 255, 0)),
+                stored_static.common_options.no_color,
+            ),
+            key,
+            false,
+        )
+        .ok();
+        write_color_buffer(
+            &BufferWriter::stdout(ColorChoice::Always),
+            None,
+            val.as_str(),
+            true,
+        )
+        .ok();
         println!();
         if stored_static.html_report_flag {
             html_report_stock.push(format!("- {tmp_total_detect_output}"));

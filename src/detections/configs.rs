@@ -1630,7 +1630,7 @@ pub struct OutputOption {
 #[derive(Copy, Args, Clone, Debug)]
 pub struct CommonOptions {
     /// Disable color output
-    #[arg(help_heading = Some("Display Settings"), long = "no-color", global = true, display_order = 400)]
+    #[arg(help_heading = Some("Display Settings"), short = 'K', long = "no-color", global = true, display_order = 400)]
     pub no_color: bool,
 
     /// Quiet mode: do not display the launch banner

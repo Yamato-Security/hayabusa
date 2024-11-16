@@ -45,7 +45,7 @@ jobs:
         run: cd main && cargo run --release -- computer-metrics -d ../hayabusa-sample-evtx -q -o out.csv -C
 
       - name: csv-timeline
-        run: cd main && cargo run --release -- csv-timeline -d ../hayabusa-sample-evtx -o out.csv -q -w -D -n -u
+        run: cd main && cargo run --release -- csv-timeline -d ../hayabusa-sample-evtx -o out.csv -q -w -D -n -u -C
 
       - name: csv-timeline(-p super-verbose)
         run: cd main && cargo run --release -- csv-timeline -d ../hayabusa-sample-evtx -o out-s.csv -p super-verbose -q -w -D -n -u

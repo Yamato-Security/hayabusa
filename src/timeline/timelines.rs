@@ -1,7 +1,9 @@
 use crate::detections::configs::{Action, EventInfoConfig, StoredStatic};
 use crate::detections::detection::EvtxRecordInfo;
 use crate::detections::message::AlertMessage;
-use crate::detections::utils::{self, make_ascii_titlecase, write_color_buffer};
+use crate::detections::utils::{
+    self, get_writable_color, make_ascii_titlecase, write_color_buffer,
+};
 use crate::timeline::search::search_result_dsp_msg;
 use comfy_table::modifiers::UTF8_ROUND_CORNERS;
 use comfy_table::presets::UTF8_FULL;
@@ -193,7 +195,26 @@ impl Timeline {
             self.tm_stats_set_msg(mapsorted, event_timeline_config, stored_static);
 
         for msgprint in sammsges.iter() {
-            println!("{msgprint}");
+            let mut parts = msgprint.splitn(2, ':');
+            let first_part = parts.next().unwrap_or_default();
+            let second_part = format!(": {}", parts.next().unwrap_or_default());
+            write_color_buffer(
+                &BufferWriter::stdout(ColorChoice::Always),
+                get_writable_color(
+                    Some(Color::Rgb(0, 255, 0)),
+                    stored_static.common_options.no_color,
+                ),
+                first_part,
+                false,
+            )
+            .ok();
+            write_color_buffer(
+                &BufferWriter::stdout(ColorChoice::Always),
+                None,
+                second_part.as_str(),
+                true,
+            )
+            .ok();
         }
         if wtr.is_some() {
             for msg in stats_msges.iter() {
@@ -270,10 +291,32 @@ impl Timeline {
             }
 
             for msgprint in sammsges.iter() {
-                println!("{msgprint}");
+                let mut parts = msgprint.splitn(2, ':');
+                let first_part = parts.next().unwrap_or_default();
+                let second_part = format!(": {}", parts.next().unwrap_or_default());
+                write_color_buffer(
+                    &BufferWriter::stdout(ColorChoice::Always),
+                    get_writable_color(
+                        Some(Color::Rgb(0, 255, 0)),
+                        stored_static.common_options.no_color,
+                    ),
+                    first_part,
+                    false,
+                )
+                .ok();
+                write_color_buffer(
+                    &BufferWriter::stdout(ColorChoice::Always),
+                    None,
+                    second_part.as_str(),
+                    true,
+                )
+                .ok();
             }
 
-            self.tm_loginstats_tb_set_msg(&logon_summary_option.output);
+            self.tm_loginstats_tb_set_msg(
+                &logon_summary_option.output,
+                stored_static.common_options.no_color,
+            );
         }
     }
 
@@ -326,9 +369,16 @@ impl Timeline {
     }
 
     /// ユーザ毎のログイン統計情報出力メッセージ生成
-    fn tm_loginstats_tb_set_msg(&self, output: &Option<PathBuf>) {
+    fn tm_loginstats_tb_set_msg(&self, output: &Option<PathBuf>, no_color: bool) {
         if output.is_none() {
-            println!("Logon Summary:\n");
+            write_color_buffer(
+                &BufferWriter::stdout(ColorChoice::Always),
+                get_writable_color(Some(Color::Rgb(0, 255, 0)), no_color),
+                "Logon Summary:",
+                true,
+            )
+            .ok();
+            write_color_buffer(&BufferWriter::stdout(ColorChoice::Always), None, "", false).ok();
         }
         if self.stats.stats_login_list.is_empty() {
             let mut loginmsges: Vec<String> = Vec::new();
@@ -339,16 +389,16 @@ impl Timeline {
                 println!("{msgprint}");
             }
         } else {
-            self.tm_loginstats_tb_dsp_msg("successful", output);
+            self.tm_loginstats_tb_dsp_msg("successful", output, no_color);
             if output.is_none() {
                 println!("\n\n");
             }
-            self.tm_loginstats_tb_dsp_msg("failed", output);
+            self.tm_loginstats_tb_dsp_msg("failed", output, no_color);
         }
     }
 
     /// ユーザ毎のログイン統計情報出力
-    fn tm_loginstats_tb_dsp_msg(&self, logon_res: &str, output: &Option<PathBuf>) {
+    fn tm_loginstats_tb_dsp_msg(&self, logon_res: &str, output: &Option<PathBuf>, no_color: bool) {
         let header_column = make_ascii_titlecase(logon_res);
         let header = vec![
             header_column.as_str(),
@@ -364,7 +414,15 @@ impl Timeline {
         ];
         let target;
         if output.is_none() {
-            println!("{} Logons:", make_ascii_titlecase(logon_res));
+            let msg = format!("{} Logons:", make_ascii_titlecase(logon_res));
+            write_color_buffer(
+                &BufferWriter::stdout(ColorChoice::Always),
+                get_writable_color(Some(Color::Rgb(0, 255, 0)), no_color),
+                msg.as_str(),
+                true,
+            )
+            .ok();
+            write_color_buffer(&BufferWriter::stdout(ColorChoice::Always), None, "", false).ok();
         }
         let mut wtr = if let Some(csv_path) = output {
             let file_name = csv_path.as_path().display().to_string() + "-" + logon_res + ".csv";
@@ -440,7 +498,6 @@ impl Timeline {
         event_timeline_config: &EventInfoConfig,
         stored_static: &StoredStatic,
     ) {
-        let mut sammsges: Vec<String> = Vec::new();
         if let Action::Search(search_summary_option) =
             &stored_static.config.action.as_ref().unwrap()
         {
@@ -452,14 +509,6 @@ impl Timeline {
                     true,
                 )
                 .ok();
-            } else {
-                sammsges.push(format!(
-                    "\nTotal findings: {}",
-                    self.event_search
-                        .search_result
-                        .len()
-                        .to_formatted_string(&Locale::en)
-                ));
             }
             let search_result = self.event_search.search_result.clone();
             search_result_dsp_msg(
@@ -472,9 +521,27 @@ impl Timeline {
                     search_summary_option.jsonl_output,
                 ),
             );
-            for msgprint in sammsges.iter() {
-                println!("{}", msgprint);
-            }
+            write_color_buffer(
+                &BufferWriter::stdout(ColorChoice::Always),
+                get_writable_color(
+                    Some(Color::Rgb(0, 255, 0)),
+                    stored_static.common_options.no_color,
+                ),
+                "Total findings: ",
+                false,
+            )
+            .ok();
+            write_color_buffer(
+                &BufferWriter::stdout(ColorChoice::Always),
+                None,
+                self.event_search
+                    .search_result
+                    .len()
+                    .to_formatted_string(&Locale::en)
+                    .as_str(),
+                true,
+            )
+            .ok();
         }
     }
 
@@ -483,7 +550,6 @@ impl Timeline {
         if let Action::ComputerMetrics(computer_metrics_option) =
             &stored_static.config.action.as_ref().unwrap()
         {
-            let mut sammsges: Nested<String> = Nested::new();
             if self.stats.stats_list.is_empty() {
                 write_color_buffer(
                     &BufferWriter::stdout(ColorChoice::Always),
@@ -493,18 +559,29 @@ impl Timeline {
                 )
                 .ok();
             } else {
-                sammsges.push(format!(
-                    "\nTotal computers: {}",
-                    self.stats.stats_list.len().to_formatted_string(&Locale::en)
-                ));
-            }
-            println!();
-            computer_metrics::computer_metrics_dsp_msg(
-                &self.stats.stats_list,
-                &computer_metrics_option.output,
-            );
-            for msgprint in sammsges.iter() {
-                println!("{}", msgprint);
+                println!();
+                println!();
+                computer_metrics::computer_metrics_dsp_msg(
+                    &self.stats.stats_list,
+                    &computer_metrics_option.output,
+                );
+                write_color_buffer(
+                    &BufferWriter::stdout(ColorChoice::Always),
+                    get_writable_color(
+                        Some(Color::Rgb(0, 255, 0)),
+                        stored_static.common_options.no_color,
+                    ),
+                    "Total computers: ",
+                    false,
+                )
+                .ok();
+                write_color_buffer(
+                    &BufferWriter::stdout(ColorChoice::Always),
+                    None,
+                    &self.stats.stats_list.len().to_formatted_string(&Locale::en),
+                    true,
+                )
+                .ok();
             }
         }
     }
