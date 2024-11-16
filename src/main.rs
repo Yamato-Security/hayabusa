@@ -578,6 +578,7 @@ impl App {
                     Action::UpdateRules(option) => Some(option.rules.to_owned()),
                     _ => None,
                 };
+                println!();
                 // エラーが出た場合はインターネット接続がそもそもできないなどの問題点もあるためエラー等の出力は行わない
                 let latest_version_data = Update::get_latest_hayabusa_version().unwrap_or_default();
                 let now_version = &format!("v{}", env!("CARGO_PKG_VERSION"));
@@ -769,6 +770,7 @@ impl App {
                 return;
             }
             Action::SetDefaultProfile(_) => {
+                println!();
                 let is_existed_config_path = CURRENT_EXE_PATH.to_path_buf().join("config").exists()
                     || Path::new("config").exists();
                 if !is_existed_config_path {
