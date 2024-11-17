@@ -120,7 +120,7 @@ impl App {
         if stored_static.html_report_flag {
             let mut output_data = Nested::<String>::new();
             output_data.extend(vec![
-                format!("- Command line: {}", std::env::args().join(" ")),
+                format!("- Command line: {}", env::args().join(" ")),
                 format!(
                     "- Start time: {}",
                     analysis_start_time.format("%Y/%m/%d %H:%M")
@@ -320,7 +320,7 @@ impl App {
                 if let Some(html_path) = &stored_static.output_option.as_ref().unwrap().html_report
                 {
                     // if already exists same html report file. output alert message and exit
-                    if !(stored_static.output_option.as_ref().unwrap().clobber)
+                    if !stored_static.output_option.as_ref().unwrap().clobber
                         && utils::check_file_expect_not_exist(
                             html_path.as_path(),
                             format!(
@@ -333,7 +333,7 @@ impl App {
                     }
                 }
                 if let Some(path) = &stored_static.output_path {
-                    if !(stored_static.output_option.as_ref().unwrap().clobber)
+                    if !stored_static.output_option.as_ref().unwrap().clobber
                         && utils::check_file_expect_not_exist(
                             path.as_path(),
                             format!(
@@ -386,7 +386,7 @@ impl App {
                 if let Some(path) = &stored_static.output_path {
                     for suffix in &["-successful.csv", "-failed.csv"] {
                         let output_file = format!("{}{suffix}", path.to_str().unwrap());
-                        if !(stored_static.output_option.as_ref().unwrap().clobber)
+                        if !stored_static.output_option.as_ref().unwrap().clobber
                             && utils::check_file_expect_not_exist(
                                 Path::new(output_file.as_str()),
                                 format!(
@@ -422,7 +422,7 @@ impl App {
             | Action::LogMetrics(_)
             | Action::Search(_) => {
                 if let Some(path) = &stored_static.output_path {
-                    if !(stored_static.output_option.as_ref().unwrap().clobber)
+                    if !stored_static.output_option.as_ref().unwrap().clobber
                         && utils::check_file_expect_not_exist(
                             path.as_path(),
                             format!(
@@ -468,7 +468,7 @@ impl App {
                     pivot_key_unions.iter().for_each(|(key, _)| {
                         let keywords_file_name =
                             csv_path.as_path().display().to_string() + "-" + key + ".txt";
-                        if !(stored_static.output_option.as_ref().unwrap().clobber) && utils::check_file_expect_not_exist(
+                        if !stored_static.output_option.as_ref().unwrap().clobber && utils::check_file_expect_not_exist(
                             Path::new(&keywords_file_name),
                             format!(
                                 " The file {} already exists. Please specify a different filename or add the -C, --clobber option to overwrite.",
@@ -1118,7 +1118,7 @@ impl App {
                     let subdir_ret =
                         Self::collect_evtxfiles(path_str, target_extensions, stored_static);
                     ret.extend(subdir_ret);
-                    Option::Some(())
+                    Some(())
                 });
             } else if target_extensions.contains(
                 path.extension()
@@ -2537,11 +2537,11 @@ impl App {
                 parse_config = parse_config.num_threads(0); // 設定しないと遅かったので、設定しておく。
 
                 let evtx_parser = evtx_parser.with_configuration(parse_config);
-                Option::Some(evtx_parser)
+                Some(evtx_parser)
             }
             Err(e) => {
                 eprintln!("{e}");
-                Option::None
+                None
             }
         }
     }
@@ -2667,7 +2667,7 @@ impl App {
             | Action::PivotKeywordsList(_)
             | Action::SetDefaultProfile(_)
             | Action::Search(_)
-            | Action::ComputerMetrics(_) => std::env::args().len() != 2,
+            | Action::ComputerMetrics(_) => env::args().len() != 2,
             _ => true,
         }
     }
