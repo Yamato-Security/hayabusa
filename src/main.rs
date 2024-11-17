@@ -1188,21 +1188,7 @@ impl App {
         .ok();
         let mut total_file_size = ByteSize::b(0);
         for file_path in &evtx_files {
-            let file_size = match fs::metadata(file_path) {
-                Ok(res) => res.len(),
-                Err(err) => {
-                    if stored_static.verbose_flag {
-                        AlertMessage::warn(&err.to_string()).ok();
-                    }
-                    if !stored_static.quiet_errors_flag {
-                        ERROR_LOG_STACK
-                            .lock()
-                            .unwrap()
-                            .push(format!("[WARN] {err}"));
-                    }
-                    0
-                }
-            };
+            let file_size = Self::get_file_size(file_path, stored_static);
             total_file_size += ByteSize::b(file_size);
         }
         write_color_buffer(
@@ -1789,9 +1775,12 @@ impl App {
         let mut afterfact_writer = afterfact::init_writer(stored_static);
         for evtx_file in evtx_files {
             if is_show_progress {
+                let size = Self::get_file_size(&evtx_file, stored_static);
+                let file_size = ByteSize::b(size);
                 let pb_msg = format!(
-                    "{:?}",
-                    &evtx_file.to_str().unwrap_or_default().replace('\\', "/")
+                    "{:?} ({})",
+                    &evtx_file.to_str().unwrap_or_default().replace('\\', "/"),
+                    file_size.to_string_as(false)
                 );
                 if !pb_msg.is_empty() {
                     pb.set_message(pb_msg);
@@ -2680,6 +2669,24 @@ impl App {
             | Action::Search(_)
             | Action::ComputerMetrics(_) => std::env::args().len() != 2,
             _ => true,
+        }
+    }
+
+    fn get_file_size(file_path: &Path, stored_static: &StoredStatic) -> u64 {
+        match fs::metadata(file_path) {
+            Ok(res) => res.len(),
+            Err(err) => {
+                if stored_static.verbose_flag {
+                    AlertMessage::warn(&err.to_string()).ok();
+                }
+                if !stored_static.quiet_errors_flag {
+                    ERROR_LOG_STACK
+                        .lock()
+                        .unwrap()
+                        .push(format!("[WARN] {err}"));
+                }
+                0
+            }
         }
     }
 }
