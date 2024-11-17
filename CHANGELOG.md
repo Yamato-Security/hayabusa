@@ -21,6 +21,7 @@
 - The colors were updated to make it easier to read. (#1480) (@yamatosecurity)
 - Added start and finish messages of the day. (#1492) (@fukusuket)
 - New color scheme added to output. (#1491) (@fukusuket)
+- File size is now displayed next to the file name under the progress bar. (#1471) (@fukusuket)
 
 **Bug Fixes:**
 
