@@ -2638,6 +2638,7 @@ impl App {
                     println!()
                 }
             }
+            write_color_buffer(&BufferWriter::stdout(ColorChoice::Always), None, "", false).ok();
         }
         Ok(())
     }
