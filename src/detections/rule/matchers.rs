@@ -1,4 +1,3 @@
-use base64::{engine::general_purpose, Engine as _};
 use cidr_utils::cidr::errors::NetworkParseError;
 use cidr_utils::cidr::IpCidr;
 use nested::Nested;
@@ -9,6 +8,10 @@ use std::{cmp::Ordering, collections::HashMap};
 use yaml_rust2::Yaml;
 
 use crate::detections::configs::WINDASH_CHARACTERS;
+use crate::detections::rule::base64_match::convert_to_base64_str;
+use crate::detections::rule::fast_match::{
+    check_fast_match, convert_to_fast_match, create_fast_match, FastMatch,
+};
 use crate::detections::{detection::EvtxRecordInfo, utils};
 use downcast_rs::Downcast;
 
@@ -49,7 +52,7 @@ impl LeafMatcher for MinlengthMatcher {
             return false;
         }
 
-        return key_list.get(1).unwrap() == "min_length";
+        key_list.get(1).unwrap() == "min_length"
     }
 
     fn init(&mut self, key_list: &Nested<String>, select_value: &Yaml) -> Result<(), Vec<String>> {
@@ -59,11 +62,11 @@ impl LeafMatcher for MinlengthMatcher {
                 "min_length value should be an integer. [key:{}]",
                 utils::concat_selection_key(key_list)
             );
-            return Result::Err(vec![errmsg]);
+            return Err(vec![errmsg]);
         }
 
         self.min_len = min_length.unwrap();
-        Result::Ok(())
+        Ok(())
     }
 
     fn is_match(&self, event_value: Option<&String>, _recinfo: &EvtxRecordInfo) -> bool {
@@ -98,19 +101,19 @@ impl LeafMatcher for RegexesFileMatcher {
     fn init(&mut self, key_list: &Nested<String>, select_value: &Yaml) -> Result<(), Vec<String>> {
         let value = match select_value {
             Yaml::String(_) | Yaml::Integer(_) | Yaml::Real(_) => select_value.as_str(),
-            _ => Option::None,
+            _ => None,
         };
         if value.is_none() {
             let errmsg = format!(
                 "regexes value should be a string. [key:{}]",
                 utils::concat_selection_key(key_list)
             );
-            return Result::Err(vec![errmsg]);
+            return Err(vec![errmsg]);
         }
 
         let regexes_strs = utils::read_txt(value.unwrap());
         if regexes_strs.is_err() {
-            return Result::Err(vec![regexes_strs.unwrap_err()]);
+            return Err(vec![regexes_strs.unwrap_err()]);
         }
         let regexes_strs = regexes_strs.unwrap();
         self.regexes = regexes_strs
@@ -118,7 +121,7 @@ impl LeafMatcher for RegexesFileMatcher {
             .map(|regex_str| Regex::new(regex_str).unwrap())
             .collect();
 
-        Result::Ok(())
+        Ok(())
     }
 
     fn is_match(&self, event_value: Option<&String>, _recinfo: &EvtxRecordInfo) -> bool {
@@ -147,27 +150,27 @@ impl LeafMatcher for AllowlistFileMatcher {
             return false;
         }
 
-        return key_list.get(1).unwrap() == "allowlist";
+        key_list.get(1).unwrap() == "allowlist"
     }
 
     fn init(&mut self, key_list: &Nested<String>, select_value: &Yaml) -> Result<(), Vec<String>> {
         let value = match select_value {
-            Yaml::String(s) => Option::Some(s.to_owned()),
-            Yaml::Integer(i) => Option::Some(i.to_string()),
-            Yaml::Real(r) => Option::Some(r.to_owned()),
-            _ => Option::None,
+            Yaml::String(s) => Some(s.to_owned()),
+            Yaml::Integer(i) => Some(i.to_string()),
+            Yaml::Real(r) => Some(r.to_owned()),
+            _ => None,
         };
         if value.is_none() {
             let errmsg = format!(
                 "allowlist value should be a string. [key:{}]",
                 utils::concat_selection_key(key_list)
             );
-            return Result::Err(vec![errmsg]);
+            return Err(vec![errmsg]);
         }
 
         let regexes_strs = utils::read_txt(&value.unwrap());
         if regexes_strs.is_err() {
-            return Result::Err(vec![regexes_strs.unwrap_err()]);
+            return Err(vec![regexes_strs.unwrap_err()]);
         }
         self.regexes = regexes_strs
             .unwrap()
@@ -175,7 +178,7 @@ impl LeafMatcher for AllowlistFileMatcher {
             .map(|regex_str| Regex::new(regex_str).unwrap())
             .collect();
 
-        Result::Ok(())
+        Ok(())
     }
 
     fn is_match(&self, event_value: Option<&String>, _recinfo: &EvtxRecordInfo) -> bool {
@@ -184,16 +187,6 @@ impl LeafMatcher for AllowlistFileMatcher {
             None => true,
         }
     }
-}
-
-// 正規表現マッチは遅いため、できるだけ高速なstd::stringのlen/starts_with/ends_with/containsでマッチ判定するためのenum
-#[derive(PartialEq, Debug)]
-enum FastMatch {
-    Exact(String),
-    StartsWith(String),
-    EndsWith(String),
-    Contains(String),
-    AllOnly(String),
 }
 
 /// デフォルトのマッチクラス
@@ -208,8 +201,8 @@ pub struct DefaultMatcher {
 impl DefaultMatcher {
     pub fn new() -> DefaultMatcher {
         DefaultMatcher {
-            re: Option::None,
-            fast_match: Option::None,
+            re: None,
+            fast_match: None,
             pipes: Vec::new(),
             key_list: Nested::<String>::new(),
         }
@@ -217,12 +210,12 @@ impl DefaultMatcher {
 
     pub fn get_eqfield_key(&self) -> Option<&String> {
         let pipe = self.pipes.first()?;
-        return pipe.get_eqfield();
+        pipe.get_eqfield()
     }
 
     /// このmatcherの正規表現とマッチするかどうか判定します。
     fn is_regex_fullmatch(&self, value: &str) -> bool {
-        return self.re.as_ref().unwrap().iter().any(|x| x.is_match(value));
+        self.re.as_ref().unwrap().iter().any(|x| x.is_match(value))
     }
 
     /// Hayabusaのルールファイルのフィールド名とそれに続いて指定されるパイプを、正規表現形式の文字列に変換します。
@@ -233,83 +226,6 @@ impl DefaultMatcher {
             .iter()
             .fold(pattern, |acc, pipe| pipe.pipe_pattern(acc))
     }
-
-    fn eq_ignore_case(event_value_str: &str, match_str: &str) -> bool {
-        if match_str.len() == event_value_str.len() {
-            return match_str.eq_ignore_ascii_case(event_value_str);
-        }
-        false
-    }
-
-    fn starts_with_ignore_case(event_value_str: &str, match_str: &str) -> Option<bool> {
-        let len = match_str.len();
-        if len > event_value_str.len() {
-            return Some(false);
-        }
-        // マルチバイト文字を含む場合は、index out of boundsになるため、asciiのみ
-        if event_value_str.is_ascii() {
-            let match_result = match_str.eq_ignore_ascii_case(&event_value_str[0..len]);
-            return Some(match_result);
-        }
-        None
-    }
-
-    fn ends_with_ignore_case(event_value_str: &str, match_str: &str) -> Option<bool> {
-        let len1 = match_str.len();
-        let len2 = event_value_str.len();
-        if len1 > len2 {
-            return Some(false);
-        }
-        // マルチバイト文字を含む場合は、index out of boundsになるため、asciiのみ
-        if event_value_str.is_ascii() {
-            let match_result = match_str.eq_ignore_ascii_case(&event_value_str[len2 - len1..]);
-            return Some(match_result);
-        }
-        None
-    }
-
-    // ワイルドカードマッチを高速なstd::stringのlen/starts_with/ends_withに変換するための関数
-    fn convert_to_fast_match(s: &str, ignore_case: bool) -> Option<Vec<FastMatch>> {
-        let wildcard_count = s.chars().filter(|c| *c == '*').count();
-        let is_literal_asterisk = |s: &str| s.ends_with(r"\*") && !s.ends_with(r"\\*");
-        if utils::contains_str(s, "?")
-            || s.ends_with(r"\\\*")
-            || (!s.is_ascii() && utils::contains_str(s, "*"))
-        {
-            // 高速なマッチに変換できないパターンは、正規表現マッチのみ
-            return None;
-        } else if s.starts_with("allOnly*") && s.ends_with('*') && wildcard_count == 2 {
-            let removed_asterisk = s[8..(s.len() - 1)].replace(r"\\", r"\");
-            if ignore_case {
-                return Some(vec![FastMatch::AllOnly(removed_asterisk.to_lowercase())]);
-            }
-            return Some(vec![FastMatch::AllOnly(removed_asterisk)]);
-        } else if s.starts_with('*')
-            && s.ends_with('*')
-            && wildcard_count == 2
-            && !is_literal_asterisk(s)
-        {
-            let removed_asterisk = s[1..(s.len() - 1)].replace(r"\\", r"\");
-            // *が先頭と末尾だけは、containsに変換
-            if ignore_case {
-                return Some(vec![FastMatch::Contains(removed_asterisk.to_lowercase())]);
-            }
-            return Some(vec![FastMatch::Contains(removed_asterisk)]);
-        } else if s.starts_with('*') && wildcard_count == 1 && !is_literal_asterisk(s) {
-            // *が先頭は、ends_withに変換
-            return Some(vec![FastMatch::EndsWith(s[1..].replace(r"\\", r"\"))]);
-        } else if s.ends_with('*') && wildcard_count == 1 && !is_literal_asterisk(s) {
-            // *が末尾は、starts_withに変換
-            return Some(vec![FastMatch::StartsWith(
-                s[..(s.len() - 1)].replace(r"\\", r"\"),
-            )]);
-        } else if utils::contains_str(s, "*") {
-            // *が先頭・末尾以外にあるパターンは、starts_with/ends_withに変換できないため、正規表現マッチのみ
-            return None;
-        }
-        // *を含まない場合は、文字列長マッチに変換
-        Some(vec![FastMatch::Exact(s.replace(r"\\", r"\"))])
-    }
 }
 
 impl LeafMatcher for DefaultMatcher {
@@ -318,7 +234,7 @@ impl LeafMatcher for DefaultMatcher {
             return true;
         }
 
-        return key_list.get(1).unwrap() == "value";
+        key_list.get(1).unwrap() == "value"
     }
 
     fn init(&mut self, key_list: &Nested<String>, select_value: &Yaml) -> Result<(), Vec<String>> {
@@ -326,23 +242,23 @@ impl LeafMatcher for DefaultMatcher {
         tmp_key_list.extend(key_list.iter());
         self.key_list = tmp_key_list;
         if select_value.is_null() {
-            return Result::Ok(());
+            return Ok(());
         }
 
         // patternをパースする
         let yaml_value = match select_value {
-            Yaml::Boolean(b) => Option::Some(b.to_string()),
-            Yaml::Integer(i) => Option::Some(i.to_string()),
-            Yaml::Real(r) => Option::Some(r.to_string()),
-            Yaml::String(s) => Option::Some(s.to_owned()),
-            _ => Option::None,
+            Yaml::Boolean(b) => Some(b.to_string()),
+            Yaml::Integer(i) => Some(i.to_string()),
+            Yaml::Real(r) => Some(r.to_string()),
+            Yaml::String(s) => Some(s.to_owned()),
+            _ => None,
         };
         if yaml_value.is_none() {
             let errmsg = format!(
                 "An unknown error occured. [key:{}]",
                 utils::concat_selection_key(key_list)
             );
-            return Result::Err(vec![errmsg]);
+            return Err(vec![errmsg]);
         }
         let mut pattern = Vec::new();
         pattern.push(yaml_value.unwrap());
@@ -405,100 +321,28 @@ impl LeafMatcher for DefaultMatcher {
         let n = self.pipes.len();
         if n == 0 {
             // パイプがないケース
-            self.fast_match = Self::convert_to_fast_match(&pattern[0], true);
+            self.fast_match = convert_to_fast_match(&pattern[0], true);
         } else if n == 1 {
             // パイプがあるケース
-            self.fast_match = match &self.pipes[0] {
-                PipeElement::Startswith => {
-                    Self::convert_to_fast_match(format!("{}*", pattern[0]).as_str(), true)
-                }
-                PipeElement::Endswith => {
-                    Self::convert_to_fast_match(format!("*{}", pattern[0]).as_str(), true)
-                }
-                PipeElement::Contains => {
-                    Self::convert_to_fast_match(format!("*{}*", pattern[0]).as_str(), true)
-                }
-                PipeElement::AllOnly => {
-                    Self::convert_to_fast_match(format!("allOnly*{}*", pattern[0]).as_str(), true)
-                }
-                _ => None,
-            };
+            self.fast_match = create_fast_match(&self.pipes, &pattern);
         } else if n == 2 {
             if self.pipes[0] == PipeElement::Base64offset && self.pipes[1] == PipeElement::Contains
             {
-                // |base64offset|containsの場合
-                let val = pattern[0].as_str();
-                let val_byte = val.as_bytes();
-                let mut fastmatches = vec![];
-                for i in 0..3 {
-                    let mut b64_result = vec![];
-                    let mut target_byte = vec![];
-                    target_byte.resize_with(i, || 0b0);
-                    target_byte.extend_from_slice(val_byte);
-                    b64_result.resize_with(target_byte.len() * 4 / 3 + 4, || 0b0);
-                    general_purpose::STANDARD
-                        .encode_slice(target_byte, &mut b64_result)
-                        .ok();
-                    let convstr_b64 = String::from_utf8(b64_result);
-                    if let Ok(b64_str) = convstr_b64 {
-                        // ここでContainsのfastmatch対応を行う
-                        let filtered_null_chr = b64_str.replace('\0', "");
-                        let b64_offset_contents = match b64_str.find('=').unwrap_or_default() % 4 {
-                            2 => {
-                                if i == 0 {
-                                    filtered_null_chr[..filtered_null_chr.len() - 3].to_string()
-                                } else {
-                                    filtered_null_chr[(i + 1)..filtered_null_chr.len() - 3]
-                                        .to_string()
-                                }
-                            }
-                            3 => {
-                                if i == 0 {
-                                    filtered_null_chr[..filtered_null_chr.len() - 2].to_string()
-                                } else {
-                                    filtered_null_chr.replace('\0', "")
-                                        [(i + 1)..filtered_null_chr.len() - 2]
-                                        .to_string()
-                                }
-                            }
-                            _ => {
-                                if i == 0 {
-                                    filtered_null_chr
-                                } else {
-                                    filtered_null_chr[(i + 1)..].to_string()
-                                }
-                            }
-                        };
-                        if let Some(fm) =
-                            Self::convert_to_fast_match(&format!("*{b64_offset_contents}*"), false)
-                        {
-                            fastmatches.extend(fm);
-                        }
-                    } else {
-                        err_msges.push(format!(
-                            "Failed base64 encoding: {}",
-                            convstr_b64.unwrap_err()
-                        ));
-                    }
-                }
-                if !fastmatches.is_empty() {
-                    self.fast_match = Some(fastmatches);
-                }
+                self.fast_match = convert_to_base64_str(pattern[0].as_str(), &mut err_msges);
             } else if self.pipes[0] == PipeElement::Contains && self.pipes[1] == PipeElement::All
             // |contains|allの場合、事前の分岐でAndSelectionNodeとしているのでここではcontainsのみとして取り扱う
             {
-                self.fast_match =
-                    Self::convert_to_fast_match(format!("*{}*", pattern[0]).as_str(), true);
+                self.fast_match = convert_to_fast_match(format!("*{}*", pattern[0]).as_str(), true);
             } else if self.pipes[0] == PipeElement::Contains
                 && self.pipes[1] == PipeElement::Windash
             {
                 // |contains|windashの場合
                 let mut fastmatches =
-                    Self::convert_to_fast_match(format!("*{}*", pattern[0]).as_str(), true)
+                    convert_to_fast_match(format!("*{}*", pattern[0]).as_str(), true)
                         .unwrap_or_default();
                 let windash_chars = WINDASH_CHARACTERS.as_slice();
                 fastmatches.extend(
-                    Self::convert_to_fast_match(
+                    convert_to_fast_match(
                         format!("*{}*", pattern[0].replacen(windash_chars, "/", 1)).as_str(),
                         true,
                     )
@@ -509,14 +353,11 @@ impl LeafMatcher for DefaultMatcher {
                 }
             } else if self.pipes[1] == PipeElement::Cased {
                 if self.pipes[0] == PipeElement::Startswith {
-                    self.fast_match =
-                        Self::convert_to_fast_match(&format!("{}*", pattern[0]), false);
+                    self.fast_match = convert_to_fast_match(&format!("{}*", pattern[0]), false);
                 } else if self.pipes[0] == PipeElement::Endswith {
-                    self.fast_match =
-                        Self::convert_to_fast_match(&format!("*{}", pattern[0]), false);
+                    self.fast_match = convert_to_fast_match(&format!("*{}", pattern[0]), false);
                 } else if self.pipes[0] == PipeElement::Contains {
-                    self.fast_match =
-                        Self::convert_to_fast_match(&format!("*{}*", pattern[0]), false);
+                    self.fast_match = convert_to_fast_match(&format!("*{}*", pattern[0]), false);
                 }
             }
         } else if n == 3 {
@@ -526,12 +367,12 @@ impl LeafMatcher for DefaultMatcher {
             // |contains|all|windashの場合、事前の分岐でAndSelectionNodeとしているのでここではcontainsとwindashのみとして取り扱う
             {
                 let mut fastmatches =
-                    Self::convert_to_fast_match(format!("*{}*", pattern[0]).as_str(), true)
+                    convert_to_fast_match(format!("*{}*", pattern[0]).as_str(), true)
                         .unwrap_or_default();
                 let windash_chars = WINDASH_CHARACTERS.as_slice();
                 pattern.push(pattern[0].replacen(windash_chars, "/", 1));
                 fastmatches.extend(
-                    Self::convert_to_fast_match(
+                    convert_to_fast_match(
                         format!("*{}*", pattern[0].replacen(windash_chars, "/", 1)).as_str(),
                         true,
                     )
@@ -546,7 +387,7 @@ impl LeafMatcher for DefaultMatcher {
                 "Multiple pipe elements cannot be used. key:{}",
                 utils::concat_selection_key(key_list)
             );
-            return Result::Err(vec![errmsg]);
+            return Err(vec![errmsg]);
         }
         if self.fast_match.is_some()
             && matches!(
@@ -556,7 +397,7 @@ impl LeafMatcher for DefaultMatcher {
             && !self.key_list.is_empty()
         {
             // FastMatch::Exact/Contains検索に置き換えられたときは正規表現は不要
-            return Result::Ok(());
+            return Ok(());
         }
         let is_eqfield = self.pipes.iter().any(|pipe_element| {
             matches!(
@@ -596,12 +437,12 @@ impl LeafMatcher for DefaultMatcher {
                         "Cannot parse regex. [regex:{pattern}, key:{}]",
                         utils::concat_selection_key(key_list)
                     );
-                    return Result::Err(vec![errmsg]);
+                    return Err(vec![errmsg]);
                 }
             }
             self.re = Some(re_result_vec);
         }
-        Result::Ok(())
+        Ok(())
     }
 
     fn is_match(&self, event_value: Option<&String>, recinfo: &EvtxRecordInfo) -> bool {
@@ -681,55 +522,7 @@ impl LeafMatcher for DefaultMatcher {
                 .iter()
                 .any(|x| x.is_match(event_value_str));
         } else if let Some(fast_matcher) = &self.fast_match {
-            let fast_match_result = if fast_matcher.len() == 1 {
-                match &fast_matcher[0] {
-                    FastMatch::Exact(s) => Some(Self::eq_ignore_case(event_value_str, s)),
-                    FastMatch::StartsWith(s) => {
-                        if self.pipes.contains(&PipeElement::Cased) {
-                            Some(event_value_str.starts_with(s))
-                        } else {
-                            Self::starts_with_ignore_case(event_value_str, s)
-                        }
-                    }
-                    FastMatch::EndsWith(s) => {
-                        if self.pipes.contains(&PipeElement::Cased) {
-                            Some(event_value_str.ends_with(s))
-                        } else {
-                            Self::ends_with_ignore_case(event_value_str, s)
-                        }
-                    }
-                    FastMatch::Contains(s) | FastMatch::AllOnly(s) => {
-                        if self.pipes.contains(&PipeElement::Windash) {
-                            Some(utils::contains_str(
-                                &event_value_str
-                                    .replacen(['-', '–', '—', '―'], "/", 1)
-                                    .to_lowercase(),
-                                s,
-                            ))
-                        } else if self.pipes.contains(&PipeElement::Cased) {
-                            Some(utils::contains_str(event_value_str, s))
-                        } else {
-                            Some(utils::contains_str(&event_value_str.to_lowercase(), s))
-                        }
-                    }
-                }
-            } else {
-                Some(fast_matcher.iter().any(|fm| match fm {
-                    FastMatch::Contains(s) => {
-                        if self.pipes.contains(&PipeElement::Windash) {
-                            utils::contains_str(
-                                &event_value_str
-                                    .replacen(['-', '–', '—', '―'], "/", 1)
-                                    .to_lowercase(),
-                                s,
-                            )
-                        } else {
-                            utils::contains_str(event_value_str, s)
-                        }
-                    }
-                    _ => false,
-                }))
-            };
+            let fast_match_result = check_fast_match(&self.pipes, event_value_str, fast_matcher);
             if let Some(is_match) = fast_match_result {
                 return is_match;
             }
@@ -742,7 +535,7 @@ impl LeafMatcher for DefaultMatcher {
 /// パイプ(|)で指定される要素を表すクラス。
 /// 要リファクタリング
 #[derive(PartialEq)]
-enum PipeElement {
+pub enum PipeElement {
     Startswith,
     Endswith,
     Contains,
@@ -2988,68 +2781,6 @@ mod tests {
         }"#;
 
         check_select(rule_str, record_json_str, true);
-    }
-
-    #[test]
-    fn test_eq_ignore_case() {
-        assert!(DefaultMatcher::eq_ignore_case("abc", "abc"));
-        assert!(DefaultMatcher::eq_ignore_case("AbC", "abc"));
-        assert!(!DefaultMatcher::eq_ignore_case("abc", "ab"));
-        assert!(!DefaultMatcher::eq_ignore_case("ab", "abc"));
-    }
-
-    #[test]
-    fn test_starts_with_ignore_case() {
-        assert!(DefaultMatcher::starts_with_ignore_case("abc", "ab").unwrap(),);
-        assert!(DefaultMatcher::starts_with_ignore_case("AbC", "ab").unwrap(),);
-        assert!(!DefaultMatcher::starts_with_ignore_case("abc", "abcd").unwrap(),);
-        assert!(!DefaultMatcher::starts_with_ignore_case("aab", "ab").unwrap(),);
-    }
-
-    #[test]
-    fn test_ends_with_ignore_case() {
-        assert!(DefaultMatcher::ends_with_ignore_case("abc", "bc").unwrap());
-        assert!(DefaultMatcher::ends_with_ignore_case("AbC", "bc").unwrap());
-        assert!(!DefaultMatcher::ends_with_ignore_case("bc", "bcd").unwrap());
-        assert!(!DefaultMatcher::ends_with_ignore_case("bcd", "abc").unwrap());
-    }
-
-    #[test]
-    fn test_convert_to_fast_match() {
-        assert_eq!(DefaultMatcher::convert_to_fast_match("ab?", true), None);
-        assert_eq!(DefaultMatcher::convert_to_fast_match("a*c", true), None);
-        assert_eq!(DefaultMatcher::convert_to_fast_match("*a*b", true), None);
-        assert_eq!(DefaultMatcher::convert_to_fast_match("*a*b*", true), None);
-        assert_eq!(DefaultMatcher::convert_to_fast_match(r"a\*", true), None);
-        assert_eq!(DefaultMatcher::convert_to_fast_match(r"a\\\*", true), None);
-        assert_eq!(
-            DefaultMatcher::convert_to_fast_match("abc*", true).unwrap(),
-            vec![FastMatch::StartsWith("abc".to_string())]
-        );
-        assert_eq!(
-            DefaultMatcher::convert_to_fast_match(r"abc\\*", true).unwrap(),
-            vec![FastMatch::StartsWith(r"abc\".to_string())]
-        );
-        assert_eq!(
-            DefaultMatcher::convert_to_fast_match("*abc", true).unwrap(),
-            vec![FastMatch::EndsWith("abc".to_string())]
-        );
-        assert_eq!(
-            DefaultMatcher::convert_to_fast_match("*abc*", true).unwrap(),
-            vec![FastMatch::Contains("abc".to_string())]
-        );
-        assert_eq!(
-            DefaultMatcher::convert_to_fast_match("abc", true).unwrap(),
-            vec![FastMatch::Exact("abc".to_string())]
-        );
-        assert_eq!(
-            DefaultMatcher::convert_to_fast_match("あいう", true).unwrap(),
-            vec![FastMatch::Exact("あいう".to_string())]
-        );
-        assert_eq!(
-            DefaultMatcher::convert_to_fast_match(r"\\\\127.0.0.1\\", true).unwrap(),
-            vec![FastMatch::Exact(r"\\127.0.0.1\".to_string())]
-        );
     }
 
     #[test]

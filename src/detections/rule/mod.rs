@@ -15,9 +15,11 @@ use self::count::{AggRecordTimeInfo, TimeFrameInfo};
 use self::selectionnodes::{LeafSelectionNode, SelectionNode};
 
 mod aggregation_parser;
+mod base64_match;
 mod condition_parser;
 pub mod correlation_parser;
 pub(crate) mod count;
+mod fast_match;
 mod matchers;
 mod selectionnodes;
 
