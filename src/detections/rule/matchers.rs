@@ -328,7 +328,7 @@ impl LeafMatcher for DefaultMatcher {
         } else if n == 2 {
             if self.pipes[0] == PipeElement::Base64offset && self.pipes[1] == PipeElement::Contains
             {
-                self.fast_match = convert_to_base64_str(pattern[0].as_str(), &mut err_msges);
+                self.fast_match = convert_to_base64_str(None, pattern[0].as_str(), &mut err_msges);
             } else if self.pipes[0] == PipeElement::Contains && self.pipes[1] == PipeElement::All
             // |contains|allの場合、事前の分岐でAndSelectionNodeとしているのでここではcontainsのみとして取り扱う
             {
@@ -380,6 +380,30 @@ impl LeafMatcher for DefaultMatcher {
                 );
                 if !fastmatches.is_empty() {
                     self.fast_match = Some(fastmatches);
+                }
+            } else if (self.pipes[0] == PipeElement::Utf16
+                || self.pipes[0] == PipeElement::Utf16Le
+                || self.pipes[0] == PipeElement::Utf16Be
+                || self.pipes[0] == PipeElement::Wide)
+                && self.pipes[1] == PipeElement::Base64offset
+                && self.pipes[2] == PipeElement::Contains
+            {
+                let encode = &self.pipes[0];
+                let org_str = pattern[0].as_str();
+                if encode == &PipeElement::Utf16 {
+                    let utf16_le_match =
+                        convert_to_base64_str(Some(&PipeElement::Utf16Le), org_str, &mut err_msges);
+                    let utf16_be_match =
+                        convert_to_base64_str(Some(&PipeElement::Utf16Be), org_str, &mut err_msges);
+                    if let Some(utf16_le_match) = utf16_le_match {
+                        if let Some(utf16_be_match) = utf16_be_match {
+                            let mut matches = utf16_le_match;
+                            matches.extend(utf16_be_match);
+                            self.fast_match = Some(matches);
+                        }
+                    }
+                } else {
+                    self.fast_match = convert_to_base64_str(Some(encode), org_str, &mut err_msges);
                 }
             }
         } else {
@@ -561,6 +585,10 @@ pub enum PipeElement {
     Lt(usize),
     Gte(usize),
     Lte(usize),
+    Utf16,
+    Utf16Le,
+    Utf16Be,
+    Wide,
 }
 
 impl PipeElement {
@@ -625,6 +653,10 @@ impl PipeElement {
                     ))
                 }
             },
+            "utf16" => Some(PipeElement::Utf16),
+            "utf16le" => Some(PipeElement::Utf16Le),
+            "utf16be" => Some(PipeElement::Utf16Be),
+            "wide" => Some(PipeElement::Wide),
             _ => None,
         };
 

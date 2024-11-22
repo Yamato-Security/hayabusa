@@ -1,38 +1,72 @@
 use crate::detections::rule::fast_match::{convert_to_fast_match, FastMatch};
+use crate::detections::rule::matchers::PipeElement;
 use base64::engine::general_purpose;
 use base64::Engine;
+use std::io::Write;
+use std::string::FromUtf8Error;
 
-pub fn convert_to_base64_str(val: &str, err_msges: &mut Vec<String>) -> Option<Vec<FastMatch>> {
-    // |base64offset|containsの場合
+pub fn convert_to_base64_str(
+    encode: Option<&PipeElement>,
+    org_str: &str,
+    err_msges: &mut Vec<String>,
+) -> Option<Vec<FastMatch>> {
     let mut fastmatches = vec![];
     for i in 0..3 {
-        let mut b64_result = vec![];
-        let mut target_byte = vec![];
-        target_byte.resize_with(i, || 0b0);
-        target_byte.extend_from_slice(val.as_bytes());
-        b64_result.resize_with(target_byte.len() * 4 / 3 + 4, || 0b0);
-        general_purpose::STANDARD
-            .encode_slice(target_byte, &mut b64_result)
-            .ok();
-        let convstr_b64 = String::from_utf8(b64_result);
-        if let Ok(b64_str) = convstr_b64 {
-            // ここでContainsのfastmatch対応を行う
-            let b64_s_null_filtered = b64_str.replace('\0', "");
-            let b64_offset_contents = base64_offset(i, b64_str, b64_s_null_filtered);
-            if let Some(fm) = convert_to_fast_match(&format!("*{b64_offset_contents}*"), false) {
-                fastmatches.extend(fm);
+        let convstr_b64 = make_base64_str(encode, org_str, i);
+        match convstr_b64 {
+            Ok(b64_str) => {
+                let b64_s_null_filtered = b64_str.replace('\0', "");
+                let b64_offset_contents = base64_offset(i, b64_str, b64_s_null_filtered);
+                if let Some(fm) = convert_to_fast_match(&format!("*{b64_offset_contents}*"), false)
+                {
+                    fastmatches.extend(fm);
+                }
             }
-        } else {
-            err_msges.push(format!(
-                "Failed base64 encoding: {}",
-                convstr_b64.unwrap_err()
-            ));
+            Err(e) => {
+                err_msges.push(format!("Failed base64 encoding: {}", e));
+            }
         }
     }
     if fastmatches.is_empty() {
         return None;
     }
     Some(fastmatches)
+}
+
+fn make_base64_str(
+    encode: Option<&PipeElement>,
+    org_str: &str,
+    variant_index: usize,
+) -> Result<String, FromUtf8Error> {
+    let mut b64_result = vec![];
+    let mut target_byte = vec![];
+    target_byte.resize_with(variant_index, || 0b0);
+    if let Some(en) = encode.as_ref() {
+        match en {
+            PipeElement::Utf16Be => {
+                let mut buffer = Vec::new();
+                for utf16 in org_str.encode_utf16() {
+                    buffer.write_all(&utf16.to_be_bytes()).unwrap();
+                }
+                target_byte.extend_from_slice(buffer.as_slice())
+            }
+            PipeElement::Utf16Le | PipeElement::Wide => {
+                let mut buffer = Vec::new();
+                for utf16 in org_str.encode_utf16() {
+                    buffer.write_all(&utf16.to_le_bytes()).unwrap();
+                }
+                target_byte.extend_from_slice(buffer.as_slice())
+            }
+            _ => target_byte.extend_from_slice(org_str.as_bytes()),
+        }
+    } else {
+        target_byte.extend_from_slice(org_str.as_bytes());
+    }
+    b64_result.resize_with(target_byte.len() * 4 / 3 + 4, || 0b0);
+    general_purpose::STANDARD
+        .encode_slice(target_byte, &mut b64_result)
+        .ok();
+    String::from_utf8(b64_result)
 }
 
 fn base64_offset(offset: usize, b64_str: String, b64_str_null_filtered: String) -> String {
@@ -86,21 +120,68 @@ mod tests {
     }
 
     #[test]
-    fn test_convert_to_base64_str() {
+    fn test_convert_to_base64_str_utf8() {
         let mut err_msges = vec![];
         let val = "Hello, world!";
-        let fastmatches = convert_to_base64_str(val, &mut err_msges).unwrap();
+        let m = convert_to_base64_str(None, val, &mut err_msges).unwrap();
+        assert_eq!(m[0], FastMatch::Contains("SGVsbG8sIHdvcmxkI".to_string()));
+        assert_eq!(m[1], FastMatch::Contains("hlbGxvLCB3b3JsZC".to_string()));
+        assert_eq!(m[2], FastMatch::Contains("IZWxsbywgd29ybGQh".to_string()));
+    }
+
+    #[test]
+    fn test_convert_to_base64_str_wide() {
+        let mut err_msges = vec![];
+        let val = "Hello, world!";
+        let m = convert_to_base64_str(Some(&PipeElement::Wide), val, &mut err_msges).unwrap();
         assert_eq!(
-            fastmatches[0],
-            FastMatch::Contains("SGVsbG8sIHdvcmxkI".to_string())
+            m[0],
+            FastMatch::Contains("SABlAGwAbABvACwAIAB3AG8AcgBsAGQAIQ".to_string())
         );
         assert_eq!(
-            fastmatches[1],
-            FastMatch::Contains("hlbGxvLCB3b3JsZC".to_string())
+            m[1],
+            FastMatch::Contains("gAZQBsAGwAbwAsACAAdwBvAHIAbABkACEA".to_string())
         );
         assert_eq!(
-            fastmatches[2],
-            FastMatch::Contains("IZWxsbywgd29ybGQh".to_string())
+            m[2],
+            FastMatch::Contains("IAGUAbABsAG8ALAAgAHcAbwByAGwAZAAhA".to_string())
+        );
+    }
+    #[test]
+    fn test_convert_to_base64_str_utf16le() {
+        let mut err_msges = vec![];
+        let val = "Hello, world!";
+        let m = convert_to_base64_str(Some(&PipeElement::Utf16Le), val, &mut err_msges).unwrap();
+        assert_eq!(
+            m[0],
+            FastMatch::Contains("SABlAGwAbABvACwAIAB3AG8AcgBsAGQAIQ".to_string())
+        );
+        assert_eq!(
+            m[1],
+            FastMatch::Contains("gAZQBsAGwAbwAsACAAdwBvAHIAbABkACEA".to_string())
+        );
+        assert_eq!(
+            m[2],
+            FastMatch::Contains("IAGUAbABsAG8ALAAgAHcAbwByAGwAZAAhA".to_string())
+        );
+    }
+
+    #[test]
+    fn test_convert_to_base64_str_utf16be() {
+        let mut err_msges = vec![];
+        let val = "Hello, world!";
+        let m = convert_to_base64_str(Some(&PipeElement::Utf16Be), val, &mut err_msges).unwrap();
+        assert_eq!(
+            m[0],
+            FastMatch::Contains("AEgAZQBsAGwAbwAsACAAdwBvAHIAbABkAC".to_string())
+        );
+        assert_eq!(
+            m[1],
+            FastMatch::Contains("BIAGUAbABsAG8ALAAgAHcAbwByAGwAZAAh".to_string())
+        );
+        assert_eq!(
+            m[2],
+            FastMatch::Contains("ASABlAGwAbABvACwAIAB3AG8AcgBsAGQAI".to_string())
         );
     }
 }
