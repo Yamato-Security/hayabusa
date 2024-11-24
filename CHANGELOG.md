@@ -7,11 +7,11 @@
 - Support for the `gt`, `gte`, `lt`, `lte` field modifiers. (#1433) (@fukusuket)
 - New `log-metrics` command to get information about `.evtx` files. (computer names, event count, first timestamp, last timestamp, channels, providers) (#1474) (@fukusuket)
 - New `-b, --disable-abbreviations` options for the following commands to disable `Channel` and `Provider` abbreviations for when you want to check the original values. (#1485) (@fukusuket)
-  * csv-timeline
-  * json-timeline
-  * eid-metrics
-  * log-metrics
-  * search
+  * `csv-timeline`
+  * `json-timeline`
+  * `eid-metrics`
+  * `log-metrics`
+  * `search`
 - Support for `utf16/utf16be/utf16le/wide` field modifiers to be used with the `base64offset|contains` field modifier. (#1432) (@fukusuket)
   * `utf16|base64offset|contains`
   * `utf16be|base64offset|contains`
