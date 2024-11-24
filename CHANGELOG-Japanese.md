@@ -12,6 +12,11 @@
   * eid-metrics
   * log-metrics
   * search
+- `utf16/utf16be/utf16le/wide`フィールドモディファイアが`base64offset|contains`フィールドモディファイアと一緒に使えるようになった。 (#1432) (@fukusuket)
+  * `utf16|base64offset|contains`
+  * `utf16be|base64offset|contains`
+  * `utf16le|base64offset|contains`
+  * `wide|base64offset|contains`
 
 **改善:**
 

@@ -12,6 +12,11 @@
   * eid-metrics
   * log-metrics
   * search
+- Support for `utf16/utf16be/utf16le/wide` field modifiers to be used with the `base64offset|contains` field modifier. (#1432) (@fukusuket)
+  * `utf16|base64offset|contains`
+  * `utf16be|base64offset|contains`
+  * `utf16le|base64offset|contains`
+  * `wide|base64offset|contains`
 
 **Enhancements:**
 
