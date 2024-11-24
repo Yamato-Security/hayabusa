@@ -7,11 +7,16 @@
 - `gt`、`gte`、`lt`、`lte`のフィールドモディファイアに対応した。(#1433) (@fukusuket)
 - 新しい`log-metrics`コマンドで`.evtx`ファイルの情報を取得できるようになった。(コンピュータ名、イベント数、最初のタイムスタンプ、最後のタイムスタンプ、チャネル、プロバイダ) (#1474) (@fukusuket)
 - 以下のコマンドに`Channel`と`Provider`の略称を無効にする`-b, --disable-abbreviations`オプションを追加した。元の値を確認したい時に便利。 (#1485) (@fukusuket)
-  * csv-timeline
-  * json-timeline
-  * eid-metrics
-  * log-metrics
-  * search
+  * `csv-timeline`
+  * `json-timeline`
+  * `eid-metrics`
+  * `log-metrics`
+  * `search`
+- `utf16/utf16be/utf16le/wide`フィールドモディファイアが`base64offset|contains`フィールドモディファイアと一緒に使えるようになった。 (#1432) (@fukusuket)
+  * `utf16|base64offset|contains`
+  * `utf16be|base64offset|contains`
+  * `utf16le|base64offset|contains`
+  * `wide|base64offset|contains`
 
 **改善:**
 
