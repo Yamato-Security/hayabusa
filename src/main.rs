@@ -273,16 +273,31 @@ impl App {
         } else {
             HashSet::default()
         };
-
+        let no_color = stored_static.common_options.no_color;
         let output_saved_file =
             |output_path: &Option<PathBuf>, message: &str, html_report_flag: &bool| {
                 if let Some(path) = output_path {
                     if let Ok(metadata) = fs::metadata(path) {
-                        let output_saved_str = format!(
-                            "{message}: {} ({})",
-                            path.display(),
-                            ByteSize::b(metadata.len()).to_string_as(false)
-                        );
+                        let output_saved_str = format!("{message}:");
+                        write_color_buffer(
+                            &BufferWriter::stdout(ColorChoice::Always),
+                            get_writable_color(Some(Color::Rgb(0, 255, 0)), no_color),
+                            &output_saved_str,
+                            false,
+                        )
+                        .ok();
+                        write_color_buffer(
+                            &BufferWriter::stdout(ColorChoice::Always),
+                            None,
+                            &format!(
+                                " {} ({})",
+                                path.display(),
+                                ByteSize::b(metadata.len()).to_string_as(false)
+                            ),
+                            true,
+                        )
+                        .ok();
+                        println!();
                         output_and_data_stack_for_html(
                             &output_saved_str,
                             "General Overview {#general_overview}",
@@ -364,7 +379,6 @@ impl App {
                     "Saved file",
                     &stored_static.html_report_flag,
                 );
-                println!();
                 if stored_static.html_report_flag {
                     let html_str = HTML_REPORTER.read().unwrap().to_owned().create_html();
                     htmlreport::create_html_file(
@@ -842,6 +856,7 @@ impl App {
             .as_mut()
             .unwrap()
             .calculate_all_stocked_results();
+
         write_color_buffer(
             &BufferWriter::stdout(ColorChoice::Always),
             get_writable_color(
@@ -924,7 +939,10 @@ impl App {
 
         // Qオプションを付けた場合もしくはパースのエラーがない場合はerrorのstackが0となるのでエラーログファイル自体が生成されない。
         if ERROR_LOG_STACK.lock().unwrap().len() > 0 {
-            AlertMessage::create_error_log(stored_static.quiet_errors_flag);
+            AlertMessage::create_error_log(
+                stored_static.quiet_errors_flag,
+                stored_static.common_options.no_color,
+            );
         }
         println!();
         let _ = self.output_open_close_message("closing_messages.txt", stored_static);
