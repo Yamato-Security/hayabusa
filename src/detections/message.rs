@@ -1,6 +1,6 @@
 extern crate lazy_static;
 use super::configs::EventKeyAliasConfig;
-use super::utils::remove_sp_char;
+use super::utils::{get_writable_color, remove_sp_char};
 use crate::detections::configs::CURRENT_EXE_PATH;
 use crate::detections::field_data_map::{convert_field_data, FieldDataMap, FieldDataMapKey};
 use crate::detections::rule::AggResult;
@@ -25,7 +25,7 @@ use std::fs::{create_dir, File};
 use std::io::{self, BufWriter, Write};
 use std::path::Path;
 use std::sync::Mutex;
-use termcolor::{BufferWriter, ColorChoice};
+use termcolor::{BufferWriter, Color, ColorChoice};
 
 /*
  * This struct express log record
@@ -404,7 +404,7 @@ pub fn get_event_time(event_record: &Value, json_input_flag: bool) -> Option<Dat
 
 impl AlertMessage {
     ///対象のディレクトリが存在することを確認後、最初の定型文を追加して、ファイルのbufwriterを返す関数
-    pub fn create_error_log(quiet_errors_flag: bool) {
+    pub fn create_error_log(quiet_errors_flag: bool, no_color: bool) {
         if quiet_errors_flag {
             return;
         }
@@ -433,8 +433,15 @@ impl AlertMessage {
         error_logs.iter().for_each(|error_log| {
             writeln!(error_log_writer, "{error_log}").ok();
         });
-        println!("Errors were generated. Please check {file_path} for details.");
         println!();
+        let msg = format!("Errors were generated. Please check {file_path} for details.");
+        write_color_buffer(
+            &BufferWriter::stdout(ColorChoice::Always),
+            get_writable_color(Some(Color::Rgb(255, 0, 0)), no_color),
+            msg.as_str(),
+            true,
+        )
+        .ok();
     }
 
     /// ERRORメッセージを表示する関数
