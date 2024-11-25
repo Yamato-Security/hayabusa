@@ -4,7 +4,7 @@
 
 **新機能:**
 
-- `gt`、`gte`、`lt`、`lte`のフィールドモディファイアに対応した。(#1433) (@fukusuket)
+- `gt`、`gte`、`lt`、`lte`のフィールド修飾子に対応した。(#1433) (@fukusuket)
 - 新しい`log-metrics`コマンドで`.evtx`ファイルの情報を取得できるようになった。(コンピュータ名、イベント数、最初のタイムスタンプ、最後のタイムスタンプ、チャネル、プロバイダ) (#1474) (@fukusuket)
 - 以下のコマンドに`Channel`と`Provider`の略称を無効にする`-b, --disable-abbreviations`オプションを追加した。元の値を確認したい時に便利。 (#1485) (@fukusuket)
   * `csv-timeline`
@@ -12,7 +12,7 @@
   * `eid-metrics`
   * `log-metrics`
   * `search`
-- `utf16/utf16be/utf16le/wide`フィールドモディファイアが`base64offset|contains`フィールドモディファイアと一緒に使えるようになった。 (#1432) (@fukusuket)
+- `utf16/utf16be/utf16le/wide`フィールド修飾子が`base64offset|contains`フィールド修飾子と一緒に使えるようになった。 (#1432) (@fukusuket)
   * `utf16|base64offset|contains`
   * `utf16be|base64offset|contains`
   * `utf16le|base64offset|contains`
@@ -46,9 +46,9 @@
 
 **新機能:**
 
-- `fieldref`モディファイア(`equalsfield`モディファイアのエリアス)に対応した。(#1409) (@hitenkoku)
-- `fieldref|startswith`と`fieldref|contains`モディファイアに対応した。 (#1439) (@fukusuket)
-- `fieldref|endswith`モディファイアは、`endswithfield`をリプレースするためのエイリアスとして作成された。(#1437) (@fukusuket)
+- `fieldref`修飾子(`equalsfield`修飾子のエリアス)に対応した。(#1409) (@hitenkoku)
+- `fieldref|startswith`と`fieldref|contains`修飾子に対応した。 (#1439) (@fukusuket)
+- `fieldref|endswith`修飾子は、`endswithfield`をリプレースするためのエイリアスとして作成された。(#1437) (@fukusuket)
 - XORエンコードされたルールをサポートし、端末に置かれるファイルを最小限に抑えるとともに、ルールに過検知するアンチウイルス製品を回避する。(#1419) (@fukusuket)
   - リリースページで、この機能を設定済みのパッケージを含める予定。手動で設定したい場合は、[encoded_rules.yml](https://github.com/Yamato-Security/hayabusa-encoded-rules/raw/refs/heads/main/encoded_rules.yml)をダウンロードして、Hayabusaのルートフォルダに置いてください。このファイルは、hayabusa-rulesリポジトリ内のルールから作成されており、ルールが更新されるたびに自動的にアップデートされる。configディレクトリ以外のrulesフォルダ内のファイルは、まだ単一ファイルに含まれていないので削除してください。
   - 注意: -Hオプションで生成されるレポートは、ルールへのリンクを作成せず、ルール名だけが出力される。
@@ -69,13 +69,13 @@
 
 **新機能:**
 
-- Sigma V2の`|re:`のサブモディファイアに対応した。 submodifers. (#1399) (@fukusuket)
+- Sigma V2の`|re:`のサブ修飾子に対応した。 submodifers. (#1399) (@fukusuket)
   - 参考: https://github.com/SigmaHQ/sigma-specification/blob/main/appendix/sigma-modifiers-appendix.md
     * `|re|i:`: (insensitive) 大文字小文字を区別しないマッチングを無効にする。
     * `|re|m:`: (multi-line) 複数行にまたがってマッチする。`^` /`$` は行頭/行末にマッチする。
     * `|re|s:`: (single-line) ドット文字 (`.`) は改行文字を含むすべての文字にマッチする。
-- Sigma V2の`|exists:`モディファイアに対応した。 (#1400) (@hitenkoku)
-- Sigma V2の`|cased:`モディファイアに対応した。 (#1401) (@hitenkoku)
+- Sigma V2の`|exists:`修飾子に対応した。 (#1400) (@hitenkoku)
+- Sigma V2の`|cased:`修飾子に対応した。 (#1401) (@hitenkoku)
 
 **改善:**
 
