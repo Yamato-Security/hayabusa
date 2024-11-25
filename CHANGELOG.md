@@ -1,6 +1,6 @@
 # Changes
 
-## x.x.x [xxxx/xx/xx]
+## 2.19.0 [2024/11/26] - "Every Day Is A Good Day" Release
 
 **New Features:**
 
@@ -37,6 +37,7 @@
   - JSON field output order is now preserved according to the original XML. (omerbenamram/evtx #241)
   - Multiple sub-nodes with attributes and the same name would be overwritten and only the last one kept. (omerbenamram/evtx #245)
 - `logon-summary` and `eid-metrics` would sometimes output multiple progress bars. #1479 (@fukusuket)
+- The progress bar has been removed when outputting to terminal and not sorting events as is unneeded. #1508 (@fukusuket)
 
 **Other:**
 
