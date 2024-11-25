@@ -602,7 +602,7 @@ Input:
 
 General Options:
   -C, --clobber                        結果ファイルを上書きする
-  -h, --help                           ヘルプメニューを
+  -h, --help                           ヘルプメニューを表示する
   -J, --JSON-input                     .evtxファイルの代わりにJSON形式のログファイル(.jsonまたは.jsonl)をスキャンする
   -Q, --quiet-errors                   Quiet errorsモード: エラーログを保存しない
   -x, --recover-records                空ページからevtxレコードをカービングする (デフォルト: 無効)
@@ -680,7 +680,7 @@ Input:
 
 General Options:
   -C, --clobber                        結果ファイルを上書きする
-  -h, --help                           ヘルプメニューを
+  -h, --help                           ヘルプメニューを表示する
   -J, --JSON-input                     .evtxファイルの代わりにJSON形式のログファイル(.jsonまたは.jsonl)をスキャンする
   -Q, --quiet-errors                   Quiet errorsモード: エラーログを保存しない
   -x, --recover-records                空ページからevtxレコードをカービングする (デフォルト: 無効)
@@ -1315,7 +1315,7 @@ Input:
 
 General Options:
   -C, --clobber                          結果ファイルを上書きする
-  -h, --help                             ヘルプ
+  -h, --help                             ヘルプメニューを表示する
   -J, --JSON-input                       .evtxファイルの代わりにJSON形式のログファイル(.jsonまたは.jsonl)をスキャンする
   -s, --sort-events                      ファイル保存前イベントをソートする (警告: これは多くのメモリを使用する!)
   -w, --no-wizard                        質問はしない。すべてのイベントとアラートをスキャンする
@@ -1396,7 +1396,7 @@ Display Settings:
 
 General Options:
   -f, --file <FILE>   ルールlevelのチューニング (デフォルト: ./rules/config/level_tuning.txt)
-  -h, --help          ヘルプ
+  -h, --help          ヘルプメニューを表示する
 ```
 
 #### `level-tuning`コマンドの使用例
@@ -1433,7 +1433,7 @@ Display Settings:
   -q, --quiet      Quietモード: 起動バナーを表示しない
   
 General Options:
-  -h, --help       ヘルプ
+  -h, --help       ヘルプメニューを表示する
 ```
 
 ### `set-default-profile`コマンド
@@ -1446,7 +1446,7 @@ Display Settings:
   -q, --quiet              Quietモード: 起動バナーを表示しない
 
 General Options:
-  -h, --help               ヘルプ
+  -h, --help               ヘルプメニューを表示する
   -p, --profile <PROFILE>  利用する出力プロファイル名を指定する
 ```
 
@@ -1467,7 +1467,7 @@ Display Settings:
   -q, --quiet     Quietモード: 起動バナーを表示しない
 
 General Options:
-  -h, --help              ヘルプ
+  -h, --help              ヘルプメニューを表示する
   -r, --rules <DIR/FILE>  ルールファイルまたはルールファイルを持つディレクトリ (デフォルト: ./rules)
 ```
 
