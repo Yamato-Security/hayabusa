@@ -8,7 +8,7 @@
 ---
 
 <p align="center">
-    <a href="https://github.com/Yamato-Security/hayabusa/releases"><img src="https://img.shields.io/github/v/release/Yamato-Security/hayabusa?color=blue&label=Stable%20Version&style=flat""/></a>
+    <a href="https://github.com/Yamato-Security/hayabusa/releases"><img src="https://img.shields.io/github/v/release/Yamato-Security/hayabusa?color=blue&label=Stable%20Version&style=flat"/></a>
     <a href="https://github.com/Yamato-Security/hayabusa/releases"><img src="https://img.shields.io/github/downloads/Yamato-Security/hayabusa/total?style=flat&label=GitHub%F0%9F%A6%85Downloads&color=blue"/></a>
     <a href="https://github.com/Yamato-Security/hayabusa/stargazers"><img src="https://img.shields.io/github/stars/Yamato-Security/hayabusa?style=flat&label=GitHub%F0%9F%A6%85Stars"/></a>
     <a href="https://github.com/Yamato-Security/hayabusa/graphs/contributors"><img src="https://img.shields.io/github/contributors/Yamato-Security/hayabusa?label=Contributors&color=blue&style=flat"/></a>
@@ -721,7 +721,7 @@ Time Format:
 
 #### `log-metrics` screenshot
 
-![eid-metrics screenshot](screenshots/LogMetrics.png)
+![log-metrics screenshot](screenshots/LogMetrics.png)
 
 ### `logon-summary` command
 
@@ -733,7 +733,7 @@ Successful logons are taken from the following events:
   * `RDS-LSM 21` (Remote Desktop Service Local Session Manager Logon)
   * `RDS-GTW 302` (Remote Desktop Service Gateway Logon)
   
-Failed logons are taken from `Security 4615` events.
+Failed logons are taken from `Security 4625` events.
 
 ```
 Usage: logon-summary <INPUT> [OPTIONS]
@@ -1770,7 +1770,6 @@ Hayabusa rules are designed solely for Windows event log analysis and have the f
 To our knowledge, hayabusa provides the greatest native support for sigma rules out of any open source Windows event log analysis tool.
 
 # Other Windows Event Log Analyzers and Related Resources
-
 
 * [APT-Hunter](https://github.com/ahmedkhlief/APT-Hunter) - Attack detection tool written in Python.
 * [Awesome Event IDs](https://github.com/stuhli/awesome-event-ids) -  Collection of Event ID resources useful for Digital Forensics and Incident Response

@@ -8,7 +8,7 @@
 ---
 
 <p align="center">
-    <a href="https://github.com/Yamato-Security/hayabusa/releases"><img src="https://img.shields.io/github/v/release/Yamato-Security/hayabusa?color=blue&label=Stable%20Version&style=flat""/></a>
+    <a href="https://github.com/Yamato-Security/hayabusa/releases"><img src="https://img.shields.io/github/v/release/Yamato-Security/hayabusa?color=blue&label=Stable%20Version&style=flat"/></a>
     <a href="https://github.com/Yamato-Security/hayabusa/releases"><img src="https://img.shields.io/github/downloads/Yamato-Security/hayabusa/total?style=flat&label=GitHub%F0%9F%A6%85Downloads&color=blue"/></a>
     <a href="https://github.com/Yamato-Security/hayabusa/stargazers"><img src="https://img.shields.io/github/stars/Yamato-Security/hayabusa?style=flat&label=GitHub%F0%9F%A6%85Stars"/></a>
     <a href="https://github.com/Yamato-Security/hayabusa/graphs/contributors"><img src="https://img.shields.io/github/contributors/Yamato-Security/hayabusa?label=Contributors&color=blue&style=flat"/></a>
@@ -89,6 +89,7 @@ Hayabusaは、日本の[Yamato Security](https://yamatosecurity.connpass.com/)�
   - [注意: アンチウィルス/EDRの誤検知と遅い初回実行](#注意-アンチウィルスedrの誤検知と遅い初回実行)
   - [Windows](#windows)
     - [パスにスペースが含まれるファイルまたはディレクトリをスキャンしようとするとエラーが発生した場合](#パスにスペースが含まれるファイルまたはディレクトリをスキャンしようとするとエラーが発生した場合)
+    - [Characters not being displayed correctly](#characters-not-being-displayed-correctly)
   - [Linux](#linux)
   - [macOS](#macos)
 - [コマンド一覧](#コマンド一覧)
@@ -104,6 +105,9 @@ Hayabusaは、日本の[Yamato Security](https://yamatosecurity.connpass.com/)�
       - [`eid-metrics`コマンドの使用例](#eid-metricsコマンドの使用例)
       - [`eid-metrics`コマンドの設定ファイル](#eid-metricsコマンドの設定ファイル)
       - [`eid-metrics`のスクリーンショット](#eid-metricsのスクリーンショット)
+    - [`log-metrics` command](#log-metricsコマンド)
+      - [`log-metrics` command examples](#log-metricsコマンドの使用例)
+      - [`log-metrics` screenshot](#log-metricsのスクリーンショット)
     - [`logon-summary`コマンド](#logon-summaryコマンド)
       - [`logon-summary`コマンドの使用例](#logon-summaryコマンドの使用例)
       - [`logon-summary`のスクリーンショット](#logon-summaryのスクリーンショット)
@@ -150,10 +154,11 @@ Hayabusaは、日本の[Yamato Security](https://yamatosecurity.connpass.com/)�
     - [プロファイルの比較](#プロファイルの比較)
     - [プロファイルのフィールドエイリアス](#プロファイルのフィールドエイリアス)
       - [その他のプロファイルのフィールドエイリアス](#その他のプロファイルのフィールドエイリアス)
-  - [Levelの省略](#levelの省略)
-  - [MITRE ATT\&CK戦術の省略](#mitre-attck戦術の省略)
-  - [Channel情報の省略](#channel情報の省略)
-- [その他の省略](#その他の省略)
+  - [省略](#省略)
+    - [Levelの省略](#levelの省略)
+    - [MITRE ATT\&CK戦術の省略](#mitre-attck戦術の省略)
+    - [Channel情報の省略](#channel情報の省略)
+    - [その他の省略](#その他の省略)
   - [プログレスバー](#プログレスバー)
   - [カラー出力](#カラー出力)
   - [結果のサマリ (Results Summary)](#結果のサマリ-results-summary)
@@ -307,6 +312,7 @@ live-responseという名前がついたzipパッケージをダウンロード�
 zipファイルには、Hayabusaのバイナリ、XORエンコードされたルールファイル、設定ファイルの3つのファイルが含まれています。
 これらのライブレスポンスパッケージの目的は、クライアントのエンドポイントでHayabusaを実行する際に、Windows Defenderのようなウイルス対策スキャナーが.ymlルールファイルに対して誤検知をしないようにするためです。
 また、USNジャーナルなどのフォレンジックアーティファクトが上書きされないよう、システムに書き込まれるファイルの量を最小限に抑えることも目的としています。
+
 # Gitクローン
 
 以下の`git clone`コマンドでレポジトリをダウンロードし、ソースコードからコンパイルして使用することも可能です：
@@ -442,6 +448,22 @@ Windowsに組み込まれているコマンドプロンプトまたはPowerShell
 1. ファイルまたはディレクトリのパスをダブルクォートで囲む。
 2. ディレクトリパスの場合は、最後の文字にバックスラッシュを入れない。
 
+### 文字が正常に表示されない場合
+
+デフォルトのフォントがWindowsの`Lucida Console`の場合、ロゴやテーブルに使用されているさまざまな文字が正しく表示されません。
+フォントを`Consolas`に変更することで、これを修正できます。
+
+これにより、ほとんどのテキスト表示の問題は修正されますが、終了メッセージに含まれる日本語文字の表示は修正されません。
+
+![文字化け](screenshots/Mojibake.png)
+
+以下の4つのオプションのいずれかで修正できます：
+1. [Windows Terminal](https://learn.microsoft.com/en-us/windows/terminal/)をCommand PromptまたはPowerShellの代わりに使用する。（推奨）
+2. `MS Gothic`フォントを使用する。ただし、バックスラッシュが円記号（¥）に変わることに注意してください。
+   ![文字化けの修正](screenshots/MojibakeFix.png)
+3. [HackGen](https://github.com/yuru7/HackGen/releases)フォントをインストールし、`HackGen Console NF`を使用する。
+4. 日本語を含む終了メッセージを表示しないために、`-q, --quiet`オプションを使用する。
+
 ## Linux
 
 まず、バイナリに実行権限を与える必要があります。
@@ -496,6 +518,7 @@ macOSの環境設定から「セキュリティとプライバシー」を開き
 * `computer-metrics`: コンピュータ名に基づくイベントの合計を出力する。
 * `eid-metrics`: イベントIDに基づくイベントの合計と割合の集計を出力する。
 * `logon-summary`: ログオンイベントのサマリを出力する。
+* `log-metrics`: ログファイルの統計情報を出力する。
 * `pivot-keywords-list`: ピボットする不審なキーワードのリストを作成する。
 * `search`: キーワードや正規表現で全イベントの検索。
 
@@ -540,17 +563,17 @@ General Options:
   -Q, --quiet-errors                   Quiet errorsモード: エラーログを保存しない
   -x, --recover-records                空ページからevtxレコードをカービングする (デフォルト: 無効)
   -c, --rules-config <DIR>             ルールフォルダのコンフィグディレクトリ (デフォルト: ./rules/config)
-      --target-file-ext <FILE-EXT...>  evtx以外の拡張子を解析対象に追加する。 (例１: evtx_data 例２: evtx1,evtx2)
   -t, --threads <NUMBER>               スレッド数 (デフォルト: パフォーマンスに最適な数値)
+      --target-file-ext <FILE-EXT...>  evtx以外の拡張子を解析対象に追加する。 (例１: evtx_data 例２: evtx1,evtx2)
 
 Filtering:
-      --timeline-offset <OFFSET>  オフセットに基づく最近のイベントのスキャン (例: 1y, 3M, 30d, 24h, 30m)
+      --time-offset <OFFSET>      オフセットに基づく最近のイベントのスキャン (例: 1y, 3M, 30d, 24h, 30m)
 
 Output:
   -o, --output <FILE>  イベントIDに基づくイベントの合計と割合の集計を出力する (例: computer-metrics.csv)
 
 Display Settings:
-      --no-color  カラーで出力しない
+  -K, --no-color  カラーで出力しない
   -q, --quiet     Quietモード: 起動バナーを表示しない
   -v, --verbose   詳細な情報を出力する               
 ```
@@ -584,25 +607,26 @@ General Options:
   -Q, --quiet-errors                   Quiet errorsモード: エラーログを保存しない
   -x, --recover-records                空ページからevtxレコードをカービングする (デフォルト: 無効)
   -c, --rules-config <DIR>             ルールフォルダのコンフィグディレクトリ (デフォルト: ./rules/config)
-      --target-file-ext <FILE-EXT...>  evtx以外の拡張子を解析対象に追加する。 (例１: evtx_data 例２: evtx1,evtx2)
   -t, --threads <NUMBER>               スレッド数 (デフォルト: パフォーマンスに最適な数値)
+      --target-file-ext <FILE-EXT...>  evtx以外の拡張子を解析対象に追加する。 (例１: evtx_data 例２: evtx1,evtx2)
 
 Filtering:
       --exclude-computer <COMPUTER...>  特定のコンピュータ名をスキャンしない (例: ComputerA) (例: ComputerA,ComputerB)
       --include-computer <COMPUTER...>  特定のコンピュータ名のみをスキャンする (例: ComputerA) (例: ComputerA,ComputerB)
-      --timeline-offset <OFFSET>        オフセットに基づく最近のイベントのスキャン (例: 1y, 3M, 30d, 24h, 30m)
+      --time-offset <OFFSET>            オフセットに基づく最近のイベントのスキャン (例: 1y, 3M, 30d, 24h, 30m)
 
 Output:
+  -b, --disable-abbreviations 省略機能を無効にする
   -o, --output <FILE>  イベントIDに基づくイベントの合計と割合の集計を出力する (例: eid-metrics.csv)
 
 Display Settings:
-      --no-color  カラーで出力しない
+  -K, --no-color  カラーで出力しない
   -q, --quiet     Quietモード: 起動バナーを表示しない
   -v, --verbose   詳細な情報を出力する
 
 Time Format:
       --European-time     ヨーロッパ形式で日付と時刻を出力する (例: 22-02-2022 22:00:00.123 +02:00)
-      --ISO-8601          ISO-8601形式で日付と時刻を出力する (例: 2022-02-22T10:10:10.1234567Z) (UTC時刻)
+  -O, --ISO-8601          ISO-8601形式で日付と時刻を出力する (例: 2022-02-22T10:10:10.1234567Z) (UTC時刻)
       --RFC-2822          RFC 2822形式で日付と時刻を出力する (例: Fri, 22 Feb 2022 22:00:00 -0600)
       --RFC-3339          RFC 3339形式で日付と時刻を出力する (例: 2022-02-22 22:00:00.123456-06:00)
       --US-military-time  24時間制(ミリタリータイム)のアメリカ形式で日付と時刻を出力する (例: 02-22-2022 22:00:00.123 -06:00)
@@ -633,10 +657,83 @@ Microsoft-Windows-Sysmon/Operational,4,Sysmon Service State Changed.
 
 ![eid-metrics screenshot](screenshots/EID-Metrics.png)
 
+### `log-metrics`コマンド
+
+`log-metrics`コマンドを使うと、イベントログ内の以下のメタデータを出力することができる:
+* ファイル名
+* コンピュータ名
+* イベント数
+* 最初のタイムスタンプ
+* 最後のタイムスタンプ
+* チャネル
+* プロバイダー
+
+このコマンドは検知ルールを使用しないので、すべてのイベントをスキャンする。
+
+```
+Usage: log-metrics <INPUT> [OPTIONS]
+
+Input:
+  -d, --directory <DIR>        .evtxファイルを持つディレクトリのパス
+  -f, --file <FILE>            1つの.evtxファイルに対して解析を行う
+  -l, --live-analysis          ローカル端末のC:\Windows\System32\winevt\Logsフォルダを解析する
+
+General Options:
+  -C, --clobber                        結果ファイルを上書きする
+  -h, --help                           ヘルプメニューを
+  -J, --JSON-input                     .evtxファイルの代わりにJSON形式のログファイル(.jsonまたは.jsonl)をスキャンする
+  -Q, --quiet-errors                   Quiet errorsモード: エラーログを保存しない
+  -x, --recover-records                空ページからevtxレコードをカービングする (デフォルト: 無効)
+  -c, --rules-config <DIR>             ルールフォルダのコンフィグディレクトリ (デフォルト: ./rules/config)
+  -t, --threads <NUMBER>               スレッド数 (デフォルト: パフォーマンスに最適な数値)
+      --target-file-ext <FILE-EXT...>  evtx以外の拡張子を解析対象に追加する。 (例１: evtx_data 例２: evtx1,evtx2)
+
+Filtering:
+      --exclude-computer <COMPUTER...>  特定のコンピュータ名をスキャンしない (例: ComputerA) (例: ComputerA,ComputerB)
+      --include-computer <COMPUTER...>  特定のコンピュータ名のみをスキャンする (例: ComputerA) (例: ComputerA,ComputerB)
+      --time-offset <OFFSET>            オフセットに基づく最近のイベントのスキャン (例: 1y, 3M, 30d, 24h, 30m)
+
+Output:
+  -b, --disable-abbreviations  省略機能を無効にする
+  -M, --multiline              イベントフィールド情報を複数の行に出力する
+  -o, --output <FILE>          メトリクスをCSV形式で保存する (例: metrics.csv)
+
+Display Settings:
+  -K, --no-color  カラーで出力しない
+  -q, --quiet     Quietモード: 起動バナーを表示しない
+  -v, --verbose   詳細な情報を出力する
+
+Time Format:
+      --European-time     ヨーロッパ形式で日付と時刻を出力する (例: 22-02-2022 22:00:00.123 +02:00)
+  -O, --ISO-8601          ISO-8601形式で日付と時刻を出力する (例: 2022-02-22T10:10:10.1234567Z) (UTC時刻)
+      --RFC-2822          RFC 2822形式で日付と時刻を出力する (例: Fri, 22 Feb 2022 22:00:00 -0600)
+      --RFC-3339          RFC 3339形式で日付と時刻を出力する (例: 2022-02-22 22:00:00.123456-06:00)
+      --US-military-time  24時間制(ミリタリータイム)のアメリカ形式で日付と時刻を出力する (例: 02-22-2022 22:00:00.123 -06:00)
+      --US-time           アメリカ形式で日付と時刻を出力する (例: 02-22-2022 10:00:00.123 PM -06:00)
+  -U, --UTC               UTC形式で日付と時刻を出力する (デフォルト: 現地時間)
+```
+
+#### `log-metrics`コマンドの例
+
+* ファイルからログファイルのメトリクスを出力する: `hayabusa.exe log-metrics -f Security.evtx`
+* ディレクトリからログファイルのメトリクスを出力する: `hayabusa.exe log-metrics -d ../logs`
+* 結果をCSVファイルに保存: `hayabusa.exe log-metrics -d ../logs -o eid-metrics.csv`
+
+#### `log-metrics`のスクリーンショット
+
+![log-metricsスクリーンショット](screenshots/LogMetrics.png)
+
 ### `logon-summary`コマンド
 
 `logon-summary`コマンドを使うことでログオン情報の要約(ユーザ名、ログイン成功数、ログイン失敗数)の画面出力ができます。
 単体のevtxファイルを解析したい場合は`-f`オプションを利用してください。複数のevtxファイルを対象としたい場合は`-d`オプションを合わせて使うことでevtxファイルごとのログイン情報の要約を出力できます。
+
+ログオン成功は、以下のイベントから取得される：
+* `Security 4624` (ログオン成功)
+* `RDS-LSM 21` (リモートデスクトップサービス ローカルセッションマネージャーのログオン)
+* `RDS-GTW 302` (リモートデスクトップサービス ゲートウェイのログオン)
+
+ログオン失敗は、`Security 4625`イベントから取得される
 
 ```
 Usage: logon-summary <INPUT> [OPTIONS]
@@ -653,27 +750,28 @@ General Options:
   -Q, --quiet-errors                   Quiet errorsモード: エラーログを保存しない
   -x, --recover-records                空ページからevtxレコードをカービングする (デフォルト: 無効)
   -c, --rules-config <DIR>             ルールフォルダのコンフィグディレクトリ (デフォルト: ./rules/config)
-      --target-file-ext <FILE-EXT...>  evtx以外の拡張子を解析対象に追加する (例１: evtx_data 例２:evtx1,evtx2)
   -t, --threads <NUMBER>               スレッド数 (デフォルト: パフォーマンスに最適な数値)
+      --target-file-ext <FILE-EXT...>  evtx以外の拡張子を解析対象に追加する (例１: evtx_data 例２:evtx1,evtx2)
 
 Filtering:
       --exclude-computer <COMPUTER...>  特定のコンピュータ名をスキャンしない (例: ComputerA) (例: ComputerA,ComputerB)
       --include-computer <COMPUTER...>  特定のコンピュータ名のみをスキャンする (例: ComputerA) (例: ComputerA,ComputerB)
       --timeline-end <DATE>             解析対象とするイベントログの終了時刻 (例: "2022-02-22 23:59:59 +09:00")
-      --timeline-offset <OFFSET>        オフセットに基づく最近のイベントのスキャン (例: 1y, 3M, 30d, 24h, 30m)
+      --time-offset <OFFSET>            オフセットに基づく最近のイベントのスキャン (例: 1y, 3M, 30d, 24h, 30m)
       --timeline-start <DATE>           解析対象とするイベントログの開始時刻 (例: "2020-02-22 00:00:00 +09:00")
 
 Output:
+  -b, --disable-abbreviations     省略機能を無効にする
   -o, --output <FILENAME-PREFIX>  ログオンサマリをCSV形式で２つのファイルに保存する (例: -o logon-summary.csv)
 
 Display Settings:
-      --no-color  カラーで出力しない
+  -K, --no-color  カラーで出力しない
   -q, --quiet     Quietモード: 起動バナーを表示しない
   -v, --verbose   詳細な情報を出力する
 
 Time Format:
       --European-time     ヨーロッパ形式で日付と時刻を出力する (例: 22-02-2022 22:00:00.123 +02:00)
-      --ISO-8601          ISO-8601形式で日付と時刻を出力する (例: 2022-02-22T10:10:10.1234567Z) (UTC時刻)
+  -O, --ISO-8601          ISO-8601形式で日付と時刻を出力する (例: 2022-02-22T10:10:10.1234567Z) (UTC時刻)
       --RFC-2822          RFC 2822形式で日付と時刻を出力する (例: Fri, 22 Feb 2022 22:00:00 -0600)
       --RFC-3339          RFC 3339形式で日付と時刻を出力する (例: 2022-02-22 22:00:00.123456-06:00)
       --US-military-time  24時間制(ミリタリータイム)のアメリカ形式で日付と時刻を出力する (例: 02-22-2022 22:00:00.123 -06:00)
@@ -716,8 +814,8 @@ General Options:
   -Q, --quiet-errors                   Quiet errorsモード: エラーログを保存しない
   -x, --recover-records                空ページからevtxレコードをカービングする (デフォルト: 無効)
   -c, --rules-config <DIR>             ルールフォルダのコンフィグディレクトリ (デフォルト: ./rules/config)
-      --target-file-ext <FILE-EXT...>  evtx以外の拡張子を解析対象に追加する。 (例１: evtx_data 例２: evtx1,evtx2)
   -t, --threads <NUMBER>               スレッド数 (デフォルト: パフォーマンスに最適な数値)
+      --target-file-ext <FILE-EXT...>  evtx以外の拡張子を解析対象に追加する。 (例１: evtx_data 例２: evtx1,evtx2)
 
 Filtering:
   -E, --EID-filter                      速度を上げるため主なEIDだけスキャンする (コンフィグファイル: ./rules/config/target_event_IDs.txt)
@@ -735,14 +833,14 @@ Filtering:
       --include-tag <TAG...>            特定のタグを持つルールのみをロードする (例１: attack.execution,attack.discovery) (例２: wmi)
   -m, --min-level <LEVEL>               結果出力をするルールの最低レベル (デフォルト: informational)
       --timeline-end <DATE>             解析対象とするイベントログの終了時刻 (例: "2022-02-22 23:59:59 +09:00")
-      --timeline-offset <OFFSET>        オフセットに基づく最近のイベントのスキャン (例: 1y, 3M, 30d, 24h, 30m)
+      --time-offset <OFFSET>            オフセットに基づく最近のイベントのスキャン (例: 1y, 3M, 30d, 24h, 30m)
       --timeline-start <DATE>           解析対象とするイベントログの開始時刻 (例: "2020-02-22 00:00:00 +09:00")
 
 Output:
   -o, --output <FILENAME-PREFIX>  ピボットキーワードの一覧を複数ファイルに出力する (例: PivotKeywords)
 
 Display Settings:
-      --no-color  カラーで出力しない
+  -K, --no-color  カラーで出力しない
   -q, --quiet     Quietモード: 起動バナーを表示しない
   -v, --verbose   詳細な情報を出力する               
 ```
@@ -775,7 +873,7 @@ Hayabusaの検知ルールでなにかの痕跡を検知できなくても、検
 Usage: hayabusa.exe search <INPUT> <--keywords "<KEYWORDS>" OR --regex "<REGEX>"> [OPTIONS]
 
 Display Settings:
-      --no-color  カラーで出力しない
+  -K, --no-color  カラーで出力しない
   -q, --quiet     Quietモード: 起動バナーを表示しない
   -v, --verbose   詳細な情報を出力する
 
@@ -785,8 +883,8 @@ General Options:
   -Q, --quiet-errors                     Quiet errorsモード: エラーログを保存しない
   -x, --recover-records                  空ページからevtxレコードをカービングする (デフォルト: 無効)
   -c, --rules-config <DIR>               ルールフォルダのコンフィグディレクトリ (デフォルト: ./rules/config)
-      --target-file-ext <FILE-EXT...>    evtx以外の拡張子を解析対象に追加する (例１: evtx_data 例２:evtx1,evtx2)
   -t, --threads <NUMBER>                 スレッド数 (デフォルト: パフォーマンスに最適な数値)
+      --target-file-ext <FILE-EXT...>    evtx以外の拡張子を解析対象に追加する (例１: evtx_data 例２:evtx1,evtx2)
 
 Input:
   -d, --directory <DIR>        .evtxファイルを持つディレクトリのパス
@@ -799,7 +897,7 @@ Filtering:
   -i, --ignore-case                  大文字と小文字を区別しない
   -k, --keywords <KEYWORD...>        キーワードでの検索
   -r, --regex <REGEX>                正規表現での検索
-      --timeline-offset <OFFSET>     オフセットに基づく最近のイベントのスキャン (例: 1y, 3M, 30d, 24h, 30m)
+      --time-offset <OFFSET>         オフセットに基づく最近のイベントのスキャン (例: 1y, 3M, 30d, 24h, 30m)
 
 Output:
   -J, --JSON-output    JSON形式で検索結果を保存する (例: -J -o results.json)
@@ -809,7 +907,7 @@ Output:
 
 Time Format:
       --European-time     ヨーロッパ形式で日付と時刻を出力する (例: 22-02-2022 22:00:00.123 +02:00)
-      --ISO-8601          ISO-8601形式で日付と時刻を出力する (例: 2022-02-22T10:10:10.1234567Z) (UTC時刻)
+  -O, --ISO-8601          ISO-8601形式で日付と時刻を出力する (例: 2022-02-22T10:10:10.1234567Z) (UTC時刻)
       --RFC-2822          RFC 2822形式で日付と時刻を出力する (例: Fri, 22 Feb 2022 22:00:00 -0600)
       --RFC-3339          RFC 3339形式で日付と時刻を出力する (例: 2022-02-22 22:00:00.123456-06:00)
       --US-military-time  24時間制(ミリタリータイム)のアメリカ形式で日付と時刻を出力する (例: 02-22-2022 22:00:00.123 -06:00)
@@ -959,11 +1057,12 @@ General Options:
   -x, --recover-records                  空ページからevtxレコードをカービングする (デフォルト: 無効)
   -r, --rules <DIR/FILE>                 ルールファイルまたはルールファイルを持つディレクトリ (デフォルト: ./rules)
   -c, --rules-config <DIR>               ルールフォルダのコンフィグディレクトリ (デフォルト: ./rules/config)
-      --target-file-ext <FILE-EXT...>    evtx以外の拡張子を解析対象に追加する。 (例１: evtx_data 例２: evtx1,evtx2)
   -t, --threads <NUMBER>                 スレッド数 (デフォルト: パフォーマンスに最適な数値)
+      --target-file-ext <FILE-EXT...>    evtx以外の拡張子を解析対象に追加する。 (例１: evtx_data 例２: evtx1,evtx2)
 
 Filtering:
   -E, --EID-filter                      速度を上げるため主なEIDだけスキャンする (コンフィグファイル: ./rules/config/target_event_IDs.txt)
+  -A, --enable-all-rules                ロードされたevtxファイルに関係なく、すべてのルールを有効にする（ルールのチャネルフィルターを無効にする）
   -D, --enable-deprecated-rules         ステータスがdeprecatedのルールを有効にする
   -n, --enable-noisy-rules              Noisyルールを有効にする
   -u, --enable-unsupported-rules        ステータスがunsupportedのルールを有効にする
@@ -980,11 +1079,13 @@ Filtering:
       --include-tag <TAG...>            特定のタグを持つルールのみをロードする (例１: attack.execution,attack.discovery) (例２: wmi)
   -m, --min-level <LEVEL>               結果出力をするルールの最低レベル (デフォルト: informational)
   -P, --proven-rules                    実績のあるルールだけでスキャンし、高速化する (./rules/config/proven_rules.txt)
+  -a, --scan-all-evtx-files             ロードされたルールに関係なく、すべてのevtxファイルをスキャンする（evtxファイルのチャネルフィルターを無効にする）
+      --time-offset <OFFSET>            オフセットに基づく最近のイベントのスキャン (例: 1y, 3M, 30d, 24h, 30m)
       --timeline-end <DATE>             解析対象とするイベントログの終了時刻 (例: "2022-02-22 23:59:59 +09:00")
-      --timeline-offset <OFFSET>        オフセットに基づく最近のイベントのスキャン (例: 1y, 3M, 30d, 24h, 30m)
       --timeline-start <DATE>           解析対象とするイベントログの開始時刻 (例: "2020-02-22 00:00:00 +09:00")
 
 Output:
+  -b, --disable-abbreviations        省略機能を無効にする
   -G, --GeoIP <MAXMIND-DB-DIR>       IPアドレスのGeoIP(ASN、都市、国)情報を追加する
   -H, --HTML-report <FILE>           HTML形式で詳細な結果を出力する (例: results.html)
   -M, --multiline                    イベントフィールド情報を複数の行に出力する
@@ -996,7 +1097,7 @@ Output:
   -X, --remove-duplicate-detections  重複した検知項目を削除する (デフォルト: 無効)
 
 Display Settings:
-      --no-color            カラーで出力しない
+  -K, --no-color            カラーで出力しない
   -N, --no-summary          結果概要を出力しない (多少速くなる)
   -q, --quiet               Quietモード: 起動バナーを表示しない
   -v, --verbose             詳細な情報を出力する
@@ -1004,7 +1105,7 @@ Display Settings:
 
 Time Format:
       --European-time     ヨーロッパ形式で日付と時刻を出力する (例: 22-02-2022 22:00:00.123 +02:00)
-      --ISO-8601          ISO-8601形式で日付と時刻を出力する (例: 2022-02-22T10:10:10.1234567Z) (UTC時刻)
+  -O, --ISO-8601          ISO-8601形式で日付と時刻を出力する (例: 2022-02-22T10:10:10.1234567Z) (UTC時刻)
       --RFC-2822          RFC 2822形式で日付と時刻を出力する (例: Fri, 22 Feb 2022 22:00:00 -0600)
       --RFC-3339          RFC 3339形式で日付と時刻を出力する (例: 2022-02-22 22:00:00.123456-06:00)
       --US-military-time  24時間制(ミリタリータイム)のアメリカ形式で日付と時刻を出力する (例: 02-22-2022 22:00:00.123 -06:00)
@@ -1222,11 +1323,12 @@ General Options:
   -x, --recover-records                  空ページからevtxレコードをカービングする (デフォルト: 無効)
   -r, --rules <DIR/FILE>                 ルールファイルまたはルールファイルを持つディレクトリ (デフォルト: ./rules)
   -c, --rules-config <DIR>               ルールフォルダのコンフィグディレクトリ (デフォルト: ./rules/config)
-      --target-file-ext <FILE-EXT...>    evtx以外の拡張子を解析対象に追加する。 (例１: evtx_data 例２: evtx1,evtx2)
   -t, --threads <NUMBER>                 スレッド数 (デフォルト: パフォーマンスに最適な数値)
+      --target-file-ext <FILE-EXT...>    evtx以外の拡張子を解析対象に追加する。 (例１: evtx_data 例２: evtx1,evtx2)
 
 Filtering:
   -E, --EID-filter                      速度を上げるため主なEIDだけスキャンする (コンフィグファイル: ./rules/config/target_event_IDs.txt)
+  -A, --enable-all-rules                ロードされたevtxファイルに関係なく、すべてのルールを有効にする（ルールのチャネルフィルターを無効にする）
   -D, --enable-deprecated-rules         ステータスがdeprecatedのルールを有効にする
   -n, --enable-noisy-rules              Noisyルールを有効にする
   -u, --enable-unsupported-rules        ステータスがunsupportedのルールを有効にする
@@ -1243,15 +1345,16 @@ Filtering:
       --include-tag <TAG...>            特定のタグを持つルールのみをロードする (例１: attack.execution,attack.discovery) (例２: wmi)
   -m, --min-level <LEVEL>               結果出力をするルールの最低レベル (デフォルト: informational)
   -P, --proven-rules                    実績のあるルールだけでスキャンし、高速化する (./rules/config/proven_rules.txt)
+  -a, --scan-all-evtx-files             ロードされたルールに関係なく、すべてのevtxファイルをスキャンする（evtxファイルのチャネルフィルターを無効にする）
+      --time-offset <OFFSET>            オフセットに基づく最近のイベントのスキャン (例: 1y, 3M, 30d, 24h, 30m)
       --timeline-end <DATE>             解析対象とするイベントログの終了時刻 (例: "2022-02-22 23:59:59 +09:00")
-      --timeline-offset <OFFSET>        オフセットに基づく最近のイベントのスキャン (例: 1y, 3M, 30d, 24h, 30m)
       --timeline-start <DATE>           解析対象とするイベントログの開始時刻 (例: "2020-02-22 00:00:00 +09:00")
 
 Output:
+  -b, --disable-abbreviations        省略機能を無効にする
   -G, --GeoIP <MAXMIND-DB-DIR>       IPアドレスのGeoIP(ASN、都市、国)情報を追加する
   -H, --HTML-report <FILE>           HTML形式で詳細な結果を出力する (例: results.html)
   -L, --JSONL-output                 タイムラインをJSONL形式で保存する (例: -L -o results.jsonl)
-  -M, --multiline                    イベントフィールド情報を複数の行に出力する
   -F, --no-field-data-mapping        フィールドデータのマッピングを無効にする
       --no-pwsh-field-extraction     PowerShell Classicログフィールド抽出の無効化
   -o, --output <FILE>                タイムラインを保存する (例: results.csv)
@@ -1260,7 +1363,7 @@ Output:
   -X, --remove-duplicate-detections  重複した検知項目を削除する (デフォルト: 無効)
 
 Display Settings:
-      --no-color            カラーで出力しない
+  -K, --no-color            カラーで出力しない
   -N, --no-summary          結果概要を出力しない (多少速くなる)
   -q, --quiet               Quietモード: 起動バナーを表示しない
   -v, --verbose             詳細な情報を出力する
@@ -1268,7 +1371,7 @@ Display Settings:
 
 Time Format:
       --European-time     ヨーロッパ形式で日付と時刻を出力する (例: 22-02-2022 22:00:00.123 +02:00)
-      --ISO-8601          ISO-8601形式で日付と時刻を出力する (例: 2022-02-22T10:10:10.1234567Z) (UTC時刻)
+  -O, --ISO-8601          ISO-8601形式で日付と時刻を出力する (例: 2022-02-22T10:10:10.1234567Z) (UTC時刻)
       --RFC-2822          RFC 2822形式で日付と時刻を出力する (例: Fri, 22 Feb 2022 22:00:00 -0600)
       --RFC-3339          RFC 3339形式で日付と時刻を出力する (例: 2022-02-22 22:00:00.123456-06:00)
       --US-military-time  24時間制(ミリタリータイム)のアメリカ形式で日付と時刻を出力する (例: 02-22-2022 22:00:00.123 -06:00)
@@ -1288,11 +1391,12 @@ Time Format:
 Usage: level-tuning [OPTIONS]
 
 Display Settings:
-      --no-color      カラーで出力しない
+  -K, --no-color      カラーで出力しない
   -q, --quiet         Quietモード: 起動バナーを表示しない
 
 General Options:
   -f, --file <FILE>   ルールlevelのチューニング (デフォルト: ./rules/config/level_tuning.txt)
+  -h, --help          ヘルプ
 ```
 
 #### `level-tuning`コマンドの使用例
@@ -1325,8 +1429,11 @@ id,new_level
 Usage: list-profiles [OPTIONS]
 
 Display Settings:
-      --no-color   カラーで出力しない
+  -K, --no-color   カラーで出力しない
   -q, --quiet      Quietモード: 起動バナーを表示しない
+  
+General Options:
+  -h, --help       ヘルプ
 ```
 
 ### `set-default-profile`コマンド
@@ -1335,10 +1442,11 @@ Display Settings:
 Usage: set-default-profile [OPTIONS]
 
 Display Settings:
-      --no-color           カラーで出力しない
+  -K, --no-color           カラーで出力しない
   -q, --quiet              Quietモード: 起動バナーを表示しない
 
 General Options:
+  -h, --help               ヘルプ
   -p, --profile <PROFILE>  利用する出力プロファイル名を指定する
 ```
 
@@ -1355,10 +1463,11 @@ General Options:
 Usage: update-rules [OPTIONS]
 
 Display Settings:
-      --no-color  カラーで出力しない
+  -K, --no-color  カラーで出力しない
   -q, --quiet     Quietモード: 起動バナーを表示しない
 
 General Options:
+  -h, --help              ヘルプ
   -r, --rules <DIR/FILE>  ルールファイルまたはルールファイルを持つディレクトリ (デフォルト: ./rules)
 ```
 
@@ -1479,7 +1588,13 @@ RuleID: "%RuleID%"
 
 また、[イベントキーエイリアス](https://github.com/Yamato-Security/hayabusa-rules/blob/main/README-Japanese.md#%E3%82%A4%E3%83%99%E3%83%B3%E3%83%88%E3%82%AD%E3%83%BC%E3%82%A8%E3%82%A4%E3%83%AA%E3%82%A2%E3%82%B9)を定義し、出力することもできます。
 
-## Levelの省略
+## Abbreviations
+
+In order to save space, we abbreviate levels, MITRE ATT&CK tactics, channels, providers, field names, etc...
+
+You can turn off some of these abbreviations to see the original channel name, provider name, etc... with the `-b, --disable-abbreviations` option.
+
+### Levelの省略
 
 簡潔に出力するために`level`を以下のように省略し出力しています。
 
@@ -1489,7 +1604,7 @@ RuleID: "%RuleID%"
 * `low `: `low`
 * `info`: `informational`
 
-## MITRE ATT&CK戦術の省略
+### MITRE ATT&CK戦術の省略
 
 簡潔に出力するためにMITRE ATT&CKの戦術を以下のように省略しています。
 `./config/mitre_tactics.txt`の設定ファイルで自由に編集できます。
@@ -1509,7 +1624,7 @@ RuleID: "%RuleID%"
 * `Exfil` : Exfiltration (持ち出し)
 * `Impact` : Impact (影響)
 
-## Channel情報の省略
+### Channel情報の省略
 
 簡潔に出力するためにChannelの表示を以下のように省略しています。
 `./rules/config/channel_abbreviations.txt`の設定ファイルで自由に編集できます。
@@ -1543,7 +1658,7 @@ RuleID: "%RuleID%"
 * `WinRM` : `Microsoft-Windows-WinRM/Operational`
 * `WMI` : `Microsoft-Windows-WMI-Activity/Operational`
 
-# その他の省略
+### その他の省略
 
 できるだけ簡潔にするために、以下の略語を使用しています:
 
