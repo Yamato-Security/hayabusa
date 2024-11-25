@@ -89,6 +89,7 @@ Hayabusa is a **Windows event log fast forensics timeline generator** and **thre
   - [Caution: Anti-Virus/EDR Warnings and Slow Runtimes](#caution-anti-virusedr-warnings-and-slow-runtimes)
   - [Windows](#windows)
     - [Error when trying to scan a file or directory with a space in the path](#error-when-trying-to-scan-a-file-or-directory-with-a-space-in-the-path)
+    - [Characters not being displayed correctly](#characters-not-being-displayed-correctly)
   - [Linux](#linux)
   - [macOS](#macos)
 - [Command List](#command-list)
@@ -104,6 +105,9 @@ Hayabusa is a **Windows event log fast forensics timeline generator** and **thre
       - [`eid-metrics` command examples](#eid-metrics-command-examples)
       - [`eid-metrics` command config file](#eid-metrics-command-config-file)
       - [`eid-metrics` screenshot](#eid-metrics-screenshot)
+    - [`log-metrics` command](#log-metrics-command)
+      - [`log-metrics` command examples](#log-metrics-command-examples)
+      - [`log-metrics` screenshot](#log-metrics-screenshot)
     - [`logon-summary` command](#logon-summary-command)
       - [`logon-summary` command examples](#logon-summary-command-examples)
       - [`logon-summary` screenshots](#logon-summary-screenshots)
@@ -150,10 +154,11 @@ Hayabusa is a **Windows event log fast forensics timeline generator** and **thre
     - [Profile Comparison](#profile-comparison)
     - [Profile Field Aliases](#profile-field-aliases)
       - [Extra Profile Field Aliases](#extra-profile-field-aliases)
-  - [Level Abbrevations](#level-abbrevations)
-  - [MITRE ATT\&CK Tactics Abbreviations](#mitre-attck-tactics-abbreviations)
-  - [Channel Abbreviations](#channel-abbreviations)
-  - [Other Abbreviations](#other-abbreviations)
+  - [Abbreviations](#abbreviations)
+    - [Level Abbreviations](#level-abbreviations)
+    - [MITRE ATT\&CK Tactics Abbreviations](#mitre-attck-tactics-abbreviations)
+    - [Channel Abbreviations](#channel-abbreviations)
+    - [Other Abbreviations](#other-abbreviations)
   - [Progress Bar](#progress-bar)
   - [Color Output](#color-output)
   - [Results Summary](#results-summary-1)
@@ -443,6 +448,22 @@ In order to load the .evtx files properly, be sure to do the following:
 1. Enclose the file or directory path with double quotes.
 2. If it is a directory path, make sure that you do not include a backslash for the last character.
 
+### Characters not being displayed correctly
+
+With the default font `Lucida Console` on Windows, various characters used in the logo and tables will not be displayed properly.
+You should change the font to `Consalas` to fix this.
+
+This will fix most of the text rendering except for the display of Japanese characters in the closing messages:
+
+![Mojibake](screenshots/Mojibake.png)
+
+You have four options to fix this:
+1. Use [Windows Terminal](https://learn.microsoft.com/en-us/windows/terminal/) instead of the Command or PowerShell prompt. (Recommended)
+2. Use the `MS Gothic` font. Note that backslashes will turn into Yen symbols.
+   ![MojibakeFix](screenshots/MojibakeFix.png)
+3. Install the [HackGen](https://github.com/yuru7/HackGen/releases) fonts and use `HackGen Console NF`.
+4. Use the `-q, --quiet` to not display the closing messages that contain Japanese.
+
 ## Linux
 
 You first need to make the binary executable.
@@ -496,6 +517,7 @@ You should now be able to run hayabusa.
 ## Analysis Commands:
 * `computer-metrics`: Print the number of events based on computer names.
 * `eid-metrics`: Print the number and percentage of events based on Event ID.
+* `log-metrics`: Print log file metrics.
 * `logon-summary`: Print a summary of logon events.
 * `pivot-keywords-list`: Print a list of suspicious keywords to pivot on.
 * `search`: Search all events by keyword(s) or regular expressions
@@ -545,13 +567,13 @@ General Options:
   -t, --threads <NUMBER>               Number of threads (default: optimal number for performance)
 
 Filtering:
-      --timeline-offset <OFFSET>  Scan recent events based on an offset (ex: 1y, 3M, 30d, 24h, 30m)
+      --time-offset <OFFSET>  Scan recent events based on an offset (ex: 1y, 3M, 30d, 24h, 30m)
 
 Output:
   -o, --output <FILE>  Save the results in CSV format (ex: computer-metrics.csv)
 
 Display Settings:
-      --no-color  Disable color output
+  -K, --no-color  Disable color output
   -q, --quiet     Quiet mode: do not display the launch banner
   -v, --verbose   Output verbose information
 ```
@@ -585,25 +607,26 @@ General Options:
   -Q, --quiet-errors                   Quiet errors mode: do not save error logs
   -x, --recover-records                Carve evtx records from slack space (default: disabled)
   -c, --rules-config <DIR>             Specify custom rule config directory (default: ./rules/config)
-      --target-file-ext <FILE-EXT...>  Specify additional evtx file extensions (ex: evtx_data)
   -t, --threads <NUMBER>               Number of threads (default: optimal number for performance)
+      --target-file-ext <FILE-EXT...>  Specify additional evtx file extensions (ex: evtx_data)
 
 Filtering:
       --exclude-computer <COMPUTER...>  Do not scan specified computer names (ex: ComputerA) (ex: ComputerA,ComputerB)
       --include-computer <COMPUTER...>  Scan only specified computer names (ex: ComputerA) (ex: ComputerA,ComputerB)
-      --timeline-offset <OFFSET>        Scan recent events based on an offset (ex: 1y, 3M, 30d, 24h, 30m)
+      --time-offset <OFFSET>            Scan recent events based on an offset (ex: 1y, 3M, 30d, 24h, 30m)
 
 Output:
-  -o, --output <FILE>  Save the Metrics in CSV format (ex: metrics.csv)
+  -b, --disable-abbreviations  Disable abbreviations
+  -o, --output <FILE>          Save the Metrics in CSV format (ex: metrics.csv)
 
 Display Settings:
-      --no-color  Disable color output
+  -K, --no-color  Disable color output
   -q, --quiet     Quiet mode: do not display the launch banner
   -v, --verbose   Output verbose information
 
 Time Format:
       --European-time     Output timestamp in European time format (ex: 22-02-2022 22:00:00.123 +02:00)
-      --ISO-8601          Output timestamp in ISO-8601 format (ex: 2022-02-22T10:10:10.1234567Z) (Always UTC)
+  -O, --ISO-8601          Output timestamp in original ISO-8601 format (ex: 2022-02-22T10:10:10.1234567Z) (Always UTC)
       --RFC-2822          Output timestamp in RFC 2822 format (ex: Fri, 22 Feb 2022 22:00:00 -0600)
       --RFC-3339          Output timestamp in RFC 3339 format (ex: 2022-02-22 22:00:00.123456-06:00)
       --US-military-time  Output timestamp in US military time format (ex: 02-22-2022 22:00:00.123 -06:00)
@@ -634,10 +657,83 @@ Microsoft-Windows-Sysmon/Operational,4,Sysmon Service State Changed.
 
 ![eid-metrics screenshot](screenshots/EID-Metrics.png)
 
+### `log-metrics` command
+
+You can use the `log-metrics` command to print out the following metadata inside event logs:
+  * Filename
+  * Computer names
+  * Number of events
+  * First timestamp
+  * Last timestamp
+  * Channels
+  * Providers
+
+This command does not use any detection rules so will scan all events.
+
+```
+Usage: log-metrics <INPUT> [OPTIONS]
+
+Input:
+  -d, --directory <DIR>  Directory of multiple .evtx files
+  -f, --file <FILE>      File path to one .evtx file
+  -l, --live-analysis    Analyze the local C:\Windows\System32\winevt\Logs folder
+
+General Options:
+  -C, --clobber                        Overwrite files when saving
+  -h, --help                           Show the help menu
+  -J, --JSON-input                     Scan JSON formatted logs instead of .evtx (.json or .jsonl)
+  -Q, --quiet-errors                   Quiet errors mode: do not save error logs
+  -x, --recover-records                Carve evtx records from slack space (default: disabled)
+  -c, --rules-config <DIR>             Specify custom rule config directory (default: ./rules/config)
+  -t, --threads <NUMBER>               Number of threads (default: optimal number for performance)
+      --target-file-ext <FILE-EXT...>  Specify additional evtx file extensions (ex: evtx_data)
+
+Filtering:
+      --exclude-computer <COMPUTER...>  Do not scan specified computer names (ex: ComputerA) (ex: ComputerA,ComputerB)
+      --include-computer <COMPUTER...>  Scan only specified computer names (ex: ComputerA) (ex: ComputerA,ComputerB)
+      --time-offset <OFFSET>            Scan recent events based on an offset (ex: 1y, 3M, 30d, 24h, 30m)
+
+Output:
+  -b, --disable-abbreviations  Disable abbreviations
+  -M, --multiline              Output event field information in multiple rows for CSV output
+  -o, --output <FILE>          Save the Metrics in CSV format (ex: metrics.csv)
+
+Display Settings:
+  -K, --no-color  Disable color output
+  -q, --quiet     Quiet mode: do not display the launch banner
+  -v, --verbose   Output verbose information
+
+Time Format:
+      --European-time     Output timestamp in European time format (ex: 22-02-2022 22:00:00.123 +02:00)
+  -O, --ISO-8601          Output timestamp in original ISO-8601 format (ex: 2022-02-22T10:10:10.1234567Z) (Always UTC)
+      --RFC-2822          Output timestamp in RFC 2822 format (ex: Fri, 22 Feb 2022 22:00:00 -0600)
+      --RFC-3339          Output timestamp in RFC 3339 format (ex: 2022-02-22 22:00:00.123456-06:00)
+      --US-military-time  Output timestamp in US military time format (ex: 02-22-2022 22:00:00.123 -06:00)
+      --US-time           Output timestamp in US time format (ex: 02-22-2022 10:00:00.123 PM -06:00)
+  -U, --UTC               Output time in UTC format (default: local time)
+```
+
+#### `log-metrics` command examples
+
+* Print Event ID metrics from a single file: `hayabusa.exe log-metrics -f Security.evtx`
+* Print Event ID metrics from a directory: `hayabusa.exe log-metrics -d ../logs`
+* Save results to a CSV file: `hayabusa.exe log-metrics -d ../logs -o eid-metrics.csv`
+
+#### `log-metrics` screenshot
+
+![eid-metrics screenshot](screenshots/LogMetrics.png)
+
 ### `logon-summary` command
 
 You can use the `logon-summary` command to output logon information summary (logon usernames and successful and failed logon count).
 You can display the logon information for one evtx file with `-f` or multiple evtx files with the `-d` option.
+
+Successful logons are taken from the following events:
+  * `Security 4624` (Successful Logon)
+  * `RDS-LSM 21` (Remote Desktop Service Local Session Manager Logon)
+  * `RDS-GTW 302` (Remote Desktop Service Gateway Logon)
+  
+Failed logons are taken from `Security 4615` events.
 
 ```
 Usage: logon-summary <INPUT> [OPTIONS]
@@ -654,27 +750,27 @@ General Options:
   -Q, --quiet-errors                   Quiet errors mode: do not save error logs
   -x, --recover-records                Carve evtx records from slack space (default: disabled)
   -c, --rules-config <DIR>             Specify custom rule config directory (default: ./rules/config)
-      --target-file-ext <FILE-EXT...>  Specify additional evtx file extensions (ex: evtx_data)
   -t, --threads <NUMBER>               Number of threads (default: optimal number for performance)
+      --target-file-ext <FILE-EXT...>  Specify additional evtx file extensions (ex: evtx_data)
 
 Filtering:
       --exclude-computer <COMPUTER...>  Do not scan specified computer names (ex: ComputerA) (ex: ComputerA,ComputerB)
       --include-computer <COMPUTER...>  Scan only specified computer names (ex: ComputerA) (ex: ComputerA,ComputerB)
+      --time-offset <OFFSET>            Scan recent events based on an offset (ex: 1y, 3M, 30d, 24h, 30m)
       --timeline-end <DATE>             End time of the event logs to load (ex: "2022-02-22 23:59:59 +09:00")
-      --timeline-offset <OFFSET>        Scan recent events based on an offset (ex: 1y, 3M, 30d, 24h, 30m)
       --timeline-start <DATE>           Start time of the event logs to load (ex: "2020-02-22 00:00:00 +09:00")
 
 Output:
   -o, --output <FILENAME-PREFIX>  Save the logon summary to two CSV files (ex: -o logon-summary)
 
 Display Settings:
-      --no-color  Disable color output
+  -K, --no-color  Disable color output
   -q, --quiet     Quiet mode: do not display the launch banner
   -v, --verbose   Output verbose information
 
 Time Format:
       --European-time     Output timestamp in European time format (ex: 22-02-2022 22:00:00.123 +02:00)
-      --ISO-8601          Output timestamp in ISO-8601 format (ex: 2022-02-22T10:10:10.1234567Z) (Always UTC)
+  -O, --ISO-8601          Output timestamp in original ISO-8601 format (ex: 2022-02-22T10:10:10.1234567Z) (Always UTC)
       --RFC-2822          Output timestamp in RFC 2822 format (ex: Fri, 22 Feb 2022 22:00:00 -0600)
       --RFC-3339          Output timestamp in RFC 3339 format (ex: 2022-02-22 22:00:00.123456-06:00)
       --US-military-time  Output timestamp in US military time format (ex: 02-22-2022 22:00:00.123 -06:00)
@@ -717,8 +813,8 @@ General Options:
   -Q, --quiet-errors                   Quiet errors mode: do not save error logs
   -x, --recover-records                Carve evtx records from slack space (default: disabled)
   -c, --rules-config <DIR>             Specify custom rule config directory (default: ./rules/config)
-      --target-file-ext <FILE-EXT...>  Specify additional evtx file extensions (ex: evtx_data)
   -t, --threads <NUMBER>               Number of threads (default: optimal number for performance)
+      --target-file-ext <FILE-EXT...>  Specify additional evtx file extensions (ex: evtx_data)
 
 Filtering:
   -E, --EID-filter                      Scan only common EIDs for faster speed (./rules/config/target_event_IDs.txt)
@@ -735,15 +831,15 @@ Filtering:
       --include-status <STATUS...>      Only load rules with specific status (ex: experimental) (ex: stable,test)
       --include-tag <TAG...>            Only load rules with specific tags (ex: attack.execution,attack.discovery)
   -m, --min-level <LEVEL>               Minimum level for rules to load (default: informational)
+      --time-offset <OFFSET>            Scan recent events based on an offset (ex: 1y, 3M, 30d, 24h, 30m)
       --timeline-end <DATE>             End time of the event logs to load (ex: "2022-02-22 23:59:59 +09:00")
-      --timeline-offset <OFFSET>        Scan recent events based on an offset (ex: 1y, 3M, 30d, 24h, 30m)
       --timeline-start <DATE>           Start time of the event logs to load (ex: "2020-02-22 00:00:00 +09:00")
 
 Output:
   -o, --output <FILENAME-PREFIX>  Save pivot words to separate files (ex: PivotKeywords)
 
 Display Settings:
-      --no-color  Disable color output
+  -K, --no-color  Disable color output
   -q, --quiet     Quiet mode: do not display the launch banner
   -v, --verbose   Output verbose information
 ```
@@ -776,7 +872,7 @@ This is useful to determine if there is any evidence in events that are not dete
 Usage: hayabusa.exe search <INPUT> <--keywords "<KEYWORDS>" OR --regex "<REGEX>"> [OPTIONS]
 
 Display Settings:
-      --no-color  Disable color output
+  -K, --no-color  Disable color output
   -q, --quiet     Quiet mode: do not display the launch banner
   -v, --verbose   Output verbose information
 
@@ -786,8 +882,8 @@ General Options:
   -Q, --quiet-errors                   Quiet errors mode: do not save error logs
   -x, --recover-records                Carve evtx records from slack space (default: disabled)
   -c, --rules-config <DIR>             Specify custom rule config directory (default: ./rules/config)
-      --target-file-ext <FILE-EXT...>  Specify additional evtx file extensions (ex: evtx_data)
   -t, --threads <NUMBER>               Number of threads (default: optimal number for performance)
+      --target-file-ext <FILE-EXT...>  Specify additional evtx file extensions (ex: evtx_data)
 
 Input:
   -d, --directory <DIR>  Directory of multiple .evtx files
@@ -795,22 +891,23 @@ Input:
   -l, --live-analysis    Analyze the local C:\Windows\System32\winevt\Logs folder
 
 Filtering:
-  -a, --and-logic                 Search keywords with AND logic (default: OR)
-  -F, --filter <FILTER...>        Filter by specific field(s)
-  -i, --ignore-case               Case-insensitive keyword search
-  -k, --keyword <KEYWORD...>      Search by keyword(s)
-  -r, --regex <REGEX>             Search by regular expression
-      --timeline-offset <OFFSET>  Scan recent events based on an offset (ex: 1y, 3M, 30d, 24h, 30m)
+  -a, --and-logic             Search keywords with AND logic (default: OR)
+  -F, --filter <FILTER...>    Filter by specific field(s)
+  -i, --ignore-case           Case-insensitive keyword search
+  -k, --keyword <KEYWORD...>  Search by keyword(s)
+  -r, --regex <REGEX>         Search by regular expression
+      --time-offset <OFFSET>  Scan recent events based on an offset (ex: 1y, 3M, 30d, 24h, 30m)
 
 Output:
-  -J, --JSON-output    Save the search results in JSON format (ex: -J -o results.json)
-  -L, --JSONL-output   Save the search results in JSONL format (ex: -L -o results.jsonl)
-  -M, --multiline      Output event field information in multiple rows for CSV output
-  -o, --output <FILE>  Save the search results in CSV format (ex: search.csv)
+  -b, --disable-abbreviations  Disable abbreviations
+  -J, --JSON-output            Save the search results in JSON format (ex: -J -o results.json)
+  -L, --JSONL-output           Save the search results in JSONL format (ex: -L -o results.jsonl)
+  -M, --multiline              Output event field information in multiple rows for CSV output
+  -o, --output <FILE>          Save the search results in CSV format (ex: search.csv)
 
 Time Format:
       --European-time     Output timestamp in European time format (ex: 22-02-2022 22:00:00.123 +02:00)
-      --ISO-8601          Output timestamp in ISO-8601 format (ex: 2022-02-22T10:10:10.1234567Z) (Always UTC)
+  -O, --ISO-8601          Output timestamp in original ISO-8601 format (ex: 2022-02-22T10:10:10.1234567Z) (Always UTC)
       --RFC-2822          Output timestamp in RFC 2822 format (ex: Fri, 22 Feb 2022 22:00:00 -0600)
       --RFC-3339          Output timestamp in RFC 3339 format (ex: 2022-02-22 22:00:00.123456-06:00)
       --US-military-time  Output timestamp in US military time format (ex: 02-22-2022 22:00:00.123 -06:00)
@@ -954,17 +1051,18 @@ General Options:
   -C, --clobber                        Overwrite files when saving
   -h, --help                           Show the help menu
   -J, --JSON-input                     Scan JSON formatted logs instead of .evtx (.json or .jsonl)
-  -s, --sort-events                    Sort events before saving the file. (warning: this uses much more memory!)
   -w, --no-wizard                      Do not ask questions. Scan for all events and alerts
   -Q, --quiet-errors                   Quiet errors mode: do not save error logs
   -x, --recover-records                Carve evtx records from slack space (default: disabled)
   -r, --rules <DIR/FILE>               Specify a custom rule directory or file (default: ./rules)
   -c, --rules-config <DIR>             Specify custom rule config directory (default: ./rules/config)
-      --target-file-ext <FILE-EXT...>  Specify additional evtx file extensions (ex: evtx_data)
+  -s, --sort-events                    Sort events before saving the file. (warning: this uses much more memory!)
   -t, --threads <NUMBER>               Number of threads (default: optimal number for performance)
+      --target-file-ext <FILE-EXT...>  Specify additional evtx file extensions (ex: evtx_data)
 
 Filtering:
   -E, --EID-filter                      Scan only common EIDs for faster speed (./rules/config/target_event_IDs.txt)
+  -A, --enable-all-rules                Enable all rules regardless of loaded evtx files (disable channel filter for rules)
   -D, --enable-deprecated-rules         Enable rules with a status of deprecated
   -n, --enable-noisy-rules              Enable rules set to noisy (./rules/config/noisy_rules.txt)
   -u, --enable-unsupported-rules        Enable rules with a status of unsupported
@@ -981,11 +1079,13 @@ Filtering:
       --include-tag <TAG...>            Only load rules with specific tags (ex: attack.execution,attack.discovery)
   -m, --min-level <LEVEL>               Minimum level for rules to load (default: informational)
   -P, --proven-rules                    Scan with only proven rules for faster speed (./rules/config/proven_rules.txt)
+  -a, --scan-all-evtx-files             Scan all evtx files regardless of loaded rules (disable channel filter for evtx files)
+      --time-offset <OFFSET>            Scan recent events based on an offset (ex: 1y, 3M, 30d, 24h, 30m)
       --timeline-end <DATE>             End time of the event logs to load (ex: "2022-02-22 23:59:59 +09:00")
-      --timeline-offset <OFFSET>        Scan recent events based on an offset (ex: 1y, 3M, 30d, 24h, 30m)
       --timeline-start <DATE>           Start time of the event logs to load (ex: "2020-02-22 00:00:00 +09:00")
 
 Output:
+  -b, --disable-abbreviations        Disable abbreviations
   -G, --GeoIP <MAXMIND-DB-DIR>       Add GeoIP (ASN, city, country) info to IP addresses
   -H, --HTML-report <FILE>           Save Results Summary details to an HTML report (ex: results.html)
   -M, --multiline                    Output event field information in multiple rows
@@ -997,7 +1097,7 @@ Output:
   -X, --remove-duplicate-detections  Remove duplicate detections (default: disabled)
 
 Display Settings:
-      --no-color            Disable color output
+  -K, --no-color            Disable color output
   -N, --no-summary          Do not display Results Summary for faster speed
   -q, --quiet               Quiet mode: do not display the launch banner
   -v, --verbose             Output verbose information
@@ -1005,7 +1105,7 @@ Display Settings:
 
 Time Format:
       --European-time     Output timestamp in European time format (ex: 22-02-2022 22:00:00.123 +02:00)
-      --ISO-8601          Output timestamp in ISO-8601 format (ex: 2022-02-22T10:10:10.1234567Z) (Always UTC)
+  -O, --ISO-8601          Output timestamp in original ISO-8601 format (ex: 2022-02-22T10:10:10.1234567Z) (Always UTC)
       --RFC-2822          Output timestamp in RFC 2822 format (ex: Fri, 22 Feb 2022 22:00:00 -0600)
       --RFC-3339          Output timestamp in RFC 3339 format (ex: 2022-02-22 22:00:00.123456-06:00)
       --US-military-time  Output timestamp in US military time format (ex: 02-22-2022 22:00:00.123 -06:00)
@@ -1217,17 +1317,18 @@ General Options:
   -C, --clobber                        Overwrite files when saving
   -h, --help                           Show the help menu
   -J, --JSON-input                     Scan JSON formatted logs instead of .evtx (.json or .jsonl)
-  -s, --sort-events                    Sort events before saving the file. (warning: this uses much more memory!)
   -w, --no-wizard                      Do not ask questions. Scan for all events and alerts
   -Q, --quiet-errors                   Quiet errors mode: do not save error logs
   -x, --recover-records                Carve evtx records from slack space (default: disabled)
   -r, --rules <DIR/FILE>               Specify a custom rule directory or file (default: ./rules)
   -c, --rules-config <DIR>             Specify custom rule config directory (default: ./rules/config)
-      --target-file-ext <FILE-EXT...>  Specify additional evtx file extensions (ex: evtx_data)
+  -s, --sort-events                    Sort events before saving the file. (warning: this uses much more memory!)
   -t, --threads <NUMBER>               Number of threads (default: optimal number for performance)
+      --target-file-ext <FILE-EXT...>  Specify additional evtx file extensions (ex: evtx_data)
 
 Filtering:
   -E, --EID-filter                      Scan only common EIDs for faster speed (./rules/config/target_event_IDs.txt)
+  -A, --enable-all-rules                Enable all rules regardless of loaded evtx files (disable channel filter for rules)
   -D, --enable-deprecated-rules         Enable rules with a status of deprecated
   -n, --enable-noisy-rules              Enable rules set to noisy (./rules/config/noisy_rules.txt)
   -u, --enable-unsupported-rules        Enable rules with a status of unsupported
@@ -1244,11 +1345,13 @@ Filtering:
       --include-tag <TAG...>            Only load rules with specific tags (ex: attack.execution,attack.discovery)
   -m, --min-level <LEVEL>               Minimum level for rules to load (default: informational)
   -P, --proven-rules                    Scan with only proven rules for faster speed (./rules/config/proven_rules.txt)
+  -a, --scan-all-evtx-files             Scan all evtx files regardless of loaded rules (disable channel filter for evtx files)
+      --time-offset <OFFSET>            Scan recent events based on an offset (ex: 1y, 3M, 30d, 24h, 30m)
       --timeline-end <DATE>             End time of the event logs to load (ex: "2022-02-22 23:59:59 +09:00")
-      --timeline-offset <OFFSET>        Scan recent events based on an offset (ex: 1y, 3M, 30d, 24h, 30m)
       --timeline-start <DATE>           Start time of the event logs to load (ex: "2020-02-22 00:00:00 +09:00")
 
 Output:
+  -b, --disable-abbreviations        Disable abbreviations
   -G, --GeoIP <MAXMIND-DB-DIR>       Add GeoIP (ASN, city, country) info to IP addresses
   -H, --HTML-report <FILE>           Save Results Summary details to an HTML report (ex: results.html)
   -L, --JSONL-output                 Save the timeline in JSONL format (ex: -L -o results.jsonl)
@@ -1260,7 +1363,7 @@ Output:
   -X, --remove-duplicate-detections  Remove duplicate detections (default: disabled)
 
 Display Settings:
-      --no-color            Disable color output
+  -K, --no-color            Disable color output
   -N, --no-summary          Do not display Results Summary for faster speed
   -q, --quiet               Quiet mode: do not display the launch banner
   -v, --verbose             Output verbose information
@@ -1268,7 +1371,7 @@ Display Settings:
 
 Time Format:
       --European-time     Output timestamp in European time format (ex: 22-02-2022 22:00:00.123 +02:00)
-      --ISO-8601          Output timestamp in ISO-8601 format (ex: 2022-02-22T10:10:10.1234567Z) (Always UTC)
+  -O, --ISO-8601          Output timestamp in original ISO-8601 format (ex: 2022-02-22T10:10:10.1234567Z) (Always UTC)
       --RFC-2822          Output timestamp in RFC 2822 format (ex: Fri, 22 Feb 2022 22:00:00 -0600)
       --RFC-3339          Output timestamp in RFC 3339 format (ex: 2022-02-22 22:00:00.123456-06:00)
       --US-military-time  Output timestamp in US military time format (ex: 02-22-2022 22:00:00.123 -06:00)
@@ -1288,11 +1391,12 @@ The `level-tuning` command will let you tune the alert levels for rules, either 
 Usage: level-tuning [OPTIONS]
 
 Display Settings:
-      --no-color  Disable color output
+  -K, --no-color  Disable color output
   -q, --quiet     Quiet mode: do not display the launch banner
 
 General Options:
   -f, --file <FILE>  Tune alert levels (default: ./rules/config/level_tuning.txt)
+  -h, --help         Show the help menu
 ```
 
 #### `level-tuning` command examples
@@ -1325,8 +1429,11 @@ The possible levels to set are `critical`, `high`, `medium`, `low` and `informat
 Usage: list-profiles [OPTIONS]
 
 Display Settings:
-      --no-color  Disable color output
+  -K, --no-color  Disable color output
   -q, --quiet     Quiet mode: do not display the launch banner
+
+General Options:
+  -h, --help  Show the help menu
 ```
 
 ### `set-default-profile` command
@@ -1335,10 +1442,11 @@ Display Settings:
 Usage: set-default-profile [OPTIONS]
 
 Display Settings:
-      --no-color  Disable color output
+  -K, --no-color  Disable color output
   -q, --quiet     Quiet mode: do not display the launch banner
 
 General Options:
+  -h, --help               Show the help menu
   -p, --profile <PROFILE>  Specify output profile
 ```
 
@@ -1355,10 +1463,11 @@ The `update-rules` command will sync the `rules` folder with the [Hayabusa rules
 Usage: update-rules [OPTIONS]
 
 Display Settings:
-      --no-color  Disable color output
+  -K, --no-color  Disable color output
   -q, --quiet     Quiet mode: do not display the launch banner
 
 General Options:
+  -h, --help              Show the help menu
   -r, --rules <DIR/FILE>  Specify a custom rule directory or file (default: ./rules)
 ```
 
@@ -1479,7 +1588,13 @@ RuleID: "%RuleID%"
 
 You can also define [event key aliases](https://github.com/Yamato-Security/hayabusa-rules/blob/main/README.md#eventkey-aliases) to output other fields.
 
-## Level Abbrevations
+## Abbreviations
+
+In order to save space, we abbreviate levels, MITRE ATT&CK tactics, channels, providers, field names, etc...
+
+You can turn off some of these abbreviations to see the original channel name, provider name, etc... with the `-b, --disable-abbreviations` option.
+
+### Level Abbreviations
 
 In order to save space, we use the following abbrevations when displaying the alert `level`.
 
@@ -1489,7 +1604,7 @@ In order to save space, we use the following abbrevations when displaying the al
 * `low `: `low`
 * `info`: `informational`
 
-## MITRE ATT&CK Tactics Abbreviations
+### MITRE ATT&CK Tactics Abbreviations
 
 In order to save space, we use the following abbreviations when displaying MITRE ATT&CK tactic tags.
 You can freely edit these abbreviations in the `./config/mitre_tactics.txt` configuration file.
@@ -1509,7 +1624,7 @@ You can freely edit these abbreviations in the `./config/mitre_tactics.txt` conf
 * `Exfil` : Exfiltration
 * `Impact` : Impact
 
-## Channel Abbreviations
+### Channel Abbreviations
 
 In order to save space, we use the following abbreviations when displaying Channel.
 You can freely edit these abbreviations in the `./rules/config/channel_abbreviations.txt` configuration file.
@@ -1543,7 +1658,7 @@ You can freely edit these abbreviations in the `./rules/config/channel_abbreviat
 * `WinRM` : `Microsoft-Windows-WinRM/Operational`
 * `WMI` : `Microsoft-Windows-WMI-Activity/Operational`
 
-## Other Abbreviations
+### Other Abbreviations
 
 The following abbreviations are used in rules in order to make the output as concise as possible:
 
@@ -1609,7 +1724,7 @@ It will display in real time the number and percent of evtx files that it has fi
 
 The alerts will be outputted in color based on the alert `level`.
 You can change the default colors in the config file at `./config/level_color.txt` in the format of `level,(RGB 6-digit ColorHex)`.
-If you want to disable color output, you can use `--no-color` option.
+If you want to disable color output, you can use `-K, --no-color` option.
 
 ## Results Summary
 
