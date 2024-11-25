@@ -810,7 +810,7 @@ General Options:
   -C, --clobber                        結果ファイルを上書きする
   -h, --help                           ヘルプメニューを表示する
   -J, --JSON-input                     .evtxファイルの代わりにJSON形式のログファイル(.jsonまたは.jsonl)をスキャンする
-  -w, --no-wizard                      Do not ask questions. Scan for all events and alerts
+  -w, --no-wizard                      質問はしない。すべてのイベントとアラートをスキャンする
   -Q, --quiet-errors                   Quiet errorsモード: エラーログを保存しない
   -x, --recover-records                空ページからevtxレコードをカービングする (デフォルト: 無効)
   -c, --rules-config <DIR>             ルールフォルダのコンフィグディレクトリ (デフォルト: ./rules/config)
