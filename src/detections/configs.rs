@@ -882,7 +882,7 @@ pub enum Action {
         display_order = 290,
         disable_help_flag = true
     )]
-    /// Save the timeline in CSV format.
+    /// Create a DFIR timeline and save it in CSV format
     CsvTimeline(CsvOutputOption),
 
     #[clap(
@@ -892,7 +892,7 @@ pub enum Action {
         display_order = 360,
         disable_help_flag = true
     )]
-    /// Save the timeline in JSON/JSONL format.
+    /// Create a DFIR timeline and save it in JSON/JSONL format
     JsonTimeline(JSONOutputOption),
 
     #[clap(
@@ -902,7 +902,7 @@ pub enum Action {
         display_order = 382,
         disable_help_flag = true
     )]
-    /// Print log file metrics
+    /// Output evtx file metadata (filename, computer names, number of events, first and last timestamps, channels, providers)
     LogMetrics(LogMetricsOption),
 
     #[clap(
@@ -912,7 +912,7 @@ pub enum Action {
         display_order = 383,
         disable_help_flag = true
     )]
-    /// Print a summary of successful and failed logons
+    /// Output a summary of successful and failed logons
     LogonSummary(LogonSummaryOption),
 
     #[clap(
@@ -922,7 +922,7 @@ pub enum Action {
         display_order = 310,
         disable_help_flag = true
     )]
-    /// Print event ID metrics
+    /// Output event ID metrics (total number and percent of events, channel, ID, event name)
     EidMetrics(EidMetricsOption),
 
     #[clap(
@@ -962,7 +962,7 @@ pub enum Action {
         display_order = 380,
         disable_help_flag = true
     )]
-    /// Tune alert levels (default: ./rules/config/level_tuning.txt)
+    /// Tune alert levels for the DFIR timeline (default: ./rules/config/level_tuning.txt)
     LevelTuning(LevelTuningOption),
 
     #[clap(
@@ -972,7 +972,7 @@ pub enum Action {
         display_order = 451,
         disable_help_flag = true
     )]
-    /// Set default output profile
+    /// Set default output profile for the DFIR timeline
     SetDefaultProfile(DefaultProfileOption),
 
     #[clap(display_order = 381)]
@@ -980,7 +980,7 @@ pub enum Action {
     ListContributors(CommonOptions),
 
     #[clap(display_order = 382)]
-    /// List the output profiles
+    /// List the output profiles for the DFIR timeline
     ListProfiles(CommonOptions),
 
     #[clap(
@@ -990,7 +990,7 @@ pub enum Action {
         display_order = 290,
         disable_help_flag = true
     )]
-    /// Print computer name metrics
+    /// Output the total number of events according to computer names
     ComputerMetrics(ComputerMetricsOption),
 }
 
