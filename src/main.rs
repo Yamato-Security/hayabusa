@@ -1902,7 +1902,20 @@ impl App {
                 style("Scanning finished.\n").color256(214).to_string()
             };
             // Convert the ColoredString to a String before passing it
-            pb.finish_with_message(msg);
+            if is_show_progress {
+                pb.finish_with_message(msg);
+            } else {
+                write_color_buffer(
+                    &BufferWriter::stdout(ColorChoice::Always),
+                    get_writable_color(
+                        Some(Color::Rgb(255, 175, 0)),
+                        stored_static.common_options.no_color,
+                    ),
+                    "Scanning finished.",
+                    true,
+                )
+                .ok();
+            }
 
             // output afterfact
             if stored_static.is_low_memory {

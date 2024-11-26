@@ -1,6 +1,6 @@
 # 変更点
 
-## x.x.x [xxxx/xx/xx]
+## 2.19.0 [2024/11/26] - "Every Day Is A Good Day" Release
 
 **新機能:**
 
@@ -37,6 +37,7 @@
   - JSONフィールドの出力順序が元のXMLに従って保持されるようになった。(omerbenamram/evtx #241)
   - 属性と同じ名前を持つ複数のサブノードは上書きされ、最後の1つだけが出力されていた。(omerbenamram/evtx #245)
 - `logon-summary`と`eid-metrics`が複数のプログレスバーを出力することがあった。 #1479 (@fukusuket)
+- ターミナルに出力し、イベントをソートしない場合、プログレスバーは不要なため削除された。 #1508 (@fukusuket)
 
 **その他:**
 
