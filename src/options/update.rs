@@ -1,6 +1,6 @@
 use crate::detections::configs::StoredStatic;
 use crate::detections::message::AlertMessage;
-use crate::detections::utils::write_color_buffer;
+use crate::detections::utils::{get_writable_color, write_color_buffer};
 use crate::filter;
 use crate::yaml::ParseYaml;
 use git2::{ErrorCode, Repository};
@@ -10,7 +10,7 @@ use std::path::Path;
 
 use hashbrown::HashMap;
 
-use termcolor::{BufferWriter, ColorChoice};
+use termcolor::{BufferWriter, Color, ColorChoice};
 
 pub struct Update {}
 
@@ -98,8 +98,11 @@ impl Update {
         }
         if result.is_ok() {
             let updated_modified_rules = Update::get_updated_rules(rule_path, stored_staic);
-            result =
-                Update::print_diff_modified_rule_dates(prev_modified_rules, updated_modified_rules);
+            result = Update::print_diff_modified_rule_dates(
+                prev_modified_rules,
+                updated_modified_rules,
+                stored_staic.common_options.no_color,
+            );
         }
         result
     }
@@ -214,6 +217,7 @@ impl Update {
     fn print_diff_modified_rule_dates(
         prev_sets: HashMap<String, String>,
         updated_sets: HashMap<String, String>,
+        no_color: bool,
     ) -> Result<String, git2::Error> {
         let diff = updated_sets.iter().filter_map(|(k, v)| {
             if let Some(prev_val) = prev_sets.get(k) {
@@ -245,15 +249,33 @@ impl Update {
             )
             .ok();
         }
+        if !update_count_by_rule_type.is_empty() {
+            println!();
+        }
         for (key, value) in &update_count_by_rule_type {
-            println!("Updated {key} rules: {value}");
+            let msg = format!("Updated {key} rules: ");
+            write_color_buffer(
+                &BufferWriter::stdout(ColorChoice::Always),
+                get_writable_color(Some(Color::Rgb(0, 255, 0)), no_color),
+                msg.as_str(),
+                false,
+            )
+            .ok();
+            write_color_buffer(
+                &BufferWriter::stdout(ColorChoice::Always),
+                None,
+                value.to_string().as_str(),
+                true,
+            )
+            .ok();
         }
         if !&update_count_by_rule_type.is_empty() {
+            println!();
             Ok("Rule updated".to_string())
         } else {
             write_color_buffer(
                 &BufferWriter::stdout(ColorChoice::Always),
-                None,
+                get_writable_color(Some(Color::Rgb(255, 175, 0)), no_color),
                 "You currently have the latest rules.",
                 true,
             )
@@ -311,8 +333,11 @@ mod tests {
             Update::get_updated_rules("test_files/rules/level_yaml", &dummy_stored_static);
         let dummy_after_updated_rules = prev_modified_rules.clone();
 
-        let actual =
-            Update::print_diff_modified_rule_dates(prev_modified_rules, dummy_after_updated_rules);
+        let actual = Update::print_diff_modified_rule_dates(
+            prev_modified_rules,
+            dummy_after_updated_rules,
+            false,
+        );
         assert!(actual.is_ok());
         assert_eq!(
             actual.unwrap(),
@@ -345,8 +370,11 @@ mod tests {
                     .unwrap_or_default()
             ),
         );
-        let actual =
-            Update::print_diff_modified_rule_dates(prev_modified_rules, dummy_after_updated_rules);
+        let actual = Update::print_diff_modified_rule_dates(
+            prev_modified_rules,
+            dummy_after_updated_rules,
+            false,
+        );
         assert!(actual.is_ok());
         assert_eq!(actual.unwrap(), "Rule updated".to_string());
     }
