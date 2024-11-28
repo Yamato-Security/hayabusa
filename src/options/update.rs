@@ -74,10 +74,10 @@ impl Update {
                 for mut submodule in submodules {
                     submodule.update(true, None)?;
                     let submodule_repo = submodule.open()?;
-                    if let Err(e) = Update::pull_repository(&submodule_repo) {
+                    match Update::pull_repository(&submodule_repo) { Err(e) => {
                         AlertMessage::alert(&format!("Failed submodule update. {e}")).ok();
                         is_success_submodule_update = false;
-                    }
+                    } _ => {}}
                 }
                 if is_success_submodule_update {
                     result = Ok("Successed submodule update".to_string());
@@ -220,15 +220,15 @@ impl Update {
         no_color: bool,
     ) -> Result<String, git2::Error> {
         let diff = updated_sets.iter().filter_map(|(k, v)| {
-            if let Some(prev_val) = prev_sets.get(k) {
+            match prev_sets.get(k) { Some(prev_val) => {
                 if prev_val != v {
                     Some(v)
                 } else {
                     None
                 }
-            } else {
+            } _ => {
                 Some(v)
-            }
+            }}
         });
         let mut update_count_by_rule_type: HashMap<String, u128> = HashMap::new();
         for diff_key in diff {

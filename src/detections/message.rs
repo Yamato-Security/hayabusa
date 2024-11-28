@@ -197,11 +197,11 @@ pub fn create_message(
                         );
                     }
                 } else {
-                    let recinfos = if let Some(c) = record_details_info_map.get("#AllFieldInfo") {
+                    let recinfos = match record_details_info_map.get("#AllFieldInfo") { Some(c) => {
                         c.to_owned()
-                    } else {
+                    } _ => {
                         utils::create_recordinfos(event_record, field_data_map_key, field_data_map)
-                    };
+                    }};
                     if is_json_timeline {
                         record_details_info_map.insert("#AllFieldInfo".into(), recinfos);
                         replaced_profiles.push((key.to_owned(), AllFieldInfo("".into())));
@@ -347,7 +347,7 @@ pub fn parse_message(
         }
         let hash_value = get_serde_number_to_string(tmp_event_record, false);
         if hash_value.is_some() {
-            if let Some(hash_value) = hash_value {
+            match hash_value { Some(hash_value) => {
                 let field_data = if field_data_map.is_none() || field.is_empty() {
                     hash_value
                 } else {
@@ -368,7 +368,7 @@ pub fn parse_message(
                         [field_data.split_ascii_whitespace().join(" ").into()].to_vec(),
                     ));
                 }
-            }
+            } _ => {}}
         } else {
             hash_map.push((
                 CompactString::from(full_target_str),

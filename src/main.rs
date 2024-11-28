@@ -1300,7 +1300,7 @@ impl App {
                             continue;
                         }
                         let mut ret_cnt = 0;
-                        if let Some(target_status_count) = rule_counter_wizard_map.get(s) {
+                        match rule_counter_wizard_map.get(s) { Some(target_status_count) => {
                             target_status_count.iter().for_each(|(rule_level, value)| {
                                 let doc_level_num = level_map
                                     .get(rule_level.to_uppercase().as_str())
@@ -1324,7 +1324,7 @@ impl App {
                             if ret_cnt > 0 {
                                 ret.insert(s.clone(), ret_cnt);
                             }
-                        }
+                        } _ => {}}
                     }
                 }
                 ret
@@ -1456,7 +1456,7 @@ impl App {
                         exclude_tags.push("detection.emerging_threats".into());
                     }
                 }
-                if let Some(th_cnt) = tags_cnt.get("detection.threat_hunting") {
+                match tags_cnt.get("detection.threat_hunting") { Some(th_cnt) => {
                     let prompt_fmt = format!(
                         "Include Threat Hunting rules? ({} rules)",
                         th_cnt.to_formatted_string(&Locale::en)
@@ -1471,7 +1471,7 @@ impl App {
                     if !th_rules_load_flag {
                         exclude_tags.push("detection.threat_hunting".into());
                     }
-                }
+                } _ => {}}
             } else {
                 // If "4. All alert rules" or "5. All event and alert rules" was selected, ask questions about deprecated and unsupported rules.
                 if let Some(dep_cnt) = exclude_noisy_cnt.get("deprecated") {
@@ -1494,7 +1494,7 @@ impl App {
                             .enable_deprecated_rules = true;
                     }
                 }
-                if let Some(unsup_cnt) = exclude_noisy_cnt.get("unsupported") {
+                match exclude_noisy_cnt.get("unsupported") { Some(unsup_cnt) => {
                     // unsupported rules load prompt
                     let prompt_fmt = format!(
                         "Include unsupported rules? ({} rules)",
@@ -1513,7 +1513,7 @@ impl App {
                             .unwrap()
                             .enable_unsupported_rules = true;
                     }
-                }
+                } _ => {}}
             }
 
             CHECKPOINT

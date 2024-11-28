@@ -549,17 +549,16 @@ impl Detection {
                         .insert("RecoveredRecord", RecoveredRecord(recovered_record.into()));
                 }
                 RenderedMessage(_) => {
-                    let convert_value = if let Some(message) =
-                        record_info.record["Event"]["RenderingInfo"]["Message"].as_str()
-                    {
+                    let convert_value = match record_info.record["Event"]["RenderingInfo"]["Message"].as_str()
+                    { Some(message) => {
                         message
                             .replace('\t', "\\t")
                             .split("\r\n")
                             .map(|x| x.trim())
                             .join("\\r\\n")
-                    } else {
+                    } _ => {
                         "n/a".into()
-                    };
+                    }};
                     profile_converter.insert(key.as_str(), RenderedMessage(convert_value.into()));
                 }
                 TgtASN(_) | TgtCountry(_) | TgtCity(_) => {

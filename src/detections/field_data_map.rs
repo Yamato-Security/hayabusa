@@ -47,22 +47,22 @@ impl FieldDataMapKey {
 
 fn build_field_data_map(yaml_data: Yaml) -> (FieldDataMapKey, FieldDataMapEntry) {
     let rewrite_field_data = yaml_data["RewriteFieldData"].as_hash();
-    let hex2decimal = if let Some(s) = yaml_data["HexToDecimal"].as_str() {
+    let hex2decimal = match yaml_data["HexToDecimal"].as_str() { Some(s) => {
         Some(YamlLoader::load_from_str(s).unwrap_or_default())
-    } else {
+    } _ => {
         yaml_data["HexToDecimal"].as_vec().map(|v| v.to_owned())
-    };
+    }};
     if rewrite_field_data.is_none() && hex2decimal.is_none() {
         return (FieldDataMapKey::default(), FieldDataMapEntry::default());
     }
     let mut providers = HashSet::new();
-    if let Some(providers_yaml) = yaml_data["Provider_Name"].as_vec() {
+    match yaml_data["Provider_Name"].as_vec() { Some(providers_yaml) => {
         for provider in providers_yaml {
             providers.insert(provider.as_str().unwrap_or_default().to_string());
         }
-    } else if let Some(provider_name) = yaml_data["Provider_Name"].as_str() {
+    } _ => { match yaml_data["Provider_Name"].as_str() { Some(provider_name) => {
         providers.insert(provider_name.to_string());
-    }
+    } _ => {}}}}
     let mut mapping = HashMap::new();
     if let Some(x) = rewrite_field_data {
         for (key_yaml, val_yaml) in x.iter() {
@@ -96,9 +96,9 @@ fn build_field_data_map(yaml_data: Yaml) -> (FieldDataMapKey, FieldDataMapEntry)
 
     if let Some(fields) = hex2decimal {
         for field in fields {
-            if let Some(key) = field.as_str() {
+            match field.as_str() { Some(key) => {
                 mapping.insert(key.to_lowercase(), HexToDecimal);
-            }
+            } _ => {}}
         }
     }
     (FieldDataMapKey::new(yaml_data), mapping)

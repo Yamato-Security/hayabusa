@@ -101,7 +101,7 @@ impl EventMetrics {
             .unwrap_or_default()
             .to_str()
             .unwrap_or_default();
-        if let Some(existing_lm) = self.stats_logfile.iter_mut().find(|lm| {
+        match self.stats_logfile.iter_mut().find(|lm| {
             lm.filename == filename
                 && lm.computers.contains(
                     get_event_value_as_string(
@@ -112,13 +112,13 @@ impl EventMetrics {
                     .to_string()
                     .trim_matches('"'),
                 )
-        }) {
+        }) { Some(existing_lm) => {
             existing_lm.update(records, stored_static);
-        } else {
+        } _ => {
             let mut lm = LogMetrics::new(filename);
             lm.update(records, stored_static);
             self.stats_logfile.push(lm);
-        }
+        }}
     }
 
     fn stats_time_cnt(&mut self, records: &[EvtxRecordInfo], stored_static: &StoredStatic) {
@@ -181,23 +181,23 @@ impl EventMetrics {
         // sortしなくてもイベントログのTimeframeを取得できるように修正しました。
         // sortしないことにより計算量が改善されています。
         for record in records.iter() {
-            if let Some(evttime) = utils::get_event_value(
+            match utils::get_event_value(
                 "Event.System.TimeCreated_attributes.SystemTime",
                 &record.record,
                 &stored_static.eventkey_alias,
             )
             .map(|evt_value| evt_value.to_string().replace("\\\"", "").replace('"', ""))
-            {
+            { Some(evttime) => {
                 check_start_end_time(&evttime);
-            } else if let Some(evttime) = utils::get_event_value(
+            } _ => { match utils::get_event_value(
                 "Event.System.@timestamp",
                 &record.record,
                 &stored_static.eventkey_alias,
             )
             .map(|evt_value| evt_value.to_string().replace("\\\"", "").replace('"', ""))
-            {
+            { Some(evttime) => {
                 check_start_end_time(&evttime);
-            };
+            } _ => {}}}};
         }
         self.total += records.len();
     }
@@ -220,13 +220,12 @@ impl EventMetrics {
             ) {
                 continue;
             }
-            let channel = if let Some(ch) =
-                utils::get_event_value("Channel", &record.record, &stored_static.eventkey_alias)
-            {
+            let channel = match utils::get_event_value("Channel", &record.record, &stored_static.eventkey_alias)
+            { Some(ch) => {
                 ch.as_str().unwrap()
-            } else {
+            } _ => {
                 "-"
-            };
+            }};
             if let Some(idnum) =
                 utils::get_event_value("EventID", &record.record, &stored_static.eventkey_alias)
             {
@@ -290,7 +289,7 @@ impl EventMetrics {
                     &record.record,
                     &stored_static.eventkey_alias,
                 );
-                if let Some(channel) = is_target_event(idnum, &channel) {
+                match is_target_event(idnum, &channel) { Some(channel) => {
                     let channel_name = match channel {
                         Sec => {
                             if idnum == 4624 {
@@ -427,7 +426,7 @@ impl EventMetrics {
                     } else if idnum == 4625 {
                         count[1] += 1;
                     }
-                }
+                } _ => {}}
             };
         }
     }

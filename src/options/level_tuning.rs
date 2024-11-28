@@ -68,7 +68,7 @@ impl LevelTuning {
 
         // Convert rule files
         for (path, rule) in rulefile_loader.files {
-            if let Some(new_level) = tuning_map.get(rule["id"].as_str().unwrap()) {
+            match tuning_map.get(rule["id"].as_str().unwrap()) { Some(new_level) => {
                 write_color_buffer(
                     &BufferWriter::stdout(ColorChoice::Always),
                     None,
@@ -116,7 +116,7 @@ impl LevelTuning {
                     true,
                 )
                 .ok();
-            }
+            } _ => {}}
         }
         println!();
         Result::Ok(())

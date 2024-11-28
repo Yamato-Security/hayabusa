@@ -452,10 +452,10 @@ impl SelectionNode for LeafSelectionNode {
             && !self.key_list.is_empty()
             && !self.key_list[0].contains("|")
         {
-            if let Some(event_id) = self.select_value.as_i64() {
+            match self.select_value.as_i64() { Some(event_id) => {
                 // 正規表現は重いので、数値のEventIDのみ文字列完全一致で判定
                 return event_value.unwrap_or(&String::default()) == &event_id.to_string();
-            }
+            } _ => {}}
         }
         if !self.key_list.is_empty() && self.key_list[0].eq("|all") {
             event_value = Some(&event_record.data_string);

@@ -304,12 +304,12 @@ pub fn set_default_profile(
             .profile
             .as_ref()
             .unwrap();
-        if let Ok(mut buf_wtr) = OpenOptions::new()
+        match OpenOptions::new()
             .write(true)
             .truncate(true)
             .open(default_profile_path)
             .map(BufWriter::new)
-        {
+        { Ok(mut buf_wtr) => {
             let prof_all_data = &profile_data[0];
             let overwrite_default_data = &prof_all_data[profile_name.as_str()];
             if !overwrite_default_data.is_badvalue() {
@@ -351,11 +351,11 @@ pub fn set_default_profile(
                     .map(|k| k.as_str().unwrap()).join(", ")
                 ))
             }
-        } else {
+        } _ => {
             Err(format!(
                 "Failed to set the default profile file({profile_path})."
             ))
-        }
+        }}
     } else {
         Err("Failed to set the default profile file. Please specify a profile.".to_string())
     }

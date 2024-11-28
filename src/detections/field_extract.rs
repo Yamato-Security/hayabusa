@@ -33,14 +33,14 @@ fn extract_powershell_classic_fields(
                     break;
                 }
             }
-            if let Some(Value::Object(fields)) = extracted_fields {
+            match extracted_fields { Some(Value::Object(fields)) => {
                 for (key, val) in fields {
                     map.insert(key.clone(), val.clone());
-                    if let Value::String(s) = val {
+                    match val { Value::String(s) => {
                         key_2_values.insert(key, s.to_string());
-                    }
+                    } _ => {}}
                 }
-            }
+            } _ => {}}
         }
         Value::Array(vec) => {
             if let Some(val) = vec.get(data_index) {
@@ -51,9 +51,9 @@ fn extract_powershell_classic_fields(
                         .map(|s| s.trim_end_matches("\r\n").trim_end_matches('\r'))
                         .filter_map(|s| s.split_once('='))
                         .collect();
-                    if let Ok(extracted_fields) = serde_json::to_value(fields_data) {
+                    match serde_json::to_value(fields_data) { Ok(extracted_fields) => {
                         return Some(extracted_fields);
-                    }
+                    } _ => {}}
                 }
             }
         }

@@ -454,15 +454,15 @@ impl LeafMatcher for DefaultMatcher {
             for p in pattern {
                 let pattern = DefaultMatcher::from_pattern_to_regex_str(p, &self.pipes);
                 // Pipeで処理されたパターンを正規表現に変換
-                if let Ok(re_result) = Regex::new(&pattern) {
+                match Regex::new(&pattern) { Ok(re_result) => {
                     re_result_vec.push(re_result);
-                } else {
+                } _ => {
                     let errmsg = format!(
                         "Cannot parse regex. [regex:{pattern}, key:{}]",
                         utils::concat_selection_key(key_list)
                     );
                     return Err(vec![errmsg]);
-                }
+                }}
             }
             self.re = Some(re_result_vec);
         }

@@ -84,13 +84,13 @@ impl ParseYaml {
 
     fn update_correlation_counts(&mut self, yaml_docs: &Vec<Yaml>) {
         for doc in yaml_docs {
-            if let Some(correlation) = doc["correlation"].as_hash() {
+            match doc["correlation"].as_hash() { Some(correlation) => {
                 let entry = self
                     .rule_cor_cnt
                     .entry(CompactString::from("correlation"))
                     .or_insert(0);
                 *entry += 1;
-                if let Some(rules) = correlation.get(&Yaml::String("rules".to_string())) {
+                match correlation.get(&Yaml::String("rules".to_string())) { Some(rules) => {
                     if let Some(rules_list) = rules.as_vec() {
                         for rule in rules_list {
                             if let Some(rule_str) = rule.as_str() {
@@ -103,8 +103,8 @@ impl ParseYaml {
                             }
                         }
                     }
-                }
-            }
+                } _ => {}}
+            } _ => {}}
         }
     }
 
@@ -684,10 +684,10 @@ pub fn count_rules<P: AsRef<Path>>(
                 .collect_vec()
         };
         if rule_id.is_some() {
-            if let Some(v) = exclude_ids
+            match exclude_ids
                 .no_use_rule
                 .get(&rule_id.unwrap_or(&String::default()).to_string())
-            {
+            { Some(v) => {
                 let entry_key = if utils::contains_str(v, "exclude_rule") {
                     "excluded"
                 } else {
@@ -717,10 +717,10 @@ pub fn count_rules<P: AsRef<Path>>(
                         .or_insert(0) += 1;
                 }
                 return;
-            }
+            } _ => {}}
         }
 
-        if let Some(s) = yaml_doc["status"].as_str() {
+        match yaml_doc["status"].as_str() { Some(s) => {
             // wizard用の初期カウンティングではstatusとlevelの内容を確認したうえで以降の処理は行わないようにする
             let counter = result_container.entry(s.into()).or_insert(HashMap::new());
             if included_target_tag_vec.is_empty() {
@@ -763,7 +763,7 @@ pub fn count_rules<P: AsRef<Path>>(
                         .or_insert(0) += 1;
                 }
             }
-        }
+        } _ => {}}
     });
     result_container.to_owned()
 }
