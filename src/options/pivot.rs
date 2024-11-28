@@ -42,16 +42,19 @@ impl PivotKeyword {
 pub fn insert_pivot_keyword(event_record: &Value, eventkey_alias: &EventKeyAliasConfig) {
     if let Some(record_level) = get_event_value("Event.System.Level", event_record, eventkey_alias)
     {
-        match get_serde_number_to_string(record_level, false) { Some(event_record_str) => {
-            let exclude_check_str = event_record_str.as_str();
-            //levelがlow以上なら続ける
-            if exclude_check_str == "infomational"
-                || exclude_check_str == "undefined"
-                || exclude_check_str == "-"
-            {
-                return;
+        match get_serde_number_to_string(record_level, false) {
+            Some(event_record_str) => {
+                let exclude_check_str = event_record_str.as_str();
+                //levelがlow以上なら続ける
+                if exclude_check_str == "infomational"
+                    || exclude_check_str == "undefined"
+                    || exclude_check_str == "-"
+                {
+                    return;
+                }
             }
-        } _ => {}}
+            _ => {}
+        }
     } else {
         return;
     }

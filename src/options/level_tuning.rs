@@ -68,55 +68,58 @@ impl LevelTuning {
 
         // Convert rule files
         for (path, rule) in rulefile_loader.files {
-            match tuning_map.get(rule["id"].as_str().unwrap()) { Some(new_level) => {
-                write_color_buffer(
-                    &BufferWriter::stdout(ColorChoice::Always),
-                    None,
-                    &format!("path: {path}"),
-                    true,
-                )
-                .ok();
-                let mut content = match fs::read_to_string(&path) {
-                    Ok(_content) => _content,
-                    Err(e) => return Result::Err(e.to_string()),
-                };
-                let past_level = "level: ".to_string() + rule["level"].as_str().unwrap();
+            match tuning_map.get(rule["id"].as_str().unwrap()) {
+                Some(new_level) => {
+                    write_color_buffer(
+                        &BufferWriter::stdout(ColorChoice::Always),
+                        None,
+                        &format!("path: {path}"),
+                        true,
+                    )
+                    .ok();
+                    let mut content = match fs::read_to_string(&path) {
+                        Ok(_content) => _content,
+                        Err(e) => return Result::Err(e.to_string()),
+                    };
+                    let past_level = "level: ".to_string() + rule["level"].as_str().unwrap();
 
-                if new_level.starts_with("informational") || new_level.starts_with("info") {
-                    content = content.replace(&past_level, "level: informational");
-                }
-                if new_level.starts_with("low") {
-                    content = content.replace(&past_level, "level: low");
-                }
-                if new_level.starts_with("medium") {
-                    content = content.replace(&past_level, "level: medium");
-                }
-                if new_level.starts_with("high") {
-                    content = content.replace(&past_level, "level: high");
-                }
-                if new_level.starts_with("critical") {
-                    content = content.replace(&past_level, "level: critical");
-                }
+                    if new_level.starts_with("informational") || new_level.starts_with("info") {
+                        content = content.replace(&past_level, "level: informational");
+                    }
+                    if new_level.starts_with("low") {
+                        content = content.replace(&past_level, "level: low");
+                    }
+                    if new_level.starts_with("medium") {
+                        content = content.replace(&past_level, "level: medium");
+                    }
+                    if new_level.starts_with("high") {
+                        content = content.replace(&past_level, "level: high");
+                    }
+                    if new_level.starts_with("critical") {
+                        content = content.replace(&past_level, "level: critical");
+                    }
 
-                let mut file = match File::options().write(true).truncate(true).open(&path) {
-                    Ok(file) => file,
-                    Err(e) => return Result::Err(e.to_string()),
-                };
+                    let mut file = match File::options().write(true).truncate(true).open(&path) {
+                        Ok(file) => file,
+                        Err(e) => return Result::Err(e.to_string()),
+                    };
 
-                file.write_all(content.as_bytes()).unwrap();
-                file.flush().unwrap();
-                write_color_buffer(
-                    &BufferWriter::stdout(ColorChoice::Always),
-                    None,
-                    &format!(
-                        "level: {} -> {}",
-                        rule["level"].as_str().unwrap(),
-                        new_level
-                    ),
-                    true,
-                )
-                .ok();
-            } _ => {}}
+                    file.write_all(content.as_bytes()).unwrap();
+                    file.flush().unwrap();
+                    write_color_buffer(
+                        &BufferWriter::stdout(ColorChoice::Always),
+                        None,
+                        &format!(
+                            "level: {} -> {}",
+                            rule["level"].as_str().unwrap(),
+                            new_level
+                        ),
+                        true,
+                    )
+                    .ok();
+                }
+                _ => {}
+            }
         }
         println!();
         Result::Ok(())

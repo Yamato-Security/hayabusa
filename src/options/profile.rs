@@ -309,39 +309,40 @@ pub fn set_default_profile(
             .truncate(true)
             .open(default_profile_path)
             .map(BufWriter::new)
-        { Ok(mut buf_wtr) => {
-            let prof_all_data = &profile_data[0];
-            let overwrite_default_data = &prof_all_data[profile_name.as_str()];
-            if !overwrite_default_data.is_badvalue() {
-                let mut out_str = String::default();
-                let mut yml_writer = YamlEmitter::new(&mut out_str);
-                let dump_result = yml_writer.dump(overwrite_default_data);
-                let result = match dump_result {
-                    Ok(_) => match buf_wtr.write_all(out_str.as_bytes()) {
+        {
+            Ok(mut buf_wtr) => {
+                let prof_all_data = &profile_data[0];
+                let overwrite_default_data = &prof_all_data[profile_name.as_str()];
+                if !overwrite_default_data.is_badvalue() {
+                    let mut out_str = String::default();
+                    let mut yml_writer = YamlEmitter::new(&mut out_str);
+                    let dump_result = yml_writer.dump(overwrite_default_data);
+                    let result = match dump_result {
+                        Ok(_) => match buf_wtr.write_all(out_str.as_bytes()) {
+                            Err(e) => Err(format!(
+                                "Failed to set the default profile file({profile_path}). {e}"
+                            )),
+                            _ => {
+                                buf_wtr.flush().ok();
+                                if let Ok(mut default_name_buf_wtr) = OpenOptions::new()
+                                    .write(true)
+                                    .truncate(true)
+                                    .open(default_profile_name_path)
+                                    .map(BufWriter::new)
+                                {
+                                    default_name_buf_wtr.write_all(profile_name.as_bytes()).ok();
+                                    println!("Successfully updated the default profile.\n");
+                                }
+                                Ok(())
+                            }
+                        },
                         Err(e) => Err(format!(
                             "Failed to set the default profile file({profile_path}). {e}"
                         )),
-                        _ => {
-                            buf_wtr.flush().ok();
-                            if let Ok(mut default_name_buf_wtr) = OpenOptions::new()
-                                .write(true)
-                                .truncate(true)
-                                .open(default_profile_name_path)
-                                .map(BufWriter::new)
-                            {
-                                default_name_buf_wtr.write_all(profile_name.as_bytes()).ok();
-                                println!("Successfully updated the default profile.\n");
-                            }
-                            Ok(())
-                        }
-                    },
-                    Err(e) => Err(format!(
-                        "Failed to set the default profile file({profile_path}). {e}"
-                    )),
-                };
-                result
-            } else {
-                Err(format!(
+                    };
+                    result
+                } else {
+                    Err(format!(
                     "Invalid profile specified: {}\nPlease specify one of the following profiles:\n{}",
                     profile_name,
                     prof_all_data
@@ -350,12 +351,12 @@ pub fn set_default_profile(
                     .keys()
                     .map(|k| k.as_str().unwrap()).join(", ")
                 ))
+                }
             }
-        } _ => {
-            Err(format!(
+            _ => Err(format!(
                 "Failed to set the default profile file({profile_path})."
-            ))
-        }}
+            )),
+        }
     } else {
         Err("Failed to set the default profile file. Please specify a profile.".to_string())
     }

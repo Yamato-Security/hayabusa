@@ -228,11 +228,14 @@ impl DetectionNode {
         let mut err_msgs = vec![];
         let compiler = condition_parser::ConditionCompiler::new();
         let compile_result = compiler.compile_condition(condition_str, &self.name_to_selection);
-        match compile_result { Result::Err(err_msg) => {
-            err_msgs.extend(vec![err_msg]);
-        } _ => {
-            self.condition = Option::Some(compile_result.unwrap());
-        }}
+        match compile_result {
+            Result::Err(err_msg) => {
+                err_msgs.extend(vec![err_msg]);
+            }
+            _ => {
+                self.condition = Option::Some(compile_result.unwrap());
+            }
+        }
 
         // aggregation condition(conditionのパイプ以降の部分)をパース
         let agg_compiler = aggregation_parser::AggegationConditionCompiler::new();
@@ -286,17 +289,20 @@ impl DetectionNode {
 
             // パースして、エラーメッセージがあれば配列にためて、戻り値で返す。
             let selection_node = self.parse_selection(&detection_hash[key]);
-            match selection_node { Some(node) => {
-                let mut selection_node = node;
-                let init_result = selection_node.init();
-                if let Err(err_detail) = init_result {
-                    err_msgs.extend(err_detail);
-                } else {
-                    let rc_selection = Arc::new(selection_node);
-                    self.name_to_selection
-                        .insert(name.to_string(), rc_selection);
+            match selection_node {
+                Some(node) => {
+                    let mut selection_node = node;
+                    let init_result = selection_node.init();
+                    if let Err(err_detail) = init_result {
+                        err_msgs.extend(err_detail);
+                    } else {
+                        let rc_selection = Arc::new(selection_node);
+                        self.name_to_selection
+                            .insert(name.to_string(), rc_selection);
+                    }
                 }
-            } _ => {}}
+                _ => {}
+            }
         }
         if !err_msgs.is_empty() {
             return Result::Err(err_msgs);

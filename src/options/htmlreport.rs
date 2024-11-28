@@ -46,14 +46,17 @@ impl HtmlReporter {
 
         let mut md_data = Nested::<String>::new();
         for section_name in self.section_order.iter() {
-            match self.md_datas.get(section_name) { Some(v) => {
-                md_data.push(format!("## {}\n", &section_name));
-                if v.is_empty() {
-                    md_data.push("not found data.\n");
-                } else {
-                    md_data.push(v.iter().collect::<Vec<&str>>().join("\n"));
+            match self.md_datas.get(section_name) {
+                Some(v) => {
+                    md_data.push(format!("## {}\n", &section_name));
+                    if v.is_empty() {
+                        md_data.push("not found data.\n");
+                    } else {
+                        md_data.push(v.iter().collect::<Vec<&str>>().join("\n"));
+                    }
                 }
-            } _ => {}}
+                _ => {}
+            }
         }
         let md_str = md_data.iter().collect::<Vec<&str>>().join("\n");
         let parser = Parser::new_ext(&md_str, options);

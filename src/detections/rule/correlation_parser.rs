@@ -28,11 +28,14 @@ fn is_referenced_rule(rule_node: &RuleNode, id_or_title: &str) -> bool {
                 return true;
             }
         }
-        match hash.get(&Yaml::String("name".to_string())) { Some(title) => {
-            if title.as_str() == Some(id_or_title) {
-                return true;
+        match hash.get(&Yaml::String("name".to_string())) {
+            Some(title) => {
+                if title.as_str() == Some(id_or_title) {
+                    return true;
+                }
             }
-        } _ => {}}
+            _ => {}
+        }
     }
     false
 }
@@ -78,13 +81,16 @@ fn parse_condition(
 ) -> Result<(AggregationConditionToken, i64, Option<String>), Box<dyn Error>> {
     if let Some(hash) = yaml.as_hash() {
         let rule_type = hash.get(&Yaml::String("type".to_string()));
-        match hash.get(&Yaml::String("condition".to_string())) { Some(condition) => {
-            if let Some(condition_hash) = condition.as_hash() {
-                let pair: Vec<(&Yaml, &Yaml)> = condition_hash.iter().collect();
-                let field = find_condition_field_value(rule_type, pair.clone());
-                return process_condition_pairs(pair, field);
+        match hash.get(&Yaml::String("condition".to_string())) {
+            Some(condition) => {
+                if let Some(condition_hash) = condition.as_hash() {
+                    let pair: Vec<(&Yaml, &Yaml)> = condition_hash.iter().collect();
+                    let field = find_condition_field_value(rule_type, pair.clone());
+                    return process_condition_pairs(pair, field);
+                }
             }
-        } _ => {}}
+            _ => {}
+        }
     }
     Err("Failed to parse condition".into())
 }

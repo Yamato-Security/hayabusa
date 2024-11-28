@@ -1300,31 +1300,35 @@ impl App {
                             continue;
                         }
                         let mut ret_cnt = 0;
-                        match rule_counter_wizard_map.get(s) { Some(target_status_count) => {
-                            target_status_count.iter().for_each(|(rule_level, value)| {
-                                let doc_level_num = level_map
-                                    .get(rule_level.to_uppercase().as_str())
-                                    .unwrap_or(&1);
-                                let args_level_num = level_map
-                                    .get(min_level.to_uppercase().as_str())
-                                    .unwrap_or(&1);
-                                if doc_level_num >= args_level_num {
-                                    if !target_tags.is_empty() {
-                                        for (tag, cnt) in value.iter() {
-                                            if target_tags.contains(&tag.as_str()) {
-                                                let matched_tag_cnt = ret.entry(tag.clone());
-                                                *matched_tag_cnt.or_insert(0) += cnt;
+                        match rule_counter_wizard_map.get(s) {
+                            Some(target_status_count) => {
+                                target_status_count.iter().for_each(|(rule_level, value)| {
+                                    let doc_level_num = level_map
+                                        .get(rule_level.to_uppercase().as_str())
+                                        .unwrap_or(&1);
+                                    let args_level_num = level_map
+                                        .get(min_level.to_uppercase().as_str())
+                                        .unwrap_or(&1);
+                                    if doc_level_num >= args_level_num {
+                                        if !target_tags.is_empty() {
+                                            for (tag, cnt) in value.iter() {
+                                                if target_tags.contains(&tag.as_str()) {
+                                                    let matched_tag_cnt = ret.entry(tag.clone());
+                                                    *matched_tag_cnt.or_insert(0) += cnt;
+                                                }
                                             }
+                                        } else {
+                                            ret_cnt +=
+                                                value.iter().map(|(_, cnt)| cnt).sum::<i128>()
                                         }
-                                    } else {
-                                        ret_cnt += value.iter().map(|(_, cnt)| cnt).sum::<i128>()
                                     }
+                                });
+                                if ret_cnt > 0 {
+                                    ret.insert(s.clone(), ret_cnt);
                                 }
-                            });
-                            if ret_cnt > 0 {
-                                ret.insert(s.clone(), ret_cnt);
                             }
-                        } _ => {}}
+                            _ => {}
+                        }
                     }
                 }
                 ret
@@ -1456,22 +1460,25 @@ impl App {
                         exclude_tags.push("detection.emerging_threats".into());
                     }
                 }
-                match tags_cnt.get("detection.threat_hunting") { Some(th_cnt) => {
-                    let prompt_fmt = format!(
-                        "Include Threat Hunting rules? ({} rules)",
-                        th_cnt.to_formatted_string(&Locale::en)
-                    );
-                    let th_rules_load_flag = Confirm::with_theme(&color_theme)
-                        .with_prompt(prompt_fmt)
-                        .default(false)
-                        .show_default(true)
-                        .interact()
-                        .unwrap();
-                    // If no is selected, then add "--exclude-tags detection.threat_hunting"
-                    if !th_rules_load_flag {
-                        exclude_tags.push("detection.threat_hunting".into());
+                match tags_cnt.get("detection.threat_hunting") {
+                    Some(th_cnt) => {
+                        let prompt_fmt = format!(
+                            "Include Threat Hunting rules? ({} rules)",
+                            th_cnt.to_formatted_string(&Locale::en)
+                        );
+                        let th_rules_load_flag = Confirm::with_theme(&color_theme)
+                            .with_prompt(prompt_fmt)
+                            .default(false)
+                            .show_default(true)
+                            .interact()
+                            .unwrap();
+                        // If no is selected, then add "--exclude-tags detection.threat_hunting"
+                        if !th_rules_load_flag {
+                            exclude_tags.push("detection.threat_hunting".into());
+                        }
                     }
-                } _ => {}}
+                    _ => {}
+                }
             } else {
                 // If "4. All alert rules" or "5. All event and alert rules" was selected, ask questions about deprecated and unsupported rules.
                 if let Some(dep_cnt) = exclude_noisy_cnt.get("deprecated") {
@@ -1494,26 +1501,29 @@ impl App {
                             .enable_deprecated_rules = true;
                     }
                 }
-                match exclude_noisy_cnt.get("unsupported") { Some(unsup_cnt) => {
-                    // unsupported rules load prompt
-                    let prompt_fmt = format!(
-                        "Include unsupported rules? ({} rules)",
-                        unsup_cnt.to_formatted_string(&Locale::en)
-                    );
-                    let unsupported_rules_load_flag = Confirm::with_theme(&color_theme)
-                        .with_prompt(prompt_fmt)
-                        .default(false)
-                        .show_default(true)
-                        .interact()
-                        .unwrap();
-                    if unsupported_rules_load_flag {
-                        stored_static
-                            .output_option
-                            .as_mut()
-                            .unwrap()
-                            .enable_unsupported_rules = true;
+                match exclude_noisy_cnt.get("unsupported") {
+                    Some(unsup_cnt) => {
+                        // unsupported rules load prompt
+                        let prompt_fmt = format!(
+                            "Include unsupported rules? ({} rules)",
+                            unsup_cnt.to_formatted_string(&Locale::en)
+                        );
+                        let unsupported_rules_load_flag = Confirm::with_theme(&color_theme)
+                            .with_prompt(prompt_fmt)
+                            .default(false)
+                            .show_default(true)
+                            .interact()
+                            .unwrap();
+                        if unsupported_rules_load_flag {
+                            stored_static
+                                .output_option
+                                .as_mut()
+                                .unwrap()
+                                .enable_unsupported_rules = true;
+                        }
                     }
-                } _ => {}}
+                    _ => {}
+                }
             }
 
             CHECKPOINT

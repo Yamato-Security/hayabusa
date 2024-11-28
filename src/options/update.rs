@@ -74,10 +74,13 @@ impl Update {
                 for mut submodule in submodules {
                     submodule.update(true, None)?;
                     let submodule_repo = submodule.open()?;
-                    match Update::pull_repository(&submodule_repo) { Err(e) => {
-                        AlertMessage::alert(&format!("Failed submodule update. {e}")).ok();
-                        is_success_submodule_update = false;
-                    } _ => {}}
+                    match Update::pull_repository(&submodule_repo) {
+                        Err(e) => {
+                            AlertMessage::alert(&format!("Failed submodule update. {e}")).ok();
+                            is_success_submodule_update = false;
+                        }
+                        _ => {}
+                    }
                 }
                 if is_success_submodule_update {
                     result = Ok("Successed submodule update".to_string());
@@ -219,17 +222,18 @@ impl Update {
         updated_sets: HashMap<String, String>,
         no_color: bool,
     ) -> Result<String, git2::Error> {
-        let diff = updated_sets.iter().filter_map(|(k, v)| {
-            match prev_sets.get(k) { Some(prev_val) => {
-                if prev_val != v {
-                    Some(v)
-                } else {
-                    None
+        let diff = updated_sets
+            .iter()
+            .filter_map(|(k, v)| match prev_sets.get(k) {
+                Some(prev_val) => {
+                    if prev_val != v {
+                        Some(v)
+                    } else {
+                        None
+                    }
                 }
-            } _ => {
-                Some(v)
-            }}
-        });
+                _ => Some(v),
+            });
         let mut update_count_by_rule_type: HashMap<String, u128> = HashMap::new();
         for diff_key in diff {
             let tmp: Vec<&str> = diff_key.split('|').collect();

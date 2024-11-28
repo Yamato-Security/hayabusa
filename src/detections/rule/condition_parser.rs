@@ -136,11 +136,10 @@ impl ConditionCompiler {
         };
 
         let result = self.compile_condition_body(&replaced_condition, name_2_node);
-        match result { Result::Err(msg) => {
-            Result::Err(format!("A condition parse error has occurred. {msg}"))
-        } _ => {
-            result
-        }}
+        match result {
+            Result::Err(msg) => Result::Err(format!("A condition parse error has occurred. {msg}")),
+            _ => result,
+        }
     }
 
     // all of selection* と 1 of selection* を通常のand/orに変換する

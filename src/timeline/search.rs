@@ -409,12 +409,11 @@ pub fn search_result_dsp_msg(
             .into_iter()
             .sorted_unstable_by(|a, b| Ord::cmp(&a.0, &b.0))
     {
-        let event_title = match event_timeline_config.get_event_id(&channel.to_ascii_lowercase(), &event_id)
-        { Some(event_info) => {
-            CompactString::from(event_info.evttitle.as_str())
-        } _ => {
-            "-".into()
-        }};
+        let event_title =
+            match event_timeline_config.get_event_id(&channel.to_ascii_lowercase(), &event_id) {
+                Some(event_info) => CompactString::from(event_info.evttitle.as_str()),
+                _ => "-".into(),
+            };
         let abbr_channel = stored_static.disp_abbr_generic.replace_all(
             stored_static
                 .ch_config

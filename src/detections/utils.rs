@@ -443,11 +443,19 @@ pub fn create_recordinfos(
         .iter()
         .map(|(key, value)| {
             if let Some(map) = field_data_map.as_ref() {
-                match convert_field_data(map, field_data_map_key, &key.to_lowercase(), value, record)
-                { Some(converted_str) => {
-                    let val = remove_sp_char(converted_str);
-                    return format!("{key}: {val}",).into();
-                } _ => {}}
+                match convert_field_data(
+                    map,
+                    field_data_map_key,
+                    &key.to_lowercase(),
+                    value,
+                    record,
+                ) {
+                    Some(converted_str) => {
+                        let val = remove_sp_char(converted_str);
+                        return format!("{key}: {val}",).into();
+                    }
+                    _ => {}
+                }
             }
             let val = remove_sp_char(value.into());
             format!("{key}: {val}").into()
@@ -536,9 +544,12 @@ fn _collect_recordinfo<'a>(
                             strval.as_str(),
                             org_value,
                         );
-                        match converted_str { Some(converted_str) => {
-                            strval = converted_str.to_string();
-                        } _ => {}}
+                        match converted_str {
+                            Some(converted_str) => {
+                                strval = converted_str.to_string();
+                            }
+                            _ => {}
+                        }
                     }
                     format!("{parent_key}[{i}]")
                 } else {

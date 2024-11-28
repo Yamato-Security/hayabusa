@@ -112,13 +112,16 @@ impl EventMetrics {
                     .to_string()
                     .trim_matches('"'),
                 )
-        }) { Some(existing_lm) => {
-            existing_lm.update(records, stored_static);
-        } _ => {
-            let mut lm = LogMetrics::new(filename);
-            lm.update(records, stored_static);
-            self.stats_logfile.push(lm);
-        }}
+        }) {
+            Some(existing_lm) => {
+                existing_lm.update(records, stored_static);
+            }
+            _ => {
+                let mut lm = LogMetrics::new(filename);
+                lm.update(records, stored_static);
+                self.stats_logfile.push(lm);
+            }
+        }
     }
 
     fn stats_time_cnt(&mut self, records: &[EvtxRecordInfo], stored_static: &StoredStatic) {
@@ -187,17 +190,25 @@ impl EventMetrics {
                 &stored_static.eventkey_alias,
             )
             .map(|evt_value| evt_value.to_string().replace("\\\"", "").replace('"', ""))
-            { Some(evttime) => {
-                check_start_end_time(&evttime);
-            } _ => { match utils::get_event_value(
-                "Event.System.@timestamp",
-                &record.record,
-                &stored_static.eventkey_alias,
-            )
-            .map(|evt_value| evt_value.to_string().replace("\\\"", "").replace('"', ""))
-            { Some(evttime) => {
-                check_start_end_time(&evttime);
-            } _ => {}}}};
+            {
+                Some(evttime) => {
+                    check_start_end_time(&evttime);
+                }
+                _ => {
+                    match utils::get_event_value(
+                        "Event.System.@timestamp",
+                        &record.record,
+                        &stored_static.eventkey_alias,
+                    )
+                    .map(|evt_value| evt_value.to_string().replace("\\\"", "").replace('"', ""))
+                    {
+                        Some(evttime) => {
+                            check_start_end_time(&evttime);
+                        }
+                        _ => {}
+                    }
+                }
+            };
         }
         self.total += records.len();
     }
@@ -220,12 +231,14 @@ impl EventMetrics {
             ) {
                 continue;
             }
-            let channel = match utils::get_event_value("Channel", &record.record, &stored_static.eventkey_alias)
-            { Some(ch) => {
-                ch.as_str().unwrap()
-            } _ => {
-                "-"
-            }};
+            let channel = match utils::get_event_value(
+                "Channel",
+                &record.record,
+                &stored_static.eventkey_alias,
+            ) {
+                Some(ch) => ch.as_str().unwrap(),
+                _ => "-",
+            };
             if let Some(idnum) =
                 utils::get_event_value("EventID", &record.record, &stored_static.eventkey_alias)
             {
@@ -289,144 +302,147 @@ impl EventMetrics {
                     &record.record,
                     &stored_static.eventkey_alias,
                 );
-                match is_target_event(idnum, &channel) { Some(channel) => {
-                    let channel_name = match channel {
-                        Sec => {
-                            if idnum == 4624 {
-                                CompactString::from("Sec 4624")
-                            } else {
-                                CompactString::from("Sec 4625")
+                match is_target_event(idnum, &channel) {
+                    Some(channel) => {
+                        let channel_name = match channel {
+                            Sec => {
+                                if idnum == 4624 {
+                                    CompactString::from("Sec 4624")
+                                } else {
+                                    CompactString::from("Sec 4625")
+                                }
                             }
-                        }
-                        RdsLsm => CompactString::from("RDS-LSM 21"),
-                        RdsGtw => CompactString::from("RDS-GTW 302"),
-                    };
-                    let dst_user = match channel {
-                        Sec => get_event_value_as_string(
-                            "TargetUserName",
-                            &record.record,
-                            &stored_static.eventkey_alias,
-                        ),
-                        RdsLsm => {
-                            let user_with_domain = get_event_value_as_string(
-                                "UserDataUser",
+                            RdsLsm => CompactString::from("RDS-LSM 21"),
+                            RdsGtw => CompactString::from("RDS-GTW 302"),
+                        };
+                        let dst_user = match channel {
+                            Sec => get_event_value_as_string(
+                                "TargetUserName",
                                 &record.record,
                                 &stored_static.eventkey_alias,
-                            );
-                            let user = user_with_domain
-                                .rsplit('\\')
-                                .next()
-                                .unwrap_or(&user_with_domain);
-                            CompactString::from(user)
-                        }
-                        RdsGtw => {
-                            let user_with_domain = get_event_value_as_string(
-                                "RdsGtwUsername",
-                                &record.record,
-                                &stored_static.eventkey_alias,
-                            );
-                            let user = user_with_domain
-                                .rsplit('\\')
-                                .next()
-                                .unwrap_or(&user_with_domain);
-                            CompactString::from(user)
-                        }
-                    };
-
-                    let src_user = get_event_value_as_string(
-                        "SubjectUserName",
-                        &record.record,
-                        &stored_static.eventkey_alias,
-                    );
-                    let dst_domain = match channel {
-                        Sec => get_event_value_as_string(
-                            "TargetDomainName",
-                            &record.record,
-                            &stored_static.eventkey_alias,
-                        ),
-                        RdsLsm => {
-                            let user_with_domain = get_event_value_as_string(
-                                "UserDataUser",
-                                &record.record,
-                                &stored_static.eventkey_alias,
-                            );
-                            let domain = user_with_domain.rsplit_once('\\').map(|x| x.0);
-                            CompactString::from(domain.unwrap_or("-"))
-                        }
-                        RdsGtw => {
-                            let user_with_domain = get_event_value_as_string(
-                                "RdsGtwUserName",
-                                &record.record,
-                                &stored_static.eventkey_alias,
-                            );
-                            let domain = user_with_domain.rsplit_once('\\').map(|x| x.0);
-                            CompactString::from(domain.unwrap_or("-"))
-                        }
-                    };
-                    let src_domain = get_event_value_as_string(
-                        "SubjectDomainName",
-                        &record.record,
-                        &stored_static.eventkey_alias,
-                    );
-                    let logontype = get_event_value_as_string(
-                        "LogonType",
-                        &record.record,
-                        &stored_static.eventkey_alias,
-                    );
-                    let hostname = get_event_value_as_string(
-                        "Computer",
-                        &record.record,
-                        &stored_static.eventkey_alias,
-                    );
-                    let source_computer = get_event_value_as_string(
-                        "WorkstationName",
-                        &record.record,
-                        &stored_static.eventkey_alias,
-                    );
-                    let source_ip = match channel {
-                        Sec => get_event_value_as_string(
-                            "IpAddress",
-                            &record.record,
-                            &stored_static.eventkey_alias,
-                        ),
-                        RdsLsm => get_event_value_as_string(
-                            "UserDataAddress",
-                            &record.record,
-                            &stored_static.eventkey_alias,
-                        ),
-                        RdsGtw => get_event_value_as_string(
-                            "RdsGtwIpAddress",
-                            &record.record,
-                            &stored_static.eventkey_alias,
-                        ),
-                    };
-
-                    let countlist: [usize; 2] = [0, 0];
-                    // この段階でEventIDは4624もしくは4625となるのでこの段階で対応するカウンターを取得する
-                    let count: &mut [usize; 2] = self
-                        .stats_login_list
-                        .entry(LoginEvent {
-                            channel: channel_name,
-                            dst_user,
-                            dst_domain,
-                            hostname,
-                            logontype: CompactString::from(
-                                *logontype_map
-                                    .get(&logontype.as_str())
-                                    .unwrap_or(&logontype.as_str()),
                             ),
-                            src_user,
-                            src_domain,
-                            source_computer,
-                            source_ip,
-                        })
-                        .or_insert(countlist);
-                    if idnum == 4624 || idnum == 21 || idnum == 302 {
-                        count[0] += 1;
-                    } else if idnum == 4625 {
-                        count[1] += 1;
+                            RdsLsm => {
+                                let user_with_domain = get_event_value_as_string(
+                                    "UserDataUser",
+                                    &record.record,
+                                    &stored_static.eventkey_alias,
+                                );
+                                let user = user_with_domain
+                                    .rsplit('\\')
+                                    .next()
+                                    .unwrap_or(&user_with_domain);
+                                CompactString::from(user)
+                            }
+                            RdsGtw => {
+                                let user_with_domain = get_event_value_as_string(
+                                    "RdsGtwUsername",
+                                    &record.record,
+                                    &stored_static.eventkey_alias,
+                                );
+                                let user = user_with_domain
+                                    .rsplit('\\')
+                                    .next()
+                                    .unwrap_or(&user_with_domain);
+                                CompactString::from(user)
+                            }
+                        };
+
+                        let src_user = get_event_value_as_string(
+                            "SubjectUserName",
+                            &record.record,
+                            &stored_static.eventkey_alias,
+                        );
+                        let dst_domain = match channel {
+                            Sec => get_event_value_as_string(
+                                "TargetDomainName",
+                                &record.record,
+                                &stored_static.eventkey_alias,
+                            ),
+                            RdsLsm => {
+                                let user_with_domain = get_event_value_as_string(
+                                    "UserDataUser",
+                                    &record.record,
+                                    &stored_static.eventkey_alias,
+                                );
+                                let domain = user_with_domain.rsplit_once('\\').map(|x| x.0);
+                                CompactString::from(domain.unwrap_or("-"))
+                            }
+                            RdsGtw => {
+                                let user_with_domain = get_event_value_as_string(
+                                    "RdsGtwUserName",
+                                    &record.record,
+                                    &stored_static.eventkey_alias,
+                                );
+                                let domain = user_with_domain.rsplit_once('\\').map(|x| x.0);
+                                CompactString::from(domain.unwrap_or("-"))
+                            }
+                        };
+                        let src_domain = get_event_value_as_string(
+                            "SubjectDomainName",
+                            &record.record,
+                            &stored_static.eventkey_alias,
+                        );
+                        let logontype = get_event_value_as_string(
+                            "LogonType",
+                            &record.record,
+                            &stored_static.eventkey_alias,
+                        );
+                        let hostname = get_event_value_as_string(
+                            "Computer",
+                            &record.record,
+                            &stored_static.eventkey_alias,
+                        );
+                        let source_computer = get_event_value_as_string(
+                            "WorkstationName",
+                            &record.record,
+                            &stored_static.eventkey_alias,
+                        );
+                        let source_ip = match channel {
+                            Sec => get_event_value_as_string(
+                                "IpAddress",
+                                &record.record,
+                                &stored_static.eventkey_alias,
+                            ),
+                            RdsLsm => get_event_value_as_string(
+                                "UserDataAddress",
+                                &record.record,
+                                &stored_static.eventkey_alias,
+                            ),
+                            RdsGtw => get_event_value_as_string(
+                                "RdsGtwIpAddress",
+                                &record.record,
+                                &stored_static.eventkey_alias,
+                            ),
+                        };
+
+                        let countlist: [usize; 2] = [0, 0];
+                        // この段階でEventIDは4624もしくは4625となるのでこの段階で対応するカウンターを取得する
+                        let count: &mut [usize; 2] = self
+                            .stats_login_list
+                            .entry(LoginEvent {
+                                channel: channel_name,
+                                dst_user,
+                                dst_domain,
+                                hostname,
+                                logontype: CompactString::from(
+                                    *logontype_map
+                                        .get(&logontype.as_str())
+                                        .unwrap_or(&logontype.as_str()),
+                                ),
+                                src_user,
+                                src_domain,
+                                source_computer,
+                                source_ip,
+                            })
+                            .or_insert(countlist);
+                        if idnum == 4624 || idnum == 21 || idnum == 302 {
+                            count[0] += 1;
+                        } else if idnum == 4625 {
+                            count[1] += 1;
+                        }
                     }
-                } _ => {}}
+                    _ => {}
+                }
             };
         }
     }

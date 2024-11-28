@@ -314,12 +314,13 @@ impl StoredStatic {
             } else {
                 &fs::read_to_string(geo_ip_file_path).unwrap()
             };
-            let geo_ip_mapping = match YamlLoader::load_from_str(contents) { Ok(loaded_yaml) => {
-                loaded_yaml
-            } _ => {
-                AlertMessage::alert("Parse error in geoip_field_mapping.yaml.").ok();
-                YamlLoader::load_from_str("").unwrap()
-            }};
+            let geo_ip_mapping = match YamlLoader::load_from_str(contents) {
+                Ok(loaded_yaml) => loaded_yaml,
+                _ => {
+                    AlertMessage::alert("Parse error in geoip_field_mapping.yaml.").ok();
+                    YamlLoader::load_from_str("").unwrap()
+                }
+            };
             let target_map = &geo_ip_mapping[0];
             let empty_yaml_vec: Vec<Yaml> = vec![];
             *GEOIP_FILTER.write().unwrap() = Some(

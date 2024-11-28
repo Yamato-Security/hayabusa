@@ -218,9 +218,12 @@ impl Timeline {
         }
         if wtr.is_some() {
             for msg in stats_msges.iter() {
-                match wtr { Some(ref mut w) => {
-                    w.write_record(msg.iter().map(|x| x.as_str())).ok();
-                } _ => {}}
+                match wtr {
+                    Some(ref mut w) => {
+                        w.write_record(msg.iter().map(|x| x.as_str())).ok();
+                    }
+                    _ => {}
+                }
             }
         }
         stats_tb.add_rows(stats_msges.iter());

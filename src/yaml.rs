@@ -84,27 +84,33 @@ impl ParseYaml {
 
     fn update_correlation_counts(&mut self, yaml_docs: &Vec<Yaml>) {
         for doc in yaml_docs {
-            match doc["correlation"].as_hash() { Some(correlation) => {
-                let entry = self
-                    .rule_cor_cnt
-                    .entry(CompactString::from("correlation"))
-                    .or_insert(0);
-                *entry += 1;
-                match correlation.get(&Yaml::String("rules".to_string())) { Some(rules) => {
-                    if let Some(rules_list) = rules.as_vec() {
-                        for rule in rules_list {
-                            if let Some(rule_str) = rule.as_str() {
-                                // Update rules count, storing each unique rule
-                                let rule_entry = self
-                                    .rule_cor_ref_cnt
-                                    .entry(CompactString::from(rule_str))
-                                    .or_insert(0);
-                                *rule_entry += 1;
+            match doc["correlation"].as_hash() {
+                Some(correlation) => {
+                    let entry = self
+                        .rule_cor_cnt
+                        .entry(CompactString::from("correlation"))
+                        .or_insert(0);
+                    *entry += 1;
+                    match correlation.get(&Yaml::String("rules".to_string())) {
+                        Some(rules) => {
+                            if let Some(rules_list) = rules.as_vec() {
+                                for rule in rules_list {
+                                    if let Some(rule_str) = rule.as_str() {
+                                        // Update rules count, storing each unique rule
+                                        let rule_entry = self
+                                            .rule_cor_ref_cnt
+                                            .entry(CompactString::from(rule_str))
+                                            .or_insert(0);
+                                        *rule_entry += 1;
+                                    }
+                                }
                             }
                         }
+                        _ => {}
                     }
-                } _ => {}}
-            } _ => {}}
+                }
+                _ => {}
+            }
         }
     }
 
@@ -687,56 +693,47 @@ pub fn count_rules<P: AsRef<Path>>(
             match exclude_ids
                 .no_use_rule
                 .get(&rule_id.unwrap_or(&String::default()).to_string())
-            { Some(v) => {
-                let entry_key = if utils::contains_str(v, "exclude_rule") {
-                    "excluded"
-                } else {
-                    "noisy"
-                };
-                // テスト用のルール(ID:000...0)の場合はexcluded ruleのカウントから除外するようにする
-                if v != "00000000-0000-0000-0000-000000000000" {
-                    let counter = result_container
-                        .entry(entry_key.into())
-                        .or_insert(HashMap::new());
-                    *counter
-                        .entry(
-                            yaml_doc["level"]
-                                .as_str()
-                                .unwrap_or("informational")
-                                .to_uppercase()
-                                .into(),
-                        )
-                        .or_insert(HashMap::new())
-                        .entry(
-                            yaml_doc["status"]
-                                .as_str()
-                                .unwrap_or("undefined")
-                                .to_lowercase()
-                                .into(),
-                        )
-                        .or_insert(0) += 1;
+            {
+                Some(v) => {
+                    let entry_key = if utils::contains_str(v, "exclude_rule") {
+                        "excluded"
+                    } else {
+                        "noisy"
+                    };
+                    // テスト用のルール(ID:000...0)の場合はexcluded ruleのカウントから除外するようにする
+                    if v != "00000000-0000-0000-0000-000000000000" {
+                        let counter = result_container
+                            .entry(entry_key.into())
+                            .or_insert(HashMap::new());
+                        *counter
+                            .entry(
+                                yaml_doc["level"]
+                                    .as_str()
+                                    .unwrap_or("informational")
+                                    .to_uppercase()
+                                    .into(),
+                            )
+                            .or_insert(HashMap::new())
+                            .entry(
+                                yaml_doc["status"]
+                                    .as_str()
+                                    .unwrap_or("undefined")
+                                    .to_lowercase()
+                                    .into(),
+                            )
+                            .or_insert(0) += 1;
+                    }
+                    return;
                 }
-                return;
-            } _ => {}}
+                _ => {}
+            }
         }
 
-        match yaml_doc["status"].as_str() { Some(s) => {
-            // wizard用の初期カウンティングではstatusとlevelの内容を確認したうえで以降の処理は行わないようにする
-            let counter = result_container.entry(s.into()).or_insert(HashMap::new());
-            if included_target_tag_vec.is_empty() {
-                *counter
-                    .entry(
-                        yaml_doc["level"]
-                            .as_str()
-                            .unwrap_or("informational")
-                            .to_uppercase()
-                            .into(),
-                    )
-                    .or_insert(HashMap::new())
-                    .entry("other".into())
-                    .or_insert(0) += 1;
-            } else {
-                if included_target_tag_vec.len() > 1 {
+        match yaml_doc["status"].as_str() {
+            Some(s) => {
+                // wizard用の初期カウンティングではstatusとlevelの内容を確認したうえで以降の処理は行わないようにする
+                let counter = result_container.entry(s.into()).or_insert(HashMap::new());
+                if included_target_tag_vec.is_empty() {
                     *counter
                         .entry(
                             yaml_doc["level"]
@@ -746,24 +743,39 @@ pub fn count_rules<P: AsRef<Path>>(
                                 .into(),
                         )
                         .or_insert(HashMap::new())
-                        .entry("duplicated".into())
-                        .or_insert(0) -= (included_target_tag_vec.len() - 1) as i128;
-                }
-                for tag in included_target_tag_vec {
-                    *counter
-                        .entry(
-                            yaml_doc["level"]
-                                .as_str()
-                                .unwrap_or("informational")
-                                .to_uppercase()
-                                .into(),
-                        )
-                        .or_insert(HashMap::new())
-                        .entry(tag.into())
+                        .entry("other".into())
                         .or_insert(0) += 1;
+                } else {
+                    if included_target_tag_vec.len() > 1 {
+                        *counter
+                            .entry(
+                                yaml_doc["level"]
+                                    .as_str()
+                                    .unwrap_or("informational")
+                                    .to_uppercase()
+                                    .into(),
+                            )
+                            .or_insert(HashMap::new())
+                            .entry("duplicated".into())
+                            .or_insert(0) -= (included_target_tag_vec.len() - 1) as i128;
+                    }
+                    for tag in included_target_tag_vec {
+                        *counter
+                            .entry(
+                                yaml_doc["level"]
+                                    .as_str()
+                                    .unwrap_or("informational")
+                                    .to_uppercase()
+                                    .into(),
+                            )
+                            .or_insert(HashMap::new())
+                            .entry(tag.into())
+                            .or_insert(0) += 1;
+                    }
                 }
             }
-        } _ => {}}
+            _ => {}
+        }
     });
     result_container.to_owned()
 }
