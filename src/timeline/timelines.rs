@@ -54,13 +54,13 @@ impl Timeline {
 
         let statistic = EventMetrics::new(
             totalcnt,
-            filepath.clone(),
+            &filepath,
             None,
             None,
             statslst,
             statsloginlst,
         );
-        let search = EventSearch::new(filepath, search_result);
+        let search = EventSearch::new(&filepath, search_result);
         Timeline {
             total_record_cnt: 0,
             stats: statistic,

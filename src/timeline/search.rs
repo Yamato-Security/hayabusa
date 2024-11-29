@@ -42,7 +42,7 @@ pub struct EventSearch {
 
 impl EventSearch {
     pub fn new(
-        filepath: CompactString,
+        filepath: &CompactString,
         search_result: HashSet<(
             CompactString,
             CompactString,
@@ -52,9 +52,9 @@ impl EventSearch {
             CompactString,
             CompactString,
         )>,
-    ) -> EventSearch {
+    ) -> Self {
         EventSearch {
-            filepath,
+            filepath: filepath.clone(),
             search_result,
         }
     }

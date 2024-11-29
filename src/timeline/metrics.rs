@@ -42,15 +42,15 @@ pub struct EventMetrics {
 impl EventMetrics {
     pub fn new(
         total: usize,
-        filepath: CompactString,
+        filepath: &CompactString,
         start_time: Option<DateTime<Utc>>,
         end_time: Option<DateTime<Utc>>,
         stats_list: HashMap<(CompactString, CompactString), usize>,
         stats_login_list: HashMap<LoginEvent, [usize; 2]>,
-    ) -> EventMetrics {
+    ) -> Self {
         EventMetrics {
             total,
-            filepath,
+            filepath: filepath.clone(),
             start_time,
             end_time,
             stats_list,
