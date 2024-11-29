@@ -52,8 +52,8 @@ impl EventSearch {
             CompactString,
             CompactString,
         )>,
-    ) -> Self {
-        Self {
+    ) -> EventSearch {
+        EventSearch {
             filepath,
             search_result,
         }
