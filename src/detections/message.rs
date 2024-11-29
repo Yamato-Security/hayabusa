@@ -399,7 +399,7 @@ pub fn get_event_time(event_record: &Value, json_input_flag: bool) -> Option<Dat
     } else {
         &event_record["Event"]["System"]["TimeCreated_attributes"]["SystemTime"]
     };
-    return utils::str_time_to_datetime(system_time.as_str().unwrap_or(""));
+    utils::str_time_to_datetime(system_time.as_str().unwrap_or(""))
 }
 
 impl AlertMessage {

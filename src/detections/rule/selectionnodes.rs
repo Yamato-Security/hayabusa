@@ -429,11 +429,11 @@ impl SelectionNode for LeafSelectionNode {
                         .iter()
                         .any(|ary_element| {
                             let event_value = utils::value_to_string(ary_element);
-                            return self
+                            self
                                 .matcher
                                 .as_ref()
                                 .unwrap()
-                                .is_match(event_value.as_ref(), event_record);
+                                .is_match(event_value.as_ref(), event_record)
                         });
                 }
                 _ => {
@@ -460,11 +460,11 @@ impl SelectionNode for LeafSelectionNode {
         if !self.key_list.is_empty() && self.key_list[0].eq("|all") {
             event_value = Some(&event_record.data_string);
         }
-        return self
+        self
             .matcher
             .as_ref()
             .unwrap()
-            .is_match(event_value, event_record);
+            .is_match(event_value, event_record)
     }
 
     fn init(&mut self) -> Result<(), Vec<String>> {
@@ -489,11 +489,11 @@ impl SelectionNode for LeafSelectionNode {
         }
 
         self.key = self._create_key();
-        return self
+        self
             .matcher
             .as_mut()
             .unwrap()
-            .init(&self.key_list, &self.select_value);
+            .init(&self.key_list, &self.select_value)
     }
 
     fn get_childs(&self) -> Vec<&dyn SelectionNode> {

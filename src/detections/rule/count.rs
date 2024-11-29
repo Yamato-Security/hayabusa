@@ -393,7 +393,7 @@ impl CountStrategy for FieldStrategy {
     }
 
     fn count(&mut self) -> i64 {
-        return self.value_2_cnt.keys().len() as i64;
+        self.value_2_cnt.keys().len() as i64
     }
 
     fn create_agg_result(

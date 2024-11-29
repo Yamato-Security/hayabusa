@@ -93,7 +93,7 @@ impl AggegationConditionCompiler {
         let mut tokens = Vec::new();
         while !cur_condition_str.is_empty() {
             let captured = self::AGGREGATION_REGEXMAP.iter().find_map(|regex| {
-                return regex.captures(cur_condition_str);
+                regex.captures(cur_condition_str)
             });
             if captured.is_none() {
                 // トークンにマッチしないのはありえないという方針でパースしています。
