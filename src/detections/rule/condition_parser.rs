@@ -195,9 +195,9 @@ impl ConditionCompiler {
 
         let mut tokens = Vec::new();
         while !cur_condition_str.is_empty() {
-            let captured = self::CONDITION_REGEXMAP.iter().find_map(|regex| {
-                regex.captures(cur_condition_str)
-            });
+            let captured = self::CONDITION_REGEXMAP
+                .iter()
+                .find_map(|regex| regex.captures(cur_condition_str));
             if captured.is_none() {
                 // トークンにマッチしないのはありえないという方針でパースしています。
                 return Result::Err("An unusable character was found.".to_string());

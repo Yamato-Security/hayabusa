@@ -2217,8 +2217,7 @@ fn extract_author_name(author: &str) -> Nested<String> {
         ret.extend(author.split(';'));
     }
 
-    ret
-        .iter()
+    ret.iter()
         .map(|r| {
             r.split('/')
                 .map(|p| p.trim().replace(['"', '\''], ""))

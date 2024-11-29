@@ -1093,7 +1093,6 @@ pub struct DefaultProfileOption {
     #[clap(flatten)]
     pub common_options: CommonOptions,
     /// Specify output profile
-
     #[arg(help_heading = Some("General Options"), short = 'p', long = "profile", display_order = 420)]
     pub profile: Option<String>,
 }

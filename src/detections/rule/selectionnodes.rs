@@ -429,8 +429,7 @@ impl SelectionNode for LeafSelectionNode {
                         .iter()
                         .any(|ary_element| {
                             let event_value = utils::value_to_string(ary_element);
-                            self
-                                .matcher
+                            self.matcher
                                 .as_ref()
                                 .unwrap()
                                 .is_match(event_value.as_ref(), event_record)
@@ -460,8 +459,7 @@ impl SelectionNode for LeafSelectionNode {
         if !self.key_list.is_empty() && self.key_list[0].eq("|all") {
             event_value = Some(&event_record.data_string);
         }
-        self
-            .matcher
+        self.matcher
             .as_ref()
             .unwrap()
             .is_match(event_value, event_record)
@@ -489,8 +487,7 @@ impl SelectionNode for LeafSelectionNode {
         }
 
         self.key = self._create_key();
-        self
-            .matcher
+        self.matcher
             .as_mut()
             .unwrap()
             .init(&self.key_list, &self.select_value)
