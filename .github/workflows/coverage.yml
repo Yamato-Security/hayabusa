@@ -12,10 +12,10 @@ jobs:
       - uses: actions/checkout@v4
         with:
           submodules: recursive
-      - name: Install nightly toolchain
+      - name: Install stable toolchain
         run: |
-          rustup install nightly
-          rustup override set nightly
+          rustup install stable
+          # rustup override set nightly
       - name: Install llvm-cov
         run: cargo install cargo-llvm-cov
       - name: Prepare llvm-tools
