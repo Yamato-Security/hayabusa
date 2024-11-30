@@ -42,12 +42,12 @@ use rust_embed::Embed;
 pub struct DefaultProfileName;
 
 pub fn concat_selection_key(key_list: &Nested<String>) -> String {
-    return key_list
+    key_list
         .iter()
         .fold("detection -> selection".to_string(), |mut acc, cur| {
             acc = acc + " -> " + cur;
             acc
-        });
+        })
 }
 
 pub fn check_regex(string: &str, regex_list: &[Regex]) -> bool {

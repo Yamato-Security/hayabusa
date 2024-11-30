@@ -1,5 +1,7 @@
 # Changes
 
+## x.x.x [xxxx/xx/xx]
+
 ## 2.19.0 [2024/11/26] - "Every Day Is A Good Day" Release
 
 **New Features:**

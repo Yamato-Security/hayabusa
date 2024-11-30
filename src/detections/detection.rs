@@ -201,7 +201,7 @@ impl Detection {
         rt: &Runtime,
         stored_static: &StoredStatic,
     ) -> Vec<DetectInfo> {
-        return rt.block_on(self.add_aggcondition_msg(stored_static));
+        rt.block_on(self.add_aggcondition_msg(stored_static))
     }
 
     async fn add_aggcondition_msg(&self, stored_static: &StoredStatic) -> Vec<DetectInfo> {

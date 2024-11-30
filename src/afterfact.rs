@@ -2217,14 +2217,13 @@ fn extract_author_name(author: &str) -> Nested<String> {
         ret.extend(author.split(';'));
     }
 
-    return ret
-        .iter()
+    ret.iter()
         .map(|r| {
             r.split('/')
                 .map(|p| p.trim().replace(['"', '\''], ""))
                 .collect::<String>()
         })
-        .collect();
+        .collect()
 }
 
 ///MITRE ATTCKのTacticsの属性を持つルールに検知したコンピュータ名をhtml出力するための文字列をhtml_output_stockに追加する関数

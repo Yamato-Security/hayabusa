@@ -45,17 +45,17 @@ impl ConditionToken {
         self,
         name_2_node: &HashMap<String, Arc<Box<dyn SelectionNode>>>,
     ) -> Result<Box<dyn SelectionNode>, String> {
-        return match self {
+        match self {
             ConditionToken::SelectionReference(selection_name) => {
                 let selection_node = name_2_node.get(&selection_name);
                 if let Some(select_node) = selection_node {
                     let selection_node = select_node;
                     let selection_node = Arc::clone(selection_node);
                     let ref_node = RefSelectionNode::new(selection_node);
-                    return Result::Ok(Box::new(ref_node));
+                    Result::Ok(Box::new(ref_node))
                 } else {
                     let err_msg = format!("{selection_name} is not defined.");
-                    return Result::Err(err_msg);
+                    Result::Err(err_msg)
                 }
             }
             ConditionToken::ParenthesisContainer(sub_token) => {
@@ -67,7 +67,7 @@ impl ConditionToken {
                     let sub_node = sub_token.into_selection_node(name_2_node)?;
                     select_and_node.child_nodes.push(sub_node);
                 }
-                return Result::Ok(Box::new(select_and_node));
+                Result::Ok(Box::new(select_and_node))
             }
             ConditionToken::OrContainer(sub_tokens) => {
                 let mut select_or_node = OrSelectionNode::new();
@@ -75,12 +75,12 @@ impl ConditionToken {
                     let sub_node = sub_token.into_selection_node(name_2_node)?;
                     select_or_node.child_nodes.push(sub_node);
                 }
-                return Result::Ok(Box::new(select_or_node));
+                Result::Ok(Box::new(select_or_node))
             }
             ConditionToken::NotContainer(sub_token) => {
                 let select_sub_node = sub_token.into_selection_node(name_2_node)?;
                 let select_not_node = NotSelectionNode::new(select_sub_node);
-                return Result::Ok(Box::new(select_not_node));
+                Result::Ok(Box::new(select_not_node))
             }
             ConditionToken::LeftParenthesis => Result::Err("Unknown error".to_string()),
             ConditionToken::RightParenthesis => Result::Err("Unknown error".to_string()),
@@ -88,7 +88,7 @@ impl ConditionToken {
             ConditionToken::Not => Result::Err("Unknown error".to_string()),
             ConditionToken::And => Result::Err("Unknown error".to_string()),
             ConditionToken::Or => Result::Err("Unknown error".to_string()),
-        };
+        }
     }
 
     pub fn to_condition_token(token: &str) -> ConditionToken {
@@ -195,9 +195,9 @@ impl ConditionCompiler {
 
         let mut tokens = Vec::new();
         while !cur_condition_str.is_empty() {
-            let captured = self::CONDITION_REGEXMAP.iter().find_map(|regex| {
-                return regex.captures(cur_condition_str);
-            });
+            let captured = self::CONDITION_REGEXMAP
+                .iter()
+                .find_map(|regex| regex.captures(cur_condition_str));
             if captured.is_none() {
                 // トークンにマッチしないのはありえないという方針でパースしています。
                 return Result::Err("An unusable character was found.".to_string());

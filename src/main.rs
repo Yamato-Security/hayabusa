@@ -2842,7 +2842,7 @@ mod tests {
             let is_contains = &vec!["test1.evtx", "test2.evtx", "testtest4.evtx"]
                 .into_iter()
                 .any(|filepath_str| {
-                    return file.file_name().unwrap().to_str().unwrap_or("") == filepath_str;
+                    file.file_name().unwrap().to_str().unwrap_or("") == filepath_str
                 });
             assert_eq!(is_contains, &true);
         })
