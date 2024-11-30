@@ -154,7 +154,7 @@ impl EventSearch {
             let search_target = if case_insensitive_flag {
                 record.data_string.to_lowercase()
             } else {
-                record.data_string.clone()
+                record.data_string.to_string()
             };
             self.filepath = CompactString::from(record.evtx_filepath.as_str());
             let search_condition = |keywords: &[String]| -> bool {
@@ -163,7 +163,7 @@ impl EventSearch {
                         let converted_key = if case_insensitive_flag {
                             key.to_lowercase()
                         } else {
-                            key.clone()
+                            key.to_string()
                         };
                         utils::contains_str(&search_target, &converted_key)
                     })
@@ -172,7 +172,7 @@ impl EventSearch {
                         let converted_key = if case_insensitive_flag {
                             key.to_lowercase()
                         } else {
-                            key.clone()
+                            key.to_string()
                         };
                         utils::contains_str(&search_target, &converted_key)
                     })
@@ -192,7 +192,7 @@ impl EventSearch {
                     channel,
                     eventid,
                     recordid,
-                    allfieldinfo_newline_splited.into(),
+                    CompactString::from(allfieldinfo_newline_splited),
                     self.filepath.clone(),
                 ));
             }
@@ -238,7 +238,7 @@ impl EventSearch {
                     channel,
                     eventid,
                     recordid,
-                    allfieldinfo_newline_splited.into(),
+                    CompactString::from(allfieldinfo_newline_splited),
                     self.filepath.clone(),
                 ));
             }
@@ -463,27 +463,27 @@ pub fn search_result_dsp_msg(
             let mut detect_info = DetectInfo::default();
             detect_info.ext_field.push((
                 CompactString::from("Timestamp"),
-                Profile::Timestamp(timestamp.clone().into()),
+                Profile::Timestamp(timestamp.into()),
             ));
             detect_info.ext_field.push((
                 CompactString::from("Hostname"),
-                Profile::Computer(hostname.clone().into()),
+                Profile::Computer(hostname.into()),
             ));
             detect_info.ext_field.push((
                 CompactString::from("Channel"),
-                Profile::Channel(abbr_channel.clone().into()),
+                Profile::Channel(abbr_channel.into()),
             ));
             detect_info.ext_field.push((
                 CompactString::from("Event ID"),
-                Profile::EventID(event_id.clone().into()),
+                Profile::EventID(event_id.into()),
             ));
             detect_info.ext_field.push((
                 CompactString::from("Record ID"),
-                Profile::RecordID(record_id.clone().into()),
+                Profile::RecordID(record_id.into()),
             ));
             detect_info.ext_field.push((
                 CompactString::from("EventTitle"),
-                Profile::Literal(event_title.clone().into()),
+                Profile::Literal(event_title.into()),
             ));
             detect_info.ext_field.push((
                 CompactString::from("AllFieldInfo"),
