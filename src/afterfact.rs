@@ -963,7 +963,12 @@ pub fn sort_detect_info(detect_infos: &mut [DetectInfo]) {
             return rulepath_cmp;
         }
 
-        a.computername.cmp(&b.computername)
+        let computer_cmp = a.computername.cmp(&b.computername);
+        if computer_cmp != Ordering::Equal {
+            return computer_cmp;
+        }
+
+        a.rec_id.cmp(&b.rec_id)
     });
 }
 
@@ -2528,6 +2533,7 @@ mod tests {
                     ext_field: output_profile.to_owned(),
                     agg_result: None,
                     details_convert_map: HashMap::default(),
+                    rec_id: CompactString::default(),
                 },
                 &profile_converter,
                 (false, false),
@@ -2553,6 +2559,7 @@ mod tests {
                     ext_field: output_profile.to_owned(),
                     agg_result: None,
                     details_convert_map: HashMap::default(),
+                    rec_id: CompactString::default(),
                 },
                 &profile_converter,
                 (false, false),
@@ -2885,6 +2892,7 @@ mod tests {
                     ext_field: output_profile.to_owned(),
                     agg_result: None,
                     details_convert_map: HashMap::default(),
+                    rec_id: CompactString::default(),
                 },
                 &profile_converter,
                 (false, false),
@@ -2910,6 +2918,7 @@ mod tests {
                     ext_field: output_profile.to_owned(),
                     agg_result: None,
                     details_convert_map: HashMap::default(),
+                    rec_id: CompactString::default(),
                 },
                 &profile_converter,
                 (false, false),
@@ -3222,6 +3231,7 @@ mod tests {
                     ext_field: output_profile.to_owned(),
                     agg_result: None,
                     details_convert_map: HashMap::default(),
+                    rec_id: CompactString::default(),
                 },
                 &profile_converter,
                 (false, false),
@@ -3247,6 +3257,7 @@ mod tests {
                     ext_field: output_profile.to_owned(),
                     agg_result: None,
                     details_convert_map: HashMap::default(),
+                    rec_id: CompactString::default(),
                 },
                 &profile_converter,
                 (false, false),
@@ -3569,6 +3580,7 @@ mod tests {
                     ext_field: output_profile.to_owned(),
                     agg_result: None,
                     details_convert_map,
+                    rec_id: CompactString::default(),
                 },
                 &profile_converter,
                 (false, true),
@@ -3594,6 +3606,7 @@ mod tests {
                     ext_field: output_profile.to_owned(),
                     agg_result: None,
                     details_convert_map: HashMap::default(),
+                    rec_id: CompactString::default(),
                 },
                 &profile_converter,
                 (false, true),
@@ -3988,6 +4001,7 @@ mod tests {
                     ext_field: output_profile.to_owned(),
                     agg_result: None,
                     details_convert_map,
+                    rec_id: CompactString::default(),
                 },
                 &profile_converter,
                 (false, true),
@@ -4351,6 +4365,7 @@ mod tests {
                     ext_field: output_profile.to_owned(),
                     agg_result: None,
                     details_convert_map,
+                    rec_id: CompactString::default(),
                 },
                 &profile_converter,
                 (false, true),
@@ -4640,6 +4655,7 @@ mod tests {
                     ext_field: output_profile.to_owned(),
                     agg_result: None,
                     details_convert_map,
+                    rec_id: CompactString::default(),
                 },
                 &profile_converter,
                 (false, true),
