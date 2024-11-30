@@ -2,6 +2,10 @@
 
 ## x.x.x [xxxx/xx/xx]
 
+**Bug Fixes:**
+
+- Sorting with `csv-timeline` was not done perfectly when record IDs were outputted. (#1519) (@fukusuket)
+
 ## 2.19.0 [2024/11/26] - "Every Day Is A Good Day" Release
 
 **New Features:**

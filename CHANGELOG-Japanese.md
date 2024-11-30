@@ -1,5 +1,11 @@
 # 変更点
 
+## x.x.x [xxxx/xx/xx]
+
+**バグ修正:**
+
+- レコードIDが出力されるとき、`csv-timeline`によるソートが完璧に行われなかった。 (#1519) (@fukusuket)
+
 ## 2.19.0 [2024/11/26] - "Every Day Is A Good Day" Release
 
 **新機能:**
