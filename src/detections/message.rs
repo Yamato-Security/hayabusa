@@ -39,6 +39,7 @@ pub struct DetectInfo {
     pub ruleauthor: CompactString,
     pub level: CompactString,
     pub computername: CompactString,
+    pub rec_id: CompactString,
     pub eventid: CompactString,
     pub detail: CompactString,
     pub ext_field: Vec<(CompactString, Profile)>,
