@@ -1,7 +1,10 @@
+use crate::detections::configs::TimeFormatOptions;
 use crate::detections::detection::EvtxRecordInfo;
-use crate::detections::utils::{get_writable_color, write_color_buffer};
+use crate::detections::message::get_event_time;
+use crate::detections::utils::{format_time, get_writable_color, write_color_buffer};
 use base64::prelude::{BASE64_STANDARD, BASE64_STANDARD_NO_PAD};
 use base64::Engine;
+use chrono::{TimeZone, Utc};
 use comfy_table::modifiers::UTF8_ROUND_CORNERS;
 use comfy_table::presets::UTF8_FULL;
 use comfy_table::{Cell, CellAlignment, ContentArrangement, Table};
@@ -28,16 +31,15 @@ struct EvtxInfo {
 }
 
 impl EvtxInfo {
-    fn new(val: &Value, file_name: String, event: Event) -> Self {
+    fn new(val: &Value, file_name: String, event: Event, ts_fmt_opt: &TimeFormatOptions) -> Self {
+        let default_time = Utc.with_ymd_and_hms(1970, 1, 1, 0, 0, 0).unwrap();
+        let ts = get_event_time(val, false).unwrap_or(default_time);
+        let ts = format_time(&ts, false, ts_fmt_opt);
         let d = &val["Event"]["System"];
-        let ts = d["TimeCreated_attributes"]["SystemTime"]
-            .as_str()
-            .unwrap_or_default()
-            .to_string();
         let computer = d["Computer"].as_str().unwrap_or_default().to_string();
         let rec_id = d["EventRecordID"].as_i64().unwrap().to_string();
         Self {
-            ts,
+            ts: ts.to_string(),
             computer,
             rec_id,
             file_name,
@@ -265,8 +267,9 @@ fn create_base64_extracted_record(
     possible_base64: &str,
     data: &Value,
     event: Event,
+    ts_fmt_opt: &TimeFormatOptions,
 ) -> Vec<Vec<String>> {
-    let evtx = EvtxInfo::new(data, file.to_string_lossy().to_string(), event);
+    let evtx = EvtxInfo::new(data, file.to_string_lossy().to_string(), event, ts_fmt_opt);
     let mut records = Vec::new();
     for token in tokenize(possible_base64) {
         if is_base64(token) {
@@ -284,7 +287,7 @@ fn create_base64_extracted_record(
             }
             let original = possible_base64.replace(b64.base64_str().as_str(), "<Base64String>");
             let row = vec![
-                evtx.ts.clone(),
+                evtx.ts.to_string(),
                 evtx.computer.clone(),
                 b64.base64_str(),
                 b64.decoded_str(),
@@ -304,22 +307,25 @@ fn create_base64_extracted_record(
     records
 }
 
-fn process_record(data: &Value, file: &Path) -> Vec<Vec<String>> {
+fn process_record(data: &Value, file: &Path, opt: &TimeFormatOptions) -> Vec<Vec<String>> {
     let mut records = Vec::new();
     let payloads = extract_payload(data);
     for (payload, event) in payloads {
         let possible_base64 = payload.as_str().unwrap_or_default();
-        let extracted = create_base64_extracted_record(file, possible_base64, data, event);
+        let extracted = create_base64_extracted_record(file, possible_base64, data, event, opt);
         records.extend(extracted);
     }
     records
 }
 
-pub fn process_evtx_record_infos(records: &[EvtxRecordInfo]) -> Vec<Vec<String>> {
+pub fn process_evtx_record_infos(
+    records: &[EvtxRecordInfo],
+    opt: &TimeFormatOptions,
+) -> Vec<Vec<String>> {
     let mut all_records = Vec::new();
     for record in records {
         let file = PathBuf::from(&record.evtx_filepath);
-        let extracted = process_record(&record.record, &file);
+        let extracted = process_record(&record.record, &file, opt);
         all_records.extend(extracted);
     }
     all_records
@@ -445,7 +451,7 @@ mod tests {
         });
 
         let expected = vec![vec![
-            "2021-12-23T00:00:00.000Z".to_string(),
+            "2021-12-23T00:00:00Z".to_string(),
             "HAYABUSA-DESKTOP".to_string(),
             "dGVzdCBjb21tYW5k".to_string(),
             "test command".to_string(),
@@ -462,7 +468,14 @@ mod tests {
             "test.evtx".to_string(),
         ]];
 
-        let result = process_record(&data, Path::new("test.evtx"));
+        let result = process_record(
+            &data,
+            Path::new("test.evtx"),
+            &TimeFormatOptions {
+                iso_8601: true,
+                ..Default::default()
+            },
+        );
         assert_eq!(result, expected);
     }
 }

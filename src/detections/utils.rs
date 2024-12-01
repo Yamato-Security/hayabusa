@@ -243,11 +243,7 @@ pub fn get_serde_number_to_string(
 ) -> Option<CompactString> {
     if value.is_string() {
         let val_str = value.as_str().unwrap_or("");
-        if val_str.ends_with(',') {
-            Some(CompactString::from(val_str))
-        } else {
-            Option::Some(CompactString::from(val_str))
-        }
+        Some(CompactString::from(val_str))
     } else if value.is_object() && search_flag {
         let map: Map<String, Value> = Map::new();
         let val_obj = value.as_object().unwrap_or(&map);

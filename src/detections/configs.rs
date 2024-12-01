@@ -1133,7 +1133,7 @@ pub struct DefaultProfileOption {
     pub profile: Option<String>,
 }
 
-#[derive(Args, Clone, Debug)]
+#[derive(Args, Clone, Debug, Default)]
 pub struct TimeFormatOptions {
     /// Output timestamp in European time format (ex: 22-02-2022 22:00:00.123 +02:00)
     #[arg(help_heading = Some("Time Format"), long = "European-time", display_order = 50)]

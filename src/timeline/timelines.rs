@@ -101,8 +101,10 @@ impl Timeline {
                 stored_static,
             );
         } else if stored_static.extract_base64_flag {
-            let records = process_evtx_record_infos(records);
-            self.extracted_base64_records.extend(records);
+            if let Action::ExtractBase64(opt) = &stored_static.config.action.as_ref().unwrap() {
+                let records = process_evtx_record_infos(records, &opt.time_format_options);
+                self.extracted_base64_records.extend(records);
+            }
         }
     }
 
