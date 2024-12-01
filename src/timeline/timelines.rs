@@ -649,8 +649,7 @@ impl Timeline {
             self.extracted_base64_records.clone(),
             stored_static.output_path.as_ref(),
             stored_static.common_options.no_color,
-        )
-        {
+        ) {
             Ok(_) => {}
             Err(err) => {
                 let errmsg = format!("Failed to output extracted base64 records. {err}");
