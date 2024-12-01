@@ -27,6 +27,7 @@ use terminal_size::Width;
 use super::computer_metrics;
 use super::metrics::EventMetrics;
 use super::search::EventSearch;
+use crate::timeline::extract_base64::{output_all, process_evtx_record_infos};
 use crate::timeline::log_metrics::LogMetrics;
 use hashbrown::{HashMap, HashSet};
 use itertools::Itertools;
@@ -36,6 +37,7 @@ pub struct Timeline {
     pub total_record_cnt: usize,
     pub stats: EventMetrics,
     pub event_search: EventSearch,
+    pub extracted_base64_records: Vec<Vec<String>>,
 }
 
 impl Default for Timeline {
@@ -65,6 +67,7 @@ impl Timeline {
             total_record_cnt: 0,
             stats: statistic,
             event_search: search,
+            extracted_base64_records: vec![],
         }
     }
 
@@ -97,6 +100,9 @@ impl Timeline {
                 &stored_static.eventkey_alias,
                 stored_static,
             );
+        } else if stored_static.extract_base64_flag {
+            let records = process_evtx_record_infos(records);
+            self.extracted_base64_records.extend(records);
         }
     }
 
@@ -636,6 +642,14 @@ impl Timeline {
         }
     }
 
+    pub fn extract_base64_dsp_msg(&mut self, stored_static: &StoredStatic) {
+        let _ = output_all(
+            self.extracted_base64_records.clone(),
+            stored_static.output_path.as_ref(),
+            stored_static.common_options.no_color,
+        );
+    }
+
     fn create_record_array(
         rec: &LogMetrics,
         stored_static: &StoredStatic,
@@ -983,7 +997,6 @@ mod tests {
                 },
                 output: Some(Path::new("./test_tm_stats.csv").to_path_buf()),
                 clobber: false,
-                disable_abbreviations: false,
             }));
         *STORED_EKEY_ALIAS.write().unwrap() = Some(dummy_stored_static.eventkey_alias.clone());
         let mut timeline = Timeline::default();

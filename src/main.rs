@@ -434,7 +434,8 @@ impl App {
             Action::EidMetrics(_)
             | Action::ComputerMetrics(_)
             | Action::LogMetrics(_)
-            | Action::Search(_) => {
+            | Action::Search(_)
+            | Action::ExtractBase64(_) => {
                 if let Some(path) = &stored_static.output_path {
                     if !stored_static.output_option.as_ref().unwrap().clobber
                         && utils::check_file_expect_not_exist(
@@ -1233,6 +1234,7 @@ impl App {
             || stored_static.search_flag
             || stored_static.computer_metrics_flag
             || stored_static.log_metrics_flag
+            || stored_static.extract_base64_flag
             || stored_static.output_option.as_ref().unwrap().no_wizard)
         {
             CHECKPOINT
@@ -1641,7 +1643,8 @@ impl App {
             || stored_static.search_flag
             || stored_static.metrics_flag
             || stored_static.computer_metrics_flag
-            || stored_static.log_metrics_flag)
+            || stored_static.log_metrics_flag
+            || stored_static.extract_base64_flag)
         {
             rule_files = detection::Detection::parse_rule_files(
                 &level,
@@ -1664,7 +1667,8 @@ impl App {
                 || stored_static.search_flag
                 || stored_static.computer_metrics_flag
                 || stored_static.metrics_flag
-                || stored_static.log_metrics_flag;
+                || stored_static.log_metrics_flag
+                || stored_static.extract_base64_flag;
             if !unused_rules_option && rule_files.is_empty() {
                 AlertMessage::alert(
                         "No rules were loaded. Please download the latest rules with the update-rules command.\r\n",
@@ -1837,7 +1841,8 @@ impl App {
             || stored_static.search_flag
             || stored_static.pivot_keyword_list_flag
             || stored_static.computer_metrics_flag
-            || stored_static.log_metrics_flag);
+            || stored_static.log_metrics_flag
+            || stored_static.extract_base64_flag);
 
         if !is_timeline_cmd {
             let msg = if stored_static.common_options.no_color {
@@ -1868,6 +1873,8 @@ impl App {
             tl.computer_metrics_dsp_msg(stored_static)
         } else if stored_static.log_metrics_flag {
             tl.log_metrics_dsp_msg(stored_static)
+        } else if stored_static.extract_base64_flag {
+            tl.extract_base64_dsp_msg(stored_static)
         }
         if is_timeline_cmd {
             let mut log_records = detection.add_aggcondition_msges(&self.rt, stored_static);
@@ -2084,7 +2091,8 @@ impl App {
             tl.start(&records_per_detect, stored_static);
             if !(stored_static.metrics_flag
                 || stored_static.logon_summary_flag
-                || stored_static.search_flag)
+                || stored_static.search_flag
+                || stored_static.extract_base64_flag)
             {
                 // detect event record by rule file
                 let (detection_tmp, mut log_records) =
@@ -3328,7 +3336,6 @@ mod tests {
                 utc: false,
             },
             clobber: false,
-            disable_abbreviations: false,
         });
         let config = Some(Config {
             action: Some(action),
@@ -3386,7 +3393,6 @@ mod tests {
                 utc: false,
             },
             clobber: true,
-            disable_abbreviations: false,
         });
         let config = Some(Config {
             action: Some(action),

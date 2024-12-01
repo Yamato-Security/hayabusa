@@ -29,6 +29,7 @@ hex = "0.4.*"
 horrorshow = "0.8.*"
 indexmap = "2.*"
 indicatif = "*"
+infer = "*"
 itertools = "*"
 krapslog = "0.6"
 lazy_static = "1.5.*"
@@ -52,6 +53,8 @@ ureq = "*"
 wildmatch = "2.*"
 yaml-rust2 = "0.9"
 rust-embed={version = "8.5.0", features = ["include-exclude", "debug-embed"]}
+encoding_rs = "0.8.35"
+walkdir = "2.5.0"
 
 [profile.dev]
 debug-assertions = false

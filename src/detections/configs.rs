@@ -111,6 +111,7 @@ pub struct StoredStatic {
     pub search_flag: bool,
     pub computer_metrics_flag: bool,
     pub log_metrics_flag: bool,
+    pub extract_base64_flag: bool,
     pub search_option: Option<SearchOption>,
     pub output_option: Option<OutputOption>,
     pub pivot_keyword_list_flag: bool,
@@ -149,6 +150,7 @@ impl StoredStatic {
             }
             Some(Action::LogonSummary(opt)) => opt.detect_common_options.quiet_errors,
             Some(Action::EidMetrics(opt)) => opt.detect_common_options.quiet_errors,
+            Some(Action::ExtractBase64(opt)) => opt.detect_common_options.quiet_errors,
             Some(Action::PivotKeywordsList(opt)) => opt.detect_common_options.quiet_errors,
             Some(Action::Search(opt)) => opt.quiet_errors,
             Some(Action::ComputerMetrics(opt)) => opt.quiet_errors,
@@ -161,6 +163,7 @@ impl StoredStatic {
             Some(Action::LevelTuning(opt)) => opt.common_options,
             Some(Action::LogonSummary(opt)) => opt.common_options,
             Some(Action::EidMetrics(opt)) => opt.common_options,
+            Some(Action::ExtractBase64(opt)) => opt.common_options,
             Some(Action::PivotKeywordsList(opt)) => opt.common_options,
             Some(Action::SetDefaultProfile(opt)) => opt.common_options,
             Some(Action::ListContributors(opt)) | Some(Action::ListProfiles(opt)) => *opt,
@@ -180,6 +183,7 @@ impl StoredStatic {
             Some(Action::JsonTimeline(opt)) => &opt.output_options.detect_common_options.config,
             Some(Action::LogonSummary(opt)) => &opt.detect_common_options.config,
             Some(Action::EidMetrics(opt)) => &opt.detect_common_options.config,
+            Some(Action::ExtractBase64(opt)) => &opt.detect_common_options.config,
             Some(Action::PivotKeywordsList(opt)) => &opt.detect_common_options.config,
             Some(Action::Search(opt)) => &opt.config,
             Some(Action::ComputerMetrics(opt)) => &opt.config,
@@ -191,6 +195,7 @@ impl StoredStatic {
             Some(Action::JsonTimeline(opt)) => opt.output_options.detect_common_options.verbose,
             Some(Action::LogonSummary(opt)) => opt.detect_common_options.verbose,
             Some(Action::EidMetrics(opt)) => opt.detect_common_options.verbose,
+            Some(Action::ExtractBase64(opt)) => opt.detect_common_options.verbose,
             Some(Action::PivotKeywordsList(opt)) => opt.detect_common_options.verbose,
             Some(Action::Search(opt)) => opt.verbose,
             Some(Action::ComputerMetrics(opt)) => opt.verbose,
@@ -202,6 +207,7 @@ impl StoredStatic {
             Some(Action::JsonTimeline(opt)) => opt.output_options.detect_common_options.json_input,
             Some(Action::LogonSummary(opt)) => opt.detect_common_options.json_input,
             Some(Action::EidMetrics(opt)) => opt.detect_common_options.json_input,
+            Some(Action::ExtractBase64(opt)) => opt.detect_common_options.json_input,
             Some(Action::PivotKeywordsList(opt)) => opt.detect_common_options.json_input,
             Some(Action::ComputerMetrics(opt)) => opt.json_input,
             Some(Action::LogMetrics(opt)) => opt.detect_common_options.json_input,
@@ -287,16 +293,15 @@ impl StoredStatic {
                     "GeoLite2-City.mmdb",
                 ],
             ));
-            let geo_ip_file_path =
-                utils::check_setting_path(config_path, "geoip_field_mapping", false)
-                    .unwrap_or_else(|| {
-                        utils::check_setting_path(
-                            &CURRENT_EXE_PATH.to_path_buf(),
-                            "rules/config/geoip_field_mapping.yaml",
-                            true,
-                        )
-                        .unwrap()
-                    });
+            let geo_ip_file_path = check_setting_path(config_path, "geoip_field_mapping", false)
+                .unwrap_or_else(|| {
+                    check_setting_path(
+                        &CURRENT_EXE_PATH.to_path_buf(),
+                        "rules/config/geoip_field_mapping.yaml",
+                        true,
+                    )
+                    .unwrap()
+                });
             if !geo_ip_file_path.exists()
                 && !ONE_CONFIG_MAP.contains_key("geoip_field_mapping.yaml")
             {
@@ -349,6 +354,7 @@ impl StoredStatic {
             Some(Action::CsvTimeline(opt)) => opt.output.as_ref(),
             Some(Action::JsonTimeline(opt)) => opt.output.as_ref(),
             Some(Action::EidMetrics(opt)) => opt.output.as_ref(),
+            Some(Action::ExtractBase64(opt)) => opt.output.as_ref(),
             Some(Action::PivotKeywordsList(opt)) => opt.output.as_ref(),
             Some(Action::LogonSummary(opt)) => opt.output.as_ref(),
             Some(Action::Search(opt)) => opt.output.as_ref(),
@@ -359,7 +365,6 @@ impl StoredStatic {
         let disable_abbreviation = match &input_config.as_ref().unwrap().action {
             Some(Action::CsvTimeline(opt)) => opt.disable_abbreviations,
             Some(Action::JsonTimeline(opt)) => opt.disable_abbreviations,
-            Some(Action::EidMetrics(opt)) => opt.disable_abbreviations,
             Some(Action::Search(opt)) => opt.disable_abbreviations,
             Some(Action::LogMetrics(opt)) => opt.disable_abbreviations,
             _ => false,
@@ -393,9 +398,9 @@ impl StoredStatic {
         };
         let target_ruleids = if proven_rule_flag {
             load_target_ids(
-                utils::check_setting_path(config_path, "proven_rules.txt", false)
+                check_setting_path(config_path, "proven_rules.txt", false)
                     .unwrap_or_else(|| {
-                        utils::check_setting_path(
+                        check_setting_path(
                             &CURRENT_EXE_PATH.to_path_buf(),
                             "rules/config/proven_rules.txt",
                             true,
@@ -429,6 +434,14 @@ impl StoredStatic {
                 .map(CompactString::from)
                 .collect(),
             Some(Action::EidMetrics(opt)) => opt
+                .detect_common_options
+                .include_computer
+                .as_ref()
+                .unwrap_or(&vec![])
+                .iter()
+                .map(CompactString::from)
+                .collect(),
+            Some(Action::ExtractBase64(opt)) => opt
                 .detect_common_options
                 .include_computer
                 .as_ref()
@@ -483,6 +496,14 @@ impl StoredStatic {
                 .map(CompactString::from)
                 .collect(),
             Some(Action::EidMetrics(opt)) => opt
+                .detect_common_options
+                .exclude_computer
+                .as_ref()
+                .unwrap_or(&vec![])
+                .iter()
+                .map(CompactString::from)
+                .collect(),
+            Some(Action::ExtractBase64(opt)) => opt
                 .detect_common_options
                 .exclude_computer
                 .as_ref()
@@ -601,6 +622,7 @@ impl StoredStatic {
             Some(Action::CsvTimeline(opt)) => opt.output_options.input_args.recover_records,
             Some(Action::JsonTimeline(opt)) => opt.output_options.input_args.recover_records,
             Some(Action::EidMetrics(opt)) => opt.input_args.recover_records,
+            Some(Action::ExtractBase64(opt)) => opt.input_args.recover_records,
             Some(Action::LogonSummary(opt)) => opt.input_args.recover_records,
             Some(Action::PivotKeywordsList(opt)) => opt.input_args.recover_records,
             Some(Action::Search(opt)) => opt.input_args.recover_records,
@@ -611,6 +633,7 @@ impl StoredStatic {
             Some(Action::CsvTimeline(opt)) => opt.output_options.input_args.time_offset.clone(),
             Some(Action::JsonTimeline(opt)) => opt.output_options.input_args.time_offset.clone(),
             Some(Action::EidMetrics(opt)) => opt.input_args.time_offset.clone(),
+            Some(Action::ExtractBase64(opt)) => opt.input_args.time_offset.clone(),
             Some(Action::LogonSummary(opt)) => opt.input_args.time_offset.clone(),
             Some(Action::PivotKeywordsList(opt)) => opt.input_args.time_offset.clone(),
             Some(Action::Search(opt)) => opt.input_args.time_offset.clone(),
@@ -729,6 +752,7 @@ impl StoredStatic {
             search_flag: action_id == 10,
             computer_metrics_flag: action_id == 11,
             log_metrics_flag: action_id == 12,
+            extract_base64_flag: action_id == 13,
             search_option: extract_search_options(input_config.as_ref().unwrap()),
             output_option: extract_output_options(input_config.as_ref().unwrap()),
             pivot_keyword_list_flag: action_id == 4,
@@ -818,31 +842,30 @@ impl StoredStatic {
                         let provider = match line.first() {
                             Some(_provider) => _provider.trim(),
                             _ => {
-                                return Result::Err(
-                                    "Failed to read provider in default_details.txt.".to_string(),
+                                return Err(
+                                    "Failed to read provider in default_details.txt.".to_string()
                                 )
                             }
                         };
-                        let eid = match line.get(1) {
-                            Some(eid_str) => match eid_str.trim().parse::<i64>() {
-                                Ok(_eid) => _eid,
+                        let eid =
+                            match line.get(1) {
+                                Some(eid_str) => match eid_str.trim().parse::<i64>() {
+                                    Ok(_eid) => _eid,
+                                    _ => {
+                                        return Err("EventID parsing error in default_details.txt."
+                                            .to_string())
+                                    }
+                                },
                                 _ => {
-                                    return Result::Err(
-                                        "EventID parsing error in default_details.txt.".to_string(),
-                                    )
+                                    return Err("Failed to read EventID in default_details.txt."
+                                        .to_string())
                                 }
-                            },
-                            _ => {
-                                return Result::Err(
-                                    "Failed to read EventID in default_details.txt.".to_string(),
-                                )
-                            }
-                        };
+                            };
                         let details = match line.get(2) {
                             Some(detail) => detail.trim(),
                             _ => {
-                                return Result::Err(
-                                    "Failed to read details in default_details.txt.".to_string(),
+                                return Err(
+                                    "Failed to read details in default_details.txt.".to_string()
                                 )
                             }
                         };
@@ -866,6 +889,7 @@ fn check_thread_number(config: &Config) -> Option<usize> {
         Action::JsonTimeline(opt) => opt.output_options.detect_common_options.thread_number,
         Action::LogonSummary(opt) => opt.detect_common_options.thread_number,
         Action::EidMetrics(opt) => opt.detect_common_options.thread_number,
+        Action::ExtractBase64(opt) => opt.detect_common_options.thread_number,
         Action::PivotKeywordsList(opt) => opt.detect_common_options.thread_number,
         Action::LogMetrics(opt) => opt.detect_common_options.thread_number,
         _ => None,
@@ -877,7 +901,7 @@ fn check_thread_number(config: &Config) -> Option<usize> {
 pub enum Action {
     #[clap(
         author = "Yamato Security (https://github.com/Yamato-Security/hayabusa - @SecurityYamato)",
-        help_template = "\nHayabusa v2.19.0 - ”Every\n{author-with-newline}\n{usage-heading}\n  hayabusa.exe csv-timeline <INPUT> [OPTIONS]\n\n{all-args}",
+        help_template = "\nHayabusa v3.0.0 - Dev Build\n{author-with-newline}\n{usage-heading}\n  hayabusa.exe eid-metrics <INPUT> [OPTIONS]\n\n{all-args}",
         term_width = 400,
         display_order = 290,
         disable_help_flag = true
@@ -924,6 +948,16 @@ pub enum Action {
     )]
     /// Output event ID metrics (total number and percent of events, channel, ID, event name)
     EidMetrics(EidMetricsOption),
+
+    #[clap(
+        author = "Yamato Security (https://github.com/Yamato-Security/hayabusa - @SecurityYamato)",
+        help_template = "\nHayabusa v3.0.0 - Dev Build\n{author-with-newline}\n{usage-heading}\n  hayabusa.exe extract-base64 <INPUT> [OPTIONS]\n\n{all-args}",
+        term_width = 400,
+        display_order = 311,
+        disable_help_flag = true
+    )]
+    /// Extract and decode base64 strings from events
+    ExtractBase64(ExtractBase64Option),
 
     #[clap(
         author = "Yamato Security (https://github.com/Yamato-Security/hayabusa - @SecurityYamato)",
@@ -1011,6 +1045,7 @@ impl Action {
                 Action::Search(_) => 10,
                 Action::ComputerMetrics(_) => 11,
                 Action::LogMetrics(_) => 12,
+                Action::ExtractBase64(_) => 13,
             }
         } else {
             100
@@ -1032,6 +1067,7 @@ impl Action {
                 Action::Search(_) => "search",
                 Action::ComputerMetrics(_) => "computer-metrics",
                 Action::LogMetrics(_) => "log-metrics",
+                Action::ExtractBase64(_) => "extract-base64",
             }
         } else {
             ""
@@ -1316,10 +1352,6 @@ pub struct EidMetricsOption {
     /// Overwrite files when saving
     #[arg(help_heading = Some("General Options"), short='C', long = "clobber", display_order = 290, requires = "output")]
     pub clobber: bool,
-
-    /// Disable abbreviations
-    #[arg(help_heading = Some("Output"), short='b', long = "disable-abbreviations", display_order = 60)]
-    pub disable_abbreviations: bool,
 }
 
 #[derive(Args, Clone, Debug)]
@@ -1808,6 +1840,29 @@ pub struct LogMetricsOption {
     pub disable_abbreviations: bool,
 }
 
+#[derive(Args, Clone, Debug)]
+pub struct ExtractBase64Option {
+    #[clap(flatten)]
+    pub input_args: InputOption,
+
+    /// Extract Base64 strings.
+    #[arg(help_heading = Some("Output"), short = 'o', long, value_name = "FILE", display_order = 410)]
+    pub output: Option<PathBuf>,
+
+    #[clap(flatten)]
+    pub common_options: CommonOptions,
+
+    #[clap(flatten)]
+    pub detect_common_options: DetectCommonOption,
+
+    #[clap(flatten)]
+    pub time_format_options: TimeFormatOptions,
+
+    /// Overwrite files when saving
+    #[arg(help_heading = Some("General Options"), short='C', long = "clobber", display_order = 290, requires = "output")]
+    pub clobber: bool,
+}
+
 #[derive(Parser, Clone, Debug)]
 #[clap(
     author = "Yamato Security (https://github.com/Yamato-Security/hayabusa - @SecurityYamato)",
@@ -2077,7 +2132,8 @@ impl TargetEventTime {
             Action::LogMetrics(_)
             | Action::EidMetrics(_)
             | Action::ComputerMetrics(_)
-            | Action::Search(_) => {
+            | Action::Search(_)
+            | Action::ExtractBase64(_) => {
                 let start_time = if time_offset.is_some() {
                     get_time(
                         time_offset.as_ref(),
@@ -2095,8 +2151,8 @@ impl TargetEventTime {
 
     pub fn set(
         input_parse_success_flag: bool,
-        input_start_time: Option<chrono::DateTime<chrono::Utc>>,
-        input_end_time: Option<chrono::DateTime<chrono::Utc>>,
+        input_start_time: Option<DateTime<Utc>>,
+        input_end_time: Option<DateTime<Utc>>,
     ) -> Self {
         Self {
             parse_success_flag: input_parse_success_flag,
@@ -2324,6 +2380,43 @@ fn extract_output_options(config: &Config) -> Option<OutputOption> {
             scan_all_evtx_files: false,
         }),
         Action::EidMetrics(option) => Some(OutputOption {
+            input_args: option.input_args.clone(),
+            enable_deprecated_rules: false,
+            enable_noisy_rules: false,
+            profile: None,
+            exclude_status: None,
+            min_level: String::default(),
+            exact_level: None,
+            end_timeline: None,
+            start_timeline: None,
+            eid_filter: false,
+            time_format_options: option.time_format_options.clone(),
+            visualize_timeline: false,
+            rules: Path::new("./rules").to_path_buf(),
+            html_report: None,
+            no_summary: false,
+            common_options: option.common_options,
+            detect_common_options: option.detect_common_options.clone(),
+            enable_unsupported_rules: false,
+            clobber: option.clobber,
+            proven_rules: false,
+            include_tag: None,
+            exclude_tag: None,
+            include_category: None,
+            exclude_category: None,
+            include_eid: None,
+            exclude_eid: None,
+            no_field: false,
+            no_pwsh_field_extraction: false,
+            remove_duplicate_data: false,
+            remove_duplicate_detections: false,
+            no_wizard: true,
+            include_status: None,
+            sort_events: false,
+            enable_all_rules: false,
+            scan_all_evtx_files: false,
+        }),
+        Action::ExtractBase64(option) => Some(OutputOption {
             input_args: option.input_args.clone(),
             enable_deprecated_rules: false,
             enable_noisy_rules: false,
@@ -2808,7 +2901,7 @@ mod tests {
     fn target_event_time_filter() {
         let start_time = Some("2018-02-20T12:00:09Z".parse::<DateTime<Utc>>().unwrap());
         let end_time = Some("2020-03-30T12:00:09Z".parse::<DateTime<Utc>>().unwrap());
-        let time_filter = configs::TargetEventTime::set(true, start_time, end_time);
+        let time_filter = TargetEventTime::set(true, start_time, end_time);
 
         let out_of_range1 = Some("1999-01-01T12:00:09Z".parse::<DateTime<Utc>>().unwrap());
         let within_range = Some("2019-02-27T01:05:01Z".parse::<DateTime<Utc>>().unwrap());
@@ -2823,7 +2916,7 @@ mod tests {
     fn target_event_time_filter_containes_on_time() {
         let start_time = Some("2018-02-20T12:00:09Z".parse::<DateTime<Utc>>().unwrap());
         let end_time = Some("2020-03-30T12:00:09Z".parse::<DateTime<Utc>>().unwrap());
-        let time_filter = configs::TargetEventTime::set(true, start_time, end_time);
+        let time_filter = TargetEventTime::set(true, start_time, end_time);
 
         assert!(time_filter.is_target(&start_time));
         assert!(time_filter.is_target(&end_time));
@@ -3117,7 +3210,6 @@ mod tests {
                     include_computer: None,
                     exclude_computer: None,
                 },
-                disable_abbreviations: false,
             })),
             debug: false,
         }));
