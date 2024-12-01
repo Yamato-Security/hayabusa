@@ -1,6 +1,6 @@
 use crate::detections::configs::{Action, EventInfoConfig, StoredStatic};
 use crate::detections::detection::EvtxRecordInfo;
-use crate::detections::message::AlertMessage;
+use crate::detections::message::{AlertMessage, ERROR_LOG_STACK};
 use crate::detections::utils::{
     self, get_writable_color, make_ascii_titlecase, write_color_buffer,
 };
@@ -645,11 +645,26 @@ impl Timeline {
     }
 
     pub fn extract_base64_dsp_msg(&mut self, stored_static: &StoredStatic) {
-        let _ = output_all(
+        match output_all(
             self.extracted_base64_records.clone(),
             stored_static.output_path.as_ref(),
             stored_static.common_options.no_color,
-        );
+        )
+        {
+            Ok(_) => {}
+            Err(err) => {
+                let errmsg = format!("Failed to output extracted base64 records. {err}");
+                if stored_static.verbose_flag {
+                    AlertMessage::alert(&errmsg).ok();
+                }
+                if !stored_static.quiet_errors_flag {
+                    ERROR_LOG_STACK
+                        .lock()
+                        .unwrap()
+                        .push(format!("[ERROR] {errmsg}"));
+                }
+            }
+        }
     }
 
     fn create_record_array(
