@@ -21,6 +21,7 @@ use std::{fmt, str};
 use termcolor::{BufferWriter, Color, ColorChoice};
 
 static TOKEN_REGEX: LazyLock<Regex> = LazyLock::new(|| Regex::new(r"[\w+/]+").unwrap());
+static BASE64_PAD: LazyLock<Regex> = LazyLock::new(|| Regex::new(r"<Base64String>(=*)").unwrap());
 
 struct EvtxInfo {
     ts: String,
@@ -285,13 +286,16 @@ fn create_base64_extracted_record(
             if matches!(b64, Base64Data::Unknown(_)) {
                 continue;
             }
-            let original = possible_base64.replace(b64.base64_str().as_str(), "<Base64String>");
+            let original = possible_base64
+                .replace(b64.base64_str().as_str(), "<Base64String>")
+                .to_string();
+            let no_pad_original = BASE64_PAD.replace_all(original.as_str(), "<Base64String>");
             let row = vec![
                 evtx.ts.to_string(),
                 evtx.computer.clone(),
                 b64.base64_str(),
                 b64.decoded_str(),
-                original,
+                no_pad_original.to_string(),
                 b64.len().to_string(),
                 b64.is_binary(),
                 b64.is_double_encoding(),
@@ -365,7 +369,11 @@ pub fn output_all(
             "File Name",
         ];
         wtr.write_record(csv_header)?;
-        for row in all_records.iter() {
+        for row in all_records.clone().iter_mut() {
+            let binary = row[6].as_str();
+            if binary == "Y" {
+                row[3] = "(BinaryData)".to_string();
+            }
             wtr.write_record(row)?;
         }
         wtr.flush()?;
@@ -381,7 +389,11 @@ pub fn output_all(
             .apply_modifier(UTF8_ROUND_CORNERS)
             .set_content_arrangement(ContentArrangement::DynamicFullWidth)
             .set_header(term_header_cells);
-        for row in all_records.iter() {
+        for row in all_records.clone().iter_mut() {
+            let binary = row[6].as_str();
+            if binary == "Y" {
+                row[3] = "(BinaryData)".to_string();
+            }
             table.add_row(&row[0..4]);
         }
         println!("{table}");
