@@ -290,6 +290,9 @@ fn create_base64_extracted_record(
                 .replace(b64.base64_str().as_str(), "<Base64String>")
                 .to_string();
             let no_pad_original = BASE64_PAD.replace_all(original.as_str(), "<Base64String>");
+            if no_pad_original.contains("-<Base64String>") {
+                continue;
+            }
             let row = vec![
                 evtx.ts.to_string(),
                 evtx.computer.clone(),
