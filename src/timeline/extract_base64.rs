@@ -375,7 +375,7 @@ pub fn output_all(
         for row in all_records.clone().iter_mut() {
             let binary = row[6].as_str();
             if binary == "Y" {
-                row[3] = "(BinaryData)".to_string();
+                row[3] = "(Binary Data)".to_string();
             }
             wtr.write_record(row)?;
         }
@@ -395,7 +395,7 @@ pub fn output_all(
         for row in all_records.clone().iter_mut() {
             let binary = row[6].as_str();
             if binary == "Y" {
-                row[3] = "(BinaryData)".to_string();
+                row[3] = "(Binary Data)".to_string();
             }
             table.add_row(&row[0..4]);
         }
