@@ -118,7 +118,7 @@ impl Base64Data {
     fn file_type(&self) -> String {
         match self {
             Base64Data::Utf8(_, _) | Base64Data::Utf16Le(_, _) | Base64Data::Utf16Be(_, _) => {
-                "TXT".to_string()
+                "text".to_string()
             }
             Base64Data::Binary(_, _, kind) => {
                 if let Some(kind) = kind {
@@ -477,7 +477,7 @@ mod tests {
             "N".to_string(),
             "N".to_string(),
             "UTF-8".to_string(),
-            "TXT".to_string(),
+            "text".to_string(),
             "Sec 4688".to_string(),
             "12345".to_string(),
             "test.evtx".to_string(),
