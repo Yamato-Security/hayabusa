@@ -677,6 +677,7 @@ impl App {
                 }
                 let split_now_version = &now_version
                     .replace("-dev", "")
+                    .replace("v", "")
                     .split('.')
                     .filter_map(|x| x.parse().ok())
                     .collect::<Vec<i8>>();
@@ -684,6 +685,7 @@ impl App {
                     .as_ref()
                     .unwrap_or(now_version)
                     .replace('"', "")
+                    .replace("v", "")
                     .split('.')
                     .filter_map(|x| x.parse().ok())
                     .collect::<Vec<i8>>();
