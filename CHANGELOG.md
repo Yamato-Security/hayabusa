@@ -2,6 +2,10 @@
 
 ## x.x.x [xxxx/xx/xx]
 
+**New Features:**
+
+New `extract-base64` command to extract and decode base64 strings from events. (#1512) (@fukusuket)
+
 **Bug Fixes:**
 
 - Sorting with `csv-timeline` was not done perfectly when record IDs were outputted. (#1519) (@fukusuket)
