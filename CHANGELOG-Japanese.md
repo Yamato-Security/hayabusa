@@ -2,6 +2,10 @@
 
 ## x.x.x [xxxx/xx/xx]
 
+**新機能:**
+
+Base64文字列を抽出して、デコードする`extract-base64`コマンドを追加した。(#1512) (@fukusuket)
+
 **バグ修正:**
 
 - レコードIDが出力されるとき、`csv-timeline`によるソートが完璧に行われなかった。 (#1519) (@fukusuket)
