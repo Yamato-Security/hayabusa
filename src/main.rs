@@ -49,7 +49,7 @@ use hayabusa::options::htmlreport::{self, HTML_REPORTER};
 use hayabusa::options::pivot::create_output;
 use hayabusa::options::pivot::PIVOT_KEYWORD;
 use hayabusa::options::profile::set_default_profile;
-use hayabusa::options::{level_tuning::LevelTuning, update::Update};
+use hayabusa::options::{expand_list::expand_list, level_tuning::LevelTuning, update::Update};
 use hayabusa::timeline::computer_metrics::countup_event_by_computer;
 use hayabusa::{detections::configs, timeline::timelines::Timeline};
 use hayabusa::{detections::utils::write_color_buffer, filter};
@@ -845,6 +845,60 @@ impl App {
                         true,
                     )
                     .ok();
+                }
+                println!();
+                let _ = self.output_open_close_message("closing_messages.txt", stored_static);
+                return;
+            }
+            Action::ExpandList(opt) => {
+                let encoded_rule_dir = Path::new("./encoded_rules.yml");
+                let rule_dir = if encoded_rule_dir.exists() {
+                    &encoded_rule_dir.to_path_buf()
+                } else {
+                    &opt.rules
+                };
+                // rule configのフォルダ、ファイルを確認してエラーがあった場合は終了とする
+                if !rule_dir.exists() {
+                    AlertMessage::alert(
+                        "The rules directory does not exist. Please check the path.",
+                    )
+                    .ok();
+                    return;
+                }
+                println!();
+                let result = expand_list(rule_dir);
+                let result: Vec<&String> = result.iter().collect();
+                if result.is_empty() {
+                    write_color_buffer(
+                        &BufferWriter::stdout(ColorChoice::Always),
+                        get_writable_color(
+                            Some(Color::Rgb(255, 175, 0)),
+                            stored_static.common_options.no_color,
+                        ),
+                        "No expanded rules found.",
+                        true,
+                    )
+                    .ok();
+                } else {
+                    write_color_buffer(
+                        &BufferWriter::stdout(ColorChoice::Always),
+                        get_writable_color(
+                            Some(Color::Rgb(0, 255, 0)),
+                            stored_static.common_options.no_color,
+                        ),
+                        &format!("{:?} unique expand placeholders found:", result.len()),
+                        true,
+                    )
+                    .ok();
+                    for rule in result {
+                        write_color_buffer(
+                            &BufferWriter::stdout(ColorChoice::Always),
+                            None,
+                            rule,
+                            true,
+                        )
+                        .ok();
+                    }
                 }
                 println!();
                 let _ = self.output_open_close_message("closing_messages.txt", stored_static);
