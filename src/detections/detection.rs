@@ -1289,8 +1289,8 @@ impl Detection {
             println!();
         }
 
-        let expand_total: u128 = parse_yaml.rule_expand_cnt.values().sum();
-        let expand_enabled_total: u128 = parse_yaml.rule_expand_enabled_cnt.values().sum();
+        let expand_total = parse_yaml.rule_expand_cnt;
+        let expand_enabled_total = parse_yaml.rule_expand_enabled_cnt;
         let key = "Expand rules: ";
         let val = format!(
             "{} ({:.2}%)",

@@ -5,7 +5,12 @@ use std::{fs, io};
 use yaml_rust2::yaml::Hash;
 use yaml_rust2::Yaml;
 
-fn process_value(value: &Yaml, replacements: &HashMap<String, Vec<String>>) -> Yaml {
+fn process_value(
+    value: &Yaml,
+    replacements: &HashMap<String, Vec<String>>,
+    expand_found: &mut u128,
+    expand_enabled: &mut u128,
+) -> Yaml {
     match value {
         Yaml::String(val_str) => {
             let mut replaced_values = vec![];
@@ -28,51 +33,58 @@ fn process_value(value: &Yaml, replacements: &HashMap<String, Vec<String>>) -> Y
         Yaml::Array(array) => {
             let new_array: Vec<Yaml> = array
                 .iter()
-                .map(|item| process_yaml(item, replacements).0)
+                .map(|item| process_yaml(item, replacements, expand_found, expand_enabled))
                 .collect();
             Yaml::Array(new_array)
         }
-        _ => process_yaml(value, replacements).0,
+        _ => process_yaml(value, replacements, expand_found, expand_enabled),
     }
 }
 
 pub fn process_yaml(
     yaml: &Yaml,
     replacements: &HashMap<String, Vec<String>>,
-) -> (Yaml, bool, bool) {
-    let mut expand_found = false;
-    let mut expand_enabled = false;
+    expand_found: &mut u128,
+    expand_enabled: &mut u128,
+) -> Yaml {
     match yaml {
         Yaml::Hash(hash) => {
             let mut new_hash = Hash::new();
             for (key, value) in hash {
                 if let Yaml::String(key_str) = key {
                     if key_str.contains("|expand") {
-                        expand_found = true;
+                        *expand_found += 1;
                         let new_key = key_str.replace("|expand", "");
                         let org_value = value.clone();
-                        let new_value = process_value(&org_value, replacements);
+                        let new_value =
+                            process_value(&org_value, replacements, expand_found, expand_enabled);
                         if org_value != new_value {
-                            expand_enabled = true;
+                            *expand_enabled += 1;
                         };
                         new_hash.insert(Yaml::String(new_key), new_value);
                     } else {
-                        new_hash.insert(key.clone(), process_yaml(value, replacements).0);
+                        new_hash.insert(
+                            key.clone(),
+                            process_yaml(value, replacements, expand_found, expand_enabled),
+                        );
                     }
                 } else {
-                    new_hash.insert(key.clone(), process_yaml(value, replacements).0);
+                    new_hash.insert(
+                        key.clone(),
+                        process_yaml(value, replacements, expand_found, expand_enabled),
+                    );
                 }
             }
-            (Yaml::Hash(new_hash), expand_found, expand_enabled)
+            Yaml::Hash(new_hash)
         }
         Yaml::Array(array) => {
             let new_array: Vec<Yaml> = array
                 .iter()
-                .map(|item| process_yaml(item, replacements).0)
+                .map(|item| process_yaml(item, replacements, expand_found, expand_enabled))
                 .collect();
-            (Yaml::Array(new_array), expand_found, expand_enabled)
+            Yaml::Array(new_array)
         }
-        _ => (yaml.clone(), expand_found, expand_enabled),
+        _ => yaml.clone(),
     }
 }
 
@@ -129,7 +141,7 @@ mod tests {
             "%placeholder%".to_string(),
             vec!["replace_value1".to_string(), "replace_value2".to_string()],
         );
-        let processed_yaml = process_yaml(&docs[0], &replacements);
+        let processed_yaml = process_yaml(&docs[0], &replacements, &mut 0, &mut 0);
 
         let expected_yaml_str = r#"
         key1: value1
@@ -142,8 +154,7 @@ mod tests {
         "#;
 
         let expected_docs = YamlLoader::load_from_str(expected_yaml_str).unwrap();
-        assert!(processed_yaml.1);
-        assert_eq!(processed_yaml.0, expected_docs[0]);
+        assert_eq!(processed_yaml, expected_docs[0]);
     }
 
     #[test]
@@ -161,7 +172,7 @@ mod tests {
 
         // Test process_value directly
         let value = &docs[0]["key2|expand"];
-        let processed_value = process_value(value, &replacements);
+        let processed_value = process_value(value, &replacements, &mut 0, &mut 0);
 
         let expected_value = Yaml::Array(vec![
             Yaml::String("testreplace_value1".to_string()),

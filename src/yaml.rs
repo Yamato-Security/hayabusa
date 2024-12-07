@@ -23,8 +23,8 @@ pub struct ParseYaml {
     pub rule_status_cnt: HashMap<CompactString, u128>,
     pub rule_cor_cnt: HashMap<CompactString, u128>,
     pub rule_cor_ref_cnt: HashMap<CompactString, u128>,
-    pub rule_expand_cnt: HashMap<CompactString, u128>,
-    pub rule_expand_enabled_cnt: HashMap<CompactString, u128>,
+    pub rule_expand_cnt: u128,
+    pub rule_expand_enabled_cnt: u128,
     pub errorrule_count: u128,
     pub exclude_status: HashSet<String>,
     pub level_map: HashMap<String, u128>,
@@ -325,21 +325,12 @@ impl ParseYaml {
         let exist_output_opt = stored_static.output_option.is_some();
         let files = yaml_docs.into_iter().filter_map(|(filepath, yaml_doc)| {
             let yaml_doc = match &expand_map {
-                Ok(map) => {
-                    let res = process_yaml(&yaml_doc, map);
-                    if res.1 {
-                        let entry = self.rule_expand_cnt.entry("expanded".into()).or_insert(0);
-                        *entry += 1;
-                        if res.2 {
-                            let entry = self
-                                .rule_expand_enabled_cnt
-                                .entry("expanded".into())
-                                .or_insert(0);
-                            *entry += 1;
-                        }
-                    }
-                    res.0
-                }
+                Ok(map) => process_yaml(
+                    &yaml_doc,
+                    map,
+                    &mut self.rule_expand_cnt,
+                    &mut self.rule_expand_enabled_cnt,
+                ),
                 Err(_) => yaml_doc,
             };
             //除外されたルールは無視する
