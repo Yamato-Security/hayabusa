@@ -44,8 +44,8 @@ fn process_value(
 pub fn process_yaml(
     yaml: &Yaml,
     replacements: &HashMap<String, Vec<String>>,
-    expand_found: &mut u128,
-    expand_enabled: &mut u128,
+    expand_count: &mut u128,
+    expand_enabled_count: &mut u128,
 ) -> Yaml {
     match yaml {
         Yaml::Hash(hash) => {
@@ -53,25 +53,29 @@ pub fn process_yaml(
             for (key, value) in hash {
                 if let Yaml::String(key_str) = key {
                     if key_str.contains("|expand") {
-                        *expand_found += 1;
+                        *expand_count += 1;
                         let new_key = key_str.replace("|expand", "");
                         let org_value = value.clone();
-                        let new_value =
-                            process_value(&org_value, replacements, expand_found, expand_enabled);
+                        let new_value = process_value(
+                            &org_value,
+                            replacements,
+                            expand_count,
+                            expand_enabled_count,
+                        );
                         if org_value != new_value {
-                            *expand_enabled += 1;
+                            *expand_enabled_count += 1;
                         };
                         new_hash.insert(Yaml::String(new_key), new_value);
                     } else {
                         new_hash.insert(
                             key.clone(),
-                            process_yaml(value, replacements, expand_found, expand_enabled),
+                            process_yaml(value, replacements, expand_count, expand_enabled_count),
                         );
                     }
                 } else {
                     new_hash.insert(
                         key.clone(),
-                        process_yaml(value, replacements, expand_found, expand_enabled),
+                        process_yaml(value, replacements, expand_count, expand_enabled_count),
                     );
                 }
             }
@@ -80,7 +84,7 @@ pub fn process_yaml(
         Yaml::Array(array) => {
             let new_array: Vec<Yaml> = array
                 .iter()
-                .map(|item| process_yaml(item, replacements, expand_found, expand_enabled))
+                .map(|item| process_yaml(item, replacements, expand_count, expand_enabled_count))
                 .collect();
             Yaml::Array(new_array)
         }
