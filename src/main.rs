@@ -890,11 +890,11 @@ impl App {
                         true,
                     )
                     .ok();
-                    for rule in result {
+                    for expand in result {
                         write_color_buffer(
                             &BufferWriter::stdout(ColorChoice::Always),
                             None,
-                            rule,
+                            &expand.replace("%", ""),
                             true,
                         )
                         .ok();
