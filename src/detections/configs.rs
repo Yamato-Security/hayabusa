@@ -150,6 +150,7 @@ impl StoredStatic {
             }
             Some(Action::LogonSummary(opt)) => opt.detect_common_options.quiet_errors,
             Some(Action::EidMetrics(opt)) => opt.detect_common_options.quiet_errors,
+            Some(Action::ExpandList(opt)) => opt.common_options.quiet,
             Some(Action::ExtractBase64(opt)) => opt.detect_common_options.quiet_errors,
             Some(Action::PivotKeywordsList(opt)) => opt.detect_common_options.quiet_errors,
             Some(Action::Search(opt)) => opt.quiet_errors,
@@ -171,6 +172,7 @@ impl StoredStatic {
             Some(Action::Search(opt)) => opt.common_options,
             Some(Action::ComputerMetrics(opt)) => opt.common_options,
             Some(Action::LogMetrics(opt)) => opt.common_options,
+            Some(Action::ExpandList(opt)) => opt.common_options,
             None => CommonOptions {
                 no_color: false,
                 quiet: false,
@@ -951,6 +953,16 @@ pub enum Action {
 
     #[clap(
         author = "Yamato Security (https://github.com/Yamato-Security/hayabusa - @SecurityYamato)",
+        help_template = "\nHayabusa v3.0.0 - Dev Build\n{author-with-newline}\n{usage-heading}\n  hayabusa.exe expand-list <INPUT> [OPTIONS]\n\n{all-args}",
+        term_width = 400,
+        display_order = 311,
+        disable_help_flag = true
+    )]
+    /// Extract expand placeholders from rule folder
+    ExpandList(ExpandListOption),
+
+    #[clap(
+        author = "Yamato Security (https://github.com/Yamato-Security/hayabusa - @SecurityYamato)",
         help_template = "\nHayabusa v3.0.0 - Dev Build\n{author-with-newline}\n{usage-heading}\n  hayabusa.exe extract-base64 <INPUT> [OPTIONS]\n\n{all-args}",
         term_width = 400,
         display_order = 311,
@@ -1046,6 +1058,7 @@ impl Action {
                 Action::ComputerMetrics(_) => 11,
                 Action::LogMetrics(_) => 12,
                 Action::ExtractBase64(_) => 13,
+                Action::ExpandList(_) => 14,
             }
         } else {
             100
@@ -1068,6 +1081,7 @@ impl Action {
                 Action::ComputerMetrics(_) => "computer-metrics",
                 Action::LogMetrics(_) => "log-metrics",
                 Action::ExtractBase64(_) => "extract-base64",
+                Action::ExpandList(_) => "expand-list",
             }
         } else {
             ""
@@ -1861,6 +1875,25 @@ pub struct ExtractBase64Option {
     /// Overwrite files when saving
     #[arg(help_heading = Some("General Options"), short='C', long = "clobber", display_order = 290, requires = "output")]
     pub clobber: bool,
+}
+
+#[derive(Args, Clone, Debug)]
+pub struct ExpandListOption {
+    /// Specify rule directory (default: ./rules)
+    #[arg(
+        help_heading = Some("General Options"),
+        short = 'r',
+        long,
+        default_value = "./rules",
+        hide_default_value = true,
+        value_name = "DIR/FILE",
+        requires = "no_wizard",
+        display_order = 441
+    )]
+    pub rules: PathBuf,
+
+    #[clap(flatten)]
+    pub common_options: CommonOptions,
 }
 
 #[derive(Parser, Clone, Debug)]

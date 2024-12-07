@@ -5,7 +5,7 @@ on:
     inputs:
       release_ver:
         required: true
-        default: "2.x.x"
+        default: "3.x.x"
         description: "Version of the release"
       branch_or_tag:
         required: true

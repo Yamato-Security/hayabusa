@@ -5,6 +5,7 @@
 **New Features:**
 
 New `extract-base64` command to extract and decode base64 strings from events. (#1512) (@fukusuket)
+New `expand-list` command to output placeholder names used for rules with the `expand` modifier. (#1513) (@fukuseket)
 
 **Bug Fixes:**
 
