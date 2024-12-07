@@ -140,6 +140,7 @@ impl Detection {
         // parse rule files
         let mut ret = rulefile_loader
             .files
+            .clone()
             .into_iter()
             .map(|rule_file_tuple| rule::create_rule(rule_file_tuple.0, rule_file_tuple.1))
             .filter_map(return_if_success)
@@ -151,15 +152,7 @@ impl Detection {
             || stored_static.computer_metrics_flag
             || stored_static.log_metrics_flag)
         {
-            Detection::print_rule_load_info(
-                &rulefile_loader.rulecounter,
-                &rulefile_loader.rule_load_cnt,
-                &rulefile_loader.rule_status_cnt,
-                &rulefile_loader.rule_cor_cnt,
-                &rulefile_loader.rule_cor_ref_cnt,
-                &parseerror_count,
-                stored_static,
-            );
+            Detection::print_rule_load_info(&rulefile_loader, &parseerror_count, stored_static);
         }
         ret
     }
@@ -1119,14 +1112,16 @@ impl Detection {
     }
 
     pub fn print_rule_load_info(
-        rc: &HashMap<CompactString, u128>,
-        ld_rc: &HashMap<CompactString, u128>,
-        st_rc: &HashMap<CompactString, u128>,
-        cor_rc: &HashMap<CompactString, u128>,
-        cor_ref_rc: &HashMap<CompactString, u128>,
+        parse_yaml: &ParseYaml,
         err_rc: &u128,
         stored_static: &StoredStatic,
     ) {
+        let rc = &parse_yaml.rulecounter;
+        let ld_rc = &parse_yaml.rule_load_cnt;
+        let st_rc = &parse_yaml.rule_status_cnt;
+        let cor_rc = &parse_yaml.rule_cor_cnt;
+        let cor_ref_rc = &parse_yaml.rule_cor_ref_cnt;
+
         let mut sorted_ld_rc: Vec<(&CompactString, &u128)> = ld_rc.iter().collect();
         sorted_ld_rc.sort_by(|a, b| a.0.cmp(b.0));
         let mut html_report_stock = Nested::<String>::new();
@@ -1293,6 +1288,56 @@ impl Detection {
             }
             println!();
         }
+
+        let expand_total: u128 = parse_yaml.rule_expand_cnt.values().sum();
+        let expand_enabled_total: u128 = parse_yaml.rule_expand_enabled_cnt.values().sum();
+        let key = "Expand rules: ";
+        let val = format!(
+            "{} ({:.2}%)",
+            expand_total.to_formatted_string(&Locale::en),
+            (expand_total as f64) / (total_loaded_rule_cnt as f64) * 100.0
+        );
+        write_color_buffer(
+            &BufferWriter::stdout(ColorChoice::Always),
+            get_writable_color(
+                Some(Color::Rgb(0, 255, 0)),
+                stored_static.common_options.no_color,
+            ),
+            key,
+            false,
+        )
+        .ok();
+        write_color_buffer(
+            &BufferWriter::stdout(ColorChoice::Always),
+            get_writable_color(None, stored_static.common_options.no_color),
+            val.as_str(),
+            true,
+        )
+        .ok();
+        let key = "Enabled expand rules: ";
+        let val = format!(
+            "{} ({:.2}%)",
+            expand_enabled_total.to_formatted_string(&Locale::en),
+            (expand_enabled_total as f64) / (total_loaded_rule_cnt as f64) * 100.0
+        );
+        write_color_buffer(
+            &BufferWriter::stdout(ColorChoice::Always),
+            get_writable_color(
+                Some(Color::Rgb(0, 255, 0)),
+                stored_static.common_options.no_color,
+            ),
+            key,
+            false,
+        )
+        .ok();
+        write_color_buffer(
+            &BufferWriter::stdout(ColorChoice::Always),
+            None,
+            val.as_str(),
+            true,
+        )
+        .ok();
+        println!();
 
         let mut sorted_rc: Vec<(&CompactString, &u128)> = rc.iter().collect();
         sorted_rc.sort_by(|a, b| a.0.cmp(b.0));
