@@ -56,6 +56,15 @@ jobs:
       - name: eid-metrics(-o)
         run: cd main && cargo run --release -- eid-metrics -d ../hayabusa-sample-evtx -q -o out.csv -C
 
+      - name: expand-list
+        run: cd main && cargo run --release -- expand-list -q
+
+      - name: extract-base64
+        run: cd main && cargo run --release -- extract-base64 -d ../hayabusa-sample-evtx -q
+
+      - name: extract-base64(-o)
+        run: cd main && cargo run --release -- extract-base64 -d ../hayabusa-sample-evtx -q -o out.csv -C
+
       - name: json-timeline
         run: cd main && cargo run --release -- json-timeline -d ../hayabusa-sample-evtx -o out.json -q -w -D -n -u
 
