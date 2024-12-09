@@ -1,11 +1,12 @@
 extern crate serde_derive;
 extern crate yaml_rust2;
 
-use crate::detections::configs::{self, StoredStatic};
+use crate::detections::configs::{self, StoredStatic, CURRENT_EXE_PATH};
 use crate::detections::message::AlertMessage;
 use crate::detections::message::ERROR_LOG_STACK;
 use crate::detections::utils;
 use crate::filter::RuleExclude;
+use crate::yaml_expand::{process_yaml, read_expand_files};
 use compact_str::CompactString;
 use hashbrown::{HashMap, HashSet};
 use itertools::Itertools;
@@ -16,12 +17,14 @@ use std::path::{Path, PathBuf};
 use yaml_rust2::{Yaml, YamlLoader};
 
 pub struct ParseYaml {
-    pub files: Vec<(String, yaml_rust2::Yaml)>,
+    pub files: Vec<(String, Yaml)>,
     pub rulecounter: HashMap<CompactString, u128>,
     pub rule_load_cnt: HashMap<CompactString, u128>,
     pub rule_status_cnt: HashMap<CompactString, u128>,
     pub rule_cor_cnt: HashMap<CompactString, u128>,
     pub rule_cor_ref_cnt: HashMap<CompactString, u128>,
+    pub rule_expand_cnt: u128,
+    pub rule_expand_enabled_cnt: u128,
     pub errorrule_count: u128,
     pub exclude_status: HashSet<String>,
     pub level_map: HashMap<String, u128>,
@@ -45,6 +48,8 @@ impl ParseYaml {
             ]),
             rule_cor_cnt: Default::default(),
             rule_cor_ref_cnt: Default::default(),
+            rule_expand_cnt: Default::default(),
+            rule_expand_enabled_cnt: Default::default(),
             errorrule_count: 0,
             exclude_status: configs::convert_option_vecs_to_hs(exclude_status_vec.as_ref()),
             level_map: HashMap::from([
@@ -143,6 +148,7 @@ impl ParseYaml {
             }
             return io::Result::Ok(String::default());
         }
+        let expand_map = read_expand_files(CURRENT_EXE_PATH.join("config/expand"));
         let mut yaml_docs = vec![];
         if metadata.unwrap().file_type().is_file() {
             // 拡張子がymlでないファイルは無視
@@ -318,6 +324,15 @@ impl ParseYaml {
         }
         let exist_output_opt = stored_static.output_option.is_some();
         let files = yaml_docs.into_iter().filter_map(|(filepath, yaml_doc)| {
+            let yaml_doc = match &expand_map {
+                Ok(map) => process_yaml(
+                    &yaml_doc,
+                    map,
+                    &mut self.rule_expand_cnt,
+                    &mut self.rule_expand_enabled_cnt,
+                ),
+                Err(_) => yaml_doc,
+            };
             //除外されたルールは無視する
             let rule_id = &yaml_doc["id"].as_str();
             if rule_id.is_some() {
