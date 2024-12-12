@@ -632,6 +632,7 @@ impl Timeline {
                             Cell::new(r[4].to_string()),
                             Cell::new(r[5].to_string()),
                             Cell::new(r[6].to_string()),
+                            Cell::new(r[7].to_string()),
                         ]);
                     }
                 }
@@ -670,7 +671,7 @@ impl Timeline {
         rec: &LogMetrics,
         stored_static: &StoredStatic,
         sep: &str,
-    ) -> Option<[String; 7]> {
+    ) -> Option<[String; 8]> {
         let include_computer = &stored_static.include_computer;
         let exclude_computer = &stored_static.exclude_computer;
         if !include_computer.is_empty()
@@ -730,6 +731,7 @@ impl Timeline {
             .into(),
             ab_ch.iter().sorted().join(sep),
             ab_provider.iter().sorted().join(sep),
+            rec.file_size.to_string(),
         ])
     }
 }
