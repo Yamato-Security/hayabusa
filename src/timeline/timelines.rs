@@ -606,6 +606,7 @@ impl Timeline {
                 "Last Timestamp",
                 "Channels",
                 "Providers",
+                "Size",
             ];
             if let Some(path) = &opt.output {
                 let file = File::create(path).expect("Failed to create output file");
