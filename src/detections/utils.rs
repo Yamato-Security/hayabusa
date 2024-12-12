@@ -33,7 +33,7 @@ use crate::options::htmlreport;
 
 use super::configs::{EventKeyAliasConfig, OutputOption, STORED_EKEY_ALIAS};
 use super::detection::EvtxRecordInfo;
-use super::message::AlertMessage;
+use super::message::{AlertMessage, ERROR_LOG_STACK};
 use rust_embed::Embed;
 
 #[derive(Embed)]
@@ -808,6 +808,24 @@ pub fn remove_sp_char(record_value: CompactString) -> CompactString {
         !retain_flag
     });
     newline_replaced_cs.trim().into()
+}
+
+pub fn get_file_size(file_path: &Path, verbose_flag: bool, quiet_errors_flag: bool) -> u64 {
+    match fs::metadata(file_path) {
+        Ok(res) => res.len(),
+        Err(err) => {
+            if verbose_flag {
+                AlertMessage::warn(&err.to_string()).ok();
+            }
+            if !quiet_errors_flag {
+                ERROR_LOG_STACK
+                    .lock()
+                    .unwrap()
+                    .push(format!("[WARN] {err}"));
+            }
+            0
+        }
+    }
 }
 
 #[cfg(test)]

@@ -1,5 +1,5 @@
 use crate::detections::message::ERROR_LOG_STACK;
-use crate::detections::utils::get_serde_number_to_string;
+use crate::detections::utils::{get_file_size, get_serde_number_to_string};
 use crate::detections::{
     configs::{EventKeyAliasConfig, StoredStatic},
     detection::EvtxRecordInfo,
@@ -8,6 +8,7 @@ use crate::detections::{
 };
 use crate::timeline::log_metrics::LogMetrics;
 use crate::timeline::metrics::Channel::{RdsGtw, RdsLsm, Sec};
+use bytesize::ByteSize;
 use chrono::{DateTime, NaiveDate, NaiveDateTime, Utc};
 use compact_str::CompactString;
 use hashbrown::{HashMap, HashSet};
@@ -96,13 +97,20 @@ impl EventMetrics {
         }
 
         self.stats_time_cnt(records, stored_static);
-        let filename = Path::new(self.filepath.as_str())
+        let path = Path::new(self.filepath.as_str());
+        let file_name = path
             .file_name()
             .unwrap_or_default()
             .to_str()
             .unwrap_or_default();
+        let file_size = get_file_size(
+            path,
+            stored_static.verbose_flag,
+            stored_static.quiet_errors_flag,
+        );
+        let file_size = ByteSize::b(file_size).to_string();
         if let Some(existing_lm) = self.stats_logfile.iter_mut().find(|lm| {
-            lm.filename == filename
+            lm.filename == file_name
                 && lm.computers.contains(
                     get_event_value_as_string(
                         "Computer",
@@ -115,7 +123,7 @@ impl EventMetrics {
         }) {
             existing_lm.update(records, stored_static);
         } else {
-            let mut lm = LogMetrics::new(filename);
+            let mut lm = LogMetrics::new(file_name, file_size);
             lm.update(records, stored_static);
             self.stats_logfile.push(lm);
         }
