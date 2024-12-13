@@ -8,6 +8,10 @@
 - New `expand-list` command to output placeholder names used for rules with the `expand` modifier. (#1513) (@fukuseket)
 - Support for `expand` field modifiers. (#1434) (@fukusuket)
 
+**Enhancements:**
+
+- Log file size added to `log-metrics` command. (#1528) (@fukusuket)
+
 **Bug Fixes:**
 
 - Sorting with `csv-timeline` was not done perfectly when record IDs were outputted. (#1519) (@fukusuket)
