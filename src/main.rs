@@ -1875,7 +1875,9 @@ impl App {
             }
 
             let (detection_tmp, cnt_tmp, tl_tmp, recover_cnt_tmp, mut detect_infos) =
-                if evtx_file.extension().unwrap() == "json" {
+                if evtx_file.extension().unwrap() == "json"
+                    || evtx_file.extension().unwrap() == "jsonl"
+                {
                     self.analysis_json_file(
                         (evtx_file, time_filter, target_event_ids, stored_static),
                         detection,
