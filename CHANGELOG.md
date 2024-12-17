@@ -15,6 +15,7 @@
 **Bug Fixes:**
 
 - Sorting with `csv-timeline` was not done perfectly when record IDs were outputted. (#1519) (@fukusuket)
+- `-J, --JSON-input` would only accept `.json` files, not `.jsonl` files so now both are supported. (#1530) (@fukusuket)
 
 ## 2.19.0 [2024/11/26] - "Every Day Is A Good Day" Release
 

@@ -2323,6 +2323,7 @@ pub fn get_target_extensions(arg: Option<&Vec<String>>, json_input_flag: bool) -
     let mut target_file_extensions: HashSet<String> = convert_option_vecs_to_hs(arg);
     if json_input_flag {
         target_file_extensions.insert(String::from("json"));
+        target_file_extensions.insert(String::from("jsonl"));
     } else {
         target_file_extensions.insert(String::from("evtx"));
     }
