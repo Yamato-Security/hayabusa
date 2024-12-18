@@ -1,6 +1,6 @@
 extern crate csv;
 
-use chrono::{TimeZone, Utc};
+use chrono::{Duration, TimeZone, Utc};
 use compact_str::CompactString;
 use hashbrown::HashMap;
 use itertools::Itertools;
@@ -21,8 +21,8 @@ use crate::detections::configs::STORED_EKEY_ALIAS;
 use crate::detections::field_data_map::FieldDataMapKey;
 use crate::detections::message::{AlertMessage, DetectInfo, ERROR_LOG_STACK, TAGS_CONFIG};
 use crate::detections::rule::correlation_parser::parse_correlation_rules;
-use crate::detections::rule::count::AggRecordTimeInfo;
-use crate::detections::rule::{self, AggResult, RuleNode};
+use crate::detections::rule::count::{get_sec_timeframe, AggRecordTimeInfo};
+use crate::detections::rule::{self, AggResult, CorrelationType, RuleNode};
 use crate::detections::utils::{
     create_recordinfos, format_time, get_writable_color, write_color_buffer,
 };
@@ -197,18 +197,72 @@ impl Detection {
         rt.block_on(self.add_aggcondition_msg(stored_static))
     }
 
+    fn detect_within_timeframe(
+        ids: &[String],
+        data: &HashMap<String, Vec<AggResult>>,
+        timeframe: Duration,
+    ) -> Vec<AggResult> {
+        let mut result = Vec::new();
+        let key = ids[0].clone();
+        for y in data.get(key.as_str()).unwrap() {
+            let mut found = true;
+            for id in ids.iter().skip(1) {
+                if !data.get(id.as_str()).unwrap().iter().any(|t| {
+                    (t.start_timedate >= y.start_timedate - timeframe)
+                        && (t.start_timedate <= y.start_timedate + timeframe)
+                }) {
+                    found = false;
+                    break;
+                }
+            }
+            if found {
+                result.push(y.clone());
+            }
+        }
+        result
+    }
+
     async fn add_aggcondition_msg(&self, stored_static: &StoredStatic) -> Vec<DetectInfo> {
         let mut ret = vec![];
+        let mut detected_temporal_refs: HashMap<String, Vec<AggResult>> = HashMap::new();
         for rule in &self.rules {
             if !rule.has_agg_condition() {
                 continue;
             }
-
             for value in rule.judge_satisfy_aggcondition(stored_static) {
-                ret.push(Detection::create_agg_log_record(rule, value, stored_static));
+                if let CorrelationType::TemporalRef(_, uuid) = &rule.correlation_type {
+                    detected_temporal_refs
+                        .entry(uuid.clone())
+                        .or_insert_with(Vec::new)
+                        .push(value.clone());
+                } else {
+                    ret.push(Detection::create_agg_log_record(rule, value, stored_static));
+                }
             }
         }
-
+        // temporalルールは個々ルールの判定がすべて出揃ってから判定できるため、再度rulesをループしてtemporalルールの判定を行う
+        for rule in self.rules.iter() {
+            if let CorrelationType::Temporal(ref_ids) = &rule.correlation_type {
+                if ref_ids
+                    .iter()
+                    .all(|x| detected_temporal_refs.contains_key(x))
+                {
+                    let mut data = HashMap::new();
+                    for id in ref_ids {
+                        let entry = detected_temporal_refs.get_key_value(id);
+                        data.insert(entry.unwrap().0.clone(), entry.unwrap().1.clone());
+                    }
+                    let timeframe = get_sec_timeframe(rule, stored_static);
+                    if let Some(timeframe) = timeframe {
+                        let duration = Duration::seconds(timeframe);
+                        let values = Detection::detect_within_timeframe(ref_ids, &data, duration);
+                        for v in values {
+                            ret.push(Detection::create_agg_log_record(rule, v, stored_static));
+                        }
+                    }
+                }
+            }
+        }
         ret
     }
 

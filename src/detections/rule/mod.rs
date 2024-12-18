@@ -1,14 +1,13 @@
 extern crate regex;
 
-use std::{fmt::Debug, sync::Arc, vec};
-
+use super::configs::{EventKeyAliasConfig, StoredStatic};
+use super::detection::EvtxRecordInfo;
 use chrono::{DateTime, Utc};
 use hashbrown::HashMap;
 use nested::Nested;
+use std::cmp::PartialEq;
+use std::{fmt::Debug, sync::Arc, vec};
 use yaml_rust2::Yaml;
-
-use super::configs::{EventKeyAliasConfig, StoredStatic};
-use super::detection::EvtxRecordInfo;
 
 use self::aggregation_parser::AggregationParseInfo;
 use self::count::{AggRecordTimeInfo, TimeFrameInfo};
@@ -27,13 +26,45 @@ pub fn create_rule(rulepath: String, yaml: Yaml) -> RuleNode {
     RuleNode::new(rulepath, yaml)
 }
 
-/// Ruleファイルを表すノ
-/// ード
+#[derive(Debug, PartialEq, Eq)]
+pub enum CorrelationType {
+    None,
+    EventCount,
+    ValueCount,
+    Temporal(Vec<String>),
+    TemporalRef(bool, String),
+}
+
+impl CorrelationType {
+    fn new(yaml: &Yaml) -> CorrelationType {
+        if yaml["correlation"]["type"].as_str().is_none() {
+            return CorrelationType::None;
+        }
+        let correlation_type = yaml["correlation"]["type"].as_str().unwrap();
+        match correlation_type {
+            "event_count" => CorrelationType::EventCount,
+            "value_count" => CorrelationType::ValueCount,
+            "temporal" => {
+                let rules: Vec<String> = yaml["correlation"]["rules"]
+                    .as_vec()
+                    .unwrap()
+                    .iter()
+                    .map(|rule| rule.as_str().unwrap().to_string())
+                    .collect();
+                CorrelationType::Temporal(rules)
+            }
+            _ => CorrelationType::None,
+        }
+    }
+}
+
+/// Ruleファイルを表すノード
 pub struct RuleNode {
     pub rulepath: String,
     pub yaml: Yaml,
-    detection: DetectionNode,
+    pub detection: DetectionNode,
     countdata: HashMap<String, Vec<AggRecordTimeInfo>>,
+    pub correlation_type: CorrelationType,
 }
 
 impl Debug for RuleNode {
@@ -45,6 +76,7 @@ impl Debug for RuleNode {
 impl RuleNode {
     pub fn new(rule_path: String, yaml_data: Yaml) -> RuleNode {
         RuleNode {
+            correlation_type: CorrelationType::new(&yaml_data),
             rulepath: rule_path,
             yaml: yaml_data,
             detection: DetectionNode::new(),
@@ -58,6 +90,7 @@ impl RuleNode {
         detection: DetectionNode,
     ) -> RuleNode {
         RuleNode {
+            correlation_type: CorrelationType::new(&yaml_data),
             rulepath: rule_path,
             yaml: yaml_data,
             detection,
@@ -160,7 +193,7 @@ pub fn get_detection_keys(node: &RuleNode) -> Nested<String> {
 }
 
 /// Ruleファイルのdetectionを表すノード
-struct DetectionNode {
+pub struct DetectionNode {
     pub name_to_selection: HashMap<String, Arc<Box<dyn SelectionNode>>>,
     pub condition: Option<Box<dyn SelectionNode>>,
     pub aggregation_condition: Option<AggregationParseInfo>,
