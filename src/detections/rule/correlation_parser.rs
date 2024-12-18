@@ -351,7 +351,10 @@ fn parse_temporal_rules(
                         temporal_ref_ids.push(Yaml::String(new_id.to_string()));
                         let mut new_yaml = other_rule.yaml.clone();
                         if let Some(hash) = new_yaml.as_mut_hash() {
-                            hash.insert(Yaml::String("id".to_string()), Yaml::String(new_id.to_string()));
+                            hash.insert(
+                                Yaml::String("id".to_string()),
+                                Yaml::String(new_id.to_string()),
+                            );
                         }
                         let generate = temporal_yaml["correlation"]["generate"]
                             .as_bool()
