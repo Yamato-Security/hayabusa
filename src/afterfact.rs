@@ -523,18 +523,18 @@ fn calc_statistic_info(
             let author_list = extract_author_name(&detect_info.ruleauthor);
             let author_str = author_list.iter().join(", ");
             afterfact_info.detect_rule_authors.insert(
-                detect_info.rulepath.to_owned(),
+                detect_info.ruleid.to_owned(),
                 author_str.to_string().into(),
             );
 
             if author_str != "-"
                 && !afterfact_info
                     .detected_rule_files
-                    .contains(&detect_info.rulepath)
+                    .contains(&detect_info.ruleid)
             {
                 afterfact_info
                     .detected_rule_files
-                    .insert(detect_info.rulepath.to_owned());
+                    .insert(detect_info.ruleid.to_owned());
                 for author in author_list.iter() {
                     *afterfact_info
                         .rule_author_counter
