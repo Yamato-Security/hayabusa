@@ -1,10 +1,6 @@
 use std::error::Error;
 use std::sync::Arc;
 
-use hashbrown::HashMap;
-use yaml_rust2::yaml::Hash;
-use yaml_rust2::Yaml;
-
 use crate::detections::configs::StoredStatic;
 use crate::detections::message::{AlertMessage, ERROR_LOG_STACK};
 use crate::detections::rule::aggregation_parser::{
@@ -12,7 +8,11 @@ use crate::detections::rule::aggregation_parser::{
 };
 use crate::detections::rule::count::TimeFrameInfo;
 use crate::detections::rule::selectionnodes::{OrSelectionNode, SelectionNode};
-use crate::detections::rule::{DetectionNode, RuleNode};
+use crate::detections::rule::{CorrelationType, DetectionNode, RuleNode};
+use hashbrown::{HashMap, HashSet};
+use uuid::Uuid;
+use yaml_rust2::yaml::Hash;
+use yaml_rust2::Yaml;
 
 type Name2Selection = HashMap<String, Arc<Box<dyn SelectionNode>>>;
 
@@ -202,7 +202,7 @@ fn create_detection(
         None => Err("Failed to get 'timespan'".into()),
         Some(timespan) => {
             let time_frame = parse_tframe(timespan.to_string())?;
-            let nodes = to_or_selection_node(related_rule_nodes);
+            let node = to_or_selection_node(related_rule_nodes);
             let agg_info = AggregationParseInfo {
                 _field_name: condition.2,
                 _by_field_name: group_by,
@@ -211,7 +211,7 @@ fn create_detection(
             };
             Ok(DetectionNode::new_with_data(
                 name_to_selection,
-                Some(Box::new(nodes)),
+                Some(Box::new(node)),
                 Some(agg_info),
                 Some(time_frame),
             ))
@@ -248,8 +248,11 @@ fn merge_referenced_rule(
     parse_error_count: &mut u128,
 ) -> RuleNode {
     let rule_type = rule.yaml["correlation"]["type"].as_str();
-    if rule_type != Some("event_count") && rule_type != Some("value_count") {
-        let m = "The type of correlation rule only supports event_count/value_count.";
+    if rule_type != Some("event_count")
+        && rule_type != Some("value_count")
+        && rule_type != Some("temporal")
+    {
+        let m = "The type of correlation rule only supports event_count/value_count/temporal.";
         error_log(&rule.rulepath, m, stored_static, parse_error_count);
         return rule;
     }
@@ -264,6 +267,19 @@ fn merge_referenced_rule(
     if referenced_ids.is_empty() {
         let m = "Referenced rule not found.";
         error_log(&rule.rulepath, m, stored_static, parse_error_count);
+        return rule;
+    }
+    if rule.yaml["correlation"]["timespan"].as_str().is_none() {
+        let m = "key timespan not found.";
+        error_log(&rule.rulepath, m, stored_static, parse_error_count);
+        return rule;
+    }
+    if rule.yaml["correlation"]["group-by"].as_vec().is_none() {
+        let m = "key group-by  not found.";
+        error_log(&rule.rulepath, m, stored_static, parse_error_count);
+        return rule;
+    }
+    if rule_type == Some("temporal") {
         return rule;
     }
     let (referenced_rules, name_to_selection) =
@@ -316,6 +332,88 @@ fn merge_referenced_rule(
     RuleNode::new_with_detection(rule.rulepath, Yaml::Hash(merged_yaml), detection)
 }
 
+fn parse_temporal_rules(
+    temporal_rules: Vec<RuleNode>,
+    other_rules: &mut Vec<RuleNode>,
+    stored_static: &StoredStatic,
+) -> Vec<RuleNode> {
+    let mut parsed_temporal_rules: Vec<RuleNode> = Vec::new();
+    let mut temporal_ref_rules: Vec<RuleNode> = Vec::new();
+    let mut referenced_del_ids: HashSet<String> = HashSet::new();
+    for temporal in temporal_rules.iter() {
+        let temporal_yaml = &temporal.yaml;
+        let mut temporal_ref_ids: Vec<Yaml> = Vec::new();
+        if let Some(ref_ids) = temporal_yaml["correlation"]["rules"].as_vec() {
+            for ref_id in ref_ids {
+                for other_rule in other_rules.iter() {
+                    if is_referenced_rule(other_rule, ref_id.as_str().unwrap_or_default()) {
+                        let new_id = Uuid::new_v4();
+                        temporal_ref_ids.push(Yaml::String(new_id.to_string()));
+                        let mut new_yaml = other_rule.yaml.clone();
+                        if let Some(hash) = new_yaml.as_mut_hash() {
+                            hash.insert(
+                                Yaml::String("id".to_string()),
+                                Yaml::String(new_id.to_string()),
+                            );
+                        }
+                        let generate = temporal_yaml["correlation"]["generate"]
+                            .as_bool()
+                            .unwrap_or_default();
+                        if !generate {
+                            referenced_del_ids
+                                .insert(ref_id.as_str().unwrap_or_default().to_string());
+                        }
+                        let mut node = RuleNode::new(other_rule.rulepath.clone(), new_yaml);
+                        let _ = node.init(stored_static);
+                        node.correlation_type =
+                            CorrelationType::TemporalRef(generate, new_id.to_string());
+                        let group_by = get_group_by_from_yaml(&temporal.yaml);
+                        let timespan = &temporal.yaml["correlation"]["timespan"].as_str().unwrap();
+                        let time_frame = parse_tframe(timespan.to_string());
+                        let agg_info = AggregationParseInfo {
+                            _field_name: None,
+                            _by_field_name: group_by.unwrap(),
+                            _cmp_op: AggregationConditionToken::GE,
+                            _cmp_num: 1,
+                        };
+                        let mut detection = DetectionNode::new();
+                        detection.name_to_selection = node.detection.name_to_selection;
+                        detection.condition = node.detection.condition;
+                        detection.timeframe = Some(time_frame.unwrap());
+                        detection.aggregation_condition = Some(agg_info);
+                        node.detection = detection;
+                        temporal_ref_rules.push(node);
+                    }
+                }
+            }
+            let mut new_yaml = temporal_yaml.clone();
+            new_yaml["correlation"]["rules"] = Yaml::Array(temporal_ref_ids);
+            let mut node = RuleNode::new(temporal.rulepath.clone(), new_yaml);
+            let group_by = get_group_by_from_yaml(&temporal.yaml);
+            let timespan = &temporal.yaml["correlation"]["timespan"].as_str().unwrap();
+            let time_frame = parse_tframe(timespan.to_string());
+            node.detection.aggregation_condition = Some(AggregationParseInfo {
+                _field_name: None,
+                _by_field_name: group_by.unwrap(),
+                _cmp_op: AggregationConditionToken::GE,
+                _cmp_num: 1,
+            });
+            node.detection.timeframe = Some(time_frame.unwrap());
+            parsed_temporal_rules.push(node);
+        }
+    }
+    other_rules.retain(|rule| {
+        let id = rule.yaml["id"].as_str().unwrap_or_default();
+        let title = rule.yaml["title"].as_str().unwrap_or_default();
+        let name = rule.yaml["name"].as_str().unwrap_or_default();
+        !referenced_del_ids.contains(id)
+            && !referenced_del_ids.contains(title)
+            && !referenced_del_ids.contains(name)
+    });
+    other_rules.extend(temporal_ref_rules);
+    parsed_temporal_rules
+}
+
 pub fn parse_correlation_rules(
     rule_nodes: Vec<RuleNode>,
     stored_static: &StoredStatic,
@@ -324,7 +422,10 @@ pub fn parse_correlation_rules(
     let (correlation_rules, mut not_correlation_rules): (Vec<RuleNode>, Vec<RuleNode>) = rule_nodes
         .into_iter()
         .partition(|rule_node| !rule_node.yaml["correlation"].is_badvalue());
-    let mut parsed_rules: Vec<RuleNode> = correlation_rules
+    let (temporal_rules, not_temporal_rules): (Vec<RuleNode>, Vec<RuleNode>) = correlation_rules
+        .into_iter()
+        .partition(|rule_node| rule_node.yaml["correlation"]["type"].as_str() == Some("temporal"));
+    let mut correlation_parsed_rules: Vec<RuleNode> = not_temporal_rules
         .into_iter()
         .map(|correlation_rule_node| {
             merge_referenced_rule(
@@ -335,8 +436,11 @@ pub fn parse_correlation_rules(
             )
         })
         .collect();
-    parsed_rules.extend(not_correlation_rules);
-    parsed_rules
+    let parsed_temporal_rules =
+        parse_temporal_rules(temporal_rules, &mut not_correlation_rules, stored_static);
+    correlation_parsed_rules.extend(not_correlation_rules);
+    correlation_parsed_rules.extend(parsed_temporal_rules);
+    correlation_parsed_rules
 }
 
 #[cfg(test)]

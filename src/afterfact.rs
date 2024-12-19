@@ -79,7 +79,6 @@ pub struct AfterfactInfo {
     pub detected_rule_files: HashSet<CompactString>,
     pub detected_rule_ids: HashSet<CompactString>,
     pub detected_computer_and_rule_names: HashSet<CompactString>,
-    pub author_list_cache: HashMap<CompactString, Nested<String>>,
     pub prev_message: HashMap<CompactString, Profile>,
     pub prev_details_convert_map: HashMap<CompactString, Vec<CompactString>>,
 }
@@ -145,7 +144,6 @@ impl Default for AfterfactInfo {
             detected_rule_files: HashSet::new(),
             detected_rule_ids: HashSet::new(),
             detected_computer_and_rule_names: HashSet::new(),
-            author_list_cache: HashMap::new(),
             prev_message: HashMap::new(),
             prev_details_convert_map: HashMap::new(),
         }
@@ -522,23 +520,20 @@ fn calc_statistic_info(
         }
         if !output_option.no_summary {
             let level_suffix = get_level_suffix(detect_info.level.as_str());
-            let author_list = afterfact_info
-                .author_list_cache
-                .entry(detect_info.rulepath.clone())
-                .or_insert_with(|| extract_author_name(&detect_info.ruleauthor))
-                .clone();
+            let author_list = extract_author_name(&detect_info.ruleauthor);
             let author_str = author_list.iter().join(", ");
             afterfact_info
                 .detect_rule_authors
-                .insert(detect_info.rulepath.to_owned(), author_str.into());
+                .insert(detect_info.ruleid.to_owned(), author_str.to_string().into());
 
-            if !afterfact_info
-                .detected_rule_files
-                .contains(&detect_info.rulepath)
+            if author_str != "-"
+                && !afterfact_info
+                    .detected_rule_files
+                    .contains(&detect_info.ruleid)
             {
                 afterfact_info
                     .detected_rule_files
-                    .insert(detect_info.rulepath.to_owned());
+                    .insert(detect_info.ruleid.to_owned());
                 for author in author_list.iter() {
                     *afterfact_info
                         .rule_author_counter
