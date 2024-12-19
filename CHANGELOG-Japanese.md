@@ -7,6 +7,7 @@
 - Base64文字列を抽出して、デコードする`extract-base64`コマンドを追加した。(#1512) (@fukusuket)
 - `expand`修飾子が入っているルールで使用されるプレースホルダー名を出力する`expand-list`コマンドを追加した。(#1513) (@fukuseket)
 - `expand`フィールド修飾子に対応した。 (#1434) (@fukusuket)
+- Temporal Proximity（`temporal`）の相関ルールに対応した。 (#1446) (@fukusuket)
 
 **改善:**
 
