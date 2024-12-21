@@ -32,6 +32,7 @@ pub enum CorrelationType {
     EventCount,
     ValueCount,
     Temporal(Vec<String>),
+    TemporalOrdered(Vec<String>),
     TemporalRef(bool, String),
 }
 
@@ -44,14 +45,18 @@ impl CorrelationType {
         match correlation_type {
             "event_count" => CorrelationType::EventCount,
             "value_count" => CorrelationType::ValueCount,
-            "temporal" => {
+            "temporal" | "temporal_ordered" => {
                 let rules: Vec<String> = yaml["correlation"]["rules"]
                     .as_vec()
                     .unwrap()
                     .iter()
                     .map(|rule| rule.as_str().unwrap().to_string())
                     .collect();
-                CorrelationType::Temporal(rules)
+                if correlation_type == "temporal" {
+                    CorrelationType::Temporal(rules)
+                } else {
+                    CorrelationType::TemporalOrdered(rules)
+                }
             }
             _ => CorrelationType::None,
         }

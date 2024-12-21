@@ -251,8 +251,9 @@ fn merge_referenced_rule(
     if rule_type != Some("event_count")
         && rule_type != Some("value_count")
         && rule_type != Some("temporal")
+        && rule_type != Some("temporal_ordered")
     {
-        let m = "The type of correlation rule only supports event_count/value_count/temporal.";
+        let m = "The type of correlation rule only supports event_count/value_count/temporal/temporal_ordered.";
         error_log(&rule.rulepath, m, stored_static, parse_error_count);
         return rule;
     }
@@ -279,7 +280,7 @@ fn merge_referenced_rule(
         error_log(&rule.rulepath, m, stored_static, parse_error_count);
         return rule;
     }
-    if rule_type == Some("temporal") {
+    if rule_type == Some("temporal") || rule_type == Some("temporal_ordered") {
         return rule;
     }
     let (referenced_rules, name_to_selection) =
@@ -345,23 +346,26 @@ fn parse_temporal_rules(
         let mut temporal_ref_ids: Vec<Yaml> = Vec::new();
         if let Some(ref_ids) = temporal_yaml["correlation"]["rules"].as_vec() {
             for ref_id in ref_ids {
-                for other_rule in other_rules.iter() {
-                    if is_referenced_rule(other_rule, ref_id.as_str().unwrap_or_default()) {
-                        let new_id = Uuid::new_v4();
-                        temporal_ref_ids.push(Yaml::String(new_id.to_string()));
+                for other_rule in other_rules.iter_mut() {
+                    let ref_id = ref_id.as_str().unwrap_or_default();
+                    if is_referenced_rule(other_rule, ref_id) {
+                        let generate = temporal_yaml["correlation"]["generate"]
+                            .as_bool()
+                            .unwrap_or_default();
                         let mut new_yaml = other_rule.yaml.clone();
+                        if other_rule.correlation_type != CorrelationType::None {
+                            temporal_ref_ids.push(Yaml::String(ref_id.to_string()));
+                            if !generate {
+                                referenced_del_ids.insert(ref_id.to_string());
+                            }
+                            continue;
+                        }
+                        let new_id = Uuid::new_v4().to_string();
                         if let Some(hash) = new_yaml.as_mut_hash() {
                             hash.insert(
                                 Yaml::String("id".to_string()),
                                 Yaml::String(new_id.to_string()),
                             );
-                        }
-                        let generate = temporal_yaml["correlation"]["generate"]
-                            .as_bool()
-                            .unwrap_or_default();
-                        if !generate {
-                            referenced_del_ids
-                                .insert(ref_id.as_str().unwrap_or_default().to_string());
                         }
                         let mut node = RuleNode::new(other_rule.rulepath.clone(), new_yaml);
                         let _ = node.init(stored_static);
@@ -383,6 +387,10 @@ fn parse_temporal_rules(
                         detection.aggregation_condition = Some(agg_info);
                         node.detection = detection;
                         temporal_ref_rules.push(node);
+                        temporal_ref_ids.push(Yaml::String(new_id.to_string()));
+                        if !generate {
+                            referenced_del_ids.insert(ref_id.to_string());
+                        }
                     }
                 }
             }
@@ -422,10 +430,12 @@ pub fn parse_correlation_rules(
     let (correlation_rules, mut not_correlation_rules): (Vec<RuleNode>, Vec<RuleNode>) = rule_nodes
         .into_iter()
         .partition(|rule_node| !rule_node.yaml["correlation"].is_badvalue());
-    let (temporal_rules, not_temporal_rules): (Vec<RuleNode>, Vec<RuleNode>) = correlation_rules
-        .into_iter()
-        .partition(|rule_node| rule_node.yaml["correlation"]["type"].as_str() == Some("temporal"));
-    let mut correlation_parsed_rules: Vec<RuleNode> = not_temporal_rules
+    let (temporal_rules, not_temporal_rules): (Vec<RuleNode>, Vec<RuleNode>) =
+        correlation_rules.into_iter().partition(|rule_node| {
+            rule_node.yaml["correlation"]["type"].as_str() == Some("temporal")
+                || rule_node.yaml["correlation"]["type"].as_str() == Some("temporal_ordered")
+        });
+    let mut parsed_rules: Vec<RuleNode> = not_temporal_rules
         .into_iter()
         .map(|correlation_rule_node| {
             merge_referenced_rule(
@@ -436,11 +446,11 @@ pub fn parse_correlation_rules(
             )
         })
         .collect();
+    parsed_rules.extend(not_correlation_rules);
     let parsed_temporal_rules =
-        parse_temporal_rules(temporal_rules, &mut not_correlation_rules, stored_static);
-    correlation_parsed_rules.extend(not_correlation_rules);
-    correlation_parsed_rules.extend(parsed_temporal_rules);
-    correlation_parsed_rules
+        parse_temporal_rules(temporal_rules, &mut parsed_rules, stored_static);
+    parsed_rules.extend(parsed_temporal_rules);
+    parsed_rules
 }
 
 #[cfg(test)]
