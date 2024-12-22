@@ -199,24 +199,42 @@ impl Detection {
 
     fn detect_within_timeframe(
         ids: &[String],
-        data: &HashMap<String, Vec<AggResult>>,
+        temporal_ref_all_results: &HashMap<String, Vec<AggResult>>,
         timeframe: Duration,
+        temporal_ordered: bool,
     ) -> Vec<AggResult> {
         let mut result = Vec::new();
-        let key = ids[0].clone();
-        for y in data.get(key.as_str()).unwrap() {
-            let mut found = true;
-            for id in ids.iter().skip(1) {
-                if !data.get(id.as_str()).unwrap().iter().any(|t| {
-                    (t.start_timedate >= y.start_timedate - timeframe)
-                        && (t.start_timedate <= y.start_timedate + timeframe)
-                }) {
-                    found = false;
-                    break;
+        let key = ids.first();
+        if let Some(key) = key {
+            if let Some(base_records) = temporal_ref_all_results.get(key.as_str()) {
+                for base in base_records {
+                    let mut found = false;
+                    let mut last_base = base;
+                    for id in ids.iter().skip(1) {
+                        found = false;
+                        if let Some(target_records) = temporal_ref_all_results.get(id.as_str()) {
+                            if temporal_ordered {
+                                found = target_records.iter().any(|t| {
+                                    (t.start_timedate >= last_base.start_timedate)
+                                        && (t.start_timedate
+                                            <= last_base.start_timedate + timeframe)
+                                });
+                            } else {
+                                found = target_records.iter().any(|t| {
+                                    (t.start_timedate >= base.start_timedate - timeframe)
+                                        && (t.start_timedate <= base.start_timedate + timeframe)
+                                });
+                            }
+                            if !found {
+                                break;
+                            }
+                            last_base = base;
+                        }
+                    }
+                    if found {
+                        result.push(base.clone());
+                    }
                 }
-            }
-            if found {
-                result.push(y.clone());
             }
         }
         result
@@ -230,35 +248,46 @@ impl Detection {
                 continue;
             }
             for value in rule.judge_satisfy_aggcondition(stored_static) {
-                if let CorrelationType::TemporalRef(_, uuid) = &rule.correlation_type {
+                let mut output = true;
+                if let CorrelationType::TemporalRef(generate, uuid) = &rule.correlation_type {
                     detected_temporal_refs
                         .entry(uuid.clone())
                         .or_insert_with(Vec::new)
                         .push(value.clone());
-                } else {
+                    output = *generate;
+                }
+                if output {
                     ret.push(Detection::create_agg_log_record(rule, value, stored_static));
                 }
             }
         }
         // temporalルールは個々ルールの判定がすべて出揃ってから判定できるため、再度rulesをループしてtemporalルールの判定を行う
         for rule in self.rules.iter() {
-            if let CorrelationType::Temporal(ref_ids) = &rule.correlation_type {
-                if ref_ids
-                    .iter()
-                    .all(|x| detected_temporal_refs.contains_key(x))
-                {
-                    let mut data = HashMap::new();
-                    for id in ref_ids {
-                        let entry = detected_temporal_refs.get_key_value(id);
-                        data.insert(entry.unwrap().0.clone(), entry.unwrap().1.clone());
-                    }
-                    let timeframe = get_sec_timeframe(rule, stored_static);
-                    if let Some(timeframe) = timeframe {
-                        let duration = Duration::seconds(timeframe);
-                        let values = Detection::detect_within_timeframe(ref_ids, &data, duration);
-                        for v in values {
-                            ret.push(Detection::create_agg_log_record(rule, v, stored_static));
-                        }
+            let (ref_ids, temporal_ordered) = match &rule.correlation_type {
+                CorrelationType::Temporal(ref_ids) => (ref_ids, false),
+                CorrelationType::TemporalOrdered(ref_ids) => (ref_ids, true),
+                _ => continue,
+            };
+            if ref_ids
+                .iter()
+                .all(|x| detected_temporal_refs.contains_key(x))
+            {
+                let mut data = HashMap::new();
+                for id in ref_ids {
+                    let entry = detected_temporal_refs.get_key_value(id);
+                    data.insert(entry.unwrap().0.clone(), entry.unwrap().1.clone());
+                }
+                let timeframe = get_sec_timeframe(rule, stored_static);
+                if let Some(timeframe) = timeframe {
+                    let duration = Duration::seconds(timeframe);
+                    let results = Detection::detect_within_timeframe(
+                        ref_ids,
+                        &data,
+                        duration,
+                        temporal_ordered,
+                    );
+                    for res in results {
+                        ret.push(Detection::create_agg_log_record(rule, res, stored_static));
                     }
                 }
             }
