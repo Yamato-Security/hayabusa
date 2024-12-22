@@ -248,20 +248,15 @@ impl Detection {
                 continue;
             }
             for value in rule.judge_satisfy_aggcondition(stored_static) {
-                if let CorrelationType::TemporalRef(_, uuid) = &rule.correlation_type {
+                let mut output = false;
+                if let CorrelationType::TemporalRef(generate, uuid) = &rule.correlation_type {
                     detected_temporal_refs
                         .entry(uuid.clone())
                         .or_insert_with(Vec::new)
                         .push(value.clone());
-                } else {
-                    if CorrelationType::ValueCount == rule.correlation_type
-                        || CorrelationType::EventCount == rule.correlation_type
-                    {
-                        detected_temporal_refs
-                            .entry(rule.yaml["name"].as_str().unwrap_or_default().to_string())
-                            .or_insert_with(Vec::new)
-                            .push(value.clone());
-                    }
+                    output = *generate;
+                }
+                if output {
                     ret.push(Detection::create_agg_log_record(rule, value, stored_static));
                 }
             }

@@ -354,10 +354,9 @@ fn parse_temporal_rules(
                             .unwrap_or_default();
                         let mut new_yaml = other_rule.yaml.clone();
                         if other_rule.correlation_type != CorrelationType::None {
+                            other_rule.correlation_type =
+                                CorrelationType::TemporalRef(generate, ref_id.to_string());
                             temporal_ref_ids.push(Yaml::String(ref_id.to_string()));
-                            if !generate {
-                                referenced_del_ids.insert(ref_id.to_string());
-                            }
                             continue;
                         }
                         let new_id = Uuid::new_v4().to_string();
