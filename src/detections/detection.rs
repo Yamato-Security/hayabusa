@@ -248,7 +248,7 @@ impl Detection {
                 continue;
             }
             for value in rule.judge_satisfy_aggcondition(stored_static) {
-                let mut output = false;
+                let mut output = true;
                 if let CorrelationType::TemporalRef(generate, uuid) = &rule.correlation_type {
                     detected_temporal_refs
                         .entry(uuid.clone())
