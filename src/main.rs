@@ -2678,8 +2678,8 @@ impl App {
         eggs.insert("05/09", ("goku.txt", Color::Rgb(243, 156, 22))); // Middle Washed Orange
         eggs.insert("08/08", ("takoyaki.txt", Color::Rgb(181, 101, 29))); // Light Brown
         eggs.insert("10/31", ("halloween.txt", Color::Rgb(255, 87, 51))); // Pumpkin Orange
-        eggs.insert("12/24", ("christmas.txt", Color::Rgb(70, 192, 22))); // Green
-        eggs.insert("12/25", ("christmas.txt", Color::Rgb(70, 192, 22))); // Green
+        eggs.insert("12/24", ("christmas.txt", Color::Rgb(0, 255, 0))); // Green
+        eggs.insert("12/25", ("christmas.txt", Color::Rgb(0, 255, 0))); // Green
 
         match eggs.get(exec_datestr) {
             None => {}
