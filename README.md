@@ -105,6 +105,12 @@ Hayabusa is a **Windows event log fast forensics timeline generator** and **thre
       - [`eid-metrics` command examples](#eid-metrics-command-examples)
       - [`eid-metrics` command config file](#eid-metrics-command-config-file)
       - [`eid-metrics` screenshot](#eid-metrics-screenshot)
+    - [`expand-list` command](#expand-list-command)
+      - [`expand-list` command examples](#expand-list-command-examples)
+      - [`expand-list` results](#expand-list-results)
+    - [`extract-base64` command](#extract-base64-command)
+      - [`extract-base64` command examples](#extract-base64-command-examples)
+      - [`extract-base64` results](#extract-base64-results)
     - [`log-metrics` command](#log-metrics-command)
       - [`log-metrics` command examples](#log-metrics-command-examples)
       - [`log-metrics` screenshot](#log-metrics-screenshot)
@@ -288,6 +294,7 @@ You can learn how to analyze JSON-formatted results with `jq` [here](doc/Analysi
 * PowerShell classic log field parsing and extraction.
 * Low memory usage. (Note: this is possible by not sorting results. Best for running on agents or big data.)
 * Filtering on Channels and Rules for the most efficient performance.
+* Detect, extract and decode Base64 strings found in logs.
 
 # Downloads
 
@@ -517,6 +524,8 @@ You should now be able to run hayabusa.
 ## Analysis Commands:
 * `computer-metrics`: Print the number of events based on computer names.
 * `eid-metrics`: Print the number and percentage of events based on Event ID.
+* `expand-list`: Extract `expand` placeholders from the rules folder.
+* `extract-base64`: Extract and decode base64 strings from events.
 * `log-metrics`: Print log file metrics.
 * `logon-summary`: Print a summary of logon events.
 * `pivot-keywords-list`: Print a list of suspicious keywords to pivot on.
@@ -656,6 +665,144 @@ Microsoft-Windows-Sysmon/Operational,4,Sysmon Service State Changed.
 #### `eid-metrics` screenshot
 
 ![eid-metrics screenshot](screenshots/EID-Metrics.png)
+
+### `expand-list` command
+
+Extract `expand` placeholders from the rules folder.
+This is useful when creating config files to use any rule that uses the `expand` field modifier.
+To use `expand` rules, you just need to create a `.txt` file with the name of the `expand` field modifier under the `./config/expand/` directory, and put in all of the values you want to check inside the file.
+
+For example, if the rule `detection` logic is:
+```yaml
+detection:
+    selection:
+        EventID: 5145
+        RelativeTargetName|contains: '\winreg'
+    filter_main:
+        IpAddress|expand: '%Admins_Workstations%'
+    condition: selection and not filter_main
+```
+
+you would create the text file `./config/expand/Admins_Workstations.txt` and put in values like:
+```
+AdminWorkstation1
+AdminWorkstation2
+AdminWorkstation3
+```
+
+This would essentially check the same logic as:
+```
+- IpAddress: 'AdminWorkstation1'
+- IpAddress: 'AdminWorkstation2'
+- IpAddress: 'AdminWorkstation3'
+```
+
+If the config file does not exist, Hayabusa will still load the `expand` rule but ignore it.
+
+```
+Usage:  expand-list <INPUT> [OPTIONS]
+
+General Options:
+  -h, --help              Show the help menu
+  -r, --rules <DIR/FILE>  Specify rule directory (default: ./rules)
+
+Display Settings:
+  -K, --no-color  Disable color output
+  -q, --quiet     Quiet mode: do not display the launch banner
+```
+
+#### `expand-list` command examples
+
+* Extract out `expand` field modifiers from the default `rules` directory: `hayabusa.exe expand-list`
+* Extract out `expand` field modifiers from the `sigma` directory: `hayabusa.exe eid-metrics -r ../sigma`
+
+#### `expand-list` results
+
+```
+5 unique expand placeholders found:
+Admins_Workstations
+DC-MACHINE-NAME
+Workstations
+internal_domains
+domain_controller_hostnames
+```
+
+### `extract-base64` command
+
+This command will extract base64 strings from the following events, decode them and tell what kind of encoding is being used.
+  * Security 4688 CommandLine
+  * Sysmon 1 CommandLine, ParentCommandLine
+  * PowerShell Operational 4104
+  * PowerShell Operational 4103
+
+```
+Usage:  extract-base64 <INPUT> [OPTIONS]
+
+Input:
+  -d, --directory <DIR>  Directory of multiple .evtx files
+  -f, --file <FILE>      File path to one .evtx file
+  -l, --live-analysis    Analyze the local C:\Windows\System32\winevt\Logs folder
+
+General Options:
+  -C, --clobber                        Overwrite files when saving
+  -h, --help                           Show the help menu
+  -J, --JSON-input                     Scan JSON formatted logs instead of .evtx (.json or .jsonl)
+  -Q, --quiet-errors                   Quiet errors mode: do not save error logs
+  -x, --recover-records                Carve evtx records from slack space (default: disabled)
+  -c, --rules-config <DIR>             Specify custom rule config directory (default: ./rules/config)
+  -t, --threads <NUMBER>               Number of threads (default: optimal number for performance)
+      --target-file-ext <FILE-EXT...>  Specify additional evtx file extensions (ex: evtx_data)
+
+Filtering:
+      --exclude-computer <COMPUTER...>  Do not scan specified computer names (ex: ComputerA) (ex: ComputerA,ComputerB)
+      --include-computer <COMPUTER...>  Scan only specified computer names (ex: ComputerA) (ex: ComputerA,ComputerB)
+      --time-offset <OFFSET>            Scan recent events based on an offset (ex: 1y, 3M, 30d, 24h, 30m)
+
+Output:
+  -o, --output <FILE>  Extract Base64 strings
+
+Display Settings:
+  -K, --no-color  Disable color output
+  -q, --quiet     Quiet mode: do not display the launch banner
+  -v, --verbose   Output verbose information
+
+Time Format:
+      --European-time     Output timestamp in European time format (ex: 22-02-2022 22:00:00.123 +02:00)
+  -O, --ISO-8601          Output timestamp in original ISO-8601 format (ex: 2022-02-22T10:10:10.1234567Z) (Always UTC)
+      --RFC-2822          Output timestamp in RFC 2822 format (ex: Fri, 22 Feb 2022 22:00:00 -0600)
+      --RFC-3339          Output timestamp in RFC 3339 format (ex: 2022-02-22 22:00:00.123456-06:00)
+      --US-military-time  Output timestamp in US military time format (ex: 02-22-2022 22:00:00.123 -06:00)
+      --US-time           Output timestamp in US time format (ex: 02-22-2022 10:00:00.123 PM -06:00)
+  -U, --UTC               Output time in UTC format (default: local time)
+```
+
+#### `extract-base64` command examples
+
+* Scan a directory and output to the terminal: `./target/release/hayabusa  extract-base64 -d ../hayabusa-sample-evtx`
+* Scan a directory and output to a CSV file: `hayabusa.exe eid-metrics -r ../sigma -o base64-extracted.csv`
+
+#### `extract-base64` results
+
+When outputting to the terminal, because space is limited, only the following fields are displayed:
+  * Timestamp
+  * Computer
+  * Base64 String
+  * Decoded String (if not binary)
+
+When saving to a CSV file, the following fields are saved:
+  * Timestamp
+  * Computer
+  * Base64 String
+  * Decoded String (if not binary)
+  * Original Field
+  * Length
+  * Binary (`Y/N`)
+  * Double Encoding (when `Y`, it usually is malicious)
+  * Encoding Type
+  * File Type
+  * Event
+  * Record ID
+  * File Name
 
 ### `log-metrics` command
 

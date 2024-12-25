@@ -1,6 +1,6 @@
 # 変更点
 
-## x.x.x [xxxx/xx/xx]
+## 3.0.0 [2024/12/25] - 3rd Year Anniversary Release
 
 **新機能:**
 
