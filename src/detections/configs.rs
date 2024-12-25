@@ -958,7 +958,7 @@ pub enum Action {
         display_order = 311,
         disable_help_flag = true
     )]
-    /// Extract expand placeholders from rule folder
+    /// Extract expand placeholders from the rules folder
     ExpandList(ExpandListOption),
 
     #[clap(
