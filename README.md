@@ -30,7 +30,13 @@
 
 # About Hayabusa
 
-Hayabusa is a **Windows event log fast forensics timeline generator** and **threat hunting tool** created by the [Yamato Security](https://yamatosecurity.connpass.com/) group in Japan. Hayabusa means ["peregrine falcon"](https://en.wikipedia.org/wiki/Peregrine_falcon) in Japanese and was chosen as peregrine falcons are the fastest animal in the world, great at hunting and highly trainable. It is written in [Rust](https://www.rust-lang.org/) and supports multi-threading in order to be as fast as possible. We have provided a [tool](https://github.com/Yamato-Security/hayabusa-rules/tree/main/tools/sigmac) to convert [Sigma](https://github.com/SigmaHQ/sigma) rules into Hayabusa rule format. The Sigma-compatible Hayabusa detection rules are written in YML in order to be as easily customizable and extensible as possible. Hayabusa can be run either on single running systems for live analysis, by gathering logs from single or multiple systems for offline analysis, or by running the [Hayabusa artifact](https://docs.velociraptor.app/exchange/artifacts/pages/windows.eventlogs.hayabusa/) with [Velociraptor](https://docs.velociraptor.app/) for enterprise-wide threat hunting and incident response. The output will be consolidated into a single CSV timeline for easy analysis in [LibreOffice](https://www.libreoffice.org/), [Timeline Explorer](https://ericzimmerman.github.io/#!index.md), [Elastic Stack](doc/ElasticStackImport/ElasticStackImport-English.md), [Timesketch](https://timesketch.org/), etc...
+Hayabusa is a **Windows event log fast forensics timeline generator** and **threat hunting tool** created by the [Yamato Security](https://yamatosecurity.connpass.com/) group in Japan.
+Hayabusa means ["peregrine falcon"](https://en.wikipedia.org/wiki/Peregrine_falcon) in Japanese and was chosen as peregrine falcons are the fastest animal in the world, great at hunting and highly trainable.
+It is written in memory-safe [Rust](https://www.rust-lang.org/), supports multi-threading in order to be as fast as possible and is the only open-source tool that has full support for the Sigma specification including v2 correlation rules.
+Hayabusa can handle parsing [upstream Sigma](https://github.com/SigmaHQ/sigma) rules, however, the Sigma rules that we use and host in the [hayabusa-rules repository](https://github.com/Yamato-Security/hayabusa-rules) have some conversion done to them in order to make rule loading more flexible and reduce false positives.
+You can read the details about this at the [sigma-to-hayabusa-converter repository](https://github.com/Yamato-Security/sigma-to-hayabusa-converter) README file.
+Hayabusa can be run either on single running systems for live analysis, by gathering logs from single or multiple systems for offline analysis, or by running the [Hayabusa artifact](https://docs.velociraptor.app/exchange/artifacts/pages/windows.eventlogs.hayabusa/) with [Velociraptor](https://docs.velociraptor.app/) for enterprise-wide threat hunting and incident response.
+The output will be consolidated into a single CSV/JSON/JSONL timeline for easy analysis in [LibreOffice](https://www.libreoffice.org/), [Timeline Explorer](https://ericzimmerman.github.io/#!index.md) [Elastic Stack](doc/ElasticStackImport/ElasticStackImport-English.md), [Timesketch](https://timesketch.org/), etc...
 
 # Companion Projects
 
@@ -2004,6 +2010,8 @@ If you find any issues (false positives, bugs, etc...) with Sigma rules, please 
 # License
 
 Hayabusa is released under [AGPLv3](https://www.gnu.org/licenses/agpl-3.0.en.html) and all rules are released under the [Detection Rule License (DRL) 1.1](https://github.com/SigmaHQ/sigma/blob/master/LICENSE.Detection.Rules.md).
+You may freely use Hayabusa internally, SaaS solutions, for consulting work, etc...
+However, if you use Hayabusa in a type of SaaS solution and make improvements to it, we ask you to open-source those improvements and give back to the project.
 
 Hayabusa uses GeoLite2 data created by MaxMind, available from [https://www.maxmind.com](https://www.maxmind.com).
 
