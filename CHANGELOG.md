@@ -7,8 +7,8 @@
 - New `extract-base64` command to extract and decode base64 strings from events. (#1512) (@fukusuket)
 - New `expand-list` command to output placeholder names used for rules with the `expand` modifier. (#1513) (@fukuseket)
 - Support for `expand` field modifiers. (#1434) (@fukusuket)
-- Suppport for Temporal Proximity (`temporal`) correlation rules. (#1446) (@fukusuket)
-- Suppport for Temporal Ordered Proximity (`temporal_ordered`) correlation rules. (#1447) (@fukusuket)
+- Support for Temporal Proximity (`temporal`) correlation rules. (#1446) (@fukusuket)
+- Support for Temporal Ordered Proximity (`temporal_ordered`) correlation rules. (#1447) (@fukusuket)
 
 **Enhancements:**
 
