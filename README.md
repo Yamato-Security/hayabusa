@@ -784,7 +784,7 @@ Time Format:
 
 #### `extract-base64` command examples
 
-* Scan a directory and output to the terminal: `./target/release/hayabusa  extract-base64 -d ../hayabusa-sample-evtx`
+* Scan a directory and output to the terminal: `hayabusa.exe  extract-base64 -d ../hayabusa-sample-evtx`
 * Scan a directory and output to a CSV file: `hayabusa.exe eid-metrics -r ../sigma -o base64-extracted.csv`
 
 #### `extract-base64` results
