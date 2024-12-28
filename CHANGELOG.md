@@ -1,5 +1,11 @@
 # Changes
 
+## 3.0.1 [2024/12/25] - 3rd Year Anniversary Release
+
+**Bug Fixes:**
+
+- Hayabusa would fail in rule parse checking on the backend with `expand` rules. (#1537) (@fukusuket)
+
 ## 3.0.0 [2024/12/25] - 3rd Year Anniversary Release
 
 **New Features:**
