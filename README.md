@@ -530,7 +530,7 @@ You should now be able to run hayabusa.
 ## Analysis Commands:
 * `computer-metrics`: Print the number of events based on computer names.
 * `eid-metrics`: Print the number and percentage of events based on Event ID.
-* `expand-list`: Extract `expand` placeholders from the rules folder.
+* `expand-list`: Extract `expand` placeholders from the `rules` folder.
 * `extract-base64`: Extract and decode base64 strings from events.
 * `log-metrics`: Print log file metrics.
 * `logon-summary`: Print a summary of logon events.
