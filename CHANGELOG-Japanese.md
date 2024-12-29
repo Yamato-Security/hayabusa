@@ -1,5 +1,11 @@
 # 変更点
 
+## 3.0.1 [2024/12/25] - 3rd Year Anniversary Release
+
+**バグ修正:**
+
+- Hayabusaはバックエンドで`expand`ルールのパースチェックに失敗していた。 (#1537) (@fukusuket)
+
 ## 3.0.0 [2024/12/25] - 3rd Year Anniversary Release
 
 **新機能:**
