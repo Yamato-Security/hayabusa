@@ -30,7 +30,13 @@
 
 # Hayabusa について
 
-Hayabusaは、日本の[Yamato Security](https://yamatosecurity.connpass.com/)グループによって作られた**Windowsイベントログのファストフォレンジックタイムライン作成**および**脅威ハンティングツール**です。 Hayabusaは日本語で[「ハヤブサ」](https://ja.wikipedia.org/wiki/%E3%83%8F%E3%83%A4%E3%83%96%E3%82%B5)を意味し、ハヤブサが世界で最も速く、狩猟(hunting)に優れ、とても訓練しやすい動物であることから選ばれました。[Rust](https://www.rust-lang.org/) で開発され、マルチスレッドに対応し、可能な限り高速に動作するよう配慮されています。[Sigma](https://github.com/SigmaHQ/Sigma)ルールをHayabusaルール形式に変換する[ツール](https://github.com/Yamato-Security/hayabusa-rules/tree/main/tools/sigmac)も提供しています。Hayabusaの検知ルールもSigmaと同様にYML形式であり、カスタマイズ性や拡張性に優れます。稼働中のシステムで実行してライブ調査することも、複数のシステムからログを収集してオフライン調査することも可能です。また、 [Velociraptor](https://docs.velociraptor.app/)と[Hayabusa artifact](https://docs.velociraptor.app/exchange/artifacts/pages/windows.eventlogs.hayabusa/)を用いることで企業向けの広範囲なスレットハンティングとインシデントレスポンスにも活用できます。出力は一つのCSVタイムラインにまとめられ、[LibreOffice](https://www.libreoffice.org/)、[Timeline Explorer](https://ericzimmerman.github.io/#!index.md)、[Elastic Stack](doc/ElasticStackImport/ElasticStackImport-Japanese.md)、[Timesketch](https://timesketch.org/)等で簡単に分析できるようになります。
+Hayabusaは、日本の[Yamato Security](https://yamatosecurity.connpass.com/)グループによって作られた**Windowsイベントログのファストフォレンジックタイムライン作成**および**脅威ハンティングツール**です。 
+Hayabusaは日本語で[「ハヤブサ」](https://ja.wikipedia.org/wiki/%E3%83%8F%E3%83%A4%E3%83%96%E3%82%B5)を意味し、ハヤブサが世界で最も速く、狩猟(hunting)に優れ、とても訓練しやすい動物であることから選ばれました。
+[Rust](https://www.rust-lang.org/) で開発され、マルチスレッドに対応し、可能な限り高速に動作するよう配慮されています。
+Hayabusaは[upstream Sigma](https://github.com/SigmaHQ/sigma) ルールの解析に対応しています。ただし、[hayabusa-rules repository](https://github.com/Yamato-Security/hayabusa-rules)で使用およびホストしているSigmaルールは、ルールの読み込みをより柔軟にし、誤検知を減らすために一部の変換が施されています。
+詳細については、[sigma-to-hayabusa-converter repository](https://github.com/Yamato-Security/sigma-to-hayabusa-converter) リポジトリのREADMEファイルをご参照ください。
+稼働中のシステムで実行してライブ調査することも、複数のシステムからログを収集してオフライン調査することも可能です。 また、 [Velociraptor](https://docs.velociraptor.app/)と[Hayabusa artifact](https://docs.velociraptor.app/exchange/artifacts/pages/windows.eventlogs.hayabusa/)を用いることで企業向けの広範囲なスレットハンティングとインシデントレスポンスにも活用できます。
+出力は一つのCSVタイムラインにまとめられ、[LibreOffice](https://www.libreoffice.org/)、[Timeline Explorer](https://ericzimmerman.github.io/#!index.md)、[Elastic Stack](doc/ElasticStackImport/ElasticStackImport-Japanese.md)、[Timesketch](https://timesketch.org/)等で簡単に分析できるようになります。
 
 # 関連プロジェクト
 
@@ -77,7 +83,7 @@ Hayabusaは、日本の[Yamato Security](https://yamatosecurity.connpass.com/)�
 - [jqによるJSON形式の結果の解析](#jqによるjson形式の結果の解析)
 - [特徴＆機能](#特徴機能)
 - [ダウンロード](#ダウンロード)
-  - [Windowsライブレスポンスパッケージ](#Windowsライブレスポンスパッケージ)
+  - [Windowsライブレスポンスパッケージ](#windowsライブレスポンスパッケージ)
 - [Gitクローン](#gitクローン)
 - [アドバンス: ソースコードからのコンパイル（任意）](#アドバンス-ソースコードからのコンパイル任意)
   - [Rustパッケージの更新](#rustパッケージの更新)
@@ -89,7 +95,7 @@ Hayabusaは、日本の[Yamato Security](https://yamatosecurity.connpass.com/)�
   - [注意: アンチウィルス/EDRの誤検知と遅い初回実行](#注意-アンチウィルスedrの誤検知と遅い初回実行)
   - [Windows](#windows)
     - [パスにスペースが含まれるファイルまたはディレクトリをスキャンしようとするとエラーが発生した場合](#パスにスペースが含まれるファイルまたはディレクトリをスキャンしようとするとエラーが発生した場合)
-    - [Characters not being displayed correctly](#characters-not-being-displayed-correctly)
+    - [文字が正常に表示されない場合](#文字が正常に表示されない場合)
   - [Linux](#linux)
   - [macOS](#macos)
 - [コマンド一覧](#コマンド一覧)
@@ -105,8 +111,14 @@ Hayabusaは、日本の[Yamato Security](https://yamatosecurity.connpass.com/)�
       - [`eid-metrics`コマンドの使用例](#eid-metricsコマンドの使用例)
       - [`eid-metrics`コマンドの設定ファイル](#eid-metricsコマンドの設定ファイル)
       - [`eid-metrics`のスクリーンショット](#eid-metricsのスクリーンショット)
+    - [`expand-list`コマンド](#expand-listコマンド)
+      - [`expand-list`コマンドの使用例](#expand-listコマンドの使用例)
+      - [`expand-list`結果](#expand-list結果)
+    - [`extract-base64`コマンド](#extract-base64コマンド)
+      - [`extract-base64`コマンドの使用例](#extract-base64コマンドの使用例)
+      - [`extract-base64`の結果](#extract-base64の結果)
     - [`log-metrics`コマンド](#log-metricsコマンド)
-      - [`log-metrics`コマンドの例](#log-metricsコマンドの使用例)
+      - [`log-metrics`コマンドの使用例](#log-metricsコマンドの使用例)
       - [`log-metrics`のスクリーンショット](#log-metricsのスクリーンショット)
     - [`logon-summary`コマンド](#logon-summaryコマンド)
       - [`logon-summary`コマンドの使用例](#logon-summaryコマンドの使用例)
@@ -288,6 +300,7 @@ JSON形式の結果を`jq`で解析する方法については、[こちら](/do
 * PowerShell classicログのフィールドパースと抽出。
 * 低メモリモード。(注意: 結果をソートしないことで可能。エージェントやビッグデータでの実行に適している。)
 * チャンネルとルールのフィルタリングによって最も効率的なパフォーマンスを達成する。
+* ログに含まれるBase64文字列を検出、抽出、デコードする。
 
 # ダウンロード
 
@@ -315,15 +328,15 @@ zipファイルには、Hayabusaのバイナリ、XORエンコードされたル
 
 # Gitクローン
 
-以下の`git clone`コマンドでレポジトリをダウンロードし、ソースコードからコンパイルして使用することも可能です：
+以下の`git clone`コマンドでレポジトリをダウンロードし、ソースコードからコンパイルして使用することも可能です:
+
+> **注意：** `main`ブランチは開発中のバージョンです。まだ正式にリリースされていない新機能が使えるかもしれないが、バグがある可能性もあるので、テスト版だと思って下さい。
 
 ```bash
 git clone https://github.com/Yamato-Security/hayabusa.git --recursive
 ```
 
-> **注意：** mainブランチは開発中のバージョンです。まだ正式にリリースされていない新機能が使えるかもしれないが、バグがある可能性もあるので、テスト版だと思って下さい。
-
-※ `--recursive`をつけ忘れた場合、サブモジュールとして管理されている`rules`フォルダ内のファイルはダウンロードされません。
+> ※ `--recursive`をつけ忘れた場合、サブモジュールとして管理されている`rules`フォルダ内のファイルはダウンロードされません。
 
 `git pull --recurse-submodules`コマンド、もしくは以下のコマンドで`rules`フォルダを同期し、Hayabusaの最新のルールを更新することができます:
 
@@ -356,7 +369,7 @@ cargo build --release
 rustup update stable
 ```
 
-コンパイルされたバイナリは`target/release`フォルダ配下で作成されます。
+コンパイルされたバイナリは`./target/release`フォルダ配下で作成されます。
 
 ## Rustパッケージの更新
 
@@ -517,6 +530,8 @@ macOSの環境設定から「セキュリティとプライバシー」を開き
 ## 分析コマンド:
 * `computer-metrics`: コンピュータ名に基づくイベントの合計を出力する。
 * `eid-metrics`: イベントIDに基づくイベントの合計と割合の集計を出力する。
+* `expand-list`: `expand`のプレースホルダを`rules`フォルダから取り出す。
+* `extract-base64`: イベントからbase64文字列を抽出し、デコードする。
 * `logon-summary`: ログオンイベントのサマリを出力する。
 * `log-metrics`: ログファイルの統計情報を出力する。
 * `pivot-keywords-list`: ピボットする不審なキーワードのリストを作成する。
@@ -532,7 +547,7 @@ macOSの環境設定から「セキュリティとプライバシー」を開き
 
 ## 汎用コマンド:
 * `help`: このメッセージまたは指定されたコマンドのヘルプを表示する。
-* `list-contributors`: コントリビュータ一覧の表示
+* `list-contributors`: コントリビュータ一覧の表示。
 
 # コマンド使用方法
 
@@ -657,6 +672,144 @@ Microsoft-Windows-Sysmon/Operational,4,Sysmon Service State Changed.
 
 ![eid-metrics screenshot](screenshots/EID-Metrics.png)
 
+### `expand-list`コマンド
+
+ルールフォルダから`expand`プレースホルダーを抽出します。
+これは、`expand`フィールド修飾子を使用するルールで利用する設定ファイルを作成する際に役立ちます。
+`expand`ルールを使用するには、`./config/expand/`ディレクトリ内に`expand`フィールド修飾子の名前を持つ.txtファイルを作成し、そのファイル内に確認したい値をすべて入力するだけです。
+
+例えば、ルールの`detection`ロジックが次のような場合:
+```yaml
+detection:
+    selection:
+        EventID: 5145
+        RelativeTargetName|contains: '\winreg'
+    filter_main:
+        IpAddress|expand: '%Admins_Workstations%'
+    condition: selection and not filter_main
+```
+
+テキストファイル `./config/expand/Admins_Workstations.txt` を作成し、次のような値を入力します:
+```
+AdminWorkstation1
+AdminWorkstation2
+AdminWorkstation3
+```
+
+これは本質的に次のロジックと同じ内容を確認します:
+```
+- IpAddress: 'AdminWorkstation1'
+- IpAddress: 'AdminWorkstation2'
+- IpAddress: 'AdminWorkstation3'
+```
+
+設定ファイルが存在しない場合でも、Hayabusaは`expand`ルールを読み込みますが、それを無視します。
+
+```
+Usage:  expand-list <INPUT> [OPTIONS]
+
+General Options:
+  -h, --help              ヘルプメニューを表示する
+  -r, --rules <DIR/FILE>  ルールファイルまたはルールファイルを持つディレクトリ (デフォルト: ./rules)
+
+Display Settings:
+  -K, --no-color  カラーで出力しない
+  -q, --quiet     Quietモード: 起動バナーを表示しない
+```
+
+#### `expand-list`コマンドの使用例
+
+* デフォルトの`rules`ディレクトリから`expand`フィールド修飾子を抽出する：`hayabusa.exe expand-list`
+* `sigma`ディレクトリから`expand`フィールド修飾子を抽出する：`hayabusa.exe eid-metrics -r ../sigma`
+
+#### `expand-list`結果
+
+```
+5 unique expand placeholders found:
+Admins_Workstations
+DC-MACHINE-NAME
+Workstations
+internal_domains
+domain_controller_hostnames
+```
+
+### `extract-base64`コマンド
+
+このコマンドは、次のイベントからBase64文字列を抽出し、それをデコードして、どのようなエンコードが使用されているかを判別します。
+* Security 4688 CommandLine
+* Sysmon 1 CommandLine, ParentCommandLine
+* PowerShell Operational 4104
+* PowerShell Operational 4103
+
+```
+Usage:  extract-base64 <INPUT> [OPTIONS]
+
+Input:
+  -d, --directory <DIR>  .evtxファイルを持つディレクトリのパス
+  -f, --file <FILE>      1つの.evtxファイルに対して解析を行う
+  -l, --live-analysis    ローカル端末のC:\Windows\System32\winevt\Logsフォルダを解析する
+
+General Options:
+  -C, --clobber                        結果ファイルを上書きする
+  -h, --help                           ヘルプメニューを表示する
+  -J, --JSON-input                     .evtxファイルの代わりにJSON形式のログファイル(.jsonまたは.jsonl)をスキャンする
+  -Q, --quiet-errors                   Quiet errorsモード: エラーログを保存しない
+  -x, --recover-records                空ページからevtxレコードをカービングする (デフォルト: 無効)
+  -c, --rules-config <DIR>             ルールフォルダのコンフィグディレクトリ (デフォルト: ./rules/config)
+  -t, --threads <NUMBER>               スレッド数 (デフォルト: パフォーマンスに最適な数値)
+      --target-file-ext <FILE-EXT...>  evtx以外の拡張子を解析対象に追加する。 (例１: evtx_data 例２: evtx1,evtx2)
+
+Filtering:
+      --exclude-computer <COMPUTER...>  特定のコンピュータ名をスキャンしない (例: ComputerA) (例: ComputerA,ComputerB)
+      --include-computer <COMPUTER...>  特定のコンピュータ名のみをスキャンする (例: ComputerA) (例: ComputerA,ComputerB)
+      --time-offset <OFFSET>            オフセットに基づく最近のイベントのスキャン (例: 1y, 3M, 30d, 24h, 30m)
+
+Output:
+  -o, --output <FILE>  Base64文字列を抽出する
+
+Display Settings:
+  -K, --no-color  カラーで出力しない
+  -q, --quiet     Quietモード: 起動バナーを表示しない
+  -v, --verbose   詳細な情報を出力する
+
+Time Format:
+      --European-time     ヨーロッパ形式で日付と時刻を出力する (例: 22-02-2022 22:00:00.123 +02:00)
+  -O, --ISO-8601          ISO-8601形式で日付と時刻を出力する (例: 2022-02-22T10:10:10.1234567Z) (UTC時刻)
+      --RFC-2822          RFC 2822形式で日付と時刻を出力する (例: Fri, 22 Feb 2022 22:00:00 -0600)
+      --RFC-3339          RFC 3339形式で日付と時刻を出力する (例: 2022-02-22 22:00:00.123456-06:00)
+      --US-military-time  24時間制(ミリタリータイム)のアメリカ形式で日付と時刻を出力する (例: 02-22-2022 22:00:00.123 -06:00)
+      --US-time           アメリカ形式で日付と時刻を出力する (例: 02-22-2022 10:00:00.123 PM -06:00)
+  -U, --UTC               UTC形式で日付と時刻を出力する (デフォルト: 現地時間)
+```
+
+#### `extract-base64`コマンドの使用例
+
+* ディレクトリをスキャンし、結果をターミナルに出力します: `hayabusa.exe  extract-base64 -d ../hayabusa-sample-evtx`
+* ディレクトリをスキャンし、結果をCSVファイルに出力します: `hayabusa.exe eid-metrics -r ../sigma -o base64-extracted.csv`
+
+#### `extract-base64`の結果
+
+ターミナルに出力する際、スペースに制限があるため、次のフィールドのみが表示されます：
+  * Timestamp
+  * Computer
+  * Base64 String
+  * Decoded String (if not binary)
+
+CSVファイルに保存する際、次のフィールドが保存されます：
+  * Timestamp
+  * Computer
+  * Base64 String
+  * Decoded String (if not binary)
+  * Original Field
+  * Length
+  * Binary (`Y/N`)
+  * Double Encoding (`Y`の場合、それは通常悪意があります。)
+  * Encoding Type
+  * File Type
+  * Event
+  * Record ID
+  * File Name
+
 ### `log-metrics`コマンド
 
 `log-metrics`コマンドを使うと、イベントログ内の以下のメタデータを出力することができる:
@@ -713,7 +866,7 @@ Time Format:
   -U, --UTC               UTC形式で日付と時刻を出力する (デフォルト: 現地時間)
 ```
 
-#### `log-metrics`コマンドの例
+#### `log-metrics`コマンドの使用例
 
 * ファイルからログファイルのメトリクスを出力する: `hayabusa.exe log-metrics -f Security.evtx`
 * ディレクトリからログファイルのメトリクスを出力する: `hayabusa.exe log-metrics -d ../logs`
@@ -728,7 +881,7 @@ Time Format:
 `logon-summary`コマンドを使うことでログオン情報の要約(ユーザ名、ログイン成功数、ログイン失敗数)の画面出力ができます。
 単体のevtxファイルを解析したい場合は`-f`オプションを利用してください。複数のevtxファイルを対象としたい場合は`-d`オプションを合わせて使うことでevtxファイルごとのログイン情報の要約を出力できます。
 
-ログオン成功は、以下のイベントから取得される：
+ログオン成功は、以下のイベントから取得される:
 * `Security 4624` (ログオン成功)
 * `RDS-LSM 21` (リモートデスクトップサービス ローカルセッションマネージャーのログオン)
 * `RDS-GTW 302` (リモートデスクトップサービス ゲートウェイのログオン)
@@ -761,7 +914,6 @@ Filtering:
       --timeline-start <DATE>           解析対象とするイベントログの開始時刻 (例: "2020-02-22 00:00:00 +09:00")
 
 Output:
-  -b, --disable-abbreviations     省略機能を無効にする
   -o, --output <FILENAME-PREFIX>  ログオンサマリをCSV形式で２つのファイルに保存する (例: -o logon-summary.csv)
 
 Display Settings:
@@ -900,10 +1052,11 @@ Filtering:
       --time-offset <OFFSET>         オフセットに基づく最近のイベントのスキャン (例: 1y, 3M, 30d, 24h, 30m)
 
 Output:
-  -J, --JSON-output    JSON形式で検索結果を保存する (例: -J -o results.json)
-  -L, --JSONL-output   JSONL形式で検索結果を保存 (例: -L -o results.jsonl)
-  -M, --multiline      イベントフィールド情報を複数の行に出力する
-  -o, --output <FILE>  ログオンサマリをCSV形式で保存する (例: search.csv)
+  -b, --disable-abbreviations        省略機能を無効にする
+  -J, --JSON-output                  JSON形式で検索結果を保存する (例: -J -o results.json)
+  -L, --JSONL-output                 JSONL形式で検索結果を保存 (例: -L -o results.jsonl)
+  -M, --multiline                    イベントフィールド情報を複数の行に出力する
+  -o, --output <FILE>                ログオンサマリをCSV形式で保存する (例: search.csv)
 
 Time Format:
       --European-time     ヨーロッパ形式で日付と時刻を出力する (例: 22-02-2022 22:00:00.123 +02:00)
@@ -1588,11 +1741,11 @@ RuleID: "%RuleID%"
 
 また、[イベントキーエイリアス](https://github.com/Yamato-Security/hayabusa-rules/blob/main/README-Japanese.md#%E3%82%A4%E3%83%99%E3%83%B3%E3%83%88%E3%82%AD%E3%83%BC%E3%82%A8%E3%82%A4%E3%83%AA%E3%82%A2%E3%82%B9)を定義し、出力することもできます。
 
-## Abbreviations
+## 省略
 
-In order to save space, we abbreviate levels, MITRE ATT&CK tactics, channels, providers, field names, etc...
+結果をミニマルにするため、レベル、MITRE ATT&CK戦術、チャンネル、プロバイダ、フィールド名などを省略しています。
 
-You can turn off some of these abbreviations to see the original channel name, provider name, etc... with the `-b, --disable-abbreviations` option.
+`b, --disable-abbreviations`オプションで、これらの省略のいくつかを無効にして、元々のチャンネル名、プロバイダ名などを表示することができます。
 
 ### Levelの省略
 
@@ -1857,6 +2010,8 @@ Sigmaルールの問題点（誤検出、バグ等々）を発見された方は
 # ライセンス
 
 Hayabusaは[AGPLv3](https://gpl.mhatta.org/agpl.ja.html)で公開され、すべてのルールは[Detection Rule License (DRL) 1.1](https://github.com/SigmaHQ/sigma/blob/master/LICENSE.Detection.Rules.md)で公開されています。
+Hayabusaの社内利用、SaaSソリューションの利用、コンサルティングの利用などは自由です。
+ただし、SaaS型ソリューションでHayabusaを利用し、改良を加えた場合は、その改良をオープンソース化し、プロジェクトに還元してください。
 
 Hayabusaは、MaxMind社が作成したGeoLite2データを使用しており、[https://www.maxmind.com](https://www.maxmind.com)から入手可能です。
 
