@@ -1,6 +1,6 @@
 # Changes
 
-## 3.0.1 [2024/12/25] - 3rd Year Anniversary Release
+## 3.0.1 [2024/12/29] - 3rd Year Anniversary Release
 
 **Bug Fixes:**
 
