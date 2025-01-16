@@ -903,7 +903,7 @@ fn check_thread_number(config: &Config) -> Option<usize> {
 pub enum Action {
     #[clap(
         author = "Yamato Security (https://github.com/Yamato-Security/hayabusa - @SecurityYamato)",
-        help_template = "\nHayabusa v3.0.1 - 3rd Year Anniversary Release\n{author-with-newline}\n{usage-heading}\n  hayabusa.exe csv-timeline <INPUT> [OPTIONS]\n\n{all-args}",
+        help_template = "\nHayabusa v3.1.0 - Dev Build\n{author-with-newline}\n{usage-heading}\n  hayabusa.exe csv-timeline <INPUT> [OPTIONS]\n\n{all-args}",
         term_width = 400,
         display_order = 290,
         disable_help_flag = true
@@ -913,7 +913,7 @@ pub enum Action {
 
     #[clap(
         author = "Yamato Security (https://github.com/Yamato-Security/hayabusa - @SecurityYamato)",
-        help_template = "\nHayabusa v3.0.1 - 3rd Year Anniversary Release\n{author-with-newline}\n{usage-heading}\n  hayabusa.exe json-timeline <INPUT> [OPTIONS]\n\n{all-args}",
+        help_template = "\nHayabusa v3.1.0 - Dev Build\n{author-with-newline}\n{usage-heading}\n  hayabusa.exe json-timeline <INPUT> [OPTIONS]\n\n{all-args}",
         term_width = 400,
         display_order = 360,
         disable_help_flag = true
@@ -923,7 +923,7 @@ pub enum Action {
 
     #[clap(
         author = "Yamato Security (https://github.com/Yamato-Security/hayabusa - @SecurityYamato)",
-        help_template = "\nHayabusa v3.0.1 - 3rd Year Anniversary Release\n{author-with-newline}\n{usage-heading}\n  hayabusa.exe log-metrics <INPUT> [OPTIONS]\n\n{all-args}",
+        help_template = "\nHayabusa v3.1.0 - Dev Build\n{author-with-newline}\n{usage-heading}\n  hayabusa.exe log-metrics <INPUT> [OPTIONS]\n\n{all-args}",
         term_width = 400,
         display_order = 382,
         disable_help_flag = true
@@ -933,7 +933,7 @@ pub enum Action {
 
     #[clap(
         author = "Yamato Security (https://github.com/Yamato-Security/hayabusa - @SecurityYamato)",
-        help_template = "\nHayabusa v3.0.1 - 3rd Year Anniversary Release\n{author-with-newline}\n{usage-heading}\n  hayabusa.exe logon-summary <INPUT> [OPTIONS]\n\n{all-args}",
+        help_template = "\nHayabusa v3.1.0 - Dev Build\n{author-with-newline}\n{usage-heading}\n  hayabusa.exe logon-summary <INPUT> [OPTIONS]\n\n{all-args}",
         term_width = 400,
         display_order = 383,
         disable_help_flag = true
@@ -943,7 +943,7 @@ pub enum Action {
 
     #[clap(
         author = "Yamato Security (https://github.com/Yamato-Security/hayabusa - @SecurityYamato)",
-        help_template = "\nHayabusa v3.0.1 - 3rd Year Anniversary Release\n{author-with-newline}\n{usage-heading}\n  hayabusa.exe eid-metrics <INPUT> [OPTIONS]\n\n{all-args}",
+        help_template = "\nHayabusa v3.1.0 - Dev Build\n{author-with-newline}\n{usage-heading}\n  hayabusa.exe eid-metrics <INPUT> [OPTIONS]\n\n{all-args}",
         term_width = 400,
         display_order = 310,
         disable_help_flag = true
@@ -953,7 +953,7 @@ pub enum Action {
 
     #[clap(
         author = "Yamato Security (https://github.com/Yamato-Security/hayabusa - @SecurityYamato)",
-        help_template = "\nHayabusa v3.0.1 - 3rd Year Anniversary Release\n{author-with-newline}\n{usage-heading}\n  hayabusa.exe expand-list <INPUT> [OPTIONS]\n\n{all-args}",
+        help_template = "\nHayabusa v3.1.0 - Dev Build\n{author-with-newline}\n{usage-heading}\n  hayabusa.exe expand-list <INPUT> [OPTIONS]\n\n{all-args}",
         term_width = 400,
         display_order = 311,
         disable_help_flag = true
@@ -963,7 +963,7 @@ pub enum Action {
 
     #[clap(
         author = "Yamato Security (https://github.com/Yamato-Security/hayabusa - @SecurityYamato)",
-        help_template = "\nHayabusa v3.0.1 - 3rd Year Anniversary Release\n{author-with-newline}\n{usage-heading}\n  hayabusa.exe extract-base64 <INPUT> [OPTIONS]\n\n{all-args}",
+        help_template = "\nHayabusa v3.1.0 - Dev Build\n{author-with-newline}\n{usage-heading}\n  hayabusa.exe extract-base64 <INPUT> [OPTIONS]\n\n{all-args}",
         term_width = 400,
         display_order = 311,
         disable_help_flag = true
@@ -973,7 +973,7 @@ pub enum Action {
 
     #[clap(
         author = "Yamato Security (https://github.com/Yamato-Security/hayabusa - @SecurityYamato)",
-        help_template = "\nHayabusa v3.0.1 - 3rd Year Anniversary Release\n{author-with-newline}\n{usage-heading}\n  hayabusa.exe pivot-keywords-list <INPUT> [OPTIONS]\n\n{all-args}",
+        help_template = "\nHayabusa v3.1.0 - Dev Build\n{author-with-newline}\n{usage-heading}\n  hayabusa.exe pivot-keywords-list <INPUT> [OPTIONS]\n\n{all-args}",
         term_width = 400,
         display_order = 420,
         disable_help_flag = true
@@ -983,7 +983,7 @@ pub enum Action {
 
     #[clap(
         author = "Yamato Security (https://github.com/Yamato-Security/hayabusa - @SecurityYamato)",
-        help_template = "\nHayabusa v3.0.1 - 3rd Year Anniversary Release\n{author-with-newline}\n{usage-heading}\n  hayabusa.exe search <INPUT> <--keywords \"<KEYWORDS>\" OR --regex \"<REGEX>\"> [OPTIONS]\n\n{all-args}",
+        help_template = "\nHayabusa v3.1.0 - Dev Build\n{author-with-newline}\n{usage-heading}\n  hayabusa.exe search <INPUT> <--keywords \"<KEYWORDS>\" OR --regex \"<REGEX>\"> [OPTIONS]\n\n{all-args}",
         term_width = 400,
         display_order = 450,
         disable_help_flag = true
@@ -993,7 +993,7 @@ pub enum Action {
 
     #[clap(
         author = "Yamato Security (https://github.com/Yamato-Security/hayabusa - @SecurityYamato)",
-        help_template = "\nHayabusa v3.0.1 - 3rd Year Anniversary Release\n{author-with-newline}\n{usage-heading}\n  {usage}\n\n{all-args}",
+        help_template = "\nHayabusa v3.1.0 - Dev Build\n{author-with-newline}\n{usage-heading}\n  {usage}\n\n{all-args}",
         term_width = 400,
         display_order = 470,
         disable_help_flag = true
@@ -1003,7 +1003,7 @@ pub enum Action {
 
     #[clap(
         author = "Yamato Security (https://github.com/Yamato-Security/hayabusa - @SecurityYamato)",
-        help_template = "\nHayabusa v3.0.1 - 3rd Year Anniversary Release\n{author-with-newline}\n{usage-heading}\n  {usage}\n\n{all-args}",
+        help_template = "\nHayabusa v3.1.0 - Dev Build\n{author-with-newline}\n{usage-heading}\n  {usage}\n\n{all-args}",
         term_width = 400,
         display_order = 380,
         disable_help_flag = true
@@ -1013,7 +1013,7 @@ pub enum Action {
 
     #[clap(
         author = "Yamato Security (https://github.com/Yamato-Security/hayabusa - @SecurityYamato)",
-        help_template = "\nHayabusa v3.0.1 - 3rd Year Anniversary Release\n{author-with-newline}\n{usage-heading}\n  {usage}\n\n{all-args}",
+        help_template = "\nHayabusa v3.1.0 - Dev Build\n{author-with-newline}\n{usage-heading}\n  {usage}\n\n{all-args}",
         term_width = 400,
         display_order = 451,
         disable_help_flag = true
@@ -1031,7 +1031,7 @@ pub enum Action {
 
     #[clap(
         author = "Yamato Security (https://github.com/Yamato-Security/hayabusa - @SecurityYamato)",
-        help_template = "\nHayabusa v3.0.1 - 3rd Year Anniversary Release\n{author-with-newline}\n{usage-heading}\n  hayabusa.exe computer-metrics <INPUT> [OPTIONS]\n\n{all-args}",
+        help_template = "\nHayabusa v3.1.0 - Dev Build\n{author-with-newline}\n{usage-heading}\n  hayabusa.exe computer-metrics <INPUT> [OPTIONS]\n\n{all-args}",
         term_width = 400,
         display_order = 290,
         disable_help_flag = true
@@ -1240,6 +1240,14 @@ pub struct SearchOption {
         display_order = 320
     )]
     pub filter: Vec<String>,
+
+    /// End time of the event logs to load (ex: "2022-02-22 23:59:59 +09:00")
+    #[arg(help_heading = Some("Filtering"), long = "timeline-end", value_name = "DATE", display_order = 460)]
+    pub end_timeline: Option<String>,
+
+    /// Start time of the event logs to load (ex: "2020-02-22 00:00:00 +09:00")
+    #[arg(help_heading = Some("Filtering"), long = "timeline-start", value_name = "DATE", display_order = 460)]
+    pub start_timeline: Option<String>,
 
     /// Save the search results in CSV format (ex: search.csv)
     #[arg(
@@ -1899,7 +1907,7 @@ pub struct ExpandListOption {
 #[derive(Parser, Clone, Debug)]
 #[clap(
     author = "Yamato Security (https://github.com/Yamato-Security/hayabusa - @SecurityYamato)",
-    help_template = "\nHayabusa v3.0.1 - 3rd Year Anniversary Release\n{author-with-newline}\n{usage-heading}\n  hayabusa.exe <COMMAND> [OPTIONS]\n  hayabusa.exe help <COMMAND> or hayabusa.exe <COMMAND> -h\n\n{all-args}{options}",
+    help_template = "\nHayabusa v3.1.0 - Dev Build\n{author-with-newline}\n{usage-heading}\n  hayabusa.exe <COMMAND> [OPTIONS]\n  hayabusa.exe help <COMMAND> or hayabusa.exe <COMMAND> -h\n\n{all-args}{options}",
     term_width = 400,
     disable_help_flag = true
 )]
@@ -2162,10 +2170,30 @@ impl TargetEventTime {
                 );
                 Self::set(parse_success_flag, start_time, end_time)
             }
+            Action::Search(option) => {
+                let start_time = if time_offset.is_some() {
+                    get_time(
+                        time_offset.as_ref(),
+                        "Invalid timeline offset. Please use one of the following formats: 1y, 3M, 30d, 24h, 30m",
+                        &mut parse_success_flag,
+                    )
+                } else {
+                    get_time(
+                        option.start_timeline.as_ref(),
+                        "start-timeline field: the timestamp format is not correct.",
+                        &mut parse_success_flag,
+                    )
+                };
+                let end_time = get_time(
+                    option.end_timeline.as_ref(),
+                    "end-timeline field: the timestamp format is not correct.",
+                    &mut parse_success_flag,
+                );
+                Self::set(parse_success_flag, start_time, end_time)
+            }
             Action::LogMetrics(_)
             | Action::EidMetrics(_)
             | Action::ComputerMetrics(_)
-            | Action::Search(_)
             | Action::ExtractBase64(_) => {
                 let start_time = if time_offset.is_some() {
                     get_time(
@@ -2358,6 +2386,8 @@ fn extract_search_options(config: &Config) -> Option<SearchOption> {
             time_format_options: option.time_format_options.clone(),
             and_logic: option.and_logic,
             disable_abbreviations: option.disable_abbreviations,
+            start_timeline: option.start_timeline.clone(),
+            end_timeline: option.end_timeline.clone(),
         }),
         _ => None,
     }
@@ -3198,6 +3228,8 @@ mod tests {
                     utc: false,
                 },
                 disable_abbreviations: false,
+                start_timeline: None,
+                end_timeline: None,
             })),
             debug: false,
         }));
