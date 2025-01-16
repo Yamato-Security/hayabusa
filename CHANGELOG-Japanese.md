@@ -1,5 +1,11 @@
 # 変更点
 
+## 3.1.0 [xxxx/xx/xx]
+
+**改善:**
+
+- `search`コマンドに`--timeline-start/--timeline-end`オプションを追加した。 (#1543) (@fukuseket)
+
 ## 3.0.1 [2024/12/29] - 3rd Year Anniversary Release
 
 **バグ修正:**
