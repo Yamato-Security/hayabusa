@@ -97,7 +97,7 @@ pub fn read_expand_files<P: AsRef<Path>>(dir: P) -> io::Result<HashMap<String, V
     if let Ok(entries) = fs::read_dir(dir) {
         for entry in entries.flatten() {
             let path = entry.path();
-            if path.is_file() && path.extension().map_or(false, |ext| ext == "txt") {
+            if path.is_file() && path.extension().is_some_and(|ext| ext == "txt") {
                 if let Some(key) = path.file_stem().and_then(|s| s.to_str()) {
                     let file = fs::File::open(&path)?;
                     let reader = io::BufReader::new(file);
