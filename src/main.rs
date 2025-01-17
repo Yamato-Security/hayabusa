@@ -72,6 +72,7 @@ use tokio::runtime::Runtime;
 use tokio::spawn;
 use tokio::task::JoinHandle;
 use ureq::get;
+use yaml_rust2::YamlLoader;
 
 #[derive(Embed)]
 #[folder = "art/"]
@@ -1817,6 +1818,26 @@ impl App {
             )
             .ok();
             println!();
+        }
+
+        if stored_static.logon_summary_flag && !stored_static.json_input_flag {
+            // Logon summary用のChannelフィルターを作成
+            let yaml_str = r#"
+            detection:
+                selection:
+                    Channel:
+                        - Security
+                        - Microsoft-Windows-TerminalServices-Gateway/Operational
+                        - Microsoft-Windows-TerminalServices-LocalSessionManager/Operational
+            "#;
+            let yaml_data = YamlLoader::load_from_str(yaml_str);
+            let node = RuleNode::new(
+                "logon".to_string(),
+                yaml_data.ok().unwrap_or_default().first().unwrap().clone(),
+            );
+            let rule_files = vec![node];
+            let mut channel_filter = create_channel_filter(&evtx_files, &rule_files);
+            evtx_files.retain(|e| channel_filter.scanable_rule_exists(e));
         }
 
         let template = if stored_static.common_options.no_color {
