@@ -5,6 +5,7 @@
 **Enhancements:**
 
 - Added `--timeline-start/--timeline-end` options to the `search` command. (#1543) (@fukuseket)
+- Significantly improved the speed of the `logon-summary` command with channel filtering. (#1544) (@fukusuket)
 
 ## 3.0.1 [2024/12/29] - 3rd Year Anniversary Release
 
