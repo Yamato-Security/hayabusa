@@ -233,7 +233,7 @@ fn extract_payload(data: &Value) -> Vec<(Value, Event)> {
                 let v = data["Event"]["EventData"]["Payload"].clone();
                 values.push((v, Event::PwSh4103));
             } else if ch == "Windows PowerShell" && id == 400 {
-                let v = data["Event"]["EventData"]["Data"].clone();
+                let v = data["Event"]["EventData"]["Data"][2].clone();
                 values.push((v, Event::PwShClassic400));
             }
         }
