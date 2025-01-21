@@ -55,6 +55,7 @@ enum Event {
     Sysmon1,
     PwSh4104,
     PwSh4103,
+    PwShClassic400,
 }
 
 impl fmt::Display for Event {
@@ -64,6 +65,7 @@ impl fmt::Display for Event {
             Event::Sysmon1 => write!(f, "Sysmon 1"),
             Event::PwSh4104 => write!(f, "PwSh 4104"),
             Event::PwSh4103 => write!(f, "PwSh 4103"),
+            Event::PwShClassic400 => write!(f, "PwShClassic 400"),
         }
     }
 }
@@ -230,6 +232,9 @@ fn extract_payload(data: &Value) -> Vec<(Value, Event)> {
             } else if ch == "Microsoft-Windows-PowerShell/Operational" && id == 4103 {
                 let v = data["Event"]["EventData"]["Payload"].clone();
                 values.push((v, Event::PwSh4103));
+            } else if ch == "Windows PowerShell" && id == 400 {
+                let v = data["Event"]["EventData"]["Data"][2].clone();
+                values.push((v, Event::PwShClassic400));
             }
         }
     }
