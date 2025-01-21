@@ -1,11 +1,12 @@
 # 変更点
 
-## 3.1.0 [xxxx/xx/xx]
+## 3.1.0 [2025/02/22] - Ninja Day Release
 
 **改善:**
 
 - `search`コマンドに`--timeline-start/--timeline-end`オプションを追加した。 (#1543) (@fukuseket)
 - チャンネルフィルタリングで `logon-summary` コマンドの速度を大幅に改善した。 (#1544) (@fukusuket)
+- `extract-base64`コマンドが`PowerShell Classic EID 400`イベントも対象するようになった。 (#1549) (@fukusuket)
 
 ## 3.0.1 [2024/12/29] - 3rd Year Anniversary Release
 
