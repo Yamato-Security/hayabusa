@@ -138,6 +138,7 @@ pub struct StoredStatic {
     pub is_low_memory: bool,
     pub enable_all_rules: bool,
     pub scan_all_evtx_files: bool,
+    pub metrics_remove_duplication: bool,
 }
 impl StoredStatic {
     /// main.rsでパースした情報からデータを格納する関数
@@ -684,6 +685,11 @@ impl StoredStatic {
             Some(Action::JsonTimeline(opt)) => opt.output_options.scan_all_evtx_files,
             _ => false,
         };
+        let metrics_remove_duplication = match &input_config.as_ref().unwrap().action {
+            Some(Action::EidMetrics(opt)) => opt.remove_duplicate_detections,
+            Some(Action::LogonSummary(opt)) => opt.remove_duplicate_detections,
+            _ => false,
+        };
         let mut ret = StoredStatic {
             config: input_config.as_ref().unwrap().to_owned(),
             config_path: config_path.to_path_buf(),
@@ -806,6 +812,7 @@ impl StoredStatic {
             is_low_memory,
             enable_all_rules,
             scan_all_evtx_files,
+            metrics_remove_duplication,
         };
         ret.profiles = load_profile(
             check_setting_path(
@@ -1362,6 +1369,10 @@ pub struct EidMetricsOption {
     #[arg(help_heading = Some("Output"), short = 'o', long, value_name = "FILE", display_order = 410)]
     pub output: Option<PathBuf>,
 
+    /// Remove duplicate detections (default: disabled)
+    #[arg(help_heading = Some("Output"), short = 'X', long = "remove-duplicate-detections", requires = "sort_events", display_order = 409)]
+    pub remove_duplicate_detections: bool,
+
     #[clap(flatten)]
     pub common_options: CommonOptions,
 
@@ -1484,6 +1495,10 @@ pub struct LogonSummaryOption {
     /// Save the logon summary to two CSV files (ex: -o logon-summary)
     #[arg(help_heading = Some("Output"), short = 'o', long, value_name = "FILENAME-PREFIX", display_order = 410)]
     pub output: Option<PathBuf>,
+
+    /// Remove duplicate detections (default: disabled)
+    #[arg(help_heading = Some("Output"), short = 'X', long = "remove-duplicate-detections", requires = "sort_events", display_order = 409)]
+    pub remove_duplicate_detections: bool,
 
     #[clap(flatten)]
     pub common_options: CommonOptions,
@@ -3276,6 +3291,7 @@ mod tests {
                     include_computer: None,
                     exclude_computer: None,
                 },
+                remove_duplicate_detections: false,
             })),
             debug: false,
         }));
@@ -3324,6 +3340,7 @@ mod tests {
                 },
                 end_timeline: None,
                 start_timeline: None,
+                remove_duplicate_detections: false,
             })),
             debug: false,
         }));

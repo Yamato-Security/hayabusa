@@ -830,6 +830,7 @@ mod tests {
                 clobber: false,
                 end_timeline: None,
                 start_timeline: None,
+                remove_duplicate_detections: false,
             }));
         dummy_stored_static.logon_summary_flag = true;
         *STORED_EKEY_ALIAS.write().unwrap() = Some(dummy_stored_static.eventkey_alias.clone());
@@ -1016,6 +1017,7 @@ mod tests {
                 },
                 output: Some(Path::new("./test_tm_stats.csv").to_path_buf()),
                 clobber: false,
+                remove_duplicate_detections: false,
             }));
         *STORED_EKEY_ALIAS.write().unwrap() = Some(dummy_stored_static.eventkey_alias.clone());
         let mut timeline = Timeline::default();
@@ -1111,6 +1113,7 @@ mod tests {
                 clobber: false,
                 end_timeline: None,
                 start_timeline: None,
+                remove_duplicate_detections: false,
             }));
         dummy_stored_static.logon_summary_flag = true;
         *STORED_EKEY_ALIAS.write().unwrap() = Some(dummy_stored_static.eventkey_alias.clone());

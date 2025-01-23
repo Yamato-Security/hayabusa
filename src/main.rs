@@ -3406,6 +3406,7 @@ mod tests {
                 utc: false,
             },
             clobber: false,
+            remove_duplicate_detections: false,
         });
         let config = Some(Config {
             action: Some(action),
@@ -3463,6 +3464,7 @@ mod tests {
                 utc: false,
             },
             clobber: true,
+            remove_duplicate_detections: false,
         });
         let config = Some(Config {
             action: Some(action),
@@ -3520,6 +3522,7 @@ mod tests {
             clobber: false,
             end_timeline: None,
             start_timeline: None,
+            remove_duplicate_detections: false,
         });
         let config = Some(Config {
             action: Some(action),
@@ -3578,6 +3581,7 @@ mod tests {
             clobber: true,
             end_timeline: None,
             start_timeline: None,
+            remove_duplicate_detections: false,
         });
         let config = Some(Config {
             action: Some(action),
