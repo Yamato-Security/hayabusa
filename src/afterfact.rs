@@ -165,12 +165,19 @@ pub fn init_writer(stored_static: &StoredStatic) -> AfterfactWriter {
 
     let mut display_flag = false;
     let target: Box<dyn io::Write> = if let Some(path) = &stored_static.output_path {
-        // output to file
-        match File::create(path) {
-            Ok(file) => Box::new(BufWriter::new(file)),
-            Err(err) => {
-                AlertMessage::alert(&format!("Failed to open file. {err}")).ok();
-                process::exit(1);
+        if matches!(
+            stored_static.config.action.as_ref().unwrap(),
+            Action::PivotKeywordsList(_) | Action::LogonSummary(_)
+        ) {
+            Box::new(BufWriter::new(io::stdout()))
+        } else {
+            // output to file
+            match File::create(path) {
+                Ok(file) => Box::new(BufWriter::new(file)),
+                Err(err) => {
+                    AlertMessage::alert(&format!("Failed to open file. {err}")).ok();
+                    process::exit(1);
+                }
             }
         }
     } else {
