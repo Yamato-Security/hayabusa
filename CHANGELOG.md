@@ -2,6 +2,10 @@
 
 ## 3.1.0 [2025/02/22] - Ninja Day Release
 
+**New Features:**
+
+- `-X, --remove-duplicate-detections` option to `eid-metrics` and `logon-summary` commands. (#1552) (@fukusuket)
+
 **Enhancements:**
 
 - Added `--timeline-start/--timeline-end` options to the `search` command. (#1543) (@fukuseket)

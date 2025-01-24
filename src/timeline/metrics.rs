@@ -36,6 +36,7 @@ pub struct EventMetrics {
     pub stats_list: HashMap<(CompactString, CompactString), usize>,
     pub stats_login_list: HashMap<LoginEvent, [usize; 2]>,
     pub stats_logfile: Vec<LogMetrics>,
+    pub counted_rec: HashSet<(String, String)>,
 }
 /**
 * Windows Event Logの統計情報を出力する
@@ -57,6 +58,7 @@ impl EventMetrics {
             stats_list,
             stats_login_list,
             stats_logfile: Vec::new(),
+            counted_rec: HashSet::new(),
         }
     }
 
@@ -238,6 +240,17 @@ impl EventMetrics {
             if let Some(idnum) =
                 utils::get_event_value("EventID", &record.record, &stored_static.eventkey_alias)
             {
+                if stored_static.metrics_remove_duplication {
+                    let event = &record.record["Event"]["System"];
+                    let rec_id = event["EventRecordID"].to_string();
+                    let evt_time = event["TimeCreated_attributes"]["SystemTime"].to_string();
+                    let counted = (rec_id, evt_time);
+                    if self.counted_rec.contains(&counted) {
+                        continue;
+                    }
+                    self.counted_rec.insert(counted);
+                }
+
                 let count: &mut usize = self
                     .stats_list
                     .entry((
@@ -409,6 +422,16 @@ impl EventMetrics {
                             &stored_static.eventkey_alias,
                         ),
                     };
+                    if stored_static.metrics_remove_duplication {
+                        let event = &record.record["Event"]["System"];
+                        let rec_id = event["EventRecordID"].to_string();
+                        let evt_time = event["TimeCreated_attributes"]["SystemTime"].to_string();
+                        let counted = (rec_id, evt_time);
+                        if self.counted_rec.contains(&counted) {
+                            continue;
+                        }
+                        self.counted_rec.insert(counted);
+                    }
 
                     let countlist: [usize; 2] = [0, 0];
                     // この段階でEventIDは4624もしくは4625となるのでこの段階で対応するカウンターを取得する
@@ -542,6 +565,7 @@ mod tests {
                 },
                 output: None,
                 clobber: false,
+                remove_duplicate_detections: false,
             }));
 
         let mut timeline = Timeline::new();
