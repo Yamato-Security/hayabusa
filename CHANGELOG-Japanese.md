@@ -12,6 +12,10 @@
 - チャンネルフィルタリングで `logon-summary` コマンドの速度を大幅に改善した。 (#1544) (@fukusuket)
 - `extract-base64`コマンドが`PowerShell Classic EID 400`イベントも対象するようになった。 (#1549) (@fukusuket)
 
+**バグ修正:**
+
+- `logon-summary`と`pivot-keywords-list`コマンドが不要なファイルを出力していた。 (#1553) (@fukusuket)
+
 ## 3.0.1 [2024/12/29] - 3rd Year Anniversary Release
 
 **バグ修正:**
