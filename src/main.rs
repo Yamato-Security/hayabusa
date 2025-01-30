@@ -8,7 +8,7 @@ use std::borrow::BorrowMut;
 use std::ffi::{OsStr, OsString};
 use std::fmt::Display;
 use std::fmt::Write as _;
-use std::io::{copy, BufRead, BufWriter, Write};
+use std::io::{BufRead, BufWriter, Write};
 use std::path::Path;
 use std::ptr::null_mut;
 use std::sync::Arc;
@@ -606,9 +606,9 @@ impl App {
                 if rule_encoded.exists() {
                     let url = "https://raw.githubusercontent.com/Yamato-Security/hayabusa-encoded-rules/main/encoded_rules.yml";
                     match get(url).call() {
-                        Ok(res) => {
+                        Ok(mut res) => {
                             let mut dst = File::create(Path::new("./encoded_rules.yml")).unwrap();
-                            copy(&mut res.into_reader(), &mut dst).unwrap();
+                            dst.write_all(res.body_mut().read_to_string().unwrap().as_bytes()).unwrap();
                             write_color_buffer(
                                 &BufferWriter::stdout(ColorChoice::Always),
                                 get_writable_color(
@@ -628,10 +628,10 @@ impl App {
                     if !ONE_CONFIG_MAP.is_empty() {
                         let url = "https://raw.githubusercontent.com/Yamato-Security/hayabusa-encoded-rules/refs/heads/main/rules_config_files.txt";
                         match get(url).call() {
-                            Ok(res) => {
+                            Ok(mut res) => {
                                 let mut dst =
                                     File::create(Path::new("./rules_config_files.txt")).unwrap();
-                                copy(&mut res.into_reader(), &mut dst).unwrap();
+                                dst.write_all(res.body_mut().read_to_string().unwrap().as_bytes()).unwrap();
                                 write_color_buffer(
                                     &BufferWriter::stdout(ColorChoice::Always),
                                     get_writable_color(
