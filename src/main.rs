@@ -608,7 +608,8 @@ impl App {
                     match get(url).call() {
                         Ok(mut res) => {
                             let mut dst = File::create(Path::new("./encoded_rules.yml")).unwrap();
-                            dst.write_all(res.body_mut().read_to_string().unwrap().as_bytes()).unwrap();
+                            dst.write_all(res.body_mut().read_to_string().unwrap().as_bytes())
+                                .unwrap();
                             write_color_buffer(
                                 &BufferWriter::stdout(ColorChoice::Always),
                                 get_writable_color(
@@ -631,7 +632,8 @@ impl App {
                             Ok(mut res) => {
                                 let mut dst =
                                     File::create(Path::new("./rules_config_files.txt")).unwrap();
-                                dst.write_all(res.body_mut().read_to_string().unwrap().as_bytes()).unwrap();
+                                dst.write_all(res.body_mut().read_to_string().unwrap().as_bytes())
+                                    .unwrap();
                                 write_color_buffer(
                                     &BufferWriter::stdout(ColorChoice::Always),
                                     get_writable_color(
