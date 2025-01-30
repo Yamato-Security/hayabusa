@@ -608,7 +608,7 @@ impl App {
                     match get(url).call() {
                         Ok(mut res) => {
                             let mut dst = File::create(Path::new("./encoded_rules.yml")).unwrap();
-                            dst.write_all(res.body_mut().read_to_string().unwrap().as_bytes())
+                            dst.write_all(res.body_mut().read_to_vec().unwrap().as_bytes())
                                 .unwrap();
                             write_color_buffer(
                                 &BufferWriter::stdout(ColorChoice::Always),
