@@ -1882,7 +1882,7 @@ pub struct ExtractBase64Option {
     #[clap(flatten)]
     pub input_args: InputOption,
 
-    /// Extract Base64 strings.
+    /// Save results to a CSV file
     #[arg(help_heading = Some("Output"), short = 'o', long, value_name = "FILE", display_order = 410)]
     pub output: Option<PathBuf>,
 
