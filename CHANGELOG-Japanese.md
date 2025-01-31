@@ -11,6 +11,7 @@
 - `search`コマンドに`--timeline-start/--timeline-end`オプションを追加した。 (#1543) (@fukuseket)
 - チャンネルフィルタリングで `logon-summary` コマンドの速度を大幅に改善した。 (#1544) (@fukusuket)
 - `extract-base64`コマンドが`PowerShell Classic EID 400`イベントも対象するようになった。 (#1549) (@fukusuket)
+- `extract-base64`コマンドがPowerShell Coreログにも対応した。 (#1558) (@fukusuket)
 
 **バグ修正:**
 
