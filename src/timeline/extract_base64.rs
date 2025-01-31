@@ -226,10 +226,16 @@ fn extract_payload(data: &Value) -> Vec<(Value, Event)> {
                 values.push((v, Event::Sysmon1));
                 let v = data["Event"]["EventData"]["ParentCommandLine"].clone();
                 values.push((v, Event::Sysmon1));
-            } else if ch == "Microsoft-Windows-PowerShell/Operational" && id == 4104 {
+            } else if (ch == "Microsoft-Windows-PowerShell/Operational"
+                || ch == "PowerShellCore/Operational")
+                && id == 4104
+            {
                 let v = data["Event"]["EventData"]["ScriptBlockText"].clone();
                 values.push((v, Event::PwSh4104));
-            } else if ch == "Microsoft-Windows-PowerShell/Operational" && id == 4103 {
+            } else if (ch == "Microsoft-Windows-PowerShell/Operational"
+                || ch == "PowerShellCore/Operational")
+                && id == 4103
+            {
                 let v = data["Event"]["EventData"]["Payload"].clone();
                 values.push((v, Event::PwSh4103));
             } else if ch == "Windows PowerShell" && id == 400 {
