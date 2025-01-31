@@ -13,6 +13,9 @@ Timesketch offers the following benefits:
 4. It is not limited to Windows
 5. It supports advanced querying
 
+There are many other benefits such as CTI support, various analyzers, interactive notebooks, etc...
+Please check out the [user's guide](https://timesketch.org/guides/user/upload-data/) and [YouTube channel](https://www.youtube.com/channel/UC_n6mMb0OxWRk7xiqiOOcRQ) for more information.
+
 The only downside is that you will have to setup a Timesketch server in your lab environment but luckily this is very trival to do.
 
 ## Table of Contents
