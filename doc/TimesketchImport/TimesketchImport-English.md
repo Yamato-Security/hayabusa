@@ -4,7 +4,7 @@
 
 "[Timesketch](https://timesketch.org/) is an open-source tool for collaborative forensic timeline analysis. Using sketches you and your collaborators can easily organize your timelines and analyze them all at the same time. Add meaning to your raw data with rich annotations, comments, tags and stars."
 
-For small investigations where you are analyzing a CSV file less than 1GB and working alone, Timeline Explorer is suitable, however, when you are working with larger data or with a team, a tool like Timesketch is much better.
+For small investigations where you are analyzing a CSV file only a couple hundred MBs in size and working alone, Timeline Explorer is suitable, however, when you are working with larger data or with a team, a tool like Timesketch is much better.
 
 Timesketch offers the following benefits:
 1. It is very fast and can handle large data
@@ -36,7 +36,7 @@ The only downside is that you will have to setup a Timesketch server in your lab
       - [Event histogram](#event-histogram)
       - [Save current search](#save-current-search)
     - [Search bar](#search-bar)
-    - [Search history](#search-history)
+      - [Search history](#search-history)
     - [Vertical elipsis](#vertical-elipsis)
     - [Stars and tags](#stars-and-tags)
 
@@ -127,11 +127,11 @@ Search for `*` and the events will show up as shown below:
 
 ### Alert details
 
-If you click on alert rule title under `message`, you will get the detailed information about the alert and log:
+If you click on an alert rule title under the `message` column, you will get the detailed information about the alert:
 
 ![Alert details](AlertDetails.png)
 
-If you want to understand the sigma rule logic, look up the description and references, etc... please check the rule in the [hayabusa-rules](https://github.com/Yamato-Security/hayabusa-rules) repository.
+If you want to understand the sigma rule logic, look up the description and references, etc... please look up the rule in the [hayabusa-rules](https://github.com/Yamato-Security/hayabusa-rules) repository.
 
 #### Field filtering
 
@@ -152,11 +152,12 @@ When you click on an alert to get detailed information, a new comment dialog box
 ![Comment Icon](CommentIcon.png)
 
 Here, users can start a chat and write comments about the investigation.
-If you working on a team, you should probably create different user account for each member so that you know who wrote what.
+
+> If you working on a team, you should probably create different user account for each member so that you know who wrote what.
 
 ![Comment chat](CommentChat.png)
 
-If you hover over a comment, you can easily edit and delete the messages.
+> If you hover over a comment, you can easily edit and delete the messages.
 
 ### Modifying columns
 
@@ -220,16 +221,20 @@ Wildcards and regular expressions are supported.
 
 Refer to the user guide [here](https://timesketch.org/guides/user/search-query-guide/) for more advanced queries.
 
-### Search history
+#### Search history
 
 If you click the clock icon to the left of the search bar you can show previously entered queries.
 You can also click the left and right arrow icons to run previous and next queries.
+
+![Search History](SearchHistory.png)
 
 ### Vertical elipsis
 
 If you click on the vertical elipsis to the left of a timestamp and click `Context search`, you can see alerts that happened before and after a certain event:
 
 ![Vertical elipsis](VerticalElipsisContext.png)
+
+This will bring up this:
 
 ![Context Search](ContextSearch.png)
 
