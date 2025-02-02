@@ -1958,7 +1958,7 @@ impl App {
         } else if stored_static.logon_summary_flag {
             tl.tm_logon_stats_dsp_msg(stored_static);
         } else if stored_static.search_flag {
-            tl.search_dsp_msg(event_timeline_config, stored_static);
+            tl.search_dsp_msg(stored_static);
         } else if stored_static.computer_metrics_flag {
             tl.computer_metrics_dsp_msg(stored_static)
         } else if stored_static.log_metrics_flag {

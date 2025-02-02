@@ -6,7 +6,7 @@ use crate::detections::utils::format_time;
 use crate::{
     afterfact::output_json_str,
     detections::{
-        configs::{Action, EventInfoConfig, EventKeyAliasConfig, StoredStatic},
+        configs::{Action, EventKeyAliasConfig, StoredStatic},
         detection::EvtxRecordInfo,
         message::AlertMessage,
         utils::{self, write_color_buffer},
@@ -70,34 +70,17 @@ impl EventSearch {
     }
 
     /// 検索処理を呼び出す関数。keywordsが空の場合は検索処理を行わない
-    pub fn search_start(
-        &mut self,
-        records: &[EvtxRecordInfo],
-        stored_static: &StoredStatic,
-    ) {
+    pub fn search_start(&mut self, records: &[EvtxRecordInfo], stored_static: &StoredStatic) {
         let search_option = stored_static.search_option.as_ref().unwrap();
-        let output_option = stored_static.output_option.as_ref().unwrap();
-        if search_option.keywords.as_ref().is_some_and(|keywords| !keywords.is_empty()) {
-            // 大文字小文字を区別しないかどうか、and検索を行うかのフラグを設定
-            let (case_insensitive_flag, and_logic_flag) = match &stored_static.config.action {
-                Some(Action::Search(opt)) => (opt.ignore_case, opt.and_logic),
-                _ => (false, false),
-            };
-            self.search_keyword(
-                records,
-                search_option,
-                output_option,
-                &stored_static.eventkey_alias,
-                (case_insensitive_flag, and_logic_flag),
-            );
+        if search_option
+            .keywords
+            .as_ref()
+            .is_some_and(|keywords| !keywords.is_empty())
+        {
+            self.search_keyword(records, search_option, stored_static);
         }
         if search_option.regex.is_some() {
-            self.search_regex(
-                records,
-                search_option,
-                output_option,
-                &stored_static.eventkey_alias,
-            );
+            self.search_regex(records, search_option, stored_static);
         }
     }
 
@@ -136,14 +119,12 @@ impl EventSearch {
         })
     }
 
-    /// イベントレコード内の情報からkeywordに設定した文字列を検索して、構造体に結果を保持する関数
+    // check if a record contains the keywords specified in a search command option or not.
     fn search_keyword(
         &mut self,
         records: &[EvtxRecordInfo],
         search_option: &SearchOption,
-        output_option: &OutputOption,
-        eventkey_alias: &EventKeyAliasConfig,
-        (case_insensitive_flag, and_logic_flag): (bool, bool), // 検索時に大文字小文字を区別するかどうか, 検索時にAND条件で検索するかどうか
+        stored_static: &StoredStatic,
     ) {
         if records.is_empty() {
             return;
@@ -157,18 +138,26 @@ impl EventSearch {
         }
 
         let filter_rule = create_filter_rule(&search_option.filter);
+        let mut wtr = ResultWriter::new(search_option);
+        let (case_insensitive_flag, and_logic_flag) = match &stored_static.config.action {
+            Some(Action::Search(opt)) => (opt.ignore_case, opt.and_logic),
+            _ => (false, false),
+        };
         for record in records.iter() {
-            // フィルタリングを通過しなければ検索は行わず次のレコードを読み込む
-            if !self.filter_record(record, &filter_rule, eventkey_alias) {
+            // filtering
+            if !self.filter_record(record, &filter_rule, &stored_static.eventkey_alias) {
                 continue;
             }
+
+            // check if the record contains keywords or not.
             let search_target = if case_insensitive_flag {
                 record.data_string.to_lowercase()
             } else {
                 record.data_string.to_string()
             };
             self.filepath = CompactString::from(record.evtx_filepath.as_str());
-            let search_condition = |keywords: &[String]| -> bool {
+
+            let contain_keywords = |keywords: &[String]| -> bool {
                 if and_logic_flag {
                     keywords.iter().all(|key| {
                         let converted_key = if case_insensitive_flag {
@@ -189,15 +178,24 @@ impl EventSearch {
                     })
                 }
             };
-            
-            if search_condition(keywords) {
-                let (timestamp, hostname, channel, eventid, recordid, allfieldinfo) =
-                    extract_search_event_info(record, eventkey_alias, output_option);
-                let allfieldinfo_newline_splited = ALLFIELDINFO_SPECIAL_CHARS
-                    .replace_all(&allfieldinfo, &["🦅", "🦅", "🦅"])
-                    .split('🦅')
-                    .filter(|x| !x.is_empty())
-                    .join(" ");
+            if !contain_keywords(keywords) {
+                continue;
+            }
+
+            // collect the hit record or output it on the fly
+            let (timestamp, hostname, channel, eventid, recordid, allfieldinfo) =
+                extract_search_event_info(
+                    record,
+                    &stored_static.eventkey_alias,
+                    stored_static.output_option.as_ref().unwrap(),
+                );
+            let allfieldinfo_newline_splited = ALLFIELDINFO_SPECIAL_CHARS
+                .replace_all(&allfieldinfo, &["🦅", "🦅", "🦅"])
+                .split('🦅')
+                .filter(|x| !x.is_empty())
+                .join(" ");
+            if search_option.sort_events {
+                // we cannot sort all the records unless we get all the records; so we just collect the hit record at this code and we'll sort them later.
                 self.search_result.insert((
                     timestamp,
                     hostname,
@@ -207,17 +205,29 @@ impl EventSearch {
                     CompactString::from(allfieldinfo_newline_splited),
                     self.filepath.clone(),
                 ));
+            } else {
+                // sort_events option is false, the hit record is output on the fly.
+                // We don't want to collect the hit record into the memory, if possible, in order to reduce memory usage.
+                let hit_record = (
+                    timestamp,
+                    hostname,
+                    channel,
+                    eventid,
+                    recordid,
+                    CompactString::from(allfieldinfo_newline_splited),
+                    self.filepath.clone(),
+                );
+                wtr.write_record(hit_record, search_option, stored_static);
             }
         }
     }
 
-    /// イベントレコード内の情報からregexに設定した正規表現を検索して、構造体に結果を保持する関数
+    // check if a record matches the regex specified in a search command option or not.
     fn search_regex(
         &mut self,
         records: &[EvtxRecordInfo],
         search_option: &SearchOption,
-        output_option: &OutputOption,
-        eventkey_alias: &EventKeyAliasConfig,
+        stored_static: &StoredStatic,
     ) {
         let re = Regex::new(search_option.regex.as_ref().unwrap()).unwrap_or_else(|err| {
             AlertMessage::alert(&format!("Failed to create regex pattern. \n{err}")).ok();
@@ -228,20 +238,33 @@ impl EventSearch {
         }
 
         let filter_rule = create_filter_rule(&search_option.filter);
+        let mut wtr = ResultWriter::new(search_option);
         for record in records.iter() {
-            // フィルタリングを通過しなければ検索は行わず次のレコードを読み込む
-            if !self.filter_record(record, &filter_rule, eventkey_alias) {
+            // we will skip this record if the record is filterd.
+            if !self.filter_record(record, &filter_rule, &stored_static.eventkey_alias) {
                 continue;
             }
+
+            // check if the regex matches the record or not.
             self.filepath = CompactString::from(record.evtx_filepath.as_str());
-            if re.is_match(&record.data_string) {
-                let (timestamp, hostname, channel, eventid, recordid, allfieldinfo) =
-                    extract_search_event_info(record, eventkey_alias, output_option);
-                let allfieldinfo_newline_splited = ALLFIELDINFO_SPECIAL_CHARS
-                    .replace_all(&allfieldinfo, &["🦅", "🦅", "🦅"])
-                    .split('🦅')
-                    .filter(|x| !x.is_empty())
-                    .join(" ");
+            if !re.is_match(&record.data_string) {
+                continue;
+            }
+
+            // collect the hit record or output it on the fly
+            let (timestamp, hostname, channel, eventid, recordid, allfieldinfo) =
+                extract_search_event_info(
+                    record,
+                    &stored_static.eventkey_alias,
+                    stored_static.output_option.as_ref().unwrap(),
+                );
+            let allfieldinfo_newline_splited = ALLFIELDINFO_SPECIAL_CHARS
+                .replace_all(&allfieldinfo, &["🦅", "🦅", "🦅"])
+                .split('🦅')
+                .filter(|x| !x.is_empty())
+                .join(" ");
+            if search_option.sort_events {
+                // we cannot sort all the records unless we get all the records; so we just collect the hit record at this code and we'll sort them later.
                 self.search_result.insert((
                     timestamp,
                     hostname,
@@ -251,6 +274,19 @@ impl EventSearch {
                     CompactString::from(allfieldinfo_newline_splited),
                     self.filepath.clone(),
                 ));
+            } else {
+                // sort_events option is false, the hit record is output on the fly.
+                // We don't want to collect the hit record into the memory, if possible, in order to reduce memory usage.
+                let hit_record = (
+                    timestamp,
+                    hostname,
+                    channel,
+                    eventid,
+                    recordid,
+                    CompactString::from(allfieldinfo_newline_splited),
+                    self.filepath.clone(),
+                );
+                wtr.write_record(hit_record, search_option, stored_static);
             }
         }
     }
@@ -259,12 +295,11 @@ impl EventSearch {
 pub struct ResultWriter {
     pub disp_wtr: Option<BufferWriter>,
     pub file_wtr: Option<Writer<BufWriter<File>>>,
+    written_record: bool,
 }
 
 impl ResultWriter {
-    pub fn new(
-        search_option: &SearchOption,
-    ) -> ResultWriter {
+    pub fn new(search_option: &SearchOption) -> ResultWriter {
         let mut file_wtr = Option::None;
         if let Some(path) = &search_option.output {
             match File::create(path) {
@@ -299,14 +334,18 @@ impl ResultWriter {
             Option::None
         };
 
-        ResultWriter { disp_wtr, file_wtr }
+        ResultWriter {
+            disp_wtr,
+            file_wtr,
+            written_record: false,
+        }
     }
 
-    pub fn write_headder(
-        &mut self,
-        search_option: &SearchOption,
-    ) {
-        if search_option.output.is_some() && !search_option.json_output && !search_option.jsonl_output {
+    fn write_headder(&mut self, search_option: &SearchOption) {
+        if search_option.output.is_some()
+            && !search_option.json_output
+            && !search_option.jsonl_output
+        {
             self.file_wtr
                 .as_mut()
                 .unwrap()
@@ -335,12 +374,17 @@ impl ResultWriter {
             CompactString,
             CompactString,
         ),
-        event_timeline_config: &EventInfoConfig,
         search_option: &SearchOption,
         stored_static: &StoredStatic,
     ) {
-        let event_title = if let Some(event_info) =
-            event_timeline_config.get_event_id(&channel.to_ascii_lowercase(), &event_id)
+        if !self.written_record {
+            self.write_headder(search_option);
+        }
+        self.written_record = true;
+
+        let event_title = if let Some(event_info) = stored_static
+            .event_timeline_config
+            .get_event_id(&channel.to_ascii_lowercase(), &event_id)
         {
             CompactString::from(event_info.evttitle.as_str())
         } else {
@@ -378,13 +422,18 @@ impl ResultWriter {
             all_field_info.as_str(),
             evtx_file.as_str(),
         ];
-        if search_option.output.is_some() && !search_option.json_output && !search_option.jsonl_output {
+        if search_option.output.is_some()
+            && !search_option.json_output
+            && !search_option.jsonl_output
+        {
             self.file_wtr
                 .as_mut()
                 .unwrap()
                 .write_record(&record_data)
                 .ok();
-        } else if search_option.output.is_some() && (search_option.json_output || search_option.jsonl_output) {
+        } else if search_option.output.is_some()
+            && (search_option.json_output || search_option.jsonl_output)
+        {
             let file_wtr = self.file_wtr.as_mut().unwrap();
             file_wtr.write_field("{").ok();
             let mut detail_infos: HashMap<CompactString, Vec<CompactString>> = HashMap::default();
@@ -612,7 +661,6 @@ pub fn search_result_dsp_msg(
         CompactString,
         CompactString,
     )>,
-    event_timeline_config: &EventInfoConfig,
     search_option: &SearchOption,
     stored_static: &StoredStatic,
 ) {
@@ -622,9 +670,6 @@ pub fn search_result_dsp_msg(
     }
 
     let mut wtr = ResultWriter::new(search_option);
-
-    wtr.write_headder(search_option);
-
     for (timestamp, hostname, channel, event_id, record_id, all_field_info, evtx_file) in
         result_list
             .into_iter()
@@ -640,7 +685,6 @@ pub fn search_result_dsp_msg(
                 all_field_info,
                 evtx_file,
             ),
-            event_timeline_config,
             search_option,
             stored_static,
         );

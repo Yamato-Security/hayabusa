@@ -86,10 +86,7 @@ impl Timeline {
         } else if stored_static.log_metrics_flag {
             self.stats.logfile_stats_start(records, stored_static);
         } else if stored_static.search_flag {
-            self.event_search.search_start(
-                records,
-                stored_static,
-            );
+            self.event_search.search_start(records, stored_static);
         } else if stored_static.extract_base64_flag {
             if let Action::ExtractBase64(opt) = &stored_static.config.action.as_ref().unwrap() {
                 let records = process_evtx_record_infos(records, &opt.time_format_options);
@@ -493,7 +490,6 @@ impl Timeline {
     /// Search結果出力
     pub fn search_dsp_msg(
         &mut self,
-        event_timeline_config: &EventInfoConfig,
         stored_static: &StoredStatic,
     ) {
         if let Action::Search(search_summary_option) =
@@ -511,7 +507,6 @@ impl Timeline {
             let search_result = self.event_search.search_result.clone();
             search_result_dsp_msg(
                 search_result,
-                event_timeline_config,
                 &search_summary_option,
                 stored_static,
             );
