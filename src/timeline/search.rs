@@ -73,13 +73,11 @@ impl EventSearch {
     pub fn search_start(
         &mut self,
         records: &[EvtxRecordInfo],
-        keywords: &[String],
-        regex: &Option<String>,
-        filters: &[String],
-        eventkey_alias: &EventKeyAliasConfig,
         stored_static: &StoredStatic,
     ) {
-        if !keywords.is_empty() {
+        let search_option = stored_static.search_option.as_ref().unwrap();
+        let output_option = stored_static.output_option.as_ref().unwrap();
+        if search_option.keywords.as_ref().is_some_and(|keywords| !keywords.is_empty()) {
             // 大文字小文字を区別しないかどうか、and検索を行うかのフラグを設定
             let (case_insensitive_flag, and_logic_flag) = match &stored_static.config.action {
                 Some(Action::Search(opt)) => (opt.ignore_case, opt.and_logic),
@@ -87,20 +85,18 @@ impl EventSearch {
             };
             self.search_keyword(
                 records,
-                keywords,
-                filters,
-                eventkey_alias,
-                stored_static.output_option.as_ref().unwrap(),
+                search_option,
+                output_option,
+                &stored_static.eventkey_alias,
                 (case_insensitive_flag, and_logic_flag),
             );
         }
-        if let Some(re) = regex {
+        if search_option.regex.is_some() {
             self.search_regex(
                 records,
-                re,
-                filters,
-                eventkey_alias,
-                stored_static.output_option.as_ref().unwrap(),
+                search_option,
+                output_option,
+                &stored_static.eventkey_alias,
             );
         }
     }
@@ -144,18 +140,23 @@ impl EventSearch {
     fn search_keyword(
         &mut self,
         records: &[EvtxRecordInfo],
-        keywords: &[String],
-        filters: &[String],
-        eventkey_alias: &EventKeyAliasConfig,
+        search_option: &SearchOption,
         output_option: &OutputOption,
+        eventkey_alias: &EventKeyAliasConfig,
         (case_insensitive_flag, and_logic_flag): (bool, bool), // 検索時に大文字小文字を区別するかどうか, 検索時にAND条件で検索するかどうか
     ) {
         if records.is_empty() {
             return;
         }
+        if search_option.keywords.is_none() {
+            return;
+        }
+        let keywords = search_option.keywords.as_ref().unwrap();
+        if keywords.is_empty() {
+            return;
+        }
 
-        let filter_rule = create_filter_rule(filters);
-
+        let filter_rule = create_filter_rule(&search_option.filter);
         for record in records.iter() {
             // フィルタリングを通過しなければ検索は行わず次のレコードを読み込む
             if !self.filter_record(record, &filter_rule, eventkey_alias) {
@@ -188,6 +189,7 @@ impl EventSearch {
                     })
                 }
             };
+            
             if search_condition(keywords) {
                 let (timestamp, hostname, channel, eventid, recordid, allfieldinfo) =
                     extract_search_event_info(record, eventkey_alias, output_option);
@@ -213,12 +215,11 @@ impl EventSearch {
     fn search_regex(
         &mut self,
         records: &[EvtxRecordInfo],
-        regex: &str,
-        filters: &[String],
-        eventkey_alias: &EventKeyAliasConfig,
+        search_option: &SearchOption,
         output_option: &OutputOption,
+        eventkey_alias: &EventKeyAliasConfig,
     ) {
-        let re = Regex::new(regex).unwrap_or_else(|err| {
+        let re = Regex::new(search_option.regex.as_ref().unwrap()).unwrap_or_else(|err| {
             AlertMessage::alert(&format!("Failed to create regex pattern. \n{err}")).ok();
             process::exit(1);
         });
@@ -226,8 +227,7 @@ impl EventSearch {
             return;
         }
 
-        let filter_rule = create_filter_rule(filters);
-
+        let filter_rule = create_filter_rule(&search_option.filter);
         for record in records.iter() {
             // フィルタリングを通過しなければ検索は行わず次のレコードを読み込む
             if !self.filter_record(record, &filter_rule, eventkey_alias) {
