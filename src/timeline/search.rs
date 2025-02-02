@@ -616,10 +616,10 @@ pub fn search_result_dsp_msg(
     search_option: &SearchOption,
     stored_static: &StoredStatic,
 ) {
-    // // if sort_events option is false, search results should have been already output.
-    // if !search_option.sort_events {
-    //     return;
-    // }
+    // if sort_events option is false, search results should have been already output.
+    if !search_option.sort_events {
+        return;
+    }
 
     let mut wtr = ResultWriter::new(search_option);
 
