@@ -709,7 +709,7 @@ pub fn search_result_dsp_msg(
         write_color_buffer(
             &BufferWriter::stdout(ColorChoice::Always),
             Some(Color::Rgb(238, 102, 97)),
-            "\n\nNo matches found.",
+            "\nNo matches found.\n",
             true,
         )
         .ok();
