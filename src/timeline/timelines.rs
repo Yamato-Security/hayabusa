@@ -522,12 +522,8 @@ impl Timeline {
             search_result_dsp_msg(
                 search_result,
                 event_timeline_config,
-                &search_summary_option.output,
+                &search_summary_option,
                 stored_static,
-                (
-                    search_summary_option.json_output,
-                    search_summary_option.jsonl_output,
-                ),
             );
             write_color_buffer(
                 &BufferWriter::stdout(ColorChoice::Always),
