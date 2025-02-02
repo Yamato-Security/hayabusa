@@ -12,7 +12,6 @@ use std::io::{BufRead, BufWriter, Write};
 use std::path::Path;
 use std::ptr::null_mut;
 use std::sync::Arc;
-use std::time::Duration;
 use std::{
     env,
     fs::{self, File},
@@ -1865,11 +1864,17 @@ impl App {
         pb.set_style(progress_style);
         // I tried progress bar with low memory option(output log on detection) but it seems that progress bar didn't go well with low memory option.
         // I disabled progress bar if low memory option is specified.
-        let is_show_progress = !stored_static.is_low_memory || stored_static.output_path.is_some();
-        if is_show_progress {
-            pb.enable_steady_tick(Duration::from_millis(300));
-        }
+        let is_sortevent_searchcmd = || -> bool {
+            if !stored_static.search_flag {
+                return false;
+            }
 
+            let search_option = stored_static.search_option.as_ref().unwrap();
+            return search_option.sort_events;
+        };
+        let is_show_progress = !(stored_static.is_low_memory
+            || !is_sortevent_searchcmd()
+            || stored_static.output_path.is_some());
         self.rule_keys = self.get_all_keys(&rule_files);
         let mut detection = detection::Detection::new(rule_files);
         let mut tl = Timeline::new();

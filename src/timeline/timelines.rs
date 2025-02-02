@@ -488,10 +488,7 @@ impl Timeline {
     }
 
     /// Search結果出力
-    pub fn search_dsp_msg(
-        &mut self,
-        stored_static: &StoredStatic,
-    ) {
+    pub fn search_dsp_msg(&mut self, stored_static: &StoredStatic) {
         if let Action::Search(search_summary_option) =
             &stored_static.config.action.as_ref().unwrap()
         {
@@ -505,11 +502,7 @@ impl Timeline {
                 .ok();
             }
             let search_result = self.event_search.search_result.clone();
-            search_result_dsp_msg(
-                search_result,
-                &search_summary_option,
-                stored_static,
-            );
+            search_result_dsp_msg(search_result, &search_summary_option, stored_static);
             write_color_buffer(
                 &BufferWriter::stdout(ColorChoice::Always),
                 get_writable_color(
