@@ -21,7 +21,7 @@ use hashbrown::{HashMap, HashSet};
 use itertools::Itertools;
 use num_format::{Locale, ToFormattedString};
 use regex::Regex;
-use std::fs::File;
+use std::fs::{File, OpenOptions};
 use std::io::BufWriter;
 use termcolor::{BufferWriter, Color, ColorChoice};
 use wildmatch::WildMatch;
@@ -221,7 +221,7 @@ impl EventSearch {
                     CompactString::from(allfieldinfo_newline_splited),
                     self.filepath.clone(),
                 );
-                wtr.write_record(hit_record, search_option, stored_static);
+                wtr.write_record(hit_record, search_option, stored_static, self.search_result_cnt == 0);
                 self.search_result_cnt += 1;
             }
         }
@@ -292,7 +292,7 @@ impl EventSearch {
                     CompactString::from(allfieldinfo_newline_splited),
                     self.filepath.clone(),
                 );
-                wtr.write_record(hit_record, search_option, stored_static);
+                wtr.write_record(hit_record, search_option, stored_static, self.search_result_cnt == 0);
                 self.search_result_cnt += 1;
             }
         }
@@ -309,7 +309,8 @@ impl ResultWriter {
     pub fn new(search_option: &SearchOption) -> ResultWriter {
         let mut file_wtr = Option::None;
         if let Some(path) = &search_option.output {
-            match File::create(path) {
+            // create new file if not exist and append if exist.
+            match OpenOptions::new().write(true).append(true).create(true).open(path) {
                 Ok(file) => {
                     if search_option.json_output || search_option.jsonl_output {
                         file_wtr = Some(
@@ -383,8 +384,9 @@ impl ResultWriter {
         ),
         search_option: &SearchOption,
         stored_static: &StoredStatic,
+        is_write_header: bool,
     ) {
-        if self.written_record_num == 0 {
+        if is_write_header {
             self.write_headder(search_option);
         }
         self.written_record_num += 1;
@@ -670,6 +672,7 @@ pub fn search_result_dsp_msg(
             .clone()
             .into_iter()
             .sorted_unstable_by(|a, b| Ord::cmp(&a.0, &b.0));
+        let mut is_firstline = true;
         for (timestamp, hostname, channel, event_id, record_id, all_field_info, evtx_file) in
             hit_records
         {
@@ -685,7 +688,9 @@ pub fn search_result_dsp_msg(
                 ),
                 search_option,
                 stored_static,
+                is_firstline,
             );
+            is_firstline = false;
         }
     }
 
