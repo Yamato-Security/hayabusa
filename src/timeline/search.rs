@@ -665,8 +665,13 @@ pub fn search_result_dsp_msg(
 ) {
     let mut wtr = ResultWriter::new(search_option);
     if search_option.sort_events {
-        let hit_records = event_search.search_result.clone().into_iter().sorted_unstable_by(|a, b| Ord::cmp(&a.0, &b.0));
-        for (timestamp, hostname, channel, event_id, record_id, all_field_info, evtx_file) in hit_records
+        let hit_records = event_search
+            .search_result
+            .clone()
+            .into_iter()
+            .sorted_unstable_by(|a, b| Ord::cmp(&a.0, &b.0));
+        for (timestamp, hostname, channel, event_id, record_id, all_field_info, evtx_file) in
+            hit_records
         {
             wtr.write_record(
                 (
@@ -707,7 +712,8 @@ pub fn search_result_dsp_msg(
     write_color_buffer(
         &BufferWriter::stdout(ColorChoice::Always),
         None,
-        event_search.search_result_cnt
+        event_search
+            .search_result_cnt
             .to_formatted_string(&Locale::en)
             .as_str(),
         true,
