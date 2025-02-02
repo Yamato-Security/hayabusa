@@ -3250,6 +3250,7 @@ mod tests {
                 disable_abbreviations: false,
                 start_timeline: None,
                 end_timeline: None,
+                sort_events: true,
             })),
             debug: false,
         }));
