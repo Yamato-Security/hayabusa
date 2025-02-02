@@ -2,7 +2,7 @@ use crate::afterfact::AfterfactInfo;
 use crate::detections::configs::{OutputOption, SearchOption, ALLFIELDINFO_SPECIAL_CHARS};
 use crate::detections::field_data_map::FieldDataMapKey;
 use crate::detections::message::{self, DetectInfo};
-use crate::detections::utils::format_time;
+use crate::detections::utils::{format_time, get_writable_color};
 use crate::{
     afterfact::output_json_str,
     detections::{
@@ -19,6 +19,7 @@ use csv::{QuoteStyle, Writer, WriterBuilder};
 use downcast_rs::__std::process;
 use hashbrown::{HashMap, HashSet};
 use itertools::Itertools;
+use num_format::{Locale, ToFormattedString};
 use regex::Regex;
 use std::fs::File;
 use std::io::BufWriter;
@@ -48,6 +49,7 @@ pub struct EventSearch {
         CompactString,
         CompactString,
     )>,
+    pub search_result_cnt: u64,
 }
 
 impl EventSearch {
@@ -66,6 +68,7 @@ impl EventSearch {
         EventSearch {
             filepath,
             search_result,
+            search_result_cnt: 0,
         }
     }
 
@@ -205,6 +208,7 @@ impl EventSearch {
                     CompactString::from(allfieldinfo_newline_splited),
                     self.filepath.clone(),
                 ));
+                self.search_result_cnt += 1;
             } else {
                 // sort_events option is false, the hit record is output on the fly.
                 // We don't want to collect the hit record into the memory, if possible, in order to reduce memory usage.
@@ -218,6 +222,7 @@ impl EventSearch {
                     self.filepath.clone(),
                 );
                 wtr.write_record(hit_record, search_option, stored_static);
+                self.search_result_cnt += 1;
             }
         }
     }
@@ -274,6 +279,7 @@ impl EventSearch {
                     CompactString::from(allfieldinfo_newline_splited),
                     self.filepath.clone(),
                 ));
+                self.search_result_cnt += 1;
             } else {
                 // sort_events option is false, the hit record is output on the fly.
                 // We don't want to collect the hit record into the memory, if possible, in order to reduce memory usage.
@@ -287,6 +293,7 @@ impl EventSearch {
                     self.filepath.clone(),
                 );
                 wtr.write_record(hit_record, search_option, stored_static);
+                self.search_result_cnt += 1;
             }
         }
     }
@@ -295,7 +302,7 @@ impl EventSearch {
 pub struct ResultWriter {
     pub disp_wtr: Option<BufferWriter>,
     pub file_wtr: Option<Writer<BufWriter<File>>>,
-    written_record: bool,
+    written_record_num: u64,
 }
 
 impl ResultWriter {
@@ -337,7 +344,7 @@ impl ResultWriter {
         ResultWriter {
             disp_wtr,
             file_wtr,
-            written_record: false,
+            written_record_num: 0,
         }
     }
 
@@ -377,10 +384,10 @@ impl ResultWriter {
         search_option: &SearchOption,
         stored_static: &StoredStatic,
     ) {
-        if !self.written_record {
+        if self.written_record_num == 0 {
             self.write_headder(search_option);
         }
-        self.written_record = true;
+        self.written_record_num += 1;
 
         let event_title = if let Some(event_info) = stored_static
             .event_timeline_config
@@ -652,41 +659,58 @@ fn extract_search_event_info(
 
 /// 検索結果を標準出力もしくはcsvファイルに出力する関数
 pub fn search_result_dsp_msg(
-    result_list: HashSet<(
-        CompactString,
-        CompactString,
-        CompactString,
-        CompactString,
-        CompactString,
-        CompactString,
-        CompactString,
-    )>,
+    event_search: &EventSearch,
     search_option: &SearchOption,
     stored_static: &StoredStatic,
 ) {
-    // if sort_events option is false, search results should have been already output.
-    if !search_option.sort_events {
-        return;
+    let mut wtr = ResultWriter::new(search_option);
+    if search_option.sort_events {
+        let hit_records = event_search.search_result.clone().into_iter().sorted_unstable_by(|a, b| Ord::cmp(&a.0, &b.0));
+        for (timestamp, hostname, channel, event_id, record_id, all_field_info, evtx_file) in hit_records
+        {
+            wtr.write_record(
+                (
+                    timestamp,
+                    hostname,
+                    channel,
+                    event_id,
+                    record_id,
+                    all_field_info,
+                    evtx_file,
+                ),
+                search_option,
+                stored_static,
+            );
+        }
     }
 
-    let mut wtr = ResultWriter::new(search_option);
-    for (timestamp, hostname, channel, event_id, record_id, all_field_info, evtx_file) in
-        result_list
-            .into_iter()
-            .sorted_unstable_by(|a, b| Ord::cmp(&a.0, &b.0))
-    {
-        wtr.write_record(
-            (
-                timestamp,
-                hostname,
-                channel,
-                event_id,
-                record_id,
-                all_field_info,
-                evtx_file,
-            ),
-            search_option,
-            stored_static,
-        );
+    // if sort_events option is false, search results should have been already output.
+    if event_search.search_result_cnt == 0 {
+        write_color_buffer(
+            &BufferWriter::stdout(ColorChoice::Always),
+            Some(Color::Rgb(238, 102, 97)),
+            "\n\nNo matches found.",
+            true,
+        )
+        .ok();
     }
+    write_color_buffer(
+        &BufferWriter::stdout(ColorChoice::Always),
+        get_writable_color(
+            Some(Color::Rgb(0, 255, 0)),
+            stored_static.common_options.no_color,
+        ),
+        "Total findings: ",
+        false,
+    )
+    .ok();
+    write_color_buffer(
+        &BufferWriter::stdout(ColorChoice::Always),
+        None,
+        event_search.search_result_cnt
+            .to_formatted_string(&Locale::en)
+            .as_str(),
+        true,
+    )
+    .ok();
 }

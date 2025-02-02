@@ -492,38 +492,7 @@ impl Timeline {
         if let Action::Search(search_summary_option) =
             &stored_static.config.action.as_ref().unwrap()
         {
-            if self.event_search.search_result.is_empty() {
-                write_color_buffer(
-                    &BufferWriter::stdout(ColorChoice::Always),
-                    Some(Color::Rgb(238, 102, 97)),
-                    "\n\nNo matches found.",
-                    true,
-                )
-                .ok();
-            }
-            let search_result = self.event_search.search_result.clone();
-            search_result_dsp_msg(search_result, &search_summary_option, stored_static);
-            write_color_buffer(
-                &BufferWriter::stdout(ColorChoice::Always),
-                get_writable_color(
-                    Some(Color::Rgb(0, 255, 0)),
-                    stored_static.common_options.no_color,
-                ),
-                "Total findings: ",
-                false,
-            )
-            .ok();
-            write_color_buffer(
-                &BufferWriter::stdout(ColorChoice::Always),
-                None,
-                self.event_search
-                    .search_result
-                    .len()
-                    .to_formatted_string(&Locale::en)
-                    .as_str(),
-                true,
-            )
-            .ok();
+            search_result_dsp_msg(&self.event_search, &search_summary_option, stored_static);
         }
     }
 
