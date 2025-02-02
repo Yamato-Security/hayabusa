@@ -320,12 +320,7 @@ impl ResultWriter {
         let mut file_wtr = Option::None;
         if let Some(path) = &search_option.output {
             // create new file if not exist and append if exist.
-            match OpenOptions::new()
-                .write(true)
-                .append(true)
-                .create(true)
-                .open(path)
-            {
+            match OpenOptions::new().append(true).create(true).open(path) {
                 Ok(file) => {
                     if search_option.json_output || search_option.jsonl_output {
                         file_wtr = Some(
