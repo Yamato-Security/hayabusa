@@ -1869,8 +1869,7 @@ impl App {
                 return false;
             }
 
-            let search_option = stored_static.search_option.as_ref().unwrap();
-            return search_option.sort_events;
+            stored_static.search_option.as_ref().unwrap().sort_events
         };
         let is_show_progress = !(stored_static.is_low_memory
             || !is_sortevent_searchcmd()

@@ -492,7 +492,7 @@ impl Timeline {
         if let Action::Search(search_summary_option) =
             &stored_static.config.action.as_ref().unwrap()
         {
-            search_result_dsp_msg(&self.event_search, &search_summary_option, stored_static);
+            search_result_dsp_msg(&self.event_search, search_summary_option, stored_static);
         }
     }
 

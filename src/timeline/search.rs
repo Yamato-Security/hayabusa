@@ -356,12 +356,12 @@ impl ResultWriter {
             self.file_wtr
                 .as_mut()
                 .unwrap()
-                .write_record(&OUTPUT_HEADERS)
+                .write_record(OUTPUT_HEADERS)
                 .ok();
         } else if search_option.output.is_none() {
             // TODO hach1yon add logic, **result.isEmpty()**
             write_color_buffer(
-                &self.disp_wtr.as_mut().unwrap(),
+                self.disp_wtr.as_mut().unwrap(),
                 None,
                 &OUTPUT_HEADERS.join(" · "),
                 true,

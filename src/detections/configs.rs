@@ -2407,7 +2407,7 @@ fn extract_search_options(config: &Config) -> Option<SearchOption> {
             disable_abbreviations: option.disable_abbreviations,
             start_timeline: option.start_timeline.clone(),
             end_timeline: option.end_timeline.clone(),
-            sort_events: option.sort_events.clone(),
+            sort_events: option.sort_events,
         }),
         _ => None,
     }
