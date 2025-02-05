@@ -1321,6 +1321,10 @@ pub struct SearchOption {
     /// Disable abbreviations
     #[arg(help_heading = Some("Output"), short='b', long = "disable-abbreviations", display_order = 60)]
     pub disable_abbreviations: bool,
+
+    /// Sort events before saving the file. (warning: this uses much more memory!)
+    #[arg(help_heading = Some("General Options"), short='s', long = "sort-events", display_order = 600)]
+    pub sort_events: bool,
 }
 
 #[derive(Args, Clone, Debug)]
@@ -2403,6 +2407,7 @@ fn extract_search_options(config: &Config) -> Option<SearchOption> {
             disable_abbreviations: option.disable_abbreviations,
             start_timeline: option.start_timeline.clone(),
             end_timeline: option.end_timeline.clone(),
+            sort_events: option.sort_events,
         }),
         _ => None,
     }
@@ -3245,6 +3250,7 @@ mod tests {
                 disable_abbreviations: false,
                 start_timeline: None,
                 end_timeline: None,
+                sort_events: true,
             })),
             debug: false,
         }));

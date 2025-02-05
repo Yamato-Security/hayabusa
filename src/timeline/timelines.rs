@@ -86,20 +86,7 @@ impl Timeline {
         } else if stored_static.log_metrics_flag {
             self.stats.logfile_stats_start(records, stored_static);
         } else if stored_static.search_flag {
-            self.event_search.search_start(
-                records,
-                stored_static
-                    .search_option
-                    .as_ref()
-                    .unwrap()
-                    .keywords
-                    .as_ref()
-                    .unwrap_or(&vec![]),
-                &stored_static.search_option.as_ref().unwrap().regex,
-                &stored_static.search_option.as_ref().unwrap().filter,
-                &stored_static.eventkey_alias,
-                stored_static,
-            );
+            self.event_search.search_start(records, stored_static);
         } else if stored_static.extract_base64_flag {
             if let Action::ExtractBase64(opt) = &stored_static.config.action.as_ref().unwrap() {
                 let records = process_evtx_record_infos(records, &opt.time_format_options);
@@ -501,55 +488,11 @@ impl Timeline {
     }
 
     /// Search結果出力
-    pub fn search_dsp_msg(
-        &mut self,
-        event_timeline_config: &EventInfoConfig,
-        stored_static: &StoredStatic,
-    ) {
+    pub fn search_dsp_msg(&mut self, stored_static: &StoredStatic) {
         if let Action::Search(search_summary_option) =
             &stored_static.config.action.as_ref().unwrap()
         {
-            if self.event_search.search_result.is_empty() {
-                write_color_buffer(
-                    &BufferWriter::stdout(ColorChoice::Always),
-                    Some(Color::Rgb(238, 102, 97)),
-                    "\n\nNo matches found.",
-                    true,
-                )
-                .ok();
-            }
-            let search_result = self.event_search.search_result.clone();
-            search_result_dsp_msg(
-                search_result,
-                event_timeline_config,
-                &search_summary_option.output,
-                stored_static,
-                (
-                    search_summary_option.json_output,
-                    search_summary_option.jsonl_output,
-                ),
-            );
-            write_color_buffer(
-                &BufferWriter::stdout(ColorChoice::Always),
-                get_writable_color(
-                    Some(Color::Rgb(0, 255, 0)),
-                    stored_static.common_options.no_color,
-                ),
-                "Total findings: ",
-                false,
-            )
-            .ok();
-            write_color_buffer(
-                &BufferWriter::stdout(ColorChoice::Always),
-                None,
-                self.event_search
-                    .search_result
-                    .len()
-                    .to_formatted_string(&Locale::en)
-                    .as_str(),
-                true,
-            )
-            .ok();
+            search_result_dsp_msg(&self.event_search, search_summary_option, stored_static);
         }
     }
 
