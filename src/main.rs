@@ -4,22 +4,6 @@ extern crate maxminddb;
 extern crate serde;
 extern crate serde_derive;
 
-use std::borrow::BorrowMut;
-use std::ffi::{OsStr, OsString};
-use std::fmt::Display;
-use std::fmt::Write as _;
-use std::io::{BufRead, BufWriter, Write};
-use std::path::Path;
-use std::ptr::null_mut;
-use std::sync::Arc;
-use std::{
-    env,
-    fs::{self, File},
-    io,
-    path::PathBuf,
-    vec,
-};
-
 use bytesize::ByteSize;
 use chrono::{DateTime, Datelike, Local, NaiveDateTime, Utc};
 use clap::Command;
@@ -66,6 +50,22 @@ use num_format::{Locale, ToFormattedString};
 use rand::seq::SliceRandom;
 use rust_embed::Embed;
 use serde_json::{Map, Value};
+use std::borrow::BorrowMut;
+use std::ffi::{OsStr, OsString};
+use std::fmt::Display;
+use std::fmt::Write as _;
+use std::io::{BufRead, BufWriter, Write};
+use std::path::Path;
+use std::ptr::null_mut;
+use std::sync::Arc;
+use std::time::Duration;
+use std::{
+    env,
+    fs::{self, File},
+    io,
+    path::PathBuf,
+    vec,
+};
 use termcolor::{BufferWriter, Color, ColorChoice};
 use tokio::runtime::Runtime;
 use tokio::spawn;
@@ -1863,6 +1863,9 @@ impl App {
         .with_tab_width(55);
         pb.set_style(progress_style);
         let is_show_progress = stored_static.output_path.is_some();
+        if is_show_progress {
+            pb.enable_steady_tick(Duration::from_millis(300));
+        }
         self.rule_keys = self.get_all_keys(&rule_files);
         let mut detection = detection::Detection::new(rule_files);
         let mut tl = Timeline::new();
