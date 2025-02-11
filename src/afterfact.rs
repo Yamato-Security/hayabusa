@@ -2,7 +2,6 @@ use std::cmp::{self, min, Ordering};
 use std::error::Error;
 use std::fs::File;
 use std::io::{self, BufWriter, Write};
-use std::path::Path;
 use std::process;
 use std::str::FromStr;
 
@@ -20,6 +19,7 @@ use krapslog::{build_sparkline, build_time_markers};
 use lazy_static::lazy_static;
 use nested::Nested;
 use num_format::{Locale, ToFormattedString};
+use strum::IntoEnumIterator;
 use termcolor::{Buffer, BufferWriter, Color, ColorChoice, ColorSpec, WriteColor};
 use terminal_size::terminal_size;
 use terminal_size::Width;
@@ -28,14 +28,14 @@ use crate::detections::configs::{
     Action, StoredStatic, TimeFormatOptions, CONTROL_CHAT_REPLACE_MAP, CURRENT_EXE_PATH,
     GEOIP_DB_PARSER,
 };
-use crate::detections::message::{AlertMessage, DetectInfo, COMPUTER_MITRE_ATTCK_MAP, LEVEL_FULL};
+use crate::detections::message::{AlertMessage, DetectInfo, COMPUTER_MITRE_ATTCK_MAP};
 use crate::detections::utils::{
     self, check_setting_path, format_time, get_writable_color, output_and_data_stack_for_html,
-    parse_csv, write_color_buffer,
+    write_color_buffer,
 };
+use crate::level::{_get_output_color, create_output_color_map, LEVEL};
 use crate::options::htmlreport;
 use crate::options::profile::Profile;
-use rust_embed::Embed;
 
 lazy_static! {
     // ここで字句解析するときに使う正規表現の一覧を定義する。
@@ -48,11 +48,6 @@ lazy_static! {
         ("CRITICAL".to_string(), 5),
     ]);
 }
-
-#[derive(Embed)]
-#[folder = "config"]
-#[include = "level_color.txt"]
-struct LevelColor;
 
 #[derive(Debug)]
 pub struct Colors {
@@ -68,9 +63,9 @@ pub struct AfterfactInfo {
     pub detected_record_idset: HashSet<CompactString>,
     pub total_detect_counts_by_level: Vec<u128>,
     pub unique_detect_counts_by_level: Vec<u128>,
-    pub detect_counts_by_date_and_level: HashMap<CompactString, HashMap<CompactString, i128>>,
-    pub detect_counts_by_computer_and_level: HashMap<CompactString, HashMap<CompactString, i128>>,
-    pub detect_counts_by_rule_and_level: HashMap<CompactString, HashMap<CompactString, i128>>,
+    pub detect_counts_by_date_and_level: HashMap<LEVEL, HashMap<CompactString, i128>>,
+    pub detect_counts_by_computer_and_level: HashMap<LEVEL, HashMap<CompactString, i128>>,
+    pub detect_counts_by_rule_and_level: HashMap<LEVEL, HashMap<CompactString, i128>>,
     pub detect_rule_authors: HashMap<CompactString, CompactString>,
     pub rule_title_path_map: HashMap<CompactString, CompactString>,
     pub rule_author_counter: HashMap<CompactString, i128>,
@@ -84,9 +79,9 @@ pub struct AfterfactInfo {
 }
 
 struct InitLevelMapResult(
-    HashMap<CompactString, HashMap<CompactString, i128>>,
-    HashMap<CompactString, HashMap<CompactString, i128>>,
-    HashMap<CompactString, HashMap<CompactString, i128>>,
+    HashMap<LEVEL, HashMap<CompactString, i128>>,
+    HashMap<LEVEL, HashMap<CompactString, i128>>,
+    HashMap<LEVEL, HashMap<CompactString, i128>>,
 );
 
 impl Default for AfterfactInfo {
@@ -96,27 +91,19 @@ impl Default for AfterfactInfo {
             detect_counts_by_computer_and_level,
             detect_counts_by_rule_and_level,
         ) = {
-            let levels = ["crit", "high", "med ", "low ", "info", "undefined"];
-            let mut detect_counts_by_date_and_level: HashMap<
-                CompactString,
-                HashMap<CompactString, i128>,
-            > = HashMap::new();
+            let mut detect_counts_by_date_and_level: HashMap<LEVEL, HashMap<CompactString, i128>> =
+                HashMap::new();
             let mut detect_counts_by_computer_and_level: HashMap<
-                CompactString,
+                LEVEL,
                 HashMap<CompactString, i128>,
             > = HashMap::new();
-            let mut detect_counts_by_rule_and_level: HashMap<
-                CompactString,
-                HashMap<CompactString, i128>,
-            > = HashMap::new();
+            let mut detect_counts_by_rule_and_level: HashMap<LEVEL, HashMap<CompactString, i128>> =
+                HashMap::new();
             // レベル別、日ごとの集計用変数の初期化
-            for level_init in levels {
-                detect_counts_by_date_and_level
-                    .insert(CompactString::from(level_init), HashMap::new());
-                detect_counts_by_computer_and_level
-                    .insert(CompactString::from(level_init), HashMap::new());
-                detect_counts_by_rule_and_level
-                    .insert(CompactString::from(level_init), HashMap::new());
+            for level_init in LEVEL::iter() {
+                detect_counts_by_date_and_level.insert(level_init.clone(), HashMap::new());
+                detect_counts_by_computer_and_level.insert(level_init.clone(), HashMap::new());
+                detect_counts_by_rule_and_level.insert(level_init, HashMap::new());
             }
 
             InitLevelMapResult(
@@ -131,8 +118,8 @@ impl Default for AfterfactInfo {
             record_cnt: 0,
             recover_record_cnt: 0,
             detected_record_idset: HashSet::new(),
-            total_detect_counts_by_level: vec![0; 6],
-            unique_detect_counts_by_level: vec![0; 6],
+            total_detect_counts_by_level: vec![0; 7],
+            unique_detect_counts_by_level: vec![0; 7],
             detect_counts_by_date_and_level,
             detect_counts_by_computer_and_level,
             detect_counts_by_rule_and_level,
@@ -355,10 +342,7 @@ fn emit_csv_inner(
                     (&output_remover, &removed_replaced_maps),
                     stored_static.common_options.no_color,
                     get_writable_color(
-                        _get_output_color(
-                            &color_map,
-                            LEVEL_FULL.get(detect_info.level.as_str()).unwrap_or(&""),
-                        ),
+                        _get_output_color(&color_map, &detect_info.level),
                         stored_static.common_options.no_color,
                     ),
                 );
@@ -372,10 +356,7 @@ fn emit_csv_inner(
                 (&output_remover, &removed_replaced_maps),
                 stored_static.common_options.no_color,
                 get_writable_color(
-                    _get_output_color(
-                        &color_map,
-                        LEVEL_FULL.get(detect_info.level.as_str()).unwrap_or(&""),
-                    ),
+                    _get_output_color(&color_map, &detect_info.level),
                     stored_static.common_options.no_color,
                 ),
             );
@@ -526,7 +507,7 @@ fn calc_statistic_info(
             }
         }
         if !output_option.no_summary {
-            let level_suffix = get_level_suffix(detect_info.level.as_str());
+            let level_suffix = detect_info.level.index();
             let author_list = extract_author_name(&detect_info.ruleauthor);
             let author_str = author_list.iter().join(", ");
             afterfact_info
@@ -604,7 +585,7 @@ fn calc_statistic_info(
                 &detect_info.level,
                 &detect_info.ruletitle,
             );
-            let level_suffix = get_level_suffix(detect_info.level.as_str());
+            let level_suffix = detect_info.level.index();
             afterfact_info.total_detect_counts_by_level[level_suffix] += 1;
         }
     }
@@ -623,20 +604,7 @@ pub fn output_additional_afterfact(
         Some((Width(w), _)) => w as usize,
         None => 100,
     };
-    let level_abbr: Nested<Vec<CompactString>> = Nested::from_iter(
-        [
-            [CompactString::from("critical"), CompactString::from("crit")].to_vec(),
-            [CompactString::from("high"), CompactString::from("high")].to_vec(),
-            [CompactString::from("medium"), CompactString::from("med ")].to_vec(),
-            [CompactString::from("low"), CompactString::from("low ")].to_vec(),
-            [
-                CompactString::from("informational"),
-                CompactString::from("info"),
-            ]
-            .to_vec(),
-        ]
-        .iter(),
-    );
+
     let output_option = stored_static.output_option.as_ref().unwrap();
     if !output_option.no_summary && !afterfact_info.rule_author_counter.is_empty() {
         write_color_buffer(
@@ -887,7 +855,6 @@ pub fn output_additional_afterfact(
                 CompactString::from("detections"),
             ),
             &color_map,
-            &level_abbr,
             &mut html_output_stock,
             stored_static.html_report_flag,
         );
@@ -896,7 +863,6 @@ pub fn output_additional_afterfact(
         _print_detection_summary_by_date(
             &afterfact_info.detect_counts_by_date_and_level,
             &color_map,
-            &level_abbr,
             &mut html_output_stock,
             stored_static,
         );
@@ -909,7 +875,6 @@ pub fn output_additional_afterfact(
         _print_detection_summary_by_computer(
             &afterfact_info.detect_counts_by_computer_and_level,
             &color_map,
-            &level_abbr,
             &mut html_output_stock,
             stored_static,
         );
@@ -925,7 +890,6 @@ pub fn output_additional_afterfact(
                 &afterfact_info.rule_title_path_map,
                 &afterfact_info.detect_rule_authors,
             ),
-            &level_abbr,
             &mut html_output_stock,
             stored_static,
             cmp::min((terminal_width / 2) - 15, 200),
@@ -948,8 +912,8 @@ pub fn sort_detect_info(detect_infos: &mut [DetectInfo]) {
             return cmp_time;
         }
 
-        let a_level = get_level_suffix(a.level.as_str());
-        let b_level = get_level_suffix(b.level.as_str());
+        let a_level = a.level.index();
+        let b_level = b.level.index();
         let level_cmp = a_level.cmp(&b_level);
         if level_cmp != Ordering::Equal {
             return level_cmp;
@@ -972,18 +936,6 @@ pub fn sort_detect_info(detect_infos: &mut [DetectInfo]) {
 
         a.rec_id.cmp(&b.rec_id)
     });
-}
-
-fn get_level_suffix(level_str: &str) -> usize {
-    *LEVEL_MAP
-        .get(
-            LEVEL_FULL
-                .get(level_str)
-                .unwrap_or(&"undefined")
-                .to_uppercase()
-                .as_str(),
-        )
-        .unwrap_or(&0) as usize
 }
 
 pub fn get_duplicate_idxes(detect_infos: &mut [DetectInfo]) -> HashSet<usize> {
@@ -1020,90 +972,12 @@ pub fn get_duplicate_idxes(detect_infos: &mut [DetectInfo]) -> HashSet<usize> {
     filtered_detect_infos
 }
 
-/// level_color.txtファイルを読み込み対応する文字色のマッピングを返却する関数
-pub fn create_output_color_map(no_color_flag: bool) -> HashMap<CompactString, Colors> {
-    let path = utils::check_setting_path(Path::new("."), "config/level_color.txt", false)
-        .unwrap_or_else(|| {
-            utils::check_setting_path(
-                &CURRENT_EXE_PATH.to_path_buf(),
-                "config/level_color.txt",
-                false,
-            )
-            .unwrap_or_default()
-        });
-    let read_result = match utils::read_csv(path.to_str().unwrap()) {
-        Ok(c) => Ok(c),
-        Err(_) => {
-            let level_color = LevelColor::get("level_color.txt").unwrap();
-            let embed_level_color =
-                parse_csv(std::str::from_utf8(level_color.data.as_ref()).unwrap_or_default());
-            if embed_level_color.is_empty() {
-                Err("Not found level_color.txt in embed resource.".to_string())
-            } else {
-                Ok(embed_level_color)
-            }
-        }
-    };
-    let mut color_map: HashMap<CompactString, Colors> = HashMap::new();
-    if no_color_flag {
-        return color_map;
-    }
-    let color_map_contents = match read_result {
-        Ok(c) => c,
-        Err(e) => {
-            // color情報がない場合は通常の白色の出力が出てくるのみで動作への影響を与えない為warnとして処理する
-            AlertMessage::warn(&e).ok();
-            return color_map;
-        }
-    };
-    color_map_contents.iter().for_each(|line| {
-        if line.len() != 2 {
-            return;
-        }
-        let empty = &"".to_string();
-        let level = CompactString::new(line.first().unwrap_or(empty).to_lowercase());
-        let convert_color_result = hex::decode(line.get(1).unwrap_or(empty).trim());
-        if convert_color_result.is_err() {
-            AlertMessage::warn(&format!(
-                "Failed hex convert in level_color.txt. Color output is disabled. Input Line: {}",
-                line.join(",")
-            ))
-            .ok();
-            return;
-        }
-        let color_code = convert_color_result.unwrap();
-        if level.is_empty() || color_code.len() < 3 {
-            return;
-        }
-        color_map.insert(
-            level,
-            Colors {
-                output_color: termcolor::Color::Rgb(color_code[0], color_code[1], color_code[2]),
-                table_color: comfy_table::Color::Rgb {
-                    r: color_code[0],
-                    g: color_code[1],
-                    b: color_code[2],
-                },
-            },
-        );
-    });
-    color_map
-}
-
-fn _get_output_color(color_map: &HashMap<CompactString, Colors>, level: &str) -> Option<Color> {
-    let mut color = None;
-    if let Some(c) = color_map.get(&CompactString::from(level.to_lowercase())) {
-        color = Some(c.output_color);
-    }
-    color
-}
-
 fn _get_table_color(
-    color_map: &HashMap<CompactString, Colors>,
-    level: &str,
+    color_map: &HashMap<LEVEL, Colors>,
+    level: &LEVEL,
 ) -> Option<comfy_table::Color> {
     let mut color = None;
-    if let Some(c) = color_map.get(&CompactString::from(level.to_lowercase())) {
+    if let Some(c) = color_map.get(level) {
         color = Some(c.table_color);
     }
     color
@@ -1158,17 +1032,16 @@ fn _print_timeline_hist(timestamps: &[i64], length: usize, side_margin_size: usi
 }
 
 fn countup_aggregation(
-    count_map: &mut HashMap<CompactString, HashMap<CompactString, i128>>,
-    key: &str,
+    count_map: &mut HashMap<LEVEL, HashMap<CompactString, i128>>,
+    level: &LEVEL,
     entry_key: &str,
 ) {
-    let compact_lowercase_key = CompactString::from(key.to_lowercase());
     let mut detect_counts_by_rules = count_map
-        .get(&compact_lowercase_key)
-        .unwrap_or_else(|| count_map.get("undefined").unwrap())
+        .get(level)
+        .unwrap_or_else(|| count_map.get(&LEVEL::UNDEFINED).unwrap())
         .to_owned();
     *detect_counts_by_rules.entry(entry_key.into()).or_insert(0) += 1;
-    count_map.insert(compact_lowercase_key, detect_counts_by_rules);
+    count_map.insert(level.clone(), detect_counts_by_rules);
 }
 
 /// columnt position. in cell
@@ -1339,8 +1212,7 @@ fn _print_unique_results(
     counts_by_level: &[u128],
     unique_counts_by_level: &[u128],
     head_and_tail_word: (CompactString, CompactString),
-    color_map: &HashMap<CompactString, Colors>,
-    level_abbr: &Nested<Vec<CompactString>>,
+    color_map: &HashMap<LEVEL, Colors>,
     html_output_stock: &mut Nested<String>,
     html_output_flag: bool,
 ) {
@@ -1368,12 +1240,12 @@ fn _print_unique_results(
     let mut total_detect_md = vec!["- Total detections:".to_string()];
     let mut unique_detect_md = vec!["- Unique detections:".to_string()];
 
-    for (i, level_name) in level_abbr.iter().enumerate() {
-        let count_by_level = *counts_by_level_rev.next().unwrap();
-        let unique_count_by_level = *unique_counts_by_level_rev.next().unwrap();
-        if "undefined" == level_name[0] {
+    for (i, level_name) in LEVEL::iter().rev().enumerate() {
+        if level_name == LEVEL::UNDEFINED {
             continue;
         }
+        let count_by_level = *counts_by_level_rev.next().unwrap();
+        let unique_count_by_level = *unique_counts_by_level_rev.next().unwrap();
         let percent = if total_count == 0 {
             0 as f64
         } else {
@@ -1387,13 +1259,13 @@ fn _print_unique_results(
         if html_output_flag {
             total_detect_md.push(format!(
                 "    - {}: {} ({:.2}%)",
-                level_name[0],
+                level_name.to_full(),
                 count_by_level.to_formatted_string(&Locale::en),
                 percent
             ));
             unique_detect_md.push(format!(
                 "    - {}: {} ({:.2}%)",
-                level_name[0],
+                level_name.to_full(),
                 unique_count_by_level.to_formatted_string(&Locale::en),
                 unique_percent
             ));
@@ -1401,7 +1273,7 @@ fn _print_unique_results(
         let output_raw_str = format!(
             "{} {} {}: {} ({:.2}%) | {} ({:.2}%)",
             head_and_tail_word.0,
-            level_name[0],
+            level_name.to_full(),
             head_and_tail_word.1,
             count_by_level.to_formatted_string(&Locale::en),
             percent,
@@ -1410,7 +1282,7 @@ fn _print_unique_results(
         );
         write_color_buffer(
             &BufferWriter::stdout(ColorChoice::Always),
-            _get_output_color(color_map, &level_name[0]),
+            _get_output_color(color_map, &level_name),
             &output_raw_str,
             true,
         )
@@ -1424,9 +1296,8 @@ fn _print_unique_results(
 
 /// 各レベル毎で最も高い検知数を出した日付を出力する
 fn _print_detection_summary_by_date(
-    detect_counts_by_date: &HashMap<CompactString, HashMap<CompactString, i128>>,
-    color_map: &HashMap<CompactString, Colors>,
-    level_abbr: &Nested<Vec<CompactString>>,
+    detect_counts_by_date: &HashMap<LEVEL, HashMap<CompactString, i128>>,
+    color_map: &HashMap<LEVEL, Colors>,
     html_output_stock: &mut Nested<String>,
     stored_static: &StoredStatic,
 ) {
@@ -1439,9 +1310,12 @@ fn _print_detection_summary_by_date(
     if stored_static.html_report_flag {
         html_output_stock.push(format!("- {output_header}"));
     }
-    for (idx, level) in level_abbr.iter().enumerate() {
+    for (i, level) in LEVEL::iter().rev().enumerate() {
+        if level == LEVEL::UNDEFINED {
+            continue;
+        }
         // output_levelsはlevelsからundefinedを除外した配列であり、各要素は必ず初期化されているのでSomeであることが保証されているのでunwrapをそのまま実施
-        let detections_by_day = detect_counts_by_date.get(&level[1]).unwrap();
+        let detections_by_day = detect_counts_by_date.get(&level).unwrap();
         let mut max_detect_str = CompactString::default();
         let mut tmp_cnt: i128 = 0;
         let mut exist_max_data = false;
@@ -1453,21 +1327,14 @@ fn _print_detection_summary_by_date(
                 tmp_cnt = *cnt;
             }
         }
-        wtr.set_color(ColorSpec::new().set_fg(_get_output_color(
-            color_map,
-            LEVEL_FULL.get(level[1].as_str()).unwrap(),
-        )))
-        .ok();
+        wtr.set_color(ColorSpec::new().set_fg(_get_output_color(color_map, &level)))
+            .ok();
         if !exist_max_data {
             max_detect_str = "n/a".into();
         }
-        let output_str = format!(
-            "{}: {}",
-            LEVEL_FULL.get(level[1].as_str()).unwrap(),
-            &max_detect_str
-        );
+        let output_str = format!("{}: {}", level.to_full(), &max_detect_str);
         write!(wtr, "{output_str}").ok();
-        if idx != level_abbr.len() - 1 {
+        if i != LEVEL::iter().count() - 1 {
             wtr.set_color(ColorSpec::new().set_fg(None)).ok();
             write!(wtr, ", ").ok();
         }
@@ -1480,9 +1347,8 @@ fn _print_detection_summary_by_date(
 
 /// 各レベル毎で最も高い検知数を出したコンピュータ名を出力する
 fn _print_detection_summary_by_computer(
-    detect_counts_by_computer: &HashMap<CompactString, HashMap<CompactString, i128>>,
-    color_map: &HashMap<CompactString, Colors>,
-    level_abbr: &Nested<Vec<CompactString>>,
+    detect_counts_by_computer: &HashMap<LEVEL, HashMap<CompactString, i128>>,
+    color_map: &HashMap<LEVEL, Colors>,
     html_output_stock: &mut Nested<String>,
     stored_static: &StoredStatic,
 ) {
@@ -1491,9 +1357,12 @@ fn _print_detection_summary_by_computer(
     wtr.set_color(ColorSpec::new().set_fg(None)).ok();
 
     writeln!(wtr, "Top 5 computers with most unique detections:").ok();
-    for level in level_abbr.iter() {
+    for level in LEVEL::iter().rev() {
+        if level == LEVEL::UNDEFINED {
+            continue;
+        }
         // output_levelsはlevelsからundefinedを除外した配列であり、各要素は必ず初期化されているのでSomeであることが保証されているのでunwrapをそのまま実施
-        let detections_by_computer = detect_counts_by_computer.get(&level[1]).unwrap();
+        let detections_by_computer = detect_counts_by_computer.get(&level).unwrap();
         let mut result_vec = Nested::<String>::new();
         //computer nameで-となっているものは除外して集計する
         let mut sorted_detections: Vec<(&CompactString, &i128)> = detections_by_computer
@@ -1507,8 +1376,8 @@ fn _print_detection_summary_by_computer(
         if stored_static.html_report_flag {
             html_output_stock.push(format!(
                 "### Computers with most unique {} detections: {{#computers_with_most_unique_{}_detections}}",
-                LEVEL_FULL.get(level[1].as_str()).unwrap(),
-                LEVEL_FULL.get(level[1].as_str()).unwrap()
+                level.to_full(),
+                level.to_full(),
             ));
             for x in sorted_detections.iter() {
                 html_output_stock.push(format!(
@@ -1532,31 +1401,21 @@ fn _print_detection_summary_by_computer(
             result_vec.iter().collect::<Vec<_>>().join(", ")
         };
 
-        wtr.set_color(ColorSpec::new().set_fg(_get_output_color(
-            color_map,
-            LEVEL_FULL.get(level[1].as_str()).unwrap(),
-        )))
-        .ok();
-        writeln!(
-            wtr,
-            "{}: {}",
-            LEVEL_FULL.get(level[1].as_str()).unwrap(),
-            &result_str
-        )
-        .ok();
+        wtr.set_color(ColorSpec::new().set_fg(_get_output_color(color_map, &level)))
+            .ok();
+        writeln!(wtr, "{}: {}", level.to_full(), &result_str).ok();
     }
     buf_wtr.print(&wtr).ok();
 }
 
 /// 各レベルごとで検出数が多かったルールを表形式で出力する関数
 fn _print_detection_summary_tables(
-    detect_counts_by_rule_and_level: &HashMap<CompactString, HashMap<CompactString, i128>>,
-    color_map: &HashMap<CompactString, Colors>,
+    detect_counts_by_rule_and_level: &HashMap<LEVEL, HashMap<CompactString, i128>>,
+    color_map: &HashMap<LEVEL, Colors>,
     (rule_title_path_map, rule_detect_author_map): (
         &HashMap<CompactString, CompactString>,
         &HashMap<CompactString, CompactString>,
     ),
-    level_abbr: &Nested<Vec<CompactString>>,
     html_output_stock: &mut Nested<String>,
     stored_static: &StoredStatic,
     limit_num: usize,
@@ -1566,20 +1425,18 @@ fn _print_detection_summary_tables(
     wtr.set_color(ColorSpec::new().set_fg(None)).ok();
     let mut output = vec![];
     let mut col_color = vec![];
-    for level in level_abbr.iter() {
-        let mut col_output: Nested<String> = Nested::<String>::new();
-        col_output.push(format!(
-            "Top {} alerts:",
-            LEVEL_FULL.get(level[1].as_str()).unwrap()
-        ));
+    for level in LEVEL::iter().rev() {
+        if level == LEVEL::UNDEFINED {
+            continue;
+        }
 
-        col_color.push(_get_table_color(
-            color_map,
-            LEVEL_FULL.get(level[1].as_str()).unwrap(),
-        ));
+        let mut col_output: Nested<String> = Nested::<String>::new();
+        col_output.push(format!("Top {} alerts:", level.to_full()));
+
+        col_color.push(_get_table_color(color_map, &level));
 
         // output_levelsはlevelsからundefinedを除外した配列であり、各要素は必ず初期化されているのでSomeであることが保証されているのでunwrapをそのまま実施
-        let detections_by_computer = detect_counts_by_rule_and_level.get(&level[1]).unwrap();
+        let detections_by_computer = detect_counts_by_rule_and_level.get(&level).unwrap();
         let mut sorted_detections: Vec<(&CompactString, &i128)> =
             detections_by_computer.iter().collect();
 
@@ -1589,8 +1446,8 @@ fn _print_detection_summary_tables(
         if stored_static.html_report_flag {
             html_output_stock.push(format!(
                 "### All {} alerts: {{#all_{}_alerts}}",
-                LEVEL_FULL.get(level[1].as_str()).unwrap(),
-                LEVEL_FULL.get(level[1].as_str()).unwrap()
+                level.to_full(),
+                level.to_full()
             ));
             let rule_path = stored_static.output_option.as_ref().unwrap().rules.clone();
             let rule_encoded =
@@ -1624,11 +1481,7 @@ fn _print_detection_summary_tables(
             html_output_stock.push("");
         }
 
-        let take_cnt = if "informational" == *LEVEL_FULL.get(level[1].as_str()).unwrap_or(&"-") {
-            10
-        } else {
-            5
-        };
+        let take_cnt = 5;
         for x in sorted_detections.iter().take(take_cnt) {
             let output_title = if x.0.len() > limit_num - 3 {
                 format!("{}...", &x.0[..(limit_num - 3)])
@@ -1666,7 +1519,6 @@ fn _print_detection_summary_tables(
         .set_style(TableComponent::MiddleIntersections, hlch)
         .set_style(TableComponent::TopBorderIntersections, tbch)
         .set_style(TableComponent::BottomBorderIntersections, hlch);
-
         tb.add_row(vec![
             Cell::new(output[2 * x].iter().skip(1).join("\n"))
                 .fg(col_color[2 * x].unwrap_or(comfy_table::Color::Reset)),
@@ -1674,17 +1526,6 @@ fn _print_detection_summary_tables(
                 .fg(col_color[2 * x + 1].unwrap_or(comfy_table::Color::Reset)),
         ]);
     }
-
-    let odd_col = &mut output[4].iter().skip(1).take(5);
-    let even_col = &mut output[4].iter().skip(6).take(5);
-    tb.add_row(vec![
-        Cell::new(&output[4][0]).fg(col_color[4].unwrap_or(comfy_table::Color::Reset)),
-        Cell::new(""),
-    ]);
-    tb.add_row(vec![
-        Cell::new(odd_col.join("\n")).fg(col_color[4].unwrap_or(comfy_table::Color::Reset)),
-        Cell::new(even_col.join("\n")).fg(col_color[4].unwrap_or(comfy_table::Color::Reset)),
-    ]);
     println!("{tb}");
 }
 
@@ -2276,7 +2117,6 @@ mod tests {
     use crate::afterfact::init_writer;
     use crate::afterfact::output_afterfact_inner;
     use crate::afterfact::AfterfactInfo;
-    use crate::afterfact::Colors;
     use crate::detections::configs::Action;
     use crate::detections::configs::CommonOptions;
     use crate::detections::configs::Config;
@@ -2292,9 +2132,8 @@ mod tests {
     use crate::detections::message;
     use crate::detections::message::DetectInfo;
     use crate::detections::utils;
+    use crate::level::LEVEL;
     use crate::options::profile::{load_profile, Profile};
-
-    use super::create_output_color_map;
 
     #[test]
     fn test_emit_csv_output() {
@@ -2309,7 +2148,7 @@ mod tests {
         let test_rulepath: &str = "test-rule.yml";
         let test_rule_id: &str = "00000000-0000-0000-0000-000000000000";
         let test_title = "test_title";
-        let test_level = "high";
+        let test_level = LEVEL::HIGH;
         let test_computername = "testcomputer";
         let test_computername2 = "testcomputer2";
         let test_eventid = "1111";
@@ -2496,7 +2335,7 @@ mod tests {
                 ),
                 ("Computer", Profile::Computer(test_computername2.into())),
                 ("Channel", Profile::Channel(ch.into())),
-                ("Level", Profile::Level(test_level.into())),
+                ("Level", Profile::Level("high".into())),
                 ("EventID", Profile::EventID(test_eventid.into())),
                 ("MitreAttack", Profile::MitreTactics(test_attack.into())),
                 ("RecordID", Profile::RecordID(test_record_id.into())),
@@ -2528,7 +2367,7 @@ mod tests {
                     ruleid: test_rule_id.into(),
                     ruletitle: CompactString::from(test_title),
                     ruleauthor: CompactString::from("test_author"),
-                    level: CompactString::from(test_level),
+                    level: test_level.clone(),
                     computername: CompactString::from(test_computername2),
                     eventid: CompactString::from(test_eventid),
                     detail: CompactString::default(),
@@ -2554,7 +2393,7 @@ mod tests {
                     ruleid: test_rule_id.into(),
                     ruletitle: CompactString::from(test_title),
                     ruleauthor: CompactString::from("test_author"),
-                    level: CompactString::from(test_level),
+                    level: test_level.clone(),
                     computername: CompactString::from(test_computername),
                     eventid: CompactString::from(test_eventid),
                     detail: CompactString::default(),
@@ -2578,7 +2417,7 @@ mod tests {
                 + "\",\""
                 + test_channel
                 + "\",\""
-                + test_level
+                + test_level.to_abbrev()
                 + "\","
                 + test_eventid
                 + ",\""
@@ -2605,7 +2444,7 @@ mod tests {
                 + "\",\""
                 + test_channel
                 + "\",\""
-                + test_level
+                + test_level.to_abbrev()
                 + "\","
                 + test_eventid
                 + ",\""
@@ -2661,7 +2500,7 @@ mod tests {
         let test_rulepath: &str = "test-rule.yml";
         let test_rule_id: &str = "00000000-0000-0000-0000-000000000000";
         let test_title = "test_title";
-        let test_level = "high";
+        let test_level = LEVEL::HIGH;
         let test_computername = "testcomputer";
         let test_computername2 = "testcomputer2";
         let test_eventid = "1111";
@@ -2858,7 +2697,7 @@ mod tests {
                 ),
                 ("Computer", Profile::Computer(test_computername2.into())),
                 ("Channel", Profile::Channel(ch.into())),
-                ("Level", Profile::Level(test_level.into())),
+                ("Level", Profile::Level("high".into())),
                 ("EventID", Profile::EventID(test_eventid.into())),
                 ("MitreAttack", Profile::MitreTactics(test_attack.into())),
                 ("RecordID", Profile::RecordID(test_record_id.into())),
@@ -2887,7 +2726,7 @@ mod tests {
                     ruleid: test_rule_id.into(),
                     ruletitle: CompactString::from(test_title),
                     ruleauthor: CompactString::from("test_author"),
-                    level: CompactString::from(test_level),
+                    level: test_level.clone(),
                     computername: CompactString::from(test_computername2),
                     eventid: CompactString::from(test_eventid),
                     detail: CompactString::default(),
@@ -2913,7 +2752,7 @@ mod tests {
                     ruleid: test_rule_id.into(),
                     ruletitle: CompactString::from(test_title),
                     ruleauthor: CompactString::from("test_author"),
-                    level: CompactString::from(test_level),
+                    level: test_level.clone(),
                     computername: CompactString::from(test_computername),
                     eventid: CompactString::from(test_eventid),
                     detail: CompactString::default(),
@@ -2939,7 +2778,7 @@ mod tests {
                 + "\","
                 + test_eventid
                 + ",\""
-                + test_level
+                + test_level.to_abbrev()
                 + "\",\""
                 + test_attack
                 + "\","
@@ -2960,7 +2799,7 @@ mod tests {
                 + "\","
                 + test_eventid
                 + ",\""
-                + test_level
+                + test_level.to_abbrev()
                 + "\",\""
                 + test_attack
                 + "\","
@@ -3007,7 +2846,7 @@ mod tests {
         let test_rulepath: &str = "test-rule.yml";
         let test_rule_id: &str = "00000000-0000-0000-0000-000000000000";
         let test_title = "test_title";
-        let test_level = "high";
+        let test_level = LEVEL::HIGH;
         let test_computername = "testcomputer";
         let test_computername2 = "testcomputer2";
         let test_eventid = "1111";
@@ -3194,7 +3033,7 @@ mod tests {
                 ),
                 ("Computer", Profile::Computer(test_computername2.into())),
                 ("Channel", Profile::Channel(ch.into())),
-                ("Level", Profile::Level(test_level.into())),
+                ("Level", Profile::Level("high".into())),
                 ("EventID", Profile::EventID(test_eventid.into())),
                 ("MitreAttack", Profile::MitreTactics(test_attack.into())),
                 ("RecordID", Profile::RecordID(test_record_id.into())),
@@ -3226,7 +3065,7 @@ mod tests {
                     ruleid: test_rule_id.into(),
                     ruletitle: CompactString::from(test_title),
                     ruleauthor: CompactString::from("test_author"),
-                    level: CompactString::from(test_level),
+                    level: test_level.clone(),
                     computername: CompactString::from(test_computername2),
                     eventid: CompactString::from(test_eventid),
                     detail: CompactString::default(),
@@ -3252,7 +3091,7 @@ mod tests {
                     ruleid: test_rule_id.into(),
                     ruletitle: CompactString::from(test_title),
                     ruleauthor: CompactString::from("test_author"),
-                    level: CompactString::from(test_level),
+                    level: test_level.clone(),
                     computername: CompactString::from(test_computername),
                     eventid: CompactString::from(test_eventid),
                     detail: CompactString::default(),
@@ -3276,7 +3115,7 @@ mod tests {
                 + "\",\""
                 + test_channel
                 + "\",\""
-                + test_level
+                + test_level.to_abbrev()
                 + "\","
                 + test_eventid
                 + ",\""
@@ -3303,7 +3142,7 @@ mod tests {
                 + "\",\""
                 + test_channel
                 + "\",\""
-                + test_level
+                + test_level.to_abbrev()
                 + "\","
                 + test_eventid
                 + ",\""
@@ -3354,7 +3193,7 @@ mod tests {
         let test_rulepath: &str = "test-rule.yml";
         let test_rule_id: &str = "00000000-0000-0000-0000-000000000000";
         let test_title = "test_title";
-        let test_level = "high";
+        let test_level = LEVEL::HIGH;
         let test_computername = "testcomputer";
         let test_computername2 = "testcomputer2";
         let test_eventid = "1111";
@@ -3541,7 +3380,7 @@ mod tests {
                 ),
                 ("Computer", Profile::Computer(test_computername2.into())),
                 ("Channel", Profile::Channel(ch.into())),
-                ("Level", Profile::Level(test_level.into())),
+                ("Level", Profile::Level("high".into())),
                 ("EventID", Profile::EventID(test_eventid.into())),
                 ("MitreAttack", Profile::MitreTactics(test_attack.into())),
                 ("RecordID", Profile::RecordID(test_record_id.into())),
@@ -3575,7 +3414,7 @@ mod tests {
                     ruleid: test_rule_id.into(),
                     ruletitle: CompactString::from(test_title),
                     ruleauthor: CompactString::from("test_author"),
-                    level: CompactString::from(test_level),
+                    level: test_level.clone(),
                     computername: CompactString::from(test_computername2),
                     eventid: CompactString::from(test_eventid),
                     detail: CompactString::default(),
@@ -3601,7 +3440,7 @@ mod tests {
                     ruleid: test_rule_id.into(),
                     ruletitle: CompactString::from(test_title),
                     ruleauthor: CompactString::from("test_author"),
-                    level: CompactString::from(test_level),
+                    level: test_level.clone(),
                     computername: CompactString::from(test_computername),
                     eventid: CompactString::from(test_eventid),
                     detail: CompactString::default(),
@@ -3640,7 +3479,7 @@ mod tests {
                 ),
                 (
                     "Level",
-                    CompactString::from("\"".to_string() + test_level + "\""),
+                    CompactString::from("\"".to_string() + test_level.to_abbrev() + "\""),
                 ),
                 ("EventID", CompactString::from(test_eventid)),
                 (
@@ -3695,7 +3534,7 @@ mod tests {
                 ),
                 (
                     "Level",
-                    CompactString::from("\"".to_string() + test_level + "\""),
+                    CompactString::from("\"".to_string() + test_level.to_abbrev() + "\""),
                 ),
                 ("EventID", test_eventid.into()),
                 (
@@ -3775,7 +3614,7 @@ mod tests {
         let test_rulepath: &str = "test-rule.yml";
         let test_rule_id: &str = "00000000-0000-0000-0000-000000000000";
         let test_title = "test_title";
-        let test_level = "high";
+        let test_level = LEVEL::HIGH;
         let test_computername = "testcomputer";
         let test_eventid = "1111";
         let test_channel = "Sec";
@@ -3962,7 +3801,7 @@ mod tests {
                 ),
                 ("Computer", Profile::Computer(test_computername.into())),
                 ("Channel", Profile::Channel(ch.into())),
-                ("Level", Profile::Level(test_level.into())),
+                ("Level", Profile::Level("high".into())),
                 ("EventID", Profile::EventID(test_eventid.into())),
                 ("MitreAttack", Profile::MitreTactics(test_attack.into())),
                 ("RecordID", Profile::RecordID(test_record_id.into())),
@@ -3996,7 +3835,7 @@ mod tests {
                     ruleid: test_rule_id.into(),
                     ruletitle: CompactString::from(test_title),
                     ruleauthor: CompactString::from("test_author"),
-                    level: CompactString::from(test_level),
+                    level: test_level.clone(),
                     computername: CompactString::from(test_computername),
                     eventid: CompactString::from(test_eventid),
                     detail: CompactString::default(),
@@ -4036,7 +3875,7 @@ mod tests {
                 ),
                 (
                     "Level",
-                    CompactString::from("\"".to_string() + test_level + "\""),
+                    CompactString::from("\"".to_string() + test_level.to_abbrev() + "\""),
                 ),
                 ("EventID", CompactString::from(test_eventid)),
                 (
@@ -4108,24 +3947,6 @@ mod tests {
         assert!(remove_file("./test_multiple_data_in_details.json").is_ok());
     }
 
-    fn check_hashmap_data(
-        target: HashMap<CompactString, Colors>,
-        expected: HashMap<CompactString, Colors>,
-    ) {
-        assert_eq!(target.len(), expected.len());
-        for (k, v) in target {
-            assert!(expected.get(&k).is_some());
-            assert_eq!(format!("{v:?}"), format!("{:?}", expected.get(&k).unwrap()));
-        }
-    }
-
-    #[test]
-    /// To confirm that empty character color mapping data is returned when the no_color flag is given.
-    fn test_set_output_color_no_color_flag() {
-        let expect: HashMap<CompactString, Colors> = HashMap::new();
-        check_hashmap_data(create_output_color_map(true), expect);
-    }
-
     #[test]
     fn test_emit_csv_json_output() {
         let mut additional_afterfact = AfterfactInfo::default();
@@ -4139,7 +3960,7 @@ mod tests {
         let test_rulepath: &str = "test-rule.yml";
         let test_rule_id: &str = "00000000-0000-0000-0000-000000000000";
         let test_title = "test_title";
-        let test_level = "high";
+        let test_level = LEVEL::HIGH;
         let test_computername = "testcomputer";
         let test_computername2 = "testcomputer";
         let test_eventid = "1111";
@@ -4326,7 +4147,7 @@ mod tests {
                 ),
                 ("Computer", Profile::Computer(test_computername2.into())),
                 ("Channel", Profile::Channel(ch.into())),
-                ("Level", Profile::Level(test_level.into())),
+                ("Level", Profile::Level("high".into())),
                 ("EventID", Profile::EventID(test_eventid.into())),
                 ("MitreAttack", Profile::MitreTactics(test_attack.into())),
                 ("RecordID", Profile::RecordID(test_record_id.into())),
@@ -4360,7 +4181,7 @@ mod tests {
                     ruleid: test_rule_id.into(),
                     ruletitle: CompactString::from(test_title),
                     ruleauthor: CompactString::from("test_author"),
-                    level: CompactString::from(test_level),
+                    level: test_level.clone(),
                     computername: CompactString::from(test_computername2),
                     eventid: CompactString::from(test_eventid),
                     detail: CompactString::default(),
@@ -4428,7 +4249,7 @@ mod tests {
         let test_rulepath: &str = "test-rule.yml";
         let test_rule_id: &str = "00000000-0000-0000-0000-000000000000";
         let test_title = "test_title";
-        let test_level = "high";
+        let test_level = LEVEL::HIGH;
         let test_computername = "testcomputer";
         let test_computername2 = "testcomputer";
         let test_eventid = "1111";
@@ -4615,7 +4436,7 @@ mod tests {
                 ),
                 ("Computer", Profile::Computer(test_computername2.into())),
                 ("Channel", Profile::Channel(ch.into())),
-                ("Level", Profile::Level(test_level.into())),
+                ("Level", Profile::Level("high".into())),
                 ("EventID", Profile::EventID(test_eventid.into())),
                 ("MitreAttack", Profile::MitreTactics(test_attack.into())),
                 ("RecordID", Profile::RecordID(test_record_id.into())),
@@ -4650,7 +4471,7 @@ mod tests {
                     ruleid: test_rule_id.into(),
                     ruletitle: CompactString::from(test_title),
                     ruleauthor: CompactString::from("test_author"),
-                    level: CompactString::from(test_level),
+                    level: test_level.clone(),
                     computername: CompactString::from(test_computername2),
                     eventid: CompactString::from(test_eventid),
                     detail: CompactString::default(),

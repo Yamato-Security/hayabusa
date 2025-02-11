@@ -1,6 +1,9 @@
+use super::message::create_output_filter_config;
+use super::utils::check_setting_path;
 use crate::detections::field_data_map::{create_field_data_map, FieldDataMap};
 use crate::detections::message::AlertMessage;
 use crate::detections::utils;
+use crate::level::LEVEL;
 use crate::options::geoip_search::GeoIPSearch;
 use crate::options::htmlreport;
 use crate::options::pivot::PIVOT_KEYWORD;
@@ -13,17 +16,16 @@ use hashbrown::{HashMap, HashSet};
 use itertools::Itertools;
 use lazy_static::lazy_static;
 use regex::Regex;
+use std::cmp::PartialEq;
 use std::env::current_exe;
 use std::fs::File;
 use std::io::BufRead;
 use std::path::{Path, PathBuf};
 use std::sync::RwLock;
 use std::{fs, io, process};
+use strum::IntoEnumIterator;
 use terminal_size::{terminal_size, Width};
 use yaml_rust2::{Yaml, YamlLoader};
-
-use super::message::{create_output_filter_config, LEVEL_ABBR_MAP};
-use super::utils::check_setting_path;
 
 lazy_static! {
     pub static ref STORED_STATIC: RwLock<Option<StoredStatic>> = RwLock::new(None);
@@ -140,6 +142,7 @@ pub struct StoredStatic {
     pub scan_all_evtx_files: bool,
     pub metrics_remove_duplication: bool,
 }
+
 impl StoredStatic {
     /// main.rsでパースした情報からデータを格納する関数
     pub fn create_static_data(input_config: Option<Config>) -> StoredStatic {
@@ -217,45 +220,45 @@ impl StoredStatic {
             _ => false,
         };
         let is_valid_min_level = match &input_config.as_ref().unwrap().action {
-            Some(Action::CsvTimeline(opt)) => LEVEL_ABBR_MAP
-                .keys()
-                .any(|level| &opt.output_options.min_level.to_lowercase() == level),
-            Some(Action::JsonTimeline(opt)) => LEVEL_ABBR_MAP
-                .keys()
-                .any(|level| &opt.output_options.min_level.to_lowercase() == level),
-            Some(Action::PivotKeywordsList(opt)) => LEVEL_ABBR_MAP
-                .keys()
-                .any(|level| &opt.min_level.to_lowercase() == level),
+            Some(Action::CsvTimeline(opt)) => LEVEL::iter()
+                .any(|level| level.eq(opt.output_options.min_level.to_lowercase().as_str())),
+            Some(Action::JsonTimeline(opt)) => LEVEL::iter()
+                .any(|level| level.eq(opt.output_options.min_level.to_lowercase().as_str())),
+            Some(Action::PivotKeywordsList(opt)) => {
+                LEVEL::iter().any(|level| level.eq(opt.min_level.to_lowercase().as_str()))
+            }
             _ => true,
         };
         let is_valid_exact_level = match &input_config.as_ref().unwrap().action {
             Some(Action::CsvTimeline(opt)) => {
                 opt.output_options.exact_level.is_none()
-                    || LEVEL_ABBR_MAP.keys().any(|level| {
-                        &opt.output_options
+                    || LEVEL::iter().any(|level| {
+                        level.eq(opt
+                            .output_options
                             .exact_level
                             .as_ref()
                             .unwrap()
                             .to_lowercase()
-                            == level
+                            .as_str())
                     })
             }
             Some(Action::JsonTimeline(opt)) => {
                 opt.output_options.exact_level.is_none()
-                    || LEVEL_ABBR_MAP.keys().any(|level| {
-                        &opt.output_options
+                    || LEVEL::iter().any(|level| {
+                        level.eq(opt
+                            .output_options
                             .exact_level
                             .as_ref()
                             .unwrap()
                             .to_lowercase()
-                            == level
+                            .as_str())
                     })
             }
             Some(Action::PivotKeywordsList(opt)) => {
                 opt.exact_level.is_none()
-                    || LEVEL_ABBR_MAP
-                        .keys()
-                        .any(|level| &opt.exact_level.as_ref().unwrap().to_lowercase() == level)
+                    || LEVEL::iter().any(|level| {
+                        level.eq(opt.exact_level.as_ref().unwrap().to_lowercase().as_str())
+                    })
             }
             _ => true,
         };
