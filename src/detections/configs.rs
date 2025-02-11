@@ -1325,8 +1325,8 @@ pub struct SearchOption {
     #[arg(help_heading = Some("Output"), short='b', long = "disable-abbreviations", display_order = 60)]
     pub disable_abbreviations: bool,
 
-    /// Sort events before saving the file. (warning: this uses much more memory!)
-    #[arg(help_heading = Some("General Options"), short='s', long = "sort-events", display_order = 600)]
+    /// Sort results before saving the file (warning: this uses much more memory!)
+    #[arg(help_heading = Some("General Options"), short='s', long = "sort", display_order = 600)]
     pub sort_events: bool,
 }
 
@@ -1689,8 +1689,8 @@ pub struct OutputOption {
     #[arg(help_heading = Some("General Options"), short = 'w', long = "no-wizard", display_order = 400)]
     pub no_wizard: bool,
 
-    /// Sort events before saving the file. (warning: this uses much more memory!)
-    #[arg(help_heading = Some("General Options"), short='s', long = "sort-events", display_order = 451)]
+    /// Sort results before saving the file (warning: this uses much more memory!)
+    #[arg(help_heading = Some("General Options"), short='s', long = "sort", display_order = 451)]
     pub sort_events: bool,
 
     /// Enable all rules regardless of loaded evtx files (disable channel filter for rules)
