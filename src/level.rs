@@ -9,7 +9,7 @@ use rust_embed::Embed;
 lazy_static! {
     static ref CRITICAL_SYSTEM: HashSet<String> = {
         let current = CURRENT_EXE_PATH.to_path_buf();
-        let path = current.join("config/critical_system.txt");
+        let path = current.join("config/critical_systems.txt");
         let content = fs::read_to_string(path).unwrap_or("".to_string());
         content
             .lines()
