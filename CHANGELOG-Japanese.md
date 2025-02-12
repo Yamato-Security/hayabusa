@@ -18,6 +18,7 @@
 **バグ修正:**
 
 - `logon-summary`と`pivot-keywords-list`コマンドが不要なファイルを出力していた。 (#1553) (@fukusuket)
+-  JSON出力では、いくつかのルールでMITRE戦術の一貫性がなかった。 (#1573) (@fukusuket)
 - バージョンv3.0.x`ではルール作者情報がHTMLレポートに出力されていなかった。 (#1571) (@fukusuket)
 
 **その他:**
