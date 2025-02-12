@@ -18,6 +18,7 @@
 **Bug Fixes:**
 
 - An unneeded file was being created with `logon-summary` and `pivot-keywords-list` commands. (#1553) (@fukusuket)
+- Rule authors would not be outputted to the HTML report in version `v3.0.x`. (#1571) (@fukusuket)
 
 **Other:**
 
