@@ -5,6 +5,7 @@ use crate::detections::configs::CURRENT_EXE_PATH;
 use crate::detections::field_data_map::{convert_field_data, FieldDataMap, FieldDataMapKey};
 use crate::detections::rule::AggResult;
 use crate::detections::utils::{self, get_serde_number_to_string, write_color_buffer};
+use crate::level::LEVEL;
 use crate::options::profile::Profile::{
     self, AllFieldInfo, Details, ExtraFieldInfo, Literal, SrcASN, SrcCity, SrcCountry, TgtASN,
     TgtCity, TgtCountry,
@@ -26,7 +27,6 @@ use std::io::{self, BufWriter, Write};
 use std::path::Path;
 use std::sync::Mutex;
 use termcolor::{BufferWriter, Color, ColorChoice};
-
 /*
  * This struct express log record
 */
@@ -37,7 +37,7 @@ pub struct DetectInfo {
     pub ruleid: CompactString,
     pub ruletitle: CompactString,
     pub ruleauthor: CompactString,
-    pub level: CompactString,
+    pub level: LEVEL,
     pub computername: CompactString,
     pub rec_id: CompactString,
     pub eventid: CompactString,
@@ -67,21 +67,6 @@ lazy_static! {
         false
     );
     pub static ref COMPUTER_MITRE_ATTCK_MAP : DashMap<CompactString, Vec<CompactString>> = DashMap::new();
-    pub static ref LEVEL_ABBR_MAP:HashMap<&'static str, &'static str> = HashMap::from_iter(vec![
-        ("critical", "crit"),
-        ("high", "high"),
-        ("medium", "med "),
-        ("low", "low "),
-        ("informational", "info"),
-    ]
-);
-    pub static ref LEVEL_FULL: HashMap<&'static str, &'static str> = HashMap::from([
-        ("crit", "critical"),
-        ("high", "high"),
-        ("med ", "medium"),
-        ("low ", "low"),
-        ("info", "informational")
-    ]);
 }
 
 /// ファイルパスで記載されたtagでのフル名、表示の際に置き換えられる文字列のHashMapを作成する関数。

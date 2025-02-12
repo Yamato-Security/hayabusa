@@ -5,6 +5,7 @@
 **新機能:**
 
 - `eid-metrics`と`logon-summary`コマンドに`-X, --remove-duplicate-detections`オプションを追加した。 (#1552) (@fukusuket)
+- 新しい「緊急アラート 」と重要なシステムに基づく重大度レベルの調整。`config/critical_systems.txt`に重要なシステム（例: ドメインコントローラ、ファイルサーバ等々）のコンピュータ名のリストを追加すると、`low`以上のすべてのアラートが1つ高く調整される。つまり、`low`は`medium`に、`medium`は`high`に、`critical`アラートは新しい`emergency`アラートになる。(#1551) (@fukusuket)
 
 **改善:**
 
@@ -12,10 +13,15 @@
 - チャンネルフィルタリングで `logon-summary` コマンドの速度を大幅に改善した。 (#1544) (@fukusuket)
 - `extract-base64`コマンドが`PowerShell Classic EID 400`イベントも対象するようになった。 (#1549) (@fukusuket)
 - `extract-base64`コマンドがPowerShell Coreログにも対応した。 (#1558) (@fukusuket)
+- `search`コマンドは、デフォルトでは結果をソートしないので、メモリ使用量が大幅に減り、より高速になった。新しい`-s, --sort`オプションを使えば、以前と同じように結果をソートできる。(#1475) (@hach1yon)
 
 **バグ修正:**
 
 - `logon-summary`と`pivot-keywords-list`コマンドが不要なファイルを出力していた。 (#1553) (@fukusuket)
+
+**その他:**
+
+- `-s, --sort-events`オプションが`-s, --sort`に名前変更された。 (@YamatoSecurity)
 
 ## 3.0.1 [2024/12/29] - 3rd Year Anniversary Release
 

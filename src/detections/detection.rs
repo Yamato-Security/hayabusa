@@ -28,6 +28,7 @@ use crate::detections::utils::{
 };
 use crate::detections::utils::{get_serde_number_to_string, make_ascii_titlecase};
 use crate::filter;
+use crate::level::LEVEL;
 use crate::options::htmlreport;
 use crate::options::pivot::insert_pivot_keyword;
 use crate::options::profile::Profile::{
@@ -41,7 +42,7 @@ use crate::yaml::ParseYaml;
 use super::configs::{
     EventKeyAliasConfig, StoredStatic, GEOIP_DB_PARSER, GEOIP_DB_YAML, GEOIP_FILTER, STORED_STATIC,
 };
-use super::message::{self, COMPUTER_MITRE_ATTCK_MAP, LEVEL_ABBR_MAP};
+use super::message::{self, COMPUTER_MITRE_ATTCK_MAP};
 
 // イベントファイルの1レコード分の情報を保持する構造体
 #[derive(Clone, Debug)]
@@ -377,14 +378,20 @@ impl Detection {
         let default_time = Utc.with_ymd_and_hms(1970, 1, 1, 0, 0, 0).unwrap();
         let time = message::get_event_time(&record_info.record, stored_static.json_input_flag)
             .unwrap_or(default_time);
-        let level = rule.yaml["level"].as_str().unwrap_or("-").to_string();
+        let level_str = rule.yaml["level"].as_str().unwrap_or("-");
+        let mut level = &LEVEL::from(level_str);
 
         let mut profile_converter: HashMap<&str, Profile> = HashMap::new();
         let tags_config_values: Vec<&CompactString> = TAGS_CONFIG.values().collect();
         let binding = STORED_EKEY_ALIAS.read().unwrap();
         let eventkey_alias = binding.as_ref().unwrap();
         let is_json_timeline = matches!(stored_static.config.action, Some(Action::JsonTimeline(_)));
-
+        let computer_name = CompactString::from(
+            record_info.record["Event"]["System"]["Computer"]
+                .as_str()
+                .unwrap_or_default()
+                .replace('\"', ""),
+        );
         let mut computer_name_to_mitre_tactics = CompactString::default();
         for (key, profile) in stored_static.profiles.as_ref().unwrap().iter() {
             match profile {
@@ -406,16 +413,10 @@ impl Detection {
                     );
                 }
                 Computer(_) => {
-                    let computer_name = CompactString::from(
-                        record_info.record["Event"]["System"]["Computer"]
-                            .as_str()
-                            .unwrap_or_default()
-                            .replace('\"', ""),
-                    );
                     if stored_static.html_report_flag {
                         computer_name_to_mitre_tactics = computer_name.clone();
                     }
-                    profile_converter.insert(key.as_str(), Computer(computer_name.into()));
+                    profile_converter.insert(key.as_str(), Computer(computer_name.clone().into()));
                 }
                 Channel(_) => {
                     profile_converter.insert(
@@ -436,8 +437,8 @@ impl Detection {
                     );
                 }
                 Level(_) => {
-                    let str_level = level.as_str();
-                    let abbr_level = LEVEL_ABBR_MAP.get(str_level).unwrap_or(&str_level);
+                    level = level.convert(computer_name.as_str());
+                    let abbr_level = level.to_abbrev();
                     let prof_level = if stored_static.output_path.is_none() {
                         abbr_level
                     } else {
@@ -814,18 +815,8 @@ impl Detection {
             ruleid: CompactString::from(rule.yaml["id"].as_str().unwrap_or("-")),
             ruletitle: CompactString::from(rule.yaml["title"].as_str().unwrap_or("-")),
             ruleauthor: CompactString::from(rule.yaml["author"].as_str().unwrap_or("-")),
-            level: CompactString::from(
-                LEVEL_ABBR_MAP
-                    .get(&level.as_str())
-                    .unwrap_or(&level.as_str())
-                    .to_string(),
-            ),
-            computername: CompactString::from(
-                record_info.record["Event"]["System"]["Computer"]
-                    .as_str()
-                    .unwrap_or_default()
-                    .replace('\"', ""),
-            ),
+            level: level.clone(),
+            computername: computer_name,
             eventid: eid,
             rec_id,
             detail: CompactString::default(),
@@ -857,7 +848,10 @@ impl Detection {
         let output = Detection::create_count_output(rule, &agg_result);
 
         let mut profile_converter: HashMap<&str, Profile> = HashMap::new();
-        let level = rule.yaml["level"].as_str().unwrap_or("-").to_string();
+        let level_str = rule.yaml["level"].as_str().unwrap_or("-");
+        let mut level = &LEVEL::from(level_str);
+        let computers =
+            Detection::join_agg_values(&agg_result.agg_record_time_info, |x| x.computer.clone());
         let tags_config_values: Vec<&CompactString> = TAGS_CONFIG.values().collect();
         let is_json_timeline = matches!(stored_static.config.action, Some(Action::JsonTimeline(_)));
         for (key, profile) in stored_static.profiles.as_ref().unwrap().iter() {
@@ -880,15 +874,7 @@ impl Detection {
                     );
                 }
                 Computer(_) => {
-                    profile_converter.insert(
-                        key.as_str(),
-                        Computer(
-                            Detection::join_agg_values(&agg_result.agg_record_time_info, |x| {
-                                x.computer.clone()
-                            })
-                            .into(),
-                        ),
-                    );
+                    profile_converter.insert(key.as_str(), Computer(computers.clone().into()));
                 }
                 Channel(_) => {
                     profile_converter.insert(
@@ -909,8 +895,8 @@ impl Detection {
                     );
                 }
                 Level(_) => {
-                    let str_level = level.as_str();
-                    let abbr_level = LEVEL_ABBR_MAP.get(str_level).unwrap_or(&str_level);
+                    level = level.convert(computers.as_str());
+                    let abbr_level = level.to_abbrev();
                     let prof_level = if stored_static.output_path.is_none() {
                         abbr_level
                     } else {
@@ -1079,19 +1065,13 @@ impl Detection {
                 _ => {}
             }
         }
-        let str_level = level.as_str();
         let detect_info = DetectInfo {
             detected_time: agg_result.start_timedate,
             rulepath: CompactString::from(&rule.rulepath),
             ruleid: CompactString::from(rule.yaml["id"].as_str().unwrap_or("-")),
             ruletitle: CompactString::from(rule.yaml["title"].as_str().unwrap_or("-")),
             ruleauthor: CompactString::from(rule.yaml["author"].as_str().unwrap_or("-")),
-            level: CompactString::from(
-                LEVEL_ABBR_MAP
-                    .get(str_level)
-                    .unwrap_or(&str_level)
-                    .to_string(),
-            ),
+            level: level.clone(),
             computername: CompactString::from("-"),
             eventid: CompactString::from("-"),
             rec_id: CompactString::from("-"),

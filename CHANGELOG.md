@@ -5,6 +5,7 @@
 **New Features:**
 
 - `-X, --remove-duplicate-detections` option to `eid-metrics` and `logon-summary` commands. (#1552) (@fukusuket)
+- New "Emergency Alerts" and severity level adjustment based on critical systems. Add a list of the computer names of critical systems (Ex: Domain Controllers, File Servers, etc...) to `config/critical_systems.txt` and all of the alerts above `low` will be adjusted one higher. That is, `low` will become `medium`, `medium` will become `high`, etc... `critical` alerts will become new `emergency` alerts. (#1551) (@fukusuket)
 
 **Enhancements:**
 
@@ -12,10 +13,15 @@
 - Significantly improved the speed of the `logon-summary` command with channel filtering. (#1544) (@fukusuket)
 - The `extract-base64` command now also works on `PowerShell Classic EID 400` events. (#1549) (@fukusuket)
 - The `extract-base64` command now also scans PowerShell Core logs as well. (#1558) (@fukusuket)
+- `search` command uses much less memory and is faster as it does not sort results by default now. You can sort results like before with the new `-s, --sort` option. (#1475) (@hach1yon)
 
 **Bug Fixes:**
 
 - An unneeded file was being created with `logon-summary` and `pivot-keywords-list` commands. (#1553) (@fukusuket)
+
+**Other:**
+
+- The `-s, --sort-events` options have been renamed to `-s, --sort`. (@YamatoSecurity)
 
 ## 3.0.1 [2024/12/29] - 3rd Year Anniversary Release
 
