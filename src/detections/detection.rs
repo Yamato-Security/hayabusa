@@ -954,9 +954,17 @@ impl Detection {
                 MitreTactics(_) => {
                     let tactics = tag_info
                         .iter()
-                        .filter(|x| tags_config_values.contains(&&CompactString::from(*x)))
-                        .join(" ¦ ");
-                    profile_converter.insert(key.as_str(), MitreTactics(tactics.into()));
+                        .filter(|x| tags_config_values.contains(&&CompactString::from(*x)));
+                    let output_tactics_str = CompactString::from(
+                        tactics
+                            .clone()
+                            .filter_map(|x| x.split(',').next())
+                            .join(" ¦ "),
+                    );
+                    profile_converter.insert(
+                        key.as_str(),
+                        MitreTactics(output_tactics_str.clone().into()),
+                    );
                 }
                 MitreTags(_) => {
                     let techniques = tag_info
