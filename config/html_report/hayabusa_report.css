@@ -37,6 +37,11 @@ h3 {
   border-bottom: solid 3px #ff0000;
 }
 
+#all_emergency_alerts {
+  color: #ff0000;
+  border-bottom: solid 3px #ff0000;
+}
+
 #all_critical_alerts {
   color: #ff0000;
   border-bottom: solid 3px #ff0000;
