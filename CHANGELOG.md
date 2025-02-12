@@ -18,6 +18,7 @@
 **Bug Fixes:**
 
 - An unneeded file was being created with `logon-summary` and `pivot-keywords-list` commands. (#1553) (@fukusuket)
+- MITRE tactics JSON output was not consistent for a few rules. (#1573) (@fukusuket)
 
 **Other:**
 
