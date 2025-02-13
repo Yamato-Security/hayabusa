@@ -259,7 +259,7 @@ Hayabusaは従来のWindowsイベントログ分析解析と比較して、分�
 
 # タイムライン結果のインポートと解析について
 
-CSVのタイムラインをExcelやTimeline Explorerで分析する方法は[こちら](doc/CSV-AnalysisWithExcelAndTimelineExplorer-Japanese.pdf)で紹介しています。
+CSVのタイムラインをExcelやTimeline Explorerで分析する方法は[こちら](doc/TimelineExplorerAnalysis/TimelineExplorerAnalysis-Japanese.md)で紹介しています。
 
 CSVのタイムラインをElastic Stackにインポートする方法は[こちら](doc/ElasticStackImport/ElasticStackImport-Japanese.md)で紹介しています。
 
