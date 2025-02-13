@@ -79,7 +79,7 @@ Copy the `Not Contains([Rule Title], 'Proc Exec')` text, add `and`, paste in the
 
 ![Multiple Filters](07-MultipleFilters.png)
 
-The easiest way to combine multiple filters is by first creating the filter syntax the `ABC` icon then copy, paste and edit that text and combine the filters with `and`, `or` and `not`.
+The easiest way to combine multiple filters is by first creating the filter syntax from the `ABC` icon, then copy, paste, and edit that text and combine the filters with `and`, `or` and `not`.
 
 You can also click on any of the colored text to get a dropdown box for the possible options to edit your filters:
 
@@ -93,6 +93,7 @@ If you right-click on any of the headers, you will get the following options:
 
 Most of these options are self-explanatory.
 
+* After you hide a column, you can show it again by opening the `Column Chooser`, right-click on the column name and click `Show Column`.
 * `Group By This Column` has the same effect as dragging a column header above to group by. (Explained in more detail later.)
 * `Hide Group By Box` will just hide the `Drag a column header here to group by that column` text and move the search bar over.
 
@@ -124,7 +125,7 @@ This will show the following:
 
 If you change the `Behavior` from `Filter` to `Search` you can search for text normally.
 
-> Note: It usually takes a while to switch the behavior and Timeline Explorer will hang for a bit, so be patient after clicking.
+> Note: It usually takes time to switch the behavior and Timeline Explorer will hang for a bit, so be patient after clicking.
 
 The default `Match criteria` is `Mixed` but can be changed to `Or`, `And`, or `Exact`.
 If you change it to anything except `Mixed`, you can then set the `Condition` from `Contains` to `Starts with`, `Like` or `Equals`.
