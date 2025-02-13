@@ -69,13 +69,13 @@ For example, if you have too many `Proc Exec` events that you would like to filt
 
 If you look towards the bottom, you can see the rule for the filter in different colors.
 If you want to temporarily disable the filter, just uncheck it.
-If you want to clear all of the filters, click the `x` button.
+If you want to clear all of the filters, click the `X` button.
 
 If you want to ignore another noisy rule, you should open up the `Filter Editor` by clicking on `Edit Filter` in the bottom-right corner:
 
 ![Filter Editor](06-FilterEditor.png)
 
-Copy the `Not Contains([Rule Title], 'Proc Exec')` text, and `and`, paste in the same filter and change `Proc Exec` to `Possible LOLBIN` and now you can ignore these two rules:
+Copy the `Not Contains([Rule Title], 'Proc Exec')` text, add `and`, paste in the same filter and change `Proc Exec` to `Possible LOLBIN` and now you can ignore these two rules:
 
 ![Multiple Filters](07-MultipleFilters.png)
 
@@ -104,9 +104,11 @@ You can format the text with color, bold font, etc... by clicking `Conditional F
 
 For example, if you wanted to show `critical` alerts with `Red Fill`, then just type `crit` and choose `Red Fill` from the options, check `Apply formatting to an entire row` and hit `OK`.
 
+![Crit](11-Crit.png)
+
 Now `critical` alerts will show up in red as shown below:
 
-![Red fill](11-RedFill.png)
+![Red fill](12-RedFill.png)
 
 You can continue doing this by adding color for the `low`, `medium` and `high` alerts as well.
 
@@ -118,7 +120,7 @@ You can see how many hits you have by checking the `Visible lines` field at the 
 You can change this behavior by clicking `Search options` at the very bottom right.
 This will show the following:
 
-![Search Options](12-SearchOptions.png)
+![Search Options](13-SearchOptions.png)
 
 If you change the `Behavior` from `Filter` to `Search` you can search for text normally.
 
@@ -159,7 +161,7 @@ Most analysts will set this to `Timestamp` so that they can always see what time
 If you drag a column header to the `Drag a column header here to group by that column`, Timeline Explorer will group by that column.
 It is common to group by `Level` so that you can prioritize alerts by severity:
 
-![Group by](13-GroupBy.png)
+![Group by](14-GroupBy.png)
 
 If you have multiple computers in your results, you can futher group-by `Computer` to triage based on different severity levels for each computer.
 
