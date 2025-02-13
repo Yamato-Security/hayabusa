@@ -20,6 +20,7 @@
 - An unneeded file was being created with `logon-summary` and `pivot-keywords-list` commands. (#1553) (@fukusuket)
 - MITRE tactics JSON output was not consistent for a few rules. (#1573) (@fukusuket)
 - Rule authors would not be outputted to the HTML report in version `v3.0.x`. (#1571) (@fukusuket)
+- The rule file name for correlation rules would not be outputted in the JSON timeline when the live response encoded rules were used. (#1572) (@fukusuket)
 
 **Other:**
 
