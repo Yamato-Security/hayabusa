@@ -8,11 +8,11 @@ Windows専用のC#製GUIツールであり、単独のアナリストによる�
 
 ## 目次
 
-- [Timeline Explorerを使ったHayabusaの結果解析](#Timeline-Explorerを使ったHayabusaの結果解析)
+- [Timeline Explorerを使ったHayabusaの結果解析](#timeline-explorerを使ったhayabusaの結果解析)
   - [概要](#概要)
   - [目次](#目次)
   - [インストールと実行](#インストールと実行)
-  - [CSVファイルの読み込み](#CSVファイルの読み込み)
+  - [CSVファイルの読み込み](#csvファイルの読み込み)
   - [データのフィルタリング](#データのフィルタリング)
   - [ヘッダーオプション](#ヘッダーオプション)
     - [条件付き書式](#条件付き書式)
@@ -93,6 +93,7 @@ CSVファイルに含まれる列に加え、Timeline Explorer によって左�
 
 これらのオプションのほとんどは自己説明的です。
 
+* 列を非表示にした後、`Column Chooser`を開き、列名の上で右クリックし、`Show Column`をクリックすることで、再び列を表示することができます。
 * `Group By This Column` は、列ヘッダーをドラッグしてグループ化するのと同じ効果があります（後述）。
 * `Hide Group By Box` は、`Drag a column header here to group by that column` テキストを非表示にし、検索バーを移動します。
 
