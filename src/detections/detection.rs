@@ -931,14 +931,14 @@ impl Detection {
                     );
                 }
                 RuleFile(_) => {
-                    let rule_path = Path::new(&rule.rulepath)
-                        .file_name()
-                        .unwrap_or_default()
-                        .to_str()
-                        .unwrap_or_default()
-                        .to_string();
-
-                    profile_converter.insert(key.as_str(), RuleFile(rule_path.into()));
+                    let rule_file_path = CompactString::from(
+                        Path::new(&rule.rulepath)
+                            .file_name()
+                            .unwrap_or_default()
+                            .to_str()
+                            .unwrap_or_default(),
+                    );
+                    profile_converter.insert(key.as_str(), RuleFile(rule_file_path.into()));
                 }
                 EvtxFile(_) => {
                     profile_converter.insert(
