@@ -19,6 +19,7 @@ standard:
     RecordID: "%RecordID%"
     Details: "%Details%"
     ExtraFieldInfo: "%ExtraFieldInfo%"
+    RuleID: "%RuleID%"
 
 # Standard profile plus MitreTags(MITRE techniques, software and groups), rule filename and EVTX filename.
 verbose:
@@ -35,6 +36,7 @@ verbose:
     Details: "%Details%"
     ExtraFieldInfo: "%ExtraFieldInfo%"
     RuleFile: "%RuleFile%"
+    RuleID: "%RuleID%"
     EvtxFile: "%EvtxFile%"
 
 # Verbose profile with all field information instead of the minimal fields defined in the Details field.
@@ -48,6 +50,7 @@ all-field-info:
     RecordID: "%RecordID%"
     AllFieldInfo: "%AllFieldInfo%"
     RuleFile: "%RuleFile%"
+    RuleID: "%RuleID%"
     EvtxFile: "%EvtxFile%"
 
 # Verbose profile with all field information and tags.
@@ -64,6 +67,7 @@ all-field-info-verbose:
     RecordID: "%RecordID%"
     AllFieldInfo: "%AllFieldInfo%"
     RuleFile: "%RuleFile%"
+    RuleID: "%RuleID%"
     EvtxFile: "%EvtxFile%"
 
 # As much information as possible.
@@ -86,6 +90,7 @@ super-verbose:
     Provider: "%Provider%"
     RuleCreationDate: "%RuleCreationDate%"
     RuleFile: "%RuleFile%"
+    RuleID: "%RuleID%"
     EvtxFile: "%EvtxFile%"
 
 # Output that is compatible to import the CSV into Timesketch.
@@ -103,6 +108,7 @@ timesketch-minimal:
     RecordID: "%RecordID%"
     Details: "%Details%"
     RuleFile: "%RuleFile%"
+    RuleID: "%RuleID%"
     EvtxFile: "%EvtxFile%"
 
 # Output that is compatible to import the CSV into Timesketch.
@@ -121,4 +127,5 @@ timesketch-verbose:
     Details: "%Details%"
     ExtraFieldInfo: "%ExtraFieldInfo%"
     RuleFile: "%RuleFile%"
+    RuleID: "%RuleID%"
     EvtxFile: "%EvtxFile%"
