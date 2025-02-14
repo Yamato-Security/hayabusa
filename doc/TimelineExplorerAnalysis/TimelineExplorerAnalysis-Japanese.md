@@ -140,17 +140,17 @@ CSVファイルに含まれる列に加え、Timeline Explorer によって左�
 * 特定の列でフィルタリングし、別のキーワードを含める場合は、`AND` ロジックとして扱われます。
 
 例:
-| Search Criteria                  | Description                                                                                                                                     |
+| 検索条件                          | 説明                                                                                                                                    |
 |----------------------------------|-------------------------------------------------------------------------------------------------------------------------------------------------|
-| mimikatz                         | Selects records that contain the `mimikatz` string in any search column.                                                                        |
-| one two three                    | Selects records that contain either `one` OR `two` OR `three` in any search column.                                                             |
-| "hoge hoge"                      | Selects records that contain `hoge hoge` in any search column.                                                                                  |
-| mimikatz +"Bad Guy"              | Selects records that contain both `mimikatz` AND `Bad Guy` in any search column.                                                                |
-| EventID:4624 kali                | Selects records that contain `4624` in the column that starts with `EventID` AND contains `kali` in any search column.                          |
-| data +entry -mark                | Selects records that contain both `data` AND `entry` in any search column, excluding records that contain `mark`.                               |
-| manu mask -file                  | Selects records that contain `menu` OR `mask`, excluding records that contain `file`.                                                           |
-| From:Roller Subj:"currency mask" | Selects records that contain `Roller` in the column that starts with `From` AND contains `currency mask` in the column that starts with `Subj`. |
-| import -From:Steve               | Selects records that contain `import` in any search column, excluding records that contain `Steve` in the column that starts with `From`.       |
+| mimikatz                         | 全体的に`mimikatz`という文字列を含むレコードを選択する。                                                                        |
+| one two three                    | 全体的に`one`または`two`または`three`のいずれかを含むレコードを選択する。                                                             |
+| "hoge hoge"                      | 全体的に`hoge hoge`という文字列を含むレコードを選択する。                                                                                 |
+| mimikatz +"Bad Guy"              | 全体的に`mimikatz`と`Bad Guy`の両方を含むレコードを選択する。                                                               |
+| EventID:4624 kali                | `EventID`で始まる列に`4624`を含み、かつ全体的に`kali`を含むレコードを選択する。                                  |
+| data +entry -mark                | `mark`を含むレコードを除外しながら、全体的に`data`と`entry`の両方を含むレコードを選択する。                               |
+| manu mask -file                  | `file`を含むレコードを除外しながら、`menu` または `mask` を含むレコードを選択する。                                                           |
+| From:Roller Subj:"currency mask" | `From`で始まる列に`Roller`を含み、かつ`Subj`から始まる列に`currency mask`を含むレコードを選択する。         |
+| import -From:Steve               | `From`で始まる列に`Steve`を含むレコードを除外しながら、全体的に`import`を含むレコードを選択する。       |
 
 ## 列の固定
 

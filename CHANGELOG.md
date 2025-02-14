@@ -25,6 +25,7 @@
 **Other:**
 
 - The `-s, --sort-events` options have been renamed to `-s, --sort`. (@YamatoSecurity)
+- Added the `RuleID` to all profiles except `minimal`. (@YamatoSecurity)
 
 ## 3.0.1 [2024/12/29] - 3rd Year Anniversary Release
 
