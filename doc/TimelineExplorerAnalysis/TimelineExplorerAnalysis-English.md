@@ -2,7 +2,7 @@
 
 ## About
 
-[Timeline Explorer](https://ericzimmerman.github.io/#!index.md) is a free but closed-source tool to replace Excel when anazlying CSV files for DFIR purposes.
+[Timeline Explorer](https://ericzimmerman.github.io/#!index.md) is a free but closed-source tool to replace Excel when analyzing CSV files for DFIR purposes.
 It is a Windows-only GUI tool written in C#.
 This tool is great for small investigations by a single analyst and for people just first learning DFIR analysis, however, the interface can be hard to understand at first so please use this guide to understand the different features.
 
@@ -132,12 +132,12 @@ If you change it to anything except `Mixed`, you can then set the `Condition` fr
 
 The `Match criteria` of `Mixed` is complicated as it sometimes uses `AND` logic and sometimes `OR` but can be very flexible once learned.
 It operates as follows:
-* If you seperate words by spaces, it will be treated as `OR` logic.
+* If you separate words by spaces, it will be treated as `OR` logic.
 * If you want to include spaces in your search, then you need to add quotes.
 * Precede a condition with `+` for `AND` logic.
 * Precede a condition with `-` to exclude results.
 * Filter on a specific column with the `ColumnName:FilterString` format.
-* If you filter on a specific column and also include a seperate keyword, it will be `AND` logic.
+* If you filter on a specific column and also include a separate keyword, it will be `AND` logic.
 
 Examples:
 | Search Criteria                  | Description                                                                                                                                     |
@@ -164,7 +164,7 @@ It is common to group by `Level` so that you can prioritize alerts by severity:
 
 ![Group by](14-GroupBy.png)
 
-If you have multiple computers in your results, you can futher group-by `Computer` to triage based on different severity levels for each computer.
+If you have multiple computers in your results, you can further group-by `Computer` to triage based on different severity levels for each computer.
 
 ## Skins
 
