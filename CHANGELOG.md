@@ -6,6 +6,7 @@
 
 - `-X, --remove-duplicate-detections` option to `eid-metrics` and `logon-summary` commands. (#1552) (@fukusuket)
 - New "Emergency Alerts" and severity level adjustment based on critical systems. Add a list of the computer names of critical systems (Ex: Domain Controllers, File Servers, etc...) to `config/critical_systems.txt` and all of the alerts above `low` will be adjusted one higher. That is, `low` will become `medium`, `medium` will become `high`, etc... `critical` alerts will become new `emergency` alerts. (#1551) (@fukusuket)
+- New `config-critical-systems` command to automatically find domain controllers and file servers to add to the `./config/critical_systems.txt` file. (#1570) (@fukusuket)
 
 **Enhancements:**
 
