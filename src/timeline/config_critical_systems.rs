@@ -3,8 +3,9 @@ use crate::detections::detection::EvtxRecordInfo;
 use crate::detections::utils::{check_setting_path, get_writable_color, write_color_buffer};
 use serde_json::Value;
 use std::collections::{HashMap, HashSet};
-use std::io::Write;
-use std::path::PathBuf;
+use std::fs::OpenOptions;
+use std::io::{BufRead, BufReader, Write};
+use std::path::{Path, PathBuf};
 use std::{fs, io};
 use strum::{EnumIter, IntoEnumIterator};
 use termcolor::{BufferWriter, Color, ColorChoice};
@@ -127,6 +128,7 @@ impl ConfigCriticalSystems {
                             file.write_all(format!("{}\n", name).as_bytes()).ok();
                         });
                         file.flush().ok();
+                        sort_and_dedup_file(&self.config_txt_path).ok();
                         write_color_buffer(
                             &BufferWriter::stdout(ColorChoice::Always),
                             get_writable_color(Some(Color::Rgb(255, 175, 0)), no_color),
@@ -150,6 +152,30 @@ impl ConfigCriticalSystems {
             }
         }
     }
+}
+
+fn sort_and_dedup_file(file_path: &Path) -> io::Result<()> {
+    let file = fs::File::open(file_path)?;
+    let reader = BufReader::new(file);
+
+    // 行を読み込み、重複を削除してソートする
+    let mut lines: HashSet<String> = HashSet::new();
+    for line in reader.lines() {
+        lines.insert(line?);
+    }
+    let mut sorted_lines: Vec<String> = lines.into_iter().collect();
+    sorted_lines.sort();
+
+    // ファイルを上書きする
+    let mut file = OpenOptions::new()
+        .write(true)
+        .truncate(true)
+        .open(file_path)?;
+    for line in sorted_lines {
+        writeln!(file, "{}", line)?;
+    }
+    file.flush().ok();
+    Ok(())
 }
 
 #[cfg(test)]
