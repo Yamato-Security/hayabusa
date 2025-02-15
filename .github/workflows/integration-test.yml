@@ -38,9 +38,6 @@ jobs:
       - name: update-rules
         run: cd main && cargo run --release -- update-rules -q
 
-      - name: config-critical-systems
-        run: cd main && cargo run --release -- config-critical-systems -d ../hayabusa-sample-evtx -q
-
       - name: computer-metrics
         run: cd main && cargo run --release -- computer-metrics -d ../hayabusa-sample-evtx -q
 
