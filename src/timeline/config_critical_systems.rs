@@ -196,7 +196,7 @@ impl ConfigCriticalSystems {
                     let msg = format!("No {:?} found.", computer_type);
                     write_color_buffer(
                         &BufferWriter::stdout(ColorChoice::Always),
-                        get_writable_color(Some(Color::Red), no_color),
+                        get_writable_color(Some(Color::Rgb(255, 175, 0)), no_color),
                         msg.as_str(),
                         true,
                     )
@@ -260,7 +260,7 @@ mod tests {
             "Event": {
                 "System": {
                     "Channel": "Security",
-                    "EventID": 5140,
+                    "EventID": 5145,
                     "Computer": "FileServer1"
                 },
                 "EventData": {
@@ -275,7 +275,7 @@ mod tests {
             "Event": {
                 "System": {
                     "Channel": "Security",
-                    "EventID": 5140,
+                    "EventID": 5145,
                     "Computer": "FileServer2"
                 },
                 "EventData": {
