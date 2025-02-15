@@ -12,7 +12,7 @@ detection:
     condition: selection
 falsepositives:
     - unknown
-level: info
+level: informational
 tags:
     - attack.test3
 output: 'CommandLine=%CommandLine%¥nParentImage=%ParentImage%'

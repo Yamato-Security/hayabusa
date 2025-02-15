@@ -42,6 +42,8 @@ pub enum LEVEL {
 
 impl LEVEL {
     pub fn from(s: &str) -> Self {
+        let s = s.to_lowercase();
+        let s = s.as_str();
         match s {
             "informational" => LEVEL::INFORMATIONAL,
             "low" => LEVEL::LOW,

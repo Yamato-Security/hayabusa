@@ -6,6 +6,7 @@ use crate::detections::message::AlertMessage;
 use crate::detections::message::ERROR_LOG_STACK;
 use crate::detections::utils;
 use crate::filter::RuleExclude;
+use crate::level::LEVEL;
 use crate::yaml_expand::{process_yaml, read_expand_files};
 use compact_str::CompactString;
 use hashbrown::{HashMap, HashSet};
@@ -27,7 +28,6 @@ pub struct ParseYaml {
     pub rule_expand_enabled_cnt: u128,
     pub errorrule_count: u128,
     pub exclude_status: HashSet<String>,
-    pub level_map: HashMap<String, u128>,
     pub loaded_rule_ids: HashSet<CompactString>,
 }
 
@@ -52,13 +52,6 @@ impl ParseYaml {
             rule_expand_enabled_cnt: Default::default(),
             errorrule_count: 0,
             exclude_status: configs::convert_option_vecs_to_hs(exclude_status_vec.as_ref()),
-            level_map: HashMap::from([
-                ("INFORMATIONAL".to_owned(), 1),
-                ("LOW".to_owned(), 2),
-                ("MEDIUM".to_owned(), 3),
-                ("HIGH".to_owned(), 4),
-                ("CRITICAL".to_owned(), 5),
-            ]),
             loaded_rule_ids: HashSet::new(),
         }
     }
@@ -384,11 +377,11 @@ impl ParseYaml {
                 .as_str()
                 .unwrap_or("informational")
                 .to_uppercase();
-            let doc_level_num = self.level_map.get(doc_level).unwrap_or(&1);
-            let args_level_num = self.level_map.get(min_level).unwrap_or(&1);
-            let target_level_num = self.level_map.get(target_level).unwrap_or(&0);
+            let doc_level_num = LEVEL::from(doc_level).index();
+            let args_level_num = LEVEL::from(min_level).index();
+            let target_level_num = LEVEL::from(target_level).index();
             if doc_level_num < args_level_num
-                || (target_level_num != &0_u128 && doc_level_num != target_level_num)
+                || (target_level_num != 0 && doc_level_num != target_level_num)
             {
                 up_rule_load_cnt("excluded");
                 return Option::None;

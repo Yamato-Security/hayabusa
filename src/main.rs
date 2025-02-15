@@ -29,6 +29,7 @@ use hayabusa::detections::utils::{
     output_profile_name,
 };
 use hayabusa::filter::create_channel_filter;
+use hayabusa::level::LEVEL;
 use hayabusa::options::htmlreport::{self, HTML_REPORTER};
 use hayabusa::options::pivot::create_output;
 use hayabusa::options::pivot::PIVOT_KEYWORD;
@@ -1365,13 +1366,6 @@ It will search for Security 5140 (Network Share Access) or 5145 (Network Share F
                 stored_static,
                 &mut rule_counter_wizard_map,
             );
-            let level_map: HashMap<&str, u128> = HashMap::from([
-                ("INFORMATIONAL", 1),
-                ("LOW", 2),
-                ("MEDIUM", 3),
-                ("HIGH", 4),
-                ("CRITICAL", 5),
-            ]);
             println!();
             write_color_buffer(
                 &BufferWriter::stdout(ColorChoice::Always),
@@ -1392,12 +1386,8 @@ It will search for Security 5140 (Network Share Access) or 5145 (Network Share F
                         let mut ret_cnt = 0;
                         if let Some(target_status_count) = rule_counter_wizard_map.get(s) {
                             target_status_count.iter().for_each(|(rule_level, value)| {
-                                let doc_level_num = level_map
-                                    .get(rule_level.to_uppercase().as_str())
-                                    .unwrap_or(&1);
-                                let args_level_num = level_map
-                                    .get(min_level.to_uppercase().as_str())
-                                    .unwrap_or(&1);
+                                let doc_level_num = LEVEL::from(rule_level.as_str()).index();
+                                let args_level_num = LEVEL::from(min_level).index();
                                 if doc_level_num >= args_level_num {
                                     ret_cnt += value.iter().map(|(_, cnt)| cnt).sum::<i128>()
                                 }
@@ -1420,12 +1410,8 @@ It will search for Security 5140 (Network Share Access) or 5145 (Network Share F
                         let mut ret_cnt = 0;
                         if let Some(target_status_count) = rule_counter_wizard_map.get(s) {
                             target_status_count.iter().for_each(|(rule_level, value)| {
-                                let doc_level_num = level_map
-                                    .get(rule_level.to_uppercase().as_str())
-                                    .unwrap_or(&1);
-                                let args_level_num = level_map
-                                    .get(min_level.to_uppercase().as_str())
-                                    .unwrap_or(&1);
+                                let doc_level_num = LEVEL::from(rule_level.as_str()).index();
+                                let args_level_num = LEVEL::from(min_level).index();
                                 if doc_level_num >= args_level_num {
                                     if !target_tags.is_empty() {
                                         for (tag, cnt) in value.iter() {
