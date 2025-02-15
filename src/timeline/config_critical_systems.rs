@@ -196,7 +196,7 @@ impl ConfigCriticalSystems {
                     let msg = format!("No {:?} found.", computer_type);
                     write_color_buffer(
                         &BufferWriter::stdout(ColorChoice::Always),
-                        get_writable_color(Some(Color::Rgb(255, 175, 0)), no_color),
+                        get_writable_color(Some(Color::Rgb(215, 0, 0)), no_color),
                         msg.as_str(),
                         true,
                     )
