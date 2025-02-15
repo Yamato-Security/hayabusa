@@ -193,6 +193,12 @@ impl App {
             return;
         }
 
+        let _ = self.output_open_close_message("opening_messages.txt", stored_static);
+        if let Action::ListContributors(_) = &stored_static.config.action.as_ref().unwrap() {
+            self.print_contributors();
+            return;
+        }
+
         if stored_static.metrics_flag {
             write_color_buffer(
                 &BufferWriter::stdout(ColorChoice::Always),
@@ -232,10 +238,55 @@ impl App {
             .ok();
             println!();
         }
-        let _ = self.output_open_close_message("opening_messages.txt", stored_static);
-        if let Action::ListContributors(_) = &stored_static.config.action.as_ref().unwrap() {
-            self.print_contributors();
-            return;
+
+        if matches!(
+            stored_static.config.action.as_ref().unwrap(),
+            Action::ConfigCriticalSystems(_)
+        ) {
+            let msg = "This command tries to find critical systems like domain controllers and file servers by checking for logs that should only exist in those systems.
+It will search for Security 4768 (Kerberos TGT requested) events to determine if it is a domain controller.
+It will search for Security 5140 (Network Share Access) or 5145 (Network Share File Access) events to determine if it is a file server.";
+            write_color_buffer(
+                &BufferWriter::stdout(ColorChoice::Always),
+                get_writable_color(
+                    Some(Color::Rgb(255, 175, 0)),
+                    stored_static.common_options.no_color,
+                ),
+                msg,
+                true,
+            )
+            .ok();
+            println!();
+            let conf = &CURRENT_EXE_PATH.to_path_buf().join("config");
+            if !conf.exists() {
+                fs::create_dir(conf).ok();
+            }
+            let config_path = conf.join("critical_systems.txt");
+            if !config_path.exists() {
+                fs::write(&config_path, "").ok();
+            }
+            if let Ok(metadata) = fs::metadata(&config_path) {
+                if metadata.len() > 0 {
+                    write_color_buffer(
+                        &BufferWriter::stdout(ColorChoice::Always),
+                        get_writable_color(
+                            Some(Color::Red),
+                            stored_static.common_options.no_color,
+                        ),
+                        "Warning: the config/critical_systems.txt file is not empty. Would you like to erase the contents first? (Y/n):",
+                        true,
+                    )
+                        .ok();
+                    let mut input = String::new();
+                    io::stdin()
+                        .read_line(&mut input)
+                        .expect("Failed to read line");
+                    if input.trim().eq_ignore_ascii_case("Y") {
+                        fs::write(config_path, "").expect("Failed to clear the file");
+                    }
+                    println!();
+                }
+            }
         }
 
         write_color_buffer(
@@ -907,6 +958,11 @@ impl App {
                 let _ = self.output_open_close_message("closing_messages.txt", stored_static);
                 return;
             }
+            Action::ConfigCriticalSystems(_) => {
+                self.analysis_start(&target_extensions, &time_filter, stored_static);
+                let _ = self.output_open_close_message("closing_messages.txt", stored_static);
+                return;
+            }
             _ => {}
         }
 
@@ -1292,14 +1348,11 @@ impl App {
         )
         .ok();
         let mut status_append_output = None;
-        if !(stored_static.metrics_flag
-            || stored_static.logon_summary_flag
-            || stored_static.search_flag
-            || stored_static.computer_metrics_flag
-            || stored_static.log_metrics_flag
-            || stored_static.extract_base64_flag
-            || stored_static.output_option.as_ref().unwrap().no_wizard)
-        {
+        let need_wizard = matches!(
+            stored_static.config.action.as_ref().unwrap(),
+            Action::CsvTimeline(_) | Action::JsonTimeline(_) | Action::PivotKeywordsList(_)
+        ) && !stored_static.output_option.as_ref().unwrap().no_wizard;
+        if need_wizard {
             CHECKPOINT
                 .lock()
                 .as_mut()
@@ -1668,12 +1721,10 @@ impl App {
             .min_level
             .to_uppercase();
         let mut wait_message = "";
-        if !(stored_static.logon_summary_flag
-            || stored_static.search_flag
-            || stored_static.metrics_flag
-            || stored_static.computer_metrics_flag
-            || stored_static.log_metrics_flag)
-        {
+        if matches!(
+            stored_static.config.action.as_ref().unwrap(),
+            Action::CsvTimeline(_) | Action::JsonTimeline(_) | Action::PivotKeywordsList(_)
+        ) {
             wait_message = "Loading detection rules. Please wait.";
         } else if stored_static.logon_summary_flag {
             wait_message = "Currently scanning for the logon summary. Please wait.";
@@ -1702,13 +1753,11 @@ impl App {
         println!();
 
         let mut rule_files = vec![];
-        if !(stored_static.logon_summary_flag
-            || stored_static.search_flag
-            || stored_static.metrics_flag
-            || stored_static.computer_metrics_flag
-            || stored_static.log_metrics_flag
-            || stored_static.extract_base64_flag)
-        {
+        let need_rules = matches!(
+            stored_static.config.action.as_ref().unwrap(),
+            Action::CsvTimeline(_) | Action::JsonTimeline(_) | Action::PivotKeywordsList(_)
+        );
+        if need_rules {
             rule_files = detection::Detection::parse_rule_files(
                 &level,
                 &target_level,
@@ -1726,13 +1775,7 @@ impl App {
                 .as_mut()
                 .unwrap()
                 .set_checkpoint(Local::now());
-            let unused_rules_option = stored_static.logon_summary_flag
-                || stored_static.search_flag
-                || stored_static.computer_metrics_flag
-                || stored_static.metrics_flag
-                || stored_static.log_metrics_flag
-                || stored_static.extract_base64_flag;
-            if !unused_rules_option && rule_files.is_empty() {
+            if rule_files.is_empty() {
                 AlertMessage::alert(
                         "No rules were loaded. Please download the latest rules with the update-rules command.\r\n",
                     )
@@ -1841,6 +1884,25 @@ impl App {
             evtx_files.retain(|e| channel_filter.scanable_rule_exists(e));
         }
 
+        if matches!(
+            stored_static.config.action.as_ref().unwrap(),
+            Action::ConfigCriticalSystems(_)
+        ) {
+            // config-critical-systems用のChannelフィルターを作成
+            let yaml_str = r#"
+            detection:
+                selection:
+                    Channel: Security
+            "#;
+            let yaml_data = YamlLoader::load_from_str(yaml_str);
+            let node = RuleNode::new(
+                "config-critical-systems".to_string(),
+                yaml_data.ok().unwrap_or_default().first().unwrap().clone(),
+            );
+            let rule_files = vec![node];
+            let mut channel_filter = create_channel_filter(&evtx_files, &rule_files);
+            evtx_files.retain(|e| channel_filter.scanable_rule_exists(e));
+        }
         let template = if stored_static.common_options.no_color {
             "[{elapsed_precise}] {human_pos} / {human_len} {spinner} [{bar:40}] {percent}%\r\n\r\n{msg}".to_string()
         } else {
@@ -1862,19 +1924,22 @@ impl App {
         )
         .with_tab_width(55);
         pb.set_style(progress_style);
-        let is_show_progress = stored_static.output_path.is_some();
-        if is_show_progress {
-            pb.enable_steady_tick(Duration::from_millis(300));
-        }
         self.rule_keys = self.get_all_keys(&rule_files);
         let mut detection = detection::Detection::new(rule_files);
         let mut tl = Timeline::new();
-
         *STORED_EKEY_ALIAS.write().unwrap() = Some(stored_static.eventkey_alias.clone());
         *STORED_STATIC.write().unwrap() = Some(stored_static.clone());
         let mut afterfact_info = AfterfactInfo::default();
         let mut all_detect_infos = vec![];
         let mut afterfact_writer = afterfact::init_writer(stored_static);
+        let is_show_progress = stored_static.output_path.is_some()
+            || matches!(
+                stored_static.config.action.as_ref().unwrap(),
+                Action::ConfigCriticalSystems(_)
+            );
+        if is_show_progress {
+            pb.enable_steady_tick(Duration::from_millis(300));
+        }
         for evtx_file in evtx_files {
             if is_show_progress {
                 let size = get_file_size(
@@ -1922,14 +1987,10 @@ impl App {
                 pb.inc(1);
             }
         }
-        let is_timeline_cmd = !(stored_static.metrics_flag
-            || stored_static.logon_summary_flag
-            || stored_static.search_flag
-            || stored_static.pivot_keyword_list_flag
-            || stored_static.computer_metrics_flag
-            || stored_static.log_metrics_flag
-            || stored_static.extract_base64_flag);
-
+        let is_timeline_cmd = matches!(
+            stored_static.config.action.as_ref().unwrap(),
+            Action::CsvTimeline(_) | Action::JsonTimeline(_)
+        );
         if !is_timeline_cmd {
             let msg = if stored_static.common_options.no_color {
                 style("Scanning finished.\n").color256(15).to_string()
@@ -1961,6 +2022,10 @@ impl App {
             tl.log_metrics_dsp_msg(stored_static)
         } else if stored_static.extract_base64_flag {
             tl.extract_base64_dsp_msg(stored_static)
+        } else if let Action::ConfigCriticalSystems(_) =
+            &stored_static.config.action.as_ref().unwrap()
+        {
+            tl.config_critical_systems_dsp_msg(stored_static.common_options.no_color);
         }
         if is_timeline_cmd {
             let mut log_records = detection.add_aggcondition_msges(&self.rt, stored_static);
@@ -2072,6 +2137,10 @@ impl App {
 
         let verbose_flag = stored_static.verbose_flag;
         let quiet_errors_flag = stored_static.quiet_errors_flag;
+        let need_rule = matches!(
+            stored_static.config.action.as_ref().unwrap(),
+            Action::CsvTimeline(_) | Action::JsonTimeline(_) | Action::PivotKeywordsList(_)
+        );
         loop {
             let mut records_per_detect = vec![];
             while records_per_detect.len() < MAX_DETECT_RECORDS {
@@ -2114,9 +2183,7 @@ impl App {
                     // computer-metricsコマンドでは検知は行わないためカウントのみ行い次のレコードを確認する
                     continue;
                 }
-
-                // Searchならすべてのフィルタを無視
-                if !stored_static.search_flag {
+                if need_rule {
                     // Computer名がinclude_computerで指定されたものに合致しないまたはexclude_computerで指定されたものに合致した場合はフィルタリングする。
                     if utils::is_filtered_by_computer_name(
                         utils::get_event_value(
@@ -2173,13 +2240,7 @@ impl App {
                 stored_static.no_pwsh_field_extraction,
             ));
 
-            // timeline機能の実行
-            tl.start(&records_per_detect, stored_static);
-            if !(stored_static.metrics_flag
-                || stored_static.logon_summary_flag
-                || stored_static.search_flag
-                || stored_static.extract_base64_flag)
-            {
+            if need_rule {
                 // detect event record by rule file
                 let (detection_tmp, mut log_records) =
                     detection.start(&self.rt, records_per_detect);
@@ -2196,6 +2257,9 @@ impl App {
                     detect_infos.append(&mut log_records);
                 }
                 detection = detection_tmp;
+            } else {
+                // timeline機能の実行
+                tl.start(&records_per_detect, stored_static);
             }
         }
         tl.total_record_cnt += record_cnt;

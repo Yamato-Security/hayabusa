@@ -27,6 +27,7 @@ use terminal_size::Width;
 use super::computer_metrics;
 use super::metrics::EventMetrics;
 use super::search::EventSearch;
+use crate::timeline::config_critical_systems::ConfigCriticalSystems;
 use crate::timeline::extract_base64::{output_all, process_evtx_record_infos};
 use crate::timeline::log_metrics::LogMetrics;
 use hashbrown::{HashMap, HashSet};
@@ -38,6 +39,7 @@ pub struct Timeline {
     pub stats: EventMetrics,
     pub event_search: EventSearch,
     pub extracted_base64_records: Vec<Vec<String>>,
+    pub config_critical_systems: ConfigCriticalSystems,
 }
 
 impl Default for Timeline {
@@ -63,11 +65,13 @@ impl Timeline {
             statsloginlst,
         );
         let search = EventSearch::new(filepath, search_result);
+        let config_critical_systems = ConfigCriticalSystems::new();
         Timeline {
             total_record_cnt: 0,
             stats: statistic,
             event_search: search,
             extracted_base64_records: vec![],
+            config_critical_systems,
         }
     }
 
@@ -92,7 +96,15 @@ impl Timeline {
                 let records = process_evtx_record_infos(records, &opt.time_format_options);
                 self.extracted_base64_records.extend(records);
             }
+        } else if let Action::ConfigCriticalSystems(_) =
+            &stored_static.config.action.as_ref().unwrap()
+        {
+            self.config_critical_systems.process(records);
         }
+    }
+
+    pub fn config_critical_systems_dsp_msg(&mut self, no_color: bool) {
+        self.config_critical_systems.output_computers(no_color);
     }
 
     /// メトリクスコマンドの統計情報のメッセージ出力関数

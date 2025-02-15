@@ -177,6 +177,7 @@ impl StoredStatic {
             Some(Action::ComputerMetrics(opt)) => opt.common_options,
             Some(Action::LogMetrics(opt)) => opt.common_options,
             Some(Action::ExpandList(opt)) => opt.common_options,
+            Some(Action::ConfigCriticalSystems(opt)) => opt.common_options,
             None => CommonOptions {
                 no_color: false,
                 quiet: false,
@@ -915,7 +916,7 @@ pub enum Action {
         author = "Yamato Security (https://github.com/Yamato-Security/hayabusa - @SecurityYamato)",
         help_template = "\nHayabusa v3.1.0 - Dev Build\n{author-with-newline}\n{usage-heading}\n  hayabusa.exe csv-timeline <INPUT> [OPTIONS]\n\n{all-args}",
         term_width = 400,
-        display_order = 290,
+        display_order = 292,
         disable_help_flag = true
     )]
     /// Create a DFIR timeline and save it in CSV format
@@ -1048,6 +1049,16 @@ pub enum Action {
     )]
     /// Output the total number of events according to computer names
     ComputerMetrics(ComputerMetricsOption),
+
+    #[clap(
+        author = "Yamato Security (https://github.com/Yamato-Security/hayabusa - @SecurityYamato)",
+        help_template = "\nHayabusa v3.1.0 - Dev Build\n{author-with-newline}\n{usage-heading}\n  hayabusa.exe config-critical-systems <INPUT> [OPTIONS]\n\n{all-args}",
+        term_width = 400,
+        display_order = 291,
+        disable_help_flag = true
+    )]
+    /// Find critical systems like domain controllers and file servers.
+    ConfigCriticalSystems(ConfigCriticalSystemsOption),
 }
 
 impl Action {
@@ -1069,6 +1080,7 @@ impl Action {
                 Action::LogMetrics(_) => 12,
                 Action::ExtractBase64(_) => 13,
                 Action::ExpandList(_) => 14,
+                Action::ConfigCriticalSystems(_) => 15,
             }
         } else {
             100
@@ -1092,6 +1104,7 @@ impl Action {
                 Action::LogMetrics(_) => "log-metrics",
                 Action::ExtractBase64(_) => "extract-base64",
                 Action::ExpandList(_) => "expand-list",
+                Action::ConfigCriticalSystems(_) => "config-critical-systems",
             }
         } else {
             ""
@@ -1921,6 +1934,20 @@ pub struct ExpandListOption {
         display_order = 441
     )]
     pub rules: PathBuf,
+
+    #[clap(flatten)]
+    pub common_options: CommonOptions,
+}
+
+#[derive(Args, Clone, Debug)]
+pub struct ConfigCriticalSystemsOption {
+    /// Directory of multiple .evtx files
+    #[arg(help_heading = Some("Input"), short = 'd', long, value_name = "DIR", conflicts_with_all = ["filepath"], display_order = 300)]
+    pub directory: Option<Vec<PathBuf>>,
+
+    /// File path to one .evtx file
+    #[arg(help_heading = Some("Input"), short = 'f', long = "file", value_name = "FILE", conflicts_with_all = ["directory"], display_order = 320)]
+    pub filepath: Option<PathBuf>,
 
     #[clap(flatten)]
     pub common_options: CommonOptions,
@@ -2816,6 +2843,66 @@ fn extract_output_options(config: &Config) -> Option<OutputOption> {
                 exclude_computer: None,
             },
             enable_unsupported_rules: true,
+            clobber: false,
+            proven_rules: false,
+            include_tag: None,
+            exclude_tag: None,
+            include_category: None,
+            exclude_category: None,
+            include_eid: None,
+            exclude_eid: None,
+            no_field: false,
+            no_pwsh_field_extraction: false,
+            remove_duplicate_data: false,
+            remove_duplicate_detections: false,
+            no_wizard: true,
+            include_status: None,
+            sort_events: false,
+            enable_all_rules: false,
+            scan_all_evtx_files: false,
+        }),
+        Action::ConfigCriticalSystems(option) => Some(OutputOption {
+            input_args: InputOption {
+                directory: option.directory.clone(),
+                filepath: option.filepath.clone(),
+                live_analysis: false,
+                recover_records: false,
+                time_offset: None,
+            },
+            enable_deprecated_rules: false,
+            enable_noisy_rules: false,
+            profile: None,
+            exclude_status: None,
+            min_level: String::default(),
+            exact_level: None,
+            end_timeline: None,
+            start_timeline: None,
+            eid_filter: false,
+            time_format_options: TimeFormatOptions {
+                european_time: false,
+                iso_8601: false,
+                rfc_2822: false,
+                rfc_3339: false,
+                us_military_time: false,
+                us_time: false,
+                utc: false,
+            },
+            visualize_timeline: false,
+            rules: Path::new("./rules").to_path_buf(),
+            html_report: None,
+            no_summary: false,
+            common_options: option.common_options,
+            detect_common_options: DetectCommonOption {
+                evtx_file_ext: None,
+                thread_number: None,
+                quiet_errors: false,
+                config: Path::new("./rules/config").to_path_buf(),
+                verbose: false,
+                json_input: false,
+                include_computer: None,
+                exclude_computer: None,
+            },
+            enable_unsupported_rules: false,
             clobber: false,
             proven_rules: false,
             include_tag: None,
