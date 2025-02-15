@@ -1940,6 +1940,7 @@ pub struct ExpandListOption {
 }
 
 #[derive(Args, Clone, Debug)]
+#[clap(group(ArgGroup::new("input_filtering").args(["directory", "filepath"]).required(true)))]
 pub struct ConfigCriticalSystemsOption {
     /// Directory of multiple .evtx files
     #[arg(help_heading = Some("Input"), short = 'd', long, value_name = "DIR", conflicts_with_all = ["filepath"], display_order = 300)]
