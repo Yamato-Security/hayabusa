@@ -2183,7 +2183,7 @@ It will search for Security 5140 (Network Share Access) or 5145 (Network Share F
                     // computer-metricsコマンドでは検知は行わないためカウントのみ行い次のレコードを確認する
                     continue;
                 }
-                if need_rule {
+                if !stored_static.search_flag {
                     // Computer名がinclude_computerで指定されたものに合致しないまたはexclude_computerで指定されたものに合致した場合はフィルタリングする。
                     if utils::is_filtered_by_computer_name(
                         utils::get_event_value(
