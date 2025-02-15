@@ -738,6 +738,7 @@ domain_controller_hostnames
 This command will extract base64 strings from the following events, decode them and tell what kind of encoding is being used.
   * Security 4688 CommandLine
   * Sysmon 1 CommandLine, ParentCommandLine
+  * System 7045 ImagePath
   * PowerShell Operational 4104
   * PowerShell Operational 4103
 

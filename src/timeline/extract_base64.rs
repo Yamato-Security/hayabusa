@@ -53,6 +53,7 @@ impl EvtxInfo {
 enum Event {
     Sec4688,
     Sysmon1,
+    System7045,
     PwSh4104,
     PwSh4103,
     PwShClassic400,
@@ -63,6 +64,7 @@ impl fmt::Display for Event {
         match self {
             Event::Sec4688 => write!(f, "Sec 4688"),
             Event::Sysmon1 => write!(f, "Sysmon 1"),
+            Event::System7045 => write!(f, "Sys 7045"),
             Event::PwSh4104 => write!(f, "PwSh 4104"),
             Event::PwSh4103 => write!(f, "PwSh 4103"),
             Event::PwShClassic400 => write!(f, "PwShClassic 400"),
@@ -241,6 +243,9 @@ fn extract_payload(data: &Value) -> Vec<(Value, Event)> {
             } else if ch == "Windows PowerShell" && id == 400 {
                 let v = data["Event"]["EventData"]["Data"][2].clone();
                 values.push((v, Event::PwShClassic400));
+            } else if ch == "System" && id == 7045 {
+                let v = data["Event"]["EventData"]["ImagePath"].clone();
+                values.push((v, Event::System7045));
             }
         }
     }
