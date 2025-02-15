@@ -1579,7 +1579,7 @@ daad2203-665f-294c-6d2f-f9272c3214f2,critical # 'Mimikatz DC Sync' - Security 46
 be670d5c-31eb-7391-4d2e-d122c89cd5bb,high # 'HackTool - Rubeus Execution' - Security 4688 - Originally critical
 ```
 
-In this case, the risk level of the rule with an `id` of `00000000-0000-0000-0000-000000000000` in the rules directory will have its `level` rewritten to `informational`.
+In this case, the risk level of the rule with an `id` of `570ae5ec-33dc-427c-b815-db86228ad43e` in the rules directory will have its `level` rewritten to `informational`.
 The possible levels to set are `critical`, `high`, `medium`, `low` and `informational`.
 
 > Warning: The `./rules/config/level_tuning.txt` config file will also be updated to the latest version on the hayabusa-rules repository everytime you run `update-rules`.

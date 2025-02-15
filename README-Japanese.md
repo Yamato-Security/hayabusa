@@ -1539,6 +1539,9 @@ Time Format:
 ### `level-tuning`コマンド
 
 `level-tuning`コマンドを使用すると、環境に応じてリスクレベルを上げたり下げたりして、ルールのアラートレベルを調整できます。
+このコマンドは、`rules`フォルダ内のルールのリスクレベル(`level`フィールド)を上書きするために、設定ファイルを使用します。
+
+> 注意: `update-rules`を実行するたびに、アラートレベルが元の設定に上書きされるので、レベルを変更したい場合は、`level-tuning`コマンドも実行する必要があります。
 
 ```
 Usage: level-tuning [OPTIONS]
@@ -1555,26 +1558,34 @@ General Options:
 #### `level-tuning`コマンドの使用例
 
 * 通常使用: `hayabusa.exe level-tuning`
-* カスタム設定ファイルに基づくルールのアラートレベルの調整: `hayabusa.exe level-tuning -f my_level_tuning.txt`
+* カスタム設定ファイルに基づくルールのアラートレベルの調整: `hayabusa.exe level-tuning -f ./config/level_tuning.txt`
 
 #### `level-tuning`の設定ファイル
 
-HayabubsaとSigmaのルール作成者は、アラートのリスクレベルを判定してルールを作成します。
-しかし、実際のリスクレベルは環境に応じて異なる場合があります。
-`./rules/config/level_tuning.txt`にルールを追加して `hayabusa.exe level-tuning`を実行すると、ルールファイル内の`level`行が更新され、リスクレベルを調整することができます。
-ルールファイルが直接更新されますので、ご注意ください。
-
-> 注意: `update-rules`を実行するたびに、アラートレベルが元の設定に上書きされるので、レベルを変更したい場合は、`update-rules`を実行した後に、`level-tuning`コマンドも実行する必要があります。
+HayabuaとSigmaのルール作成者は、ルールを作成する際にアラートの適切なリスクレベルを見積もります。
+しかし、リスクレベルが一貫していない場合や、実際のリスクレベルが環境によって異なる場合があります。
+Yamato Securityは、`./rules/config/level_tuning.txt`に設定ファイルを提供し、ルールを調整することができます。
 
 `./rules/config/level_tuning.txt`の一例:
 
 ```csv
 id,new_level
-00000000-0000-0000-0000-000000000000,informational # レベルチューニングのサンプル
+570ae5ec-33dc-427c-b815-db86228ad43e,informational # 'Application Uninstalled' - Originally low.
+b6ce0b2f-593b-5e1c-e137-d30b2974e30e,high # 'Suspicious Double Extension File Execution' - Sysmon 1 - Originally critical
+452b2159-5e6e-c494-63b9-b385d6195f58,high # 'Suspicious Double Extension File Execution' - Security 4688 - Originally critical
+51ba8477-86a4-6ff0-35fa-7b7f1b1e3f83,high # 'CobaltStrike Service Installations - System' - System 7045 - Originally critical
+daad2203-665f-294c-6d2f-f9272c3214f2,critical # 'Mimikatz DC Sync' - Security 4662 - Originally high
+8b061ac2-31c7-659d-aa1b-36ceed1b03f1,high # 'HackTool - Rubeus Execution' - Sysmon 1 - Originally critical
+be670d5c-31eb-7391-4d2e-d122c89cd5bb,high # 'HackTool - Rubeus Execution' - Security 4688 - Originally critical
 ```
 
-この場合、ルールディレクトリ内の`id`が`00000000-0000-0000000000`のルールのアラート`level`が、`informational`に書き換えられます。
+この場合、ルールディレクトリ内の`id`が`570ae5ec-33dc-427c-b815-db86228ad43e`のルールのリスクレベルは、`informational`に書き換えられます。
 設定可能なレベルは、`critical`、`high`、`medium`、`low`、`informational`です。
+
+> 注意: `./rules/config/level_tuning.txt`設定ファイルは、`update-rules`を実行するたびに、hayabusa-rulesリポジトリの最新バージョンに更新されます。
+> したがって、このファイルを変更した場合、変更内容は失われます！
+> 自分用の設定ファイルを保持したい場合は、`./config/level_tuning.txt`に設定ファイルを作成し、`hayabusa.exe level-tuning -f ./config/level_tuning.txt`を実行してください。
+> また、Yamato Securityが提供する設定ファイルを使用して最初にレベル調整を行い、その後独自の設定ファイルでさらに調整することもできます。
 
 ### `list-profiles`コマンド
 
