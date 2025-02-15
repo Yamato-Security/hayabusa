@@ -98,7 +98,7 @@ impl ConfigCriticalSystems {
                     write_color_buffer(
                         &BufferWriter::stdout(ColorChoice::Always),
                         get_writable_color(Some(Color::Rgb(0, 255, 0)), no_color),
-                        &format!("{:?} found ({:?}):", computer_type.to_str(), names.len()),
+                        &format!("{:?} found ({:?}):", computer_type.to_str().replace("\"",""), names.len()),
                         true,
                     )
                     .ok();
