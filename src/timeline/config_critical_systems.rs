@@ -17,6 +17,15 @@ enum ComputerType {
     FileServer,
 }
 
+impl ComputerType {
+    fn to_str(&self) -> &str {
+        match self {
+            ComputerType::DomainController => "Domain Controllers",
+            ComputerType::FileServer => "File Servers",
+        }
+    }
+}
+
 #[derive(Clone, Debug)]
 pub struct ConfigCriticalSystems {
     computers: HashMap<ComputerType, HashSet<String>>,
@@ -89,7 +98,7 @@ impl ConfigCriticalSystems {
                     write_color_buffer(
                         &BufferWriter::stdout(ColorChoice::Always),
                         get_writable_color(Some(Color::Rgb(0, 255, 0)), no_color),
-                        &format!("{:?} found ({:?}):", computer_type, names.len()),
+                        &format!("{:?} found ({:?}):", computer_type.to_str(), names.len()),
                         true,
                     )
                     .ok();
