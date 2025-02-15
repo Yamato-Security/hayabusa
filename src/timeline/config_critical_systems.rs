@@ -111,7 +111,7 @@ impl ConfigCriticalSystems {
                             "\nWould you like to add them to the {} file? (Y/n):",
                             CONFIG_CRITICAL_SYSTEMS
                         ),
-                        true,
+                        false,
                     )
                     .ok();
                     let mut input = String::new();
