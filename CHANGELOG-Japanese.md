@@ -13,6 +13,7 @@
 - チャンネルフィルタリングで `logon-summary` コマンドの速度を大幅に改善した。 (#1544) (@fukusuket)
 - `extract-base64`コマンドが`PowerShell Classic EID 400`イベントも対象するようになった。 (#1549) (@fukusuket)
 - `extract-base64`コマンドがPowerShell Coreログにも対応した。 (#1558) (@fukusuket)
+- `extract-base64`コマンドが`System 7045` (サービス作成)イベントにも対応した。 (#1583) (@fukusuket)
 - `search`コマンドは、デフォルトでは結果をソートしないので、メモリ使用量が大幅に減り、より高速になった。新しい`-s, --sort`オプションを使えば、以前と同じように結果をソートできる。(#1475) (@hach1yon)
 
 **バグ修正:**

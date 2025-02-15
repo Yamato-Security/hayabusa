@@ -13,6 +13,7 @@
 - Significantly improved the speed of the `logon-summary` command with channel filtering. (#1544) (@fukusuket)
 - The `extract-base64` command now also works on `PowerShell Classic EID 400` events. (#1549) (@fukusuket)
 - The `extract-base64` command now also scans PowerShell Core logs as well. (#1558) (@fukusuket)
+- The `extract-base64` command now also scans `System 7045` (Service Creation) events. (#1583) (@fukusuket)
 - `search` command uses much less memory and is faster as it does not sort results by default now. You can sort results like before with the new `-s, --sort` option. (#1475) (@hach1yon)
 
 **Bug Fixes:**
