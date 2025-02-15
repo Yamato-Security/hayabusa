@@ -738,6 +738,7 @@ domain_controller_hostnames
 このコマンドは、次のイベントからBase64文字列を抽出し、それをデコードして、どのようなエンコードが使用されているかを判別します。
 * Security 4688 CommandLine
 * Sysmon 1 CommandLine, ParentCommandLine
+* System 7045 ImagePath
 * PowerShell Operational 4104
 * PowerShell Operational 4103
 
