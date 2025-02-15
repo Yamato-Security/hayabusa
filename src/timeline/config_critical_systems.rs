@@ -73,7 +73,7 @@ impl ConfigCriticalSystems {
                             .entry(ComputerType::DomainController)
                             .or_default()
                             .insert(v);
-                    } else if id == 5140 || id == 5145 {
+                    } else if id == 5145 {
                         let share = data["Event"]["EventData"]["ShareName"]
                             .as_str()
                             .unwrap_or_default();
