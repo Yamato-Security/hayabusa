@@ -1,6 +1,9 @@
 use crate::detections::configs::CURRENT_EXE_PATH;
 use crate::detections::detection::EvtxRecordInfo;
 use crate::detections::utils::{check_setting_path, get_writable_color, write_color_buffer};
+use console::{style, Style};
+use dialoguer::theme::ColorfulTheme;
+use dialoguer::Confirm;
 use serde_json::Value;
 use std::collections::{HashMap, HashSet};
 use std::fs::OpenOptions;
@@ -98,11 +101,7 @@ impl ConfigCriticalSystems {
                     write_color_buffer(
                         &BufferWriter::stdout(ColorChoice::Always),
                         get_writable_color(Some(Color::Rgb(0, 255, 0)), no_color),
-                        &format!(
-                            "{:?} found ({:?}):",
-                            computer_type.to_str().replace("\"", ""),
-                            names.len()
-                        ),
+                        &format!("{} found ({}):", computer_type.to_str(), names.len()),
                         true,
                     )
                     .ok();
@@ -117,21 +116,62 @@ impl ConfigCriticalSystems {
                         )
                         .ok();
                     }
-                    write_color_buffer(
-                        &BufferWriter::stdout(ColorChoice::Always),
-                        get_writable_color(Some(Color::Rgb(255, 175, 0)), no_color),
-                        &format!(
-                            "\nWould you like to add them to the {} file? (Y/n):",
-                            CONFIG_CRITICAL_SYSTEMS
-                        ),
-                        false,
-                    )
-                    .ok();
-                    let mut input = String::new();
-                    io::stdin()
-                        .read_line(&mut input)
-                        .expect("Failed to read line");
-                    if input.trim().eq_ignore_ascii_case("Y") {
+                    println!();
+                    let color_theme = if no_color {
+                        ColorfulTheme {
+                            defaults_style: Style::new().for_stderr(),
+                            prompt_style: Style::new().for_stderr().bold(),
+                            prompt_prefix: style("?".to_string()).for_stderr(),
+                            prompt_suffix: style("›".to_string()).for_stderr(),
+                            success_prefix: style("✔".to_string()).for_stderr(),
+                            success_suffix: style("·".to_string()).for_stderr(),
+                            error_prefix: style("✘".to_string()).for_stderr(),
+                            error_style: Style::new().for_stderr(),
+                            hint_style: Style::new().for_stderr(),
+                            values_style: Style::new().for_stderr(),
+                            active_item_style: Style::new().for_stderr(),
+                            inactive_item_style: Style::new().for_stderr(),
+                            active_item_prefix: style("❯".to_string()).for_stderr(),
+                            inactive_item_prefix: style(" ".to_string()).for_stderr(),
+                            checked_item_prefix: style("✔".to_string()).for_stderr(),
+                            unchecked_item_prefix: style("⬚".to_string()).for_stderr(),
+                            picked_item_prefix: style("❯".to_string()).for_stderr(),
+                            unpicked_item_prefix: style(" ".to_string()).for_stderr(),
+                        }
+                    } else {
+                        ColorfulTheme {
+                            active_item_prefix: Style::new()
+                                .color256(214)
+                                .apply_to("❯".to_string()), // orange
+                            checked_item_prefix: Style::new()
+                                .color256(46)
+                                .apply_to("✔".to_string()), // green
+                            picked_item_prefix: Style::new()
+                                .color256(214)
+                                .apply_to("❯".to_string()), // orange
+                            active_item_style: Style::new().color256(51), // cyan
+                            values_style: Style::new().color256(46),      // green
+                            prompt_prefix: Style::new().color256(214).apply_to("?".to_string()), // orange
+                            prompt_suffix: Style::new().color256(15).apply_to("›".to_string()), // cyan
+                            defaults_style: Style::new().color256(51), // cyan
+                            hint_style: Style::new().color256(214),    // orange
+                            success_prefix: Style::new().color256(46).apply_to("✔".to_string()), // green
+                            success_suffix: Style::new().color256(15).apply_to("·".to_string()), // white
+                            error_prefix: Style::new().color256(9).apply_to("✘".to_string()), // red
+                            ..Default::default()
+                        }
+                    };
+                    let prompt_fmt = format!(
+                        "Would you like to add them to the {} file?:",
+                        CONFIG_CRITICAL_SYSTEMS
+                    );
+                    let config_append = Confirm::with_theme(&color_theme)
+                        .with_prompt(prompt_fmt)
+                        .default(true)
+                        .show_default(true)
+                        .interact()
+                        .unwrap();
+                    if config_append {
                         let mut file = fs::OpenOptions::new()
                             .append(true)
                             .create(true)

@@ -269,21 +269,57 @@ Any hostnames added to the critical_systems.txt file will have all alerts above 
             }
             if let Ok(metadata) = fs::metadata(&config_path) {
                 if metadata.len() > 0 {
-                    write_color_buffer(
-                        &BufferWriter::stdout(ColorChoice::Always),
-                        get_writable_color(
-                            Some(Color::Red),
-                            stored_static.common_options.no_color,
-                        ),
-                        "Warning: the config/critical_systems.txt file is not empty. Would you like to erase the contents first? (Y/n):",
-                        true,
-                    )
-                        .ok();
-                    let mut input = String::new();
-                    io::stdin()
-                        .read_line(&mut input)
-                        .expect("Failed to read line");
-                    if input.trim().eq_ignore_ascii_case("Y") {
+                    let color_theme = if stored_static.common_options.no_color {
+                        ColorfulTheme {
+                            defaults_style: Style::new().for_stderr(),
+                            prompt_style: Style::new().for_stderr().bold(),
+                            prompt_prefix: style("?".to_string()).for_stderr(),
+                            prompt_suffix: style("›".to_string()).for_stderr(),
+                            success_prefix: style("✔".to_string()).for_stderr(),
+                            success_suffix: style("·".to_string()).for_stderr(),
+                            error_prefix: style("✘".to_string()).for_stderr(),
+                            error_style: Style::new().for_stderr(),
+                            hint_style: Style::new().for_stderr(),
+                            values_style: Style::new().for_stderr(),
+                            active_item_style: Style::new().for_stderr(),
+                            inactive_item_style: Style::new().for_stderr(),
+                            active_item_prefix: style("❯".to_string()).for_stderr(),
+                            inactive_item_prefix: style(" ".to_string()).for_stderr(),
+                            checked_item_prefix: style("✔".to_string()).for_stderr(),
+                            unchecked_item_prefix: style("⬚".to_string()).for_stderr(),
+                            picked_item_prefix: style("❯".to_string()).for_stderr(),
+                            unpicked_item_prefix: style(" ".to_string()).for_stderr(),
+                        }
+                    } else {
+                        ColorfulTheme {
+                            active_item_prefix: Style::new()
+                                .color256(214)
+                                .apply_to("❯".to_string()), // orange
+                            checked_item_prefix: Style::new()
+                                .color256(46)
+                                .apply_to("✔".to_string()), // green
+                            picked_item_prefix: Style::new()
+                                .color256(214)
+                                .apply_to("❯".to_string()), // orange
+                            values_style: Style::new().color256(46), // green
+                            prompt_prefix: Style::new().color256(160).apply_to("?".to_string()), // orange
+                            prompt_suffix: Style::new().color256(15).apply_to("›".to_string()), // cyan
+                            prompt_style: Style::new().color256(160).bold(), // red
+                            defaults_style: Style::new().color256(51),       // cyan
+                            hint_style: Style::new().color256(214),          // orange
+                            success_prefix: Style::new().color256(46).apply_to("✔".to_string()), // green
+                            success_suffix: Style::new().color256(15).apply_to("·".to_string()), // white
+                            ..Default::default()
+                        }
+                    };
+                    let prompt_fmt = "Warning: the config/critical_systems.txt file is not empty. Would you like to erase the contents first?";
+                    let config_clear = Confirm::with_theme(&color_theme)
+                        .with_prompt(prompt_fmt)
+                        .default(true)
+                        .show_default(true)
+                        .interact()
+                        .unwrap();
+                    if config_clear {
                         fs::write(config_path, "").expect("Failed to clear the file");
                     }
                     println!();
@@ -1488,12 +1524,11 @@ Any hostnames added to the critical_systems.txt file will have all alerts above 
                     active_item_prefix: Style::new().color256(214).apply_to("❯".to_string()), // orange
                     checked_item_prefix: Style::new().color256(46).apply_to("✔".to_string()), // green
                     picked_item_prefix: Style::new().color256(214).apply_to("❯".to_string()), // orange
-                    active_item_style: Style::new().color256(51), // cyan
-                    values_style: Style::new().color256(46),      // green
+                    values_style: Style::new().color256(46), // green
                     prompt_prefix: Style::new().color256(214).apply_to("?".to_string()), // orange
                     prompt_suffix: Style::new().color256(15).apply_to("›".to_string()), // cyan
-                    defaults_style: Style::new().color256(51),    // cyan
-                    hint_style: Style::new().color256(214),       // orange
+                    defaults_style: Style::new().color256(51), // cyan
+                    hint_style: Style::new().color256(214),  // orange
                     success_prefix: Style::new().color256(46).apply_to("✔".to_string()), // green
                     success_suffix: Style::new().color256(15).apply_to("·".to_string()), // white
                     error_prefix: Style::new().color256(9).apply_to("✘".to_string()), // red
