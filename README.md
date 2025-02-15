@@ -1538,7 +1538,10 @@ The options and config files for `json-timeline` are the same as `csv-timeline` 
 
 ### `level-tuning` command
 
-The `level-tuning` command will let you tune the alert levels for rules, either raising or decreasing the risk level according to your environment.
+The `level-tuning` command will let you tune the alert levels for rules, either raising or decreasing the risk level as you would like them.
+This command uses a config file to overwrite the risk levels (the `level` field) of rules in the `rules` folder.
+
+> Warning: everytime you run the `update-rules` command, the risk level will be returned back to the original value so you will need to run the `level-tuning` command again aferwards.
 
 ```
 Usage: level-tuning [OPTIONS]
@@ -1555,26 +1558,34 @@ General Options:
 #### `level-tuning` command examples
 
 * Normal usage: `hayabusa.exe level-tuning`
-* Tune rule alert levels based on your custom config file: `hayabusa.exe level-tuning -f my_level_tuning.txt`
+* Tune rule alert levels based on your custom config file: `hayabusa.exe level-tuning -f ./config/level_tuning.txt`
 
 #### `level-tuning` config file
 
-Hayabusa and Sigma rule authors will determine the risk level of the alert when writing their rules.
-However, the actual risk level may differ according to the environment.
-You can tune the risk level of the rules by adding them to `./rules/config/level_tuning.txt` and executing `hayabusa.exe level-tuning` which will update the `level` line in the rule file.
-Please note that the rule file will be updated directly.
+Hayabusa and Sigma rule authors will estimate the appropriate risk level of the alert when writing their rules.
+However, sometimes risk levels are not consistant and also the actual risk level may differ according to your environment.
+Yamato Security provides and maintains a config file at `./rules/config/level_tuning.txt` that you can use to tune your rules as well.
 
-> Warning: Anytime you run `update-rules`, the original alert level will overwrite any settings you have changed, so you will need to run the `level-tuning` command after every time you run `update-rules` if you want to change the levels.
-
-`./rules/config/level_tuning.txt` sample line:
+`./rules/config/level_tuning.txt` sample:
 
 ```csv
 id,new_level
-00000000-0000-0000-0000-000000000000,informational # sample level tuning line
+570ae5ec-33dc-427c-b815-db86228ad43e,informational # 'Application Uninstalled' - Originally low.
+b6ce0b2f-593b-5e1c-e137-d30b2974e30e,high # 'Suspicious Double Extension File Execution' - Sysmon 1 - Originally critical
+452b2159-5e6e-c494-63b9-b385d6195f58,high # 'Suspicious Double Extension File Execution' - Security 4688 - Originally critical
+51ba8477-86a4-6ff0-35fa-7b7f1b1e3f83,high # 'CobaltStrike Service Installations - System' - System 7045 - Originally critical
+daad2203-665f-294c-6d2f-f9272c3214f2,critical # 'Mimikatz DC Sync' - Security 4662 - Originally high
+8b061ac2-31c7-659d-aa1b-36ceed1b03f1,high # 'HackTool - Rubeus Execution' - Sysmon 1 - Originally critical
+be670d5c-31eb-7391-4d2e-d122c89cd5bb,high # 'HackTool - Rubeus Execution' - Security 4688 - Originally critical
 ```
 
 In this case, the risk level of the rule with an `id` of `00000000-0000-0000-0000-000000000000` in the rules directory will have its `level` rewritten to `informational`.
 The possible levels to set are `critical`, `high`, `medium`, `low` and `informational`.
+
+> Warning: The `./rules/config/level_tuning.txt` config file will also be updated to the latest version on the hayabusa-rules repository everytime you run `update-rules`.
+> Therefore, if you make changes to this file, you will loose those changes!
+> If you want to keep a config file for yourself, then create a config file in `./config/level_tuning.txt` and run `hayabusa.exe level-tuning -f ./config/level_tuning.txt`.
+> You can also first do level tuning with the config file provided by Yamato Security and then further tune with your own config file.
 
 ### `list-profiles` command
 
