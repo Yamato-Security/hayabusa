@@ -201,6 +201,7 @@ impl ConfigCriticalSystems {
                         true,
                     )
                     .ok();
+                    println!();
                 }
             }
         }
