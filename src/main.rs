@@ -246,7 +246,8 @@ impl App {
         ) {
             let msg = "This command tries to find critical systems like domain controllers and file servers by checking for logs that should only exist in those systems.
 It will search for Security 4768 (Kerberos TGT requested) events to determine if it is a domain controller.
-It will search for Security 5140 (Network Share Access) or 5145 (Network Share File Access) events to determine if it is a file server.";
+It will search for Security 5140 (Network Share Access) or 5145 (Network Share File Access) events to determine if it is a file server.
+Any hostnames added to the critical_systems.txt file will have all alerts above low increased by one level with a maximum of emergency level.";
             write_color_buffer(
                 &BufferWriter::stdout(ColorChoice::Always),
                 get_writable_color(
