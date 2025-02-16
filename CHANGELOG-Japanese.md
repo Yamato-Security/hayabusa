@@ -29,6 +29,7 @@
 
 - `-s, --sort-events`オプションが`-s, --sort`に名前変更された。 (@YamatoSecurity)
 - `minimal`以外のプロファイルに`RuleID`を追加した。 (@YamatoSecurity)
+- コードのリファクタリング: StoredStaticの不要な初期化コードを減らすためにデフォルトのtraitを使用することにした。 (#1588) (@fukusuket)
 
 ## 3.0.1 [2024/12/29] - 3rd Year Anniversary Release
 

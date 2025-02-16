@@ -1112,7 +1112,7 @@ impl Action {
     }
 }
 
-#[derive(Args, Clone, Debug)]
+#[derive(Args, Clone, Debug, Default)]
 pub struct DetectCommonOption {
     /// Scan JSON formatted logs instead of .evtx (.json or .jsonl)
     #[arg(help_heading = Some("General Options"), short = 'J', long = "JSON-input", conflicts_with = "live_analysis", display_order = 360)]
@@ -1161,7 +1161,7 @@ pub struct DetectCommonOption {
     pub exclude_computer: Option<Vec<String>>,
 }
 
-#[derive(Args, Clone, Debug)]
+#[derive(Args, Clone, Debug, Default)]
 pub struct DefaultProfileOption {
     #[clap(flatten)]
     pub common_options: CommonOptions,
@@ -1201,7 +1201,7 @@ pub struct TimeFormatOptions {
     pub utc: bool,
 }
 
-#[derive(Args, Clone, Debug)]
+#[derive(Args, Clone, Debug, Default)]
 #[clap(group(ArgGroup::new("search_input_filtering").args(["keywords", "regex"]).required(true)))]
 pub struct SearchOption {
     #[clap(flatten)]
@@ -1343,7 +1343,7 @@ pub struct SearchOption {
     pub sort_events: bool,
 }
 
-#[derive(Args, Clone, Debug)]
+#[derive(Args, Clone, Debug, Default)]
 pub struct UpdateOption {
     #[clap(flatten)]
     pub common_options: CommonOptions,
@@ -1380,7 +1380,7 @@ pub struct LevelTuningOption {
     pub level_tuning: PathBuf,
 }
 
-#[derive(Args, Clone, Debug)]
+#[derive(Args, Clone, Debug, Default)]
 pub struct EidMetricsOption {
     #[clap(flatten)]
     pub input_args: InputOption,
@@ -1407,7 +1407,7 @@ pub struct EidMetricsOption {
     pub clobber: bool,
 }
 
-#[derive(Args, Clone, Debug)]
+#[derive(Args, Clone, Debug, Default)]
 #[clap(group(ArgGroup::new("input_filtering").args(["directory", "filepath", "live_analysis"]).required(true)))]
 #[clap(group(ArgGroup::new("level_rule_filtering").args(["min_level", "exact_level"]).multiple(false)))]
 pub struct PivotKeywordOption {
@@ -1507,7 +1507,7 @@ pub struct PivotKeywordOption {
     pub no_wizard: bool,
 }
 
-#[derive(Args, Clone, Debug)]
+#[derive(Args, Clone, Debug, Default)]
 pub struct LogonSummaryOption {
     #[clap(flatten)]
     pub input_args: InputOption,
@@ -1543,7 +1543,7 @@ pub struct LogonSummaryOption {
 }
 
 /// Options can be set when outputting
-#[derive(Args, Clone, Debug)]
+#[derive(Args, Clone, Debug, Default)]
 #[clap(group(ArgGroup::new("level_rule_filtering").args(["min_level", "exact_level"]).multiple(false)))]
 pub struct OutputOption {
     #[clap(flatten)]
@@ -1715,7 +1715,7 @@ pub struct OutputOption {
     pub scan_all_evtx_files: bool,
 }
 
-#[derive(Copy, Args, Clone, Debug)]
+#[derive(Copy, Args, Clone, Debug, Default)]
 pub struct CommonOptions {
     /// Disable color output
     #[arg(help_heading = Some("Display Settings"), short = 'K', long = "no-color", global = true, display_order = 400)]
@@ -1730,7 +1730,7 @@ pub struct CommonOptions {
     pub help: Option<bool>,
 }
 
-#[derive(Args, Clone, Debug)]
+#[derive(Args, Clone, Debug, Default)]
 #[clap(group(ArgGroup::new("input_filtering").args(["directory", "filepath", "live_analysis"]).required(true)))]
 pub struct InputOption {
     /// Directory of multiple .evtx files
@@ -1754,7 +1754,7 @@ pub struct InputOption {
     pub time_offset: Option<String>,
 }
 
-#[derive(Args, Clone, Debug)]
+#[derive(Args, Clone, Debug, Default)]
 pub struct CsvOutputOption {
     #[clap(flatten)]
     pub output_options: OutputOption,
@@ -1783,7 +1783,7 @@ pub struct CsvOutputOption {
     pub disable_abbreviations: bool,
 }
 
-#[derive(Args, Clone, Debug)]
+#[derive(Args, Clone, Debug, Default)]
 pub struct JSONOutputOption {
     #[clap(flatten)]
     pub output_options: OutputOption,
@@ -1811,7 +1811,7 @@ pub struct JSONOutputOption {
     pub disable_abbreviations: bool,
 }
 
-#[derive(Args, Clone, Debug)]
+#[derive(Args, Clone, Debug, Default)]
 pub struct ComputerMetricsOption {
     #[clap(flatten)]
     pub input_args: InputOption,
@@ -1866,7 +1866,7 @@ pub struct ComputerMetricsOption {
     pub clobber: bool,
 }
 
-#[derive(Args, Clone, Debug)]
+#[derive(Args, Clone, Debug, Default)]
 pub struct LogMetricsOption {
     #[clap(flatten)]
     pub input_args: InputOption,
@@ -1897,7 +1897,7 @@ pub struct LogMetricsOption {
     pub disable_abbreviations: bool,
 }
 
-#[derive(Args, Clone, Debug)]
+#[derive(Args, Clone, Debug, Default)]
 pub struct ExtractBase64Option {
     #[clap(flatten)]
     pub input_args: InputOption,
@@ -1920,7 +1920,7 @@ pub struct ExtractBase64Option {
     pub clobber: bool,
 }
 
-#[derive(Args, Clone, Debug)]
+#[derive(Args, Clone, Debug, Default)]
 pub struct ExpandListOption {
     /// Specify rule directory (default: ./rules)
     #[arg(
@@ -1939,7 +1939,7 @@ pub struct ExpandListOption {
     pub common_options: CommonOptions,
 }
 
-#[derive(Args, Clone, Debug)]
+#[derive(Args, Clone, Debug, Default)]
 #[clap(group(ArgGroup::new("input_filtering").args(["directory", "filepath"]).required(true)))]
 pub struct ConfigCriticalSystemsOption {
     /// Directory of multiple .evtx files
@@ -1954,7 +1954,7 @@ pub struct ConfigCriticalSystemsOption {
     pub common_options: CommonOptions,
 }
 
-#[derive(Parser, Clone, Debug)]
+#[derive(Parser, Clone, Debug, Default)]
 #[clap(
     author = "Yamato Security (https://github.com/Yamato-Security/hayabusa - @SecurityYamato)",
     help_template = "\nHayabusa v3.1.0 - Dev Build\n{author-with-newline}\n{usage-heading}\n  hayabusa.exe <COMMAND> [OPTIONS]\n  hayabusa.exe help <COMMAND> or hayabusa.exe <COMMAND> -h\n\n{all-args}{options}",
@@ -2453,176 +2453,56 @@ fn extract_output_options(config: &Config) -> Option<OutputOption> {
             input_args: option.input_args.clone(),
             enable_deprecated_rules: option.enable_deprecated_rules,
             enable_noisy_rules: option.enable_noisy_rules,
-            profile: None,
             exclude_status: option.exclude_status.clone(),
             min_level: option.min_level.clone(),
             exact_level: option.exact_level.clone(),
             end_timeline: option.end_timeline.clone(),
             start_timeline: option.start_timeline.clone(),
             eid_filter: option.eid_filter,
-            time_format_options: TimeFormatOptions {
-                european_time: false,
-                iso_8601: false,
-                rfc_2822: false,
-                rfc_3339: false,
-                us_military_time: false,
-                us_time: false,
-                utc: false,
-            },
-            visualize_timeline: false,
-            rules: Path::new("./rules").to_path_buf(),
-            html_report: None,
-            no_summary: false,
+            time_format_options: TimeFormatOptions::default(),
             common_options: option.common_options,
             detect_common_options: option.detect_common_options.clone(),
             enable_unsupported_rules: option.enable_unsupported_rules,
             clobber: option.clobber,
-            proven_rules: false,
             include_tag: option.include_tag.clone(),
             exclude_tag: option.exclude_tag.clone(),
-            include_category: None,
-            exclude_category: None,
             include_eid: option.include_eid.clone(),
             exclude_eid: option.exclude_eid.clone(),
-            no_field: false,
-            no_pwsh_field_extraction: false,
-            remove_duplicate_data: false,
-            remove_duplicate_detections: false,
             no_wizard: option.no_wizard,
             include_status: option.include_status.clone(),
-            sort_events: false,
-            enable_all_rules: false,
-            scan_all_evtx_files: false,
+            ..Default::default()
         }),
         Action::EidMetrics(option) => Some(OutputOption {
             input_args: option.input_args.clone(),
-            enable_deprecated_rules: false,
-            enable_noisy_rules: false,
-            profile: None,
-            exclude_status: None,
-            min_level: String::default(),
-            exact_level: None,
-            end_timeline: None,
-            start_timeline: None,
-            eid_filter: false,
             time_format_options: option.time_format_options.clone(),
-            visualize_timeline: false,
-            rules: Path::new("./rules").to_path_buf(),
-            html_report: None,
-            no_summary: false,
             common_options: option.common_options,
             detect_common_options: option.detect_common_options.clone(),
-            enable_unsupported_rules: false,
             clobber: option.clobber,
-            proven_rules: false,
-            include_tag: None,
-            exclude_tag: None,
-            include_category: None,
-            exclude_category: None,
-            include_eid: None,
-            exclude_eid: None,
-            no_field: false,
-            no_pwsh_field_extraction: false,
-            remove_duplicate_data: false,
-            remove_duplicate_detections: false,
             no_wizard: true,
-            include_status: None,
-            sort_events: false,
-            enable_all_rules: false,
-            scan_all_evtx_files: false,
+            ..Default::default()
         }),
         Action::ExtractBase64(option) => Some(OutputOption {
             input_args: option.input_args.clone(),
-            enable_deprecated_rules: false,
-            enable_noisy_rules: false,
-            profile: None,
-            exclude_status: None,
-            min_level: String::default(),
-            exact_level: None,
-            end_timeline: None,
-            start_timeline: None,
-            eid_filter: false,
             time_format_options: option.time_format_options.clone(),
-            visualize_timeline: false,
             rules: Path::new("./rules").to_path_buf(),
-            html_report: None,
-            no_summary: false,
             common_options: option.common_options,
             detect_common_options: option.detect_common_options.clone(),
-            enable_unsupported_rules: false,
             clobber: option.clobber,
-            proven_rules: false,
-            include_tag: None,
-            exclude_tag: None,
-            include_category: None,
-            exclude_category: None,
-            include_eid: None,
-            exclude_eid: None,
-            no_field: false,
-            no_pwsh_field_extraction: false,
-            remove_duplicate_data: false,
-            remove_duplicate_detections: false,
             no_wizard: true,
-            include_status: None,
-            sort_events: false,
-            enable_all_rules: false,
-            scan_all_evtx_files: false,
+            ..Default::default()
         }),
         Action::LogonSummary(option) => Some(OutputOption {
             input_args: option.input_args.clone(),
-            enable_deprecated_rules: false,
-            enable_noisy_rules: false,
-            profile: None,
-            exclude_status: None,
-            min_level: String::default(),
-            exact_level: None,
-            end_timeline: None,
-            start_timeline: None,
-            eid_filter: false,
             time_format_options: option.time_format_options.clone(),
-            visualize_timeline: false,
-            rules: Path::new("./rules").to_path_buf(),
-            html_report: None,
-            no_summary: false,
             common_options: option.common_options,
             detect_common_options: option.detect_common_options.clone(),
-            enable_unsupported_rules: false,
             clobber: option.clobber,
-            proven_rules: false,
-            include_tag: None,
-            exclude_tag: None,
-            include_category: None,
-            exclude_category: None,
-            include_eid: None,
-            exclude_eid: None,
-            no_field: false,
-            no_pwsh_field_extraction: false,
-            remove_duplicate_data: false,
-            remove_duplicate_detections: false,
             no_wizard: true,
-            include_status: None,
-            sort_events: false,
-            enable_all_rules: false,
-            scan_all_evtx_files: false,
+            ..Default::default()
         }),
         Action::ComputerMetrics(option) => Some(OutputOption {
             input_args: option.input_args.clone(),
-            profile: None,
             common_options: option.common_options,
-            enable_deprecated_rules: false,
-            enable_unsupported_rules: false,
-            exclude_status: None,
-            include_tag: None,
-            include_category: None,
-            exclude_category: None,
-            min_level: String::default(),
-            exact_level: None,
-            enable_noisy_rules: false,
-            end_timeline: None,
-            start_timeline: None,
-            eid_filter: false,
-            proven_rules: false,
-            exclude_tag: None,
             detect_common_options: DetectCommonOption {
                 json_input: option.json_input,
                 evtx_file_ext: option.evtx_file_ext.clone(),
@@ -2633,84 +2513,23 @@ fn extract_output_options(config: &Config) -> Option<OutputOption> {
                 include_computer: None,
                 exclude_computer: None,
             },
-            time_format_options: TimeFormatOptions {
-                european_time: false,
-                iso_8601: false,
-                rfc_2822: false,
-                rfc_3339: false,
-                us_military_time: false,
-                us_time: false,
-                utc: false,
-            },
-            visualize_timeline: false,
-            rules: Path::new("./rules").to_path_buf(),
-            html_report: None,
-            no_summary: false,
+            time_format_options: TimeFormatOptions::default(),
             clobber: option.clobber,
-            include_eid: None,
-            exclude_eid: None,
-            no_field: false,
-            no_pwsh_field_extraction: false,
-            remove_duplicate_data: false,
-            remove_duplicate_detections: false,
             no_wizard: true,
-            include_status: None,
-            sort_events: false,
-            enable_all_rules: false,
-            scan_all_evtx_files: false,
+            ..Default::default()
         }),
         Action::LogMetrics(option) => Some(OutputOption {
             input_args: option.input_args.clone(),
-            profile: None,
             common_options: option.common_options,
-            enable_deprecated_rules: false,
-            enable_unsupported_rules: false,
-            exclude_status: None,
-            include_tag: None,
-            include_category: None,
-            exclude_category: None,
-            min_level: String::default(),
-            exact_level: None,
-            enable_noisy_rules: false,
-            end_timeline: None,
-            start_timeline: None,
-            eid_filter: false,
-            proven_rules: false,
-            exclude_tag: None,
             detect_common_options: option.detect_common_options.clone(),
             time_format_options: option.time_format_options.clone(),
-            visualize_timeline: false,
-            rules: Path::new("./rules").to_path_buf(),
-            html_report: None,
-            no_summary: false,
             clobber: option.clobber,
-            include_eid: None,
-            exclude_eid: None,
-            no_field: false,
-            no_pwsh_field_extraction: false,
-            remove_duplicate_data: false,
-            remove_duplicate_detections: false,
             no_wizard: true,
-            include_status: None,
-            sort_events: false,
-            enable_all_rules: false,
-            scan_all_evtx_files: false,
+            ..Default::default()
         }),
         Action::Search(option) => Some(OutputOption {
             input_args: option.input_args.clone(),
-            enable_deprecated_rules: false,
-            enable_noisy_rules: false,
-            profile: None,
-            exclude_status: None,
-            min_level: String::default(),
-            end_timeline: None,
-            start_timeline: None,
-            eid_filter: false,
             time_format_options: option.time_format_options.clone(),
-            visualize_timeline: false,
-            rules: Path::new("./rules").to_path_buf(),
-            html_report: None,
-            no_summary: false,
             common_options: option.common_options,
             detect_common_options: DetectCommonOption {
                 json_input: false,
@@ -2722,145 +2541,28 @@ fn extract_output_options(config: &Config) -> Option<OutputOption> {
                 include_computer: None,
                 exclude_computer: None,
             },
-            exact_level: None,
-            enable_unsupported_rules: false,
             clobber: option.clobber,
-            proven_rules: false,
-            include_tag: None,
-            exclude_tag: None,
-            include_category: None,
-            exclude_category: None,
-            include_eid: None,
-            exclude_eid: None,
-            no_field: false,
-            no_pwsh_field_extraction: false,
-            remove_duplicate_data: false,
-            remove_duplicate_detections: false,
             no_wizard: true,
-            include_status: None,
-            sort_events: false,
-            enable_all_rules: false,
-            scan_all_evtx_files: false,
+            ..Default::default()
         }),
         Action::SetDefaultProfile(option) => Some(OutputOption {
-            input_args: InputOption {
-                directory: None,
-                filepath: None,
-                live_analysis: false,
-                recover_records: false,
-                time_offset: None,
-            },
-            enable_deprecated_rules: false,
-            enable_noisy_rules: false,
-            profile: None,
-            exclude_status: None,
-            min_level: String::default(),
-            exact_level: None,
-            end_timeline: None,
-            start_timeline: None,
-            eid_filter: false,
-            time_format_options: TimeFormatOptions {
-                european_time: false,
-                iso_8601: false,
-                rfc_2822: false,
-                rfc_3339: false,
-                us_military_time: false,
-                us_time: false,
-                utc: false,
-            },
-            visualize_timeline: false,
-            rules: Path::new("./rules").to_path_buf(),
-            html_report: None,
-            no_summary: false,
+            input_args: InputOption::default(),
+            time_format_options: TimeFormatOptions::default(),
             common_options: option.common_options,
-            detect_common_options: DetectCommonOption {
-                evtx_file_ext: None,
-                thread_number: None,
-                quiet_errors: false,
-                config: Path::new("./rules/config").to_path_buf(),
-                verbose: false,
-                json_input: false,
-                include_computer: None,
-                exclude_computer: None,
-            },
-            enable_unsupported_rules: false,
-            clobber: false,
-            proven_rules: false,
-            include_tag: None,
-            exclude_tag: None,
-            include_category: None,
-            exclude_category: None,
-            include_eid: None,
-            exclude_eid: None,
-            no_field: false,
-            no_pwsh_field_extraction: false,
-            remove_duplicate_data: false,
-            remove_duplicate_detections: false,
+            detect_common_options: DetectCommonOption::default(),
             no_wizard: true,
-            include_status: None,
-            sort_events: false,
-            enable_all_rules: false,
-            scan_all_evtx_files: false,
+            ..Default::default()
         }),
         Action::UpdateRules(option) => Some(OutputOption {
-            input_args: InputOption {
-                directory: None,
-                filepath: None,
-                live_analysis: false,
-                recover_records: false,
-                time_offset: None,
-            },
+            input_args: InputOption::default(),
             enable_deprecated_rules: true,
             enable_noisy_rules: true,
-            profile: None,
-            exclude_status: None,
-            min_level: String::default(),
-            exact_level: None,
-            end_timeline: None,
-            start_timeline: None,
-            eid_filter: false,
-            time_format_options: TimeFormatOptions {
-                european_time: false,
-                iso_8601: false,
-                rfc_2822: false,
-                rfc_3339: false,
-                us_military_time: false,
-                us_time: false,
-                utc: false,
-            },
-            visualize_timeline: false,
-            rules: Path::new("./rules").to_path_buf(),
-            html_report: None,
-            no_summary: false,
+            time_format_options: TimeFormatOptions::default(),
             common_options: option.common_options,
-            detect_common_options: DetectCommonOption {
-                evtx_file_ext: None,
-                thread_number: None,
-                quiet_errors: false,
-                config: Path::new("./rules/config").to_path_buf(),
-                verbose: false,
-                json_input: false,
-                include_computer: None,
-                exclude_computer: None,
-            },
+            detect_common_options: DetectCommonOption::default(),
             enable_unsupported_rules: true,
-            clobber: false,
-            proven_rules: false,
-            include_tag: None,
-            exclude_tag: None,
-            include_category: None,
-            exclude_category: None,
-            include_eid: None,
-            exclude_eid: None,
-            no_field: false,
-            no_pwsh_field_extraction: false,
-            remove_duplicate_data: false,
-            remove_duplicate_detections: false,
             no_wizard: true,
-            include_status: None,
-            sort_events: false,
-            enable_all_rules: false,
-            scan_all_evtx_files: false,
+            ..Default::default()
         }),
         Action::ConfigCriticalSystems(option) => Some(OutputOption {
             input_args: InputOption {
@@ -2870,57 +2572,11 @@ fn extract_output_options(config: &Config) -> Option<OutputOption> {
                 recover_records: false,
                 time_offset: None,
             },
-            enable_deprecated_rules: false,
-            enable_noisy_rules: false,
-            profile: None,
-            exclude_status: None,
-            min_level: String::default(),
-            exact_level: None,
-            end_timeline: None,
-            start_timeline: None,
-            eid_filter: false,
-            time_format_options: TimeFormatOptions {
-                european_time: false,
-                iso_8601: false,
-                rfc_2822: false,
-                rfc_3339: false,
-                us_military_time: false,
-                us_time: false,
-                utc: false,
-            },
-            visualize_timeline: false,
-            rules: Path::new("./rules").to_path_buf(),
-            html_report: None,
-            no_summary: false,
+            time_format_options: TimeFormatOptions::default(),
             common_options: option.common_options,
-            detect_common_options: DetectCommonOption {
-                evtx_file_ext: None,
-                thread_number: None,
-                quiet_errors: false,
-                config: Path::new("./rules/config").to_path_buf(),
-                verbose: false,
-                json_input: false,
-                include_computer: None,
-                exclude_computer: None,
-            },
-            enable_unsupported_rules: false,
-            clobber: false,
-            proven_rules: false,
-            include_tag: None,
-            exclude_tag: None,
-            include_category: None,
-            exclude_category: None,
-            include_eid: None,
-            exclude_eid: None,
-            no_field: false,
-            no_pwsh_field_extraction: false,
-            remove_duplicate_data: false,
-            remove_duplicate_detections: false,
+            detect_common_options: DetectCommonOption::default(),
             no_wizard: true,
-            include_status: None,
-            sort_events: false,
-            enable_all_rules: false,
-            scan_all_evtx_files: false,
+            ..Default::default()
         }),
         _ => None,
     }
@@ -3040,12 +2696,12 @@ pub fn load_windash_characters(file_path: &str) -> Vec<char> {
 
 #[cfg(test)]
 mod tests {
-    use std::path::Path;
+    use std::default::Default;
 
     use super::{
         create_control_chat_replace_map, Action, CommonOptions, Config, CsvOutputOption,
         DetectCommonOption, InputOption, JSONOutputOption, OutputOption, StoredStatic,
-        TargetEventTime, TimeFormatOptions,
+        TargetEventTime,
     };
     use crate::detections::configs::{
         self, EidMetricsOption, LogonSummaryOption, PivotKeywordOption, SearchOption,
@@ -3053,24 +2709,6 @@ mod tests {
     use chrono::{DateTime, Utc};
     use compact_str::CompactString;
     use hashbrown::{HashMap, HashSet};
-
-    //     #[test]
-    //     #[ignore]
-    //     fn singleton_read_and_write() {
-    //         let message =
-    //             "EventKeyAliasConfig { key_to_eventkey: {\"EventID\": \"Event.System.EventID\"} }";
-    //         configs::EVENT_KEY_ALIAS_CONFIG =
-    //             configs::load_eventkey_alias("test_files/config/eventkey_alias.txt");
-    //         let display = format!(
-    //             "{}",
-    //             format_args!(
-    //                 "{:?}",
-    //                 configs::CONFIG.write().unwrap().event_key_alias_config
-    //             )
-    //         );
-    //         assert_eq!(message, display);
-    //     }
-    // }
 
     #[test]
     fn target_event_time_filter() {
@@ -3142,72 +2780,18 @@ mod tests {
             action: Some(Action::CsvTimeline(CsvOutputOption {
                 output_options: OutputOption {
                     input_args: InputOption {
-                        directory: None,
-                        filepath: None,
-                        live_analysis: false,
-                        recover_records: false,
                         time_offset: Some("1d".to_string()),
+                        ..Default::default()
                     },
-                    profile: None,
-                    enable_deprecated_rules: false,
-                    exclude_status: None,
                     min_level: "informational".to_string(),
-                    exact_level: None,
-                    enable_noisy_rules: false,
-                    end_timeline: None,
-                    start_timeline: None,
-                    eid_filter: false,
-                    time_format_options: TimeFormatOptions {
-                        european_time: false,
-                        iso_8601: false,
-                        rfc_2822: false,
-                        rfc_3339: false,
-                        us_military_time: false,
-                        us_time: false,
-                        utc: false,
-                    },
-                    visualize_timeline: false,
-                    rules: Path::new("./rules").to_path_buf(),
-                    html_report: None,
-                    no_summary: false,
-                    common_options: CommonOptions {
-                        no_color: false,
-                        quiet: false,
-                        help: None,
-                    },
                     detect_common_options: DetectCommonOption {
-                        evtx_file_ext: None,
-                        thread_number: None,
-                        quiet_errors: false,
-                        config: Path::new("./rules/config").to_path_buf(),
-                        verbose: false,
                         json_input: true,
-                        include_computer: None,
-                        exclude_computer: None,
+                        ..Default::default()
                     },
-                    enable_unsupported_rules: false,
-                    clobber: false,
-                    proven_rules: false,
-                    include_tag: None,
-                    exclude_tag: None,
-                    include_category: None,
-                    exclude_category: None,
-                    include_eid: None,
-                    exclude_eid: None,
-                    no_field: false,
-                    no_pwsh_field_extraction: false,
-                    remove_duplicate_data: false,
-                    remove_duplicate_detections: false,
                     no_wizard: true,
-                    include_status: None,
-                    sort_events: false,
-                    enable_all_rules: false,
-                    scan_all_evtx_files: false,
+                    ..Default::default()
                 },
-                geo_ip: None,
-                output: None,
-                multiline: false,
-                disable_abbreviations: false,
+                ..Default::default()
             })),
             debug: false,
         }));
@@ -3223,72 +2807,18 @@ mod tests {
             action: Some(Action::JsonTimeline(JSONOutputOption {
                 output_options: OutputOption {
                     input_args: InputOption {
-                        directory: None,
-                        filepath: None,
-                        live_analysis: false,
-                        recover_records: false,
                         time_offset: Some("1y".to_string()),
+                        ..Default::default()
                     },
-                    profile: None,
-                    enable_deprecated_rules: false,
-                    exclude_status: None,
                     min_level: "informational".to_string(),
-                    exact_level: None,
-                    enable_noisy_rules: false,
-                    end_timeline: None,
-                    start_timeline: None,
-                    eid_filter: false,
-                    time_format_options: TimeFormatOptions {
-                        european_time: false,
-                        iso_8601: false,
-                        rfc_2822: false,
-                        rfc_3339: false,
-                        us_military_time: false,
-                        us_time: false,
-                        utc: false,
-                    },
-                    visualize_timeline: false,
-                    rules: Path::new("./rules").to_path_buf(),
-                    html_report: None,
-                    no_summary: false,
-                    common_options: CommonOptions {
-                        no_color: false,
-                        quiet: false,
-                        help: None,
-                    },
                     detect_common_options: DetectCommonOption {
-                        evtx_file_ext: None,
-                        thread_number: None,
-                        quiet_errors: false,
-                        config: Path::new("./rules/config").to_path_buf(),
-                        verbose: false,
                         json_input: true,
-                        include_computer: None,
-                        exclude_computer: None,
+                        ..Default::default()
                     },
-                    enable_unsupported_rules: false,
-                    clobber: false,
-                    proven_rules: false,
-                    include_tag: None,
-                    exclude_tag: None,
-                    include_category: None,
-                    exclude_category: None,
-                    include_eid: None,
-                    exclude_eid: None,
-                    no_field: false,
-                    no_pwsh_field_extraction: false,
-                    remove_duplicate_data: false,
-                    remove_duplicate_detections: false,
                     no_wizard: true,
-                    include_status: None,
-                    sort_events: false,
-                    enable_all_rules: false,
-                    scan_all_evtx_files: false,
+                    ..Default::default()
                 },
-                geo_ip: None,
-                output: None,
-                jsonl_timeline: false,
-                disable_abbreviations: false,
+                ..Default::default()
             })),
             debug: false,
         }));
@@ -3302,46 +2832,16 @@ mod tests {
     fn test_time_offset_search() {
         let json_timeline = StoredStatic::create_static_data(Some(Config {
             action: Some(Action::Search(SearchOption {
-                output: None,
-                common_options: CommonOptions {
-                    no_color: false,
-                    quiet: false,
-                    help: None,
-                },
+                common_options: CommonOptions::default(),
                 input_args: InputOption {
-                    directory: None,
-                    filepath: None,
-                    live_analysis: false,
-                    recover_records: false,
                     time_offset: Some("1h".to_string()),
+                    ..Default::default()
                 },
                 keywords: Some(vec!["mimikatz".to_string()]),
-                regex: None,
                 ignore_case: true,
-                and_logic: false,
-                filter: vec![],
-                evtx_file_ext: None,
-                thread_number: None,
-                quiet_errors: false,
-                config: Path::new("./rules/config").to_path_buf(),
-                verbose: false,
-                multiline: false,
                 clobber: true,
-                json_output: false,
-                jsonl_output: false,
-                time_format_options: TimeFormatOptions {
-                    european_time: false,
-                    iso_8601: false,
-                    rfc_2822: false,
-                    rfc_3339: false,
-                    us_military_time: false,
-                    us_time: false,
-                    utc: false,
-                },
-                disable_abbreviations: false,
-                start_timeline: None,
-                end_timeline: None,
                 sort_events: true,
+                ..Default::default()
             })),
             debug: false,
         }));
@@ -3355,40 +2855,17 @@ mod tests {
     fn test_time_offset_eid_metrics() {
         let eid_metrics = StoredStatic::create_static_data(Some(Config {
             action: Some(Action::EidMetrics(EidMetricsOption {
-                output: None,
-                common_options: CommonOptions {
-                    no_color: false,
-                    quiet: false,
-                    help: None,
-                },
+                common_options: CommonOptions::default(),
                 input_args: InputOption {
-                    directory: None,
-                    filepath: None,
-                    live_analysis: false,
-                    recover_records: false,
                     time_offset: Some("1h1m".to_string()),
+                    ..Default::default()
                 },
                 clobber: true,
-                time_format_options: TimeFormatOptions {
-                    european_time: false,
-                    iso_8601: false,
-                    rfc_2822: false,
-                    rfc_3339: false,
-                    us_military_time: false,
-                    us_time: false,
-                    utc: false,
-                },
                 detect_common_options: DetectCommonOption {
-                    evtx_file_ext: None,
-                    thread_number: None,
-                    quiet_errors: false,
-                    config: Path::new("./rules/config").to_path_buf(),
-                    verbose: false,
                     json_input: true,
-                    include_computer: None,
-                    exclude_computer: None,
+                    ..Default::default()
                 },
-                remove_duplicate_detections: false,
+                ..Default::default()
             })),
             debug: false,
         }));
@@ -3402,42 +2879,16 @@ mod tests {
     fn test_time_offset_logon_summary() {
         let logon_summary = StoredStatic::create_static_data(Some(Config {
             action: Some(Action::LogonSummary(LogonSummaryOption {
-                output: None,
-                common_options: CommonOptions {
-                    no_color: false,
-                    quiet: false,
-                    help: None,
-                },
                 input_args: InputOption {
-                    directory: None,
-                    filepath: None,
-                    live_analysis: false,
-                    recover_records: false,
                     time_offset: Some("1y1d1h".to_string()),
+                    ..Default::default()
                 },
                 clobber: true,
-                time_format_options: TimeFormatOptions {
-                    european_time: false,
-                    iso_8601: false,
-                    rfc_2822: false,
-                    rfc_3339: false,
-                    us_military_time: false,
-                    us_time: false,
-                    utc: false,
-                },
                 detect_common_options: DetectCommonOption {
-                    evtx_file_ext: None,
-                    thread_number: None,
-                    quiet_errors: false,
-                    config: Path::new("./rules/config").to_path_buf(),
-                    verbose: false,
                     json_input: true,
-                    include_computer: None,
-                    exclude_computer: None,
+                    ..Default::default()
                 },
-                end_timeline: None,
-                start_timeline: None,
-                remove_duplicate_detections: false,
+                ..Default::default()
             })),
             debug: false,
         }));
@@ -3455,45 +2906,18 @@ mod tests {
     fn test_time_offset_pivot() {
         let pivot_keywords_list = StoredStatic::create_static_data(Some(Config {
             action: Some(Action::PivotKeywordsList(PivotKeywordOption {
-                output: None,
-                common_options: CommonOptions {
-                    no_color: false,
-                    quiet: false,
-                    help: None,
-                },
                 input_args: InputOption {
-                    directory: None,
-                    filepath: None,
-                    live_analysis: false,
-                    recover_records: false,
                     time_offset: Some("1y1M1s".to_string()),
+                    ..Default::default()
                 },
                 clobber: true,
                 detect_common_options: DetectCommonOption {
-                    evtx_file_ext: None,
-                    thread_number: None,
-                    quiet_errors: false,
-                    config: Path::new("./rules/config").to_path_buf(),
-                    verbose: false,
                     json_input: true,
-                    include_computer: None,
-                    exclude_computer: None,
+                    ..Default::default()
                 },
-                end_timeline: None,
-                start_timeline: None,
-                enable_deprecated_rules: false,
-                enable_unsupported_rules: false,
-                exclude_status: None,
                 min_level: "informational".to_string(),
-                exact_level: None,
-                enable_noisy_rules: false,
-                eid_filter: false,
-                include_eid: None,
-                exclude_eid: None,
                 no_wizard: true,
-                include_tag: None,
-                exclude_tag: None,
-                include_status: None,
+                ..Default::default()
             })),
             debug: false,
         }));

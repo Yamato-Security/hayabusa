@@ -3098,72 +3098,21 @@ mod tests {
         let action = Action::CsvTimeline(CsvOutputOption {
             output_options: OutputOption {
                 input_args: InputOption {
-                    directory: None,
                     filepath: Some(Path::new("test_files/evtx/test.json").to_path_buf()),
-                    live_analysis: false,
-                    recover_records: false,
-                    time_offset: None,
+                    ..Default::default()
                 },
-                profile: None,
-                enable_deprecated_rules: false,
-                exclude_status: None,
                 min_level: "informational".to_string(),
-                exact_level: None,
-                enable_noisy_rules: false,
-                end_timeline: None,
-                start_timeline: None,
-                eid_filter: false,
-                time_format_options: TimeFormatOptions {
-                    european_time: false,
-                    iso_8601: false,
-                    rfc_2822: false,
-                    rfc_3339: false,
-                    us_military_time: false,
-                    us_time: false,
-                    utc: false,
-                },
-                visualize_timeline: false,
                 rules: Path::new("./test_files/rules/yaml/test_json_detect.yml").to_path_buf(),
-                html_report: None,
                 no_summary: true,
-                common_options: CommonOptions {
-                    no_color: false,
-                    quiet: false,
-                    help: None,
-                },
                 detect_common_options: DetectCommonOption {
-                    evtx_file_ext: None,
-                    thread_number: None,
-                    quiet_errors: false,
-                    config: Path::new("./rules/config").to_path_buf(),
-                    verbose: false,
                     json_input: true,
-                    include_computer: None,
-                    exclude_computer: None,
+                    ..Default::default()
                 },
-                enable_unsupported_rules: false,
-                clobber: false,
-                proven_rules: false,
-                include_tag: None,
-                exclude_tag: None,
-                include_category: None,
-                exclude_category: None,
-                include_eid: None,
-                exclude_eid: None,
-                no_field: false,
-                no_pwsh_field_extraction: false,
-                remove_duplicate_data: false,
-                remove_duplicate_detections: false,
                 no_wizard: true,
-                include_status: None,
-                sort_events: false,
-                enable_all_rules: false,
-                scan_all_evtx_files: false,
+                ..Default::default()
             },
-            geo_ip: None,
             output: Some(Path::new("overwrite.csv").to_path_buf()),
-            multiline: false,
-            disable_abbreviations: false,
+            ..Default::default()
         });
         let config = Some(Config {
             action: Some(action),
@@ -3189,72 +3138,22 @@ mod tests {
         let action = Action::CsvTimeline(CsvOutputOption {
             output_options: OutputOption {
                 input_args: InputOption {
-                    directory: None,
                     filepath: Some(Path::new("test_files/evtx/test.json").to_path_buf()),
-                    live_analysis: false,
-                    recover_records: false,
-                    time_offset: None,
+                    ..Default::default()
                 },
-                profile: None,
-                enable_deprecated_rules: false,
-                exclude_status: None,
                 min_level: "informational".to_string(),
-                exact_level: None,
-                enable_noisy_rules: false,
-                end_timeline: None,
-                start_timeline: None,
-                eid_filter: false,
-                time_format_options: TimeFormatOptions {
-                    european_time: false,
-                    iso_8601: false,
-                    rfc_2822: false,
-                    rfc_3339: false,
-                    us_military_time: false,
-                    us_time: false,
-                    utc: false,
-                },
-                visualize_timeline: false,
                 rules: Path::new("test_files/rules/yaml/test_json_detect.yml").to_path_buf(),
-                html_report: None,
                 no_summary: true,
-                common_options: CommonOptions {
-                    no_color: false,
-                    quiet: false,
-                    help: None,
-                },
                 detect_common_options: DetectCommonOption {
-                    evtx_file_ext: None,
-                    thread_number: None,
-                    quiet_errors: false,
-                    config: Path::new("./rules/config").to_path_buf(),
-                    verbose: false,
                     json_input: true,
-                    include_computer: None,
-                    exclude_computer: None,
+                    ..Default::default()
                 },
-                enable_unsupported_rules: false,
                 clobber: true,
-                proven_rules: false,
-                include_tag: None,
-                exclude_tag: None,
-                include_category: None,
-                exclude_category: None,
-                include_eid: None,
-                exclude_eid: None,
-                no_field: false,
-                no_pwsh_field_extraction: false,
-                remove_duplicate_data: false,
-                remove_duplicate_detections: false,
                 no_wizard: true,
-                include_status: None,
-                sort_events: false,
-                enable_all_rules: false,
-                scan_all_evtx_files: false,
+                ..Default::default()
             },
-            geo_ip: None,
             output: Some(Path::new("overwrite.csv").to_path_buf()),
-            multiline: false,
-            disable_abbreviations: false,
+            ..Default::default()
         });
         let config = Some(Config {
             action: Some(action),
@@ -3279,72 +3178,22 @@ mod tests {
         let action = Action::JsonTimeline(JSONOutputOption {
             output_options: OutputOption {
                 input_args: InputOption {
-                    directory: None,
                     filepath: Some(Path::new("test_files/evtx/test.json").to_path_buf()),
-                    live_analysis: false,
-                    recover_records: false,
-                    time_offset: None,
+                    ..Default::default()
                 },
-                profile: None,
-                enable_deprecated_rules: false,
-                exclude_status: None,
                 min_level: "informational".to_string(),
-                exact_level: None,
-                enable_noisy_rules: false,
-                end_timeline: None,
-                start_timeline: None,
-                eid_filter: false,
-                time_format_options: TimeFormatOptions {
-                    european_time: false,
-                    iso_8601: false,
-                    rfc_2822: false,
-                    rfc_3339: false,
-                    us_military_time: false,
-                    us_time: false,
-                    utc: false,
-                },
-                visualize_timeline: false,
                 rules: Path::new("./test_files/rules/yaml/test_json_detect.yml").to_path_buf(),
-                html_report: None,
                 no_summary: true,
-                common_options: CommonOptions {
-                    no_color: false,
-                    quiet: false,
-                    help: None,
-                },
                 detect_common_options: DetectCommonOption {
-                    evtx_file_ext: None,
-                    thread_number: None,
-                    quiet_errors: false,
                     config: Path::new("./rules/config").to_path_buf(),
-                    verbose: false,
                     json_input: true,
-                    include_computer: None,
-                    exclude_computer: None,
+                    ..Default::default()
                 },
-                enable_unsupported_rules: false,
-                clobber: false,
-                proven_rules: false,
-                include_tag: None,
-                exclude_tag: None,
-                include_category: None,
-                exclude_category: None,
-                include_eid: None,
-                exclude_eid: None,
-                no_field: false,
-                no_pwsh_field_extraction: false,
-                remove_duplicate_data: false,
-                remove_duplicate_detections: false,
                 no_wizard: true,
-                include_status: None,
-                sort_events: false,
-                enable_all_rules: false,
-                scan_all_evtx_files: false,
+                ..Default::default()
             },
-            geo_ip: None,
             output: Some(Path::new("overwrite.json").to_path_buf()),
-            jsonl_timeline: false,
-            disable_abbreviations: false,
+            ..Default::default()
         });
         let config = Some(Config {
             action: Some(action),
@@ -3370,72 +3219,22 @@ mod tests {
         let action = Action::JsonTimeline(JSONOutputOption {
             output_options: OutputOption {
                 input_args: InputOption {
-                    directory: None,
                     filepath: Some(Path::new("test_files/evtx/test.json").to_path_buf()),
-                    live_analysis: false,
-                    recover_records: false,
-                    time_offset: None,
+                    ..Default::default()
                 },
-                profile: None,
-                enable_deprecated_rules: false,
-                exclude_status: None,
                 min_level: "informational".to_string(),
-                exact_level: None,
-                enable_noisy_rules: false,
-                end_timeline: None,
-                start_timeline: None,
-                eid_filter: false,
-                time_format_options: TimeFormatOptions {
-                    european_time: false,
-                    iso_8601: false,
-                    rfc_2822: false,
-                    rfc_3339: false,
-                    us_military_time: false,
-                    us_time: false,
-                    utc: false,
-                },
-                visualize_timeline: false,
                 rules: Path::new("test_files/rules/yaml/test_json_detect.yml").to_path_buf(),
-                html_report: None,
                 no_summary: true,
-                common_options: CommonOptions {
-                    no_color: false,
-                    quiet: false,
-                    help: None,
-                },
                 detect_common_options: DetectCommonOption {
-                    evtx_file_ext: None,
-                    thread_number: None,
-                    quiet_errors: false,
-                    config: Path::new("./rules/config").to_path_buf(),
-                    verbose: false,
                     json_input: true,
-                    include_computer: None,
-                    exclude_computer: None,
+                    ..Default::default()
                 },
-                enable_unsupported_rules: false,
                 clobber: true,
-                proven_rules: false,
-                include_tag: None,
-                exclude_tag: None,
-                include_category: None,
-                exclude_category: None,
-                include_eid: None,
-                exclude_eid: None,
-                no_field: false,
-                no_pwsh_field_extraction: false,
-                remove_duplicate_data: false,
-                remove_duplicate_detections: false,
                 no_wizard: true,
-                include_status: None,
-                sort_events: false,
-                enable_all_rules: false,
-                scan_all_evtx_files: false,
+                ..Default::default()
             },
-            geo_ip: None,
             output: Some(Path::new("overwrite.json").to_path_buf()),
-            jsonl_timeline: false,
-            disable_abbreviations: false,
+            ..Default::default()
         });
         let config = Some(Config {
             action: Some(action),
@@ -3460,38 +3259,14 @@ mod tests {
         let action = Action::EidMetrics(EidMetricsOption {
             output: Some(Path::new("overwrite-metric.csv").to_path_buf()),
             input_args: InputOption {
-                directory: None,
                 filepath: Some(Path::new("test_files/evtx/test_metrics.json").to_path_buf()),
-                live_analysis: false,
-                recover_records: false,
-                time_offset: None,
-            },
-            common_options: CommonOptions {
-                no_color: false,
-                quiet: false,
-                help: None,
+                ..Default::default()
             },
             detect_common_options: DetectCommonOption {
-                evtx_file_ext: None,
-                thread_number: None,
-                quiet_errors: false,
-                config: Path::new("./rules/config").to_path_buf(),
-                verbose: false,
                 json_input: true,
-                include_computer: None,
-                exclude_computer: None,
+                ..Default::default()
             },
-            time_format_options: TimeFormatOptions {
-                european_time: false,
-                iso_8601: false,
-                rfc_2822: false,
-                rfc_3339: false,
-                us_military_time: false,
-                us_time: false,
-                utc: false,
-            },
-            clobber: false,
-            remove_duplicate_detections: false,
+            ..Default::default()
         });
         let config = Some(Config {
             action: Some(action),
@@ -3518,38 +3293,15 @@ mod tests {
         let action = Action::EidMetrics(EidMetricsOption {
             output: Some(Path::new("overwrite-metric.csv").to_path_buf()),
             input_args: InputOption {
-                directory: None,
                 filepath: Some(Path::new("test_files/evtx/test_metrics.json").to_path_buf()),
-                live_analysis: false,
-                recover_records: false,
-                time_offset: None,
-            },
-            common_options: CommonOptions {
-                no_color: false,
-                quiet: false,
-                help: None,
+                ..Default::default()
             },
             detect_common_options: DetectCommonOption {
-                evtx_file_ext: None,
-                thread_number: None,
-                quiet_errors: false,
-                config: Path::new("./rules/config").to_path_buf(),
-                verbose: false,
                 json_input: true,
-                include_computer: None,
-                exclude_computer: None,
-            },
-            time_format_options: TimeFormatOptions {
-                european_time: false,
-                iso_8601: false,
-                rfc_2822: false,
-                rfc_3339: false,
-                us_military_time: false,
-                us_time: false,
-                utc: false,
+                ..Default::default()
             },
             clobber: true,
-            remove_duplicate_detections: false,
+            ..Default::default()
         });
         let config = Some(Config {
             action: Some(action),
@@ -3574,40 +3326,14 @@ mod tests {
         let action = Action::LogonSummary(LogonSummaryOption {
             output: Some(Path::new("overwrite-metric").to_path_buf()),
             input_args: InputOption {
-                directory: None,
                 filepath: Some(Path::new("test_files/evtx/test_metrics.json").to_path_buf()),
-                live_analysis: false,
-                time_offset: None,
-                recover_records: false,
-            },
-            common_options: CommonOptions {
-                no_color: false,
-                quiet: false,
-                help: None,
+                ..Default::default()
             },
             detect_common_options: DetectCommonOption {
-                evtx_file_ext: None,
-                thread_number: None,
-                quiet_errors: false,
-                config: Path::new("./rules/config").to_path_buf(),
-                verbose: false,
                 json_input: true,
-                include_computer: None,
-                exclude_computer: None,
+                ..Default::default()
             },
-            time_format_options: TimeFormatOptions {
-                european_time: false,
-                iso_8601: false,
-                rfc_2822: false,
-                rfc_3339: false,
-                us_military_time: false,
-                us_time: false,
-                utc: false,
-            },
-            clobber: false,
-            end_timeline: None,
-            start_timeline: None,
-            remove_duplicate_detections: false,
+            ..Default::default()
         });
         let config = Some(Config {
             action: Some(action),
@@ -3633,40 +3359,15 @@ mod tests {
         let action = Action::LogonSummary(LogonSummaryOption {
             output: Some(Path::new("overwrite-metric").to_path_buf()),
             input_args: InputOption {
-                directory: None,
                 filepath: Some(Path::new("test_files/evtx/test_metrics.json").to_path_buf()),
-                live_analysis: false,
-                recover_records: false,
-                time_offset: None,
-            },
-            common_options: CommonOptions {
-                no_color: false,
-                quiet: false,
-                help: None,
+                ..Default::default()
             },
             detect_common_options: DetectCommonOption {
-                evtx_file_ext: None,
-                thread_number: None,
-                quiet_errors: false,
-                config: Path::new("./rules/config").to_path_buf(),
-                verbose: false,
                 json_input: true,
-                include_computer: None,
-                exclude_computer: None,
-            },
-            time_format_options: TimeFormatOptions {
-                european_time: false,
-                iso_8601: false,
-                rfc_2822: false,
-                rfc_3339: false,
-                us_military_time: false,
-                us_time: false,
-                utc: false,
+                ..Default::default()
             },
             clobber: true,
-            end_timeline: None,
-            start_timeline: None,
-            remove_duplicate_detections: false,
+            ..Default::default()
         });
         let config = Some(Config {
             action: Some(action),
@@ -3691,24 +3392,12 @@ mod tests {
         let action = Action::ComputerMetrics(ComputerMetricsOption {
             output: Some(Path::new("overwrite-computer-metrics.csv").to_path_buf()),
             input_args: InputOption {
-                directory: None,
                 filepath: Some(Path::new("test_files/evtx/test_metrics.json").to_path_buf()),
-                live_analysis: false,
-                recover_records: false,
-                time_offset: None,
+                ..Default::default()
             },
-            common_options: CommonOptions {
-                no_color: false,
-                quiet: false,
-                help: None,
-            },
-            evtx_file_ext: None,
-            thread_number: None,
-            quiet_errors: false,
             config: Path::new("./rules/config").to_path_buf(),
-            verbose: false,
             json_input: true,
-            clobber: false,
+            ..Default::default()
         });
         let config = Some(Config {
             action: Some(action),
@@ -3734,24 +3423,12 @@ mod tests {
         let action = Action::ComputerMetrics(ComputerMetricsOption {
             output: Some(Path::new("overwrite-computer-metrics.csv").to_path_buf()),
             input_args: InputOption {
-                directory: None,
                 filepath: Some(Path::new("test_files/evtx/test_metrics.json").to_path_buf()),
-                live_analysis: false,
-                recover_records: false,
-                time_offset: None,
+                ..Default::default()
             },
-            common_options: CommonOptions {
-                no_color: false,
-                quiet: false,
-                help: None,
-            },
-            evtx_file_ext: None,
-            thread_number: None,
-            quiet_errors: false,
-            config: Path::new("./rules/config").to_path_buf(),
-            verbose: false,
             json_input: true,
             clobber: true,
+            ..Default::default()
         });
         let config = Some(Config {
             action: Some(action),
