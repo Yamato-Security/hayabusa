@@ -16,7 +16,6 @@ use hashbrown::hash_map::RawEntryMut;
 use hashbrown::{HashMap, HashSet};
 use itertools::Itertools;
 use krapslog::{build_sparkline, build_time_markers};
-use lazy_static::lazy_static;
 use nested::Nested;
 use num_format::{Locale, ToFormattedString};
 use strum::IntoEnumIterator;
@@ -36,18 +35,6 @@ use crate::detections::utils::{
 use crate::level::{_get_output_color, create_output_color_map, LEVEL};
 use crate::options::htmlreport;
 use crate::options::profile::Profile;
-
-lazy_static! {
-    // ここで字句解析するときに使う正規表現の一覧を定義する。
-    // ここはSigmaのGithubレポジトリにある、toos/sigma/parser/condition.pyのSigmaConditionTokenizerのtokendefsを参考にしています。
-    pub static ref LEVEL_MAP: HashMap<String, u128> = HashMap::from([
-        ("INFORMATIONAL".to_string(), 1),
-        ("LOW".to_string(), 2),
-        ("MEDIUM".to_string(), 3),
-        ("HIGH".to_string(), 4),
-        ("CRITICAL".to_string(), 5),
-    ]);
-}
 
 #[derive(Debug)]
 pub struct Colors {
