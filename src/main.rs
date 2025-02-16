@@ -864,6 +864,7 @@ Any hostnames added to the critical_systems.txt file will have all alerts above 
                 };
 
                 if Path::new(&level_tuning_config_path).exists() {
+                    stored_static.include_status.insert("*".into());
                     if let Err(err) =
                         LevelTuning::run(&level_tuning_config_path, rules_path, stored_static)
                     {
