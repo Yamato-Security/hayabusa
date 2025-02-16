@@ -395,11 +395,9 @@ pub fn get_profile_list(profile_path: &str) -> Nested<Vec<String>> {
 
 #[cfg(test)]
 mod tests {
-    use std::path::Path;
 
     use crate::detections::configs::{
-        Action, CommonOptions, Config, CsvOutputOption, DetectCommonOption, InputOption,
-        OutputOption, StoredStatic, TimeFormatOptions, GEOIP_DB_PARSER,
+        Action, Config, CsvOutputOption, OutputOption, StoredStatic, GEOIP_DB_PARSER,
     };
     use crate::options::profile::{get_profile_list, load_profile, Profile};
     use compact_str::CompactString;
@@ -495,73 +493,10 @@ mod tests {
         let dummy_stored_static =
             create_dummy_stored_static(Action::CsvTimeline(CsvOutputOption {
                 output_options: OutputOption {
-                    input_args: InputOption {
-                        directory: None,
-                        filepath: None,
-                        live_analysis: false,
-                        recover_records: false,
-                        time_offset: None,
-                    },
-                    profile: None,
-                    enable_deprecated_rules: false,
-                    exclude_status: None,
                     min_level: "informational".to_string(),
-                    exact_level: None,
-                    enable_noisy_rules: false,
-                    end_timeline: None,
-                    start_timeline: None,
-                    eid_filter: false,
-                    time_format_options: TimeFormatOptions {
-                        european_time: false,
-                        iso_8601: false,
-                        rfc_2822: false,
-                        rfc_3339: false,
-                        us_military_time: false,
-                        us_time: false,
-                        utc: false,
-                    },
-                    visualize_timeline: false,
-                    rules: Path::new("./rules").to_path_buf(),
-                    html_report: None,
-                    no_summary: false,
-                    common_options: CommonOptions {
-                        no_color: false,
-                        quiet: false,
-                        help: None,
-                    },
-                    detect_common_options: DetectCommonOption {
-                        evtx_file_ext: None,
-                        thread_number: None,
-                        quiet_errors: false,
-                        config: Path::new("./rules/config").to_path_buf(),
-                        verbose: false,
-                        json_input: false,
-                        include_computer: None,
-                        exclude_computer: None,
-                    },
-                    enable_unsupported_rules: false,
-                    clobber: false,
-                    proven_rules: false,
-                    include_tag: None,
-                    exclude_tag: None,
-                    include_category: None,
-                    exclude_category: None,
-                    include_eid: None,
-                    exclude_eid: None,
-                    no_field: false,
-                    no_pwsh_field_extraction: false,
-                    remove_duplicate_data: false,
-                    remove_duplicate_detections: false,
-                    no_wizard: true,
-                    include_status: None,
-                    sort_events: false,
-                    enable_all_rules: false,
-                    scan_all_evtx_files: false,
+                    ..Default::default()
                 },
-                geo_ip: None,
-                output: None,
-                multiline: false,
-                disable_abbreviations: false,
+                ..Default::default()
             }));
         *GEOIP_DB_PARSER.write().unwrap() = None;
         assert_eq!(
@@ -579,73 +514,11 @@ mod tests {
         let dummy_stored_static =
             create_dummy_stored_static(Action::CsvTimeline(CsvOutputOption {
                 output_options: OutputOption {
-                    input_args: InputOption {
-                        directory: None,
-                        filepath: None,
-                        live_analysis: false,
-                        recover_records: false,
-                        time_offset: None,
-                    },
                     profile: Some("minimal".to_string()),
-                    enable_deprecated_rules: false,
-                    exclude_status: None,
                     min_level: "informational".to_string(),
-                    exact_level: None,
-                    enable_noisy_rules: false,
-                    end_timeline: None,
-                    start_timeline: None,
-                    eid_filter: false,
-                    time_format_options: TimeFormatOptions {
-                        european_time: false,
-                        iso_8601: false,
-                        rfc_2822: false,
-                        rfc_3339: false,
-                        us_military_time: false,
-                        us_time: false,
-                        utc: false,
-                    },
-                    visualize_timeline: false,
-                    rules: Path::new("./rules").to_path_buf(),
-                    html_report: None,
-                    no_summary: false,
-                    common_options: CommonOptions {
-                        no_color: false,
-                        quiet: false,
-                        help: None,
-                    },
-                    detect_common_options: DetectCommonOption {
-                        evtx_file_ext: None,
-                        thread_number: None,
-                        quiet_errors: false,
-                        config: Path::new("./rules/config").to_path_buf(),
-                        verbose: false,
-                        json_input: false,
-                        include_computer: None,
-                        exclude_computer: None,
-                    },
-                    enable_unsupported_rules: false,
-                    clobber: false,
-                    proven_rules: false,
-                    include_tag: None,
-                    exclude_tag: None,
-                    include_category: None,
-                    exclude_category: None,
-                    include_eid: None,
-                    exclude_eid: None,
-                    no_field: false,
-                    no_pwsh_field_extraction: false,
-                    remove_duplicate_data: false,
-                    remove_duplicate_detections: false,
-                    no_wizard: true,
-                    include_status: None,
-                    sort_events: false,
-                    enable_all_rules: false,
-                    scan_all_evtx_files: false,
+                    ..Default::default()
                 },
-                geo_ip: None,
-                output: None,
-                multiline: false,
-                disable_abbreviations: false,
+                ..Default::default()
             }));
 
         let expect: Vec<(CompactString, Profile)> = vec![
@@ -693,73 +566,11 @@ mod tests {
         let dummy_stored_static =
             create_dummy_stored_static(Action::CsvTimeline(CsvOutputOption {
                 output_options: OutputOption {
-                    input_args: InputOption {
-                        directory: None,
-                        filepath: None,
-                        live_analysis: false,
-                        recover_records: false,
-                        time_offset: None,
-                    },
                     profile: Some("not_exist".to_string()),
-                    enable_deprecated_rules: false,
-                    exclude_status: None,
                     min_level: "informational".to_string(),
-                    exact_level: None,
-                    enable_noisy_rules: false,
-                    end_timeline: None,
-                    start_timeline: None,
-                    eid_filter: false,
-                    time_format_options: TimeFormatOptions {
-                        european_time: false,
-                        iso_8601: false,
-                        rfc_2822: false,
-                        rfc_3339: false,
-                        us_military_time: false,
-                        us_time: false,
-                        utc: false,
-                    },
-                    visualize_timeline: false,
-                    rules: Path::new("./rules").to_path_buf(),
-                    html_report: None,
-                    no_summary: false,
-                    common_options: CommonOptions {
-                        no_color: false,
-                        quiet: false,
-                        help: None,
-                    },
-                    detect_common_options: DetectCommonOption {
-                        evtx_file_ext: None,
-                        thread_number: None,
-                        quiet_errors: false,
-                        config: Path::new("./rules/config").to_path_buf(),
-                        verbose: false,
-                        json_input: false,
-                        include_computer: None,
-                        exclude_computer: None,
-                    },
-                    enable_unsupported_rules: false,
-                    clobber: false,
-                    proven_rules: false,
-                    include_tag: None,
-                    exclude_tag: None,
-                    include_category: None,
-                    exclude_category: None,
-                    include_eid: None,
-                    exclude_eid: None,
-                    no_field: false,
-                    no_pwsh_field_extraction: false,
-                    remove_duplicate_data: false,
-                    remove_duplicate_detections: false,
-                    no_wizard: true,
-                    include_status: None,
-                    sort_events: false,
-                    enable_all_rules: false,
-                    scan_all_evtx_files: false,
+                    ..Default::default()
                 },
-                geo_ip: None,
-                output: None,
-                multiline: false,
-                disable_abbreviations: false,
+                ..Default::default()
             }));
         //両方のファイルが存在しない場合
         assert_eq!(
