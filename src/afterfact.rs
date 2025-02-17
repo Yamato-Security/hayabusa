@@ -1322,7 +1322,7 @@ fn _print_detection_summary_by_date(
         }
         let output_str = format!("{}: {}", level.to_full(), &max_detect_str);
         write!(wtr, "{output_str}").ok();
-        if i != LEVEL::iter().count() - 1 {
+        if i != LEVEL::iter().count() - 2 {
             wtr.set_color(ColorSpec::new().set_fg(None)).ok();
             write!(wtr, ", ").ok();
         }
