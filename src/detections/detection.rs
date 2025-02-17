@@ -549,7 +549,8 @@ impl Detection {
                     profile_converter.insert(key.as_str(), OtherTags(tags.into()));
                 }
                 RuleAuthor(_) => {
-                    let author = if stored_static.multiline_flag {
+                    let author = if stored_static.multiline_flag || stored_static.tab_separator_flag
+                    {
                         rule.yaml["author"]
                             .as_str()
                             .unwrap_or("-")
@@ -995,7 +996,8 @@ impl Detection {
                     profile_converter.insert(key.as_str(), OtherTags(tags.into()));
                 }
                 RuleAuthor(_) => {
-                    let author = if stored_static.multiline_flag {
+                    let author = if stored_static.multiline_flag || stored_static.tab_separator_flag
+                    {
                         rule.yaml["author"]
                             .as_str()
                             .unwrap_or("-")
