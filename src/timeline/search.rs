@@ -428,6 +428,8 @@ impl ResultWriter {
         let fmted_all_field_info = all_field_info.split_whitespace().join(" ");
         let all_field_info = if search_option.output.is_some() && stored_static.multiline_flag {
             fmted_all_field_info.replace(" ¦ ", "\r\n")
+        } else if stored_static.tab_separator_flag {
+            fmted_all_field_info.replace(" ¦ ", "\t")
         } else {
             fmted_all_field_info
         };

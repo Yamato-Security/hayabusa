@@ -128,6 +128,7 @@ pub struct StoredStatic {
     pub output_path: Option<PathBuf>,
     pub common_options: CommonOptions,
     pub multiline_flag: bool,
+    pub tab_separator_flag: bool,
     pub include_computer: HashSet<CompactString>,
     pub exclude_computer: HashSet<CompactString>,
     pub include_eid: HashSet<CompactString>,
@@ -396,6 +397,12 @@ impl StoredStatic {
             Some(Action::CsvTimeline(opt)) => opt.multiline,
             Some(Action::Search(opt)) => opt.multiline,
             Some(Action::LogMetrics(opt)) => opt.multiline,
+            _ => false,
+        };
+        let tab_separator_flag = match &input_config.as_ref().unwrap().action {
+            Some(Action::CsvTimeline(opt)) => opt.tab_separator,
+            Some(Action::Search(opt)) => opt.tab_separator,
+            Some(Action::LogMetrics(opt)) => opt.tab_separator,
             _ => false,
         };
         let proven_rule_flag = match &input_config.as_ref().unwrap().action {
@@ -804,6 +811,7 @@ impl StoredStatic {
             output_path: output_path.cloned(),
             common_options,
             multiline_flag,
+            tab_separator_flag,
             include_computer,
             exclude_computer,
             include_eid,
@@ -1319,6 +1327,10 @@ pub struct SearchOption {
     #[arg(help_heading = Some("Output"), short = 'M', long="multiline", display_order = 390)]
     pub multiline: bool,
 
+    /// Separate event field information by tabs
+    #[arg(help_heading = Some("Output"), short = 'S', long="tab-separator", requires = "output", display_order = 490)]
+    pub tab_separator: bool,
+
     /// Overwrite files when saving
     #[arg(help_heading = Some("General Options"), short='C', long = "clobber", display_order = 290, requires = "output")]
     pub clobber: bool,
@@ -1763,6 +1775,10 @@ pub struct CsvOutputOption {
     #[arg(help_heading = Some("Output"), short = 'M', long="multiline", display_order = 390)]
     pub multiline: bool,
 
+    /// Separate event field information by tabs
+    #[arg(help_heading = Some("Output"), short = 'S', long="tab-separator", requires = "output", display_order = 490)]
+    pub tab_separator: bool,
+
     // display_order value is defined acronym of long option (A=10,B=20,...,Z=260,a=270, b=280...,z=520)
     /// Add GeoIP (ASN, city, country) info to IP addresses
     #[arg(
@@ -1885,8 +1901,12 @@ pub struct LogMetricsOption {
     pub time_format_options: TimeFormatOptions,
 
     /// Output event field information in multiple rows for CSV output
-    #[arg(help_heading = Some("Output"), short = 'M', long="multiline", display_order = 390)]
+    #[arg(help_heading = Some("Output"), short = 'M', long="multiline", requires = "output", display_order = 390)]
     pub multiline: bool,
+
+    /// Separate event field information by tabs
+    #[arg(help_heading = Some("Output"), short = 'S', long="tab-separator", display_order = 490)]
+    pub tab_separator: bool,
 
     /// Overwrite files when saving
     #[arg(help_heading = Some("General Options"), short='C', long = "clobber", display_order = 290, requires = "output")]
@@ -2439,6 +2459,7 @@ fn extract_search_options(config: &Config) -> Option<SearchOption> {
             start_timeline: option.start_timeline.clone(),
             end_timeline: option.end_timeline.clone(),
             sort_events: option.sort_events,
+            tab_separator: option.tab_separator,
         }),
         _ => None,
     }

@@ -648,6 +648,8 @@ impl Timeline {
         }
         let sep = if stored_static.multiline_flag {
             "\n"
+        } else if stored_static.tab_separator_flag {
+            "\t"
         } else {
             sep
         };

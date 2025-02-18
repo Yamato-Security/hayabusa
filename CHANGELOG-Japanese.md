@@ -7,6 +7,7 @@
 - `eid-metrics`と`logon-summary`コマンドに`-X, --remove-duplicate-detections`オプションを追加した。 (#1552) (@fukusuket)
 - 新しい「緊急アラート 」と重要なシステムに基づく重大度レベルの調整。`config/critical_systems.txt`に重要なシステム（例: ドメインコントローラ、ファイルサーバ等々）のコンピュータ名のリストを追加すると、`low`以上のすべてのアラートが1つ高く調整される。つまり、`low`は`medium`に、`medium`は`high`に、`critical`アラートは新しい`emergency`アラートになる。 (#1551) (@fukusuket)
 - `./config/critical_systems.txt`ファイルに追加するドメインコントローラーとファイルサーバーを自動的に見つける`config-critical-systems`コマンドを追加した。 (#1570) (@fukusuket)
+- `csv-timeline`、`search`、`log-metrics`コマンドに、フィールド情報をタブで区切る`-S, --tab-separator`オプションを追加した。 (#1587) (@fukusuket)
 
 **改善:**
 

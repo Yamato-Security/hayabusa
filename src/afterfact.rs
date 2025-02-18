@@ -287,6 +287,9 @@ fn emit_csv_inner(
     if stored_static.multiline_flag {
         removed_replaced_maps.insert("🛂🛂", "\r\n");
         removed_replaced_maps.insert(" ¦ ", "\r\n");
+    } else if stored_static.tab_separator_flag {
+        removed_replaced_maps.insert("🛂🛂", "\t");
+        removed_replaced_maps.insert(" ¦ ", "\t");
     }
     let output_replacer = AhoCorasickBuilder::new()
         .match_kind(MatchKind::LeftmostLongest)
