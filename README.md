@@ -1132,7 +1132,7 @@ It will search for Security 5145 (Network Share File Access) events to determine
 Any hostnames added to the `critical_systems.txt` file will have all alerts above low increased by one level with a maximum of `emergency` level.
 
 ```
-Usage: hayabusa.exe search <INPUT> [OPTIONS]
+Usage: hayabusa.exe config-critical-systems <INPUT> [OPTIONS]
 
 Input:
   -d, --directory <DIR>  Directory of multiple .evtx files
