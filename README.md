@@ -859,6 +859,7 @@ Output:
   -b, --disable-abbreviations  Disable abbreviations
   -M, --multiline              Output event field information in multiple rows for CSV output
   -o, --output <FILE>          Save the Metrics in CSV format (ex: metrics.csv)
+  -S, --tab-separator          Separate event field information by tabs
 
 Display Settings:
   -K, --no-color  Disable color output
@@ -1069,6 +1070,7 @@ Output:
   -L, --JSONL-output           Save the search results in JSONL format (ex: -L -o results.jsonl)
   -M, --multiline              Output event field information in multiple rows for CSV output
   -o, --output <FILE>          Save the search results in CSV format (ex: search.csv)
+  -S, --tab-separator          Separate event field information by tabs
 
 Time Format:
       --European-time     Output timestamp in European time format (ex: 22-02-2022 22:00:00.123 +02:00)
@@ -1291,6 +1293,7 @@ Output:
   -p, --profile <PROFILE>            Specify output profile
   -R, --remove-duplicate-data        Duplicate field data will be replaced with "DUP"
   -X, --remove-duplicate-detections  Remove duplicate detections (default: disabled)
+  -S, --tab-separator                Separate event field information by tabs
 
 Display Settings:
   -K, --no-color            Disable color output
