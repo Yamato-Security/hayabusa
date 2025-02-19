@@ -1149,7 +1149,7 @@ General Options:
 
 #### `config-critical-systems`コマンドの使用例
 
-* Search the `../hayabusa-sample-evtx` directory for domain controllers and file servers:
+* `../hayabusa-sample-evtx`ディレクトリでドメインコントローラーとファイルサーバーを検索する:
 
 ```
 hayabusa.exe config-critical-systems -d ../hayabusa-sample-evtx"
