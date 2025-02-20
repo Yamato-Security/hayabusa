@@ -19,6 +19,7 @@ This tool is great for small investigations by a single analyst and for people j
   - [Searching](#searching)
   - [Freezing columns](#freezing-columns)
   - [Dragging column headers to group by](#dragging-column-headers-to-group-by)
+  - [Checking fields](#checking-fields)
   - [Skins](#skins)
   - [Sessions](#sessions)
 
@@ -165,6 +166,43 @@ It is common to group by `Level` so that you can prioritize alerts by severity:
 ![Group by](14-GroupBy.png)
 
 If you have multiple computers in your results, you can further group-by `Computer` to triage based on different severity levels for each computer.
+
+## Checking fields
+
+By default, Hayabusa will separate field data by the broken pipe symbol: `¦`.
+When field data is on a horizontal line, this makes it very easy to distinguish multiple fields as this character is not often found in logs:
+
+![Field Information](15-FieldInformation.png)
+
+Sometimes, however, there will be too much field information in the log and everything cannot fit on one screen.
+In this case, you can double-click on the cell to get a pop-up that shows all of the field information:
+
+![Cell Contents](16-CellContents.png)
+
+The problem is that Timeline Explorer only lets you format field data by newline characters (`CRLF`, `CR`, `LF`), commas and tabs.
+
+If you use the `-M, --multiline` option, you can separate fields by a newline character and when you double-click to open up a cell's contents, it will be properly formatted:
+
+![Multi-line formatting](17-MultilineFormatting.png)
+
+The problem is that now only the first field will be show in the timeline so you will have to double-click and open a new window everytime you want to check the other field data:
+
+![Multiline single fiels](18-MultilineSingleField.png)
+
+Unfortunately, Timeline Explorer does not support multiple lines in the timeline view.
+
+To work around this, as of Hayabusa `v3.1.0`, you can separate fields by tabs:
+
+![Tab separation](19-TabSeparation.png)
+
+It is a little harder to distinguish where one field ends and the next one begins.
+Also, when you double-click and open up the cell's contents the fields are not automatically formatted:
+
+![Tab separation not formatted](20-TabSeparationNotFormatted.png)
+
+However, if you click `Tab` at the bottom and then `Format` you can format the fields into an easy-to-read view:
+
+![Tab separation formatted](21-TabSeparationFormatted.png)
 
 ## Skins
 
