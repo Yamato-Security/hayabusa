@@ -100,6 +100,7 @@ Hayabusaは[upstream Sigma](https://github.com/SigmaHQ/sigma) ルールの解析
   - [macOS](#macos)
 - [コマンド一覧](#コマンド一覧)
   - [分析コマンド:](#分析コマンド)
+  - [Configコマンド:](#configコマンド)
   - [DFIRタイムライン作成のコマンド:](#dfirタイムライン作成のコマンド)
   - [汎用コマンド:](#汎用コマンド)
 - [コマンド使用方法](#コマンド使用方法)
@@ -129,6 +130,9 @@ Hayabusaは[upstream Sigma](https://github.com/SigmaHQ/sigma) ルールの解析
     - [`search`コマンド](#searchコマンド)
       - [`search`コマンドの使用例](#searchコマンドの使用例)
       - [`search`の設定ファイル](#searchの設定ファイル)
+  - [Configコマンド](#Configコマンド-1)
+    - [`config-critical-systems`コマンド](#config-critical-systemsコマンド)
+      - [`config-critical-systems`コマンドの使用例](#config-critical-systemsコマンドの使用例)
   - [DFIRタイムラインコマンド](#dfirタイムラインコマンド)
     - [スキャンウィザード](#スキャンウィザード)
       - [Core ルール](#core-ルール)
@@ -301,6 +305,7 @@ JSON形式の結果を`jq`で解析する方法については、[こちら](/do
 * 低メモリモード。(注意: 結果をソートしないことで可能。エージェントやビッグデータでの実行に適している。)
 * チャンネルとルールのフィルタリングによって最も効率的なパフォーマンスを達成する。
 * ログに含まれるBase64文字列を検出、抽出、デコードする。
+* 重要なシステムに基づくアラートレベルの調整。
 
 # ダウンロード
 
@@ -536,6 +541,9 @@ macOSの環境設定から「セキュリティとプライバシー」を開き
 * `log-metrics`: ログファイルの統計情報を出力する。
 * `pivot-keywords-list`: ピボットする不審なキーワードのリストを作成する。
 * `search`: キーワードや正規表現で全イベントの検索。
+
+## Configコマンド:
+* `config-critical-systems`: ドメインコントローラーやファイルサーバーなどの重要なシステムを見つける。
 
 ## DFIRタイムライン作成のコマンド:
 * `csv-timeline`: CSV形式のタイムラインを出力する。
@@ -851,6 +859,7 @@ Output:
   -b, --disable-abbreviations  省略機能を無効にする
   -M, --multiline              イベントフィールド情報を複数の行に出力する
   -o, --output <FILE>          メトリクスをCSV形式で保存する (例: metrics.csv)
+  -S, --tab-separator          フィールドをタブ区切りにする
 
 Display Settings:
   -K, --no-color  カラーで出力しない
@@ -1038,6 +1047,7 @@ General Options:
   -c, --rules-config <DIR>               ルールフォルダのコンフィグディレクトリ (デフォルト: ./rules/config)
   -t, --threads <NUMBER>                 スレッド数 (デフォルト: パフォーマンスに最適な数値)
       --target-file-ext <FILE-EXT...>    evtx以外の拡張子を解析対象に追加する (例１: evtx_data 例２:evtx1,evtx2)
+  -s, --sort                             ファイル保存前にイベントをソートする (警告: これは多くのメモリを使用する!)
 
 Input:
   -d, --directory <DIR>        .evtxファイルを持つディレクトリのパス
@@ -1051,6 +1061,8 @@ Filtering:
   -k, --keywords <KEYWORD...>        キーワードでの検索
   -r, --regex <REGEX>                正規表現での検索
       --time-offset <OFFSET>         オフセットに基づく最近のイベントのスキャン (例: 1y, 3M, 30d, 24h, 30m)
+      --timeline-end <DATE>             解析対象とするイベントログの終了時刻 (例: "2022-02-22 23:59:59 +09:00")
+      --timeline-start <DATE>           解析対象とするイベントログの開始時刻 (例: "2020-02-22 00:00:00 +09:00")
 
 Output:
   -b, --disable-abbreviations        省略機能を無効にする
@@ -1058,6 +1070,7 @@ Output:
   -L, --JSONL-output                 JSONL形式で検索結果を保存 (例: -L -o results.jsonl)
   -M, --multiline                    イベントフィールド情報を複数の行に出力する
   -o, --output <FILE>                ログオンサマリをCSV形式で保存する (例: search.csv)
+  -S, --tab-separator                フィールドをタブ区切りにする
 
 Time Format:
       --European-time     ヨーロッパ形式で日付と時刻を出力する (例: 22-02-2022 22:00:00.123 +02:00)
@@ -1109,6 +1122,38 @@ hayabusa.exe search -d ../hayabusa-sample-evtx -r ".*" -F WorkstationName:"kali"
 
 `./rules/config/channel_abbreviations.txt`: チャンネル名とその略称のマッピング。
 
+## Configコマンド
+
+### `config-critical-systems`コマンド
+
+このコマンドは、自動的にドメインコントローラーやファイルサーバーなどの重要なシステムを見つけ、`./config/critical_systems.txt`コンフィグファイルに追加します。そのためすべてのアラートが1つ上のレベルになります。
+ドメインコントローラーかどうかを判断するためにSecurity 4768 (Kerberos TGT requested)イベントを検索します。
+ファイルサーバーかどうかを判断するためにSecurity 5145 (Network Share File Access)イベントを検索します。
+`critical_systems.txt`ファイルに追加されたホスト名は、すべてのアラートが1つ上のレベルになり、最大で`emergency`レベルになります。
+
+```
+Usage: hayabusa.exe config-critical-systems <INPUT> [OPTIONS]
+
+Input:
+  -d, --directory <DIR>        .evtxファイルを持つディレクトリのパス
+  -f, --file <FILE>            1つの.evtxファイルに対して解析を行う
+
+Display Settings:
+  -K, --no-color  カラーで出力しない
+  -q, --quiet     Quietモード: 起動バナーを表示しない
+  -v, --verbose   詳細な情報を出力する
+
+General Options:
+  -h, --help      ヘルプメニューを表示する
+```
+
+#### `config-critical-systems`コマンドの使用例
+
+* `../hayabusa-sample-evtx`ディレクトリでドメインコントローラーとファイルサーバーを検索する:
+
+```
+hayabusa.exe config-critical-systems -d ../hayabusa-sample-evtx"
+```
 
 ## DFIRタイムラインコマンド
 
@@ -1205,12 +1250,12 @@ General Options:
   -C, --clobber                          結果ファイルを上書きする
   -h, --help                             ヘルプメニューを表示する
   -J, --JSON-input                       .evtxファイルの代わりにJSON形式のログファイル(.jsonまたは.jsonl)をスキャンする
-  -s, --sort-events                      ファイル保存前にイベントをソートする (警告: これは多くのメモリを使用する!)
   -w, --no-wizard                        質問はしない。すべてのイベントとアラートをスキャンする
   -Q, --quiet-errors                     Quiet errorsモード: エラーログを保存しない
   -x, --recover-records                  空ページからevtxレコードをカービングする (デフォルト: 無効)
   -r, --rules <DIR/FILE>                 ルールファイルまたはルールファイルを持つディレクトリ (デフォルト: ./rules)
   -c, --rules-config <DIR>               ルールフォルダのコンフィグディレクトリ (デフォルト: ./rules/config)
+  -s, --sort                             ファイル保存前にイベントをソートする (警告: これは多くのメモリを使用する!)
   -t, --threads <NUMBER>                 スレッド数 (デフォルト: パフォーマンスに最適な数値)
       --target-file-ext <FILE-EXT...>    evtx以外の拡張子を解析対象に追加する。 (例１: evtx_data 例２: evtx1,evtx2)
 
@@ -1249,6 +1294,7 @@ Output:
   -p, --profile <PROFILE>            利用する出力プロファイル名を指定する
   -R, --remove-duplicate-data        重複したフィールドデータは「DUP」に置き換えられる (ファイルサイズが約10〜15％削減される)
   -X, --remove-duplicate-detections  重複した検知項目を削除する (デフォルト: 無効)
+  -S, --tab-separator                フィールドをタブ区切りにする
 
 Display Settings:
   -K, --no-color            カラーで出力しない
@@ -1471,12 +1517,12 @@ General Options:
   -C, --clobber                          結果ファイルを上書きする
   -h, --help                             ヘルプメニューを表示する
   -J, --JSON-input                       .evtxファイルの代わりにJSON形式のログファイル(.jsonまたは.jsonl)をスキャンする
-  -s, --sort-events                      ファイル保存前イベントをソートする (警告: これは多くのメモリを使用する!)
   -w, --no-wizard                        質問はしない。すべてのイベントとアラートをスキャンする
   -Q, --quiet-errors                     Quiet errorsモード: エラーログを保存しない
   -x, --recover-records                  空ページからevtxレコードをカービングする (デフォルト: 無効)
   -r, --rules <DIR/FILE>                 ルールファイルまたはルールファイルを持つディレクトリ (デフォルト: ./rules)
   -c, --rules-config <DIR>               ルールフォルダのコンフィグディレクトリ (デフォルト: ./rules/config)
+  -s, --sort                             ファイル保存前イベントをソートする (警告: これは多くのメモリを使用する!)
   -t, --threads <NUMBER>                 スレッド数 (デフォルト: パフォーマンスに最適な数値)
       --target-file-ext <FILE-EXT...>    evtx以外の拡張子を解析対象に追加する。 (例１: evtx_data 例２: evtx1,evtx2)
 
@@ -1665,35 +1711,35 @@ Hayabusaの`config/profiles.yaml`設定ファイルでは、５つのプロフ�
 
 ### 2. `standard`プロファイルの出力
 
-`%Timestamp%, %Computer%, %Channel%, %EventID%, %Level%, %RecordID%, %RuleTitle%, %Details%, %ExtraFieldInfo%`
+`%Timestamp%, %Computer%, %Channel%, %EventID%, %Level%, %RecordID%, %RuleTitle%, %Details%, %ExtraFieldInfo%`, %RuleID%
 
 ### 3. `verbose`プロファイルの出力
 
-`%Timestamp%, %Computer%, %Channel%, %EventID%, %Level%, %MitreTactics%, %MitreTags%, %OtherTags%, %RecordID%, %RuleTitle%, %Details%, %ExtraFieldInfo%, %RuleFile%, %EvtxFile%`
+`%Timestamp%, %Computer%, %Channel%, %EventID%, %Level%, %MitreTactics%, %MitreTags%, %OtherTags%, %RecordID%, %RuleTitle%, %Details%, %ExtraFieldInfo%, %RuleFile%, %RuleID%, %EvtxFile%`
 
 ### 4. `all-field-info`プロファイルの出力
 
 最小限の`details`情報を出力する代わりに、イベントにあるすべての`EventData`フィールド情報(`%AllFieldInfo%`)が出力されます。フィールド名は元々のフィールド名になります。
 
-`%Timestamp%, %Computer%, %Channel%, %EventID%, %Level%, %RecordID%, %RuleTitle%, %AllFieldInfo%, %RuleFile%, %EvtxFile%`
+`%Timestamp%, %Computer%, %Channel%, %EventID%, %Level%, %RecordID%, %RuleTitle%, %AllFieldInfo%, %RuleFile%, %RuleID%, %EvtxFile%`
 
 ### 5. `all-field-info-verbose`プロファイルの出力
 
-`%Timestamp%, %Computer%, %Channel%, %EventID%, %Level%, %MitreTactics%, %MitreTags%, %OtherTags%, %RecordID%, %RuleTitle%, %AllFieldInfo%, %RuleFile%, %EvtxFile%`
+`%Timestamp%, %Computer%, %Channel%, %EventID%, %Level%, %MitreTactics%, %MitreTags%, %OtherTags%, %RecordID%, %RuleTitle%, %AllFieldInfo%, %RuleFile%, %RuleID%, %EvtxFile%`
 
 ### 6. `super-verbose`プロファイルの出力
 
-`%Timestamp%, %Computer%, %Channel%, %EventID%, %Level%, %RuleTitle%, %RuleAuthor%, %RuleModifiedDate%, %Status%, %RecordID%, %Details%, %ExtraFieldInfo%, %MitreTactics%, %MitreTags%, %OtherTags%, %Provider%, %RuleCreationDate%, %RuleFile%, %EvtxFile%`
+`%Timestamp%, %Computer%, %Channel%, %EventID%, %Level%, %RuleTitle%, %RuleAuthor%, %RuleModifiedDate%, %Status%, %RecordID%, %Details%, %ExtraFieldInfo%, %MitreTactics%, %MitreTags%, %OtherTags%, %Provider%, %RuleCreationDate%, %RuleFile%, %RuleID%, %EvtxFile%`
 
 ### 7. `timesketch-minimal`プロファイルの出力
 
 [Timesketch](https://timesketch.org/)にインポートできるプロファイル。
 
-`%Timestamp%, hayabusa, %RuleTitle%, %Computer%, %Channel%, %EventID%, %Level%, %MitreTactics%, %MitreTags%, %OtherTags%, %RecordID%, %Details%, %RuleFile%, %EvtxFile%`
+`%Timestamp%, hayabusa, %RuleTitle%, %Computer%, %Channel%, %EventID%, %Level%, %MitreTactics%, %MitreTags%, %OtherTags%, %RecordID%, %Details%, %RuleFile%, %RuleID%, %EvtxFile%`
 
 ### 8. `timesketch-verbose`プロファイルの出力
 
-`%Timestamp%, hayabusa, %RuleTitle%, %Computer%, %Channel%, %EventID%, %Level%, %MitreTactics%, %MitreTags%, %OtherTags%, %RecordID%, %Details%, %ExtraFieldInfo%, %RuleFile%, %EvtxFile%`
+`%Timestamp%, hayabusa, %RuleTitle%, %Computer%, %Channel%, %EventID%, %Level%, %MitreTactics%, %MitreTags%, %OtherTags%, %RecordID%, %Details%, %ExtraFieldInfo%, %RuleFile%, %RuleID%, %EvtxFile%`
 
 ### プロファイルの比較
 
@@ -1748,7 +1794,6 @@ Hayabusaの`config/profiles.yaml`設定ファイルでは、５つのプロフ�
 
 ```
 Message: "%RenderedMessage%"
-RuleID: "%RuleID%"
 ```
 
 また、[イベントキーエイリアス](https://github.com/Yamato-Security/hayabusa-rules/blob/main/README-Japanese.md#%E3%82%A4%E3%83%99%E3%83%B3%E3%83%88%E3%82%AD%E3%83%BC%E3%82%A8%E3%82%A4%E3%83%AA%E3%82%A2%E3%82%B9)を定義し、出力することもできます。

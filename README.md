@@ -100,6 +100,7 @@ The output will be consolidated into a single CSV/JSON/JSONL timeline for easy a
   - [macOS](#macos)
 - [Command List](#command-list)
   - [Analysis Commands:](#analysis-commands)
+  - [Config Commands:](#config-commands)
   - [DFIR Timeline Commands:](#dfir-timeline-commands)
   - [General Commands:](#general-commands)
 - [Command Usage](#command-usage)
@@ -129,6 +130,9 @@ The output will be consolidated into a single CSV/JSON/JSONL timeline for easy a
     - [`search` command](#search-command)
       - [`search` command examples](#search-command-examples)
       - [`search` command config files](#search-command-config-files)
+  - [Config Commands](#config-commands-1)
+    - [`config-critical-systems` command](#config-critical-systems-command)
+      - [`config-critical-systems` command examples](#config-critical-systems-command-examples)
   - [DFIR Timeline Commands](#dfir-timeline-commands-1)
     - [Scan Wizard](#scan-wizard)
       - [Core Rules](#core-rules)
@@ -165,7 +169,7 @@ The output will be consolidated into a single CSV/JSON/JSONL timeline for easy a
     - [8. `timesketch-verbose` profile output](#8-timesketch-verbose-profile-output)
     - [Profile Comparison](#profile-comparison)
     - [Profile Field Aliases](#profile-field-aliases)
-      - [Extra Profile Field Aliases](#extra-profile-field-aliases)
+      - [Extra Profile Field Alias](#extra-profile-field-alias)
   - [Abbreviations](#abbreviations)
     - [Level Abbreviations](#level-abbreviations)
     - [MITRE ATT\&CK Tactics Abbreviations](#mitre-attck-tactics-abbreviations)
@@ -301,6 +305,7 @@ You can learn how to analyze JSON-formatted results with `jq` [here](doc/Analysi
 * Low memory usage. (Note: this is possible by not sorting results. Best for running on agents or big data.)
 * Filtering on Channels and Rules for the most efficient performance.
 * Detect, extract and decode Base64 strings found in logs.
+* Alert level adjustment based on critical systems.
 
 # Downloads
 
@@ -536,6 +541,9 @@ You should now be able to run hayabusa.
 * `logon-summary`: Print a summary of logon events.
 * `pivot-keywords-list`: Print a list of suspicious keywords to pivot on.
 * `search`: Search all events by keyword(s) or regular expressions
+
+## Config Commands:
+* `config-critical-systems`: Find critical systems like domain controllers and file servers.
 
 ## DFIR Timeline Commands:
 * `csv-timeline`: Save the timeline in CSV format.
@@ -851,6 +859,7 @@ Output:
   -b, --disable-abbreviations  Disable abbreviations
   -M, --multiline              Output event field information in multiple rows for CSV output
   -o, --output <FILE>          Save the Metrics in CSV format (ex: metrics.csv)
+  -S, --tab-separator          Separate event field information by tabs
 
 Display Settings:
   -K, --no-color  Disable color output
@@ -1038,6 +1047,7 @@ General Options:
   -c, --rules-config <DIR>             Specify custom rule config directory (default: ./rules/config)
   -t, --threads <NUMBER>               Number of threads (default: optimal number for performance)
       --target-file-ext <FILE-EXT...>  Specify additional evtx file extensions (ex: evtx_data)
+  -s, --sort                           Sort results before saving the file (warning: this uses much more memory!)
 
 Input:
   -d, --directory <DIR>  Directory of multiple .evtx files
@@ -1045,12 +1055,14 @@ Input:
   -l, --live-analysis    Analyze the local C:\Windows\System32\winevt\Logs folder
 
 Filtering:
-  -a, --and-logic             Search keywords with AND logic (default: OR)
-  -F, --filter <FILTER...>    Filter by specific field(s)
-  -i, --ignore-case           Case-insensitive keyword search
-  -k, --keyword <KEYWORD...>  Search by keyword(s)
-  -r, --regex <REGEX>         Search by regular expression
-      --time-offset <OFFSET>  Scan recent events based on an offset (ex: 1y, 3M, 30d, 24h, 30m)
+  -a, --and-logic              Search keywords with AND logic (default: OR)
+  -F, --filter <FILTER...>     Filter by specific field(s)
+  -i, --ignore-case            Case-insensitive keyword search
+  -k, --keyword <KEYWORD...>   Search by keyword(s)
+  -r, --regex <REGEX>          Search by regular expression
+      --time-offset <OFFSET>   Scan recent events based on an offset (ex: 1y, 3M, 30d, 24h, 30m)
+      --timeline-end <DATE>    End time of the event logs to load (ex: "2022-02-22 23:59:59 +09:00")
+      --timeline-start <DATE>  Start time of the event logs to load (ex: "2020-02-22 00:00:00 +09:00")
 
 Output:
   -b, --disable-abbreviations  Disable abbreviations
@@ -1058,6 +1070,7 @@ Output:
   -L, --JSONL-output           Save the search results in JSONL format (ex: -L -o results.jsonl)
   -M, --multiline              Output event field information in multiple rows for CSV output
   -o, --output <FILE>          Save the search results in CSV format (ex: search.csv)
+  -S, --tab-separator          Separate event field information by tabs
 
 Time Format:
       --European-time     Output timestamp in European time format (ex: 22-02-2022 22:00:00.123 +02:00)
@@ -1109,6 +1122,37 @@ hayabusa.exe search -d ../hayabusa-sample-evtx -r ".*" -F WorkstationName:"kali"
 
 `./rules/config/channel_abbreviations.txt`: Mappings of channel names and their abbreviations.
 
+## Config Commands
+
+### `config-critical-systems` command
+
+This command will automatically try to find critical systems like domain controllers and file servers and add them to the `./config/critical_systems.txt` config file so that all of the alerts will be increased by one level.
+It will search for Security 4768 (Kerberos TGT requested) events to determine if it is a domain controller.
+It will search for Security 5145 (Network Share File Access) events to determine if it is a file server.
+Any hostnames added to the `critical_systems.txt` file will have all alerts above low increased by one level with a maximum of `emergency` level.
+
+```
+Usage: hayabusa.exe config-critical-systems <INPUT> [OPTIONS]
+
+Input:
+  -d, --directory <DIR>  Directory of multiple .evtx files
+  -f, --file <FILE>      File path to one .evtx file
+
+Display Settings:
+  -K, --no-color  Disable color output
+  -q, --quiet     Quiet mode: do not display the launch banner
+
+General Options:
+  -h, --help  Show the help menu
+```
+
+#### `config-critical-systems` command examples
+
+* Search the `../hayabusa-sample-evtx` directory for domain controllers and file servers:
+
+```
+hayabusa.exe config-critical-systems -d ../hayabusa-sample-evtx"
+```
 
 ## DFIR Timeline Commands
 
@@ -1210,7 +1254,7 @@ General Options:
   -x, --recover-records                Carve evtx records from slack space (default: disabled)
   -r, --rules <DIR/FILE>               Specify a custom rule directory or file (default: ./rules)
   -c, --rules-config <DIR>             Specify custom rule config directory (default: ./rules/config)
-  -s, --sort-events                    Sort events before saving the file. (warning: this uses much more memory!)
+  -s, --sort                           Sort events before saving the file. (warning: this uses much more memory!)
   -t, --threads <NUMBER>               Number of threads (default: optimal number for performance)
       --target-file-ext <FILE-EXT...>  Specify additional evtx file extensions (ex: evtx_data)
 
@@ -1249,6 +1293,7 @@ Output:
   -p, --profile <PROFILE>            Specify output profile
   -R, --remove-duplicate-data        Duplicate field data will be replaced with "DUP"
   -X, --remove-duplicate-detections  Remove duplicate detections (default: disabled)
+  -S, --tab-separator                Separate event field information by tabs
 
 Display Settings:
   -K, --no-color            Disable color output
@@ -1476,7 +1521,7 @@ General Options:
   -x, --recover-records                Carve evtx records from slack space (default: disabled)
   -r, --rules <DIR/FILE>               Specify a custom rule directory or file (default: ./rules)
   -c, --rules-config <DIR>             Specify custom rule config directory (default: ./rules/config)
-  -s, --sort-events                    Sort events before saving the file. (warning: this uses much more memory!)
+  -s, --sort                           Sort events before saving the file. (warning: this uses much more memory!)
   -t, --threads <NUMBER>               Number of threads (default: optimal number for performance)
       --target-file-ext <FILE-EXT...>  Specify additional evtx file extensions (ex: evtx_data)
 
@@ -1665,35 +1710,35 @@ Use the `list-profiles` command to show the available profiles and their field i
 
 ### 2. `standard` profile output
 
-`%Timestamp%, %Computer%, %Channel%, %EventID%, %Level%, %RecordID%, %RuleTitle%, %Details%, %ExtraFieldInfo%`
+`%Timestamp%, %Computer%, %Channel%, %EventID%, %Level%, %RecordID%, %RuleTitle%, %Details%, %ExtraFieldInfo%`, %RuleID%
 
 ### 3. `verbose` profile output
 
-`%Timestamp%, %Computer%, %Channel%, %EventID%, %Level%, %MitreTactics%, %MitreTags%, %OtherTags%, %RecordID%, %RuleTitle%, %Details%, %ExtraFieldInfo%, %RuleFile%, %EvtxFile%`
+`%Timestamp%, %Computer%, %Channel%, %EventID%, %Level%, %MitreTactics%, %MitreTags%, %OtherTags%, %RecordID%, %RuleTitle%, %Details%, %ExtraFieldInfo%, %RuleFile%, %RuleID%, %EvtxFile%`
 
 ### 4. `all-field-info` profile output
 
 Instead of outputting the minimal `details` information, all field information in the `EventData` and `UserData` sections will be outputted along with their original field names.
 
-`%Timestamp%, %Computer%, %Channel%, %EventID%, %Level%, %RecordID%, %RuleTitle%, %AllFieldInfo%, %RuleFile%, %EvtxFile%`
+`%Timestamp%, %Computer%, %Channel%, %EventID%, %Level%, %RecordID%, %RuleTitle%, %AllFieldInfo%, %RuleFile%, %RuleID%, %EvtxFile%`
 
 ### 5. `all-field-info-verbose` profile output
 
-`%Timestamp%, %Computer%, %Channel%, %EventID%, %Level%, %MitreTactics%, %MitreTags%, %OtherTags%, %RecordID%, %RuleTitle%, %AllFieldInfo%, %RuleFile%, %EvtxFile%`
+`%Timestamp%, %Computer%, %Channel%, %EventID%, %Level%, %MitreTactics%, %MitreTags%, %OtherTags%, %RecordID%, %RuleTitle%, %AllFieldInfo%, %RuleFile%, %RuleID%, %EvtxFile%`
 
 ### 6. `super-verbose` profile output
 
-`%Timestamp%, %Computer%, %Channel%, %EventID%, %Level%, %RuleTitle%, %RuleAuthor%, %RuleModifiedDate%, %Status%, %RecordID%, %Details%, %ExtraFieldInfo%, %MitreTactics%, %MitreTags%, %OtherTags%, %Provider%, %RuleCreationDate%, %RuleFile%, %EvtxFile%`
+`%Timestamp%, %Computer%, %Channel%, %EventID%, %Level%, %RuleTitle%, %RuleAuthor%, %RuleModifiedDate%, %Status%, %RecordID%, %Details%, %ExtraFieldInfo%, %MitreTactics%, %MitreTags%, %OtherTags%, %Provider%, %RuleCreationDate%, %RuleFile%, %RuleID%, %EvtxFile%`
 
 ### 7. `timesketch-minimal` profile output
 
 Output to a format compatible with importing into [Timesketch](https://timesketch.org/).
 
-`%Timestamp%, hayabusa, %RuleTitle%, %Computer%, %Channel%, %EventID%, %Level%, %MitreTactics%, %MitreTags%, %OtherTags%, %RecordID%, %Details%, %RuleFile%, %EvtxFile%`
+`%Timestamp%, hayabusa, %RuleTitle%, %Computer%, %Channel%, %EventID%, %Level%, %MitreTactics%, %MitreTags%, %OtherTags%, %RecordID%, %Details%, %RuleFile%, %RuleID%, %EvtxFile%`
 
 ### 8. `timesketch-verbose` profile output
 
-`%Timestamp%, hayabusa, %RuleTitle%, %Computer%, %Channel%, %EventID%, %Level%, %MitreTactics%, %MitreTags%, %OtherTags%, %RecordID%, %Details%, %ExtraFieldInfo%, %RuleFile%, %EvtxFile%`
+`%Timestamp%, hayabusa, %RuleTitle%, %Computer%, %Channel%, %EventID%, %Level%, %MitreTactics%, %MitreTags%, %OtherTags%, %RecordID%, %Details%, %ExtraFieldInfo%, %RuleFile%, %RuleID%, %EvtxFile%`
 
 ### Profile Comparison
 
@@ -1730,25 +1775,24 @@ The following information can be outputted with built-in output profiles:
 |%RuleAuthor% | The `author` field in the YML detection rule. |
 |%RuleCreationDate% | The `date` field in the YML detection rule. |
 |%RuleFile% | The filename of the detection rule that generated the alert or event. |
+|%RuleID% | The `id` field in the YML detection rule. |
 |%RuleModifiedDate% | The `modified` field in the YML detection rule. |
 |%RuleTitle% | The `title` field in the YML detection rule. |
 |%Status% | The `status` field in the YML detection rule. |
 |%Timestamp% | Default is `YYYY-MM-DD HH:mm:ss.sss +hh:mm` format. `<Event><System><TimeCreated SystemTime>` field in the event log. The default timezone will be the local timezone but you can change the timezone to UTC with the `--UTC` option. |
 
-#### Extra Profile Field Aliases
+#### Extra Profile Field Alias
 
-You can also add these extra aliases to your output profile if you need them:
+You can also add this extra aliases to your output profile if you need it:
 
 | Alias name | Hayabusa output information|
 | :--- | :--- |
 |%RenderedMessage% | The `<Event><RenderingInfo><Message>` field in WEC forwarded logs. |
-|%RuleID% | The `id` field in the YML detection rule. |
 
-Note: these are **not** included in any built in profiles so you will need to manually edit the `config/default_profile.yaml` file and add the following lines:
+Note: this is **not** included in any built in profiles so you will need to manually edit the `config/default_profile.yaml` file and add the following line:
 
 ```
 Message: "%RenderedMessage%"
-RuleID: "%RuleID%"
 ```
 
 You can also define [event key aliases](https://github.com/Yamato-Security/hayabusa-rules/blob/main/README.md#eventkey-aliases) to output other fields.
