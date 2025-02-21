@@ -11,8 +11,8 @@ use crate::detections::rule::selectionnodes::{OrSelectionNode, SelectionNode};
 use crate::detections::rule::{CorrelationType, DetectionNode, RuleNode};
 use hashbrown::{HashMap, HashSet};
 use uuid::Uuid;
-use yaml_rust2::yaml::Hash;
 use yaml_rust2::Yaml;
+use yaml_rust2::yaml::Hash;
 
 type Name2Selection = HashMap<String, Arc<Box<dyn SelectionNode>>>;
 

@@ -5,11 +5,11 @@ use crate::detections::utils::{
     self, get_writable_color, make_ascii_titlecase, write_color_buffer,
 };
 use crate::timeline::search::search_result_dsp_msg;
-use comfy_table::modifiers::UTF8_ROUND_CORNERS;
-use comfy_table::presets::UTF8_FULL;
 use comfy_table::ColumnConstraint::LowerBoundary;
 use comfy_table::ColumnConstraint::UpperBoundary;
 use comfy_table::Width::Fixed;
+use comfy_table::modifiers::UTF8_ROUND_CORNERS;
+use comfy_table::presets::UTF8_FULL;
 use comfy_table::*;
 use compact_str::CompactString;
 use csv::WriterBuilder;
@@ -21,8 +21,8 @@ use std::fs::File;
 use std::io::BufWriter;
 use std::path::PathBuf;
 use termcolor::{BufferWriter, Color, ColorChoice};
-use terminal_size::terminal_size;
 use terminal_size::Width;
+use terminal_size::terminal_size;
 
 use super::computer_metrics;
 use super::metrics::EventMetrics;
@@ -733,7 +733,7 @@ mod tests {
         detections::{
             configs::{
                 Action, CommonOptions, Config, DetectCommonOption, EidMetricsOption, InputOption,
-                LogonSummaryOption, StoredStatic, STORED_EKEY_ALIAS,
+                LogonSummaryOption, STORED_EKEY_ALIAS, StoredStatic,
             },
             utils::create_rec_info,
         },

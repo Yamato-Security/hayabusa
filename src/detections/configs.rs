@@ -1,13 +1,13 @@
 use super::message::create_output_filter_config;
 use super::utils::check_setting_path;
-use crate::detections::field_data_map::{create_field_data_map, FieldDataMap};
+use crate::detections::field_data_map::{FieldDataMap, create_field_data_map};
 use crate::detections::message::AlertMessage;
 use crate::detections::utils;
 use crate::level::LEVEL;
 use crate::options::geoip_search::GeoIPSearch;
 use crate::options::htmlreport;
 use crate::options::pivot::PIVOT_KEYWORD;
-use crate::options::profile::{load_profile, Profile};
+use crate::options::profile::{Profile, load_profile};
 use aho_corasick::{AhoCorasick, AhoCorasickBuilder, MatchKind};
 use chrono::{DateTime, Days, Duration, Local, Months, Utc};
 use clap::{ArgAction, ArgGroup, Args, ColorChoice, Command, CommandFactory, Parser, Subcommand};
@@ -24,7 +24,7 @@ use std::path::{Path, PathBuf};
 use std::sync::RwLock;
 use std::{fs, io, process};
 use strum::IntoEnumIterator;
-use terminal_size::{terminal_size, Width};
+use terminal_size::{Width, terminal_size};
 use yaml_rust2::{Yaml, YamlLoader};
 
 lazy_static! {
@@ -865,29 +865,30 @@ impl StoredStatic {
                             _ => {
                                 return Err(
                                     "Failed to read provider in default_details.txt.".to_string()
-                                )
+                                );
                             }
                         };
-                        let eid =
-                            match line.get(1) {
-                                Some(eid_str) => match eid_str.trim().parse::<i64>() {
-                                    Ok(_eid) => _eid,
-                                    _ => {
-                                        return Err("EventID parsing error in default_details.txt."
-                                            .to_string())
-                                    }
-                                },
+                        let eid = match line.get(1) {
+                            Some(eid_str) => match eid_str.trim().parse::<i64>() {
+                                Ok(_eid) => _eid,
                                 _ => {
-                                    return Err("Failed to read EventID in default_details.txt."
-                                        .to_string())
+                                    return Err(
+                                        "EventID parsing error in default_details.txt.".to_string()
+                                    );
                                 }
-                            };
+                            },
+                            _ => {
+                                return Err(
+                                    "Failed to read EventID in default_details.txt.".to_string()
+                                );
+                            }
+                        };
                         let details = match line.get(2) {
                             Some(detail) => detail.trim(),
                             _ => {
                                 return Err(
                                     "Failed to read details in default_details.txt.".to_string()
-                                )
+                                );
                             }
                         };
                         ret.insert(
@@ -2720,9 +2721,9 @@ mod tests {
     use std::default::Default;
 
     use super::{
-        create_control_chat_replace_map, Action, CommonOptions, Config, CsvOutputOption,
-        DetectCommonOption, InputOption, JSONOutputOption, OutputOption, StoredStatic,
-        TargetEventTime,
+        Action, CommonOptions, Config, CsvOutputOption, DetectCommonOption, InputOption,
+        JSONOutputOption, OutputOption, StoredStatic, TargetEventTime,
+        create_control_chat_replace_map,
     };
     use crate::detections::configs::{
         self, EidMetricsOption, LogonSummaryOption, PivotKeywordOption, SearchOption,

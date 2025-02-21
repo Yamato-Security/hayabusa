@@ -171,8 +171,8 @@ pub fn create_fast_match(pipes: &[PipeElement], pattern: &[String]) -> Option<Ve
 #[cfg(test)]
 mod tests {
     use crate::detections::rule::fast_match::{
-        convert_to_fast_match, ends_with_ignore_case, eq_ignore_case, starts_with_ignore_case,
-        FastMatch,
+        FastMatch, convert_to_fast_match, ends_with_ignore_case, eq_ignore_case,
+        starts_with_ignore_case,
     };
 
     #[test]

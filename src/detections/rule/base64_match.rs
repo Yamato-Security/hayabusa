@@ -1,7 +1,7 @@
-use crate::detections::rule::fast_match::{convert_to_fast_match, FastMatch};
+use crate::detections::rule::fast_match::{FastMatch, convert_to_fast_match};
 use crate::detections::rule::matchers::PipeElement;
-use base64::engine::general_purpose;
 use base64::Engine;
+use base64::engine::general_purpose;
 use std::io::Write;
 use std::string::FromUtf8Error;
 

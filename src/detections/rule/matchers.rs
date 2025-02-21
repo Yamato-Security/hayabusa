@@ -1,5 +1,5 @@
-use cidr_utils::cidr::errors::NetworkParseError;
 use cidr_utils::cidr::IpCidr;
+use cidr_utils::cidr::errors::NetworkParseError;
 use nested::Nested;
 use regex::Regex;
 use std::net::IpAddr;
@@ -10,7 +10,7 @@ use yaml_rust2::Yaml;
 use crate::detections::configs::WINDASH_CHARACTERS;
 use crate::detections::rule::base64_match::convert_to_base64_str;
 use crate::detections::rule::fast_match::{
-    check_fast_match, convert_to_fast_match, create_fast_match, FastMatch,
+    FastMatch, check_fast_match, convert_to_fast_match, create_fast_match,
 };
 use crate::detections::{detection::EvtxRecordInfo, utils};
 use downcast_rs::Downcast;
@@ -625,7 +625,7 @@ impl PipeElement {
                     return Err(format!(
                         "gt value should be a number. key:{}",
                         utils::concat_selection_key(key_list)
-                    ))
+                    ));
                 }
             },
             "lt" => match pattern.parse::<usize>() {
@@ -634,7 +634,7 @@ impl PipeElement {
                     return Err(format!(
                         "lt value should be a number. key:{}",
                         utils::concat_selection_key(key_list)
-                    ))
+                    ));
                 }
             },
             "gte" => match pattern.parse::<usize>() {
@@ -643,7 +643,7 @@ impl PipeElement {
                     return Err(format!(
                         "gte value should be a number. key:{}",
                         utils::concat_selection_key(key_list)
-                    ))
+                    ));
                 }
             },
             "lte" => match pattern.parse::<usize>() {
@@ -652,7 +652,7 @@ impl PipeElement {
                     return Err(format!(
                         "lte value should be a number. key:{}",
                         utils::concat_selection_key(key_list)
-                    ))
+                    ));
                 }
             },
             "utf16" => Some(PipeElement::Utf16),
@@ -868,7 +868,7 @@ mod tests {
         AndSelectionNode, LeafSelectionNode, OrSelectionNode, SelectionNode,
     };
     use crate::detections::configs::{
-        Action, Config, CsvOutputOption, OutputOption, StoredStatic, STORED_EKEY_ALIAS,
+        Action, Config, CsvOutputOption, OutputOption, STORED_EKEY_ALIAS, StoredStatic,
     };
     use crate::detections::rule::matchers::FastMatch;
     use crate::detections::rule::tests::parse_rule_from_str;
@@ -2040,7 +2040,10 @@ mod tests {
     #[test]
     fn test_pipe_pattern_wildcard_asterisk() {
         let value = PipeElement::pipe_pattern_wildcard(r"*ho*ge*".to_string());
-        assert_eq!("(?i)(.|\\a|\\f|\\t|\\n|\\r|\\v)*ho(.|\\a|\\f|\\t|\\n|\\r|\\v)*ge(.|\\a|\\f|\\t|\\n|\\r|\\v)*", value);
+        assert_eq!(
+            "(?i)(.|\\a|\\f|\\t|\\n|\\r|\\v)*ho(.|\\a|\\f|\\t|\\n|\\r|\\v)*ge(.|\\a|\\f|\\t|\\n|\\r|\\v)*",
+            value
+        );
     }
 
     #[test]

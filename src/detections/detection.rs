@@ -21,7 +21,7 @@ use crate::detections::configs::STORED_EKEY_ALIAS;
 use crate::detections::field_data_map::FieldDataMapKey;
 use crate::detections::message::{AlertMessage, DetectInfo, ERROR_LOG_STACK, TAGS_CONFIG};
 use crate::detections::rule::correlation_parser::parse_correlation_rules;
-use crate::detections::rule::count::{get_sec_timeframe, AggRecordTimeInfo};
+use crate::detections::rule::count::{AggRecordTimeInfo, get_sec_timeframe};
 use crate::detections::rule::{self, AggResult, CorrelationType, RuleNode};
 use crate::detections::utils::{
     create_recordinfos, format_time, get_writable_color, write_color_buffer,
@@ -40,7 +40,7 @@ use crate::options::profile::Profile::{
 use crate::yaml::ParseYaml;
 
 use super::configs::{
-    EventKeyAliasConfig, StoredStatic, GEOIP_DB_PARSER, GEOIP_DB_YAML, GEOIP_FILTER, STORED_STATIC,
+    EventKeyAliasConfig, GEOIP_DB_PARSER, GEOIP_DB_YAML, GEOIP_FILTER, STORED_STATIC, StoredStatic,
 };
 use super::message::{self, COMPUTER_MITRE_ATTCK_MAP};
 
@@ -1506,18 +1506,18 @@ mod tests {
     use yaml_rust2::YamlLoader;
 
     use crate::detections;
-    use crate::detections::configs::load_eventkey_alias;
     use crate::detections::configs::Action;
+    use crate::detections::configs::CURRENT_EXE_PATH;
     use crate::detections::configs::Config;
     use crate::detections::configs::CsvOutputOption;
     use crate::detections::configs::OutputOption;
-    use crate::detections::configs::StoredStatic;
-    use crate::detections::configs::CURRENT_EXE_PATH;
     use crate::detections::configs::STORED_EKEY_ALIAS;
+    use crate::detections::configs::StoredStatic;
+    use crate::detections::configs::load_eventkey_alias;
     use crate::detections::detection::Detection;
-    use crate::detections::rule::create_rule;
     use crate::detections::rule::AggResult;
     use crate::detections::rule::RuleNode;
+    use crate::detections::rule::create_rule;
     use crate::detections::utils;
     use crate::filter;
     use crate::options::profile::Profile;

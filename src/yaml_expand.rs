@@ -2,8 +2,8 @@ use std::collections::HashMap;
 use std::io::BufRead;
 use std::path::Path;
 use std::{fs, io};
-use yaml_rust2::yaml::Hash;
 use yaml_rust2::Yaml;
+use yaml_rust2::yaml::Hash;
 
 fn process_value(
     value: &Yaml,

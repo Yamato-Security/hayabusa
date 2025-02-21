@@ -222,11 +222,7 @@ impl Update {
     ) -> Result<String, git2::Error> {
         let diff = updated_sets.iter().filter_map(|(k, v)| {
             if let Some(prev_val) = prev_sets.get(k) {
-                if prev_val != v {
-                    Some(v)
-                } else {
-                    None
-                }
+                if prev_val != v { Some(v) } else { None }
             } else {
                 Some(v)
             }
