@@ -3,8 +3,8 @@ name = "hayabusa"
 version = "3.1.0"
 repository = "https://github.com/Yamato-Security/hayabusa"
 authors = ["Yamato Security @SecurityYamato"]
-edition = "2021"
-rust-version = "1.84.1"
+edition = "2024"
+rust-version = "1.85.0"
 include = ["src/**/*", "LICENSE.txt", "README.md", "CHANGELOG.md"]
 
 [dependencies]

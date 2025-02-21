@@ -1,5 +1,11 @@
 # Changes
 
+## x.x.x [xxxx/xx/xx]
+
+**Enhancements:**
+
+- Updated Rust edition to 2024. (@YamatoSecurity)
+
 ## 3.1.0 [2025/02/22] - Ninja Day Release
 
 **New Features:**
