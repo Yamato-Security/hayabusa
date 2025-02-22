@@ -1,4 +1,4 @@
-use crate::detections::configs::{self, StoredStatic, ONE_CONFIG_MAP};
+use crate::detections::configs::{self, ONE_CONFIG_MAP, StoredStatic};
 use crate::detections::message::{AlertMessage, ERROR_LOG_STACK};
 use crate::detections::rule::RuleNode;
 use evtx::EvtxParser;

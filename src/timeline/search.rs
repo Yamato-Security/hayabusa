@@ -1,5 +1,5 @@
 use crate::afterfact::AfterfactInfo;
-use crate::detections::configs::{OutputOption, SearchOption, ALLFIELDINFO_SPECIAL_CHARS};
+use crate::detections::configs::{ALLFIELDINFO_SPECIAL_CHARS, OutputOption, SearchOption};
 use crate::detections::field_data_map::FieldDataMapKey;
 use crate::detections::message::{self, DetectInfo};
 use crate::detections::utils::{format_time, get_writable_color};

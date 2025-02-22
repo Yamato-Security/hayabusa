@@ -142,12 +142,12 @@ pub fn fmt_keywords_results(mut output: String, pivot_keyword: &PivotKeyword) ->
 
 #[cfg(test)]
 mod tests {
+    use crate::detections::configs::CURRENT_EXE_PATH;
     use crate::detections::configs::load_eventkey_alias;
     use crate::detections::configs::load_pivot_keywords;
-    use crate::detections::configs::CURRENT_EXE_PATH;
     use crate::detections::utils;
-    use crate::options::pivot::insert_pivot_keyword;
     use crate::options::pivot::PIVOT_KEYWORD;
+    use crate::options::pivot::insert_pivot_keyword;
     use serde_json;
 
     #[test]
@@ -179,13 +179,15 @@ mod tests {
             ),
         );
 
-        assert!(!PIVOT_KEYWORD
-            .write()
-            .unwrap()
-            .get_mut("Ip Addresses")
-            .unwrap()
-            .keywords
-            .contains("127.0.0.1"));
+        assert!(
+            !PIVOT_KEYWORD
+                .write()
+                .unwrap()
+                .get_mut("Ip Addresses")
+                .unwrap()
+                .keywords
+                .contains("127.0.0.1")
+        );
     }
 
     #[test]
@@ -217,13 +219,15 @@ mod tests {
             ),
         );
 
-        assert!(PIVOT_KEYWORD
-            .write()
-            .unwrap()
-            .get_mut("Ip Addresses")
-            .unwrap()
-            .keywords
-            .contains("10.0.0.1"));
+        assert!(
+            PIVOT_KEYWORD
+                .write()
+                .unwrap()
+                .get_mut("Ip Addresses")
+                .unwrap()
+                .keywords
+                .contains("10.0.0.1")
+        );
     }
 
     #[test]
@@ -255,13 +259,15 @@ mod tests {
             ),
         );
 
-        assert!(!PIVOT_KEYWORD
-            .write()
-            .unwrap()
-            .get_mut("Ip Addresses")
-            .unwrap()
-            .keywords
-            .contains("-"));
+        assert!(
+            !PIVOT_KEYWORD
+                .write()
+                .unwrap()
+                .get_mut("Ip Addresses")
+                .unwrap()
+                .keywords
+                .contains("-")
+        );
     }
 
     #[test]
@@ -293,13 +299,15 @@ mod tests {
             ),
         );
 
-        assert!(!PIVOT_KEYWORD
-            .write()
-            .unwrap()
-            .get_mut("Ip Addresses")
-            .unwrap()
-            .keywords
-            .contains("::1"));
+        assert!(
+            !PIVOT_KEYWORD
+                .write()
+                .unwrap()
+                .get_mut("Ip Addresses")
+                .unwrap()
+                .keywords
+                .contains("::1")
+        );
     }
 
     #[test]
@@ -331,13 +339,15 @@ mod tests {
             ),
         );
 
-        assert!(!PIVOT_KEYWORD
-            .write()
-            .unwrap()
-            .get_mut("Ip Addresses")
-            .unwrap()
-            .keywords
-            .contains("10.0.0.2"));
+        assert!(
+            !PIVOT_KEYWORD
+                .write()
+                .unwrap()
+                .get_mut("Ip Addresses")
+                .unwrap()
+                .keywords
+                .contains("10.0.0.2")
+        );
     }
 
     #[test]
@@ -369,13 +379,15 @@ mod tests {
             ),
         );
 
-        assert!(PIVOT_KEYWORD
-            .write()
-            .unwrap()
-            .get_mut("Ip Addresses")
-            .unwrap()
-            .keywords
-            .contains("10.0.0.1"));
+        assert!(
+            PIVOT_KEYWORD
+                .write()
+                .unwrap()
+                .get_mut("Ip Addresses")
+                .unwrap()
+                .keywords
+                .contains("10.0.0.1")
+        );
     }
 
     #[test]
@@ -407,12 +419,14 @@ mod tests {
             ),
         );
 
-        assert!(!PIVOT_KEYWORD
-            .write()
-            .unwrap()
-            .get_mut("Ip Addresses")
-            .unwrap()
-            .keywords
-            .contains("10.0.0.3"));
+        assert!(
+            !PIVOT_KEYWORD
+                .write()
+                .unwrap()
+                .get_mut("Ip Addresses")
+                .unwrap()
+                .keywords
+                .contains("10.0.0.3")
+        );
     }
 }

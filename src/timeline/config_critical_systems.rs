@@ -1,9 +1,9 @@
 use crate::detections::configs::CURRENT_EXE_PATH;
 use crate::detections::detection::EvtxRecordInfo;
 use crate::detections::utils::{check_setting_path, get_writable_color, write_color_buffer};
-use console::{style, Style};
-use dialoguer::theme::ColorfulTheme;
+use console::{Style, style};
 use dialoguer::Confirm;
+use dialoguer::theme::ColorfulTheme;
 use serde_json::Value;
 use std::collections::{HashMap, HashSet};
 use std::fs::OpenOptions;
@@ -250,11 +250,13 @@ mod tests {
             }
         });
         config.find_critical_computers(&data);
-        assert!(config
-            .computers
-            .get(&ComputerType::DomainController)
-            .unwrap()
-            .contains("DC1"));
+        assert!(
+            config
+                .computers
+                .get(&ComputerType::DomainController)
+                .unwrap()
+                .contains("DC1")
+        );
 
         let data = json!({
             "Event": {
@@ -284,10 +286,12 @@ mod tests {
             }
         });
         config.find_critical_computers(&data);
-        assert!(config
-            .computers
-            .get(&ComputerType::FileServer)
-            .unwrap()
-            .contains("FileServer2"));
+        assert!(
+            config
+                .computers
+                .get(&ComputerType::FileServer)
+                .unwrap()
+                .contains("FileServer2")
+        );
     }
 }

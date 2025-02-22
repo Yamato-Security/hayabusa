@@ -2,7 +2,7 @@ extern crate lazy_static;
 use super::configs::EventKeyAliasConfig;
 use super::utils::{get_writable_color, remove_sp_char};
 use crate::detections::configs::CURRENT_EXE_PATH;
-use crate::detections::field_data_map::{convert_field_data, FieldDataMap, FieldDataMapKey};
+use crate::detections::field_data_map::{FieldDataMap, FieldDataMapKey, convert_field_data};
 use crate::detections::rule::AggResult;
 use crate::detections::utils::{self, get_serde_number_to_string, write_color_buffer};
 use crate::level::LEVEL;
@@ -22,7 +22,7 @@ use regex::Regex;
 use rust_embed::Embed;
 use serde_json::Value;
 use std::env;
-use std::fs::{create_dir, File};
+use std::fs::{File, create_dir};
 use std::io::{self, BufWriter, Write};
 use std::path::Path;
 use std::sync::Mutex;
@@ -453,9 +453,9 @@ impl AlertMessage {
 
 #[cfg(test)]
 mod tests {
-    use crate::detections::configs::{load_eventkey_alias, StoredStatic, CURRENT_EXE_PATH};
+    use crate::detections::configs::{CURRENT_EXE_PATH, StoredStatic, load_eventkey_alias};
     use crate::detections::field_data_map::FieldDataMapKey;
-    use crate::detections::message::{parse_message, AlertMessage};
+    use crate::detections::message::{AlertMessage, parse_message};
     use crate::detections::utils;
 
     use compact_str::CompactString;

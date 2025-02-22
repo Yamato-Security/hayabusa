@@ -9,20 +9,20 @@ use chrono::{DateTime, Datelike, Local, NaiveDateTime, Utc};
 use clap::Command;
 use colored::Colorize;
 use compact_str::CompactString;
-use console::{style, Style};
+use console::{Style, style};
 use dialoguer::Confirm;
-use dialoguer::{theme::ColorfulTheme, Select};
+use dialoguer::{Select, theme::ColorfulTheme};
 use evtx::{EvtxParser, ParserSettings, RecordAllocation};
 use hashbrown::{HashMap, HashSet};
 use hayabusa::afterfact::{self, AfterfactInfo, AfterfactWriter};
 use hayabusa::debug::checkpoint_process_timer::CHECKPOINT;
 use hayabusa::detections::configs::{
-    load_pivot_keywords, Action, ConfigReader, EventKeyAliasConfig, StoredStatic, TargetEventTime,
-    TargetIds, CURRENT_EXE_PATH, ONE_CONFIG_MAP, STORED_EKEY_ALIAS, STORED_STATIC,
+    Action, CURRENT_EXE_PATH, ConfigReader, EventKeyAliasConfig, ONE_CONFIG_MAP, STORED_EKEY_ALIAS,
+    STORED_STATIC, StoredStatic, TargetEventTime, TargetIds, load_pivot_keywords,
 };
 use hayabusa::detections::detection::{self, EvtxRecordInfo};
 use hayabusa::detections::message::{AlertMessage, DetectInfo, ERROR_LOG_STACK};
-use hayabusa::detections::rule::{get_detection_keys, RuleNode};
+use hayabusa::detections::rule::{RuleNode, get_detection_keys};
 use hayabusa::detections::utils;
 use hayabusa::detections::utils::{
     check_setting_path, get_file_size, get_writable_color, output_and_data_stack_for_html,
@@ -31,8 +31,8 @@ use hayabusa::detections::utils::{
 use hayabusa::filter::create_channel_filter;
 use hayabusa::level::LEVEL;
 use hayabusa::options::htmlreport::{self, HTML_REPORTER};
-use hayabusa::options::pivot::create_output;
 use hayabusa::options::pivot::PIVOT_KEYWORD;
+use hayabusa::options::pivot::create_output;
 use hayabusa::options::profile::set_default_profile;
 use hayabusa::options::{expand_list::expand_list, level_tuning::LevelTuning, update::Update};
 use hayabusa::timeline::computer_metrics::countup_event_by_computer;
@@ -178,7 +178,9 @@ impl App {
         }
 
         if Path::new("encoded_rules.yml").exists() && Path::new("rules").exists() {
-            println!("You have the rules directory and encoded_rules.yml in your path. Please delete one of them.");
+            println!(
+                "You have the rules directory and encoded_rules.yml in your path. Please delete one of them."
+            );
             println!();
             return;
         }
@@ -494,9 +496,9 @@ Any hostnames added to the critical_systems.txt file will have all alerts above 
                             && utils::check_file_expect_not_exist(
                                 Path::new(output_file.as_str()),
                                 format!(
-                                " The files with a base name of {} already exist. Please specify a different base filename or add the -C, --clobber option to overwrite.\n",
-                                path.as_os_str().to_str().unwrap()
-                            ),
+                                    " The files with a base name of {} already exist. Please specify a different base filename or add the -C, --clobber option to overwrite.\n",
+                                    path.as_os_str().to_str().unwrap()
+                                ),
                             )
                         {
                             return;
@@ -884,7 +886,9 @@ Any hostnames added to the critical_systems.txt file will have all alerts above 
                 let is_existed_config_path = CURRENT_EXE_PATH.to_path_buf().join("config").exists()
                     || Path::new("config").exists();
                 if !is_existed_config_path {
-                    println!("Default profile cannot be set due to the absence of a config folder. Please check the config folder.");
+                    println!(
+                        "Default profile cannot be set due to the absence of a config folder. Please check the config folder."
+                    );
                     return;
                 }
                 if let Err(e) = set_default_profile(
@@ -1265,7 +1269,9 @@ Any hostnames added to the critical_systems.txt file will have all alerts above 
         if entries.is_err() {
             let mut errmsg = format!("{}", entries.unwrap_err());
             if errmsg.ends_with("123)") {
-                errmsg = format!("{errmsg}. You may not be able to load evtx files when there are spaces in the directory path. Please enclose the path with double quotes and remove any trailing slash at the end of the path.");
+                errmsg = format!(
+                    "{errmsg}. You may not be able to load evtx files when there are spaces in the directory path. Please enclose the path with double quotes and remove any trailing slash at the end of the path."
+                );
             }
             if stored_static.verbose_flag {
                 AlertMessage::alert(&errmsg).ok();
@@ -1472,11 +1478,26 @@ Any hostnames added to the critical_systems.txt file will have all alerts above 
                 ret
             };
             let selections_status = &[
-                ("1. Core ( status: test, stable | level: high, critical )", (vec!["test", "stable"], "high")),
-                ("2. Core+ ( status: test, stable | level: medium, high, critical )", (vec!["test", "stable"], "medium")),
-                ("3. Core++ ( status: experimental, test, stable | level: medium, high, critical )", (vec!["experimental", "test", "stable"], "medium")),
-                ("4. All alert rules ( status: * | level: low+ )", (vec!["*"], "low")),
-                ("5. All event and alert rules ( status: * | level: informational+ )", (vec!["*"], "informational")),
+                (
+                    "1. Core ( status: test, stable | level: high, critical )",
+                    (vec!["test", "stable"], "high"),
+                ),
+                (
+                    "2. Core+ ( status: test, stable | level: medium, high, critical )",
+                    (vec!["test", "stable"], "medium"),
+                ),
+                (
+                    "3. Core++ ( status: experimental, test, stable | level: medium, high, critical )",
+                    (vec!["experimental", "test", "stable"], "medium"),
+                ),
+                (
+                    "4. All alert rules ( status: * | level: low+ )",
+                    (vec!["*"], "low"),
+                ),
+                (
+                    "5. All event and alert rules ( status: * | level: informational+ )",
+                    (vec!["*"], "informational"),
+                ),
             ];
 
             let sections_rule_cnt = selections_status
@@ -1492,11 +1513,51 @@ Any hostnames added to the critical_systems.txt file will have all alerts above 
                 })
                 .collect_vec();
             let selection_status_items = &[
-                format!("1. Core ({} rules) ( status: test, stable | level: high, critical )", (sections_rule_cnt[0].iter().map(|(_, cnt)| cnt).sum::<i128>() - sections_rule_cnt[0].get("excluded").unwrap_or(&0)).to_formatted_string(&Locale::en)),
-                format!("2. Core+ ({} rules) ( status: test, stable | level: medium, high, critical )", (sections_rule_cnt[1].iter().map(|(_, cnt)| cnt).sum::<i128>() - sections_rule_cnt[1].get("excluded").unwrap_or(&0)).to_formatted_string(&Locale::en)),
-                format!("3. Core++ ({} rules) ( status: experimental, test, stable | level: medium, high, critical )", (sections_rule_cnt[2].iter().map(|(_, cnt)| cnt).sum::<i128>() - sections_rule_cnt[2].get("excluded").unwrap_or(&0)).to_formatted_string(&Locale::en)),
-                format!("4. All alert rules ({} rules) ( status: * | level: low+ )", (sections_rule_cnt[3].iter().map(|(_, cnt)| cnt).sum::<i128>() - sections_rule_cnt[3].get("excluded").unwrap_or(&0)).to_formatted_string(&Locale::en)),
-                format!("5. All event and alert rules ({} rules) ( status: * | level: informational+ )", (sections_rule_cnt[4].iter().map(|(_, cnt)| cnt).sum::<i128>() - sections_rule_cnt[4].get("excluded").unwrap_or(&0)).to_formatted_string(&Locale::en))
+                format!(
+                    "1. Core ({} rules) ( status: test, stable | level: high, critical )",
+                    (sections_rule_cnt[0]
+                        .iter()
+                        .map(|(_, cnt)| cnt)
+                        .sum::<i128>()
+                        - sections_rule_cnt[0].get("excluded").unwrap_or(&0))
+                    .to_formatted_string(&Locale::en)
+                ),
+                format!(
+                    "2. Core+ ({} rules) ( status: test, stable | level: medium, high, critical )",
+                    (sections_rule_cnt[1]
+                        .iter()
+                        .map(|(_, cnt)| cnt)
+                        .sum::<i128>()
+                        - sections_rule_cnt[1].get("excluded").unwrap_or(&0))
+                    .to_formatted_string(&Locale::en)
+                ),
+                format!(
+                    "3. Core++ ({} rules) ( status: experimental, test, stable | level: medium, high, critical )",
+                    (sections_rule_cnt[2]
+                        .iter()
+                        .map(|(_, cnt)| cnt)
+                        .sum::<i128>()
+                        - sections_rule_cnt[2].get("excluded").unwrap_or(&0))
+                    .to_formatted_string(&Locale::en)
+                ),
+                format!(
+                    "4. All alert rules ({} rules) ( status: * | level: low+ )",
+                    (sections_rule_cnt[3]
+                        .iter()
+                        .map(|(_, cnt)| cnt)
+                        .sum::<i128>()
+                        - sections_rule_cnt[3].get("excluded").unwrap_or(&0))
+                    .to_formatted_string(&Locale::en)
+                ),
+                format!(
+                    "5. All event and alert rules ({} rules) ( status: * | level: informational+ )",
+                    (sections_rule_cnt[4]
+                        .iter()
+                        .map(|(_, cnt)| cnt)
+                        .sum::<i128>()
+                        - sections_rule_cnt[4].get("excluded").unwrap_or(&0))
+                    .to_formatted_string(&Locale::en)
+                ),
             ];
 
             let color_theme = if stored_static.common_options.no_color {
@@ -1547,12 +1608,12 @@ Any hostnames added to the critical_systems.txt file will have all alerts above 
                 selections_status[selected_index].0
             ));
             stored_static.output_option.as_mut().unwrap().min_level =
-                selections_status[selected_index].1 .1.into();
+                selections_status[selected_index].1.1.into();
 
             let exclude_noisy_cnt = calcurate_wizard_rule_count(
                 true,
                 ["excluded", "noisy", "deprecated", "unsupported"].to_vec(),
-                selections_status[selected_index].1 .1,
+                selections_status[selected_index].1.1,
                 [].to_vec(),
                 [].to_vec(),
             );
@@ -1560,7 +1621,7 @@ Any hostnames added to the critical_systems.txt file will have all alerts above 
             stored_static.include_status.extend(
                 selections_status[selected_index]
                     .1
-                     .0
+                    .0
                     .iter()
                     .map(|x| x.to_owned().into()),
             );
@@ -1570,8 +1631,8 @@ Any hostnames added to the critical_systems.txt file will have all alerts above 
             let tags_cnt = calcurate_wizard_rule_count(
                 false,
                 [].to_vec(),
-                selections_status[selected_index].1 .1,
-                selections_status[selected_index].1 .0.clone(),
+                selections_status[selected_index].1.1,
+                selections_status[selected_index].1.0.clone(),
                 [
                     "detection.emerging_threats",
                     "detection.threat_hunting",
@@ -2889,7 +2950,7 @@ Any hostnames added to the critical_systems.txt file will have all alerts above 
 #[cfg(test)]
 mod tests {
     use std::{
-        fs::{self, remove_file, File},
+        fs::{self, File, remove_file},
         path::Path,
     };
 
@@ -2905,8 +2966,8 @@ mod tests {
             configs::{
                 Action, ComputerMetricsOption, Config, ConfigReader, CsvOutputOption,
                 DetectCommonOption, EidMetricsOption, InputOption, JSONOutputOption,
-                LogonSummaryOption, OutputOption, StoredStatic, TargetEventTime, TargetIds,
-                STORED_EKEY_ALIAS, STORED_STATIC,
+                LogonSummaryOption, OutputOption, STORED_EKEY_ALIAS, STORED_STATIC, StoredStatic,
+                TargetEventTime, TargetIds,
             },
             detection,
             rule::create_rule,

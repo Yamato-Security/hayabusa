@@ -53,11 +53,7 @@ impl SelectionNode for AndSelectionNode {
             .iter_mut()
             .map(|child_node| {
                 let res = child_node.init();
-                if let Err(err) = res {
-                    err
-                } else {
-                    vec![]
-                }
+                if let Err(err) = res { err } else { vec![] }
             })
             .fold(
                 vec![],
@@ -123,11 +119,7 @@ impl SelectionNode for AllSelectionNode {
             .iter_mut()
             .map(|child_node| {
                 let res = child_node.init();
-                if let Err(err) = res {
-                    err
-                } else {
-                    vec![]
-                }
+                if let Err(err) = res { err } else { vec![] }
             })
             .fold(
                 vec![],
@@ -193,11 +185,7 @@ impl SelectionNode for OrSelectionNode {
             .iter_mut()
             .map(|child_node| {
                 let res = child_node.init();
-                if let Err(err) = res {
-                    err
-                } else {
-                    vec![]
-                }
+                if let Err(err) = res { err } else { vec![] }
             })
             .fold(
                 vec![],
@@ -506,7 +494,7 @@ impl SelectionNode for LeafSelectionNode {
 mod tests {
     use crate::detections::{
         self,
-        configs::{Action, Config, CsvOutputOption, OutputOption, StoredStatic, STORED_EKEY_ALIAS},
+        configs::{Action, Config, CsvOutputOption, OutputOption, STORED_EKEY_ALIAS, StoredStatic},
         rule::tests::parse_rule_from_str,
         utils,
     };

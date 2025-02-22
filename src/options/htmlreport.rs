@@ -1,13 +1,13 @@
-use base64::engine::general_purpose;
 use base64::Engine;
+use base64::engine::general_purpose;
 use hashbrown::HashMap;
 use horrorshow::helper::doctype;
 use horrorshow::prelude::*;
 use lazy_static::lazy_static;
 use nested::Nested;
-use pulldown_cmark::{html, Options, Parser};
+use pulldown_cmark::{Options, Parser, html};
 use rust_embed::Embed;
-use std::fs::{create_dir, File};
+use std::fs::{File, create_dir};
 use std::io::{BufWriter, Write};
 use std::path::Path;
 use std::sync::RwLock;
@@ -188,7 +188,7 @@ mod tests {
 
     use nested::Nested;
 
-    use super::{img_to_base64, HTML_REPORTER};
+    use super::{HTML_REPORTER, img_to_base64};
     use crate::{
         detections::configs::{
             Action, Config, CsvOutputOption, JSONOutputOption, OutputOption, StoredStatic,

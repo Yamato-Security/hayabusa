@@ -1,7 +1,7 @@
 extern crate serde_derive;
 extern crate yaml_rust2;
 
-use crate::detections::configs::{self, StoredStatic, CURRENT_EXE_PATH};
+use crate::detections::configs::{self, CURRENT_EXE_PATH, StoredStatic};
 use crate::detections::message::AlertMessage;
 use crate::detections::message::ERROR_LOG_STACK;
 use crate::detections::utils;
@@ -128,7 +128,9 @@ impl ParseYaml {
                 err_contents
             );
             if err_contents.ends_with("123)") {
-                errmsg = format!("{errmsg}. You may not be able to load evtx files when there are spaces in the directory path. Please enclose the path with double quotes and remove any trailing slash at the end of the path.");
+                errmsg = format!(
+                    "{errmsg}. You may not be able to load evtx files when there are spaces in the directory path. Please enclose the path with double quotes and remove any trailing slash at the end of the path."
+                );
             }
             if stored_static.verbose_flag {
                 AlertMessage::alert(&errmsg)?;

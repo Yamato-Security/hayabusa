@@ -255,7 +255,7 @@ impl DetectionNode {
             let mut keys = self.name_to_selection.keys();
             if keys.len() >= 2 {
                 return Result::Err(vec![
-                    "There is no condition node under detection.".to_string()
+                    "There is no condition node under detection.".to_string(),
                 ]);
             }
 
@@ -343,7 +343,7 @@ impl DetectionNode {
         // selectionノードが無いのはエラー
         if self.name_to_selection.is_empty() {
             return Result::Err(vec![
-                "There is no selection node under detection.".to_string()
+                "There is no selection node under detection.".to_string(),
             ]);
         }
 
@@ -450,7 +450,7 @@ mod tests {
     use super::RuleNode;
     use crate::detections::{
         self,
-        configs::{Action, Config, CsvOutputOption, OutputOption, StoredStatic, STORED_EKEY_ALIAS},
+        configs::{Action, Config, CsvOutputOption, OutputOption, STORED_EKEY_ALIAS, StoredStatic},
         rule::create_rule,
         utils,
     };

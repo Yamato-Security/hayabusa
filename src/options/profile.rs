@@ -1,4 +1,4 @@
-use crate::detections::configs::{Action, StoredStatic, CURRENT_EXE_PATH, GEOIP_DB_PARSER};
+use crate::detections::configs::{Action, CURRENT_EXE_PATH, GEOIP_DB_PARSER, StoredStatic};
 use crate::detections::message::AlertMessage;
 use crate::detections::utils::check_setting_path;
 use crate::options::profile::Profile::{
@@ -345,10 +345,11 @@ pub fn set_default_profile(
                     "Invalid profile specified: {}\nPlease specify one of the following profiles:\n{}",
                     profile_name,
                     prof_all_data
-                    .as_hash()
-                    .unwrap()
-                    .keys()
-                    .map(|k| k.as_str().unwrap()).join(", ")
+                        .as_hash()
+                        .unwrap()
+                        .keys()
+                        .map(|k| k.as_str().unwrap())
+                        .join(", ")
                 ))
             }
         } else {
@@ -397,9 +398,9 @@ pub fn get_profile_list(profile_path: &str) -> Nested<Vec<String>> {
 mod tests {
 
     use crate::detections::configs::{
-        Action, Config, CsvOutputOption, OutputOption, StoredStatic, GEOIP_DB_PARSER,
+        Action, Config, CsvOutputOption, GEOIP_DB_PARSER, OutputOption, StoredStatic,
     };
-    use crate::options::profile::{get_profile_list, load_profile, Profile};
+    use crate::options::profile::{Profile, get_profile_list, load_profile};
     use compact_str::CompactString;
     use nested::Nested;
 

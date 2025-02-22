@@ -2,7 +2,7 @@ use cidr_utils::cidr::IpCidr;
 use compact_str::CompactString;
 use hashbrown::HashMap;
 use lazy_static::lazy_static;
-use maxminddb::{geoip2, MaxMindDBError, Reader};
+use maxminddb::{MaxMindDBError, Reader, geoip2};
 use std::path::{Path, PathBuf};
 use std::sync::Mutex;
 use std::{net::IpAddr, str::FromStr};
@@ -171,16 +171,18 @@ mod tests {
     #[test]
     fn test_no_specified_geo_ip_option() {
         // Test files from https://github.com/maxmind/MaxMind-DB/tree/a8ae5b4ac0aa730e2783f708cdaa208aca20e9ec/test-data
-        assert!(GeoIPSearch::check_exist_geo_ip_files(
-            &None,
-            vec![
-                "GeoLite2-ASN-Test.mmdb",
-                "GeoLite2-Country-Test.mmdb",
-                "GeoLite2-City-Test.mmdb",
-            ]
+        assert!(
+            GeoIPSearch::check_exist_geo_ip_files(
+                &None,
+                vec![
+                    "GeoLite2-ASN-Test.mmdb",
+                    "GeoLite2-Country-Test.mmdb",
+                    "GeoLite2-City-Test.mmdb",
+                ]
+            )
+            .unwrap()
+            .is_none()
         )
-        .unwrap()
-        .is_none())
     }
 
     #[test]

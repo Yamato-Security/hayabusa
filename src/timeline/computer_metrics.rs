@@ -2,7 +2,7 @@ use crate::detections::configs::EventKeyAliasConfig;
 use crate::detections::message::AlertMessage;
 use crate::detections::utils;
 use crate::timeline::timelines::Timeline;
-use comfy_table::{modifiers::UTF8_ROUND_CORNERS, presets::UTF8_FULL, Table};
+use comfy_table::{Table, modifiers::UTF8_ROUND_CORNERS, presets::UTF8_FULL};
 use compact_str::CompactString;
 use csv::{QuoteStyle, WriterBuilder};
 use downcast_rs::__std::process;
@@ -110,8 +110,8 @@ mod tests {
 
     use crate::{
         detections::configs::{
-            Action, CommonOptions, ComputerMetricsOption, Config, InputOption, StoredStatic,
-            STORED_EKEY_ALIAS, STORED_STATIC,
+            Action, CommonOptions, ComputerMetricsOption, Config, InputOption, STORED_EKEY_ALIAS,
+            STORED_STATIC, StoredStatic,
         },
         timeline::{
             computer_metrics::{computer_metrics_dsp_msg, countup_event_by_computer},

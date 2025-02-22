@@ -3,7 +3,7 @@ extern crate csv;
 extern crate regex;
 
 use std::cmp::Ordering;
-use std::fs::{read_to_string, File};
+use std::fs::{File, read_to_string};
 use std::io::prelude::*;
 use std::io::{BufRead, BufReader};
 use std::path::{Path, PathBuf};
@@ -21,13 +21,13 @@ use itertools::Itertools;
 use memchr::memmem;
 use nested::Nested;
 use regex::Regex;
-use serde_json::{json, Error, Map, Value};
+use serde_json::{Error, Map, Value, json};
 use termcolor::{BufferWriter, ColorSpec, WriteColor};
 use termcolor::{Color, ColorChoice};
 use tokio::runtime::{Builder, Runtime};
 
-use crate::detections::configs::{TimeFormatOptions, CURRENT_EXE_PATH, ONE_CONFIG_MAP};
-use crate::detections::field_data_map::{convert_field_data, FieldDataMap, FieldDataMapKey};
+use crate::detections::configs::{CURRENT_EXE_PATH, ONE_CONFIG_MAP, TimeFormatOptions};
+use crate::detections::field_data_map::{FieldDataMap, FieldDataMapKey, convert_field_data};
 use crate::detections::field_extract::extract_fields;
 use crate::options::htmlreport;
 
@@ -398,11 +398,7 @@ pub fn write_color_buffer(
 
 /// no-colorのオプションの指定があるかを確認し、指定されている場合はNoneをかえし、指定されていない場合は引数で指定されたColorをSomeでラップして返す関数
 pub fn get_writable_color(color: Option<Color>, no_color: bool) -> Option<Color> {
-    if no_color {
-        None
-    } else {
-        color
-    }
+    if no_color { None } else { color }
 }
 
 /**

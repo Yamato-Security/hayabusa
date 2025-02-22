@@ -420,7 +420,7 @@ impl ConditionCompiler {
 #[cfg(test)]
 mod tests {
     use crate::detections::configs::{
-        Action, Config, CsvOutputOption, OutputOption, StoredStatic, STORED_EKEY_ALIAS,
+        Action, Config, CsvOutputOption, OutputOption, STORED_EKEY_ALIAS, StoredStatic,
     };
     use crate::detections::rule::condition_parser::ConditionCompiler;
     use crate::detections::rule::create_rule;

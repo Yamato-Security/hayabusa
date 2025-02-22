@@ -2,8 +2,8 @@ use hashbrown::HashSet;
 use std::collections::HashMap;
 use std::fs;
 use std::path::{Path, PathBuf};
-use yaml_rust2::yaml::Hash;
 use yaml_rust2::YamlLoader;
+use yaml_rust2::yaml::Hash;
 
 fn list_yml_files<P: AsRef<Path>>(dir: P) -> Vec<String> {
     let mut yml_files = Vec::new();

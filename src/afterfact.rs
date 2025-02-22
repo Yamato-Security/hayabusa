@@ -1,4 +1,4 @@
-use std::cmp::{self, min, Ordering};
+use std::cmp::{self, Ordering, min};
 use std::error::Error;
 use std::fs::File;
 use std::io::{self, BufWriter, Write};
@@ -20,19 +20,19 @@ use nested::Nested;
 use num_format::{Locale, ToFormattedString};
 use strum::IntoEnumIterator;
 use termcolor::{Buffer, BufferWriter, Color, ColorChoice, ColorSpec, WriteColor};
-use terminal_size::terminal_size;
 use terminal_size::Width;
+use terminal_size::terminal_size;
 
 use crate::detections::configs::{
-    Action, StoredStatic, TimeFormatOptions, CONTROL_CHAT_REPLACE_MAP, CURRENT_EXE_PATH,
-    GEOIP_DB_PARSER,
+    Action, CONTROL_CHAT_REPLACE_MAP, CURRENT_EXE_PATH, GEOIP_DB_PARSER, StoredStatic,
+    TimeFormatOptions,
 };
-use crate::detections::message::{AlertMessage, DetectInfo, COMPUTER_MITRE_ATTCK_MAP};
+use crate::detections::message::{AlertMessage, COMPUTER_MITRE_ATTCK_MAP, DetectInfo};
 use crate::detections::utils::{
     self, check_setting_path, format_time, get_writable_color, output_and_data_stack_for_html,
     write_color_buffer,
 };
-use crate::level::{_get_output_color, create_output_color_map, LEVEL};
+use crate::level::{_get_output_color, LEVEL, create_output_color_map};
 use crate::options::htmlreport;
 use crate::options::profile::Profile;
 
@@ -2104,24 +2104,24 @@ mod tests {
     use hashbrown::HashMap;
     use serde_json::Value;
 
+    use crate::afterfact::AfterfactInfo;
     use crate::afterfact::format_time;
     use crate::afterfact::init_writer;
     use crate::afterfact::output_afterfact_inner;
-    use crate::afterfact::AfterfactInfo;
     use crate::detections::configs::Action;
+    use crate::detections::configs::CURRENT_EXE_PATH;
     use crate::detections::configs::Config;
     use crate::detections::configs::CsvOutputOption;
     use crate::detections::configs::JSONOutputOption;
     use crate::detections::configs::OutputOption;
     use crate::detections::configs::StoredStatic;
-    use crate::detections::configs::CURRENT_EXE_PATH;
-    use crate::detections::configs::{load_eventkey_alias, TimeFormatOptions};
+    use crate::detections::configs::{TimeFormatOptions, load_eventkey_alias};
     use crate::detections::field_data_map::FieldDataMapKey;
     use crate::detections::message;
     use crate::detections::message::DetectInfo;
     use crate::detections::utils;
     use crate::level::LEVEL;
-    use crate::options::profile::{load_profile, Profile};
+    use crate::options::profile::{Profile, load_profile};
 
     #[test]
     fn test_emit_csv_output() {
@@ -2338,13 +2338,15 @@ mod tests {
         additional_afterfact.tl_endtime = Some(expect_tz);
         let mut writer = init_writer(&stored_static);
 
-        assert!(output_afterfact_inner(
-            &mut detect_infos,
-            &mut writer,
-            &stored_static,
-            &mut additional_afterfact,
-        )
-        .is_ok());
+        assert!(
+            output_afterfact_inner(
+                &mut detect_infos,
+                &mut writer,
+                &stored_static,
+                &mut additional_afterfact,
+            )
+            .is_ok()
+        );
         match read_to_string("./test_emit_csv.csv") {
             Err(_) => panic!("Failed to open file."),
             Ok(s) => {
@@ -2568,13 +2570,15 @@ mod tests {
         additional_afterfact.tl_starttime = Some(expect_tz);
         additional_afterfact.tl_endtime = Some(expect_tz);
         let mut writer = init_writer(&stored_static);
-        assert!(output_afterfact_inner(
-            &mut detect_infos,
-            &mut writer,
-            &stored_static,
-            &mut additional_afterfact,
-        )
-        .is_ok());
+        assert!(
+            output_afterfact_inner(
+                &mut detect_infos,
+                &mut writer,
+                &stored_static,
+                &mut additional_afterfact,
+            )
+            .is_ok()
+        );
         match read_to_string("./test_emit_csv_multiline.csv") {
             Err(_) => panic!("Failed to open file."),
             Ok(s) => {
@@ -2797,13 +2801,15 @@ mod tests {
         additional_afterfact.tl_starttime = Some(expect_tz);
         additional_afterfact.tl_endtime = Some(expect_tz);
         let mut writer = init_writer(&stored_static);
-        assert!(output_afterfact_inner(
-            &mut detect_infos,
-            &mut writer,
-            &stored_static,
-            &mut additional_afterfact,
-        )
-        .is_ok());
+        assert!(
+            output_afterfact_inner(
+                &mut detect_infos,
+                &mut writer,
+                &stored_static,
+                &mut additional_afterfact,
+            )
+            .is_ok()
+        );
         match read_to_string("./test_emit_csv_remove_duplicate.csv") {
             Err(_) => panic!("Failed to open file."),
             Ok(s) => {
@@ -3100,13 +3106,15 @@ mod tests {
         additional_afterfact.tl_starttime = Some(expect_tz);
         additional_afterfact.tl_endtime = Some(expect_tz);
         let mut writer = init_writer(&stored_static);
-        assert!(output_afterfact_inner(
-            &mut detect_infos,
-            &mut writer,
-            &stored_static,
-            &mut additional_afterfact,
-        )
-        .is_ok());
+        assert!(
+            output_afterfact_inner(
+                &mut detect_infos,
+                &mut writer,
+                &stored_static,
+                &mut additional_afterfact,
+            )
+            .is_ok()
+        );
         match read_to_string("./test_emit_csv_remove_duplicate.json") {
             Err(_) => panic!("Failed to open file."),
             Ok(s) => {
@@ -3255,60 +3263,62 @@ mod tests {
         }
 
         let expect_target = [vec![
-                (
-                    "Timestamp",
-                    CompactString::from(
-                        "\"".to_string()
-                            + &expect_tz
-                                .with_timezone(&Local)
-                                .format("%Y-%m-%d %H:%M:%S%.3f %:z")
-                                .to_string()
-                            + "\"",
-                    ),
+            (
+                "Timestamp",
+                CompactString::from(
+                    "\"".to_string()
+                        + &expect_tz
+                            .with_timezone(&Local)
+                            .format("%Y-%m-%d %H:%M:%S%.3f %:z")
+                            .to_string()
+                        + "\"",
                 ),
-                (
-                    "Computer",
-                    CompactString::from("\"".to_string() + test_computername + "\""),
+            ),
+            (
+                "Computer",
+                CompactString::from("\"".to_string() + test_computername + "\""),
+            ),
+            (
+                "Channel",
+                CompactString::from("\"".to_string() + test_channel + "\""),
+            ),
+            (
+                "Level",
+                CompactString::from("\"".to_string() + test_level.to_abbrev() + "\""),
+            ),
+            ("EventID", CompactString::from(test_eventid)),
+            (
+                "MitreAttack",
+                CompactString::from("[\n        \"".to_string() + test_attack + "\"\n    ]"),
+            ),
+            ("RecordID", CompactString::from(test_record_id)),
+            (
+                "RuleTitle",
+                CompactString::from("\"".to_string() + test_title + "\""),
+            ),
+            (
+                "Details",
+                CompactString::from("\"".to_string() + output + "\""),
+            ),
+            (
+                "RecordInformation",
+                CompactString::from(
+                    "{\n        \"CommandRLine\": \"hoge\",\n        \"Data[1]\": \"xxx\",\n        \"Data[2]\": \"yyy\"\n    }",
                 ),
-                (
-                    "Channel",
-                    CompactString::from("\"".to_string() + test_channel + "\""),
-                ),
-                (
-                    "Level",
-                    CompactString::from("\"".to_string() + test_level.to_abbrev() + "\""),
-                ),
-                ("EventID", CompactString::from(test_eventid)),
-                (
-                    "MitreAttack",
-                    CompactString::from("[\n        \"".to_string() + test_attack + "\"\n    ]"),
-                ),
-                ("RecordID", CompactString::from(test_record_id)),
-                (
-                    "RuleTitle",
-                    CompactString::from("\"".to_string() + test_title + "\""),
-                ),
-                (
-                    "Details",
-                    CompactString::from("\"".to_string() + output + "\""),
-                ),
-                (
-                    "RecordInformation",
-                    CompactString::from("{\n        \"CommandRLine\": \"hoge\",\n        \"Data[1]\": \"xxx\",\n        \"Data[2]\": \"yyy\"\n    }"),
-                ),
-                (
-                    "RuleFile",
-                    CompactString::from("\"".to_string() + test_rulepath + "\""),
-                ),
-                (
-                    "EvtxFile",
-                    CompactString::from("\"".to_string() + test_filepath + "\""),
-                ),
-                (
-                    "Tags",
-                    CompactString::from("[\n        \"".to_string() + test_attack + "\"\n    ]"),
-                ),
-            ]];
+            ),
+            (
+                "RuleFile",
+                CompactString::from("\"".to_string() + test_rulepath + "\""),
+            ),
+            (
+                "EvtxFile",
+                CompactString::from("\"".to_string() + test_filepath + "\""),
+            ),
+            (
+                "Tags",
+                CompactString::from("[\n        \"".to_string() + test_attack + "\"\n    ]"),
+            ),
+        ]];
         let mut expect_str = String::default();
         for (target_idx, target) in expect_target.iter().enumerate() {
             let mut expect_json = "{\n".to_string();
@@ -3332,13 +3342,15 @@ mod tests {
         additional_afterfact.tl_starttime = Some(expect_tz);
         additional_afterfact.tl_endtime = Some(expect_tz);
         let mut writer = init_writer(&stored_static);
-        assert!(output_afterfact_inner(
-            &mut detect_infos,
-            &mut writer,
-            &stored_static,
-            &mut additional_afterfact,
-        )
-        .is_ok());
+        assert!(
+            output_afterfact_inner(
+                &mut detect_infos,
+                &mut writer,
+                &stored_static,
+                &mut additional_afterfact,
+            )
+            .is_ok()
+        );
         match read_to_string("./test_multiple_data_in_details.json") {
             Err(_) => panic!("Failed to open file."),
             Ok(s) => {
@@ -3506,13 +3518,15 @@ mod tests {
         additional_afterfact.tl_starttime = Some(expect_tz);
         additional_afterfact.tl_endtime = Some(expect_tz);
         let mut writer = init_writer(&stored_static);
-        assert!(output_afterfact_inner(
-            &mut detect_infos,
-            &mut writer,
-            &stored_static,
-            &mut additional_afterfact,
-        )
-        .is_ok());
+        assert!(
+            output_afterfact_inner(
+                &mut detect_infos,
+                &mut writer,
+                &stored_static,
+                &mut additional_afterfact,
+            )
+            .is_ok()
+        );
         match read_to_string("./test_emit_csv_json.json") {
             Err(_) => panic!("Failed to open file."),
             Ok(s) => {
@@ -3682,13 +3696,15 @@ mod tests {
         additional_afterfact.tl_starttime = Some(expect_tz);
         additional_afterfact.tl_endtime = Some(expect_tz);
         let mut writer = init_writer(&stored_static);
-        assert!(output_afterfact_inner(
-            &mut detect_infos,
-            &mut writer,
-            &stored_static,
-            &mut additional_afterfact,
-        )
-        .is_ok());
+        assert!(
+            output_afterfact_inner(
+                &mut detect_infos,
+                &mut writer,
+                &stored_static,
+                &mut additional_afterfact,
+            )
+            .is_ok()
+        );
         match read_to_string("./test_emit_csv_jsonl.jsonl") {
             Err(_) => panic!("Failed to open file."),
             Ok(s) => {

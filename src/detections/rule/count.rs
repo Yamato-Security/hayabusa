@@ -1,13 +1,13 @@
 use crate::detections::configs::EventKeyAliasConfig;
-use crate::detections::configs::StoredStatic;
 use crate::detections::configs::STORED_EKEY_ALIAS;
+use crate::detections::configs::StoredStatic;
 use crate::detections::detection::EvtxRecordInfo;
 use crate::detections::message;
 use crate::detections::message::AlertMessage;
 use crate::detections::message::ERROR_LOG_STACK;
-use crate::detections::rule::aggregation_parser::AggregationConditionToken;
 use crate::detections::rule::AggResult;
 use crate::detections::rule::RuleNode;
+use crate::detections::rule::aggregation_parser::AggregationConditionToken;
 use chrono::{DateTime, TimeZone, Utc};
 use hashbrown::HashMap;
 use serde_json::Value;
@@ -117,23 +117,25 @@ fn get_alias_value_in_record(
         None => {
             let errmsg = match is_by_alias {
                 true => format!(
-          "count by clause alias value not found in count process. rule file:{} EventID:{}",
-          Path::new(&rule.rulepath)
-            .file_name()
-            .unwrap()
-            .to_str()
-            .unwrap(),
-          utils::get_event_value(&utils::get_event_id_key(), record, eventkey_alias).unwrap()
-        ),
+                    "count by clause alias value not found in count process. rule file:{} EventID:{}",
+                    Path::new(&rule.rulepath)
+                        .file_name()
+                        .unwrap()
+                        .to_str()
+                        .unwrap(),
+                    utils::get_event_value(&utils::get_event_id_key(), record, eventkey_alias)
+                        .unwrap()
+                ),
                 false => format!(
-          "count field clause alias value not found in count process. rule file:{} EventID:{}",
-          Path::new(&rule.rulepath)
-            .file_name()
-            .unwrap()
-            .to_str()
-            .unwrap(),
-          utils::get_event_value(&utils::get_event_id_key(), record, eventkey_alias).unwrap()
-        ),
+                    "count field clause alias value not found in count process. rule file:{} EventID:{}",
+                    Path::new(&rule.rulepath)
+                        .file_name()
+                        .unwrap()
+                        .to_str()
+                        .unwrap(),
+                    utils::get_event_value(&utils::get_event_id_key(), record, eventkey_alias)
+                        .unwrap()
+                ),
             };
             if verbose_flag {
                 AlertMessage::alert(&errmsg).ok();
@@ -544,10 +546,10 @@ mod tests {
     use crate::detections::configs::Config;
     use crate::detections::configs::CsvOutputOption;
     use crate::detections::configs::OutputOption;
-    use crate::detections::configs::StoredStatic;
     use crate::detections::configs::STORED_EKEY_ALIAS;
-    use crate::detections::rule::create_rule;
+    use crate::detections::configs::StoredStatic;
     use crate::detections::rule::AggResult;
+    use crate::detections::rule::create_rule;
     use crate::detections::utils;
     use chrono::DateTime;
     use chrono::NaiveDate;
