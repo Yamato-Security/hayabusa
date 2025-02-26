@@ -4,7 +4,11 @@
 
 **Enhancements:**
 
-- Updated Rust edition to 2024. (@YamatoSecurity)
+- Updated Rust edition to 2024. (@fukusuket)
+
+**Bug Fixes:**
+
+- The number of `expand` rules was not being properly displayed on the terminal. (#1598) (@fukusuket)
 
 ## 3.1.0 [2025/02/22] - Ninja Day Release
 
