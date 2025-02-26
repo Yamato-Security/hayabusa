@@ -4,7 +4,11 @@
 
 **改善:**
 
-- Rustエディションを2024に更新した。(@YamatoSecurity)
+- Rustエディションを2024に更新した。(@fukusuket)
+
+**バグ修正:**
+
+- `expand`ルールの数がターミナルに正しく表示されていなかった。 (#1598) (@fukusuket)
 
 ## 3.1.0 [2025/02/22] - Ninja Day Release
 

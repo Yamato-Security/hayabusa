@@ -319,14 +319,20 @@ impl ParseYaml {
         }
         let exist_output_opt = stored_static.output_option.is_some();
         let files = yaml_docs.into_iter().filter_map(|(filepath, yaml_doc)| {
-            let yaml_doc = match &expand_map {
-                Ok(map) => process_yaml(
-                    &yaml_doc,
-                    map,
-                    &mut self.rule_expand_cnt,
-                    &mut self.rule_expand_enabled_cnt,
-                ),
-                Err(_) => yaml_doc,
+            let mut expand_found = false;
+            let mut expand_enabled_found = false;
+            let place_holder_map = expand_map.as_ref().unwrap();
+            let yaml_doc = process_yaml(
+                &yaml_doc,
+                place_holder_map,
+                &mut expand_found,
+                &mut expand_enabled_found,
+            );
+            if expand_found {
+                self.rule_expand_cnt += 1;
+                if expand_enabled_found {
+                    self.rule_expand_enabled_cnt += 1;
+                }
             };
             //除外されたルールは無視する
             let rule_id = &yaml_doc["id"].as_str();
