@@ -1527,6 +1527,7 @@ mod tests {
             action: Some(Action::CsvTimeline(CsvOutputOption {
                 output_options: OutputOption {
                     min_level: "informational".to_string(),
+                    include_status: Some(vec!["*".to_string()]),
                     no_wizard: true,
                     ..Default::default()
                 },
