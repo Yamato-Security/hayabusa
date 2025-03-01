@@ -332,6 +332,8 @@ impl ParseYaml {
                 self.rule_expand_cnt += 1;
                 if expand_enabled_found {
                     self.rule_expand_enabled_cnt += 1;
+                } else {
+                    return Option::None;
                 }
             };
             //除外されたルールは無視する
