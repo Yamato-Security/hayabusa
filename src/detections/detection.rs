@@ -1364,11 +1364,16 @@ impl Detection {
 
         let expand_total = parse_yaml.rule_expand_cnt;
         let expand_enabled_total = parse_yaml.rule_expand_enabled_cnt;
+        let rate = if total_loaded_rule_cnt != 0 {
+            (expand_total as f64) / (total_loaded_rule_cnt as f64) * 100.0
+        } else {
+            0.0
+        };
         let key = "Expand rules: ";
         let val = format!(
             "{} ({:.2}%)",
             expand_total.to_formatted_string(&Locale::en),
-            (expand_total as f64) / (total_loaded_rule_cnt as f64) * 100.0
+            rate
         );
         write_color_buffer(
             &BufferWriter::stdout(ColorChoice::Always),
@@ -1387,11 +1392,16 @@ impl Detection {
             true,
         )
         .ok();
+        let rate = if total_loaded_rule_cnt != 0 {
+            (expand_enabled_total as f64) / (total_loaded_rule_cnt as f64) * 100.0
+        } else {
+            0.0
+        };
         let key = "Enabled expand rules: ";
         let val = format!(
             "{} ({:.2}%)",
             expand_enabled_total.to_formatted_string(&Locale::en),
-            (expand_enabled_total as f64) / (total_loaded_rule_cnt as f64) * 100.0
+            rate
         );
         write_color_buffer(
             &BufferWriter::stdout(ColorChoice::Always),
@@ -1527,6 +1537,7 @@ mod tests {
             action: Some(Action::CsvTimeline(CsvOutputOption {
                 output_options: OutputOption {
                     min_level: "informational".to_string(),
+                    include_status: Some(vec!["*".to_string()]),
                     no_wizard: true,
                     ..Default::default()
                 },

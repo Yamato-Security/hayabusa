@@ -1,7 +1,7 @@
 extern crate serde_derive;
 extern crate yaml_rust2;
 
-use crate::detections::configs::{self, CURRENT_EXE_PATH, StoredStatic};
+use crate::detections::configs::{self, Action, CURRENT_EXE_PATH, StoredStatic};
 use crate::detections::message::AlertMessage;
 use crate::detections::message::ERROR_LOG_STACK;
 use crate::detections::utils;
@@ -423,6 +423,15 @@ impl ParseYaml {
                     up_rule_status_cnt(s);
                     return Option::None;
                 }
+            } else if !is_contained_include_status_all_allowed {
+                let need_rules = matches!(
+                    stored_static.config.action.as_ref().unwrap(),
+                    Action::CsvTimeline(_) | Action::JsonTimeline(_) | Action::PivotKeywordsList(_)
+                );
+                if need_rules {
+                    up_rule_load_cnt("excluded");
+                    return Option::None;
+                }
             }
 
             if exist_output_opt {
@@ -809,6 +818,7 @@ mod tests {
             action: Some(Action::CsvTimeline(CsvOutputOption {
                 output_options: OutputOption {
                     min_level: "informational".to_string(),
+                    include_status: Some(vec!["*".to_string()]),
                     detect_common_options: DetectCommonOption {
                         config: Path::new("./rules/config").to_path_buf(),
                         ..Default::default()
