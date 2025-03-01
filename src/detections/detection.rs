@@ -1364,57 +1364,63 @@ impl Detection {
 
         let expand_total = parse_yaml.rule_expand_cnt;
         let expand_enabled_total = parse_yaml.rule_expand_enabled_cnt;
-        if expand_total != 0 {
-            let key = "Expand rules: ";
-            let val = format!(
-                "{} ({:.2}%)",
-                expand_total.to_formatted_string(&Locale::en),
-                (expand_total as f64) / (total_loaded_rule_cnt as f64) * 100.0
-            );
-            write_color_buffer(
-                &BufferWriter::stdout(ColorChoice::Always),
-                get_writable_color(
-                    Some(Color::Rgb(0, 255, 0)),
-                    stored_static.common_options.no_color,
-                ),
-                key,
-                false,
-            )
-            .ok();
-            write_color_buffer(
-                &BufferWriter::stdout(ColorChoice::Always),
-                get_writable_color(None, stored_static.common_options.no_color),
-                val.as_str(),
-                true,
-            )
-            .ok();
-        }
-        if expand_enabled_total != 0 {
-            let key = "Enabled expand rules: ";
-            let val = format!(
-                "{} ({:.2}%)",
-                expand_enabled_total.to_formatted_string(&Locale::en),
-                (expand_enabled_total as f64) / (total_loaded_rule_cnt as f64) * 100.0
-            );
-            write_color_buffer(
-                &BufferWriter::stdout(ColorChoice::Always),
-                get_writable_color(
-                    Some(Color::Rgb(0, 255, 0)),
-                    stored_static.common_options.no_color,
-                ),
-                key,
-                false,
-            )
-            .ok();
-            write_color_buffer(
-                &BufferWriter::stdout(ColorChoice::Always),
-                None,
-                val.as_str(),
-                true,
-            )
-            .ok();
-            println!();
-        }
+        let rate = if total_loaded_rule_cnt != 0 {
+            (expand_total as f64) / (total_loaded_rule_cnt as f64) * 100.0
+        } else {
+            0.0
+        };
+        let key = "Expand rules: ";
+        let val = format!(
+            "{} ({:.2}%)",
+            expand_total.to_formatted_string(&Locale::en),
+            rate
+        );
+        write_color_buffer(
+            &BufferWriter::stdout(ColorChoice::Always),
+            get_writable_color(
+                Some(Color::Rgb(0, 255, 0)),
+                stored_static.common_options.no_color,
+            ),
+            key,
+            false,
+        )
+        .ok();
+        write_color_buffer(
+            &BufferWriter::stdout(ColorChoice::Always),
+            get_writable_color(None, stored_static.common_options.no_color),
+            val.as_str(),
+            true,
+        )
+        .ok();
+        let rate = if total_loaded_rule_cnt != 0 {
+            (expand_enabled_total as f64) / (total_loaded_rule_cnt as f64) * 100.0
+        } else {
+            0.0
+        };
+        let key = "Enabled expand rules: ";
+        let val = format!(
+            "{} ({:.2}%)",
+            expand_enabled_total.to_formatted_string(&Locale::en),
+            rate
+        );
+        write_color_buffer(
+            &BufferWriter::stdout(ColorChoice::Always),
+            get_writable_color(
+                Some(Color::Rgb(0, 255, 0)),
+                stored_static.common_options.no_color,
+            ),
+            key,
+            false,
+        )
+        .ok();
+        write_color_buffer(
+            &BufferWriter::stdout(ColorChoice::Always),
+            None,
+            val.as_str(),
+            true,
+        )
+        .ok();
+        println!();
 
         let mut sorted_rc: Vec<(&CompactString, &u128)> = rc.iter().collect();
         sorted_rc.sort_by(|a, b| a.0.cmp(b.0));
