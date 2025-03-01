@@ -200,3 +200,51 @@ jobs:
 
       - name: set-default-profile
         run: cd main && ./hayabusa set-default-profile -p verbose -q
+
+  integration-test-live-response-results:
+    runs-on: ${{ matrix.os }}
+
+    strategy:
+      matrix:
+        os: ['ubuntu-24.04', 'macos-15']
+
+    steps:
+      - name: Checkout main
+        uses: actions/checkout@v4
+        with:
+          submodules: recursive
+          path: main
+
+      - name: Checkout hayabusa-sample-evtx repo
+        uses: actions/checkout@v4
+        with:
+          repository: Yamato-Security/hayabusa-sample-evtx
+          path: hayabusa-sample-evtx
+
+      - name: Set up Rust toolchain
+        if: ${{ steps.skip_check.outputs.should_skip != 'true' }}
+        uses: dtolnay/rust-toolchain@stable
+
+      - name: build
+        run: cd main && cargo build --release && cp target/release/hayabusa .
+
+      - name: csv-timeline(standard package)
+        run: cd main && ./hayabusa update-rules &&./hayabusa csv-timeline -d ../hayabusa-sample-evtx -o result.csv -p super-verbose -q -w -D -n -u
+
+      - name: csv-timeline(live-response package)
+        run: |
+          cd main
+          rm -rf ./config && rm -rf ./rules/
+          curl -O https://raw.githubusercontent.com/Yamato-Security/hayabusa-encoded-rules/refs/heads/main/encoded_rules.yml
+          curl -O https://raw.githubusercontent.com/Yamato-Security/hayabusa-encoded-rules/refs/heads/main/rules_config_files.txt
+          ./hayabusa update-rules
+          ./hayabusa csv-timeline -d ../hayabusa-sample-evtx -o result-live-response.csv -p super-verbose -q -w -D -n -u
+
+      - name: check csv-timeline results
+        run: |
+          standard_lines=$(cat main/result.csv | wc -l)
+          live_response_lines=$(cat main/result-live-response.csv | wc -l)
+          if [ "$standard_lines" -ne "$live_response_lines" ]; then
+            echo "Line counts differ: standard ($standard_lines) vs live-response ($live_response_lines)"
+            exit 1
+          fi
