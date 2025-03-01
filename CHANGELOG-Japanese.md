@@ -10,6 +10,7 @@
 
 - `expand`ルールの数がターミナルに正しく表示されていなかった。 (#1598) (@fukusuket)
 - `status`フィールドが定義されていないルールは、スキャンウィザードで `status: test, stable` などを指定しても読み込まれた。(#1602) (@fukusuket)
+- `expand`ルールの数が正しくカウントされていなかった。 (#1606) (@fukusuket)
 
 ## 3.1.0 [2025/02/22] - Ninja Day Release
 
