@@ -152,15 +152,23 @@ impl Base64Data {
     }
 
     fn is_double_encoding(&self) -> String {
-        match self {
-            Base64Data::Utf8(_, s) | Base64Data::Utf16Le(_, s) | Base64Data::Utf16Be(_, s) => {
-                match is_base64(s) {
-                    true => "Y".to_string(),
-                    false => "N".to_string(),
+        for token in tokenize(self.decoded_str().as_str()) {
+            if is_base64(token) {
+                if token.len() < 10 || token.chars().all(|c| c.is_alphabetic()) {
+                    continue;
                 }
+                let payload = match BASE64_STANDARD_NO_PAD.decode(token) {
+                    Ok(payload) => payload,
+                    Err(_) => BASE64_STANDARD.decode(token).unwrap(),
+                };
+                let b64 = Base64Data::new(token, &payload);
+                if matches!(b64, Base64Data::Unknown(_)) {
+                    continue;
+                }
+                return "Y".to_string();
             }
-            _ => "N".to_string(),
         }
+        "N".to_string()
     }
 }
 
