@@ -428,6 +428,7 @@ impl AlertMessage {
             true,
         )
         .ok();
+        write_color_buffer(&BufferWriter::stdout(ColorChoice::Always), None, "", false).ok();
     }
 
     /// ERRORメッセージを表示する関数
