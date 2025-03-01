@@ -229,7 +229,7 @@ jobs:
         run: cd main && cargo build --release && cp target/release/hayabusa .
 
       - name: csv-timeline(standard package)
-        run: cd main && ./hayabusa csv-timeline -d ../hayabusa-sample-evtx -o result.csv -p super-verbose -q -w -D -n -u
+        run: cd main && ./hayabusa update-rules &&./hayabusa csv-timeline -d ../hayabusa-sample-evtx -o result.csv -p super-verbose -q -w -D -n -u
 
       - name: csv-timeline(live-response package)
         run: |
@@ -237,6 +237,7 @@ jobs:
           rm -rf ./config && rm -rf ./rules/
           curl -O https://raw.githubusercontent.com/Yamato-Security/hayabusa-encoded-rules/refs/heads/main/encoded_rules.yml
           curl -O https://raw.githubusercontent.com/Yamato-Security/hayabusa-encoded-rules/refs/heads/main/rules_config_files.txt
+          ./hayabusa update-rules
           ./hayabusa csv-timeline -d ../hayabusa-sample-evtx -o result-live-response.csv -p super-verbose -q -w -D -n -u
 
       - name: check csv-timeline results
