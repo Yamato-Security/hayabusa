@@ -2020,6 +2020,12 @@ Any hostnames added to the critical_systems.txt file will have all alerts above 
             || matches!(
                 stored_static.config.action.as_ref().unwrap(),
                 Action::ConfigCriticalSystems(_)
+                    | Action::PivotKeywordsList(_)
+                    | Action::ExtractBase64(_)
+                    | Action::LogonSummary(_)
+                    | Action::ComputerMetrics(_)
+                    | Action::LogMetrics(_)
+                    | Action::EidMetrics(_)
             );
         if is_show_progress {
             pb.enable_steady_tick(Duration::from_millis(300));
