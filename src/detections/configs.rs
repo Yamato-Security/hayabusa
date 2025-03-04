@@ -2482,6 +2482,7 @@ fn extract_output_options(config: &Config) -> Option<OutputOption> {
             start_timeline: option.start_timeline.clone(),
             eid_filter: option.eid_filter,
             time_format_options: TimeFormatOptions::default(),
+            rules: Path::new("./rules").to_path_buf(),
             common_options: option.common_options,
             detect_common_options: option.detect_common_options.clone(),
             enable_unsupported_rules: option.enable_unsupported_rules,
