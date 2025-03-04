@@ -1,6 +1,6 @@
 # Changes
 
-## x.x.x [xxxx/xx/xx]
+## 3.1.1 [2025/03/12] - Chilli Crab Release
 
 **Enhancements:**
 
@@ -10,10 +10,11 @@
 
 - The number of `expand` rules was not being properly displayed on the terminal. (#1598) (@fukusuket)
 - Rules without the `status` field defined would be loaded even if you specified `status: test, stable`, etc... in the Scan Wizard. (#1602) (@fukusuket)
-- The number of `expand` rules were not being counted properly. (#1606) (@fukusuket)
+- `expand` rules were being loaded without configuration. (#1606) (@fukusuket)
 - Detecting double Base64 encoding was not working properly with the `extract-base64` command. (#1607) (@fukusuket)
 - The terminal text would sometimes turn red after an error message. (#1610) (@fukusuket)
 - The progress bar would not display when `-d` option was used but `-o` was not used for some commands. (#1617) (@fukusuket)
+- The `pivot-keywords-list` command was broken. (#1619) (@fukusuket)
 
 ## 3.1.0 [2025/02/22] - Ninja Day Release
 
