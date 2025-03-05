@@ -790,6 +790,14 @@ impl Detection {
                 _ => {}
             }
         }
+        let field_data_map_key = if stored_static.field_data_map.is_none() {
+            FieldDataMapKey::default()
+        } else {
+            FieldDataMapKey {
+                channel: ch_str.clone().to_lowercase(),
+                event_id: eid.clone(),
+            }
+        };
         //ルール側にdetailsの項目があればそれをそのまま出力し、そうでない場合はproviderとeventidの組で設定したdetailsの項目を出力する
         let details_fmt_str = match rule.yaml["details"].as_str() {
             Some(s) => s.to_string(),
@@ -798,17 +806,13 @@ impl Detection {
                 .get(&CompactString::from(format!("{provider}_{eid}")))
             {
                 Some(str) => str.to_string(),
-                None => create_recordinfos(&record_info.record, &FieldDataMapKey::default(), &None)
-                    .join(" ¦ "),
+                None => create_recordinfos(
+                    &record_info.record,
+                    &field_data_map_key,
+                    &stored_static.field_data_map,
+                )
+                .join(" ¦ "),
             },
-        };
-        let field_data_map_key: FieldDataMapKey = if stored_static.field_data_map.is_none() {
-            FieldDataMapKey::default()
-        } else {
-            FieldDataMapKey {
-                channel: ch_str.clone().to_lowercase(),
-                event_id: eid.clone(),
-            }
         };
         let detect_info = DetectInfo {
             detected_time: time,
