@@ -16,6 +16,7 @@
 - いくつかのコマンドで`-d`オプションが使用され、`-o`オプションが使用されなかった場合、プログレスバーが表示されなかった。 (#1617) (@fukusuket)
 - `pivot-keywords-list`コマンドが壊れていた。(#1619) (@fukusuket)
 - `details`が未定義の場合、フィールドデータマッピングが正常に機能しなかった。 (#1614) (@fukusuket)
+- `details`フィールドが設定されていない場合、`Details`列と`ExtraFieldInfo`列の両方に重複したデータが出力されていた。現在は`Details`列だけに出力される。 (#1623) (@fukusuket)
 
 ## 3.1.0 [2025/02/22] - Ninja Day Release
 
