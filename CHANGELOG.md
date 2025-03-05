@@ -16,6 +16,7 @@
 - The progress bar would not display when `-d` option was used but `-o` was not used for some commands. (#1617) (@fukusuket)
 - The `pivot-keywords-list` command was broken. (#1619) (@fukusuket)
 - Field data mapping was not working when `details` was not defined. (#1614) (@fukusuket)
+- When the `details` field was not set, duplicate data was outputted to both the `Details` column and `ExtraFieldInfo` column. Now it is just outputted to the `Details` column. (#1623) (@fukusuket)
 
 ## 3.1.0 [2025/02/22] - Ninja Day Release
 
