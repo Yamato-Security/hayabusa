@@ -5,6 +5,7 @@
 **改善:**
 
 - Rustエディションを2024に更新した。(@fukusuket)
+- `computer-metrics`コマンドにOS情報を追加した。 (#1629) (@fukusuket)
 
 **バグ修正:**
 
