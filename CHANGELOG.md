@@ -5,6 +5,7 @@
 **Enhancements:**
 
 - Updated Rust edition to 2024. (@fukusuket)
+- Added OS information to the `computer-metrics` command. (#1629) (@fukusuket)
 
 **Bug Fixes:**
 
