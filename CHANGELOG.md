@@ -1,6 +1,6 @@
 # Changes
 
-## 3.1.1 [2025/03/12] - Chilli Crab Release
+## 3.1.1 [2025/03/12] - Laksa Release
 
 **Enhancements:**
 
