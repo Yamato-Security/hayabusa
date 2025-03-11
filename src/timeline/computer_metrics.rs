@@ -60,8 +60,16 @@ pub fn countup_event_by_computer(
                                 let ver = ver.replace(".01", ".1").replace(".00", ".0");
                                 let bui = arr[1].as_str().unwrap_or_default().to_string();
                                 let rev = arr[4].as_str().unwrap_or_default().to_string();
-                                if let Some((win, data)) = WIN_VERSIONS.get(&(ver, bui, rev)) {
+                                if let Some((win, data)) =
+                                    WIN_VERSIONS.get(&(ver.clone(), bui.clone(), rev.clone()))
+                                {
                                     *os_name = format!("Windows {}({})", win, data).into();
+                                } else {
+                                    *os_name = format!(
+                                        "Version: {} Build: {} Revision: {}",
+                                        ver, bui, rev
+                                    )
+                                    .into();
                                 }
                             }
                         }
