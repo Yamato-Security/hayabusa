@@ -527,7 +527,11 @@ impl Timeline {
                 write_color_buffer(
                     &BufferWriter::stdout(ColorChoice::Always),
                     None,
-                    &self.stats.stats_computer.len().to_formatted_string(&Locale::en),
+                    &self
+                        .stats
+                        .stats_computer
+                        .len()
+                        .to_formatted_string(&Locale::en),
                     true,
                 )
                 .ok();
