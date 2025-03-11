@@ -18,17 +18,16 @@ use std::io::BufWriter;
 use std::path::{Path, PathBuf};
 
 lazy_static! {
-    static ref WIN_VERSIONS: HashMap<(String, String, String), (String, String)> = {
+    static ref WIN_VERSIONS: HashMap<(String, String), (String, String)> = {
         let mut map = HashMap::new();
         if let Ok(file) = File::open(Path::new("rules/config/windows_versions.csv")) {
             let mut rdr = csv::Reader::from_reader(file);
             for rec in rdr.records().flatten() {
                 let ver = rec.get(0).unwrap_or_default().to_string();
                 let build = rec.get(1).unwrap_or_default().to_string();
-                let rev = rec.get(2).unwrap_or_default().to_string();
-                let win = rec.get(3).unwrap_or_default().to_string();
-                let date = rec.get(4).unwrap_or_default().to_string();
-                map.insert((ver, build, rev), (win, date));
+                let win = rec.get(2).unwrap_or_default().to_string();
+                let date = rec.get(3).unwrap_or_default().to_string();
+                map.insert((ver, build), (win, date));
             }
             return map;
         }
@@ -59,17 +58,12 @@ pub fn countup_event_by_computer(
                                 let ver = arr[0].as_str().unwrap_or_default().trim_matches('.');
                                 let ver = ver.replace(".01", ".1").replace(".00", ".0");
                                 let bui = arr[1].as_str().unwrap_or_default().to_string();
-                                let rev = arr[4].as_str().unwrap_or_default().to_string();
                                 if let Some((win, data)) =
-                                    WIN_VERSIONS.get(&(ver.clone(), bui.clone(), rev.clone()))
+                                    WIN_VERSIONS.get(&(ver.clone(), bui.clone()))
                                 {
                                     *os_name = format!("Windows {}({})", win, data).into();
                                 } else {
-                                    *os_name = format!(
-                                        "Version: {} Build: {} Revision: {}",
-                                        ver, bui, rev
-                                    )
-                                    .into();
+                                    *os_name = format!("Version: {} Build: {}", ver, bui).into();
                                 }
                             }
                         }
