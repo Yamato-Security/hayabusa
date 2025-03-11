@@ -30,7 +30,7 @@ use super::search::EventSearch;
 use crate::timeline::config_critical_systems::ConfigCriticalSystems;
 use crate::timeline::extract_base64::{output_all, process_evtx_record_infos};
 use crate::timeline::log_metrics::LogMetrics;
-use hashbrown::{HashMap, HashSet};
+use hashbrown::HashSet;
 use itertools::Itertools;
 
 #[derive(Debug, Clone)]
@@ -50,21 +50,8 @@ impl Default for Timeline {
 
 impl Timeline {
     pub fn new() -> Timeline {
-        let totalcnt = 0;
-        let filepath = CompactString::default();
-        let statslst = HashMap::new();
-        let statsloginlst = HashMap::new();
-        let search_result = HashSet::new();
-
-        let statistic = EventMetrics::new(
-            totalcnt,
-            filepath.clone(),
-            None,
-            None,
-            statslst,
-            statsloginlst,
-        );
-        let search = EventSearch::new(filepath, search_result);
+        let statistic = EventMetrics::default();
+        let search = EventSearch::new(CompactString::default(), HashSet::new());
         let config_critical_systems = ConfigCriticalSystems::new();
         Timeline {
             total_record_cnt: 0,
@@ -513,7 +500,7 @@ impl Timeline {
         if let Action::ComputerMetrics(computer_metrics_option) =
             &stored_static.config.action.as_ref().unwrap()
         {
-            if self.stats.stats_list.is_empty() {
+            if self.stats.stats_computer.is_empty() {
                 write_color_buffer(
                     &BufferWriter::stdout(ColorChoice::Always),
                     Some(Color::Rgb(238, 102, 97)),
@@ -523,9 +510,8 @@ impl Timeline {
                 .ok();
             } else {
                 println!();
-                println!();
                 computer_metrics::computer_metrics_dsp_msg(
-                    &self.stats.stats_list,
+                    &self.stats.stats_computer,
                     &computer_metrics_option.output,
                 );
                 write_color_buffer(

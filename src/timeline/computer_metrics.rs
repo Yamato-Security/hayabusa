@@ -8,13 +8,33 @@ use csv::{QuoteStyle, WriterBuilder};
 use downcast_rs::__std::process;
 use hashbrown::HashMap;
 use itertools::Itertools;
+use lazy_static::lazy_static;
 use num::FromPrimitive;
 use num_format::{Locale, ToFormattedString};
 use serde_json::Value;
 use std::cmp::Ordering;
 use std::fs::File;
 use std::io::BufWriter;
-use std::path::PathBuf;
+use std::path::{Path, PathBuf};
+
+lazy_static! {
+    static ref WIN_VERSIONS: HashMap<(String, String, String), (String, String)> = {
+        let mut map = HashMap::new();
+        if let Ok(file) = File::open(Path::new("rules/config/windows_versions.csv")) {
+            let mut rdr = csv::Reader::from_reader(file);
+            for rec in rdr.records().flatten() {
+                let ver = rec.get(0).unwrap_or_default().to_string();
+                let build = rec.get(1).unwrap_or_default().to_string();
+                let rev = rec.get(2).unwrap_or_default().to_string();
+                let win = rec.get(3).unwrap_or_default().to_string();
+                let date = rec.get(4).unwrap_or_default().to_string();
+                map.insert((ver, build, rev), (win, date));
+            }
+            return map;
+        }
+        HashMap::new()
+    };
+}
 
 pub fn countup_event_by_computer(
     record: &Value,
@@ -24,21 +44,39 @@ pub fn countup_event_by_computer(
     if let Some(computer_name) =
         utils::get_event_value("Event.System.Computer", record, eventkey_alias)
     {
-        let count = tl
+        let val = tl
             .stats
-            .stats_list
-            .entry((
-                computer_name.to_string().replace('\"', "").into(),
-                CompactString::default(),
-            ))
-            .or_insert(0);
+            .stats_computer
+            .entry(computer_name.to_string().replace('\"', "").into())
+            .or_insert((CompactString::default(), 0));
+        let os_name = &mut val.0;
+        if os_name.is_empty() && !WIN_VERSIONS.is_empty() {
+            if let Some(ch) = record["Event"]["System"]["Channel"].as_str() {
+                if ch == "System" {
+                    if let Some(id) = record["Event"]["System"]["EventID"].as_i64() {
+                        if id == 6009 {
+                            if let Some(arr) = record["Event"]["EventData"]["Data"].as_array() {
+                                let ver = arr[0].as_str().unwrap_or_default().trim_matches('.');
+                                let ver = ver.replace(".01", ".1").replace(".00", ".0");
+                                let bui = arr[1].as_str().unwrap_or_default().to_string();
+                                let rev = arr[4].as_str().unwrap_or_default().to_string();
+                                if let Some((win, data)) = WIN_VERSIONS.get(&(ver, bui, rev)) {
+                                    *os_name = format!("Windows {}({})", win, data).into();
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
+        let count = &mut val.1;
         *count += 1;
     }
 }
 
 /// レコード内のコンピュータ名を降順で画面出力もしくはcsvに出力する関数
 pub fn computer_metrics_dsp_msg(
-    result_list: &HashMap<(CompactString, CompactString), usize>,
+    result_list: &HashMap<CompactString, (CompactString, usize)>,
     output: &Option<PathBuf>,
 ) {
     let mut file_wtr = None;
@@ -60,7 +98,7 @@ pub fn computer_metrics_dsp_msg(
     };
 
     // Write header
-    let header = vec!["Computer", "Events"];
+    let header = vec!["Computer", "OS information", "Events"];
     let mut stats_tb = Table::new();
     stats_tb
         .load_preset(UTF8_FULL)
@@ -72,10 +110,10 @@ pub fn computer_metrics_dsp_msg(
     }
 
     // Write contents
-    for ((computer_name, _), count) in result_list.into_iter().sorted_unstable_by(|a, b| {
+    for (computer_name, (os_info, count)) in result_list.into_iter().sorted_unstable_by(|a, b| {
         let count_cmp = Ord::cmp(
-            &-i64::from_usize(*a.1).unwrap_or_default(),
-            &-i64::from_usize(*b.1).unwrap_or_default(),
+            &-i64::from_usize(a.1.1).unwrap_or_default(),
+            &-i64::from_usize(b.1.1).unwrap_or_default(),
         );
         if count_cmp != Ordering::Equal {
             return count_cmp;
@@ -88,7 +126,7 @@ pub fn computer_metrics_dsp_msg(
         } else {
             count.to_formatted_string(&Locale::en)
         };
-        let record_data = vec![computer_name.as_str(), &count_str];
+        let record_data = vec![computer_name.as_str(), os_info, &count_str];
         if output.is_some() {
             file_wtr.as_mut().unwrap().write_record(&record_data).ok();
         } else {
@@ -203,11 +241,14 @@ mod tests {
             &mut timeline,
         );
 
-        computer_metrics_dsp_msg(&timeline.stats.stats_list, &output);
+        computer_metrics_dsp_msg(&timeline.stats.stats_computer, &output);
 
-        let header = ["\"Computer\"", "\"Events\""];
+        let header = ["\"Computer\"", "\"OS information\"", "\"Events\""];
 
-        let expect = [vec!["\"FALCON\"", "1"], vec!["\"HAYABUSA-DESKTOP\"", "1"]];
+        let expect = [
+            vec!["\"FALCON\"", "\"\"", "1"],
+            vec!["\"HAYABUSA-DESKTOP\"", "\"\"", "1"],
+        ];
         let expect_str =
             header.join(",") + "\n" + &expect.join(&"\n").join(",").replace(",\n,", "\n") + "\n";
         match read_to_string("./test_computer_metrics.csv") {

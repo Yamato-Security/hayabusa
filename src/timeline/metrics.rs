@@ -27,13 +27,14 @@ pub struct LoginEvent {
     pub source_ip: CompactString,
 }
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, Default)]
 pub struct EventMetrics {
     pub total: usize,
     pub filepath: CompactString,
     pub start_time: Option<DateTime<Utc>>,
     pub end_time: Option<DateTime<Utc>>,
     pub stats_list: HashMap<(CompactString, CompactString), usize>,
+    pub stats_computer: HashMap<CompactString, (CompactString, usize)>,
     pub stats_login_list: HashMap<LoginEvent, [usize; 2]>,
     pub stats_logfile: Vec<LogMetrics>,
     pub counted_rec: HashSet<(String, String)>,
@@ -42,26 +43,6 @@ pub struct EventMetrics {
 * Windows Event Logの統計情報を出力する
 */
 impl EventMetrics {
-    pub fn new(
-        total: usize,
-        filepath: CompactString,
-        start_time: Option<DateTime<Utc>>,
-        end_time: Option<DateTime<Utc>>,
-        stats_list: HashMap<(CompactString, CompactString), usize>,
-        stats_login_list: HashMap<LoginEvent, [usize; 2]>,
-    ) -> EventMetrics {
-        EventMetrics {
-            total,
-            filepath,
-            start_time,
-            end_time,
-            stats_list,
-            stats_login_list,
-            stats_logfile: Vec::new(),
-            counted_rec: HashSet::new(),
-        }
-    }
-
     pub fn evt_stats_start(
         &mut self,
         records: &[EvtxRecordInfo],
