@@ -1881,7 +1881,11 @@ Any hostnames added to the critical_systems.txt file will have all alerts above 
                 )
                 .ok();
                 println!();
-                let mut channel_filter = create_channel_filter(&evtx_files, &rule_files);
+                let mut channel_filter = create_channel_filter(
+                    &evtx_files,
+                    &rule_files,
+                    stored_static.quiet_errors_flag,
+                );
                 if !stored_static.scan_all_evtx_files {
                     evtx_files.retain(|e| channel_filter.scanable_rule_exists(e));
                     write_color_buffer(
@@ -1964,7 +1968,8 @@ Any hostnames added to the critical_systems.txt file will have all alerts above 
                 yaml_data.ok().unwrap_or_default().first().unwrap().clone(),
             );
             let rule_files = vec![node];
-            let mut channel_filter = create_channel_filter(&evtx_files, &rule_files);
+            let mut channel_filter =
+                create_channel_filter(&evtx_files, &rule_files, stored_static.quiet_errors_flag);
             evtx_files.retain(|e| channel_filter.scanable_rule_exists(e));
         }
 
@@ -1984,7 +1989,8 @@ Any hostnames added to the critical_systems.txt file will have all alerts above 
                 yaml_data.ok().unwrap_or_default().first().unwrap().clone(),
             );
             let rule_files = vec![node];
-            let mut channel_filter = create_channel_filter(&evtx_files, &rule_files);
+            let mut channel_filter =
+                create_channel_filter(&evtx_files, &rule_files, stored_static.quiet_errors_flag);
             evtx_files.retain(|e| channel_filter.scanable_rule_exists(e));
         }
         let template = if stored_static.common_options.no_color {
