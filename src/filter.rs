@@ -97,27 +97,39 @@ impl RuleExclude {
 
 fn peek_channel_from_evtx_first_record(
     evtx_files: &Vec<PathBuf>,
-) -> Result<HashMap<String, Vec<PathBuf>>, Box<dyn std::error::Error>> {
+    quiet_errors_flag: bool,
+) -> HashMap<String, Vec<PathBuf>> {
     let mut channels = HashMap::new();
     for path in evtx_files {
-        let mut parser = EvtxParser::from_path(path)?;
-        let mut records = parser.records_json_value();
-        match records.next() {
-            Some(Ok(rec)) => {
-                let key = rec.data["Event"]["System"]["Channel"]
-                    .as_str()
-                    .unwrap_or("")
-                    .trim_matches('"')
-                    .to_string();
-                channels
-                    .entry(key)
-                    .or_insert_with(Vec::new)
-                    .push(path.to_path_buf());
+        match EvtxParser::from_path(path) {
+            Ok(mut parser) => {
+                let mut records = parser.records_json_value();
+                match records.next() {
+                    Some(Ok(rec)) => {
+                        let key = rec.data["Event"]["System"]["Channel"]
+                            .as_str()
+                            .unwrap_or("")
+                            .trim_matches('"')
+                            .to_string();
+                        channels
+                            .entry(key)
+                            .or_insert_with(Vec::new)
+                            .push(path.to_path_buf());
+                    }
+                    _ => continue,
+                };
             }
-            _ => continue,
-        };
+            Err(_) => {
+                if !quiet_errors_flag {
+                    ERROR_LOG_STACK
+                        .lock()
+                        .unwrap()
+                        .push(format!("Failed to open evtx file: {}", path.display()));
+                }
+            }
+        }
     }
-    Ok(channels)
+    channels
 }
 
 fn extract_channel_from_rules(
@@ -204,18 +216,18 @@ impl Default for ChannelFilter {
 pub fn create_channel_filter(
     evtx_files: &Vec<PathBuf>,
     rule_nodes: &Vec<RuleNode>,
+    quiet_errors_flag: bool,
 ) -> ChannelFilter {
-    let channels = peek_channel_from_evtx_first_record(evtx_files);
-    match channels {
-        Ok(ch) => {
-            let (x, y) = extract_channel_from_rules(rule_nodes, &ch.keys().cloned().collect());
-            ChannelFilter {
-                rulepathes: x,
-                intersec_channels: y.into_iter().collect(),
-                evtx_channels_map: ch,
-            }
+    let channels = peek_channel_from_evtx_first_record(evtx_files, quiet_errors_flag);
+    if !channels.is_empty() {
+        let (x, y) = extract_channel_from_rules(rule_nodes, &channels.keys().cloned().collect());
+        ChannelFilter {
+            rulepathes: x,
+            intersec_channels: y.into_iter().collect(),
+            evtx_channels_map: channels,
         }
-        _ => ChannelFilter::new(),
+    } else {
+        ChannelFilter::new()
     }
 }
 
@@ -242,8 +254,8 @@ mod tests {
     #[test]
     fn test_peek_channel_from_evtx_first_record_invalid_evtx() {
         let evtx_files = vec![PathBuf::from("test_files/evtx/test1.evtx")];
-        let result = peek_channel_from_evtx_first_record(&evtx_files);
-        assert!(result.is_err());
+        let result = peek_channel_from_evtx_first_record(&evtx_files, false);
+        assert!(result.is_empty());
     }
 
     #[test]
@@ -345,7 +357,7 @@ mod tests {
         let test_yaml_data = rule_yaml.next().unwrap();
         let rule = RuleNode::new("test_files/evtx/test1.evtx".to_string(), test_yaml_data);
         let rule_nodes = vec![rule];
-        let result = create_channel_filter(&evtx_files, &rule_nodes);
+        let result = create_channel_filter(&evtx_files, &rule_nodes, false);
         assert_eq!(result.rulepathes.len(), 0);
     }
 }
