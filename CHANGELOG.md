@@ -1,5 +1,11 @@
 # Changes
 
+## x.x.x [xxxx/xx/xx]
+
+**Bug Fixes:**
+
+- Scans would fail if the `.evtx` file was not able to be opened. (#1634) (@fukusuket)
+
 ## 3.1.1 [2025/03/12] - Laksa Release
 
 **Enhancements:**
