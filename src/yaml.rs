@@ -224,7 +224,7 @@ impl ParseYaml {
                 }
             }
         } else {
-            let mut entries = fs::read_dir(path)?;
+            let mut entries = fs::read_dir(&path)?;
             yaml_docs = entries.try_fold(vec![], |mut ret, entry| {
                 let entry = entry?;
                 // フォルダは再帰的に呼び出す。
@@ -381,7 +381,56 @@ impl ParseYaml {
                 let entry = self.rule_load_cnt.entry(status.into()).or_insert(0);
                 *entry += 1;
             };
-
+            let level = yaml_doc["level"].as_str();
+            if level.is_none()
+                || !["informational", "low", "medium", "high", "critical"]
+                    .contains(&level.unwrap().to_lowercase().as_str())
+            {
+                let errmsg = format!(
+                    "Failed to parse rule:{}. Invalid level:{}",
+                    path.as_ref().to_path_buf().display(),
+                    level.unwrap_or("N/A")
+                );
+                if stored_static.verbose_flag {
+                    AlertMessage::warn(&errmsg).ok();
+                }
+                if !stored_static.quiet_errors_flag {
+                    ERROR_LOG_STACK
+                        .lock()
+                        .unwrap()
+                        .push(format!("[WARN] {errmsg}"));
+                }
+                self.errorrule_count += 1;
+                return Option::None;
+            }
+            let status = yaml_doc["status"].as_str();
+            if status.is_some()
+                && ![
+                    "stable",
+                    "test",
+                    "experimental",
+                    "deprecated",
+                    "unsupported",
+                ]
+                .contains(&status.unwrap().to_lowercase().as_str())
+            {
+                let errmsg = format!(
+                    "Failed to parse rule:{}.Invalid status:{}",
+                    path.as_ref().to_path_buf().display(),
+                    status.unwrap_or("N/A")
+                );
+                if stored_static.verbose_flag {
+                    AlertMessage::warn(&errmsg).ok();
+                }
+                if !stored_static.quiet_errors_flag {
+                    ERROR_LOG_STACK
+                        .lock()
+                        .unwrap()
+                        .push(format!("[WARN] {errmsg}"));
+                }
+                self.errorrule_count += 1;
+                return Option::None;
+            }
             // 指定されたレベルより低いルールは無視する
             let doc_level = &yaml_doc["level"]
                 .as_str()
