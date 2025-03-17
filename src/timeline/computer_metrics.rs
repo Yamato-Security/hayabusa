@@ -47,38 +47,69 @@ pub fn countup_event_by_computer(
             .stats
             .stats_computer
             .entry(computer_name.to_string().replace('\"', "").into())
-            .or_insert((CompactString::default(), 0));
-        let os_name = &mut val.0;
-        if os_name.is_empty() && !WIN_VERSIONS.is_empty() {
-            if let Some(ch) = record["Event"]["System"]["Channel"].as_str() {
-                if ch == "System" {
-                    if let Some(id) = record["Event"]["System"]["EventID"].as_i64() {
-                        if id == 6009 {
-                            if let Some(arr) = record["Event"]["EventData"]["Data"].as_array() {
-                                let ver = arr[0].as_str().unwrap_or_default().trim_matches('.');
-                                let ver = ver.replace(".01", ".1").replace(".00", ".0");
-                                let bui = arr[1].as_str().unwrap_or_default().to_string();
-                                if let Some((win, data)) =
-                                    WIN_VERSIONS.get(&(ver.clone(), bui.clone()))
-                                {
-                                    *os_name = format!("Windows {}({})", win, data).into();
-                                } else {
-                                    *os_name = format!("Version: {} Build: {}", ver, bui).into();
-                                }
+            .or_insert((
+                CompactString::default(),
+                CompactString::default(),
+                CompactString::default(),
+                0,
+            ));
+        if let Some(ch) = record["Event"]["System"]["Channel"].as_str() {
+            if ch == "System" {
+                if let Some(id) = record["Event"]["System"]["EventID"].as_i64() {
+                    let os_name = &mut val.0;
+                    if id == 6009 && os_name.is_empty() && !WIN_VERSIONS.is_empty() {
+                        if let Some(arr) = record["Event"]["EventData"]["Data"].as_array() {
+                            let ver = arr[0].as_str().unwrap_or_default().trim_matches('.');
+                            let ver = ver.replace(".01", ".1").replace(".00", ".0");
+                            let bui = arr[1].as_str().unwrap_or_default().to_string();
+                            if let Some((win, data)) = WIN_VERSIONS.get(&(ver.clone(), bui.clone()))
+                            {
+                                *os_name = format!("Windows {}({})", win, data).into();
+                            } else {
+                                *os_name = format!("Version: {} Build: {}", ver, bui).into();
                             }
+                        }
+                    } else if id == 6013 {
+                        let uptime = &mut val.1;
+                        let timezone = &mut val.2;
+                        if let Some(arr) = record["Event"]["EventData"]["Data"].as_array() {
+                            let up = arr[4].as_str().unwrap_or_default();
+                            let up = up.parse::<i64>().unwrap_or_default();
+                            let up = format_uptime(up);
+                            let tz = arr[6].as_str().unwrap_or_default();
+                            let tz = match tz.find(' ') {
+                                Some(index) => &tz[index + 1..],
+                                None => tz,
+                            };
+                            let tz = tz.to_string();
+                            *uptime = up.into();
+                            *timezone = tz.into();
                         }
                     }
                 }
             }
         }
-        let count = &mut val.1;
+        let count = &mut val.3;
         *count += 1;
     }
 }
 
+fn format_uptime(seconds: i64) -> String {
+    let years = seconds / 31_536_000;
+    let months = (seconds % 31_536_000) / 2_592_000;
+    let days = (seconds % 2_592_000) / 86_400;
+    let hours = (seconds % 86_400) / 3_600;
+    let minutes = (seconds % 3_600) / 60;
+    let seconds = seconds % 60;
+    format!(
+        "{}Y {}M {}d {}h {}m {}s",
+        years, months, days, hours, minutes, seconds
+    )
+}
+
 /// レコード内のコンピュータ名を降順で画面出力もしくはcsvに出力する関数
 pub fn computer_metrics_dsp_msg(
-    result_list: &HashMap<CompactString, (CompactString, usize)>,
+    result_list: &HashMap<CompactString, (CompactString, CompactString, CompactString, usize)>,
     output: &Option<PathBuf>,
 ) {
     let mut file_wtr = None;
@@ -100,7 +131,7 @@ pub fn computer_metrics_dsp_msg(
     };
 
     // Write header
-    let header = vec!["Computer", "OS information", "Events"];
+    let header = vec!["Computer", "OS information", "UpTime", "Timezone", "Events"];
     let mut stats_tb = Table::new();
     stats_tb
         .load_preset(UTF8_FULL)
@@ -112,23 +143,31 @@ pub fn computer_metrics_dsp_msg(
     }
 
     // Write contents
-    for (computer_name, (os_info, count)) in result_list.into_iter().sorted_unstable_by(|a, b| {
-        let count_cmp = Ord::cmp(
-            &-i64::from_usize(a.1.1).unwrap_or_default(),
-            &-i64::from_usize(b.1.1).unwrap_or_default(),
-        );
-        if count_cmp != Ordering::Equal {
-            return count_cmp;
-        }
+    for (computer_name, (os_info, uptime, timezone, count)) in
+        result_list.into_iter().sorted_unstable_by(|a, b| {
+            let count_cmp = Ord::cmp(
+                &-i64::from_usize(a.1.3).unwrap_or_default(),
+                &-i64::from_usize(b.1.3).unwrap_or_default(),
+            );
+            if count_cmp != Ordering::Equal {
+                return count_cmp;
+            }
 
-        a.0.cmp(b.0)
-    }) {
+            a.0.cmp(b.0)
+        })
+    {
         let count_str = if output.is_some() {
             format!("{count}")
         } else {
             count.to_formatted_string(&Locale::en)
         };
-        let record_data = vec![computer_name.as_str(), os_info, &count_str];
+        let record_data = vec![
+            computer_name.as_str(),
+            os_info,
+            uptime,
+            timezone,
+            &count_str,
+        ];
         if output.is_some() {
             file_wtr.as_mut().unwrap().write_record(&record_data).ok();
         } else {
@@ -244,11 +283,16 @@ mod tests {
 
         computer_metrics_dsp_msg(&timeline.stats.stats_computer, &output);
 
-        let header = ["\"Computer\"", "\"OS information\"", "\"Events\""];
+        let header = [
+            "\"Computer\"",
+            "\"OS information\"",
+            "\"UpTime\",\"Timezone\"",
+            "\"Events\"",
+        ];
 
         let expect = [
-            vec!["\"FALCON\"", "\"\"", "1"],
-            vec!["\"HAYABUSA-DESKTOP\"", "\"\"", "1"],
+            vec!["\"FALCON\"", "\"\"", "\"\"", "\"\"", "1"],
+            vec!["\"HAYABUSA-DESKTOP\"", "\"\"", "\"\"", "\"\"", "1"],
         ];
         let expect_str =
             header.join(",") + "\n" + &expect.join(&"\n").join(",").replace(",\n,", "\n") + "\n";
