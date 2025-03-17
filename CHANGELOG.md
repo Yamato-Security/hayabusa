@@ -2,6 +2,10 @@
 
 ## x.x.x [xxxx/xx/xx]
 
+**Enhancements:**
+
+- Added uptime and timezone info to the `computer-metrics` command. (#1638) (@fukusuket)
+
 **Bug Fixes:**
 
 - Scans would fail if the `.evtx` file was not able to be opened. (#1634) (@fukusuket)
