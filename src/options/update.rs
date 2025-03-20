@@ -293,7 +293,7 @@ mod tests {
 
     #[test]
     fn test_get_updated_rules() {
-        let dummy_stored_static = StoredStatic::create_static_data(Some(Config {
+        let mut dummy_stored_static = StoredStatic::create_static_data(Some(Config {
             action: Some(Action::UpdateRules(UpdateOption {
                 rules: Path::new("./rules").to_path_buf(),
                 common_options: CommonOptions {
@@ -304,6 +304,7 @@ mod tests {
             })),
             debug: false,
         }));
+        dummy_stored_static.include_status.insert("*".into());
         let prev_modified_rules =
             Update::get_updated_rules("test_files/rules/level_yaml", &dummy_stored_static);
         assert_eq!(prev_modified_rules.len(), 5);
