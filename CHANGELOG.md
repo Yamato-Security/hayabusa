@@ -5,6 +5,7 @@
 **Enhancements:**
 
 - Added uptime and timezone info to the `computer-metrics` command. (#1638) (@fukusuket)
+- Improved checking and logging of invalid rules. (#1601) (@fukusuket)
 
 **Bug Fixes:**
 
