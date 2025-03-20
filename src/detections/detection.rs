@@ -1245,7 +1245,7 @@ impl Detection {
         if err_rc != &0_u128 {
             write_color_buffer(
                 &BufferWriter::stdout(ColorChoice::Always),
-                Some(Color::Red),
+                Some(Color::Rgb(255, 0, 0)),
                 &format!("Rule parsing errors: {err_rc}"),
                 true,
             )
