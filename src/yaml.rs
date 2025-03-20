@@ -11,11 +11,17 @@ use crate::yaml_expand::{process_yaml, read_expand_files};
 use compact_str::CompactString;
 use hashbrown::{HashMap, HashSet};
 use itertools::Itertools;
+use lazy_static::lazy_static;
+use regex::Regex;
 use std::ffi::OsStr;
 use std::fs;
 use std::io::{self, BufReader, Read};
 use std::path::{Path, PathBuf};
 use yaml_rust2::{Yaml, YamlLoader};
+
+lazy_static! {
+    static ref DATE_REGEX: Regex = Regex::new(r"^\d{4}[-/]\d{1,2}[-/]\d{1,2}$").unwrap();
+}
 
 pub struct ParseYaml {
     pub files: Vec<(String, Yaml)>,
@@ -381,6 +387,22 @@ impl ParseYaml {
                 let entry = self.rule_load_cnt.entry(status.into()).or_insert(0);
                 *entry += 1;
             };
+            match check_hayabusa_rule_fmt(&yaml_doc) {
+                Ok(_) => {}
+                Err(errmsg) => {
+                    if stored_static.verbose_flag {
+                        AlertMessage::warn(&errmsg).ok();
+                    }
+                    if !stored_static.quiet_errors_flag {
+                        ERROR_LOG_STACK
+                            .lock()
+                            .unwrap()
+                            .push(format!("[WARN] Invalid rule. {errmsg} ({filepath})"));
+                    }
+                    self.errorrule_count += 1;
+                    return Option::None;
+                }
+            }
 
             // 指定されたレベルより低いルールは無視する
             let doc_level = &yaml_doc["level"]
@@ -396,7 +418,6 @@ impl ParseYaml {
                 up_rule_load_cnt("excluded");
                 return Option::None;
             }
-
             let status = yaml_doc["status"].as_str();
             if let Some(s) = yaml_doc["status"].as_str() {
                 // excluded status optionで指定されたstatusとinclude_status optionで指定されたstatus以外のルールは除外する
@@ -407,6 +428,7 @@ impl ParseYaml {
                     up_rule_load_cnt("excluded");
                     return Option::None;
                 }
+
                 if exist_output_opt
                     && ((s == "deprecated"
                         && !stored_static
@@ -435,7 +457,6 @@ impl ParseYaml {
                     return Option::None;
                 }
             }
-
             if exist_output_opt {
                 let category_in_rule = yaml_doc["logsource"]["category"]
                     .as_str()
@@ -793,6 +814,73 @@ pub fn count_rules<P: AsRef<Path>>(
         }
     });
     result_container.to_owned()
+}
+
+pub fn check_hayabusa_rule_fmt(yaml: &Yaml) -> Result<(), String> {
+    let mut required_keys = vec![
+        "author",
+        "title",
+        "logsource",
+        "detection",
+        "ruletype",
+        "level",
+        "status",
+        "date",
+        "id",
+    ];
+
+    if yaml["correlation"].is_hash() {
+        required_keys.retain(|&key| key != "logsource" && key != "detection");
+    }
+
+    let mut errors = Vec::new();
+
+    for &key in &required_keys {
+        if !yaml[key].is_badvalue() {
+            match key {
+                "ruletype" => {
+                    let value = yaml[key].as_str().unwrap_or("").to_lowercase();
+                    if value != "hayabusa" && value != "sigma" {
+                        errors.push(format!("invalid: {}", key));
+                    }
+                }
+                "level" => {
+                    let value = yaml[key].as_str().unwrap_or("");
+                    if !["informational", "low", "medium", "high", "critical"].contains(&value) {
+                        errors.push(format!("invalid: {}", key));
+                    }
+                }
+                "status" => {
+                    let value = yaml[key].as_str().unwrap_or("");
+                    if ![
+                        "stable",
+                        "test",
+                        "experimental",
+                        "deprecated",
+                        "unsupported",
+                    ]
+                    .contains(&value)
+                    {
+                        errors.push(format!("invalid: {}", key));
+                    }
+                }
+                "date" => {
+                    if !DATE_REGEX.is_match(yaml[key].as_str().unwrap_or("")) {
+                        errors.push(format!("invalid: {}", key));
+                    }
+                }
+                _ => {}
+            }
+        } else {
+            errors.push(format!("missing: {}", key));
+        }
+    }
+
+    if errors.is_empty() {
+        Ok(())
+    } else {
+        Err(errors.join(" ¦ "))
+    }
 }
 
 #[cfg(test)]
@@ -1302,5 +1390,21 @@ mod tests {
         std::fs::remove_file(&test_path).expect("Failed to delete test file");
         assert!(result.is_ok());
         assert_eq!(result.unwrap(), "Hello");
+    }
+
+    #[test]
+    fn test_hayabusa_rule_fmt() {
+        let dir = Path::new("test_files/rules/level_yaml/");
+        let entries = std::fs::read_dir(dir).unwrap();
+        for entry in entries {
+            let entry = entry.unwrap();
+            let path = entry.path();
+            let read_content = ParseYaml::read_file(&path).ok();
+            let yaml_contents = YamlLoader::load_from_str(&read_content.unwrap()).ok();
+            for yaml_content in yaml_contents.unwrap() {
+                let result = yaml::check_hayabusa_rule_fmt(&yaml_content);
+                assert!(result.is_ok());
+            }
+        }
     }
 }

@@ -188,22 +188,50 @@ mod tests {
     fn test_level_tuning_update_rule_files() {
         let level_tuning_config_path = "./test_files/config/level_tuning.txt";
         let rule_str = r#"
-        id: 12345678-1234-1234-1234-123456789012
-        level: informational
+id: 12345678-1234-1234-1234-123456789012
+date: 2025-03-01
+level: informational
+status: test
+author: A
+title: Samurai
+logsource:
+    product: windows
+    service: security
+detection:
+    selection:
+        Channel: Security
+        EventID: 4624
+        LogonType: 0
+    condition: selection
+ruletype: Hayabusa
         "#;
 
         let expected_rule = r#"
-        id: 12345678-1234-1234-1234-123456789012
-        level: high
+id: 12345678-1234-1234-1234-123456789012
+date: 2025-03-01
+level: high
+status: test
+author: A
+title: Samurai
+logsource:
+    product: windows
+    service: security
+detection:
+    selection:
+        Channel: Security
+        EventID: 4624
+        LogonType: 0
+    condition: selection
+ruletype: Hayabusa
         "#;
-
         let path = "test_files/rules/level_tuning_test.yml";
         let mut file = File::create(path).unwrap();
         let buf = rule_str.as_bytes();
         file.write_all(buf).unwrap();
         file.flush().unwrap();
 
-        let dummy_stored_static = create_dummy_stored_static(path);
+        let mut dummy_stored_static = create_dummy_stored_static(path);
+        dummy_stored_static.include_status.insert("*".into());
         let res = LevelTuning::run(level_tuning_config_path, path, &dummy_stored_static);
         assert_eq!(res, Ok(()));
 
