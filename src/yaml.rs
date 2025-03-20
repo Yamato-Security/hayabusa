@@ -841,13 +841,13 @@ pub fn check_hayabusa_rule_fmt(yaml: &Yaml) -> Result<(), String> {
                 "ruletype" => {
                     let value = yaml[key].as_str().unwrap_or("").to_lowercase();
                     if value != "hayabusa" && value != "sigma" {
-                        errors.push(format!("invalid: {}", key));
+                        errors.push(format!("Invalid: {}", key));
                     }
                 }
                 "level" => {
                     let value = yaml[key].as_str().unwrap_or("");
                     if !["informational", "low", "medium", "high", "critical"].contains(&value) {
-                        errors.push(format!("invalid: {}", key));
+                        errors.push(format!("Invalid: {}", key));
                     }
                 }
                 "status" => {
@@ -861,18 +861,18 @@ pub fn check_hayabusa_rule_fmt(yaml: &Yaml) -> Result<(), String> {
                     ]
                     .contains(&value)
                     {
-                        errors.push(format!("invalid: {}", key));
+                        errors.push(format!("Invalid: {}", key));
                     }
                 }
                 "date" => {
                     if !DATE_REGEX.is_match(yaml[key].as_str().unwrap_or("")) {
-                        errors.push(format!("invalid: {}", key));
+                        errors.push(format!("Invalid: {}", key));
                     }
                 }
                 _ => {}
             }
         } else {
-            errors.push(format!("missing: {}", key));
+            errors.push(format!("Missing: {}", key));
         }
     }
 
