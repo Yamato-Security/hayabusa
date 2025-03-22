@@ -646,7 +646,7 @@ pub fn output_additional_afterfact(
                 Some(Color::Rgb(0, 255, 0)),
                 stored_static.common_options.no_color,
             ),
-            "Results Summary:\n",
+            "Results Summary:",
             true,
         )
         .ok();
@@ -850,6 +850,49 @@ pub fn output_additional_afterfact(
             stored_static.html_report_flag,
         );
         println!();
+        if afterfact_info.tl_starttime.is_some() {
+            let ts = format!(
+                "First Timestamp: {}",
+                format_time(
+                    &afterfact_info.tl_starttime.unwrap(),
+                    false,
+                    &stored_static
+                        .output_option
+                        .as_ref()
+                        .unwrap()
+                        .time_format_options
+                )
+            );
+            write_color_buffer(
+                &BufferWriter::stdout(ColorChoice::Always),
+                None,
+                ts.as_str(),
+                true,
+            )
+            .ok();
+        }
+        if afterfact_info.tl_endtime.is_some() {
+            let ts = format!(
+                "Last Timestamp: {}",
+                format_time(
+                    &afterfact_info.tl_endtime.unwrap(),
+                    false,
+                    &stored_static
+                        .output_option
+                        .as_ref()
+                        .unwrap()
+                        .time_format_options
+                )
+            );
+            write_color_buffer(
+                &BufferWriter::stdout(ColorChoice::Always),
+                None,
+                ts.as_str(),
+                true,
+            )
+            .ok();
+            println!();
+        }
 
         _print_detection_summary_by_date(
             &afterfact_info.detect_counts_by_date_and_level,

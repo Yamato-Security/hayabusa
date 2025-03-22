@@ -113,7 +113,7 @@ impl EventMetrics {
         }
     }
 
-    fn stats_time_cnt(&mut self, records: &[EvtxRecordInfo], stored_static: &StoredStatic) {
+    pub fn stats_time_cnt(&mut self, records: &[EvtxRecordInfo], stored_static: &StoredStatic) {
         if records.is_empty() {
             return;
         }
@@ -170,9 +170,10 @@ impl EventMetrics {
                 self.end_time = timestamp;
             }
         };
-        // sortしなくてもイベントログのTimeframeを取得できるように修正しました。
-        // sortしないことにより計算量が改善されています。
-        for record in records.iter() {
+        let first = records.first();
+        let last = records.last();
+        let rec = [first, last];
+        for record in rec.iter().flatten() {
             if let Some(evttime) = utils::get_event_value(
                 "Event.System.TimeCreated_attributes.SystemTime",
                 &record.record,

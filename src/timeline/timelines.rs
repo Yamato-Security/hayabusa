@@ -87,6 +87,11 @@ impl Timeline {
             &stored_static.config.action.as_ref().unwrap()
         {
             self.config_critical_systems.process(records);
+        } else if matches!(
+            stored_static.config.action.as_ref().unwrap(),
+            Action::CsvTimeline(_) | Action::JsonTimeline(_)
+        ) {
+            self.stats.stats_time_cnt(records, stored_static);
         }
     }
 
