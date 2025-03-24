@@ -378,20 +378,21 @@ Any hostnames added to the critical_systems.txt file will have all alerts above 
                             false,
                         )
                         .ok();
+                        let file_str = format!(
+                            " {} ({})",
+                            path.display(),
+                            ByteSize::b(metadata.len()).to_string_as(false)
+                        );
                         write_color_buffer(
                             &BufferWriter::stdout(ColorChoice::Always),
                             None,
-                            &format!(
-                                " {} ({})",
-                                path.display(),
-                                ByteSize::b(metadata.len()).to_string_as(false)
-                            ),
+                            &file_str,
                             true,
                         )
                         .ok();
                         println!();
                         output_and_data_stack_for_html(
-                            &output_saved_str,
+                            &format!("{message}: {}", file_str),
                             "General Overview {#general_overview}",
                             html_report_flag,
                         );
@@ -471,22 +472,6 @@ Any hostnames added to the critical_systems.txt file will have all alerts above 
                     "Saved file",
                     &stored_static.html_report_flag,
                 );
-                if stored_static.html_report_flag {
-                    let html_str = HTML_REPORTER.read().unwrap().to_owned().create_html();
-                    htmlreport::create_html_file(
-                        html_str,
-                        stored_static
-                            .output_option
-                            .as_ref()
-                            .unwrap()
-                            .html_report
-                            .as_ref()
-                            .unwrap()
-                            .to_str()
-                            .unwrap_or(""),
-                        stored_static.common_options.no_color,
-                    )
-                }
             }
             Action::LogonSummary(_) => {
                 let mut target_output_path = Nested::<String>::new();
@@ -1016,7 +1001,11 @@ Any hostnames added to the critical_systems.txt file will have all alerts above 
             .as_mut()
             .unwrap()
             .calculate_all_stocked_results();
-
+        output_and_data_stack_for_html(
+            &format!("Elapsed time: {}", elapsed_output_str),
+            "General Overview {#general_overview}",
+            &stored_static.html_report_flag,
+        );
         write_color_buffer(
             &BufferWriter::stdout(ColorChoice::Always),
             get_writable_color(
@@ -1034,11 +1023,6 @@ Any hostnames added to the critical_systems.txt file will have all alerts above 
             true,
         )
         .ok();
-        output_and_data_stack_for_html(
-            &elapsed_output_str,
-            "General Overview {#general_overview}",
-            &stored_static.html_report_flag,
-        );
         match stored_static.config.action {
             Some(Action::CsvTimeline(_)) | Some(Action::JsonTimeline(_)) => {
                 println!();
@@ -1093,6 +1077,22 @@ Any hostnames added to the critical_systems.txt file will have all alerts above 
                     true,
                 )
                 .ok();
+                if stored_static.html_report_flag {
+                    let html_str = HTML_REPORTER.read().unwrap().to_owned().create_html();
+                    htmlreport::create_html_file(
+                        html_str,
+                        stored_static
+                            .output_option
+                            .as_ref()
+                            .unwrap()
+                            .html_report
+                            .as_ref()
+                            .unwrap()
+                            .to_str()
+                            .unwrap_or(""),
+                        stored_static.common_options.no_color,
+                    )
+                }
             }
             _ => {}
         }
