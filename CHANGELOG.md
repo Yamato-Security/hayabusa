@@ -6,6 +6,7 @@
 
 - Added uptime and timezone info to the `computer-metrics` command. (#1638) (@fukusuket)
 - Improved checking and logging of invalid rules. (#1601) (@fukusuket)
+- Added first and last timestamp to the default output. (#1616) (@fukusuket)
 
 **Bug Fixes:**
 

@@ -698,7 +698,7 @@ pub fn output_and_data_stack_for_html(
 ) {
     if *html_report_flag {
         let mut output_data = Nested::<String>::new();
-        output_data.extend(vec![format!("- Elapsed time: {output_str}")]);
+        output_data.extend(vec![format!("- {output_str}")]);
         htmlreport::add_md_data(section_name, output_data);
     }
 }

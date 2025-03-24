@@ -484,6 +484,7 @@ Any hostnames added to the critical_systems.txt file will have all alerts above 
                             .unwrap()
                             .to_str()
                             .unwrap_or(""),
+                        stored_static.common_options.no_color,
                     )
                 }
             }
@@ -2335,7 +2336,7 @@ Any hostnames added to the critical_systems.txt file will have all alerts above 
                 self.rule_keys.to_owned(),
                 stored_static.no_pwsh_field_extraction,
             ));
-
+            tl.start(&records_per_detect, stored_static);
             if need_rule {
                 // detect event record by rule file
                 let (detection_tmp, mut log_records) =
@@ -2353,9 +2354,6 @@ Any hostnames added to the critical_systems.txt file will have all alerts above 
                     detect_infos.append(&mut log_records);
                 }
                 detection = detection_tmp;
-            } else {
-                // timeline機能の実行
-                tl.start(&records_per_detect, stored_static);
             }
         }
         tl.total_record_cnt += record_cnt;

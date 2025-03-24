@@ -1,3 +1,5 @@
+use crate::detections::configs::{Action, Config};
+use crate::detections::utils::{get_writable_color, write_color_buffer};
 use base64::Engine;
 use base64::engine::general_purpose;
 use hashbrown::HashMap;
@@ -11,8 +13,7 @@ use std::fs::{File, create_dir};
 use std::io::{BufWriter, Write};
 use std::path::Path;
 use std::sync::RwLock;
-
-use crate::detections::configs::{Action, Config};
+use termcolor::{BufferWriter, Color, ColorChoice};
 
 #[derive(Embed)]
 #[folder = "config/html_report/"]
@@ -108,7 +109,7 @@ pub fn add_md_data(section_name: &str, data: Nested<String>) {
 }
 
 /// create html file
-pub fn create_html_file(input_html: String, path_str: &str) {
+pub fn create_html_file(input_html: String, path_str: &str, no_color: bool) {
     let path = Path::new(path_str);
     if !path.parent().unwrap().exists() {
         create_dir(path.parent().unwrap()).ok();
@@ -148,7 +149,20 @@ pub fn create_html_file(input_html: String, path_str: &str) {
     );
 
     writeln!(html_writer, "{html_data}").ok();
-    println!("HTML report: {path_str}");
+    write_color_buffer(
+        &BufferWriter::stdout(ColorChoice::Always),
+        get_writable_color(Some(Color::Rgb(0, 255, 0)), no_color),
+        "HTML report: ",
+        false,
+    )
+    .ok();
+    write_color_buffer(
+        &BufferWriter::stdout(ColorChoice::Always),
+        None,
+        path_str,
+        true,
+    )
+    .ok();
 }
 
 fn get_file_type(hex: &str) -> &str {
@@ -334,6 +348,7 @@ mod tests {
         htmlreport::create_html_file(
             html_reporter.create_html(),
             "./test-html/test_create_html_file.html",
+            false,
         );
 
         let css_contents = read_to_string("./config/html_report/hayabusa_report.css").unwrap();
