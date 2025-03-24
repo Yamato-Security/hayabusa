@@ -11,6 +11,7 @@
 **Bug Fixes:**
 
 - Scans would fail if the `.evtx` file was not able to be opened. (#1634) (@fukusuket)
+- Elapsed time and saved file information was not being outputted in the HTML report. (#1643) (@fukusuket)
 
 ## 3.1.1 [2025/03/12] - Laksa Release
 
