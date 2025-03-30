@@ -2,7 +2,8 @@ use cidr_utils::cidr::IpCidr;
 use compact_str::CompactString;
 use hashbrown::HashMap;
 use lazy_static::lazy_static;
-use maxminddb::{MaxMindDBError, Reader, geoip2};
+use maxminddb::{MaxMindDbError, Reader, geoip2};
+use std::io::Error;
 use std::path::{Path, PathBuf};
 use std::sync::Mutex;
 use std::{net::IpAddr, str::FromStr};
@@ -82,7 +83,7 @@ impl GeoIPSearch {
     }
 
     /// convert IP address string to geo data
-    pub fn convert_ip_to_geo(&self, target_ip: &str) -> Result<String, MaxMindDBError> {
+    pub fn convert_ip_to_geo(&self, target_ip: &str) -> Result<String, MaxMindDbError> {
         if target_ip == "ローカル" || target_ip == "LOCAL" {
             return Ok("Local🦅-🦅-".to_string());
         }
@@ -95,8 +96,10 @@ impl GeoIPSearch {
         if let Ok(conv) = IpAddr::from_str(&target) {
             addr = conv;
         } else {
-            return Err(MaxMindDBError::IoError(format!(
-                "Failed Convert IP Address. input: {target_ip}"
+            let msg = format!("Failed Convert IP Address. input: {target_ip}");
+            return Err(MaxMindDbError::Io(Error::new(
+                std::io::ErrorKind::Other,
+                msg,
             )));
         };
 
@@ -112,42 +115,38 @@ impl GeoIPSearch {
         if let Some(cached_data) = IP_MAP.lock().unwrap().get(&addr) {
             return Ok(cached_data.to_string());
         }
-
-        let asn_search: Result<geoip2::Asn, MaxMindDBError> = self.asn_reader.lookup(addr);
-        let country_search: Result<geoip2::Country, MaxMindDBError> =
+        let asn_search: Result<Option<geoip2::Asn>, MaxMindDbError> = self.asn_reader.lookup(addr);
+        let country_search: Result<Option<geoip2::Country>, MaxMindDbError> =
             self.country_reader.lookup(addr);
-        let city_search: Result<geoip2::City, MaxMindDBError> = self.city_reader.lookup(addr);
+        let city_search: Result<Option<geoip2::City>, MaxMindDbError> =
+            self.city_reader.lookup(addr);
 
-        let output_asn = if let Ok(asn) = asn_search {
+        let output_asn = if let Ok(Some(asn)) = asn_search {
             asn.autonomous_system_organization.unwrap_or("-")
         } else {
             "-"
         };
 
-        let output_country = if let Ok(country_data) = country_search {
-            if let Some(country) = country_data.country {
-                let mut ret = "-";
+        let output_country = if let Ok(Some(country)) = country_search {
+            let mut ret = "-";
+            if let Some(country) = country.country {
                 if let Some(name_tree) = country.names {
                     ret = name_tree.get("en").unwrap_or(&"-")
                 }
-                ret
-            } else {
-                "-"
             }
+            ret
         } else {
             "-"
         };
 
-        let output_city = if let Ok(city_data) = city_search {
-            if let Some(city) = city_data.city {
-                let mut ret = "n/-";
+        let output_city = if let Ok(Some(city)) = city_search {
+            let mut ret = "n/-";
+            if let Some(city) = city.city {
                 if let Some(name_tree) = city.names {
                     ret = name_tree.get("en").unwrap_or(&"-")
                 }
-                ret
-            } else {
-                "-"
             }
+            ret
         } else {
             "-"
         };
