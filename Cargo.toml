@@ -10,7 +10,7 @@ include = ["src/**/*", "LICENSE.txt", "README.md", "CHANGELOG.md"]
 [dependencies]
 aho-corasick = "*"
 base64 = "*"
-bytesize = "2.*"
+bytesize = "1.*"
 chrono = "0.4.*"
 cidr-utils = "0.6.*"
 clap = { version = "4.*", features = ["derive", "cargo", "color"]}
