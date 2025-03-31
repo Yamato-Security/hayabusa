@@ -1,6 +1,6 @@
 # 変更点
 
-## x.x.x [xxxx/xx/xx]
+## 3.2.0 [2025/04/02] - Vegemite Release
 
 **改善:**
 
