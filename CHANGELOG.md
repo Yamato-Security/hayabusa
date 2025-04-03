@@ -1,5 +1,11 @@
 # Changes
 
+## x.x.x [xxxx/xx/xx]
+
+**Enhancements:**
+
+- Now output file size in base 1024 (Ex: `KiB`, `MiB`, `GiB`). (#1648) (@fukusuket)
+
 ## 3.2.0 [2025/04/02] - Vegemite Release
 
 **Enhancements:**
