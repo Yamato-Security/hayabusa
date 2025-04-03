@@ -1,6 +1,6 @@
 [package]
 name = "hayabusa"
-version = "3.2.0"
+version = "3.3.0-dev"
 repository = "https://github.com/Yamato-Security/hayabusa"
 authors = ["Yamato Security @SecurityYamato"]
 edition = "2024"

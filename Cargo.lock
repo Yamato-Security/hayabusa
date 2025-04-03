@@ -874,7 +874,7 @@ dependencies = [
 
 [[package]]
 name = "hayabusa"
-version = "3.2.0"
+version = "3.3.0-dev"
 dependencies = [
  "aho-corasick",
  "base64",
@@ -920,7 +920,7 @@ dependencies = [
  "serde_json",
  "strum",
  "termcolor",
- "terminal_size 0.4.2",
+ "terminal_size",
  "tokio",
  "ureq",
  "uuid",
@@ -1262,7 +1262,7 @@ dependencies = [
  "rayon",
  "regex",
  "tempfile",
- "terminal_size 0.3.0",
+ "terminal_size",
 ]
 
 [[package]]
@@ -2184,16 +2184,6 @@ checksum = "21bebf2b7c9e0a515f6e0f8c51dc0f8e4696391e6f1ff30379559f8365fb0df7"
 dependencies = [
  "rustix 0.38.44",
  "windows-sys 0.48.0",
-]
-
-[[package]]
-name = "terminal_size"
-version = "0.4.2"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "45c6481c4829e4cc63825e62c49186a34538b7b2750b73b266581ffb612fb5ed"
-dependencies = [
- "rustix 1.0.5",
- "windows-sys 0.59.0",
 ]
 
 [[package]]
