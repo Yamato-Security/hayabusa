@@ -381,7 +381,7 @@ Any hostnames added to the critical_systems.txt file will have all alerts above 
                         let file_str = format!(
                             " {} ({})",
                             path.display(),
-                            ByteSize::b(metadata.len()).to_string_as(false)
+                            ByteSize::b(metadata.len()).display()
                         );
                         write_color_buffer(
                             &BufferWriter::stdout(ColorChoice::Always),
@@ -1098,7 +1098,7 @@ Any hostnames added to the critical_systems.txt file will have all alerts above 
         }
 
         // Qオプションを付けた場合もしくはパースのエラーがない場合はerrorのstackが0となるのでエラーログファイル自体が生成されない。
-        if ERROR_LOG_STACK.lock().unwrap().len() > 0 {
+        if !ERROR_LOG_STACK.lock().unwrap().is_empty() {
             AlertMessage::create_error_log(
                 stored_static.quiet_errors_flag,
                 stored_static.common_options.no_color,
@@ -1385,11 +1385,11 @@ Any hostnames added to the critical_systems.txt file will have all alerts above 
             false,
         )
         .ok();
-        let total_size = total_file_size.to_string_as(false);
+        let total_size = total_file_size;
         write_color_buffer(
             &BufferWriter::stdout(ColorChoice::Always),
             None,
-            &total_file_size.to_string_as(false),
+            &total_file_size.display().to_string(),
             true,
         )
         .ok();
@@ -2048,7 +2048,7 @@ Any hostnames added to the critical_systems.txt file will have all alerts above 
                 let pb_msg = format!(
                     "{:?} ({})",
                     &evtx_file.to_str().unwrap_or_default().replace('\\', "/"),
-                    file_size.to_string_as(false)
+                    file_size.display()
                 );
                 if !pb_msg.is_empty() {
                     pb.set_message(pb_msg);
