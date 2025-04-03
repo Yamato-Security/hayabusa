@@ -1,6 +1,6 @@
 [package]
 name = "hayabusa"
-version = "3.2.0"
+version = "3.3.0-dev"
 repository = "https://github.com/Yamato-Security/hayabusa"
 authors = ["Yamato Security @SecurityYamato"]
 edition = "2024"
@@ -10,7 +10,7 @@ include = ["src/**/*", "LICENSE.txt", "README.md", "CHANGELOG.md"]
 [dependencies]
 aho-corasick = "*"
 base64 = "*"
-bytesize = "1.*"
+bytesize = "2.*"
 chrono = "0.4.*"
 cidr-utils = "0.6.*"
 clap = { version = "4.*", features = ["derive", "cargo", "color"]}
@@ -33,10 +33,10 @@ infer = "*"
 itertools = "*"
 krapslog = "0.6"
 lazy_static = "1.5.*"
-libmimalloc-sys = { version = "*",  features = ["extended"] }
+libmimalloc-sys = { version = "0.1.40",  features = ["extended"] }
 maxminddb = "0.*"
 memchr = "2.*"
-mimalloc = { version = "*", default-features = false }
+mimalloc = { version = "0.1.44", default-features = false }
 nested="*"
 num = "0.4.0"
 num-format = "*"
