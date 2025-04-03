@@ -1098,7 +1098,7 @@ Any hostnames added to the critical_systems.txt file will have all alerts above 
         }
 
         // Qオプションを付けた場合もしくはパースのエラーがない場合はerrorのstackが0となるのでエラーログファイル自体が生成されない。
-        if ERROR_LOG_STACK.lock().unwrap().len() > 0 {
+        if !ERROR_LOG_STACK.lock().unwrap().is_empty() {
             AlertMessage::create_error_log(
                 stored_static.quiet_errors_flag,
                 stored_static.common_options.no_color,
