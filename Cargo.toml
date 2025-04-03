@@ -33,10 +33,10 @@ infer = "*"
 itertools = "*"
 krapslog = "0.6"
 lazy_static = "1.5.*"
-libmimalloc-sys = { version = "0.1.40",  features = ["extended"] }
+libmimalloc-sys = { version = "*",  features = ["extended"] }
 maxminddb = "0.*"
 memchr = "2.*"
-mimalloc = { version = "0.1.44", default-features = false }
+mimalloc = { version = "*", default-features = false }
 nested="*"
 num = "0.4.0"
 num-format = "*"
