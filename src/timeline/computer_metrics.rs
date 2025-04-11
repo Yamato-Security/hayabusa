@@ -196,11 +196,11 @@ pub fn computer_metrics_dsp_msg(
         } else {
             count.to_formatted_string(&Locale::en)
         };
-        let uptime = calc_elapsed_seconds(uptime.as_str(), last_timestamp.as_str());
+        let elapsed_time = calc_elapsed_seconds(uptime.as_str(), last_timestamp.as_str());
         let record_data = vec![
             computer_name.as_str(),
             os_info,
-            &uptime,
+            &elapsed_time,
             timezone,
             &count_str,
         ];
