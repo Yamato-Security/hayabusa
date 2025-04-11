@@ -5,6 +5,7 @@
 **改善:**
 
 - ファイルサイズを1024ベースで出力するようにした。（例:`KiB`, `MiB`, `GiB`等） (#1648) (@fukusuket)
+- `computer-metrics`コマンドのアップタイムの計算を改善した。 (#1656) (@fukusuket)
 
 ## 3.2.0 [2025/04/02] - Vegemite Release
 
