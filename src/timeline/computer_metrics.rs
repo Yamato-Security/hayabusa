@@ -88,7 +88,7 @@ pub fn countup_event_by_computer(
                         record["Event"]["System"]["TimeCreated_attributes"]["SystemTime"]
                             .to_string();
                     let evt_time = evt_time.trim_matches('"').to_string();
-                    if id == 12 || id == 6005 || id == 6006 {
+                    if id == 12 || id == 6005 || id == 6009 {
                         *uptime = evt_time.clone().into();
                     }
                     let last_timestamp = &mut val.3;
