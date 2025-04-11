@@ -92,7 +92,10 @@ pub fn countup_event_by_computer(
                         *uptime = evt_time.clone().into();
                     }
                     let last_timestamp = &mut val.3;
-                    *last_timestamp = evt_time.into();
+                    let evt_time = evt_time.as_str();
+                    if evt_time > last_timestamp.as_str() {
+                        *last_timestamp = evt_time.into();
+                    }
                 }
             }
         }
