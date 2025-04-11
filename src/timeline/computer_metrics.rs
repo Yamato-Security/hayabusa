@@ -109,7 +109,7 @@ fn calc_elapsed_seconds(uptime: &str, last_timestamp: &str) -> String {
         Ok(uptime_dt) => match DateTime::parse_from_rfc3339(last_timestamp) {
             Ok(last) => {
                 let elapsed = last.timestamp() - uptime_dt.timestamp();
-                if elapsed == 0 {
+                if elapsed <= 0 {
                     return "".to_string();
                 }
                 format_uptime(elapsed)
