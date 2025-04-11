@@ -59,7 +59,6 @@ pub fn countup_event_by_computer(
             if ch == "System" {
                 if let Some(id) = record["Event"]["System"]["EventID"].as_i64() {
                     let os_name = &mut val.0;
-                    let uptime = &mut val.1;
                     if id == 6009 && os_name.is_empty() && !WIN_VERSIONS.is_empty() {
                         if let Some(arr) = record["Event"]["EventData"]["Data"].as_array() {
                             let ver = arr[0].as_str().unwrap_or_default().trim_matches('.');
@@ -89,7 +88,11 @@ pub fn countup_event_by_computer(
                             .to_string();
                     let evt_time = evt_time.trim_matches('"').to_string();
                     if id == 12 || id == 6005 || id == 6009 {
-                        *uptime = evt_time.clone().into();
+                        let uptime = &mut val.1;
+                        let evt_time = evt_time.as_str();
+                        if evt_time > uptime.as_str() {
+                            *uptime = evt_time.clone().into();
+                        }
                     }
                     let last_timestamp = &mut val.3;
                     let evt_time = evt_time.as_str();
