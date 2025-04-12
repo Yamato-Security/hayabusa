@@ -34,8 +34,16 @@ pub struct EventMetrics {
     pub start_time: Option<DateTime<Utc>>,
     pub end_time: Option<DateTime<Utc>>,
     pub stats_list: HashMap<(CompactString, CompactString), usize>,
-    pub stats_computer:
-        HashMap<CompactString, (CompactString, CompactString, CompactString, usize)>,
+    pub stats_computer: HashMap<
+        CompactString, // ComputerName
+        (
+            CompactString, // OS
+            CompactString, // Uptime
+            CompactString, // TimeZone
+            CompactString, // LastTimestamp
+            usize,
+        ),
+    >,
     pub stats_login_list: HashMap<LoginEvent, [usize; 2]>,
     pub stats_logfile: Vec<LogMetrics>,
     pub counted_rec: HashSet<(String, String)>,

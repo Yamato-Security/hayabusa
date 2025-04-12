@@ -2,6 +2,7 @@ use crate::detections::configs::EventKeyAliasConfig;
 use crate::detections::message::AlertMessage;
 use crate::detections::utils;
 use crate::timeline::timelines::Timeline;
+use chrono::DateTime;
 use comfy_table::{Table, modifiers::UTF8_ROUND_CORNERS, presets::UTF8_FULL};
 use compact_str::CompactString;
 use csv::{QuoteStyle, WriterBuilder};
@@ -51,6 +52,7 @@ pub fn countup_event_by_computer(
                 CompactString::default(),
                 CompactString::default(),
                 CompactString::default(),
+                CompactString::default(),
                 0,
             ));
         if let Some(ch) = record["Event"]["System"]["Channel"].as_str() {
@@ -64,33 +66,63 @@ pub fn countup_event_by_computer(
                             let bui = arr[1].as_str().unwrap_or_default().to_string();
                             if let Some((win, data)) = WIN_VERSIONS.get(&(ver.clone(), bui.clone()))
                             {
-                                *os_name = format!("Windows {}({})", win, data).into();
+                                *os_name = format!("Windows {} ({})", win, data).into();
                             } else {
                                 *os_name = format!("Version: {} Build: {}", ver, bui).into();
                             }
                         }
                     } else if id == 6013 {
-                        let uptime = &mut val.1;
                         let timezone = &mut val.2;
                         if let Some(arr) = record["Event"]["EventData"]["Data"].as_array() {
-                            let up = arr[4].as_str().unwrap_or_default();
-                            let up = up.parse::<i64>().unwrap_or_default();
-                            let up = format_uptime(up);
                             let tz = arr[6].as_str().unwrap_or_default();
                             let tz = match tz.find(' ') {
                                 Some(index) => &tz[index + 1..],
                                 None => tz,
                             };
                             let tz = tz.to_string();
-                            *uptime = up.into();
                             *timezone = tz.into();
                         }
+                    }
+                    let evt_time =
+                        record["Event"]["System"]["TimeCreated_attributes"]["SystemTime"]
+                            .to_string();
+                    let evt_time = evt_time.trim_matches('"').to_string();
+                    if id == 12 || id == 6005 || id == 6009 {
+                        let uptime = &mut val.1;
+                        let evt_time = evt_time.as_str();
+                        if evt_time > uptime.as_str() {
+                            *uptime = evt_time.into();
+                        }
+                    }
+                    let last_timestamp = &mut val.3;
+                    let evt_time = evt_time.as_str();
+                    if evt_time > last_timestamp.as_str() {
+                        *last_timestamp = evt_time.into();
                     }
                 }
             }
         }
-        let count = &mut val.3;
+        let count = &mut val.4;
         *count += 1;
+    }
+}
+
+fn calc_elapsed_seconds(uptime: &str, last_timestamp: &str) -> String {
+    if uptime.is_empty() || last_timestamp.is_empty() {
+        return "".to_string();
+    }
+    match DateTime::parse_from_rfc3339(uptime) {
+        Ok(uptime_dt) => match DateTime::parse_from_rfc3339(last_timestamp) {
+            Ok(last) => {
+                let elapsed = last.timestamp() - uptime_dt.timestamp();
+                if elapsed <= 0 {
+                    return "".to_string();
+                }
+                format_uptime(elapsed)
+            }
+            Err(_) => "".to_string(),
+        },
+        Err(_) => "".to_string(),
     }
 }
 
@@ -109,7 +141,16 @@ fn format_uptime(seconds: i64) -> String {
 
 /// レコード内のコンピュータ名を降順で画面出力もしくはcsvに出力する関数
 pub fn computer_metrics_dsp_msg(
-    result_list: &HashMap<CompactString, (CompactString, CompactString, CompactString, usize)>,
+    result_list: &HashMap<
+        CompactString,
+        (
+            CompactString,
+            CompactString,
+            CompactString,
+            CompactString,
+            usize,
+        ),
+    >,
     output: &Option<PathBuf>,
 ) {
     let mut file_wtr = None;
@@ -143,11 +184,11 @@ pub fn computer_metrics_dsp_msg(
     }
 
     // Write contents
-    for (computer_name, (os_info, uptime, timezone, count)) in
+    for (computer_name, (os_info, uptime, timezone, last_timestamp, count)) in
         result_list.into_iter().sorted_unstable_by(|a, b| {
             let count_cmp = Ord::cmp(
-                &-i64::from_usize(a.1.3).unwrap_or_default(),
-                &-i64::from_usize(b.1.3).unwrap_or_default(),
+                &-i64::from_usize(a.1.4).unwrap_or_default(),
+                &-i64::from_usize(b.1.4).unwrap_or_default(),
             );
             if count_cmp != Ordering::Equal {
                 return count_cmp;
@@ -161,10 +202,11 @@ pub fn computer_metrics_dsp_msg(
         } else {
             count.to_formatted_string(&Locale::en)
         };
+        let elapsed_time = calc_elapsed_seconds(uptime.as_str(), last_timestamp.as_str());
         let record_data = vec![
             computer_name.as_str(),
             os_info,
-            uptime,
+            &elapsed_time,
             timezone,
             &count_str,
         ];
