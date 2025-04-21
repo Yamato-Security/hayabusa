@@ -1,4 +1,4 @@
-use crate::detections::configs::EventKeyAliasConfig;
+use crate::detections::configs::{EventKeyAliasConfig, WIN_VERSIONS};
 use crate::detections::message::AlertMessage;
 use crate::detections::utils;
 use crate::timeline::timelines::Timeline;
@@ -9,32 +9,13 @@ use csv::{QuoteStyle, WriterBuilder};
 use downcast_rs::__std::process;
 use hashbrown::HashMap;
 use itertools::Itertools;
-use lazy_static::lazy_static;
 use num::FromPrimitive;
 use num_format::{Locale, ToFormattedString};
 use serde_json::Value;
 use std::cmp::Ordering;
 use std::fs::File;
 use std::io::BufWriter;
-use std::path::{Path, PathBuf};
-
-lazy_static! {
-    static ref WIN_VERSIONS: HashMap<(String, String), (String, String)> = {
-        let mut map = HashMap::new();
-        if let Ok(file) = File::open(Path::new("rules/config/windows_versions.csv")) {
-            let mut rdr = csv::Reader::from_reader(file);
-            for rec in rdr.records().flatten() {
-                let ver = rec.get(0).unwrap_or_default().to_string();
-                let build = rec.get(1).unwrap_or_default().to_string();
-                let win = rec.get(2).unwrap_or_default().to_string();
-                let date = rec.get(3).unwrap_or_default().to_string();
-                map.insert((ver, build), (win, date));
-            }
-            return map;
-        }
-        HashMap::new()
-    };
-}
+use std::path::PathBuf;
 
 pub fn countup_event_by_computer(
     record: &Value,

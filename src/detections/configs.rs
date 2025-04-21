@@ -55,6 +55,7 @@ lazy_static! {
         .to_str()
         .unwrap(),
     );
+    pub static ref WIN_VERSIONS: HashMap<(String, String), (String, String)> = load_win_versions();
 }
 
 fn read_one_config_file(file_path: &Path) -> io::Result<HashMap<String, String>> {
@@ -2714,6 +2715,29 @@ pub fn load_windash_characters(file_path: &str) -> Vec<char> {
             characters
         }
         Err(_) => characters,
+    }
+}
+
+pub fn load_win_versions() -> HashMap<(String, String), (String, String)> {
+    fn parse_csv<R: std::io::Read>(reader: R) -> HashMap<(String, String), (String, String)> {
+        let mut map = HashMap::new();
+        let mut rdr = csv::Reader::from_reader(reader);
+        for rec in rdr.records().flatten() {
+            let ver = rec.get(0).unwrap_or_default().to_string();
+            let build = rec.get(1).unwrap_or_default().to_string();
+            let win = rec.get(2).unwrap_or_default().to_string();
+            let date = rec.get(3).unwrap_or_default().to_string();
+            map.insert((ver, build), (win, date));
+        }
+        map
+    }
+
+    if let Ok(file) = File::open(Path::new("rules/config/windows_versions.csv")) {
+        parse_csv(file)
+    } else if let Some(contents) = ONE_CONFIG_MAP.get("windows_versions.csv") {
+        parse_csv(contents.as_bytes())
+    } else {
+        HashMap::new()
     }
 }
 
