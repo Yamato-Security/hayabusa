@@ -7,6 +7,10 @@
 - Now output file size in base 1024 (Ex: `KiB`, `MiB`, `GiB`). (#1648) (@fukusuket)
 - Improved the uptime calculation in the `computer-metrics` command. (#1656) (@fukusuket)
 
+**Bug Fixes:**
+
+- The `computer-metrics` command was not working with the Windows live response package. (#1654) (@fukusuket)
+
 ## 3.2.0 [2025/04/02] - Vegemite Release
 
 **Enhancements:**
