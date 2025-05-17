@@ -1099,15 +1099,14 @@ impl Detection {
 
         let field_data_map_key = FieldDataMapKey::default();
 
-        let detect_info = message::create_message(
+        message::create_message(
             &Value::default(),
             CompactString::from(detect_info.detail.as_str()),
             detect_info,
             &profile_converter,
             (true, is_json_timeline),
             (eventkey_alias, &field_data_map_key, &None),
-        );
-        detect_info
+        )
     }
 
     fn join_agg_values<F>(
