@@ -10,6 +10,7 @@
 **Bug Fixes:**
 
 - The `computer-metrics` command was not working with the Windows live response package. (#1654) (@fukusuket)
+- `ruletype` field was returned to being an optional field. (#1660) (@fukusuket)
 
 ## 3.2.0 [2025/04/02] - Vegemite Release
 

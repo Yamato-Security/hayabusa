@@ -10,6 +10,7 @@
 **バグ修正:**
 
 - Windowsのライブレスポンスパッケージでは、`computer-metrics`コマンドが正しく動作しなかった。 (#1654) (@fukusuket)
+- `ruletype`フィールドは任意フィールドに戻された。 (#1660) (@fukusuket)
 
 ## 3.2.0 [2025/04/02] - Vegemite Release
 
