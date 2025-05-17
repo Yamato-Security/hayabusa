@@ -97,9 +97,7 @@ impl GeoIPSearch {
             addr = conv;
         } else {
             let msg = format!("Failed Convert IP Address. input: {target_ip}");
-            return Err(MaxMindDbError::Io(Error::other(
-                msg
-            )));
+            return Err(MaxMindDbError::Io(Error::other(msg)));
         };
 
         if addr.is_loopback() || target_ip == "0.0.0.0" {
