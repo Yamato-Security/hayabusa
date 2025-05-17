@@ -822,7 +822,6 @@ pub fn check_hayabusa_rule_fmt(yaml: &Yaml) -> Result<(), String> {
         "title",
         "logsource",
         "detection",
-        "ruletype",
         "level",
         "status",
         "date",
@@ -838,12 +837,6 @@ pub fn check_hayabusa_rule_fmt(yaml: &Yaml) -> Result<(), String> {
     for &key in &required_keys {
         if !yaml[key].is_badvalue() {
             match key {
-                "ruletype" => {
-                    let value = yaml[key].as_str().unwrap_or("").to_lowercase();
-                    if value != "hayabusa" && value != "sigma" {
-                        errors.push(format!("Invalid: {}", key));
-                    }
-                }
                 "level" => {
                     let value = yaml[key].as_str().unwrap_or("");
                     if !["informational", "low", "medium", "high", "critical"].contains(&value) {
