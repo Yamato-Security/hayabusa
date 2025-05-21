@@ -1,6 +1,6 @@
 # 変更点
 
-## x.x.x [xxxx/xx/xx]
+## 3.3.0 [2025/03/22] - AUSCERT/SINCON Release
 
 **改善:**
 
