@@ -852,9 +852,9 @@ impl StoredStatic {
     /// detailsのdefault値をファイルから読み取る関数
     pub fn get_default_details(
         filepath: &str,
-        disable_abbreviation: bool,
+        disable_abbreviations: bool,
     ) -> HashMap<CompactString, CompactString> {
-        if disable_abbreviation {
+        if disable_abbreviations {
             return HashMap::new();
         }
         let read_result = utils::read_csv(filepath);

@@ -823,7 +823,7 @@ mod tests {
     }
 
     #[test]
-    fn _get_default_defails_with_abbreviation() {
+    fn _get_default_details_with_abbreviation() {
         let expected: HashMap<CompactString, CompactString> = HashMap::new();
         let actual =
             StoredStatic::get_default_details("test_files/config/default_details.txt", true);
