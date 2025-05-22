@@ -753,6 +753,7 @@ impl StoredStatic {
                     })
                     .to_str()
                     .unwrap(),
+                disable_abbreviation,
             ),
             eventkey_alias: load_eventkey_alias(
                 check_setting_path(config_path, "eventkey_alias.txt", false)
@@ -849,7 +850,13 @@ impl StoredStatic {
         ret
     }
     /// detailsのdefault値をファイルから読み取る関数
-    pub fn get_default_details(filepath: &str) -> HashMap<CompactString, CompactString> {
+    pub fn get_default_details(
+        filepath: &str,
+        disable_abbreviation: bool,
+    ) -> HashMap<CompactString, CompactString> {
+        if disable_abbreviation {
+            return HashMap::new();
+        }
         let read_result = utils::read_csv(filepath);
         match read_result {
             Err(_e) => {
