@@ -817,7 +817,16 @@ mod tests {
             ("Microsoft-Windows-Sysmon_1".into(), "Cmd: %CommandLine% | Process: %Image% | User: %User% | Parent Cmd: %ParentCommandLine% | LID: %LogonId% | PID: %ProcessId% | PGUID: %ProcessGuid%".into()),
             ("Service Control Manager_7031".into(), "Svc: %param1% | Crash Count: %param2% | Action: %param5%".into()),
         ]);
-        let actual = StoredStatic::get_default_details("test_files/config/default_details.txt");
+        let actual =
+            StoredStatic::get_default_details("test_files/config/default_details.txt", false);
+        _check_hashmap_element(&expected, actual);
+    }
+
+    #[test]
+    fn _get_default_defails_with_abbreviation() {
+        let expected: HashMap<CompactString, CompactString> = HashMap::new();
+        let actual =
+            StoredStatic::get_default_details("test_files/config/default_details.txt", true);
         _check_hashmap_element(&expected, actual);
     }
 
