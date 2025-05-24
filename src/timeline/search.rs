@@ -13,6 +13,7 @@ use crate::{
     },
     options::profile::Profile,
 };
+use aho_corasick::AhoCorasickBuilder;
 use chrono::{TimeZone, Utc};
 use compact_str::CompactString;
 use csv::{QuoteStyle, Writer, WriterBuilder};
@@ -122,6 +123,24 @@ impl EventSearch {
         })
     }
 
+    fn get_default_details_mapping_table(
+        &self,
+        stored_static: &StoredStatic,
+    ) -> HashMap<CompactString, CompactString> {
+        let mut default_details_abbr: HashMap<CompactString, CompactString> = HashMap::new();
+        for detail_values in stored_static.default_details.values() {
+            detail_values.split(" ¦ ").for_each(|x| {
+                let abbr_k_v = x.split(": ").collect_vec();
+                if abbr_k_v.len() == 2 {
+                    let abbr: CompactString = abbr_k_v[0].into();
+                    let full: CompactString = abbr_k_v[1].replace("%", "").trim().into();
+                    default_details_abbr.insert(full, abbr);
+                }
+            });
+        }
+        default_details_abbr
+    }
+
     // check if a record contains the keywords specified in a search command option or not.
     fn search_keyword(
         &mut self,
@@ -146,6 +165,15 @@ impl EventSearch {
             Some(Action::Search(opt)) => (opt.ignore_case, opt.and_logic),
             _ => (false, false),
         };
+        let default_details_abbr = self.get_default_details_mapping_table(stored_static);
+        let all_field_info_abbr = AhoCorasickBuilder::new()
+            .ascii_case_insensitive(true)
+            .build(default_details_abbr.keys().map(|x| x.as_str()))
+            .unwrap();
+        let all_field_info_abbr_value = default_details_abbr
+            .values()
+            .map(|x| x.as_str())
+            .collect_vec();
         for record in records.iter() {
             // filtering
             if !self.filter_record(record, &filter_rule, &stored_static.eventkey_alias) {
@@ -192,11 +220,16 @@ impl EventSearch {
                     &stored_static.eventkey_alias,
                     stored_static.output_option.as_ref().unwrap(),
                 );
-            let allfieldinfo_newline_splited = ALLFIELDINFO_SPECIAL_CHARS
-                .replace_all(&allfieldinfo, &["🦅", "🦅", "🦅"])
-                .split('🦅')
-                .filter(|x| !x.is_empty())
-                .join(" ");
+            let allfieldinfo_newline_splited = all_field_info_abbr.replace_all(
+                ALLFIELDINFO_SPECIAL_CHARS
+                    .replace_all(&allfieldinfo, &["🦅", "🦅", "🦅"])
+                    .split('🦅')
+                    .filter(|x| !x.is_empty())
+                    .join(" ")
+                    .as_str(),
+                &all_field_info_abbr_value,
+            );
+
             if search_option.sort_events {
                 // we cannot sort all the records unless we get all the records; so we just collect the hit record at this code and we'll sort them later.
                 self.search_result.insert((
@@ -247,6 +280,16 @@ impl EventSearch {
             return;
         }
 
+        let default_details_abbr = self.get_default_details_mapping_table(stored_static);
+        let all_field_info_abbr = AhoCorasickBuilder::new()
+            .ascii_case_insensitive(true)
+            .build(default_details_abbr.keys().map(|x| x.as_str()))
+            .unwrap();
+        let all_field_info_abbr_value = default_details_abbr
+            .values()
+            .map(|x| x.as_str())
+            .collect_vec();
+
         let filter_rule = create_filter_rule(&search_option.filter);
         let mut wtr = ResultWriter::new(search_option);
         for record in records.iter() {
@@ -268,11 +311,15 @@ impl EventSearch {
                     &stored_static.eventkey_alias,
                     stored_static.output_option.as_ref().unwrap(),
                 );
-            let allfieldinfo_newline_splited = ALLFIELDINFO_SPECIAL_CHARS
-                .replace_all(&allfieldinfo, &["🦅", "🦅", "🦅"])
-                .split('🦅')
-                .filter(|x| !x.is_empty())
-                .join(" ");
+            let allfieldinfo_newline_splited = all_field_info_abbr.replace_all(
+                ALLFIELDINFO_SPECIAL_CHARS
+                    .replace_all(&allfieldinfo, &["🦅", "🦅", "🦅"])
+                    .split('🦅')
+                    .filter(|x| !x.is_empty())
+                    .join(" ")
+                    .as_str(),
+                &all_field_info_abbr_value,
+            );
             if search_option.sort_events {
                 // we cannot sort all the records unless we get all the records; so we just collect the hit record at this code and we'll sort them later.
                 self.search_result.insert((
