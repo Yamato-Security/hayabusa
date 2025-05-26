@@ -864,6 +864,9 @@ impl StoredStatic {
                 HashMap::new()
             }
             Ok(lines) => {
+                // 以下の形式のデータとなっていてProvide Name, EID, Detailsでの出力要素の順に記載されている
+                // Microsoft-Windows-Sysmon, 1, Cmdline: %CommandLine% ¦ Proc: %Image% ...
+
                 let mut ret: HashMap<CompactString, CompactString> = HashMap::new();
                 lines
                     .iter()
@@ -899,6 +902,7 @@ impl StoredStatic {
                                 );
                             }
                         };
+                        // ProviderとEIDの組み合わせで重複することはないためキーとして利用する
                         ret.insert(
                             CompactString::from(format!("{provider}_{eid}")),
                             CompactString::from(details),
