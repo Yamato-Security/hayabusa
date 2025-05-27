@@ -1,5 +1,11 @@
 # Changes
 
+## x.x.x [xxxx/xx/xx]
+
+**Enhancements:**
+
+- Field names are now abbreviated in the `search` command. You can disable with `-b, --disable-abbreviations`. (#1627) (@hitenkoku)
+
 ## 3.3.0 [2025/03/22] - AUSCERT/SINCON Release
 
 **Enhancements:**

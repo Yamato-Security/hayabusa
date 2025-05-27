@@ -1,5 +1,11 @@
 # 変更点
 
+## x.x.x [xxxx/xx/xx]
+
+**改善:**
+
+- `search`コマンドでフィールド名が省略されるようになった。`-b, --disable-abbreviations`で無効にできる。 (#1627) (@hitenkoku)
+
 ## 3.3.0 [2025/03/22] - AUSCERT/SINCON Release
 
 **改善:**
