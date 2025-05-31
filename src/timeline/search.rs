@@ -235,7 +235,7 @@ impl EventSearch {
                     &stored_static.eventkey_alias,
                     stored_static.output_option.as_ref().unwrap(),
                 );
-            let allfieldinfo_newline_splited = all_field_info_abbr.replace_all(
+            let allfieldinfo_newline_split = all_field_info_abbr.replace_all(
                 ALLFIELDINFO_SPECIAL_CHARS
                     .replace_all(&allfieldinfo, &["🦅", "🦅", "🦅"])
                     .split('🦅')
@@ -253,7 +253,7 @@ impl EventSearch {
                     channel,
                     eventid,
                     recordid,
-                    CompactString::from(allfieldinfo_newline_splited),
+                    CompactString::from(allfieldinfo_newline_split),
                     self.filepath.clone(),
                 ));
                 self.search_result_cnt += 1;
@@ -266,7 +266,7 @@ impl EventSearch {
                     channel,
                     eventid,
                     recordid,
-                    CompactString::from(allfieldinfo_newline_splited),
+                    CompactString::from(allfieldinfo_newline_split),
                     self.filepath.clone(),
                 );
                 wtr.write_record(
@@ -318,7 +318,7 @@ impl EventSearch {
                     &stored_static.eventkey_alias,
                     stored_static.output_option.as_ref().unwrap(),
                 );
-            let allfieldinfo_newline_splited = all_field_info_abbr.replace_all(
+            let allfieldinfo_newline_split = all_field_info_abbr.replace_all(
                 ALLFIELDINFO_SPECIAL_CHARS
                     .replace_all(&allfieldinfo, &["🦅", "🦅", "🦅"])
                     .split('🦅')
@@ -335,7 +335,7 @@ impl EventSearch {
                     channel,
                     eventid,
                     recordid,
-                    CompactString::from(allfieldinfo_newline_splited),
+                    CompactString::from(allfieldinfo_newline_split),
                     self.filepath.clone(),
                 ));
                 self.search_result_cnt += 1;
@@ -348,7 +348,7 @@ impl EventSearch {
                     channel,
                     eventid,
                     recordid,
-                    CompactString::from(allfieldinfo_newline_splited),
+                    CompactString::from(allfieldinfo_newline_split),
                     self.filepath.clone(),
                 );
                 wtr.write_record(
