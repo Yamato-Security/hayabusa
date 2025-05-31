@@ -242,7 +242,7 @@ impl EventSearch {
                     .filter(|x| !x.is_empty())
                     .join(" ")
                     .as_str(),
-                &all_field_info_abbr_value,
+                all_field_info_abbr_value,
             );
 
             if search_option.sort_events {
@@ -325,7 +325,7 @@ impl EventSearch {
                     .filter(|x| !x.is_empty())
                     .join(" ")
                     .as_str(),
-                &all_field_info_abbr_value,
+                all_field_info_abbr_value,
             );
             if search_option.sort_events {
                 // we cannot sort all the records unless we get all the records; so we just collect the hit record at this code and we'll sort them later.
