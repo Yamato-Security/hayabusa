@@ -240,7 +240,7 @@ impl EventSearch {
                     channel,
                     eventid,
                     recordid,
-                    CompactString::from(allfieldinfo_newline_split),
+                    allfieldinfo_newline_split,
                     self.filepath.clone(),
                 ));
                 self.search_result_cnt += 1;
@@ -253,7 +253,7 @@ impl EventSearch {
                     channel,
                     eventid,
                     recordid,
-                    CompactString::from(allfieldinfo_newline_split),
+                    allfieldinfo_newline_split,
                     self.filepath.clone(),
                 );
                 wtr.write_record(
@@ -324,7 +324,7 @@ impl EventSearch {
                     channel,
                     eventid,
                     recordid,
-                    CompactString::from(allfieldinfo_newline_split),
+                    allfieldinfo_newline_split,
                     self.filepath.clone(),
                 ));
                 self.search_result_cnt += 1;
@@ -337,7 +337,7 @@ impl EventSearch {
                     channel,
                     eventid,
                     recordid,
-                    CompactString::from(allfieldinfo_newline_split),
+                    allfieldinfo_newline_split,
                     self.filepath.clone(),
                 );
                 wtr.write_record(
