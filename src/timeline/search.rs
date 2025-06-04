@@ -220,8 +220,16 @@ impl EventSearch {
                     &stored_static.eventkey_alias,
                     stored_static.output_option.as_ref().unwrap(),
                 );
-            let target_allfieldinfo_abbr_table =
-                allfield_replace_table.get(format!("{}-{}", channel, eventid).as_str());
+            let target_allfieldinfo_abbr_table = allfield_replace_table.get(
+                format!(
+                    "{}_{}",
+                    record.record["Event"]["System"]["Provider_attributes"]["Name"]
+                        .to_string()
+                        .replace('\"', ""),
+                    eventid
+                )
+                .as_str(),
+            );
             let allfieldinfo_newline_split = self.replace_all_field_info_abbr(
                 ALLFIELDINFO_SPECIAL_CHARS
                     .replace_all(&allfieldinfo, &["🦅", "🦅", "🦅"])
@@ -304,8 +312,16 @@ impl EventSearch {
                     &stored_static.eventkey_alias,
                     stored_static.output_option.as_ref().unwrap(),
                 );
-            let target_allfieldinfo_abbr_table =
-                allfield_replace_table.get(format!("{}-{}", channel, eventid).as_str());
+            let target_allfieldinfo_abbr_table = allfield_replace_table.get(
+                format!(
+                    "{}_{}",
+                    record.record["Event"]["System"]["Provider_attributes"]["Name"]
+                        .to_string()
+                        .replace('\"', ""),
+                    eventid
+                )
+                .as_str(),
+            );
             let allfieldinfo_newline_split = self.replace_all_field_info_abbr(
                 ALLFIELDINFO_SPECIAL_CHARS
                     .replace_all(&allfieldinfo, &["🦅", "🦅", "🦅"])
