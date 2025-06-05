@@ -75,15 +75,21 @@ impl EventSearch {
     /// 検索処理を呼び出す関数。keywordsが空の場合は検索処理を行わない
     pub fn search_start(&mut self, records: &[EvtxRecordInfo], stored_static: &StoredStatic) {
         let search_option = stored_static.search_option.as_ref().unwrap();
+        let default_details_abbr = self.get_default_details_mapping_table(stored_static);
         if search_option
             .keywords
             .as_ref()
             .is_some_and(|keywords| !keywords.is_empty())
         {
-            self.search_keyword(records, search_option, stored_static);
+            self.search_keyword(
+                records,
+                search_option,
+                stored_static,
+                default_details_abbr.clone(),
+            );
         }
         if search_option.regex.is_some() {
-            self.search_regex(records, search_option, stored_static);
+            self.search_regex(records, search_option, stored_static, default_details_abbr);
         }
     }
 
@@ -122,12 +128,33 @@ impl EventSearch {
         })
     }
 
+    fn get_default_details_mapping_table(
+        &self,
+        stored_static: &StoredStatic,
+    ) -> HashMap<CompactString, HashMap<CompactString, CompactString>> {
+        let mut ret: HashMap<CompactString, HashMap<CompactString, CompactString>> = HashMap::new();
+        let mut default_details_abbr: HashMap<CompactString, CompactString> = HashMap::new();
+        for (k, v) in stored_static.default_details.iter() {
+            v.split(" ¦ ").for_each(|x| {
+                let abbr_k_v = x.split(": ").collect_vec();
+                if abbr_k_v.len() == 2 {
+                    let abbr: CompactString = abbr_k_v[0].into();
+                    let full: CompactString = abbr_k_v[1].replace("%", "").trim().into();
+                    default_details_abbr.insert(full, abbr);
+                }
+            });
+            ret.insert(k.clone(), default_details_abbr.clone());
+        }
+        ret
+    }
+
     // check if a record contains the keywords specified in a search command option or not.
     fn search_keyword(
         &mut self,
         records: &[EvtxRecordInfo],
         search_option: &SearchOption,
         stored_static: &StoredStatic,
+        allfield_replace_table: HashMap<CompactString, HashMap<CompactString, CompactString>>,
     ) {
         if records.is_empty() {
             return;
@@ -146,6 +173,7 @@ impl EventSearch {
             Some(Action::Search(opt)) => (opt.ignore_case, opt.and_logic),
             _ => (false, false),
         };
+
         for record in records.iter() {
             // filtering
             if !self.filter_record(record, &filter_rule, &stored_static.eventkey_alias) {
@@ -192,11 +220,26 @@ impl EventSearch {
                     &stored_static.eventkey_alias,
                     stored_static.output_option.as_ref().unwrap(),
                 );
-            let allfieldinfo_newline_splited = ALLFIELDINFO_SPECIAL_CHARS
-                .replace_all(&allfieldinfo, &["🦅", "🦅", "🦅"])
-                .split('🦅')
-                .filter(|x| !x.is_empty())
-                .join(" ");
+            let target_allfieldinfo_abbr_table = allfield_replace_table.get(
+                format!(
+                    "{}_{}",
+                    record.record["Event"]["System"]["Provider_attributes"]["Name"]
+                        .to_string()
+                        .replace('\"', ""),
+                    eventid
+                )
+                .as_str(),
+            );
+            let allfieldinfo_newline_split = self.replace_all_field_info_abbr(
+                ALLFIELDINFO_SPECIAL_CHARS
+                    .replace_all(&allfieldinfo, &["🦅", "🦅", "🦅"])
+                    .split('🦅')
+                    .filter(|x| !x.is_empty())
+                    .join(" ")
+                    .as_str(),
+                target_allfieldinfo_abbr_table,
+            );
+
             if search_option.sort_events {
                 // we cannot sort all the records unless we get all the records; so we just collect the hit record at this code and we'll sort them later.
                 self.search_result.insert((
@@ -205,7 +248,7 @@ impl EventSearch {
                     channel,
                     eventid,
                     recordid,
-                    CompactString::from(allfieldinfo_newline_splited),
+                    allfieldinfo_newline_split,
                     self.filepath.clone(),
                 ));
                 self.search_result_cnt += 1;
@@ -218,7 +261,7 @@ impl EventSearch {
                     channel,
                     eventid,
                     recordid,
-                    CompactString::from(allfieldinfo_newline_splited),
+                    allfieldinfo_newline_split,
                     self.filepath.clone(),
                 );
                 wtr.write_record(
@@ -238,6 +281,7 @@ impl EventSearch {
         records: &[EvtxRecordInfo],
         search_option: &SearchOption,
         stored_static: &StoredStatic,
+        allfield_replace_table: HashMap<CompactString, HashMap<CompactString, CompactString>>,
     ) {
         let re = Regex::new(search_option.regex.as_ref().unwrap()).unwrap_or_else(|err| {
             AlertMessage::alert(&format!("Failed to create regex pattern. \n{err}")).ok();
@@ -268,11 +312,26 @@ impl EventSearch {
                     &stored_static.eventkey_alias,
                     stored_static.output_option.as_ref().unwrap(),
                 );
-            let allfieldinfo_newline_splited = ALLFIELDINFO_SPECIAL_CHARS
-                .replace_all(&allfieldinfo, &["🦅", "🦅", "🦅"])
-                .split('🦅')
-                .filter(|x| !x.is_empty())
-                .join(" ");
+            let target_allfieldinfo_abbr_table = allfield_replace_table.get(
+                format!(
+                    "{}_{}",
+                    record.record["Event"]["System"]["Provider_attributes"]["Name"]
+                        .to_string()
+                        .replace('\"', ""),
+                    eventid
+                )
+                .as_str(),
+            );
+            let allfieldinfo_newline_split = self.replace_all_field_info_abbr(
+                ALLFIELDINFO_SPECIAL_CHARS
+                    .replace_all(&allfieldinfo, &["🦅", "🦅", "🦅"])
+                    .split('🦅')
+                    .filter(|x| !x.is_empty())
+                    .join(" ")
+                    .as_str(),
+                target_allfieldinfo_abbr_table,
+            );
+
             if search_option.sort_events {
                 // we cannot sort all the records unless we get all the records; so we just collect the hit record at this code and we'll sort them later.
                 self.search_result.insert((
@@ -281,7 +340,7 @@ impl EventSearch {
                     channel,
                     eventid,
                     recordid,
-                    CompactString::from(allfieldinfo_newline_splited),
+                    allfieldinfo_newline_split,
                     self.filepath.clone(),
                 ));
                 self.search_result_cnt += 1;
@@ -294,7 +353,7 @@ impl EventSearch {
                     channel,
                     eventid,
                     recordid,
-                    CompactString::from(allfieldinfo_newline_splited),
+                    allfieldinfo_newline_split,
                     self.filepath.clone(),
                 );
                 wtr.write_record(
@@ -306,6 +365,28 @@ impl EventSearch {
                 self.search_result_cnt += 1;
             }
         }
+    }
+
+    /// Replace all the field info abbreviations in the given value with their full names.
+    fn replace_all_field_info_abbr(
+        &self,
+        value: &str,
+        all_field_info_abbr: Option<&HashMap<CompactString, CompactString>>,
+    ) -> CompactString {
+        let mut pairs = if let Some(s) = all_field_info_abbr {
+            s.iter().collect::<Vec<_>>()
+        } else {
+            vec![]
+        };
+        if pairs.is_empty() {
+            return value.into();
+        }
+        pairs.sort_unstable_by(|a, b| a.0.len().cmp(&b.0.len()));
+        let mut all_field_info = value.to_string();
+        for (k, v) in pairs {
+            all_field_info = all_field_info.replace(k.as_str(), v.as_str());
+        }
+        all_field_info.into()
     }
 }
 

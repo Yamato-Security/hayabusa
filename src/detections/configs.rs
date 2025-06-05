@@ -753,6 +753,7 @@ impl StoredStatic {
                     })
                     .to_str()
                     .unwrap(),
+                disable_abbreviation,
             ),
             eventkey_alias: load_eventkey_alias(
                 check_setting_path(config_path, "eventkey_alias.txt", false)
@@ -849,7 +850,13 @@ impl StoredStatic {
         ret
     }
     /// detailsのdefault値をファイルから読み取る関数
-    pub fn get_default_details(filepath: &str) -> HashMap<CompactString, CompactString> {
+    pub fn get_default_details(
+        filepath: &str,
+        disable_abbreviations: bool,
+    ) -> HashMap<CompactString, CompactString> {
+        if disable_abbreviations {
+            return HashMap::new();
+        }
         let read_result = utils::read_csv(filepath);
         match read_result {
             Err(_e) => {
@@ -857,6 +864,9 @@ impl StoredStatic {
                 HashMap::new()
             }
             Ok(lines) => {
+                // 以下の形式のデータとなっていてProvide Name, EID, Detailsでの出力要素の順に記載されている
+                // Microsoft-Windows-Sysmon, 1, Cmdline: %CommandLine% ¦ Proc: %Image% ...
+
                 let mut ret: HashMap<CompactString, CompactString> = HashMap::new();
                 lines
                     .iter()
@@ -892,6 +902,7 @@ impl StoredStatic {
                                 );
                             }
                         };
+                        // ProviderとEIDの組み合わせで重複することはないためキーとして利用する
                         ret.insert(
                             CompactString::from(format!("{provider}_{eid}")),
                             CompactString::from(details),
@@ -924,7 +935,7 @@ fn check_thread_number(config: &Config) -> Option<usize> {
 pub enum Action {
     #[clap(
         author = "Yamato Security (https://github.com/Yamato-Security/hayabusa - @SecurityYamato)",
-        help_template = "\nHayabusa v3.3.0 - AUSCERT/SINCON Release\n{author-with-newline}\n{usage-heading}\n  hayabusa.exe csv-timeline <INPUT> [OPTIONS]\n\n{all-args}",
+        help_template = "\nHayabusa v3.4.0 - Dev Build\n{author-with-newline}\n{usage-heading}\n  hayabusa.exe csv-timeline <INPUT> [OPTIONS]\n\n{all-args}",
         term_width = 400,
         display_order = 292,
         disable_help_flag = true
@@ -934,7 +945,7 @@ pub enum Action {
 
     #[clap(
         author = "Yamato Security (https://github.com/Yamato-Security/hayabusa - @SecurityYamato)",
-        help_template = "\nHayabusa v3.3.0 - AUSCERT/SINCON Release\n{author-with-newline}\n{usage-heading}\n  hayabusa.exe json-timeline <INPUT> [OPTIONS]\n\n{all-args}",
+        help_template = "\nHayabusa v3.4.0 - Dev Build\n{author-with-newline}\n{usage-heading}\n  hayabusa.exe json-timeline <INPUT> [OPTIONS]\n\n{all-args}",
         term_width = 400,
         display_order = 360,
         disable_help_flag = true
@@ -944,7 +955,7 @@ pub enum Action {
 
     #[clap(
         author = "Yamato Security (https://github.com/Yamato-Security/hayabusa - @SecurityYamato)",
-        help_template = "\nHayabusa v3.3.0 - AUSCERT/SINCON Release\n{author-with-newline}\n{usage-heading}\n  hayabusa.exe log-metrics <INPUT> [OPTIONS]\n\n{all-args}",
+        help_template = "\nHayabusa v3.4.0 - Dev Build\n{author-with-newline}\n{usage-heading}\n  hayabusa.exe log-metrics <INPUT> [OPTIONS]\n\n{all-args}",
         term_width = 400,
         display_order = 382,
         disable_help_flag = true
@@ -954,7 +965,7 @@ pub enum Action {
 
     #[clap(
         author = "Yamato Security (https://github.com/Yamato-Security/hayabusa - @SecurityYamato)",
-        help_template = "\nHayabusa v3.3.0 - AUSCERT/SINCON Release\n{author-with-newline}\n{usage-heading}\n  hayabusa.exe logon-summary <INPUT> [OPTIONS]\n\n{all-args}",
+        help_template = "\nHayabusa v3.4.0 - Dev Build\n{author-with-newline}\n{usage-heading}\n  hayabusa.exe logon-summary <INPUT> [OPTIONS]\n\n{all-args}",
         term_width = 400,
         display_order = 383,
         disable_help_flag = true
@@ -964,7 +975,7 @@ pub enum Action {
 
     #[clap(
         author = "Yamato Security (https://github.com/Yamato-Security/hayabusa - @SecurityYamato)",
-        help_template = "\nHayabusa v3.3.0 - AUSCERT/SINCON Release\n{author-with-newline}\n{usage-heading}\n  hayabusa.exe eid-metrics <INPUT> [OPTIONS]\n\n{all-args}",
+        help_template = "\nHayabusa v3.4.0 - Dev Build\n{author-with-newline}\n{usage-heading}\n  hayabusa.exe eid-metrics <INPUT> [OPTIONS]\n\n{all-args}",
         term_width = 400,
         display_order = 310,
         disable_help_flag = true
@@ -974,7 +985,7 @@ pub enum Action {
 
     #[clap(
         author = "Yamato Security (https://github.com/Yamato-Security/hayabusa - @SecurityYamato)",
-        help_template = "\nHayabusa v3.3.0 - AUSCERT/SINCON Release\n{author-with-newline}\n{usage-heading}\n  hayabusa.exe expand-list <INPUT> [OPTIONS]\n\n{all-args}",
+        help_template = "\nHayabusa v3.4.0 - Dev Build\n{author-with-newline}\n{usage-heading}\n  hayabusa.exe expand-list <INPUT> [OPTIONS]\n\n{all-args}",
         term_width = 400,
         display_order = 311,
         disable_help_flag = true
@@ -984,7 +995,7 @@ pub enum Action {
 
     #[clap(
         author = "Yamato Security (https://github.com/Yamato-Security/hayabusa - @SecurityYamato)",
-        help_template = "\nHayabusa v3.3.0 - AUSCERT/SINCON Release\n{author-with-newline}\n{usage-heading}\n  hayabusa.exe extract-base64 <INPUT> [OPTIONS]\n\n{all-args}",
+        help_template = "\nHayabusa v3.4.0 - Dev Build\n{author-with-newline}\n{usage-heading}\n  hayabusa.exe extract-base64 <INPUT> [OPTIONS]\n\n{all-args}",
         term_width = 400,
         display_order = 311,
         disable_help_flag = true
@@ -994,7 +1005,7 @@ pub enum Action {
 
     #[clap(
         author = "Yamato Security (https://github.com/Yamato-Security/hayabusa - @SecurityYamato)",
-        help_template = "\nHayabusa v3.3.0 - AUSCERT/SINCON Release\n{author-with-newline}\n{usage-heading}\n  hayabusa.exe pivot-keywords-list <INPUT> [OPTIONS]\n\n{all-args}",
+        help_template = "\nHayabusa v3.4.0 - Dev Build\n{author-with-newline}\n{usage-heading}\n  hayabusa.exe pivot-keywords-list <INPUT> [OPTIONS]\n\n{all-args}",
         term_width = 400,
         display_order = 420,
         disable_help_flag = true
@@ -1004,7 +1015,7 @@ pub enum Action {
 
     #[clap(
         author = "Yamato Security (https://github.com/Yamato-Security/hayabusa - @SecurityYamato)",
-        help_template = "\nHayabusa v3.3.0 - AUSCERT/SINCON Release\n{author-with-newline}\n{usage-heading}\n  hayabusa.exe search <INPUT> <--keywords \"<KEYWORDS>\" OR --regex \"<REGEX>\"> [OPTIONS]\n\n{all-args}",
+        help_template = "\nHayabusa v3.4.0 - Dev Build\n{author-with-newline}\n{usage-heading}\n  hayabusa.exe search <INPUT> <--keywords \"<KEYWORDS>\" OR --regex \"<REGEX>\"> [OPTIONS]\n\n{all-args}",
         term_width = 400,
         display_order = 450,
         disable_help_flag = true
@@ -1014,7 +1025,7 @@ pub enum Action {
 
     #[clap(
         author = "Yamato Security (https://github.com/Yamato-Security/hayabusa - @SecurityYamato)",
-        help_template = "\nHayabusa v3.3.0 - AUSCERT/SINCON Release\n{author-with-newline}\n{usage-heading}\n  {usage}\n\n{all-args}",
+        help_template = "\nHayabusa v3.4.0 - Dev Build\n{author-with-newline}\n{usage-heading}\n  {usage}\n\n{all-args}",
         term_width = 400,
         display_order = 470,
         disable_help_flag = true
@@ -1024,7 +1035,7 @@ pub enum Action {
 
     #[clap(
         author = "Yamato Security (https://github.com/Yamato-Security/hayabusa - @SecurityYamato)",
-        help_template = "\nHayabusa v3.3.0 - AUSCERT/SINCON Release\n{author-with-newline}\n{usage-heading}\n  {usage}\n\n{all-args}",
+        help_template = "\nHayabusa v3.4.0 - Dev Build\n{author-with-newline}\n{usage-heading}\n  {usage}\n\n{all-args}",
         term_width = 400,
         display_order = 380,
         disable_help_flag = true
@@ -1034,7 +1045,7 @@ pub enum Action {
 
     #[clap(
         author = "Yamato Security (https://github.com/Yamato-Security/hayabusa - @SecurityYamato)",
-        help_template = "\nHayabusa v3.3.0 - AUSCERT/SINCON Release\n{author-with-newline}\n{usage-heading}\n  {usage}\n\n{all-args}",
+        help_template = "\nHayabusa v3.4.0 - Dev Build\n{author-with-newline}\n{usage-heading}\n  {usage}\n\n{all-args}",
         term_width = 400,
         display_order = 451,
         disable_help_flag = true
@@ -1052,7 +1063,7 @@ pub enum Action {
 
     #[clap(
         author = "Yamato Security (https://github.com/Yamato-Security/hayabusa - @SecurityYamato)",
-        help_template = "\nHayabusa v3.3.0 - AUSCERT/SINCON Release\n{author-with-newline}\n{usage-heading}\n  hayabusa.exe computer-metrics <INPUT> [OPTIONS]\n\n{all-args}",
+        help_template = "\nHayabusa v3.4.0 - Dev Build\n{author-with-newline}\n{usage-heading}\n  hayabusa.exe computer-metrics <INPUT> [OPTIONS]\n\n{all-args}",
         term_width = 400,
         display_order = 290,
         disable_help_flag = true
@@ -1062,7 +1073,7 @@ pub enum Action {
 
     #[clap(
         author = "Yamato Security (https://github.com/Yamato-Security/hayabusa - @SecurityYamato)",
-        help_template = "\nHayabusa v3.3.0 - AUSCERT/SINCON Release\n{author-with-newline}\n{usage-heading}\n  hayabusa.exe config-critical-systems <INPUT> [OPTIONS]\n\n{all-args}",
+        help_template = "\nHayabusa v3.4.0 - Dev Build\n{author-with-newline}\n{usage-heading}\n  hayabusa.exe config-critical-systems <INPUT> [OPTIONS]\n\n{all-args}",
         term_width = 400,
         display_order = 291,
         disable_help_flag = true
@@ -1979,7 +1990,7 @@ pub struct ConfigCriticalSystemsOption {
 #[derive(Parser, Clone, Debug, Default)]
 #[clap(
     author = "Yamato Security (https://github.com/Yamato-Security/hayabusa - @SecurityYamato)",
-    help_template = "\nHayabusa v3.3.0 - AUSCERT/SINCON Release\n{author-with-newline}\n{usage-heading}\n  hayabusa.exe <COMMAND> [OPTIONS]\n  hayabusa.exe help <COMMAND> or hayabusa.exe <COMMAND> -h\n\n{all-args}{options}",
+    help_template = "\nHayabusa v3.4.0 - Dev Build\n{author-with-newline}\n{usage-heading}\n  hayabusa.exe <COMMAND> [OPTIONS]\n  hayabusa.exe help <COMMAND> or hayabusa.exe <COMMAND> -h\n\n{all-args}{options}",
     term_width = 400,
     disable_help_flag = true
 )]
