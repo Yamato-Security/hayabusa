@@ -22,11 +22,11 @@ jobs:
             target: "x86_64-pc-windows-msvc",
           }
           - {
-            os: "windows-2022",
+            os: "windows-latest",
             target: "i686-pc-windows-msvc",
           }
           - {
-            os: "windows-2019",
+            os: "windows-latest",
             target: "aarch64-pc-windows-msvc",
           }
           - {
@@ -34,11 +34,11 @@ jobs:
             target: "x86_64-unknown-linux-gnu",
           }
           - {
-            os: "ubuntu-24.04",
+            os: "ubuntu-latest",
             target: "x86_64-unknown-linux-musl",
           }
           - {
-            os: "ubuntu-22.04",
+            os: "ubuntu-latest",
             target: "aarch64-unknown-linux-gnu",
           }
           - {
@@ -46,7 +46,7 @@ jobs:
             target: "aarch64-apple-darwin",
           }
           - {
-            os: "macos-13",
+            os: "macos-latest",
             target: "x86_64-apple-darwin",
           }
 
@@ -109,8 +109,8 @@ jobs:
           Copy-Item -Recurse -Path ./hayabusa-rules/ -Destination release-binaries/rules -Force
           switch ("${{ matrix.info.os }}") {
               "windows-latest" { mv release-binaries/hayabusa.exe release-binaries/hayabusa-${{ github.event.inputs.release_ver }}-win-x64.exe }
-              "windows-2022" { mv release-binaries/hayabusa.exe release-binaries/hayabusa-${{ github.event.inputs.release_ver }}-win-x86.exe }
-              "windows-2019" { mv release-binaries/hayabusa.exe release-binaries/hayabusa-${{ github.event.inputs.release_ver }}-win-aarch64.exe }
+              "windows-latest" { mv release-binaries/hayabusa.exe release-binaries/hayabusa-${{ github.event.inputs.release_ver }}-win-x86.exe }
+              "windows-latest" { mv release-binaries/hayabusa.exe release-binaries/hayabusa-${{ github.event.inputs.release_ver }}-win-aarch64.exe }
           }
 
       - name: Package and Zip(encoded_rule) - Windows
@@ -124,8 +124,8 @@ jobs:
           Invoke-WebRequest -Uri https://raw.githubusercontent.com/Yamato-Security/hayabusa-encoded-rules/refs/heads/main/rules_config_files.txt -OutFile release-binaries-encoded-rules/rules_config_files.txt
           switch ("${{ matrix.info.os }}") {
               "windows-latest" { mv release-binaries-encoded-rules/hayabusa.exe release-binaries-encoded-rules/hayabusa-${{ github.event.inputs.release_ver }}-win-x64.exe }
-              "windows-2022" { mv release-binaries-encoded-rules/hayabusa.exe release-binaries-encoded-rules/hayabusa-${{ github.event.inputs.release_ver }}-win-x86.exe }
-              "windows-2019" { mv release-binaries-encoded-rules/hayabusa.exe release-binaries-encoded-rules/hayabusa-${{ github.event.inputs.release_ver }}-win-aarch64.exe }
+              "windows-latest" { mv release-binaries-encoded-rules/hayabusa.exe release-binaries-encoded-rules/hayabusa-${{ github.event.inputs.release_ver }}-win-x86.exe }
+              "windows-latest" { mv release-binaries-encoded-rules/hayabusa.exe release-binaries-encoded-rules/hayabusa-${{ github.event.inputs.release_ver }}-win-aarch64.exe }
           }
 
       - name: Package and Zip - Unix
@@ -144,16 +144,16 @@ jobs:
           case ${{ matrix.info.os }} in
             'ubuntu-latest')
                 mv release-binaries/hayabusa release-binaries/hayabusa-${{ github.event.inputs.release_ver }}-lin-x64-gnu ;;
-            'ubuntu-24.04')
+            'ubuntu-latest')
                 cp ./target/x86_64-unknown-linux-musl/release/hayabusa release-binaries/
                 mv release-binaries/hayabusa release-binaries/hayabusa-${{ github.event.inputs.release_ver }}-lin-x64-musl ;;
-            'ubuntu-22.04')
+            'ubuntu-latest')
                 mv release-binaries/hayabusa release-binaries/hayabusa-${{ github.event.inputs.release_ver }}-lin-aarch64-gnu ;;
-            'ubuntu-20.04')
+            'ubuntu-latest')
                 mv release-binaries/hayabusa release-binaries/hayabusa-${{ github.event.inputs.release_ver }}-lin-aarch64-musl ;;
             'macos-latest')
                 mv release-binaries/hayabusa release-binaries/hayabusa-${{ github.event.inputs.release_ver }}-mac-aarch64 ;;
-            'macos-13')
+            'macos-latest')
                 mv release-binaries/hayabusa release-binaries/hayabusa-${{ github.event.inputs.release_ver }}-mac-x64 ;;
           esac
 
@@ -164,21 +164,21 @@ jobs:
           case "${{ matrix.info.os }}" in
             'windows-latest')
               echo "artifact_name=hayabusa-${{ github.event.inputs.release_ver }}-win-x64" >> $GITHUB_OUTPUT ;;
-            'windows-2022')
+            'windows-latest')
               echo "artifact_name=hayabusa-${{ github.event.inputs.release_ver }}-win-x86" >> $GITHUB_OUTPUT ;;
-            'windows-2019')
+            'windows-latest')
               echo "artifact_name=hayabusa-${{ github.event.inputs.release_ver }}-win-aarch64" >> $GITHUB_OUTPUT ;;
             'ubuntu-latest')
               echo "artifact_name=hayabusa-${{ github.event.inputs.release_ver }}-lin-x64-gnu" >> $GITHUB_OUTPUT ;;
-            'ubuntu-24.04')
+            'ubuntu-latest')
               echo "artifact_name=hayabusa-${{ github.event.inputs.release_ver }}-lin-x64-musl" >> $GITHUB_OUTPUT ;;
-            'ubuntu-22.04')
+            'ubuntu-latest')
               echo "artifact_name=hayabusa-${{ github.event.inputs.release_ver }}-lin-aarch64-gnu" >> $GITHUB_OUTPUT ;;
-            'ubuntu-20.04')
+            'ubuntu-latest')
               echo "artifact_name=hayabusa-${{ github.event.inputs.release_ver }}-lin-aarch64-musl" >> $GITHUB_OUTPUT ;;
             'macos-latest')
               echo "artifact_name=hayabusa-${{ github.event.inputs.release_ver }}-mac-aarch64" >> $GITHUB_OUTPUT ;;
-            'macos-13')
+            'macos-latest')
               echo "artifact_name=hayabusa-${{ github.event.inputs.release_ver }}-mac-x64" >> $GITHUB_OUTPUT ;;
           esac
 
@@ -197,9 +197,9 @@ jobs:
           case "${{ matrix.info.os }}" in
             'windows-latest')
               echo "artifact_name=hayabusa-${{ github.event.inputs.release_ver }}-win-x64-live-response" > $GITHUB_OUTPUT ;;
-            'windows-2022')
+            'windows-latest')
               echo "artifact_name=hayabusa-${{ github.event.inputs.release_ver }}-win-x86-live-response" > $GITHUB_OUTPUT ;;
-            'windows-2019')
+            'windows-latest')
               echo "artifact_name=hayabusa-${{ github.event.inputs.release_ver }}-win-aarch64-live-response" > $GITHUB_OUTPUT ;;
           esac
 
