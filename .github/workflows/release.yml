@@ -99,7 +99,7 @@ jobs:
         run: |
           mkdir -p release-binaries
           mkdir -p release-binaries/logs
-          Copy-Item -Path ./target/release/hayabusa.exe -Destination release-binaries/
+          Copy-Item -Path ./target/${{ matrix.info.target }}/release/hayabusa.exe -Destination release-binaries/
           Copy-Item -Recurse -Path ./config -Destination release-binaries/
           Remove-Item -Path ./hayabusa-rules/.gitignore -Force
           Remove-Item -Path ./hayabusa-rules/*.md -Force
@@ -107,10 +107,10 @@ jobs:
           Remove-Item -Path ./hayabusa-rules/scripts -Recurse -Force
           Remove-Item -Path ./hayabusa-rules/doc -Recurse -Force
           Copy-Item -Recurse -Path ./hayabusa-rules/ -Destination release-binaries/rules -Force
-          switch ("${{ matrix.info.os }}") {
-              "windows-latest" { mv release-binaries/hayabusa.exe release-binaries/hayabusa-${{ github.event.inputs.release_ver }}-win-x64.exe }
-              "windows-latest" { mv release-binaries/hayabusa.exe release-binaries/hayabusa-${{ github.event.inputs.release_ver }}-win-x86.exe }
-              "windows-latest" { mv release-binaries/hayabusa.exe release-binaries/hayabusa-${{ github.event.inputs.release_ver }}-win-aarch64.exe }
+          switch ("${{ matrix.info.target }}") {
+              "x86_64-pc-windows-msvc" { mv release-binaries/hayabusa.exe release-binaries/hayabusa-${{ github.event.inputs.release_ver }}-win-x64.exe }
+              "i686-pc-windows-msvc" { mv release-binaries/hayabusa.exe release-binaries/hayabusa-${{ github.event.inputs.release_ver }}-win-x86.exe }
+              "aarch64-pc-windows-msvc" { mv release-binaries/hayabusa.exe release-binaries/hayabusa-${{ github.event.inputs.release_ver }}-win-aarch64.exe }
           }
 
       - name: Package and Zip(encoded_rule) - Windows
@@ -119,41 +119,38 @@ jobs:
         run: |
           mkdir -p release-binaries-encoded-rules
           mkdir -p release-binaries-encoded-rules/logs
-          Copy-Item -Path ./target/release/hayabusa.exe -Destination release-binaries-encoded-rules/
+          Copy-Item -Path ./target/${{ matrix.info.target }}/release/hayabusa.exe -Destination release-binaries-encoded-rules/
           Invoke-WebRequest -Uri https://raw.githubusercontent.com/Yamato-Security/hayabusa-encoded-rules/refs/heads/main/encoded_rules.yml -OutFile release-binaries-encoded-rules/encoded_rules.yml
           Invoke-WebRequest -Uri https://raw.githubusercontent.com/Yamato-Security/hayabusa-encoded-rules/refs/heads/main/rules_config_files.txt -OutFile release-binaries-encoded-rules/rules_config_files.txt
-          switch ("${{ matrix.info.os }}") {
-              "windows-latest" { mv release-binaries-encoded-rules/hayabusa.exe release-binaries-encoded-rules/hayabusa-${{ github.event.inputs.release_ver }}-win-x64.exe }
-              "windows-latest" { mv release-binaries-encoded-rules/hayabusa.exe release-binaries-encoded-rules/hayabusa-${{ github.event.inputs.release_ver }}-win-x86.exe }
-              "windows-latest" { mv release-binaries-encoded-rules/hayabusa.exe release-binaries-encoded-rules/hayabusa-${{ github.event.inputs.release_ver }}-win-aarch64.exe }
+          switch ("${{ matrix.info.target }}") {
+              "x86_64-pc-windows-msvc" { mv release-binaries-encoded-rules/hayabusa.exe release-binaries-encoded-rules/hayabusa-${{ github.event.inputs.release_ver }}-win-x64.exe }
+              "i686-pc-windows-msvc" { mv release-binaries-encoded-rules/hayabusa.exe release-binaries-encoded-rules/hayabusa-${{ github.event.inputs.release_ver }}-win-x86.exe }
+              "aarch64-pc-windows-msvc" { mv release-binaries-encoded-rules/hayabusa.exe release-binaries-encoded-rules/hayabusa-${{ github.event.inputs.release_ver }}-win-aarch64.exe }
           }
 
       - name: Package and Zip - Unix
         if: contains(matrix.info.os, 'windows') == false
         run: |
           mkdir -p release-binaries
-          cp ./target/release/hayabusa release-binaries/
+          cp ./target/${{ matrix.info.target }}/release/hayabusa release-binaries/
           cp -r ./config release-binaries/config
-          cp -r ./logs release-binaries/logs
+          mkdir -p release-binaries/logs
           rm -f ./hayabusa-rules/.gitignore
           rm -f ./hayabusa-rules/*.md
           rm -rf ./hayabusa-rules/.github
           rm -rf ./hayabusa-rules/scripts
           rm -rf ./hayabusa-rules/doc
           cp -r ./hayabusa-rules/. release-binaries/rules
-          case ${{ matrix.info.os }} in
-            'ubuntu-latest')
+          case ${{ matrix.info.target }} in
+            'x86_64-unknown-linux-gnu')
                 mv release-binaries/hayabusa release-binaries/hayabusa-${{ github.event.inputs.release_ver }}-lin-x64-gnu ;;
-            'ubuntu-latest')
-                cp ./target/x86_64-unknown-linux-musl/release/hayabusa release-binaries/
+            'x86_64-unknown-linux-musl')
                 mv release-binaries/hayabusa release-binaries/hayabusa-${{ github.event.inputs.release_ver }}-lin-x64-musl ;;
-            'ubuntu-latest')
+            'aarch64-unknown-linux-gnu')
                 mv release-binaries/hayabusa release-binaries/hayabusa-${{ github.event.inputs.release_ver }}-lin-aarch64-gnu ;;
-            'ubuntu-latest')
-                mv release-binaries/hayabusa release-binaries/hayabusa-${{ github.event.inputs.release_ver }}-lin-aarch64-musl ;;
-            'macos-latest')
+            'aarch64-apple-darwin')
                 mv release-binaries/hayabusa release-binaries/hayabusa-${{ github.event.inputs.release_ver }}-mac-aarch64 ;;
-            'macos-latest')
+            'x86_64-apple-darwin')
                 mv release-binaries/hayabusa release-binaries/hayabusa-${{ github.event.inputs.release_ver }}-mac-x64 ;;
           esac
 
@@ -161,24 +158,22 @@ jobs:
         id: set_artifact_name
         shell: bash
         run: |
-          case "${{ matrix.info.os }}" in
-            'windows-latest')
+          case "${{ matrix.info.target }}" in
+            'x86_64-pc-windows-msvc')
               echo "artifact_name=hayabusa-${{ github.event.inputs.release_ver }}-win-x64" >> $GITHUB_OUTPUT ;;
-            'windows-latest')
+            'i686-pc-windows-msvc')
               echo "artifact_name=hayabusa-${{ github.event.inputs.release_ver }}-win-x86" >> $GITHUB_OUTPUT ;;
-            'windows-latest')
+            'aarch64-pc-windows-msvc')
               echo "artifact_name=hayabusa-${{ github.event.inputs.release_ver }}-win-aarch64" >> $GITHUB_OUTPUT ;;
-            'ubuntu-latest')
+            'x86_64-unknown-linux-gnu')
               echo "artifact_name=hayabusa-${{ github.event.inputs.release_ver }}-lin-x64-gnu" >> $GITHUB_OUTPUT ;;
-            'ubuntu-latest')
+            'x86_64-unknown-linux-musl')
               echo "artifact_name=hayabusa-${{ github.event.inputs.release_ver }}-lin-x64-musl" >> $GITHUB_OUTPUT ;;
-            'ubuntu-latest')
+            'aarch64-unknown-linux-gnu')
               echo "artifact_name=hayabusa-${{ github.event.inputs.release_ver }}-lin-aarch64-gnu" >> $GITHUB_OUTPUT ;;
-            'ubuntu-latest')
-              echo "artifact_name=hayabusa-${{ github.event.inputs.release_ver }}-lin-aarch64-musl" >> $GITHUB_OUTPUT ;;
-            'macos-latest')
+            'aarch64-apple-darwin')
               echo "artifact_name=hayabusa-${{ github.event.inputs.release_ver }}-mac-aarch64" >> $GITHUB_OUTPUT ;;
-            'macos-latest')
+            'x86_64-apple-darwin')
               echo "artifact_name=hayabusa-${{ github.event.inputs.release_ver }}-mac-x64" >> $GITHUB_OUTPUT ;;
           esac
 
@@ -194,13 +189,13 @@ jobs:
         id: set_artifact_name_encoded_rule
         shell: bash
         run: |
-          case "${{ matrix.info.os }}" in
-            'windows-latest')
-              echo "artifact_name=hayabusa-${{ github.event.inputs.release_ver }}-win-x64-live-response" > $GITHUB_OUTPUT ;;
-            'windows-latest')
-              echo "artifact_name=hayabusa-${{ github.event.inputs.release_ver }}-win-x86-live-response" > $GITHUB_OUTPUT ;;
-            'windows-latest')
-              echo "artifact_name=hayabusa-${{ github.event.inputs.release_ver }}-win-aarch64-live-response" > $GITHUB_OUTPUT ;;
+          case "${{ matrix.info.target }}" in
+            'x86_64-pc-windows-msvc')
+              echo "artifact_name=hayabusa-${{ github.event.inputs.release_ver }}-win-x64-live-response" >> $GITHUB_OUTPUT ;;
+            'i686-pc-windows-msvc')
+              echo "artifact_name=hayabusa-${{ github.event.inputs.release_ver }}-win-x86-live-response" >> $GITHUB_OUTPUT ;;
+            'aarch64-pc-windows-msvc')
+              echo "artifact_name=hayabusa-${{ github.event.inputs.release_ver }}-win-aarch64-live-response" >> $GITHUB_OUTPUT ;;
           esac
 
       - name: Upload Artifacts(encoded_rule)
@@ -212,13 +207,13 @@ jobs:
           include-hidden-files: true
 
       - name: Setup node
-        if: matrix.info.os == 'macos-latest'
+        if: matrix.info.target == 'aarch64-apple-darwin'
         uses: actions/setup-node@v4
         with:
           node-version: 20
 
       - name: Create PDF
-        if: matrix.info.os == 'macos-latest'
+        if: matrix.info.target == 'aarch64-apple-darwin'
         run: |
           npm i -g md-to-pdf
           md-to-pdf ./*.md --md-file-encoding utf-8
@@ -226,7 +221,7 @@ jobs:
           mv ./README-Japanese.pdf ./README-${{ github.event.inputs.release_ver }}-Japanese.pdf
 
       - name: Upload Document Artifacts
-        if: matrix.info.os == 'macos-latest'
+        if: matrix.info.target == 'aarch64-apple-darwin'
         uses: actions/upload-artifact@v4
         with:
           name: hayabusa-documents
