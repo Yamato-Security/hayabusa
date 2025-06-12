@@ -57,6 +57,7 @@ rust-embed={version = "8.7.2", features = ["include-exclude", "debug-embed"]}
 encoding_rs = "0.8.35"
 walkdir = "2.5.0"
 uuid = { version = "1.11.0", features = ["v4"] }
+winapi = { version = "0.3.9", features = ["wow64apiset"] }
 
 [profile.dev]
 debug-assertions = false

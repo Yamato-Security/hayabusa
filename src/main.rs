@@ -28,6 +28,15 @@ use hayabusa::detections::utils::{
     check_setting_path, get_file_size, get_writable_color, output_and_data_stack_for_html,
     output_profile_name,
 };
+#[cfg(target_os = "windows")]
+use winapi::{
+    um::wow64apiset::{
+        Wow64DisableWow64FsRedirection,
+        Wow64RevertWow64FsRedirection
+    },
+    ctypes::c_void,
+    shared::ntdef::PVOID,
+};
 use hayabusa::filter::create_channel_filter;
 use hayabusa::level::LEVEL;
 use hayabusa::options::htmlreport::{self, HTML_REPORTER};
@@ -100,6 +109,41 @@ fn main() {
     app.rt.shutdown_background();
 }
 
+struct Wow64RedirectionGuard {
+    #[cfg(target_os = "windows")]
+    old_state: *mut c_void,
+}
+
+impl Wow64RedirectionGuard {
+    fn new() -> Option<Self> {
+        #[cfg(target_os = "windows")]
+        {
+            let mut old_state: *mut winapi::ctypes::c_void = std::ptr::null_mut();
+            unsafe {
+                if Wow64DisableWow64FsRedirection(&mut old_state as *mut *mut _ as *mut PVOID) != 0 {
+                    Some(Self { old_state })
+                } else {
+                    None
+                }
+            }
+        }
+
+        #[cfg(not(target_os = "windows"))]
+        {
+            Some(Self {})
+        }
+    }
+}
+
+impl Drop for Wow64RedirectionGuard {
+    fn drop(&mut self) {
+        #[cfg(target_os = "windows")]
+        unsafe {
+            Wow64RevertWow64FsRedirection(self.old_state as PVOID);
+        }
+    }
+}
+
 pub struct App {
     rt: Runtime,
     rule_keys: Nested<String>,
@@ -168,14 +212,11 @@ impl App {
                 &analysis_start_time.day()
             ));
         }
-        if !self.is_matched_architecture_and_binary() {
-            AlertMessage::alert(
-                "The hayabusa version you ran does not match your PC architecture.\nPlease use the correct architecture. (Binary ending in -x64.exe for 64-bit and -x86.exe for 32-bit.)",
-            )
-            .ok();
-            println!();
-            return;
-        }
+        let _guard = if !self.is_matched_architecture_and_binary() {
+            Wow64RedirectionGuard::new()
+        } else {
+            None
+        };
 
         if Path::new("encoded_rules.yml").exists() && Path::new("rules").exists() {
             println!(
