@@ -926,6 +926,7 @@ dependencies = [
  "uuid",
  "walkdir",
  "wildmatch",
+ "winapi",
  "yaml-rust2",
 ]
 
