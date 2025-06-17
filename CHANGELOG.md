@@ -5,6 +5,8 @@
 **Enhancements:**
 
 - Field names are now abbreviated in the `search` command. You can disable with `-b, --disable-abbreviations`. (#1627) (@hitenkoku)
+- 32-bit version of Hayabusa will now also run on 64-bit OSes. (#1665) (@akkuman)
+- We now put a return character after the last line in JSON/L files so that filebeat will not miss the last event. (#1666) (@fukusuket)
 
 ## 3.3.0 [2025/03/22] - AUSCERT/SINCON Release
 
