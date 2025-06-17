@@ -5,6 +5,8 @@
 **改善:**
 
 - `search`コマンドでフィールド名が省略されるようになった。`-b, --disable-abbreviations`で無効にできる。 (#1627) (@hitenkoku)
+- 32ビット版のHayabusaが64ビットOSでも動作するようになった。 (#1665) (@akkuman)
+- Filebeatが最後のイベントを見逃さないように、JSON/Lファイルの最終行の後にリターン文字を置くようにした。 (#1666) (@fukusuket)
 
 ## 3.3.0 [2025/03/22] - AUSCERT/SINCON Release
 
