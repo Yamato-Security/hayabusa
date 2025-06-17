@@ -72,6 +72,12 @@ use tokio::runtime::Runtime;
 use tokio::spawn;
 use tokio::task::JoinHandle;
 use ureq::get;
+#[cfg(target_os = "windows")]
+use winapi::{
+    ctypes::c_void,
+    shared::ntdef::PVOID,
+    um::wow64apiset::{Wow64DisableWow64FsRedirection, Wow64RevertWow64FsRedirection},
+};
 use yaml_rust2::YamlLoader;
 
 #[derive(Embed)]
@@ -98,6 +104,42 @@ fn main() {
     let mut app = App::new(stored_static.thread_number);
     app.exec(&mut config_reader.app, &mut stored_static);
     app.rt.shutdown_background();
+}
+
+struct Wow64RedirectionGuard {
+    #[cfg(target_os = "windows")]
+    old_state: *mut c_void,
+}
+
+impl Wow64RedirectionGuard {
+    fn new() -> Option<Self> {
+        #[cfg(target_os = "windows")]
+        {
+            let mut old_state: *mut winapi::ctypes::c_void = std::ptr::null_mut();
+            unsafe {
+                if Wow64DisableWow64FsRedirection(&mut old_state as *mut *mut _ as *mut PVOID) != 0
+                {
+                    Some(Self { old_state })
+                } else {
+                    None
+                }
+            }
+        }
+
+        #[cfg(not(target_os = "windows"))]
+        {
+            Some(Self {})
+        }
+    }
+}
+
+impl Drop for Wow64RedirectionGuard {
+    fn drop(&mut self) {
+        #[cfg(target_os = "windows")]
+        unsafe {
+            Wow64RevertWow64FsRedirection(self.old_state as PVOID);
+        }
+    }
 }
 
 pub struct App {
@@ -168,14 +210,11 @@ impl App {
                 &analysis_start_time.day()
             ));
         }
-        if !self.is_matched_architecture_and_binary() {
-            AlertMessage::alert(
-                "The hayabusa version you ran does not match your PC architecture.\nPlease use the correct architecture. (Binary ending in -x64.exe for 64-bit and -x86.exe for 32-bit.)",
-            )
-            .ok();
-            println!();
-            return;
-        }
+        let _guard = if !self.is_matched_architecture_and_binary() {
+            Wow64RedirectionGuard::new()
+        } else {
+            None
+        };
 
         if Path::new("encoded_rules.yml").exists() && Path::new("rules").exists() {
             println!(
