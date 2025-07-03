@@ -1182,7 +1182,7 @@ impl Detection {
         let v2: Vec<&str> = s2.split(',').collect();
         v1.into_iter()
             .zip(v2)
-            .map(|(s1, s2)| format!("{}:{}", s1, s2))
+            .map(|(s1, s2)| format!("{s1}:{s2}"))
             .collect::<Vec<String>>()
             .join(" ¦ ")
     }
@@ -1236,7 +1236,7 @@ impl Detection {
                 )
                 .ok();
                 if stored_static.html_report_flag {
-                    let output_str = format!("{}{}", key, val);
+                    let output_str = format!("{key}{val}");
                     html_report_stock.push(format!("- {output_str}"));
                 }
             }
@@ -1300,7 +1300,7 @@ impl Detection {
                 )
                 .ok();
                 if stored_static.html_report_flag {
-                    let output_str = format!("{}{}", key, val);
+                    let output_str = format!("{key}{val}");
                     html_report_stock.push(format!("- {output_str}"));
                 }
             }
@@ -1333,7 +1333,7 @@ impl Detection {
                 true,
             )
             .ok();
-            let col = format!("{}{}", key, val);
+            let col = format!("{key}{val}");
             let key = "Correlation referenced rules: ";
             let val = format!(
                 "{} ({:.2}%)",
@@ -1357,7 +1357,7 @@ impl Detection {
                 true,
             )
             .ok();
-            let col_ref = format!("{}{}", key, val);
+            let col_ref = format!("{key}{val}");
             if stored_static.html_report_flag {
                 html_report_stock.push(format!("- {col}"));
                 html_report_stock.push(format!("- {col_ref}"));

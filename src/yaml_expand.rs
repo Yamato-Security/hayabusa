@@ -103,7 +103,7 @@ pub fn read_expand_files<P: AsRef<Path>>(dir: P) -> io::Result<HashMap<String, V
                         .map(|s| s.trim().to_string())
                         .collect();
                     if !values.is_empty() {
-                        expand_map.insert(format!("%{}%", key), values);
+                        expand_map.insert(format!("%{key}%"), values);
                     }
                 }
             }

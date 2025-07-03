@@ -162,8 +162,7 @@ impl ConfigCriticalSystems {
                         }
                     };
                     let prompt_fmt = format!(
-                        "Would you like to add them to the {} file?:",
-                        CONFIG_CRITICAL_SYSTEMS
+                        "Would you like to add them to the {CONFIG_CRITICAL_SYSTEMS} file?:"
                     );
                     let config_append = Confirm::with_theme(&color_theme)
                         .with_prompt(prompt_fmt)
@@ -178,14 +177,14 @@ impl ConfigCriticalSystems {
                             .open(&self.config_txt_path)
                             .expect("Failed to open file");
                         names.iter().for_each(|name| {
-                            file.write_all(format!("{}\n", name).as_bytes()).ok();
+                            file.write_all(format!("{name}\n").as_bytes()).ok();
                         });
                         file.flush().ok();
                         sort_and_dedup_file(&self.config_txt_path).ok();
                         write_color_buffer(
                             &BufferWriter::stdout(ColorChoice::Always),
                             get_writable_color(Some(Color::Rgb(255, 175, 0)), no_color),
-                            &format!("Added to the {} file.", CONFIG_CRITICAL_SYSTEMS),
+                            &format!("Added to the {CONFIG_CRITICAL_SYSTEMS} file."),
                             true,
                         )
                         .ok();
@@ -193,7 +192,7 @@ impl ConfigCriticalSystems {
                     }
                 }
                 None => {
-                    let msg = format!("No {:?} found.", computer_type);
+                    let msg = format!("No {computer_type:?} found.");
                     write_color_buffer(
                         &BufferWriter::stdout(ColorChoice::Always),
                         get_writable_color(Some(Color::Rgb(215, 0, 0)), no_color),
@@ -226,7 +225,7 @@ fn sort_and_dedup_file(file_path: &Path) -> io::Result<()> {
         .truncate(true)
         .open(file_path)?;
     for line in sorted_lines {
-        writeln!(file, "{}", line)?;
+        writeln!(file, "{line}")?;
     }
     file.flush().ok();
     Ok(())

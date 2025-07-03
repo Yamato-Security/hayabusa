@@ -162,7 +162,7 @@ impl ConditionCompiler {
                 .filter(|x| x.starts_with(target_node_key_prefix.as_str()))
                 .join(sep);
             converted_str =
-                converted_str.replace(match_str, format!("({})", replaced_condition).as_str())
+                converted_str.replace(match_str, format!("({replaced_condition})").as_str())
         }
         converted_str
     }

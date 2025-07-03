@@ -47,9 +47,9 @@ pub fn countup_event_by_computer(
                             let bui = arr[1].as_str().unwrap_or_default().to_string();
                             if let Some((win, data)) = WIN_VERSIONS.get(&(ver.clone(), bui.clone()))
                             {
-                                *os_name = format!("Windows {} ({})", win, data).into();
+                                *os_name = format!("Windows {win} ({data})").into();
                             } else {
-                                *os_name = format!("Version: {} Build: {}", ver, bui).into();
+                                *os_name = format!("Version: {ver} Build: {bui}").into();
                             }
                         }
                     } else if id == 6013 {
@@ -114,10 +114,7 @@ fn format_uptime(seconds: i64) -> String {
     let hours = (seconds % 86_400) / 3_600;
     let minutes = (seconds % 3_600) / 60;
     let seconds = seconds % 60;
-    format!(
-        "{}Y {}M {}d {}h {}m {}s",
-        years, months, days, hours, minutes, seconds
-    )
+    format!("{years}Y {months}M {days}d {hours}h {minutes}m {seconds}s")
 }
 
 /// レコード内のコンピュータ名を降順で画面出力もしくはcsvに出力する関数

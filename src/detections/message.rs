@@ -380,7 +380,7 @@ pub fn parse_message(
         for detail_contents in details_key.iter() {
             let key = detail_contents.split_once(": ").unwrap_or_default().0;
             let val = detail_contents.split_once(": ").unwrap_or_default().1;
-            details_key_and_value.push(format!("{}: {}", key, val).into());
+            details_key_and_value.push(format!("{key}: {val}").into());
         }
     }
     (return_message, details_key_and_value)
