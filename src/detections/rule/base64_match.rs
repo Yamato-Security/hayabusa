@@ -23,7 +23,7 @@ pub fn convert_to_base64_str(
                 }
             }
             Err(e) => {
-                err_msges.push(format!("Failed base64 encoding: {}", e));
+                err_msges.push(format!("Failed base64 encoding: {e}"));
             }
         }
     }

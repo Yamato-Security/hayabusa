@@ -431,7 +431,7 @@ Any hostnames added to the critical_systems.txt file will have all alerts above 
                         .ok();
                         println!();
                         output_and_data_stack_for_html(
-                            &format!("{message}: {}", file_str),
+                            &format!("{message}: {file_str}"),
                             "General Overview {#general_overview}",
                             html_report_flag,
                         );
@@ -1041,7 +1041,7 @@ Any hostnames added to the critical_systems.txt file will have all alerts above 
             .unwrap()
             .calculate_all_stocked_results();
         output_and_data_stack_for_html(
-            &format!("Elapsed time: {}", elapsed_output_str),
+            &format!("Elapsed time: {elapsed_output_str}"),
             "General Overview {#general_overview}",
             &stored_static.html_report_flag,
         );
@@ -1832,7 +1832,7 @@ Any hostnames added to the critical_systems.txt file will have all alerts above 
                 .unwrap_or_default()
                 .join(" / ");
             if !exclude_tags_data.is_empty() {
-                html_report_data.push(format!("- Excluded tags: {}", exclude_tags_data));
+                html_report_data.push(format!("- Excluded tags: {exclude_tags_data}"));
             }
             output_data.extend(html_report_data.iter());
             htmlreport::add_md_data("General Overview #{general_overview}", output_data);
@@ -2039,8 +2039,7 @@ Any hostnames added to the critical_systems.txt file will have all alerts above 
             let spinner = "{spinner}".truecolor(0, 255, 0).to_string();
             let bar = "{bar:40}".truecolor(0, 255, 0).to_string();
             format!(
-                "[{{elapsed_precise}}] {{human_pos}} / {{human_len}} {} [{}] {{percent}}%\r\n\r\n{{msg}}",
-                spinner, bar
+                "[{{elapsed_precise}}] {{human_pos}} / {{human_len}} {spinner} [{bar}] {{percent}}%\r\n\r\n{{msg}}",
             )
         };
 
@@ -2933,7 +2932,7 @@ Any hostnames added to the critical_systems.txt file will have all alerts above 
         }
         let checked_path = check_setting_path(
             &CURRENT_EXE_PATH.to_path_buf(),
-            format!("rules/config/{}", file_path).as_str(),
+            format!("rules/config/{file_path}").as_str(),
             true,
         );
         if let Some(f) = checked_path {

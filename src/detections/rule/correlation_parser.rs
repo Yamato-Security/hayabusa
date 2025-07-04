@@ -183,7 +183,7 @@ fn create_related_rule_nodes(
             }
         }
         if !any_referenced {
-            let msg = format!("The referenced rule was not found: {}", id);
+            let msg = format!("The referenced rule was not found: {id}");
             return Err(msg.into());
         }
     }
@@ -225,10 +225,7 @@ fn error_log(
     stored_static: &StoredStatic,
     parseerror_count: &mut u128,
 ) {
-    let msg = format!(
-        "Failed to parse rule. (FilePath : {}) {}",
-        rule_path, reason
-    );
+    let msg = format!("Failed to parse rule. (FilePath : {rule_path}) {reason}");
     if stored_static.verbose_flag {
         AlertMessage::alert(msg.as_str()).ok();
     }

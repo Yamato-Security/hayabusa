@@ -840,7 +840,7 @@ pub fn check_hayabusa_rule_fmt(yaml: &Yaml) -> Result<(), String> {
                 "level" => {
                     let value = yaml[key].as_str().unwrap_or("");
                     if !["informational", "low", "medium", "high", "critical"].contains(&value) {
-                        errors.push(format!("Invalid: {}", key));
+                        errors.push(format!("Invalid: {key}"));
                     }
                 }
                 "status" => {
@@ -854,18 +854,18 @@ pub fn check_hayabusa_rule_fmt(yaml: &Yaml) -> Result<(), String> {
                     ]
                     .contains(&value)
                     {
-                        errors.push(format!("Invalid: {}", key));
+                        errors.push(format!("Invalid: {key}"));
                     }
                 }
                 "date" => {
                     if !DATE_REGEX.is_match(yaml[key].as_str().unwrap_or("")) {
-                        errors.push(format!("Invalid: {}", key));
+                        errors.push(format!("Invalid: {key}"));
                     }
                 }
                 _ => {}
             }
         } else {
-            errors.push(format!("Missing: {}", key));
+            errors.push(format!("Missing: {key}"));
         }
     }
 
