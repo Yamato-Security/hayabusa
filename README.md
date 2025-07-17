@@ -409,19 +409,10 @@ brew install openssl
 
 ## Linux Compiling Notes
 
-If you receive compile errors about openssl, you will need to install the following package.
-
-Ubuntu-based distros:
-
-```bash
-sudo apt install libssl-dev
-```
-
-Fedora-based distros:
-
-```bash
-sudo yum install openssl-devel
-```
+The following build dependencies are required:
+* openssl-devel (Fedora-based) / libssl-dev (Ubuntu-based) 
+* perl
+* musl-gcc
 
 ## Cross-compiling Linux MUSL Binaries
 
