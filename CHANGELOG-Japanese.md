@@ -8,6 +8,10 @@
 - 32ビット版のHayabusaが64ビットOSでも動作するようになった。 (#1665) (@akkuman)
 - Filebeatが最後のイベントを見逃さないように、JSON/Lファイルの最終行の後にリターン文字を置くようにした。 (#1666) (@fukusuket)
 
+**バグ修正:**
+
+- レベルは、`--disable-abbreviations`オプションが有効であっても省略されていた。(#1672) (@fukusuket)
+
 ## 3.3.0 [2025/03/22] - AUSCERT/SINCON Release
 
 **改善:**

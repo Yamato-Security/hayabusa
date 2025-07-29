@@ -438,11 +438,16 @@ impl Detection {
                 }
                 Level(_) => {
                     level = level.convert(computer_name.as_str());
-                    let abbr_level = level.to_abbrev();
-                    let prof_level = if stored_static.output_path.is_none() {
-                        abbr_level
+
+                    let level_str = if stored_static.disable_abbreviation {
+                        level.to_full()
                     } else {
-                        abbr_level.trim()
+                        level.to_abbrev()
+                    };
+                    let prof_level = if stored_static.output_path.is_none() {
+                        level_str
+                    } else {
+                        level_str.trim()
                     };
                     profile_converter.insert(key.as_str(), Level(prof_level.to_string().into()));
                 }
@@ -901,11 +906,15 @@ impl Detection {
                 }
                 Level(_) => {
                     level = level.convert(computers.as_str());
-                    let abbr_level = level.to_abbrev();
-                    let prof_level = if stored_static.output_path.is_none() {
-                        abbr_level
+                    let level_str = if stored_static.disable_abbreviation {
+                        level.to_full()
                     } else {
-                        abbr_level.trim()
+                        level.to_abbrev()
+                    };
+                    let prof_level = if stored_static.output_path.is_none() {
+                        level_str
+                    } else {
+                        level_str.trim()
                     };
                     profile_converter.insert(key.as_str(), Level(prof_level.to_string().into()));
                 }

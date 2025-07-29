@@ -143,6 +143,7 @@ pub struct StoredStatic {
     pub enable_all_rules: bool,
     pub scan_all_evtx_files: bool,
     pub metrics_remove_duplication: bool,
+    pub disable_abbreviation: bool,
 }
 
 impl StoredStatic {
@@ -827,6 +828,7 @@ impl StoredStatic {
             enable_all_rules,
             scan_all_evtx_files,
             metrics_remove_duplication,
+            disable_abbreviation,
         };
         ret.profiles = load_profile(
             check_setting_path(

@@ -8,6 +8,10 @@
 - 32-bit version of Hayabusa will now also run on 64-bit OSes. (#1665) (@akkuman)
 - We now put a return character after the last line in JSON/L files so that filebeat will not miss the last event. (#1666) (@fukusuket)
 
+**Bug Fixes:**
+
+- Levels would be abbreviated even when `--disable-abbreviations` was enabled. (#1672) (@fukusuket)
+
 ## 3.3.0 [2025/03/22] - AUSCERT/SINCON Release
 
 **Enhancements:**
