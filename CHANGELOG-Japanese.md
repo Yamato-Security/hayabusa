@@ -1,6 +1,6 @@
 # 変更点
 
-## x.x.x [xxxx/xx/xx]
+## 3.4.0 [2025/08/01] - Black Hat Arsenal USA 2025 Release
 
 **改善:**
 
