@@ -155,10 +155,9 @@ fn read_profile_data(profile_path: &str) -> Result<Vec<Yaml>, String> {
                 .unwrap_or_default(),
         );
         // 通常のプロファイルファイルを読み込む場合
-        if default_profile_name_path.is_some() {
+        if let Some(path) = default_profile_name_path {
             match YamlLoader::load_from_str(
-                std::str::from_utf8(default_profile_name_path.unwrap().data.as_ref())
-                    .unwrap_or_default(),
+                std::str::from_utf8(path.data.as_ref()).unwrap_or_default(),
             ) {
                 Ok(profile_yml) => Ok(profile_yml),
                 Err(e) => Err(format!("Parse error: {profile_path}. {e}")),
@@ -297,13 +296,8 @@ pub fn set_default_profile(
         .to_path_buf()
         .with_file_name("default_profile_name.txt");
 
-    if set_default_profile.is_some() && set_default_profile.unwrap().profile.is_some() {
-        let profile_name = set_default_profile
-            .as_ref()
-            .unwrap()
-            .profile
-            .as_ref()
-            .unwrap();
+    if let Some(prof) = set_default_profile {
+        let profile_name = prof.profile.as_ref().unwrap();
         if let Ok(mut buf_wtr) = OpenOptions::new()
             .write(true)
             .truncate(true)

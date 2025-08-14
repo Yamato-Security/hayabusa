@@ -8,7 +8,9 @@ use std::{cmp::Ordering, collections::HashMap};
 use yaml_rust2::Yaml;
 
 use crate::detections::configs::WINDASH_CHARACTERS;
-use crate::detections::rule::base64_match::convert_to_base64_str;
+use crate::detections::rule::base64_match::{
+    convert_to_base64_str, to_base64_utf8, to_base64_utf16be, to_base64_utf16le_with_bom,
+};
 use crate::detections::rule::fast_match::{
     FastMatch, check_fast_match, convert_to_fast_match, create_fast_match,
 };
@@ -326,7 +328,13 @@ impl LeafMatcher for DefaultMatcher {
             // パイプがあるケース
             self.fast_match = create_fast_match(&self.pipes, &pattern);
         } else if n == 2 {
-            if self.pipes[0] == PipeElement::Base64offset && self.pipes[1] == PipeElement::Contains
+            if self.pipes[0] == PipeElement::Base64 && self.pipes[1] == PipeElement::Contains {
+                self.fast_match = convert_to_fast_match(
+                    &format!("*{}*", &to_base64_utf8(pattern[0].as_str())),
+                    true,
+                );
+            } else if self.pipes[0] == PipeElement::Base64offset
+                && self.pipes[1] == PipeElement::Contains
             {
                 self.fast_match = convert_to_base64_str(None, pattern[0].as_str(), &mut err_msges);
             } else if self.pipes[0] == PipeElement::Contains && self.pipes[1] == PipeElement::All
@@ -385,25 +393,64 @@ impl LeafMatcher for DefaultMatcher {
                 || self.pipes[0] == PipeElement::Utf16Le
                 || self.pipes[0] == PipeElement::Utf16Be
                 || self.pipes[0] == PipeElement::Wide)
-                && self.pipes[1] == PipeElement::Base64offset
+                && (self.pipes[1] == PipeElement::Base64offset
+                    || self.pipes[1] == PipeElement::Base64)
                 && self.pipes[2] == PipeElement::Contains
             {
-                let encode = &self.pipes[0];
-                let org_str = pattern[0].as_str();
-                if encode == &PipeElement::Utf16 {
-                    let utf16_le_match =
-                        convert_to_base64_str(Some(&PipeElement::Utf16Le), org_str, &mut err_msges);
-                    let utf16_be_match =
-                        convert_to_base64_str(Some(&PipeElement::Utf16Be), org_str, &mut err_msges);
-                    if let Some(utf16_le_match) = utf16_le_match {
-                        if let Some(utf16_be_match) = utf16_be_match {
-                            let mut matches = utf16_le_match;
-                            matches.extend(utf16_be_match);
-                            self.fast_match = Some(matches);
+                if self.pipes[1] == PipeElement::Base64offset {
+                    let encode = &self.pipes[0];
+                    let org_str = pattern[0].as_str();
+                    if encode == &PipeElement::Utf16 {
+                        let utf16_le_match = convert_to_base64_str(
+                            Some(&PipeElement::Utf16Le),
+                            org_str,
+                            &mut err_msges,
+                        );
+                        let utf16_be_match = convert_to_base64_str(
+                            Some(&PipeElement::Utf16Be),
+                            org_str,
+                            &mut err_msges,
+                        );
+                        if let Some(utf16_le_match) = utf16_le_match {
+                            if let Some(utf16_be_match) = utf16_be_match {
+                                let mut matches = utf16_le_match;
+                                matches.extend(utf16_be_match);
+                                self.fast_match = Some(matches);
+                            }
+                        }
+                    } else {
+                        self.fast_match =
+                            convert_to_base64_str(Some(encode), org_str, &mut err_msges);
+                    }
+                } else if self.pipes[1] == PipeElement::Base64 {
+                    let encode = &self.pipes[0];
+                    let org_str = pattern[0].as_str();
+                    match encode {
+                        PipeElement::Utf16 => {
+                            self.fast_match = convert_to_fast_match(
+                                &format!("*{}*", &to_base64_utf16le_with_bom(org_str, true)),
+                                true,
+                            );
+                        }
+                        PipeElement::Utf16Le | PipeElement::Wide => {
+                            self.fast_match = convert_to_fast_match(
+                                &format!("*{}*", &to_base64_utf16le_with_bom(org_str, false)),
+                                true,
+                            );
+                        }
+                        PipeElement::Utf16Be => {
+                            self.fast_match = convert_to_fast_match(
+                                &format!("*{}*", &to_base64_utf16be(org_str)),
+                                true,
+                            );
+                        }
+                        _ => {
+                            self.fast_match = convert_to_fast_match(
+                                &format!("*{}*", &to_base64_utf8(org_str)),
+                                true,
+                            );
                         }
                     }
-                } else {
-                    self.fast_match = convert_to_base64_str(Some(encode), org_str, &mut err_msges);
                 }
             }
         } else {
@@ -576,6 +623,7 @@ pub enum PipeElement {
     FieldRefStartswith(String),
     FieldRefEndswith(String),
     FieldRefContains(String),
+    Base64,
     Base64offset,
     Windash,
     Cidr(Result<IpCidr, NetworkParseError>),
@@ -613,6 +661,7 @@ impl PipeElement {
             "fieldrefstartswith" => Some(PipeElement::FieldRefStartswith(pattern.to_string())),
             "fieldrefendswith" => Some(PipeElement::FieldRefEndswith(pattern.to_string())),
             "fieldrefcontains" => Some(PipeElement::FieldRefContains(pattern.to_string())),
+            "base64" => Some(PipeElement::Base64),
             "base64offset" => Some(PipeElement::Base64offset),
             "windash" => Some(PipeElement::Windash),
             "cidr" => Some(PipeElement::Cidr(IpCidr::from_str(pattern))),
@@ -2749,6 +2798,26 @@ mod tests {
 
         let record_json_str = r#"{
             "Event": {"System": {"EventID": 4103, "Channel": "Security", "Computer": "A-HOST-1"}},
+            "Event_attributes": {"xmlns": "http://schemas.microsoft.com/win/2004/08/events/event"}
+        }"#;
+
+        check_select(rule_str, record_json_str, true);
+    }
+
+    #[test]
+    fn test_base64_contains() {
+        // base64|containsのマッチ
+        let rule_str = r#"
+        enabled: true
+        detection:
+            selection:
+                Payload|base64|contains:
+                    - "http://"
+        details: 'command=%CommandLine%'
+        "#;
+
+        let record_json_str = r#"{
+            "Event": {"System": {"EventID": 4103, "Channel": "Security", "Computer": "Tester"}, "EventData":{"Payload": "aHR0cDovLw"}},
             "Event_attributes": {"xmlns": "http://schemas.microsoft.com/win/2004/08/events/event"}
         }"#;
 
