@@ -1800,11 +1800,13 @@ You can turn off some of these abbreviations to see the original channel name, p
 
 In order to save space, we use the following abbrevations when displaying the alert `level`.
 
+* `emer`: `emergency`
 * `crit`: `critical`
 * `high`: `high`
 * `med `: `medium`
 * `low `: `low`
 * `info`: `informational`
+* `undef`: `undefined`
 
 ### MITRE ATT&CK Tactics Abbreviations
 

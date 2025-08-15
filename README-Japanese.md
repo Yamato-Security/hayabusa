@@ -1810,11 +1810,13 @@ Message: "%RenderedMessage%"
 
 簡潔に出力するために`level`を以下のように省略し出力しています。
 
+* `emer`: `emergency`
 * `crit`: `critical`
 * `high`: `high`
 * `med `: `medium`
 * `low `: `low`
 * `info`: `informational`
+* `undef`: `undefined`
 
 ### MITRE ATT&CK戦術の省略
 
