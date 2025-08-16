@@ -309,62 +309,57 @@ Any hostnames added to the critical_systems.txt file will have all alerts above 
                 fs::write(&config_path, "").ok();
             }
             if let Ok(metadata) = fs::metadata(&config_path)
-                && metadata.len() > 0 {
-                    let color_theme = if stored_static.common_options.no_color {
-                        ColorfulTheme {
-                            defaults_style: Style::new().for_stderr(),
-                            prompt_style: Style::new().for_stderr().bold(),
-                            prompt_prefix: style("?".to_string()).for_stderr(),
-                            prompt_suffix: style("›".to_string()).for_stderr(),
-                            success_prefix: style("✔".to_string()).for_stderr(),
-                            success_suffix: style("·".to_string()).for_stderr(),
-                            error_prefix: style("✘".to_string()).for_stderr(),
-                            error_style: Style::new().for_stderr(),
-                            hint_style: Style::new().for_stderr(),
-                            values_style: Style::new().for_stderr(),
-                            active_item_style: Style::new().for_stderr(),
-                            inactive_item_style: Style::new().for_stderr(),
-                            active_item_prefix: style("❯".to_string()).for_stderr(),
-                            inactive_item_prefix: style(" ".to_string()).for_stderr(),
-                            checked_item_prefix: style("✔".to_string()).for_stderr(),
-                            unchecked_item_prefix: style("⬚".to_string()).for_stderr(),
-                            picked_item_prefix: style("❯".to_string()).for_stderr(),
-                            unpicked_item_prefix: style(" ".to_string()).for_stderr(),
-                        }
-                    } else {
-                        ColorfulTheme {
-                            active_item_prefix: Style::new()
-                                .color256(214)
-                                .apply_to("❯".to_string()), // orange
-                            checked_item_prefix: Style::new()
-                                .color256(46)
-                                .apply_to("✔".to_string()), // green
-                            picked_item_prefix: Style::new()
-                                .color256(214)
-                                .apply_to("❯".to_string()), // orange
-                            values_style: Style::new().color256(46), // green
-                            prompt_prefix: Style::new().color256(160).apply_to("?".to_string()), // orange
-                            prompt_suffix: Style::new().color256(15).apply_to("›".to_string()), // cyan
-                            prompt_style: Style::new().color256(160).bold(), // red
-                            defaults_style: Style::new().color256(51),       // cyan
-                            hint_style: Style::new().color256(214),          // orange
-                            success_prefix: Style::new().color256(46).apply_to("✔".to_string()), // green
-                            success_suffix: Style::new().color256(15).apply_to("·".to_string()), // white
-                            ..Default::default()
-                        }
-                    };
-                    let prompt_fmt = "Warning: the config/critical_systems.txt file is not empty. Would you like to erase the contents first?";
-                    let config_clear = Confirm::with_theme(&color_theme)
-                        .with_prompt(prompt_fmt)
-                        .default(true)
-                        .show_default(true)
-                        .interact()
-                        .unwrap();
-                    if config_clear {
-                        fs::write(config_path, "").expect("Failed to clear the file");
+                && metadata.len() > 0
+            {
+                let color_theme = if stored_static.common_options.no_color {
+                    ColorfulTheme {
+                        defaults_style: Style::new().for_stderr(),
+                        prompt_style: Style::new().for_stderr().bold(),
+                        prompt_prefix: style("?".to_string()).for_stderr(),
+                        prompt_suffix: style("›".to_string()).for_stderr(),
+                        success_prefix: style("✔".to_string()).for_stderr(),
+                        success_suffix: style("·".to_string()).for_stderr(),
+                        error_prefix: style("✘".to_string()).for_stderr(),
+                        error_style: Style::new().for_stderr(),
+                        hint_style: Style::new().for_stderr(),
+                        values_style: Style::new().for_stderr(),
+                        active_item_style: Style::new().for_stderr(),
+                        inactive_item_style: Style::new().for_stderr(),
+                        active_item_prefix: style("❯".to_string()).for_stderr(),
+                        inactive_item_prefix: style(" ".to_string()).for_stderr(),
+                        checked_item_prefix: style("✔".to_string()).for_stderr(),
+                        unchecked_item_prefix: style("⬚".to_string()).for_stderr(),
+                        picked_item_prefix: style("❯".to_string()).for_stderr(),
+                        unpicked_item_prefix: style(" ".to_string()).for_stderr(),
                     }
-                    println!();
+                } else {
+                    ColorfulTheme {
+                        active_item_prefix: Style::new().color256(214).apply_to("❯".to_string()), // orange
+                        checked_item_prefix: Style::new().color256(46).apply_to("✔".to_string()), // green
+                        picked_item_prefix: Style::new().color256(214).apply_to("❯".to_string()), // orange
+                        values_style: Style::new().color256(46), // green
+                        prompt_prefix: Style::new().color256(160).apply_to("?".to_string()), // orange
+                        prompt_suffix: Style::new().color256(15).apply_to("›".to_string()),  // cyan
+                        prompt_style: Style::new().color256(160).bold(),                     // red
+                        defaults_style: Style::new().color256(51),                           // cyan
+                        hint_style: Style::new().color256(214), // orange
+                        success_prefix: Style::new().color256(46).apply_to("✔".to_string()), // green
+                        success_suffix: Style::new().color256(15).apply_to("·".to_string()), // white
+                        ..Default::default()
+                    }
+                };
+                let prompt_fmt = "Warning: the config/critical_systems.txt file is not empty. Would you like to erase the contents first?";
+                let config_clear = Confirm::with_theme(&color_theme)
+                    .with_prompt(prompt_fmt)
+                    .default(true)
+                    .show_default(true)
+                    .interact()
+                    .unwrap();
+                if config_clear {
+                    fs::write(config_path, "").expect("Failed to clear the file");
                 }
+                println!();
+            }
         }
 
         write_color_buffer(
@@ -407,34 +402,35 @@ Any hostnames added to the critical_systems.txt file will have all alerts above 
         let output_saved_file =
             |output_path: &Option<PathBuf>, message: &str, html_report_flag: &bool| {
                 if let Some(path) = output_path
-                    && let Ok(metadata) = fs::metadata(path) {
-                        let output_saved_str = format!("{message}:");
-                        write_color_buffer(
-                            &BufferWriter::stdout(ColorChoice::Always),
-                            get_writable_color(Some(Color::Rgb(0, 255, 0)), no_color),
-                            &output_saved_str,
-                            false,
-                        )
-                        .ok();
-                        let file_str = format!(
-                            " {} ({})",
-                            path.display(),
-                            ByteSize::b(metadata.len()).display()
-                        );
-                        write_color_buffer(
-                            &BufferWriter::stdout(ColorChoice::Always),
-                            None,
-                            &file_str,
-                            true,
-                        )
-                        .ok();
-                        println!();
-                        output_and_data_stack_for_html(
-                            &format!("{message}: {file_str}"),
-                            "General Overview {#general_overview}",
-                            html_report_flag,
-                        );
-                    }
+                    && let Ok(metadata) = fs::metadata(path)
+                {
+                    let output_saved_str = format!("{message}:");
+                    write_color_buffer(
+                        &BufferWriter::stdout(ColorChoice::Always),
+                        get_writable_color(Some(Color::Rgb(0, 255, 0)), no_color),
+                        &output_saved_str,
+                        false,
+                    )
+                    .ok();
+                    let file_str = format!(
+                        " {} ({})",
+                        path.display(),
+                        ByteSize::b(metadata.len()).display()
+                    );
+                    write_color_buffer(
+                        &BufferWriter::stdout(ColorChoice::Always),
+                        None,
+                        &file_str,
+                        true,
+                    )
+                    .ok();
+                    println!();
+                    output_and_data_stack_for_html(
+                        &format!("{message}: {file_str}"),
+                        "General Overview {#general_overview}",
+                        html_report_flag,
+                    );
+                }
             };
 
         match &stored_static.config.action.as_ref().unwrap() {
@@ -479,16 +475,16 @@ Any hostnames added to the critical_systems.txt file will have all alerts above 
                 }
                 if let Some(path) = &stored_static.output_path
                     && !stored_static.output_option.as_ref().unwrap().clobber
-                        && utils::check_file_expect_not_exist(
-                            path.as_path(),
-                            format!(
-                                " The file {} already exists. Please specify a different filename or add the -C, --clobber option to overwrite.\n",
-                                path.as_os_str().to_str().unwrap()
-                            ),
-                        )
-                    {
-                        return;
-                    }
+                    && utils::check_file_expect_not_exist(
+                        path.as_path(),
+                        format!(
+                            " The file {} already exists. Please specify a different filename or add the -C, --clobber option to overwrite.\n",
+                            path.as_os_str().to_str().unwrap()
+                        ),
+                    )
+                {
+                    return;
+                }
                 if stored_static.json_input_flag
                     && (stored_static.scan_all_evtx_files || stored_static.enable_all_rules)
                 {
@@ -552,16 +548,16 @@ Any hostnames added to the critical_systems.txt file will have all alerts above 
             | Action::ExtractBase64(_) => {
                 if let Some(path) = &stored_static.output_path
                     && !stored_static.output_option.as_ref().unwrap().clobber
-                        && utils::check_file_expect_not_exist(
-                            path.as_path(),
-                            format!(
-                                " The file {} already exists. Please specify a different filename or add the -C, --clobber option to overwrite.\n",
-                                path.as_os_str().to_str().unwrap()
-                            ),
-                        )
-                    {
-                        return;
-                    }
+                    && utils::check_file_expect_not_exist(
+                        path.as_path(),
+                        format!(
+                            " The file {} already exists. Please specify a different filename or add the -C, --clobber option to overwrite.\n",
+                            path.as_os_str().to_str().unwrap()
+                        ),
+                    )
+                {
+                    return;
+                }
                 self.analysis_start(&target_extensions, &time_filter, stored_static);
                 output_saved_file(
                     &stored_static.output_path,
@@ -2224,11 +2220,11 @@ Any hostnames added to the critical_systems.txt file will have all alerts above 
 
             if let Some(Action::JsonTimeline(json_options)) = &stored_static.config.action
                 && json_options.jsonl_timeline
-                    && let Some(path) = &stored_static.output_path
-                        && let Ok(mut file) = fs::OpenOptions::new().append(true).open(path)
-                    {
-                        let _ = file.write_all(b"\n");
-                    }
+                && let Some(path) = &stored_static.output_path
+                && let Ok(mut file) = fs::OpenOptions::new().append(true).open(path)
+            {
+                let _ = file.write_all(b"\n");
+            }
         }
         CHECKPOINT
             .lock()
