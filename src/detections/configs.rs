@@ -1042,7 +1042,7 @@ pub enum Action {
         display_order = 380,
         disable_help_flag = true
     )]
-    /// Tune alert levels for the DFIR timeline (default: ./rules/config/level_tuning.txt)
+    /// Tune alert levels for the DFIR timeline
     LevelTuning(LevelTuningOption),
 
     #[clap(
