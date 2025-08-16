@@ -962,7 +962,7 @@ pub enum Action {
         display_order = 382,
         disable_help_flag = true
     )]
-    /// Output evtx file metadata (filename, computer names, number of events, first and last timestamps, channels, providers)
+    /// Output evtx file metadata
     LogMetrics(LogMetricsOption),
 
     #[clap(
@@ -982,7 +982,7 @@ pub enum Action {
         display_order = 310,
         disable_help_flag = true
     )]
-    /// Output event ID metrics (total number and percent of events, channel, ID, event name)
+    /// Output event ID metrics
     EidMetrics(EidMetricsOption),
 
     #[clap(
