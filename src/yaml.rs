@@ -94,17 +94,17 @@ impl ParseYaml {
                     .entry(CompactString::from("correlation"))
                     .or_insert(0);
                 *entry += 1;
-                if let Some(rules) = correlation.get(&Yaml::String("rules".to_string())) {
-                    if let Some(rules_list) = rules.as_vec() {
-                        for rule in rules_list {
-                            if let Some(rule_str) = rule.as_str() {
-                                // Update rules count, storing each unique rule
-                                let rule_entry = self
-                                    .rule_cor_ref_cnt
-                                    .entry(CompactString::from(rule_str))
-                                    .or_insert(0);
-                                *rule_entry += 1;
-                            }
+                if let Some(rules) = correlation.get(&Yaml::String("rules".to_string()))
+                    && let Some(rules_list) = rules.as_vec()
+                {
+                    for rule in rules_list {
+                        if let Some(rule_str) = rule.as_str() {
+                            // Update rules count, storing each unique rule
+                            let rule_entry = self
+                                .rule_cor_ref_cnt
+                                .entry(CompactString::from(rule_str))
+                                .or_insert(0);
+                            *rule_entry += 1;
                         }
                     }
                 }
@@ -369,12 +369,12 @@ impl ParseYaml {
                         return Option::None;
                     }
                 }
-                if let Some(id) = rule_id {
-                    if !stored_static.target_ruleids.is_target(id, true) {
-                        let entry = self.rule_load_cnt.entry("excluded".into()).or_insert(0);
-                        *entry += 1;
-                        return Option::None;
-                    }
+                if let Some(id) = rule_id
+                    && !stored_static.target_ruleids.is_target(id, true)
+                {
+                    let entry = self.rule_load_cnt.entry("excluded".into()).or_insert(0);
+                    *entry += 1;
+                    return Option::None;
                 }
             }
 
@@ -731,41 +731,40 @@ pub fn count_rules<P: AsRef<Path>>(
                 .filter_map(|s| s.as_str())
                 .collect_vec()
         };
-        if rule_id.is_some() {
-            if let Some(v) = exclude_ids
+        if rule_id.is_some()
+            && let Some(v) = exclude_ids
                 .no_use_rule
                 .get(&rule_id.unwrap_or(&String::default()).to_string())
-            {
-                let entry_key = if utils::contains_str(v, "exclude_rule") {
-                    "excluded"
-                } else {
-                    "noisy"
-                };
-                // テスト用のルール(ID:000...0)の場合はexcluded ruleのカウントから除外するようにする
-                if v != "00000000-0000-0000-0000-000000000000" {
-                    let counter = result_container
-                        .entry(entry_key.into())
-                        .or_insert(HashMap::new());
-                    *counter
-                        .entry(
-                            yaml_doc["level"]
-                                .as_str()
-                                .unwrap_or("informational")
-                                .to_uppercase()
-                                .into(),
-                        )
-                        .or_insert(HashMap::new())
-                        .entry(
-                            yaml_doc["status"]
-                                .as_str()
-                                .unwrap_or("undefined")
-                                .to_lowercase()
-                                .into(),
-                        )
-                        .or_insert(0) += 1;
-                }
-                return;
+        {
+            let entry_key = if utils::contains_str(v, "exclude_rule") {
+                "excluded"
+            } else {
+                "noisy"
+            };
+            // テスト用のルール(ID:000...0)の場合はexcluded ruleのカウントから除外するようにする
+            if v != "00000000-0000-0000-0000-000000000000" {
+                let counter = result_container
+                    .entry(entry_key.into())
+                    .or_insert(HashMap::new());
+                *counter
+                    .entry(
+                        yaml_doc["level"]
+                            .as_str()
+                            .unwrap_or("informational")
+                            .to_uppercase()
+                            .into(),
+                    )
+                    .or_insert(HashMap::new())
+                    .entry(
+                        yaml_doc["status"]
+                            .as_str()
+                            .unwrap_or("undefined")
+                            .to_lowercase()
+                            .into(),
+                    )
+                    .or_insert(0) += 1;
             }
+            return;
         }
 
         if let Some(s) = yaml_doc["status"].as_str() {

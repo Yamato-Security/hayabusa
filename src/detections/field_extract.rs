@@ -7,15 +7,13 @@ pub fn extract_fields(
     data: &mut Value,
     key_2_values: &mut HashMap<String, String>,
 ) {
-    if let Some(ch) = channel {
-        if let Some(eid) = event_id {
-            if ch == "Windows PowerShell"
-                && (eid == "400" || eid == "403" || eid == "600" || eid == "800")
-            {
-                let target_data_index = if eid == "800" { 1 } else { 2 };
-                extract_powershell_classic_fields(data, target_data_index, key_2_values);
-            }
-        }
+    if let Some(ch) = channel
+        && let Some(eid) = event_id
+        && ch == "Windows PowerShell"
+        && (eid == "400" || eid == "403" || eid == "600" || eid == "800")
+    {
+        let target_data_index = if eid == "800" { 1 } else { 2 };
+        extract_powershell_classic_fields(data, target_data_index, key_2_values);
     }
 }
 
@@ -43,17 +41,17 @@ fn extract_powershell_classic_fields(
             }
         }
         Value::Array(vec) => {
-            if let Some(val) = vec.get(data_index) {
-                if let Some(powershell_data_str) = val.as_str() {
-                    let fields_data: std::collections::HashMap<&str, &str> = powershell_data_str
-                        .trim()
-                        .split("\n\t")
-                        .map(|s| s.trim_end_matches("\r\n").trim_end_matches('\r'))
-                        .filter_map(|s| s.split_once('='))
-                        .collect();
-                    if let Ok(extracted_fields) = serde_json::to_value(fields_data) {
-                        return Some(extracted_fields);
-                    }
+            if let Some(val) = vec.get(data_index)
+                && let Some(powershell_data_str) = val.as_str()
+            {
+                let fields_data: std::collections::HashMap<&str, &str> = powershell_data_str
+                    .trim()
+                    .split("\n\t")
+                    .map(|s| s.trim_end_matches("\r\n").trim_end_matches('\r'))
+                    .filter_map(|s| s.split_once('='))
+                    .collect();
+                if let Ok(extracted_fields) = serde_json::to_value(fields_data) {
+                    return Some(extracted_fields);
                 }
             }
         }

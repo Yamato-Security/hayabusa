@@ -18,20 +18,20 @@ type Name2Selection = HashMap<String, Arc<Box<dyn SelectionNode>>>;
 
 fn is_referenced_rule(rule_node: &RuleNode, id_or_title: &str) -> bool {
     if let Some(hash) = rule_node.yaml.as_hash() {
-        if let Some(id) = hash.get(&Yaml::String("id".to_string())) {
-            if id.as_str() == Some(id_or_title) {
-                return true;
-            }
+        if let Some(id) = hash.get(&Yaml::String("id".to_string()))
+            && id.as_str() == Some(id_or_title)
+        {
+            return true;
         }
-        if let Some(title) = hash.get(&Yaml::String("title".to_string())) {
-            if title.as_str() == Some(id_or_title) {
-                return true;
-            }
+        if let Some(title) = hash.get(&Yaml::String("title".to_string()))
+            && title.as_str() == Some(id_or_title)
+        {
+            return true;
         }
-        if let Some(title) = hash.get(&Yaml::String("name".to_string())) {
-            if title.as_str() == Some(id_or_title) {
-                return true;
-            }
+        if let Some(title) = hash.get(&Yaml::String("name".to_string()))
+            && title.as_str() == Some(id_or_title)
+        {
+            return true;
         }
     }
     false
@@ -41,10 +41,11 @@ fn find_condition_field_value(
     pair: Vec<(&Yaml, &Yaml)>,
 ) -> Option<String> {
     for (key, value) in pair {
-        if let Some(key_str) = key.as_str() {
-            if key_str == "field" && rule_type == Some(&Yaml::String("value_count".to_string())) {
-                return value.as_str().map(|s| s.to_string());
-            }
+        if let Some(key_str) = key.as_str()
+            && key_str == "field"
+            && rule_type == Some(&Yaml::String("value_count".to_string()))
+        {
+            return value.as_str().map(|s| s.to_string());
         }
     }
     None
@@ -78,12 +79,12 @@ fn parse_condition(
 ) -> Result<(AggregationConditionToken, i64, Option<String>), Box<dyn Error>> {
     if let Some(hash) = yaml.as_hash() {
         let rule_type = hash.get(&Yaml::String("type".to_string()));
-        if let Some(condition) = hash.get(&Yaml::String("condition".to_string())) {
-            if let Some(condition_hash) = condition.as_hash() {
-                let pair: Vec<(&Yaml, &Yaml)> = condition_hash.iter().collect();
-                let field = find_condition_field_value(rule_type, pair.clone());
-                return process_condition_pairs(pair, field);
-            }
+        if let Some(condition) = hash.get(&Yaml::String("condition".to_string()))
+            && let Some(condition_hash) = condition.as_hash()
+        {
+            let pair: Vec<(&Yaml, &Yaml)> = condition_hash.iter().collect();
+            let field = find_condition_field_value(rule_type, pair.clone());
+            return process_condition_pairs(pair, field);
         }
     }
     Err("Failed to parse condition".into())

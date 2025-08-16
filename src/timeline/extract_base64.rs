@@ -226,35 +226,35 @@ fn extract_payload(data: &Value) -> Vec<(Value, Event)> {
     let ch = data["Event"]["System"]["Channel"].as_str();
     let id = data["Event"]["System"]["EventID"].as_i64();
     let mut values = vec![];
-    if let Some(ch) = ch {
-        if let Some(id) = id {
-            if ch == "Security" && id == 4688 {
-                let v = data["Event"]["EventData"]["CommandLine"].clone();
-                values.push((v, Event::Sec4688));
-            } else if ch == "Microsoft-Windows-Sysmon/Operational" && id == 1 {
-                let v = data["Event"]["EventData"]["CommandLine"].clone();
-                values.push((v, Event::Sysmon1));
-                let v = data["Event"]["EventData"]["ParentCommandLine"].clone();
-                values.push((v, Event::Sysmon1));
-            } else if (ch == "Microsoft-Windows-PowerShell/Operational"
-                || ch == "PowerShellCore/Operational")
-                && id == 4104
-            {
-                let v = data["Event"]["EventData"]["ScriptBlockText"].clone();
-                values.push((v, Event::PwSh4104));
-            } else if (ch == "Microsoft-Windows-PowerShell/Operational"
-                || ch == "PowerShellCore/Operational")
-                && id == 4103
-            {
-                let v = data["Event"]["EventData"]["Payload"].clone();
-                values.push((v, Event::PwSh4103));
-            } else if ch == "Windows PowerShell" && id == 400 {
-                let v = data["Event"]["EventData"]["Data"][2].clone();
-                values.push((v, Event::PwShClassic400));
-            } else if ch == "System" && id == 7045 {
-                let v = data["Event"]["EventData"]["ImagePath"].clone();
-                values.push((v, Event::System7045));
-            }
+    if let Some(ch) = ch
+        && let Some(id) = id
+    {
+        if ch == "Security" && id == 4688 {
+            let v = data["Event"]["EventData"]["CommandLine"].clone();
+            values.push((v, Event::Sec4688));
+        } else if ch == "Microsoft-Windows-Sysmon/Operational" && id == 1 {
+            let v = data["Event"]["EventData"]["CommandLine"].clone();
+            values.push((v, Event::Sysmon1));
+            let v = data["Event"]["EventData"]["ParentCommandLine"].clone();
+            values.push((v, Event::Sysmon1));
+        } else if (ch == "Microsoft-Windows-PowerShell/Operational"
+            || ch == "PowerShellCore/Operational")
+            && id == 4104
+        {
+            let v = data["Event"]["EventData"]["ScriptBlockText"].clone();
+            values.push((v, Event::PwSh4104));
+        } else if (ch == "Microsoft-Windows-PowerShell/Operational"
+            || ch == "PowerShellCore/Operational")
+            && id == 4103
+        {
+            let v = data["Event"]["EventData"]["Payload"].clone();
+            values.push((v, Event::PwSh4103));
+        } else if ch == "Windows PowerShell" && id == 400 {
+            let v = data["Event"]["EventData"]["Data"][2].clone();
+            values.push((v, Event::PwShClassic400));
+        } else if ch == "System" && id == 7045 {
+            let v = data["Event"]["EventData"]["ImagePath"].clone();
+            values.push((v, Event::System7045));
         }
     }
     values

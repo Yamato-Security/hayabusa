@@ -434,13 +434,12 @@ pub fn create_recordinfos(
     output_vec
         .iter()
         .map(|(key, value)| {
-            if let Some(map) = field_data_map.as_ref() {
-                if let Some(converted_str) =
+            if let Some(map) = field_data_map.as_ref()
+                && let Some(converted_str) =
                     convert_field_data(map, field_data_map_key, &key.to_lowercase(), value, record)
-                {
-                    let val = remove_sp_char(converted_str);
-                    return format!("{key}: {val}",).into();
-                }
+            {
+                let val = remove_sp_char(converted_str);
+                return format!("{key}: {val}",).into();
             }
             let val = remove_sp_char(value.into());
             format!("{key}: {val}").into()

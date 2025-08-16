@@ -61,35 +61,34 @@ impl ConfigCriticalSystems {
     }
 
     fn find_critical_computers(&mut self, data: &Value) {
-        if let Some(ch) = data["Event"]["System"]["Channel"].as_str() {
-            if let Some(id) = data["Event"]["System"]["EventID"].as_i64() {
-                if ch == "Security" {
-                    if id == 4768 {
-                        let v = data["Event"]["System"]["Computer"]
-                            .as_str()
-                            .unwrap_or_default()
-                            .to_string();
-                        self.computers
-                            .entry(ComputerType::DomainController)
-                            .or_default()
-                            .insert(v);
-                    } else if id == 5145 {
-                        let share = data["Event"]["EventData"]["ShareName"]
-                            .as_str()
-                            .unwrap_or_default();
-                        if share == r"\\*\IPC$" {
-                            return;
-                        }
-                        let v = data["Event"]["System"]["Computer"]
-                            .as_str()
-                            .unwrap_or_default()
-                            .to_string();
-                        self.computers
-                            .entry(ComputerType::FileServer)
-                            .or_default()
-                            .insert(v);
-                    }
+        if let Some(ch) = data["Event"]["System"]["Channel"].as_str()
+            && let Some(id) = data["Event"]["System"]["EventID"].as_i64()
+            && ch == "Security"
+        {
+            if id == 4768 {
+                let v = data["Event"]["System"]["Computer"]
+                    .as_str()
+                    .unwrap_or_default()
+                    .to_string();
+                self.computers
+                    .entry(ComputerType::DomainController)
+                    .or_default()
+                    .insert(v);
+            } else if id == 5145 {
+                let share = data["Event"]["EventData"]["ShareName"]
+                    .as_str()
+                    .unwrap_or_default();
+                if share == r"\\*\IPC$" {
+                    return;
                 }
+                let v = data["Event"]["System"]["Computer"]
+                    .as_str()
+                    .unwrap_or_default()
+                    .to_string();
+                self.computers
+                    .entry(ComputerType::FileServer)
+                    .or_default()
+                    .insert(v);
             }
         }
     }

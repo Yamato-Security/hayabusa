@@ -1,5 +1,11 @@
 # 変更点
 
+## 3.5.0 [2025/08/16] - Obon Release
+
+**改善*:**
+
+- `base64`フィールド修飾子に対応した。 (#1677) (@fukusuket)
+
 ## 3.4.0 [2025/08/01] - Black Hat Arsenal USA 2025 Release
 
 **改善:**

@@ -206,35 +206,34 @@ impl Detection {
     ) -> Vec<AggResult> {
         let mut result = Vec::new();
         let key = ids.first();
-        if let Some(key) = key {
-            if let Some(base_records) = temporal_ref_all_results.get(key.as_str()) {
-                for base in base_records {
-                    let mut found = false;
-                    let mut last_base = base;
-                    for id in ids.iter().skip(1) {
-                        found = false;
-                        if let Some(target_records) = temporal_ref_all_results.get(id.as_str()) {
-                            if temporal_ordered {
-                                found = target_records.iter().any(|t| {
-                                    (t.start_timedate >= last_base.start_timedate)
-                                        && (t.start_timedate
-                                            <= last_base.start_timedate + timeframe)
-                                });
-                            } else {
-                                found = target_records.iter().any(|t| {
-                                    (t.start_timedate >= base.start_timedate - timeframe)
-                                        && (t.start_timedate <= base.start_timedate + timeframe)
-                                });
-                            }
-                            if !found {
-                                break;
-                            }
-                            last_base = base;
+        if let Some(key) = key
+            && let Some(base_records) = temporal_ref_all_results.get(key.as_str())
+        {
+            for base in base_records {
+                let mut found = false;
+                let mut last_base = base;
+                for id in ids.iter().skip(1) {
+                    found = false;
+                    if let Some(target_records) = temporal_ref_all_results.get(id.as_str()) {
+                        if temporal_ordered {
+                            found = target_records.iter().any(|t| {
+                                (t.start_timedate >= last_base.start_timedate)
+                                    && (t.start_timedate <= last_base.start_timedate + timeframe)
+                            });
+                        } else {
+                            found = target_records.iter().any(|t| {
+                                (t.start_timedate >= base.start_timedate - timeframe)
+                                    && (t.start_timedate <= base.start_timedate + timeframe)
+                            });
                         }
+                        if !found {
+                            break;
+                        }
+                        last_base = base;
                     }
-                    if found {
-                        result.push(base.clone());
-                    }
+                }
+                if found {
+                    result.push(base.clone());
                 }
             }
         }

@@ -97,6 +97,34 @@ fn base64_offset(offset: usize, b64_str: String, b64_str_null_filtered: String) 
     }
 }
 
+pub fn to_base64_utf8(input: &str) -> String {
+    general_purpose::STANDARD_NO_PAD.encode(input)
+}
+
+pub fn to_base64_utf16le_with_bom(input: &str, with_bom: bool) -> String {
+    let mut utf16_bytes: Vec<u8> = Vec::new();
+
+    if with_bom {
+        utf16_bytes.extend_from_slice(&[0xFF, 0xFE]);
+    }
+
+    utf16_bytes.extend(
+        input
+            .encode_utf16()
+            .flat_map(|code_unit| code_unit.to_le_bytes()),
+    );
+
+    general_purpose::STANDARD_NO_PAD.encode(&utf16_bytes)
+}
+
+pub fn to_base64_utf16be(input: &str) -> String {
+    let utf16_bytes: Vec<u8> = input
+        .encode_utf16()
+        .flat_map(|code_unit| code_unit.to_be_bytes())
+        .collect();
+    general_purpose::STANDARD_NO_PAD.encode(&utf16_bytes)
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -183,5 +211,80 @@ mod tests {
             m[2],
             FastMatch::Contains("ASABlAGwAbABvACwAIAB3AG8AcgBsAGQAI".to_string())
         );
+    }
+
+    #[test]
+    fn test_to_base64_utf16be() {
+        assert_eq!(to_base64_utf16be("A"), "AEE");
+        assert_eq!(to_base64_utf16be("Hello"), "AEgAZQBsAGwAbw");
+        assert_eq!(to_base64_utf16be("こんにちは"), "MFMwkzBrMGEwbw");
+        assert_eq!(to_base64_utf16be(""), "");
+    }
+
+    #[test]
+    fn test_to_base64_utf16le_with_bom() {
+        // BOMなしの場合（既存の関数と同じ結果）
+        assert_eq!(to_base64_utf16le_with_bom("A", false), "QQA");
+        assert_eq!(to_base64_utf16le_with_bom("Hello", false), "SABlAGwAbABvAA");
+        assert_eq!(to_base64_utf16le_with_bom("", false), "");
+
+        // BOMありの場合（先頭に0xFF 0xFEが追加される）
+        assert_eq!(to_base64_utf16le_with_bom("A", true), "//5BAA");
+        assert_eq!(
+            to_base64_utf16le_with_bom("Hello", true),
+            "//5IAGUAbABsAG8A"
+        );
+        assert_eq!(to_base64_utf16le_with_bom("", true), "//4");
+
+        // 日本語文字列のテスト
+        assert_eq!(
+            to_base64_utf16le_with_bom("こんにちは", false),
+            "UzCTMGswYTBvMA"
+        );
+        assert_eq!(
+            to_base64_utf16le_with_bom("こんにちは", true),
+            "//5TMJMwazBhMG8w"
+        );
+    }
+
+    #[test]
+    fn test_utf16_comparison() {
+        let input = "テスト";
+        let utf16le = to_base64_utf16le_with_bom(input, false);
+        let utf16be = to_base64_utf16be(input);
+
+        // UTF-16LEとUTF-16BEは異なる結果になることを確認
+        assert_ne!(utf16le, utf16be);
+
+        // UTF-8とUTF-16も異なる結果になることを確認
+        let utf8 = to_base64_utf8(input);
+        assert_ne!(utf8, utf16le);
+        assert_ne!(utf8, utf16be);
+    }
+
+    #[test]
+    fn test_to_base64_utf8() {
+        // 基本的な英語文字列
+        assert_eq!(to_base64_utf8("Hello"), "SGVsbG8");
+        assert_eq!(to_base64_utf8("A"), "QQ");
+        assert_eq!(to_base64_utf8("Hello, World!"), "SGVsbG8sIFdvcmxkIQ");
+
+        // 空文字列
+        assert_eq!(to_base64_utf8(""), "");
+
+        // 日本語文字列
+        assert_eq!(to_base64_utf8("こんにちは"), "44GT44KT44Gr44Gh44Gv");
+        assert_eq!(to_base64_utf8("テスト"), "44OG44K544OI");
+
+        // 数字と記号
+        assert_eq!(to_base64_utf8("123"), "MTIz");
+        assert_eq!(to_base64_utf8("!@#$%"), "IUAjJCU");
+
+        // 改行文字を含む文字列
+        assert_eq!(to_base64_utf8("line1\nline2"), "bGluZTEKbGluZTI");
+
+        // UTF-8の特殊文字
+        assert_eq!(to_base64_utf8("🎉"), "8J+OiQ");
+        assert_eq!(to_base64_utf8("café"), "Y2Fmw6k");
     }
 }
