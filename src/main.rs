@@ -308,8 +308,8 @@ Any hostnames added to the critical_systems.txt file will have all alerts above 
             if !config_path.exists() {
                 fs::write(&config_path, "").ok();
             }
-            if let Ok(metadata) = fs::metadata(&config_path) {
-                if metadata.len() > 0 {
+            if let Ok(metadata) = fs::metadata(&config_path)
+                && metadata.len() > 0 {
                     let color_theme = if stored_static.common_options.no_color {
                         ColorfulTheme {
                             defaults_style: Style::new().for_stderr(),
@@ -365,7 +365,6 @@ Any hostnames added to the critical_systems.txt file will have all alerts above 
                     }
                     println!();
                 }
-            }
         }
 
         write_color_buffer(
@@ -407,8 +406,8 @@ Any hostnames added to the critical_systems.txt file will have all alerts above 
         let no_color = stored_static.common_options.no_color;
         let output_saved_file =
             |output_path: &Option<PathBuf>, message: &str, html_report_flag: &bool| {
-                if let Some(path) = output_path {
-                    if let Ok(metadata) = fs::metadata(path) {
+                if let Some(path) = output_path
+                    && let Ok(metadata) = fs::metadata(path) {
                         let output_saved_str = format!("{message}:");
                         write_color_buffer(
                             &BufferWriter::stdout(ColorChoice::Always),
@@ -436,7 +435,6 @@ Any hostnames added to the critical_systems.txt file will have all alerts above 
                             html_report_flag,
                         );
                     }
-                }
             };
 
         match &stored_static.config.action.as_ref().unwrap() {
@@ -479,8 +477,8 @@ Any hostnames added to the critical_systems.txt file will have all alerts above 
                         return;
                     }
                 }
-                if let Some(path) = &stored_static.output_path {
-                    if !stored_static.output_option.as_ref().unwrap().clobber
+                if let Some(path) = &stored_static.output_path
+                    && !stored_static.output_option.as_ref().unwrap().clobber
                         && utils::check_file_expect_not_exist(
                             path.as_path(),
                             format!(
@@ -491,7 +489,6 @@ Any hostnames added to the critical_systems.txt file will have all alerts above 
                     {
                         return;
                     }
-                }
                 if stored_static.json_input_flag
                     && (stored_static.scan_all_evtx_files || stored_static.enable_all_rules)
                 {
@@ -553,8 +550,8 @@ Any hostnames added to the critical_systems.txt file will have all alerts above 
             | Action::LogMetrics(_)
             | Action::Search(_)
             | Action::ExtractBase64(_) => {
-                if let Some(path) = &stored_static.output_path {
-                    if !stored_static.output_option.as_ref().unwrap().clobber
+                if let Some(path) = &stored_static.output_path
+                    && !stored_static.output_option.as_ref().unwrap().clobber
                         && utils::check_file_expect_not_exist(
                             path.as_path(),
                             format!(
@@ -565,7 +562,6 @@ Any hostnames added to the critical_systems.txt file will have all alerts above 
                     {
                         return;
                     }
-                }
                 self.analysis_start(&target_extensions, &time_filter, stored_static);
                 output_saved_file(
                     &stored_static.output_path,
@@ -2226,15 +2222,13 @@ Any hostnames added to the critical_systems.txt file will have all alerts above 
                 );
             }
 
-            if let Some(Action::JsonTimeline(json_options)) = &stored_static.config.action {
-                if json_options.jsonl_timeline {
-                    if let Some(path) = &stored_static.output_path
+            if let Some(Action::JsonTimeline(json_options)) = &stored_static.config.action
+                && json_options.jsonl_timeline
+                    && let Some(path) = &stored_static.output_path
                         && let Ok(mut file) = fs::OpenOptions::new().append(true).open(path)
                     {
                         let _ = file.write_all(b"\n");
                     }
-                }
-            }
         }
         CHECKPOINT
             .lock()
