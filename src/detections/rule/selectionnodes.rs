@@ -318,10 +318,10 @@ impl LeafSelectionNode {
 
         if let Some(matcher) = &self.matcher {
             let matcher = matcher.downcast_ref::<DefaultMatcher>();
-            if let Some(matcher) = matcher {
-                if let Some(eq_key) = matcher.get_eqfield_key() {
-                    keys.push(eq_key);
-                }
+            if let Some(matcher) = matcher
+                && let Some(eq_key) = matcher.get_eqfield_key()
+            {
+                keys.push(eq_key);
             }
         }
 
@@ -438,11 +438,10 @@ impl SelectionNode for LeafSelectionNode {
             && !self.select_value.is_null()
             && !self.key_list.is_empty()
             && !self.key_list[0].contains("|")
+            && let Some(event_id) = self.select_value.as_i64()
         {
-            if let Some(event_id) = self.select_value.as_i64() {
-                // 正規表現は重いので、数値のEventIDのみ文字列完全一致で判定
-                return event_value.unwrap_or(&String::default()) == &event_id.to_string();
-            }
+            // 正規表現は重いので、数値のEventIDのみ文字列完全一致で判定
+            return event_value.unwrap_or(&String::default()) == &event_id.to_string();
         }
         if !self.key_list.is_empty() && self.key_list[0].eq("|all") {
             event_value = Some(&event_record.data_string);

@@ -126,10 +126,10 @@ impl GeoIPSearch {
 
         let output_country = if let Ok(Some(country)) = country_search {
             let mut ret = "-";
-            if let Some(country) = country.country {
-                if let Some(name_tree) = country.names {
-                    ret = name_tree.get("en").unwrap_or(&"-")
-                }
+            if let Some(country) = country.country
+                && let Some(name_tree) = country.names
+            {
+                ret = name_tree.get("en").unwrap_or(&"-")
             }
             ret
         } else {
@@ -138,10 +138,10 @@ impl GeoIPSearch {
 
         let output_city = if let Ok(Some(city)) = city_search {
             let mut ret = "n/-";
-            if let Some(city) = city.city {
-                if let Some(name_tree) = city.names {
-                    ret = name_tree.get("en").unwrap_or(&"-")
-                }
+            if let Some(city) = city.city
+                && let Some(name_tree) = city.names
+            {
+                ret = name_tree.get("en").unwrap_or(&"-")
             }
             ret
         } else {

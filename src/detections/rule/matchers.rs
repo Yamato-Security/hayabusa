@@ -411,12 +411,12 @@ impl LeafMatcher for DefaultMatcher {
                             org_str,
                             &mut err_msges,
                         );
-                        if let Some(utf16_le_match) = utf16_le_match {
-                            if let Some(utf16_be_match) = utf16_be_match {
-                                let mut matches = utf16_le_match;
-                                matches.extend(utf16_be_match);
-                                self.fast_match = Some(matches);
-                            }
+                        if let Some(utf16_le_match) = utf16_le_match
+                            && let Some(utf16_be_match) = utf16_be_match
+                        {
+                            let mut matches = utf16_le_match;
+                            matches.extend(utf16_be_match);
+                            self.fast_match = Some(matches);
                         }
                     } else {
                         self.fast_match =

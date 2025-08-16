@@ -2228,10 +2228,10 @@ Any hostnames added to the critical_systems.txt file will have all alerts above 
 
             if let Some(Action::JsonTimeline(json_options)) = &stored_static.config.action {
                 if json_options.jsonl_timeline {
-                    if let Some(path) = &stored_static.output_path {
-                        if let Ok(mut file) = fs::OpenOptions::new().append(true).open(path) {
-                            let _ = file.write_all(b"\n");
-                        }
+                    if let Some(path) = &stored_static.output_path
+                        && let Ok(mut file) = fs::OpenOptions::new().append(true).open(path)
+                    {
+                        let _ = file.write_all(b"\n");
                     }
                 }
             }

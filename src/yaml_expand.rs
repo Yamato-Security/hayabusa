@@ -93,18 +93,19 @@ pub fn read_expand_files<P: AsRef<Path>>(dir: P) -> io::Result<HashMap<String, V
     if let Ok(entries) = fs::read_dir(dir) {
         for entry in entries.flatten() {
             let path = entry.path();
-            if path.is_file() && path.extension().is_some_and(|ext| ext == "txt") {
-                if let Some(key) = path.file_stem().and_then(|s| s.to_str()) {
-                    let file = fs::File::open(&path)?;
-                    let reader = io::BufReader::new(file);
-                    let values: Vec<String> = reader
-                        .lines()
-                        .map_while(Result::ok)
-                        .map(|s| s.trim().to_string())
-                        .collect();
-                    if !values.is_empty() {
-                        expand_map.insert(format!("%{key}%"), values);
-                    }
+            if path.is_file()
+                && path.extension().is_some_and(|ext| ext == "txt")
+                && let Some(key) = path.file_stem().and_then(|s| s.to_str())
+            {
+                let file = fs::File::open(&path)?;
+                let reader = io::BufReader::new(file);
+                let values: Vec<String> = reader
+                    .lines()
+                    .map_while(Result::ok)
+                    .map(|s| s.trim().to_string())
+                    .collect();
+                if !values.is_empty() {
+                    expand_map.insert(format!("%{key}%"), values);
                 }
             }
         }

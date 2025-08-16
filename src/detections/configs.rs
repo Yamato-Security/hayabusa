@@ -2315,15 +2315,15 @@ impl TargetEventTime {
         if eventtime.is_none() {
             return true;
         }
-        if let Some(starttime) = self.start_time {
-            if eventtime.unwrap() < starttime {
-                return false;
-            }
+        if let Some(starttime) = self.start_time
+            && eventtime.unwrap() < starttime
+        {
+            return false;
         }
-        if let Some(endtime) = self.end_time {
-            if eventtime.unwrap() > endtime {
-                return false;
-            }
+        if let Some(endtime) = self.end_time
+            && eventtime.unwrap() > endtime
+        {
+            return false;
         }
         true
     }

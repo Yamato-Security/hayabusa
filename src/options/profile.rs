@@ -262,13 +262,13 @@ pub fn load_profile(
         ));
         ret.push((CompactString::from("TgtCity"), TgtCity(Cow::default())));
     }
-    if let Some(opt) = &opt_stored_static.as_ref().unwrap().output_option {
-        if opt.input_args.recover_records {
-            ret.push((
-                CompactString::from("RecoveredRecord"),
-                RecoveredRecord(Cow::default()),
-            ));
-        }
+    if let Some(opt) = &opt_stored_static.as_ref().unwrap().output_option
+        && opt.input_args.recover_records
+    {
+        ret.push((
+            CompactString::from("RecoveredRecord"),
+            RecoveredRecord(Cow::default()),
+        ));
     }
     Some(ret)
 }
