@@ -8,6 +8,7 @@ use std::collections::HashSet;
 use std::fs::File;
 use std::io::{BufRead, BufReader};
 use std::path::PathBuf;
+use std::time::Instant;
 use yaml_rust2::Yaml;
 
 #[derive(Debug)]
@@ -99,6 +100,7 @@ fn peek_channel_from_evtx_first_record(
     evtx_files: &Vec<PathBuf>,
     quiet_errors_flag: bool,
 ) -> HashMap<String, Vec<PathBuf>> {
+    let start_time = Instant::now();
     let mut channels = HashMap::new();
     for path in evtx_files {
         match EvtxParser::from_path(path) {
@@ -128,6 +130,12 @@ fn peek_channel_from_evtx_first_record(
                 }
             }
         }
+        let elapsed = start_time.elapsed();
+        println!(
+            "peek_channel_from_evtx_first_record: {:.2}秒, {:?}",
+            elapsed.as_secs_f64(),
+            path.display()
+        );
     }
     channels
 }
