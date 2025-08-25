@@ -1,6 +1,7 @@
 use crate::detections::configs::{self, ONE_CONFIG_MAP, StoredStatic};
 use crate::detections::message::{AlertMessage, ERROR_LOG_STACK};
 use crate::detections::rule::RuleNode;
+use crate::detections::utils::get_thread_num;
 use evtx::EvtxParser;
 use hashbrown::HashMap;
 use regex::Regex;
@@ -8,6 +9,9 @@ use std::collections::HashSet;
 use std::fs::File;
 use std::io::{BufRead, BufReader};
 use std::path::PathBuf;
+use std::sync::{Arc, Mutex};
+use std::thread;
+use std::time::Instant;
 use yaml_rust2::Yaml;
 
 #[derive(Debug)]
@@ -96,40 +100,81 @@ impl RuleExclude {
 }
 
 fn peek_channel_from_evtx_first_record(
-    evtx_files: &Vec<PathBuf>,
+    evtx_files: &[PathBuf],
     quiet_errors_flag: bool,
+    thread_num: Option<usize>,
 ) -> HashMap<String, Vec<PathBuf>> {
-    let mut channels = HashMap::new();
-    for path in evtx_files {
-        match EvtxParser::from_path(path) {
-            Ok(mut parser) => {
-                let mut records = parser.records_json_value();
-                match records.next() {
-                    Some(Ok(rec)) => {
-                        let key = rec.data["Event"]["System"]["Channel"]
-                            .as_str()
-                            .unwrap_or("")
-                            .trim_matches('"')
-                            .to_string();
-                        channels
-                            .entry(key)
-                            .or_insert_with(Vec::new)
-                            .push(path.to_path_buf());
+    let start_time = Instant::now();
+
+    let channels = Arc::new(Mutex::new(HashMap::new()));
+    let error_stack = Arc::new(Mutex::new(Vec::new()));
+
+    let chunk_size = evtx_files.len().max(1) / get_thread_num(thread_num).max(1);
+    let chunks: Vec<_> = evtx_files.chunks(chunk_size.max(1)).collect();
+
+    let handles: Vec<_> = chunks
+        .into_iter()
+        .map(|chunk| {
+            let channels = Arc::clone(&channels);
+            let error_stack = Arc::clone(&error_stack);
+            let chunk = chunk.to_vec();
+
+            thread::spawn(move || {
+                for path in chunk {
+                    match EvtxParser::from_path(&path) {
+                        Ok(mut parser) => {
+                            let mut records = parser.records_json_value();
+                            if let Some(Ok(rec)) = records.next() {
+                                let key = rec.data["Event"]["System"]["Channel"]
+                                    .as_str()
+                                    .unwrap_or("")
+                                    .trim_matches('"')
+                                    .to_string();
+
+                                channels
+                                    .lock()
+                                    .unwrap()
+                                    .entry(key)
+                                    .or_insert_with(Vec::new)
+                                    .push(path);
+                            }
+                        }
+                        Err(_) => {
+                            if !quiet_errors_flag {
+                                error_stack
+                                    .lock()
+                                    .unwrap()
+                                    .push(format!("Failed to open evtx file: {}", path.display()));
+                            }
+                        }
                     }
-                    _ => continue,
-                };
-            }
-            Err(_) => {
-                if !quiet_errors_flag {
-                    ERROR_LOG_STACK
-                        .lock()
-                        .unwrap()
-                        .push(format!("Failed to open evtx file: {}", path.display()));
                 }
-            }
-        }
+            })
+        })
+        .collect();
+
+    // 全てのスレッドの完了を待機
+    for handle in handles {
+        let _ = handle.join();
     }
-    channels
+
+    // エラーをグローバルスタックに追加
+    if !quiet_errors_flag {
+        let mut global_errors = ERROR_LOG_STACK.lock().unwrap();
+        global_errors.extend(error_stack.lock().unwrap().drain(..));
+    }
+
+    let result = Arc::try_unwrap(channels)
+        .map(|mutex| mutex.into_inner().unwrap_or_default())
+        .unwrap_or_default();
+
+    let elapsed = start_time.elapsed();
+    println!(
+        "peek_channel_from_evtx_first_record: {:.2}秒",
+        elapsed.as_secs_f64()
+    );
+
+    result
 }
 
 fn extract_channel_from_rules(
@@ -214,11 +259,12 @@ impl Default for ChannelFilter {
 }
 
 pub fn create_channel_filter(
-    evtx_files: &Vec<PathBuf>,
+    evtx_files: &[PathBuf],
     rule_nodes: &Vec<RuleNode>,
     quiet_errors_flag: bool,
+    thread_num: Option<usize>,
 ) -> ChannelFilter {
-    let channels = peek_channel_from_evtx_first_record(evtx_files, quiet_errors_flag);
+    let channels = peek_channel_from_evtx_first_record(evtx_files, quiet_errors_flag, thread_num);
     if !channels.is_empty() {
         let (x, y) = extract_channel_from_rules(rule_nodes, &channels.keys().cloned().collect());
         ChannelFilter {
@@ -254,7 +300,7 @@ mod tests {
     #[test]
     fn test_peek_channel_from_evtx_first_record_invalid_evtx() {
         let evtx_files = vec![PathBuf::from("test_files/evtx/test1.evtx")];
-        let result = peek_channel_from_evtx_first_record(&evtx_files, false);
+        let result = peek_channel_from_evtx_first_record(&evtx_files, false, None);
         assert!(result.is_empty());
     }
 
@@ -357,7 +403,7 @@ mod tests {
         let test_yaml_data = rule_yaml.next().unwrap();
         let rule = RuleNode::new("test_files/evtx/test1.evtx".to_string(), test_yaml_data);
         let rule_nodes = vec![rule];
-        let result = create_channel_filter(&evtx_files, &rule_nodes, false);
+        let result = create_channel_filter(&evtx_files, &rule_nodes, false, None);
         assert_eq!(result.rulepathes.len(), 0);
     }
 }
