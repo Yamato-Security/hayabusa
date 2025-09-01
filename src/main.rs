@@ -48,7 +48,7 @@ use libmimalloc_sys::mi_stats_print_out;
 use mimalloc::MiMalloc;
 use nested::Nested;
 use num_format::{Locale, ToFormattedString};
-use rand::seq::SliceRandom;
+use rand::prelude::*;
 use rust_embed::Embed;
 use serde_json::{Map, Value};
 use std::borrow::BorrowMut;
@@ -2930,7 +2930,7 @@ Any hostnames added to the critical_systems.txt file will have all alerts above 
                 let file = File::open(f)?;
                 let lines: Vec<String> =
                     io::BufReader::new(file).lines().collect::<Result<_, _>>()?;
-                if let Some(random_line) = lines.choose(&mut rand::thread_rng()) {
+                if let Some(random_line) = lines.choose(&mut rand::rng()) {
                     write_color_buffer(
                         &BufferWriter::stdout(ColorChoice::Always),
                         get_writable_color(
@@ -2945,7 +2945,7 @@ Any hostnames added to the critical_systems.txt file will have all alerts above 
                 }
             } else if let Some(contents) = ONE_CONFIG_MAP.get(file_path) {
                 let lines: Vec<&str> = contents.lines().collect();
-                if let Some(random_line) = lines.choose(&mut rand::thread_rng()) {
+                if let Some(random_line) = lines.choose(&mut rand::rng()) {
                     write_color_buffer(
                         &BufferWriter::stdout(ColorChoice::Always),
                         get_writable_color(
