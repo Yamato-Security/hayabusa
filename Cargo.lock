@@ -933,7 +933,6 @@ dependencies = [
  "tokio",
  "ureq",
  "uuid",
- "walkdir",
  "wildmatch",
  "winapi",
  "yaml-rust2",
