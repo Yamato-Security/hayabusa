@@ -1,25 +1,104 @@
-# Importing Results Into Elastic Stack
+- [Importing Results Into SOF-ELK (Elastic Stack)](#importing-results-into-sof-elk-elastic-stack)
+  - [Install and start SOF-ELK](#install-and-start-sof-elk)
+    - [Network connectivity trouble on Macs](#network-connectivity-trouble-on-macs)
+  - [Update SOF-ELK!](#update-sof-elk)
+  - [Run Hayabusa](#run-hayabusa)
+  - [Import Hayabusa results into SOF-ELK](#import-hayabusa-results-into-sof-elk)
+  - [Check that the import worked](#check-that-the-import-worked)
+  - [View results in Discover](#view-results-in-discover)
+  - [Import the CSV results](#import-the-csv-results)
+  - [Analyzing results](#analyzing-results)
+  - [Hayabusa Dashboard](#hayabusa-dashboard)
+  - [Future Plans](#future-plans)
+  - [Acknowledgements](#acknowledgements)
 
-## Start an elastic stack distribution
 
-Hayabusa results can easily be imported into Elastic Stack. We recommend using [SOF-ELK](https://github.com/philhagen/sof-elk/blob/main/VM_README.md), a free elastic stack Linux distro focused on DFIR investigations.
+# Importing Results Into SOF-ELK (Elastic Stack)
 
-First download and unzip the SOF-ELK 7-zipped VMware image from [http://for572.com/sof-elk-vm](http://for572.com/sof-elk-vm).
+## Install and start SOF-ELK
 
-* Username: `elk_user`
-* Password: `forensics`
+Hayabusa results can easily be imported into Elastic Stack.
+We recommend using [SOF-ELK](https://github.com/philhagen/sof-elk), a free elastic stack Linux distro focused on DFIR investigations.
+
+First download and unzip the SOF-ELK 7-zipped VMware image from [https://github.com/philhagen/sof-elk/wiki/Virtual-Machine-README](https://github.com/philhagen/sof-elk/wiki/Virtual-Machine-README).
+
+There are two versions, x86 for Intel CPUs and an ARM version for Apple M-series computers.
 
 When you boot up the VM, you will get a screen similar to below:
 
 ![SOF-ELK Bootup](01-SOF-ELK-Bootup.png)
 
-Open Kibana in a web browser according to the URL displayed. For example: http://172.16.62.130:5601/
+You can log in with the following credentials:
+* Username: `elk_user`
+* Password: `forensics`
+
+Open Kibana in a web browser according to the URL displayed.
+For example: http://172.16.23.128:5601/
 
 >> Note: it may take a while for Kibana to load.
 
 You should see a webpage as follows:
 
 ![SOF-ELK Kibana](02-Kibana.png)
+
+We recommend that you SSH into the VM instead of typing commands inside the VM with `ssh elk_user@172.16.23.128`.
+
+> Note: the default keyboard layout is the US keyboard.
+
+### Network connectivity trouble on Macs
+
+If you are on macOS and you get a `no route to host error` in the terminal or you cannot access Kibana in your browser, it is probably due to macOS's local network privacy controls.
+
+In `System Settings`, open up `Privacy & Security` -> `Local Network` and make sure that your browser and terminal program are enabled to be able to communicate with devices on your local network.
+
+## Update SOF-ELK!
+
+Before importing data, be sure to update SOF-ELK with the `sudo sof-elk_update.sh` command.
+
+## Run Hayabusa
+
+Run Hayabusa and save results to CSV (and/or JSON?) 
+
+Ex: `./hayabusa-3.x.x csv-timeline -d ../hayabusa-sample-evtx -w -p super-verbose -G /opt/homebrew/var/GeoIP -o super-verbose-and-geoip.csv`
+
+## Import Hayabusa results into SOF-ELK
+
+Logs are ingested into SOF-ELK by copying the logs into the appropriate directory inside the  `/logstash` directory.
+
+Copy over the Hayabusa results file you created with `scp`:
+`scp ./results.csv elk_user@172.16.23.128:/logstash/hayabusa`
+
+## Check that the import worked
+
+Refresh the SOF-ELK homepage to see the total records:
+
+[!TotalRecords](03-TotalRecords.png)
+
+You can also check from the terminal by running `sof-elk_clear.py -i list` to see if the import was successful.
+You should see that your `evtxlogs` index should have more records:
+```
+The following indices are currently active in Elasticsearch:
+- evtxlogs (32,298 documents)
+```
+
+## View results in Discover
+
+Click on the top-left sidebar icon and click `Discover`:
+
+![OpenDiscover](04-OpenDiscover.png)
+
+By default, you will not see any results:
+
+![NoResults](05-NoResults.png)
+
+
+
+You need to make sure that you change the dates so that they include the logs and then click `Update`:
+
+![Change date](03-ChangeData.png)
+
+
+
 
 ## Import the CSV results
 
