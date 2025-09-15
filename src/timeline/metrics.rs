@@ -132,7 +132,7 @@ impl EventMetrics {
             .unwrap();
         let evtx_service_released_date = Some(DateTime::<Utc>::from_naive_utc_and_offset(dt, Utc));
         let mut check_start_end_time = |evttime: &str| {
-            let timestamp = match NaiveDateTime::parse_from_str(evttime, "%Y-%m-%dT%H:%M:%S%.3fZ") {
+            let timestamp = match NaiveDateTime::parse_from_str(evttime, "%Y-%m-%dT%H:%M:%S%.fZ") {
                 Ok(without_timezone_datetime) => Some(DateTime::<Utc>::from_naive_utc_and_offset(
                     without_timezone_datetime,
                     Utc,
