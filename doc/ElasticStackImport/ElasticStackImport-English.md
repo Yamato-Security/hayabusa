@@ -70,9 +70,20 @@ Copy over the Hayabusa results file you created with `scp`:
 
 ## Check that the import worked
 
-Refresh the SOF-ELK homepage to see the total records:
+First take note of the `Total detections`, `First Timestamp` and `Last Timestamp` in the `Results Summary` of your Hayabusa scan.
 
-[!TotalRecords](03-TotalRecords.png)
+If you cannot get this information, you can run `wc -l scan.csv` on *nix to get the total line count for `Total detections`.
+
+By default, Hayabusa does not sort results in order to improve performance so you cannot look at the first and last lines to get the first and last timestamp.
+If you do not know the exact first and last timestamps, just set the first date in Kibana to the year 2007 and the last day as `now` so you will have all results.
+
+[!UpdateDates](03-ChangeDates.png)
+
+You should now see the `Total Records` as well as the first and last timestamps of events that have been imported.
+
+It sometimes takes a while to import all the events, so just keep refreshing the page until the `Total Records` is the count that you expect.
+
+[!TotalRecords](04-TotalRecords.png)
 
 You can also check from the terminal by running `sof-elk_clear.py -i list` to see if the import was successful.
 You should see that your `evtxlogs` index should have more records:
@@ -85,7 +96,7 @@ The following indices are currently active in Elasticsearch:
 
 Click on the top-left sidebar icon and click `Discover`:
 
-![OpenDiscover](04-OpenDiscover.png)
+![OpenDiscover](05-OpenDiscover.png)
 
 By default, you will not see any results:
 
