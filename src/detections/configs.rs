@@ -1675,7 +1675,7 @@ pub struct OutputOption {
     pub time_format_options: TimeFormatOptions,
 
     /// Output event frequency timeline (terminal needs to support unicode)
-    #[arg(help_heading = Some("Display Settings"), short = 'T', long = "visualize-timeline", display_order = 490)]
+    #[arg(help_heading = Some("Display Settings"), short = 'T', long = "visualize-timeline", display_order = 490, requires = "sort_events")]
     pub visualize_timeline: bool,
 
     /// Specify a custom rule directory or file (default: ./rules)

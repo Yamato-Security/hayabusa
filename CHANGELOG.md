@@ -1,5 +1,11 @@
 # Changes
 
+## 3.6.0 [2025/xx/xx]
+
+**Bug Fixes:**
+
+- `-T, --visualize-timeline` would output incorrect results if `-s, --sort` was not specified so we now require `-s` when `-T` is used. (#1690) (@yamatosecurity)
+
 ## 3.5.0 [2025/08/16] - Obon Release
 
 **Enhancements:**
