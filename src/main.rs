@@ -2450,7 +2450,7 @@ Any hostnames added to the critical_systems.txt file will have all alerts above 
         } else if is_splunk_api_json {
             "%Y-%m-%dT%H:%M:%S%.9fZ"
         } else {
-            "%Y-%m-%dT%H:%M:%S%.3fZ"
+            "%Y-%m-%dT%H:%M:%S%.fZ"
         };
         // EventID側の条件との条件の混同を防ぐため時間でのフィルタリングの条件分岐を分離した
         let timestamp = match NaiveDateTime::parse_from_str(
@@ -2578,7 +2578,7 @@ Any hostnames added to the critical_systems.txt file will have all alerts above 
                                     without_timezone_datetime,
                                     Utc,
                                 )
-                                .format("%Y-%m-%dT%H:%M:%S%.3fZ")
+                                .format("%Y-%m-%dT%H:%M:%S%.fZ")
                             }
                             Err(e) => {
                                 AlertMessage::warn(&format!(
@@ -2591,7 +2591,7 @@ Any hostnames added to the critical_systems.txt file will have all alerts above 
                                     e
                                 ))
                                 .ok();
-                                DateTime::<Utc>::default().format("%Y-%m-%dT%H:%M:%S%.3fZ")
+                                DateTime::<Utc>::default().format("%Y-%m-%dT%H:%M:%S%.fZ")
                             }
                         };
 

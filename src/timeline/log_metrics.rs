@@ -34,44 +34,42 @@ impl LogMetrics {
             )
             .map(|evt_value| evt_value.to_string().replace("\\\"", "").replace('"', ""))
             {
-                let timestamp =
-                    match NaiveDateTime::parse_from_str(evttime.as_str(), "%Y-%m-%dT%H:%M:%S%.3fZ")
-                    {
-                        Ok(without_timezone_datetime) => {
-                            Some(DateTime::<Utc>::from_naive_utc_and_offset(
-                                without_timezone_datetime,
-                                Utc,
-                            ))
-                        }
-                        Err(_) => {
-                            match NaiveDateTime::parse_from_str(
-                                evttime.as_str(),
-                                "%Y-%m-%dT%H:%M:%S%.3f%:z",
-                            ) {
-                                Ok(splunk_json_datetime) => {
-                                    Some(DateTime::<Utc>::from_naive_utc_and_offset(
-                                        splunk_json_datetime,
-                                        Utc,
-                                    ))
+                let timestamp = match NaiveDateTime::parse_from_str(
+                    evttime.as_str(),
+                    "%Y-%m-%dT%H:%M:%S%.fZ",
+                ) {
+                    Ok(without_timezone_datetime) => Some(
+                        DateTime::<Utc>::from_naive_utc_and_offset(without_timezone_datetime, Utc),
+                    ),
+                    Err(_) => {
+                        match NaiveDateTime::parse_from_str(
+                            evttime.as_str(),
+                            "%Y-%m-%dT%H:%M:%S%.3f%:z",
+                        ) {
+                            Ok(splunk_json_datetime) => {
+                                Some(DateTime::<Utc>::from_naive_utc_and_offset(
+                                    splunk_json_datetime,
+                                    Utc,
+                                ))
+                            }
+                            Err(e) => {
+                                let errmsg = format!(
+                                    "Timestamp parse error.\nInput: {evttime}\nError: {e}\n"
+                                );
+                                if stored_static.verbose_flag {
+                                    AlertMessage::alert(&errmsg).ok();
                                 }
-                                Err(e) => {
-                                    let errmsg = format!(
-                                        "Timestamp parse error.\nInput: {evttime}\nError: {e}\n"
-                                    );
-                                    if stored_static.verbose_flag {
-                                        AlertMessage::alert(&errmsg).ok();
-                                    }
-                                    if !stored_static.quiet_errors_flag {
-                                        ERROR_LOG_STACK
-                                            .lock()
-                                            .unwrap()
-                                            .push(format!("[ERROR] {errmsg}"));
-                                    }
-                                    None
+                                if !stored_static.quiet_errors_flag {
+                                    ERROR_LOG_STACK
+                                        .lock()
+                                        .unwrap()
+                                        .push(format!("[ERROR] {errmsg}"));
                                 }
+                                None
                             }
                         }
-                    };
+                    }
+                };
                 if let Some(timestamp) = timestamp {
                     if self.first_timestamp.is_none() || timestamp < self.first_timestamp.unwrap() {
                         self.first_timestamp = Some(timestamp);
