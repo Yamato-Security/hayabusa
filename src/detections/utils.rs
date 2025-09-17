@@ -219,10 +219,6 @@ pub fn get_event_id_key() -> String {
     "Event.System.EventID".to_string()
 }
 
-pub fn get_event_time() -> String {
-    "Event.System.TimeCreated_attributes.SystemTime".to_string()
-}
-
 pub fn str_time_to_datetime(system_time_str: &str) -> Option<DateTime<Utc>> {
     if system_time_str.is_empty() {
         return Option::None;

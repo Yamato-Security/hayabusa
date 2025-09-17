@@ -21,7 +21,7 @@ use hayabusa::detections::configs::{
     STORED_STATIC, StoredStatic, TargetEventTime, TargetIds, load_pivot_keywords,
 };
 use hayabusa::detections::detection::{self, EvtxRecordInfo};
-use hayabusa::detections::message::{AlertMessage, DetectInfo, ERROR_LOG_STACK};
+use hayabusa::detections::message::{AlertMessage, DetectInfo, ERROR_LOG_STACK, get_event_time};
 use hayabusa::detections::rule::{RuleNode, get_detection_keys};
 use hayabusa::detections::utils;
 use hayabusa::detections::utils::{
@@ -2355,8 +2355,8 @@ Any hostnames added to the critical_systems.txt file will have all alerts above 
                     }
                 }
                 // EventID側の条件との条件の混同を防ぐため時間でのフィルタリングの条件分岐を分離した
-                let timestamp = record_result.as_ref().unwrap().timestamp;
-                if !time_filter.is_target(&Some(timestamp)) {
+                let timestamp = get_event_time(data, stored_static.json_input_flag);
+                if !time_filter.is_target(&timestamp) {
                     continue;
                 }
 
