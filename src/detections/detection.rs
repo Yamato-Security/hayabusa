@@ -367,7 +367,7 @@ impl Detection {
         .replace('\'', "");
         let eid =
             get_serde_number_to_string(&record_info.record["Event"]["System"]["EventID"], false)
-                .unwrap_or_else(|| "-".into());
+                .unwrap_or_else(|| "".into());
         let recovered_record = if record_info.recovered_record {
             "Y"
         } else {
@@ -929,7 +929,7 @@ impl Detection {
                     );
                 }
                 RecordID(_) => {
-                    profile_converter.insert(key.as_str(), RecordID("-".into()));
+                    profile_converter.insert(key.as_str(), RecordID("".into()));
                 }
                 RuleTitle(_) => {
                     profile_converter.insert(
