@@ -2,6 +2,10 @@
 
 ## 3.6.0 [2025/xx/xx]
 
+**Enhancements:**
+
+- Event and record IDs with multiple possibilities due to correlation rules are now outputted as empty strings instead of `-` for easier parsing. (#1694) (@fukusuket)
+
 **Bug Fixes:**
 
 - `-T, --visualize-timeline` would output incorrect results if `-s, --sort` was not specified so we now require `-s` when `-T` is used. (#1690) (@yamatosecurity)
