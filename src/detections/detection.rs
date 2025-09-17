@@ -649,9 +649,9 @@ impl Detection {
                         continue;
                     }
                     // initialize GeoIP Tgt associated fields
-                    profile_converter.insert("TgtASN", TgtASN("-".into()));
-                    profile_converter.insert("TgtCountry", TgtCountry("-".into()));
-                    profile_converter.insert("TgtCity", TgtCity("-".into()));
+                    profile_converter.insert("TgtASN", TgtASN("".into()));
+                    profile_converter.insert("TgtCountry", TgtCountry("".into()));
+                    profile_converter.insert("TgtCity", TgtCity("".into()));
                     let binding = GEOIP_DB_YAML.read().unwrap();
                     let geo_ip_mapping = binding.as_ref().unwrap();
                     if geo_ip_mapping.is_empty() {
@@ -691,7 +691,7 @@ impl Detection {
                             .collect(),
                         &record_info.record,
                         eventkey_alias,
-                        is_json_timeline,
+                        false,
                     );
                     let geo_data = GEOIP_DB_PARSER
                         .read()
@@ -705,7 +705,7 @@ impl Detection {
                     let binding = geo_data.unwrap();
                     let mut tgt_data = binding
                         .split('🦅')
-                        .map(|x| if x.is_empty() { "-" } else { x });
+                        .map(|x| if x.is_empty() { "" } else { x });
                     profile_converter
                         .entry("TgtASN")
                         .and_modify(|p| *p = TgtASN(tgt_data.next().unwrap().to_owned().into()));
@@ -721,9 +721,9 @@ impl Detection {
                         continue;
                     }
                     // initialize GeoIP Tgt associated fields
-                    profile_converter.insert("SrcASN", SrcASN("-".into()));
-                    profile_converter.insert("SrcCountry", SrcCountry("-".into()));
-                    profile_converter.insert("SrcCity", SrcCity("-".into()));
+                    profile_converter.insert("SrcASN", SrcASN("".into()));
+                    profile_converter.insert("SrcCountry", SrcCountry("".into()));
+                    profile_converter.insert("SrcCity", SrcCity("".into()));
                     let binding = GEOIP_DB_YAML.read().unwrap();
                     let geo_ip_mapping = binding.as_ref().unwrap();
                     if geo_ip_mapping.is_empty() {
@@ -765,7 +765,7 @@ impl Detection {
                             .collect(),
                         &record_info.record,
                         eventkey_alias,
-                        is_json_timeline,
+                        false,
                     );
 
                     let geo_data = GEOIP_DB_PARSER
@@ -780,7 +780,7 @@ impl Detection {
                     let binding = geo_data.unwrap();
                     let mut src_data = binding
                         .split('🦅')
-                        .map(|x| if x.is_empty() { "-" } else { x });
+                        .map(|x| if x.is_empty() { "" } else { x });
                     profile_converter
                         .entry("SrcASN")
                         .and_modify(|p| *p = SrcASN(src_data.next().unwrap().to_owned().into()));
@@ -1808,7 +1808,7 @@ mod tests {
                     ("SrcASN".into(), Profile::SrcASN("Bredband2 AB".into())),
                     ("SrcCountry".into(), Profile::SrcCountry("Sweden".into())),
                     ("SrcCity".into(), Profile::SrcCity("Linköping".into())),
-                    ("TgtASN".into(), Profile::TgtASN("-".into())),
+                    ("TgtASN".into(), Profile::TgtASN("".into())),
                     (
                         "TgtCountry".into(),
                         Profile::TgtCountry("United Kingdom".into()),
@@ -1887,12 +1887,12 @@ mod tests {
                 let stored_static = &stored_static;
                 let detect_info = Detection::create_log_record(rule, record_info, stored_static);
                 let expect_geo_ip_data: Vec<(CompactString, Profile)> = vec![
-                    ("SrcASN".into(), Profile::SrcASN("-".into())),
-                    ("SrcCountry".into(), Profile::SrcCountry("-".into())),
-                    ("SrcCity".into(), Profile::SrcCity("-".into())),
-                    ("TgtASN".into(), Profile::TgtASN("-".into())),
-                    ("TgtCountry".into(), Profile::TgtCountry("-".into())),
-                    ("TgtCity".into(), Profile::TgtCity("-".into())),
+                    ("SrcASN".into(), Profile::SrcASN("".into())),
+                    ("SrcCountry".into(), Profile::SrcCountry("".into())),
+                    ("SrcCity".into(), Profile::SrcCity("".into())),
+                    ("TgtASN".into(), Profile::TgtASN("".into())),
+                    ("TgtCountry".into(), Profile::TgtCountry("".into())),
+                    ("TgtCity".into(), Profile::TgtCity("".into())),
                 ];
                 let ext_field = detect_info.ext_field.clone();
                 for expect in expect_geo_ip_data.iter() {

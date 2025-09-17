@@ -119,17 +119,17 @@ impl GeoIPSearch {
             self.city_reader.lookup(addr);
 
         let output_asn = if let Ok(Some(asn)) = asn_search {
-            asn.autonomous_system_organization.unwrap_or("-")
+            asn.autonomous_system_organization.unwrap_or("")
         } else {
-            "-"
+            ""
         };
 
         let output_country = if let Ok(Some(country)) = country_search {
-            let mut ret = "-";
+            let mut ret = "";
             if let Some(country) = country.country
                 && let Some(name_tree) = country.names
             {
-                ret = name_tree.get("en").unwrap_or(&"-")
+                ret = name_tree.get("en").unwrap_or(&"")
             }
             ret
         } else {
@@ -137,15 +137,15 @@ impl GeoIPSearch {
         };
 
         let output_city = if let Ok(Some(city)) = city_search {
-            let mut ret = "n/-";
+            let mut ret = "";
             if let Some(city) = city.city
                 && let Some(name_tree) = city.names
             {
-                ret = name_tree.get("en").unwrap_or(&"-")
+                ret = name_tree.get("en").unwrap_or(&"")
             }
             ret
         } else {
-            "-"
+            ""
         };
 
         let geo_data = format!("{output_asn}🦅{output_country}🦅{output_city}");
@@ -218,7 +218,7 @@ mod tests {
         );
         IP_MAP.lock().unwrap().clear();
         let geo_ip = GeoIPSearch::new(&test_path, target_files);
-        let expect = "-🦅United Kingdom🦅Boxford";
+        let expect = "🦅United Kingdom🦅Boxford";
         let actual = geo_ip.convert_ip_to_geo("2.125.160.216");
         assert!(actual.is_ok());
         assert_eq!(expect, actual.unwrap());
