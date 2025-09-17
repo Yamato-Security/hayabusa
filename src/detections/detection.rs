@@ -691,7 +691,7 @@ impl Detection {
                             .collect(),
                         &record_info.record,
                         eventkey_alias,
-                        is_json_timeline,
+                        false,
                     );
                     let geo_data = GEOIP_DB_PARSER
                         .read()
@@ -765,7 +765,7 @@ impl Detection {
                             .collect(),
                         &record_info.record,
                         eventkey_alias,
-                        is_json_timeline,
+                        false,
                     );
 
                     let geo_data = GEOIP_DB_PARSER
