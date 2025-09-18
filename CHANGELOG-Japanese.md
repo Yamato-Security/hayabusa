@@ -9,6 +9,7 @@
 **バグ修正:**
 
 - `-T, --visualize-timeline`は、`-s, --sort`が指定されていない場合、正しくない結果を出力するため、`-T`を使用する際には`-s`の指定を必須とした。 (#1690) (@yamatosecurity)
+- レコード自体のタイムスタンプではなく、レコードヘッダー内のタイムスタンプでフィルタリングしていたため、タイムレンジオプション（--timeline-start / --timeline-end）で指定した範囲外のレコードが表示されていた。 (#1689) (@fukusuket)
 - GeoIP検索が`json-timeline`で機能していなかった。 (#1693) (@fukusuket)
 
 ## 3.5.0 [2025/08/16] - Obon Release

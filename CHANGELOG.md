@@ -9,6 +9,7 @@
 **Bug Fixes:**
 
 - `-T, --visualize-timeline` would output incorrect results if `-s, --sort` was not specified so we now require `-s` when `-T` is used. (#1690) (@yamatosecurity)
+- Records outside the range specified by the time range options (`--timeline-start`/`--timeline-end`) were being displayed because we were filtering with the timestamps in the record headers instead of the timestamps in the records themselves. (#1689) (@fukusuket)
 - GeoIP lookup was not working with `json-timeline`. (#1693) (@fukusuket)
 
 ## 3.5.0 [2025/08/16] - Obon Release
