@@ -936,7 +936,7 @@ pub fn output_additional_afterfact(
         }
         if afterfact_info.detect_starttime.is_some() {
             let ts = format!(
-                "Detect timestamp: {}",
+                "First detection: {}",
                 format_time(
                     &afterfact_info.detect_starttime.unwrap(),
                     false,
@@ -957,7 +957,7 @@ pub fn output_additional_afterfact(
         }
         if afterfact_info.detect_endtime.is_some() {
             let ts = format!(
-                "Detect timestamp: {}",
+                "Last detection: {}",
                 format_time(
                     &afterfact_info.detect_endtime.unwrap(),
                     false,
