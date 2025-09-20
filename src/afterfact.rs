@@ -45,6 +45,8 @@ pub struct Colors {
 pub struct AfterfactInfo {
     pub tl_starttime: Option<DateTime<Utc>>,
     pub tl_endtime: Option<DateTime<Utc>>,
+    pub detect_starttime: Option<DateTime<Utc>>,
+    pub detect_endtime: Option<DateTime<Utc>>,
     pub record_cnt: u128,
     pub recover_record_cnt: u128,
     pub detected_record_idset: HashSet<CompactString>,
@@ -102,6 +104,8 @@ impl Default for AfterfactInfo {
         AfterfactInfo {
             tl_starttime: Option::None,
             tl_endtime: Option::None,
+            detect_starttime: Option::None,
+            detect_endtime: Option::None,
             record_cnt: 0,
             recover_record_cnt: 0,
             detected_record_idset: HashSet::new(),
@@ -647,14 +651,14 @@ pub fn output_additional_afterfact(
                 stored_static.common_options.no_color,
             ),
             "Results Summary:",
-            true,
+            false,
         )
         .ok();
 
         if afterfact_info.tl_starttime.is_some() {
             output_and_data_stack_for_html(
                 &format!(
-                    "First Timestamp: {}",
+                    "First timestamp: {}",
                     utils::format_time(
                         &afterfact_info.tl_starttime.unwrap(),
                         false,
@@ -672,9 +676,46 @@ pub fn output_additional_afterfact(
         if afterfact_info.tl_endtime.is_some() {
             output_and_data_stack_for_html(
                 &format!(
-                    "Last Timestamp: {}",
+                    "Last timestamp: {}",
                     utils::format_time(
                         &afterfact_info.tl_endtime.unwrap(),
+                        false,
+                        &stored_static
+                            .output_option
+                            .as_ref()
+                            .unwrap()
+                            .time_format_options
+                    )
+                ),
+                "Results Summary {#results_summary}",
+                &stored_static.html_report_flag,
+            );
+            println!();
+        }
+        if afterfact_info.detect_starttime.is_some() {
+            output_and_data_stack_for_html(
+                &format!(
+                    "First detection: {}",
+                    utils::format_time(
+                        &afterfact_info.detect_starttime.unwrap(),
+                        false,
+                        &stored_static
+                            .output_option
+                            .as_ref()
+                            .unwrap()
+                            .time_format_options
+                    )
+                ),
+                "Results Summary {#results_summary}",
+                &stored_static.html_report_flag,
+            );
+        }
+        if afterfact_info.detect_endtime.is_some() {
+            output_and_data_stack_for_html(
+                &format!(
+                    "Last detection: {}",
+                    utils::format_time(
+                        &afterfact_info.detect_endtime.unwrap(),
                         false,
                         &stored_static
                             .output_option
@@ -852,7 +893,7 @@ pub fn output_additional_afterfact(
         println!();
         if afterfact_info.tl_starttime.is_some() {
             let ts = format!(
-                "First Timestamp: {}",
+                "First timestamp: {}",
                 format_time(
                     &afterfact_info.tl_starttime.unwrap(),
                     false,
@@ -873,9 +914,52 @@ pub fn output_additional_afterfact(
         }
         if afterfact_info.tl_endtime.is_some() {
             let ts = format!(
-                "Last Timestamp: {}",
+                "Last timestamp: {}",
                 format_time(
                     &afterfact_info.tl_endtime.unwrap(),
+                    false,
+                    &stored_static
+                        .output_option
+                        .as_ref()
+                        .unwrap()
+                        .time_format_options
+                )
+            );
+            write_color_buffer(
+                &BufferWriter::stdout(ColorChoice::Always),
+                None,
+                ts.as_str(),
+                true,
+            )
+            .ok();
+            println!();
+        }
+        if afterfact_info.detect_starttime.is_some() {
+            let ts = format!(
+                "Detect timestamp: {}",
+                format_time(
+                    &afterfact_info.detect_starttime.unwrap(),
+                    false,
+                    &stored_static
+                        .output_option
+                        .as_ref()
+                        .unwrap()
+                        .time_format_options
+                )
+            );
+            write_color_buffer(
+                &BufferWriter::stdout(ColorChoice::Always),
+                None,
+                ts.as_str(),
+                true,
+            )
+            .ok();
+        }
+        if afterfact_info.detect_endtime.is_some() {
+            let ts = format!(
+                "Detect timestamp: {}",
+                format_time(
+                    &afterfact_info.detect_endtime.unwrap(),
                     false,
                     &stored_static
                         .output_option
