@@ -144,6 +144,7 @@ impl EventSearch {
                 }
             });
             ret.insert(k.clone(), default_details_abbr.clone());
+            default_details_abbr.clear();
         }
         ret
     }
@@ -764,7 +765,11 @@ pub fn search_result_dsp_msg(
             .search_result
             .clone()
             .into_iter()
-            .sorted_unstable_by(|a, b| Ord::cmp(&a.0, &b.0));
+            .sorted_unstable_by(|a, b| {
+                Ord::cmp(&a.0, &b.0)
+                    .then_with(|| Ord::cmp(&a.4, &b.4))
+                    .then_with(|| Ord::cmp(&a.6, &b.6))
+            });
         let mut is_firstline = true;
         for (timestamp, hostname, channel, event_id, record_id, all_field_info, evtx_file) in
             hit_records
