@@ -43,7 +43,7 @@ use indicatif::ProgressBar;
 use indicatif::{ProgressDrawTarget, ProgressStyle};
 #[cfg(target_os = "windows")]
 use is_elevated::is_elevated;
-use itertools::Itertools;
+use itertools::{Itertools, MinMaxResult};
 use libmimalloc_sys::mi_stats_print_out;
 use mimalloc::MiMalloc;
 use nested::Nested;
@@ -2379,6 +2379,21 @@ Any hostnames added to the critical_systems.txt file will have all alerts above 
                 // detect event record by rule file
                 let (detection_tmp, mut log_records) =
                     detection.start(&self.rt, records_per_detect);
+
+                if let MinMaxResult::MinMax(min_time, max_time) =
+                    log_records.iter().map(|info| info.detected_time).minmax()
+                {
+                    if afterfact_info.detect_starttime.is_none()
+                        || afterfact_info.detect_starttime.unwrap() > min_time
+                    {
+                        afterfact_info.detect_starttime = Some(min_time);
+                    }
+                    if afterfact_info.detect_endtime.is_none()
+                        || afterfact_info.detect_endtime.unwrap() < max_time
+                    {
+                        afterfact_info.detect_endtime = Some(max_time);
+                    }
+                }
                 if stored_static.is_low_memory {
                     let empty_ids = HashSet::new();
                     afterfact::emit_csv(

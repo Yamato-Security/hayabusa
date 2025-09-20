@@ -5,6 +5,7 @@
 **Enhancements:**
 
 - Event and record IDs with multiple possibilities due to correlation rules are now outputted as empty strings instead of `-` for easier parsing. (#1694) (@fukusuket)
+- We now output first and last detection timestamps instead of just the first and last timestamps found in the `Results Summary` of the `csv-timeline` and `json-timeline` commands. (#1688) (@fukusuket)
 
 **Bug Fixes:**
 
