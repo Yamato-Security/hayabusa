@@ -2042,7 +2042,7 @@ fn output_detected_rule_authors(
     let authors_num = sorted_authors.len();
     let div = if authors_num <= table_column_num {
         1
-    } else if authors_num % 4 != 0 {
+    } else if authors_num.is_multiple_of(4) {
         authors_num / table_column_num + 1
     } else {
         authors_num / table_column_num
