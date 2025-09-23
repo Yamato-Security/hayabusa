@@ -1448,9 +1448,9 @@ You can install the MaxMind `geoipupdate` tool [here](https://github.com/maxmind
 
 Steps on macOS:
 1. `brew install geoipupdate`
-2. Edit `/usr/local/etc/GeoIP.conf`: Put in your `AccountID` and `LicenseKey` you create after logging into the MaxMind website. Make sure the `EditionIDs` line says `EditionIDs GeoLite2-ASN GeoLite2-City GeoLite2-Country`.
+2. Edit `/usr/local/etc/GeoIP.conf` or `/opt/homebrew/etc/GeoIP.conf`: Put in your `AccountID` and `LicenseKey` you create after logging into the MaxMind website. Make sure the `EditionIDs` line says `EditionIDs GeoLite2-ASN GeoLite2-City GeoLite2-Country`.
 3. Run `geoipupdate`.
-4. Add `-G /usr/local/var/GeoIP` when you want to add GeoIP information.
+4. Add `-G /usr/local/var/GeoIP` or `-G /opt/homebrew/var/GeoIP` when you want to add GeoIP information.
 
 Steps on Windows:
 1. Download the latest Windows binary (Ex: `geoipupdate_4.10.0_windows_amd64.zip`) from the [Releases](https://github.com/maxmind/geoipupdate/releases) page.
