@@ -1,132 +1,204 @@
-# Elastic Stackへの結果インポート
+# SOF-ELK (Elastic Stack) へのインポート結果
 
-## Elastic Stackディストリビューションの開始
+## 目次
+- [SOF-ELK (Elastic Stack) へのインポート結果](#sof-elk-elastic-stack-へのインポート結果)
+  - [目次](#目次)
+  - [SOF-ELKのインストールと起動](#sof-elkのインストールと起動)
+    - [Macでのネットワーク接続の問題](#macでのネットワーク接続の問題)
+  - [SOF-ELKをアップデート！](#sof-elkをアップデート)
+  - [Hayabusaの実行](#hayabusaの実行)
+  - [オプション：古いインポートデータの削除](#オプション古いインポートデータの削除)
+  - [SOF-ELKでHayabusaのlogstash設定ファイルを構成](#sof-elkでhayabusaのlogstash設定ファイルを構成)
+  - [SOF-ELKにHayabusaの結果をインポート](#sof-elkにhayabusaの結果をインポート)
+  - [Kibanaでインポートが成功したか確認](#kibanaでインポートが成功したか確認)
+  - [Discoverで結果を表示](#discoverで結果を表示)
+  - [結果の分析](#結果の分析)
+    - [カラムの追加](#カラムの追加)
+    - [フィルタリング](#フィルタリング)
+    - [詳細の切り替え](#詳細の切り替え)
+    - [前後のドキュメントを表示](#前後のドキュメントを表示)
+    - [フィールドのクイックメトリクスを取得](#フィールドのクイックメトリクスを取得)
+  - [今後の計画](#今後の計画)
 
-Hayabusaの結果はElasic Stackへ簡単にインポートすることができます。DFIR調査に特化した無料のElasitc Stack Linuxディストリビューションである[SOF-ELK](https://github.com/philhagen/sof-elk/blob/main/VM_README.md)の仕様をおすすめします。
+## SOF-ELKのインストールと起動
 
-まず SOF-ELKのVMWareイメージを[http://for572.com/sof-elk-vm](http://for572.com/sof-elk-vm)からダウンロードし解凍します。
-ユーザ名とパスワードのデフォルトは以下のとおりです。
+Hayabusaの結果はElastic Stackに簡単にインポートできます。
+DFIRインベスティゲーションに特化した無料のElastic StackのLinuxディストリビューションである[SOF-ELK](https://github.com/philhagen/sof-elk)の使用を推奨します。
 
-* Username: `elk_user`
-* Password: `forensics`
+まず、[https://github.com/philhagen/sof-elk/wiki/Virtual-Machine-README](https://github.com/philhagen/sof-elk/wiki/Virtual-Machine-README)から、SOF-ELKの7-zip圧縮されたVMwareイメージをダウンロードして解凍してください。
 
-VMを起動したら、以下のスクリーンのようなものが表示されます。
+Intel CPU用のx86版とApple M-seriesコンピュータ用のARM版の2つのバージョンがあります。
+
+VMを起動すると、次のような画面が表示されます：
 
 ![SOF-ELK Bootup](01-SOF-ELK-Bootup.png)
 
-表示されたURLをウェブブラウザに入力してKibanaを開きます。例: http://172.16.62.130:5601/
+KibanaのURLとSSHサーバーのIPアドレスを控えておいてください。
 
->> Note: Kibanaの読み込みには時間を要します
+以下の認証情報でログインできます：
+* ユーザー名：`elk_user`
+* パスワード：`forensics`
 
-以下のウェブページが表示されます。
+表示されたURLに従って、WebブラウザでKibanaを開きます。
+例：http://172.16.23.128:5601/
+
+> 注意：Kibanaが読み込まれるまでに時間がかかることがあります。
+
+次のようなWebページが表示されます：
 
 ![SOF-ELK Kibana](02-Kibana.png)
 
-## CSV結果のインポート
+VM内でコマンドを入力する代わりに、`ssh elk_user@172.16.23.128`でVMにSSH接続することをお勧めします。
 
-一番上の左隅のサイドバーアイコンをクリックし、`Integrations`を開いてください。
+> 注意：デフォルトのキーボードレイアウトはUSキーボードです。
 
-![Integrations](03-Integrations.png)
+### Macでのネットワーク接続の問題
 
-サーチバーに`csv`を入力して`Upload a file`をクリックしてください。
+macOSを使用していて、ターミナルで`no route to host`エラーが発生したり、ブラウザでKibanaにアクセスできない場合は、macOSのローカルネットワークプライバシー制御が原因の可能性があります。
 
-![CSV Upload](04-IntegrationsImportCSV.png)
+`システム設定`で、`プライバシーとセキュリティ` -> `ローカルネットワーク`を開き、ブラウザとターミナルプログラムがローカルネットワーク上のデバイスと通信できるように有効になっていることを確認してください。
 
-CSVファイルをアップロードした後、`Override settings`をクリックして正しいタイムスタンプのフォーマットを指定します。
+## SOF-ELKをアップデート！
 
-![Override Settings](05-OverrideSettings.png)
+データをインポートする前に、必ず`sudo sof-elk_update.sh`コマンドでSOF-ELKをアップデートしてください。
 
-以下の通り、変更したら`Apply`をクリックします。
+## Hayabusaの実行
 
-1. `Timestamp format` を `custom`に変更する。
-2. フォーマットを`yyyy-MM-dd HH:mm:ss.SSS XXX`に指定する。
-3. `Time field` を `Timestamp`に変更する。
-   
-![Override Settings Config](06-OverrideSettingsConfig.png)
+Hayabusaを実行し、結果をJSONLに保存します。
 
-左隅の`Import`をクリックします。
+例：`./hayabusa json-timeline -L -d ../hayabusa-sample-evtx -w -p super-verbose -G /opt/homebrew/var/GeoIP -o results.jsonl`
 
-![CSV Import](07-CSV-Import.png)
+## オプション：古いインポートデータの削除
 
-`Import`を押す前に、`Advanced` をクリックして以下の設定を投入してください。
+初めてHayabusaの結果をインポートするのではなく、すべてをクリアしたい場合は、以下の手順で実行できます：
 
-1. `Index name` を `evtxlogs-hayabusa`にします。
-2. `Index settings`に、`, "number_of_replicas": 0` を追加してインデックスのヘルスステータスが黄色にならないようにします。
-3. `Mappings`の下にある`RuleTitle`の type を`text` から `keyword` に、`EventID` の type を `long` から `keyword` に変更します。
-4. `Ingest pipeline`の下にある `remove`セクションの下に`, "field": "Timestamp"`を追加します。タイムスタンプは`@timestamp`として表示されるため重複するフィールドは不要になります。インポートのエラーを回避するために以下の記載を削除します。
-   ```
-    {
-      "convert": {
-        "field": "EventID",
-        "type": "long",
-        "ignore_missing": true
-      }
-    },
-    ```
+1. SOF-ELKに現在どのレコードがあるか確認：`sof-elk_clear.py -i list`
+2. 現在のデータを削除：`sof-elk_clear.py -a`
+3. logstashディレクトリのファイルを削除：`rm /logstash/hayabusa/*`
 
-設定は以下の図のようになります。
+## SOF-ELKでHayabusaのlogstash設定ファイルを構成
 
-![Import Data Settings](08-ImportDataSettings.png)
+SOF-ELKにはすでにフィールド名をElastic Common Schema形式に変換するHayabusaのlogstash設定ファイルが含まれています。
+Hayabusaのフィールド名に慣れている場合は、私たちが提供するものを使用することをお勧めします。
 
-インポート後、以下のようなImport completeの画面表示が得られます。
+1. まずSOF-ELKにSSH接続：`ssh elk_user@172.16.23.128`
+2. 現在のlogstash設定ファイルを削除または移動：`sudo rm /etc/logstash/conf.d/6650-hayabusa.conf`
+3. 新しい[6650-hayabusa-jsonl.conf](6650-hayabusa-jsonl.conf)ファイルを`/etc/logstash/conf.d/`にアップロード：`sudo wget https://raw.githubusercontent.com/Yamato-Security/hayabusa/main/doc/ElasticStackImport/6650-hayabusa-jsonl.conf -O /etc/logstash/conf.d/6650-hayabusa.conf`
+4. logstashを再起動：`sudo systemctl restart logstash`
 
-![Import Finish](09-ImportFinish.png)
+この設定ファイルは、統合された`DetailsText`と`ExtraFieldInfoText`フィールドを作成し、各レコードを一つずつ開いてすべてのフィールドを確認する代わりに、最も重要なフィールドを一目で確認できるようにします。
 
-`View index in Discover` をクリックして結果を閲覧することができます。
+## SOF-ELKにHayabusaの結果をインポート
 
+ログは`/logstash`ディレクトリ内の適切なディレクトリにコピーすることでSOF-ELKに取り込まれます。
 
-## 解析結果
+まずSSHから`exit`し、作成したHayabusaの結果ファイルをコピーします：
+`scp ./results.jsonl elk_user@172.16.23.128:/logstash/hayabusa`
 
-デフォルトのDiscoverの表示は以下のようになります。
+## Kibanaでインポートが成功したか確認
 
-![Discover View](10-Discover.png)
+まず、Hayabusaスキャンの`Results Summary`にある`Total detections`、`First Timestamp`、`Last Timestamp`を控えておいてください。
 
-画面上部のヒストグラムを見ることでいつイベントが発生したか、イベントの頻度の概要を見ることができます。
+この情報が取得できない場合は、*nixで`wc -l results.jsonl`を実行して`Total detections`の合計行数を取得できます。
 
-画面左のサイドバーでフィールドにカーソルを合わせてプラスマークをクリックするとこで列に表示するフィールドを追加することができます。
+デフォルトでは、Hayabusaはパフォーマンスを向上させるために結果をソートしないため、最初と最後の行を見て最初と最後のタイムスタンプを取得することはできません。
+正確な最初と最後のタイムスタンプがわからない場合は、Kibanaで最初の日付を2007年に、最後の日を`now`に設定して、すべての結果を表示できるようにしてください。
 
-![Adding Columns](12-AddingColumns.png)
+![UpdateDates](03-ChangeDates.png)
 
-最初は以下のカラムを追加することをおすすめします。
+インポートされたイベントの`Total Records`と最初と最後のタイムスタンプが表示されるはずです。
 
-![Recommended Columns](13-RecommendedColumns.png)
+すべてのイベントをインポートするのに時間がかかることがあるので、`Total Records`が期待するカウントになるまでページを更新し続けてください。
 
-Discoveryビューでは以下のように見えます。
+![TotalRecords](04-TotalRecords.png)
 
-![Discover With Columns](14-DicoverWithColumns.png)
+ターミナルから`sof-elk_clear.py -i list`を実行して、インポートが成功したかどうかを確認することもできます。
+`evtxlogs`インデックスにより多くのレコードが表示されるはずです：
+```
+The following indices are currently active in Elasticsearch:
+- evtxlogs (32,298 documents)
+```
 
-KQLによるフィルタで、以下の例の通り、イベントやアラートを検索することができます。
-  * `Level: "critical"`: criticalのアラートのみを表示する。
-  * `Level: "critical" or Level: "high"`: high と critical のアラートを表示する。
-  * `NOT Level:info`: informationalのイベントを表示しない。
-  * `*LatMov*`: 感染の横展開に関連するアラートとイベントを表示する。
-  * `"Password Spray"`: "Password Spray"のような特定の攻撃のみを表示する。
-  * `"LID: 0x8724ead"`: ログオンIDが0x8724eadとなっている関連したイベントを全て表示する。
+インポート時に解析エラーが発生した場合は、GitHubでissueを作成してください。
+これは`/var/log/logstash/logstash-plain.log`ログファイルの末尾を確認することで確認できます。
 
-## Hayabusaダッシュボード
+## Discoverで結果を表示
 
-シンプルなHayabusaダッシュボードを設定するためのJSONを提供します。[ここ](HayabusaDashboard.ndjson)をクリックすると設定のためのJSONファイルがダウンロードできます。
+左上のサイドバーアイコンをクリックし、`Discover`をクリックします：
 
-ダッシュボードのインポートのためには、左のサイドバーを開き、`Management`の下にある`Stack Management`をクリックします。
+![OpenDiscover](05-OpenDiscover.png)
 
-![Stack Management](15-HayabusaDashboard-StackManagement.png)
+おそらく`No results match your search criteria`と表示されるでしょう。
 
-`Saved Objects`を押した後に, 右上隅にある`Import`をクリックして、ダウンロードしたHayabusaダッシュボードJSONファイルをインポートします。
+左上の`logstash-*`インデックスと表示されている場所をクリックし、`evtxlogs-*`に変更します。
+これでDiscoverタイムラインが表示されるはずです。
 
-![Import Dashboard](16-HayabusaDashboard-Import.png)
+## 結果の分析
 
-以下のダッシュボードを利用することができます。
+デフォルトのDiscoverビューは次のようになります：
 
-![Hayabusa Dashboard-1](17-HayabusaDashboard-1.png)
+![Discover View](06-Discover.png)
 
-![Hayabussa Dashboard-2](18-HayabusaDashboard-2.png)
+上部のヒストグラムを見ることで、イベントがいつ発生したか、イベントの頻度の概要を把握できます。
 
-## 今後の展望
+### カラムの追加
 
-SOF-ELK用のHayabusa logstashパーサーとダッシュボードを作成予定です。この機能でHayabusaのCSVの結果ファイルをディレクトリにコピーするだけでログの取り込みができるようになる予定です。
+左側のサイドバーで、フィールドにカーソルを合わせた後にプラス記号をクリックすることで、カラムに表示したいフィールドを追加できます。
+フィールドが多いため、検索ボックスに探しているフィールド名を入力することをお勧めします。
 
-## 謝辞
+![Adding Columns](07-AddingColumns.png)
 
-このドキュメントの多くは、@kzzzzo2さんの[こちら](https://qiita.com/kzzzzo2/items/ead8ccc77b7609143749)のブログ記事から引用しました。
+まず、以下のカラムをお勧めします：
+- `Computer`
+- `EventID`
+- `Level`
+- `RuleTitle`
+- `DetailsText`
 
-@kzzzzo2 さん、ありがとうございます！
+モニターが十分に広い場合は、すべてのフィールド情報を表示するために`ExtraFieldInfoText`も追加することをお勧めします。
+
+Discoverビューは次のようになります：
+
+![Discover With Columns](08-DiscoverWithColumns.png)
+
+### フィルタリング
+
+KQL（Kibana Query Language）でフィルタリングして、特定のイベントとアラートを検索できます。例：
+  * `Level: "crit"`：重要アラートのみを表示。
+  * `Level: "crit" OR Level: "high"`：高および重要アラートを表示。
+  * `NOT Level: info`：情報イベントは表示せず、アラートのみ。
+  * `MitreTactics: *LatMov*`：ラテラルムーブメントに関連するイベントとアラートを表示。
+  * `"PW Spray"`：「パスワードスプレー」などの特定の攻撃のみを表示。
+  * `"LID: 0x8724ead"`：ログオンID 0x8724eadに関連するすべてのアクティビティを表示。
+  * `Details_TgtUser: admmig`：ターゲットユーザーが`admmig`であるすべてのイベントを検索。
+
+### 詳細の切り替え
+
+レコード内のすべてのフィールドを確認するには、タイムスタンプの横にあるアイコン（詳細付きダイアログを切り替え）をクリックします：
+
+![ToggleDetails](09-ToggleDetails.png)
+
+### 前後のドキュメントを表示
+
+特定のアラートの直前と直後のイベントを表示したい場合は、まずそのアラートの詳細を開き、右上の`View surrounding documents`をクリックします：
+
+![ViewSurroundingDocuments](10-ViewSurroundingDocuments.png)
+
+この例では、Pass the Hash攻撃アラートの前後のイベントを確認しています：
+
+![SurroundingDocuments](11-SurroundingDocuments.png)
+
+> 注意：より多くのイベントを取得するには、上部の`Load x newer documents`または下部の`Load x older documents`の数値を変更してください。
+
+### フィールドのクイックメトリクスを取得
+
+左の列で、フィールド名をクリックすると、その使用状況に関するクイックメトリクスが表示されます：
+
+![LevelMetrics](12-LevelMetrics.png)
+
+> データは速度のためにサンプリングされているため、100%正確ではないことに注意してください。
+
+## 今後の計画
+
+* CSV用のLogstashパーサー
+* 事前構築されたダッシュボード

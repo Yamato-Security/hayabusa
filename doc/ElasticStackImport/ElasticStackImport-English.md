@@ -14,7 +14,6 @@
     - [Toggling Details](#toggling-details)
     - [View surrounding documents](#view-surrounding-documents)
     - [Get quick metrics on fields](#get-quick-metrics-on-fields)
-  - [Hayabusa Dashboard](#hayabusa-dashboard)
   - [Future Plans](#future-plans)
 
 
@@ -29,7 +28,7 @@ First download and unzip the SOF-ELK 7-zipped VMware image from [https://github.
 
 There are two versions, x86 for Intel CPUs and an ARM version for Apple M-series computers.
 
-When you boot up the VM, you will get a screen similar to below:
+When you boot up the VM, you will get a screen similar to this:
 
 ![SOF-ELK Bootup](01-SOF-ELK-Bootup.png)
 
@@ -83,7 +82,7 @@ If you are more comfortable with Hayabusa field names, we recommened to use the 
 
 1. First SSH into SOF-ELK: `ssh elk_user@172.16.23.128`
 2. Delete or move the current logstash config file: `sudo rm /etc/logstash/conf.d/6650-hayabusa.conf`
-3. Upload the new [6650-hayabusa-jsonl.conf](6650-hayabusa-jsonl.conf) file to `/etc/logstash/conf.d/`.
+3. Upload the new [6650-hayabusa-jsonl.conf](6650-hayabusa-jsonl.conf) file to `/etc/logstash/conf.d/`: `sudo wget https://raw.githubusercontent.com/Yamato-Security/hayabusa/main/doc/ElasticStackImport/6650-hayabusa-jsonl.conf -O /etc/logstash/conf.d/6650-hayabusa.conf`.
 4. Reboot logstash: `sudo systemctl restart logstash`
 
 This config file will create consolidated `DetailsText` and `ExtraFieldInfoText` fields that let you quickly see the most important fields at a glance instead of having to take time opening up each record one at a time to look through all of the fields.
@@ -198,24 +197,7 @@ In the left column, if you click on a field name it will give you quick metrics 
 
 > Note that the data is sampled for speed so it is not 100% accurate.
 
-## Hayabusa Dashboard
-
-We have exported a simple Hayabusa Dashboard in JSON to download [here](https://github.com/Yamato-Security/hayabusa/blob/main/doc/ElasticStackImport/HayabusaDashboard.ndjson)
-
-To import the dashboard, open the left sidebar and click `Stack Management` under `Management`.
-
-![Stack Management](15-HayabusaDashboard-StackManagement.png)
-
-After clicking `Saved Objects`, please click `Import` in the upper right-hand corner and import the Hayabusa Dashboard JSON file you downloaded.
-
-![Import Dashboard](16-HayabusaDashboard-Import.png)
-
-You should now be able to use the dashboard shown below:
-
-![Hayabusa Dashboard-1](17-HayabusaDashboard-1.png)
-
-![Hayabussa Dashboard-2](18-HayabusaDashboard-2.png)
-
 ## Future Plans
 
-We plan on creating Hayabusa logstash parsers for CSV as well.
+* Logstash parsers for CSV
+* Pre-built dashboard
