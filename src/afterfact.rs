@@ -1866,6 +1866,9 @@ pub fn output_json_str(
         .collect();
     for (key, profile) in target_ext_field.iter() {
         let val = profile.to_value();
+        if val.is_empty() {
+            continue;
+        }
         let vec_data = _get_json_vec(profile, &val.to_string());
         if (!key_add_to_details.contains(&key.as_str())
             && !matches!(
