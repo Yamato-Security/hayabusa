@@ -1458,9 +1458,9 @@ MaxMind GeoIP データベースは、2 週間ごとに更新されます。
 
 macOSでの手順:
 1. `brew install geoipupdate`
-2. `/usr/local/etc/GeoIP.conf`を編集する: MaxMindのウェブサイトにログインした後に作成した`AccountID`と`LicenseKey`を入れる。`EditionIDs`の行に、`EditionIDs GeoLite2-ASN GeoLite2-City GeoLite2-Country`とあることを確認する。
+2. `/usr/local/etc/GeoIP.conf`または`/opt/homebrew/etc/GeoIP.conf`を編集する: MaxMindのウェブサイトにログインした後に作成した`AccountID`と`LicenseKey`を入れる。`EditionIDs`の行に、`EditionIDs GeoLite2-ASN GeoLite2-City GeoLite2-Country`とあることを確認する。
 3. `geoipupdate`を実行する。
-4. GeoIP情報を追加する場合は、`-G /usr/local/var/GeoIP`を追加する。
+4. GeoIP情報を追加する場合は、`-G /usr/local/var/GeoIP`または`-G /opt/homebrew/var/GeoIP`を追加する。
 
 Windowsでの手順:
 1. [Releases](https://github.com/maxmind/geoipupdate/releases)ページからWindowsバイナリの最新版(例: `geoipupdate_4.10.0_windows_amd64.zip`)をダウンロードする。
