@@ -580,7 +580,7 @@ impl Detection {
                         RuleModifiedDate(
                             rule.yaml["modified"]
                                 .as_str()
-                                .unwrap_or("-")
+                                .unwrap_or("")
                                 .to_string()
                                 .into(),
                         ),
@@ -1035,7 +1035,7 @@ impl Detection {
                         RuleModifiedDate(
                             rule.yaml["modified"]
                                 .as_str()
-                                .unwrap_or("-")
+                                .unwrap_or("")
                                 .to_owned()
                                 .into(),
                         ),
