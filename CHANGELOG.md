@@ -8,6 +8,7 @@
 - We now output first and last detection timestamps instead of just the first and last timestamps found in the `Results Summary` of the `csv-timeline` and `json-timeline` commands. (#1688) (@fukusuket)
 - The guide on how to import Hayabusa JSONL results into SOF-ELK (Elastic Stack) was updated. (#1091) (@yamatosecurity)
 - Output an empty string instead of `-` in the rule's modified date if it is not defined to make importing into a SIEM easier. (#1702) (@yamatosecurity)
+- Empty fields in rule metadata like `RuleModifiedDate`, etc... are not outputted to JSON if they are empty in order to make parsing easier and decrease file size. (#1702) (@fukusuket)
 
 **Bug Fixes:**
 

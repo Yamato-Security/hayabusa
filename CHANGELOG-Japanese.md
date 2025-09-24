@@ -8,6 +8,7 @@
 - `csv-timeline`および`json-timeline`コマンドの`Results Summary`に表示される最初のタイムスタンプと最後のタイムスタンプの後に、最初と最後の検出のタイムスタンプも出力するようにした。 (#1688) (@fukusuket)
 - SOF-ELK（Elastic Stack）へのHayabusa JSONL結果のインポート方法に関するガイドが更新された。 (#1091) (@yamatosecurity)
 - ルールの変更日時が定義されていない場合、SIEMへのインポートを容易にするため、`-`の代わりに空文字列を出力する。 (#1702) (@yamatosecurity)
+- ルールメタデータ内の`RuleModifiedDate`等の空フィールドは、パースを容易にしファイルサイズを削減するため、JSONに出力されない。 (#1702) (@fukusuket)
 
 **バグ修正:**
 
