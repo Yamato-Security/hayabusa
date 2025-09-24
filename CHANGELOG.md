@@ -1,6 +1,6 @@
 # Changes
 
-## 3.6.0 [2025/xx/xx]
+## 3.6.0 [2025/09/25] - Nezamezuki Release
 
 **Enhancements:**
 
