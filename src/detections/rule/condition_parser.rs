@@ -14,7 +14,7 @@ lazy_static! {
         Regex::new(r"^\(").unwrap(),
         Regex::new(r"^\)").unwrap(),
         Regex::new(r"^ ").unwrap(),
-        Regex::new(r"^\w+").unwrap(),
+        Regex::new(r"^[\w+]+").unwrap(),
     ];
     pub static ref RE_PIPE: Regex = Regex::new(r"\|.*").unwrap();
     // all of selection* と 1 of selection* にマッチする正規表現
