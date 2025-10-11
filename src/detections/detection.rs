@@ -44,14 +44,13 @@ use super::configs::{
 };
 use super::message::{self, COMPUTER_MITRE_ATTCK_MAP};
 
-// イベントファイルの1レコード分の情報を保持する構造体
 #[derive(Clone, Debug)]
 pub struct EvtxRecordInfo {
-    pub evtx_filepath: String, // イベントファイルのファイルパス ログで出力するときに使う
-    pub record: Value,         // 1レコード分のデータをJSON形式にシリアライズしたもの
-    pub data_string: String,   //1レコード内のデータを文字列にしたもの
-    pub key_2_value: HashMap<String, String>, // 階層化されたキーを.でつないだデータとその値のマップ
-    pub recovered_record: bool, // レコードが復元されたかどうか
+    pub evtx_filepath: String,
+    pub record: Value,
+    pub data_string: String,
+    pub key_2_value: HashMap<String, String>,
+    pub recovered_record: bool,
 }
 
 impl EvtxRecordInfo {

@@ -25,6 +25,7 @@ use std::fs::{File, OpenOptions};
 use std::io::BufWriter;
 use termcolor::{BufferWriter, Color, ColorChoice};
 use wildmatch::WildMatch;
+use rayon::prelude::*;
 
 const OUTPUT_HEADERS: [&str; 8] = [
     "Timestamp",
@@ -36,6 +37,40 @@ const OUTPUT_HEADERS: [&str; 8] = [
     "AllFieldInfo",
     "EvtxFile",
 ];
+
+/// イベントレコード内の情報からfilterに設定した情報が存在するかを返す関数
+pub fn filter_record(
+    record: &EvtxRecordInfo,
+    filter_rule: &HashMap<String, Vec<WildMatch>>,
+    eventkey_alias: &EventKeyAliasConfig,
+) -> bool {
+    filter_rule.iter().all(|(k, v)| {
+        let alias_target_val = utils::get_serde_number_to_string(
+            utils::get_event_value(k, &record.record, eventkey_alias)
+                .unwrap_or(&serde_json::Value::Null),
+            true,
+        )
+            .unwrap_or_else(|| "n/a".into())
+            .replace(['"', '\''], "");
+        // aliasでマッチした場合はaliasに登録されていないフィールドを検索する必要がないためtrueを返す
+        if v.iter()
+            .all(|search_target| search_target.matches(&alias_target_val))
+        {
+            return true;
+        }
+
+        // aliasに登録されていないフィールドも検索対象とするため
+        let allfieldinfo = match utils::get_serde_number_to_string(
+            &record.record["Event"]["EventData"][k],
+            true,
+        ) {
+            Some(eventdata) => eventdata,
+            _ => CompactString::new("-"),
+        };
+        v.iter()
+            .all(|search_target| search_target.matches(&allfieldinfo))
+    })
+}
 
 #[derive(Debug, Clone)]
 pub struct EventSearch {
@@ -93,41 +128,6 @@ impl EventSearch {
         }
     }
 
-    /// イベントレコード内の情報からfilterに設定した情報が存在するかを返す関数
-    fn filter_record(
-        &mut self,
-        record: &EvtxRecordInfo,
-        filter_rule: &HashMap<String, Vec<WildMatch>>,
-        eventkey_alias: &EventKeyAliasConfig,
-    ) -> bool {
-        filter_rule.iter().all(|(k, v)| {
-            let alias_target_val = utils::get_serde_number_to_string(
-                utils::get_event_value(k, &record.record, eventkey_alias)
-                    .unwrap_or(&serde_json::Value::Null),
-                true,
-            )
-            .unwrap_or_else(|| "n/a".into())
-            .replace(['"', '\''], "");
-            // aliasでマッチした場合はaliasに登録されていないフィールドを検索する必要がないためtrueを返す
-            if v.iter()
-                .all(|search_target| search_target.matches(&alias_target_val))
-            {
-                return true;
-            }
-
-            // aliasに登録されていないフィールドも検索対象とするため
-            let allfieldinfo = match utils::get_serde_number_to_string(
-                &record.record["Event"]["EventData"][k],
-                true,
-            ) {
-                Some(eventdata) => eventdata,
-                _ => CompactString::new("-"),
-            };
-            v.iter()
-                .all(|search_target| search_target.matches(&allfieldinfo))
-        })
-    }
-
     fn get_default_details_mapping_table(
         &self,
         stored_static: &StoredStatic,
@@ -157,7 +157,7 @@ impl EventSearch {
         stored_static: &StoredStatic,
         allfield_replace_table: HashMap<CompactString, HashMap<CompactString, CompactString>>,
     ) {
-        if records.is_empty() {
+        if !records.is_empty() {
             return;
         }
         if search_option.keywords.is_none() {
@@ -168,6 +168,7 @@ impl EventSearch {
             return;
         }
 
+        // create filter rule
         let filter_rule = create_filter_rule(&search_option.filter);
         let mut wtr = ResultWriter::new(search_option);
         let (case_insensitive_flag, and_logic_flag) = match &stored_static.config.action {
@@ -175,70 +176,75 @@ impl EventSearch {
             _ => (false, false),
         };
 
-        for record in records.iter() {
-            // filtering
-            if !self.filter_record(record, &filter_rule, &stored_static.eventkey_alias) {
-                continue;
-            }
-
-            // check if the record contains keywords or not.
-            let search_target = if case_insensitive_flag {
-                record.data_string.to_lowercase()
+        // logic for detecting records containing keywords.
+        let contain_keywords = |search_target: &String| -> bool {
+            if and_logic_flag {
+                keywords.iter().all(|key| {
+                    let converted_key = if case_insensitive_flag {
+                        key.to_lowercase()
+                    } else {
+                        key.to_string()
+                    };
+                    utils::contains_str(&search_target, &converted_key)
+                })
             } else {
-                record.data_string.to_string()
-            };
-            self.filepath = CompactString::from(record.evtx_filepath.as_str());
-
-            let contain_keywords = |keywords: &[String]| -> bool {
-                if and_logic_flag {
-                    keywords.iter().all(|key| {
-                        let converted_key = if case_insensitive_flag {
-                            key.to_lowercase()
-                        } else {
-                            key.to_string()
-                        };
-                        utils::contains_str(&search_target, &converted_key)
-                    })
-                } else {
-                    keywords.iter().any(|key| {
-                        let converted_key = if case_insensitive_flag {
-                            key.to_lowercase()
-                        } else {
-                            key.to_string()
-                        };
-                        utils::contains_str(&search_target, &converted_key)
-                    })
-                }
-            };
-            if !contain_keywords(keywords) {
-                continue;
+                keywords.iter().any(|key| {
+                    let converted_key = if case_insensitive_flag {
+                        key.to_lowercase()
+                    } else {
+                        key.to_string()
+                    };
+                    utils::contains_str(&search_target, &converted_key)
+                })
             }
+        };
 
-            // collect the hit record or output it on the fly
+        // execute keyword search logic in parallel using rayon.
+        let hit_records: Vec<&EvtxRecordInfo> = records.par_iter()
+            .filter(|record| filter_record(record, &filter_rule, &stored_static.eventkey_alias))
+            .filter(|record| {
+                return if case_insensitive_flag {
+                    contain_keywords(&record.data_string.to_lowercase())
+                } else {
+                    contain_keywords(&record.data_string)
+                }
+            })
+            .map(|record| {
+                return record;
+            } )
+            .collect();
+        if hit_records.is_empty() {
+            return;
+        }
+
+        // collect hit records and transform them for later use
+        self.filepath = CompactString::from(hit_records.first().unwrap().evtx_filepath.as_str());
+        for hit_record in hit_records {
             let (timestamp, hostname, channel, eventid, recordid, allfieldinfo) =
                 extract_search_event_info(
-                    record,
+                    hit_record,
                     &stored_static.eventkey_alias,
                     stored_static.output_option.as_ref().unwrap(),
                 );
-            let target_allfieldinfo_abbr_table = allfield_replace_table.get(
-                format!(
-                    "{}_{}",
-                    record.record["Event"]["System"]["Provider_attributes"]["Name"]
-                        .to_string()
-                        .replace('\"', ""),
-                    eventid
-                )
-                .as_str(),
+
+            let provider_attributes_name = hit_record.record["Event"]["System"]["Provider_attributes"]["Name"]                            .to_string()
+                .to_string()
+                .replace('\"', "");
+            let table_key = format!(
+                "{}_{}",
+                provider_attributes_name,
+                eventid
             );
-            let allfieldinfo_newline_split = self.replace_all_field_info_abbr(
-                ALLFIELDINFO_SPECIAL_CHARS
-                    .replace_all(&allfieldinfo, &["🦅", "🦅", "🦅"])
-                    .split('🦅')
-                    .filter(|x| !x.is_empty())
-                    .join(" ")
-                    .as_str(),
-                target_allfieldinfo_abbr_table,
+            let target_all_field_info_abbr_table = allfield_replace_table.get(table_key.as_str());
+
+            let all_field_info_key = ALLFIELDINFO_SPECIAL_CHARS
+                .replace_all(&allfieldinfo, &["🦅", "🦅", "🦅"])
+                .split('🦅')
+                .filter(|x| !x.is_empty())
+                .join(" ");
+            let all_field_info_newline_split = self.replace_all_field_info_abbr(
+                all_field_info_key.as_str(),
+                target_all_field_info_abbr_table,
             );
 
             if search_option.sort_events {
@@ -249,24 +255,24 @@ impl EventSearch {
                     channel,
                     eventid,
                     recordid,
-                    allfieldinfo_newline_split,
+                    all_field_info_newline_split,
                     self.filepath.clone(),
                 ));
                 self.search_result_cnt += 1;
             } else {
                 // sort_events option is false, the hit record is output on the fly.
                 // We don't want to collect the hit record into the memory, if possible, in order to reduce memory usage.
-                let hit_record = (
+                let record_for_stdout = (
                     timestamp,
                     hostname,
                     channel,
                     eventid,
                     recordid,
-                    allfieldinfo_newline_split,
+                    all_field_info_newline_split,
                     self.filepath.clone(),
                 );
                 wtr.write_record(
-                    hit_record,
+                    record_for_stdout,
                     search_option,
                     stored_static,
                     self.search_result_cnt == 0,
@@ -296,7 +302,7 @@ impl EventSearch {
         let mut wtr = ResultWriter::new(search_option);
         for record in records.iter() {
             // we will skip this record if the record is filterd.
-            if !self.filter_record(record, &filter_rule, &stored_static.eventkey_alias) {
+            if !filter_record(record, &filter_rule, &stored_static.eventkey_alias) {
                 continue;
             }
 

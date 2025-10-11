@@ -922,6 +922,7 @@ dependencies = [
  "openssl",
  "pulldown-cmark",
  "rand",
+ "rayon",
  "regex",
  "rust-embed",
  "serde",
