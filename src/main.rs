@@ -2875,7 +2875,7 @@ Any hostnames added to the critical_systems.txt file will have all alerts above 
                 let mut parse_config =
                     ParserSettings::default().parse_empty_chunks(enable_recover_records);
                 parse_config = parse_config.separate_json_attributes(true); // XMLのattributeをJSONに変換する時のルールを設定
-                parse_config = parse_config.num_threads(8); // 設定しないと遅かったので、設定しておく。
+                parse_config = parse_config.num_threads(0); // 設定しないと遅かったので、設定しておく。
                 parse_config = parse_config.validate_checksums(validate_checksum);
 
                 let evtx_parser = evtx_parser.with_configuration(parse_config);
