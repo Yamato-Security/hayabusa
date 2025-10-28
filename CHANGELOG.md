@@ -1,5 +1,11 @@
 # Changes
 
+## 3.7.0 [xxxx/xx/xx]
+
+**Bug Fixes:**
+
+- When `validate_checksum` is disabled (default), an infinite loop and memory leak when the data_size of an event is set to zero was fixed. (omerbenamram/evtx#264)
+
 ## 3.6.0 [2025/09/25] - Nezamezuki Release
 
 **Enhancements:**
