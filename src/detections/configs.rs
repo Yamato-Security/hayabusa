@@ -144,6 +144,7 @@ pub struct StoredStatic {
     pub scan_all_evtx_files: bool,
     pub metrics_remove_duplication: bool,
     pub disable_abbreviation: bool,
+    pub validate_checksum: bool,
 }
 
 impl StoredStatic {
@@ -703,6 +704,22 @@ impl StoredStatic {
             Some(Action::LogonSummary(opt)) => opt.remove_duplicate_detections,
             _ => false,
         };
+        let validate_checksum = match &input_config.as_ref().unwrap().action {
+            Some(Action::CsvTimeline(opt)) => {
+                opt.output_options.detect_common_options.validate_checksums
+            }
+            Some(Action::JsonTimeline(opt)) => {
+                opt.output_options.detect_common_options.validate_checksums
+            }
+            Some(Action::LogonSummary(opt)) => opt.detect_common_options.validate_checksums,
+            Some(Action::EidMetrics(opt)) => opt.detect_common_options.validate_checksums,
+            Some(Action::ExtractBase64(opt)) => opt.detect_common_options.validate_checksums,
+            Some(Action::PivotKeywordsList(opt)) => opt.detect_common_options.validate_checksums,
+            Some(Action::Search(opt)) => opt.validate_checksums,
+            Some(Action::ComputerMetrics(opt)) => opt.validate_checksums,
+            Some(Action::LogMetrics(opt)) => opt.detect_common_options.validate_checksums,
+            _ => false,
+        };
         let mut ret = StoredStatic {
             config: input_config.as_ref().unwrap().to_owned(),
             config_path: config_path.to_path_buf(),
@@ -829,6 +846,7 @@ impl StoredStatic {
             scan_all_evtx_files,
             metrics_remove_duplication,
             disable_abbreviation,
+            validate_checksum,
         };
         ret.profiles = load_profile(
             check_setting_path(
@@ -1141,6 +1159,10 @@ pub struct DetectCommonOption {
     #[arg(help_heading = Some("General Options"), short = 'J', long = "JSON-input", conflicts_with = "live_analysis", display_order = 360)]
     pub json_input: bool,
 
+    /// Enable checksum validation
+    #[arg(help_heading = Some("General Options"), short = 'V', long = "validate-checksums", display_order = 470)]
+    pub validate_checksums: bool,
+
     /// Specify additional evtx file extensions (ex: evtx_data)
     #[arg(help_heading = Some("General Options"), long = "target-file-ext", value_name = "FILE-EXT...", use_value_delimiter = true, value_delimiter = ',', display_order = 460)]
     pub evtx_file_ext: Option<Vec<String>>,
@@ -1368,6 +1390,10 @@ pub struct SearchOption {
     /// Sort results before saving the file (warning: this uses much more memory!)
     #[arg(help_heading = Some("General Options"), short='s', long = "sort", display_order = 600)]
     pub sort_events: bool,
+
+    /// Enable checksum validation
+    #[arg(help_heading = Some("General Options"), short = 'V', long = "validate-checksums", display_order = 600)]
+    pub validate_checksums: bool,
 }
 
 #[derive(Args, Clone, Debug, Default)]
@@ -1895,6 +1921,10 @@ pub struct ComputerMetricsOption {
     /// Overwrite files when saving
     #[arg(help_heading = Some("General Options"), short='C', long = "clobber", display_order = 290, requires = "output")]
     pub clobber: bool,
+
+    /// Enable checksum validation
+    #[arg(help_heading = Some("General Options"), short = 'V', long = "validate-checksums", display_order = 480)]
+    pub validate_checksums: bool,
 }
 
 #[derive(Args, Clone, Debug, Default)]
@@ -2475,6 +2505,7 @@ fn extract_search_options(config: &Config) -> Option<SearchOption> {
             end_timeline: option.end_timeline.clone(),
             sort_events: option.sort_events,
             tab_separator: option.tab_separator,
+            validate_checksums: option.validate_checksums,
         }),
         _ => None,
     }
@@ -2542,6 +2573,7 @@ fn extract_output_options(config: &Config) -> Option<OutputOption> {
             common_options: option.common_options,
             detect_common_options: DetectCommonOption {
                 json_input: option.json_input,
+                validate_checksums: option.validate_checksums,
                 evtx_file_ext: option.evtx_file_ext.clone(),
                 thread_number: option.thread_number,
                 quiet_errors: option.quiet_errors,
@@ -2570,6 +2602,7 @@ fn extract_output_options(config: &Config) -> Option<OutputOption> {
             common_options: option.common_options,
             detect_common_options: DetectCommonOption {
                 json_input: false,
+                validate_checksums: option.validate_checksums,
                 evtx_file_ext: option.evtx_file_ext.clone(),
                 thread_number: option.thread_number,
                 quiet_errors: option.quiet_errors,

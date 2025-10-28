@@ -537,6 +537,7 @@ mod tests {
                 },
                 detect_common_options: DetectCommonOption {
                     json_input: false,
+                    validate_checksums: false,
                     evtx_file_ext: None,
                     thread_number: None,
                     quiet_errors: false,
