@@ -239,7 +239,6 @@ mod tests {
                 },
                 json_input: false,
                 evtx_file_ext: None,
-                thread_number: None,
                 quiet_errors: false,
                 config: Path::new("./rules/config").to_path_buf(),
                 verbose: false,
