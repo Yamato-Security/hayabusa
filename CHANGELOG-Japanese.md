@@ -1,5 +1,16 @@
 # 変更点
 
+## 3.7.0 [xxxx/xx/xx]
+
+**新機能:**
+
+- `csv-timeline`および`json-timeline`コマンドでチャンクヘッダーのチェックサムを確認する`-V, --validate-checksums`オプションを追加した。 (#1709) (@fukusuket)
+
+**バグ修正:**
+
+- `validate_checksum`が無効化されている場合（デフォルト）、イベントのデータサイズがゼロに設定された際の無限ループとメモリリークが修正された。 (omerbenamram/evtx#264)
+- `-t, --threads`オプションが`computer-metrics`および`search`コマンドで機能していなかった。(#1563) (@hach1yon)
+
 ## 3.6.0 [2025/09/25] - 寝覚月リリース
 
 **改善:**
