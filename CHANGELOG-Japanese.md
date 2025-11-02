@@ -2,6 +2,10 @@
 
 ## 3.7.0 [xxxx/xx/xx]
 
+**新機能:**
+
+- `csv-timeline`および`json-timeline`コマンドでチャンクヘッダーのチェックサムを確認する`-V, --validate-checksums`オプションを追加した。 (#1709) (@fukusuket)
+
 **バグ修正:**
 
 - `validate_checksum`が無効（デフォルト設定）になっている場合、イベントの`data_size`がゼロに設定されていると、無限ループとメモリリークが発生する問題が修正された。 (omerbenamram/evtx#264)
