@@ -2,6 +2,10 @@
 
 ## 3.7.0 [xxxx/xx/xx]
 
+**New Features:**
+
+- Added a `-V, --validate-checksums` option to check chunk header checksums in the `csv-timeline` and `json-timeline` commands. (#1709) (@fukusuket)
+
 **Bug Fixes:**
 
 - When `validate_checksum` is disabled (default), an infinite loop and memory leak when the data_size of an event is set to zero was fixed. (omerbenamram/evtx#264)
