@@ -928,6 +928,7 @@ fn check_thread_number(config: &Config) -> Option<usize> {
         Action::ExtractBase64(opt) => opt.detect_common_options.thread_number,
         Action::PivotKeywordsList(opt) => opt.detect_common_options.thread_number,
         Action::LogMetrics(opt) => opt.detect_common_options.thread_number,
+        Action::Search(opt) => opt.thread_number,
         _ => None,
     }
 }
