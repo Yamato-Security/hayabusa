@@ -2871,6 +2871,7 @@ Any hostnames added to the critical_systems.txt file will have all alerts above 
                     .parse_empty_chunks(stored_static.enable_recover_records);
                 parse_config = parse_config.separate_json_attributes(true); // XMLのattributeをJSONに変換する時のルールを設定
                 parse_config = parse_config.num_threads(stored_static.thread_number.unwrap_or(0));
+                parse_config = parse_config.validate_checksums(stored_static.validate_checksum);
 
                 let evtx_parser = evtx_parser.with_configuration(parse_config);
                 Some(evtx_parser)

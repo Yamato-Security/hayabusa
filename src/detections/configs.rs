@@ -144,6 +144,7 @@ pub struct StoredStatic {
     pub scan_all_evtx_files: bool,
     pub metrics_remove_duplication: bool,
     pub disable_abbreviation: bool,
+    pub validate_checksum: bool,
 }
 
 impl StoredStatic {
@@ -703,6 +704,22 @@ impl StoredStatic {
             Some(Action::LogonSummary(opt)) => opt.remove_duplicate_detections,
             _ => false,
         };
+        let validate_checksum = match &input_config.as_ref().unwrap().action {
+            Some(Action::CsvTimeline(opt)) => {
+                opt.output_options.detect_common_options.validate_checksums
+            }
+            Some(Action::JsonTimeline(opt)) => {
+                opt.output_options.detect_common_options.validate_checksums
+            }
+            Some(Action::LogonSummary(opt)) => opt.detect_common_options.validate_checksums,
+            Some(Action::EidMetrics(opt)) => opt.detect_common_options.validate_checksums,
+            Some(Action::ExtractBase64(opt)) => opt.detect_common_options.validate_checksums,
+            Some(Action::PivotKeywordsList(opt)) => opt.detect_common_options.validate_checksums,
+            Some(Action::Search(opt)) => opt.validate_checksums,
+            Some(Action::ComputerMetrics(opt)) => opt.validate_checksums,
+            Some(Action::LogMetrics(opt)) => opt.detect_common_options.validate_checksums,
+            _ => false,
+        };
         let mut ret = StoredStatic {
             config: input_config.as_ref().unwrap().to_owned(),
             config_path: config_path.to_path_buf(),
@@ -829,6 +846,7 @@ impl StoredStatic {
             scan_all_evtx_files,
             metrics_remove_duplication,
             disable_abbreviation,
+            validate_checksum,
         };
         ret.profiles = load_profile(
             check_setting_path(
@@ -938,7 +956,7 @@ fn check_thread_number(config: &Config) -> Option<usize> {
 pub enum Action {
     #[clap(
         author = "Yamato Security (https://github.com/Yamato-Security/hayabusa - @SecurityYamato)",
-        help_template = "\nHayabusa v3.6.0 - Nezamezuki Release\n{author-with-newline}\n{usage-heading}\n  hayabusa.exe csv-timeline <INPUT> [OPTIONS]\n\n{all-args}",
+        help_template = "\nHayabusa v3.7.0 - Dev Build\n{author-with-newline}\n{usage-heading}\n  hayabusa.exe csv-timeline <INPUT> [OPTIONS]\n\n{all-args}",
         term_width = 400,
         display_order = 292,
         disable_help_flag = true
@@ -948,7 +966,7 @@ pub enum Action {
 
     #[clap(
         author = "Yamato Security (https://github.com/Yamato-Security/hayabusa - @SecurityYamato)",
-        help_template = "\nHayabusa v3.6.0 - Nezamezuki Release\n{author-with-newline}\n{usage-heading}\n  hayabusa.exe json-timeline <INPUT> [OPTIONS]\n\n{all-args}",
+        help_template = "\nHayabusa v3.7.0 - Dev Build\n{author-with-newline}\n{usage-heading}\n  hayabusa.exe json-timeline <INPUT> [OPTIONS]\n\n{all-args}",
         term_width = 400,
         display_order = 360,
         disable_help_flag = true
@@ -958,7 +976,7 @@ pub enum Action {
 
     #[clap(
         author = "Yamato Security (https://github.com/Yamato-Security/hayabusa - @SecurityYamato)",
-        help_template = "\nHayabusa v3.6.0 - Nezamezuki Release\n{author-with-newline}\n{usage-heading}\n  hayabusa.exe log-metrics <INPUT> [OPTIONS]\n\n{all-args}",
+        help_template = "\nHayabusa v3.7.0 - Dev Build\n{author-with-newline}\n{usage-heading}\n  hayabusa.exe log-metrics <INPUT> [OPTIONS]\n\n{all-args}",
         term_width = 400,
         display_order = 382,
         disable_help_flag = true
@@ -968,7 +986,7 @@ pub enum Action {
 
     #[clap(
         author = "Yamato Security (https://github.com/Yamato-Security/hayabusa - @SecurityYamato)",
-        help_template = "\nHayabusa v3.6.0 - Nezamezuki Release\n{author-with-newline}\n{usage-heading}\n  hayabusa.exe logon-summary <INPUT> [OPTIONS]\n\n{all-args}",
+        help_template = "\nHayabusa v3.7.0 - Dev Build\n{author-with-newline}\n{usage-heading}\n  hayabusa.exe logon-summary <INPUT> [OPTIONS]\n\n{all-args}",
         term_width = 400,
         display_order = 383,
         disable_help_flag = true
@@ -978,7 +996,7 @@ pub enum Action {
 
     #[clap(
         author = "Yamato Security (https://github.com/Yamato-Security/hayabusa - @SecurityYamato)",
-        help_template = "\nHayabusa v3.6.0 - Nezamezuki Release\n{author-with-newline}\n{usage-heading}\n  hayabusa.exe eid-metrics <INPUT> [OPTIONS]\n\n{all-args}",
+        help_template = "\nHayabusa v3.7.0 - Dev Build\n{author-with-newline}\n{usage-heading}\n  hayabusa.exe eid-metrics <INPUT> [OPTIONS]\n\n{all-args}",
         term_width = 400,
         display_order = 310,
         disable_help_flag = true
@@ -988,7 +1006,7 @@ pub enum Action {
 
     #[clap(
         author = "Yamato Security (https://github.com/Yamato-Security/hayabusa - @SecurityYamato)",
-        help_template = "\nHayabusa v3.6.0 - Nezamezuki Release\n{author-with-newline}\n{usage-heading}\n  hayabusa.exe expand-list <INPUT> [OPTIONS]\n\n{all-args}",
+        help_template = "\nHayabusa v3.7.0 - Dev Build\n{author-with-newline}\n{usage-heading}\n  hayabusa.exe expand-list <INPUT> [OPTIONS]\n\n{all-args}",
         term_width = 400,
         display_order = 311,
         disable_help_flag = true
@@ -998,7 +1016,7 @@ pub enum Action {
 
     #[clap(
         author = "Yamato Security (https://github.com/Yamato-Security/hayabusa - @SecurityYamato)",
-        help_template = "\nHayabusa v3.6.0 - Nezamezuki Release\n{author-with-newline}\n{usage-heading}\n  hayabusa.exe extract-base64 <INPUT> [OPTIONS]\n\n{all-args}",
+        help_template = "\nHayabusa v3.7.0 - Dev Build\n{author-with-newline}\n{usage-heading}\n  hayabusa.exe extract-base64 <INPUT> [OPTIONS]\n\n{all-args}",
         term_width = 400,
         display_order = 311,
         disable_help_flag = true
@@ -1008,7 +1026,7 @@ pub enum Action {
 
     #[clap(
         author = "Yamato Security (https://github.com/Yamato-Security/hayabusa - @SecurityYamato)",
-        help_template = "\nHayabusa v3.6.0 - Nezamezuki Release\n{author-with-newline}\n{usage-heading}\n  hayabusa.exe pivot-keywords-list <INPUT> [OPTIONS]\n\n{all-args}",
+        help_template = "\nHayabusa v3.7.0 - Dev Build\n{author-with-newline}\n{usage-heading}\n  hayabusa.exe pivot-keywords-list <INPUT> [OPTIONS]\n\n{all-args}",
         term_width = 400,
         display_order = 420,
         disable_help_flag = true
@@ -1018,7 +1036,7 @@ pub enum Action {
 
     #[clap(
         author = "Yamato Security (https://github.com/Yamato-Security/hayabusa - @SecurityYamato)",
-        help_template = "\nHayabusa v3.6.0 - Nezamezuki Release\n{author-with-newline}\n{usage-heading}\n  hayabusa.exe search <INPUT> <--keywords \"<KEYWORDS>\" OR --regex \"<REGEX>\"> [OPTIONS]\n\n{all-args}",
+        help_template = "\nHayabusa v3.7.0 - Dev Build\n{author-with-newline}\n{usage-heading}\n  hayabusa.exe search <INPUT> <--keywords \"<KEYWORDS>\" OR --regex \"<REGEX>\"> [OPTIONS]\n\n{all-args}",
         term_width = 400,
         display_order = 450,
         disable_help_flag = true
@@ -1028,7 +1046,7 @@ pub enum Action {
 
     #[clap(
         author = "Yamato Security (https://github.com/Yamato-Security/hayabusa - @SecurityYamato)",
-        help_template = "\nHayabusa v3.6.0 - Nezamezuki Release\n{author-with-newline}\n{usage-heading}\n  {usage}\n\n{all-args}",
+        help_template = "\nHayabusa v3.7.0 - Dev Build\n{author-with-newline}\n{usage-heading}\n  {usage}\n\n{all-args}",
         term_width = 400,
         display_order = 470,
         disable_help_flag = true
@@ -1038,7 +1056,7 @@ pub enum Action {
 
     #[clap(
         author = "Yamato Security (https://github.com/Yamato-Security/hayabusa - @SecurityYamato)",
-        help_template = "\nHayabusa v3.6.0 - Nezamezuki Release\n{author-with-newline}\n{usage-heading}\n  {usage}\n\n{all-args}",
+        help_template = "\nHayabusa v3.7.0 - Dev Build\n{author-with-newline}\n{usage-heading}\n  {usage}\n\n{all-args}",
         term_width = 400,
         display_order = 380,
         disable_help_flag = true
@@ -1048,7 +1066,7 @@ pub enum Action {
 
     #[clap(
         author = "Yamato Security (https://github.com/Yamato-Security/hayabusa - @SecurityYamato)",
-        help_template = "\nHayabusa v3.6.0 - Nezamezuki Release\n{author-with-newline}\n{usage-heading}\n  {usage}\n\n{all-args}",
+        help_template = "\nHayabusa v3.7.0 - Dev Build\n{author-with-newline}\n{usage-heading}\n  {usage}\n\n{all-args}",
         term_width = 400,
         display_order = 451,
         disable_help_flag = true
@@ -1066,7 +1084,7 @@ pub enum Action {
 
     #[clap(
         author = "Yamato Security (https://github.com/Yamato-Security/hayabusa - @SecurityYamato)",
-        help_template = "\nHayabusa v3.6.0 - Nezamezuki Release\n{author-with-newline}\n{usage-heading}\n  hayabusa.exe computer-metrics <INPUT> [OPTIONS]\n\n{all-args}",
+        help_template = "\nHayabusa v3.7.0 - Dev Build\n{author-with-newline}\n{usage-heading}\n  hayabusa.exe computer-metrics <INPUT> [OPTIONS]\n\n{all-args}",
         term_width = 400,
         display_order = 290,
         disable_help_flag = true
@@ -1076,7 +1094,7 @@ pub enum Action {
 
     #[clap(
         author = "Yamato Security (https://github.com/Yamato-Security/hayabusa - @SecurityYamato)",
-        help_template = "\nHayabusa v3.6.0 - Nezamezuki Release\n{author-with-newline}\n{usage-heading}\n  hayabusa.exe config-critical-systems <INPUT> [OPTIONS]\n\n{all-args}",
+        help_template = "\nHayabusa v3.7.0 - Dev Build\n{author-with-newline}\n{usage-heading}\n  hayabusa.exe config-critical-systems <INPUT> [OPTIONS]\n\n{all-args}",
         term_width = 400,
         display_order = 291,
         disable_help_flag = true
@@ -1141,6 +1159,10 @@ pub struct DetectCommonOption {
     /// Scan JSON formatted logs instead of .evtx (.json or .jsonl)
     #[arg(help_heading = Some("General Options"), short = 'J', long = "JSON-input", conflicts_with = "live_analysis", display_order = 360)]
     pub json_input: bool,
+
+    /// Enable checksum validation
+    #[arg(help_heading = Some("General Options"), short = 'V', long = "validate-checksums", display_order = 470)]
+    pub validate_checksums: bool,
 
     /// Specify additional evtx file extensions (ex: evtx_data)
     #[arg(help_heading = Some("General Options"), long = "target-file-ext", value_name = "FILE-EXT...", use_value_delimiter = true, value_delimiter = ',', display_order = 460)]
@@ -1369,6 +1391,10 @@ pub struct SearchOption {
     /// Sort results before saving the file (warning: this uses much more memory!)
     #[arg(help_heading = Some("General Options"), short='s', long = "sort", display_order = 600)]
     pub sort_events: bool,
+
+    /// Enable checksum validation
+    #[arg(help_heading = Some("General Options"), short = 'V', long = "validate-checksums", display_order = 600)]
+    pub validate_checksums: bool,
 }
 
 #[derive(Args, Clone, Debug, Default)]
@@ -1886,6 +1912,10 @@ pub struct ComputerMetricsOption {
     /// Overwrite files when saving
     #[arg(help_heading = Some("General Options"), short='C', long = "clobber", display_order = 290, requires = "output")]
     pub clobber: bool,
+
+    /// Enable checksum validation
+    #[arg(help_heading = Some("General Options"), short = 'V', long = "validate-checksums", display_order = 480)]
+    pub validate_checksums: bool,
 }
 
 #[derive(Args, Clone, Debug, Default)]
@@ -1983,7 +2013,7 @@ pub struct ConfigCriticalSystemsOption {
 #[derive(Parser, Clone, Debug, Default)]
 #[clap(
     author = "Yamato Security (https://github.com/Yamato-Security/hayabusa - @SecurityYamato)",
-    help_template = "\nHayabusa v3.6.0 - Nezamezuki Release\n{author-with-newline}\n{usage-heading}\n  hayabusa.exe <COMMAND> [OPTIONS]\n  hayabusa.exe help <COMMAND> or hayabusa.exe <COMMAND> -h\n\n{all-args}{options}",
+    help_template = "\nHayabusa v3.7.0 - Dev Build\n{author-with-newline}\n{usage-heading}\n  hayabusa.exe <COMMAND> [OPTIONS]\n  hayabusa.exe help <COMMAND> or hayabusa.exe <COMMAND> -h\n\n{all-args}{options}",
     term_width = 400,
     disable_help_flag = true
 )]
@@ -2466,6 +2496,7 @@ fn extract_search_options(config: &Config) -> Option<SearchOption> {
             end_timeline: option.end_timeline.clone(),
             sort_events: option.sort_events,
             tab_separator: option.tab_separator,
+            validate_checksums: option.validate_checksums,
         }),
         _ => None,
     }
@@ -2533,6 +2564,7 @@ fn extract_output_options(config: &Config) -> Option<OutputOption> {
             common_options: option.common_options,
             detect_common_options: DetectCommonOption {
                 json_input: option.json_input,
+                validate_checksums: option.validate_checksums,
                 evtx_file_ext: option.evtx_file_ext.clone(),
                 thread_number: None,
                 quiet_errors: option.quiet_errors,
@@ -2561,6 +2593,7 @@ fn extract_output_options(config: &Config) -> Option<OutputOption> {
             common_options: option.common_options,
             detect_common_options: DetectCommonOption {
                 json_input: false,
+                validate_checksums: option.validate_checksums,
                 evtx_file_ext: option.evtx_file_ext.clone(),
                 thread_number: option.thread_number,
                 quiet_errors: option.quiet_errors,

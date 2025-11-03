@@ -244,6 +244,7 @@ mod tests {
                 verbose: false,
                 output: output.clone(),
                 clobber: true,
+                validate_checksums: false,
             }));
         *STORED_EKEY_ALIAS.write().unwrap() = Some(dummy_stored_static.eventkey_alias.clone());
         let mut timeline = Timeline::default();
