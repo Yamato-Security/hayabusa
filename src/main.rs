@@ -2259,11 +2259,7 @@ Any hostnames added to the critical_systems.txt file will have all alerts above 
         Vec<DetectInfo>,
     ) {
         let path = evtx_filepath.display();
-        let parser = self.evtx_to_jsons(
-            &evtx_filepath,
-            stored_static.enable_recover_records,
-            stored_static.validate_checksum,
-        );
+        let parser = self.evtx_to_jsons(&evtx_filepath, stored_static);
         let mut record_cnt = 0;
         let mut recover_records_cnt = 0;
         let mut detect_infos: Vec<DetectInfo> = vec![];
@@ -2866,17 +2862,16 @@ Any hostnames added to the critical_systems.txt file will have all alerts above 
     fn evtx_to_jsons(
         &self,
         evtx_filepath: &PathBuf,
-        enable_recover_records: bool,
-        validate_checksum: bool,
+        stored_static: &StoredStatic,
     ) -> Option<EvtxParser<File>> {
         match EvtxParser::from_path(evtx_filepath) {
             Ok(evtx_parser) => {
                 // parserのデフォルト設定を変更
-                let mut parse_config =
-                    ParserSettings::default().parse_empty_chunks(enable_recover_records);
+                let mut parse_config = ParserSettings::default()
+                    .parse_empty_chunks(stored_static.enable_recover_records);
                 parse_config = parse_config.separate_json_attributes(true); // XMLのattributeをJSONに変換する時のルールを設定
-                parse_config = parse_config.num_threads(0); // 設定しないと遅かったので、設定しておく。
-                parse_config = parse_config.validate_checksums(validate_checksum);
+                parse_config = parse_config.num_threads(stored_static.thread_number.unwrap_or(0));
+                parse_config = parse_config.validate_checksums(stored_static.validate_checksum);
 
                 let evtx_parser = evtx_parser.with_configuration(parse_config);
                 Some(evtx_parser)

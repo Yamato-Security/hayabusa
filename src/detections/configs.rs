@@ -946,6 +946,7 @@ fn check_thread_number(config: &Config) -> Option<usize> {
         Action::ExtractBase64(opt) => opt.detect_common_options.thread_number,
         Action::PivotKeywordsList(opt) => opt.detect_common_options.thread_number,
         Action::LogMetrics(opt) => opt.detect_common_options.thread_number,
+        Action::Search(opt) => opt.thread_number,
         _ => None,
     }
 }
@@ -1888,16 +1889,6 @@ pub struct ComputerMetricsOption {
     #[arg(help_heading = Some("General Options"), long = "target-file-ext", value_name = "FILE-EXT...", use_value_delimiter = true, value_delimiter = ',', display_order = 450)]
     pub evtx_file_ext: Option<Vec<String>>,
 
-    /// Number of threads (default: optimal number for performance)
-    #[arg(
-        help_heading = Some("General Options"),
-        short = 't',
-        long = "threads",
-        value_name = "NUMBER",
-        display_order = 460
-    )]
-    pub thread_number: Option<usize>,
-
     /// Quiet errors mode: do not save error logs
     #[arg(help_heading = Some("General Options"), short = 'Q', long = "quiet-errors", display_order = 430)]
     pub quiet_errors: bool,
@@ -2575,7 +2566,7 @@ fn extract_output_options(config: &Config) -> Option<OutputOption> {
                 json_input: option.json_input,
                 validate_checksums: option.validate_checksums,
                 evtx_file_ext: option.evtx_file_ext.clone(),
-                thread_number: option.thread_number,
+                thread_number: None,
                 quiet_errors: option.quiet_errors,
                 config: option.config.clone(),
                 verbose: option.verbose,
