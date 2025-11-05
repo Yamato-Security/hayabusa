@@ -10,6 +10,7 @@
 
 - `validate_checksum`が無効（デフォルト設定）になっている場合、イベントの`data_size`がゼロに設定されていると、無限ループとメモリリークが発生する問題が修正された。 (omerbenamram/evtx#264)
 - `-t, --threads`オプションが`computer-metrics`および`search`コマンドで機能していなかった。(#1563) (@hach1yon)
+- 複数のコンピュータからのログをスキャンした際、`log-metrics`が誤った結果を返していた。 (#1713) (@fukusuket)
 
 ## 3.6.0 [2025/09/25] - 寝覚月リリース
 
