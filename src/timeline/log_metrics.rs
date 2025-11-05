@@ -7,6 +7,7 @@ use std::collections::HashSet;
 
 #[derive(Default, Debug, Clone)]
 pub struct LogMetrics {
+    pub filepath: String,
     pub filename: String,
     pub file_size: String,
     pub computers: HashSet<String>,
@@ -18,8 +19,9 @@ pub struct LogMetrics {
 }
 
 impl LogMetrics {
-    pub fn new(filename: &str, file_size: String) -> Self {
+    pub fn new(filepath: &str, filename: &str, file_size: String) -> Self {
         Self {
+            filepath: filepath.to_string(),
             filename: filename.to_string(),
             file_size,
             ..Default::default()

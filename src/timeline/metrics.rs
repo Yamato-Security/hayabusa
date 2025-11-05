@@ -102,7 +102,8 @@ impl EventMetrics {
         );
         let file_size = ByteSize::b(file_size).to_string();
         if let Some(existing_lm) = self.stats_logfile.iter_mut().find(|lm| {
-            lm.filename == file_name
+            lm.filepath == self.filepath.as_str()
+                && lm.filename == file_name
                 && lm.computers.contains(
                     get_event_value_as_string(
                         "Computer",
@@ -115,7 +116,11 @@ impl EventMetrics {
         }) {
             existing_lm.update(records, stored_static);
         } else {
-            let mut lm = LogMetrics::new(file_name, file_size);
+            let mut lm = LogMetrics::new(
+                path.to_str().unwrap().to_string().as_str(),
+                file_name,
+                file_size,
+            );
             lm.update(records, stored_static);
             self.stats_logfile.push(lm);
         }
