@@ -116,11 +116,7 @@ impl EventMetrics {
         }) {
             existing_lm.update(records, stored_static);
         } else {
-            let mut lm = LogMetrics::new(
-                self.filepath.as_str(),
-                file_name,
-                file_size,
-            );
+            let mut lm = LogMetrics::new(self.filepath.as_str(), file_name, file_size);
             lm.update(records, stored_static);
             self.stats_logfile.push(lm);
         }
