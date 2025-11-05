@@ -10,6 +10,7 @@
 
 - When `validate_checksum` is disabled (default), an infinite loop and memory leak when the data_size of an event is set to zero was fixed. (omerbenamram/evtx#264)
 - `-t, --threads` was not working in the `computer-metrics` and `search` commands. (#1563) (@hach1yon)
+- `computer-metrics` was giving incorrect results when logs from multiple comuters were scanned. (#1713) (@fukusuket)
 
 ## 3.6.0 [2025/09/25] - Nezamezuki Release
 
