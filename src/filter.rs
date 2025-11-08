@@ -253,15 +253,14 @@ fn apply_channel_filter(
     if let Some(channels) = channels {
         let channels_yaml = channels
             .iter()
-            .map(|c| format!("                        - {}", c))
+            .map(|c| format!("            - '{}'", c))
             .join("\n");
         let yaml_str = format!(
             r#"
 detection:
     selection:
         Channel:
-{}
-"#,
+{}"#,
             channels_yaml
         );
         let yaml_data = YamlLoader::load_from_str(yaml_str.as_str());
