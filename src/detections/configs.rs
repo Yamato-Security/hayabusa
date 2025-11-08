@@ -1951,6 +1951,22 @@ pub struct LogMetricsOption {
     /// Disable abbreviations
     #[arg(help_heading = Some("Output"), short='b', long = "disable-abbreviations", display_order = 60)]
     pub disable_abbreviations: bool,
+
+    /// Only include specified channels (ex: System,Security)
+    #[arg(help_heading = Some("Filtering"),long = "include-channel", value_name = "CHANNEL...", conflicts_with = "exclude_channel", use_value_delimiter = true, value_delimiter = ',',display_order = 355)]
+    pub include_channel: Option<Vec<String>>,
+
+    /// Do not scan specified channels (ex: System,Security)
+    #[arg(help_heading = Some("Filtering"),long = "exclude-channel", value_name = "CHANNEL...", conflicts_with = "include_channel", use_value_delimiter = true, value_delimiter = ',',display_order = 315)]
+    pub exclude_channel: Option<Vec<String>>,
+
+    /// Only include specified evtx files (ex: Security.evtx,System.evtx)
+    #[arg(help_heading = Some("Filtering"), long = "include-filename", value_name = "FILE...", conflicts_with = "exclude_filename", use_value_delimiter = true, value_delimiter = ',', display_order = 356)]
+    pub include_filename: Option<Vec<String>>,
+
+    /// Do not scan specified evtx files (ex: Security.evtx,System.evtx)
+    #[arg(help_heading = Some("Filtering"), long = "exclude-filename", value_name = "FILE...", conflicts_with = "include_filename", use_value_delimiter = true, value_delimiter = ',', display_order = 316)]
+    pub exclude_filename: Option<Vec<String>>,
 }
 
 #[derive(Args, Clone, Debug, Default)]

@@ -28,7 +28,7 @@ use hayabusa::detections::utils::{
     check_setting_path, get_file_size, get_writable_color, output_and_data_stack_for_html,
     output_profile_name,
 };
-use hayabusa::filter::create_channel_filter;
+use hayabusa::filter::{create_channel_filter, filter_evtx_files};
 use hayabusa::level::LEVEL;
 use hayabusa::options::htmlreport::{self, HTML_REPORTER};
 use hayabusa::options::pivot::PIVOT_KEYWORD;
@@ -2025,6 +2025,17 @@ Any hostnames added to the critical_systems.txt file will have all alerts above 
                 create_channel_filter(&evtx_files, &rule_files, stored_static.quiet_errors_flag);
             evtx_files.retain(|e| channel_filter.scanable_rule_exists(e));
         }
+
+        if let Some(Action::LogMetrics(opt)) = &stored_static.config.action {
+            evtx_files = filter_evtx_files(
+                evtx_files,
+                &opt.include_channel,
+                &opt.include_filename,
+                &opt.exclude_channel,
+                &opt.exclude_filename,
+            );
+        }
+
         let template = if stored_static.common_options.no_color {
             "[{elapsed_precise}] {human_pos} / {human_len} {spinner} [{bar:40}] {percent}%\r\n\r\n{msg}".to_string()
         } else {
