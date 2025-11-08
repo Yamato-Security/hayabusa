@@ -3,12 +3,13 @@ use crate::detections::message::{AlertMessage, ERROR_LOG_STACK};
 use crate::detections::rule::RuleNode;
 use evtx::EvtxParser;
 use hashbrown::HashMap;
+use itertools::Itertools;
 use regex::Regex;
 use std::collections::HashSet;
 use std::fs::File;
 use std::io::{BufRead, BufReader};
 use std::path::PathBuf;
-use yaml_rust2::Yaml;
+use yaml_rust2::{Yaml, YamlLoader};
 
 #[derive(Debug)]
 pub struct DataFilterRule {
@@ -229,6 +230,71 @@ pub fn create_channel_filter(
     } else {
         ChannelFilter::new()
     }
+}
+
+pub fn filter_evtx_files(
+    mut evtx_files: Vec<PathBuf>,
+    include_channel: &Option<Vec<String>>,
+    include_filename: &Option<Vec<String>>,
+    exclude_channel: &Option<Vec<String>>,
+    exclude_filename: &Option<Vec<String>>,
+) -> Vec<PathBuf> {
+    evtx_files = apply_channel_filter(evtx_files, include_channel, false);
+    evtx_files = apply_channel_filter(evtx_files, exclude_channel, true);
+    evtx_files = apply_filename_filter(evtx_files, include_filename, false);
+    apply_filename_filter(evtx_files, exclude_filename, true)
+}
+
+fn apply_channel_filter(
+    mut evtx_files: Vec<PathBuf>,
+    channels: &Option<Vec<String>>,
+    is_exclude: bool,
+) -> Vec<PathBuf> {
+    if let Some(channels) = channels {
+        let channels_yaml = channels
+            .iter()
+            .map(|c| format!("                        - {}", c))
+            .join("\n");
+        let yaml_str = format!(
+            r#"
+detection:
+    selection:
+        Channel:
+{}
+"#,
+            channels_yaml
+        );
+        let yaml_data = YamlLoader::load_from_str(yaml_str.as_str());
+        let node = RuleNode::new(
+            "log-metrics".to_string(),
+            yaml_data.ok().unwrap_or_default().first().unwrap().clone(),
+        );
+        let node = vec![node];
+        let mut channel_filter = create_channel_filter(&evtx_files, &node, false);
+        evtx_files.retain(|e| channel_filter.scanable_rule_exists(e) != is_exclude);
+    }
+    evtx_files
+}
+
+fn apply_filename_filter(
+    mut evtx_files: Vec<PathBuf>,
+    patterns: &Option<Vec<String>>,
+    is_exclude: bool,
+) -> Vec<PathBuf> {
+    if let Some(patterns) = patterns {
+        evtx_files.retain(|path| {
+            path.file_name()
+                .and_then(|n| n.to_str())
+                .is_some_and(|filename| {
+                    let matches = patterns.iter().any(|pattern| {
+                        wildmatch::WildMatch::new(pattern.to_ascii_lowercase().as_str())
+                            .matches(filename.to_ascii_lowercase().as_str())
+                    });
+                    matches != is_exclude
+                })
+        });
+    }
+    evtx_files
 }
 
 #[cfg(test)]
