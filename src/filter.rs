@@ -265,13 +265,13 @@ detection:
             channels_yaml
         );
         let yaml_data = YamlLoader::load_from_str(yaml_str.as_str());
-        let node = RuleNode::new(
-            "log-metrics".to_string(),
-            yaml_data.ok().unwrap_or_default().first().unwrap().clone(),
-        );
-        let node = vec![node];
-        let mut channel_filter = create_channel_filter(&evtx_files, &node, false);
-        evtx_files.retain(|e| channel_filter.scanable_rule_exists(e) != is_exclude);
+        let maybe_doc = yaml_data.ok().and_then(|docs| docs.into_iter().next());
+        if let Some(doc) = maybe_doc {
+            let node = RuleNode::new("log-metrics".to_string(), doc);
+            let node = vec![node];
+            let mut channel_filter = create_channel_filter(&evtx_files, &node, false);
+            evtx_files.retain(|e| channel_filter.scanable_rule_exists(e) != is_exclude);
+        }
     }
     evtx_files
 }
