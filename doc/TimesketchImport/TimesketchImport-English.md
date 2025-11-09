@@ -79,11 +79,13 @@ cd timesketch
 ```
 
 Because the [docker/e2e/Dockerfile](https://github.com/google/timesketch/blob/master/docker/e2e/Dockerfile) does not support the ARM architecture, change the first three lines of the [docker/e2e/Dockerfile](https://github.com/google/timesketch/blob/master/docker/e2e/Dockerfile) as follows.
-```bash
+
+```Dockerfile
 ARG UBUNTU_VERSION=24.04
 # Use the official Docker Hub Ubuntu base image
 FROM ubuntu:latest
 ```
+
 Start the Docker container by following the steps below.
 - https://github.com/google/timesketch/tree/master/docker/e2e#build-and-start-containers
 

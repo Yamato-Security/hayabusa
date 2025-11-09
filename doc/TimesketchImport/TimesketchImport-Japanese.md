@@ -80,14 +80,14 @@ cd timesketch
 ```
 
 [docker/e2e/Dockerfile](https://github.com/google/timesketch/blob/master/docker/e2e/Dockerfile)がArmアーキテクチャをサポートしていないため、[docker/e2e/Dockerfile](https://github.com/google/timesketch/blob/master/docker/e2e/Dockerfile)を以下のように変更します：
-```bash
+```Dockerfile
 ARG UBUNTU_VERSION=24.04
 # Use the official Docker Hub Ubuntu base image
 FROM ubuntu:latest
 ```
 
 以下の手順に従ってDockerコンテナを起動します。
-- https://github.com/google/timesketch/tree/master/docker/e2e#clone-timesketch
+- https://github.com/google/timesketch/tree/master/docker/e2e#build-and-start-containers
 
 
 ## ログイン
