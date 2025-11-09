@@ -1362,7 +1362,7 @@ pub struct SearchOption {
     pub verbose: bool,
 
     /// Output event field information in multiple rows for CSV output
-    #[arg(help_heading = Some("Output"), short = 'M', long="multiline", conflicts_with = "tab-separator", display_order = 390)]
+    #[arg(help_heading = Some("Output"), short = 'M', long="multiline", conflicts_with = "tab_separator", display_order = 390)]
     pub multiline: bool,
 
     /// Separate event field information by tabs
@@ -1814,7 +1814,7 @@ pub struct CsvOutputOption {
     pub output_options: OutputOption,
 
     /// Output event field information in multiple rows
-    #[arg(help_heading = Some("Output"), short = 'M', long="multiline", conflicts_with = "tab-separator", display_order = 390)]
+    #[arg(help_heading = Some("Output"), short = 'M', long="multiline", conflicts_with = "tab_separator", display_order = 390)]
     pub multiline: bool,
 
     /// Separate event field information by tabs
@@ -1937,7 +1937,7 @@ pub struct LogMetricsOption {
     pub time_format_options: TimeFormatOptions,
 
     /// Output event field information in multiple rows for CSV output
-    #[arg(help_heading = Some("Output"), short = 'M', long="multiline", conflicts_with = "tab-separator", requires = "output", display_order = 390)]
+    #[arg(help_heading = Some("Output"), short = 'M', long="multiline", conflicts_with = "tab_separator", requires = "output", display_order = 390)]
     pub multiline: bool,
 
     /// Separate event field information by tabs
