@@ -9,6 +9,7 @@
 **Enhancements:**
 
 - Added four new command-line options `--include-channel`, `--exclude-channel`, `--include-filename`, and `--exclude-filename` to the `log-metrics` command. (#1715) (@fukusuket)
+- Updated the Timesketch install readme to support Timesketch on ARM-based Macs. (#1719) (@fukusuket)
 
 **Bug Fixes:**
 
