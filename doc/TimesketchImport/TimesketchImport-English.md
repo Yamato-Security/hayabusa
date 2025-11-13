@@ -79,7 +79,7 @@ git clone https://github.com/google/timesketch.git
 cd timesketch
 ```
 
-Because the [docker/e2e/Dockerfile](https://github.com/google/timesketch/blob/master/docker/e2e/Dockerfile) does not support the ARM architecture, change the first three lines of the [docker/e2e/Dockerfile](https://github.com/google/timesketch/blob/master/docker/e2e/Dockerfile) as follows.
+Because the [docker/e2e/Dockerfile](https://github.com/google/timesketch/blob/master/docker/e2e/Dockerfile) does not support the ARM architecture, replace lines 1-3 of the [docker/e2e/Dockerfile](https://github.com/google/timesketch/blob/master/docker/e2e/Dockerfile) with the following:
 
 ```Dockerfile
 ARG UBUNTU_VERSION=24.04
