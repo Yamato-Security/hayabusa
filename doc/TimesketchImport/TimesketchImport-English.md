@@ -24,6 +24,9 @@ The only downside is that you will have to setup a Timesketch server in your lab
   - [About](#about)
   - [Table of Contents](#table-of-contents)
   - [Installing](#installing)
+    - [Docker](#docker)
+    - [Ubuntu](#ubuntu)
+    - [macOS](#macos)
   - [Logging in](#logging-in)
   - [Creating a new sketch](#creating-a-new-sketch)
   - [Uploading your timeline](#uploading-your-timeline)
@@ -44,7 +47,11 @@ The only downside is that you will have to setup a Timesketch server in your lab
     - [Stars and tags](#stars-and-tags)
 
 ## Installing
+### Docker
+Follow the official instructions [here](https://docs.docker.com/compose/install).
 
+### Ubuntu
+**Note:** Docker must be installed before proceeding. Please follow the [Docker installation instructions above](#docker) if you have not already installed Docker.
 We recommend using the latest Ubuntu LTS Server edition with at least 8GB of memory.
 You can download it [here](https://ubuntu.com/download/server).
 Choose the minimal install when setting it up.
@@ -54,31 +61,7 @@ You won't have `ifconfig` available, so install it with `sudo apt install net-to
 After that, run `ifconfig` to find the IP address of the VM and optionally ssh into it.
 
 Run the following commands:
-
 ``` bash
-# Delete any old versions of docker in case they are present
-for pkg in docker.io docker-doc docker-compose docker-compose-v2 podman-docker containerd runc; do sudo apt-get remove $pkg; done
-
-# Prepare to install docker
-sudo apt-get update
-sudo apt-get install ca-certificates curl
-sudo install -m 0755 -d /etc/apt/keyrings
-sudo curl -fsSL https://download.docker.com/linux/ubuntu/gpg -o /etc/apt/keyrings/docker.asc
-sudo chmod a+r /etc/apt/keyrings/docker.asc
-
-# Add the repository to Apt sources:
-echo \
-  "deb [arch=$(dpkg --print-architecture) signed-by=/etc/apt/keyrings/docker.asc] https://download.docker.com/linux/ubuntu \
-  $(. /etc/os-release && echo "$VERSION_CODENAME") stable" | \
-  sudo tee /etc/apt/sources.list.d/docker.list > /dev/null
-sudo apt-get update
-
-# Install docker
-sudo apt-get install docker-ce docker-ce-cli containerd.io docker-buildx-plugin docker-compose-plugin
-
-# Test docker
-sudo docker run hello-world
-
 curl -s -O https://raw.githubusercontent.com/google/timesketch/master/contrib/deploy_timesketch.sh
 chmod 755 deploy_timesketch.sh
 cd /opt
@@ -89,6 +72,24 @@ sudo docker compose up -d
 # Create a user named user. Set the password here.
 sudo docker compose exec timesketch-web tsctl create-user user
 ```
+### macOS
+**Note:** Before proceeding, ensure you have [Docker Desktop for Mac](https://docs.docker.com/desktop/install/mac/) installed and running on your system.
+Clone the Timesketch repository and change into the directory.
+```bash
+git clone https://github.com/google/timesketch.git
+cd timesketch
+```
+
+Because the [docker/e2e/Dockerfile](https://github.com/google/timesketch/blob/master/docker/e2e/Dockerfile) does not support the ARM architecture, replace lines 1-3 of the [docker/e2e/Dockerfile](https://github.com/google/timesketch/blob/master/docker/e2e/Dockerfile) with the following:
+
+```Dockerfile
+ARG UBUNTU_VERSION=24.04
+# Use the official Docker Hub Ubuntu base image
+FROM ubuntu:latest
+```
+
+Start the Docker container by following the steps below.
+- https://github.com/google/timesketch/tree/master/docker/e2e#build-and-start-containers
 
 ## Logging in
 

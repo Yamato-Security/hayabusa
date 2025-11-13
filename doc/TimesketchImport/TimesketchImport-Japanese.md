@@ -24,6 +24,9 @@ Timesketchの利点は以下のとおりです：
     - [概要](#概要)
     - [目次](#目次)
     - [インストール](#インストール)
+      - [Docker](#docker)
+      - [Ubuntu](#ubuntu)
+      - [macOS](#macos)
     - [ログイン](#ログイン)
     - [新しいスケッチの作成](#新しいスケッチの作成)
     - [タイムラインのアップロード](#タイムラインのアップロード)
@@ -44,7 +47,10 @@ Timesketchの利点は以下のとおりです：
         - [スターとタグ](#スターとタグ)
 
 ## インストール
+### Docker
+公式サイトの[こちら](https://docs.docker.com/compose/install)の手順に従ってインストールしてください。
 
+### Ubuntu
 最新のUbuntu LTS Server版（メモリ8GB以上）を使用することを推奨します。
 ダウンロードは [こちら](https://ubuntu.com/download/server)から。
 最小インストールを選択し、
@@ -54,31 +60,7 @@ OSのセットアップ時にDockerをインストールしないでください
 そのあと, `ifconfig` を実行して、VMのIPアドレスを確認し、任意でsshでログインしてください。
 
 以下のコマンドを実行します:
-
 ``` bash
-# Delete any old versions of docker in case they are present
-for pkg in docker.io docker-doc docker-compose docker-compose-v2 podman-docker containerd runc; do sudo apt-get remove $pkg; done
-
-# Prepare to install docker
-sudo apt-get update
-sudo apt-get install ca-certificates curl
-sudo install -m 0755 -d /etc/apt/keyrings
-sudo curl -fsSL https://download.docker.com/linux/ubuntu/gpg -o /etc/apt/keyrings/docker.asc
-sudo chmod a+r /etc/apt/keyrings/docker.asc
-
-# Add the repository to Apt sources:
-echo \
-  "deb [arch=$(dpkg --print-architecture) signed-by=/etc/apt/keyrings/docker.asc] https://download.docker.com/linux/ubuntu \
-  $(. /etc/os-release && echo "$VERSION_CODENAME") stable" | \
-  sudo tee /etc/apt/sources.list.d/docker.list > /dev/null
-sudo apt-get update
-
-# Install docker
-sudo apt-get install docker-ce docker-ce-cli containerd.io docker-buildx-plugin docker-compose-plugin
-
-# Test docker
-sudo docker run hello-world
-
 curl -s -O https://raw.githubusercontent.com/google/timesketch/master/contrib/deploy_timesketch.sh
 chmod 755 deploy_timesketch.sh
 cd /opt
@@ -89,6 +71,24 @@ sudo docker compose up -d
 # Create a user named user. Set the password here.
 sudo docker compose exec timesketch-web tsctl create-user user
 ```
+
+### macOS
+Timesketchのリポジトリをクローンします。
+```bash
+git clone https://github.com/google/timesketch.git
+cd timesketch
+```
+
+[docker/e2e/Dockerfile](https://github.com/google/timesketch/blob/master/docker/e2e/Dockerfile)がArmアーキテクチャをサポートしていないため、[docker/e2e/Dockerfile](https://github.com/google/timesketch/blob/master/docker/e2e/Dockerfile)の最初の3行を以下の内容に置き換えてください：
+```Dockerfile
+ARG UBUNTU_VERSION=24.04
+# Use the official Docker Hub Ubuntu base image
+FROM ubuntu:latest
+```
+
+以下の手順に従ってDockerコンテナを起動します。
+- https://github.com/google/timesketch/tree/master/docker/e2e#build-and-start-containers
+
 
 ## ログイン
 
