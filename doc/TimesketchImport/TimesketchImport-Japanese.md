@@ -79,7 +79,7 @@ git clone https://github.com/google/timesketch.git
 cd timesketch
 ```
 
-[docker/e2e/Dockerfile](https://github.com/google/timesketch/blob/master/docker/e2e/Dockerfile)がArmアーキテクチャをサポートしていないため、[docker/e2e/Dockerfile](https://github.com/google/timesketch/blob/master/docker/e2e/Dockerfile)を以下のように変更します：
+[docker/e2e/Dockerfile](https://github.com/google/timesketch/blob/master/docker/e2e/Dockerfile)がArmアーキテクチャをサポートしていないため、[docker/e2e/Dockerfile](https://github.com/google/timesketch/blob/master/docker/e2e/Dockerfile)の最初の3行を以下の内容に置き換えてください：
 ```Dockerfile
 ARG UBUNTU_VERSION=24.04
 # Use the official Docker Hub Ubuntu base image
