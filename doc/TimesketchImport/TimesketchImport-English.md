@@ -73,6 +73,7 @@ sudo docker compose up -d
 sudo docker compose exec timesketch-web tsctl create-user user
 ```
 ### macOS
+**Note:** Before proceeding, ensure you have [Docker Desktop for Mac](https://docs.docker.com/desktop/install/mac/) installed and running on your system.
 Clone the Timesketch repository and change into the directory.
 ```bash
 git clone https://github.com/google/timesketch.git
