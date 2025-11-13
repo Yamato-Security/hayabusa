@@ -51,6 +51,7 @@ The only downside is that you will have to setup a Timesketch server in your lab
 Follow the official instructions [here](https://docs.docker.com/compose/install).
 
 ### Ubuntu
+**Note:** Docker must be installed before proceeding. Please follow the [Docker installation instructions above](#docker) if you have not already installed Docker.
 We recommend using the latest Ubuntu LTS Server edition with at least 8GB of memory.
 You can download it [here](https://ubuntu.com/download/server).
 Choose the minimal install when setting it up.
