@@ -1,6 +1,6 @@
 # Changes
 
-## 3.7.0 [xxxx/xx/xx]
+## 3.7.0 [2025/11/15] - CODE BLUE Release
 
 **New Features:**
 

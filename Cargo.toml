@@ -1,6 +1,6 @@
 [package]
 name = "hayabusa"
-version = "3.7.0-dev"
+version = "3.7.0"
 repository = "https://github.com/Yamato-Security/hayabusa"
 authors = ["Yamato Security @SecurityYamato"]
 edition = "2024"
@@ -22,7 +22,7 @@ csv = "1.4.*"
 dashmap = "*"
 dialoguer = "*"
 downcast-rs = "1.*"
-evtx = { git = "https://github.com/Yamato-Security/hayabusa-evtx.git" , features = ["fast-alloc"] , rev = "6ff8f11" } # 0.9.5 2025/10/27 update
+evtx = { git = "https://github.com/Yamato-Security/hayabusa-evtx.git" , features = ["fast-alloc"] , rev = "0ee1f03" } # 0.9.6 2025/11/14 update
 git2 = "0.*"
 hashbrown = "0.16.*"
 hex = "0.4.*"
