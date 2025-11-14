@@ -649,8 +649,8 @@ dependencies = [
 
 [[package]]
 name = "evtx"
-version = "0.9.5"
-source = "git+https://github.com/Yamato-Security/hayabusa-evtx.git?rev=6ff8f11#6ff8f115189770d2e1e2a0fd12197a7971dbd76a"
+version = "0.9.6"
+source = "git+https://github.com/Yamato-Security/hayabusa-evtx.git?rev=0ee1f03#0ee1f038b01429cc7faf19ad8bb57a2035109334"
 dependencies = [
  "anyhow",
  "bitflags 2.10.0",
@@ -852,7 +852,7 @@ dependencies = [
 
 [[package]]
 name = "hayabusa"
-version = "3.7.0-dev"
+version = "3.7.0"
 dependencies = [
  "aho-corasick",
  "base64",
