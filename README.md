@@ -23,6 +23,7 @@
     <a href="https://www.blackhat.com/sector/2024/briefings/schedule/index.html#performing-dfir-and-threat-hunting-with-yamato-security-oss-tools-and-community-driven-knowledge-41347"><img src="https://img.shields.io/badge/SecTor-2024-blue"></a>
     <a href="https://www.infosec-city.com/schedule/sin25-con"><img src="https://img.shields.io/badge/SINCON%20Kampung%20Workshop-2025-blue"></a>
     <a href="https://www.blackhat.com/us-25/arsenal/schedule/index.html#windows-fast-forensics-with-yamato-securitys-hayabusa-45629"><img src="https://img.shields.io/badge/Black%20Hat%20Arsenal%20USA-2025-blue"></a>
+    <a href="https://codeblue.jp/en/program/time-table/day2-t3-02/"><img src="https://img.shields.io/badge/CODE%20BLUE%20-2025-blue"></a>
     <a href="https://gist.github.com/cheerfulstoic/d107229326a01ff0f333a1d3476e068d"><img src="https://img.shields.io/badge/Maintenance%20Level-Actively%20Developed-brightgreen.svg" /></a>
     <a href="https://github.com/Yamato-Security/hayabusa/commits/main/"><img src="https://img.shields.io/github/commit-activity/t/Yamato-Security/hayabusa/main" /></a>
     <a href="https://rust-reportcard.xuri.me/report/github.com/Yamato-Security/hayabusa"><img src="https://rust-reportcard.xuri.me/badge/github.com/Yamato-Security/hayabusa" /></a>
@@ -79,7 +80,6 @@ The output will be consolidated into a single CSV/JSON/JSONL timeline for easy a
   - [DFIR Timeline Analysis in LibreOffice (`-M` Multiline Output)](#dfir-timeline-analysis-in-libreoffice--m-multiline-output)
   - [DFIR Timeline Analysis in Timeline Explorer](#dfir-timeline-analysis-in-timeline-explorer)
   - [Critical Alert Filtering and Computer Grouping in Timeline Explorer](#critical-alert-filtering-and-computer-grouping-in-timeline-explorer)
-  - [Analysis with the Elastic Stack Dashboard](#analysis-with-the-elastic-stack-dashboard)
   - [Analysis in Timesketch](#analysis-in-timesketch)
 - [Importing and Analyzing Timeline Results](#importing-and-analyzing-timeline-results)
 - [Analyzing JSON-formatted results with JQ](#analyzing-json-formatted-results-with-jq)
@@ -252,12 +252,6 @@ Hayabusa hopes to let analysts get 80% of their work done in 20% of the time whe
 ## Critical Alert Filtering and Computer Grouping in Timeline Explorer
 
 ![Critical alert filtering and computer grouping in Timeline Explorer](screenshots/TimelineExplorer-CriticalAlerts-ComputerGrouping.png)
-
-## Analysis with the Elastic Stack Dashboard
-
-![Elastic Stack Dashboard 1](doc/ElasticStackImport/17-HayabusaDashboard-1.png)
-
-![Elastic Stack Dashboard 2](doc/ElasticStackImport/18-HayabusaDashboard-2.png)
 
 ## Analysis in Timesketch
 
@@ -2025,6 +2019,8 @@ To create the most forensic evidence and detect with the highest accuracy, you n
 
 ## English
 
+* 2025/10/01 [BHIS: Wrangling Windows Event Logs with Hayabusa & SOF-ELK (Part 2)](https://www.blackhillsinfosec.com/wrangling-windows-event-logs-with-hayabusa-sof-elk-part-2/)
+* 2025/09/29 [BHIS: Wrangling Windows Event Logs with Hayabusa & SOF-ELK (Part 1)](https://www.blackhillsinfosec.com/wrangling-windows-event-logs-with-hayabusa-sof-elk-part-1/)
 * 2023/12/11 [Unleashing the Hayabusa Feathers: My Top Features Revealed!](https://detect.fyi/hunting-with-hayabusa-tool-showcase-aafef7434413) by Christian Henriksen
 * 2023/10/16 [Incident response and threat hunting using hayabusa tool](https://mahim-firoj.medium.com/incident-response-and-threat-hunting-using-hayabusa-tool-383da273183a) by Md. Mahim Bin Firoj
 * 2023/03/21 [Find Threats in Event Logs with Hayabusa](https://blog.ecapuano.com/p/find-threats-in-event-logs-with-hayabusa) by [Eric Capuano](https://twitter.com/eric_capuano)
