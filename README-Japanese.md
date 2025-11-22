@@ -23,6 +23,7 @@
     <a href="https://www.blackhat.com/sector/2024/briefings/schedule/index.html#performing-dfir-and-threat-hunting-with-yamato-security-oss-tools-and-community-driven-knowledge-41347"><img src="https://img.shields.io/badge/SecTor-2024-blue"></a>
     <a href="https://www.infosec-city.com/schedule/sin25-con"><img src="https://img.shields.io/badge/SINCON%20Kampung%20Workshop-2025-blue"></a>
     <a href="https://www.blackhat.com/us-25/arsenal/schedule/index.html#windows-fast-forensics-with-yamato-securitys-hayabusa-45629"><img src="https://img.shields.io/badge/Black%20Hat%20Arsenal%20USA-2025-blue"></a>
+    <a href="https://codeblue.jp/program/time-table/day2-t3-02/"><img src="https://img.shields.io/badge/CODE%20BLUE%20-2025-blue"></a>
     <a href="https://gist.github.com/cheerfulstoic/d107229326a01ff0f333a1d3476e068d"><img src="https://img.shields.io/badge/Maintenance%20Level-Actively%20Developed-brightgreen.svg" /></a>
     <a href="https://github.com/Yamato-Security/hayabusa/commits/main/"><img src="https://img.shields.io/github/commit-activity/t/Yamato-Security/hayabusa/main" /></a>
     <a href="https://rust-reportcard.xuri.me/report/github.com/Yamato-Security/hayabusa"><img src="https://rust-reportcard.xuri.me/badge/github.com/Yamato-Security/hayabusa" /></a>
@@ -79,7 +80,6 @@ Hayabusaは[upstream Sigma](https://github.com/SigmaHQ/sigma) ルールの解析
   - [LibreOfficeでのDFIRタイムライン解析 (`-M` マルチライン出力)](#libreofficeでのdfirタイムライン解析--m-マルチライン出力)
   - [Timeline ExplorerでのDFIRタイムライン解析](#timeline-explorerでのdfirタイムライン解析)
   - [Criticalアラートのフィルタリングとコンピュータごとのグルーピング](#criticalアラートのフィルタリングとコンピュータごとのグルーピング)
-  - [Elastic Stackダッシュボードでの解析](#elastic-stackダッシュボードでの解析)
   - [Timesketchでの解析](#timesketchでの解析)
 - [タイムライン結果のインポートと解析について](#タイムライン結果のインポートと解析について)
 - [jqによるJSON形式の結果の解析](#jqによるjson形式の結果の解析)
@@ -252,12 +252,6 @@ Hayabusaは従来のWindowsイベントログ分析解析と比較して、分�
 ## Criticalアラートのフィルタリングとコンピュータごとのグルーピング
 
 ![Timeline ExplorerでCriticalアラートのフィルタリングとコンピュータグルーピング](screenshots/TimelineExplorer-CriticalAlerts-ComputerGrouping.png)
-
-## Elastic Stackダッシュボードでの解析
-
-![Elastic Stack Dashboard 1](doc/ElasticStackImport/17-HayabusaDashboard-1.png)
-
-![Elastic Stack Dashboard 2](doc/ElasticStackImport/18-HayabusaDashboard-2.png)
 
 ## Timesketchでの解析
 
@@ -2035,6 +2029,8 @@ Windows機での悪性な活動を検知する為には、デフォルトのロ�
 
 ## 英語
 
+* 2025/10/01 [BHIS: Wrangling Windows Event Logs with Hayabusa & SOF-ELK (Part 2)](https://www.blackhillsinfosec.com/wrangling-windows-event-logs-with-hayabusa-sof-elk-part-2/)
+* 2025/09/29 [BHIS: Wrangling Windows Event Logs with Hayabusa & SOF-ELK (Part 1)](https://www.blackhillsinfosec.com/wrangling-windows-event-logs-with-hayabusa-sof-elk-part-1/)
 * 2023/12/11 Christian Henriksen氏による[Unleashing the Hayabusa Feathers: My Top Features Revealed!](https://detect.fyi/hunting-with-hayabusa-tool-showcase-aafef7434413)
 * 2023/10/16 Md. Mahim Bin Firoj氏による[Incident response and threat hunting using hayabusa tool](https://mahim-firoj.medium.com/incident-response-and-threat-hunting-using-hayabusa-tool-383da273183a)
 * 2023/03/21 [Eric Capuano](https://twitter.com/eric_capuano)氏による[Find Threats in Event Logs with Hayabusa](https://blog.ecapuano.com/p/find-threats-in-event-logs-with-hayabusa)
