@@ -1998,12 +1998,14 @@ pub fn output_json_str(
                                 )
                             ));
                         } else {
-                            let last_contents_end =
-                                if is_included_geo_ip && !valid_key_add_to_details.is_empty() {
-                                    ","
-                                } else {
-                                    ""
-                                };
+                            let last_contents_end = if is_included_geo_ip
+                                && !matches!(profile, Profile::ExtraFieldInfo(_))
+                                && !valid_key_add_to_details.is_empty()
+                            {
+                                ","
+                            } else {
+                                ""
+                            };
                             output_stock.push(format!(
                                 "{}{last_contents_end}",
                                 _create_json_output_format(
