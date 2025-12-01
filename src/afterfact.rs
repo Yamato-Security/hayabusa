@@ -2016,7 +2016,7 @@ pub fn output_json_str(
                             ));
                         }
                     }
-                    if is_included_geo_ip {
+                    if is_included_geo_ip && !matches!(profile, Profile::ExtraFieldInfo(_)) {
                         for (geo_ip_field_cnt, target_key) in
                             valid_key_add_to_details.iter().enumerate()
                         {
