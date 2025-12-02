@@ -1,5 +1,12 @@
 # 変更点
 
+## x.x.x [xxxx/xx/xx]
+
+**バグ修正:**
+
+- MaxMindのコンパイルエラーを直した。 (#1722) (@fukusuket)
+- `-GeoIP`が指定された場合、GeoIPフィールドはJSONタイムラインの`Details`と`ExtraFieldInfo`の両方に出力されていた。 (#1724) (@fukusuket)
+
 ## 3.7.0 [2025/11/15] - CODE BLUE Release
 
 **新機能:**
