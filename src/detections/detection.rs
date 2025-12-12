@@ -91,8 +91,8 @@ impl Detection {
             exclude_ids,
             stored_static,
         );
-        if result_readdir.is_err() {
-            let errmsg = format!("{}", result_readdir.unwrap_err());
+        if let Err(e) = result_readdir {
+            let errmsg = format!("{}", e);
             if stored_static.verbose_flag {
                 AlertMessage::alert(&errmsg).ok();
             }

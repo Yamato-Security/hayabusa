@@ -62,8 +62,8 @@ impl LevelTuning {
             &RuleExclude::new(),
             stored_static,
         );
-        if result_readdir.is_err() {
-            return Result::Err(format!("{}", result_readdir.unwrap_err()));
+        if let Err(e) = result_readdir {
+            return Result::Err(format!("{}", e));
         }
 
         // Convert rule files
