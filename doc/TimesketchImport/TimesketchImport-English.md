@@ -79,15 +79,6 @@ Clone the Timesketch repository and change into the directory.
 git clone https://github.com/google/timesketch.git
 cd timesketch
 ```
-
-Because the [docker/e2e/Dockerfile](https://github.com/google/timesketch/blob/master/docker/e2e/Dockerfile) does not support the ARM architecture, replace lines 1-3 of the [docker/e2e/Dockerfile](https://github.com/google/timesketch/blob/master/docker/e2e/Dockerfile) with the following:
-
-```Dockerfile
-ARG UBUNTU_VERSION=24.04
-# Use the official Docker Hub Ubuntu base image
-FROM ubuntu:latest
-```
-
 Start the Docker container by following the steps below.
 - https://github.com/google/timesketch/tree/master/docker/e2e#build-and-start-containers
 

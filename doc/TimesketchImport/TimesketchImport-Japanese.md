@@ -73,22 +73,14 @@ sudo docker compose exec timesketch-web tsctl create-user user
 ```
 
 ### macOS
+**注意:** システムに [Docker Desktop for Mac](https://docs.docker.com/desktop/install/mac/) がインストールされ、起動していることを確認してください。
 Timesketchのリポジトリをクローンします。
 ```bash
 git clone https://github.com/google/timesketch.git
 cd timesketch
 ```
-
-[docker/e2e/Dockerfile](https://github.com/google/timesketch/blob/master/docker/e2e/Dockerfile)がArmアーキテクチャをサポートしていないため、[docker/e2e/Dockerfile](https://github.com/google/timesketch/blob/master/docker/e2e/Dockerfile)の最初の3行を以下の内容に置き換えてください：
-```Dockerfile
-ARG UBUNTU_VERSION=24.04
-# Use the official Docker Hub Ubuntu base image
-FROM ubuntu:latest
-```
-
 以下の手順に従ってDockerコンテナを起動します。
 - https://github.com/google/timesketch/tree/master/docker/e2e#build-and-start-containers
-
 
 ## ログイン
 
