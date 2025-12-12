@@ -113,11 +113,10 @@ impl LeafMatcher for RegexesFileMatcher {
             return Err(vec![errmsg]);
         }
 
-        let regexes_strs = utils::read_txt(value.unwrap());
-        if regexes_strs.is_err() {
-            return Err(vec![regexes_strs.unwrap_err()]);
-        }
-        let regexes_strs = regexes_strs.unwrap();
+        let regexes_strs = match utils::read_txt(value.unwrap()) {
+            Ok(v) => v,
+            Err(e) => return Err(vec![e]),
+        };
         self.regexes = regexes_strs
             .iter()
             .map(|regex_str| Regex::new(regex_str).unwrap())
@@ -170,12 +169,11 @@ impl LeafMatcher for AllowlistFileMatcher {
             return Err(vec![errmsg]);
         }
 
-        let regexes_strs = utils::read_txt(&value.unwrap());
-        if regexes_strs.is_err() {
-            return Err(vec![regexes_strs.unwrap_err()]);
-        }
+        let regexes_strs = match utils::read_txt(&value.unwrap()) {
+            Ok(v) => v,
+            Err(e) => return Err(vec![e]),
+        };
         self.regexes = regexes_strs
-            .unwrap()
             .iter()
             .map(|regex_str| Regex::new(regex_str).unwrap())
             .collect();

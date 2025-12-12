@@ -1298,8 +1298,8 @@ Any hostnames added to the critical_systems.txt file will have all alerts above 
             dirpath.remove(dirpath.len() - 1);
         }
         let entries = fs::read_dir(dirpath);
-        if entries.is_err() {
-            let mut errmsg = format!("{}", entries.unwrap_err());
+        if let Err(e) = &entries {
+            let mut errmsg = format!("{}", e);
             if errmsg.ends_with("123)") {
                 errmsg = format!(
                     "{errmsg}. You may not be able to load evtx files when there are spaces in the directory path. Please enclose the path with double quotes and remove any trailing slash at the end of the path."
@@ -2304,12 +2304,11 @@ Any hostnames added to the critical_systems.txt file will have all alerts above 
                     recover_records_cnt += 1;
                 }
 
-                if record_result.is_err() {
+                if let Err(e) = record_result {
                     let evtx_filepath = &path;
                     let errmsg = format!(
                         "Failed to parse event file.\nEventFile: {}\nError: {}\n",
-                        evtx_filepath,
-                        record_result.unwrap_err()
+                        evtx_filepath, e
                     );
                     if verbose_flag {
                         AlertMessage::alert(&errmsg).ok();

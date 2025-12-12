@@ -19,8 +19,7 @@ fn process_value(
                     replaced_values.extend(
                         replace_list
                             .iter()
-                            .cloned()
-                            .map(|s| Yaml::String(val_str.replace(placeholder, &s))),
+                            .map(|s| Yaml::String(val_str.replace(placeholder, s))),
                     );
                 }
             }
