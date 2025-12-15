@@ -259,13 +259,6 @@ impl ParseYaml {
                 }
 
                 let path_str = path.to_str().unwrap();
-                // ignore if yml file in .git folder.
-                if utils::contains_str(path_str, "/.git/")
-                    || utils::contains_str(path_str, "\\.git\\")
-                {
-                    return io::Result::Ok(ret);
-                }
-
                 // ignore if tool test yml file in hayabusa-rules.
                 if utils::contains_str(path_str, "rules/tools/sigmac/test_files")
                     || utils::contains_str(path_str, "rules\\tools\\sigmac\\test_files")
