@@ -530,25 +530,13 @@ impl ParseYaml {
             }
 
             // exclude-tag optionで指定されたtagを持つルールは除外する
-            if stored_static.output_option.is_some()
-                && stored_static
-                    .output_option
-                    .as_ref()
-                    .unwrap()
-                    .exclude_tag
-                    .is_some()
+            if let Some(opt) = stored_static.output_option.as_ref()
+                && let Some(exclude_tag) = opt.exclude_tag.as_ref()
             {
-                let exclude_target_tags = stored_static
-                    .output_option
-                    .as_ref()
-                    .unwrap()
-                    .exclude_tag
-                    .as_ref()
-                    .unwrap();
                 let rule_tags_vec = yaml_doc["tags"].as_vec();
                 if let Some(rule_tags) = rule_tags_vec {
                     let is_match = rule_tags.iter().any(|tag| {
-                        exclude_target_tags.contains(&tag.as_str().unwrap_or_default().to_string())
+                        exclude_tag.contains(&tag.as_str().unwrap_or_default().to_string())
                     });
                     if is_match {
                         up_rule_load_cnt("excluded");
