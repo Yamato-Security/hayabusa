@@ -162,8 +162,8 @@ pub fn create_count_key(
     eventkey_alias: &EventKeyAliasConfig,
 ) -> String {
     let agg_condition = rule.get_agg_condition().unwrap();
-    if agg_condition._by_field_name.is_some() {
-        let by_field_key = agg_condition._by_field_name.as_ref().unwrap();
+    if let Some(_by_field_name) = agg_condition._by_field_name.as_ref() {
+        let by_field_key = _by_field_name;
         if by_field_key.contains(',') {
             let mut res = String::default();
             for key in by_field_key.split(',') {

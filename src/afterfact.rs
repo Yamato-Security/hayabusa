@@ -655,12 +655,12 @@ pub fn output_additional_afterfact(
         )
         .ok();
 
-        if afterfact_info.tl_starttime.is_some() {
+        if let Some(tl_starttime) = afterfact_info.tl_starttime {
             output_and_data_stack_for_html(
                 &format!(
                     "First timestamp: {}",
                     utils::format_time(
-                        &afterfact_info.tl_starttime.unwrap(),
+                        &tl_starttime,
                         false,
                         &stored_static
                             .output_option
@@ -673,12 +673,12 @@ pub fn output_additional_afterfact(
                 &stored_static.html_report_flag,
             );
         }
-        if afterfact_info.tl_endtime.is_some() {
+        if let Some(tl_endtime) = afterfact_info.tl_endtime {
             output_and_data_stack_for_html(
                 &format!(
                     "Last timestamp: {}",
                     utils::format_time(
-                        &afterfact_info.tl_endtime.unwrap(),
+                        &tl_endtime,
                         false,
                         &stored_static
                             .output_option
@@ -692,12 +692,12 @@ pub fn output_additional_afterfact(
             );
             println!();
         }
-        if afterfact_info.detect_starttime.is_some() {
+        if let Some(detect_starttime) = afterfact_info.detect_starttime {
             output_and_data_stack_for_html(
                 &format!(
                     "First detection: {}",
                     utils::format_time(
-                        &afterfact_info.detect_starttime.unwrap(),
+                        &detect_starttime,
                         false,
                         &stored_static
                             .output_option
@@ -710,12 +710,12 @@ pub fn output_additional_afterfact(
                 &stored_static.html_report_flag,
             );
         }
-        if afterfact_info.detect_endtime.is_some() {
+        if let Some(detect_endtime) = afterfact_info.detect_endtime {
             output_and_data_stack_for_html(
                 &format!(
                     "Last detection: {}",
                     utils::format_time(
-                        &afterfact_info.detect_endtime.unwrap(),
+                        &detect_endtime,
                         false,
                         &stored_static
                             .output_option
@@ -891,11 +891,11 @@ pub fn output_additional_afterfact(
             stored_static.html_report_flag,
         );
         println!();
-        if afterfact_info.tl_starttime.is_some() {
+        if let Some(tl_starttime) = afterfact_info.tl_starttime {
             let ts = format!(
                 "First timestamp: {}",
                 format_time(
-                    &afterfact_info.tl_starttime.unwrap(),
+                    &tl_starttime,
                     false,
                     &stored_static
                         .output_option
@@ -912,11 +912,11 @@ pub fn output_additional_afterfact(
             )
             .ok();
         }
-        if afterfact_info.tl_endtime.is_some() {
+        if let Some(tl_endtime) = afterfact_info.tl_endtime {
             let ts = format!(
                 "Last timestamp: {}",
                 format_time(
-                    &afterfact_info.tl_endtime.unwrap(),
+                    &tl_endtime,
                     false,
                     &stored_static
                         .output_option
@@ -934,11 +934,11 @@ pub fn output_additional_afterfact(
             .ok();
             println!();
         }
-        if afterfact_info.detect_starttime.is_some() {
+        if let Some(detect_starttime) = afterfact_info.detect_starttime {
             let ts = format!(
                 "First detection: {}",
                 format_time(
-                    &afterfact_info.detect_starttime.unwrap(),
+                    &detect_starttime,
                     false,
                     &stored_static
                         .output_option
@@ -955,11 +955,11 @@ pub fn output_additional_afterfact(
             )
             .ok();
         }
-        if afterfact_info.detect_endtime.is_some() {
+        if let Some(detect_endtime) = afterfact_info.detect_endtime {
             let ts = format!(
                 "Last detection: {}",
                 format_time(
-                    &afterfact_info.detect_endtime.unwrap(),
+                    &detect_endtime,
                     false,
                     &stored_static
                         .output_option

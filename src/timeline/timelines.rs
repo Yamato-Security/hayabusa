@@ -120,11 +120,11 @@ impl Timeline {
                     sammsges.push(format!("Evtx File Path: {}", self.stats.filepath));
                 }
                 sammsges.push(total_event_record);
-                if self.stats.start_time.is_some() {
+                if let Some(start_time) = self.stats.start_time {
                     sammsges.push(format!(
                         "First Timestamp: {}",
                         utils::format_time(
-                            &self.stats.start_time.unwrap(),
+                            &start_time,
                             false,
                             &stored_static
                                 .output_option
@@ -134,11 +134,11 @@ impl Timeline {
                         )
                     ));
                 }
-                if self.stats.end_time.is_some() {
+                if let Some(end_time) = self.stats.end_time {
                     sammsges.push(format!(
                         "Last Timestamp: {}\n",
                         utils::format_time(
-                            &self.stats.end_time.unwrap(),
+                            &end_time,
                             false,
                             &stored_static
                                 .output_option
@@ -260,11 +260,11 @@ impl Timeline {
             }
             sammsges.push(total_event_record);
 
-            if self.stats.start_time.is_some() {
+            if let Some(start_time) = self.stats.start_time {
                 sammsges.push(format!(
                     "First Timestamp: {}",
                     utils::format_time(
-                        &self.stats.start_time.unwrap(),
+                        &start_time,
                         false,
                         &stored_static
                             .output_option
@@ -274,11 +274,11 @@ impl Timeline {
                     )
                 ));
             }
-            if self.stats.end_time.is_some() {
+            if let Some(end_time) = self.stats.end_time {
                 sammsges.push(format!(
                     "Last Timestamp: {}\n",
                     utils::format_time(
-                        &self.stats.end_time.unwrap(),
+                        &end_time,
                         false,
                         &stored_static
                             .output_option

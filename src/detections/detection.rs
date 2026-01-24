@@ -1158,18 +1158,12 @@ impl Detection {
         write!(ret, "Count:{}", agg_result.data).ok();
         let mut sorted_filed_values = agg_result.field_values.clone();
         sorted_filed_values.sort();
-        if agg_condition._field_name.is_some() {
-            write!(
-                ret,
-                " ¦ {}:{}",
-                agg_condition._field_name.as_ref().unwrap(),
-                sorted_filed_values.join("/")
-            )
-            .ok();
+        if let Some(_field_name) = agg_condition._field_name.as_ref() {
+            write!(ret, " ¦ {}:{}", _field_name, sorted_filed_values.join("/")).ok();
         }
 
-        if agg_condition._by_field_name.is_some() {
-            let field_name = agg_condition._by_field_name.as_ref().unwrap();
+        if let Some(_by_field_name) = agg_condition._by_field_name.as_ref() {
+            let field_name = _by_field_name;
             if field_name.contains(',') {
                 write!(
                     ret,

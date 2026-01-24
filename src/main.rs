@@ -384,15 +384,9 @@ Any hostnames added to the critical_systems.txt file will have all alerts above 
             .as_mut()
             .unwrap()
             .set_checkpoint(analysis_start_time);
-        let target_extensions = if stored_static.output_option.is_some() {
+        let target_extensions = if let Some(output_option) = stored_static.output_option.as_ref() {
             configs::get_target_extensions(
-                stored_static
-                    .output_option
-                    .as_ref()
-                    .unwrap()
-                    .detect_common_options
-                    .evtx_file_ext
-                    .as_ref(),
+                output_option.detect_common_options.evtx_file_ext.as_ref(),
                 stored_static.json_input_flag,
             )
         } else {
@@ -1156,12 +1150,8 @@ Any hostnames added to the critical_systems.txt file will have all alerts above 
         stored_static: &mut StoredStatic,
     ) {
         if stored_static.output_option.is_none() {
-        } else if stored_static
-            .output_option
-            .as_ref()
-            .unwrap()
-            .input_args
-            .live_analysis
+        } else if let Some(output_option) = stored_static.output_option.as_ref()
+            && output_option.input_args.live_analysis
         {
             let live_analysis_list =
                 self.collect_liveanalysis_files(target_extensions, stored_static);
@@ -1173,12 +1163,8 @@ Any hostnames added to the critical_systems.txt file will have all alerts above 
                 time_filter,
                 stored_static.borrow_mut(),
             );
-        } else if let Some(directories) = &stored_static
-            .output_option
-            .as_ref()
-            .unwrap()
-            .input_args
-            .directory
+        } else if let Some(output_option) = &stored_static.output_option.as_ref()
+            && let Some(directories) = &output_option.input_args.directory
         {
             let mut evtx_files = Vec::new();
             for directory in directories {
@@ -1195,12 +1181,8 @@ Any hostnames added to the critical_systems.txt file will have all alerts above 
             self.analysis_files(evtx_files, time_filter, stored_static.borrow_mut());
         } else {
             // directory, live_analysis以外はfilepathの指定の場合
-            if let Some(filepath) = &stored_static
-                .output_option
-                .as_ref()
-                .unwrap()
-                .input_args
-                .filepath
+            if let Some(input_args) = &stored_static.output_option.as_ref()
+                && let Some(filepath) = &input_args.input_args.filepath
             {
                 let mut replaced_filepath = filepath.display().to_string();
                 if replaced_filepath.starts_with('"') {
