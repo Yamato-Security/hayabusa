@@ -131,9 +131,15 @@ pub fn convert_field_data(
                 let _ = ac.try_stream_replace_all(field_data_str.as_bytes(), &mut wtr, rep);
                 Some(CompactString::from(std::str::from_utf8(&wtr).unwrap()))
             }
-            Some(HexToDecimal) => match u64::from_str_radix(&field_data_str[2..], 16) {
-                Ok(decimal_value) => Some(CompactString::from(decimal_value.to_string())),
-                Err(_) => Some(CompactString::from(field_data_str)),
+            Some(HexToDecimal) => match field_data_str
+                .strip_prefix("0x")
+                .or_else(|| field_data_str.strip_prefix("0X"))
+            {
+                Some(hex) if !hex.is_empty() => match u64::from_str_radix(hex, 16) {
+                    Ok(decimal_value) => Some(CompactString::from(decimal_value.to_string())),
+                    Err(_) => Some(CompactString::from(field_data_str)),
+                },
+                _ => Some(CompactString::from(field_data_str)),
             },
         },
     }
