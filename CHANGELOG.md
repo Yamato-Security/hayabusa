@@ -6,6 +6,7 @@
 
 - Fixed MaxMind compile error. (#1722) (@fukusuket)
 - When `-GeoIP` is specified, the GeoIP fields were outputed in both the `Details` and `ExtraFieldInfo` in the JSON timelines. (#1724) (@fukusuket)
+- Fixed a possible panic with corrupted logs. (#1732) (@fukusuket)
 
 ## 3.7.0 [2025/11/15] - CODE BLUE Release
 
