@@ -6,6 +6,7 @@
 
 - MaxMindのコンパイルエラーを直した。 (#1722) (@fukusuket)
 - `-GeoIP`が指定された場合、GeoIPフィールドはJSONタイムラインの`Details`と`ExtraFieldInfo`の両方に出力されていた。 (#1724) (@fukusuket)
+- 破損したログによるパニックの可能性を修正した。 (#1732) (@fukusuket)
 
 ## 3.7.0 [2025/11/15] - CODE BLUE Release
 

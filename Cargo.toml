@@ -1,10 +1,10 @@
 [package]
 name = "hayabusa"
-version = "3.7.0"
+version = "3.8.0-dev"
 repository = "https://github.com/Yamato-Security/hayabusa"
 authors = ["Yamato Security @SecurityYamato"]
 edition = "2024"
-rust-version = "1.89.0"
+rust-version = "1.92.0"
 include = ["src/**/*", "LICENSE.txt", "README.md", "CHANGELOG.md"]
 
 [dependencies]
