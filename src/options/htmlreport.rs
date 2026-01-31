@@ -57,7 +57,8 @@ impl HtmlReporter {
             }
         }
         let md_str = md_data.iter().collect::<Vec<&str>>().join("\n");
-        let parser = Parser::new_ext(&md_str, options);
+        let escaped_md_str = html_escape(&md_str);
+        let parser = Parser::new_ext(&escaped_md_str, options);
 
         let mut ret = String::new();
         html::push_html(&mut ret, parser);
@@ -190,6 +191,21 @@ fn img_to_base64(path: &str) -> String {
     } else {
         String::default()
     }
+}
+
+fn html_escape(input: &str) -> String {
+    let mut escaped = String::with_capacity(input.len());
+    for c in input.chars() {
+        match c {
+            '<' => escaped.push_str("&lt;"),
+            '>' => escaped.push_str("&gt;"),
+            '&' => escaped.push_str("&amp;"),
+            '"' => escaped.push_str("&quot;"),
+            '\'' => escaped.push_str("&#39;"),
+            _ => escaped.push(c),
+        }
+    }
+    escaped
 }
 
 #[cfg(test)]
