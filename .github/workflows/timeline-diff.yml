@@ -1,5 +1,8 @@
 name: Check CSV timeline and JSON timeline Diff
 
+permissions:
+  contents: read
+
 on:
   workflow_dispatch:
 
