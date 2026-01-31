@@ -1,12 +1,16 @@
 # Changes
 
-## x.x.x [xxxx/xx/xx]
+## 3.8.0 [2026/01/31] - Winter Release
 
 **Bug Fixes:**
 
 - Fixed MaxMind compile error. (#1722) (@fukusuket)
 - When `-GeoIP` is specified, the GeoIP fields were outputed in both the `Details` and `ExtraFieldInfo` in the JSON timelines. (#1724) (@fukusuket)
 - Fixed a possible panic with corrupted logs. (#1732) (@fukusuket)
+
+**Vulnerability Fixes:**
+
+- Fixed an XSS vulnerability in the HTML report if a user scans JSON exported logs (not the standard `.evtx` files) and an attacker has the ability to inject malicious Javascript in the `Computer` field of those logs. (@fukusuket)
 
 ## 3.7.0 [2025/11/15] - CODE BLUE Release
 

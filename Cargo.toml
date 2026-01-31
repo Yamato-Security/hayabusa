@@ -1,6 +1,6 @@
 [package]
 name = "hayabusa"
-version = "3.8.0-dev"
+version = "3.8.0"
 repository = "https://github.com/Yamato-Security/hayabusa"
 authors = ["Yamato Security @SecurityYamato"]
 edition = "2024"
@@ -38,9 +38,9 @@ maxminddb = "0.*"
 memchr = "2.*"
 mimalloc = { version = "*", default-features = false }
 nested="*"
-num = "0.4.0"
+num = "0.4.3"
 num-format = "*"
-pulldown-cmark = { version = "0.9.*", default-features = false, features = ["simd"] }
+pulldown-cmark = { version = "013.*", default-features = false, features = ["simd"] }
 rand = "0.9.*"
 regex = "1"
 serde = { version = "1.*", features = ["derive"] }
@@ -52,10 +52,10 @@ terminal_size = "*"
 tokio = { version = "1", features = ["full"] }
 ureq = "*"
 wildmatch = "2.*"
-yaml-rust2 = "0.10"
-rust-embed={version = "8.8.0", features = ["include-exclude", "debug-embed"]}
+yaml-rust2 = "0.11"
+rust-embed={version = "8.11.0", features = ["include-exclude", "debug-embed"]}
 encoding_rs = "0.8.35"
-uuid = { version = "1.18.1", features = ["v4"] }
+uuid = { version = "1.20.0", features = ["v4"] }
 winapi = { version = "0.3.9", features = ["wow64apiset"] }
 
 [profile.dev]
