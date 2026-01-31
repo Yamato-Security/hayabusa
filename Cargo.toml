@@ -40,7 +40,7 @@ mimalloc = { version = "*", default-features = false }
 nested="*"
 num = "0.4.3"
 num-format = "*"
-pulldown-cmark = { version = "013.*", default-features = false, features = ["simd"] }
+pulldown-cmark = { version = "0.13.*", default-features = false, features = ["simd"] }
 rand = "0.9.*"
 regex = "1"
 serde = { version = "1.*", features = ["derive"] }

@@ -11,6 +11,7 @@
 **Vulnerability Fixes:**
 
 - Fixed an XSS vulnerability in the HTML report if a user scans JSON exported logs (not the standard `.evtx` files) and an attacker has the ability to inject malicious Javascript in the `Computer` field of those logs. (@fukusuket)
+  - Many thanks to the [Mobasi](https://mobasi.ai/) team for finding and reporting this!
 
 ## 3.7.0 [2025/11/15] - CODE BLUE Release
 
