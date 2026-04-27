@@ -197,8 +197,9 @@ pub fn _get_output_color(color_map: &HashMap<LEVEL, Colors>, level: &LEVEL) -> O
 #[cfg(test)]
 mod tests {
     use crate::afterfact::Colors;
-    use crate::level::LEVEL;
+    use crate::level::{_get_output_color, LEVEL, create_output_color_map};
     use hashbrown::HashMap;
+    use termcolor::Color;
 
     fn check_hashmap_data(target: HashMap<LEVEL, Colors>, expected: HashMap<LEVEL, Colors>) {
         assert_eq!(target.len(), expected.len());
@@ -212,6 +213,154 @@ mod tests {
     /// To confirm that empty character color mapping data is returned when the no_color flag is given.
     fn test_set_output_color_no_color_flag() {
         let expect: HashMap<LEVEL, Colors> = HashMap::new();
-        check_hashmap_data(crate::level::create_output_color_map(true), expect);
+        check_hashmap_data(create_output_color_map(true), expect);
+    }
+
+    #[test]
+    fn test_level_from_known_strings() {
+        assert_eq!(LEVEL::from("informational"), LEVEL::INFORMATIONAL);
+        assert_eq!(LEVEL::from("low"), LEVEL::LOW);
+        assert_eq!(LEVEL::from("medium"), LEVEL::MEDIUM);
+        assert_eq!(LEVEL::from("high"), LEVEL::HIGH);
+        assert_eq!(LEVEL::from("critical"), LEVEL::CRITICAL);
+        assert_eq!(LEVEL::from("emergency"), LEVEL::EMERGENCY);
+    }
+
+    #[test]
+    fn test_level_from_is_case_insensitive() {
+        assert_eq!(LEVEL::from("HIGH"), LEVEL::HIGH);
+        assert_eq!(LEVEL::from("Critical"), LEVEL::CRITICAL);
+        assert_eq!(LEVEL::from("eMeRgEnCy"), LEVEL::EMERGENCY);
+    }
+
+    #[test]
+    fn test_level_from_unknown_is_undefined() {
+        assert_eq!(LEVEL::from(""), LEVEL::UNDEFINED);
+        assert_eq!(LEVEL::from("info"), LEVEL::UNDEFINED);
+        assert_eq!(LEVEL::from("not_a_level"), LEVEL::UNDEFINED);
+    }
+
+    #[test]
+    fn test_level_default_is_undefined() {
+        assert_eq!(LEVEL::default(), LEVEL::UNDEFINED);
+    }
+
+    #[test]
+    fn test_level_to_full() {
+        assert_eq!(LEVEL::INFORMATIONAL.to_full(), "informational");
+        assert_eq!(LEVEL::LOW.to_full(), "low");
+        assert_eq!(LEVEL::MEDIUM.to_full(), "medium");
+        assert_eq!(LEVEL::HIGH.to_full(), "high");
+        assert_eq!(LEVEL::CRITICAL.to_full(), "critical");
+        assert_eq!(LEVEL::EMERGENCY.to_full(), "emergency");
+        assert_eq!(LEVEL::UNDEFINED.to_full(), "undefined");
+    }
+
+    #[test]
+    fn test_level_to_abbrev() {
+        assert_eq!(LEVEL::INFORMATIONAL.to_abbrev(), "info");
+        assert_eq!(LEVEL::LOW.to_abbrev(), "low");
+        assert_eq!(LEVEL::MEDIUM.to_abbrev(), "med");
+        assert_eq!(LEVEL::HIGH.to_abbrev(), "high");
+        assert_eq!(LEVEL::CRITICAL.to_abbrev(), "crit");
+        assert_eq!(LEVEL::EMERGENCY.to_abbrev(), "emer");
+        assert_eq!(LEVEL::UNDEFINED.to_abbrev(), "undef");
+    }
+
+    #[test]
+    fn test_level_index_is_strictly_increasing() {
+        assert_eq!(LEVEL::UNDEFINED.index(), 0);
+        assert_eq!(LEVEL::INFORMATIONAL.index(), 1);
+        assert_eq!(LEVEL::LOW.index(), 2);
+        assert_eq!(LEVEL::MEDIUM.index(), 3);
+        assert_eq!(LEVEL::HIGH.index(), 4);
+        assert_eq!(LEVEL::CRITICAL.index(), 5);
+        assert_eq!(LEVEL::EMERGENCY.index(), 6);
+    }
+
+    #[test]
+    fn test_level_partial_eq_str_matches_full_and_abbrev() {
+        assert!(LEVEL::HIGH == *"high");
+        assert!(LEVEL::MEDIUM == *"medium");
+        assert!(LEVEL::MEDIUM == *"med");
+        assert!(LEVEL::CRITICAL == *"crit");
+        assert!(LEVEL::INFORMATIONAL == *"info");
+        assert!(LEVEL::UNDEFINED == *"undefined");
+        assert!(LEVEL::UNDEFINED == *"undef");
+    }
+
+    #[test]
+    fn test_level_partial_eq_str_rejects_mismatch() {
+        assert!(!(LEVEL::HIGH == *"low"));
+        assert!(!(LEVEL::HIGH == *"HIGH"));
+        assert!(!(LEVEL::CRITICAL == *""));
+    }
+
+    #[test]
+    fn test_level_convert_returns_self_when_no_critical_system_match() {
+        // The default config/critical_systems.txt is empty, so no host name will match
+        // and convert() should return the original level for every variant.
+        for level in [
+            LEVEL::INFORMATIONAL,
+            LEVEL::LOW,
+            LEVEL::MEDIUM,
+            LEVEL::HIGH,
+            LEVEL::CRITICAL,
+            LEVEL::EMERGENCY,
+            LEVEL::UNDEFINED,
+        ] {
+            assert_eq!(level.convert("UNKNOWN-HOST"), &level);
+        }
+    }
+
+    #[test]
+    fn test_level_convert_handles_pipe_separated_computers() {
+        // convert() splits on " ¦ "; when none of the names match CRITICAL_SYSTEM
+        // it should still return the original level rather than panic.
+        assert_eq!(
+            LEVEL::HIGH.convert("HOST-A ¦ HOST-B ¦ HOST-C"),
+            &LEVEL::HIGH
+        );
+        assert_eq!(LEVEL::LOW.convert(""), &LEVEL::LOW);
+    }
+
+    #[test]
+    fn test_get_output_color_returns_none_for_missing_level() {
+        let map: HashMap<LEVEL, Colors> = HashMap::new();
+        assert!(_get_output_color(&map, &LEVEL::HIGH).is_none());
+    }
+
+    #[test]
+    fn test_get_output_color_returns_color_for_present_level() {
+        let mut map: HashMap<LEVEL, Colors> = HashMap::new();
+        map.insert(
+            LEVEL::HIGH,
+            Colors {
+                output_color: Color::Rgb(0xff, 0xc1, 0x00),
+                table_color: comfy_table::Color::Rgb {
+                    r: 0xff,
+                    g: 0xc1,
+                    b: 0x00,
+                },
+            },
+        );
+        let got = _get_output_color(&map, &LEVEL::HIGH);
+        assert_eq!(got, Some(Color::Rgb(0xff, 0xc1, 0x00)));
+        assert!(_get_output_color(&map, &LEVEL::LOW).is_none());
+    }
+
+    #[test]
+    fn test_create_output_color_map_loads_levels_when_color_enabled() {
+        // With color enabled, the map should be populated either from the on-disk
+        // config/level_color.txt or the embedded fallback. Either way it must
+        // contain the levels listed in the shipped level_color.txt.
+        let map = create_output_color_map(false);
+        assert!(map.contains_key(&LEVEL::EMERGENCY));
+        assert!(map.contains_key(&LEVEL::CRITICAL));
+        assert!(map.contains_key(&LEVEL::HIGH));
+        assert!(map.contains_key(&LEVEL::MEDIUM));
+        assert!(map.contains_key(&LEVEL::LOW));
+        // UNDEFINED is filtered out when building the map.
+        assert!(!map.contains_key(&LEVEL::UNDEFINED));
     }
 }
