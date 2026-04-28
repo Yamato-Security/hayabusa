@@ -382,7 +382,7 @@ impl EventSearch {
         if pairs.is_empty() {
             return value.into();
         }
-        pairs.sort_unstable_by(|a, b| a.0.len().cmp(&b.0.len()));
+        pairs.sort_unstable_by_key(|a| a.0.len());
         let mut all_field_info = value.to_string();
         for (k, v) in pairs {
             all_field_info = all_field_info.replace(k.as_str(), v.as_str());

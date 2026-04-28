@@ -144,18 +144,16 @@ fn extract_channel_from_rules(
         intersection_channels: &mut Vec<String>,
     ) {
         match *value {
-            Yaml::String(ref s) => {
-                if key == "Channel" {
-                    if s.contains('*') {
-                        // SigmaルールでChannelにワイルドカードが使われた場合
-                        for ch in evtx_channels {
-                            if ch.contains(s.trim_matches('*')) {
-                                intersection_channels.push(ch.to_string());
-                            }
+            Yaml::String(ref s) if key == "Channel" => {
+                if s.contains('*') {
+                    // SigmaルールでChannelにワイルドカードが使われた場合
+                    for ch in evtx_channels {
+                        if ch.contains(s.trim_matches('*')) {
+                            intersection_channels.push(ch.to_string());
                         }
-                    } else if evtx_channels.contains(s) {
-                        intersection_channels.push(s.clone());
                     }
+                } else if evtx_channels.contains(s) {
+                    intersection_channels.push(s.clone());
                 }
             }
             Yaml::Hash(ref map) => {

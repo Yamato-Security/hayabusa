@@ -502,7 +502,7 @@ pub fn judge_timeframe(
 
     // AggRecordTimeInfoを時間順がソートされている前提で処理を進める
     let mut datas = time_datas.to_owned();
-    datas.sort_by(|a, b| a.time.cmp(&b.time));
+    datas.sort_by_key(|a| a.time);
 
     // timeframeの設定がルールにない時は最初と最後の要素の時間差をtimeframeに設定する。
     let def_frame =
