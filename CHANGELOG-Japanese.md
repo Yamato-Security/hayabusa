@@ -1,5 +1,11 @@
 # 変更点
 
+## 3.9.0 [2026/04/29]
+
+**改善:**
+
+MITRE ATT&CK v19に対応した。(@fukusuket)
+
 ## 3.8.1 [2026/02/24] - Spring Hayfever Release
 
 **バグ修正:**

@@ -1,5 +1,16 @@
 # Changes
 
+## 3.9.0 [2026/04/29]
+
+**Enchancements:**
+
+Support for MITRE ATT&CK v19. (@fukusuket)
+
+**Other:**
+
+Added unit tests. (#1746) (@Fuzzdkk)
+
+
 ## 3.8.1 [2026/02/24] - Spring Hayfever Release
 
 **Bug Fixes:**
