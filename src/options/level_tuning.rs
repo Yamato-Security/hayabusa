@@ -24,7 +24,7 @@ impl LevelTuning {
         // Read Tuning files
         let mut tuning_map: HashMap<String, String> = HashMap::new();
         read_result.iter().try_for_each(|line| -> Result<(), String> {
-            // 1つ目の要素も存在しない場合はread_csvの段階で読み飛ばされるためget(0)がNoneにはならない
+            // If the first element also does not exist, it is skipped at the read_csv stage, so get(0) will not be None.
             let id = line.first().unwrap();
             if !configs::IDS_REGEX.is_match(id) {
                 return Result::Err(format!("Failed to read level tuning file. {id} is not correct id format, fix it."));
@@ -45,7 +45,7 @@ impl LevelTuning {
                             return Result::Err("level tuning file's level must in informational, low, medium, high, critical".to_string())
                         }
                     }
-                // headerに2つ以上の列が存在していない場合このエラーが発生する
+                // This error occurs when the header does not have two or more columns.
                 _ => return Result::Err("Failed to read level...".to_string())
             };
             tuning_map.insert(id.to_string(), level);

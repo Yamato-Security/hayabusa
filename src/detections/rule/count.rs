@@ -16,7 +16,7 @@ use std::path::Path;
 
 use crate::detections::utils;
 
-/// 検知された際にカウント情報を投入する関数
+/// Function to insert count information when a detection occurs.
 pub fn count(
     rule: &mut RuleNode,
     evtx_rec: &EvtxRecordInfo,
@@ -53,7 +53,7 @@ pub fn count(
     countup(rule, key, field_value, evtx_rec, json_input_flag);
 }
 
-///count byの条件に合致する検知済みレコードの数を増やすための関数
+/// Function to increment the count of detected records matching the count by condition.
 pub fn countup(
     rule: &mut RuleNode,
     key: String,
@@ -97,9 +97,9 @@ pub fn countup(
     });
 }
 
-/// 与えられたエイリアスから対象レコード内の値を取得してダブルクオーテーションを外す関数。
-///  ダブルクオーテーションを外す理由は結果表示の際に余計なダブルクオーテーションが入るのを防ぐため
-/// is_by_aliasはこの関数を呼び出す際はcountのbyの値もしくはfieldの値のどちらかであるためboolとした
+/// Function to get the value in the target record from the given alias and remove double quotes.
+///  The reason for removing double quotes is to prevent extra double quotes from appearing in the result display.
+/// is_by_alias is bool because when calling this function, it is either the by value or the field value of count.
 fn get_alias_value_in_record(
     rule: &RuleNode,
     alias: &str,
@@ -151,9 +151,9 @@ fn get_alias_value_in_record(
     }
 }
 
-/// countでgroupbyなどの情報を区分するためのハッシュマップのキーを作成する関数。
-/// 以下の場合は空文字を返却
-/// groupbyの指定がない、groubpbyで指定したエイリアスがレコードに存在しない場合は_のみとする。空文字ではキーを指定してデータを取得することができなかった
+/// Function to create hashmap keys for grouping information such as groupby in count.
+/// Returns empty string in the following cases:
+/// If groupby is not specified, or the alias specified by groupby does not exist in the record, use only "_". An empty string could not be used to retrieve data by key.
 pub fn create_count_key(
     rule: &RuleNode,
     record: &Value,
@@ -200,12 +200,12 @@ pub fn create_count_key(
     }
 }
 
-///現状のレコードの状態から条件式に一致しているかを判定する関数
+/// Function to determine whether the current state of the record matches the condition expression.
 pub fn aggregation_condition_select(
     rule: &RuleNode,
     stored_static: &StoredStatic,
 ) -> Vec<AggResult> {
-    // recordでaliasが登録されている前提とする
+    // Assumes that aliases are registered in the record.
     let value_map = &rule.countdata;
     let mut ret = Vec::new();
     for (key, value) in value_map {
@@ -215,7 +215,7 @@ pub fn aggregation_condition_select(
 }
 
 #[derive(Debug, Clone, PartialEq, Eq, Default)]
-/// countの括弧内の情報とレコードの情報を所持する構造体
+/// Struct holding information inside the parentheses of count and record information.
 pub struct AggRecordTimeInfo {
     pub field_value: String,
     pub time: DateTime<Utc>,
@@ -226,14 +226,14 @@ pub struct AggRecordTimeInfo {
 }
 
 #[derive(Debug)]
-/// timeframeに設定された情報。SIGMAルール上timeframeで複数の単位(日、時、分、秒)が複合で記載されているルールがなかったためタイプと数値のみを格納する構造体
+/// Information set in timeframe. A struct that stores only the type and number, since there were no SIGMA rules with multiple units (days, hours, minutes, seconds) combined in timeframe.
 pub struct TimeFrameInfo {
     pub timetype: String,
     pub timenum: Result<i64, ParseIntError>,
 }
 
 impl TimeFrameInfo {
-    /// timeframeの文字列をパースし、構造体を返す関数
+    /// Function to parse the timeframe string and return a struct.
     pub fn parse_tframe(value: String, stored_static: &StoredStatic) -> TimeFrameInfo {
         let mut ttype = "";
         let mut target_val = value.as_str();
@@ -267,7 +267,7 @@ impl TimeFrameInfo {
     }
 }
 
-/// TimeFrameInfoで格納されたtimeframeの値を秒数に変換した結果を返す関数
+/// Function that returns the result of converting the timeframe value stored in TimeFrameInfo to seconds.
 pub fn get_sec_timeframe(rule: &RuleNode, stored_static: &StoredStatic) -> Option<i64> {
     let timeframe = rule.detection.timeframe.as_ref();
     let tfi = timeframe?;
@@ -298,7 +298,7 @@ pub fn get_sec_timeframe(rule: &RuleNode, stored_static: &StoredStatic) -> Optio
         }
     }
 }
-/// conditionのパイプ以降の処理をAggregationParseInfoを参照し、conditionの条件を満たすか判定するための関数
+/// Function to evaluate whether the condition is satisfied by checking AggregationParseInfo for the processing after the pipe in condition.
 pub fn select_aggcon(cnt: i64, rule: &RuleNode) -> bool {
     let agg_condition = rule.detection.aggregation_condition.as_ref();
     if agg_condition.is_none() {
@@ -316,7 +316,7 @@ pub fn select_aggcon(cnt: i64, rule: &RuleNode) -> bool {
     }
 }
 
-/// condtionの分岐によって同じ型を返すif-letのジェネリクス
+/// Generics for if-let that returns the same type depending on the branch of condition.
 fn _if_condition_fn_caller<T: FnMut() -> S, S, U: FnMut() -> S>(
     condition: bool,
     mut process_true: T,
@@ -330,29 +330,29 @@ fn _if_condition_fn_caller<T: FnMut() -> S, S, U: FnMut() -> S>(
 }
 
 /**
- * count()の数え方の違いを吸収するtrait
+ * Trait to absorb differences in how count() counts.
  */
 trait CountStrategy {
     /**
-     * datas[idx]のデータをtimeframeに追加します
+     * Adds the data of datas[idx] to the timeframe.
      */
     fn add_data(&mut self, idx: i64, datas: &[AggRecordTimeInfo], rule: &RuleNode);
     /**
-     * datas[idx]のデータをtimeframeから削除します。
+     * Removes the data of datas[idx] from the timeframe.
      */
     fn remove_data(&mut self, idx: i64, datas: &[AggRecordTimeInfo], rule: &RuleNode);
     /**
-     * count()の値を返します。
+     * Returns the value of count().
      */
     fn count(&mut self) -> i64;
     /**
-     * AggResultを作成します。
+     * Creates an AggResult.
      */
     fn create_agg_result(&mut self, datas: &[AggRecordTimeInfo], cnt: i64, key: &str) -> AggResult;
 }
 
 /**
- * countにfieldが指定されている場合のjudgeの計算方法を表す構造体
+ * Struct representing the calculation method of judge when a field is specified in count.
  */
 struct FieldStrategy {
     value_2_cnt: HashMap<String, i64>,
@@ -387,10 +387,10 @@ impl CountStrategy for FieldStrategy {
 
         let val: &mut i64 = key_val.unwrap().1;
         if val <= &mut 1 {
-            // 0になる場合はキー自体削除する
+            // If the value becomes 0, delete the key itself.
             self.value_2_cnt.remove(record_value);
         } else {
-            *val += -1; // 個数を減らす
+            *val += -1; // Decrease the count.
         }
     }
 
@@ -404,7 +404,7 @@ impl CountStrategy for FieldStrategy {
         _cnt: i64,
         key: &str,
     ) -> AggResult {
-        let values: Vec<String> = self.value_2_cnt.drain().map(|(key, _)| key).collect(); // drainで初期化
+        let values: Vec<String> = self.value_2_cnt.drain().map(|(key, _)| key).collect(); // Initialize with drain.
         AggResult::new(
             values.len() as i64,
             key.to_string(),
@@ -416,7 +416,7 @@ impl CountStrategy for FieldStrategy {
 }
 
 /**
- * countにfieldが指定されていない場合のjudgeの計算方法を表す構造体
+ * Struct representing the calculation method of judge when no field is specified in count.
  */
 struct NoFieldStrategy {
     cnt: i64,
@@ -451,7 +451,7 @@ impl CountStrategy for NoFieldStrategy {
             datas.first().unwrap().time,
             datas.to_vec(),
         );
-        self.cnt = 0; //cntを初期化
+        self.cnt = 0; // Initialize cnt.
         ret
     }
 }
@@ -475,11 +475,11 @@ fn _get_timestamp_subsec_nano(idx: i64, datas: &[AggRecordTimeInfo]) -> u32 {
     datas[idx as usize].time.timestamp_subsec_nanos()
 }
 
-// data[left]からdata[right-1]までのデータがtimeframeに収まっているか判定する
+// Determine whether data from data[left] to data[right-1] fits within the timeframe.
 fn _is_in_timeframe(left: i64, right: i64, frame: i64, datas: &[AggRecordTimeInfo]) -> bool {
     let left_time = _get_timestamp(left, datas);
     let left_time_nano = _get_timestamp_subsec_nano(left, datas);
-    // evtxのSystemTimeは小数点7桁秒まで記録されているので、それを考慮する
+    // evtx SystemTime is recorded with up to 7 decimal places of seconds, so this is taken into account.
     let mut right_time = _get_timestamp(right, datas);
     let right_time_nano = _get_timestamp_subsec_nano(right, datas);
     if right_time_nano > left_time_nano {
@@ -488,7 +488,7 @@ fn _is_in_timeframe(left: i64, right: i64, frame: i64, datas: &[AggRecordTimeInf
     right_time - left_time <= frame
 }
 
-/// count済みデータ内でタイムフレーム内に存在するselectの条件を満たすレコードが、timeframe単位でcountの条件を満たしているAggResultを配列として返却する関数
+/// Function that returns as an array the AggResults where records satisfying the select condition within the timeframe in the counted data meet the count condition per timeframe.
 pub fn judge_timeframe(
     rule: &RuleNode,
     time_datas: &[AggRecordTimeInfo],
@@ -500,23 +500,23 @@ pub fn judge_timeframe(
         return ret;
     }
 
-    // AggRecordTimeInfoを時間順がソートされている前提で処理を進める
+    // Proceed with processing assuming AggRecordTimeInfo is sorted in time order.
     let mut datas = time_datas.to_owned();
     datas.sort_by_key(|a| a.time);
 
-    // timeframeの設定がルールにない時は最初と最後の要素の時間差をtimeframeに設定する。
+    // If the timeframe setting is not in the rule, set the time difference between the first and last elements as the timeframe.
     let def_frame =
         datas.last().unwrap().time.timestamp() - datas.first().unwrap().time.timestamp();
     let frame = get_sec_timeframe(rule, stored_static).unwrap_or(def_frame);
 
-    // left <= i < rightの範囲にあるdata[i]がtimeframe内にあるデータであると考える
+    // Consider data[i] in the range left <= i < right to be data within the timeframe.
     let mut left: i64 = 0;
     let mut right: i64 = 0;
     let mut counter = _create_counter(rule);
     let data_len = datas.len() as i64;
-    // rightは開区間なので+1
+    // right is an open interval, so +1.
     while left < data_len && right < data_len + 1 {
-        // timeframeの範囲にある限りrightをincrement
+        // Increment right as long as it is within the timeframe range.
         while right < data_len && _is_in_timeframe(left, right, frame, &datas) {
             counter.add_data(right, &datas, rule);
             right += 1;
@@ -524,11 +524,11 @@ pub fn judge_timeframe(
 
         let cnt = counter.count();
         if select_aggcon(cnt, rule) {
-            // 条件を満たすtimeframeが見つかった
+            // A timeframe satisfying the condition was found.
             ret.push(counter.create_agg_result(&datas[left as usize..right as usize], cnt, key));
             left = right;
         } else {
-            // 条件を満たさなかったので、rightとleftを+1ずらす
+            // The condition was not satisfied, so shift right and left by +1.
             counter.add_data(right, &datas, rule);
             right += 1;
             counter.remove_data(left, &datas, rule);
@@ -590,7 +590,7 @@ mod tests {
     }
 
     #[test]
-    /// countのカッコ内の記載及びcount byの記載がない場合(timeframeなし)にruleで検知ができることのテスト
+    /// Test that detection by rule works when there is no description inside count parentheses and no count by description (without timeframe).
     fn test_count_no_field_and_by() {
         let record_str: &str = r#"
         {
@@ -641,7 +641,7 @@ mod tests {
     }
 
     #[test]
-    /// countのカッコ内の記載及びcount byの記載がない場合(timeframeあり)にruleで検知ができることのテスト
+    /// Test that detection by rule works when there is no description inside count parentheses and no count by description (with timeframe).
     fn test_count_no_field_and_by_with_timeframe() {
         let record_str: &str = r#"
         {
@@ -702,7 +702,7 @@ mod tests {
     }
 
     #[test]
-    /// countでカッコ内の記載がある場合にruleでcountの検知ができることを確認する
+    /// Verify that count detection by rule works when there is a description inside the count parentheses.
     fn test_count_exist_field() {
         let rule_str = r#"
         enabled: true
@@ -734,7 +734,7 @@ mod tests {
     }
 
     #[test]
-    /// countでカッコ内の記載、byの記載両方がある場合にruleでcountの検知ができることを確認する
+    /// Verify that count detection by rule works when both a description inside parentheses and a by description are present.
     fn test_count_exist_field_and_by() {
         let record_str: &str = r#"
         {
@@ -792,7 +792,7 @@ mod tests {
     }
 
     #[test]
-    /// countでカッコ内の記載、byの記載両方がある場合(複数レコードでカッコ内の指定する値が異なる場合)に値の組み合わせごとに分けてcountが実行していることを確認する
+    /// Verify that count is executed separately for each combination of values when both a description in parentheses and a by description are present in count (when the values specified inside parentheses differ across multiple records).
     fn test_count_exist_field_and_by_with_othervalue_in_timeframe() {
         let record_str: &str = r#"
         {
@@ -850,7 +850,7 @@ mod tests {
     }
 
     #[test]
-    /// countでtimeframeの条件によってruleのcountの条件を満たさない場合に空の配列を返すことを確認する
+    /// Verify that an empty array is returned when the count condition of the rule is not satisfied due to the timeframe condition.
     fn test_count_not_satisfy_in_timeframe() {
         let record_str: &str = r#"
         {
@@ -904,7 +904,7 @@ mod tests {
                 }
             }
         }
-        //countupの関数が機能しているかを確認
+        // Verify that the countup function is working.
         assert_eq!(
             rule_node.countdata.get(&"_".to_owned()).unwrap().len() as i32,
             2
@@ -913,7 +913,7 @@ mod tests {
         assert_eq!(judge_result.len(), 0);
     }
     #[test]
-    /// countでカッコ内の記載、byの記載両方がありtimeframe内に存在する場合にruleでcountの検知ができることを確認する
+    /// Verify that count detection by rule works when both a description inside parentheses and a by description are present and exist within the timeframe.
     fn test_count_exist_field_and_by_with_timeframe() {
         let record_str: &str = r#"
         {
@@ -962,7 +962,7 @@ mod tests {
     }
 
     #[test]
-    /// countで括弧内の記載、byの記載両方がありtimeframe内に存在する場合にruleでcountの検知ができることを確認する(countの括弧内の項目が異なる場合)
+    /// Verify that count detection by rule works when both a description inside parentheses and a by description are present and exist within the timeframe (when the items inside the count parentheses differ).
     fn test_count_exist_field_and_by_with_timeframe_other_field_value() {
         let record_str: &str = r#"
         {
@@ -1011,7 +1011,7 @@ mod tests {
         );
     }
 
-    // timeframeのsecondsが動くことを確認
+    // Verify that timeframe seconds work.
     #[test]
     fn test_count_timeframe_seconds() {
         let recs = vec![
@@ -1020,7 +1020,7 @@ mod tests {
             test_create_recstr_std("3", "1977-01-09T00:30:20Z"),
         ];
 
-        // timeframe=20sはギリギリHit
+        // timeframe=20s is a just-barely-hit.
         {
             let rule_str = create_std_rule("count(EventID) >= 3", "20s");
             let default_time = Utc.with_ymd_and_hms(1977, 1, 9, 0, 30, 0).unwrap();
@@ -1036,7 +1036,7 @@ mod tests {
             check_count(&rule_str, &recs, expected_count, expected_agg_result);
         }
 
-        // timeframe=19sはギリギリHitしない
+        // timeframe=19s just barely does not hit.
         {
             let rule_str = create_std_rule("count(EventID) >= 3", "19s");
             let mut expected_count = HashMap::new();
@@ -1045,7 +1045,7 @@ mod tests {
         }
     }
 
-    // timeframeのminitutesが動くことを確認
+    // Verify that timeframe minutes work.
     #[test]
     fn test_count_timeframe_minitues() {
         let recs = vec![
@@ -1054,7 +1054,7 @@ mod tests {
             test_create_recstr_std("3", "1977-01-09T00:50:00Z"),
         ];
 
-        // timeframe=20mはギリギリHit
+        // timeframe=20m is a just-barely-hit.
         {
             let rule_str = create_std_rule("count(EventID) >= 3", "20m");
             let default_time = Utc.with_ymd_and_hms(1977, 1, 9, 0, 30, 0).unwrap();
@@ -1070,7 +1070,7 @@ mod tests {
             check_count(&rule_str, &recs, expected_count, expected_agg_result);
         }
 
-        // timeframe=19mはギリギリHitしない
+        // timeframe=19m just barely does not hit.
         {
             let rule_str = create_std_rule("count(EventID) >= 3", "19m");
             let mut expected_count = HashMap::new();
@@ -1079,7 +1079,7 @@ mod tests {
         }
     }
 
-    // timeframeのhourが動くことを確認
+    // Verify that timeframe hours work.
     #[test]
     fn test_count_timeframe_hour() {
         let recs = vec![
@@ -1088,7 +1088,7 @@ mod tests {
             test_create_recstr_std("3", "1977-01-09T02:30:00Z"),
         ];
 
-        // timeframe=3hはHit
+        // timeframe=3h hits.
         {
             let rule_str = create_std_rule("count(EventID) >= 3", "3h");
             let default_time = Utc.with_ymd_and_hms(1977, 1, 9, 0, 30, 0).unwrap();
@@ -1104,7 +1104,7 @@ mod tests {
             check_count(&rule_str, &recs, expected_count, expected_agg_result);
         }
 
-        // timeframe=2hはギリギリHit
+        // timeframe=2h is a just-barely-hit.
         {
             let rule_str = create_std_rule("count(EventID) >= 3", "2h");
             let default_time = Utc.with_ymd_and_hms(1977, 1, 9, 0, 30, 0).unwrap();
@@ -1120,7 +1120,7 @@ mod tests {
             check_count(&rule_str, &recs, expected_count, expected_agg_result);
         }
 
-        // timeframe=1hはギリギリHitしない
+        // timeframe=1h just barely does not hit.
         {
             let rule_str = create_std_rule("count(EventID) >= 3", "1h");
             let mut expected_count = HashMap::new();
@@ -1128,7 +1128,7 @@ mod tests {
             check_count(&rule_str, &recs, expected_count, Vec::new());
         }
 
-        // timeframe=120minはギリギリHit
+        // timeframe=120min is a just-barely-hit.
         {
             let rule_str = create_std_rule("count(EventID) >= 3", "120m");
             let default_time = Utc.with_ymd_and_hms(1977, 1, 9, 0, 30, 0).unwrap();
@@ -1144,7 +1144,7 @@ mod tests {
             check_count(&rule_str, &recs, expected_count, expected_agg_result);
         }
 
-        // timeframe=119minはギリギリHitしない
+        // timeframe=119min just barely does not hit.
         {
             let rule_str = create_std_rule("count(EventID) >= 3", "119m");
             let mut expected_count = HashMap::new();
@@ -1153,7 +1153,7 @@ mod tests {
         }
     }
 
-    // timeframeのdayが動くことを確認
+    // Verify that timeframe days work.
     #[test]
     fn test_count_timeframe_day() {
         let recs = vec![
@@ -1162,7 +1162,7 @@ mod tests {
             test_create_recstr_std("3", "1977-01-20T00:30:00Z"),
         ];
 
-        // timeframe=11dはギリギリHit
+        // timeframe=11d is a just-barely-hit.
         {
             let rule_str = create_std_rule("count(EventID) >= 3", "11d");
             let default_time = Utc.with_ymd_and_hms(1977, 1, 9, 0, 30, 0).unwrap();
@@ -1178,7 +1178,7 @@ mod tests {
             check_count(&rule_str, &recs, expected_count, expected_agg_result);
         }
 
-        // timeframe=10dはギリギリHitしない
+        // timeframe=10d just barely does not hit.
         {
             let rule_str = create_std_rule("count(EventID) >= 3", "10d");
             let mut expected_count = HashMap::new();
@@ -1187,7 +1187,7 @@ mod tests {
         }
     }
 
-    // evtx的には小数点の秒数が指定されうるので、それが正しく制御できることを確認
+    // In evtx, seconds with decimal points may be specified, so verify that this is correctly handled.
     #[test]
     fn test_count_timeframe_milsecs() {
         let recs = vec![
@@ -1196,7 +1196,7 @@ mod tests {
             test_create_recstr_std("3", "2021-12-21T10:40:10.0003000Z"),
         ];
 
-        // timeframe=11secはギリギリHit
+        // timeframe=11sec is a just-barely-hit.
         {
             let rule_str = create_std_rule("count(EventID) >= 3", "11s");
             let default_time = Utc.with_ymd_and_hms(2021, 12, 21, 10, 40, 0).unwrap();
@@ -1212,7 +1212,7 @@ mod tests {
             check_count(&rule_str, &recs, expected_count, expected_agg_result);
         }
 
-        // timeframe=10dはギリギリHitしない
+        // timeframe=10d just barely does not hit.
         {
             let rule_str = create_std_rule("count(EventID) >= 3", "10s");
             let mut expected_count = HashMap::new();
@@ -1221,7 +1221,7 @@ mod tests {
         }
     }
 
-    // evtx的には小数点の秒数が指定されうるので、それが正しく制御できることを確認
+    // In evtx, seconds with decimal points may be specified, so verify that this is correctly handled.
     #[test]
     fn test_count_timeframe_milsecs2() {
         let recs = vec![
@@ -1230,7 +1230,7 @@ mod tests {
             test_create_recstr_std("3", "2021-12-21T10:40:10.0400000Z"),
         ];
 
-        // timeframe=10secはギリギリHit
+        // timeframe=10sec is a just-barely-hit.
         {
             let rule_str = create_std_rule("count(EventID) >= 3", "10s");
             let default_time = DateTime::<Utc>::from_naive_utc_and_offset(
@@ -1252,7 +1252,7 @@ mod tests {
             check_count(&rule_str, &recs, expected_count, expected_agg_result);
         }
 
-        // timeframe=10dはギリギリHitしない
+        // timeframe=10d just barely does not hit.
         {
             let rule_str = create_std_rule("count(EventID) >= 3", "9s");
             let mut expected_count = HashMap::new();
@@ -1261,7 +1261,7 @@ mod tests {
         }
     }
 
-    // evtx的には小数点の秒数が指定されうるので、それが正しく制御できることを確認
+    // In evtx, seconds with decimal points may be specified, so verify that this is correctly handled.
     #[test]
     fn test_count_timeframe_milsecs3() {
         let recs = vec![
@@ -1270,7 +1270,7 @@ mod tests {
             test_create_recstr_std("3", "2021-12-21T10:40:10.0600000Z"),
         ];
 
-        // timeframe=11secはギリギリHit
+        // timeframe=11sec is a just-barely-hit.
         {
             let rule_str = create_std_rule("count(EventID) >= 3", "11s");
             let default_time = DateTime::<Utc>::from_naive_utc_and_offset(
@@ -1292,7 +1292,7 @@ mod tests {
             check_count(&rule_str, &recs, expected_count, expected_agg_result);
         }
 
-        // timeframe=10dはギリギリHitしない
+        // timeframe=10d just barely does not hit.
         {
             let rule_str = create_std_rule("count(EventID) >= 3", "10s");
             let mut expected_count = HashMap::new();
@@ -1301,7 +1301,7 @@ mod tests {
         }
     }
 
-    // Hitしたレコードがない時のテスト
+    // Test when there are no hit records.
     #[test]
     fn test_count_norecord() {
         let recs = vec![];
@@ -1313,12 +1313,12 @@ mod tests {
         }
     }
 
-    // 1レコードで正しく検知できることを確認
+    // Verify that detection works correctly with 1 record.
     #[test]
     fn test_count_onerecord() {
         let recs = vec![test_create_recstr_std("1", "2021-12-21T10:40:00.0000000Z")];
 
-        // byない
+        // Without by.
         {
             let rule_str = create_std_rule("count(EventID) >= 1", "1s");
             let default_time = DateTime::<Utc>::from_naive_utc_and_offset(
@@ -1340,7 +1340,7 @@ mod tests {
             check_count(&rule_str, &recs, expected_count, expected_agg_result);
         }
 
-        // byある
+        // With by.
         {
             let rule_str = create_std_rule("count(EventID) by param1>= 1", "1s");
             let default_time = DateTime::<Utc>::from_naive_utc_and_offset(
@@ -1363,11 +1363,11 @@ mod tests {
         }
     }
 
-    // timeframeの検査
-    // timeframe=2hで、パイプ以降はcount(EventID) >= 3とする。
+    // Inspection of timeframe.
+    // timeframe=2h, and after the pipe: count(EventID) >= 3.
     //
-    // このとき先頭の3行だと検知しないが、2行目から4行目は検知するはず
-    // このように先頭行ではなく、途中から数えて検知するパターンをチェックする。
+    // In this case, the first 3 rows should not be detected, but rows 2 through 4 should be detected.
+    // Check patterns that detect starting from the middle rather than from the first row.
     // 0:30 EventID=1
     // 1:30 EventID=1
     // 2:30 EventID=2
@@ -1400,7 +1400,7 @@ mod tests {
         check_count(&rule_str, &recs, expected_count, expected_agg_result);
     }
 
-    // ずっと微妙に検知しない
+    // Never quite detects.
     #[test]
     fn test_count_timeframe2() {
         let recs = vec![
@@ -1421,7 +1421,7 @@ mod tests {
         }
     }
 
-    // 同じ時刻のレコードがあっても正しくcount出来る
+    // Can correctly count even when records have the same timestamp.
     #[test]
     fn test_count_sametime() {
         let recs = vec![
@@ -1453,8 +1453,8 @@ mod tests {
         }
     }
 
-    // countの実装で番兵をおいてないので、それで正しく動くかチェック
-    // Hitした全レコードのtimeframeが条件のtimeframeよりも狭い場合にエラーがでないかチェック
+    // No sentinel is placed in the count implementation; check that it works correctly.
+    // Check that no error occurs when the timeframe of all hit records is narrower than the condition timeframe.
     #[test]
     fn test_count_sentinel() {
         let recs = vec![
@@ -1463,7 +1463,7 @@ mod tests {
             test_create_recstr_std("3", "1977-01-09T03:30:00Z"),
         ];
 
-        // Hitするパターン
+        // Pattern that hits.
         {
             let rule_str = create_std_rule("count(EventID) >= 3", "1d");
             let mut expected_count = HashMap::new();
@@ -1479,7 +1479,7 @@ mod tests {
 
             check_count(&rule_str, &recs, expected_count, expected_agg_result);
         }
-        // Hitしないパターン
+        // Pattern that does not hit.
         {
             let rule_str = create_std_rule("count(EventID) >= 4", "1d");
             let mut expected_count = HashMap::new();
@@ -1489,8 +1489,8 @@ mod tests {
         }
     }
 
-    // 1:30-4:30までEventIDが4種類あって、2:30-5:30までEventIDが4種類あるが、
-    // 1:30-4:30までで4種類あったら、今度は5:30から数え始めていることを確認
+    // There are 4 types of EventIDs from 1:30 to 4:30, and 4 types from 2:30 to 5:30,
+    // Verify that once 4 types are found from 1:30 to 4:30, counting restarts from 5:30.
     #[test]
     fn test_count_timeframe_reset() {
         let recs = vec![
@@ -1556,10 +1556,10 @@ mod tests {
         }
     }
 
-    // timeframeの検査
-    // timeframe=2hで、パイプ以降はcount(EventID) >= 3とする。
+    // Inspection of timeframe.
+    // timeframe=2h, and after the pipe: count(EventID) >= 3.
     //
-    // test_count_timeframe()のパターンが2回続く場合
+    // When the test_count_timeframe() pattern repeats twice.
     #[test]
     fn test_count_timeframe_twice() {
         let recs = vec![
@@ -1644,7 +1644,7 @@ mod tests {
             .replace("${TIME_FRAME}", timeframe)
     }
 
-    /// countで対象の数値確認を行うためのテスト用関数
+    /// Test function to verify target numbers for count.
     fn check_count(
         rule_str: &str,
         records_str: &[String],
@@ -1695,7 +1695,7 @@ mod tests {
         let mut expect_start_timedate = vec![];
         for expect_agg in expect_agg_results {
             let expect_count = expected_counts.get(&expect_agg.key).unwrap_or(&-1);
-            //countupの関数が機能しているかを確認
+            // Verify that the countup function is working.
             assert_eq!(
                 rule_node.countdata.get(&expect_agg.key).unwrap().len() as i32,
                 *expect_count
@@ -1707,7 +1707,7 @@ mod tests {
         }
         for agg_result in agg_results {
             println!("{}", &agg_result.start_timedate);
-            //ここですでにstart_timedateの格納を確認済み
+            // Storage of start_timedate has already been verified here.
             let index = expect_start_timedate
                 .binary_search(&agg_result.start_timedate)
                 .unwrap();
@@ -1715,8 +1715,8 @@ mod tests {
             assert_eq!(agg_result.key, expect_key[index]);
             assert!(agg_result.field_values.len() == expect_field_values[index].len());
             for expect_field_value in &expect_field_values[index] {
-                // テストによってはtimeframeの値と各fieldの値で配列の順番が想定したものと変化してしまう可能性があるため配列の長さを確認したうえで期待した各要素が存在するかを確認する。
-                // field`要素の順番については以降の処理で関連しない
+                // Depending on the test, the array order may differ from expected due to timeframe values and field values, so verify the array length and then check whether each expected element exists.
+                // The order of field elements is not relevant for subsequent processing.
                 assert!(agg_result.field_values.contains(expect_field_value));
             }
         }

@@ -17,12 +17,12 @@ lazy_static! {
         Regex::new(r"^[\w+]+").unwrap(),
     ];
     pub static ref RE_PIPE: Regex = Regex::new(r"\|.*").unwrap();
-    // all of selection* と 1 of selection* にマッチする正規表現
+    // Regular expression matching "all of selection*" and "1 of selection*".
     pub static ref OF_SELECTION: Regex = Regex::new(r"(all|1) of ([^*]+)\*").unwrap();
 }
 
 #[derive(Debug, Clone)]
-/// 字句解析で出てくるトークン
+/// Tokens appearing during lexical analysis.
 pub enum ConditionToken {
     LeftParenthesis,
     RightParenthesis,
@@ -32,10 +32,10 @@ pub enum ConditionToken {
     Or,
     SelectionReference(String),
 
-    // パースの時に上手く処理するために作った疑似的なトークン
-    ParenthesisContainer(Box<ConditionToken>), // 括弧を表すトークン
-    AndContainer(IntoIter<ConditionToken>),    // ANDでつながった条件をまとめるためのトークン
-    OrContainer(IntoIter<ConditionToken>),     // ORでつながった条件をまとめるためのトークン
+    // Pseudo tokens created to facilitate processing during parsing.
+    ParenthesisContainer(Box<ConditionToken>), // Token representing parentheses.
+    AndContainer(IntoIter<ConditionToken>),    // Token to group conditions connected by AND.
+    OrContainer(IntoIter<ConditionToken>),     // Token to group conditions connected by OR.
     NotContainer(Box<ConditionToken>), // 「NOT」と「NOTで否定される式」をまとめるためのトークン この配列には要素が一つしか入らないが、他のContainerと同じように扱えるようにするためにVecにしている。あんまり良くない。
 }
 
@@ -113,7 +113,7 @@ impl ConditionToken {
 #[derive(Debug)]
 pub struct ConditionCompiler {}
 
-// conditionの式を読み取るクラス。
+// Class that reads condition expressions.
 impl ConditionCompiler {
     pub fn new() -> Self {
         ConditionCompiler {}
@@ -126,7 +126,7 @@ impl ConditionCompiler {
     ) -> Result<Box<dyn SelectionNode>, String> {
         let node_keys: Vec<String> = name_2_node.keys().cloned().collect();
         let condition_str = Self::convert_condition(condition_str, &node_keys);
-        // パイプはここでは処理しない
+        // Pipes are not processed here.
         let captured = self::RE_PIPE.captures(condition_str.as_str());
         let replaced_condition = if let Some(cap) = captured {
             let captured = cap.get(0).unwrap().as_str();
@@ -143,7 +143,7 @@ impl ConditionCompiler {
         }
     }
 
-    // all of selection* と 1 of selection* を通常のand/orに変換する
+    // Convert "all of selection*" and "1 of selection*" to normal and/or.
     pub fn convert_condition(condition_str: &str, node_keys: &[String]) -> String {
         let mut converted_str = condition_str.to_string();
         for matched in OF_SELECTION.find_iter(condition_str) {
@@ -167,7 +167,7 @@ impl ConditionCompiler {
         converted_str
     }
 
-    /// 与えたConditionからSelectionNodeを作る
+    /// Creates a SelectionNode from the given Condition.
     fn compile_condition_body(
         &self,
         condition_str: &str,
@@ -180,16 +180,16 @@ impl ConditionCompiler {
         parsed.into_selection_node(name_2_node)
     }
 
-    /// 構文解析を実行する。
+    /// Executes syntactic analysis.
     fn parse(&self, tokens: IntoIter<ConditionToken>) -> Result<ConditionToken, String> {
-        // 括弧で囲まれた部分を解析します。
+        // Analyze sections enclosed in parentheses.
         let tokens = self.parse_parenthesis(tokens)?;
 
-        // AndとOrをパースする。
+        // Parse And and Or.
         self.parse_and_or_operator(tokens)
     }
 
-    /// 字句解析を行う
+    /// Performs lexical analysis.
     fn tokenize(&self, condition_str: &str) -> Result<Vec<ConditionToken>, String> {
         let mut cur_condition_str = condition_str;
 
@@ -199,14 +199,14 @@ impl ConditionCompiler {
                 .iter()
                 .find_map(|regex| regex.captures(cur_condition_str));
             if captured.is_none() {
-                // トークンにマッチしないのはありえないという方針でパースしています。
+                // Parsing is done under the policy that failing to match a token is not possible.
                 return Result::Err("An unusable character was found.".to_string());
             }
 
             let matched_str = captured.unwrap().get(0).unwrap().as_str();
             let token = ConditionToken::to_condition_token(matched_str);
             if let ConditionToken::Space = token {
-                // 空白は特に意味ないので、読み飛ばす。
+                // Whitespace has no special meaning, so skip it.
                 cur_condition_str = &cur_condition_str[matched_str.len()..];
                 continue;
             }
@@ -218,21 +218,21 @@ impl ConditionCompiler {
         Result::Ok(tokens)
     }
 
-    /// 右括弧と左括弧をだけをパースする。戻り値の配列にはLeftParenthesisとRightParenthesisが含まれず、代わりにTokenContainerに変換される。TokenContainerが括弧で囲まれた部分を表現している。
+    /// Parses only left and right parentheses. The returned array does not contain LeftParenthesis or RightParenthesis; instead they are converted to TokenContainers. A TokenContainer represents the section enclosed in parentheses.
     fn parse_parenthesis(
         &self,
         mut tokens: IntoIter<ConditionToken>,
     ) -> Result<Vec<ConditionToken>, String> {
         let mut ret = vec![];
         while let Some(token) = tokens.next() {
-            // まず、左括弧を探す。
+            // First, look for a left parenthesis.
             let is_left = matches!(token, ConditionToken::LeftParenthesis);
             if !is_left {
                 ret.push(token);
                 continue;
             }
 
-            // 左括弧が見つかったら、対応する右括弧を見つける。
+            // If a left parenthesis is found, find the corresponding right parenthesis.
             let mut left_cnt = 1;
             let mut right_cnt = 0;
             let mut sub_tokens = vec![];
@@ -247,19 +247,19 @@ impl ConditionCompiler {
                 }
                 sub_tokens.push(token);
             }
-            // 最後までついても対応する右括弧が見つからないことを表している
+            // Reaching the end without finding a matching right parenthesis.
             if left_cnt != right_cnt {
                 return Result::Err("')' was expected but not found.".to_string());
             }
 
-            // ここで再帰的に呼び出す。
+            // Call recursively here.
             let parsed_sub_token = self.parse(sub_tokens.into_iter())?;
             let parenthesis_token =
                 ConditionToken::ParenthesisContainer(Box::new(parsed_sub_token));
             ret.push(parenthesis_token);
         }
 
-        // この時点で右括弧が残っている場合は右括弧の数が左括弧よりも多いことを表している。
+        // If right parentheses remain at this point, there are more right parentheses than left.
         let is_right_left = ret
             .iter()
             .any(|token| matches!(token, ConditionToken::RightParenthesis));
@@ -270,41 +270,41 @@ impl ConditionCompiler {
         Result::Ok(ret)
     }
 
-    /// AND, ORをパースする。
+    /// Parses AND and OR.
     fn parse_and_or_operator(&self, tokens: Vec<ConditionToken>) -> Result<ConditionToken, String> {
         if tokens.is_empty() {
-            // 長さ0は呼び出してはいけない
+            // Must not be called with length 0.
             return Result::Err("Unknown error.".to_string());
         }
 
-        // まず、selection1 and not selection2みたいな式のselection1やnot selection2のように、ANDやORでつながるトークンをまとめる。
+        // First, group tokens connected by AND or OR, like selection1 and "not selection2" in an expression like "selection1 and not selection2".
         let tokens = self.to_operand_container(tokens)?;
 
-        // 先頭又は末尾がAND/ORなのはだめ
+        // AND/OR at the beginning or end is invalid.
         if self.is_logical(&tokens[0]) || self.is_logical(&tokens[tokens.len() - 1]) {
             return Result::Err("An illegal logical operator(and, or) was found.".to_string());
         }
 
-        // OperandContainerとLogicalOperator(AndとOR)が交互に並んでいるので、それぞれリストに投入
+        // OperandContainers and LogicalOperators (And and OR) alternate, so add each to their respective lists.
         let mut operand_list = vec![];
         let mut operator_list = vec![];
         for (i, token) in tokens.into_iter().enumerate() {
             if (i % 2 == 1) != self.is_logical(&token) {
-                // インデックスが奇数の時はLogicalOperatorで、インデックスが偶数のときはOperandContainerになる
+                // At odd indices it is a LogicalOperator; at even indices it is an OperandContainer.
                 return Result::Err(
                     "The use of a logical operator(and, or) was wrong.".to_string(),
                 );
             }
 
             if i % 2 == 0 {
-                // ここで再帰的にAND,ORをパースする関数を呼び出す
+                // Call the function to recursively parse AND and OR here.
                 operand_list.push(token);
             } else {
                 operator_list.push(token);
             }
         }
 
-        // 先にANDでつながっている部分を全部まとめる
+        // First, group all parts connected by AND.
         let mut operand_ite = operand_list.into_iter();
         let mut operands = vec![];
         let mut and_grops = vec![];
@@ -326,16 +326,16 @@ impl ConditionCompiler {
         if operands.len() == 1 {
             return Result::Ok(operands.into_iter().next().unwrap());
         }
-        // 次にOrでつながっている部分をまとめる
+        // Next, group parts connected by OR.
         Result::Ok(ConditionToken::OrContainer(operands.into_iter()))
     }
 
-    /// OperandContainerの中身をパースする。現状はNotをパースするためだけに存在している。
+    /// Parses the contents of an OperandContainer. Currently exists only to parse Not.
     fn parse_operand_container(sub_tokens: Vec<ConditionToken>) -> Result<ConditionToken, String> {
-        // 現状ではNOTの場合は、「not」と「notで修飾されるselectionノードの名前」の2つ入っているはず
-        // NOTが無い場合、「selectionノードの名前」の一つしか入っていないはず。
+        // Currently, in the NOT case, there should be two items: "not" and "the name of the selection node modified by not".
+        // If there is no NOT, there should be only one item: "the name of the selection node".
 
-        // 上記の通り、3つ以上入っていることはないはず。
+        // As stated above, there should never be three or more items.
         if sub_tokens.len() >= 3 {
             return Result::Err(
                 "Unknown error. Maybe it is because there are multiple names of selection nodes."
@@ -343,12 +343,12 @@ impl ConditionCompiler {
             );
         }
 
-        // 0はありえないはず
+        // 0 should not be possible.
         if sub_tokens.is_empty() {
             return Result::Err("Unknown error.".to_string());
         }
 
-        // 1つだけ入っている場合、NOTはありえない。
+        // If there is only one item, NOT is not possible.
         if sub_tokens.len() == 1 {
             let operand_subtoken = sub_tokens.into_iter().next().unwrap();
             if let ConditionToken::Not = operand_subtoken {
@@ -358,7 +358,7 @@ impl ConditionCompiler {
             return Result::Ok(operand_subtoken);
         }
 
-        // ２つ入っている場合、先頭がNotで次はNotじゃない何かのはず
+        // If there are two items, the first should be Not and the next should be something that is not Not.
         let mut sub_ite = sub_tokens.into_iter();
         let first_token = sub_ite.next().unwrap();
         let second_token = sub_ite.next().unwrap();
@@ -377,21 +377,21 @@ impl ConditionCompiler {
         }
     }
 
-    /// ConditionTokenがAndまたはOrTokenならばTrue
+    /// Returns true if the ConditionToken is an And or Or token.
     fn is_logical(&self, token: &ConditionToken) -> bool {
         matches!(token, ConditionToken::And | ConditionToken::Or)
     }
 
-    /// ConditionToken::OperandContainerに変換できる部分があれば変換する。
+    /// Converts sections that can be converted to ConditionToken::OperandContainer.
     fn to_operand_container(
         &self,
         tokens: Vec<ConditionToken>,
     ) -> Result<Vec<ConditionToken>, String> {
         let mut ret = vec![];
-        let mut grouped_operands = vec![]; // ANDとORの間にあるトークンを表す。ANDとORをOperatorとしたときのOperand
+        let mut grouped_operands = vec![]; // Represents tokens between AND and OR. The Operand when AND and OR are treated as Operators.
         for token in tokens.into_iter() {
             if self.is_logical(&token) {
-                // ここに来るのはエラーのはずだが、後でエラー出力するので、ここではエラー出さない。
+                // This should be an error, but since errors are output later, do not output an error here.
                 if grouped_operands.is_empty() {
                     ret.push(token);
                     continue;
@@ -494,7 +494,7 @@ mod tests {
 
     #[test]
     fn test_no_condition() {
-        // condition式が無くても、selectionが一つだけなら、正しくパースできることを確認
+        // Verify that parsing succeeds when there is only one selection even without a condition expression.
         let rule_str = r#"
         enabled: true
         detection:
@@ -527,8 +527,8 @@ mod tests {
 
     #[test]
     fn test_no_condition_notdetect() {
-        // condition式が無くても、selectionが一つだけなら、正しくパースできることを確認
-        // これは検知しないパターン
+        // Verify that parsing succeeds when there is only one selection even without a condition expression.
+        // This is a non-detection pattern.
         let rule_str = r#"
         enabled: true
         detection:
@@ -561,7 +561,7 @@ mod tests {
 
     #[test]
     fn test_condition_and_detect() {
-        // conditionにandを使ったパターンのテスト
+        // Test for patterns using and in condition.
         let rule_str = r#"
         enabled: true
         detection:
@@ -580,8 +580,8 @@ mod tests {
 
     #[test]
     fn test_condition_and_notdetect() {
-        // conditionにandを使ったパターンのテスト
-        // これはHitしないパターン
+        // Test for patterns using and in condition.
+        // This is a non-hit pattern.
         let rule_str = r#"
         enabled: true
         detection:
@@ -600,8 +600,8 @@ mod tests {
 
     #[test]
     fn test_condition_and_notdetect2() {
-        // conditionにandを使ったパターンのテスト
-        // これはHitしないパターン
+        // Test for patterns using and in condition.
+        // This is a non-hit pattern.
         let rule_str = r#"
         enabled: true
         detection:
@@ -620,8 +620,8 @@ mod tests {
 
     #[test]
     fn test_condition_and_detect3() {
-        // conditionにandを使ったパターンのテスト
-        // これはHitしないパターン
+        // Test for patterns using and in condition.
+        // This is a non-hit pattern.
         let rule_str = r#"
         enabled: true
         detection:
@@ -640,8 +640,8 @@ mod tests {
 
     #[test]
     fn test_condition_and_notdetect4() {
-        // conditionにandを使ったパターンのテスト
-        // これはHitしないパターン
+        // Test for patterns using and in condition.
+        // This is a non-hit pattern.
         let rule_str = r#"
         enabled: true
         detection:
@@ -660,8 +660,8 @@ mod tests {
 
     #[test]
     fn test_condition_and_notdetect5() {
-        // conditionにandを使ったパターンのテスト
-        // これはHitしないパターン
+        // Test for patterns using and in condition.
+        // This is a non-hit pattern.
         let rule_str = r#"
         enabled: true
         detection:
@@ -680,7 +680,7 @@ mod tests {
 
     #[test]
     fn test_condition_or_detect() {
-        // conditionにorを使ったパターンのテスト
+        // Test for patterns using or in condition.
         let rule_str = r#"
         enabled: true
         detection:
@@ -699,7 +699,7 @@ mod tests {
 
     #[test]
     fn test_condition_or_detect2() {
-        // conditionにorを使ったパターンのテスト
+        // Test for patterns using or in condition.
         let rule_str = r#"
         enabled: true
         detection:
@@ -718,7 +718,7 @@ mod tests {
 
     #[test]
     fn test_condition_or_detect3() {
-        // conditionにorを使ったパターンのテスト
+        // Test for patterns using or in condition.
         let rule_str = r#"
         enabled: true
         detection:
@@ -737,7 +737,7 @@ mod tests {
 
     #[test]
     fn test_condition_or_detect4() {
-        // conditionにorを使ったパターンのテスト
+        // Test for patterns using or in condition.
         let rule_str = r#"
         enabled: true
         detection:
@@ -756,7 +756,7 @@ mod tests {
 
     #[test]
     fn test_condition_or_detect5() {
-        // conditionにorを使ったパターンのテスト
+        // Test for patterns using or in condition.
         let rule_str = r#"
         enabled: true
         detection:
@@ -775,7 +775,7 @@ mod tests {
 
     #[test]
     fn test_condition_or_detect6() {
-        // conditionにorを使ったパターンのテスト
+        // Test for patterns using or in condition.
         let rule_str = r#"
         enabled: true
         detection:
@@ -794,7 +794,7 @@ mod tests {
 
     #[test]
     fn test_condition_or_detect7() {
-        // conditionにorを使ったパターンのテスト
+        // Test for patterns using or in condition.
         let rule_str = r#"
         enabled: true
         detection:
@@ -813,7 +813,7 @@ mod tests {
 
     #[test]
     fn test_condition_or_notdetect() {
-        // conditionにorを使ったパターンのテスト
+        // Test for patterns using or in condition.
         let rule_str = r#"
         enabled: true
         detection:
@@ -832,7 +832,7 @@ mod tests {
 
     #[test]
     fn test_condition_not_detect() {
-        // conditionにnotを使ったパターンのテスト
+        // Test for patterns using not in condition.
         let rule_str = r#"
         enabled: true
         detection:
@@ -847,7 +847,7 @@ mod tests {
 
     #[test]
     fn test_condition_not_notdetect() {
-        // conditionにnotを使ったパターンのテスト
+        // Test for patterns using not in condition.
         let rule_str = r#"
         enabled: true
         detection:
@@ -862,7 +862,7 @@ mod tests {
 
     #[test]
     fn test_condition_parenthesis_detect() {
-        // conditionに括弧を使ったテスト
+        // Test using parentheses in condition.
         let rule_str = r#"
         enabled: true
         detection:
@@ -881,7 +881,7 @@ mod tests {
 
     #[test]
     fn test_condition_parenthesis_not_detect() {
-        // conditionに括弧を使ったテスト
+        // Test using parentheses in condition.
         let rule_str = r#"
         enabled: true
         detection:
@@ -900,7 +900,7 @@ mod tests {
 
     #[test]
     fn test_condition_many_parenthesis_detect() {
-        // conditionに括弧を沢山使ったテスト
+        // Test using many parentheses in condition.
         let rule_str = r#"
         enabled: true
         detection:
@@ -919,7 +919,7 @@ mod tests {
 
     #[test]
     fn test_condition_manyparenthesis_not_detect() {
-        // conditionに括弧を沢山使ったテスト
+        // Test using many parentheses in condition.
         let rule_str = r#"
         enabled: true
         detection:
@@ -938,7 +938,7 @@ mod tests {
 
     #[test]
     fn test_condition_notparenthesis_detect() {
-        // conditionに括弧を沢山使ったテスト
+        // Test using many parentheses in condition.
         let rule_str = r#"
         enabled: true
         detection:
@@ -957,7 +957,7 @@ mod tests {
 
     #[test]
     fn test_condition_notparenthesis_notdetect() {
-        // conditionに括弧とnotを組み合わせたテスト
+        // Test combining parentheses and not in condition.
         let rule_str = r#"
         enabled: true
         detection:
@@ -976,7 +976,7 @@ mod tests {
 
     #[test]
     fn test_condition_manyparenthesis_detect2() {
-        // 括弧を色々使ったケース
+        // Cases using various parentheses.
         let rule_str = r#"
         enabled: true
         detection:
@@ -995,7 +995,7 @@ mod tests {
 
     #[test]
     fn test_condition_manyparenthesis_notdetect2() {
-        // 括弧を色々使ったケース
+        // Cases using various parentheses.
         let rule_str = r#"
         enabled: true
         detection:
@@ -1014,7 +1014,7 @@ mod tests {
 
     #[test]
     fn test_condition_manyparenthesis_detect3() {
-        // 括弧を色々使ったケース
+        // Cases using various parentheses.
         let rule_str = r#"
         enabled: true
         detection:
@@ -1035,7 +1035,7 @@ mod tests {
 
     #[test]
     fn test_condition_manyparenthesis_notdetect3() {
-        // 括弧を色々使ったケース
+        // Cases using various parentheses.
         let rule_str = r#"
         enabled: true
         detection:
@@ -1056,7 +1056,7 @@ mod tests {
 
     #[test]
     fn test_condition_manyparenthesis_detect4() {
-        // 括弧を色々使ったケース
+        // Cases using various parentheses.
         let rule_str = r#"
         enabled: true
         detection:
@@ -1077,7 +1077,7 @@ mod tests {
 
     #[test]
     fn test_condition_manyparenthesis_notdetect4() {
-        // 括弧を色々使ったケース
+        // Cases using various parentheses.
         let rule_str = r#"
         enabled: true
         detection:
@@ -1098,7 +1098,7 @@ mod tests {
 
     #[test]
     fn test_rule_parseerror_no_condition() {
-        // selectionが複数あるのにconditionが無いのはエラー
+        // Having multiple selections without a condition is an error.
         let rule_str = r#"
         enabled: true
         detection:
@@ -1123,7 +1123,7 @@ mod tests {
 
     #[test]
     fn test_condition_err_condition_forbit_character() {
-        // conditionに読み込めない文字が指定されている。
+        // An unreadable character is specified in condition.
         let rule_str = r#"
         enabled: true
         detection:
@@ -1147,7 +1147,7 @@ mod tests {
 
     #[test]
     fn test_condition_err_leftparenthesis_over() {
-        // 左括弧が多い
+        // Too many left parentheses.
         let rule_str = r#"
         enabled: true
         detection:
@@ -1170,7 +1170,7 @@ mod tests {
 
     #[test]
     fn test_condition_err_rightparenthesis_over() {
-        // 右括弧が多い
+        // Too many right parentheses.
         let rule_str = r#"
         enabled: true
         detection:
@@ -1193,7 +1193,7 @@ mod tests {
 
     #[test]
     fn test_condition_err_parenthesis_direction_wrong() {
-        // 括弧の向きが違う
+        // Wrong direction of parentheses.
         let rule_str = r#"
         enabled: true
         detection:
@@ -1216,7 +1216,7 @@ mod tests {
 
     #[test]
     fn test_condition_err_no_logical() {
-        // ANDとかORで結合してない
+        // Not connected by AND or OR.
         let rule_str = r#"
         enabled: true
         detection:
@@ -1321,7 +1321,7 @@ mod tests {
 
     #[test]
     fn test_condition_err_not_not() {
-        // notが続くのはだめ
+        // Consecutive nots are not allowed.
         let rule_str = r#"
         enabled: true
         detection:
@@ -1433,7 +1433,7 @@ mod tests {
 
     #[test]
     fn test_condition_1_of_select_detect() {
-        // conditionに 1 of selection* を使ったパターンのテスト
+        // Test for patterns using "1 of selection*" in condition.
         let rule_str = r#"
         enabled: true
         detection:
@@ -1452,7 +1452,7 @@ mod tests {
 
     #[test]
     fn test_condition_1_of_select_not_detect() {
-        // conditionに 1 of selection* を使ったパターンのテスト
+        // Test for patterns using "1 of selection*" in condition.
         let rule_str = r#"
         enabled: true
         detection:
@@ -1471,7 +1471,7 @@ mod tests {
 
     #[test]
     fn test_condition_all_of_select_detect() {
-        // conditionに all of selection* を使ったパターンのテスト
+        // Test for patterns using "all of selection*" in condition.
         let rule_str = r#"
         enabled: true
         detection:
@@ -1490,7 +1490,7 @@ mod tests {
 
     #[test]
     fn test_condition_all_of_select_not_detect() {
-        // conditionに all of selection* を使ったパターンのテスト
+        // Test for patterns using "all of selection*" in condition.
         let rule_str = r#"
         enabled: true
         detection:

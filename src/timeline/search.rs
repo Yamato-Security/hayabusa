@@ -72,7 +72,7 @@ impl EventSearch {
         }
     }
 
-    /// 検索処理を呼び出す関数。keywordsが空の場合は検索処理を行わない
+    /// Function that calls the search process. Does not perform a search if keywords is empty.
     pub fn search_start(&mut self, records: &[EvtxRecordInfo], stored_static: &StoredStatic) {
         let search_option = stored_static.search_option.as_ref().unwrap();
         let default_details_abbr = self.get_default_details_mapping_table(stored_static);
@@ -93,7 +93,7 @@ impl EventSearch {
         }
     }
 
-    /// イベントレコード内の情報からfilterに設定した情報が存在するかを返す関数
+    /// Function that returns whether information set in the filter exists within the event record.
     fn filter_record(
         &mut self,
         record: &EvtxRecordInfo,
@@ -108,14 +108,14 @@ impl EventSearch {
             )
             .unwrap_or_else(|| "n/a".into())
             .replace(['"', '\''], "");
-            // aliasでマッチした場合はaliasに登録されていないフィールドを検索する必要がないためtrueを返す
+            // If matched by alias, there is no need to search fields not registered in the alias, so return true.
             if v.iter()
                 .all(|search_target| search_target.matches(&alias_target_val))
             {
                 return true;
             }
 
-            // aliasに登録されていないフィールドも検索対象とするため
+            // Also search fields not registered in the alias.
             let allfieldinfo = match utils::get_serde_number_to_string(
                 &record.record["Event"]["EventData"][k],
                 true,
@@ -596,7 +596,7 @@ impl ResultWriter {
             for (record_field_idx, record_field_data) in record_data.iter().enumerate() {
                 let newline_flag = record_field_idx == record_data.len() - 1;
                 if record_field_idx == 6 {
-                    //AllFieldInfoの列の出力
+                    // Output the AllFieldInfo column.
                     let all_field_sep_info = all_field_info.split('¦').collect::<Vec<&str>>();
                     for (field_idx, fields) in all_field_sep_info.iter().enumerate() {
                         let mut separated_fields_data =
@@ -626,7 +626,7 @@ impl ResultWriter {
                         }
                     }
                 } else if record_field_idx == 0 || record_field_idx == 1 {
-                    //タイムスタンプとイベントタイトルは同じ色で表示
+                    // Display timestamp and event title in the same color.
                     write_color_buffer(
                         self.disp_wtr.as_mut().unwrap(),
                         get_char_color(Some(Color::Rgb(0, 255, 0))),
@@ -661,7 +661,7 @@ impl ResultWriter {
     }
 }
 
-/// filters からフィルタリング条件を作成する関数
+/// Function that creates filter conditions from filters.
 fn create_filter_rule(filters: &[String]) -> HashMap<String, Vec<WildMatch>> {
     filters
         .iter()
@@ -683,7 +683,7 @@ fn create_filter_rule(filters: &[String]) -> HashMap<String, Vec<WildMatch>> {
         })
 }
 
-/// 検索条件に合致したイベントレコードから出力する情報を抽出する関数
+/// Function that extracts information to output from event records matching the search conditions.
 fn extract_search_event_info(
     record: &EvtxRecordInfo,
     eventkey_alias: &EventKeyAliasConfig,
@@ -753,7 +753,7 @@ fn extract_search_event_info(
     )
 }
 
-/// 検索結果を標準出力もしくはcsvファイルに出力する関数
+/// Function that outputs search results to standard output or a CSV file.
 pub fn search_result_dsp_msg(
     event_search: &EventSearch,
     search_option: &SearchOption,

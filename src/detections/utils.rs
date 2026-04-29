@@ -152,12 +152,12 @@ pub fn read_json_to_value(path: &str) -> Result<Box<dyn Iterator<Item = Value>>,
     let value_converter = |record: Value| json!({"Event":{"EventData": record}});
     match json_values {
         Ok(values) => {
-            // JSON(Array)形式の場合
+            // For JSON (Array) format.
             let ret = values.into_iter().map(value_converter);
             Ok(Box::new(ret))
         }
         Err(_) => {
-            // jq形式の場合
+            // For jq format.
             let newline_replaced_contents = contents.replace(['\n', '\r'], "");
             let json = format!(
                 "[{}]",
@@ -232,7 +232,7 @@ pub fn str_time_to_datetime(system_time_str: &str) -> Option<DateTime<Utc>> {
         .single()
 }
 
-/// serde:Valueの型を確認し、文字列を返します。
+/// Checks the type of serde::Value and returns a string.
 pub fn get_serde_number_to_string(
     value: &serde_json::Value,
     search_flag: bool,
@@ -270,7 +270,7 @@ pub fn get_event_value<'a>(
     let event_key = eventkey_alias.get_event_key(key);
     let mut ret: &Value = event_value;
     if let Some(event_key) = event_key {
-        // get_event_keyが取得できてget_event_key_splitが取得できないことはないため、unwrapのチェックは行わない
+        // Since it is not possible to get_event_key without also being able to get_event_key_split, the unwrap check is not performed.
         let splits = eventkey_alias.get_event_key_split(key);
         let mut start_idx = 0;
         for key in splits.unwrap() {
@@ -315,7 +315,7 @@ pub fn create_tokio_runtime(thread_number: Option<usize>) -> Runtime {
         .unwrap()
 }
 
-// EvtxRecordInfoを作成します。
+// Creates EvtxRecordInfo.
 pub fn create_rec_info(
     mut data: Value,
     path: String,
@@ -323,13 +323,13 @@ pub fn create_rec_info(
     recovered_record: &bool,
     no_pwsh_field_extraction: &bool,
 ) -> EvtxRecordInfo {
-    // 高速化のための処理
+    // Processing for performance optimization.
 
-    // 例えば、Value型から"Event.System.EventID"の値を取得しようとすると、value["Event"]["System"]["EventID"]のように3回アクセスする必要がある。
-    // この処理を高速化するため、rec.key_2_valueというhashmapに"Event.System.EventID"というキーで値を設定しておく。
-    // これなら、"Event.System.EventID"というキーを1回指定するだけで値を取得できるようになるので、高速化されるはず。
-    // あと、serde_jsonのValueからvalue["Event"]みたいな感じで値を取得する処理がなんか遅いので、そういう意味でも早くなるかも
-    // それと、serde_jsonでは内部的に標準ライブラリのhashmapを使用しているが、hashbrownを使った方が早くなるらしい。標準ライブラリがhashbrownを採用したためserde_jsonについても高速化した。
+    // For example, to get the value of "Event.System.EventID" from a Value type, it would require 3 accesses like value["Event"]["System"]["EventID"].
+    // To speed up this processing, set the value with the key "Event.System.EventID" in a hashmap called rec.key_2_value.
+    // With this, the value can be retrieved by specifying the key "Event.System.EventID" only once, which should improve performance.
+    // Also, retrieving values from serde_json Value like value["Event"] is somehow slow, so this might also help.
+    // Also, serde_json internally uses the standard library hashmap, but using hashbrown is reportedly faster. Since the standard library adopted hashbrown, serde_json has also been sped up.
     let mut key_2_values = HashMap::new();
 
     let binding = STORED_EKEY_ALIAS.read().unwrap();
@@ -361,7 +361,7 @@ pub fn create_rec_info(
         extract_fields(channel, event_id, &mut data, &mut key_2_values);
     }
 
-    // EvtxRecordInfoを作る
+    // Create EvtxRecordInfo.
     let data_str = data.to_string();
 
     EvtxRecordInfo {
@@ -374,7 +374,7 @@ pub fn create_rec_info(
 }
 
 /**
- * 標準出力のカラー出力設定を指定した値に変更し画面出力を行う関数
+ * Function that changes the color output setting of standard output to the specified value and outputs to screen.
  */
 pub fn write_color_buffer(
     wtr: &BufferWriter,
@@ -392,13 +392,13 @@ pub fn write_color_buffer(
     wtr.print(&buf)
 }
 
-/// no-colorのオプションの指定があるかを確認し、指定されている場合はNoneをかえし、指定されていない場合は引数で指定されたColorをSomeでラップして返す関数
+/// Function that checks whether the no-color option is specified, returning None if it is, and returning the Color specified as an argument wrapped in Some if it is not.
 pub fn get_writable_color(color: Option<Color>, no_color: bool) -> Option<Color> {
     if no_color { None } else { color }
 }
 
 /**
- * CSVのrecord infoカラムに出力する文字列を作る
+ * Creates the string to output in the record info column of CSV.
  */
 pub fn create_recordinfos(
     record: &Value,
@@ -417,7 +417,7 @@ pub fn create_recordinfos(
     );
 
     let mut output_vec: Vec<&(String, String)> = output.iter().collect();
-    // 同じレコードなら毎回同じ出力になるようにソートしておく
+    // Sort so that the output is the same every time for the same record.
     output_vec.sort_by(|(left, left_data), (right, right_data)| {
         let ord = left.cmp(right);
         if ord == Ordering::Equal {
@@ -444,7 +444,7 @@ pub fn create_recordinfos(
 }
 
 /**
- * CSVのfieldsカラムに出力する要素を全て収集する
+ * Collects all elements to output in the fields column of CSV.
  */
 fn _collect_recordinfo<'a>(
     keys: &mut Vec<&'a str>,
@@ -470,7 +470,7 @@ fn _collect_recordinfo<'a>(
             }
         }
         Value::Object(obj) => {
-            // lifetimeの関係でちょっと変な実装になっている
+            // The implementation is a bit unusual due to lifetime constraints.
             if !parent_key.is_empty() {
                 keys.push(parent_key);
             }
@@ -478,7 +478,7 @@ fn _collect_recordinfo<'a>(
                 if key.eq("xmlns") {
                     continue;
                 }
-                // Event.Systemは出力しない
+                // Do not output Event.System.
                 if key.eq("System") && keys.first().unwrap_or(&"").eq(&"Event") {
                     continue;
                 }
@@ -499,7 +499,7 @@ fn _collect_recordinfo<'a>(
         }
         Value::Null => (),
         _ => {
-            // 一番子の要素の値しか収集しない
+            // Only collect the values of the innermost child elements.
             let strval = value_to_string(cur_value);
             if let Some(strval) = strval {
                 let mut strval = strval.chars().fold(String::default(), |mut acc, c| {
@@ -539,7 +539,7 @@ fn _collect_recordinfo<'a>(
 }
 
 /**
- * 最初の文字を大文字にする関数
+ * Function to capitalize the first character.
  */
 pub fn make_ascii_titlecase(s: &str) -> CompactString {
     let mut c = s.trim().chars();
@@ -555,7 +555,7 @@ pub fn make_ascii_titlecase(s: &str) -> CompactString {
     }
 }
 
-/// base_path/path が存在するかを確認し、存在しなければカレントディレクトリを参照するpathを返す関数
+/// Function that checks whether base_path/path exists and returns a path referencing the current directory if it does not.
 pub fn check_setting_path(base_path: &Path, path: &str, ignore_err: bool) -> Option<PathBuf> {
     let re = Regex::new(r".*/").unwrap();
     if ONE_CONFIG_MAP.contains_key(&re.replace(path, "").to_string()) {
@@ -569,9 +569,9 @@ pub fn check_setting_path(base_path: &Path, path: &str, ignore_err: bool) -> Opt
     }
 }
 
-/// rule configのファイルの所在を確認する関数。
+/// Function to verify the location of rule config files.
 pub fn check_rule_config(config_path: &PathBuf) -> Result<(), String> {
-    // 各種ファイルを確認する
+    // Check various files.
     let files = vec![
         "channel_abbreviations.txt",
         "target_event_IDs.txt",
@@ -585,7 +585,7 @@ pub fn check_rule_config(config_path: &PathBuf) -> Result<(), String> {
         return Ok(());
     }
 
-    // rules/configのフォルダが存在するかを確認する
+    // Check whether the rules/config folder exists.
     let exist_rule_config_folder = if config_path == &CURRENT_EXE_PATH.to_path_buf() {
         check_setting_path(config_path, "rules/config", false).is_some()
     } else {
@@ -611,7 +611,7 @@ pub fn check_rule_config(config_path: &PathBuf) -> Result<(), String> {
     Ok(())
 }
 
-///タイムゾーンに合わせた情報を情報を取得する関数
+/// Function to get information adjusted for the timezone.
 pub fn format_time(
     time: &DateTime<Utc>,
     date_only: bool,
@@ -746,7 +746,7 @@ pub fn output_profile_name(output_option: &Option<OutputOption>, stdout: bool, n
             .ok();
         }
         let output_saved_str = format!("Output profile: {profile_name}");
-        // profileの表示位置とHTMLの出力順が異なるため引数で管理をした
+        // Since the display position in the profile and the HTML output order differ, this is managed by arguments.
         if !stdout && profile_opt.html_report.is_some() {
             htmlreport::add_md_data(
                 "General Overview {#general_overview}",
@@ -756,7 +756,7 @@ pub fn output_profile_name(output_option: &Option<OutputOption>, stdout: bool, n
     }
 }
 
-/// コンピュータ名がフィルタリング対象であるかを判定する関数
+/// Function to determine whether a computer name is subject to filtering.
 pub fn is_filtered_by_computer_name(
     record: Option<&Value>,
     (include_computer, exclude_computer): (&HashSet<CompactString>, &HashSet<CompactString>),
@@ -772,7 +772,7 @@ pub fn is_filtered_by_computer_name(
     false
 }
 
-///指定された秒数とミリ秒数から出力文字列を作成する関数。絶対値での秒数から算出してhh:mm:ss.fffの形式で出力する。
+/// Function to create an output string from the specified number of seconds and milliseconds. Calculates from the absolute value of seconds and outputs in hh:mm:ss.fff format.
 pub fn output_duration((mut s, mut ms): (i64, i64)) -> String {
     if s < 0 {
         s = -s;
@@ -855,7 +855,7 @@ mod tests {
         match serde_json::from_str(record_json_str) {
             Ok(record) => {
                 let ret = utils::create_recordinfos(&record, &FieldDataMapKey::default(), &None);
-                // Systemは除外される/属性(_attributesも除外される)/key順に並ぶ
+                // System is excluded / attributes (_attributes are also excluded) / sorted by key.
                 let expected = "AccessMask: %%1369 ¦ Process: lsass.exe ¦ User: u1".to_string();
                 assert_eq!(ret.join(" ¦ "), expected);
             }
@@ -867,7 +867,7 @@ mod tests {
 
     #[test]
     fn test_create_recordinfos2() {
-        // EventDataの特殊ケース
+        // Special case for EventData.
         let record_json_str = r#"
         {
             "Event": {
@@ -889,7 +889,7 @@ mod tests {
         match serde_json::from_str(record_json_str) {
             Ok(record) => {
                 let ret = utils::create_recordinfos(&record, &FieldDataMapKey::default(), &None);
-                // Systemは除外される/属性(_attributesも除外される)/key順に並ぶ
+                // System is excluded / attributes (_attributes are also excluded) / sorted by key.
                 let expected = "Binary: hogehoge ¦ Data[1]: Data1 ¦ Data[2]: DataData2 ¦ Data[3]:  ¦ Data[4]: DataDataData3"
                     .to_string();
                 assert_eq!(ret.join(" ¦ "), expected);
@@ -931,7 +931,7 @@ mod tests {
     }
 
     #[test]
-    /// Serde::Valueの数値型の値を文字列として返却することを確かめるテスト
+    /// Test to verify that numeric type values of Serde::Value are returned as strings.
     fn test_get_serde_number_to_string() {
         let json_str = r#"
         {
@@ -951,7 +951,7 @@ mod tests {
     }
 
     #[test]
-    /// Serde::Valueの文字列型の値を文字列として返却することを確かめるテスト
+    /// Test to verify that string type values of Serde::Value are returned as strings.
     fn test_get_serde_number_serde_string_to_string() {
         let json_str = r#"
         {
@@ -975,7 +975,7 @@ mod tests {
     }
 
     #[test]
-    /// Serde::Valueのオブジェクト型の内容を誤って渡した際にNoneを返却することを確かめるテスト
+    /// Test to verify that None is returned when object type contents of Serde::Value are incorrectly passed.
     fn test_get_serde_number_serde_object_ret_none() {
         let json_str = r#"
         {
@@ -994,7 +994,7 @@ mod tests {
     }
 
     #[test]
-    /// 文字列を与えてascii文字を大文字にするように対応する関数のテスト
+    /// Test for the function that capitalizes ASCII characters when given a string.
     fn test_make_ascii_titlecase() {
         assert_eq!(make_ascii_titlecase("aaaa".to_string().as_mut()), "Aaaa");
         assert_eq!(
@@ -1005,7 +1005,7 @@ mod tests {
     }
 
     #[test]
-    /// 与えられたパスからファイルの存在確認ができているかのテスト
+    /// Test to verify that file existence can be confirmed from the given path.
     fn test_check_setting_path() {
         let exist_path = Path::new("./test_files").to_path_buf();
         let not_exist_path = Path::new("not_exist_path").to_path_buf();
@@ -1041,11 +1041,11 @@ mod tests {
 
     #[test]
     fn test_json_array_file_to_serde_json_value() {
-        // 存在しないパスはErr
+        // Non-existent paths return Err.
         let r = utils::read_json_to_value("invalid path");
         assert!(r.is_err());
 
-        // JSON(Array)形式を変換できること
+        // Verify that JSON (Array) format can be converted.
         let path = "test_files/evtx/test.json";
         let records = utils::read_json_to_value(path).unwrap();
         let records: Vec<Value> = records.into_iter().collect();
@@ -1062,14 +1062,14 @@ mod tests {
 
     #[test]
     fn test_jsonl_file_to_serde_json_value() {
-        // 存在しないパスはErr
+        // Non-existent paths return Err.
         let r = utils::read_jsonl_to_value("invalid path");
         assert!(r.is_err());
-        // 改行でフォーマットされたJSON(Array)形式もErr
+        // JSON (Array) format formatted with newlines also returns Err.
         let r = utils::read_jsonl_to_value("test_files/evtx/test.json");
         assert!(r.is_err());
 
-        // JSONL形式を変換できること
+        // Verify that JSONL format can be converted.
         let path = "test_files/evtx/test.jsonl";
         let records = utils::read_jsonl_to_value(path).unwrap();
         let records: Vec<Value> = records.into_iter().collect();
@@ -1086,11 +1086,11 @@ mod tests {
 
     #[test]
     fn test_jq_c_file_to_serde_json_value() {
-        // 存在しないパスはErr
+        // Non-existent paths return Err.
         let r = utils::read_json_to_value("invalid path");
         assert!(r.is_err());
 
-        // jqコマンド出力結果のJSON形式を変換できること
+        // Verify that the JSON format of jq command output can be converted.
         let path = "test_files/evtx/test-jq-output.json";
         let records = utils::read_json_to_value(path).unwrap();
         let records: Vec<Value> = records.into_iter().collect();
@@ -1137,7 +1137,7 @@ mod tests {
     }
 
     #[test]
-    /// Computerの値をもとにフィルタリングされることを確認するテスト
+    /// Test to verify that filtering is performed based on the Computer value.
     fn test_is_filtered_by_computer_name() {
         let json_str = r#"
         {
@@ -1150,19 +1150,19 @@ mod tests {
         "#;
         let event_record: Value = serde_json::from_str(json_str).unwrap();
 
-        // include_computer, exclude_computerが指定されていない場合はフィルタリングされない
+        // If include_computer and exclude_computer are not specified, filtering is not performed.
         assert!(!utils::is_filtered_by_computer_name(
             Some(&event_record["Event"]["System"]["Computer"]),
             (&HashSet::new(), &HashSet::new()),
         ));
 
-        // recordのコンピュータ名の情報がない場合はフィルタリングされない
+        // If there is no computer name information in the record, filtering is not performed.
         assert!(!utils::is_filtered_by_computer_name(
             None,
             (&HashSet::new(), &HashSet::new()),
         ));
 
-        // include_computerで合致しない場合フィルタリングされる
+        // If there is no match with include_computer, filtering is performed.
         assert!(utils::is_filtered_by_computer_name(
             Some(&event_record["Event"]["System"]["Computer"]),
             (
@@ -1171,7 +1171,7 @@ mod tests {
             ),
         ));
 
-        // include_computerで合致する場合フィルタリングされない
+        // If there is a match with include_computer, filtering is not performed.
         assert!(!utils::is_filtered_by_computer_name(
             Some(&event_record["Event"]["System"]["Computer"]),
             (
@@ -1180,7 +1180,7 @@ mod tests {
             ),
         ));
 
-        // exclude_computerで合致する場合フィルタリングされる
+        // If there is a match with exclude_computer, filtering is performed.
         assert!(utils::is_filtered_by_computer_name(
             Some(&event_record["Event"]["System"]["Computer"]),
             (
@@ -1191,7 +1191,7 @@ mod tests {
     }
 
     #[test]
-    /// Durationから出力文字列を作成する関数のテスト
+    /// Test for the function that creates an output string from a Duration.
     fn test_output_duration() {
         let time1 = NaiveDate::from_ymd_opt(2021, 12, 26)
             .unwrap()

@@ -37,14 +37,14 @@ impl PivotKeyword {
     }
 }
 
-///levelがlowより大きいレコードの場合、keywordがrecord内にみつかれば、
-///それをPIVOT_KEYWORD.keywordsに入れる。
+/// For records with a level greater than low, if a keyword is found in the record,
+/// insert it into PIVOT_KEYWORD.keywords.
 pub fn insert_pivot_keyword(event_record: &Value, eventkey_alias: &EventKeyAliasConfig) {
     if let Some(record_level) = get_event_value("Event.System.Level", event_record, eventkey_alias)
     {
         if let Some(event_record_str) = get_serde_number_to_string(record_level, false) {
             let exclude_check_str = event_record_str.as_str();
-            //levelがlow以上なら続ける
+            // Continue if level is low or above.
             if exclude_check_str == "infomational"
                 || exclude_check_str == "undefined"
                 || exclude_check_str == "-"
@@ -83,7 +83,7 @@ pub fn insert_pivot_keyword(event_record: &Value, eventkey_alias: &EventKeyAlias
     });
 }
 
-//pivot_keywordsの標準出力などに関する関数たち
+// Functions related to standard output of pivot_keywords, etc.
 pub fn create_output(
     mut output: String,
     key: &String,

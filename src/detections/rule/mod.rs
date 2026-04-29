@@ -63,7 +63,7 @@ impl CorrelationType {
     }
 }
 
-/// Ruleファイルを表すノード
+/// Node representing a Rule file.
 pub struct RuleNode {
     pub rulepath: String,
     pub yaml: Yaml,
@@ -142,11 +142,11 @@ impl RuleNode {
         }
         result
     }
-    /// aggregation conditionが存在するかを返す関数
+    /// Function that returns whether an aggregation condition exists.
     pub fn has_agg_condition(&self) -> bool {
         self.detection.aggregation_condition.is_some()
     }
-    /// Aggregation Conditionの結果を配列で返却する関数
+    /// Function that returns the results of the Aggregation Condition as an array.
     pub fn judge_satisfy_aggcondition(&self, stored_static: &StoredStatic) -> Vec<AggResult> {
         let mut ret = Vec::new();
         if !self.has_agg_condition() {
@@ -161,7 +161,7 @@ impl RuleNode {
     pub fn check_exist_countdata(&self) -> bool {
         !self.countdata.is_empty()
     }
-    /// ルール内のAggregationParseInfo(Aggregation Condition)を取得する関数
+    /// Function to get the AggregationParseInfo (Aggregation Condition) within a rule.
     pub fn get_agg_condition(&self) -> Option<&AggregationParseInfo> {
         if self.detection.aggregation_condition.as_ref().is_some() {
             return self.detection.aggregation_condition.as_ref();
@@ -170,7 +170,7 @@ impl RuleNode {
     }
 }
 
-// RuleNodeのdetectionに定義されているキーの一覧を取得する。
+// Get the list of keys defined in the detection of RuleNode.
 pub fn get_detection_keys(node: &RuleNode) -> Nested<String> {
     let mut ret = Nested::<String>::new();
     let detection = &node.detection;
@@ -197,7 +197,7 @@ pub fn get_detection_keys(node: &RuleNode) -> Nested<String> {
     ret
 }
 
-/// Ruleファイルのdetectionを表すノード
+/// Node representing the detection of a Rule file.
 pub struct DetectionNode {
     pub name_to_selection: HashMap<String, Arc<Box<dyn SelectionNode>>>,
     pub condition: Option<Box<dyn SelectionNode>>,
@@ -234,10 +234,10 @@ impl DetectionNode {
         detection_yaml: &Yaml,
         stored_static: &StoredStatic,
     ) -> Result<(), Vec<String>> {
-        // selection nodeの初期化
+        // Initialize selection nodes.
         self.parse_name_to_selection(detection_yaml)?;
 
-        //timeframeに指定されている値を取得
+        // Get the value specified in timeframe.
         let timeframe = &detection_yaml["timeframe"].as_str();
         if timeframe.is_some() {
             self.timeframe = Some(TimeFrameInfo::parse_tframe(
@@ -246,12 +246,12 @@ impl DetectionNode {
             ));
         }
 
-        // conditionに指定されている式を取得
+        // Get the expression specified in condition.
         let condition = &detection_yaml["condition"].as_str();
         let condition_str = if let Some(cond_str) = condition {
             *cond_str
         } else {
-            // conditionが指定されていない場合、selectionが一つだけならそのselectionを採用することにする。
+            // If condition is not specified, adopt the selection if there is only one selection.
             let mut keys = self.name_to_selection.keys();
             if keys.len() >= 2 {
                 return Result::Err(vec![
@@ -262,7 +262,7 @@ impl DetectionNode {
             keys.next().unwrap()
         };
 
-        // conditionをパースして、SelectionNodeに変換する
+        // Parse condition and convert to SelectionNode.
         let mut err_msgs = vec![];
         let compiler = condition_parser::ConditionCompiler::new();
         let compile_result = compiler.compile_condition(condition_str, &self.name_to_selection);
@@ -272,7 +272,7 @@ impl DetectionNode {
             self.condition = Option::Some(compile_result.unwrap());
         }
 
-        // aggregation condition(conditionのパイプ以降の部分)をパース
+        // Parse the aggregation condition (the part after the pipe in condition).
         let agg_compiler = aggregation_parser::AggegationConditionCompiler::new();
         let compile_result = agg_compiler.compile(condition_str);
         if let Result::Err(err_msg) = compile_result {
@@ -301,14 +301,14 @@ impl DetectionNode {
         condition.select(event_record, eventkey_alias)
     }
 
-    /// selectionノードをパースします。
+    /// Parses selection nodes.
     fn parse_name_to_selection(&mut self, detection_yaml: &Yaml) -> Result<(), Vec<String>> {
         let detection_hash = detection_yaml.as_hash();
         if detection_hash.is_none() {
             return Result::Err(vec!["Detection node was not found.".to_string()]);
         }
 
-        // selectionをパースする。
+        // Parse selection.
         let detection_hash = detection_hash.unwrap();
         let keys = detection_hash.keys();
         let mut err_msgs = vec![];
@@ -317,12 +317,12 @@ impl DetectionNode {
             if name.is_empty() {
                 continue;
             }
-            // condition等、特殊なキーワードを無視する。
+            // Ignore special keywords such as condition.
             if name == "condition" || name == "timeframe" {
                 continue;
             }
 
-            // パースして、エラーメッセージがあれば配列にためて、戻り値で返す。
+            // Parse; if there are error messages, accumulate them in an array and return them.
             let selection_node = self.parse_selection(&detection_hash[key]);
             if let Some(node) = selection_node {
                 let mut selection_node = node;
@@ -340,7 +340,7 @@ impl DetectionNode {
             return Result::Err(err_msgs);
         }
 
-        // selectionノードが無いのはエラー
+        // Having no selection node is an error.
         if self.name_to_selection.is_empty() {
             return Result::Err(vec![
                 "There is no selection node under detection.".to_string(),
@@ -350,7 +350,7 @@ impl DetectionNode {
         Result::Ok(())
     }
 
-    /// selectionをパースします。
+    /// Parses selection.
     fn parse_selection(&self, selection_yaml: &Yaml) -> Option<Box<dyn SelectionNode>> {
         Option::Some(Self::parse_selection_recursively(
             &Nested::<String>::new(),
@@ -358,13 +358,13 @@ impl DetectionNode {
         ))
     }
 
-    /// selectionをパースします。
+    /// Parses selection.
     fn parse_selection_recursively(
         key_list: &Nested<String>,
         yaml: &Yaml,
     ) -> Box<dyn SelectionNode> {
         if yaml.as_hash().is_some() {
-            // 連想配列はAND条件と解釈する
+            // Associative arrays are interpreted as AND conditions.
             let yaml_hash = yaml.as_hash().unwrap();
             let mut and_node = selectionnodes::AndSelectionNode::new();
 
@@ -377,7 +377,7 @@ impl DetectionNode {
             });
             Box::new(and_node)
         } else if yaml.as_vec().is_some() && key_list.len() == 1 && key_list[0].eq("|all") {
-            // |all だけの場合、
+            // In the case of |all only,
             let mut or_node = selectionnodes::AllSelectionNode::new();
             yaml.as_vec().unwrap().iter().for_each(|child_yaml| {
                 let child_node = Self::parse_selection_recursively(key_list, child_yaml);
@@ -385,7 +385,7 @@ impl DetectionNode {
             });
             Box::new(or_node)
         } else if yaml.as_vec().is_some() && key_list.iter().any(|k: &str| k.contains("|all")) {
-            //key_listにallが入っていた場合は子要素の配列はAND条件と解釈する。
+            // If "all" is in key_list, the child element array is interpreted as an AND condition.
             let mut and_node = selectionnodes::AndSelectionNode::new();
             yaml.as_vec().unwrap().iter().for_each(|child_yaml| {
                 let child_node = Self::parse_selection_recursively(key_list, child_yaml);
@@ -393,7 +393,7 @@ impl DetectionNode {
             });
             Box::new(and_node)
         } else if yaml.as_vec().is_some() {
-            // 配列はOR条件と解釈する。
+            // Arrays are interpreted as OR conditions.
             let mut or_node = selectionnodes::OrSelectionNode::new();
             yaml.as_vec().unwrap().iter().for_each(|child_yaml| {
                 let child_node = Self::parse_selection_recursively(key_list, child_yaml);
@@ -401,7 +401,7 @@ impl DetectionNode {
             });
             Box::new(or_node)
         } else {
-            // 連想配列と配列以外は末端ノード
+            // Items other than associative arrays and arrays are leaf nodes.
             Box::new(selectionnodes::LeafSelectionNode::new(
                 key_list.clone(),
                 yaml.to_owned(),
@@ -411,17 +411,17 @@ impl DetectionNode {
 }
 
 #[derive(Debug, Clone, PartialEq, Eq, Default)]
-/// countなどのaggregationの結果を出力する構造体
+/// Struct that outputs the results of aggregation such as count.
 pub struct AggResult {
-    /// countなどの値
+    /// Value such as count.
     pub data: i64,
-    /// count byで指定された条件のレコード内での値
+    /// Value within the record for the condition specified by count by.
     pub key: String,
-    /// countの括弧内指定された項目の検知されたレコード内での値の配列。括弧内で指定がなかった場合は長さ0の配列となる
+    /// Array of values in detected records for items specified inside the parentheses of count. If nothing is specified inside the parentheses, this is an array of length 0.
     pub field_values: Vec<String>,
-    ///検知したブロックの最初のレコードの時間
+    /// Time of the first record in the detected block.
     pub start_timedate: DateTime<Utc>,
-    ///検知したブロックのレコードの全時間とEventID
+    /// All times and EventIDs of records in the detected block.
     pub agg_record_time_info: Vec<AggRecordTimeInfo>,
 }
 
@@ -508,7 +508,7 @@ mod tests {
 
     #[test]
     fn test_detect_dotkey() {
-        // aliasじゃなくて、.区切りでつなげるケースが正しく検知できる。
+        // Cases where values are connected with "." instead of alias can be correctly detected.
         let rule_str = r#"
         enabled: true
         detection:
@@ -527,7 +527,7 @@ mod tests {
 
     #[test]
     fn test_notdetect_dotkey() {
-        // aliasじゃなくて、.区切りでつなげるケースで、検知しないはずのケースで検知しないことを確かめる。
+        // Verify that cases which should not be detected are not detected, for cases using "." instead of alias.
         let rule_str = r#"
         enabled: true
         detection:
@@ -546,7 +546,7 @@ mod tests {
 
     #[test]
     fn test_notdetect_differentkey() {
-        // aliasじゃなくて、.区切りでつなげるケースで、検知しないはずのケースで検知しないことを確かめる。
+        // Verify that cases which should not be detected are not detected, for cases using "." instead of alias.
         let rule_str = r#"
         enabled: true
         detection:
@@ -566,8 +566,8 @@ mod tests {
 
     #[test]
     fn test_detect_attribute() {
-        // XMLのタグのattributionの部分に値がある場合、JSONが特殊な感じでパースされるのでそのテスト
-        // 元のXMLは下記のような感じで、Providerタグの部分のNameとかGuidを検知するテスト
+        // Test for cases where JSON is parsed in a special way when a value exists in the attribution part of an XML tag.
+        // The original XML looks like the following, and this is a test to detect Name or Guid in the Provider tag.
         /*         - <Event xmlns="http://schemas.microsoft.com/win/2004/08/events/event">
         - <System>
           <Provider Name="Microsoft-Windows-Security-Auditing" Guid="{54849625-5478-4994-a5ba-3e3b0328c30d}" />
@@ -638,7 +638,7 @@ mod tests {
 
     #[test]
     fn test_notdetect_attribute() {
-        // XMLのタグのattributionの検知しないケースを確認
+        // Verify cases where XML tag attribution is not detected.
         let rule_str = r#"
         enabled: true
         detection:
@@ -686,7 +686,7 @@ mod tests {
 
     #[test]
     fn test_detect_eventdata() {
-        // XML形式の特殊なパターンでEventDataというタグあって、Name=の部分にキー的なものが来る。
+        // In a special XML format pattern, there is a tag called EventData, and a key-like value comes in the Name= part.
         /* - <EventData>
         <Data Name="SubjectUserSid">S-1-5-21-2673273881-979819022-3746999991-1001</Data>
         <Data Name="SubjectUserName">takai</Data>
@@ -697,7 +697,7 @@ mod tests {
         <Data Name="TargetDomainName">DESKTOP-ICHIICH</Data>
         </EventData> */
 
-        // その場合、イベントパーサーのJSONは下記のような感じになるので、それで正しく検知出来ることをテスト。
+        // In that case, the JSON of the event parser looks like the following, so test that it can be correctly detected.
         /*         {
             "Event": {
               "EventData": {
@@ -774,7 +774,7 @@ mod tests {
 
     #[test]
     fn test_notdetect_eventdata() {
-        // EventDataの検知しないパターン
+        // Patterns where EventData is not detected.
         let rule_str = r#"
         enabled: true
         detection:
@@ -808,9 +808,9 @@ mod tests {
 
     #[test]
     fn test_detect_special_eventdata() {
-        // 上記テストケースのEventDataの更に特殊ケースで下記のようにDataタグの中にNameキーがないケースがある。
-        // そのためにruleファイルでEventDataというキーだけ特別対応している。
-        // 現状、downgrade_attack.ymlというルールの場合だけで確認出来ているケース
+        // A further special case of EventData in the above test case, where there is no Name key inside the Data tag as shown below.
+        // For this reason, only the EventData key receives special handling in the rule file.
+        // Currently, this case has only been confirmed with the downgrade_attack.yml rule.
         let rule_str = r"
         enabled: true
         detection:
@@ -862,9 +862,9 @@ mod tests {
 
     #[test]
     fn test_notdetect_special_eventdata() {
-        // 上記テストケースのEventDataの更に特殊ケースで下記のようにDataタグの中にNameキーがないケースがある。
-        // そのためにruleファイルでEventDataというキーだけ特別対応している。
-        // 現状、downgrade_attack.ymlというルールの場合だけで確認出来ているケース
+        // A further special case of EventData in the above test case, where there is no Name key inside the Data tag as shown below.
+        // For this reason, only the EventData key receives special handling in the rule file.
+        // Currently, this case has only been confirmed with the downgrade_attack.yml rule.
         let rule_str = r"
         enabled: true
         detection:
@@ -916,7 +916,7 @@ mod tests {
 
     #[test]
     fn test_use_strfeature_in_or_node() {
-        // orNodeの中でもstartswithが使えるかのテスト
+        // Test that startswith can be used within an orNode.
         let rule_str = r#"
         enabled: true
         detection:
@@ -952,7 +952,7 @@ mod tests {
 
     #[test]
     fn test_detect_undefined_rule_option() {
-        // 不明な文字列オプションがルールに書かれていたら警告するテスト
+        // Test that a warning is issued when an unknown string option is written in a rule.
         let rule_str = r#"
         enabled: true
         detection:
@@ -975,7 +975,7 @@ mod tests {
 
     #[test]
     fn test_detect_not_defined_selection() {
-        // 不明な文字列オプションがルールに書かれていたら警告するテスト
+        // Test that a warning is issued when an unknown string option is written in a rule.
         let rule_str = r#"
         enabled: true
         detection:
@@ -992,7 +992,7 @@ mod tests {
 
     #[test]
     fn test_use_allfeature_() {
-        // allがパイプで入っていた場合は以下の配下の者をAnd条件で扱うようにすできるかのテスト
+        // Test that when "all" is included via pipe, the items below are treated as AND conditions.
         let rule_str = r#"
         enabled: true
         detection:
@@ -1045,7 +1045,7 @@ mod tests {
         check_select(rule_str, record_json_str2, false);
     }
 
-    /// countで対象の数値確認を行うためのテスト用関数
+    /// Test function to verify numbers for count.
     fn _check_count(rule_str: &str, record_str: &str, key: &str, expect_count: i32) {
         let mut rule_yaml = YamlLoader::load_from_str(rule_str).unwrap().into_iter();
         let test = rule_yaml.next().unwrap();

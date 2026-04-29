@@ -152,7 +152,7 @@ impl ParseYaml {
         let expand_map = read_expand_files(CURRENT_EXE_PATH.join("config/expand"));
         let mut yaml_docs = vec![];
         if metadata.unwrap().file_type().is_file() {
-            // 拡張子がymlでないファイルは無視
+            // Ignore files with extensions other than yml
             if path
                 .as_ref()
                 .to_path_buf()
@@ -162,7 +162,7 @@ impl ParseYaml {
             {
                 return io::Result::Ok(String::default());
             }
-            // 個別のファイルの読み込みは即終了としない。
+            // Do not immediately abort when loading individual files.
             let mut is_encoded = false;
             let read_content = if path
                 .as_ref()
@@ -198,7 +198,7 @@ impl ParseYaml {
                 }
             };
 
-            // ここも個別のファイルの読み込みは即終了としない。
+            // Same here: do not immediately abort when loading individual files.
             match YamlLoader::load_from_str(&read_content) {
                 Ok(contents) => {
                     Self::update_correlation_counts(self, &contents);
@@ -236,7 +236,7 @@ impl ParseYaml {
             let mut entries = fs::read_dir(path)?;
             yaml_docs = entries.try_fold(vec![], |mut ret, entry| {
                 let entry = entry?;
-                // フォルダは再帰的に呼び出す。
+                // Recurse into subdirectories.
                 if entry.file_type()?.is_dir() {
                     self.read_dir(
                         entry.path(),
@@ -247,12 +247,12 @@ impl ParseYaml {
                     )?;
                     return io::Result::Ok(ret);
                 }
-                // ファイル以外は無視
+                // Ignore non-file entries.
                 if !entry.file_type()?.is_file() {
                     return io::Result::Ok(ret);
                 }
 
-                // 拡張子がymlでないファイルは無視
+                // Ignore files with extensions other than yml
                 let path = entry.path();
                 if path.extension().unwrap_or_else(|| OsStr::new("")) != "yml" {
                     return io::Result::Ok(ret);
@@ -273,7 +273,7 @@ impl ParseYaml {
                     return io::Result::Ok(ret);
                 }
 
-                // 個別のファイルの読み込みは即終了としない。
+                // Do not immediately abort when loading individual files.
                 let read_content = match Self::read_file(&path) {
                     Ok(content) => content,
                     Err(e) => {
@@ -293,7 +293,7 @@ impl ParseYaml {
                     }
                 };
 
-                // ここも個別のファイルの読み込みは即終了としない。
+                // Same here: do not immediately abort when loading individual files.
                 match YamlLoader::load_from_str(&read_content) {
                     Ok(contents) => {
                         Self::update_correlation_counts(self, &contents);
@@ -344,7 +344,7 @@ impl ParseYaml {
                     return Option::None;
                 }
             };
-            //除外されたルールは無視する
+            // Ignore excluded rules.
             let rule_id = &yaml_doc["id"].as_str();
             if rule_id.is_some() {
                 if let Some(v) = exclude_ids
@@ -356,7 +356,7 @@ impl ParseYaml {
                     } else {
                         "noisy"
                     };
-                    // テスト用のルール(ID:000...0)の場合はexcluded ruleのカウントから除外するようにする
+                    // For test rules (ID: 000...0), exclude them from the excluded rule count.
                     if v != "00000000-0000-0000-0000-000000000000" {
                         let entry = self.rule_load_cnt.entry(entry_key.into()).or_insert(0);
                         *entry += 1;
@@ -406,7 +406,7 @@ impl ParseYaml {
                 }
             }
 
-            // 指定されたレベルより低いルールは無視する
+            // Ignore rules below the specified level.
             let doc_level = &yaml_doc["level"]
                 .as_str()
                 .unwrap_or("informational")
@@ -422,7 +422,7 @@ impl ParseYaml {
             }
             let status = yaml_doc["status"].as_str();
             if let Some(s) = yaml_doc["status"].as_str() {
-                // excluded status optionで指定されたstatusとinclude_status optionで指定されたstatus以外のルールは除外する
+                // Exclude rules whose status matches the excluded status option, or does not match the include_status option.
                 if self.exclude_status.contains(&s.to_string())
                     || !(is_contained_include_status_all_allowed
                         || stored_static.include_status.contains(s))
@@ -445,7 +445,7 @@ impl ParseYaml {
                                 .unwrap()
                                 .enable_unsupported_rules))
                 {
-                    // deprecated or unsupported statusで対応するenable-xxx-rules optionが指定されていない場合はステータスのカウントのみ行ったうえで除外する
+                    // If the corresponding enable-xxx-rules option is not specified for deprecated or unsupported status, only count the status and then exclude.
                     up_rule_status_cnt(s);
                     return Option::None;
                 }
@@ -498,7 +498,7 @@ impl ParseYaml {
                 }
             }
 
-            // tags optionで指定されたtagsを持たないルールは除外する
+            // Exclude rules that do not have the tags specified by the tags option.
             if exist_output_opt
                 && stored_static
                     .output_option
@@ -529,7 +529,7 @@ impl ParseYaml {
                 }
             }
 
-            // exclude-tag optionで指定されたtagを持つルールは除外する
+            // Exclude rules that have the tag specified by the exclude-tag option.
             if let Some(opt) = stored_static.output_option.as_ref()
                 && let Some(exclude_tag) = opt.exclude_tag.as_ref()
             {
@@ -566,7 +566,7 @@ impl ParseYaml {
     }
 }
 
-/// wizardへのルール数表示のためのstatus/level/tagsごとに階層化させてカウントする
+/// Count rules hierarchically by status/level/tags for display in the scan wizard.
 pub fn count_rules<P: AsRef<Path>>(
     path: P,
     exclude_ids: &RuleExclude,
@@ -582,7 +582,7 @@ pub fn count_rules<P: AsRef<Path>>(
     }
     let mut yaml_docs = vec![];
     if metadata.unwrap().file_type().is_file() {
-        // 拡張子がymlでないファイルは無視
+        // Ignore files with extensions other than yml
         if path
             .as_ref()
             .to_path_buf()
@@ -593,7 +593,7 @@ pub fn count_rules<P: AsRef<Path>>(
             return HashMap::default();
         }
 
-        // 個別のファイルの読み込みは即終了としない。
+        // Do not immediately abort when loading individual files.
         let mut is_encoded = false;
         let read_content = if path
             .as_ref()
@@ -613,7 +613,7 @@ pub fn count_rules<P: AsRef<Path>>(
             Err(_) => return HashMap::default(),
         };
 
-        // ここも個別のファイルの読み込みは即終了としない。
+        // Same here: do not immediately abort when loading individual files.
         let yaml_contents = match YamlLoader::load_from_str(&read_content) {
             Ok(contents) => contents,
             Err(_) => return HashMap::default(),
@@ -639,17 +639,17 @@ pub fn count_rules<P: AsRef<Path>>(
             .unwrap()
             .try_fold(vec![], |mut ret, entry| {
                 let entry = entry?;
-                // フォルダは再帰的に呼び出す。
+                // Recurse into subdirectories.
                 if entry.file_type()?.is_dir() {
                     count_rules(entry.path(), exclude_ids, stored_static, result_container);
                     return io::Result::Ok(ret);
                 }
-                // ファイル以外は無視
+                // Ignore non-file entries.
                 if !entry.file_type()?.is_file() {
                     return io::Result::Ok(ret);
                 }
 
-                // 拡張子がymlでないファイルは無視
+                // Ignore files with extensions other than yml
                 let path = entry.path();
                 if path.extension().unwrap_or_else(|| OsStr::new("")) != "yml" {
                     return io::Result::Ok(ret);
@@ -670,13 +670,13 @@ pub fn count_rules<P: AsRef<Path>>(
                     return io::Result::Ok(ret);
                 }
 
-                // 個別のファイルの読み込みは即終了としない。
+                // Do not immediately abort when loading individual files.
                 let read_content = match ParseYaml::read_file(&path) {
                     Ok(content) => content,
                     Err(_) => return io::Result::Ok(ret),
                 };
 
-                // ここも個別のファイルの読み込みは即終了としない。
+                // Same here: do not immediately abort when loading individual files.
                 let yaml_contents = match YamlLoader::load_from_str(&read_content) {
                     Ok(contents) => contents,
                     Err(e) => {
@@ -705,7 +705,7 @@ pub fn count_rules<P: AsRef<Path>>(
             .unwrap_or_default();
     }
     yaml_docs.into_iter().for_each(|(_filepath, yaml_doc)| {
-        //除外されたルールは無視する
+        // Ignore excluded rules.
         let empty = vec![];
         let rule_id = &yaml_doc["id"].as_str();
         let rule_tags_vec = yaml_doc["tags"].as_vec().unwrap_or(&empty);
@@ -731,7 +731,7 @@ pub fn count_rules<P: AsRef<Path>>(
             } else {
                 "noisy"
             };
-            // テスト用のルール(ID:000...0)の場合はexcluded ruleのカウントから除外するようにする
+            // For test rules (ID: 000...0), exclude them from the excluded rule count.
             if v != "00000000-0000-0000-0000-000000000000" {
                 let counter = result_container
                     .entry(entry_key.into())
@@ -758,7 +758,7 @@ pub fn count_rules<P: AsRef<Path>>(
         }
 
         if let Some(s) = yaml_doc["status"].as_str() {
-            // wizard用の初期カウンティングではstatusとlevelの内容を確認したうえで以降の処理は行わないようにする
+            // In the initial counting for the wizard, check the status and level, then skip further processing.
             let counter = result_container.entry(s.into()).or_insert(HashMap::new());
             if included_target_tag_vec.is_empty() {
                 *counter

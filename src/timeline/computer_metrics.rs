@@ -114,7 +114,7 @@ fn format_uptime(seconds: i64) -> String {
     format!("{years}Y {months}M {days}d {hours}h {minutes}m {seconds}s")
 }
 
-/// レコード内のコンピュータ名を降順で画面出力もしくはcsvに出力する関数
+/// Function that outputs computer names in a record in descending order to the screen or CSV.
 pub fn computer_metrics_dsp_msg(
     result_list: &HashMap<
         CompactString,
@@ -320,7 +320,7 @@ mod tests {
             }
         };
 
-        //テスト終了後にファイルを削除する
+        // Delete the file after the test.
         assert!(remove_file("./test_computer_metrics.csv").is_ok());
     }
 }

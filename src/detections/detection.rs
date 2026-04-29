@@ -44,14 +44,14 @@ use super::configs::{
 };
 use super::message::{self, COMPUTER_MITRE_ATTCK_MAP};
 
-// イベントファイルの1レコード分の情報を保持する構造体
+// Struct to hold information for one record of an event file.
 #[derive(Clone, Debug)]
 pub struct EvtxRecordInfo {
-    pub evtx_filepath: String, // イベントファイルのファイルパス ログで出力するときに使う
-    pub record: Value,         // 1レコード分のデータをJSON形式にシリアライズしたもの
-    pub data_string: String,   //1レコード内のデータを文字列にしたもの
-    pub key_2_value: HashMap<String, String>, // 階層化されたキーを.でつないだデータとその値のマップ
-    pub recovered_record: bool, // レコードが復元されたかどうか
+    pub evtx_filepath: String, // File path of the event file, used when outputting logs.
+    pub record: Value,         // Data for one record serialized in JSON format.
+    pub data_string: String,   // Data within one record converted to a string.
+    pub key_2_value: HashMap<String, String>, // Map of hierarchical keys joined by "." and their values.
+    pub recovered_record: bool, // Whether the record was recovered.
 }
 
 impl EvtxRecordInfo {
@@ -74,7 +74,7 @@ impl Detection {
         rt.block_on(self.execute_rules(records))
     }
 
-    // ルールファイルをパースします。
+    // Parse the rule files.
     pub fn parse_rule_files(
         min_level: &str,
         target_level: &str,
@@ -82,7 +82,7 @@ impl Detection {
         exclude_ids: &filter::RuleExclude,
         stored_static: &StoredStatic,
     ) -> Vec<RuleNode> {
-        // ルールファイルのパースを実行
+        // Execute rule file parsing.
         let mut rulefile_loader = ParseYaml::new(stored_static);
         let result_readdir = rulefile_loader.read_dir(
             rulespath,
@@ -111,7 +111,7 @@ impl Detection {
                 return Some(rule);
             }
 
-            // ruleファイルのパースに失敗した場合はエラー出力
+            // Output an error if rule file parsing fails.
             err_msgs_result.err().iter().for_each(|err_msgs| {
                 let errmsg_body =
                     format!("Failed to parse rule file. (FilePath : {})", rule.rulepath);
@@ -158,10 +158,10 @@ impl Detection {
         ret
     }
 
-    // 複数のイベントレコードに対して、複数のルールを1個実行します。
+    // Execute multiple rules against multiple event records, one rule at a time.
     async fn execute_rules(mut self, records: Vec<EvtxRecordInfo>) -> (Self, Vec<DetectInfo>) {
         let records_arc = Arc::new(records);
-        // // 各rule毎にスレッドを作成して、スレッドを起動する。
+        // // Create a thread for each rule and start the threads.
         let rules = self.rules;
         let handles: Vec<JoinHandle<(RuleNode, Vec<DetectInfo>)>> = rules
             .into_iter()
@@ -171,7 +171,7 @@ impl Detection {
             })
             .collect();
 
-        // 全スレッドの実行完了を待機
+        // Wait for all threads to complete execution.
         let mut rules = vec![];
         let mut all_log_records = vec![];
         for handle in handles {
@@ -182,9 +182,9 @@ impl Detection {
             }
         }
 
-        // この関数の先頭でrules.into_iter()を呼び出している。それにより所有権がmapのruleを経由し、execute_ruleの引数に渡しているruleに移っているので、self.rulesには所有権が無くなっている。
-        // 所有権を失ったメンバー変数を持つオブジェクトをreturnするコードを書くと、コンパイラが怒になるので(E0382という番号のコンパイルエラー)、ここでself.rulesに所有権を戻している。
-        // self.rulesが再度所有権を取り戻せるように、Detection::execute_ruleで引数に渡したruleを戻り値として返すようにしている。
+        // rules.into_iter() is called at the top of this function, which transfers ownership through the rule in map to the rule passed as an argument to execute_rule, so self.rules no longer has ownership.
+        // Writing code that returns an object with a member variable that has lost ownership causes a compiler error (compile error E0382), so ownership is returned to self.rules here.
+        // To allow self.rules to regain ownership, Detection::execute_rule returns the rule passed as an argument as the return value.
         self.rules = rules;
 
         (self, all_log_records)
@@ -261,7 +261,7 @@ impl Detection {
                 }
             }
         }
-        // temporalルールは個々ルールの判定がすべて出揃ってから判定できるため、再度rulesをループしてtemporalルールの判定を行う
+        // Temporal rules can only be evaluated after all individual rule evaluations are complete, so loop through rules again to evaluate temporal rules.
         for rule in self.rules.iter() {
             let (ref_ids, temporal_ordered) = match &rule.correlation_type {
                 CorrelationType::Temporal(ref_ids) => (ref_ids, false),
@@ -295,7 +295,7 @@ impl Detection {
         ret
     }
 
-    // 複数のイベントレコードに対して、ルールを1個実行します。
+    // Execute one rule against multiple event records.
     fn execute_rule(
         mut rule: RuleNode,
         records: Arc<Vec<EvtxRecordInfo>>,
@@ -321,7 +321,7 @@ impl Detection {
                 continue;
             }
 
-            // aggregation conditionが存在しない場合はそのまま出力対応を行う
+            // If no aggregation condition exists, proceed with output as-is.
             if !agg_condition {
                 ret.push(Detection::create_log_record(
                     &rule,
@@ -802,7 +802,7 @@ impl Detection {
                 event_id: eid.clone(),
             }
         };
-        //ルール側にdetailsの項目があればそれをそのまま出力し、そうでない場合はproviderとeventidの組で設定したdetailsの項目を出力する
+        // If the rule has a details entry, output it as-is; otherwise output the details entry configured for the provider and eventid combination.
         let details_fmt_str = match rule.yaml["details"].as_str() {
             Some(s) => s.to_string(),
             None => match stored_static
@@ -1133,7 +1133,7 @@ impl Detection {
             .join(" ¦ ")
             .into()
     }
-    /// rule内のtagsの内容を配列として返却する関数
+    /// Function to return the contents of tags in a rule as an array.
     fn get_tag_info(rule: &RuleNode) -> Nested<String> {
         Nested::from_iter(
             rule.yaml["tags"]
@@ -1150,10 +1150,10 @@ impl Detection {
         )
     }
 
-    ///aggregation conditionのcount部分の検知出力文の文字列を返す関数
+    /// Function that returns the detection output string for the count portion of the aggregation condition.
     fn create_count_output(rule: &RuleNode, agg_result: &AggResult) -> CompactString {
         let mut ret: String = "".to_string();
-        // この関数が呼び出されている段階で既にaggregation conditionは存在する前提なのでagg_conditionの配列の長さは2となる
+        // Since it is assumed that the aggregation condition already exists when this function is called, the length of the agg_condition array is 2.
         let agg_condition = rule.get_agg_condition().unwrap();
         write!(ret, "Count:{}", agg_result.data).ok();
         let mut sorted_filed_values = agg_result.field_values.clone();
@@ -1217,7 +1217,7 @@ impl Detection {
                 } else {
                     ""
                 };
-                //タイトルに利用するものはascii文字であることを前提として1文字目を大文字にするように変更する
+                // Change the first character to uppercase, assuming that the titles use ASCII characters.
                 let key = format!("{} rules: ", make_ascii_titlecase(key));
                 let val = format!("{}{}", value.to_formatted_string(&Locale::en), disable_flag);
                 write_color_buffer(

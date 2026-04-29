@@ -54,7 +54,7 @@ pub enum Profile {
     TgtCity(Cow<'static, str>),
     ExtraFieldInfo(Cow<'static, str>),
     RecoveredRecord(Cow<'static, str>),
-    Literal(Cow<'static, str>), // profiles.yamlの固定文字列を変換なしでそのまま出力する場合
+    Literal(Cow<'static, str>), // For outputting fixed strings from profiles.yaml without conversion.
 }
 
 impl Profile {
@@ -133,12 +133,12 @@ impl From<&str> for Profile {
             "%RenderedMessage%" => RenderedMessage(Default::default()),
             "%ExtraFieldInfo%" => ExtraFieldInfo(Default::default()),
             "%RecoveredRecord%" => RecoveredRecord(Default::default()),
-            s => Literal(s.to_string().into()), // profiles.yamlの固定文字列を変換なしでそのまま出力する場合
+            s => Literal(s.to_string().into()), // For outputting fixed strings from profiles.yaml without conversion.
         }
     }
 }
 
-// 指定されたパスのprofileを読み込む処理
+// Process to load the profile at the specified path.
 fn read_profile_data(profile_path: &str) -> Result<Vec<Yaml>, String> {
     let profile_path_buf = Path::new(profile_path).to_path_buf();
     if let Ok(loaded_profile) = yaml::ParseYaml::read_file(&profile_path_buf) {
@@ -154,7 +154,7 @@ fn read_profile_data(profile_path: &str) -> Result<Vec<Yaml>, String> {
                 .to_str()
                 .unwrap_or_default(),
         );
-        // 通常のプロファイルファイルを読み込む場合
+        // When loading a normal profile file.
         if let Some(path) = default_profile_name_path {
             match YamlLoader::load_from_str(
                 std::str::from_utf8(path.data.as_ref()).unwrap_or_default(),
@@ -170,7 +170,7 @@ fn read_profile_data(profile_path: &str) -> Result<Vec<Yaml>, String> {
     }
 }
 
-/// プロファイル情報を読み込む関数
+/// Function to load profile information.
 pub fn load_profile(
     default_profile_path: &str,
     profile_path: &str,
@@ -201,7 +201,7 @@ pub fn load_profile(
         }
     };
 
-    // profileを読み込んで何も結果がない場合はAlert出しているためプログラム終了のためにNoneを出力する。
+    // If no results are returned after loading the profile, an Alert is issued, so output None to terminate the program.
     if profile_all.is_empty() {
         return None;
     }
@@ -273,7 +273,7 @@ pub fn load_profile(
     Some(ret)
 }
 
-/// デフォルトプロファイルを設定する関数
+/// Function to set the default profile.
 pub fn set_default_profile(
     default_profile_path: &str,
     profile_path: &str,
@@ -411,7 +411,7 @@ mod tests {
     }
 
     #[test]
-    ///オプションの設定が入ると値の冪等性が担保できないためテストを逐次的に処理する
+    /// Process tests sequentially because option settings prevent guaranteed idempotency of values.
     fn test_load_profile() {
         test_load_profile_without_profile_option();
         test_load_profile_no_exist_profile_files();
@@ -427,7 +427,7 @@ mod tests {
         );
     }
 
-    /// プロファイルオプションが設定されていないときにロードをした場合のテスト
+    /// Test for when loading is done without the profile option set.
     fn test_load_profile_without_profile_option() {
         let expect: Vec<(CompactString, Profile)> = vec![
             (
@@ -503,7 +503,7 @@ mod tests {
         );
     }
 
-    /// プロファイルオプションが設定されて`おり、そのオプションに該当するプロファイルが存在する場合のテスト
+    /// Test for when the profile option is set and a profile matching that option exists.
     fn test_load_profile_with_profile_option() {
         let dummy_stored_static =
             create_dummy_stored_static(Action::CsvTimeline(CsvOutputOption {
@@ -555,7 +555,7 @@ mod tests {
         );
     }
 
-    /// プロファイルオプションが設定されているが、対象のオプションが存在しない場合のテスト
+    /// Test for when the profile option is set but the target option does not exist.
     fn test_load_profile_no_exist_profile_files() {
         let dummy_stored_static =
             create_dummy_stored_static(Action::CsvTimeline(CsvOutputOption {
@@ -566,7 +566,7 @@ mod tests {
                 },
                 ..Default::default()
             }));
-        //両方のファイルが存在しない場合
+        // When neither file exists.
         assert_eq!(
             None,
             load_profile(
@@ -576,7 +576,7 @@ mod tests {
             )
         );
 
-        //デフォルトプロファイルは存在しているがprofileオプションが指定されているため読み込み失敗の場合
+        // When the default profile exists but loading fails because the profile option is specified.
         assert_eq!(
             None,
             load_profile(
@@ -586,7 +586,7 @@ mod tests {
             )
         );
 
-        //オプション先のターゲットのプロファイルファイルが存在しているが、profileオプションで指定されたオプションが存在しない場合
+        // When the target profile file for the option exists, but the option specified by the profile option does not exist.
         assert_eq!(
             None,
             load_profile(
@@ -597,7 +597,7 @@ mod tests {
         );
     }
 
-    /// yamlファイル内のプロファイル名一覧を取得する機能のテスト
+    /// Test for the feature that retrieves the list of profile names in a yaml file.
     fn test_get_profile_names() {
         let mut expect: Nested<Vec<String>> = Nested::<Vec<String>>::new();
         expect.push(vec![

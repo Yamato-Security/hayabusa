@@ -92,13 +92,13 @@ struct Contributors;
 #[global_allocator]
 static GLOBAL: MiMalloc = MiMalloc;
 
-// 一度に読み込んで、スキャンするレコード数
+// The number of records to load and scan at one time.
 // The number of records to load and scan at a time. 1000 gave the fastest results and lowest memory usage in test benchmarks.
 const MAX_DETECT_RECORDS: usize = 1000;
 
 fn main() {
     let mut config_reader = ConfigReader::new();
-    // コマンドのパース情報を作成してstatic変数に格納する
+    // Create the parsed command information and store it in a static variable.
     let mut stored_static = StoredStatic::create_static_data(config_reader.config);
     config_reader.config = None;
     let mut app = App::new(stored_static.thread_number);
@@ -173,7 +173,7 @@ impl App {
             htmlreport::add_md_data("General Overview {#general_overview}", output_data);
         }
 
-        // 引数がなかった時にhelpを出力するためのサブコマンド出力。引数がなくても動作するサブコマンドはhelpを出力しない
+        // Output subcommand help when no arguments are provided. Subcommands that work without arguments do not output help.
         let subcommand_name = Action::get_action_name(stored_static.config.action.as_ref());
         if stored_static.config.action.is_some()
             && !self.check_is_valid_args_num(stored_static.config.action.as_ref())
@@ -224,7 +224,7 @@ impl App {
             return;
         }
 
-        // カレントディレクトリ以外からの実行の際にrules-configオプションの指定がないとエラーが発生することを防ぐための処理
+        // Prevent errors when running from a directory other than the current directory without the rules-config option.
         if stored_static.config_path == Path::new("./rules/config") {
             stored_static.config_path =
                 check_setting_path(&CURRENT_EXE_PATH.to_path_buf(), "rules/config", true).unwrap();
@@ -429,7 +429,7 @@ Any hostnames added to the critical_systems.txt file will have all alerts above 
 
         match &stored_static.config.action.as_ref().unwrap() {
             Action::CsvTimeline(_) | Action::JsonTimeline(_) => {
-                // カレントディレクトリ以外からの実行の際にrulesオプションの指定がないとエラーが発生することを防ぐための処理
+                // Prevent errors when running from a directory other than the current directory without the rules option.
                 if stored_static.output_option.as_ref().unwrap().rules == Path::new("./rules") {
                     if Path::new("./encoded_rules.yml").exists() {
                         stored_static.output_option.as_mut().unwrap().rules = check_setting_path(
@@ -444,7 +444,7 @@ Any hostnames added to the critical_systems.txt file will have all alerts above 
                                 .unwrap();
                     }
                 }
-                // rule configのフォルダ、ファイルを確認してエラーがあった場合は終了とする
+                // Check the rule config folder and files, and terminate if there are errors.
                 if let Err(e) = utils::check_rule_config(&stored_static.config_path) {
                     AlertMessage::alert(&e).ok();
                     return;
@@ -579,7 +579,7 @@ Any hostnames added to the critical_systems.txt file will have all alerts above 
                     .unwrap();
                 }
 
-                // pivot 機能でファイルを出力する際に同名ファイルが既に存在していた場合はエラー文を出して終了する。
+                // When outputting a file with the pivot feature, if a file with the same name already exists, output an error and terminate.
                 let mut error_flag = false;
                 if let Some(csv_path) = &stored_static.output_path {
                     let pivot_key_unions = PIVOT_KEYWORD.read().unwrap();
@@ -606,7 +606,7 @@ Any hostnames added to the critical_systems.txt file will have all alerts above 
 
                 let pivot_key_unions = PIVOT_KEYWORD.read().unwrap();
                 if let Some(pivot_file) = &stored_static.output_path {
-                    //ファイル出力の場合
+                    // For file output
                     pivot_key_unions.iter().for_each(|(key, pivot_keyword)| {
                         let mut f = BufWriter::new(
                             File::create(
@@ -655,7 +655,7 @@ Any hostnames added to the critical_systems.txt file will have all alerts above 
                     )
                     .ok();
                 } else {
-                    //標準出力の場合
+                    // For standard output
                     let output = "The following pivot keywords were found:";
                     write_color_buffer(
                         &BufferWriter::stdout(ColorChoice::Always),
@@ -697,7 +697,7 @@ Any hostnames added to the critical_systems.txt file will have all alerts above 
                     _ => None,
                 };
                 println!();
-                // エラーが出た場合はインターネット接続がそもそもできないなどの問題点もあるためエラー等の出力は行わない
+                // If an error occurs, do not output errors because there may be issues such as no internet connection.
                 let latest_version_data = Update::get_latest_hayabusa_version().unwrap_or_default();
                 let now_version = &format!("v{}", env!("CARGO_PKG_VERSION"));
                 stored_static.include_status.insert("*".into());
@@ -965,7 +965,7 @@ Any hostnames added to the critical_systems.txt file will have all alerts above 
                 } else {
                     &opt.rules
                 };
-                // rule configのフォルダ、ファイルを確認してエラーがあった場合は終了とする
+                // Check the rule config folder and files, and terminate if there are errors.
                 if !rule_dir.exists() {
                     AlertMessage::alert(
                         "The rules directory does not exist. Please check the path.",
@@ -1020,7 +1020,7 @@ Any hostnames added to the critical_systems.txt file will have all alerts above 
             _ => {}
         }
 
-        // 処理時間の出力
+        // Output processing time.
         let elapsed_output_str = CHECKPOINT
             .lock()
             .as_mut()
@@ -1122,7 +1122,7 @@ Any hostnames added to the critical_systems.txt file will have all alerts above 
             _ => {}
         }
 
-        // Qオプションを付けた場合もしくはパースのエラーがない場合はerrorのstackが0となるのでエラーログファイル自体が生成されない。
+        // If the -Q option is specified or there are no parse errors, the error stack is 0 and no error log file is generated.
         if !ERROR_LOG_STACK.lock().unwrap().is_empty() {
             AlertMessage::create_error_log(
                 stored_static.quiet_errors_flag,
@@ -1132,7 +1132,7 @@ Any hostnames added to the critical_systems.txt file will have all alerts above 
         println!();
         let _ = self.output_open_close_message("closing_messages.txt", stored_static);
 
-        // Debugフラグをつけていた時にはメモリ利用情報などの統計情報を画面に出力する
+        // When the debug flag is set, output statistics such as memory usage to the screen.
         if stored_static.config.debug {
             CHECKPOINT.lock().as_ref().unwrap().output_stocked_result();
             println!();
@@ -1180,7 +1180,7 @@ Any hostnames added to the critical_systems.txt file will have all alerts above 
             }
             self.analysis_files(evtx_files, time_filter, stored_static.borrow_mut());
         } else {
-            // directory, live_analysis以外はfilepathの指定の場合
+            // For cases other than directory and live_analysis, a filepath is specified.
             if let Some(input_args) = &stored_static.output_option.as_ref()
                 && let Some(filepath) = &input_args.input_args.filepath
             {
@@ -1458,7 +1458,7 @@ Any hostnames added to the critical_systems.txt file will have all alerts above 
                 } else {
                     let all_status_flag = target_status.contains(&"*");
                     for s in rule_counter_wizard_map.keys() {
-                        // 指定されたstatusに合致しないものは集計をスキップする
+                        // Skip aggregation for items that do not match the specified status.
                         if (exclude_noisy_status.contains(&s.as_str())
                             || !target_status.contains(&s.as_str()))
                             && !all_status_flag
@@ -1967,7 +1967,7 @@ Any hostnames added to the critical_systems.txt file will have all alerts above 
         }
 
         if stored_static.logon_summary_flag && !stored_static.json_input_flag {
-            // Logon summary用のChannelフィルターを作成
+            // Create a channel filter for the logon summary.
             let yaml_str = r#"
             detection:
                 selection:
@@ -1991,7 +1991,7 @@ Any hostnames added to the critical_systems.txt file will have all alerts above 
             stored_static.config.action.as_ref().unwrap(),
             Action::ConfigCriticalSystems(_)
         ) {
-            // config-critical-systems用のChannelフィルターを作成
+            // Create a channel filter for config-critical-systems.
             let yaml_str = r#"
             detection:
                 selection:
@@ -2231,7 +2231,7 @@ Any hostnames added to the critical_systems.txt file will have all alerts above 
             .set_checkpoint(Local::now());
     }
 
-    // Windowsイベントログファイルを1ファイル分解析する。
+    // Analyze one Windows event log file.
     fn analysis_file(
         &self,
         (evtx_filepath, time_filter, target_event_ids, stored_static): (
@@ -2272,7 +2272,7 @@ Any hostnames added to the critical_systems.txt file will have all alerts above 
         loop {
             let mut records_per_detect = vec![];
             while records_per_detect.len() < MAX_DETECT_RECORDS {
-                // パースに失敗している場合、エラーメッセージを出力
+                // If parsing fails, output an error message.
                 let next_rec = records.next();
                 if next_rec.is_none() {
                     break;
@@ -2307,11 +2307,11 @@ Any hostnames added to the critical_systems.txt file will have all alerts above 
                 let data = &record_result.as_ref().unwrap().data;
                 if stored_static.computer_metrics_flag {
                     countup_event_by_computer(data, &stored_static.eventkey_alias, &mut tl);
-                    // computer-metricsコマンドでは検知は行わないためカウントのみ行い次のレコードを確認する
+                    // The computer-metrics command does not perform detection, so only count and check the next record.
                     continue;
                 }
                 if !stored_static.search_flag {
-                    // Computer名がinclude_computerで指定されたものに合致しないまたはexclude_computerで指定されたものに合致した場合はフィルタリングする。
+                    // Filter if the Computer name does not match include_computer or matches exclude_computer.
                     if utils::is_filtered_by_computer_name(
                         utils::get_event_value(
                             "Event.System.Computer",
@@ -2326,7 +2326,7 @@ Any hostnames added to the critical_systems.txt file will have all alerts above 
                         continue;
                     }
 
-                    // EventIDがinclude_eidで指定されたものに合致しないまたはexclude_eidで指定されたものに合致した場合、target_eventids.txtで指定されたEventIDではない場合はフィルタリングする。
+                    // Filter if the EventID does not match include_eid, matches exclude_eid, or is not an EventID specified in target_eventids.txt.
                     if self.is_filtered_by_eid(
                         data,
                         &stored_static.eventkey_alias,
@@ -2337,7 +2337,7 @@ Any hostnames added to the critical_systems.txt file will have all alerts above 
                         continue;
                     }
 
-                    // channelがnullである場合はフィルタリングする。
+                    // Filter if channel is null.
                     if !self._is_valid_channel(
                         data,
                         &stored_static.eventkey_alias,
@@ -2346,7 +2346,7 @@ Any hostnames added to the critical_systems.txt file will have all alerts above 
                         continue;
                     }
                 }
-                // EventID側の条件との条件の混同を防ぐため時間でのフィルタリングの条件分岐を分離した
+                // Separated the time-based filtering condition branch to avoid confusion with EventID conditions.
                 let timestamp = get_event_time(data, stored_static.json_input_flag);
                 if !time_filter.is_target(&timestamp) {
                     continue;
@@ -2405,7 +2405,7 @@ Any hostnames added to the critical_systems.txt file will have all alerts above 
         (detection, record_cnt, tl, recover_records_cnt, detect_infos)
     }
 
-    // 時刻およびチャンネルによるフィルタリングを行い、フィルタリングされた場合はtrueを返す。
+    // Perform filtering by time and channel, and return true if filtered.
     fn is_filtered_record(
         &self,
         (path, time_filter, target_event_ids, stored_static): (
@@ -2417,7 +2417,7 @@ Any hostnames added to the critical_systems.txt file will have all alerts above 
         (is_splunk_json, is_splunk_api_json): (bool, bool),
         data: &Value,
     ) -> bool {
-        // Computer名がinclude_computerで指定されたものに合致しないまたはexclude_computerで指定されたものに合致した場合はフィルタリングする。
+        // Filter if the Computer name does not match include_computer or matches exclude_computer.
         if utils::is_filtered_by_computer_name(
             utils::get_event_value("Event.System.Computer", data, &stored_static.eventkey_alias),
             (
@@ -2439,7 +2439,7 @@ Any hostnames added to the critical_systems.txt file will have all alerts above 
             return true;
         }
 
-        // channelがnullである場合はフィルタリングする。
+        // Filter if channel is null.
         if !self._is_valid_channel(
             data,
             &stored_static.eventkey_alias,
@@ -2459,7 +2459,7 @@ Any hostnames added to the critical_systems.txt file will have all alerts above 
         } else {
             "%Y-%m-%dT%H:%M:%S%.fZ"
         };
-        // EventID側の条件との条件の混同を防ぐため時間でのフィルタリングの条件分岐を分離した
+        // Separated the time-based filtering condition branch to avoid confusion with EventID conditions.
         let timestamp = match NaiveDateTime::parse_from_str(
             &target_timestamp
                 .to_string()
@@ -2491,7 +2491,7 @@ Any hostnames added to the critical_systems.txt file will have all alerts above 
         false
     }
 
-    // JSON形式のイベントログファイルを1ファイル分解析する。
+    // Analyze one JSON-format event log file.
     fn analysis_json_file(
         &self,
         (filepath, time_filter, target_event_ids, stored_static): (
@@ -2528,9 +2528,9 @@ Any hostnames added to the critical_systems.txt file will have all alerts above 
         let jsonl_value_iter = utils::read_jsonl_to_value(&filepath);
         let mut detect_infos: Vec<DetectInfo> = vec![];
         let mut records = match jsonl_value_iter {
-            // JSONL形式の場合
+            // For JSONL format
             Ok(values) => values,
-            // JSONL形式以外(JSON(Array or jq)形式)の場合
+            // For non-JSONL format (JSON Array or jq format)
             Err(_) => {
                 let json_value_iter = utils::read_json_to_value(&filepath);
                 match json_value_iter {
@@ -2546,7 +2546,7 @@ Any hostnames added to the critical_systems.txt file will have all alerts above 
         loop {
             let mut records_per_detect = vec![];
             while records_per_detect.len() < MAX_DETECT_RECORDS {
-                // パースに失敗している場合、エラーメッセージを出力
+                // If parsing fails, output an error message.
                 let next_rec = records.next();
                 if next_rec.is_none() {
                     break;
@@ -2554,7 +2554,7 @@ Any hostnames added to the critical_systems.txt file will have all alerts above 
                 let mut data = next_rec.unwrap();
                 let is_splunk_json = data["Event"]["EventData"]["result"].is_object();
                 is_splunk_api_json = !data["Event"]["EventData"]["rows"].is_null();
-                // ChannelなどのデータはEvent -> Systemに存在する必要があるが、他処理のことも考え、Event -> EventDataのデータをそのまま投入する形にした。cloneを利用しているのはCopy trait実装がserde_json::Valueにないため
+                // Data such as Channel must exist in Event -> System, but considering other processing, the data from Event -> EventData is inserted as-is. clone is used because serde_json::Value does not implement the Copy trait.
                 if is_splunk_api_json {
                     let tmp_data = data["Event"]["EventData"]["rows"].clone();
                     let tmp_data_value = data["Event"]["EventData"]["fields"].clone();
@@ -2621,7 +2621,7 @@ Any hostnames added to the critical_systems.txt file will have all alerts above 
                         splunk_api_record["Event"]["System"]["Provider_attributes"]["Name"] =
                             splunk_api_record["Event"]["EventData"]["Name"].clone();
                         if stored_static.computer_metrics_flag {
-                            // computer-metricsコマンドでは検知は行わないためカウントのみ行い次のレコードを確認する
+                            // The computer-metrics command does not perform detection, so only count and check the next record.
                             countup_event_by_computer(
                                 &splunk_api_record,
                                 &stored_static.eventkey_alias,
@@ -2675,14 +2675,14 @@ Any hostnames added to the critical_systems.txt file will have all alerts above 
                 } else {
                     data["Event"]["System"]["Provider_attributes"]["Name"] =
                         data["Event"]["EventData"]["SourceName"].clone();
-                    // Computer名に対応する内容はHostnameであることがわかったためデータをクローンして投入
+                    // Since the content corresponding to the Computer name was found to be Hostname, clone and insert the data.
                     data["Event"]["System"]["Computer"] =
                         data["Event"]["EventData"]["Hostname"].clone();
                 }
 
                 if stored_static.computer_metrics_flag {
                     countup_event_by_computer(&data, &stored_static.eventkey_alias, &mut tl);
-                    // computer-metricsコマンドでは検知は行わないためカウントのみ行い次のレコードを確認する
+                    // The computer-metrics command does not perform detection, so only count and check the next record.
                     continue;
                 }
                 if !self.is_filtered_record(
@@ -2709,16 +2709,16 @@ Any hostnames added to the critical_systems.txt file will have all alerts above 
                 stored_static.no_pwsh_field_extraction,
             ));
 
-            // timeline機能の実行
+            // Execute the timeline feature.
             tl.start(&records_per_detect, stored_static);
 
-            // 以下のコマンドの際にはルールにかけない
+            // Do not apply rules for the following commands.
             if !(stored_static.metrics_flag
                 || stored_static.logon_summary_flag
                 || stored_static.log_metrics_flag
                 || stored_static.search_flag)
             {
-                // ruleファイルの検知
+                // Detect using rule files.
                 let (detection_tmp, mut log_records) =
                     detection.start(&self.rt, records_per_detect);
                 if stored_static.is_low_memory {
@@ -2787,7 +2787,7 @@ Any hostnames added to the critical_systems.txt file will have all alerts above 
         key_set.into_iter().collect::<Nested<String>>()
     }
 
-    /// target_eventids.txtの設定を元にフィルタする。 trueであれば検知確認対象のEventIDであることを意味する。
+    /// Filter based on the settings in target_eventids.txt. Returns true if it is an EventID subject to detection check.
     fn _is_target_event_id(
         &self,
         data: &Value,
@@ -2802,11 +2802,11 @@ Any hostnames added to the critical_systems.txt file will have all alerts above 
         match eventid.unwrap() {
             Value::String(s) => target_event_ids.is_target(&s.replace('\"', ""), true),
             Value::Number(n) => target_event_ids.is_target(&n.to_string().replace('\"', ""), true),
-            _ => true, // レコードからEventIdが取得できない場合は、特にフィルタしない
+            _ => true, // If EventId cannot be obtained from the record, do not filter.
         }
     }
 
-    /// レコードのチャンネルの値が正しい(Stringの形でありnullでないもの)ことを判定する関数
+    /// Function that determines whether the channel value in the record is valid (a String and not null).
     fn _is_valid_channel(
         &self,
         data: &Value,
@@ -2819,7 +2819,7 @@ Any hostnames added to the critical_systems.txt file will have all alerts above 
         }
         match channel.unwrap() {
             Value::String(s) => s != "null",
-            _ => false, // channelの値は文字列を想定しているため、それ以外のデータが来た場合はfalseを返す
+            _ => false, // Since the channel value is expected to be a string, return false for any other data type.
         }
     }
 
@@ -2842,10 +2842,10 @@ Any hostnames added to the critical_systems.txt file will have all alerts above 
         } else {
             CompactString::default()
         };
-        // 以下の場合はフィルタリングする。
-        // 1. include_eidが指定されているが、include_eidに含まれていない場合
-        // 2. exclude_eidが指定されていて、exclude_eidに含まれている場合
-        // 3. eid_filterが指定されていて、target_eventids.txtで指定されたEventIDでない場合
+        // Filter in the following cases.
+        // 1. include_eid is specified, but the EventID is not included in include_eid.
+        // 2. exclude_eid is specified, and the EventID is included in exclude_eid.
+        // 3. eid_filter is specified, and the EventID is not one specified in target_eventids.txt.
         (!include_eid.is_empty() && !include_eid.contains(&target_eid))
             || (!exclude_eid.is_empty() && exclude_eid.contains(&target_eid))
             || (eid_filter && !self._is_target_event_id(data, target_event_ids, eventkey_alias))
@@ -2858,10 +2858,10 @@ Any hostnames added to the critical_systems.txt file will have all alerts above 
     ) -> Option<EvtxParser<File>> {
         match EvtxParser::from_path(evtx_filepath) {
             Ok(evtx_parser) => {
-                // parserのデフォルト設定を変更
+                // Change the default parser settings.
                 let mut parse_config = ParserSettings::default()
                     .parse_empty_chunks(stored_static.enable_recover_records);
-                parse_config = parse_config.separate_json_attributes(true); // XMLのattributeをJSONに変換する時のルールを設定
+                parse_config = parse_config.separate_json_attributes(true); // Set rules for converting XML attributes to JSON.
                 parse_config = parse_config.num_threads(stored_static.thread_number.unwrap_or(0));
                 parse_config = parse_config.validate_checksums(stored_static.validate_checksum);
 
@@ -2991,7 +2991,7 @@ Any hostnames added to the critical_systems.txt file will have all alerts above 
             let is_processor_arch_32bit = env::var_os("PROCESSOR_ARCHITECTURE")
                 .unwrap_or_default()
                 .eq("x86");
-            // PROCESSOR_ARCHITEW6432は32bit環境には存在しないため、環境変数存在しなかった場合は32bit環境であると判断する
+            // PROCESSOR_ARCHITEW6432 does not exist in 32-bit environments, so if the environment variable does not exist, it is determined to be a 32-bit environment.
             let not_wow_flag = env::var_os("PROCESSOR_ARCHITEW6432")
                 .unwrap_or_else(|| OsString::from("x86"))
                 .eq("x86");
@@ -3164,7 +3164,7 @@ mod tests {
 
     #[test]
     fn test_same_file_output_csv_exit() {
-        // 先に空ファイルを作成する
+        // Create an empty file first.
         let mut app = App::new(None);
         File::create("overwrite.csv").ok();
         let action = Action::CsvTimeline(CsvOutputOption {
@@ -3198,13 +3198,13 @@ mod tests {
         // TODO add check
         // assert_eq!(MESSAGES.len(), 0);
 
-        // テストファイルの作成
+        // Create the test file.
         remove_file("overwrite.csv").ok();
     }
 
     #[test]
     fn test_overwrite_csv() {
-        // 先に空ファイルを作成する
+        // Create an empty file first.
         let mut app = App::new(None);
         File::create("overwrite.csv").ok();
         let action = Action::CsvTimeline(CsvOutputOption {
@@ -3238,13 +3238,13 @@ mod tests {
         app.exec(&mut config_reader.app, &mut stored_static);
         // TODO add check
         // assert_ne!(MESSAGES.len(), 0);
-        // テストファイルの作成
+        // Create the test file.
         remove_file("overwrite.csv").ok();
     }
 
     #[test]
     fn test_same_file_output_json_exit() {
-        // 先に空ファイルを作成する
+        // Create an empty file first.
         let mut app = App::new(None);
         File::create("overwrite.json").ok();
         let action = Action::JsonTimeline(JSONOutputOption {
@@ -3279,13 +3279,13 @@ mod tests {
         // TODO add check
         // assert_eq!(MESSAGES.len(), 0);
 
-        // テストファイルの作成
+        // Create the test file.
         remove_file("overwrite.json").ok();
     }
 
     #[test]
     fn test_overwrite_json() {
-        // 先に空ファイルを作成する
+        // Create an empty file first.
         let mut app = App::new(None);
         File::create("overwrite.csv").ok();
         let action = Action::JsonTimeline(JSONOutputOption {
@@ -3319,13 +3319,13 @@ mod tests {
         app.exec(&mut config_reader.app, &mut stored_static);
         // TODO add check
         // assert_ne!(MESSAGES.len(), 0);
-        // テストファイルの削除
+        // Delete the test file.
         remove_file("overwrite.json").ok();
     }
 
     #[test]
     fn test_same_file_output_metric_csv_exit() {
-        // 先に空ファイルを作成する
+        // Create an empty file first.
         let mut app = App::new(None);
         File::create("overwrite-metric.csv").ok();
         let action = Action::EidMetrics(EidMetricsOption {
@@ -3352,14 +3352,14 @@ mod tests {
         let meta = fs::metadata("overwrite-metric.csv").unwrap();
         assert_eq!(meta.len(), 0);
 
-        // テストファイルの削除
+        // Delete the test file.
         remove_file("overwrite-metric.csv").ok();
         remove_file("overwrite-metric").ok();
     }
 
     #[test]
     fn test_same_file_output_metric_csv() {
-        // 先に空ファイルを作成する
+        // Create an empty file first.
         let mut app = App::new(None);
         File::create("overwrite-metric.csv").ok();
         let action = Action::EidMetrics(EidMetricsOption {
@@ -3386,13 +3386,13 @@ mod tests {
         app.exec(&mut config_reader.app, &mut stored_static);
         let meta = fs::metadata("overwrite-metric.csv").unwrap();
         assert_ne!(meta.len(), 0);
-        // テストファイルの削除
+        // Delete the test file.
         remove_file("overwrite-metric.csv").ok();
     }
 
     #[test]
     fn test_same_file_output_logon_summary_csv_exit() {
-        // 先に空ファイルを作成する
+        // Create an empty file first.
         let mut app = App::new(None);
         File::create("overwrite-metric-successful.csv").ok();
         let action = Action::LogonSummary(LogonSummaryOption {
@@ -3419,13 +3419,13 @@ mod tests {
         let meta = fs::metadata("overwrite-metric-successful.csv").unwrap();
         assert_eq!(meta.len(), 0);
 
-        // テストファイルの削除
+        // Delete the test file.
         remove_file("overwrite-metric-successful.csv").ok();
     }
 
     #[test]
     fn test_same_file_output_logon_summary_csv() {
-        // 先に空ファイルを作成する
+        // Create an empty file first.
         let mut app = App::new(None);
         File::create("overwrite-metric-successful.csv").ok();
         let action = Action::LogonSummary(LogonSummaryOption {
@@ -3452,13 +3452,13 @@ mod tests {
         app.exec(&mut config_reader.app, &mut stored_static);
         let meta = fs::metadata("overwrite-metric-successful.csv").unwrap();
         assert_ne!(meta.len(), 0);
-        // テストファイルの削除
+        // Delete the test file.
         remove_file("overwrite-metric-successful").ok();
     }
 
     #[test]
     fn test_same_file_output_computer_metrics_exit() {
-        // 先に空ファイルを作成する
+        // Create an empty file first.
         let mut app = App::new(None);
         File::create("overwrite-computer-metrics.csv").ok();
         let action = Action::ComputerMetrics(ComputerMetricsOption {
@@ -3482,14 +3482,14 @@ mod tests {
         app.exec(&mut config_reader.app, &mut stored_static);
         let meta = fs::metadata("overwrite-computer-metrics.csv").unwrap();
         assert_eq!(meta.len(), 0);
-        // テストファイルの削除
+        // Delete the test file.
         remove_file("overwrite-computer-metrics").ok();
         remove_file("overwrite-computer-metrics.csv").ok();
     }
 
     #[test]
     fn test_same_file_output_computer_metrics_csv() {
-        // 先に空ファイルを作成する
+        // Create an empty file first.
         let mut app = App::new(None);
         File::create("overwrite-computer-metrics.csv").ok();
         let action = Action::ComputerMetrics(ComputerMetricsOption {
@@ -3513,7 +3513,7 @@ mod tests {
         app.exec(&mut config_reader.app, &mut stored_static);
         let meta = fs::metadata("overwrite-computer-metrics.csv").unwrap();
         assert_ne!(meta.len(), 0);
-        // テストファイルの削除
+        // Delete the test file.
         remove_file("overwrite-computer-metrics.csv").ok();
     }
 

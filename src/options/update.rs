@@ -155,7 +155,7 @@ impl Update {
         }
     }
 
-    /// git clone でhauyabusa-rules レポジトリをrulesフォルダにgit cloneする関数
+    /// Function that git clones the hayabusa-rules repository into the rules folder.
     fn clone_rules(rules_path: &Path) -> Result<String, git2::Error> {
         match Repository::clone(
             "https://github.com/Yamato-Security/hayabusa-rules.git",

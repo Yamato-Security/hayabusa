@@ -7,27 +7,27 @@ use yaml_rust2::Yaml;
 
 use super::matchers::{self, DefaultMatcher};
 
-// Ruleファイルの detection- selection配下のノードはこのtraitを実装する。
+// Nodes under detection-selection in a Rule file implement this trait.
 pub trait SelectionNode: Downcast + Send + Sync {
-    // 引数で指定されるイベントログのレコードが、条件に一致するかどうかを判定する
-    // このトレイトを実装する構造体毎に適切な判定処理を書く必要がある。
+    // Determine whether the event log record specified as an argument matches the condition.
+    // Appropriate determination processing must be written for each struct that implements this trait.
     fn select(&self, event_record: &EvtxRecordInfo, eventkey_alias: &EventKeyAliasConfig) -> bool;
 
-    // 初期化処理を行う
-    // 戻り値としてエラーを返却できるようになっているので、Ruleファイルが間違っていて、SelectionNodeを構成出来ない時はここでエラーを出す
-    // AndSelectionNode等ではinit()関数とは別にnew()関数を実装しているが、new()関数はただインスタンスを作るだけにして、あまり長い処理を書かないようにしている。
-    // これはRuleファイルのパースのエラー処理をinit()関数にまとめるためにこうしている。
+    // Perform initialization processing.
+    // Since errors can be returned as a return value, output an error here when the Rule file is incorrect and a SelectionNode cannot be constructed.
+    // AndSelectionNode and others implement a new() function in addition to init(), but new() is meant to only create an instance without writing overly long processing.
+    // This is done to consolidate error handling for Rule file parsing into the init() function.
     fn init(&mut self) -> Result<(), Vec<String>>;
 
-    // 子ノードを取得する(グラフ理論のchildと同じ意味)
+    // Get child nodes (same meaning as child in graph theory).
     fn get_childs(&self) -> Vec<&dyn SelectionNode>;
 
-    // 子孫ノードを取得する(グラフ理論のdescendantと同じ意味)
+    // Get descendant nodes (same meaning as descendant in graph theory).
     fn get_descendants(&self) -> Vec<&dyn SelectionNode>;
 }
 downcast_rs::impl_downcast!(SelectionNode);
 
-/// detection - selection配下でAND条件を表すノード
+/// Node representing AND conditions under detection-selection.
 pub struct AndSelectionNode {
     pub child_nodes: Vec<Box<dyn SelectionNode>>,
 }
@@ -93,7 +93,7 @@ impl SelectionNode for AndSelectionNode {
     }
 }
 
-/// detection - selection配下でAll条件を表すノード
+/// Node representing All conditions under detection-selection.
 pub struct AllSelectionNode {
     pub child_nodes: Vec<Box<dyn SelectionNode>>,
 }
@@ -159,7 +159,7 @@ impl SelectionNode for AllSelectionNode {
     }
 }
 
-/// detection - selection配下でOr条件を表すノード
+/// Node representing OR conditions under detection-selection.
 pub struct OrSelectionNode {
     pub child_nodes: Vec<Box<dyn SelectionNode>>,
 }
@@ -225,7 +225,7 @@ impl SelectionNode for OrSelectionNode {
     }
 }
 
-/// conditionでNotを表すノード
+/// Node representing Not in condition.
 pub struct NotSelectionNode {
     node: Box<dyn SelectionNode>,
 }
@@ -254,11 +254,11 @@ impl SelectionNode for NotSelectionNode {
     }
 }
 
-/// detectionで定義した条件をconditionで参照するためのもの
+/// Used to reference conditions defined in detection from condition.
 pub struct RefSelectionNode {
-    // selection_nodeはDetectionNodeのname_2_nodeが所有権を持っていて、RefSelectionNodeのselection_nodeに所有権を持たせることができない。
-    // そこでArcを使って、DetectionNodeのname_2_nodeとRefSelectionNodeのselection_nodeで所有権を共有する。
-    // RcじゃなくてArcなのはマルチスレッド対応のため
+    // selection_node is owned by name_2_node of DetectionNode, so ownership cannot be given to selection_node of RefSelectionNode.
+    // Therefore, Arc is used so that ownership is shared between name_2_node of DetectionNode and selection_node of RefSelectionNode.
+    // Arc is used instead of Rc for multi-thread support.
     selection_node: Arc<Box<dyn SelectionNode>>,
 }
 
@@ -288,7 +288,7 @@ impl SelectionNode for RefSelectionNode {
     }
 }
 
-/// detection - selection配下の末端ノード
+/// Leaf node under detection-selection.
 pub struct LeafSelectionNode {
     key: String,
     key_list: Nested<String>,
@@ -337,9 +337,9 @@ impl LeafSelectionNode {
         topkey.split('|').next().unwrap_or_default().to_string()
     }
 
-    /// JSON形式のEventJSONから値を取得する関数 aliasも考慮されている。
+    /// Function to get a value from EventJSON in JSON format. Aliases are also considered.
     fn get_event_value<'a>(&self, record: &'a EvtxRecordInfo) -> Option<&'a String> {
-        // keyが指定されていない場合はそのままのレコードのデータを取得する
+        // If no key is specified, get the record data as-is.
         if self.key_list.is_empty() {
             return Option::Some(&record.data_string);
         }
@@ -347,8 +347,8 @@ impl LeafSelectionNode {
         record.get_value(self.get_key())
     }
 
-    /// matchers::LeafMatcherの一覧を取得する。
-    /// 上から順番に調べて、一番始めに一致したMatcherが適用される
+    /// Gets the list of matchers::LeafMatchers.
+    /// Examine in order from the top, and the first matching Matcher is applied.
     fn get_matchers(&self) -> Vec<Box<dyn matchers::LeafMatcher>> {
         vec![
             Box::new(matchers::MinlengthMatcher::new()),
@@ -365,8 +365,8 @@ impl SelectionNode for LeafSelectionNode {
             return false;
         }
 
-        // EventDataはXMLが特殊な形式になっているので特別対応。
-        //// 元のXMLは下記のような形式
+        // EventData requires special handling because XML is in a special format.
+        //// The original XML is in the following format.
         /*
             <EventData>
             <Data>Available</Data>
@@ -374,8 +374,8 @@ impl SelectionNode for LeafSelectionNode {
             <Data>NewEngineState=Available PreviousEngineState=None SequenceNumber=9 HostName=ConsoleHost HostVersion=2.0 HostId=5cbb33bf-acf7-47cc-9242-141cd0ba9f0c EngineVersion=2.0 RunspaceId=c6e94dca-0daf-418c-860a-f751a9f2cbe1 PipelineId= CommandName= CommandType= ScriptName= CommandPath= CommandLine=</Data>
             </EventData>
         */
-        //// XMLをJSONにパースすると、下記のような形式になっていた。
-        //// JSONが配列になってしまうようなルールは現状では書けない。
+        //// When XML is parsed to JSON, it is in the following format.
+        //// Rules that would result in JSON being an array cannot currently be written.
         /*     "EventData": {
                     "Binary": null,
                     "Data": [
@@ -399,7 +399,7 @@ impl SelectionNode for LeafSelectionNode {
                     .is_match(Option::None, event_record);
             }
 
-            // 配列じゃなくて、文字列や数値等の場合は普通通りに比較する。
+            // For strings or numbers (not arrays), compare normally.
             let eventdata_data = values.unwrap();
             match eventdata_data {
                 Value::Bool(_) | Value::Number(_) | Value::String(_) => {
@@ -440,7 +440,7 @@ impl SelectionNode for LeafSelectionNode {
             && !self.key_list[0].contains("|")
             && let Some(event_id) = self.select_value.as_i64()
         {
-            // 正規表現は重いので、数値のEventIDのみ文字列完全一致で判定
+            // Regex is heavy, so for numeric EventIDs, use exact string matching.
             return event_value.unwrap_or(&String::default()) == &event_id.to_string();
         }
         if !self.key_list.is_empty() && self.key_list[0].eq("|all") {
@@ -458,7 +458,7 @@ impl SelectionNode for LeafSelectionNode {
             .into_iter()
             .find(|matcher| matcher.is_target_key(&self.key_list));
 
-        // 一致するmatcherが見つからないエラー
+        // Error: no matching matcher found.
         if self.matcher.is_none() {
             return Result::Err(vec![format!(
                 "Found unknown key. key:{}",
@@ -541,7 +541,7 @@ mod tests {
 
     #[test]
     fn test_detect_mutiple_regex_and() {
-        // AND条件が正しく検知することを確認する。
+        // Verify that AND conditions are correctly detected.
         let rule_str = r#"
         enabled: true
         detection:
@@ -562,8 +562,8 @@ mod tests {
 
     #[test]
     fn test_notdetect_mutiple_regex_and() {
-        // AND条件で一つでも条件に一致しないと、検知しないことを確認
-        // この例ではComputerの値が異なっている。
+        // Verify that if even one condition in an AND condition does not match, it is not detected.
+        // In this example, the Computer value is different.
         let rule_str = r#"
         enabled: true
         detection:
@@ -584,7 +584,7 @@ mod tests {
 
     #[test]
     fn test_detect_or() {
-        // OR条件が正しく検知できることを確認
+        // Verify that OR conditions are correctly detected.
         let rule_str = r#"
         enabled: true
         detection:
@@ -606,7 +606,7 @@ mod tests {
 
     #[test]
     fn test_detect_or2() {
-        // OR条件が正しく検知できることを確認
+        // Verify that OR conditions are correctly detected.
         let rule_str = r#"
         enabled: true
         detection:
@@ -628,7 +628,7 @@ mod tests {
 
     #[test]
     fn test_notdetect_or() {
-        // OR条件が正しく検知できることを確認
+        // Verify that OR conditions are correctly detected.
         let rule_str = r#"
         enabled: true
         detection:
@@ -650,7 +650,7 @@ mod tests {
 
     #[test]
     fn test_detect_event_id_wildcard() {
-        // EventIDのワイルドカードマッチが正しく検知することを確認する。
+        // Verify that EventID wildcard matching is correctly detected.
         let rule_str = r#"
         enabled: true
         detection:
@@ -671,7 +671,7 @@ mod tests {
 
     #[test]
     fn test_detect_event_id_question() {
-        // EventIDのクエスチョン?1文字マッチが正しく検知することを確認する。
+        // Verify that EventID single-character "?" matching is correctly detected.
         let rule_str = r#"
         enabled: true
         detection:
