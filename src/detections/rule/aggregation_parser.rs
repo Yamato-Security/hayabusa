@@ -20,10 +20,10 @@ lazy_static! {
 
 #[derive(Debug)]
 pub struct AggregationParseInfo {
-    pub _field_name: Option<String>,    // Characters enclosed in parentheses of count.
+    pub _field_name: Option<String>, // Characters enclosed in parentheses of count.
     pub _by_field_name: Option<String>, // String specified after count() by.
     pub _cmp_op: AggregationConditionToken, // (Required) What was specified, such as < or >.
-    pub _cmp_num: i64,                  // (Required) The number after < or > etc.
+    pub _cmp_num: i64,               // (Required) The number after < or > etc.
 }
 
 #[derive(Debug)]

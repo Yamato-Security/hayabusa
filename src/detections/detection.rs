@@ -51,7 +51,7 @@ pub struct EvtxRecordInfo {
     pub record: Value,         // Data for one record serialized in JSON format.
     pub data_string: String,   // Data within one record converted to a string.
     pub key_2_value: HashMap<String, String>, // Map of hierarchical keys joined by "." and their values.
-    pub recovered_record: bool, // Whether the record was recovered.
+    pub recovered_record: bool,               // Whether the record was recovered.
 }
 
 impl EvtxRecordInfo {
