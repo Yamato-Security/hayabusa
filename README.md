@@ -1813,7 +1813,8 @@ You can freely edit these abbreviations in the `./config/mitre_tactics.txt` conf
 * `Exec` : Execution
 * `Persis` : Persistence
 * `PrivEsc` : Privilege Escalation
-* `Evas` : Defense Evasion
+* `Stealth` : Stealth (formerly Defense Evasion)
+* `DefImpair` : Defense Impairment
 * `CredAccess` : Credential Access
 * `Disc` : Discovery
 * `LatMov` : Lateral Movement
