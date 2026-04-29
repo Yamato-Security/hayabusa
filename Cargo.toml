@@ -1,10 +1,10 @@
 [package]
 name = "hayabusa"
-version = "3.8.1"
+version = "3.8.2-dev"
 repository = "https://github.com/Yamato-Security/hayabusa"
 authors = ["Yamato Security @SecurityYamato"]
 edition = "2024"
-rust-version = "1.92.0"
+rust-version = "1.95.0"
 include = ["src/**/*", "LICENSE.txt", "README.md", "CHANGELOG.md"]
 
 [dependencies]
@@ -41,7 +41,7 @@ nested="*"
 num = "0.4.3"
 num-format = "*"
 pulldown-cmark = { version = "0.13.*", default-features = false, features = ["simd", "html"] }
-rand = "0.9.*"
+rand = "0.10.*"
 regex = "1"
 serde = { version = "1.*", features = ["derive"] }
 serde_derive = "1.*"

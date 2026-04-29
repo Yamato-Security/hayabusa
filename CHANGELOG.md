@@ -1,5 +1,11 @@
 # Changes
 
+## x.x.x [xxxx/xx/xx]
+
+**Other:**
+
+Added unit tests. (#1746) (@Fuzzdkk)
+
 ## 3.8.1 [2026/02/24] - Spring Hayfever Release
 
 **Bug Fixes:**
