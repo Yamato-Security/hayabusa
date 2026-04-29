@@ -1488,7 +1488,7 @@ fn _print_detection_summary_by_computer(
             .filter(|a| a.0.as_str() != "-")
             .collect();
 
-        sorted_detections.sort_by(|a, b| (-a.1).cmp(&(-b.1)));
+        sorted_detections.sort_by_key(|a| -a.1);
 
         // html出力は各種すべてのコンピュータ名を表示するようにする
         if stored_static.html_report_flag {
@@ -1558,7 +1558,7 @@ fn _print_detection_summary_tables(
         let mut sorted_detections: Vec<(&CompactString, &i128)> =
             detections_by_computer.iter().collect();
 
-        sorted_detections.sort_by(|a, b| (-a.1).cmp(&(-b.1)));
+        sorted_detections.sort_by_key(|a| -a.1);
 
         // html出力の場合はすべての内容を出力するようにする
         if stored_static.html_report_flag {
@@ -2131,7 +2131,7 @@ fn output_detected_rule_authors(
 ) {
     let mut sorted_authors: Vec<(&CompactString, &i128)> = rule_author_counter.iter().collect();
 
-    sorted_authors.sort_by(|a, b| (-a.1).cmp(&(-b.1)));
+    sorted_authors.sort_by_key(|a| -a.1);
     let authors_num = sorted_authors.len();
     let div = if authors_num <= table_column_num {
         1

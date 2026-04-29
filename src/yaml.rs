@@ -846,10 +846,8 @@ pub fn check_hayabusa_rule_fmt(yaml: &Yaml) -> Result<(), String> {
                         errors.push(format!("Invalid: {key}"));
                     }
                 }
-                "date" => {
-                    if !DATE_REGEX.is_match(yaml[key].as_str().unwrap_or("")) {
-                        errors.push(format!("Invalid: {key}"));
-                    }
+                "date" if !DATE_REGEX.is_match(yaml[key].as_str().unwrap_or("")) => {
+                    errors.push(format!("Invalid: {key}"));
                 }
                 _ => {}
             }
