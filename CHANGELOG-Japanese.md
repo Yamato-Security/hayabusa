@@ -6,6 +6,10 @@
 
 MITRE ATT&CK v19に対応した。(@fukusuket)
 
+**その他:**
+
+ユニットテストの追加。 (#1746) (@Fuzzdkk)
+
 ## 3.8.1 [2026/02/24] - Spring Hayfever Release
 
 **バグ修正:**
