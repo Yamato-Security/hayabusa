@@ -21,7 +21,7 @@ console = "0.16.*"
 csv = "1.4.*"
 dashmap = "*"
 dialoguer = "*"
-downcast-rs = "1.*"
+downcast-rs = "2.*"
 evtx = { git = "https://github.com/Yamato-Security/hayabusa-evtx.git" , features = ["fast-alloc"] , rev = "5c2bc81" } # 0.9.7 2026/04/29 update
 git2 = "0.*"
 hashbrown = "0.17.*"
@@ -46,7 +46,7 @@ regex = "1"
 serde = { version = "1.*", features = ["derive"] }
 serde_derive = "1.*"
 serde_json = { version = "1.0"}
-strum = { version = "0.27.*", features = ["derive"] }
+strum = { version = "0.28.*", features = ["derive"] }
 termcolor = "*"
 terminal_size = "*"
 tokio = { version = "1", features = ["full"] }
