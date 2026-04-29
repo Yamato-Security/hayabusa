@@ -134,7 +134,7 @@ pub struct StoredStatic {
     pub exclude_computer: HashSet<CompactString>,
     pub include_eid: HashSet<CompactString>,
     pub exclude_eid: HashSet<CompactString>,
-    pub include_status: HashSet<CompactString>, // 読み込み対象ルールのステータスのセット。*はすべてのステータスを読み込む
+    pub include_status: HashSet<CompactString>, // Set of statuses for rules to load. * loads all statuses.
     pub field_data_map: Option<FieldDataMap>,
     pub no_pwsh_field_extraction: bool,
     pub enable_recover_records: bool,
@@ -148,7 +148,7 @@ pub struct StoredStatic {
 }
 
 impl StoredStatic {
-    /// main.rsでパースした情報からデータを格納する関数
+    /// Function to store data from the information parsed in main.rs.
     pub fn create_static_data(input_config: Option<Config>) -> StoredStatic {
         let action_id = Action::to_usize(input_config.as_ref().unwrap().action.as_ref());
         let quiet_errors_flag = match &input_config.as_ref().unwrap().action {
@@ -869,7 +869,7 @@ impl StoredStatic {
         );
         ret
     }
-    /// detailsのdefault値をファイルから読み取る関数
+    /// Function to read the default values of details from a file.
     pub fn get_default_details(
         filepath: &str,
         disable_abbreviations: bool,
@@ -884,7 +884,7 @@ impl StoredStatic {
                 HashMap::new()
             }
             Ok(lines) => {
-                // 以下の形式のデータとなっていてProvide Name, EID, Detailsでの出力要素の順に記載されている
+                // The data is in the following format, listed in order of Provider Name, EID, Details output elements.
                 // Microsoft-Windows-Sysmon, 1, Cmdline: %CommandLine% ¦ Proc: %Image% ...
 
                 let mut ret: HashMap<CompactString, CompactString> = HashMap::new();
@@ -922,7 +922,7 @@ impl StoredStatic {
                                 );
                             }
                         };
-                        // ProviderとEIDの組み合わせで重複することはないためキーとして利用する
+                        // Since the combination of Provider and EID is unique, it is used as the key.
                         ret.insert(
                             CompactString::from(format!("{provider}_{eid}")),
                             CompactString::from(details),
@@ -936,7 +936,7 @@ impl StoredStatic {
     }
 }
 
-/// config情報からthread_numberの情報を抽出する関数
+/// Function to extract thread_number information from config.
 fn check_thread_number(config: &Config) -> Option<usize> {
     match config.action.as_ref()? {
         Action::CsvTimeline(opt) => opt.output_options.detect_common_options.thread_number,
@@ -951,12 +951,12 @@ fn check_thread_number(config: &Config) -> Option<usize> {
     }
 }
 
-// コマンド生成用のClapの定義
+// Clap definitions for command generation.
 #[derive(Subcommand, Clone, Debug)]
 pub enum Action {
     #[clap(
         author = "Yamato Security (https://github.com/Yamato-Security/hayabusa - @SecurityYamato)",
-        help_template = "\nHayabusa v3.8.1 - Spring Hayfever Release\n{author-with-newline}\n{usage-heading}\n  hayabusa.exe csv-timeline <INPUT> [OPTIONS]\n\n{all-args}",
+        help_template = "\nHayabusa v3.9.0 - Showa Day Release\n{author-with-newline}\n{usage-heading}\n  hayabusa.exe csv-timeline <INPUT> [OPTIONS]\n\n{all-args}",
         term_width = 400,
         display_order = 292,
         disable_help_flag = true
@@ -966,7 +966,7 @@ pub enum Action {
 
     #[clap(
         author = "Yamato Security (https://github.com/Yamato-Security/hayabusa - @SecurityYamato)",
-        help_template = "\nHayabusa v3.8.1 - Spring Hayfever Release\n{author-with-newline}\n{usage-heading}\n  hayabusa.exe json-timeline <INPUT> [OPTIONS]\n\n{all-args}",
+        help_template = "\nHayabusa v3.9.0 - Showa Day Release\n{author-with-newline}\n{usage-heading}\n  hayabusa.exe json-timeline <INPUT> [OPTIONS]\n\n{all-args}",
         term_width = 400,
         display_order = 360,
         disable_help_flag = true
@@ -976,7 +976,7 @@ pub enum Action {
 
     #[clap(
         author = "Yamato Security (https://github.com/Yamato-Security/hayabusa - @SecurityYamato)",
-        help_template = "\nHayabusa v3.8.1 - Spring Hayfever Release\n{author-with-newline}\n{usage-heading}\n  hayabusa.exe log-metrics <INPUT> [OPTIONS]\n\n{all-args}",
+        help_template = "\nHayabusa v3.9.0 - Showa Day Release\n{author-with-newline}\n{usage-heading}\n  hayabusa.exe log-metrics <INPUT> [OPTIONS]\n\n{all-args}",
         term_width = 400,
         display_order = 382,
         disable_help_flag = true
@@ -986,7 +986,7 @@ pub enum Action {
 
     #[clap(
         author = "Yamato Security (https://github.com/Yamato-Security/hayabusa - @SecurityYamato)",
-        help_template = "\nHayabusa v3.8.1 - Spring Hayfever Release\n{author-with-newline}\n{usage-heading}\n  hayabusa.exe logon-summary <INPUT> [OPTIONS]\n\n{all-args}",
+        help_template = "\nHayabusa v3.9.0 - Showa Day Release\n{author-with-newline}\n{usage-heading}\n  hayabusa.exe logon-summary <INPUT> [OPTIONS]\n\n{all-args}",
         term_width = 400,
         display_order = 383,
         disable_help_flag = true
@@ -996,7 +996,7 @@ pub enum Action {
 
     #[clap(
         author = "Yamato Security (https://github.com/Yamato-Security/hayabusa - @SecurityYamato)",
-        help_template = "\nHayabusa v3.8.1 - Spring Hayfever Release\n{author-with-newline}\n{usage-heading}\n  hayabusa.exe eid-metrics <INPUT> [OPTIONS]\n\n{all-args}",
+        help_template = "\nHayabusa v3.9.0 - Showa Day Release\n{author-with-newline}\n{usage-heading}\n  hayabusa.exe eid-metrics <INPUT> [OPTIONS]\n\n{all-args}",
         term_width = 400,
         display_order = 310,
         disable_help_flag = true
@@ -1006,7 +1006,7 @@ pub enum Action {
 
     #[clap(
         author = "Yamato Security (https://github.com/Yamato-Security/hayabusa - @SecurityYamato)",
-        help_template = "\nHayabusa v3.8.1 - Spring Hayfever Release\n{author-with-newline}\n{usage-heading}\n  hayabusa.exe expand-list <INPUT> [OPTIONS]\n\n{all-args}",
+        help_template = "\nHayabusa v3.9.0 - Showa Day Release\n{author-with-newline}\n{usage-heading}\n  hayabusa.exe expand-list <INPUT> [OPTIONS]\n\n{all-args}",
         term_width = 400,
         display_order = 311,
         disable_help_flag = true
@@ -1016,7 +1016,7 @@ pub enum Action {
 
     #[clap(
         author = "Yamato Security (https://github.com/Yamato-Security/hayabusa - @SecurityYamato)",
-        help_template = "\nHayabusa v3.8.1 - Spring Hayfever Release\n{author-with-newline}\n{usage-heading}\n  hayabusa.exe extract-base64 <INPUT> [OPTIONS]\n\n{all-args}",
+        help_template = "\nHayabusa v3.9.0 - Showa Day Release\n{author-with-newline}\n{usage-heading}\n  hayabusa.exe extract-base64 <INPUT> [OPTIONS]\n\n{all-args}",
         term_width = 400,
         display_order = 311,
         disable_help_flag = true
@@ -1026,7 +1026,7 @@ pub enum Action {
 
     #[clap(
         author = "Yamato Security (https://github.com/Yamato-Security/hayabusa - @SecurityYamato)",
-        help_template = "\nHayabusa v3.8.1 - Spring Hayfever Release\n{author-with-newline}\n{usage-heading}\n  hayabusa.exe pivot-keywords-list <INPUT> [OPTIONS]\n\n{all-args}",
+        help_template = "\nHayabusa v3.9.0 - Showa Day Release\n{author-with-newline}\n{usage-heading}\n  hayabusa.exe pivot-keywords-list <INPUT> [OPTIONS]\n\n{all-args}",
         term_width = 400,
         display_order = 420,
         disable_help_flag = true
@@ -1036,7 +1036,7 @@ pub enum Action {
 
     #[clap(
         author = "Yamato Security (https://github.com/Yamato-Security/hayabusa - @SecurityYamato)",
-        help_template = "\nHayabusa v3.8.1 - Spring Hayfever Release\n{author-with-newline}\n{usage-heading}\n  hayabusa.exe search <INPUT> <--keywords \"<KEYWORDS>\" OR --regex \"<REGEX>\"> [OPTIONS]\n\n{all-args}",
+        help_template = "\nHayabusa v3.9.0 - Showa Day Release\n{author-with-newline}\n{usage-heading}\n  hayabusa.exe search <INPUT> <--keywords \"<KEYWORDS>\" OR --regex \"<REGEX>\"> [OPTIONS]\n\n{all-args}",
         term_width = 400,
         display_order = 450,
         disable_help_flag = true
@@ -1046,7 +1046,7 @@ pub enum Action {
 
     #[clap(
         author = "Yamato Security (https://github.com/Yamato-Security/hayabusa - @SecurityYamato)",
-        help_template = "\nHayabusa v3.8.1 - Spring Hayfever Release\n{author-with-newline}\n{usage-heading}\n  {usage}\n\n{all-args}",
+        help_template = "\nHayabusa v3.9.0 - Showa Day Release\n{author-with-newline}\n{usage-heading}\n  {usage}\n\n{all-args}",
         term_width = 400,
         display_order = 470,
         disable_help_flag = true
@@ -1056,7 +1056,7 @@ pub enum Action {
 
     #[clap(
         author = "Yamato Security (https://github.com/Yamato-Security/hayabusa - @SecurityYamato)",
-        help_template = "\nHayabusa v3.8.1 - Spring Hayfever Release\n{author-with-newline}\n{usage-heading}\n  {usage}\n\n{all-args}",
+        help_template = "\nHayabusa v3.9.0 - Showa Day Release\n{author-with-newline}\n{usage-heading}\n  {usage}\n\n{all-args}",
         term_width = 400,
         display_order = 380,
         disable_help_flag = true
@@ -1066,7 +1066,7 @@ pub enum Action {
 
     #[clap(
         author = "Yamato Security (https://github.com/Yamato-Security/hayabusa - @SecurityYamato)",
-        help_template = "\nHayabusa v3.8.1 - Spring Hayfever Release\n{author-with-newline}\n{usage-heading}\n  {usage}\n\n{all-args}",
+        help_template = "\nHayabusa v3.9.0 - Showa Day Release\n{author-with-newline}\n{usage-heading}\n  {usage}\n\n{all-args}",
         term_width = 400,
         display_order = 451,
         disable_help_flag = true
@@ -1084,7 +1084,7 @@ pub enum Action {
 
     #[clap(
         author = "Yamato Security (https://github.com/Yamato-Security/hayabusa - @SecurityYamato)",
-        help_template = "\nHayabusa v3.8.1 - Spring Hayfever Release\n{author-with-newline}\n{usage-heading}\n  hayabusa.exe computer-metrics <INPUT> [OPTIONS]\n\n{all-args}",
+        help_template = "\nHayabusa v3.9.0 - Showa Day Release\n{author-with-newline}\n{usage-heading}\n  hayabusa.exe computer-metrics <INPUT> [OPTIONS]\n\n{all-args}",
         term_width = 400,
         display_order = 290,
         disable_help_flag = true
@@ -1094,7 +1094,7 @@ pub enum Action {
 
     #[clap(
         author = "Yamato Security (https://github.com/Yamato-Security/hayabusa - @SecurityYamato)",
-        help_template = "\nHayabusa v3.8.1 - Spring Hayfever Release\n{author-with-newline}\n{usage-heading}\n  hayabusa.exe config-critical-systems <INPUT> [OPTIONS]\n\n{all-args}",
+        help_template = "\nHayabusa v3.9.0 - Showa Day Release\n{author-with-newline}\n{usage-heading}\n  hayabusa.exe config-critical-systems <INPUT> [OPTIONS]\n\n{all-args}",
         term_width = 400,
         display_order = 291,
         disable_help_flag = true
@@ -2029,7 +2029,7 @@ pub struct ConfigCriticalSystemsOption {
 #[derive(Parser, Clone, Debug, Default)]
 #[clap(
     author = "Yamato Security (https://github.com/Yamato-Security/hayabusa - @SecurityYamato)",
-    help_template = "\nHayabusa v3.8.1 - Spring Hayfever Release\n{author-with-newline}\n{usage-heading}\n  hayabusa.exe <COMMAND> [OPTIONS]\n  hayabusa.exe help <COMMAND> or hayabusa.exe <COMMAND> -h\n\n{all-args}{options}",
+    help_template = "\nHayabusa v3.9.0 - Showa Day Release\n{author-with-newline}\n{usage-heading}\n  hayabusa.exe <COMMAND> [OPTIONS]\n  hayabusa.exe help <COMMAND> or hayabusa.exe <COMMAND> -h\n\n{all-args}{options}",
     term_width = 400,
     disable_help_flag = true
 )]
@@ -2080,7 +2080,7 @@ impl TargetIds {
     }
 
     pub fn is_target(&self, id: &str, flag_in_case_empty: bool) -> bool {
-        // 中身が空の場合はEventIdの場合は全EventIdを対象とする。RuleIdの場合は全部のRuleIdはフィルタリングの対象にならないものとする
+        // If the content is empty: for EventId, target all EventIds. For RuleId, treat all RuleIds as not subject to filtering.
         if self.ids.is_empty() {
             return flag_in_case_empty;
         }
@@ -2093,7 +2093,7 @@ fn load_target_ids(path: &str) -> TargetIds {
     let lines = match utils::read_txt(path) {
         Ok(lines) => lines,
         Err(e) => {
-            // ファイルが存在しなければエラーとする
+            // Treat it as an error if the file does not exist.
             AlertMessage::alert(&e).ok();
             return ret;
         }
@@ -2398,7 +2398,7 @@ impl Default for EventKeyAliasConfig {
 pub fn load_eventkey_alias(path: &str) -> EventKeyAliasConfig {
     let mut config = EventKeyAliasConfig::new();
 
-    // eventkey_aliasが読み込めなかったらエラーで終了とする。
+    // Terminate with an error if eventkey_alias cannot be loaded.
     let read_result = utils::read_csv(path);
     if let Err(e) = read_result {
         AlertMessage::alert(&e).ok();
@@ -2429,7 +2429,7 @@ pub fn load_eventkey_alias(path: &str) -> EventKeyAliasConfig {
     config
 }
 
-///設定ファイルを読み込み、keyとfieldsのマップをPIVOT_KEYWORD大域変数にロードする。
+/// Load the config file and load the map of keys and fields into the PIVOT_KEYWORD global variable.
 pub fn load_pivot_keywords(path: &str) {
     let read_result = match utils::read_txt(path) {
         Ok(v) => v,
@@ -2451,7 +2451,7 @@ pub fn load_pivot_keywords(path: &str) {
         let key = map.next().unwrap();
         let value = map.next().unwrap();
 
-        //存在しなければ、keyを作成
+        // If it does not exist, create the key.
         PIVOT_KEYWORD
             .write()
             .unwrap()
@@ -2468,7 +2468,7 @@ pub fn load_pivot_keywords(path: &str) {
     });
 }
 
-/// --target-file-extで追加された拡張子から、調査対象ファイルの拡張子セットを返す関数。--json-inputがtrueの場合はjsonのみを対象とする
+/// Function to return the set of file extensions to investigate, from the extensions added by --target-file-ext. If --json-input is true, only json is targeted.
 pub fn get_target_extensions(arg: Option<&Vec<String>>, json_input_flag: bool) -> HashSet<String> {
     let mut target_file_extensions: HashSet<String> = convert_option_vecs_to_hs(arg);
     if json_input_flag {
@@ -2480,7 +2480,7 @@ pub fn get_target_extensions(arg: Option<&Vec<String>>, json_input_flag: bool) -
     target_file_extensions
 }
 
-/// Option<Vec<String>>の内容をHashSetに変換する関数
+/// Function to convert the contents of Option<Vec<String>> to a HashSet.
 pub fn convert_option_vecs_to_hs(arg: Option<&Vec<String>>) -> HashSet<String> {
     let ret: HashSet<String> = arg.unwrap_or(&Vec::new()).iter().cloned().collect();
     ret
@@ -2518,7 +2518,7 @@ fn extract_search_options(config: &Config) -> Option<SearchOption> {
     }
 }
 
-/// configから出力に関連したオプションの値を格納した構造体を抽出する関数
+/// Function to extract a struct containing option values related to output from the config.
 fn extract_output_options(config: &Config) -> Option<OutputOption> {
     match &config.action.as_ref()? {
         Action::CsvTimeline(option) => Some(option.output_options.clone()),
@@ -2710,7 +2710,7 @@ fn load_eventcode_info(path: &str) -> EventInfoConfig {
         }
     };
 
-    // channel_eid_info.txtが読み込めなかったらエラーで終了とする。
+    // Terminate with an error if channel_eid_info.txt cannot be loaded.
     read_result.iter().for_each(|line| {
         if line.len() != 3 {
             return;

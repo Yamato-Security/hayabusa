@@ -5,11 +5,13 @@ attack.initial-access,InitAccess,03. Initial Access
 attack.execution,Exec,04. Execution
 attack.persistence,Persis,05. Persistence
 attack.privilege-escalation,PrivEsc,06. Privilege Escalation
-attack.defense-evasion,Evas,07. Defense Evasion
-attack.credential-access,CredAccess,08. Credential Access
-attack.discovery,Disc,09. Discovery
-attack.lateral-movement,LatMov,10. Lateral Movement
-attack.collection,Collect,11. Collection
-attack.command-and-control,C2,12. C2
-attack.exfiltration,Exfil,13. Exfiltration
-attack.impact,Impact,14. Impact
+attack.stealth,Stealth,07. Stealth
+attack.defense-evasion,Stealth,07. Stealth
+attack.defense-impairment,DefImpair,08. Defense Impairment
+attack.credential-access,CredAccess,09. Credential Access
+attack.discovery,Disc,10. Discovery
+attack.lateral-movement,LatMov,11. Lateral Movement
+attack.collection,Collect,12. Collection
+attack.command-and-control,C2,13. C2
+attack.exfiltration,Exfil,14. Exfiltration
+attack.impact,Impact,15. Impact

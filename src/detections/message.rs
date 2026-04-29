@@ -69,7 +69,7 @@ lazy_static! {
     pub static ref COMPUTER_MITRE_ATTCK_MAP : DashMap<CompactString, Vec<CompactString>> = DashMap::new();
 }
 
-/// ファイルパスで記載されたtagでのフル名、表示の際に置き換えられる文字列のHashMapを作成する関数。
+/// Function to create a HashMap of full names for tags described by file paths and the strings to be replaced during display.
 /// ex. attack.impact,Impact
 pub fn create_output_filter_config(
     path: &str,
@@ -123,7 +123,7 @@ pub fn create_message(
     let mut record_details_info_map = HashMap::new();
     let mut sp_removed_details_in_record = vec![];
     if !is_agg {
-        //ここの段階でdetailsの内容でaliasを置き換えた内容と各種、key,valueの組み合わせのmapを取得する
+        // At this stage, get the map containing the content with aliases replaced in details and various key-value combinations.
         let (removed_sp_parsed_detail, mut details_in_record) = parse_message(
             event_record,
             &output,
@@ -138,8 +138,8 @@ pub fn create_message(
         if is_json_timeline {
             record_details_info_map.insert("#Details".into(), sp_removed_details_in_record.clone());
         }
-        // 特殊文字の除外のためのretain処理
-        // Details内にある改行文字は除外しないために絵文字を含めた特殊な文字に変換することで対応する
+        // retain processing to exclude special characters.
+        // To avoid excluding newline characters within Details, convert them to special characters including emoji.
         let parsed_detail = remove_sp_char(removed_sp_parsed_detail);
         detect_info.detail = if parsed_detail.is_empty() {
             CompactString::from("-")
@@ -159,13 +159,13 @@ pub fn create_message(
         match profile {
             Details(_) => {
                 if detect_info.detail.is_empty() {
-                    //Detailsの中身が何も入っていない場合はそのままの値を入れる
+                    // If the Details content is empty, insert the value as-is.
                     replaced_profiles.push((key.to_owned(), profile.to_owned()));
                 } else {
                     replaced_profiles
                         .push((key.to_owned(), Details(detect_info.detail.clone().into())));
 
-                    // メモリの節約のためにDetailsの中身を空にする
+                    // Empty the Details content to save memory.
                     detect_info.detail = CompactString::default();
                 }
             }
@@ -219,7 +219,7 @@ pub fn create_message(
                 let details_splits: HashSet<&str> = {
                     let details = sp_removed_details_in_record.iter().map(|x| {
                         let v = x.split_once(": ").unwrap_or_default().1;
-                        // 末尾のカンマが含まれている場合と含まれていない場合でExtraFieldInfoでの一致判定が変わってしまうため判定用のハッシュセットの末尾のカンマを削除する
+                        // Remove the trailing comma from the hash set used for matching, because the match determination in ExtraFieldInfo differs depending on whether a trailing comma is present.
                         v.strip_suffix(',').unwrap_or(v)
                     });
                     HashSet::from_iter(details)
@@ -285,7 +285,7 @@ pub fn create_message(
     detect_info
 }
 
-/// メッセージ内の%で囲まれた箇所をエイリアスとしてレコード情報を参照して置き換える関数
+/// Function to replace sections enclosed in % in the message by referencing record information as aliases.
 pub fn parse_message(
     event_record: &Value,
     output: &CompactString,
@@ -364,7 +364,7 @@ pub fn parse_message(
     }
     let mut details_key_and_value: Vec<CompactString> = vec![];
     for (k, v) in hash_map.iter() {
-        // JSON出力の場合は各種のaliasを置き換える処理はafterfactの出力用の関数で行うため、ここでは行わない
+        // For JSON output, the alias replacement processing is handled by the afterfact output functions, so it is not done here.
         if !json_timeline_flag {
             return_message = CompactString::new(return_message.replace(k.as_str(), v[0].as_str()));
         }
@@ -396,7 +396,7 @@ pub fn get_event_time(event_record: &Value, json_input_flag: bool) -> Option<Dat
 }
 
 impl AlertMessage {
-    ///対象のディレクトリが存在することを確認後、最初の定型文を追加して、ファイルのbufwriterを返す関数
+    /// Function that confirms the target directory exists, adds the initial boilerplate, and returns a BufWriter for the file.
     pub fn create_error_log(quiet_errors_flag: bool, no_color: bool) {
         if quiet_errors_flag {
             return;
@@ -438,7 +438,7 @@ impl AlertMessage {
         write_color_buffer(&BufferWriter::stdout(ColorChoice::Always), None, "", false).ok();
     }
 
-    /// ERRORメッセージを表示する関数
+    /// Function to display an ERROR message.
     pub fn alert(contents: &str) -> io::Result<()> {
         write_color_buffer(
             &BufferWriter::stderr(ColorChoice::Always),
@@ -448,7 +448,7 @@ impl AlertMessage {
         )
     }
 
-    /// WARNメッセージを表示する関数
+    /// Function to display a WARN message.
     pub fn warn(contents: &str) -> io::Result<()> {
         write_color_buffer(
             &BufferWriter::stderr(ColorChoice::Always),
@@ -485,7 +485,7 @@ mod tests {
     }
 
     #[test]
-    /// outputで指定されているキー(eventkey_alias.txt内で設定済み)から対象のレコード内の情報でメッセージをパースしているか確認する関数
+    /// Function to verify that the message is parsed using information from the target record for keys specified in output (already set in eventkey_alias.txt).
     fn test_parse_message() {
         let json_str = r#"
         {
@@ -564,7 +564,7 @@ mod tests {
     }
 
     #[test]
-    /// outputで指定されているキーが、eventkey_alias.txt内で設定されていない場合の出力テスト
+    /// Output test for when the key specified in output is not set in eventkey_alias.txt.
     fn test_parse_message_not_exist_key_in_output() {
         let json_str = r#"
         {

@@ -210,7 +210,7 @@ fn sort_and_dedup_file(file_path: &Path) -> io::Result<()> {
     let file = fs::File::open(file_path)?;
     let reader = BufReader::new(file);
 
-    // 行を読み込み、重複を削除してソートする
+    // Read lines, remove duplicates, and sort.
     let mut lines: HashSet<String> = HashSet::new();
     for line in reader.lines() {
         lines.insert(line?);
@@ -218,7 +218,7 @@ fn sort_and_dedup_file(file_path: &Path) -> io::Result<()> {
     let mut sorted_lines: Vec<String> = lines.into_iter().collect();
     sorted_lines.sort();
 
-    // ファイルを上書きする
+    // Overwrite the file.
     let mut file = OpenOptions::new()
         .write(true)
         .truncate(true)

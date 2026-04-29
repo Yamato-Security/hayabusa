@@ -99,13 +99,13 @@ impl Timeline {
         self.config_critical_systems.output_computers(no_color);
     }
 
-    /// メトリクスコマンドの統計情報のメッセージ出力関数
+    /// Function to output the statistics message for the metrics command.
     pub fn tm_stats_dsp_msg(
         &mut self,
         event_timeline_config: &EventInfoConfig,
         stored_static: &StoredStatic,
     ) {
-        // 出力メッセージ作成
+        // Create the output message.
         let mut sammsges: Nested<String> = Nested::new();
         let total_event_record = format!(
             "\n\nTotal Event Records: {}\n",
@@ -185,11 +185,11 @@ impl Timeline {
 
         stats_tb.set_header(header_cells);
 
-        // 集計件数でソート
+        // Sort by aggregated count.
         let mut mapsorted: Vec<_> = self.stats.stats_list.iter().collect();
         mapsorted.sort_by(|x, y| y.1.cmp(x.1));
 
-        // イベントID毎の出力メッセージ生成
+        // Generate an output message for each Event ID.
         let stats_msges: Nested<Vec<CompactString>> =
             self.tm_stats_set_msg(mapsorted, event_timeline_config, stored_static);
 
@@ -244,9 +244,9 @@ impl Timeline {
         }
     }
 
-    /// ログオン統計情報のメッセージ出力関数
+    /// Function to output the logon statistics message.
     pub fn tm_logon_stats_dsp_msg(&mut self, stored_static: &StoredStatic) {
-        // 出力メッセージ作成
+        // Create the output message.
         let mut sammsges: Vec<String> = Vec::new();
         let total_event_record = format!(
             "\n\nTotal Event Records: {}\n",
@@ -319,7 +319,7 @@ impl Timeline {
         }
     }
 
-    // イベントID毎の出力メッセージ生成
+    // Generate an output message for each Event ID.
     fn tm_stats_set_msg(
         &self,
         mapsorted: Vec<(&(CompactString, CompactString), &usize)>,
@@ -329,13 +329,13 @@ impl Timeline {
         let mut msges: Nested<Vec<CompactString>> = Nested::new();
 
         for ((event_id, channel), event_cnt) in mapsorted.iter() {
-            // 件数の割合を算出
+            // Calculate the percentage of counts.
             let rate: f32 = **event_cnt as f32 / self.stats.total as f32;
             let fmted_channel = channel;
 
-            // イベント情報取得(eventtitleなど)
-            // channel_eid_info.txtに登録あるものは情報設定
-            // 出力メッセージ1行作成
+            // Get event information (event title, etc.)
+            // Set information for entries registered in channel_eid_info.txt.
+            // Create one line of output message.
             let ch = replace_channel_abbr(stored_static, fmted_channel);
 
             if event_timeline_config
@@ -367,7 +367,7 @@ impl Timeline {
         msges
     }
 
-    /// ユーザ毎のログイン統計情報出力メッセージ生成
+    /// Generate output message for login statistics per user.
     fn tm_loginstats_tb_set_msg(&self, output: &Option<PathBuf>, no_color: bool) {
         if output.is_none() {
             write_color_buffer(
@@ -396,7 +396,7 @@ impl Timeline {
         }
     }
 
-    /// ユーザ毎のログイン統計情報出力
+    /// Output login statistics per user.
     fn tm_loginstats_tb_dsp_msg(&self, logon_res: &str, output: &Option<PathBuf>, no_color: bool) {
         let header_column = make_ascii_titlecase(logon_res);
         let header = vec![
@@ -449,17 +449,17 @@ impl Timeline {
             .apply_modifier(UTF8_ROUND_CORNERS);
         let h = &header;
         logins_stats_tb.set_header([h[0], h[1], h[2], h[4], h[8], h[9]]);
-        // 集計するログオン結果を設定
+        // Set the logon results to aggregate.
         let vnum = match logon_res {
             "successful" => 0,
             "failed" => 1,
             &_ => 0,
         };
-        // 集計件数でソート
+        // Sort by aggregated count.
         let mut mapsorted: Vec<_> = self.stats.stats_login_list.iter().collect();
         mapsorted.sort_by(|x, y| y.1[vnum].cmp(&x.1[vnum]));
         for (e, values) in &mapsorted {
-            // 件数が"0"件は表示しない
+            // Do not display entries with a count of zero.
             if values[vnum] == 0 {
                 continue;
             } else {
@@ -483,7 +483,7 @@ impl Timeline {
                 logins_stats_tb.add_row([r[0], r[1], r[2], r[4], r[8], r[9]]);
             }
         }
-        // rowデータがない場合は、検出なしのメッセージを表示する
+        // If there is no row data, display a message indicating no detections.
         if logins_stats_tb.row_iter().len() == 0 {
             println!(" No logon {logon_res} events were detected.");
         } else if output.is_none() {
@@ -491,7 +491,7 @@ impl Timeline {
         }
     }
 
-    /// Search結果出力
+    /// Output search results.
     pub fn search_dsp_msg(&mut self, stored_static: &StoredStatic) {
         if let Action::Search(search_summary_option) =
             &stored_static.config.action.as_ref().unwrap()
@@ -500,7 +500,7 @@ impl Timeline {
         }
     }
 
-    /// ComputeMetrics結果出力
+    /// Output computer metrics results.
     pub fn computer_metrics_dsp_msg(&mut self, stored_static: &StoredStatic) {
         if let Action::ComputerMetrics(computer_metrics_option) =
             &stored_static.config.action.as_ref().unwrap()
@@ -742,7 +742,7 @@ mod tests {
         }))
     }
 
-    /// メトリクスコマンドの統計情報集計のテスト。 Testing of statistics aggregation for metrics commands.
+    /// Test for statistics aggregation of the metrics command.
     #[test]
     pub fn test_evt_logon_stats() {
         let mut dummy_stored_static =
@@ -789,10 +789,10 @@ mod tests {
         *STORED_EKEY_ALIAS.write().unwrap() = Some(dummy_stored_static.eventkey_alias.clone());
         let mut timeline = Timeline::default();
 
-        // レコード情報がないときにはstats_time_cntは何も行わないことをテスト
+        // Test that stats_time_cnt does nothing when there is no record information.
         timeline.stats.logon_stats_start(&[], &dummy_stored_static);
 
-        // テスト1: 対象となるTimestamp情報がない場合
+        // Test 1: When there is no target Timestamp information.
         let no_timestamp_record_str = r#"{
             "Event": {
                 "System": {
@@ -818,7 +818,7 @@ mod tests {
         assert!(timeline.stats.start_time.is_none());
         assert!(timeline.stats.end_time.is_none());
 
-        // テスト2: Event.System.TimeCreated_attributes.SystemTimeにタイムスタンプが含まれる場合
+        // Test 2: When Event.System.TimeCreated_attributes.SystemTime contains a timestamp.
         let tcreated_attribe_record_str = r#"{
             "Event": {
                 "System": {
@@ -850,7 +850,7 @@ mod tests {
             &false,
         ));
 
-        // テスト3: Event.System.@timestampにタイムスタンプが含まれる場合
+        // Test 3: When Event.System.@timestamp contains a timestamp.
         let timestamp_attribe_record_str = r#"{
             "Event": {
                 "System": {
@@ -1024,7 +1024,7 @@ mod tests {
                 assert_eq!(s, expect);
             }
         };
-        //テスト終了後にファイルを削除する
+        // Delete the file after the test.
         assert!(remove_file("./test_tm_stats.csv").is_ok());
     }
 
@@ -1208,7 +1208,7 @@ mod tests {
                 assert_eq!(s, expect_failed);
             }
         };
-        //テスト終了後にファイルを削除する
+        // Delete the file after the test.
         assert!(remove_file("./test_tm_logon_stats-successful.csv").is_ok());
         assert!(remove_file("./test_tm_logon_stats-failed.csv").is_ok());
     }

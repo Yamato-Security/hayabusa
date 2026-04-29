@@ -88,7 +88,7 @@ impl Default for AfterfactInfo {
             > = HashMap::new();
             let mut detect_counts_by_rule_and_level: HashMap<LEVEL, HashMap<CompactString, i128>> =
                 HashMap::new();
-            // レベル別、日ごとの集計用変数の初期化
+            // Initialize aggregation variables by level and day.
             for level_init in LEVEL::iter() {
                 detect_counts_by_date_and_level.insert(level_init.clone(), HashMap::new());
                 detect_counts_by_computer_and_level.insert(level_init.clone(), HashMap::new());
@@ -304,7 +304,7 @@ fn emit_csv_inner(
         .build(removed_replaced_maps.keys())
         .unwrap();
 
-    // remove duplicate dataのための前レコード分の情報を保持する変数
+    // Variable to hold the previous record information for removing duplicate data.
     let color_map = create_output_color_map(stored_static.common_options.no_color);
     let (json_output_flag, jsonl_output_flag, remove_duplicate_data) =
         match &stored_static.config.action.as_ref().unwrap() {
@@ -325,9 +325,9 @@ fn emit_csv_inner(
             continue;
         }
         if afterfact_writer.display_flag && !(json_output_flag || jsonl_output_flag) {
-            // 標準出力の場合
+            // For standard output.
             if !afterfact_info.has_displayed_header {
-                // ヘッダーのみを出力
+                // Output only the header.
                 _get_serialized_disp_output(
                     &afterfact_writer.disp_wtr,
                     profile,
@@ -1412,7 +1412,7 @@ fn _print_unique_results(
     }
 }
 
-/// 各レベル毎で最も高い検知数を出した日付を出力する
+/// Output the date with the highest detection count for each level.
 fn _print_detection_summary_by_date(
     detect_counts_by_date: &HashMap<LEVEL, HashMap<CompactString, i128>>,
     color_map: &HashMap<LEVEL, Colors>,
@@ -1432,7 +1432,7 @@ fn _print_detection_summary_by_date(
         if level == LEVEL::UNDEFINED {
             continue;
         }
-        // output_levelsはlevelsからundefinedを除外した配列であり、各要素は必ず初期化されているのでSomeであることが保証されているのでunwrapをそのまま実施
+        // output_levels is an array with undefined excluded from levels; each element is guaranteed to be initialized and Some, so unwrap is called directly.
         let detections_by_day = detect_counts_by_date.get(&level).unwrap();
         let mut max_detect_str = CompactString::default();
         let mut tmp_cnt: i128 = 0;
@@ -1463,7 +1463,7 @@ fn _print_detection_summary_by_date(
     buf_wtr.print(&wtr).ok();
 }
 
-/// 各レベル毎で最も高い検知数を出したコンピュータ名を出力する
+/// Output the computer name with the highest detection count for each level.
 fn _print_detection_summary_by_computer(
     detect_counts_by_computer: &HashMap<LEVEL, HashMap<CompactString, i128>>,
     color_map: &HashMap<LEVEL, Colors>,
@@ -1479,10 +1479,10 @@ fn _print_detection_summary_by_computer(
         if level == LEVEL::UNDEFINED {
             continue;
         }
-        // output_levelsはlevelsからundefinedを除外した配列であり、各要素は必ず初期化されているのでSomeであることが保証されているのでunwrapをそのまま実施
+        // output_levels is an array with undefined excluded from levels; each element is guaranteed to be initialized and Some, so unwrap is called directly.
         let detections_by_computer = detect_counts_by_computer.get(&level).unwrap();
         let mut result_vec = Nested::<String>::new();
-        //computer nameで-となっているものは除外して集計する
+        // Exclude entries where the computer name is "-" from the aggregation.
         let mut sorted_detections: Vec<(&CompactString, &i128)> = detections_by_computer
             .iter()
             .filter(|a| a.0.as_str() != "-")
@@ -1490,7 +1490,7 @@ fn _print_detection_summary_by_computer(
 
         sorted_detections.sort_by_key(|a| -a.1);
 
-        // html出力は各種すべてのコンピュータ名を表示するようにする
+        // For HTML output, display all computer names.
         if stored_static.html_report_flag {
             html_output_stock.push(format!(
                 "### Computers with most unique {} detections: {{#computers_with_most_unique_{}_detections}}",
@@ -1526,7 +1526,7 @@ fn _print_detection_summary_by_computer(
     buf_wtr.print(&wtr).ok();
 }
 
-/// 各レベルごとで検出数が多かったルールを表形式で出力する関数
+/// Function to output rules with the most detections for each level in table format.
 fn _print_detection_summary_tables(
     detect_counts_by_rule_and_level: &HashMap<LEVEL, HashMap<CompactString, i128>>,
     color_map: &HashMap<LEVEL, Colors>,
@@ -1553,14 +1553,14 @@ fn _print_detection_summary_tables(
 
         col_color.push(_get_table_color(color_map, &level));
 
-        // output_levelsはlevelsからundefinedを除外した配列であり、各要素は必ず初期化されているのでSomeであることが保証されているのでunwrapをそのまま実施
+        // output_levels is an array with undefined excluded from levels; each element is guaranteed to be initialized and Some, so unwrap is called directly.
         let detections_by_computer = detect_counts_by_rule_and_level.get(&level).unwrap();
         let mut sorted_detections: Vec<(&CompactString, &i128)> =
             detections_by_computer.iter().collect();
 
         sorted_detections.sort_by_key(|a| -a.1);
 
-        // html出力の場合はすべての内容を出力するようにする
+        // For HTML output, output all content.
         if stored_static.html_report_flag {
             html_output_stock.push(format!(
                 "### All {} alerts: {{#all_{}_alerts}}",
@@ -1661,7 +1661,7 @@ fn _get_timestamp(output_option: &TimeFormatOptions, time: &DateTime<Utc>) -> i6
     }
 }
 
-/// json出力の際に配列として対応させるdetails,MitreTactics,MitreTags,OtherTagsに該当する場合に配列を返す関数
+/// Function that returns an array when the value corresponds to details, MitreTactics, MitreTags, or OtherTags that are handled as arrays in JSON output.
 fn _get_json_vec(profile: &Profile, target_data: &String) -> Vec<String> {
     match profile {
         Profile::MitreTactics(_) | Profile::MitreTags(_) | Profile::OtherTags(_) => {
@@ -1679,7 +1679,7 @@ fn _get_json_vec(profile: &Profile, target_data: &String) -> Vec<String> {
     }
 }
 
-/// JSONの出力フォーマットに合わせた文字列を出力する関数
+/// Function to output a string matching the JSON output format.
 fn _create_json_output_format(
     key: &str,
     value: &str,
@@ -1749,7 +1749,7 @@ fn _create_json_output_format(
     }
 }
 
-/// JSONの値に対して文字列の出力形式をJSON出力でエラーにならないようにするための変換を行う関数
+/// Function that converts string values for JSON output to prevent errors in JSON output format.
 fn _convert_valid_json_str(input: &[&str], concat_flag: bool) -> String {
     let con_cal = if input.len() == 1 {
         input[0].to_string()
@@ -1787,7 +1787,7 @@ fn _convert_valid_json_str(input: &[&str], concat_flag: bool) -> String {
     }
 }
 
-/// JSONに出力する1検知分のオブジェクトの文字列を出力する関数
+/// Function to output the object string for one detection in JSON output.
 pub fn output_json_str(
     detect_info: &DetectInfo,
     afterfact_info: &mut AfterfactInfo,
@@ -1829,12 +1829,12 @@ pub fn output_json_str(
                             == profile.to_value())
                         || (!&now.is_empty() && !&prev.is_empty() && now == prev);
                     if dup_flag {
-                        // 合致する場合は前回レコード分のメッセージを更新する合致している場合は出力用のフィールドマップの内容を変更する。
-                        // 合致しているので前回分のメッセージは更新しない
-                        //DUPという通常の文字列を出すためにProfile::Literalを使用する
+                        // If matched, update the message for the previous record and change the content of the field map for output.
+                        // Since it matches, do not update the previous message.
+                        // Use Profile::Literal to output the ordinary string "DUP".
                         target_ext_field.push((field_name.clone(), Profile::Literal("DUP".into())));
                     } else {
-                        // 合致しない場合は前回レコード分のメッセージを更新する
+                        // If not matched, update the message for the previous record.
                         next_prev_message.insert(field_name.clone(), profile.clone());
                         target_ext_field.push((field_name.clone(), profile.clone()));
                     }
@@ -1967,7 +1967,7 @@ pub fn output_json_str(
                     }
                     output_stock.push(format!("    \"{key}\": {{"));
 
-                    // ルール内での表示順に合わせた表示順を戻した配列
+                    // Array with display order restored to match the display order in the rule.
                     let mut sorted_children_output_stock: Vec<(
                         &CompactString,
                         &Vec<CompactString>,
@@ -2181,12 +2181,12 @@ fn output_detected_rule_authors(
     println!("{tb}");
 }
 
-/// 与えられたyaml_pathからauthorの名前を抽出して配列で返却する関数
+/// Function to extract the author name from the given yaml_path and return it as an array.
 fn extract_author_name(author: &str) -> Nested<String> {
     let mut ret = Nested::<String>::new();
     for author in author.split(',').map(|s| {
-        // 各要素の括弧以降の記載は名前としないためtmpの一番最初の要素のみを参照する
-        // データの中にdouble quote と single quoteが入っているためここで除外する
+        // Only reference the first element of tmp, as descriptions after parentheses in each element are not treated as a name.
+        // Exclude double quotes and single quotes from the data here.
         s.split('(').next().unwrap_or_default().to_string()
     }) {
         ret.extend(author.split(';'));
@@ -2201,7 +2201,7 @@ fn extract_author_name(author: &str) -> Nested<String> {
         .collect()
 }
 
-///MITRE ATTCKのTacticsの属性を持つルールに検知したコンピュータ名をhtml出力するための文字列をhtml_output_stockに追加する関数
+/// Function to add to html_output_stock the string for HTML-outputting the computer name detected by rules with MITRE ATT&CK Tactics attributes.
 fn _output_html_computer_by_mitre_attck(html_output_stock: &mut Nested<String>) {
     html_output_stock.push("### MITRE ATT&CK Tactics:{#computers_with_mitre_attck_detections}");
     if COMPUTER_MITRE_ATTCK_MAP.is_empty() {

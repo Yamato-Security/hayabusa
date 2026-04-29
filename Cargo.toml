@@ -1,6 +1,6 @@
 [package]
 name = "hayabusa"
-version = "3.8.2-dev"
+version = "3.9.0"
 repository = "https://github.com/Yamato-Security/hayabusa"
 authors = ["Yamato Security @SecurityYamato"]
 edition = "2024"
@@ -21,10 +21,10 @@ console = "0.16.*"
 csv = "1.4.*"
 dashmap = "*"
 dialoguer = "*"
-downcast-rs = "1.*"
-evtx = { git = "https://github.com/Yamato-Security/hayabusa-evtx.git" , features = ["fast-alloc"] , rev = "0ee1f03" } # 0.9.6 2025/11/14 update
+downcast-rs = "2.*"
+evtx = { git = "https://github.com/Yamato-Security/hayabusa-evtx.git" , features = ["fast-alloc"] , rev = "5c2bc81" } # 0.9.7 2026/04/29 update
 git2 = "0.*"
-hashbrown = "0.16.*"
+hashbrown = "0.17.*"
 hex = "0.4.*"
 horrorshow = "0.8.*"
 indexmap = "2.*"
@@ -46,7 +46,7 @@ regex = "1"
 serde = { version = "1.*", features = ["derive"] }
 serde_derive = "1.*"
 serde_json = { version = "1.0"}
-strum = { version = "0.27.*", features = ["derive"] }
+strum = { version = "0.28.*", features = ["derive"] }
 termcolor = "*"
 terminal_size = "*"
 tokio = { version = "1", features = ["full"] }
@@ -55,7 +55,7 @@ wildmatch = "2.*"
 yaml-rust2 = "0.11"
 rust-embed={version = "8.11.0", features = ["include-exclude", "debug-embed"]}
 encoding_rs = "0.8.35"
-uuid = { version = "1.20.0", features = ["v4"] }
+uuid = { version = "1", features = ["v4"] }
 winapi = { version = "0.3.9", features = ["wow64apiset"] }
 
 [profile.dev]

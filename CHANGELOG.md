@@ -1,6 +1,10 @@
 # Changes
 
-## x.x.x [xxxx/xx/xx]
+## 3.9.0 [2026/04/29]
+
+**Enchancements:**
+
+Support for MITRE ATT&CK v19. (@fukusuket)
 
 **Other:**
 

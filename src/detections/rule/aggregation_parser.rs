@@ -2,10 +2,10 @@ use lazy_static::lazy_static;
 use regex::Regex;
 
 lazy_static! {
-    // ここで字句解析するときに使う正規表現の一覧を定義する。
-    // ここはSigmaのGithubレポジトリにある、toos/sigma/parser/condition.pyのSigmaConditionTokenizerのtokendefsを参考にしています。
+    // Define the list of regular expressions used for lexical analysis here.
+    // This is based on the tokendefs of SigmaConditionTokenizer in toos/sigma/parser/condition.py in the Sigma GitHub repository.
     pub static ref AGGREGATION_REGEXMAP: Vec<Regex> = vec![
-        Regex::new(r"^count\( *\w* *\)").unwrap(), // countの式
+        Regex::new(r"^count\( *\w* *\)").unwrap(), // count expression
         Regex::new(r"^ ").unwrap(),
         Regex::new(r"^by").unwrap(),
         Regex::new(r"^==").unwrap(),
@@ -20,27 +20,27 @@ lazy_static! {
 
 #[derive(Debug)]
 pub struct AggregationParseInfo {
-    pub _field_name: Option<String>,    // countの括弧に囲まれた部分の文字
-    pub _by_field_name: Option<String>, // count() by の後に指定される文字列
-    pub _cmp_op: AggregationConditionToken, // (必須)<とか>とか何が指定されたのか
-    pub _cmp_num: i64,                  // (必須)<とか>とかの後にある数値
+    pub _field_name: Option<String>, // Characters enclosed in parentheses of count.
+    pub _by_field_name: Option<String>, // String specified after count() by.
+    pub _cmp_op: AggregationConditionToken, // (Required) What was specified, such as < or >.
+    pub _cmp_num: i64,               // (Required) The number after < or > etc.
 }
 
 #[derive(Debug)]
 pub enum AggregationConditionToken {
     Count(String),   // count
-    Space,           // 空白
+    Space,           // Whitespace
     BY,              // by
-    EQ,              // ..と等しい
-    LE,              // ..以下
-    LT,              // ..未満
-    GE,              // ..以上
-    GT,              // .よりおおきい
-    Keyword(String), // BYのフィールド名
+    EQ,              // Equal to ..
+    LE,              // Less than or equal to ..
+    LT,              // Less than ..
+    GE,              // Greater than or equal to ..
+    GT,              // Greater than .
+    Keyword(String), // Field name for BY
 }
 
-/// SIGMAルールでいうAggregationConditionを解析する。
-/// AggregationConditionはconditionに指定された式のパイプ以降の部分を指してます。
+/// Parses the AggregationCondition as defined in SIGMA rules.
+/// AggregationCondition refers to the part after the pipe in the expression specified in condition.
 #[derive(Debug)]
 pub struct AggegationConditionCompiler {}
 
@@ -64,13 +64,13 @@ impl AggegationConditionCompiler {
         &self,
         condition_str: &str,
     ) -> Result<Option<AggregationParseInfo>, String> {
-        // パイプの部分だけを取り出す
+        // Extract only the pipe portion.
         let captured = self::RE_PIPE.captures(condition_str);
         if captured.is_none() {
-            // パイプが無いので終了
+            // No pipe found, so terminate.
             return Result::Ok(Option::None);
         }
-        // ハイプ自体は削除してからパースする。
+        // Remove the pipe itself before parsing.
         let aggregation_str = captured
             .unwrap()
             .get(0)
@@ -83,7 +83,7 @@ impl AggegationConditionCompiler {
         self.parse(tokens)
     }
 
-    /// 字句解析します。
+    /// Performs lexical analysis.
     pub fn tokenize(
         &self,
         condition_str: String,
@@ -96,7 +96,7 @@ impl AggegationConditionCompiler {
                 .iter()
                 .find_map(|regex| regex.captures(cur_condition_str));
             if captured.is_none() {
-                // トークンにマッチしないのはありえないという方針でパースしています。
+                // Parsing is done under the policy that failing to match a token is not possible.
                 return Result::Err("An unusable character was found.".to_string());
             }
 
@@ -104,7 +104,7 @@ impl AggegationConditionCompiler {
             let token = self.to_enum(matched_str);
 
             if let AggregationConditionToken::Space = token {
-                // 空白は特に意味ないので、読み飛ばす。
+                // Whitespace has no special meaning, so skip it.
                 cur_condition_str = &cur_condition_str[matched_str.len()..];
                 continue;
             }
@@ -116,7 +116,7 @@ impl AggegationConditionCompiler {
         Result::Ok(tokens)
     }
 
-    /// 比較演算子かどうか判定します。
+    /// Determines whether it is a comparison operator.
     fn is_cmp_op(&self, token: &AggregationConditionToken) -> bool {
         matches!(
             token,
@@ -128,13 +128,13 @@ impl AggegationConditionCompiler {
         )
     }
 
-    /// 構文解析します。
+    /// Performs syntactic analysis.
     fn parse(
         &self,
         tokens: Vec<AggregationConditionToken>,
     ) -> Result<Option<AggregationParseInfo>, String> {
         if tokens.is_empty() {
-            // パイプしか無いのはおかしいのでエラー
+            // Having only a pipe is invalid, so return an error.
             return Result::Err("There are no strings after the pipe(|).".to_string());
         }
 
@@ -147,25 +147,25 @@ impl AggegationConditionCompiler {
                 count_field_name = Option::Some(field_name);
             }
         } else {
-            // いろんなパターンがあるので難しいが、countというキーワードしか使えないことを説明しておく。
+            // Various patterns exist which makes this complex, but it should be noted that only the "count" keyword can be used.
             return Result::Err("The aggregation condition can only use count.".to_string());
         }
 
         let token = token_ite.next();
         if token.is_none() {
-            // 論理演算子がないのはだめ
+            // Missing logical operator is invalid.
             return Result::Err(
                 "The count keyword needs a compare operator and number like '> 3'".to_string(),
             );
         }
 
-        // BYはオプションでつけなくても良い
+        // BY is optional and may be omitted.
         let mut by_field_name = Option::None;
         let token = token.unwrap();
         let token = if let AggregationConditionToken::BY = token {
             let after_by = token_ite.next();
             if after_by.is_none() {
-                // BYの後に何もないのはだめ
+                // Nothing after BY is invalid.
                 return Result::Err(
                     "The by keyword needs a field name like 'by EventID'".to_string(),
                 );
@@ -183,9 +183,9 @@ impl AggegationConditionCompiler {
             Option::Some(token)
         };
 
-        // 比較演算子と数値をパース
+        // Parse comparison operator and number.
         if token.is_none() {
-            // 論理演算子がないのはだめ
+            // Missing logical operator is invalid.
             return Result::Err(
                 "The count keyword needs a compare operator and number like '> 3'".to_string(),
             );
@@ -204,11 +204,11 @@ impl AggegationConditionCompiler {
             if let Ok(num) = number {
                 num
             } else {
-                // 比較演算子の後に数値が無い。
+                // No number after comparison operator.
                 return Result::Err("The compare operator needs a number like '> 3'.".to_string());
             }
         } else {
-            // 比較演算子の後に数値が無い。
+            // No number after comparison operator.
             return Result::Err("The compare operator needs a number like '> 3'.".to_string());
         };
 
@@ -225,7 +225,7 @@ impl AggegationConditionCompiler {
         Result::Ok(Option::Some(info))
     }
 
-    /// 文字列をConditionTokenに変換する。
+    /// Converts a string to a ConditionToken.
     fn to_enum(&self, token: &str) -> AggregationConditionToken {
         if token.starts_with("count(") {
             let count_field = token
@@ -261,7 +261,7 @@ mod tests {
 
     #[test]
     fn test_aggegation_condition_compiler_no_count() {
-        // countが無いパターン
+        // Pattern without count.
         let compiler = AggegationConditionCompiler::new();
         let result = compiler.compile("select1 and select2");
         assert!(result.is_ok());
@@ -271,7 +271,7 @@ mod tests {
 
     #[test]
     fn test_aggegation_condition_compiler_count_ope() {
-        // 正常系 countの中身にフィールドが無い 各種演算子を試す
+        // Normal case: no field inside count, try various operators.
         let token =
             check_aggregation_condition_ope("select1 and select2|count() > 32".to_string(), 32);
         assert!(matches!(token, AggregationConditionToken::GT));
@@ -397,7 +397,7 @@ mod tests {
 
     #[test]
     fn test_aggegation_condition_compiler_not_count() {
-        // countじゃないものが先頭に来ている。
+        // Something other than count is at the beginning.
         let compiler = AggegationConditionCompiler::new();
         let result = compiler.compile("select1 or select2 | by count( hogehoge) by snsn > 3");
 
@@ -407,7 +407,7 @@ mod tests {
 
     #[test]
     fn test_aggegation_condition_compiler_no_ope() {
-        // 比較演算子がない
+        // Missing comparison operator.
         let compiler = AggegationConditionCompiler::new();
         let result = compiler.compile("select1 or select2 | count( hogehoge) 3");
 
@@ -417,7 +417,7 @@ mod tests {
 
     #[test]
     fn test_aggegation_condition_compiler_by() {
-        // byの後に何もない
+        // Nothing after by.
         let compiler = AggegationConditionCompiler::new();
         let result = compiler.compile("select1 or select2 | count( hogehoge) by");
 
@@ -427,7 +427,7 @@ mod tests {
 
     #[test]
     fn test_aggegation_condition_compiler_no_ope_afterby() {
-        // byの後に何もない
+        // Nothing after by.
         let compiler = AggegationConditionCompiler::new();
         let result = compiler.compile("select1 or select2 | count( hogehoge ) by hoe >");
 
@@ -437,7 +437,7 @@ mod tests {
 
     #[test]
     fn test_aggegation_condition_compiler_unneccesary_word() {
-        // byの後に何もない
+        // Nothing after by.
         let compiler = AggegationConditionCompiler::new();
         let result = compiler.compile("select1 or select2 | count( hogehoge ) by hoe > 3 33");
 

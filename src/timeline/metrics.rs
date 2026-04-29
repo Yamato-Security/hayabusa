@@ -49,7 +49,7 @@ pub struct EventMetrics {
     pub counted_rec: HashSet<(String, String)>,
 }
 /**
-* Windows Event Logの統計情報を出力する
+* Outputs statistics for Windows Event Logs.
 */
 impl EventMetrics {
     pub fn evt_stats_start(
@@ -58,20 +58,20 @@ impl EventMetrics {
         stored_static: &StoredStatic,
         (include_computer, exclude_computer): (&HashSet<CompactString>, &HashSet<CompactString>),
     ) {
-        // recordsから、 最初のレコードの時刻と最後のレコードの時刻、レコードの総数を取得する
+        // Get the timestamp of the first record, the timestamp of the last record, and the total number of records from records.
         self.stats_time_cnt(records, stored_static);
 
-        // 引数でmetricsオプションが指定されている時だけ、統計情報を出力する。
+        // Only output statistics when the metrics option is specified as an argument.
         if !stored_static.metrics_flag {
             return;
         }
 
-        // EventIDで集計
+        // Aggregate by EventID
         self.stats_eventid(records, stored_static, (include_computer, exclude_computer));
     }
 
     pub fn logon_stats_start(&mut self, records: &[EvtxRecordInfo], stored_static: &StoredStatic) {
-        // 引数でlogon-summaryオプションが指定されている時だけ、統計情報を出力する。
+        // Only output statistics when the logon-summary option is specified as an argument.
         if !stored_static.logon_summary_flag {
             return;
         }
@@ -167,7 +167,7 @@ impl EventMetrics {
                 if timestamp >= evtx_service_released_date {
                     self.start_time = timestamp;
                 } else {
-                    // evtxがリリースされた2007/1/30以前の日付データは不正な形式データ扱いとする
+                    // Date data before 2007/1/30, when evtx was released, is treated as invalid format data.
                     ERROR_LOG_STACK.lock().unwrap().push(format!(
                         "[ERROR] Invalid record found.\nEventFile:{}\nTimestamp:{}\n",
                         self.filepath,
@@ -204,7 +204,7 @@ impl EventMetrics {
         self.total += records.len();
     }
 
-    /// EventIDで集計
+    /// Aggregate by EventID
     fn stats_eventid(
         &mut self,
         records: &[EvtxRecordInfo],
@@ -426,7 +426,7 @@ impl EventMetrics {
                     }
 
                     let countlist: [usize; 2] = [0, 0];
-                    // この段階でEventIDは4624もしくは4625となるのでこの段階で対応するカウンターを取得する
+                    // At this point the EventID is either 4624 or 4625, so obtain the corresponding counter here.
                     let count: &mut [usize; 2] = self
                         .stats_login_list
                         .entry(LoginEvent {
@@ -519,7 +519,7 @@ mod tests {
         }))
     }
 
-    /// メトリクスコマンドの統計情報集計のテスト。 Testing of statistics aggregation for metrics commands.
+    /// Test for statistics aggregation of the metrics command.
     #[test]
     pub fn test_evt_logon_stats() {
         let dummy_stored_static =
@@ -562,7 +562,7 @@ mod tests {
             }));
 
         let mut timeline = Timeline::new();
-        // テスト1: レコードのチャンネルがaliasに含まれている場合
+        // Test 1: When the channel of the record is included in the alias.
         let alias_ch_record_str = r#"{
             "Event": {"System": {"EventID": 4103, "Channel": "Security", "Computer":"HAYABUSA-DESKTOP"}},
             "Event_attributes": {"xmlns": "http://schemas.microsoft.com/win/2004/08/events/event"}
@@ -577,7 +577,7 @@ mod tests {
             &false,
         ));
 
-        // テスト2: レコードのチャンネル名がaliasに含まれていない場合
+        // Test 2: When the channel name of the record is not included in the alias.
         let no_alias_ch_record_str = r#"{
             "Event": {"System": {"EventID": 4104, "Channel": "NotExistInAlias", "Computer":"HAYABUSA-DESKTOP"}},
             "Event_attributes": {"xmlns": "http://schemas.microsoft.com/win/2004/08/events/event"}

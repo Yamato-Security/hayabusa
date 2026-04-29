@@ -21,7 +21,7 @@ pub struct CheckPointTimeStore {
 }
 
 impl CheckPointProcessTimer {
-    /// static変数に最初に投入するための構造体情報を作成する関数
+    /// Creates the struct data to be initially inserted into the static variable.
     pub fn create_checkpoint_timer() -> Self {
         CheckPointProcessTimer {
             prev_checkpoint: None,
@@ -29,12 +29,12 @@ impl CheckPointProcessTimer {
         }
     }
 
-    /// 時間計測開始点を設定する関数
+    /// Sets the time measurement start point.
     pub fn set_checkpoint(&mut self, time: DateTime<Local>) {
         self.prev_checkpoint = Some(time);
     }
 
-    /// ラップタイムを取得して、出力用の配列に格納する関数
+    /// Gets the lap time and stores it in the output array.
     pub fn rap_checkpoint(&mut self, output_str: &str) {
         if self.prev_checkpoint.is_none() {
             return;
@@ -60,7 +60,7 @@ impl CheckPointProcessTimer {
         self.prev_checkpoint = None;
     }
 
-    /// ストックした結果を出力する関数
+    /// Outputs the stocked results.
     pub fn output_stocked_result(&self) {
         for output in self.stocked_results.iter() {
             println!(

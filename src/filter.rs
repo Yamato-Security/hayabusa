@@ -88,7 +88,7 @@ impl RuleExclude {
         for v in lines {
             let v = v.split('#').collect::<Vec<&str>>()[0].trim().to_string();
             if v.is_empty() || !configs::IDS_REGEX.is_match(&v) {
-                // 空行は無視する。IDの検証
+                // Ignore empty lines. Validate ID.
                 continue;
             }
             self.no_use_rule.insert(v, filename.to_owned());
@@ -146,7 +146,7 @@ fn extract_channel_from_rules(
         match *value {
             Yaml::String(ref s) if key == "Channel" => {
                 if s.contains('*') {
-                    // SigmaルールでChannelにワイルドカードが使われた場合
+                    // When a wildcard is used for Channel in a Sigma rule
                     for ch in evtx_channels {
                         if ch.contains(s.trim_matches('*')) {
                             intersection_channels.push(ch.to_string());
@@ -183,8 +183,8 @@ fn extract_channel_from_rules(
 
 pub struct ChannelFilter {
     pub rulepathes: Vec<String>,
-    pub intersec_channels: HashSet<String>, // evtxとruleのchannelの積集合
-    pub evtx_channels_map: HashMap<String, Vec<PathBuf>>, // key=channel, val=evtxパスのリスト
+    pub intersec_channels: HashSet<String>, // intersection of evtx and rule channels
+    pub evtx_channels_map: HashMap<String, Vec<PathBuf>>, // key=channel, val=list of evtx paths
 }
 
 impl ChannelFilter {

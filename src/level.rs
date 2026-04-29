@@ -91,7 +91,7 @@ impl LEVEL {
     }
 
     pub fn convert(&self, computer: &str) -> &LEVEL {
-        // computerがCRITICAL_SYSTEMに含まれている場合は、レベルを上げる
+        // If the computer is included in CRITICAL_SYSTEM, raise the level.
         let computers = computer.split(" ¦ ");
         for c in computers {
             if CRITICAL_SYSTEM.contains(c) {
@@ -116,7 +116,7 @@ impl PartialEq<str> for LEVEL {
     }
 }
 
-/// level_color.txtファイルを読み込み対応する文字色のマッピングを返却する関数
+/// Reads the level_color.txt file and returns the corresponding text color mapping.
 pub fn create_output_color_map(no_color_flag: bool) -> HashMap<LEVEL, Colors> {
     let path = utils::check_setting_path(Path::new("."), "config/level_color.txt", false)
         .unwrap_or_else(|| {
@@ -147,7 +147,7 @@ pub fn create_output_color_map(no_color_flag: bool) -> HashMap<LEVEL, Colors> {
     let color_map_contents = match read_result {
         Ok(c) => c,
         Err(e) => {
-            // color情報がない場合は通常の白色の出力が出てくるのみで動作への影響を与えない為warnとして処理する
+            // If there is no color information, only the normal white output will appear and it will not affect behavior, so it is treated as a warning.
             AlertMessage::warn(&e).ok();
             return color_map;
         }

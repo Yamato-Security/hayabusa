@@ -17,27 +17,27 @@ use crate::detections::rule::fast_match::{
 use crate::detections::{detection::EvtxRecordInfo, utils};
 use downcast_rs::Downcast;
 
-// 末端ノードがEventLogの値を比較するロジックを表す。
-// 正規条件のマッチや文字数制限など、比較ロジック毎にこのtraitを実装したクラスが存在する。
+// Represents the logic for comparing EventLog values at leaf nodes.
+// A class implementing this trait exists for each comparison logic, such as regex matching and character count limits.
 //
-// 新規にLeafMatcherを実装するクラスを作成した場合、
-// LeafSelectionNodeのget_matchersクラスの戻り値の配列に新規作成したクラスのインスタンスを追加する。
+// When creating a new class that implements LeafMatcher,
+// add an instance of the newly created class to the return value array of the get_matchers method of LeafSelectionNode.
 pub trait LeafMatcher: Downcast + Send + Sync {
-    /// 指定されたkey_listにマッチするLeafMatcherであるかどうか判定する。
+    /// Determines whether this is a LeafMatcher matching the specified key_list.
     fn is_target_key(&self, key_list: &Nested<String>) -> bool;
 
-    /// 引数に指定されたJSON形式のデータがマッチするかどうか判定する。
-    /// main.rsでWindows Event LogをJSON形式に変換していて、そのJSON形式のWindowsのイベントログデータがここには来る
-    /// 例えば正規表現でマッチするロジックなら、ここに正規表現でマッチさせる処理を書く。
+    /// Determines whether the JSON-format data specified as an argument matches.
+    /// Windows Event Log is converted to JSON format in main.rs, and that JSON-format Windows event log data comes here.
+    /// For example, for logic that matches using regex, write the regex matching process here.
     fn is_match(&self, event_value: Option<&String>, recinfo: &EvtxRecordInfo) -> bool;
 
-    /// 初期化ロジックをここに記載します。
-    /// ルールファイルの書き方が間違っている等の原因により、正しくルールファイルからパースできない場合、戻り値のResult型でエラーを返してください。
+    /// Describe the initialization logic here.
+    /// If parsing from the rule file fails due to an incorrect rule file format, etc., return an error in the Result return type.
     fn init(&mut self, key_list: &Nested<String>, select_value: &Yaml) -> Result<(), Vec<String>>;
 }
 downcast_rs::impl_downcast!(LeafMatcher);
 
-/// 指定された文字数以上であることをチェックするクラス。
+/// Class that checks whether the value has at least the specified number of characters.
 pub struct MinlengthMatcher {
     min_len: i64,
 }
@@ -79,8 +79,8 @@ impl LeafMatcher for MinlengthMatcher {
     }
 }
 
-/// 正規表現のリストが記載されたファイルを読み取って、比較するロジックを表すクラス
-/// DeepBlueCLIのcheck_cmdメソッドの一部に同様の処理が実装されていた。
+/// Class representing the logic of reading a file containing a list of regular expressions and comparing.
+/// Similar processing was implemented in part of the check_cmd method of DeepBlueCLI.
 pub struct RegexesFileMatcher {
     regexes: Vec<Regex>,
 }
@@ -133,8 +133,8 @@ impl LeafMatcher for RegexesFileMatcher {
     }
 }
 
-/// ファイルに列挙された文字列に一致する場合に検知するロジックを表す
-/// DeepBlueCLIのcheck_cmdメソッドの一部に同様の処理が実装されていた。
+/// Represents the logic to detect when the value matches a string enumerated in a file.
+/// Similar processing was implemented in part of the check_cmd method of DeepBlueCLI.
 pub struct AllowlistFileMatcher {
     regexes: Vec<Regex>,
 }
@@ -189,8 +189,8 @@ impl LeafMatcher for AllowlistFileMatcher {
     }
 }
 
-/// デフォルトのマッチクラス
-/// ワイルドカードの処理やパイプ
+/// Default match class.
+/// Handling wildcards and pipes.
 pub struct DefaultMatcher {
     re: Option<Vec<Regex>>,
     fast_match: Option<Vec<FastMatch>>,
@@ -213,15 +213,15 @@ impl DefaultMatcher {
         pipe.get_eqfield()
     }
 
-    /// このmatcherの正規表現とマッチするかどうか判定します。
+    /// Determines whether this matcher matches the given regex.
     fn is_regex_fullmatch(&self, value: &str) -> bool {
         self.re.as_ref().unwrap().iter().any(|x| x.is_match(value))
     }
 
-    /// Hayabusaのルールファイルのフィールド名とそれに続いて指定されるパイプを、正規表現形式の文字列に変換します。
-    /// ワイルドカードの文字列を正規表現にする処理もこのメソッドに実装されています。patternにワイルドカードの文字列を指定して、pipesにPipeElement::Wildcardを指定すればOK!!
+    /// Converts the field name in Hayabusa rule files and the pipe specified after it to a regex-format string.
+    /// Processing to convert wildcard strings to regex is also implemented in this method. Specify the wildcard string in pattern and PipeElement::Wildcard in pipes.
     fn from_pattern_to_regex_str(pattern: String, pipes: &[PipeElement]) -> String {
-        // パターンをPipeで処理する。
+        // Process the pattern with Pipe.
         pipes
             .iter()
             .fold(pattern, |acc, pipe| pipe.pipe_pattern(acc))
@@ -266,16 +266,16 @@ impl LeafMatcher for DefaultMatcher {
         let emp = String::default();
         // 一つ目はただのキーで、2つめ以降がpipe
 
-        let mut keys_all: Vec<&str> = key_list.get(0).unwrap_or(&emp).split('|').collect(); // key_listが空はあり得ない
+        let mut keys_all: Vec<&str> = key_list.get(0).unwrap_or(&emp).split('|').collect(); // key_list cannot be empty.
 
-        //all -> allOnlyの対応関係
+        // Correspondence between all and allOnly.
         let mut change_map: HashMap<&str, &str> = HashMap::new();
         change_map.insert("all", "allOnly");
         change_map.insert("i", "reignorecase");
         change_map.insert("m", "remultiline");
         change_map.insert("s", "resingleline");
 
-        //先頭が｜の場合を検知して、all -> allOnlyに変更
+        // Detect the case where | is at the beginning, and change all -> allOnly.
         if keys_all[0].is_empty() && keys_all.len() == 2 && keys_all[1] == "all" {
             keys_all[1] = change_map["all"];
         }
@@ -320,10 +320,10 @@ impl LeafMatcher for DefaultMatcher {
         }
         let n = self.pipes.len();
         if n == 0 {
-            // パイプがないケース
+            // Case without pipe.
             self.fast_match = convert_to_fast_match(&pattern[0], true);
         } else if n == 1 {
-            // パイプがあるケース
+            // Case with pipe.
             self.fast_match = create_fast_match(&self.pipes, &pattern);
         } else if n == 2 {
             if self.pipes[0] == PipeElement::Base64 && self.pipes[1] == PipeElement::Contains {
@@ -336,13 +336,13 @@ impl LeafMatcher for DefaultMatcher {
             {
                 self.fast_match = convert_to_base64_str(None, pattern[0].as_str(), &mut err_msges);
             } else if self.pipes[0] == PipeElement::Contains && self.pipes[1] == PipeElement::All
-            // |contains|allの場合、事前の分岐でAndSelectionNodeとしているのでここではcontainsのみとして取り扱う
+            // For |contains|all, it has been designated as AndSelectionNode in a prior branch, so treat it as contains only here.
             {
                 self.fast_match = convert_to_fast_match(format!("*{}*", pattern[0]).as_str(), true);
             } else if self.pipes[0] == PipeElement::Contains
                 && self.pipes[1] == PipeElement::Windash
             {
-                // |contains|windashの場合
+                // For |contains|windash
                 let mut fastmatches =
                     convert_to_fast_match(format!("*{}*", pattern[0]).as_str(), true)
                         .unwrap_or_default();
@@ -370,7 +370,7 @@ impl LeafMatcher for DefaultMatcher {
             if self.pipes.contains(&PipeElement::Contains)
                 && self.pipes.contains(&PipeElement::All)
                 && self.pipes.contains(&PipeElement::Windash)
-            // |contains|all|windashの場合、事前の分岐でAndSelectionNodeとしているのでここではcontainsとwindashのみとして取り扱う
+            // For |contains|all|windash, it has been designated as AndSelectionNode in a prior branch, so treat it as contains and windash only here.
             {
                 let mut fastmatches =
                     convert_to_fast_match(format!("*{}*", pattern[0]).as_str(), true)
@@ -465,7 +465,7 @@ impl LeafMatcher for DefaultMatcher {
             )
             && !self.key_list.is_empty()
         {
-            // FastMatch::Exact/Contains検索に置き換えられたときは正規表現は不要
+            // Regex is not needed when replaced with FastMatch::Exact/Contains search.
             return Ok(());
         }
         let is_eqfield = self.pipes.iter().any(|pipe_element| {
@@ -480,8 +480,8 @@ impl LeafMatcher for DefaultMatcher {
             )
         });
         if !is_eqfield {
-            // 正規表現ではない場合、ワイルドカードであることを表す。
-            // ワイルドカードは正規表現でマッチングするので、ワイルドカードを正規表現に変換するPipeを内部的に追加することにする。
+            // If it is not a regex, it represents a wildcard.
+            // Wildcards are matched using regex, so internally add a Pipe that converts wildcards to regex.
             let is_re = self.pipes.iter().any(|pipe_element| {
                 matches!(
                     pipe_element,
@@ -498,7 +498,7 @@ impl LeafMatcher for DefaultMatcher {
             let mut re_result_vec = vec![];
             for p in pattern {
                 let pattern = DefaultMatcher::from_pattern_to_regex_str(p, &self.pipes);
-                // Pipeで処理されたパターンを正規表現に変換
+                // Convert the pattern processed by Pipe to regex.
                 if let Ok(re_result) = Regex::new(&pattern) {
                     re_result_vec.push(re_result);
                 } else {
@@ -524,10 +524,10 @@ impl LeafMatcher for DefaultMatcher {
                     let event_ip = IpAddr::from_str(event_value_str);
                     match event_ip {
                         Ok(target_ip) => Some(matcher_ip.contains(&target_ip)),
-                        Err(_) => Some(false), //IPアドレス以外の形式のとき
+                        Err(_) => Some(false), // For formats other than IP addresses.
                     }
                 }
-                Err(_) => Some(false), //IPアドレス以外の形式のとき
+                Err(_) => Some(false), // For formats other than IP addresses.
             },
             PipeElement::Exists(..)
             | PipeElement::EqualsField(_)
@@ -551,7 +551,7 @@ impl LeafMatcher for DefaultMatcher {
                         };
                         Some(cmp_result)
                     }
-                    Err(_) => Some(false), //数値以外のとき
+                    Err(_) => Some(false), // For non-numeric values.
                 }
             }
             _ => None,
@@ -560,15 +560,15 @@ impl LeafMatcher for DefaultMatcher {
             return result;
         }
 
-        // yamlにnullが設定されていた場合
-        // keylistが空(==JSONのgrep検索)の場合、無視する。
+        // If null is set in yaml.
+        // If keylist is empty (== JSON grep search), ignore.
         if self.key_list.is_empty() && self.re.is_none() && self.fast_match.is_none() {
             return false;
         }
 
-        // yamlにnullが設定されていた場合
+        // If null is set in yaml.
         if self.re.is_none() && self.fast_match.is_none() {
-            // レコード内に対象のフィールドが存在しなければ検知したものとして扱う
+            // If the target field does not exist in the record, treat it as detected.
             for v in self.key_list.iter() {
                 if recinfo.get_value(v).is_none() {
                     return true;
@@ -583,7 +583,7 @@ impl LeafMatcher for DefaultMatcher {
 
         let event_value_str = event_value.unwrap();
         if self.key_list.is_empty() {
-            // この場合ただのgrep検索なので、ただ正規表現に一致するかどうか調べればよいだけ
+            // In this case it is just a grep search, so simply check whether it matches the regex.
             return self
                 .re
                 .as_ref()
@@ -596,13 +596,13 @@ impl LeafMatcher for DefaultMatcher {
                 return is_match;
             }
         }
-        // 文字数/starts_with/ends_with検索に変換できなかった場合は、正規表現マッチで比較
+        // If it could not be converted to character count/starts_with/ends_with search, compare using regex match.
         self.is_regex_fullmatch(event_value_str)
     }
 }
 
-/// パイプ(|)で指定される要素を表すクラス。
-/// 要リファクタリング
+/// Class representing elements specified by pipes (|).
+/// Needs refactoring.
 #[derive(PartialEq)]
 pub enum PipeElement {
     Startswith,
@@ -738,7 +738,7 @@ impl PipeElement {
             }
             PipeElement::EqualsField(eq_key) | PipeElement::FieldRef(eq_key) => {
                 let eq_value = recinfo.get_value(eq_key);
-                // Evtxのレコードに存在しないeventkeyを指定された場合はfalseにする
+                // If an eventkey specified does not exist in the Evtx record, set to false.
                 if event_value.is_none() || eq_value.is_none() {
                     return false;
                 }
@@ -755,7 +755,7 @@ impl PipeElement {
             }
             PipeElement::Endswithfield(eq_key) | PipeElement::FieldRefEndswith(eq_key) => {
                 let ends_value = recinfo.get_value(eq_key);
-                // Evtxのレコードに存在しないeventkeyを指定された場合はfalseにする
+                // If an eventkey specified does not exist in the Evtx record, set to false.
                 if event_value.is_none() || ends_value.is_none() {
                     return false;
                 }
@@ -777,9 +777,9 @@ impl PipeElement {
         }
     }
 
-    /// patternをパイプ処理します
+    /// Processes the pattern with pipe.
     fn pipe_pattern(&self, pattern: String) -> String {
-        // enumでポリモーフィズムを実装すると、一つのメソッドに全部の型の実装をする感じになる。Java使い的にはキモイ感じがする。
+        // When implementing polymorphism with an enum, all type implementations go into one method. For Java developers, this might feel odd.
         let fn_add_asterisk_end = |patt: String| {
             if patt.ends_with("//*") {
                 patt
@@ -788,8 +788,8 @@ impl PipeElement {
             } else if patt.ends_with('*') {
                 patt
             } else if patt.ends_with('\\') {
-                // 末尾が\(バックスラッシュ1つ)の場合は、末尾を\\* (バックスラッシュ2つとアスタリスク)に変換する
-                // 末尾が\\*は、バックスラッシュ1文字とそれに続けてワイルドカードパターンであることを表す
+                // If the end is \ (one backslash), convert the end to \\* (two backslashes and an asterisk).
+                // A trailing \\* means one backslash followed by a wildcard pattern.
                 patt + "\\*"
             } else {
                 patt + "*"
@@ -808,13 +808,13 @@ impl PipeElement {
         };
 
         match self {
-            // startswithの場合はpatternの最後にwildcardを足すことで対応する
+            // For startswith, handle by appending a wildcard to the end of pattern.
             PipeElement::Startswith => fn_add_asterisk_end(pattern),
-            // endswithの場合はpatternの最初にwildcardを足すことで対応する
+            // For endswith, handle by prepending a wildcard to the beginning of pattern.
             PipeElement::Endswith => fn_add_asterisk_begin(pattern),
-            // containsの場合はpatternの前後にwildcardを足すことで対応する
+            // For contains, handle by prepending and appending wildcards to pattern.
             PipeElement::Contains => fn_add_asterisk_end(fn_add_asterisk_begin(pattern)),
-            // WildCardは正規表現に変換する。
+            // Convert WildCard to regex.
             PipeElement::Wildcard => PipeElement::pipe_pattern_wildcard(pattern),
             PipeElement::ReIgnoreCase => "(?i)".to_string() + pattern.as_str(),
             PipeElement::ReMultiLine => "(?m)".to_string() + pattern.as_str(),
@@ -823,13 +823,13 @@ impl PipeElement {
         }
     }
 
-    /// PipeElement::Wildcardのパイプ処理です。
-    /// pipe_pattern()に含めて良い処理ですが、複雑な処理になってしまったので別関数にしました。
+    /// Pipe processing for PipeElement::Wildcard.
+    /// This processing could be included in pipe_pattern(), but became complex so it was separated into a separate function.
     fn pipe_pattern_wildcard(pattern: String) -> String {
         let wildcards = vec!["*", "?"];
 
-        // patternをwildcardでsplitした結果をpattern_splitsに入れる
-        // 以下のアルゴリズムの場合、pattern_splitsの偶数indexの要素はwildcardじゃない文字列となり、奇数indexの要素はwildcardが入る。
+        // Put the result of splitting pattern by wildcard into pattern_splits.
+        // With the following algorithm, elements at even indices of pattern_splits are non-wildcard strings, and elements at odd indices contain wildcards.
         let mut idx = 0;
         let mut pattern_splits = vec![];
         let mut cur_str = String::default();
@@ -838,7 +838,7 @@ impl PipeElement {
             for wildcard in &wildcards {
                 let cur_pattern: String = pattern.chars().skip(idx).collect::<String>();
                 if cur_pattern.starts_with(&format!(r"\\{wildcard}")) {
-                    // wildcardの前にエスケープ文字が2つある場合
+                    // When there are two escape characters before the wildcard.
                     cur_str = format!("{}{}", cur_str, r"\");
                     pattern_splits.push(cur_str);
                     pattern_splits.push(wildcard.to_string());
@@ -847,12 +847,12 @@ impl PipeElement {
                     idx += 3;
                     break;
                 } else if cur_pattern.starts_with(&format!(r"\{wildcard}")) {
-                    // wildcardの前にエスケープ文字が1つある場合
+                    // When there is one escape character before the wildcard.
                     cur_str = format!("{cur_str}{wildcard}");
                     idx += 2;
                     break;
                 } else if cur_pattern.starts_with(wildcard) {
-                    // wildcardの場合
+                    // When it is a wildcard.
                     pattern_splits.push(cur_str);
                     pattern_splits.push(wildcard.to_string());
 
@@ -861,7 +861,7 @@ impl PipeElement {
                     break;
                 }
             }
-            // 上記のFor文でHitした場合はcontinue
+            // If hit in the above For loop, continue.
             if prev_idx != idx {
                 continue;
             }
@@ -873,20 +873,20 @@ impl PipeElement {
             );
             idx += 1;
         }
-        // 最後の文字がwildcardじゃない場合は、cur_strに文字が入っているので、それをpattern_splitsに入れておく
+        // If the last character is not a wildcard, cur_str contains characters, so put them into pattern_splits.
         if !cur_str.is_empty() {
             pattern_splits.push(cur_str);
         }
 
-        // SIGMAルールのwildcard表記から正規表現の表記に変換します。
+        // Convert from SIGMA rule wildcard notation to regex notation.
         let ret = pattern_splits.iter().enumerate().fold(
             String::default(),
             |acc: String, (idx, pattern)| {
                 let regex_value = if idx % 2 == 0 {
-                    // wildcardじゃない場合はescapeした文字列を返す
+                    // If not a wildcard, return the escaped string.
                     regex::escape(pattern)
                 } else {
-                    // wildcardの場合、"*"は".*"という正規表現に変換し、"?"は"."に変換する。
+                    // When it is a wildcard.、"*"は".*"という正規表現に変換し、"?"は"."に変換する。
                     let wildcard_regex_value = if *pattern == "*" {
                         "(.|\\a|\\f|\\t|\\n|\\r|\\v)*"
                     } else {
@@ -899,8 +899,8 @@ impl PipeElement {
             },
         );
 
-        // sigmaのwildcardはcase insensitive
-        // なので、正規表現の先頭にcase insensitiveであることを表す記号を付与
+        // sigma wildcards are case insensitive.
+        // Therefore, prepend a symbol indicating case insensitivity to the regex.
         "(?i)".to_string() + &ret
     }
 }
@@ -996,14 +996,14 @@ mod tests {
 
         // Channel
         {
-            // LeafSelectionNodeが正しく読み込めることを確認
+            // Verify that LeafSelectionNode is correctly loaded.
             let child_node = detection_childs[0];
             assert!(child_node.is::<LeafSelectionNode>());
             let child_node = child_node.downcast_ref::<LeafSelectionNode>().unwrap();
             assert_eq!(child_node.get_key(), "Channel");
             assert_eq!(child_node.get_childs().len(), 0);
 
-            // 比較する正規表現が正しいことを確認
+            // Verify that the comparison regex is correct.
             let matcher = &child_node.matcher;
             assert!(matcher.is_some());
             let matcher = child_node.matcher.as_ref().unwrap();
@@ -1022,14 +1022,14 @@ mod tests {
 
         // EventID
         {
-            // LeafSelectionNodeが正しく読み込めることを確認
+            // Verify that LeafSelectionNode is correctly loaded.
             let child_node = detection_childs[1] as &dyn SelectionNode;
             assert!(child_node.is::<LeafSelectionNode>());
             let child_node = child_node.downcast_ref::<LeafSelectionNode>().unwrap();
             assert_eq!(child_node.get_key(), "EventID");
             assert_eq!(child_node.get_childs().len(), 0);
 
-            // 比較する正規表現が正しいことを確認
+            // Verify that the comparison regex is correct.
             let matcher = &child_node.matcher;
             assert!(matcher.is_some());
             let matcher = child_node.matcher.as_ref().unwrap();
@@ -1040,15 +1040,15 @@ mod tests {
 
         // ContextInfo
         {
-            // OrSelectionNodeを正しく読み込めることを確認
+            // Verify that OrSelectionNode is correctly loaded.
             let child_node = detection_childs[2] as &dyn SelectionNode;
             assert!(child_node.is::<OrSelectionNode>());
             let child_node = child_node.downcast_ref::<OrSelectionNode>().unwrap();
             let ancestors = child_node.get_childs();
             assert_eq!(ancestors.len(), 2);
 
-            // OrSelectionNodeの下にLeafSelectionNodeがあるパターンをテスト
-            // LeafSelectionNodeである、Host Applicationノードが正しいことを確認
+            // Test patterns where LeafSelectionNode is under OrSelectionNode.
+            // Verify that the Host Application node, which is a LeafSelectionNode, is correct.
             let hostapp_en_node = ancestors[0] as &dyn SelectionNode;
             assert!(hostapp_en_node.is::<LeafSelectionNode>());
             let hostapp_en_node = hostapp_en_node.downcast_ref::<LeafSelectionNode>().unwrap();
@@ -1065,7 +1065,7 @@ mod tests {
                 vec![FastMatch::Exact("Host Application".to_string())]
             );
 
-            // LeafSelectionNodeである、ホスト アプリケーションノードが正しいことを確認
+            // Verify that the host application node, which is a LeafSelectionNode, is correct.
             let hostapp_jp_node = ancestors[1] as &dyn SelectionNode;
             assert!(hostapp_jp_node.is::<LeafSelectionNode>());
             let hostapp_jp_node = hostapp_jp_node.downcast_ref::<LeafSelectionNode>().unwrap();
@@ -1085,14 +1085,14 @@ mod tests {
 
         // ImagePath
         {
-            // AndSelectionNodeを正しく読み込めることを確認
+            // Verify that AndSelectionNode is correctly loaded.
             let child_node = detection_childs[3] as &dyn SelectionNode;
             assert!(child_node.is::<AndSelectionNode>());
             let child_node = child_node.downcast_ref::<AndSelectionNode>().unwrap();
             let ancestors = child_node.get_childs();
             assert_eq!(ancestors.len(), 3);
 
-            // min-lenが正しく読み込めることを確認
+            // Verify that min-len is correctly loaded.
             {
                 let ancestor_node = ancestors[0] as &dyn SelectionNode;
                 assert!(ancestor_node.is::<LeafSelectionNode>());
@@ -1106,7 +1106,7 @@ mod tests {
                 assert_eq!(ancestor_matcher.min_len, 1234321);
             }
 
-            // regexesが正しく読み込めることを確認
+            // Verify that regexes are correctly loaded.
             {
                 let ancestor_node = ancestors[1] as &dyn SelectionNode;
                 assert!(ancestor_node.is::<LeafSelectionNode>());
@@ -1120,7 +1120,7 @@ mod tests {
                     .downcast_ref::<RegexesFileMatcher>()
                     .unwrap();
 
-                // regexes.txtの中身と一致していることを確認
+                // Verify that the content matches regexes.txt.
                 let csvcontent = &ancestor_matcher.regexes;
 
                 assert_eq!(csvcontent.len(), 16);
@@ -1134,7 +1134,7 @@ mod tests {
                 );
             }
 
-            // allowlist.txtが読み込めることを確認
+            // Verify that allowlist.txt can be loaded.
             {
                 let ancestor_node = ancestors[2] as &dyn SelectionNode;
                 assert!(ancestor_node.is::<LeafSelectionNode>());
@@ -1165,7 +1165,7 @@ mod tests {
 
     #[test]
     fn test_notdetect_regex_eventid() {
-        // 完全一致なので、前方一致で検知しないことを確認
+        // Since it is an exact match, verify that prefix matching does not detect.
         let rule_str = r#"
         enabled: true
         detection:
@@ -1185,7 +1185,7 @@ mod tests {
 
     #[test]
     fn test_notdetect_regex_eventid2() {
-        // 完全一致なので、後方一致で検知しないことを確認
+        // Since it is an exact match, verify that suffix matching does not detect.
         let rule_str = r#"
         enabled: true
         detection:
@@ -1205,7 +1205,7 @@ mod tests {
 
     #[test]
     fn test_detect_regex_eventid() {
-        // これはEventID=4103で検知するはず
+        // This should be detected for EventID=4103.
         let rule_str = r#"
         enabled: true
         detection:
@@ -1225,8 +1225,8 @@ mod tests {
 
     #[test]
     fn test_notdetect_regex_str() {
-        // 文字列っぽいデータでも確認
-        // 完全一致なので、前方一致しないことを確認
+        // Also verify with string-like data.
+        // Since it is an exact match, verify that it does not match as a prefix.
         let rule_str = r#"
         enabled: true
         detection:
@@ -1246,8 +1246,8 @@ mod tests {
 
     #[test]
     fn test_notdetect_regex_str2() {
-        // 文字列っぽいデータでも確認
-        // 完全一致なので、後方一致しないことを確認
+        // Also verify with string-like data.
+        // Since it is an exact match, verify that it does not match as a suffix.
         let rule_str = r#"
         enabled: true
         detection:
@@ -1267,7 +1267,7 @@ mod tests {
 
     #[test]
     fn test_detect_regex_str() {
-        // 文字列っぽいデータでも完全一致することを確認
+        // Verify that exact matching also works with string-like data.
         let rule_str = r#"
         enabled: true
         detection:
@@ -1287,7 +1287,7 @@ mod tests {
 
     #[test]
     fn test_notdetect_regex_emptystr() {
-        // 文字列っぽいデータでも完全一致することを確認
+        // Verify that exact matching also works with string-like data.
         let rule_str = r#"
         enabled: true
         detection:
@@ -1307,7 +1307,7 @@ mod tests {
 
     #[test]
     fn test_notdetect_minlen() {
-        // minlenが正しく検知できることを確認
+        // Verify that minlen is correctly detected.
         let rule_str = r#"
         enabled: true
         detection:
@@ -1328,7 +1328,7 @@ mod tests {
 
     #[test]
     fn test_detect_minlen() {
-        // minlenが正しく検知できることを確認
+        // Verify that minlen is correctly detected.
         let rule_str = r#"
         enabled: true
         detection:
@@ -1349,7 +1349,7 @@ mod tests {
 
     #[test]
     fn test_detect_minlen2() {
-        // minlenが正しく検知できることを確認
+        // Verify that minlen is correctly detected.
         let rule_str = r#"
         enabled: true
         detection:
@@ -1370,7 +1370,7 @@ mod tests {
 
     #[test]
     fn test_detect_minlen_and() {
-        // minlenが正しく検知できることを確認
+        // Verify that minlen is correctly detected.
         let rule_str = r#"
         enabled: true
         detection:
@@ -1391,7 +1391,7 @@ mod tests {
 
     #[test]
     fn test_notdetect_minlen_and() {
-        // minlenが正しく検知できることを確認
+        // Verify that minlen is correctly detected.
         let rule_str = r#"
         enabled: true
         detection:
@@ -1412,7 +1412,7 @@ mod tests {
 
     #[test]
     fn test_detect_regex() {
-        // 正規表現が使えることを確認
+        // Verify that regex can be used.
         let rule_str = r#"
         enabled: true
         detection:
@@ -1432,7 +1432,7 @@ mod tests {
 
     #[test]
     fn test_detect_regex_partial_match() {
-        // 正規表現の部分一致
+        // Partial regex match.
         let rule_str = r#"
         enabled: true
         detection:
@@ -1452,8 +1452,8 @@ mod tests {
 
     #[test]
     fn test_detect_regexes() {
-        // regexes.txtが正しく検知できることを確認
-        // この場合ではEventIDが一致しているが、allowlistに一致するので検知しないはず。
+        // Verify that regexes.txt is correctly detected.
+        // In this case, the EventID matches, but since it matches the allowlist, it should not be detected.
         let rule_str = r#"
         enabled: true
         detection:
@@ -1464,7 +1464,7 @@ mod tests {
         details: 'command=%CommandLine%'
         "#;
 
-        // JSONで値としてダブルクオートを使う場合、\でエスケープが必要なのに注意
+        // Note that when using double quotes as values in JSON, \ escape is required.
         let record_json_str = r#"
         {
             "Event": {"System": {"EventID": 4103, "Channel": "\"C:\\Program Files\\Google\\Update\\GoogleUpdate.exe\"", "Computer":"DESKTOP-ICHIICHI"}},
@@ -1476,8 +1476,8 @@ mod tests {
 
     #[test]
     fn test_detect_allowlist() {
-        // allowlistが正しく検知できることを確認
-        // この場合ではEventIDが一致しているが、allowlistに一致するので検知しないはず。
+        // Verify that the allowlist is correctly handled.
+        // In this case, the EventID matches, but since it matches the allowlist, it should not be detected.
         let rule_str = r#"
         enabled: true
         detection:
@@ -1488,7 +1488,7 @@ mod tests {
         details: 'command=%CommandLine%'
         "#;
 
-        // JSONで値としてダブルクオートを使う場合、\でエスケープが必要なのに注意
+        // Note that when using double quotes as values in JSON, \ escape is required.
         let record_json_str = r#"
         {
             "Event": {"System": {"EventID": 4103, "Channel": "\"C:\\Program Files\\Google\\Update\\GoogleUpdate.exe\"", "Computer":"DESKTOP-ICHIICHI"}},
@@ -1500,8 +1500,8 @@ mod tests {
 
     #[test]
     fn test_detect_allowlist2() {
-        // allowlistが正しく検知できることを確認
-        // この場合ではEventIDが一致しているが、allowlistに一致するので検知しないはず。
+        // Verify that the allowlist is correctly handled.
+        // In this case, the EventID matches, but since it matches the allowlist, it should not be detected.
         let rule_str = r#"
         enabled: true
         detection:
@@ -1522,7 +1522,7 @@ mod tests {
 
     #[test]
     fn test_detect_startswith1() {
-        // startswithが正しく検知できることを確認
+        // Verify that startswith is correctly detected.
         let rule_str = r#"
         enabled: true
         detection:
@@ -1554,7 +1554,7 @@ mod tests {
 
     #[test]
     fn test_detect_startswith2() {
-        // startswithが正しく検知できることを確認
+        // Verify that startswith is correctly detected.
         let rule_str = r#"
         enabled: true
         detection:
@@ -1586,7 +1586,7 @@ mod tests {
 
     #[test]
     fn test_detect_startswith_case_insensitive() {
-        // startswithが大文字小文字を区別しないことを確認
+        // Verify that startswith is case-insensitive.
         let rule_str = r#"
         enabled: true
         detection:
@@ -1617,7 +1617,7 @@ mod tests {
 
     #[test]
     fn test_detect_startswith_cased() {
-        // startswith|casedが正しく検知できることを確認
+        // Verify that startswith|cased is correctly detected.
         let rule_str = r#"
         enabled: true
         detection:
@@ -1649,7 +1649,7 @@ mod tests {
 
     #[test]
     fn test_detect_startswith_cased2() {
-        // startswith|casedが正しく検知できることを確認
+        // Verify that startswith|cased is correctly detected.
         let rule_str = r#"
         enabled: true
         detection:
@@ -1681,7 +1681,7 @@ mod tests {
 
     #[test]
     fn test_detect_endswith1() {
-        // endswithが正しく検知できることを確認
+        // Verify that endswith is correctly detected.
         let rule_str = r#"
         enabled: true
         detection:
@@ -1713,7 +1713,7 @@ mod tests {
 
     #[test]
     fn test_detect_endswith2() {
-        // endswithが正しく検知できることを確認
+        // Verify that endswith is correctly detected.
         let rule_str = r#"
         enabled: true
         detection:
@@ -1744,7 +1744,7 @@ mod tests {
 
     #[test]
     fn test_detect_endswith_case_insensitive() {
-        // endswithが大文字小文字を区別せず検知するかを確認するテスト
+        // Test to verify that endswith detects without distinguishing case.
         let rule_str = r#"
         enabled: true
         detection:
@@ -1775,7 +1775,7 @@ mod tests {
 
     #[test]
     fn test_detect_endswith_cased1() {
-        // endswith|casedが正しく検知できることを確認
+        // Verify that endswith|cased is correctly detected.
         let rule_str = r#"
         enabled: true
         detection:
@@ -1806,7 +1806,7 @@ mod tests {
 
     #[test]
     fn test_detect_endswith_cased2() {
-        // endswith|casedが正しく検知できることを確認
+        // Verify that endswith|cased is correctly detected.
         let rule_str = r#"
         enabled: true
         detection:
@@ -1837,7 +1837,7 @@ mod tests {
 
     #[test]
     fn test_detect_endswith_cased3() {
-        // endswith|casedが正しく検知できることを確認
+        // Verify that endswith|cased is correctly detected.
         let rule_str = r#"
         enabled: true
         detection:
@@ -1868,7 +1868,7 @@ mod tests {
 
     #[test]
     fn test_detect_contains1() {
-        // containsが正しく検知できることを確認
+        // Verify that contains is correctly detected.
         let rule_str = r#"
         enabled: true
         detection:
@@ -1900,7 +1900,7 @@ mod tests {
 
     #[test]
     fn test_detect_contains2() {
-        // containsが正しく検知できることを確認
+        // Verify that contains is correctly detected.
         let rule_str = r#"
         enabled: true
         detection:
@@ -1932,7 +1932,7 @@ mod tests {
 
     #[test]
     fn test_detect_contains_case_insensitive() {
-        // containsが大文字小文字を区別せずに検知することを確認するテスト
+        // Test to verify that contains detects without distinguishing case.
         let rule_str = r#"
         enabled: true
         detection:
@@ -1963,7 +1963,7 @@ mod tests {
 
     #[test]
     fn test_detect_contains_cased1() {
-        // contains|casedが正しく検知できることを確認
+        // Verify that contains|cased is correctly detected.
         let rule_str = r#"
         enabled: true
         detection:
@@ -1995,7 +1995,7 @@ mod tests {
 
     #[test]
     fn test_detect_contains_cased2() {
-        // contains|casedが正しく検知できることを確認
+        // Verify that contains|cased is correctly detected.
         let rule_str = r#"
         enabled: true
         detection:
@@ -2027,7 +2027,7 @@ mod tests {
 
     #[test]
     fn test_detect_wildcard_multibyte() {
-        // multi byteの確認
+        // Verification with multi-byte characters.
         let rule_str = r#"
         enabled: true
         detection:
@@ -2047,7 +2047,7 @@ mod tests {
 
     #[test]
     fn test_detect_wildcard_multibyte_notdetect() {
-        // multi byteの確認
+        // Verification with multi-byte characters.
         let rule_str = r#"
         enabled: true
         detection:
@@ -2066,7 +2066,7 @@ mod tests {
 
     #[test]
     fn test_wildcard_case_insensitive() {
-        // wildcardは大文字小文字関係なくマッチする。
+        // Wildcards match regardless of case.
         let rule_str = r#"
         enabled: true
         detection:
@@ -2096,15 +2096,15 @@ mod tests {
     #[test]
     fn test_pipe_pattern_wildcard_asterisk2() {
         let value = PipeElement::pipe_pattern_wildcard(r"\*ho\*\*ge\*".to_string());
-        // wildcardの「\*」は文字列としての「*」を表す。
-        // 正規表現で「*」はエスケープする必要があるので、\*が正解
+        // The wildcard "\*" represents the literal "*".
+        // In regex, "*" must be escaped, so \* is correct.
         assert_eq!(r"(?i)\*ho\*\*ge\*", value);
     }
 
     #[test]
     fn test_pipe_pattern_wildcard_asterisk3() {
-        // wildcardの「\\*」は文字列としての「\」と正規表現の「.*」を表す。
-        // 文字列としての「\」はエスケープされるので、「\\.*」が正解
+        // The wildcard "\\\\*" represents the literal "\\" and the regex ".*".
+        // The literal "\\" is escaped, so "\\\\.*" is correct.
         let value = PipeElement::pipe_pattern_wildcard(r"\\*ho\\*ge\\*".to_string());
         assert_eq!(
             r"(?i)\\(.|\a|\f|\t|\n|\r|\v)*ho\\(.|\a|\f|\t|\n|\r|\v)*ge\\(.|\a|\f|\t|\n|\r|\v)*",
@@ -2156,7 +2156,7 @@ mod tests {
 
     #[test]
     fn test_grep_match() {
-        // wildcardは大文字小文字関係なくマッチする。
+        // Wildcards match regardless of case.
         let rule_str = r#"
         enabled: true
         detection:
@@ -2175,7 +2175,7 @@ mod tests {
 
     #[test]
     fn test_grep_not_match() {
-        // wildcardは大文字小文字関係なくマッチする。
+        // Wildcards match regardless of case.
         let rule_str = r#"
         enabled: true
         detection:
@@ -2195,8 +2195,8 @@ mod tests {
 
     #[test]
     fn test_detect_value_keyword() {
-        // 文字列っぽいデータでも確認
-        // 完全一致なので、前方一致しないことを確認
+        // Also verify with string-like data.
+        // Since it is an exact match, verify that it does not match as a prefix.
         let rule_str = r#"
         enabled: true
         detection:
@@ -2217,8 +2217,8 @@ mod tests {
 
     #[test]
     fn test_notdetect_value_keyword() {
-        // 文字列っぽいデータでも確認
-        // 完全一致なので、前方一致しないことを確認
+        // Also verify with string-like data.
+        // Since it is an exact match, verify that it does not match as a prefix.
         let rule_str = r#"
         enabled: true
         detection:
@@ -2239,7 +2239,7 @@ mod tests {
 
     #[test]
     fn test_endswith_field() {
-        // endswithfieldで正しく検知できることを確認
+        // Verify that endswithfield is correctly detected.
         let rule_str = r#"
         detection:
             selection:
@@ -2258,7 +2258,7 @@ mod tests {
 
     #[test]
     fn test_endswith_field2() {
-        // endswithfieldで正しく検知できることを確認
+        // Verify that endswithfield is correctly detected.
         let rule_str = r#"
         detection:
             selection:
@@ -2277,7 +2277,7 @@ mod tests {
 
     #[test]
     fn test_endswith_field_caseinsensitive() {
-        // endswithfieldでcaseinsensitiveで検知することを確認
+        // Verify that endswithfield detects case-insensitively.
         let rule_str = r#"
         detection:
             selection:
@@ -2296,7 +2296,7 @@ mod tests {
 
     #[test]
     fn test_endswith_field_caseinsensitive2() {
-        // endswithfieldでcaseinsensitiveで検知することを確認
+        // Verify that endswithfield detects case-insensitively.
         let rule_str = r#"
         detection:
             selection:
@@ -2315,7 +2315,7 @@ mod tests {
 
     #[test]
     fn test_endswith_field_notdetect() {
-        // endswithfieldで正しく検知しないパターン
+        // Patterns correctly not detected by endswithfield.
         let rule_str = r#"
         detection:
             selection:
@@ -2334,7 +2334,7 @@ mod tests {
 
     #[test]
     fn test_endswith_field_notdetect2() {
-        // endswithfieldで正しく検知しないパターン
+        // Patterns correctly not detected by endswithfield.
         let rule_str = r#"
         detection:
             selection:
@@ -2353,7 +2353,7 @@ mod tests {
 
     #[test]
     fn test_eq_field_ref() {
-        // fieldrefで正しく検知できることを確認
+        // Verify that fieldref is correctly detected.
         let rule_str = r#"
         detection:
             selection:
@@ -2372,7 +2372,7 @@ mod tests {
 
     #[test]
     fn test_eq_field_ref_notdetect() {
-        // fieldrefの検知できないパターン
+        // Patterns that fieldref cannot detect.
         let rule_str = r#"
         detection:
             selection:
@@ -2390,7 +2390,7 @@ mod tests {
 
     #[test]
     fn test_eq_field_ref_endswith() {
-        // fieldrefで正しく検知できることを確認
+        // Verify that fieldref is correctly detected.
         let rule_str = r#"
         detection:
             selection:
@@ -2409,7 +2409,7 @@ mod tests {
 
     #[test]
     fn test_eq_field_ref_notdetect_endswith() {
-        // fieldrefの検知できないパターン
+        // Patterns that fieldref cannot detect.
         let rule_str = r#"
         detection:
             selection:
@@ -2427,7 +2427,7 @@ mod tests {
 
     #[test]
     fn test_eq_field_ref_startswith() {
-        // fieldrefで正しく検知できることを確認
+        // Verify that fieldref is correctly detected.
         let rule_str = r#"
         detection:
             selection:
@@ -2446,7 +2446,7 @@ mod tests {
 
     #[test]
     fn test_eq_field_ref_notdetect_startswith() {
-        // fieldrefの検知できないパターン
+        // Patterns that fieldref cannot detect.
         let rule_str = r#"
         detection:
             selection:
@@ -2464,7 +2464,7 @@ mod tests {
 
     #[test]
     fn test_eq_field_ref_contains() {
-        // fieldrefで正しく検知できることを確認
+        // Verify that fieldref is correctly detected.
         let rule_str = r#"
         detection:
             selection:
@@ -2483,7 +2483,7 @@ mod tests {
 
     #[test]
     fn test_eq_field_ref_notdetect_contains() {
-        // fieldrefの検知できないパターン
+        // Patterns that fieldref cannot detect.
         let rule_str = r#"
         detection:
             selection:
@@ -2501,7 +2501,7 @@ mod tests {
 
     #[test]
     fn test_eq_field() {
-        // equalsfieldsで正しく検知できることを確認
+        // Verify that equalsfields is correctly detected.
         let rule_str = r#"
         detection:
             selection:
@@ -2520,7 +2520,7 @@ mod tests {
 
     #[test]
     fn test_eq_field_notdetect() {
-        // equalsfieldsの検知できないパターン
+        // Patterns that equalsfields cannot detect.
         let rule_str = r#"
         detection:
             selection:
@@ -2538,7 +2538,7 @@ mod tests {
 
     #[test]
     fn test_eq_field_emptyfield() {
-        // 存在しないフィールドを指定した場合は検知しない
+        // If a non-existent field is specified, do not detect.
         let rule_str = r#"
         detection:
             selection:
@@ -2573,7 +2573,7 @@ mod tests {
 
     #[test]
     fn test_field_null() {
-        // 値でnullであった場合に対象のフィールドが存在しないことを確認
+        // Verify that the target field does not exist when the value is null.
         let rule_str = r#"
         enabled: true
         detection:
@@ -2595,7 +2595,7 @@ mod tests {
 
     #[test]
     fn test_field_null_not_detect() {
-        // 値でnullであった場合に対象のフィールドが存在しないことを確認するテスト
+        // Verify that the target field does not exist when the value is null.するテスト
         let rule_str = r#"
         enabled: true
         detection:
@@ -2614,7 +2614,7 @@ mod tests {
 
     #[test]
     fn test_wildcard_converted_starts_with() {
-        // ワイルドカード1文字を末尾に含む場合、stars_with相当のマッチ
+        // When a single wildcard is at the end, it is equivalent to starts_with matching.
         let rule_str = r#"
         enabled: true
         detection:
@@ -2633,7 +2633,7 @@ mod tests {
 
     #[test]
     fn test_wildcard_converted_starts_with_notdetect() {
-        // ワイルドカード1文字を末尾に含む場合、stars_with相当のマッチ
+        // When a single wildcard is at the end, it is equivalent to starts_with matching.
         let rule_str = r#"
         enabled: true
         detection:
@@ -2652,7 +2652,7 @@ mod tests {
 
     #[test]
     fn test_wildcard_converted_starts_with_exact_val() {
-        // ワイルドカード1文字を末尾に含みかつ、＊を除く比較対象文字がちょうど一致する場合
+        // When a single wildcard is at the end and the characters to compare (excluding *) exactly match.
         let rule_str = r#"
         enabled: true
         detection:
@@ -2671,7 +2671,7 @@ mod tests {
 
     #[test]
     fn test_wildcard_converted_starts_with_shorter_val_notdetect() {
-        // ワイルドカード1文字を末尾に含みかつ、比較対象文字のほうが文字数が少ない場合はマッチしない
+        // When a single wildcard is at the end but the characters to compare have fewer characters, it does not match.
         let rule_str = r#"
         enabled: true
         detection:
@@ -2690,7 +2690,7 @@ mod tests {
 
     #[test]
     fn test_wildcard_converted_starts_with_multibytes() {
-        //ワイルドカードを含むかつascii以外のパターンは正規表現マッチ
+        // Patterns containing wildcards and non-ASCII characters use regex matching.
         let rule_str = r#"
         enabled: true
         detection:
@@ -2709,7 +2709,7 @@ mod tests {
 
     #[test]
     fn test_wildcard_converted_ends_with() {
-        // ワイルドカード1文字を先頭に含む場合、ends_with相当のマッチ
+        // When a single wildcard is at the beginning, it is equivalent to ends_with matching.
         let rule_str = r#"
         enabled: true
         detection:
@@ -2728,7 +2728,7 @@ mod tests {
 
     #[test]
     fn test_wildcard_converted_ends_with_starts_with_exact_val() {
-        // ワイルドカード1文字を先頭に含みかつ、＊を除く比較対象文字がちょうど一致する場合
+        // When a single wildcard is at the beginning and the characters to compare (excluding *) exactly match.
         let rule_str = r#"
         enabled: true
         detection:
@@ -2747,7 +2747,7 @@ mod tests {
 
     #[test]
     fn test_wildcard_converted_ends_with_shorter_val_notdetect() {
-        // ワイルドカード1文字を先頭に含みかつ、比較対象文字のほうが文字数が少ない場合はマッチしない
+        // When a single wildcard is at the beginning but the characters to compare have fewer characters, it does not match.
         let rule_str = r#"
         enabled: true
         detection:
@@ -2766,7 +2766,7 @@ mod tests {
 
     #[test]
     fn test_only_wildcard() {
-        // ワイルドカードだけの場合、ends_with相当のマッチ
+        // When there is only a wildcard, it is equivalent to ends_with matching.
         let rule_str = r#"
         enabled: true
         detection:
@@ -2785,7 +2785,7 @@ mod tests {
 
     #[test]
     fn test_two_wildcards() {
-        // ワイルドカード2文字以上を含む場合、正規表現マッチ
+        // When two or more wildcards are included, use regex matching.
         let rule_str = r#"
         enabled: true
         detection:
@@ -2804,7 +2804,7 @@ mod tests {
 
     #[test]
     fn test_base64_contains() {
-        // base64|containsのマッチ
+        // Match for base64|contains.
         let rule_str = r#"
         enabled: true
         detection:
@@ -2824,7 +2824,7 @@ mod tests {
 
     #[test]
     fn test_base64offset_contains() {
-        // base64offset|containsのマッチ
+        // Match for base64offset|contains.
         let rule_str = r#"
         enabled: true
         detection:
@@ -2844,7 +2844,7 @@ mod tests {
 
     #[test]
     fn test_base64offset_contains_not_match() {
-        // base64offset|containsのマッチしないパターン
+        // Match for base64offset|contains.しないパターン
         let rule_str = r#"
         enabled: true
         detection:
@@ -2864,7 +2864,7 @@ mod tests {
 
     #[test]
     fn test_cidr_ipv4_detect() {
-        // cidrにマッチするIP
+        // IPs matching CIDR.
         let rule_str = r#"
         enabled: true
         detection:
@@ -2883,7 +2883,7 @@ mod tests {
 
     #[test]
     fn test_cidr_ipv4_not_detect() {
-        // cidrにマッチしないIP
+        // IPs not matching CIDR.
         let rule_str = r#"
         enabled: true
         detection:
@@ -2902,7 +2902,7 @@ mod tests {
 
     #[test]
     fn test_cidr_ipv6_detect() {
-        // cidrにマッチするIP
+        // IPs matching CIDR.
         let rule_str = r#"
         enabled: true
         detection:
@@ -2921,7 +2921,7 @@ mod tests {
 
     #[test]
     fn test_cidr_ipv6_not_detect() {
-        // cidrにマッチしないIP
+        // IPs not matching CIDR.
         let rule_str = r#"
         enabled: true
         detection:
@@ -2940,7 +2940,7 @@ mod tests {
 
     #[test]
     fn test_cidr_ip_field_not_exists_not_detect() {
-        // cidrにマッチしないIP
+        // IPs not matching CIDR.
         let rule_str = r#"
         enabled: true
         detection:

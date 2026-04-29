@@ -2,7 +2,7 @@ use crate::detections::configs::WINDASH_CHARACTERS;
 use crate::detections::rule::matchers::PipeElement;
 use crate::detections::utils;
 
-// 正規表現マッチは遅いため、できるだけ高速なstd::stringのlen/starts_with/ends_with/containsでマッチ判定するためのenum
+// Since regex matching is slow, this enum is used to match using the faster std::string methods: len/starts_with/ends_with/contains.
 #[derive(PartialEq, Debug)]
 pub enum FastMatch {
     Exact(String),
@@ -24,7 +24,7 @@ pub fn starts_with_ignore_case(event_value_str: &str, match_str: &str) -> Option
     if len > event_value_str.len() {
         return Some(false);
     }
-    // マルチバイト文字を含む場合は、index out of boundsになるため、asciiのみ
+    // ASCII only, because multibyte characters would cause an index out of bounds.
     if event_value_str.is_ascii() {
         let match_result = match_str.eq_ignore_ascii_case(&event_value_str[0..len]);
         return Some(match_result);
@@ -38,7 +38,7 @@ pub fn ends_with_ignore_case(event_value_str: &str, match_str: &str) -> Option<b
     if len1 > len2 {
         return Some(false);
     }
-    // マルチバイト文字を含む場合は、index out of boundsになるため、asciiのみ
+    // ASCII only, because multibyte characters would cause an index out of bounds.
     if event_value_str.is_ascii() {
         let match_result = match_str.eq_ignore_ascii_case(&event_value_str[len2 - len1..]);
         return Some(match_result);
@@ -46,7 +46,7 @@ pub fn ends_with_ignore_case(event_value_str: &str, match_str: &str) -> Option<b
     None
 }
 
-// ワイルドカードマッチを高速なstd::stringのlen/starts_with/ends_withに変換するための関数
+// Function to convert wildcard matching to the faster std::string methods: len/starts_with/ends_with.
 pub fn convert_to_fast_match(s: &str, ignore_case: bool) -> Option<Vec<FastMatch>> {
     let wildcard_count = s.chars().filter(|c| *c == '*').count();
     let is_literal_asterisk = |s: &str| s.ends_with(r"\*") && !s.ends_with(r"\\*");
@@ -54,7 +54,7 @@ pub fn convert_to_fast_match(s: &str, ignore_case: bool) -> Option<Vec<FastMatch
         || s.ends_with(r"\\\*")
         || (!s.is_ascii() && utils::contains_str(s, "*"))
     {
-        // 高速なマッチに変換できないパターンは、正規表現マッチのみ
+        // Patterns that cannot be converted to fast matching use regex match only.
         return None;
     } else if s.starts_with("allOnly*") && s.ends_with('*') && wildcard_count == 2 {
         let removed_asterisk = s[8..(s.len() - 1)].replace(r"\\", r"\");
@@ -68,24 +68,24 @@ pub fn convert_to_fast_match(s: &str, ignore_case: bool) -> Option<Vec<FastMatch
         && !is_literal_asterisk(s)
     {
         let removed_asterisk = s[1..(s.len() - 1)].replace(r"\\", r"\");
-        // *が先頭と末尾だけは、containsに変換
+        // If * is only at the beginning and end, convert to contains.
         if ignore_case {
             return Some(vec![FastMatch::Contains(removed_asterisk.to_lowercase())]);
         }
         return Some(vec![FastMatch::Contains(removed_asterisk)]);
     } else if s.starts_with('*') && wildcard_count == 1 && !is_literal_asterisk(s) {
-        // *が先頭は、ends_withに変換
+        // If * is only at the beginning, convert to ends_with.
         return Some(vec![FastMatch::EndsWith(s[1..].replace(r"\\", r"\"))]);
     } else if s.ends_with('*') && wildcard_count == 1 && !is_literal_asterisk(s) {
-        // *が末尾は、starts_withに変換
+        // If * is only at the end, convert to starts_with.
         return Some(vec![FastMatch::StartsWith(
             s[..(s.len() - 1)].replace(r"\\", r"\"),
         )]);
     } else if utils::contains_str(s, "*") {
-        // *が先頭・末尾以外にあるパターンは、starts_with/ends_withに変換できないため、正規表現マッチのみ
+        // Patterns where * appears in positions other than the beginning or end cannot be converted to starts_with/ends_with, so use regex match only.
         return None;
     }
-    // *を含まない場合は、文字列長マッチに変換
+    // If * is not included, convert to string length match.
     Some(vec![FastMatch::Exact(s.replace(r"\\", r"\"))])
 }
 
