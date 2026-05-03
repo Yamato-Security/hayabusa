@@ -28,6 +28,25 @@ use crate::detections::configs::{
     TimeFormatOptions,
 };
 use crate::detections::message::{AlertMessage, COMPUTER_MITRE_ATTCK_MAP, DetectInfo};
+
+/// Escapes HTML special characters in user-supplied data values to prevent XSS
+/// when embedding them into Markdown that will be rendered as HTML.
+/// This should be applied only to dynamic data values (e.g. computer names from logs),
+/// not to the markdown template strings that may contain intentional HTML like `<br>`.
+fn html_escape_value(s: &str) -> String {
+    let mut escaped = String::with_capacity(s.len());
+    for c in s.chars() {
+        match c {
+            '<' => escaped.push_str("&lt;"),
+            '>' => escaped.push_str("&gt;"),
+            '&' => escaped.push_str("&amp;"),
+            '"' => escaped.push_str("&quot;"),
+            '\'' => escaped.push_str("&#39;"),
+            _ => escaped.push(c),
+        }
+    }
+    escaped
+}
 use crate::detections::utils::{
     self, check_setting_path, format_time, get_writable_color, output_and_data_stack_for_html,
     write_color_buffer,
@@ -1500,7 +1519,7 @@ fn _print_detection_summary_by_computer(
             for x in sorted_detections.iter() {
                 html_output_stock.push(format!(
                     "- {} ({})",
-                    x.0,
+                    html_escape_value(x.0),
                     x.1.to_formatted_string(&Locale::en)
                 ));
             }
@@ -1578,21 +1597,25 @@ fn _print_detection_summary_tables(
                 if is_encoded_rule {
                     html_output_stock.push(format!(
                         "- {} ({}) - {}",
-                        x.0,
+                        html_escape_value(x.0),
                         x.1.to_formatted_string(&Locale::en),
-                        rule_detect_author_map
-                            .get(rule_path)
-                            .unwrap_or(&not_found_str)
+                        html_escape_value(
+                            rule_detect_author_map
+                                .get(rule_path)
+                                .unwrap_or(&not_found_str)
+                        )
                     ));
                 } else {
                     html_output_stock.push(format!(
                         "- [{}]({}) ({}) - {}",
-                        x.0,
+                        html_escape_value(x.0),
                         &rule_path.replace('\\', "/"),
                         x.1.to_formatted_string(&Locale::en),
-                        rule_detect_author_map
-                            .get(rule_path)
-                            .unwrap_or(&not_found_str)
+                        html_escape_value(
+                            rule_detect_author_map
+                                .get(rule_path)
+                                .unwrap_or(&not_found_str)
+                        )
                     ));
                 }
             }
@@ -2223,7 +2246,7 @@ fn _output_html_computer_by_mitre_attck(html_output_stock: &mut Nested<String>) 
         }
         html_output_stock.push(format!(
             "|{}|{}|",
-            sorted_output_map.key(),
+            html_escape_value(sorted_output_map.key()),
             sorted_output_map.value().join("<br>")
         ));
     }
