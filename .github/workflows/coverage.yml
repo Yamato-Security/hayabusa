@@ -9,7 +9,7 @@ jobs:
       issues: read
       pull-requests: read
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
         with:
           submodules: recursive
       - name: Install stable toolchain
@@ -25,6 +25,6 @@ jobs:
           RUST_TEST_THREADS: 1
           CARGO_INCREMENTAL: "0"
         run: cargo llvm-cov --lcov --output-path /tmp/coverage.info
-      - uses: codecov/codecov-action@v4
+      - uses: codecov/codecov-action@57e3a136b779b570ffcdbf80b3bdc90e7fab3de2 # v6.0.0
         with:
           directory: /tmp/
