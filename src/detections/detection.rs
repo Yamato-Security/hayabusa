@@ -42,7 +42,7 @@ use crate::yaml::ParseYaml;
 use super::configs::{
     EventKeyAliasConfig, GEOIP_DB_PARSER, GEOIP_DB_YAML, GEOIP_FILTER, STORED_STATIC, StoredStatic,
 };
-use super::message::{self, COMPUTER_MITRE_ATTCK_MAP};
+use super::message::{self, COMPUTER_MITRE_ATTCK_MAP, COMPUTER_MITRE_ATTCK_UNIQUE_KEYS};
 
 // Struct to hold information for one record of an event file.
 #[derive(Clone, Debug)]
@@ -516,9 +516,20 @@ impl Detection {
                             .or_default();
                         let (_, attck_tac) = v.pair_mut();
                         for html_attck_tac in html_output_tactics_str {
-                            if !attck_tac.contains(&html_attck_tac.into()) {
-                                attck_tac.push(html_attck_tac.into());
-                                attck_tac.sort_unstable();
+                            let tactic_key: CompactString = html_attck_tac.into();
+                            let unique_key = CompactString::from(format!(
+                                "{}|{}|{}",
+                                &computer_name_to_mitre_tactics, &tactic_key, &rule.rulepath
+                            ));
+                            let is_unique = COMPUTER_MITRE_ATTCK_UNIQUE_KEYS.insert(unique_key);
+                            if let Some(entry) =
+                                attck_tac.iter_mut().find(|(t, _, _)| t == tactic_key)
+                            {
+                                entry.1 += if is_unique { 1 } else { 0 };
+                                entry.2 += 1;
+                            } else {
+                                attck_tac.push((tactic_key, if is_unique { 1 } else { 0 }, 1));
+                                attck_tac.sort_unstable_by(|a, b| a.0.cmp(&b.0));
                             }
                         }
                     }
