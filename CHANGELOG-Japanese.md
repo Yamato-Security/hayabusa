@@ -2,6 +2,10 @@
 
 ## x.x.x
 
+**改善:**
+
+検出されたMITRE ATT&CK戦術について、一意の件数と合計件数を追加した。 (#1753) (@fukusuket)
+
 **バグ修正:**
 
 - MITRE ATT&CK Tacticsの項目が、HTMLレポートで適切に改行されていなかった。 (#1751) (@fukusuket)

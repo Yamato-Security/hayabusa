@@ -2234,8 +2234,8 @@ fn _output_html_computer_by_mitre_attck(html_output_stock: &mut Nested<String>) 
         .iter()
         .sorted_by(|a, b| {
             Ord::cmp(
-                &format!("{}-{}", &b.value()[b.value().len() - 1], b.key()),
-                &format!("{}-{}", &a.value()[a.value().len() - 1], a.key()),
+                &format!("{}-{}", &b.value()[b.value().len() - 1].0, b.key()),
+                &format!("{}-{}", &a.value()[a.value().len() - 1].0, a.key()),
             )
         })
         .enumerate()
@@ -2247,7 +2247,12 @@ fn _output_html_computer_by_mitre_attck(html_output_stock: &mut Nested<String>) 
         html_output_stock.push(format!(
             "|{}|{}|",
             html_escape_value(sorted_output_map.key()),
-            sorted_output_map.value().join("<br>")
+            sorted_output_map
+                .value()
+                .iter()
+                .map(|(tactic, unique, total)| format!("{} ({} &#124; {})", tactic, unique, total))
+                .collect::<Vec<_>>()
+                .join("<br>")
         ));
     }
 }

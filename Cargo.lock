@@ -918,7 +918,7 @@ dependencies = [
 
 [[package]]
 name = "hayabusa"
-version = "3.9.1"
+version = "3.10.0-dev"
 dependencies = [
  "aho-corasick",
  "base64",

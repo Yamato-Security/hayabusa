@@ -12,7 +12,7 @@ use crate::options::profile::Profile::{
 };
 use chrono::{DateTime, Local, Utc};
 use compact_str::CompactString;
-use dashmap::DashMap;
+use dashmap::{DashMap, DashSet};
 use hashbrown::HashMap;
 use hashbrown::HashSet;
 use itertools::Itertools;
@@ -66,7 +66,8 @@ lazy_static! {
         true,
         false
     );
-    pub static ref COMPUTER_MITRE_ATTCK_MAP : DashMap<CompactString, Vec<CompactString>> = DashMap::new();
+    pub static ref COMPUTER_MITRE_ATTCK_MAP : DashMap<CompactString, Vec<(CompactString, i64, i64)>> = DashMap::new();
+    pub static ref COMPUTER_MITRE_ATTCK_UNIQUE_KEYS : DashSet<CompactString> = DashSet::new();
 }
 
 /// Function to create a HashMap of full names for tags described by file paths and the strings to be replaced during display.
