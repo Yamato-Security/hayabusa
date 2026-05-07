@@ -2,6 +2,10 @@
 
 ## x.x.x
 
+**Enchancements:**
+
+Added unique and total alert count to MITRE ATT&CK tactics found. (#1753) (@fukusuket)
+
 **Bug Fixes:**
 
 - MITRE ATT&CK Tactics were not line-breaking properly in HTML reports (#1751) (@fukusuket)
