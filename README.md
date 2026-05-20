@@ -2065,4 +2065,4 @@ Hayabusa uses GeoLite2 data created by MaxMind, available from [https://www.maxm
 
 # Twitter
 
-You can recieve the latest news about Hayabusa, rule updates, other Yamato Security tools, etc... by following us on Twitter at [@SecurityYamato](https://twitter.com/SecurityYamato).
+You can receive the latest news about Hayabusa, rule updates, other Yamato Security tools, etc... by following us on Twitter at [@SecurityYamato](https://twitter.com/SecurityYamato).
