@@ -10,6 +10,7 @@ Added unique and total alert count to MITRE ATT&CK tactics found. (#1753) (@fuku
 
 - MITRE ATT&CK Tactics were not line-breaking properly in HTML reports (#1751) (@fukusuket)
 - Fixed the scan progress bar not redrawing in place (each update was printed on a new line) during large scans, caused by literal carriage returns (`\r\n`) in the progress bar template. (#1760) (@YamatoSecurity)
+- Fixed unexpected timestamp-parse error/warning messages being shown during JSON/JSONL/Splunk scans regardless of the `--verbose`/`--quiet-errors` options (and missing from the error log); they are now gated like the EVTX record-parse path. (#1762) (@YamatoSecurity)
 
 ## 3.9.0 [2026/04/29]
 
