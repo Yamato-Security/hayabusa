@@ -23,6 +23,12 @@ lazy_static! {
     pub static ref HTML_REPORTER: RwLock<HtmlReporter> = RwLock::new(HtmlReporter::new());
 }
 
+/// Serializes the tests that mutate the process-global `HTML_REPORTER`
+/// (clear/populate/read) so they don't race under the parallel test harness.
+/// Each such test must hold this lock for its whole body.
+#[cfg(test)]
+pub(crate) static HTML_REPORTER_TEST_LOCK: std::sync::Mutex<()> = std::sync::Mutex::new(());
+
 #[derive(Clone)]
 pub struct HtmlReporter {
     pub section_order: Nested<String>,
@@ -202,7 +208,7 @@ mod tests {
 
     use nested::Nested;
 
-    use super::{HTML_REPORTER, img_to_base64};
+    use super::{HTML_REPORTER, HTML_REPORTER_TEST_LOCK, img_to_base64};
     use crate::{
         detections::configs::{
             Action, Config, CsvOutputOption, JSONOutputOption, OutputOption, StoredStatic,
@@ -368,6 +374,10 @@ mod tests {
 
     #[test]
     fn test_add_md_data() {
+        // Serialize against other tests that mutate the global HTML_REPORTER.
+        let _html_reporter_lock = HTML_REPORTER_TEST_LOCK
+            .lock()
+            .unwrap_or_else(|e| e.into_inner());
         HTML_REPORTER.write().unwrap().md_datas.clear();
         let mut html_reporter = HtmlReporter::default();
         let mut general_data = Nested::<String>::new();

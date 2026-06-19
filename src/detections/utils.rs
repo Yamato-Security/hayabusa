@@ -1107,6 +1107,10 @@ mod tests {
 
     #[test]
     fn test_output_profile() {
+        // Serialize against other tests that mutate the global HTML_REPORTER.
+        let _html_reporter_lock = crate::options::htmlreport::HTML_REPORTER_TEST_LOCK
+            .lock()
+            .unwrap_or_else(|e| e.into_inner());
         HTML_REPORTER.write().unwrap().md_datas.clear();
         let stored_static = StoredStatic::create_static_data(Some(Config {
             action: Some(Action::CsvTimeline(CsvOutputOption {
