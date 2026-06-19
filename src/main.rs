@@ -3310,7 +3310,7 @@ mod tests {
             .unwrap_or_else(|e| e.into_inner());
         // Create an empty file first.
         let mut app = App::new(None);
-        File::create("overwrite.csv").ok();
+        File::create("overwrite.json").ok();
         let action = Action::JsonTimeline(JSONOutputOption {
             output_options: OutputOption {
                 input_args: InputOption {
