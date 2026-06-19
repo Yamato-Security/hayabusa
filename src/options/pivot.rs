@@ -22,6 +22,12 @@ lazy_static! {
         RwLock::new(IndexMap::new());
 }
 
+/// Serializes the tests that mutate the process-global `PIVOT_KEYWORD`
+/// (clear/load/insert/read) so they don't race under the parallel test harness.
+/// Each such test must hold this lock for its whole body.
+#[cfg(test)]
+pub(crate) static PIVOT_KEYWORD_TEST_LOCK: std::sync::Mutex<()> = std::sync::Mutex::new(());
+
 impl Default for PivotKeyword {
     fn default() -> Self {
         Self::new()
@@ -147,11 +153,16 @@ mod tests {
     use crate::detections::configs::load_pivot_keywords;
     use crate::detections::utils;
     use crate::options::pivot::PIVOT_KEYWORD;
+    use crate::options::pivot::PIVOT_KEYWORD_TEST_LOCK;
     use crate::options::pivot::insert_pivot_keyword;
     use serde_json;
 
     #[test]
     fn insert_pivot_keyword_local_ip4() {
+        // Serialize against other tests that mutate the global PIVOT_KEYWORD.
+        let _pivot_keyword_lock = PIVOT_KEYWORD_TEST_LOCK
+            .lock()
+            .unwrap_or_else(|e| e.into_inner());
         PIVOT_KEYWORD.write().unwrap().clear();
         load_pivot_keywords("test_files/config/pivot_keywords.txt");
         let record_json_str = r#"
@@ -192,6 +203,10 @@ mod tests {
 
     #[test]
     fn insert_pivot_keyword_ip4() {
+        // Serialize against other tests that mutate the global PIVOT_KEYWORD.
+        let _pivot_keyword_lock = PIVOT_KEYWORD_TEST_LOCK
+            .lock()
+            .unwrap_or_else(|e| e.into_inner());
         PIVOT_KEYWORD.write().unwrap().clear();
         load_pivot_keywords("test_files/config/pivot_keywords.txt");
         let record_json_str = r#"
@@ -232,6 +247,10 @@ mod tests {
 
     #[test]
     fn insert_pivot_keyword_ip_empty() {
+        // Serialize against other tests that mutate the global PIVOT_KEYWORD.
+        let _pivot_keyword_lock = PIVOT_KEYWORD_TEST_LOCK
+            .lock()
+            .unwrap_or_else(|e| e.into_inner());
         PIVOT_KEYWORD.write().unwrap().clear();
         load_pivot_keywords("test_files/config/pivot_keywords.txt");
         let record_json_str = r#"
@@ -272,6 +291,10 @@ mod tests {
 
     #[test]
     fn insert_pivot_keyword_local_ip6() {
+        // Serialize against other tests that mutate the global PIVOT_KEYWORD.
+        let _pivot_keyword_lock = PIVOT_KEYWORD_TEST_LOCK
+            .lock()
+            .unwrap_or_else(|e| e.into_inner());
         PIVOT_KEYWORD.write().unwrap().clear();
         load_pivot_keywords("test_files/config/pivot_keywords.txt");
         let record_json_str = r#"
@@ -312,6 +335,10 @@ mod tests {
 
     #[test]
     fn insert_pivot_keyword_level_infomational() {
+        // Serialize against other tests that mutate the global PIVOT_KEYWORD.
+        let _pivot_keyword_lock = PIVOT_KEYWORD_TEST_LOCK
+            .lock()
+            .unwrap_or_else(|e| e.into_inner());
         PIVOT_KEYWORD.write().unwrap().clear();
         load_pivot_keywords("test_files/config/pivot_keywords.txt");
         let record_json_str = r#"
@@ -352,6 +379,10 @@ mod tests {
 
     #[test]
     fn insert_pivot_keyword_level_low() {
+        // Serialize against other tests that mutate the global PIVOT_KEYWORD.
+        let _pivot_keyword_lock = PIVOT_KEYWORD_TEST_LOCK
+            .lock()
+            .unwrap_or_else(|e| e.into_inner());
         PIVOT_KEYWORD.write().unwrap().clear();
         load_pivot_keywords("test_files/config/pivot_keywords.txt");
         let record_json_str = r#"
@@ -392,6 +423,10 @@ mod tests {
 
     #[test]
     fn insert_pivot_keyword_level_none() {
+        // Serialize against other tests that mutate the global PIVOT_KEYWORD.
+        let _pivot_keyword_lock = PIVOT_KEYWORD_TEST_LOCK
+            .lock()
+            .unwrap_or_else(|e| e.into_inner());
         PIVOT_KEYWORD.write().unwrap().clear();
         load_pivot_keywords("test_files/config/pivot_keywords.txt");
         let record_json_str = r#"
