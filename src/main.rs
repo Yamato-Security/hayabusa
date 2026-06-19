@@ -3491,8 +3491,9 @@ mod tests {
         app.exec(&mut config_reader.app, &mut stored_static);
         let meta = fs::metadata("overwrite-metric-successful.csv").unwrap();
         assert_ne!(meta.len(), 0);
-        // Delete the test file.
-        remove_file("overwrite-metric-successful").ok();
+        // Delete the test files (LogonSummary writes both -successful and -failed).
+        remove_file("overwrite-metric-successful.csv").ok();
+        remove_file("overwrite-metric-failed.csv").ok();
     }
 
     #[test]
