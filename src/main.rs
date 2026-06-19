@@ -2019,12 +2019,13 @@ Any hostnames added to the critical_systems.txt file will have all alerts above 
         }
 
         let template = if stored_static.common_options.no_color {
-            "[{elapsed_precise}] {human_pos} / {human_len} {spinner} [{bar:40}] {percent}%\r\n\r\n{msg}".to_string()
+            "[{elapsed_precise}] {human_pos} / {human_len} {spinner} [{bar:40}] {percent}%\n\n{msg}"
+                .to_string()
         } else {
             let spinner = "{spinner}".truecolor(0, 255, 0).to_string();
             let bar = "{bar:40}".truecolor(0, 255, 0).to_string();
             format!(
-                "[{{elapsed_precise}}] {{human_pos}} / {{human_len}} {spinner} [{bar}] {{percent}}%\r\n\r\n{{msg}}",
+                "[{{elapsed_precise}}] {{human_pos}} / {{human_len}} {spinner} [{bar}] {{percent}}%\n\n{{msg}}",
             )
         };
 
