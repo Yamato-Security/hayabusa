@@ -3046,6 +3046,13 @@ mod tests {
         timeline::timelines::Timeline,
     };
 
+    /// Serializes the tests that exercise output-file overwrite behavior. They
+    /// share fixed output filenames (e.g. `overwrite-metric.csv`) between the
+    /// `*_exit` (no-clobber, expects the file untouched) and clobber variants,
+    /// so running them concurrently lets one test write the file the other
+    /// asserts is empty. Each such test holds this lock for its whole body.
+    static FILE_OUTPUT_TEST_LOCK: std::sync::Mutex<()> = std::sync::Mutex::new(());
+
     fn create_dummy_stored_static() -> StoredStatic {
         StoredStatic::create_static_data(Some(Config {
             action: Some(Action::CsvTimeline(CsvOutputOption {
@@ -3165,6 +3172,10 @@ mod tests {
 
     #[test]
     fn test_same_file_output_csv_exit() {
+        // Serialize against the sibling test that shares this output filename.
+        let _file_output_lock = FILE_OUTPUT_TEST_LOCK
+            .lock()
+            .unwrap_or_else(|e| e.into_inner());
         // Create an empty file first.
         let mut app = App::new(None);
         File::create("overwrite.csv").ok();
@@ -3205,6 +3216,10 @@ mod tests {
 
     #[test]
     fn test_overwrite_csv() {
+        // Serialize against the sibling test that shares this output filename.
+        let _file_output_lock = FILE_OUTPUT_TEST_LOCK
+            .lock()
+            .unwrap_or_else(|e| e.into_inner());
         // Create an empty file first.
         let mut app = App::new(None);
         File::create("overwrite.csv").ok();
@@ -3245,6 +3260,10 @@ mod tests {
 
     #[test]
     fn test_same_file_output_json_exit() {
+        // Serialize against the sibling test that shares this output filename.
+        let _file_output_lock = FILE_OUTPUT_TEST_LOCK
+            .lock()
+            .unwrap_or_else(|e| e.into_inner());
         // Create an empty file first.
         let mut app = App::new(None);
         File::create("overwrite.json").ok();
@@ -3286,9 +3305,13 @@ mod tests {
 
     #[test]
     fn test_overwrite_json() {
+        // Serialize against the sibling test that shares this output filename.
+        let _file_output_lock = FILE_OUTPUT_TEST_LOCK
+            .lock()
+            .unwrap_or_else(|e| e.into_inner());
         // Create an empty file first.
         let mut app = App::new(None);
-        File::create("overwrite.csv").ok();
+        File::create("overwrite.json").ok();
         let action = Action::JsonTimeline(JSONOutputOption {
             output_options: OutputOption {
                 input_args: InputOption {
@@ -3326,6 +3349,10 @@ mod tests {
 
     #[test]
     fn test_same_file_output_metric_csv_exit() {
+        // Serialize against the sibling test that shares this output filename.
+        let _file_output_lock = FILE_OUTPUT_TEST_LOCK
+            .lock()
+            .unwrap_or_else(|e| e.into_inner());
         // Create an empty file first.
         let mut app = App::new(None);
         File::create("overwrite-metric.csv").ok();
@@ -3360,6 +3387,10 @@ mod tests {
 
     #[test]
     fn test_same_file_output_metric_csv() {
+        // Serialize against the sibling test that shares this output filename.
+        let _file_output_lock = FILE_OUTPUT_TEST_LOCK
+            .lock()
+            .unwrap_or_else(|e| e.into_inner());
         // Create an empty file first.
         let mut app = App::new(None);
         File::create("overwrite-metric.csv").ok();
@@ -3393,6 +3424,10 @@ mod tests {
 
     #[test]
     fn test_same_file_output_logon_summary_csv_exit() {
+        // Serialize against the sibling test that shares this output filename.
+        let _file_output_lock = FILE_OUTPUT_TEST_LOCK
+            .lock()
+            .unwrap_or_else(|e| e.into_inner());
         // Create an empty file first.
         let mut app = App::new(None);
         File::create("overwrite-metric-successful.csv").ok();
@@ -3426,6 +3461,10 @@ mod tests {
 
     #[test]
     fn test_same_file_output_logon_summary_csv() {
+        // Serialize against the sibling test that shares this output filename.
+        let _file_output_lock = FILE_OUTPUT_TEST_LOCK
+            .lock()
+            .unwrap_or_else(|e| e.into_inner());
         // Create an empty file first.
         let mut app = App::new(None);
         File::create("overwrite-metric-successful.csv").ok();
@@ -3453,12 +3492,17 @@ mod tests {
         app.exec(&mut config_reader.app, &mut stored_static);
         let meta = fs::metadata("overwrite-metric-successful.csv").unwrap();
         assert_ne!(meta.len(), 0);
-        // Delete the test file.
-        remove_file("overwrite-metric-successful").ok();
+        // Delete the test files (LogonSummary writes both -successful and -failed).
+        remove_file("overwrite-metric-successful.csv").ok();
+        remove_file("overwrite-metric-failed.csv").ok();
     }
 
     #[test]
     fn test_same_file_output_computer_metrics_exit() {
+        // Serialize against the sibling test that shares this output filename.
+        let _file_output_lock = FILE_OUTPUT_TEST_LOCK
+            .lock()
+            .unwrap_or_else(|e| e.into_inner());
         // Create an empty file first.
         let mut app = App::new(None);
         File::create("overwrite-computer-metrics.csv").ok();
@@ -3490,6 +3534,10 @@ mod tests {
 
     #[test]
     fn test_same_file_output_computer_metrics_csv() {
+        // Serialize against the sibling test that shares this output filename.
+        let _file_output_lock = FILE_OUTPUT_TEST_LOCK
+            .lock()
+            .unwrap_or_else(|e| e.into_inner());
         // Create an empty file first.
         let mut app = App::new(None);
         File::create("overwrite-computer-metrics.csv").ok();
