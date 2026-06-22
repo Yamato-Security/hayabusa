@@ -2678,9 +2678,30 @@ Any hostnames added to the critical_systems.txt file will have all alerts above 
                 record_cnt += 1;
                 if data["Event"]["EventData"].is_object() {
                     data["Event"]["System"] = data["Event"]["EventData"].clone();
-                } else if data["Event"]["EventData"].is_array() {
-                    data["Event"]["System"] =
-                        data["Event"]["EventData"].as_array().unwrap()[0].clone();
+                } else if let Some(first) = data["Event"]["EventData"]
+                    .as_array()
+                    .and_then(|a| a.first())
+                {
+                    data["Event"]["System"] = first.clone();
+                }
+                // If EventData was an empty array, a scalar, or an array whose first
+                // element isn't an object, `System` is not a JSON object and the
+                // normalization below would panic at `as_object_mut().unwrap()`. Skip
+                // the malformed record instead of aborting the whole scan.
+                if !data["Event"]["System"].is_object() {
+                    let errmsg = format!(
+                        "Skipped a malformed JSON record (unexpected Event.EventData shape). Filepath: {path}"
+                    );
+                    if stored_static.verbose_flag {
+                        AlertMessage::warn(&errmsg).ok();
+                    }
+                    if !stored_static.quiet_errors_flag {
+                        ERROR_LOG_STACK
+                            .lock()
+                            .unwrap()
+                            .push(format!("[WARN] {errmsg}"));
+                    }
+                    continue;
                 }
                 data["Event"]["System"]
                     .as_object_mut()
