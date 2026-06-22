@@ -1071,7 +1071,24 @@ pub fn sort_detect_info(detect_infos: &mut [DetectInfo]) {
             return computer_cmp;
         }
 
-        a.rec_id.cmp(&b.rec_id)
+        let rec_id_cmp = a.rec_id.cmp(&b.rec_id);
+        if rec_id_cmp != Ordering::Equal {
+            return rec_id_cmp;
+        }
+
+        // Final tie-breaker: order by the rendered field values so the sort is a
+        // total order and the output is deterministic run-to-run (previously,
+        // records equal on every key above — e.g. the same event collected from
+        // two overlapping evtx files, differing only in the EvtxFile column — got
+        // a run-dependent order from the unstable sort + parallel collection).
+        // Records still equal here render byte-identical rows, so their order is
+        // irrelevant. Only reached when all keys above tie (rare) and
+        // short-circuits at the first differing field, so the added cost is
+        // negligible.
+        a.ext_field
+            .iter()
+            .map(|(_, p)| p.to_value())
+            .cmp(b.ext_field.iter().map(|(_, p)| p.to_value()))
     });
 }
 
@@ -1454,15 +1471,21 @@ fn _print_detection_summary_by_date(
         // output_levels is an array with undefined excluded from levels; each element is guaranteed to be initialized and Some, so unwrap is called directly.
         let detections_by_day = detect_counts_by_date.get(&level).unwrap();
         let mut max_detect_str = CompactString::default();
+        let mut max_date: Option<&CompactString> = None;
         let mut tmp_cnt: i128 = 0;
         let mut exist_max_data = false;
         for (date, cnt) in detections_by_day {
-            if cnt > &tmp_cnt {
+            // On a tie, pick the earliest date so the choice is deterministic
+            // rather than HashMap-iteration-dependent.
+            if *cnt > tmp_cnt || (*cnt == tmp_cnt && exist_max_data && Some(date) < max_date) {
                 exist_max_data = true;
-                max_detect_str =
-                    format!("{} ({})", date, cnt.to_formatted_string(&Locale::en)).into();
+                max_date = Some(date);
                 tmp_cnt = *cnt;
             }
+        }
+        if let Some(date) = max_date {
+            max_detect_str =
+                format!("{} ({})", date, tmp_cnt.to_formatted_string(&Locale::en)).into();
         }
         wtr.set_color(ColorSpec::new().set_fg(_get_output_color(color_map, &level)))
             .ok();
@@ -1507,7 +1530,10 @@ fn _print_detection_summary_by_computer(
             .filter(|a| a.0.as_str() != "-")
             .collect();
 
-        sorted_detections.sort_by_key(|a| -a.1);
+        // Sort by count descending, then by name ascending so equal-count
+        // entries have a deterministic (rather than HashMap-iteration-dependent)
+        // order.
+        sorted_detections.sort_by(|a, b| b.1.cmp(a.1).then_with(|| a.0.cmp(b.0)));
 
         // For HTML output, display all computer names.
         if stored_static.html_report_flag {
@@ -1577,7 +1603,10 @@ fn _print_detection_summary_tables(
         let mut sorted_detections: Vec<(&CompactString, &i128)> =
             detections_by_computer.iter().collect();
 
-        sorted_detections.sort_by_key(|a| -a.1);
+        // Sort by count descending, then by name ascending so equal-count
+        // entries have a deterministic (rather than HashMap-iteration-dependent)
+        // order.
+        sorted_detections.sort_by(|a, b| b.1.cmp(a.1).then_with(|| a.0.cmp(b.0)));
 
         // For HTML output, output all content.
         if stored_static.html_report_flag {
@@ -2154,7 +2183,9 @@ fn output_detected_rule_authors(
 ) {
     let mut sorted_authors: Vec<(&CompactString, &i128)> = rule_author_counter.iter().collect();
 
-    sorted_authors.sort_by_key(|a| -a.1);
+    // Count descending, then author name ascending for a deterministic order
+    // among equal-count authors.
+    sorted_authors.sort_by(|a, b| b.1.cmp(a.1).then_with(|| a.0.cmp(b.0)));
     let authors_num = sorted_authors.len();
     let div = if authors_num <= table_column_num {
         1
@@ -2272,6 +2303,7 @@ mod tests {
     use crate::afterfact::format_time;
     use crate::afterfact::init_writer;
     use crate::afterfact::output_afterfact_inner;
+    use crate::afterfact::sort_detect_info;
     use crate::detections::configs::Action;
     use crate::detections::configs::CURRENT_EXE_PATH;
     use crate::detections::configs::Config;
@@ -2286,6 +2318,46 @@ mod tests {
     use crate::detections::utils;
     use crate::level::LEVEL;
     use crate::options::profile::{Profile, load_profile};
+
+    /// `sort_detect_info` must be a total order so the `-s` output is
+    /// deterministic: records equal on every primary key (here: same time/level/
+    /// eventid/rule/computer/rec_id, differing only in the EvtxFile field — the
+    /// overlapping-evtx-collection case) must sort to the same order regardless of
+    /// their (non-deterministic) input order.
+    #[test]
+    fn test_sort_detect_info_deterministic_on_ties() {
+        let make = |evtx: &str| DetectInfo {
+            detected_time: Utc.with_ymd_and_hms(2020, 1, 1, 0, 0, 0).unwrap(),
+            rulepath: "rule.yml".into(),
+            ruleid: "id".into(),
+            ruletitle: "title".into(),
+            ruleauthor: "author".into(),
+            level: LEVEL::INFORMATIONAL,
+            computername: "PC".into(),
+            rec_id: "100".into(),
+            eventid: "1".into(),
+            detail: CompactString::default(),
+            ext_field: vec![(
+                CompactString::from("EvtxFile"),
+                Profile::EvtxFile(evtx.to_string().into()),
+            )],
+            agg_result: None,
+            details_convert_map: HashMap::default(),
+        };
+        let evtx_of = |d: &DetectInfo| d.ext_field[0].1.to_value();
+
+        let mut a = vec![make("c.evtx"), make("a.evtx"), make("b.evtx")];
+        let mut b = vec![make("b.evtx"), make("c.evtx"), make("a.evtx")];
+        sort_detect_info(&mut a);
+        sort_detect_info(&mut b);
+        let a_order: Vec<_> = a.iter().map(evtx_of).collect();
+        let b_order: Vec<_> = b.iter().map(evtx_of).collect();
+        assert_eq!(
+            a_order, b_order,
+            "sort order must not depend on input order"
+        );
+        assert_eq!(a_order, vec!["a.evtx", "b.evtx", "c.evtx"]);
+    }
 
     #[test]
     fn test_emit_csv_output() {
