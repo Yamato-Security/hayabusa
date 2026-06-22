@@ -1081,10 +1081,10 @@ pub fn sort_detect_info(detect_infos: &mut [DetectInfo]) {
         // records equal on every key above — e.g. the same event collected from
         // two overlapping evtx files, differing only in the EvtxFile column — got
         // a run-dependent order from the unstable sort + parallel collection).
-        // Records still equal here render byte-identical rows, so their order is
-        // irrelevant. Only reached when all keys above tie (rare) and
-        // short-circuits at the first differing field, so the added cost is
-        // negligible.
+        // Records still equal here are indistinguishable (identical rendered
+        // fields), so their relative order does not affect the output. Only
+        // reached when all keys above tie (rare) and short-circuits at the first
+        // differing field, so the added cost is negligible.
         a.ext_field
             .iter()
             .map(|(_, p)| p.to_value())
@@ -1475,8 +1475,11 @@ fn _print_detection_summary_by_date(
         let mut tmp_cnt: i128 = 0;
         let mut exist_max_data = false;
         for (date, cnt) in detections_by_day {
-            // On a tie, pick the earliest date so the choice is deterministic
-            // rather than HashMap-iteration-dependent.
+            // On a tie, pick the lexicographically-smallest date string so the
+            // choice is deterministic rather than HashMap-iteration-dependent.
+            // (The key is the already-formatted date, so this is lexical, not
+            // necessarily chronological under non-ISO date formats — fine, since
+            // only determinism matters here.)
             if *cnt > tmp_cnt || (*cnt == tmp_cnt && exist_max_data && Some(date) < max_date) {
                 exist_max_data = true;
                 max_date = Some(date);
