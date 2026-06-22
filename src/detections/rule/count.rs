@@ -64,27 +64,30 @@ pub fn countup(
     let record = &evtx_rec.record;
     let default_time = Utc.with_ymd_and_hms(1977, 1, 1, 0, 0, 0).unwrap();
     let time = message::get_event_time(record, json_input_flag).unwrap_or(default_time);
+    // A record missing EventID/Computer/Channel must not panic and abort the whole
+    // scan; default to an empty string (mirrors the `unwrap_or(default_time)` used
+    // for `time` just above).
     let event_id = utils::get_event_value(
         "Event.System.EventID",
         record,
         STORED_EKEY_ALIAS.read().unwrap().as_ref().unwrap(),
     )
-    .unwrap();
-    let event_id = event_id.to_string().trim_matches('\"').to_string();
+    .map(|v| v.to_string().trim_matches('\"').to_string())
+    .unwrap_or_default();
     let computer = utils::get_event_value(
         "Event.System.Computer",
         record,
         STORED_EKEY_ALIAS.read().unwrap().as_ref().unwrap(),
     )
-    .unwrap();
-    let computer = computer.to_string().trim_matches('\"').to_string();
+    .map(|v| v.to_string().trim_matches('\"').to_string())
+    .unwrap_or_default();
     let channel = utils::get_event_value(
         "Event.System.Channel",
         record,
         STORED_EKEY_ALIAS.read().unwrap().as_ref().unwrap(),
     )
-    .unwrap();
-    let channel = channel.to_string().trim_matches('\"').to_string();
+    .map(|v| v.to_string().trim_matches('\"').to_string())
+    .unwrap_or_default();
     let evtx_file_path = evtx_rec.evtx_filepath.to_string();
     let value_map = rule.countdata.entry(key).or_default();
     value_map.push(AggRecordTimeInfo {
@@ -115,26 +118,22 @@ fn get_alias_value_in_record(
     match utils::get_event_value(alias, record, eventkey_alias) {
         Some(value) => Some(value.to_string().replace('\"', "")),
         None => {
+            // This arm is meant to warn-and-continue, so building the diagnostic
+            // must not itself panic on a record that also lacks an EventID (or a
+            // rulepath without a file name).
+            let rule_file = Path::new(&rule.rulepath)
+                .file_name()
+                .and_then(|s| s.to_str())
+                .unwrap_or("-");
+            let event_id =
+                utils::get_event_value(&utils::get_event_id_key(), record, eventkey_alias)
+                    .map_or_else(|| "-".to_string(), |v| v.to_string());
             let errmsg = match is_by_alias {
                 true => format!(
-                    "count by clause alias value not found in count process. rule file:{} EventID:{}",
-                    Path::new(&rule.rulepath)
-                        .file_name()
-                        .unwrap()
-                        .to_str()
-                        .unwrap(),
-                    utils::get_event_value(&utils::get_event_id_key(), record, eventkey_alias)
-                        .unwrap()
+                    "count by clause alias value not found in count process. rule file:{rule_file} EventID:{event_id}"
                 ),
                 false => format!(
-                    "count field clause alias value not found in count process. rule file:{} EventID:{}",
-                    Path::new(&rule.rulepath)
-                        .file_name()
-                        .unwrap()
-                        .to_str()
-                        .unwrap(),
-                    utils::get_event_value(&utils::get_event_id_key(), record, eventkey_alias)
-                        .unwrap()
+                    "count field clause alias value not found in count process. rule file:{rule_file} EventID:{event_id}"
                 ),
             };
             if verbose_flag {
@@ -731,6 +730,68 @@ mod tests {
             expected_count,
             vec![expected_agg_result],
         );
+    }
+
+    /// Build a rule + record, run `select()` (which drives `count()`/`countup()`),
+    /// assert the record matched, and return the aggregation results.
+    fn run_count_select(rule_str: &str, record_str: &str) -> Vec<AggResult> {
+        let mut rule_yaml = YamlLoader::load_from_str(rule_str).unwrap().into_iter();
+        let test = rule_yaml.next().unwrap();
+        let mut rule_node = create_rule("testpath".to_string(), test);
+        rule_node.init(&create_dummy_stored_static()).unwrap();
+        let dummy_stored_static = create_dummy_stored_static();
+        *STORED_EKEY_ALIAS.write().unwrap() = Some(dummy_stored_static.eventkey_alias.clone());
+        let record: serde_json::Value = serde_json::from_str(record_str).unwrap();
+        let keys = detections::rule::get_detection_keys(&rule_node);
+        let recinfo = utils::create_rec_info(record, "testpath".to_owned(), &keys, &false, &false);
+        let matched = rule_node.select(
+            &recinfo,
+            dummy_stored_static.verbose_flag,
+            dummy_stored_static.quiet_errors_flag,
+            dummy_stored_static.json_input_flag,
+            &dummy_stored_static.eventkey_alias,
+        );
+        assert!(matched, "record should match selection1");
+        rule_node.judge_satisfy_aggcondition(&dummy_stored_static)
+    }
+
+    #[test]
+    /// Regression: a record that matches the selection but has no `Event.System`
+    /// object (so the EventID/Computer/Channel lookups in `countup()` return
+    /// `None`) must not panic and abort the scan.
+    fn test_count_missing_system_fields_no_panic() {
+        let rule_str = r#"
+        enabled: true
+        detection:
+            selection1:
+                param1: 'Windows Event Log'
+            condition: selection1 | count() >= 1
+        details: 'x'
+        "#;
+        // No Event.System -> get_event_value("Event.System.{EventID,Computer,Channel}") is None.
+        let record_str = r#"{"Event":{"EventData":{"param1":"Windows Event Log"}}}"#;
+        let agg = run_count_select(rule_str, record_str);
+        assert_eq!(agg.len(), 1); // `count() >= 1` is satisfied, no panic
+    }
+
+    #[test]
+    /// Regression: the "alias not found" warn-and-continue arm must not panic
+    /// while formatting its diagnostic when the record also lacks an EventID.
+    /// Here `count(Computer)`'s Computer alias resolves through the absent
+    /// `Event.System`, hitting the None arm, and the EventID it reports is
+    /// likewise absent.
+    fn test_count_missing_alias_and_eventid_no_panic() {
+        let rule_str = r#"
+        enabled: true
+        detection:
+            selection1:
+                param1: 'Windows Event Log'
+            condition: selection1 | count(Computer) >= 1
+        details: 'x'
+        "#;
+        let record_str = r#"{"Event":{"EventData":{"param1":"Windows Event Log"}}}"#;
+        // Must not panic building the "alias not found" diagnostic (EventID is None).
+        let _agg = run_count_select(rule_str, record_str);
     }
 
     #[test]
