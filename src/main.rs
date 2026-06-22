@@ -2473,16 +2473,30 @@ Any hostnames added to the critical_systems.txt file will have all alerts above 
                 Utc,
             )),
             Err(e) => {
-                AlertMessage::alert(&format!(
-                    "Timestamp parse error. Filepath: {},{} {}",
-                    path,
-                    &target_timestamp
-                        .to_string()
-                        .replace("\\\"", "")
-                        .replace('"', ""),
-                    e
-                ))
-                .ok();
+                // Gate this per-record parse error like the EVTX path does, so it
+                // honors --verbose/--quiet-errors, stays out of the live progress
+                // bar, and lands in the error log instead of leaking to stderr.
+                // Only build the message when it will actually be emitted.
+                if stored_static.verbose_flag || !stored_static.quiet_errors_flag {
+                    let errmsg = format!(
+                        "Timestamp parse error. Filepath: {},{} {}",
+                        path,
+                        &target_timestamp
+                            .to_string()
+                            .replace("\\\"", "")
+                            .replace('"', ""),
+                        e
+                    );
+                    if stored_static.verbose_flag {
+                        AlertMessage::alert(&errmsg).ok();
+                    }
+                    if !stored_static.quiet_errors_flag {
+                        ERROR_LOG_STACK
+                            .lock()
+                            .unwrap()
+                            .push(format!("[ERROR] {errmsg}"));
+                    }
+                }
                 None
             }
         };
@@ -2589,16 +2603,30 @@ Any hostnames added to the critical_systems.txt file will have all alerts above 
                                 .format("%Y-%m-%dT%H:%M:%S%.fZ")
                             }
                             Err(e) => {
-                                AlertMessage::warn(&format!(
-                                    "Timestamp parse error. Filepath: {},{} {}",
-                                    path,
-                                    &splunk_api_record["Event"]["System"]["SystemTime"]
-                                        .to_string()
-                                        .replace("\\\"", "")
-                                        .replace('"', ""),
-                                    e
-                                ))
-                                .ok();
+                                // Gate like the EVTX path so it honors
+                                // --verbose/--quiet-errors and is logged rather
+                                // than leaked to stderr over the progress bar.
+                                // Only build the message when it will be emitted.
+                                if stored_static.verbose_flag || !stored_static.quiet_errors_flag {
+                                    let errmsg = format!(
+                                        "Timestamp parse error. Filepath: {},{} {}",
+                                        path,
+                                        &splunk_api_record["Event"]["System"]["SystemTime"]
+                                            .to_string()
+                                            .replace("\\\"", "")
+                                            .replace('"', ""),
+                                        e
+                                    );
+                                    if stored_static.verbose_flag {
+                                        AlertMessage::warn(&errmsg).ok();
+                                    }
+                                    if !stored_static.quiet_errors_flag {
+                                        ERROR_LOG_STACK
+                                            .lock()
+                                            .unwrap()
+                                            .push(format!("[WARN] {errmsg}"));
+                                    }
+                                }
                                 DateTime::<Utc>::default().format("%Y-%m-%dT%H:%M:%S%.fZ")
                             }
                         };
