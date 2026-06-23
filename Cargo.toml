@@ -23,7 +23,12 @@ dashmap = "*"
 dialoguer = "*"
 downcast-rs = "2.*"
 evtx = { git = "https://github.com/Yamato-Security/hayabusa-evtx.git" , features = ["fast-alloc"] , rev = "5c2bc81" } # 0.9.7 2026/04/29 update
-git2 = "0.*"
+# Enable the vendored-OpenSSL HTTPS/TLS backend for libgit2. The wildcard
+# `0.*` resolved to a build of libgit2 with no TLS transport, so `update-rules`
+# failed with `class=Ssl (16) - there is no TLS stream available`. The project
+# already vendors OpenSSL (see `openssl` below), so this just links libgit2's
+# TLS transport against it.
+git2 = { version = "0.20", features = ["https", "vendored-openssl"] }
 hashbrown = "0.17.*"
 hex = "0.4.*"
 horrorshow = "0.8.*"
