@@ -1444,7 +1444,7 @@ pub struct EidMetricsOption {
     pub output: Option<PathBuf>,
 
     /// Remove duplicate event records (default: disabled)
-    #[arg(help_heading = Some("Output"), short = 'X', long = "remove-duplicate-detections", display_order = 409)]
+    #[arg(help_heading = Some("Output"), short = 'X', long = "remove-duplicate-records", alias = "remove-duplicate-detections", display_order = 409)]
     pub remove_duplicate_detections: bool,
 
     #[clap(flatten)]
@@ -1571,7 +1571,7 @@ pub struct LogonSummaryOption {
     pub output: Option<PathBuf>,
 
     /// Remove duplicate event records (default: disabled)
-    #[arg(help_heading = Some("Output"), short = 'X', long = "remove-duplicate-detections", display_order = 409)]
+    #[arg(help_heading = Some("Output"), short = 'X', long = "remove-duplicate-records", alias = "remove-duplicate-detections", display_order = 409)]
     pub remove_duplicate_detections: bool,
 
     #[clap(flatten)]
