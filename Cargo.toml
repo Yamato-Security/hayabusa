@@ -28,7 +28,7 @@ evtx = { git = "https://github.com/Yamato-Security/hayabusa-evtx.git" , features
 # failed with `class=Ssl (16) - there is no TLS stream available`. The project
 # already vendors OpenSSL (see `openssl` below), so this just links libgit2's
 # TLS transport against it.
-git2 = { version = "0.20", features = ["https", "vendored-openssl"] }
+git2 = { version = "0.21", features = ["https", "vendored-openssl"] }
 hashbrown = "0.17.*"
 hex = "0.4.*"
 horrorshow = "0.8.*"
