@@ -1443,8 +1443,8 @@ pub struct EidMetricsOption {
     #[arg(help_heading = Some("Output"), short = 'o', long, value_name = "FILE", display_order = 410)]
     pub output: Option<PathBuf>,
 
-    /// Remove duplicate detections (default: disabled)
-    #[arg(help_heading = Some("Output"), short = 'X', long = "remove-duplicate-detections", requires = "sort_events", display_order = 409)]
+    /// Remove duplicate event records (default: disabled)
+    #[arg(help_heading = Some("Output"), short = 'X', long = "remove-duplicate-detections", display_order = 409)]
     pub remove_duplicate_detections: bool,
 
     #[clap(flatten)]
@@ -1570,8 +1570,8 @@ pub struct LogonSummaryOption {
     #[arg(help_heading = Some("Output"), short = 'o', long, value_name = "FILENAME-PREFIX", display_order = 410)]
     pub output: Option<PathBuf>,
 
-    /// Remove duplicate detections (default: disabled)
-    #[arg(help_heading = Some("Output"), short = 'X', long = "remove-duplicate-detections", requires = "sort_events", display_order = 409)]
+    /// Remove duplicate event records (default: disabled)
+    #[arg(help_heading = Some("Output"), short = 'X', long = "remove-duplicate-detections", display_order = 409)]
     pub remove_duplicate_detections: bool,
 
     #[clap(flatten)]
