@@ -737,9 +737,6 @@ extra:
     - icon: fontawesome/brands/x-twitter
       link: https://twitter.com/SecurityYamato
       name: Yamato Security on X
-    - icon: fontawesome/brands/discord
-      link: https://discord.gg/P8tkqGnNvk
-      name: Yamato Security Discord
 
 nav:
   - Home: index.md
