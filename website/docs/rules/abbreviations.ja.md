@@ -1,0 +1,58 @@
+# Details出力の省略
+
+できるだけ簡潔にするために、以下の略語を使用しています:
+
+- `Acct` -> Account
+- `Addr` -> Address
+- `Auth` -> Authentication
+- `Cli` -> Client
+- `Chan` -> Channel
+- `Cmd` -> Command
+- `Cnt` -> Count
+- `Comp` -> Computer
+- `Conn` -> Connection/Connected
+- `Creds` -> Credentials
+- `Crit` -> Critical
+- `Disconn` -> Disconnection/Disconnected
+- `Dir` -> Directory
+- `Drv` -> Driver
+- `Dst` -> Destination
+- `EID` -> Event ID
+- `Err` -> Error
+- `Exec` -> Execution
+- `FP` -> False Positive
+- `FW` -> Firewall
+- `GTW` -> Gateway
+- `Grp` -> Group
+- `Img` -> Image
+- `Inj` -> Injection
+- `Krb` -> Kerberos
+- `LID` -> Logon ID
+- `Med` -> Medium
+- `Net` -> Network
+- `Obj` -> Object
+- `Op` -> Operational/Operation
+- `Proto` -> Protocol
+- `PW` -> Password
+- `Reconn` -> Reconnection
+- `Req` -> Request
+- `Rsp` -> Response
+- `Sess` -> Session
+- `Sig` -> Signature
+- `Susp` -> Suspicious
+- `Src` -> Source
+- `Svc` -> Service
+- `Svr` -> Server
+- `Temp` -> Temporary
+- `Term` -> Termination/Terminated
+- `Tkt` -> Ticket
+- `Tgt` -> Target
+- `Unkwn` -> Unknown
+- `Usr` -> User
+- `Perm` -> Permament
+- `Pkg` -> Package
+- `Priv` -> Privilege
+- `Proc` -> Process
+- `PID` -> Process ID
+- `PGUID` -> Process GUID (Global Unique ID)
+- `Ver` -> Version

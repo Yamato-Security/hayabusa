@@ -18,3 +18,10 @@ hayabusa*
 !LICENSE.txt
 .~*
 config/critical_systems.txt
+
+# Documentation site (Material for MkDocs in website/)
+/website/site/
+# Re-include site source files that the broad patterns above would otherwise ignore
+!/website/requirements.txt
+!/website/docs/stylesheets/
+!/website/docs/stylesheets/extra.css

@@ -1,0 +1,125 @@
+/* =========================================================================
+   Hayabusa docs — custom theme (falcon blue + amber)
+   ========================================================================= */
+
+/* ---- Custom primary / accent palette (theme.palette primary: custom) ---- */
+[data-md-color-primary="custom"] {
+  --md-primary-fg-color:        #163b6b;
+  --md-primary-fg-color--light: #2a5694;
+  --md-primary-fg-color--dark:  #0e2747;
+  --md-primary-bg-color:        #ffffff;
+  --md-primary-bg-color--light: #ffffffb3;
+}
+
+[data-md-color-accent="custom"] {
+  --md-accent-fg-color:             #e8851a;
+  --md-accent-fg-color--transparent:#e8851a1a;
+  --md-accent-bg-color:             #ffffff;
+  --md-accent-bg-color--light:      #ffffffb3;
+}
+
+/* Light scheme: tasteful blue links */
+[data-md-color-scheme="default"] {
+  --md-typeset-a-color: #1d5fb8;
+}
+
+/* Dark scheme: lighten header + links for contrast */
+[data-md-color-scheme="slate"] {
+  --md-primary-fg-color: #12233b;
+  --md-typeset-a-color:  #6ea8fe;
+  --md-accent-fg-color:  #ffa53b;
+}
+
+/* ---- Top tabs: a touch bolder so main topics read as primary nav ---- */
+.md-tabs__link {
+  font-weight: 600;
+  opacity: 0.92;
+}
+.md-tabs__link--active {
+  opacity: 1;
+}
+
+/* Subtle header gradient */
+.md-header {
+  background: linear-gradient(90deg, var(--md-primary-fg-color--dark), var(--md-primary-fg-color));
+}
+.md-tabs {
+  background: var(--md-primary-fg-color);
+}
+
+/* Slightly wider content for the dense command reference tables */
+.md-grid {
+  max-width: 68rem;
+}
+
+/* =========================================================================
+   Landing-page hero
+   ========================================================================= */
+.hb-hero {
+  text-align: center;
+  padding: 2.4rem 0 1.2rem;
+}
+.hb-hero img.hb-logo {
+  width: min(420px, 80%);
+  margin: 0 auto 1rem;
+}
+.hb-hero .hb-tagline {
+  font-size: 1.15rem;
+  line-height: 1.6;
+  max-width: 46rem;
+  margin: 0 auto 1.4rem;
+  color: var(--md-default-fg-color--light);
+}
+.hb-badges {
+  margin: 0.4rem 0 1.4rem;
+}
+.hb-badges img {
+  margin: 2px;
+  vertical-align: middle;
+}
+.hb-cta {
+  display: flex;
+  gap: 0.6rem;
+  justify-content: center;
+  flex-wrap: wrap;
+  margin-bottom: 1rem;
+}
+.hb-cta .md-button {
+  margin: 0.2rem;
+}
+
+/* =========================================================================
+   Grid cards (feature highlights on the home page)
+   ========================================================================= */
+.md-typeset .grid.cards > ul > li {
+  border-radius: 0.5rem;
+  transition: border-color 160ms ease, box-shadow 160ms ease, transform 160ms ease;
+}
+.md-typeset .grid.cards > ul > li:hover {
+  border-color: var(--md-accent-fg-color);
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.10);
+  transform: translateY(-2px);
+}
+.md-typeset .grid.cards .lg.middle {
+  color: var(--md-accent-fg-color);
+}
+
+/* =========================================================================
+   Misc readability tweaks
+   ========================================================================= */
+/* Screenshots get a light frame + zoom affordance */
+.md-typeset img:not(.hb-logo):not(.twemoji):not([src*="img.shields.io"]):not([src*="badge"]) {
+  border-radius: 6px;
+  box-shadow: 0 1px 6px rgba(0, 0, 0, 0.18);
+}
+
+/* Wrap wide tables instead of overflowing oddly */
+.md-typeset table:not([class]) {
+  display: table;
+  width: 100%;
+}
+
+/* Inline code a little calmer */
+.md-typeset code {
+  border-radius: 4px;
+}

@@ -1,0 +1,264 @@
+# =============================================================================
+# Hayabusa Documentation Site — Material for MkDocs
+# -----------------------------------------------------------------------------
+# Built to be hosted for free on GitHub Pages (see ../.github/workflows/docs.yml).
+# Top tabs = main topics, left sidebar = subtopics (same layout as
+# https://www.purplecloud.network/).
+#
+# >>> If you fork/rename, update site_url, repo_url and repo_name below. <<<
+# =============================================================================
+
+site_name: Hayabusa
+site_description: >-
+  Hayabusa is a Windows event log fast forensics timeline generator and threat
+  hunting tool with full support for the Sigma specification, written in Rust.
+site_author: Yamato Security
+# GitHub Pages URL — update the org/user if you host from a different account.
+site_url: https://shirofune-security.github.io/hayabusa/
+
+# Source repository (shown in the top-right header).
+repo_url: https://github.com/Yamato-Security/hayabusa
+repo_name: Yamato-Security/hayabusa
+edit_uri: edit/main/README.md
+
+copyright: >-
+  Copyright &copy; 2020–2026 Yamato Security — Documentation built with Material for MkDocs
+
+docs_dir: docs
+
+theme:
+  name: material
+  language: en
+  logo: assets/logo.png
+  favicon: assets/logo.png
+  icon:
+    repo: fontawesome/brands/github
+  font:
+    text: Inter
+    code: JetBrains Mono
+  palette:
+    # Light mode
+    - media: "(prefers-color-scheme: light)"
+      scheme: default
+      primary: custom
+      accent: custom
+      toggle:
+        icon: material/weather-night
+        name: Switch to dark mode
+    # Dark mode
+    - media: "(prefers-color-scheme: dark)"
+      scheme: slate
+      primary: custom
+      accent: custom
+      toggle:
+        icon: material/weather-sunny
+        name: Switch to light mode
+  features:
+    - navigation.tabs          # main topics across the top
+    - navigation.tabs.sticky   # keep the tabs visible while scrolling
+    - navigation.sections      # group subtopics in the sidebar
+    - navigation.top           # back-to-top button
+    - navigation.footer        # prev/next page links
+    - navigation.tracking      # update URL with the active anchor
+    - toc.follow
+    - search.suggest
+    - search.highlight
+    - search.share
+    - content.code.copy
+    - content.code.annotate
+    - content.tooltips
+
+extra_css:
+  - stylesheets/extra.css
+
+markdown_extensions:
+  - abbr
+  - admonition
+  - attr_list
+  - def_list
+  - footnotes
+  - md_in_html
+  - tables
+  - toc:
+      permalink: true
+      toc_depth: 3
+      # Unicode-aware slugify so Japanese/CJK/Cyrillic headings get readable
+      # anchors that match hand-written in-page links (default slugify is ASCII-only).
+      slugify: !!python/object/apply:pymdownx.slugs.slugify
+        kwds:
+          case: lower
+  - pymdownx.details
+  - pymdownx.highlight:
+      anchor_linenums: true
+      line_spans: __span
+      pygments_lang_class: true
+  - pymdownx.inlinehilite
+  - pymdownx.snippets
+  - pymdownx.superfences
+  - pymdownx.tabbed:
+      alternate_style: true
+  - pymdownx.tasklist:
+      custom_checkbox: true
+  - pymdownx.keys
+  - pymdownx.emoji:
+      emoji_index: !!python/name:material.extensions.emoji.twemoji
+      emoji_generator: !!python/name:material.extensions.emoji.to_svg
+
+plugins:
+  - search
+  - glightbox:               # click-to-zoom on screenshots
+      touchNavigation: true
+      loop: false
+      effect: zoom
+      width: 100%
+      auto_caption: false
+  # Multi-language support. Japanese ships full translated content (*.ja.md);
+  # the other languages localize the interface and fall back to English content.
+  # Add real translations later by creating <page>.<locale>.md files.
+  - i18n:
+      docs_structure: suffix
+      fallback_to_default: true
+      reconfigure_material: true
+      reconfigure_search: true
+      languages:
+        - locale: en
+          default: true
+          name: English
+          build: true
+        - locale: ja
+          name: 日本語
+          build: true
+          site_name: Hayabusa ドキュメント
+          nav_translations:
+            Home: ホーム
+            Overview: 概要
+            About Hayabusa: Hayabusaについて
+            Main Goals: 主な目的
+            Features: 特徴・機能
+            Screenshots: スクリーンショット
+            Getting Started: はじめに
+            Downloads: ダウンロード
+            Git Cloning: Gitクローン
+            Compiling From Source: ソースからのコンパイル
+            Running Hayabusa: Hayabusaの実行
+            Commands: コマンド
+            Command List: コマンド一覧
+            Analysis Commands: 分析コマンド
+            Config Commands: Configコマンド
+            DFIR Timeline Commands: DFIRタイムラインコマンド
+            Output: 出力
+            Timeline Output: タイムライン出力
+            Abbreviations: 省略形
+            Display & Summary: 表示とサマリ
+            Rules: ルール
+            Creating Rule Files: ルールファイルの作成
+            Detection Fields: detectionフィールド
+            Field Modifiers: フィールド修飾子
+            Sigma Correlations: Sigma相関ルール
+            Deprecated Features: 非推奨機能
+            Rule Creation Advice: ルール作成のアドバイス
+            Importing & Analysis: インポートと解析
+            Elastic Stack: Elastic Stack
+            Timesketch: Timesketch
+            Timeline Explorer: Timeline Explorer
+            Analyzing with jq: jqによる解析
+            Resources: リソース
+            Projects & Ecosystem: プロジェクトとエコシステム
+            Windows Logging & Sysmon: Windowsログ設定とSysmon
+            Rust Performance: Rustパフォーマンス
+            Community Docs: コミュニティドキュメント
+            Contributing & Support: 貢献とサポート
+        - locale: zh-TW
+          name: 繁體中文
+          build: true
+        - locale: ko
+          name: 한국어
+          build: true
+        - locale: de
+          name: Deutsch
+          build: true
+        - locale: tr
+          name: Türkçe
+          build: true
+        - locale: fr
+          name: Français
+          build: true
+        - locale: es
+          name: Español
+          build: true
+        - locale: pt
+          name: Português
+          build: true
+        - locale: uk
+          name: Українська
+          build: true
+        - locale: hi
+          name: हिन्दी
+          build: true
+        - locale: bn
+          name: বাংলা
+          build: true
+        - locale: my
+          name: မြန်မာဘာသာ
+          build: true
+        - locale: th
+          name: ไทย
+          build: true
+        - locale: ar
+          name: العربية
+          build: true
+
+extra:
+  social:
+    - icon: fontawesome/brands/github
+      link: https://github.com/Yamato-Security/hayabusa
+      name: Hayabusa on GitHub
+    - icon: fontawesome/brands/x-twitter
+      link: https://twitter.com/SecurityYamato
+      name: Yamato Security on X
+    - icon: fontawesome/brands/discord
+      link: https://discord.gg/P8tkqGnNvk
+      name: Yamato Security Discord
+
+nav:
+  - Home: index.md
+  - Overview:
+      - About Hayabusa: overview/index.md
+      - Main Goals: overview/main-goals.md
+      - Features: overview/features.md
+      - Screenshots: overview/screenshots.md
+  - Getting Started:
+      - Downloads: getting-started/index.md
+      - Git Cloning: getting-started/git-cloning.md
+      - Compiling From Source: getting-started/compiling.md
+      - Running Hayabusa: getting-started/running.md
+  - Commands:
+      - Command List: commands/index.md
+      - Analysis Commands: commands/analysis.md
+      - Config Commands: commands/config.md
+      - DFIR Timeline Commands: commands/dfir-timeline.md
+  - Output:
+      - Timeline Output: output/index.md
+      - Abbreviations: output/abbreviations.md
+      - Display & Summary: output/display.md
+  - Rules:
+      - Overview: rules/index.md
+      - Creating Rule Files: rules/creating-rules.md
+      - Detection Fields: rules/detection-fields.md
+      - Field Modifiers: rules/field-modifiers.md
+      - Sigma Correlations: rules/correlations.md
+      - Abbreviations: rules/abbreviations.md
+      - Deprecated Features: rules/deprecated.md
+      - Rule Creation Advice: rules/advice.md
+  - Importing & Analysis:
+      - Overview: importing/index.md
+      - Elastic Stack: importing/elastic-stack.md
+      - Timesketch: importing/timesketch.md
+      - Timeline Explorer: importing/timeline-explorer.md
+      - Analyzing with jq: importing/jq.md
+  - Resources:
+      - Projects & Ecosystem: resources/index.md
+      - Windows Logging & Sysmon: resources/logging.md
+      - Rust Performance: resources/performance.md
+      - Community Docs: resources/community.md
+      - Contributing & Support: resources/contributing.md
