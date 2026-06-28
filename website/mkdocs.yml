@@ -136,6 +136,7 @@ plugins:
             Main Goals: 主な目的
             Features: 特徴・機能
             Screenshots: スクリーンショット
+            Licenses: ライセンス
             Getting Started: はじめに
             Downloads: ダウンロード
             Git Cloning: Gitクローン
@@ -178,6 +179,7 @@ plugins:
             "Main Goals": "主要目標"
             "Features": "功能特色"
             "Screenshots": "螢幕擷圖"
+            "Licenses": "授權條款"
             "Getting Started": "開始使用"
             "Downloads": "下載"
             "Git Cloning": "Git 複製"
@@ -220,6 +222,7 @@ plugins:
             "Main Goals": "주요 목표"
             "Features": "기능"
             "Screenshots": "스크린샷"
+            "Licenses": "라이선스"
             "Getting Started": "시작하기"
             "Downloads": "다운로드"
             "Git Cloning": "Git 클론"
@@ -262,6 +265,7 @@ plugins:
             "Main Goals": "Hauptziele"
             "Features": "Funktionen"
             "Screenshots": "Screenshots"
+            "Licenses": "Lizenzen"
             "Getting Started": "Erste Schritte"
             "Downloads": "Downloads"
             "Git Cloning": "Git-Klonen"
@@ -304,6 +308,7 @@ plugins:
             "Main Goals": "Ana Hedefler"
             "Features": "Özellikler"
             "Screenshots": "Ekran Görüntüleri"
+            "Licenses": "Lisanslar"
             "Getting Started": "Başlarken"
             "Downloads": "İndirmeler"
             "Git Cloning": "Git ile Klonlama"
@@ -346,6 +351,7 @@ plugins:
             "Main Goals": "Objectifs principaux"
             "Features": "Fonctionnalités"
             "Screenshots": "Captures d'écran"
+            "Licenses": "Licences"
             "Getting Started": "Premiers pas"
             "Downloads": "Téléchargements"
             "Git Cloning": "Clonage Git"
@@ -388,6 +394,7 @@ plugins:
             "Main Goals": "Objetivos principales"
             "Features": "Características"
             "Screenshots": "Capturas de pantalla"
+            "Licenses": "Licencias"
             "Getting Started": "Primeros pasos"
             "Downloads": "Descargas"
             "Git Cloning": "Clonación con Git"
@@ -430,6 +437,7 @@ plugins:
             "Main Goals": "Principais objetivos"
             "Features": "Funcionalidades"
             "Screenshots": "Capturas de tela"
+            "Licenses": "Licenças"
             "Getting Started": "Primeiros passos"
             "Downloads": "Downloads"
             "Git Cloning": "Clonagem com Git"
@@ -472,6 +480,7 @@ plugins:
             "Main Goals": "Основні цілі"
             "Features": "Можливості"
             "Screenshots": "Знімки екрана"
+            "Licenses": "Ліцензії"
             "Getting Started": "Початок роботи"
             "Downloads": "Завантаження"
             "Git Cloning": "Клонування Git"
@@ -514,6 +523,7 @@ plugins:
             "Main Goals": "मुख्य लक्ष्य"
             "Features": "विशेषताएँ"
             "Screenshots": "स्क्रीनशॉट"
+            "Licenses": "लाइसेंस"
             "Getting Started": "शुरुआत करना"
             "Downloads": "डाउनलोड"
             "Git Cloning": "Git क्लोनिंग"
@@ -556,6 +566,7 @@ plugins:
             "Main Goals": "মূল লক্ষ্যসমূহ"
             "Features": "বৈশিষ্ট্যসমূহ"
             "Screenshots": "স্ক্রিনশট"
+            "Licenses": "লাইসেন্স"
             "Getting Started": "শুরু করা"
             "Downloads": "ডাউনলোড"
             "Git Cloning": "Git ক্লোনিং"
@@ -598,6 +609,7 @@ plugins:
             "Main Goals": "အဓိကရည်မှန်းချက်များ"
             "Features": "အင်္ဂါရပ်များ"
             "Screenshots": "ဖန်သားပြင်ဓာတ်ပုံများ"
+            "Licenses": "လိုင်စင်များ"
             "Getting Started": "စတင်အသုံးပြုခြင်း"
             "Downloads": "ဒေါင်းလုဒ်များ"
             "Git Cloning": "Git Cloning ပြုလုပ်ခြင်း"
@@ -640,6 +652,7 @@ plugins:
             "Main Goals": "เป้าหมายหลัก"
             "Features": "คุณสมบัติ"
             "Screenshots": "ภาพหน้าจอ"
+            "Licenses": "สัญญาอนุญาต"
             "Getting Started": "เริ่มต้นใช้งาน"
             "Downloads": "ดาวน์โหลด"
             "Git Cloning": "การโคลนด้วย Git"
@@ -682,6 +695,7 @@ plugins:
             "Main Goals": "الأهداف الرئيسية"
             "Features": "الميزات"
             "Screenshots": "لقطات الشاشة"
+            "Licenses": "التراخيص"
             "Getting Started": "البدء"
             "Downloads": "التنزيلات"
             "Git Cloning": "الاستنساخ عبر Git"
@@ -734,6 +748,7 @@ nav:
       - Main Goals: overview/main-goals.md
       - Features: overview/features.md
       - Screenshots: overview/screenshots.md
+      - Licenses: overview/licenses.md
   - Getting Started:
       - Downloads: getting-started/index.md
       - Git Cloning: getting-started/git-cloning.md
