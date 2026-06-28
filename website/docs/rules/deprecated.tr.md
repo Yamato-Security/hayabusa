@@ -5,12 +5,14 @@ Kullanımdan kaldırılan özel anahtar sözcükler ve `count` toplama işlevi H
 ## Kullanımdan kaldırılan özel anahtar sözcükler
 
 Şu anda aşağıdaki özel anahtar sözcükler belirtilebilir:
+
 - `value`: dizeye göre eşleşir (joker karakterler ve borular da belirtilebilir).
 - `min_length`: karakter sayısı belirtilen sayıdan büyük veya eşit olduğunda eşleşir.
 - `regexes`: bu alanda belirttiğiniz dosyadaki düzenli ifadelerden biri eşleşirse eşleşir.
 - `allowlist`: bu alanda belirttiğiniz dosyadaki düzenli ifadeler listesinde herhangi bir eşleşme bulunursa kural atlanır.
 
 Aşağıdaki örnekte, aşağıdakiler doğruysa kural eşleşecektir:
+
 - `ServiceName`, `malicious-service` olarak adlandırılır veya `./rules/config/regex/detectlist_suspicous_services.txt` içinde bir düzenli ifade içerir.
 - `ImagePath` en az 1000 karakter içerir.
 - `ImagePath`, `allowlist` içinde herhangi bir eşleşmeye sahip değildir.
@@ -32,6 +34,7 @@ detection:
 ### regexes ve allowlist anahtar sözcüğü örnek dosyaları
 
 Hayabusa'nın `./rules/hayabusa/default/alerts/System/7045_CreateOrModiftySystemProcess-WindowsService_MaliciousServiceInstalled.yml` dosyası için kullanılan iki yerleşik düzenli ifade dosyası vardı:
+
 - `./rules/config/regex/detectlist_suspicous_services.txt`: şüpheli hizmet adlarını tespit etmek için
 - `./rules/config/regex/allowlist_legitimate_services.txt`: meşru hizmetlere izin vermek için
 
@@ -59,9 +62,11 @@ detection:
 ```
 
 Toplama koşulları aşağıdaki biçimde tanımlanabilir:
+
 - `count() {operator} {number}`: Borudan önceki ilk koşulla eşleşen günlük olayları için, eşleşen günlüklerin sayısı `{operator}` ve `{number}` ile belirtilen koşul ifadesini karşılarsa koşul eşleşir.
 
 `{operator}` aşağıdakilerden biri olabilir:
+
 - `==`: Değer belirtilen değere eşitse, koşulla eşleşiyor olarak kabul edilir.
 - `>=`: Değer belirtilen değerden büyük veya eşitse, koşulun karşılandığı kabul edilir.
 - `>`: Değer belirtilen değerden büyükse, koşulun karşılandığı kabul edilir.
@@ -71,6 +76,7 @@ Toplama koşulları aşağıdaki biçimde tanımlanabilir:
 `{number}` bir sayı olmalıdır.
 
 `timeframe` aşağıdaki biçimde tanımlanabilir:
+
 - `15s`: 15 saniye
 - `30m`: 30 dakika
 - `12h`: 12 saat

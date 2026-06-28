@@ -3,6 +3,7 @@
 Bitte laden Sie die neueste stabile Version von Hayabusa mit kompilierten Binärdateien herunter oder kompilieren Sie den Quellcode von der Seite [Releases](https://github.com/Yamato-Security/hayabusa/releases).
 
 Wir stellen Binärdateien für die folgenden Architekturen bereit:
+
 - Linux ARM 64-Bit GNU (`hayabusa-x.x.x-lin-aarch64-gnu`)
 - Linux Intel 64-Bit GNU (`hayabusa-x.x.x-lin-x64-gnu`)
 - Linux Intel 64-Bit MUSL (`hayabusa-x.x.x-lin-x64-musl`)

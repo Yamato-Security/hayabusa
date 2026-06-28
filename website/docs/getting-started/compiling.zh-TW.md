@@ -52,6 +52,7 @@ brew install openssl
 ## Linux 編譯注意事項
 
 需要以下建置相依套件：
+
 * openssl-devel（Fedora 系列）/ libssl-dev（Ubuntu 系列） 
 * perl
 * musl-gcc

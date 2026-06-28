@@ -80,6 +80,7 @@ Timestamp · RuleTitle · Level · Computer · Channel · EventID · RecordID ·
 Estas regras contam os mesmos eventos dentro de um intervalo de tempo com valores **diferentes** de um determinado campo.
 
 Exemplos:
+
 - Varreduras de rede em que um único endereço IP de origem tenta se conectar a muitos endereços IP e/ou portas de destino diferentes.
 - Ataques de pulverização de senha em que uma única origem falha em autenticar com muitos usuários diferentes.
 - Detectar ferramentas como o BloodHound que enumeram muitos grupos do AD de alto privilégio em um curto intervalo de tempo.

@@ -52,6 +52,7 @@ brew install openssl
 ## Hinweise zum Kompilieren unter Linux
 
 Die folgenden Build-Abhängigkeiten sind erforderlich:
+
 * openssl-devel (Fedora-basiert) / libssl-dev (Ubuntu-basiert) 
 * perl
 * musl-gcc

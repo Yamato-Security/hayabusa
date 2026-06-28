@@ -80,6 +80,7 @@ Timestamp · RuleTitle · Level · Computer · Channel · EventID · RecordID ·
 這類規則會計算在某個時間範圍內，具有特定欄位**不同**數值的相同事件。
 
 範例：
+
 - 網路掃描，即單一來源 IP 位址嘗試連線至許多不同的目的地 IP 位址與／或連接埠。
 - 密碼噴灑攻擊，即單一來源以許多不同的使用者驗證失敗。
 - 偵測像 BloodHound 這類在短時間內列舉許多高權限 AD 群組的工具。

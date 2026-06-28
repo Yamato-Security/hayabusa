@@ -18,6 +18,7 @@ En un símbolo del sistema de Command/PowerShell o en Windows Terminal, simpleme
 
 Al usar el símbolo del sistema integrado de Command o PowerShell en Windows, es posible que reciba un error que indica que Hayabusa no pudo cargar ningún archivo .evtx si hay un espacio en la ruta de su archivo o directorio.
 Para cargar los archivos .evtx correctamente, asegúrese de hacer lo siguiente:
+
 1. Encierre la ruta del archivo o directorio entre comillas dobles.
 2. Si es una ruta de directorio, asegúrese de no incluir una barra invertida como último carácter.
 
@@ -31,6 +32,7 @@ Esto corregirá la mayor parte del renderizado de texto, excepto la visualizaci�
 ![Mojibake](../assets/screenshots/Mojibake.png)
 
 Tiene cuatro opciones para solucionar esto:
+
 1. Use [Windows Terminal](https://learn.microsoft.com/en-us/windows/terminal/) en lugar del símbolo del sistema de Command o PowerShell. (Recomendado)
 2. Use la fuente `MS Gothic`. Tenga en cuenta que las barras invertidas se convertirán en símbolos de Yen.
    ![MojibakeFix](../assets/screenshots/MojibakeFix.png)

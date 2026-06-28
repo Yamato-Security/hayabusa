@@ -3,6 +3,7 @@
 Hayabusa ၏ နောက်ဆုံးထွက် တည်ငြိမ်သော ဗားရှင်းကို ကွန်ပိုင်းလုပ်ပြီးသား binary များဖြင့် ဒေါင်းလုဒ်လုပ်ပါ သို့မဟုတ် [Releases](https://github.com/Yamato-Security/hayabusa/releases) စာမျက်နှာမှ source code ကို ကွန်ပိုင်းလုပ်ပါ။
 
 အောက်ပါ architecture များအတွက် binary များကို ကျွန်ုပ်တို့ ပံ့ပိုးပေးပါသည်-
+
 - Linux ARM 64-bit GNU (`hayabusa-x.x.x-lin-aarch64-gnu`)
 - Linux Intel 64-bit GNU (`hayabusa-x.x.x-lin-x64-gnu`)
 - Linux Intel 64-bit MUSL (`hayabusa-x.x.x-lin-x64-musl`)

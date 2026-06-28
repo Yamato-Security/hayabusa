@@ -64,6 +64,7 @@ Ao curar regras Sigma no repositório [hayabusa-rules](https://github.com/Yamato
 Explicamos como e por que fazemos isso em profundidade [aqui](https://github.com/Yamato-Security/sigma-to-hayabusa-converter).
 
 Atualmente, existem apenas duas regras de detecção que não têm `Channel` definido e que se destinam a varrer todos os arquivos `.evtx`, que são as seguintes:
+
 - [Possible Hidden Shellcode](https://github.com/Yamato-Security/hayabusa-rules/blob/main/hayabusa/builtin/UnkwnChannEID_Med_PossibleHiddenShellcode.yml)
 - [Mimikatz Use](https://github.com/SigmaHQ/sigma/blob/master/rules/windows/builtin/win_alert_mimikatz_keywords.yml)
 
@@ -276,6 +277,7 @@ Se você não quiser salvar mensagens de erro, por favor adicione `-Q`.
 Você pode adicionar informações de GeoIP (organização ASN, cidade e país) aos campos SrcIP (IP de origem) e aos campos TgtIP (IP de destino) com os dados gratuitos de geolocalização GeoLite2.
 
 Etapas:
+
 1. Primeiro, cadastre-se em uma conta MaxMind [aqui](https://dev.maxmind.com/geoip/geolite2-free-geolocation-data).
 2. Baixe os três arquivos `.mmdb` da [página de download](https://www.maxmind.com/en/accounts/current/geoip/downloads) e salve-os em um diretório. Os nomes dos arquivos devem ser `GeoLite2-ASN.mmdb`,	`GeoLite2-City.mmdb` e `GeoLite2-Country.mmdb`.
 3. Ao executar os comandos `csv-timeline` ou `json-timeline`, adicione a opção `-G` seguida do diretório com os bancos de dados MaxMind.
@@ -298,12 +300,14 @@ Os bancos de dados GeoIP da MaxMind são atualizados a cada 2 semanas.
 Você pode instalar a ferramenta `geoipupdate` da MaxMind [aqui](https://github.com/maxmind/geoipupdate) para atualizar automaticamente esses bancos de dados.
 
 Etapas no macOS:
+
 1. `brew install geoipupdate`
 2. Edite `/usr/local/etc/GeoIP.conf` ou `/opt/homebrew/etc/GeoIP.conf`: Coloque seu `AccountID` e `LicenseKey` que você cria após fazer login no site da MaxMind. Certifique-se de que a linha `EditionIDs` diga `EditionIDs GeoLite2-ASN GeoLite2-City GeoLite2-Country`.
 3. Execute `geoipupdate`.
 4. Adicione `-G /usr/local/var/GeoIP` ou `-G /opt/homebrew/var/GeoIP` quando quiser adicionar informações de GeoIP.
 
 Etapas no Windows:
+
 1. Baixe o binário mais recente do Windows (Ex: `geoipupdate_4.10.0_windows_amd64.zip`) da página de [Releases](https://github.com/maxmind/geoipupdate/releases).
 2. Edite `\ProgramData\MaxMind/GeoIPUpdate\GeoIP.conf`: Coloque seu `AccountID` e `LicenseKey` que você cria após fazer login no site da MaxMind. Certifique-se de que a linha `EditionIDs` diga `EditionIDs GeoLite2-ASN GeoLite2-City GeoLite2-Country`.
 3. Execute o executável `geoipupdate`.

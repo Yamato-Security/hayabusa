@@ -52,6 +52,7 @@ brew install openssl
 ## Linux संकलन नोट्स
 
 निम्नलिखित बिल्ड निर्भरताएँ आवश्यक हैं:
+
 * openssl-devel (Fedora-based) / libssl-dev (Ubuntu-based) 
 * perl
 * musl-gcc

@@ -64,6 +64,7 @@
 我們在[此處](https://github.com/Yamato-Security/sigma-to-hayabusa-converter)深入說明我們為何以及如何這麼做。
 
 目前只有以下兩條偵測規則未定義 `Channel`，並設計為掃描所有 `.evtx` 檔案：
+
 - [Possible Hidden Shellcode](https://github.com/Yamato-Security/hayabusa-rules/blob/main/hayabusa/builtin/UnkwnChannEID_Med_PossibleHiddenShellcode.yml)
 - [Mimikatz Use](https://github.com/SigmaHQ/sigma/blob/master/rules/windows/builtin/win_alert_mimikatz_keywords.yml)
 
@@ -276,6 +277,7 @@ hayabusa.exe csv-timeline -d ../hayabusa-sample-evtx --RFC-3339 -o timesketch-im
 您可以利用免費的 GeoLite2 地理位置資料，將 GeoIP（ASN 組織、城市與國家）資訊加入 SrcIP（來源 IP）欄位與 TgtIP（目標 IP）欄位。
 
 步驟：
+
 1. 首先在[此處](https://dev.maxmind.com/geoip/geolite2-free-geolocation-data)註冊 MaxMind 帳號。
 2. 從[下載頁面](https://www.maxmind.com/en/accounts/current/geoip/downloads)下載三個 `.mmdb` 檔案並儲存到某個目錄。檔名應分別為 `GeoLite2-ASN.mmdb`、	`GeoLite2-City.mmdb` 與 `GeoLite2-Country.mmdb`。
 3. 執行 `csv-timeline` 或 `json-timeline` 指令時，加上 `-G` 選項，後接含有 MaxMind 資料庫的目錄。
@@ -298,12 +300,14 @@ MaxMind GeoIP 資料庫每 2 週更新一次。
 您可以在[此處](https://github.com/maxmind/geoipupdate)安裝 MaxMind `geoipupdate` 工具，以便自動更新這些資料庫。
 
 macOS 上的步驟：
+
 1. `brew install geoipupdate`
 2. 編輯 `/usr/local/etc/GeoIP.conf` 或 `/opt/homebrew/etc/GeoIP.conf`：填入您登入 MaxMind 網站後建立的 `AccountID` 與 `LicenseKey`。確認 `EditionIDs` 那一行為 `EditionIDs GeoLite2-ASN GeoLite2-City GeoLite2-Country`。
 3. 執行 `geoipupdate`。
 4. 當您想加入 GeoIP 資訊時，加上 `-G /usr/local/var/GeoIP` 或 `-G /opt/homebrew/var/GeoIP`。
 
 Windows 上的步驟：
+
 1. 從 [Releases](https://github.com/maxmind/geoipupdate/releases) 頁面下載最新的 Windows 二進位檔（例如：`geoipupdate_4.10.0_windows_amd64.zip`）。
 2. 編輯 `\ProgramData\MaxMind/GeoIPUpdate\GeoIP.conf`：填入您登入 MaxMind 網站後建立的 `AccountID` 與 `LicenseKey`。確認 `EditionIDs` 那一行為 `EditionIDs GeoLite2-ASN GeoLite2-City GeoLite2-Country`。
 3. 執行 `geoipupdate` 執行檔。

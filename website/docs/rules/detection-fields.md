@@ -8,6 +8,7 @@ First, the fundamentals of how to create a selection rule will be explained.
 
 To write AND logic, we use nested dictionaries.
 The detection rule below defines that **both conditions** have to be true in order for the rule to match.
+
 - EventID has to exactly be `7040`.
 - **AND**
 - Channel has to exactly be `System`.
@@ -22,6 +23,7 @@ detection:
 
 To write OR logic, we use lists (Dictionaries that start with `-`).
 In the detection rule below, **either one** of the conditions will result in the rule being triggered.
+
 - EventID has to exactly be `7040`.
 - **OR**
 - Channel has to exactly be `System`.
@@ -36,6 +38,7 @@ detection:
 
 We can also combine `AND` and `OR` logic as shown below.
 In this case, the rule matches when the following two conditions are both true.
+
 - EventID is either exactly `7040` **OR** `7041`.
 - **AND**
 - Channel is exactly `System`.
@@ -302,10 +305,12 @@ detection:
 ```
 
 The following two wildcards can be used.
+
 - `*`: Matches any string of zero or more characters. (Internally it is converted to the regular expression `.*`)
 - `?`: Matches any single character. (Internally converted to the regular expression `.`)
 
 About escaping wildcards:
+
 - Wildcards (`*` and `?`) can be escaped by using a backslash: `\*`, `\?`.
 - If you want to use a backslash right before a wildcard then write `\\*` or `\\?`.
 - Escaping is not required if you are using backslashes by themselves.
@@ -353,6 +358,7 @@ detection:
 ```
 
 The following expressions can be used for `condition`.
+
 - `{expression1} and {expression2}`: Require both {expression1} AND {expression2}
 - `{expression1} or {expression2}`: Require either {expression1} OR {expression2}
 - `not {expression}`: Reverse the logic of {expression}
@@ -391,6 +397,7 @@ detection:
 We have implemented all of the Sigma version 2.0.0 correlations as defined [here](https://github.com/SigmaHQ/sigma-specification/blob/version_2/specification/sigma-correlation-rules-specification.md).
 
 Supported correlations:
+
 - Event Count (`event_count`)
 - Value Count (`value_count`)
 - Temporal Proximity (`temporal`)

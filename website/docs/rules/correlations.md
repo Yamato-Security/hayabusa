@@ -80,6 +80,7 @@ Timestamp · RuleTitle · Level · Computer · Channel · EventID · RecordID ·
 These rules counts the same events within a time frame with  **different** values of a given field.
 
 Examples:
+
 - Network scans where a single source IP address tries to connect to many different destination IP addresses and/or ports.
 - Password spraying attacks where a single source fails to authenticate with many different users.
 - Detect tools like BloodHound that enumerate many high-privilege AD groups within a short time frame.

@@ -18,6 +18,7 @@
 
 เมื่อใช้ Command หรือ PowerShell prompt ที่มีมาในตัวบน Windows คุณอาจได้รับข้อผิดพลาดว่า Hayabusa ไม่สามารถโหลดไฟล์ .evtx ใดๆ ได้ หากมีช่องว่างอยู่ในพาธของไฟล์หรือไดเรกทอรี
 เพื่อให้โหลดไฟล์ .evtx ได้อย่างถูกต้อง โปรดทำตามขั้นตอนต่อไปนี้:
+
 1. ครอบพาธของไฟล์หรือไดเรกทอรีด้วยเครื่องหมายอัญประกาศคู่ (double quotes)
 2. หากเป็นพาธของไดเรกทอรี ตรวจสอบให้แน่ใจว่าคุณไม่ได้ใส่ backslash เป็นอักขระตัวสุดท้าย
 
@@ -31,6 +32,7 @@
 ![Mojibake](../assets/screenshots/Mojibake.png)
 
 คุณมีสี่ตัวเลือกในการแก้ไขปัญหานี้:
+
 1. ใช้ [Windows Terminal](https://learn.microsoft.com/en-us/windows/terminal/) แทน Command หรือ PowerShell prompt (แนะนำ)
 2. ใช้ฟอนต์ `MS Gothic` โปรดทราบว่า backslash จะกลายเป็นสัญลักษณ์เงินเยน
    ![MojibakeFix](../assets/screenshots/MojibakeFix.png)

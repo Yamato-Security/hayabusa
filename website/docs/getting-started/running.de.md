@@ -18,6 +18,7 @@ Führen Sie in einer Eingabeaufforderung/PowerShell-Eingabeaufforderung oder im 
 
 Wenn Sie die integrierte Eingabeaufforderung oder PowerShell-Eingabeaufforderung in Windows verwenden, erhalten Sie möglicherweise einen Fehler, dass Hayabusa keine .evtx-Dateien laden konnte, falls Ihr Datei- oder Verzeichnispfad ein Leerzeichen enthält.
 Um die .evtx-Dateien ordnungsgemäß zu laden, stellen Sie Folgendes sicher:
+
 1. Schließen Sie den Datei- oder Verzeichnispfad in doppelte Anführungszeichen ein.
 2. Wenn es sich um einen Verzeichnispfad handelt, achten Sie darauf, dass Sie keinen Backslash als letztes Zeichen einfügen.
 
@@ -31,6 +32,7 @@ Dadurch wird die meiste Textdarstellung korrigiert, mit Ausnahme der Anzeige jap
 ![Mojibake](../assets/screenshots/Mojibake.png)
 
 Sie haben vier Möglichkeiten, dies zu beheben:
+
 1. Verwenden Sie [Windows Terminal](https://learn.microsoft.com/en-us/windows/terminal/) anstelle der Eingabeaufforderung oder PowerShell-Eingabeaufforderung. (Empfohlen)
 2. Verwenden Sie die Schriftart `MS Gothic`. Beachten Sie, dass Backslashes zu Yen-Symbolen werden.
    ![MojibakeFix](../assets/screenshots/MojibakeFix.png)

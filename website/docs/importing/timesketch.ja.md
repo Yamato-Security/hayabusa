@@ -7,6 +7,7 @@
 小規模な調査で数百MB程度のCSVファイルを単独で分析する場合は、Timeline Explorerが適しています。しかし、大規模なデータを扱う場合やチームで作業する場合は、Timesketchのようなツールを使用する方がはるかに効果的です。
 
 Timesketchの利点は以下のとおりです：
+
 1. 高速で大量のデータを処理可能
 2. 複数ユーザーによる同時利用が可能
 3. 高度なデータ分析、ヒストグラム、可視化機能を提供
@@ -52,6 +53,7 @@ git clone https://github.com/google/timesketch.git
 cd timesketch
 ```
 以下の手順に従ってDockerコンテナを起動します。
+
 - https://github.com/google/timesketch/tree/master/docker/e2e#build-and-start-containers
 
 ## ログイン
@@ -177,6 +179,7 @@ Sigmaルールのロジックを理解したい場合は、[hayabusa-rules](http
 ### 検索バー
 
 以下のクエリを使用すると、特定の重大度のアラートのみを表示できます：
+
 1. Level:crit - 重大なアラートのみ表示 
 2. Level:crit OR Level:high - 高重大度以上のアラートを表示 
 3. NOT Level:info - 情報レベルのアラートを非表示

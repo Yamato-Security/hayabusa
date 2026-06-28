@@ -64,6 +64,7 @@ Sigmaルールでは、`logsource`の`service`や`category`フィールドでチ
 これをどのように、そしてなぜ行うのかについては、[こちら](https://github.com/Yamato-Security/sigma-to-hayabusa-converter)で詳しく説明しています。
 
 現在、`Channel`が定義されておらず、すべての`.evtx`ファイルをスキャンするためのルールは以下の2つだけです：
+
 - [Possible Hidden Shellcode](https://github.com/Yamato-Security/hayabusa-rules/blob/main/hayabusa/builtin/UnkwnChannEID_Med_PossibleHiddenShellcode.yml)
 - [Mimikatz Use](https://github.com/SigmaHQ/sigma/blob/master/rules/windows/builtin/win_alert_mimikatz_keywords.yml)
 
@@ -276,6 +277,7 @@ hayabusa.exe csv-timeline -d ../hayabusa-sample-evtx --RFC-3339 -o timesketch-im
 無償のGeoLite2のジオロケーションデータで、SrcIP（ソースIPアドレス）フィールドとTgtIP（ターゲットIPアドレス）フィールドにGeoIP（ASN組織、都市、国）情報を追加することができます。
 
 手順:
+
 1. まずMaxMindのアカウントを[こちら](https://dev.maxmind.com/geoip/geolite2-free-geolocation-data)で登録してください。
 2. [ダウンロードページ](https://www.maxmind.com/en/accounts/current/geoip/downloads)から3つの`.mmdb`ファイルをダウンロードし、ディレクトリに保存してください。ファイル名は、`GeoLite2-ASN.mmdb`、`GeoLite2-City.mmdb`、`GeoLite2-Country.mmdb`であることをご確認ください。
 3. `csv-timeline`または`json-timeline`コマンドを実行する際には、`-G`オプションの後にMaxMindデータベースのあるディレクトリを追加してください。
@@ -298,12 +300,14 @@ MaxMind GeoIP データベースは、2 週間ごとに更新されます。
 これらのデータベースを自動的に更新するために、[こちら](https://github.com/maxmind/geoipupdate)からMaxMindの`geoipupdate`のツールをインストールすることができます。
 
 macOSでの手順:
+
 1. `brew install geoipupdate`
 2. `/usr/local/etc/GeoIP.conf`または`/opt/homebrew/etc/GeoIP.conf`を編集する: MaxMindのウェブサイトにログインした後に作成した`AccountID`と`LicenseKey`を入れる。`EditionIDs`の行に、`EditionIDs GeoLite2-ASN GeoLite2-City GeoLite2-Country`とあることを確認する。
 3. `geoipupdate`を実行する。
 4. GeoIP情報を追加する場合は、`-G /usr/local/var/GeoIP`または`-G /opt/homebrew/var/GeoIP`を追加する。
 
 Windowsでの手順:
+
 1. [Releases](https://github.com/maxmind/geoipupdate/releases)ページからWindowsバイナリの最新版(例: `geoipupdate_4.10.0_windows_amd64.zip`)をダウンロードする。
 2. `\ProgramData\MaxMind/GeoIPUpdate\GeoIP.conf`を編集する: MaxMindのウェブサイトにログインした後に作成した`AccountID`と`LicenseKey`を入れる。`EditionIDs`の行に、`EditionIDs GeoLite2-ASN GeoLite2-City GeoLite2-Country`とあることを確認する。
 3. `geoipupdate`を実行する。

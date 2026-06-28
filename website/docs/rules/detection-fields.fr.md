@@ -8,6 +8,7 @@ Tout d'abord, les fondamentaux de la création d'une règle de sélection seront
 
 Pour écrire une logique AND, nous utilisons des dictionnaires imbriqués.
 La règle de détection ci-dessous définit que **les deux conditions** doivent être vraies pour que la règle corresponde.
+
 - EventID doit être exactement `7040`.
 - **AND**
 - Channel doit être exactement `System`.
@@ -22,6 +23,7 @@ detection:
 
 Pour écrire une logique OR, nous utilisons des listes (des dictionnaires qui commencent par `-`).
 Dans la règle de détection ci-dessous, **l'une ou l'autre** des conditions déclenchera la règle.
+
 - EventID doit être exactement `7040`.
 - **OR**
 - Channel doit être exactement `System`.
@@ -36,6 +38,7 @@ detection:
 
 Nous pouvons également combiner la logique `AND` et `OR` comme indiqué ci-dessous.
 Dans ce cas, la règle correspond lorsque les deux conditions suivantes sont toutes deux vraies.
+
 - EventID est exactement soit `7040` **OR** `7041`.
 - **AND**
 - Channel est exactement `System`.
@@ -302,10 +305,12 @@ detection:
 ```
 
 Les deux caractères génériques suivants peuvent être utilisés.
+
 - `*`: Correspond à toute chaîne de zéro ou plusieurs caractères. (En interne, il est converti en expression régulière `.*`)
 - `?`: Correspond à un seul caractère quelconque. (En interne, converti en expression régulière `.`)
 
 À propos de l'échappement des caractères génériques :
+
 - Les caractères génériques (`*` et `?`) peuvent être échappés en utilisant une barre oblique inverse : `\*`, `\?`.
 - Si vous souhaitez utiliser une barre oblique inverse juste avant un caractère générique, écrivez alors `\\*` ou `\\?`.
 - L'échappement n'est pas requis si vous utilisez des barres obliques inverses seules.
@@ -353,6 +358,7 @@ detection:
 ```
 
 Les expressions suivantes peuvent être utilisées pour `condition`.
+
 - `{expression1} and {expression2}`: Nécessite à la fois {expression1} AND {expression2}
 - `{expression1} or {expression2}`: Nécessite soit {expression1} OR {expression2}
 - `not {expression}`: Inverse la logique de {expression}
@@ -391,6 +397,7 @@ detection:
 Nous avons implémenté toutes les corrélations Sigma version 2.0.0 telles que définies [ici](https://github.com/SigmaHQ/sigma-specification/blob/version_2/specification/sigma-correlation-rules-specification.md).
 
 Corrélations prises en charge :
+
 - Event Count (`event_count`)
 - Value Count (`value_count`)
 - Temporal Proximity (`temporal`)

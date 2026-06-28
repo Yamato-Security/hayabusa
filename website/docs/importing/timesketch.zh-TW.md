@@ -7,6 +7,7 @@
 對於只分析數百 MB 大小的 CSV 檔案且獨自作業的小型調查而言，Timeline Explorer 已足夠勝任；然而，當您處理較大的資料或與團隊協作時，像 Timesketch 這樣的工具會好得多。
 
 Timesketch 提供以下優點：
+
 1. 它非常快速，能夠處理大量資料
 2. 它是一套協作工具，多位使用者可以同時使用
 3. 它提供進階資料分析、直方圖與視覺化
@@ -52,6 +53,7 @@ git clone https://github.com/google/timesketch.git
 cd timesketch
 ```
 依照以下步驟啟動 Docker 容器。
+
 - https://github.com/google/timesketch/tree/master/docker/e2e#build-and-start-containers
 
 ## 登入
@@ -178,6 +180,7 @@ hayabusa-x.x.x-win-x64.exe csv-timeline -d <DIR> -o timesketch-import.csv -p tim
 ### 搜尋列
 
 以下是一些方便的查詢，可作為起點，僅顯示具有特定嚴重性等級的警示：
+
 1. `Level:crit` 僅顯示嚴重 (critical) 警示。
 2. `Level:crit OR Level:high` 顯示高 (high) 與嚴重 (critical) 警示
 3. `NOT Level:info` 隱藏資訊性 (informational) 警示

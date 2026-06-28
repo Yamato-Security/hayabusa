@@ -8,6 +8,7 @@
 
 AND 로직을 작성하려면 중첩된 딕셔너리를 사용합니다.
 아래 탐지 규칙은 규칙이 일치하기 위해 **두 조건 모두**가 참이어야 한다고 정의합니다.
+
 - EventID가 정확히 `7040`이어야 합니다.
 - **AND**
 - Channel이 정확히 `System`이어야 합니다.
@@ -22,6 +23,7 @@ detection:
 
 OR 로직을 작성하려면 리스트(`-`로 시작하는 딕셔너리)를 사용합니다.
 아래 탐지 규칙에서는 조건 중 **어느 하나**라도 충족되면 규칙이 트리거됩니다.
+
 - EventID가 정확히 `7040`이어야 합니다.
 - **OR**
 - Channel이 정확히 `System`이어야 합니다.
@@ -36,6 +38,7 @@ detection:
 
 아래와 같이 `AND`와 `OR` 로직을 결합할 수도 있습니다.
 이 경우, 규칙은 다음 두 조건이 모두 참일 때 일치합니다.
+
 - EventID가 정확히 `7040` **OR** `7041`입니다.
 - **AND**
 - Channel이 정확히 `System`입니다.
@@ -302,10 +305,12 @@ detection:
 ```
 
 다음 두 가지 와일드카드를 사용할 수 있습니다.
+
 - `*`: 0개 이상의 문자로 이루어진 모든 문자열과 일치합니다. (내부적으로 정규 표현식 `.*`로 변환됩니다)
 - `?`: 임의의 단일 문자와 일치합니다. (내부적으로 정규 표현식 `.`로 변환됩니다)
 
 와일드카드 이스케이프에 대하여:
+
 - 와일드카드(`*` 및 `?`)는 백슬래시를 사용하여 이스케이프할 수 있습니다: `\*`, `\?`.
 - 와일드카드 바로 앞에 백슬래시를 사용하려면 `\\*` 또는 `\\?`로 작성합니다.
 - 백슬래시를 단독으로 사용하는 경우에는 이스케이프가 필요하지 않습니다.
@@ -353,6 +358,7 @@ detection:
 ```
 
 `condition`에는 다음 표현식을 사용할 수 있습니다.
+
 - `{expression1} and {expression2}`: {expression1}과 {expression2} 모두 필요
 - `{expression1} or {expression2}`: {expression1} 또는 {expression2} 중 하나 필요
 - `not {expression}`: {expression}의 로직을 반전
@@ -391,6 +397,7 @@ detection:
 [여기](https://github.com/SigmaHQ/sigma-specification/blob/version_2/specification/sigma-correlation-rules-specification.md)에 정의된 Sigma 버전 2.0.0 상관관계를 모두 구현했습니다.
 
 지원되는 상관관계:
+
 - Event Count (`event_count`)
 - Value Count (`value_count`)
 - Temporal Proximity (`temporal`)

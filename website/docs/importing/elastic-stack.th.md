@@ -34,6 +34,7 @@
 จดบันทึก URL ของ Kibana และที่อยู่ IP ของเซิร์ฟเวอร์ SSH ไว้
 
 คุณสามารถเข้าสู่ระบบได้ด้วยข้อมูลรับรองต่อไปนี้:
+
 * Username: `elk_user`
 * Password: `forensics`
 
@@ -147,6 +148,7 @@ The following indices are currently active in Elasticsearch:
 ![Adding Columns](../assets/doc/ElasticStackImport/07-AddingColumns.png)
 
 ในการเริ่มต้น เราแนะนำคอลัมน์ต่อไปนี้:
+
 - `Computer`
 - `EventID`
 - `Level`

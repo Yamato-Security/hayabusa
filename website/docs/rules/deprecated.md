@@ -5,12 +5,14 @@ The deprecated special keywords and `count` aggregation are still supported in H
 ## Deprecated special keywords
 
 Currently, the following special keywords can be specified:
+
 - `value`: matches by string (wildcards and pipes can also be specified).
 - `min_length`: matches when the number of characters is greater than or equal to the specified number.
 - `regexes`: matches if one of the regular expressions in the file that you specify in this field matches.
 - `allowlist`: rule will be skipped if there is any match found in the list of regular expressions in the file that you specify in this field.
 
 In the example below, the rule will match if the following are true:
+
 - `ServiceName` is called `malicious-service` or contains a regular expression in `./rules/config/regex/detectlist_suspicous_services.txt`.
 - `ImagePath` has a minimum of 1000 characters.
 - `ImagePath` does not have any matches in the `allowlist`.
@@ -32,6 +34,7 @@ detection:
 ### regexes and allowlist keyword sample files
 
 Hayabusa had two built-in regular expression files used for the `./rules/hayabusa/default/alerts/System/7045_CreateOrModiftySystemProcess-WindowsService_MaliciousServiceInstalled.yml` file:
+
 - `./rules/config/regex/detectlist_suspicous_services.txt`: to detect suspicious service names
 - `./rules/config/regex/allowlist_legitimate_services.txt`: to allow legitimate services
 
@@ -59,9 +62,11 @@ detection:
 ```
 
 Aggregation conditions can be defined in the following format:
+
 - `count() {operator} {number}`: For log events that match the first condition before the pipe, the condition will match if the number of matched logs satisfies the condition expression specified by `{operator}` and `{number}`.
 
 `{operator}` can be one of the following:
+
 - `==`: If the value is equal to the specified value, it is treated as matching the condition.
 - `>=`: If the value is greater than or equal to the specified value, the condition is considered to have been met.
 - `>`: If the value is greater than the specified value, the condition is considered to have been met.
@@ -71,6 +76,7 @@ Aggregation conditions can be defined in the following format:
 `{number}` must be a number.
 
 `timeframe` can be defined in the following:
+
 - `15s`: 15 seconds
 - `30m`: 30 minutes
 - `12h`: 12 hours

@@ -34,6 +34,7 @@ VM을 부팅하면 다음과 유사한 화면이 나타납니다:
 Kibana URL과 SSH 서버의 IP 주소를 기록해 두세요.
 
 다음 자격 증명으로 로그인할 수 있습니다:
+
 * 사용자 이름: `elk_user`
 * 비밀번호: `forensics`
 
@@ -147,6 +148,7 @@ The following indices are currently active in Elasticsearch:
 ![Adding Columns](../assets/doc/ElasticStackImport/07-AddingColumns.png)
 
 우선, 다음 열을 권장합니다:
+
 - `Computer`
 - `EventID`
 - `Level`

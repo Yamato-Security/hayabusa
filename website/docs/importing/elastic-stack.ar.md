@@ -34,6 +34,7 @@
 لاحظ عنوان URL الخاص بـ Kibana وعنوان IP لخادم SSH.
 
 يمكنك تسجيل الدخول باستخدام بيانات الاعتماد التالية:
+
 * اسم المستخدم: `elk_user`
 * كلمة المرور: `forensics`
 
@@ -147,6 +148,7 @@ The following indices are currently active in Elasticsearch:
 ![Adding Columns](../assets/doc/ElasticStackImport/07-AddingColumns.png)
 
 للبداية، نوصي بالأعمدة التالية:
+
 - `Computer`
 - `EventID`
 - `Level`

@@ -42,6 +42,7 @@ That is all you need to do to change the memory allocator.
 
 ### Effectiveness（Real example from a Pull Request）  <!-- omit in toc -->
 How much speed improves will depend on the program, but in the following example
+
 - [chg: build.rs(for vc runtime) to rustflags in config.toml and replace default global memory allocator with mimalloc. #777](https://github.com/Yamato-Security/hayabusa/pull/777)
 
 changing the memory allocator to [mimalloc](https://github.com/microsoft/mimalloc) resulted in a 20-30% performance increase on Intel CPUs. 
@@ -78,6 +79,7 @@ there will be about a 1000 times speed increase.
 
 ### Effectiveness（Real example from a Pull Request）   <!-- omit in toc -->
 In the following example, the IO processing when handling one detection result at a time was able to be performed outside of the loop:
+
 - [Improve speed by removing IO process before insert_message() #858](https://github.com/Yamato-Security/hayabusa/pull/858)
 
 This resulted in a speed improvement of about 20%.
@@ -122,6 +124,7 @@ the updated code is about 100 times faster.
 
 ### Effectiveness（Real example from a Pull Request）   <!-- omit in toc -->
 In the following example, regular expression compilation is performed outside the loop and cached.
+
 - [cache regex for allowlist and regexes keyword. #174](https://github.com/Yamato-Security/hayabusa/pull/174)
 
 This resulted in significant speed improvements.
@@ -161,6 +164,7 @@ there is about a 50 times speed improvement.
 
 ### Effectiveness（Real example from a Pull Request）   <!-- omit in toc -->
 The method described above was implemented here
+
 - [Feature/improve output#253 #285](https://github.com/Yamato-Security/hayabusa/pull/285)
 
 and has resulted in significant speed improvements in output processing.
@@ -206,6 +210,7 @@ processing will be 10 times faster.
 
 ### Effectiveness（Real example from a Pull Request）   <!-- omit in toc -->
 Since Hayabusa requires case-insensitive string comparison, we use [to_lowercase()](https://doc.rust-lang.org/std/string/struct.String.html#method.to_lowercase) and then apply the above method. Even then, in the following examples
+
 - [Imporving speed by changing wildcard search process from regular expression match to starts_with/ends_with match #890](https://github.com/Yamato-Security/hayabusa/pull/890)
 - [Improving speed by using eq_ignore_ascii_case() before regular expression match #884](https://github.com/Yamato-Security/hayabusa/pull/884)
 
@@ -254,6 +259,7 @@ speed will improve by about 20 times.
 
 ### Effectiveness（Real example from a Pull Request）   <!-- omit in toc -->
 In the following example, the above method is used.
+
 - [Improving speed by adding string length match before regular expression match #883](https://github.com/Yamato-Security/hayabusa/pull/883)
 
 This improved speed by about 15%.
@@ -301,6 +307,7 @@ By removing the clone() usage, memory usage is reduced by up to 50%.
 
 ### Effectiveness（Real example from a Pull Request）   <!-- omit in toc -->
 In the following example, by replacing unnecessary [clone()](https://doc.rust-lang.org/std/clone/trait.Clone.html), [to_string()](https://doc.rust-lang.org/std/string/trait.ToString.html), and [to_owned()](https://doc.rust-lang.org/std/borrow/trait.ToOwned.html) usage,
+
 - [Reduce used memory and Skipped rule author, detect counts aggregation when --no-summary option is used #782](https://github.com/Yamato-Security/hayabusa/pull/782)
 
 we were able to significantly reduce memory usage.
@@ -380,6 +387,7 @@ Memory usage drops significantly from 1 GB to only 3 MB.
 
 ### Effectiveness（Real example from a Pull Request）   <!-- omit in toc -->
 The following example uses the method described above:
+
 - [Reduce memory usage when reading JSONL file #921](https://github.com/Yamato-Security/hayabusa/pull/921)
 
 When tested on a 1.7GB JSON file, memory decreased by 75%.
@@ -409,12 +417,14 @@ By doing this, memory usage is reduced by around 50%.
 
 ### Effectiveness（Real example from a Pull Request）   <!-- omit in toc -->
 In the following example, short strings are handled with [CompactString](https://docs.rs/compact_str/latest/compact_str/):
+
 - [To reduce ram usage and performance, Replaced String with other crate #793](https://github.com/Yamato-Security/hayabusa/pull/793)
 
 This gave a reduction of memory usage by about 20%.
 
 ## Delete unnecessary fields in long-lived structures
 Structures that continue to be retained in memory during process startup may affect the overall memory usage. In Hayabusa, the following structures (as of version 2.2.2), in particular, are retained in large numbers.
+
 - [DetectInfo](https://github.com/Yamato-Security/hayabusa/blob/v2.2.2/src/detections/message.rs#L27-L36)
 - [LeafSelectNode](https://github.com/Yamato-Security/hayabusa/blob/v2.2.2/src/detections/rule/selectionnodes.rs#L234-L239)
 
@@ -456,6 +466,7 @@ a reduction in memory usage of several bytes per detection result record was ach
 
 ### Effectiveness（Real example from a Pull Request）   <!-- omit in toc -->
 In the following example, when tested against data where the number of detection result records was about 1.5 million,
+
 - [Reduced memory usage of DetectInfo/EvtxRecordInfo #837](https://github.com/Yamato-Security/hayabusa/pull/837)
 - [Reduce memory usage by removing unnecessary regex #894](https://github.com/Yamato-Security/hayabusa/pull/894)
 
@@ -492,6 +503,7 @@ Prerequisites: You need to be using mimalloc as explained in the [Change the mem
 
 ### Example   <!-- omit in toc -->
 The above implementation was applied in the following:
+
 - [add --debug option for printing mimalloc memory stats #822](https://github.com/Yamato-Security/hayabusa/pull/822)
 
 In Hayabusa, if you add the `--debug` option, memory usage statistics will be outputted at the end.
@@ -524,6 +536,7 @@ Prerequisites：The following procedure is only valid for environments where `Po
 
 ### Example  <!-- omit in toc -->
 The following contains an example procedure for measuring performance with Hayabusa.
+
 - [Example of obtaining Windows performance counters](https://github.com/Yamato-Security/hayabusa/issues/778#issuecomment-1296504766)
 
 ## Use heaptrack

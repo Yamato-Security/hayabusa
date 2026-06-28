@@ -5,12 +5,14 @@
 ## 已棄用的特殊關鍵字
 
 目前可以指定下列特殊關鍵字：
+
 - `value`：以字串進行比對（也可以指定萬用字元與管線符號）。
 - `min_length`：當字元數大於或等於指定數值時即比對成功。
 - `regexes`：如果您在此欄位指定的檔案中的其中一個正規表示式比對成功，即視為比對成功。
 - `allowlist`：如果在您於此欄位指定的檔案中的正規表示式清單裡找到任何相符項目，則會跳過該規則。
 
 在下方範例中，當以下條件全部成立時，該規則即比對成功：
+
 - `ServiceName` 名為 `malicious-service` 或包含 `./rules/config/regex/detectlist_suspicous_services.txt` 中的某個正規表示式。
 - `ImagePath` 至少有 1000 個字元。
 - `ImagePath` 在 `allowlist` 中沒有任何相符項目。
@@ -32,6 +34,7 @@ detection:
 ### regexes 與 allowlist 關鍵字範例檔案
 
 Hayabusa 內建兩個正規表示式檔案，供 `./rules/hayabusa/default/alerts/System/7045_CreateOrModiftySystemProcess-WindowsService_MaliciousServiceInstalled.yml` 檔案使用：
+
 - `./rules/config/regex/detectlist_suspicous_services.txt`：用於偵測可疑的服務名稱
 - `./rules/config/regex/allowlist_legitimate_services.txt`：用於允許合法的服務
 
@@ -59,9 +62,11 @@ detection:
 ```
 
 聚合條件可以用下列格式定義：
+
 - `count() {operator} {number}`：對於符合管線符號前第一個條件的記錄事件，如果相符記錄的數量滿足由 `{operator}` 與 `{number}` 指定的條件運算式，則該條件即比對成功。
 
 `{operator}` 可以是下列其中之一：
+
 - `==`：如果數值等於指定值，即視為符合條件。
 - `>=`：如果數值大於或等於指定值，即視為已滿足條件。
 - `>`：如果數值大於指定值，即視為已滿足條件。
@@ -71,6 +76,7 @@ detection:
 `{number}` 必須是數字。
 
 `timeframe` 可以用下列方式定義：
+
 - `15s`：15 秒
 - `30m`：30 分鐘
 - `12h`：12 小時

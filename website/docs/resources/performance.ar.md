@@ -42,6 +42,7 @@ Zach Mathis ([@yamatosecurity](https://twitter.com/yamatosecurity))
 
 ### الفعالية（مثال واقعي من طلب سحب）  <!-- omit in toc -->
 يعتمد مدى تحسن السرعة على البرنامج، لكن في المثال التالي
+
 - [chg: build.rs(for vc runtime) to rustflags in config.toml and replace default global memory allocator with mimalloc. #777](https://github.com/Yamato-Security/hayabusa/pull/777)
 
 أدى تغيير مُخصِّص الذاكرة إلى [mimalloc](https://github.com/microsoft/mimalloc) إلى زيادة في الأداء بنسبة 20-30٪ على معالجات Intel. 
@@ -78,6 +79,7 @@ fn main() {
 
 ### الفعالية（مثال واقعي من طلب سحب）   <!-- omit in toc -->
 في المثال التالي، أمكن تنفيذ معالجة الإدخال/الإخراج عند التعامل مع نتيجة كشف واحدة في كل مرة خارج الحلقة:
+
 - [Improve speed by removing IO process before insert_message() #858](https://github.com/Yamato-Security/hayabusa/pull/858)
 
 أدى هذا إلى تحسن في السرعة بحوالي 20٪.
@@ -122,6 +124,7 @@ fn main() {
 
 ### الفعالية（مثال واقعي من طلب سحب）   <!-- omit in toc -->
 في المثال التالي، يُجرى تجميع التعبير النمطي خارج الحلقة ويُخزَّن مؤقتًا.
+
 - [cache regex for allowlist and regexes keyword. #174](https://github.com/Yamato-Security/hayabusa/pull/174)
 
 أدى هذا إلى تحسينات كبيرة في السرعة.
@@ -161,6 +164,7 @@ fn main() {
 
 ### الفعالية（مثال واقعي من طلب سحب）   <!-- omit in toc -->
 الطريقة الموضحة أعلاه نُفِّذت هنا
+
 - [Feature/improve output#253 #285](https://github.com/Yamato-Security/hayabusa/pull/285)
 
 وأدت إلى تحسينات كبيرة في السرعة في معالجة الإخراج.
@@ -206,6 +210,7 @@ fn main() {
 
 ### الفعالية（مثال واقعي من طلب سحب）   <!-- omit in toc -->
 بما أن Hayabusa تتطلب مقارنة سلاسل نصية غير حساسة لحالة الأحرف، فإننا نستخدم [to_lowercase()](https://doc.rust-lang.org/std/string/struct.String.html#method.to_lowercase) ثم نطبق الطريقة أعلاه. حتى مع ذلك، في الأمثلة التالية
+
 - [Imporving speed by changing wildcard search process from regular expression match to starts_with/ends_with match #890](https://github.com/Yamato-Security/hayabusa/pull/890)
 - [Improving speed by using eq_ignore_ascii_case() before regular expression match #884](https://github.com/Yamato-Security/hayabusa/pull/884)
 
@@ -254,6 +259,7 @@ fn main() {
 
 ### الفعالية（مثال واقعي من طلب سحب）   <!-- omit in toc -->
 في المثال التالي، تُستخدم الطريقة أعلاه.
+
 - [Improving speed by adding string length match before regular expression match #883](https://github.com/Yamato-Security/hayabusa/pull/883)
 
 أدى هذا إلى تحسين السرعة بحوالي 15٪.
@@ -301,6 +307,7 @@ fn main() {
 
 ### الفعالية（مثال واقعي من طلب سحب）   <!-- omit in toc -->
 في المثال التالي، باستبدال الاستخدام غير الضروري لـ[clone()](https://doc.rust-lang.org/std/clone/trait.Clone.html) و[to_string()](https://doc.rust-lang.org/std/string/trait.ToString.html) و[to_owned()](https://doc.rust-lang.org/std/borrow/trait.ToOwned.html)،
+
 - [Reduce used memory and Skipped rule author, detect counts aggregation when --no-summary option is used #782](https://github.com/Yamato-Security/hayabusa/pull/782)
 
 تمكنا من تقليل استخدام الذاكرة بشكل كبير.
@@ -380,6 +387,7 @@ fn main() {
 
 ### الفعالية（مثال واقعي من طلب سحب）   <!-- omit in toc -->
 يستخدم المثال التالي الطريقة الموضحة أعلاه:
+
 - [Reduce memory usage when reading JSONL file #921](https://github.com/Yamato-Security/hayabusa/pull/921)
 
 عند الاختبار على ملف JSON بحجم 1.7 جيجابايت، انخفضت الذاكرة بنسبة 75٪.
@@ -409,12 +417,14 @@ fn main() {
 
 ### الفعالية（مثال واقعي من طلب سحب）   <!-- omit in toc -->
 في المثال التالي، يُتعامل مع السلاسل النصية القصيرة باستخدام [CompactString](https://docs.rs/compact_str/latest/compact_str/):
+
 - [To reduce ram usage and performance, Replaced String with other crate #793](https://github.com/Yamato-Security/hayabusa/pull/793)
 
 أعطى هذا تقليلًا في استخدام الذاكرة بحوالي 20٪.
 
 ## حذف الحقول غير الضرورية في البُنى طويلة العمر
 قد تؤثر البُنى التي تستمر في الاحتفاظ بها في الذاكرة أثناء بدء تشغيل العملية على إجمالي استخدام الذاكرة. في Hayabusa، يُحتفظ بالبُنى التالية (اعتبارًا من الإصدار 2.2.2) بأعداد كبيرة على وجه الخصوص.
+
 - [DetectInfo](https://github.com/Yamato-Security/hayabusa/blob/v2.2.2/src/detections/message.rs#L27-L36)
 - [LeafSelectNode](https://github.com/Yamato-Security/hayabusa/blob/v2.2.2/src/detections/rule/selectionnodes.rs#L234-L239)
 
@@ -456,6 +466,7 @@ pub struct DetectInfo {
 
 ### الفعالية（مثال واقعي من طلب سحب）   <!-- omit in toc -->
 في المثال التالي، عند الاختبار على بيانات كان فيها عدد سجلات نتائج الكشف حوالي 1.5 مليون،
+
 - [Reduced memory usage of DetectInfo/EvtxRecordInfo #837](https://github.com/Yamato-Security/hayabusa/pull/837)
 - [Reduce memory usage by removing unnecessary regex #894](https://github.com/Yamato-Security/hayabusa/pull/894)
 
@@ -492,6 +503,7 @@ pub struct DetectInfo {
 
 ### مثال   <!-- omit in toc -->
 طُبِّق التنفيذ أعلاه في ما يلي:
+
 - [add --debug option for printing mimalloc memory stats #822](https://github.com/Yamato-Security/hayabusa/pull/822)
 
 في Hayabusa، إذا أضفت الخيار `--debug`، فسيتم إخراج إحصائيات استخدام الذاكرة في النهاية.
@@ -524,6 +536,7 @@ pub struct DetectInfo {
 
 ### مثال  <!-- omit in toc -->
 يحتوي ما يلي على مثال لإجراء قياس الأداء باستخدام Hayabusa.
+
 - [Example of obtaining Windows performance counters](https://github.com/Yamato-Security/hayabusa/issues/778#issuecomment-1296504766)
 
 ## استخدام heaptrack

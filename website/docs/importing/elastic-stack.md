@@ -34,6 +34,7 @@ When you boot up the VM, you will get a screen similar to this:
 Take note of the Kibana URL and IP address of the SSH server.
 
 You can log in with the following credentials:
+
 * Username: `elk_user`
 * Password: `forensics`
 
@@ -147,6 +148,7 @@ Since there are many fields, you may want to type in the name of the field name 
 ![Adding Columns](../assets/doc/ElasticStackImport/07-AddingColumns.png)
 
 To start off, we recommend the following columns:
+
 - `Computer`
 - `EventID`
 - `Level`

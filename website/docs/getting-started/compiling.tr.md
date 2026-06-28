@@ -52,6 +52,7 @@ brew install openssl
 ## Linux Derleme Notları
 
 Aşağıdaki derleme bağımlılıkları gereklidir:
+
 * openssl-devel (Fedora tabanlı) / libssl-dev (Ubuntu tabanlı) 
 * perl
 * musl-gcc

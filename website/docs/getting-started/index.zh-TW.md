@@ -3,6 +3,7 @@
 請從 [Releases](https://github.com/Yamato-Security/hayabusa/releases) 頁面下載已編譯為二進位檔的最新穩定版 Hayabusa，或自行編譯原始碼。
 
 我們提供下列架構的二進位檔：
+
 - Linux ARM 64 位元 GNU（`hayabusa-x.x.x-lin-aarch64-gnu`）
 - Linux Intel 64 位元 GNU（`hayabusa-x.x.x-lin-x64-gnu`）
 - Linux Intel 64 位元 MUSL（`hayabusa-x.x.x-lin-x64-musl`）

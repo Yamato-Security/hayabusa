@@ -5,12 +5,14 @@ Las palabras clave especiales obsoletas y la agregación `count` todavía son co
 ## Palabras clave especiales obsoletas
 
 Actualmente, se pueden especificar las siguientes palabras clave especiales:
+
 - `value`: coincide por cadena de texto (también se pueden especificar comodines y barras verticales).
 - `min_length`: coincide cuando el número de caracteres es mayor o igual al número especificado.
 - `regexes`: coincide si una de las expresiones regulares del archivo que especifique en este campo coincide.
 - `allowlist`: la regla se omitirá si se encuentra alguna coincidencia en la lista de expresiones regulares del archivo que especifique en este campo.
 
 En el ejemplo siguiente, la regla coincidirá si se cumple lo siguiente:
+
 - `ServiceName` se llama `malicious-service` o contiene una expresión regular en `./rules/config/regex/detectlist_suspicous_services.txt`.
 - `ImagePath` tiene un mínimo de 1000 caracteres.
 - `ImagePath` no tiene ninguna coincidencia en la `allowlist`.
@@ -32,6 +34,7 @@ detection:
 ### Archivos de ejemplo para las palabras clave regexes y allowlist
 
 Hayabusa tenía dos archivos de expresiones regulares integrados que se usaban para el archivo `./rules/hayabusa/default/alerts/System/7045_CreateOrModiftySystemProcess-WindowsService_MaliciousServiceInstalled.yml`:
+
 - `./rules/config/regex/detectlist_suspicous_services.txt`: para detectar nombres de servicios sospechosos
 - `./rules/config/regex/allowlist_legitimate_services.txt`: para permitir servicios legítimos
 
@@ -59,9 +62,11 @@ detection:
 ```
 
 Las condiciones de agregación se pueden definir en el siguiente formato:
+
 - `count() {operator} {number}`: Para los eventos de registro que coinciden con la primera condición antes de la barra vertical, la condición coincidirá si el número de registros coincidentes satisface la expresión de condición especificada por `{operator}` y `{number}`.
 
 `{operator}` puede ser uno de los siguientes:
+
 - `==`: Si el valor es igual al valor especificado, se trata como coincidente con la condición.
 - `>=`: Si el valor es mayor o igual al valor especificado, se considera que se ha cumplido la condición.
 - `>`: Si el valor es mayor que el valor especificado, se considera que se ha cumplido la condición.
@@ -71,6 +76,7 @@ Las condiciones de agregación se pueden definir en el siguiente formato:
 `{number}` debe ser un número.
 
 `timeframe` se puede definir de la siguiente manera:
+
 - `15s`: 15 segundos
 - `30m`: 30 minutos
 - `12h`: 12 horas

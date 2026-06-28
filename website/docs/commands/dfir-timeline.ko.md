@@ -64,6 +64,7 @@ Sigma 룰에서 채널 및 이벤트 ID 필드는 `logsource` 아래의 `service
 우리가 이를 어떻게, 왜 하는지에 대해서는 [여기](https://github.com/Yamato-Security/sigma-to-hayabusa-converter)에서 심도 있게 설명합니다.
 
 현재 `Channel`이 정의되어 있지 않아 모든 `.evtx` 파일을 스캔하도록 의도된 탐지 룰은 다음 두 가지뿐입니다:
+
 - [Possible Hidden Shellcode](https://github.com/Yamato-Security/hayabusa-rules/blob/main/hayabusa/builtin/UnkwnChannEID_Med_PossibleHiddenShellcode.yml)
 - [Mimikatz Use](https://github.com/SigmaHQ/sigma/blob/master/rules/windows/builtin/win_alert_mimikatz_keywords.yml)
 
@@ -276,6 +277,7 @@ hayabusa.exe csv-timeline -d ../hayabusa-sample-evtx --RFC-3339 -o timesketch-im
 무료 GeoLite2 위치 정보 데이터를 사용하여 SrcIP(출발지 IP) 필드와 TgtIP(목적지 IP) 필드에 GeoIP(ASN 조직, 도시 및 국가) 정보를 추가할 수 있습니다.
 
 단계:
+
 1. 먼저 [여기](https://dev.maxmind.com/geoip/geolite2-free-geolocation-data)에서 MaxMind 계정에 가입하십시오.
 2. [다운로드 페이지](https://www.maxmind.com/en/accounts/current/geoip/downloads)에서 세 개의 `.mmdb` 파일을 다운로드하여 디렉터리에 저장하십시오. 파일 이름은 `GeoLite2-ASN.mmdb`,	`GeoLite2-City.mmdb`, `GeoLite2-Country.mmdb`여야 합니다.
 3. `csv-timeline` 또는 `json-timeline` 명령어를 실행할 때, MaxMind 데이터베이스가 있는 디렉터리를 뒤에 붙여 `-G` 옵션을 추가하십시오.
@@ -298,12 +300,14 @@ MaxMind GeoIP 데이터베이스는 2주마다 업데이트됩니다.
 이러한 데이터베이스를 자동으로 업데이트하기 위해 [여기](https://github.com/maxmind/geoipupdate)에서 MaxMind `geoipupdate` 도구를 설치할 수 있습니다.
 
 macOS에서의 단계:
+
 1. `brew install geoipupdate`
 2. `/usr/local/etc/GeoIP.conf` 또는 `/opt/homebrew/etc/GeoIP.conf` 편집: MaxMind 웹사이트에 로그인한 후 생성한 `AccountID`와 `LicenseKey`를 입력하십시오. `EditionIDs` 줄이 `EditionIDs GeoLite2-ASN GeoLite2-City GeoLite2-Country`로 되어 있는지 확인하십시오.
 3. `geoipupdate` 실행.
 4. GeoIP 정보를 추가하려면 `-G /usr/local/var/GeoIP` 또는 `-G /opt/homebrew/var/GeoIP`를 추가하십시오.
 
 Windows에서의 단계:
+
 1. [Releases](https://github.com/maxmind/geoipupdate/releases) 페이지에서 최신 Windows 바이너리(예: `geoipupdate_4.10.0_windows_amd64.zip`)를 다운로드하십시오.
 2. `\ProgramData\MaxMind/GeoIPUpdate\GeoIP.conf` 편집: MaxMind 웹사이트에 로그인한 후 생성한 `AccountID`와 `LicenseKey`를 입력하십시오. `EditionIDs` 줄이 `EditionIDs GeoLite2-ASN GeoLite2-City GeoLite2-Country`로 되어 있는지 확인하십시오.
 3. `geoipupdate` 실행 파일을 실행하십시오.

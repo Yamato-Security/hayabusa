@@ -42,6 +42,7 @@ Eso es todo lo que necesitas hacer para cambiar el asignador de memoria.
 
 ### Eficacia（Ejemplo real de un Pull Request）  <!-- omit in toc -->
 Cuánto mejora la velocidad dependerá del programa, pero en el siguiente ejemplo
+
 - [chg: build.rs(for vc runtime) to rustflags in config.toml and replace default global memory allocator with mimalloc. #777](https://github.com/Yamato-Security/hayabusa/pull/777)
 
 cambiar el asignador de memoria a [mimalloc](https://github.com/microsoft/mimalloc) resultó en un aumento de rendimiento del 20-30% en CPU Intel. 
@@ -78,6 +79,7 @@ habrá un aumento de velocidad de aproximadamente 1000 veces.
 
 ### Eficacia（Ejemplo real de un Pull Request）   <!-- omit in toc -->
 En el siguiente ejemplo, el procesamiento de IO al manejar un resultado de detección a la vez pudo realizarse fuera del bucle:
+
 - [Improve speed by removing IO process before insert_message() #858](https://github.com/Yamato-Security/hayabusa/pull/858)
 
 Esto resultó en una mejora de velocidad de aproximadamente el 20%.
@@ -122,6 +124,7 @@ el código actualizado es aproximadamente 100 veces más rápido.
 
 ### Eficacia（Ejemplo real de un Pull Request）   <!-- omit in toc -->
 En el siguiente ejemplo, la compilación de expresiones regulares se realiza fuera del bucle y se almacena en caché.
+
 - [cache regex for allowlist and regexes keyword. #174](https://github.com/Yamato-Security/hayabusa/pull/174)
 
 Esto resultó en mejoras significativas de velocidad.
@@ -161,6 +164,7 @@ hay una mejora de velocidad de aproximadamente 50 veces.
 
 ### Eficacia（Ejemplo real de un Pull Request）   <!-- omit in toc -->
 El método descrito anteriormente se implementó aquí
+
 - [Feature/improve output#253 #285](https://github.com/Yamato-Security/hayabusa/pull/285)
 
 y ha resultado en mejoras significativas de velocidad en el procesamiento de salida.
@@ -206,6 +210,7 @@ el procesamiento será 10 veces más rápido.
 
 ### Eficacia（Ejemplo real de un Pull Request）   <!-- omit in toc -->
 Dado que Hayabusa requiere comparación de cadenas sin distinción de mayúsculas y minúsculas, usamos [to_lowercase()](https://doc.rust-lang.org/std/string/struct.String.html#method.to_lowercase) y luego aplicamos el método anterior. Aun así, en los siguientes ejemplos
+
 - [Imporving speed by changing wildcard search process from regular expression match to starts_with/ends_with match #890](https://github.com/Yamato-Security/hayabusa/pull/890)
 - [Improving speed by using eq_ignore_ascii_case() before regular expression match #884](https://github.com/Yamato-Security/hayabusa/pull/884)
 
@@ -254,6 +259,7 @@ la velocidad mejorará aproximadamente 20 veces.
 
 ### Eficacia（Ejemplo real de un Pull Request）   <!-- omit in toc -->
 En el siguiente ejemplo, se utiliza el método anterior.
+
 - [Improving speed by adding string length match before regular expression match #883](https://github.com/Yamato-Security/hayabusa/pull/883)
 
 Esto mejoró la velocidad aproximadamente un 15%.
@@ -301,6 +307,7 @@ Al eliminar el uso de clone(), el uso de memoria se reduce hasta en un 50%.
 
 ### Eficacia（Ejemplo real de un Pull Request）   <!-- omit in toc -->
 En el siguiente ejemplo, al reemplazar el uso innecesario de [clone()](https://doc.rust-lang.org/std/clone/trait.Clone.html), [to_string()](https://doc.rust-lang.org/std/string/trait.ToString.html) y [to_owned()](https://doc.rust-lang.org/std/borrow/trait.ToOwned.html),
+
 - [Reduce used memory and Skipped rule author, detect counts aggregation when --no-summary option is used #782](https://github.com/Yamato-Security/hayabusa/pull/782)
 
 pudimos reducir significativamente el uso de memoria.
@@ -380,6 +387,7 @@ El uso de memoria cae significativamente de 1 GB a solo 3 MB.
 
 ### Eficacia（Ejemplo real de un Pull Request）   <!-- omit in toc -->
 El siguiente ejemplo usa el método descrito anteriormente:
+
 - [Reduce memory usage when reading JSONL file #921](https://github.com/Yamato-Security/hayabusa/pull/921)
 
 Cuando se probó en un archivo JSON de 1.7GB, la memoria disminuyó en un 75%.
@@ -409,12 +417,14 @@ Al hacer esto, el uso de memoria se reduce alrededor de un 50%.
 
 ### Eficacia（Ejemplo real de un Pull Request）   <!-- omit in toc -->
 En el siguiente ejemplo, las cadenas cortas se manejan con [CompactString](https://docs.rs/compact_str/latest/compact_str/):
+
 - [To reduce ram usage and performance, Replaced String with other crate #793](https://github.com/Yamato-Security/hayabusa/pull/793)
 
 Esto dio una reducción del uso de memoria de aproximadamente el 20%.
 
 ## Elimina campos innecesarios en estructuras de larga duración
 Las estructuras que continúan reteniéndose en memoria durante el inicio del proceso pueden afectar el uso general de memoria. En Hayabusa, las siguientes estructuras (a partir de la versión 2.2.2), en particular, se retienen en grandes cantidades.
+
 - [DetectInfo](https://github.com/Yamato-Security/hayabusa/blob/v2.2.2/src/detections/message.rs#L27-L36)
 - [LeafSelectNode](https://github.com/Yamato-Security/hayabusa/blob/v2.2.2/src/detections/rule/selectionnodes.rs#L234-L239)
 
@@ -456,6 +466,7 @@ se logró una reducción en el uso de memoria de varios bytes por registro de re
 
 ### Eficacia（Ejemplo real de un Pull Request）   <!-- omit in toc -->
 En el siguiente ejemplo, cuando se probó contra datos donde el número de registros de resultados de detección era de aproximadamente 1.5 millones,
+
 - [Reduced memory usage of DetectInfo/EvtxRecordInfo #837](https://github.com/Yamato-Security/hayabusa/pull/837)
 - [Reduce memory usage by removing unnecessary regex #894](https://github.com/Yamato-Security/hayabusa/pull/894)
 
@@ -492,6 +503,7 @@ Requisitos previos: Necesitas estar usando mimalloc como se explica en la secci�
 
 ### Ejemplo   <!-- omit in toc -->
 La implementación anterior se aplicó en lo siguiente:
+
 - [add --debug option for printing mimalloc memory stats #822](https://github.com/Yamato-Security/hayabusa/pull/822)
 
 En Hayabusa, si agregas la opción `--debug`, las estadísticas de uso de memoria se enviarán al final.
@@ -524,6 +536,7 @@ Requisitos previos：El siguiente procedimiento solo es válido para entornos do
 
 ### Ejemplo  <!-- omit in toc -->
 Lo siguiente contiene un procedimiento de ejemplo para medir el rendimiento con Hayabusa.
+
 - [Example of obtaining Windows performance counters](https://github.com/Yamato-Security/hayabusa/issues/778#issuecomment-1296504766)
 
 ## Usa heaptrack

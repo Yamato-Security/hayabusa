@@ -8,6 +8,7 @@
 
 ในการเขียนตรรกะ AND เราจะใช้ dictionary แบบซ้อนกัน
 กฎการตรวจจับด้านล่างกำหนดว่า **ทั้งสองเงื่อนไข** ต้องเป็นจริงจึงจะทำให้กฎตรงกัน
+
 - EventID ต้องเท่ากับ `7040` พอดี
 - **AND**
 - Channel ต้องเท่ากับ `System` พอดี
@@ -22,6 +23,7 @@ detection:
 
 ในการเขียนตรรกะ OR เราจะใช้ list (dictionary ที่ขึ้นต้นด้วย `-`)
 ในกฎการตรวจจับด้านล่าง **เงื่อนไขใดเงื่อนไขหนึ่ง** จะทำให้กฎถูกกระตุ้น
+
 - EventID ต้องเท่ากับ `7040` พอดี
 - **OR**
 - Channel ต้องเท่ากับ `System` พอดี
@@ -36,6 +38,7 @@ detection:
 
 เรายังสามารถรวมตรรกะ `AND` และ `OR` เข้าด้วยกันได้ดังที่แสดงด้านล่าง
 ในกรณีนี้ กฎจะตรงกันเมื่อเงื่อนไขสองข้อต่อไปนี้เป็นจริงทั้งคู่
+
 - EventID เท่ากับ `7040` **OR** `7041` พอดี
 - **AND**
 - Channel เท่ากับ `System` พอดี
@@ -302,10 +305,12 @@ detection:
 ```
 
 สามารถใช้ wildcard สองตัวต่อไปนี้ได้
+
 - `*`: จับคู่สตริงใด ๆ ที่มีอักขระศูนย์ตัวหรือมากกว่า (ภายในจะถูกแปลงเป็นนิพจน์ทั่วไป `.*`)
 - `?`: จับคู่อักขระเดี่ยวใด ๆ (ภายในจะถูกแปลงเป็นนิพจน์ทั่วไป `.`)
 
 เกี่ยวกับการ escape wildcard:
+
 - wildcard (`*` และ `?`) สามารถ escape ได้โดยใช้ backslash: `\*`, `\?`
 - หากคุณต้องการใช้ backslash ก่อนหน้า wildcard ทันที ให้เขียน `\\*` หรือ `\\?`
 - ไม่จำเป็นต้อง escape หากคุณใช้ backslash เพียงตัวเดียว
@@ -353,6 +358,7 @@ detection:
 ```
 
 นิพจน์ต่อไปนี้สามารถใช้สำหรับ `condition` ได้
+
 - `{expression1} and {expression2}`: ต้องการทั้ง {expression1} AND {expression2}
 - `{expression1} or {expression2}`: ต้องการ {expression1} OR {expression2} อย่างใดอย่างหนึ่ง
 - `not {expression}`: กลับตรรกะของ {expression}
@@ -391,6 +397,7 @@ detection:
 เราได้ใช้งาน Sigma เวอร์ชัน 2.0.0 correlation ทั้งหมดตามที่กำหนดไว้[ที่นี่](https://github.com/SigmaHQ/sigma-specification/blob/version_2/specification/sigma-correlation-rules-specification.md)
 
 correlation ที่รองรับ:
+
 - Event Count (`event_count`)
 - Value Count (`value_count`)
 - Temporal Proximity (`temporal`)

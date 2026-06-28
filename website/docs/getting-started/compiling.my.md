@@ -52,6 +52,7 @@ brew install openssl
 ## Linux Compiling မှတ်ချက်များ
 
 အောက်ပါ build dependencies များ လိုအပ်သည်-
+
 * openssl-devel (Fedora-based) / libssl-dev (Ubuntu-based) 
 * perl
 * musl-gcc

@@ -64,6 +64,7 @@ Sigma kuralları için kanal ve olay kimliği alanları, `logsource` altındaki 
 Bunu nasıl ve neden yaptığımızı ayrıntılı olarak [burada](https://github.com/Yamato-Security/sigma-to-hayabusa-converter) açıklıyoruz.
 
 Şu anda, `Channel` tanımlanmamış ve tüm `.evtx` dosyalarını taramak için tasarlanmış yalnızca iki tespit kuralı vardır:
+
 - [Possible Hidden Shellcode](https://github.com/Yamato-Security/hayabusa-rules/blob/main/hayabusa/builtin/UnkwnChannEID_Med_PossibleHiddenShellcode.yml)
 - [Mimikatz Use](https://github.com/SigmaHQ/sigma/blob/master/rules/windows/builtin/win_alert_mimikatz_keywords.yml)
 
@@ -276,6 +277,7 @@ Hata mesajlarını kaydetmek istemiyorsanız, lütfen `-Q` ekleyin.
 Ücretsiz GeoLite2 coğrafi konum verileriyle SrcIP (kaynak IP) alanlarına ve TgtIP (hedef IP) alanlarına GeoIP (ASN kuruluşu, şehir ve ülke) bilgisi ekleyebilirsiniz.
 
 Adımlar:
+
 1. Önce [buradan](https://dev.maxmind.com/geoip/geolite2-free-geolocation-data) bir MaxMind hesabı için kaydolun.
 2. [İndirme sayfasından](https://www.maxmind.com/en/accounts/current/geoip/downloads) üç `.mmdb` dosyasını indirin ve bir dizine kaydedin. Dosya adları `GeoLite2-ASN.mmdb`,	`GeoLite2-City.mmdb` ve `GeoLite2-Country.mmdb` olmalıdır.
 3. `csv-timeline` veya `json-timeline` komutlarını çalıştırırken, `-G` seçeneğini ardından MaxMind veritabanlarının bulunduğu dizini ekleyin.
@@ -298,12 +300,14 @@ MaxMind GeoIP veritabanları her 2 haftada bir güncellenir.
 Bu veritabanlarını otomatik olarak güncellemek için MaxMind `geoipupdate` aracını [buradan](https://github.com/maxmind/geoipupdate) kurabilirsiniz.
 
 macOS'ta adımlar:
+
 1. `brew install geoipupdate`
 2. `/usr/local/etc/GeoIP.conf` veya `/opt/homebrew/etc/GeoIP.conf` dosyasını düzenleyin: MaxMind web sitesine giriş yaptıktan sonra oluşturduğunuz `AccountID` ve `LicenseKey` bilgilerinizi girin. `EditionIDs` satırının `EditionIDs GeoLite2-ASN GeoLite2-City GeoLite2-Country` dediğinden emin olun.
 3. `geoipupdate` çalıştırın.
 4. GeoIP bilgisi eklemek istediğinizde `-G /usr/local/var/GeoIP` veya `-G /opt/homebrew/var/GeoIP` ekleyin.
 
 Windows'ta adımlar:
+
 1. [Releases](https://github.com/maxmind/geoipupdate/releases) sayfasından en son Windows ikili dosyasını (Örn: `geoipupdate_4.10.0_windows_amd64.zip`) indirin.
 2. `\ProgramData\MaxMind/GeoIPUpdate\GeoIP.conf` dosyasını düzenleyin: MaxMind web sitesine giriş yaptıktan sonra oluşturduğunuz `AccountID` ve `LicenseKey` bilgilerinizi girin. `EditionIDs` satırının `EditionIDs GeoLite2-ASN GeoLite2-City GeoLite2-Country` dediğinden emin olun.
 3. `geoipupdate` yürütülebilir dosyasını çalıştırın.

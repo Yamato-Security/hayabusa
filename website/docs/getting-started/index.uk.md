@@ -3,6 +3,7 @@
 Будь ласка, завантажте найновішу стабільну версію Hayabusa зі скомпільованими бінарними файлами або скомпілюйте вихідний код зі сторінки [Releases](https://github.com/Yamato-Security/hayabusa/releases).
 
 Ми надаємо бінарні файли для таких архітектур:
+
 - Linux ARM 64-bit GNU (`hayabusa-x.x.x-lin-aarch64-gnu`)
 - Linux Intel 64-bit GNU (`hayabusa-x.x.x-lin-x64-gnu`)
 - Linux Intel 64-bit MUSL (`hayabusa-x.x.x-lin-x64-musl`)

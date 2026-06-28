@@ -18,6 +18,7 @@ Dans une invite de commande/PowerShell ou Windows Terminal, exécutez simplement
 
 Lorsque vous utilisez l'invite de commande ou PowerShell intégrée de Windows, vous pourriez recevoir une erreur indiquant que Hayabusa n'a pas pu charger de fichiers .evtx s'il y a un espace dans le chemin de votre fichier ou répertoire.
 Afin de charger correctement les fichiers .evtx, assurez-vous de faire ce qui suit :
+
 1. Entourez le chemin du fichier ou du répertoire de guillemets doubles.
 2. S'il s'agit d'un chemin de répertoire, assurez-vous de ne pas inclure de barre oblique inverse comme dernier caractère.
 
@@ -31,6 +32,7 @@ Cela corrigera la plupart du rendu du texte, à l'exception de l'affichage des c
 ![Mojibake](../assets/screenshots/Mojibake.png)
 
 Vous avez quatre options pour corriger cela :
+
 1. Utilisez [Windows Terminal](https://learn.microsoft.com/en-us/windows/terminal/) au lieu de l'invite de commande ou PowerShell. (Recommandé)
 2. Utilisez la police `MS Gothic`. Notez que les barres obliques inverses se transformeront en symboles Yen.
    ![MojibakeFix](../assets/screenshots/MojibakeFix.png)

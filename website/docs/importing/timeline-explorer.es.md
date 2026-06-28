@@ -116,6 +116,7 @@ Si lo cambia a cualquier cosa excepto `Mixed`, podrá establecer la `Condition` 
 
 El `Match criteria` de `Mixed` es complicado, ya que a veces usa la lógica `AND` y a veces `OR`, pero puede ser muy flexible una vez que se aprende.
 Funciona de la siguiente manera:
+
 * Si separa las palabras por espacios, se tratará como lógica `OR`.
 * Si desea incluir espacios en su búsqueda, debe agregar comillas.
 * Anteceda una condición con `+` para la lógica `AND`.
@@ -124,6 +125,7 @@ Funciona de la siguiente manera:
 * Si filtra en una columna específica y además incluye una palabra clave separada, será lógica `AND`.
 
 Ejemplos:
+
 | Criterio de búsqueda             | Descripción                                                                                                                                     |
 |----------------------------------|-------------------------------------------------------------------------------------------------------------------------------------------------|
 | mimikatz                         | Selecciona los registros que contienen la cadena `mimikatz` en cualquier columna de búsqueda.                                                   |

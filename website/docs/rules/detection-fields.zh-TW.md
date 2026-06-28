@@ -8,6 +8,7 @@
 
 要撰寫 AND 邏輯，我們會使用巢狀字典。
 下方的偵測規則定義了**兩個條件**都必須為真，規則才會比對成功。
+
 - EventID 必須剛好為 `7040`。
 - **AND**
 - Channel 必須剛好為 `System`。
@@ -22,6 +23,7 @@ detection:
 
 要撰寫 OR 邏輯，我們會使用清單（以 `-` 開頭的字典）。
 在下方的偵測規則中，**任一個**條件成立都會觸發規則。
+
 - EventID 必須剛好為 `7040`。
 - **OR**
 - Channel 必須剛好為 `System`。
@@ -36,6 +38,7 @@ detection:
 
 我們也可以如下所示結合 `AND` 與 `OR` 邏輯。
 在這個情況下，當以下兩個條件都為真時，規則才會比對成功。
+
 - EventID 剛好為 `7040` **OR** `7041`。
 - **AND**
 - Channel 剛好為 `System`。
@@ -302,10 +305,12 @@ detection:
 ```
 
 可以使用以下兩種萬用字元。
+
 - `*`：比對零個或多個字元組成的任何字串。（在內部會被轉換為正規表示式 `.*`）
 - `?`：比對任何單一字元。（在內部會被轉換為正規表示式 `.`）
 
 關於跳脫萬用字元：
+
 - 萬用字元（`*` 與 `?`）可以使用反斜線來跳脫：`\*`、`\?`。
 - 如果你想在萬用字元前面直接使用反斜線，請寫成 `\\*` 或 `\\?`。
 - 如果你只是單獨使用反斜線，則不需要跳脫。
@@ -353,6 +358,7 @@ detection:
 ```
 
 `condition` 可以使用以下運算式。
+
 - `{expression1} and {expression2}`：同時需要 {expression1} AND {expression2}
 - `{expression1} or {expression2}`：需要 {expression1} OR {expression2} 其中之一
 - `not {expression}`：反轉 {expression} 的邏輯
@@ -391,6 +397,7 @@ detection:
 我們已實作[此處](https://github.com/SigmaHQ/sigma-specification/blob/version_2/specification/sigma-correlation-rules-specification.md)所定義的所有 Sigma 2.0.0 版關聯。
 
 支援的關聯：
+
 - Event Count（`event_count`）
 - Value Count（`value_count`）
 - Temporal Proximity（`temporal`）

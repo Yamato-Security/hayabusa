@@ -8,6 +8,7 @@
 
 AND logic ရေးသားရန် nested dictionary များကို အသုံးပြုပါသည်။
 အောက်ပါ detection rule သည် rule ကိုက်ညီရန်အတွက် **အခြေအနေနှစ်ခုစလုံး** မှန်ကန်ရမည်ဟု သတ်မှတ်ထားသည်။
+
 - EventID သည် `7040` အတိအကျ ဖြစ်ရမည်။
 - **AND**
 - Channel သည် `System` အတိအကျ ဖြစ်ရမည်။
@@ -22,6 +23,7 @@ detection:
 
 OR logic ရေးသားရန် list များ (`-` ဖြင့်စတင်သော dictionary များ) ကို အသုံးပြုပါသည်။
 အောက်ပါ detection rule တွင် အခြေအနေများ၏ **တစ်ခုခု** က rule ကို အစပျိုးစေပါမည်။
+
 - EventID သည် `7040` အတိအကျ ဖြစ်ရမည်။
 - **OR**
 - Channel သည် `System` အတိအကျ ဖြစ်ရမည်။
@@ -36,6 +38,7 @@ detection:
 
 `AND` နှင့် `OR` logic ကို အောက်ပါအတိုင်း ပေါင်းစပ်အသုံးပြုနိုင်ပါသည်။
 ဤကိစ္စတွင် အောက်ပါ အခြေအနေနှစ်ခုစလုံး မှန်ကန်သောအခါ rule ကိုက်ညီပါသည်။
+
 - EventID သည် `7040` **OR** `7041` အတိအကျ ဖြစ်ရမည်။
 - **AND**
 - Channel သည် `System` အတိအကျ ဖြစ်ရမည်။
@@ -302,10 +305,12 @@ detection:
 ```
 
 အောက်ပါ wildcard နှစ်ခုကို အသုံးပြုနိုင်ပါသည်။
+
 - `*`: character သုညခု သို့မဟုတ် ထို့ထက်ပိုသော မည်သည့် string ကိုမဆို ကိုက်ညီသည်။ (အတွင်းပိုင်းတွင် regular expression `.*` သို့ ပြောင်းလဲသည်။)
 - `?`: မည်သည့် character တစ်လုံးကိုမဆို ကိုက်ညီသည်။ (အတွင်းပိုင်းတွင် regular expression `.` သို့ ပြောင်းလဲသည်။)
 
 Wildcard များ escape လုပ်ခြင်းအကြောင်း:
+
 - Wildcard များ (`*` နှင့် `?`) ကို backslash အသုံးပြု၍ escape လုပ်နိုင်သည်: `\*`, `\?`။
 - Wildcard တစ်ခု၏ ရှေ့တွင်တိုက်ရိုက် backslash တစ်ခုကို အသုံးပြုလိုပါက `\\*` သို့မဟုတ် `\\?` ဟု ရေးပါ။
 - Backslash များကို သီးသန့်အသုံးပြုနေပါက escape လုပ်ရန် မလိုအပ်ပါ။
@@ -353,6 +358,7 @@ detection:
 ```
 
 `condition` အတွက် အောက်ပါ expression များကို အသုံးပြုနိုင်ပါသည်။
+
 - `{expression1} and {expression2}`: {expression1} AND {expression2} နှစ်ခုစလုံး လိုအပ်သည်
 - `{expression1} or {expression2}`: {expression1} OR {expression2} တစ်ခုခု လိုအပ်သည်
 - `not {expression}`: {expression} ၏ logic ကို ပြောင်းပြန်လှန်သည်
@@ -391,6 +397,7 @@ detection:
 Sigma version 2.0.0 correlation အားလုံးကို [ဤနေရာ](https://github.com/SigmaHQ/sigma-specification/blob/version_2/specification/sigma-correlation-rules-specification.md) တွင် သတ်မှတ်ထားသည့်အတိုင်း ကျွန်ုပ်တို့ အကောင်အထည်ဖော်ထားပါသည်။
 
 Support လုပ်ထားသော correlation များ:
+
 - Event Count (`event_count`)
 - Value Count (`value_count`)
 - Temporal Proximity (`temporal`)

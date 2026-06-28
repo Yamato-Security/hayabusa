@@ -8,6 +8,7 @@
 
 AND mantığını yazmak için iç içe geçmiş sözlükler kullanırız.
 Aşağıdaki tespit kuralı, kuralın eşleşmesi için **her iki koşulun** da doğru olması gerektiğini tanımlar.
+
 - EventID tam olarak `7040` olmalıdır.
 - **AND**
 - Channel tam olarak `System` olmalıdır.
@@ -22,6 +23,7 @@ detection:
 
 OR mantığını yazmak için listeler (`-` ile başlayan sözlükler) kullanırız.
 Aşağıdaki tespit kuralında, koşullardan **herhangi biri** kuralın tetiklenmesine neden olur.
+
 - EventID tam olarak `7040` olmalıdır.
 - **OR**
 - Channel tam olarak `System` olmalıdır.
@@ -36,6 +38,7 @@ detection:
 
 Aşağıda gösterildiği gibi `AND` ve `OR` mantığını da birleştirebiliriz.
 Bu durumda, kural aşağıdaki iki koşulun her ikisi de doğru olduğunda eşleşir.
+
 - EventID tam olarak `7040` **OR** `7041` değerlerinden biridir.
 - **AND**
 - Channel tam olarak `System`'dir.
@@ -302,10 +305,12 @@ detection:
 ```
 
 Aşağıdaki iki joker karakter kullanılabilir.
+
 - `*`: Sıfır veya daha fazla karakterden oluşan herhangi bir dizeyle eşleşir. (Dahili olarak `.*` düzenli ifadesine dönüştürülür)
 - `?`: Herhangi bir tek karakterle eşleşir. (Dahili olarak `.` düzenli ifadesine dönüştürülür)
 
 Joker karakterlerin kaçış (escape) işlemi hakkında:
+
 - Joker karakterler (`*` ve `?`) bir ters eğik çizgi kullanılarak kaçırılabilir: `\*`, `\?`.
 - Bir joker karakterin hemen önünde bir ters eğik çizgi kullanmak istiyorsanız `\\*` veya `\\?` yazın.
 - Ters eğik çizgileri tek başlarına kullanıyorsanız kaçış işlemi gerekmez.
@@ -353,6 +358,7 @@ detection:
 ```
 
 `condition` için aşağıdaki ifadeler kullanılabilir.
+
 - `{expression1} and {expression2}`: Hem {expression1} HEM DE {expression2} gerektirir
 - `{expression1} or {expression2}`: {expression1} VEYA {expression2}'den birini gerektirir
 - `not {expression}`: {expression} mantığını tersine çevirir
@@ -391,6 +397,7 @@ detection:
 [Burada](https://github.com/SigmaHQ/sigma-specification/blob/version_2/specification/sigma-correlation-rules-specification.md) tanımlandığı şekilde tüm Sigma sürüm 2.0.0 korelasyonlarını uyguladık.
 
 Desteklenen korelasyonlar:
+
 - Event Count (`event_count`)
 - Value Count (`value_count`)
 - Temporal Proximity (`temporal`)

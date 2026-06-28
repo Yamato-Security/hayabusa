@@ -42,6 +42,7 @@ Zach Mathis ([@yamatosecurity](https://twitter.com/yamatosecurity))
 
 ### 成效（取自 Pull Request 的實際範例）  <!-- omit in toc -->
 速度能改善多少取決於程式本身，但在下列範例中
+
 - [chg: build.rs(for vc runtime) to rustflags in config.toml and replace default global memory allocator with mimalloc. #777](https://github.com/Yamato-Security/hayabusa/pull/777)
 
 將記憶體配置器改為 [mimalloc](https://github.com/microsoft/mimalloc) 後，在 Intel CPU 上帶來了 20-30% 的效能提升。
@@ -78,6 +79,7 @@ fn main() {
 
 ### 成效（取自 Pull Request 的實際範例）   <!-- omit in toc -->
 在下列範例中，原本一次處理一筆偵測結果時的 IO 處理得以移到迴圈外執行：
+
 - [Improve speed by removing IO process before insert_message() #858](https://github.com/Yamato-Security/hayabusa/pull/858)
 
 這帶來了約 20% 的速度改善。
@@ -122,6 +124,7 @@ fn main() {
 
 ### 成效（取自 Pull Request 的實際範例）   <!-- omit in toc -->
 在下列範例中，正規表示式在迴圈外編譯並加以快取。
+
 - [cache regex for allowlist and regexes keyword. #174](https://github.com/Yamato-Security/hayabusa/pull/174)
 
 這帶來了顯著的速度改善。
@@ -161,6 +164,7 @@ fn main() {
 
 ### 成效（取自 Pull Request 的實際範例）   <!-- omit in toc -->
 上述方法已在此實作
+
 - [Feature/improve output#253 #285](https://github.com/Yamato-Security/hayabusa/pull/285)
 
 並在輸出處理上帶來了顯著的速度改善。
@@ -206,6 +210,7 @@ fn main() {
 
 ### 成效（取自 Pull Request 的實際範例）   <!-- omit in toc -->
 由於 Hayabusa 需要不分大小寫的字串比較，我們會先使用 [to_lowercase()](https://doc.rust-lang.org/std/string/struct.String.html#method.to_lowercase)，再套用上述方法。即便如此，在下列範例中
+
 - [Imporving speed by changing wildcard search process from regular expression match to starts_with/ends_with match #890](https://github.com/Yamato-Security/hayabusa/pull/890)
 - [Improving speed by using eq_ignore_ascii_case() before regular expression match #884](https://github.com/Yamato-Security/hayabusa/pull/884)
 
@@ -254,6 +259,7 @@ fn main() {
 
 ### 成效（取自 Pull Request 的實際範例）   <!-- omit in toc -->
 在下列範例中使用了上述方法。
+
 - [Improving speed by adding string length match before regular expression match #883](https://github.com/Yamato-Security/hayabusa/pull/883)
 
 這改善了約 15% 的速度。
@@ -301,6 +307,7 @@ fn main() {
 
 ### 成效（取自 Pull Request 的實際範例）   <!-- omit in toc -->
 在下列範例中，藉由取代不必要的 [clone()](https://doc.rust-lang.org/std/clone/trait.Clone.html)、[to_string()](https://doc.rust-lang.org/std/string/trait.ToString.html) 與 [to_owned()](https://doc.rust-lang.org/std/borrow/trait.ToOwned.html) 使用，
+
 - [Reduce used memory and Skipped rule author, detect counts aggregation when --no-summary option is used #782](https://github.com/Yamato-Security/hayabusa/pull/782)
 
 我們得以顯著減少記憶體用量。
@@ -380,6 +387,7 @@ fn main() {
 
 ### 成效（取自 Pull Request 的實際範例）   <!-- omit in toc -->
 下列範例使用了上述方法：
+
 - [Reduce memory usage when reading JSONL file #921](https://github.com/Yamato-Security/hayabusa/pull/921)
 
 在一個 1.7GB 的 JSON 檔案上測試時，記憶體減少了 75%。
@@ -409,12 +417,14 @@ fn main() {
 
 ### 成效（取自 Pull Request 的實際範例）   <!-- omit in toc -->
 在下列範例中，以 [CompactString](https://docs.rs/compact_str/latest/compact_str/) 處理短字串：
+
 - [To reduce ram usage and performance, Replaced String with other crate #793](https://github.com/Yamato-Security/hayabusa/pull/793)
 
 這帶來了約 20% 的記憶體用量減少。
 
 ## 刪除長壽命結構中不必要的欄位
 在程序啟動期間持續保留在記憶體中的結構，可能會影響整體的記憶體用量。在 Hayabusa 中，下列結構（截至 2.2.2 版）特別是被大量保留。
+
 - [DetectInfo](https://github.com/Yamato-Security/hayabusa/blob/v2.2.2/src/detections/message.rs#L27-L36)
 - [LeafSelectNode](https://github.com/Yamato-Security/hayabusa/blob/v2.2.2/src/detections/rule/selectionnodes.rs#L234-L239)
 
@@ -456,6 +466,7 @@ pub struct DetectInfo {
 
 ### 成效（取自 Pull Request 的實際範例）   <!-- omit in toc -->
 在下列範例中，針對偵測結果記錄數量約為 150 萬筆的資料進行測試，
+
 - [Reduced memory usage of DetectInfo/EvtxRecordInfo #837](https://github.com/Yamato-Security/hayabusa/pull/837)
 - [Reduce memory usage by removing unnecessary regex #894](https://github.com/Yamato-Security/hayabusa/pull/894)
 
@@ -492,6 +503,7 @@ pub struct DetectInfo {
 
 ### 範例   <!-- omit in toc -->
 上述實作已套用於下列：
+
 - [add --debug option for printing mimalloc memory stats #822](https://github.com/Yamato-Security/hayabusa/pull/822)
 
 在 Hayabusa 中，如果您加入 `--debug` 選項，記憶體用量統計將在結束時輸出。
@@ -524,6 +536,7 @@ pub struct DetectInfo {
 
 ### 範例  <!-- omit in toc -->
 下列包含以 Hayabusa 測量效能的範例步驟。
+
 - [Example of obtaining Windows performance counters](https://github.com/Yamato-Security/hayabusa/issues/778#issuecomment-1296504766)
 
 ## 使用 heaptrack
