@@ -2,7 +2,7 @@
  <p>
     <img alt="Hayabusa Logo" src="logo.png" width="60%">
  </p>
-  [<a href="README.md">English</a>] | [<b>日本語</b>]
+  [<a href="OLD-README.md">English</a>] | [<b>日本語</b>]
 </div>
 
 ---
