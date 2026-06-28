@@ -125,6 +125,7 @@ It operates as follows:
 * If you filter on a specific column and also include a separate keyword, it will be `AND` logic.
 
 Examples:
+
 | Search Criteria                  | Description                                                                                                                                     |
 |----------------------------------|-------------------------------------------------------------------------------------------------------------------------------------------------|
 | mimikatz                         | Selects records that contain the `mimikatz` string in any search column.                                                                        |

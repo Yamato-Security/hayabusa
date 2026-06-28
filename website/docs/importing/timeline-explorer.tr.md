@@ -125,6 +125,7 @@ Varsayılan `Match criteria` değeri `Mixed`'dir ancak `Or`, `And` veya `Exact` 
 * Belirli bir sütun üzerinde filtreleyip ayrıca ayrı bir anahtar kelime de eklerseniz, `AND` mantığı olur.
 
 Örnekler:
+
 | Arama Ölçütü                  | Açıklama                                                                                                                                     |
 |----------------------------------|-------------------------------------------------------------------------------------------------------------------------------------------------|
 | mimikatz                         | Herhangi bir arama sütununda `mimikatz` dizesini içeren kayıtları seçer.                                                                        |

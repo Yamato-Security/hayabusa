@@ -125,6 +125,7 @@ Ele funciona da seguinte forma:
 * Se você filtrar uma coluna específica e também incluir uma palavra-chave separada, será lógica `AND`.
 
 Exemplos:
+
 | Critério de Pesquisa             | Descrição                                                                                                                                       |
 |----------------------------------|-------------------------------------------------------------------------------------------------------------------------------------------------|
 | mimikatz                         | Seleciona registros que contêm a string `mimikatz` em qualquer coluna de pesquisa.                                                              |

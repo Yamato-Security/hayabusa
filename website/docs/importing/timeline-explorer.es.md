@@ -125,6 +125,7 @@ Funciona de la siguiente manera:
 * Si filtra en una columna específica y además incluye una palabra clave separada, será lógica `AND`.
 
 Ejemplos:
+
 | Criterio de búsqueda             | Descripción                                                                                                                                     |
 |----------------------------------|-------------------------------------------------------------------------------------------------------------------------------------------------|
 | mimikatz                         | Selecciona los registros que contienen la cadena `mimikatz` en cualquier columna de búsqueda.                                                   |

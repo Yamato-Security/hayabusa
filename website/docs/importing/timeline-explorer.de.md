@@ -125,6 +125,7 @@ Sie funktioniert wie folgt:
 * Wenn Sie nach einer bestimmten Spalte filtern und außerdem ein separates Schlüsselwort einschließen, wird `AND`-Logik verwendet.
 
 Beispiele:
+
 | Suchkriterien                    | Beschreibung                                                                                                                                     |
 |----------------------------------|-------------------------------------------------------------------------------------------------------------------------------------------------|
 | mimikatz                         | Wählt Datensätze aus, die die Zeichenkette `mimikatz` in einer beliebigen Suchspalte enthalten.                                                  |

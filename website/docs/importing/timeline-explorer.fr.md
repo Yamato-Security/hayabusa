@@ -125,6 +125,7 @@ Il fonctionne comme suit :
 * Si vous filtrez sur une colonne spécifique et incluez également un mot-clé distinct, ce sera une logique `AND`.
 
 Exemples :
+
 | Critère de recherche             | Description                                                                                                                                     |
 |----------------------------------|-------------------------------------------------------------------------------------------------------------------------------------------------|
 | mimikatz                         | Sélectionne les enregistrements qui contiennent la chaîne `mimikatz` dans n'importe quelle colonne de recherche.                                |
