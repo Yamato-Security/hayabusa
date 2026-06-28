@@ -6,7 +6,7 @@ hide:
 
 <div class="hb-hero" markdown>
 
-<img class="hb-logo" alt="Hayabusa" src="assets/logo.png" />
+![Hayabusa](assets/logo.png){ .hb-logo }
 
 <p class="hb-tagline">
 O <strong>Hayabusa</strong> é um <strong>gerador rápido de linha do tempo forense</strong> de registros de eventos do Windows

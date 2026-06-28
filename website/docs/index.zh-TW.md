@@ -6,7 +6,7 @@ hide:
 
 <div class="hb-hero" markdown>
 
-<img class="hb-logo" alt="Hayabusa" src="assets/logo.png" />
+![Hayabusa](assets/logo.png){ .hb-logo }
 
 <p class="hb-tagline">
 <strong>Hayabusa</strong> 是一款 Windows 事件記錄檔的<strong>快速鑑識時間軸產生器</strong>
