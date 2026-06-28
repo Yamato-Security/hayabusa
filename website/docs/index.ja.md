@@ -6,7 +6,7 @@ hide:
 
 <div class="hb-hero" markdown>
 
-<img class="hb-logo" alt="Hayabusa" src="assets/logo.png" />
+![Hayabusa](assets/logo.png){ .hb-logo }
 
 <p class="hb-tagline">
 <strong>Hayabusa</strong>（隼）は、日本の<a href="https://yamatosecurity.connpass.com/">Yamato Security</a>

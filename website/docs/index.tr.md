@@ -6,7 +6,7 @@ hide:
 
 <div class="hb-hero" markdown>
 
-<img class="hb-logo" alt="Hayabusa" src="assets/logo.png" />
+![Hayabusa](assets/logo.png){ .hb-logo }
 
 <p class="hb-tagline">
 <strong>Hayabusa</strong>, <a href="https://yamatosecurity.connpass.com/">Yamato Security</a> tarafından oluşturulmuş bir Windows olay günlüğü <strong>hızlı adli zaman çizelgesi oluşturucu</strong>
