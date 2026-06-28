@@ -1,0 +1,9 @@
+# Hayabusa Hakkında
+
+Hayabusa, Japonya'daki [Yamato Security](https://yamatosecurity.connpass.com/) grubu tarafından oluşturulan bir **Windows olay günlüğü hızlı adli zaman çizelgesi oluşturucu** ve **tehdit avlama aracıdır**.
+Hayabusa Japoncada ["gezgin şahin"](https://en.wikipedia.org/wiki/Peregrine_falcon) anlamına gelir ve gezgin şahinler dünyanın en hızlı hayvanı olmaları, avlanmada üstün olmaları ve son derece eğitilebilir olmaları nedeniyle seçilmiştir.
+Bellek açısından güvenli [Rust](https://www.rust-lang.org/) ile yazılmıştır, mümkün olduğunca hızlı olmak için çoklu iş parçacığını destekler ve v2 korelasyon kuralları dahil Sigma spesifikasyonunu tam olarak destekleyen tek açık kaynaklı araçtır.
+Hayabusa [üst akış Sigma](https://github.com/SigmaHQ/sigma) kurallarını ayrıştırmayı işleyebilir, ancak [hayabusa-rules deposunda](https://github.com/Yamato-Security/hayabusa-rules) kullandığımız ve barındırdığımız Sigma kurallarına, kural yüklemeyi daha esnek hale getirmek ve yanlış pozitifleri azaltmak için bazı dönüşümler uygulanmıştır.
+Bununla ilgili ayrıntıları [sigma-to-hayabusa-converter deposu](https://github.com/Yamato-Security/sigma-to-hayabusa-converter) README dosyasında okuyabilirsiniz.
+Hayabusa, canlı analiz için tek çalışan sistemlerde, çevrimdışı analiz için tek veya birden çok sistemden günlükleri toplayarak ya da kurumsal çapta tehdit avlama ve olay müdahalesi için [Velociraptor](https://docs.velociraptor.app/) ile [Hayabusa yapaytını](https://docs.velociraptor.app/exchange/artifacts/pages/windows.eventlogs.hayabusa/) çalıştırarak kullanılabilir.
+Çıktı, [LibreOffice](https://www.libreoffice.org/), [Timeline Explorer](https://ericzimmerman.github.io/#!index.md) [Elastic Stack](../importing/elastic-stack.md), [Timesketch](https://timesketch.org/) vb. ortamlarda kolay analiz için tek bir CSV/JSON/JSONL zaman çizelgesinde birleştirilecektir...

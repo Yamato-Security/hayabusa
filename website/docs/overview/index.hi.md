@@ -1,0 +1,9 @@
+# Hayabusa के बारे में
+
+Hayabusa एक **Windows इवेंट लॉग फास्ट फोरेंसिक्स टाइमलाइन जनरेटर** और **थ्रेट हंटिंग टूल** है जिसे जापान के [Yamato Security](https://yamatosecurity.connpass.com/) समूह द्वारा बनाया गया है।
+जापानी में Hayabusa का अर्थ ["peregrine falcon"](https://en.wikipedia.org/wiki/Peregrine_falcon) है और इसे इसलिए चुना गया क्योंकि peregrine falcons दुनिया के सबसे तेज़ जानवर हैं, शिकार में निपुण हैं और अत्यधिक प्रशिक्षित किए जा सकते हैं।
+यह मेमोरी-सेफ [Rust](https://www.rust-lang.org/) में लिखा गया है, यथासंभव तेज़ होने के लिए मल्टी-थ्रेडिंग का समर्थन करता है और यह एकमात्र ओपन-सोर्स टूल है जो v2 correlation rules सहित Sigma स्पेसिफिकेशन का पूर्ण समर्थन करता है।
+Hayabusa [upstream Sigma](https://github.com/SigmaHQ/sigma) नियमों को पार्स कर सकता है, हालांकि, जिन Sigma नियमों का हम उपयोग करते हैं और [hayabusa-rules repository](https://github.com/Yamato-Security/hayabusa-rules) में होस्ट करते हैं, उनमें नियम लोडिंग को अधिक लचीला बनाने और फॉल्स पॉज़िटिव को कम करने के लिए कुछ रूपांतरण किए गए हैं।
+आप इसके बारे में विवरण [sigma-to-hayabusa-converter repository](https://github.com/Yamato-Security/sigma-to-hayabusa-converter) README फ़ाइल में पढ़ सकते हैं।
+Hayabusa को या तो लाइव विश्लेषण के लिए एकल चल रहे सिस्टम पर, एकल या एकाधिक सिस्टम से लॉग एकत्र करके ऑफ़लाइन विश्लेषण के लिए, या एंटरप्राइज़-व्यापी थ्रेट हंटिंग और इंसिडेंट रिस्पॉन्स के लिए [Velociraptor](https://docs.velociraptor.app/) के साथ [Hayabusa artifact](https://docs.velociraptor.app/exchange/artifacts/pages/windows.eventlogs.hayabusa/) चलाकर चलाया जा सकता है।
+आउटपुट को एक ही CSV/JSON/JSONL टाइमलाइन में समेकित किया जाएगा ताकि [LibreOffice](https://www.libreoffice.org/), [Timeline Explorer](https://ericzimmerman.github.io/#!index.md) [Elastic Stack](../importing/elastic-stack.md), [Timesketch](https://timesketch.org/), आदि में आसानी से विश्लेषण किया जा सके...

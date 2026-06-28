@@ -1,0 +1,66 @@
+name: Deploy docs to GitHub Pages
+
+# Build the Material for MkDocs site in website/ and publish it to GitHub Pages.
+#
+# One-time setup in the repo: Settings -> Pages -> "Build and deployment" ->
+# Source: "GitHub Actions". After that, every push to main that touches website/
+# (re)deploys the site automatically.
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - "website/**"
+      - ".github/workflows/docs.yml"
+  workflow_dispatch:
+
+# Permissions required to deploy to GitHub Pages.
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+# Allow only one concurrent deployment; don't cancel an in-progress run.
+concurrency:
+  group: pages
+  cancel-in-progress: false
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0   # needed for git-based "last updated" dates
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.x"
+          cache: pip
+
+      - name: Install dependencies
+        run: pip install -r website/requirements.txt
+
+      - name: Build site (strict)
+        run: mkdocs build --strict --config-file website/mkdocs.yml
+
+      - name: Configure Pages
+        uses: actions/configure-pages@v5
+
+      - name: Upload artifact
+        uses: actions/upload-pages-artifact@v3
+        with:
+          path: website/site
+
+  deploy:
+    needs: build
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - name: Deploy to GitHub Pages
+        id: deployment
+        uses: actions/deploy-pages@v4

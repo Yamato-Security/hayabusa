@@ -1,0 +1,771 @@
+# =============================================================================
+# Hayabusa Documentation Site — Material for MkDocs
+# -----------------------------------------------------------------------------
+# Built to be hosted for free on GitHub Pages (see ../.github/workflows/docs.yml).
+# Top tabs = main topics, left sidebar = subtopics (same layout as
+# https://www.purplecloud.network/).
+#
+# >>> If you fork/rename, update site_url, repo_url and repo_name below. <<<
+# =============================================================================
+
+site_name: Hayabusa
+site_description: >-
+  Hayabusa is a Windows event log fast forensics timeline generator and threat
+  hunting tool with full support for the Sigma specification, written in Rust.
+site_author: Yamato Security
+# GitHub Pages URL — update the org/user if you host from a different account.
+site_url: https://yamato-security.github.io/hayabusa/
+
+# Source repository (shown in the top-right header).
+repo_url: https://github.com/Yamato-Security/hayabusa
+repo_name: Yamato-Security/hayabusa
+edit_uri: edit/main/README.md
+
+copyright: >-
+  Copyright &copy; 2020–2026 Yamato Security — Documentation built with Material for MkDocs
+
+docs_dir: docs
+
+theme:
+  name: material
+  language: en
+  logo: assets/logo.png
+  favicon: assets/logo.png
+  icon:
+    repo: fontawesome/brands/github
+  font:
+    text: Inter
+    code: JetBrains Mono
+  palette:
+    # Light mode
+    - media: "(prefers-color-scheme: light)"
+      scheme: default
+      primary: custom
+      accent: custom
+      toggle:
+        icon: material/weather-night
+        name: Switch to dark mode
+    # Dark mode
+    - media: "(prefers-color-scheme: dark)"
+      scheme: slate
+      primary: custom
+      accent: custom
+      toggle:
+        icon: material/weather-sunny
+        name: Switch to light mode
+  features:
+    - navigation.tabs          # main topics across the top
+    - navigation.tabs.sticky   # keep the tabs visible while scrolling
+    - navigation.sections      # group subtopics in the sidebar
+    - navigation.top           # back-to-top button
+    - navigation.footer        # prev/next page links
+    - navigation.tracking      # update URL with the active anchor
+    - toc.follow
+    - search.suggest
+    - search.highlight
+    - search.share
+    - content.code.copy
+    - content.code.annotate
+    - content.tooltips
+
+extra_css:
+  - stylesheets/extra.css
+
+markdown_extensions:
+  - abbr
+  - admonition
+  - attr_list
+  - def_list
+  - footnotes
+  - md_in_html
+  - tables
+  - toc:
+      permalink: true
+      toc_depth: 3
+      # Unicode-aware slugify so Japanese/CJK/Cyrillic headings get readable
+      # anchors that match hand-written in-page links (default slugify is ASCII-only).
+      slugify: !!python/object/apply:pymdownx.slugs.slugify
+        kwds:
+          case: lower
+  - pymdownx.details
+  - pymdownx.highlight:
+      anchor_linenums: true
+      line_spans: __span
+      pygments_lang_class: true
+  - pymdownx.inlinehilite
+  - pymdownx.snippets
+  - pymdownx.superfences
+  - pymdownx.tabbed:
+      alternate_style: true
+  - pymdownx.tasklist:
+      custom_checkbox: true
+  - pymdownx.keys
+  - pymdownx.emoji:
+      emoji_index: !!python/name:material.extensions.emoji.twemoji
+      emoji_generator: !!python/name:material.extensions.emoji.to_svg
+
+plugins:
+  - search
+  - glightbox:               # click-to-zoom on screenshots
+      touchNavigation: true
+      loop: false
+      effect: zoom
+      width: 100%
+      auto_caption: false
+  # Multi-language support. Japanese ships full translated content (*.ja.md);
+  # the other languages localize the interface and fall back to English content.
+  # Add real translations later by creating <page>.<locale>.md files.
+  - i18n:
+      docs_structure: suffix
+      fallback_to_default: true
+      reconfigure_material: true
+      reconfigure_search: true
+      languages:
+        - locale: en
+          default: true
+          name: English
+          build: true
+        - locale: ja
+          name: 日本語
+          build: true
+          site_name: Hayabusa ドキュメント
+          nav_translations:
+            Home: ホーム
+            Overview: 概要
+            About Hayabusa: Hayabusaについて
+            Main Goals: 主な目的
+            Features: 特徴・機能
+            Screenshots: スクリーンショット
+            Getting Started: はじめに
+            Downloads: ダウンロード
+            Git Cloning: Gitクローン
+            Compiling From Source: ソースからのコンパイル
+            Running Hayabusa: Hayabusaの実行
+            Commands: コマンド
+            Command List: コマンド一覧
+            Analysis Commands: 分析コマンド
+            Config Commands: Configコマンド
+            DFIR Timeline Commands: DFIRタイムラインコマンド
+            Output: 出力
+            Timeline Output: タイムライン出力
+            Abbreviations: 省略形
+            Display & Summary: 表示とサマリ
+            Rules: ルール
+            Creating Rule Files: ルールファイルの作成
+            Detection Fields: detectionフィールド
+            Field Modifiers: フィールド修飾子
+            Sigma Correlations: Sigma相関ルール
+            Deprecated Features: 非推奨機能
+            Rule Creation Advice: ルール作成のアドバイス
+            Importing & Analysis: インポートと解析
+            Elastic Stack: Elastic Stack
+            Timesketch: Timesketch
+            Timeline Explorer: Timeline Explorer
+            Analyzing with jq: jqによる解析
+            Resources: リソース
+            Projects & Ecosystem: プロジェクトとエコシステム
+            Windows Logging & Sysmon: Windowsログ設定とSysmon
+            Rust Performance: Rustパフォーマンス
+            Community Docs: コミュニティドキュメント
+            Contributing & Support: 貢献とサポート
+        - locale: zh-TW
+          name: 繁體中文
+          build: true
+          nav_translations:
+            "Home": "首頁"
+            "Overview": "概觀"
+            "About Hayabusa": "關於 Hayabusa"
+            "Main Goals": "主要目標"
+            "Features": "功能特色"
+            "Screenshots": "螢幕擷圖"
+            "Getting Started": "開始使用"
+            "Downloads": "下載"
+            "Git Cloning": "Git 複製"
+            "Compiling From Source": "從原始碼編譯"
+            "Running Hayabusa": "執行 Hayabusa"
+            "Commands": "命令"
+            "Command List": "命令清單"
+            "Analysis Commands": "分析命令"
+            "Config Commands": "設定命令"
+            "DFIR Timeline Commands": "DFIR 時間軸命令"
+            "Output": "輸出"
+            "Timeline Output": "時間軸輸出"
+            "Abbreviations": "縮寫"
+            "Display & Summary": "顯示與摘要"
+            "Rules": "規則"
+            "Creating Rule Files": "建立規則檔案"
+            "Detection Fields": "偵測欄位"
+            "Field Modifiers": "欄位修飾子"
+            "Sigma Correlations": "Sigma 關聯"
+            "Deprecated Features": "已淘汰的功能"
+            "Rule Creation Advice": "規則建立建議"
+            "Importing & Analysis": "匯入與分析"
+            "Elastic Stack": "Elastic Stack"
+            "Timesketch": "Timesketch"
+            "Timeline Explorer": "Timeline Explorer"
+            "Analyzing with jq": "使用 jq 進行分析"
+            "Resources": "資源"
+            "Projects & Ecosystem": "專案與生態系"
+            "Windows Logging & Sysmon": "Windows 記錄與 Sysmon"
+            "Rust Performance": "Rust 效能"
+            "Community Docs": "社群文件"
+            "Contributing & Support": "貢獻與支援"
+        - locale: ko
+          name: 한국어
+          build: true
+          nav_translations:
+            "Home": "홈"
+            "Overview": "개요"
+            "About Hayabusa": "Hayabusa 소개"
+            "Main Goals": "주요 목표"
+            "Features": "기능"
+            "Screenshots": "스크린샷"
+            "Getting Started": "시작하기"
+            "Downloads": "다운로드"
+            "Git Cloning": "Git 클론"
+            "Compiling From Source": "소스에서 컴파일하기"
+            "Running Hayabusa": "Hayabusa 실행하기"
+            "Commands": "명령어"
+            "Command List": "명령어 목록"
+            "Analysis Commands": "분석 명령어"
+            "Config Commands": "구성 명령어"
+            "DFIR Timeline Commands": "DFIR 타임라인 명령어"
+            "Output": "출력"
+            "Timeline Output": "타임라인 출력"
+            "Abbreviations": "약어"
+            "Display & Summary": "표시 및 요약"
+            "Rules": "규칙"
+            "Creating Rule Files": "규칙 파일 만들기"
+            "Detection Fields": "탐지 필드"
+            "Field Modifiers": "필드 수정자"
+            "Sigma Correlations": "Sigma 상관 분석"
+            "Deprecated Features": "지원 중단된 기능"
+            "Rule Creation Advice": "규칙 작성 조언"
+            "Importing & Analysis": "가져오기 및 분석"
+            "Elastic Stack": "Elastic Stack"
+            "Timesketch": "Timesketch"
+            "Timeline Explorer": "Timeline Explorer"
+            "Analyzing with jq": "jq로 분석하기"
+            "Resources": "리소스"
+            "Projects & Ecosystem": "프로젝트 및 생태계"
+            "Windows Logging & Sysmon": "Windows 로깅 및 Sysmon"
+            "Rust Performance": "Rust 성능"
+            "Community Docs": "커뮤니티 문서"
+            "Contributing & Support": "기여 및 지원"
+        - locale: de
+          name: Deutsch
+          build: true
+          nav_translations:
+            "Home": "Startseite"
+            "Overview": "Übersicht"
+            "About Hayabusa": "Über Hayabusa"
+            "Main Goals": "Hauptziele"
+            "Features": "Funktionen"
+            "Screenshots": "Screenshots"
+            "Getting Started": "Erste Schritte"
+            "Downloads": "Downloads"
+            "Git Cloning": "Git-Klonen"
+            "Compiling From Source": "Aus Quellcode kompilieren"
+            "Running Hayabusa": "Hayabusa ausführen"
+            "Commands": "Befehle"
+            "Command List": "Befehlsliste"
+            "Analysis Commands": "Analysebefehle"
+            "Config Commands": "Konfigurationsbefehle"
+            "DFIR Timeline Commands": "DFIR-Timeline-Befehle"
+            "Output": "Ausgabe"
+            "Timeline Output": "Timeline-Ausgabe"
+            "Abbreviations": "Abkürzungen"
+            "Display & Summary": "Anzeige & Zusammenfassung"
+            "Rules": "Regeln"
+            "Creating Rule Files": "Regeldateien erstellen"
+            "Detection Fields": "Erkennungsfelder"
+            "Field Modifiers": "Feldmodifikatoren"
+            "Sigma Correlations": "Sigma-Korrelationen"
+            "Deprecated Features": "Veraltete Funktionen"
+            "Rule Creation Advice": "Hinweise zur Regelerstellung"
+            "Importing & Analysis": "Importieren & Analyse"
+            "Elastic Stack": "Elastic Stack"
+            "Timesketch": "Timesketch"
+            "Timeline Explorer": "Timeline Explorer"
+            "Analyzing with jq": "Analysieren mit jq"
+            "Resources": "Ressourcen"
+            "Projects & Ecosystem": "Projekte & Ökosystem"
+            "Windows Logging & Sysmon": "Windows-Protokollierung & Sysmon"
+            "Rust Performance": "Rust-Performance"
+            "Community Docs": "Community-Dokumentation"
+            "Contributing & Support": "Mitwirken & Support"
+        - locale: tr
+          name: Türkçe
+          build: true
+          nav_translations:
+            "Home": "Ana Sayfa"
+            "Overview": "Genel Bakış"
+            "About Hayabusa": "Hayabusa Hakkında"
+            "Main Goals": "Ana Hedefler"
+            "Features": "Özellikler"
+            "Screenshots": "Ekran Görüntüleri"
+            "Getting Started": "Başlarken"
+            "Downloads": "İndirmeler"
+            "Git Cloning": "Git ile Klonlama"
+            "Compiling From Source": "Kaynaktan Derleme"
+            "Running Hayabusa": "Hayabusa'yı Çalıştırma"
+            "Commands": "Komutlar"
+            "Command List": "Komut Listesi"
+            "Analysis Commands": "Analiz Komutları"
+            "Config Commands": "Yapılandırma Komutları"
+            "DFIR Timeline Commands": "DFIR Zaman Çizelgesi Komutları"
+            "Output": "Çıktı"
+            "Timeline Output": "Zaman Çizelgesi Çıktısı"
+            "Abbreviations": "Kısaltmalar"
+            "Display & Summary": "Görüntüleme ve Özet"
+            "Rules": "Kurallar"
+            "Creating Rule Files": "Kural Dosyaları Oluşturma"
+            "Detection Fields": "Tespit Alanları"
+            "Field Modifiers": "Alan Değiştiricileri"
+            "Sigma Correlations": "Sigma Korelasyonları"
+            "Deprecated Features": "Kullanımdan Kaldırılan Özellikler"
+            "Rule Creation Advice": "Kural Oluşturma Tavsiyeleri"
+            "Importing & Analysis": "İçe Aktarma ve Analiz"
+            "Elastic Stack": "Elastic Stack"
+            "Timesketch": "Timesketch"
+            "Timeline Explorer": "Timeline Explorer"
+            "Analyzing with jq": "jq ile Analiz"
+            "Resources": "Kaynaklar"
+            "Projects & Ecosystem": "Projeler ve Ekosistem"
+            "Windows Logging & Sysmon": "Windows Günlükleme ve Sysmon"
+            "Rust Performance": "Rust Performansı"
+            "Community Docs": "Topluluk Belgeleri"
+            "Contributing & Support": "Katkıda Bulunma ve Destek"
+        - locale: fr
+          name: Français
+          build: true
+          nav_translations:
+            "Home": "Accueil"
+            "Overview": "Vue d'ensemble"
+            "About Hayabusa": "À propos de Hayabusa"
+            "Main Goals": "Objectifs principaux"
+            "Features": "Fonctionnalités"
+            "Screenshots": "Captures d'écran"
+            "Getting Started": "Premiers pas"
+            "Downloads": "Téléchargements"
+            "Git Cloning": "Clonage Git"
+            "Compiling From Source": "Compilation depuis les sources"
+            "Running Hayabusa": "Exécuter Hayabusa"
+            "Commands": "Commandes"
+            "Command List": "Liste des commandes"
+            "Analysis Commands": "Commandes d'analyse"
+            "Config Commands": "Commandes de configuration"
+            "DFIR Timeline Commands": "Commandes de chronologie DFIR"
+            "Output": "Sortie"
+            "Timeline Output": "Sortie de chronologie"
+            "Abbreviations": "Abréviations"
+            "Display & Summary": "Affichage et résumé"
+            "Rules": "Règles"
+            "Creating Rule Files": "Création de fichiers de règles"
+            "Detection Fields": "Champs de détection"
+            "Field Modifiers": "Modificateurs de champs"
+            "Sigma Correlations": "Corrélations Sigma"
+            "Deprecated Features": "Fonctionnalités obsolètes"
+            "Rule Creation Advice": "Conseils de création de règles"
+            "Importing & Analysis": "Importation et analyse"
+            "Elastic Stack": "Elastic Stack"
+            "Timesketch": "Timesketch"
+            "Timeline Explorer": "Timeline Explorer"
+            "Analyzing with jq": "Analyse avec jq"
+            "Resources": "Ressources"
+            "Projects & Ecosystem": "Projets et écosystème"
+            "Windows Logging & Sysmon": "Journalisation Windows et Sysmon"
+            "Rust Performance": "Performance de Rust"
+            "Community Docs": "Documentation communautaire"
+            "Contributing & Support": "Contribution et support"
+        - locale: es
+          name: Español
+          build: true
+          nav_translations:
+            "Home": "Inicio"
+            "Overview": "Visión general"
+            "About Hayabusa": "Acerca de Hayabusa"
+            "Main Goals": "Objetivos principales"
+            "Features": "Características"
+            "Screenshots": "Capturas de pantalla"
+            "Getting Started": "Primeros pasos"
+            "Downloads": "Descargas"
+            "Git Cloning": "Clonación con Git"
+            "Compiling From Source": "Compilación desde el código fuente"
+            "Running Hayabusa": "Ejecución de Hayabusa"
+            "Commands": "Comandos"
+            "Command List": "Lista de comandos"
+            "Analysis Commands": "Comandos de análisis"
+            "Config Commands": "Comandos de configuración"
+            "DFIR Timeline Commands": "Comandos de línea de tiempo DFIR"
+            "Output": "Salida"
+            "Timeline Output": "Salida de línea de tiempo"
+            "Abbreviations": "Abreviaturas"
+            "Display & Summary": "Visualización y resumen"
+            "Rules": "Reglas"
+            "Creating Rule Files": "Creación de archivos de reglas"
+            "Detection Fields": "Campos de detección"
+            "Field Modifiers": "Modificadores de campos"
+            "Sigma Correlations": "Correlaciones de Sigma"
+            "Deprecated Features": "Funciones obsoletas"
+            "Rule Creation Advice": "Consejos para la creación de reglas"
+            "Importing & Analysis": "Importación y análisis"
+            "Elastic Stack": "Elastic Stack"
+            "Timesketch": "Timesketch"
+            "Timeline Explorer": "Timeline Explorer"
+            "Analyzing with jq": "Análisis con jq"
+            "Resources": "Recursos"
+            "Projects & Ecosystem": "Proyectos y ecosistema"
+            "Windows Logging & Sysmon": "Registro de Windows y Sysmon"
+            "Rust Performance": "Rendimiento de Rust"
+            "Community Docs": "Documentación de la comunidad"
+            "Contributing & Support": "Contribución y soporte"
+        - locale: pt-BR
+          name: Português (Brasil)
+          build: true
+          nav_translations:
+            "Home": "Início"
+            "Overview": "Visão geral"
+            "About Hayabusa": "Sobre o Hayabusa"
+            "Main Goals": "Principais objetivos"
+            "Features": "Funcionalidades"
+            "Screenshots": "Capturas de tela"
+            "Getting Started": "Primeiros passos"
+            "Downloads": "Downloads"
+            "Git Cloning": "Clonagem com Git"
+            "Compiling From Source": "Compilando a partir do código-fonte"
+            "Running Hayabusa": "Executando o Hayabusa"
+            "Commands": "Comandos"
+            "Command List": "Lista de comandos"
+            "Analysis Commands": "Comandos de análise"
+            "Config Commands": "Comandos de configuração"
+            "DFIR Timeline Commands": "Comandos de linha do tempo DFIR"
+            "Output": "Saída"
+            "Timeline Output": "Saída de linha do tempo"
+            "Abbreviations": "Abreviações"
+            "Display & Summary": "Exibição e resumo"
+            "Rules": "Regras"
+            "Creating Rule Files": "Criando arquivos de regras"
+            "Detection Fields": "Campos de detecção"
+            "Field Modifiers": "Modificadores de campo"
+            "Sigma Correlations": "Correlações do Sigma"
+            "Deprecated Features": "Funcionalidades obsoletas"
+            "Rule Creation Advice": "Dicas para criação de regras"
+            "Importing & Analysis": "Importação e análise"
+            "Elastic Stack": "Elastic Stack"
+            "Timesketch": "Timesketch"
+            "Timeline Explorer": "Timeline Explorer"
+            "Analyzing with jq": "Analisando com jq"
+            "Resources": "Recursos"
+            "Projects & Ecosystem": "Projetos e ecossistema"
+            "Windows Logging & Sysmon": "Registro de logs do Windows e Sysmon"
+            "Rust Performance": "Desempenho do Rust"
+            "Community Docs": "Documentação da comunidade"
+            "Contributing & Support": "Contribuição e suporte"
+        - locale: uk
+          name: Українська
+          build: true
+          nav_translations:
+            "Home": "Головна"
+            "Overview": "Огляд"
+            "About Hayabusa": "Про Hayabusa"
+            "Main Goals": "Основні цілі"
+            "Features": "Можливості"
+            "Screenshots": "Знімки екрана"
+            "Getting Started": "Початок роботи"
+            "Downloads": "Завантаження"
+            "Git Cloning": "Клонування Git"
+            "Compiling From Source": "Компіляція з вихідного коду"
+            "Running Hayabusa": "Запуск Hayabusa"
+            "Commands": "Команди"
+            "Command List": "Список команд"
+            "Analysis Commands": "Команди аналізу"
+            "Config Commands": "Команди конфігурації"
+            "DFIR Timeline Commands": "Команди часової шкали DFIR"
+            "Output": "Вивід"
+            "Timeline Output": "Вивід часової шкали"
+            "Abbreviations": "Скорочення"
+            "Display & Summary": "Відображення та зведення"
+            "Rules": "Правила"
+            "Creating Rule Files": "Створення файлів правил"
+            "Detection Fields": "Поля виявлення"
+            "Field Modifiers": "Модифікатори полів"
+            "Sigma Correlations": "Кореляції Sigma"
+            "Deprecated Features": "Застарілі можливості"
+            "Rule Creation Advice": "Поради зі створення правил"
+            "Importing & Analysis": "Імпорт та аналіз"
+            "Elastic Stack": "Elastic Stack"
+            "Timesketch": "Timesketch"
+            "Timeline Explorer": "Timeline Explorer"
+            "Analyzing with jq": "Аналіз за допомогою jq"
+            "Resources": "Ресурси"
+            "Projects & Ecosystem": "Проєкти та екосистема"
+            "Windows Logging & Sysmon": "Журналювання Windows та Sysmon"
+            "Rust Performance": "Продуктивність Rust"
+            "Community Docs": "Документація спільноти"
+            "Contributing & Support": "Внесок та підтримка"
+        - locale: hi
+          name: हिन्दी
+          build: true
+          nav_translations:
+            "Home": "होम"
+            "Overview": "अवलोकन"
+            "About Hayabusa": "Hayabusa के बारे में"
+            "Main Goals": "मुख्य लक्ष्य"
+            "Features": "विशेषताएँ"
+            "Screenshots": "स्क्रीनशॉट"
+            "Getting Started": "शुरुआत करना"
+            "Downloads": "डाउनलोड"
+            "Git Cloning": "Git क्लोनिंग"
+            "Compiling From Source": "स्रोत से कंपाइल करना"
+            "Running Hayabusa": "Hayabusa चलाना"
+            "Commands": "कमांड"
+            "Command List": "कमांड सूची"
+            "Analysis Commands": "विश्लेषण कमांड"
+            "Config Commands": "कॉन्फ़िग कमांड"
+            "DFIR Timeline Commands": "DFIR टाइमलाइन कमांड"
+            "Output": "आउटपुट"
+            "Timeline Output": "टाइमलाइन आउटपुट"
+            "Abbreviations": "संक्षिप्ताक्षर"
+            "Display & Summary": "प्रदर्शन और सारांश"
+            "Rules": "नियम"
+            "Creating Rule Files": "नियम फ़ाइलें बनाना"
+            "Detection Fields": "डिटेक्शन फ़ील्ड"
+            "Field Modifiers": "फ़ील्ड मॉडिफ़ायर"
+            "Sigma Correlations": "Sigma सहसंबंध"
+            "Deprecated Features": "पदावनत विशेषताएँ"
+            "Rule Creation Advice": "नियम निर्माण सलाह"
+            "Importing & Analysis": "आयात और विश्लेषण"
+            "Elastic Stack": "Elastic Stack"
+            "Timesketch": "Timesketch"
+            "Timeline Explorer": "Timeline Explorer"
+            "Analyzing with jq": "jq के साथ विश्लेषण"
+            "Resources": "संसाधन"
+            "Projects & Ecosystem": "परियोजनाएँ और पारिस्थितिकी तंत्र"
+            "Windows Logging & Sysmon": "Windows लॉगिंग और Sysmon"
+            "Rust Performance": "Rust प्रदर्शन"
+            "Community Docs": "सामुदायिक दस्तावेज़"
+            "Contributing & Support": "योगदान और समर्थन"
+        - locale: bn
+          name: বাংলা
+          build: true
+          nav_translations:
+            "Home": "হোম"
+            "Overview": "সংক্ষিপ্ত বিবরণ"
+            "About Hayabusa": "Hayabusa সম্পর্কে"
+            "Main Goals": "মূল লক্ষ্যসমূহ"
+            "Features": "বৈশিষ্ট্যসমূহ"
+            "Screenshots": "স্ক্রিনশট"
+            "Getting Started": "শুরু করা"
+            "Downloads": "ডাউনলোড"
+            "Git Cloning": "Git ক্লোনিং"
+            "Compiling From Source": "সোর্স থেকে কম্পাইল করা"
+            "Running Hayabusa": "Hayabusa চালানো"
+            "Commands": "কমান্ডসমূহ"
+            "Command List": "কমান্ড তালিকা"
+            "Analysis Commands": "বিশ্লেষণ কমান্ড"
+            "Config Commands": "কনফিগ কমান্ড"
+            "DFIR Timeline Commands": "DFIR টাইমলাইন কমান্ড"
+            "Output": "আউটপুট"
+            "Timeline Output": "টাইমলাইন আউটপুট"
+            "Abbreviations": "সংক্ষিপ্ত রূপসমূহ"
+            "Display & Summary": "প্রদর্শন ও সারসংক্ষেপ"
+            "Rules": "নিয়মসমূহ"
+            "Creating Rule Files": "নিয়ম ফাইল তৈরি করা"
+            "Detection Fields": "সনাক্তকরণ ফিল্ড"
+            "Field Modifiers": "ফিল্ড মডিফায়ার"
+            "Sigma Correlations": "Sigma কোরিলেশন"
+            "Deprecated Features": "অবচিত বৈশিষ্ট্যসমূহ"
+            "Rule Creation Advice": "নিয়ম তৈরির পরামর্শ"
+            "Importing & Analysis": "ইম্পোর্ট ও বিশ্লেষণ"
+            "Elastic Stack": "Elastic Stack"
+            "Timesketch": "Timesketch"
+            "Timeline Explorer": "Timeline Explorer"
+            "Analyzing with jq": "jq দিয়ে বিশ্লেষণ"
+            "Resources": "রিসোর্সসমূহ"
+            "Projects & Ecosystem": "প্রকল্প ও ইকোসিস্টেম"
+            "Windows Logging & Sysmon": "Windows লগিং ও Sysmon"
+            "Rust Performance": "Rust পারফরম্যান্স"
+            "Community Docs": "কমিউনিটি ডকুমেন্টেশন"
+            "Contributing & Support": "অবদান ও সহায়তা"
+        - locale: my
+          name: မြန်မာဘာသာ
+          build: true
+          nav_translations:
+            "Home": "ပင်မစာမျက်နှာ"
+            "Overview": "ခြုံငုံသုံးသပ်ချက်"
+            "About Hayabusa": "Hayabusa အကြောင်း"
+            "Main Goals": "အဓိကရည်မှန်းချက်များ"
+            "Features": "အင်္ဂါရပ်များ"
+            "Screenshots": "ဖန်သားပြင်ဓာတ်ပုံများ"
+            "Getting Started": "စတင်အသုံးပြုခြင်း"
+            "Downloads": "ဒေါင်းလုဒ်များ"
+            "Git Cloning": "Git Cloning ပြုလုပ်ခြင်း"
+            "Compiling From Source": "အရင်းအမြစ်မှ Compile ပြုလုပ်ခြင်း"
+            "Running Hayabusa": "Hayabusa ကိုလည်ပတ်ခြင်း"
+            "Commands": "ညွှန်ကြားချက်များ"
+            "Command List": "ညွှန်ကြားချက်စာရင်း"
+            "Analysis Commands": "ခွဲခြမ်းစိတ်ဖြာမှုညွှန်ကြားချက်များ"
+            "Config Commands": "ဖွဲ့စည်းပြင်ဆင်မှုညွှန်ကြားချက်များ"
+            "DFIR Timeline Commands": "DFIR အချိန်ဇယားညွှန်ကြားချက်များ"
+            "Output": "ထွက်ရှိမှုရလဒ်"
+            "Timeline Output": "အချိန်ဇယားထွက်ရှိမှုရလဒ်"
+            "Abbreviations": "အတိုကောက်များ"
+            "Display & Summary": "ဖော်ပြမှုနှင့်အကျဉ်းချုပ်"
+            "Rules": "စည်းမျဉ်းများ"
+            "Creating Rule Files": "စည်းမျဉ်းဖိုင်များဖန်တီးခြင်း"
+            "Detection Fields": "ထောက်လှမ်းတွေ့ရှိမှုအကွက်များ"
+            "Field Modifiers": "အကွက်ပြုပြင်မွမ်းမံကိရိယာများ"
+            "Sigma Correlations": "Sigma ဆက်စပ်မှုများ"
+            "Deprecated Features": "အသုံးမပြုတော့သောအင်္ဂါရပ်များ"
+            "Rule Creation Advice": "စည်းမျဉ်းဖန်တီးခြင်းဆိုင်ရာအကြံပြုချက်"
+            "Importing & Analysis": "တင်သွင်းခြင်းနှင့်ခွဲခြမ်းစိတ်ဖြာခြင်း"
+            "Elastic Stack": "Elastic Stack"
+            "Timesketch": "Timesketch"
+            "Timeline Explorer": "Timeline Explorer"
+            "Analyzing with jq": "jq ဖြင့်ခွဲခြမ်းစိတ်ဖြာခြင်း"
+            "Resources": "အရင်းအမြစ်များ"
+            "Projects & Ecosystem": "ပရောဂျက်များနှင့်ဂေဟစနစ်"
+            "Windows Logging & Sysmon": "Windows Logging နှင့် Sysmon"
+            "Rust Performance": "Rust စွမ်းဆောင်ရည်"
+            "Community Docs": "အသိုက်အဝန်းစာရွက်စာတမ်းများ"
+            "Contributing & Support": "ပံ့ပိုးကူညီခြင်းနှင့်အထောက်အပံ့"
+        - locale: th
+          name: ไทย
+          build: true
+          nav_translations:
+            "Home": "หน้าแรก"
+            "Overview": "ภาพรวม"
+            "About Hayabusa": "เกี่ยวกับ Hayabusa"
+            "Main Goals": "เป้าหมายหลัก"
+            "Features": "คุณสมบัติ"
+            "Screenshots": "ภาพหน้าจอ"
+            "Getting Started": "เริ่มต้นใช้งาน"
+            "Downloads": "ดาวน์โหลด"
+            "Git Cloning": "การโคลนด้วย Git"
+            "Compiling From Source": "การคอมไพล์จากซอร์ส"
+            "Running Hayabusa": "การรัน Hayabusa"
+            "Commands": "คำสั่ง"
+            "Command List": "รายการคำสั่ง"
+            "Analysis Commands": "คำสั่งการวิเคราะห์"
+            "Config Commands": "คำสั่งการตั้งค่า"
+            "DFIR Timeline Commands": "คำสั่งไทม์ไลน์ DFIR"
+            "Output": "เอาต์พุต"
+            "Timeline Output": "เอาต์พุตไทม์ไลน์"
+            "Abbreviations": "ตัวย่อ"
+            "Display & Summary": "การแสดงผลและสรุป"
+            "Rules": "กฎ"
+            "Creating Rule Files": "การสร้างไฟล์กฎ"
+            "Detection Fields": "ฟิลด์การตรวจจับ"
+            "Field Modifiers": "ตัวปรับแต่งฟิลด์"
+            "Sigma Correlations": "การเชื่อมโยง Sigma"
+            "Deprecated Features": "คุณสมบัติที่เลิกใช้แล้ว"
+            "Rule Creation Advice": "คำแนะนำในการสร้างกฎ"
+            "Importing & Analysis": "การนำเข้าและการวิเคราะห์"
+            "Elastic Stack": "Elastic Stack"
+            "Timesketch": "Timesketch"
+            "Timeline Explorer": "Timeline Explorer"
+            "Analyzing with jq": "การวิเคราะห์ด้วย jq"
+            "Resources": "แหล่งข้อมูล"
+            "Projects & Ecosystem": "โครงการและระบบนิเวศ"
+            "Windows Logging & Sysmon": "การบันทึกล็อก Windows และ Sysmon"
+            "Rust Performance": "ประสิทธิภาพของ Rust"
+            "Community Docs": "เอกสารจากชุมชน"
+            "Contributing & Support": "การมีส่วนร่วมและการสนับสนุน"
+        - locale: ar
+          name: العربية
+          build: true
+          nav_translations:
+            "Home": "الرئيسية"
+            "Overview": "نظرة عامة"
+            "About Hayabusa": "حول Hayabusa"
+            "Main Goals": "الأهداف الرئيسية"
+            "Features": "الميزات"
+            "Screenshots": "لقطات الشاشة"
+            "Getting Started": "البدء"
+            "Downloads": "التنزيلات"
+            "Git Cloning": "الاستنساخ عبر Git"
+            "Compiling From Source": "الترجمة من المصدر"
+            "Running Hayabusa": "تشغيل Hayabusa"
+            "Commands": "الأوامر"
+            "Command List": "قائمة الأوامر"
+            "Analysis Commands": "أوامر التحليل"
+            "Config Commands": "أوامر الإعداد"
+            "DFIR Timeline Commands": "أوامر الجدول الزمني لـ DFIR"
+            "Output": "المخرجات"
+            "Timeline Output": "مخرجات الجدول الزمني"
+            "Abbreviations": "الاختصارات"
+            "Display & Summary": "العرض والملخص"
+            "Rules": "القواعد"
+            "Creating Rule Files": "إنشاء ملفات القواعد"
+            "Detection Fields": "حقول الكشف"
+            "Field Modifiers": "معدّلات الحقول"
+            "Sigma Correlations": "ارتباطات Sigma"
+            "Deprecated Features": "الميزات المهملة"
+            "Rule Creation Advice": "نصائح لإنشاء القواعد"
+            "Importing & Analysis": "الاستيراد والتحليل"
+            "Elastic Stack": "Elastic Stack"
+            "Timesketch": "Timesketch"
+            "Timeline Explorer": "Timeline Explorer"
+            "Analyzing with jq": "التحليل باستخدام jq"
+            "Resources": "الموارد"
+            "Projects & Ecosystem": "المشاريع والنظام البيئي"
+            "Windows Logging & Sysmon": "تسجيل Windows وSysmon"
+            "Rust Performance": "أداء Rust"
+            "Community Docs": "وثائق المجتمع"
+            "Contributing & Support": "المساهمة والدعم"
+
+extra:
+  social:
+    - icon: fontawesome/brands/github
+      link: https://github.com/Yamato-Security/hayabusa
+      name: Hayabusa on GitHub
+    - icon: fontawesome/brands/x-twitter
+      link: https://twitter.com/SecurityYamato
+      name: Yamato Security on X
+    - icon: fontawesome/brands/discord
+      link: https://discord.gg/P8tkqGnNvk
+      name: Yamato Security Discord
+
+nav:
+  - Home: index.md
+  - Overview:
+      - About Hayabusa: overview/index.md
+      - Main Goals: overview/main-goals.md
+      - Features: overview/features.md
+      - Screenshots: overview/screenshots.md
+  - Getting Started:
+      - Downloads: getting-started/index.md
+      - Git Cloning: getting-started/git-cloning.md
+      - Compiling From Source: getting-started/compiling.md
+      - Running Hayabusa: getting-started/running.md
+  - Commands:
+      - Command List: commands/index.md
+      - Analysis Commands: commands/analysis.md
+      - Config Commands: commands/config.md
+      - DFIR Timeline Commands: commands/dfir-timeline.md
+  - Output:
+      - Timeline Output: output/index.md
+      - Abbreviations: output/abbreviations.md
+      - Display & Summary: output/display.md
+  - Rules:
+      - Overview: rules/index.md
+      - Creating Rule Files: rules/creating-rules.md
+      - Detection Fields: rules/detection-fields.md
+      - Field Modifiers: rules/field-modifiers.md
+      - Sigma Correlations: rules/correlations.md
+      - Abbreviations: rules/abbreviations.md
+      - Deprecated Features: rules/deprecated.md
+      - Rule Creation Advice: rules/advice.md
+  - Importing & Analysis:
+      - Overview: importing/index.md
+      - Elastic Stack: importing/elastic-stack.md
+      - Timesketch: importing/timesketch.md
+      - Timeline Explorer: importing/timeline-explorer.md
+      - Analyzing with jq: importing/jq.md
+  - Resources:
+      - Projects & Ecosystem: resources/index.md
+      - Windows Logging & Sysmon: resources/logging.md
+      - Rust Performance: resources/performance.md
+      - Community Docs: resources/community.md
+      - Contributing & Support: resources/contributing.md

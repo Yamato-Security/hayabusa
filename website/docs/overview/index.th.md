@@ -1,0 +1,9 @@
+# เกี่ยวกับ Hayabusa
+
+Hayabusa เป็น **เครื่องมือสร้างไทม์ไลน์นิติวิทยาศาสตร์อย่างรวดเร็วสำหรับบันทึกเหตุการณ์ของ Windows (Windows event log fast forensics timeline generator)** และ **เครื่องมือล่าภัยคุกคาม (threat hunting tool)** ที่สร้างขึ้นโดยกลุ่ม [Yamato Security](https://yamatosecurity.connpass.com/) ในประเทศญี่ปุ่น
+Hayabusa มีความหมายว่า ["เหยี่ยวเพเรกริน"](https://en.wikipedia.org/wiki/Peregrine_falcon) ในภาษาญี่ปุ่น และถูกเลือกใช้เนื่องจากเหยี่ยวเพเรกรินเป็นสัตว์ที่เร็วที่สุดในโลก เก่งในการล่าเหยื่อ และฝึกฝนได้ดีเยี่ยม
+มันถูกเขียนด้วย [Rust](https://www.rust-lang.org/) ที่ปลอดภัยต่อหน่วยความจำ รองรับการทำงานแบบมัลติเธรดเพื่อให้รวดเร็วที่สุดเท่าที่จะเป็นไปได้ และเป็นเครื่องมือโอเพนซอร์สเพียงหนึ่งเดียวที่รองรับข้อกำหนดของ Sigma อย่างเต็มรูปแบบ รวมถึงกฎ correlation เวอร์ชัน v2
+Hayabusa สามารถจัดการการแยกวิเคราะห์กฎ [upstream Sigma](https://github.com/SigmaHQ/sigma) ได้ อย่างไรก็ตาม กฎ Sigma ที่เราใช้และโฮสต์ไว้ใน [hayabusa-rules repository](https://github.com/Yamato-Security/hayabusa-rules) ได้ผ่านการแปลงบางอย่างเพื่อให้การโหลดกฎมีความยืดหยุ่นมากขึ้นและลดผลบวกลวง (false positives)
+คุณสามารถอ่านรายละเอียดเกี่ยวกับเรื่องนี้ได้ที่ไฟล์ README ของ [sigma-to-hayabusa-converter repository](https://github.com/Yamato-Security/sigma-to-hayabusa-converter)
+Hayabusa สามารถรันได้ทั้งบนระบบที่กำลังทำงานอยู่เครื่องเดียวสำหรับการวิเคราะห์แบบสด, โดยการรวบรวมบันทึกจากระบบเดียวหรือหลายระบบสำหรับการวิเคราะห์แบบออฟไลน์, หรือโดยการรัน [Hayabusa artifact](https://docs.velociraptor.app/exchange/artifacts/pages/windows.eventlogs.hayabusa/) ด้วย [Velociraptor](https://docs.velociraptor.app/) สำหรับการล่าภัยคุกคามและการตอบสนองต่อเหตุการณ์ทั่วทั้งองค์กร
+ผลลัพธ์จะถูกรวมเข้าด้วยกันเป็นไทม์ไลน์ CSV/JSON/JSONL เดียวเพื่อให้วิเคราะห์ได้ง่ายใน [LibreOffice](https://www.libreoffice.org/), [Timeline Explorer](https://ericzimmerman.github.io/#!index.md) [Elastic Stack](../importing/elastic-stack.md), [Timesketch](https://timesketch.org/), ฯลฯ...
