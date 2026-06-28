@@ -14,7 +14,7 @@ site_description: >-
   hunting tool with full support for the Sigma specification, written in Rust.
 site_author: Yamato Security
 # GitHub Pages URL — update the org/user if you host from a different account.
-site_url: https://shirofune-security.github.io/hayabusa/
+site_url: https://yamato-security.github.io/hayabusa/
 
 # Source repository (shown in the top-right header).
 repo_url: https://github.com/Yamato-Security/hayabusa
