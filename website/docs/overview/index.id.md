@@ -1,0 +1,9 @@
+# Tentang Hayabusa
+
+Hayabusa adalah **generator timeline forensik cepat untuk log peristiwa Windows** dan **alat perburuan ancaman** yang dibuat oleh grup [Yamato Security](https://yamatosecurity.connpass.com/) di Jepang.
+Hayabusa berarti ["peregrine falcon"](https://en.wikipedia.org/wiki/Peregrine_falcon) dalam bahasa Jepang dan dipilih karena peregrine falcon adalah hewan tercepat di dunia, hebat dalam berburu dan sangat mudah dilatih.
+Alat ini ditulis dalam [Rust](https://www.rust-lang.org/) yang aman terhadap memori, mendukung multi-threading agar secepat mungkin dan merupakan satu-satunya alat sumber terbuka yang memiliki dukungan penuh untuk spesifikasi Sigma termasuk aturan korelasi v2.
+Hayabusa dapat menangani penguraian aturan [Sigma upstream](https://github.com/SigmaHQ/sigma), namun, aturan Sigma yang kami gunakan dan host di [repositori hayabusa-rules](https://github.com/Yamato-Security/hayabusa-rules) telah mengalami beberapa konversi agar pemuatan aturan lebih fleksibel dan mengurangi false positive.
+Anda dapat membaca detailnya di berkas README [repositori sigma-to-hayabusa-converter](https://github.com/Yamato-Security/sigma-to-hayabusa-converter).
+Hayabusa dapat dijalankan baik pada sistem tunggal yang sedang berjalan untuk analisis langsung, dengan mengumpulkan log dari satu atau beberapa sistem untuk analisis offline, atau dengan menjalankan [artefak Hayabusa](https://docs.velociraptor.app/exchange/artifacts/pages/windows.eventlogs.hayabusa/) dengan [Velociraptor](https://docs.velociraptor.app/) untuk perburuan ancaman dan respons insiden di seluruh perusahaan.
+Output akan dikonsolidasikan menjadi satu timeline CSV/JSON/JSONL untuk memudahkan analisis di [LibreOffice](https://www.libreoffice.org/), [Timeline Explorer](https://ericzimmerman.github.io/#!index.md) [Elastic Stack](../importing/elastic-stack.md), [Timesketch](https://timesketch.org/), dll...
