@@ -1,0 +1,9 @@
+# Sobre o Hayabusa
+
+O Hayabusa é um **gerador rápido de linha do tempo para análise forense de registros de eventos do Windows** e uma **ferramenta de caça a ameaças** criado pelo grupo [Yamato Security](https://yamatosecurity.connpass.com/) no Japão.
+Hayabusa significa ["falcão-peregrino"](https://en.wikipedia.org/wiki/Peregrine_falcon) em japonês e foi escolhido porque os falcões-peregrinos são os animais mais rápidos do mundo, excelentes na caça e altamente treináveis.
+Ele é escrito na linguagem [Rust](https://www.rust-lang.org/), com segurança de memória, e oferece suporte a multithreading para ser o mais rápido possível, sendo a única ferramenta de código aberto com suporte completo à especificação Sigma, incluindo as regras de correlação v2.
+O Hayabusa consegue processar as [regras Sigma originais](https://github.com/SigmaHQ/sigma), porém, as regras Sigma que utilizamos e hospedamos no [repositório hayabusa-rules](https://github.com/Yamato-Security/hayabusa-rules) passam por algumas conversões para tornar o carregamento de regras mais flexível e reduzir os falsos positivos.
+Você pode ler os detalhes sobre isso no arquivo README do [repositório sigma-to-hayabusa-converter](https://github.com/Yamato-Security/sigma-to-hayabusa-converter).
+O Hayabusa pode ser executado tanto em sistemas em funcionamento isolados para análise ao vivo, coletando registros de um ou vários sistemas para análise offline, quanto executando o [artefato Hayabusa](https://docs.velociraptor.app/exchange/artifacts/pages/windows.eventlogs.hayabusa/) com o [Velociraptor](https://docs.velociraptor.app/) para caça a ameaças e resposta a incidentes em toda a empresa.
+A saída será consolidada em uma única linha do tempo em CSV/JSON/JSONL para facilitar a análise no [LibreOffice](https://www.libreoffice.org/), [Timeline Explorer](https://ericzimmerman.github.io/#!index.md) [Elastic Stack](../importing/elastic-stack.md), [Timesketch](https://timesketch.org/), etc...

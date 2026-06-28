@@ -1,0 +1,9 @@
+# حول Hayabusa
+
+Hayabusa هي **أداة لتوليد الخط الزمني للتحليل الجنائي السريع لسجلات أحداث Windows** و**أداة لتعقّب التهديدات** أنشأتها مجموعة [Yamato Security](https://yamatosecurity.connpass.com/) في اليابان.
+تعني كلمة Hayabusa ["الصقر الجوّال"](https://en.wikipedia.org/wiki/Peregrine_falcon) باللغة اليابانية، وقد تم اختيارها لأن الصقور الجوّالة هي أسرع حيوان في العالم، وبارعة في الصيد وقابلة للتدريب بدرجة عالية.
+وهي مكتوبة بلغة [Rust](https://www.rust-lang.org/) الآمنة في إدارة الذاكرة، وتدعم تعدد الخيوط (multi-threading) لتكون بأقصى سرعة ممكنة، وهي الأداة مفتوحة المصدر الوحيدة التي تدعم بالكامل مواصفات Sigma بما في ذلك قواعد الارتباط (correlation) من الإصدار v2.
+يمكن لـ Hayabusa التعامل مع تحليل قواعد [Sigma الأصلية (upstream)](https://github.com/SigmaHQ/sigma)، إلا أن قواعد Sigma التي نستخدمها ونستضيفها في [مستودع hayabusa-rules](https://github.com/Yamato-Security/hayabusa-rules) قد أُجري عليها بعض التحويل لجعل تحميل القواعد أكثر مرونة وتقليل النتائج الإيجابية الكاذبة.
+يمكنك قراءة التفاصيل حول ذلك في ملف README الخاص بـ[مستودع sigma-to-hayabusa-converter](https://github.com/Yamato-Security/sigma-to-hayabusa-converter).
+يمكن تشغيل Hayabusa إما على الأنظمة العاملة المنفردة للتحليل المباشر، أو عن طريق جمع السجلات من نظام واحد أو أنظمة متعددة للتحليل دون اتصال، أو عن طريق تشغيل [أداة Hayabusa artifact](https://docs.velociraptor.app/exchange/artifacts/pages/windows.eventlogs.hayabusa/) مع [Velociraptor](https://docs.velociraptor.app/) لتعقّب التهديدات والاستجابة للحوادث على مستوى المؤسسة بأكملها.
+سيتم توحيد المخرجات في خط زمني واحد بصيغة CSV/JSON/JSONL لتسهيل التحليل في [LibreOffice](https://www.libreoffice.org/) و[Timeline Explorer](https://ericzimmerman.github.io/#!index.md) و[Elastic Stack](../importing/elastic-stack.md) و[Timesketch](https://timesketch.org/) وغيرها...

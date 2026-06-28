@@ -1,0 +1,58 @@
+# 縮寫
+
+為了讓輸出盡可能簡潔，規則中會使用以下縮寫：
+
+- `Acct` -> Account（帳戶）
+- `Addr` -> Address（位址）
+- `Auth` -> Authentication（驗證）
+- `Cli` -> Client（用戶端）
+- `Chan` -> Channel（通道）
+- `Cmd` -> Command（命令）
+- `Cnt` -> Count（計數）
+- `Comp` -> Computer（電腦）
+- `Conn` -> Connection/Connected（連線/已連線）
+- `Creds` -> Credentials（憑證）
+- `Crit` -> Critical（嚴重）
+- `Disconn` -> Disconnection/Disconnected（中斷連線/已中斷連線）
+- `Dir` -> Directory（目錄）
+- `Drv` -> Driver（驅動程式）
+- `Dst` -> Destination（目的地）
+- `EID` -> Event ID（事件 ID）
+- `Err` -> Error（錯誤）
+- `Exec` -> Execution（執行）
+- `FP` -> False Positive（誤判）
+- `FW` -> Firewall（防火牆）
+- `GTW` -> Gateway（閘道）
+- `Grp` -> Group（群組）
+- `Img` -> Image（映像）
+- `Inj` -> Injection（注入）
+- `Krb` -> Kerberos
+- `LID` -> Logon ID（登入 ID）
+- `Med` -> Medium（中）
+- `Net` -> Network（網路）
+- `Obj` -> Object（物件）
+- `Op` -> Operational/Operation（操作）
+- `Proto` -> Protocol（通訊協定）
+- `PW` -> Password（密碼）
+- `Reconn` -> Reconnection（重新連線）
+- `Req` -> Request（要求）
+- `Rsp` -> Response（回應）
+- `Sess` -> Session（工作階段）
+- `Sig` -> Signature（簽章）
+- `Susp` -> Suspicious（可疑）
+- `Src` -> Source（來源）
+- `Svc` -> Service（服務）
+- `Svr` -> Server（伺服器）
+- `Temp` -> Temporary（暫時）
+- `Term` -> Termination/Terminated（終止/已終止）
+- `Tkt` -> Ticket（票證）
+- `Tgt` -> Target（目標）
+- `Unkwn` -> Unknown（未知）
+- `Usr` -> User（使用者）
+- `Perm` -> Permament（永久）
+- `Pkg` -> Package（套件）
+- `Priv` -> Privilege（權限）
+- `Proc` -> Process（處理程序）
+- `PID` -> Process ID（處理程序 ID）
+- `PGUID` -> Process GUID (Global Unique ID)（處理程序 GUID（全域唯一 ID））
+- `Ver` -> Version（版本）

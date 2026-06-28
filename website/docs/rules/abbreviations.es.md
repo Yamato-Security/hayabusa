@@ -1,0 +1,58 @@
+# Abreviaturas
+
+Las siguientes abreviaturas se utilizan en las reglas para que la salida sea lo más concisa posible:
+
+- `Acct` -> Cuenta
+- `Addr` -> Dirección
+- `Auth` -> Autenticación
+- `Cli` -> Cliente
+- `Chan` -> Canal
+- `Cmd` -> Comando
+- `Cnt` -> Recuento
+- `Comp` -> Equipo
+- `Conn` -> Conexión/Conectado
+- `Creds` -> Credenciales
+- `Crit` -> Crítico
+- `Disconn` -> Desconexión/Desconectado
+- `Dir` -> Directorio
+- `Drv` -> Controlador
+- `Dst` -> Destino
+- `EID` -> ID de evento
+- `Err` -> Error
+- `Exec` -> Ejecución
+- `FP` -> Falso positivo
+- `FW` -> Cortafuegos
+- `GTW` -> Puerta de enlace
+- `Grp` -> Grupo
+- `Img` -> Imagen
+- `Inj` -> Inyección
+- `Krb` -> Kerberos
+- `LID` -> ID de inicio de sesión
+- `Med` -> Medio
+- `Net` -> Red
+- `Obj` -> Objeto
+- `Op` -> Operativo/Operación
+- `Proto` -> Protocolo
+- `PW` -> Contraseña
+- `Reconn` -> Reconexión
+- `Req` -> Solicitud
+- `Rsp` -> Respuesta
+- `Sess` -> Sesión
+- `Sig` -> Firma
+- `Susp` -> Sospechoso
+- `Src` -> Origen
+- `Svc` -> Servicio
+- `Svr` -> Servidor
+- `Temp` -> Temporal
+- `Term` -> Terminación/Terminado
+- `Tkt` -> Ticket
+- `Tgt` -> Objetivo
+- `Unkwn` -> Desconocido
+- `Usr` -> Usuario
+- `Perm` -> Permanente
+- `Pkg` -> Paquete
+- `Priv` -> Privilegio
+- `Proc` -> Proceso
+- `PID` -> ID de proceso
+- `PGUID` -> GUID de proceso (ID único global)
+- `Ver` -> Versión

@@ -1,0 +1,129 @@
+# ตัวย่อ
+
+เพื่อประหยัดพื้นที่ เราจะย่อระดับ (level), กลยุทธ์ MITRE ATT&CK, channel, provider, ชื่อฟิลด์ และอื่นๆ...
+
+คุณสามารถปิดตัวย่อบางส่วนเหล่านี้เพื่อดูชื่อ channel เดิม ชื่อ provider เดิม และอื่นๆ ได้ด้วยตัวเลือก `-b, --disable-abbreviations`
+
+## ตัวย่อของ Level
+
+เพื่อประหยัดพื้นที่ เราใช้ตัวย่อต่อไปนี้เมื่อแสดง `level` ของการแจ้งเตือน
+
+* `emer`: `emergency`
+* `crit`: `critical`
+* `high`: `high`
+* `med `: `medium`
+* `low `: `low`
+* `info`: `informational`
+* `undef`: `undefined`
+
+## ตัวย่อของกลยุทธ์ MITRE ATT&CK
+
+เพื่อประหยัดพื้นที่ เราใช้ตัวย่อต่อไปนี้เมื่อแสดงแท็กกลยุทธ์ MITRE ATT&CK
+คุณสามารถแก้ไขตัวย่อเหล่านี้ได้อย่างอิสระในไฟล์การตั้งค่า `./config/mitre_tactics.txt`
+
+* `Recon` : Reconnaissance
+* `ResDev` : Resource Development
+* `InitAccess` : Initial Access
+* `Exec` : Execution
+* `Persis` : Persistence
+* `PrivEsc` : Privilege Escalation
+* `Stealth` : Stealth (formerly Defense Evasion)
+* `DefImpair` : Defense Impairment
+* `CredAccess` : Credential Access
+* `Disc` : Discovery
+* `LatMov` : Lateral Movement
+* `Collect` : Collection
+* `C2` : Command and Control
+* `Exfil` : Exfiltration
+* `Impact` : Impact
+
+## ตัวย่อของ Channel
+
+เพื่อประหยัดพื้นที่ เราใช้ตัวย่อต่อไปนี้เมื่อแสดง Channel
+คุณสามารถแก้ไขตัวย่อเหล่านี้ได้อย่างอิสระในไฟล์การตั้งค่า `./rules/config/channel_abbreviations.txt`
+
+* `App` : `Application`
+* `AppLocker` : `Microsoft-Windows-AppLocker/*`
+* `BitsCli` : `Microsoft-Windows-Bits-Client/Operational`
+* `CodeInteg` : `Microsoft-Windows-CodeIntegrity/Operational`
+* `Defender` : `Microsoft-Windows-Windows Defender/Operational`
+* `DHCP-Svr` : `Microsoft-Windows-DHCP-Server/Operational`
+* `DNS-Svr` : `DNS Server`
+* `DvrFmwk` : `Microsoft-Windows-DriverFrameworks-UserMode/Operational`
+* `Exchange` : `MSExchange Management`
+* `Firewall` : `Microsoft-Windows-Windows Firewall With Advanced Security/Firewall`
+* `KeyMgtSvc` : `Key Management Service`
+* `LDAP-Cli` : `Microsoft-Windows-LDAP-Client/Debug`
+* `NTLM` `Microsoft-Windows-NTLM/Operational`
+* `OpenSSH` : `OpenSSH/Operational`
+* `PrintAdm` : `Microsoft-Windows-PrintService/Admin`
+* `PrintOp` : `Microsoft-Windows-PrintService/Operational`
+* `PwSh` : `Microsoft-Windows-PowerShell/Operational`
+* `PwShClassic` : `Windows PowerShell`
+* `RDP-Client` : `Microsoft-Windows-TerminalServices-RDPClient/Operational`
+* `Sec` : `Security`
+* `SecMitig` : `Microsoft-Windows-Security-Mitigations/*`
+* `SmbCliSec` : `Microsoft-Windows-SmbClient/Security`
+* `SvcBusCli` : `Microsoft-ServiceBus-Client`
+* `Sys` : `System`
+* `Sysmon` : `Microsoft-Windows-Sysmon/Operational`
+* `TaskSch` : `Microsoft-Windows-TaskScheduler/Operational`
+* `WinRM` : `Microsoft-Windows-WinRM/Operational`
+* `WMI` : `Microsoft-Windows-WMI-Activity/Operational`
+
+## ตัวย่ออื่นๆ
+
+ตัวย่อต่อไปนี้ถูกใช้ในกฎ (rule) เพื่อทำให้ผลลัพธ์กระชับที่สุดเท่าที่จะเป็นไปได้:
+
+* `Acct` -> Account
+* `Addr` -> Address
+* `Auth` -> Authentication
+* `Cli` -> Client
+* `Chan` -> Channel
+* `Cmd` -> Command
+* `Cnt` -> Count
+* `Comp` -> Computer
+* `Conn` -> Connection/Connected
+* `Creds` -> Credentials
+* `Crit` -> Critical
+* `Disconn` -> Disconnection/Disconnected
+* `Dir` -> Directory
+* `Drv` -> Driver
+* `Dst` -> Destination
+* `EID` -> Event ID
+* `Err` -> Error
+* `Exec` -> Execution
+* `FW` -> Firewall
+* `Grp` -> Group
+* `Img` -> Image
+* `Inj` -> Injection
+* `Krb` -> Kerberos
+* `LID` -> Logon ID
+* `Med` -> Medium
+* `Net` -> Network
+* `Obj` -> Object
+* `Op` -> Operational/Operation
+* `Proto` -> Protocol
+* `PW` -> Password
+* `Reconn` -> Reconnection
+* `Req` -> Request
+* `Rsp` -> Response
+* `Sess` -> Session
+* `Sig` -> Signature
+* `Susp` -> Suspicious
+* `Src` -> Source
+* `Svc` -> Service
+* `Svr` -> Server
+* `Temp` -> Temporary
+* `Term` -> Termination/Terminated
+* `Tkt` -> Ticket
+* `Tgt` -> Target
+* `Unkwn` -> Unknown
+* `Usr` -> User
+* `Perm` -> Permament
+* `Pkg` -> Package
+* `Priv` -> Privilege
+* `Proc` -> Process
+* `PID` -> Process ID
+* `PGUID` -> Process GUID (Global Unique ID)
+* `Ver` -> Version
