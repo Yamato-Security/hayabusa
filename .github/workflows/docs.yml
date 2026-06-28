@@ -43,6 +43,9 @@ jobs:
       - name: Install dependencies
         run: pip install -r website/requirements.txt
 
+      - name: Sync changelog into docs
+        run: python website/scripts/sync_changelog.py
+
       - name: Build site (strict)
         run: mkdocs build --strict --config-file website/mkdocs.yml
 
