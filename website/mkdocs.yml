@@ -19,7 +19,7 @@ site_url: https://yamato-security.github.io/hayabusa/
 # Source repository (shown in the top-right header).
 repo_url: https://github.com/Yamato-Security/hayabusa
 repo_name: Yamato-Security/hayabusa
-edit_uri: edit/main/README.md
+edit_uri: edit/main/website/docs/
 
 copyright: >-
   Copyright &copy; 2020–2026 Yamato Security — Documentation built with Material for MkDocs
