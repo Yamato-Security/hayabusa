@@ -5,12 +5,14 @@
 ## 더 이상 사용되지 않는 특수 키워드
 
 현재 다음 특수 키워드를 지정할 수 있습니다:
+
 - `value`: 문자열로 매칭합니다(와일드카드와 파이프도 지정할 수 있습니다).
 - `min_length`: 문자 수가 지정한 숫자 이상일 때 매칭합니다.
 - `regexes`: 이 필드에 지정한 파일 안의 정규 표현식 중 하나가 매칭되면 매칭됩니다.
 - `allowlist`: 이 필드에 지정한 파일 안의 정규 표현식 목록에서 매칭이 발견되면 룰을 건너뜁니다.
 
 아래 예시에서, 다음이 모두 참이면 룰이 매칭됩니다:
+
 - `ServiceName`이 `malicious-service`라고 불리거나 `./rules/config/regex/detectlist_suspicous_services.txt`의 정규 표현식을 포함하는 경우.
 - `ImagePath`가 최소 1000자인 경우.
 - `ImagePath`가 `allowlist`에서 매칭되지 않는 경우.
@@ -32,6 +34,7 @@ detection:
 ### regexes 및 allowlist 키워드 샘플 파일
 
 Hayabusa에는 `./rules/hayabusa/default/alerts/System/7045_CreateOrModiftySystemProcess-WindowsService_MaliciousServiceInstalled.yml` 파일에 사용되는 두 개의 내장 정규 표현식 파일이 있었습니다:
+
 - `./rules/config/regex/detectlist_suspicous_services.txt`: 의심스러운 서비스 이름을 탐지합니다
 - `./rules/config/regex/allowlist_legitimate_services.txt`: 정상적인 서비스를 허용합니다
 
@@ -59,9 +62,11 @@ detection:
 ```
 
 집계 조건은 다음 형식으로 정의할 수 있습니다:
+
 - `count() {operator} {number}`: 파이프 앞의 첫 번째 조건과 매칭되는 로그 이벤트에 대해, 매칭된 로그 수가 `{operator}`와 `{number}`로 지정된 조건식을 충족하면 조건이 매칭됩니다.
 
 `{operator}`는 다음 중 하나가 될 수 있습니다:
+
 - `==`: 값이 지정된 값과 같으면 조건에 매칭되는 것으로 처리됩니다.
 - `>=`: 값이 지정된 값 이상이면 조건이 충족된 것으로 간주됩니다.
 - `>`: 값이 지정된 값보다 크면 조건이 충족된 것으로 간주됩니다.
@@ -71,6 +76,7 @@ detection:
 `{number}`는 숫자여야 합니다.
 
 `timeframe`은 다음과 같이 정의할 수 있습니다:
+
 - `15s`: 15초
 - `30m`: 30분
 - `12h`: 12시간

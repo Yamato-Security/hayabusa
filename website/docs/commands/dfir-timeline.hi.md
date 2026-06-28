@@ -64,6 +64,7 @@ Sigma नियमों के लिए, चैनल और इवेंट I
 हम कैसे और क्यों ऐसा करते हैं, इसे विस्तार से [यहाँ](https://github.com/Yamato-Security/sigma-to-hayabusa-converter) समझाते हैं।
 
 वर्तमान में, केवल दो डिटेक्शन नियम हैं जिनमें `Channel` परिभाषित नहीं है और जो सभी `.evtx` फ़ाइलों को स्कैन करने के लिए अभिप्रेत हैं, वे निम्नलिखित हैं:
+
 - [Possible Hidden Shellcode](https://github.com/Yamato-Security/hayabusa-rules/blob/main/hayabusa/builtin/UnkwnChannEID_Med_PossibleHiddenShellcode.yml)
 - [Mimikatz Use](https://github.com/SigmaHQ/sigma/blob/master/rules/windows/builtin/win_alert_mimikatz_keywords.yml)
 
@@ -276,6 +277,7 @@ hayabusa.exe csv-timeline -d ../hayabusa-sample-evtx --RFC-3339 -o timesketch-im
 आप मुफ़्त GeoLite2 जियोलोकेशन डेटा के साथ SrcIP (स्रोत IP) फ़ील्ड और TgtIP (लक्ष्य IP) फ़ील्ड में GeoIP (ASN संगठन, शहर और देश) जानकारी जोड़ सकते हैं।
 
 चरण:
+
 1. सबसे पहले [यहाँ](https://dev.maxmind.com/geoip/geolite2-free-geolocation-data) एक MaxMind खाते के लिए साइन अप करें।
 2. [डाउनलोड पेज](https://www.maxmind.com/en/accounts/current/geoip/downloads) से तीन `.mmdb` फ़ाइलें डाउनलोड करें और उन्हें एक निर्देशिका में सहेजें। फ़ाइल नाम `GeoLite2-ASN.mmdb`,	`GeoLite2-City.mmdb` और `GeoLite2-Country.mmdb` होने चाहिए।
 3. `csv-timeline` या `json-timeline` कमांड चलाते समय, MaxMind डेटाबेस वाली निर्देशिका के बाद `-G` विकल्प जोड़ें।
@@ -298,12 +300,14 @@ MaxMind GeoIP डेटाबेस हर 2 सप्ताह में अप
 इन डेटाबेस को स्वचालित रूप से अपडेट करने के लिए आप MaxMind `geoipupdate` टूल को [यहाँ](https://github.com/maxmind/geoipupdate) इंस्टॉल कर सकते हैं।
 
 macOS पर चरण:
+
 1. `brew install geoipupdate`
 2. `/usr/local/etc/GeoIP.conf` या `/opt/homebrew/etc/GeoIP.conf` संपादित करें: MaxMind वेबसाइट में लॉग इन करने के बाद आपके द्वारा बनाई गई अपनी `AccountID` और `LicenseKey` डालें। सुनिश्चित करें कि `EditionIDs` लाइन में `EditionIDs GeoLite2-ASN GeoLite2-City GeoLite2-Country` लिखा हो।
 3. `geoipupdate` चलाएँ।
 4. जब आप GeoIP जानकारी जोड़ना चाहते हैं तो `-G /usr/local/var/GeoIP` या `-G /opt/homebrew/var/GeoIP` जोड़ें।
 
 Windows पर चरण:
+
 1. [Releases](https://github.com/maxmind/geoipupdate/releases) पेज से नवीनतम Windows बाइनरी (उदा: `geoipupdate_4.10.0_windows_amd64.zip`) डाउनलोड करें।
 2. `\ProgramData\MaxMind/GeoIPUpdate\GeoIP.conf` संपादित करें: MaxMind वेबसाइट में लॉग इन करने के बाद आपके द्वारा बनाई गई अपनी `AccountID` और `LicenseKey` डालें। सुनिश्चित करें कि `EditionIDs` लाइन में `EditionIDs GeoLite2-ASN GeoLite2-City GeoLite2-Country` लिखा हो।
 3. `geoipupdate` निष्पादन योग्य चलाएँ।

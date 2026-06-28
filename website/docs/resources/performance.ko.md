@@ -42,6 +42,7 @@ Zach Mathis ([@yamatosecurity](https://twitter.com/yamatosecurity))
 
 ### 효과（Pull Request의 실제 예시）  <!-- omit in toc -->
 속도가 얼마나 개선되는지는 프로그램에 따라 다르지만, 다음 예시에서
+
 - [chg: build.rs(for vc runtime) to rustflags in config.toml and replace default global memory allocator with mimalloc. #777](https://github.com/Yamato-Security/hayabusa/pull/777)
 
 메모리 할당자를 [mimalloc](https://github.com/microsoft/mimalloc)으로 변경하자 Intel CPU에서 20-30%의 성능 향상이 있었습니다. 
@@ -78,6 +79,7 @@ fn main() {
 
 ### 효과（Pull Request의 실제 예시）   <!-- omit in toc -->
 다음 예시에서는 한 번에 하나의 탐지 결과를 처리할 때의 IO 처리를 루프 밖에서 수행할 수 있었습니다:
+
 - [Improve speed by removing IO process before insert_message() #858](https://github.com/Yamato-Security/hayabusa/pull/858)
 
 이로 인해 약 20%의 속도 개선이 있었습니다.
@@ -122,6 +124,7 @@ fn main() {
 
 ### 효과（Pull Request의 실제 예시）   <!-- omit in toc -->
 다음 예시에서는 정규 표현식 컴파일을 루프 밖에서 수행하고 캐시합니다.
+
 - [cache regex for allowlist and regexes keyword. #174](https://github.com/Yamato-Security/hayabusa/pull/174)
 
 이로 인해 상당한 속도 개선이 있었습니다.
@@ -161,6 +164,7 @@ fn main() {
 
 ### 효과（Pull Request의 실제 예시）   <!-- omit in toc -->
 위에서 설명한 방법은 여기서 구현되었으며
+
 - [Feature/improve output#253 #285](https://github.com/Yamato-Security/hayabusa/pull/285)
 
 출력 처리에서 상당한 속도 개선을 가져왔습니다.
@@ -206,6 +210,7 @@ fn main() {
 
 ### 효과（Pull Request의 실제 예시）   <!-- omit in toc -->
 Hayabusa는 대소문자를 구분하지 않는 문자열 비교가 필요하므로, [to_lowercase()](https://doc.rust-lang.org/std/string/struct.String.html#method.to_lowercase)를 사용한 후 위 방법을 적용합니다. 그렇게 하더라도, 다음 예시에서
+
 - [Imporving speed by changing wildcard search process from regular expression match to starts_with/ends_with match #890](https://github.com/Yamato-Security/hayabusa/pull/890)
 - [Improving speed by using eq_ignore_ascii_case() before regular expression match #884](https://github.com/Yamato-Security/hayabusa/pull/884)
 
@@ -254,6 +259,7 @@ fn main() {
 
 ### 효과（Pull Request의 실제 예시）   <!-- omit in toc -->
 다음 예시에서는 위 방법을 사용합니다.
+
 - [Improving speed by adding string length match before regular expression match #883](https://github.com/Yamato-Security/hayabusa/pull/883)
 
 이로 인해 속도가 약 15% 개선되었습니다.
@@ -301,6 +307,7 @@ clone() 사용을 제거하면 메모리 사용량이 최대 50%까지 줄어듭
 
 ### 효과（Pull Request의 실제 예시）   <!-- omit in toc -->
 다음 예시에서는 불필요한 [clone()](https://doc.rust-lang.org/std/clone/trait.Clone.html), [to_string()](https://doc.rust-lang.org/std/string/trait.ToString.html), [to_owned()](https://doc.rust-lang.org/std/borrow/trait.ToOwned.html) 사용을 대체하여
+
 - [Reduce used memory and Skipped rule author, detect counts aggregation when --no-summary option is used #782](https://github.com/Yamato-Security/hayabusa/pull/782)
 
 메모리 사용량을 크게 줄일 수 있었습니다.
@@ -380,6 +387,7 @@ fn main() {
 
 ### 효과（Pull Request의 실제 예시）   <!-- omit in toc -->
 다음 예시는 위에서 설명한 방법을 사용합니다:
+
 - [Reduce memory usage when reading JSONL file #921](https://github.com/Yamato-Security/hayabusa/pull/921)
 
 1.7GB JSON 파일에서 테스트했을 때, 메모리가 75% 감소했습니다.
@@ -409,12 +417,14 @@ fn main() {
 
 ### 효과（Pull Request의 실제 예시）   <!-- omit in toc -->
 다음 예시에서는 짧은 문자열을 [CompactString](https://docs.rs/compact_str/latest/compact_str/)으로 다룹니다:
+
 - [To reduce ram usage and performance, Replaced String with other crate #793](https://github.com/Yamato-Security/hayabusa/pull/793)
 
 이로 인해 메모리 사용량이 약 20% 감소했습니다.
 
 ## 오래 유지되는 구조체에서 불필요한 필드 삭제
 프로세스 시작 중에 메모리에 계속 유지되는 구조체는 전체 메모리 사용량에 영향을 줄 수 있습니다. Hayabusa에서는 특히 다음 구조체들(버전 2.2.2 기준)이 대량으로 유지됩니다.
+
 - [DetectInfo](https://github.com/Yamato-Security/hayabusa/blob/v2.2.2/src/detections/message.rs#L27-L36)
 - [LeafSelectNode](https://github.com/Yamato-Security/hayabusa/blob/v2.2.2/src/detections/rule/selectionnodes.rs#L234-L239)
 
@@ -456,6 +466,7 @@ pub struct DetectInfo {
 
 ### 효과（Pull Request의 실제 예시）   <!-- omit in toc -->
 다음 예시에서는 탐지 결과 레코드 수가 약 150만 개인 데이터에 대해 테스트했을 때,
+
 - [Reduced memory usage of DetectInfo/EvtxRecordInfo #837](https://github.com/Yamato-Security/hayabusa/pull/837)
 - [Reduce memory usage by removing unnecessary regex #894](https://github.com/Yamato-Security/hayabusa/pull/894)
 
@@ -492,6 +503,7 @@ pub struct DetectInfo {
 
 ### 예시   <!-- omit in toc -->
 위 구현은 다음에 적용되었습니다:
+
 - [add --debug option for printing mimalloc memory stats #822](https://github.com/Yamato-Security/hayabusa/pull/822)
 
 Hayabusa에서는 `--debug` 옵션을 추가하면 마지막에 메모리 사용량 통계가 출력됩니다.
@@ -524,6 +536,7 @@ OS 측에서 얻을 수 있는 통계로부터 다양한 리소스 사용량을 
 
 ### 예시  <!-- omit in toc -->
 다음은 Hayabusa로 성능을 측정하는 예시 절차를 담고 있습니다.
+
 - [Windows 성능 카운터를 얻는 예시](https://github.com/Yamato-Security/hayabusa/issues/778#issuecomment-1296504766)
 
 ## heaptrack 사용

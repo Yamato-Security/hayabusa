@@ -5,12 +5,14 @@
 ## အသုံးပြုခြင်းရပ်ဆိုင်းထားသော special keywords များ
 
 လောလောဆယ်တွင် အောက်ပါ special keywords များကို သတ်မှတ်နိုင်ပါသည်-
+
 - `value`: string ဖြင့် ကိုက်ညီမှုရှာသည် (wildcards နှင့် pipes များကိုလည်း သတ်မှတ်နိုင်သည်)။
 - `min_length`: စာလုံးအရေအတွက်သည် သတ်မှတ်ထားသော အရေအတွက်ထက် ကြီးသည် သို့မဟုတ် တူညီသည့်အခါ ကိုက်ညီသည်။
 - `regexes`: ဤ field တွင် သင်သတ်မှတ်ထားသော file အတွင်းရှိ regular expressions များထဲမှ တစ်ခုခုကိုက်ညီပါက ကိုက်ညီသည်။
 - `allowlist`: ဤ field တွင် သင်သတ်မှတ်ထားသော file အတွင်းရှိ regular expressions စာရင်းတွင် ကိုက်ညီမှုတစ်ခုခုတွေ့ရှိပါက rule ကို ကျော်သွားမည်ဖြစ်သည်။
 
 အောက်ပါဥပမာတွင် အောက်ပါအချက်များမှန်ကန်ပါက rule သည် ကိုက်ညီမည်ဖြစ်သည်-
+
 - `ServiceName` ကို `malicious-service` ဟုခေါ်သည် သို့မဟုတ် `./rules/config/regex/detectlist_suspicous_services.txt` အတွင်းရှိ regular expression တစ်ခုပါဝင်သည်။
 - `ImagePath` တွင် အနည်းဆုံး စာလုံး ၁၀၀၀ ရှိသည်။
 - `ImagePath` တွင် `allowlist` အတွင်း ကိုက်ညီမှုတစ်စုံတစ်ရာ မရှိပါ။
@@ -32,6 +34,7 @@ detection:
 ### regexes နှင့် allowlist keyword နမူနာ file များ
 
 Hayabusa တွင် `./rules/hayabusa/default/alerts/System/7045_CreateOrModiftySystemProcess-WindowsService_MaliciousServiceInstalled.yml` file အတွက် အသုံးပြုသော built-in regular expression file နှစ်ခုရှိသည်-
+
 - `./rules/config/regex/detectlist_suspicous_services.txt`: သံသယဖြစ်ဖွယ် service နာမည်များကို ထောက်လှမ်းရန်
 - `./rules/config/regex/allowlist_legitimate_services.txt`: တရားဝင် service များကို ခွင့်ပြုရန်
 
@@ -59,9 +62,11 @@ detection:
 ```
 
 Aggregation conditions များကို အောက်ပါ format ဖြင့် သတ်မှတ်နိုင်သည်-
+
 - `count() {operator} {number}`: pipe မတိုင်မီ ပထမ condition နှင့် ကိုက်ညီသော log events များအတွက် ကိုက်ညီသော log အရေအတွက်သည် `{operator}` နှင့် `{number}` ဖြင့် သတ်မှတ်ထားသော condition expression ကို ပြည့်မီပါက condition သည် ကိုက်ညီမည်ဖြစ်သည်။
 
 `{operator}` သည် အောက်ပါတို့မှ တစ်ခုဖြစ်နိုင်သည်-
+
 - `==`: တန်ဖိုးသည် သတ်မှတ်ထားသော တန်ဖိုးနှင့် တူညီပါက condition နှင့် ကိုက်ညီသည်ဟု သတ်မှတ်သည်။
 - `>=`: တန်ဖိုးသည် သတ်မှတ်ထားသော တန်ဖိုးထက် ကြီးသည် သို့မဟုတ် တူညီပါက condition ပြည့်မီသည်ဟု သတ်မှတ်သည်။
 - `>`: တန်ဖိုးသည် သတ်မှတ်ထားသော တန်ဖိုးထက် ကြီးပါက condition ပြည့်မီသည်ဟု သတ်မှတ်သည်။
@@ -71,6 +76,7 @@ Aggregation conditions များကို အောက်ပါ format ဖြ
 `{number}` သည် ဂဏန်းဖြစ်ရမည်။
 
 `timeframe` ကို အောက်ပါအတိုင်း သတ်မှတ်နိုင်သည်-
+
 - `15s`: ၁၅ စက္ကန့်
 - `30m`: ၃၀ မိနစ်
 - `12h`: ၁၂ နာရီ

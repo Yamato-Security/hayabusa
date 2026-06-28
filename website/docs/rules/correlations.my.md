@@ -80,6 +80,7 @@ Timestamp · RuleTitle · Level · Computer · Channel · EventID · RecordID ·
 ဤ rule များသည် အချိန်ကာလတစ်ခုအတွင်း သတ်မှတ်ထားသော field ၏ **မတူညီသော** တန်ဖိုးများဖြင့် တူညီသော event များကို ရေတွက်သည်။
 
 ဥပမာများ-
+
 - source IP address တစ်ခုတည်းက မတူညီသော destination IP address များနှင့်/သို့မဟုတ် port များစွာသို့ ချိတ်ဆက်ရန် ကြိုးစားသည့် Network scan များ။
 - source တစ်ခုတည်းက မတူညီသော user များစွာဖြင့် authentication လုပ်ရန် မအောင်မြင်သည့် Password spraying တိုက်ခိုက်မှုများ။
 - အချိန်တိုအတွင်း high-privilege AD group များစွာကို စစ်ဆေးဖော်ထုတ်သည့် BloodHound ကဲ့သို့သော tool များကို ဖော်ထုတ်ခြင်း။

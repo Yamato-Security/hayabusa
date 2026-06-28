@@ -7,6 +7,7 @@
 Yalnizca birkac yuz MB boyutunda bir CSV dosyasini analiz ettiginiz ve tek basina calistiginiz kucuk arastirmalar icin Timeline Explorer uygundur, ancak daha buyuk verilerle veya bir ekiple calisirken Timesketch gibi bir arac cok daha iyidir.
 
 Timesketch su faydalari sunar:
+
 1. Cok hizlidir ve buyuk verileri isleyebilir
 2. Birden fazla kullanicinin ayni anda kullanabildigi isbirlikci bir aractir
 3. Gelismis veri analizi, histogramlar ve gorsellestirmeler saglar
@@ -52,6 +53,7 @@ git clone https://github.com/google/timesketch.git
 cd timesketch
 ```
 Asagidaki adimlari izleyerek Docker konteynerini baslatin.
+
 - https://github.com/google/timesketch/tree/master/docker/e2e#build-and-start-containers
 
 ## Oturum acma
@@ -178,6 +180,7 @@ Daha sonra, sol taraftaki kenar cubugundan favori aramalariniza kolayca erisebil
 ### Arama cubugu
 
 Iste yalnizca belirli onem duzeylerine sahip uyarilari gostererek baslamak icin bazi kullanisli sorgular:
+
 1. Yalnizca kritik uyarilari gostermek icin `Level:crit`.
 2. Yuksek ve kritik uyarilari gostermek icin `Level:crit OR Level:high`
 3. Bilgilendirici uyarilari gizlemek icin `NOT Level:info`

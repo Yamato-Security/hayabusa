@@ -52,6 +52,7 @@ brew install openssl
 ## ملاحظات حول التجميع على Linux
 
 تتطلب تبعيات البناء التالية:
+
 * openssl-devel (Fedora-based) / libssl-dev (Ubuntu-based) 
 * perl
 * musl-gcc

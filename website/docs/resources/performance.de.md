@@ -42,6 +42,7 @@ Mehr müssen Sie nicht tun, um den Speicher-Allocator zu ändern.
 
 ### Wirksamkeit（Reales Beispiel aus einem Pull Request）  <!-- omit in toc -->
 Wie stark sich die Geschwindigkeit verbessert, hängt vom Programm ab, aber im folgenden Beispiel
+
 - [chg: build.rs(for vc runtime) to rustflags in config.toml and replace default global memory allocator with mimalloc. #777](https://github.com/Yamato-Security/hayabusa/pull/777)
 
 führte das Ändern des Speicher-Allocators auf [mimalloc](https://github.com/microsoft/mimalloc) zu einer Performance-Steigerung von 20-30 % auf Intel-CPUs. 
@@ -78,6 +79,7 @@ ergibt sich eine etwa 1000-fache Geschwindigkeitssteigerung.
 
 ### Wirksamkeit（Reales Beispiel aus einem Pull Request）   <!-- omit in toc -->
 Im folgenden Beispiel konnte die IO-Verarbeitung bei der Behandlung eines Erkennungsergebnisses nach dem anderen außerhalb der Schleife durchgeführt werden:
+
 - [Improve speed by removing IO process before insert_message() #858](https://github.com/Yamato-Security/hayabusa/pull/858)
 
 Dies führte zu einer Geschwindigkeitsverbesserung von etwa 20 %.
@@ -122,6 +124,7 @@ ist der aktualisierte Code etwa 100-mal schneller.
 
 ### Wirksamkeit（Reales Beispiel aus einem Pull Request）   <!-- omit in toc -->
 Im folgenden Beispiel wird die Kompilierung des regulären Ausdrucks außerhalb der Schleife durchgeführt und zwischengespeichert.
+
 - [cache regex for allowlist and regexes keyword. #174](https://github.com/Yamato-Security/hayabusa/pull/174)
 
 Dies führte zu erheblichen Geschwindigkeitsverbesserungen.
@@ -161,6 +164,7 @@ ergibt sich eine etwa 50-fache Geschwindigkeitsverbesserung.
 
 ### Wirksamkeit（Reales Beispiel aus einem Pull Request）   <!-- omit in toc -->
 Die oben beschriebene Methode wurde hier implementiert
+
 - [Feature/improve output#253 #285](https://github.com/Yamato-Security/hayabusa/pull/285)
 
 und hat zu erheblichen Geschwindigkeitsverbesserungen bei der Ausgabeverarbeitung geführt.
@@ -206,6 +210,7 @@ wird die Verarbeitung 10-mal schneller.
 
 ### Wirksamkeit（Reales Beispiel aus einem Pull Request）   <!-- omit in toc -->
 Da Hayabusa einen Groß-/Kleinschreibung-unabhängigen String-Vergleich benötigt, verwenden wir [to_lowercase()](https://doc.rust-lang.org/std/string/struct.String.html#method.to_lowercase) und wenden dann die obige Methode an. Selbst dann hat sich in den folgenden Beispielen
+
 - [Imporving speed by changing wildcard search process from regular expression match to starts_with/ends_with match #890](https://github.com/Yamato-Security/hayabusa/pull/890)
 - [Improving speed by using eq_ignore_ascii_case() before regular expression match #884](https://github.com/Yamato-Security/hayabusa/pull/884)
 
@@ -254,6 +259,7 @@ wird sich die Geschwindigkeit um etwa das 20-Fache verbessern.
 
 ### Wirksamkeit（Reales Beispiel aus einem Pull Request）   <!-- omit in toc -->
 Im folgenden Beispiel wird die obige Methode verwendet.
+
 - [Improving speed by adding string length match before regular expression match #883](https://github.com/Yamato-Security/hayabusa/pull/883)
 
 Dies verbesserte die Geschwindigkeit um etwa 15 %.
@@ -301,6 +307,7 @@ Durch das Entfernen der clone()-Verwendung wird der Speicherverbrauch um bis zu 
 
 ### Wirksamkeit（Reales Beispiel aus einem Pull Request）   <!-- omit in toc -->
 Im folgenden Beispiel konnten wir durch das Ersetzen der unnötigen Verwendung von [clone()](https://doc.rust-lang.org/std/clone/trait.Clone.html), [to_string()](https://doc.rust-lang.org/std/string/trait.ToString.html) und [to_owned()](https://doc.rust-lang.org/std/borrow/trait.ToOwned.html),
+
 - [Reduce used memory and Skipped rule author, detect counts aggregation when --no-summary option is used #782](https://github.com/Yamato-Security/hayabusa/pull/782)
 
 den Speicherverbrauch erheblich reduzieren.
@@ -380,6 +387,7 @@ Der Speicherverbrauch sinkt erheblich von 1 GB auf nur 3 MB.
 
 ### Wirksamkeit（Reales Beispiel aus einem Pull Request）   <!-- omit in toc -->
 Das folgende Beispiel verwendet die oben beschriebene Methode:
+
 - [Reduce memory usage when reading JSONL file #921](https://github.com/Yamato-Security/hayabusa/pull/921)
 
 Beim Test mit einer 1,7 GB großen JSON-Datei verringerte sich der Speicher um 75 %.
@@ -409,12 +417,14 @@ Dadurch wird der Speicherverbrauch um etwa 50 % reduziert.
 
 ### Wirksamkeit（Reales Beispiel aus einem Pull Request）   <!-- omit in toc -->
 Im folgenden Beispiel werden kurze Strings mit [CompactString](https://docs.rs/compact_str/latest/compact_str/) behandelt:
+
 - [To reduce ram usage and performance, Replaced String with other crate #793](https://github.com/Yamato-Security/hayabusa/pull/793)
 
 Dies ergab eine Reduzierung des Speicherverbrauchs um etwa 20 %.
 
 ## Unnötige Felder in langlebigen Strukturen löschen
 Strukturen, die während des Prozessstarts weiterhin im Speicher gehalten werden, können den gesamten Speicherverbrauch beeinflussen. In Hayabusa werden insbesondere die folgenden Strukturen (Stand Version 2.2.2) in großer Zahl gehalten.
+
 - [DetectInfo](https://github.com/Yamato-Security/hayabusa/blob/v2.2.2/src/detections/message.rs#L27-L36)
 - [LeafSelectNode](https://github.com/Yamato-Security/hayabusa/blob/v2.2.2/src/detections/rule/selectionnodes.rs#L234-L239)
 
@@ -456,6 +466,7 @@ wurde eine Reduzierung des Speicherverbrauchs von mehreren Byte pro Erkennungser
 
 ### Wirksamkeit（Reales Beispiel aus einem Pull Request）   <!-- omit in toc -->
 Im folgenden Beispiel konnten wir beim Test gegen Daten, bei denen die Anzahl der Erkennungsergebnis-Datensätze etwa 1,5 Millionen betrug,
+
 - [Reduced memory usage of DetectInfo/EvtxRecordInfo #837](https://github.com/Yamato-Security/hayabusa/pull/837)
 - [Reduce memory usage by removing unnecessary regex #894](https://github.com/Yamato-Security/hayabusa/pull/894)
 
@@ -492,6 +503,7 @@ Voraussetzungen: Sie müssen mimalloc verwenden, wie im Abschnitt [Den Speicher-
 
 ### Beispiel   <!-- omit in toc -->
 Die obige Implementierung wurde im Folgenden angewendet:
+
 - [add --debug option for printing mimalloc memory stats #822](https://github.com/Yamato-Security/hayabusa/pull/822)
 
 Wenn Sie in Hayabusa die Option `--debug` hinzufügen, werden am Ende Speicherverbrauchsstatistiken ausgegeben.
@@ -524,6 +536,7 @@ Voraussetzungen：Das folgende Verfahren ist nur für Umgebungen gültig, in den
 
 ### Beispiel  <!-- omit in toc -->
 Das Folgende enthält ein Beispielverfahren zum Messen der Performance mit Hayabusa.
+
 - [Example of obtaining Windows performance counters](https://github.com/Yamato-Security/hayabusa/issues/778#issuecomment-1296504766)
 
 ## heaptrack verwenden

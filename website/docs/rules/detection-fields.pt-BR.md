@@ -8,6 +8,7 @@ Primeiro, serão explicados os fundamentos de como criar uma regra de seleção.
 
 Para escrever lógica AND, usamos dicionários aninhados.
 A regra de detecção abaixo define que **ambas as condições** precisam ser verdadeiras para que a regra corresponda.
+
 - O EventID precisa ser exatamente `7040`.
 - **AND**
 - O Channel precisa ser exatamente `System`.
@@ -22,6 +23,7 @@ detection:
 
 Para escrever lógica OR, usamos listas (dicionários que começam com `-`).
 Na regra de detecção abaixo, **qualquer uma** das condições fará com que a regra seja acionada.
+
 - O EventID precisa ser exatamente `7040`.
 - **OR**
 - O Channel precisa ser exatamente `System`.
@@ -36,6 +38,7 @@ detection:
 
 Também podemos combinar as lógicas `AND` e `OR` como mostrado abaixo.
 Neste caso, a regra corresponde quando as duas condições a seguir são ambas verdadeiras.
+
 - O EventID é exatamente `7040` **OR** `7041`.
 - **AND**
 - O Channel é exatamente `System`.
@@ -302,10 +305,12 @@ detection:
 ```
 
 Os dois curingas a seguir podem ser usados.
+
 - `*`: Corresponde a qualquer string de zero ou mais caracteres. (Internamente é convertido para a expressão regular `.*`)
 - `?`: Corresponde a qualquer caractere único. (Internamente convertido para a expressão regular `.`)
 
 Sobre o escape de curingas:
+
 - Curingas (`*` e `?`) podem ser escapados usando uma barra invertida: `\*`, `\?`.
 - Se você quiser usar uma barra invertida imediatamente antes de um curinga, escreva `\\*` ou `\\?`.
 - O escape não é necessário se você estiver usando barras invertidas sozinhas.
@@ -353,6 +358,7 @@ detection:
 ```
 
 As seguintes expressões podem ser usadas para `condition`.
+
 - `{expression1} and {expression2}`: Requer tanto {expression1} QUANTO {expression2}
 - `{expression1} or {expression2}`: Requer {expression1} OU {expression2}
 - `not {expression}`: Inverte a lógica de {expression}
@@ -391,6 +397,7 @@ detection:
 Implementamos todas as correlações da versão 2.0.0 do Sigma conforme definido [aqui](https://github.com/SigmaHQ/sigma-specification/blob/version_2/specification/sigma-correlation-rules-specification.md).
 
 Correlações suportadas:
+
 - Contagem de Eventos (`event_count`)
 - Contagem de Valores (`value_count`)
 - Proximidade Temporal (`temporal`)

@@ -80,6 +80,7 @@ Timestamp · RuleTitle · Level · Computer · Channel · EventID · RecordID ·
 Ces règles comptent les mêmes événements dans un intervalle de temps avec des valeurs **différentes** d'un champ donné.
 
 Exemples :
+
 - Analyses réseau où une seule adresse IP source tente de se connecter à de nombreuses adresses IP de destination et/ou ports différents.
 - Attaques par pulvérisation de mots de passe où une seule source échoue à s'authentifier avec de nombreux utilisateurs différents.
 - Détecter des outils comme BloodHound qui énumèrent de nombreux groupes AD à privilèges élevés dans un court intervalle de temps.

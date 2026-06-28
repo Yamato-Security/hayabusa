@@ -18,6 +18,7 @@
 
 在 Windows 中使用內建的命令提示字元或 PowerShell 提示字元時，如果你的檔案或目錄路徑中含有空格，你可能會收到 Hayabusa 無法載入任何 .evtx 檔案的錯誤。
 為了正確載入 .evtx 檔案，請務必執行以下步驟：
+
 1. 用雙引號將檔案或目錄路徑括起來。
 2. 如果是目錄路徑，請確保最後一個字元不包含反斜線。
 
@@ -31,6 +32,7 @@
 ![Mojibake](../assets/screenshots/Mojibake.png)
 
 你有四個選項可以修正此問題：
+
 1. 使用 [Windows Terminal](https://learn.microsoft.com/en-us/windows/terminal/) 取代命令提示字元或 PowerShell 提示字元。（建議）
 2. 使用 `MS Gothic` 字型。請注意反斜線會變成日圓符號。
    ![MojibakeFix](../assets/screenshots/MojibakeFix.png)

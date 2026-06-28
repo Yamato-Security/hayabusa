@@ -18,6 +18,7 @@ In a Command/PowerShell Prompt or Windows Terminal, just run the appropriate 32-
 
 When using the built-in Command or PowerShell prompt in Windows, you may receive an error that Hayabusa was not able to load any .evtx files if there is a space in your file or directory path.
 In order to load the .evtx files properly, be sure to do the following:
+
 1. Enclose the file or directory path with double quotes.
 2. If it is a directory path, make sure that you do not include a backslash for the last character.
 
@@ -31,6 +32,7 @@ This will fix most of the text rendering except for the display of Japanese char
 ![Mojibake](../assets/screenshots/Mojibake.png)
 
 You have four options to fix this:
+
 1. Use [Windows Terminal](https://learn.microsoft.com/en-us/windows/terminal/) instead of the Command or PowerShell prompt. (Recommended)
 2. Use the `MS Gothic` font. Note that backslashes will turn into Yen symbols.
    ![MojibakeFix](../assets/screenshots/MojibakeFix.png)

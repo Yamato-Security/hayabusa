@@ -80,6 +80,7 @@ Timestamp · RuleTitle · Level · Computer · Channel · EventID · RecordID ·
 Bu kurallar, belirli bir alanın **farklı** değerleriyle bir zaman aralığında aynı olayları sayar.
 
 Örnekler:
+
 - Tek bir kaynak IP adresinin birçok farklı hedef IP adresine ve/veya bağlantı noktasına bağlanmaya çalıştığı ağ taramaları.
 - Tek bir kaynağın birçok farklı kullanıcı ile kimlik doğrulamasının başarısız olduğu parola püskürtme (password spraying) saldırıları.
 - BloodHound gibi, kısa bir zaman aralığında birçok yüksek ayrıcalıklı AD grubunu numaralandıran araçların tespiti.

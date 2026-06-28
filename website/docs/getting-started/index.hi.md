@@ -3,6 +3,7 @@
 कृपया Hayabusa का नवीनतम स्थिर संस्करण संकलित बाइनरी के साथ डाउनलोड करें या [Releases](https://github.com/Yamato-Security/hayabusa/releases) पृष्ठ से स्रोत कोड संकलित करें।
 
 हम निम्नलिखित आर्किटेक्चर के लिए बाइनरी प्रदान करते हैं:
+
 - Linux ARM 64-bit GNU (`hayabusa-x.x.x-lin-aarch64-gnu`)
 - Linux Intel 64-bit GNU (`hayabusa-x.x.x-lin-x64-gnu`)
 - Linux Intel 64-bit MUSL (`hayabusa-x.x.x-lin-x64-musl`)

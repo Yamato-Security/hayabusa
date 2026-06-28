@@ -80,6 +80,7 @@ Timestamp · RuleTitle · Level · Computer · Channel · EventID · RecordID ·
 Estas reglas cuentan los mismos eventos dentro de un periodo de tiempo con valores **diferentes** de un campo dado.
 
 Ejemplos:
+
 - Escaneos de red donde una sola dirección IP de origen intenta conectarse a muchas direcciones IP y/o puertos de destino diferentes.
 - Ataques de rociado de contraseñas (password spraying) donde un solo origen falla al autenticarse con muchos usuarios diferentes.
 - Detectar herramientas como BloodHound que enumeran muchos grupos de AD con privilegios altos dentro de un corto periodo de tiempo.

@@ -34,6 +34,7 @@ Lorsque vous démarrez la VM, vous obtenez un écran semblable à celui-ci :
 Notez l'URL de Kibana et l'adresse IP du serveur SSH.
 
 Vous pouvez vous connecter avec les identifiants suivants :
+
 * Nom d'utilisateur : `elk_user`
 * Mot de passe : `forensics`
 
@@ -147,6 +148,7 @@ Comme il y a de nombreux champs, vous pouvez taper le nom du champ que vous rech
 ![Adding Columns](../assets/doc/ElasticStackImport/07-AddingColumns.png)
 
 Pour commencer, nous recommandons les colonnes suivantes :
+
 - `Computer`
 - `EventID`
 - `Level`

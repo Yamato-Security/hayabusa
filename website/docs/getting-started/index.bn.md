@@ -3,6 +3,7 @@
 অনুগ্রহ করে কম্পাইল করা বাইনারিসহ Hayabusa-এর সর্বশেষ স্থিতিশীল সংস্করণটি ডাউনলোড করুন অথবা [Releases](https://github.com/Yamato-Security/hayabusa/releases) পৃষ্ঠা থেকে সোর্স কোড কম্পাইল করুন।
 
 আমরা নিম্নলিখিত আর্কিটেকচারগুলোর জন্য বাইনারি সরবরাহ করি:
+
 - Linux ARM 64-bit GNU (`hayabusa-x.x.x-lin-aarch64-gnu`)
 - Linux Intel 64-bit GNU (`hayabusa-x.x.x-lin-x64-gnu`)
 - Linux Intel 64-bit MUSL (`hayabusa-x.x.x-lin-x64-musl`)

@@ -16,6 +16,7 @@ VMを起動すると、次のような画面が表示されます：
 KibanaのURLとSSHサーバーのIPアドレスを控えておいてください。
 
 以下の認証情報でログインできます：
+
 * ユーザー名：`elk_user`
 * パスワード：`forensics`
 
@@ -129,6 +130,7 @@ The following indices are currently active in Elasticsearch:
 ![Adding Columns](../assets/doc/ElasticStackImport/07-AddingColumns.png)
 
 まず、以下のカラムをお勧めします：
+
 - `Computer`
 - `EventID`
 - `Level`

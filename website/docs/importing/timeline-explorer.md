@@ -116,6 +116,7 @@ If you change it to anything except `Mixed`, you can then set the `Condition` fr
 
 The `Match criteria` of `Mixed` is complicated as it sometimes uses `AND` logic and sometimes `OR` but can be very flexible once learned.
 It operates as follows:
+
 * If you separate words by spaces, it will be treated as `OR` logic.
 * If you want to include spaces in your search, then you need to add quotes.
 * Precede a condition with `+` for `AND` logic.

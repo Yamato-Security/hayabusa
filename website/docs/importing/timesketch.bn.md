@@ -7,6 +7,7 @@
 ছোট তদন্তের ক্ষেত্রে যেখানে আপনি মাত্র কয়েকশ MB আকারের একটি CSV ফাইল বিশ্লেষণ করছেন এবং একা কাজ করছেন, সেক্ষেত্রে Timeline Explorer উপযুক্ত, তবে যখন আপনি বৃহত্তর ডেটা নিয়ে বা একটি দলের সাথে কাজ করছেন, তখন Timesketch এর মতো একটি টুল অনেক ভালো।
 
 Timesketch নিম্নলিখিত সুবিধাগুলো প্রদান করে:
+
 1. এটি খুব দ্রুত এবং বৃহৎ ডেটা পরিচালনা করতে পারে
 2. এটি একটি সহযোগিতামূলক টুল যেখানে একাধিক ব্যবহারকারী একই সাথে এটি ব্যবহার করতে পারেন
 3. এটি উন্নত ডেটা বিশ্লেষণ, হিস্টোগ্রাম এবং ভিজ্যুয়ালাইজেশন প্রদান করে
@@ -52,6 +53,7 @@ git clone https://github.com/google/timesketch.git
 cd timesketch
 ```
 নিচের ধাপগুলো অনুসরণ করে Docker কন্টেইনার শুরু করুন।
+
 - https://github.com/google/timesketch/tree/master/docker/e2e#build-and-start-containers
 
 ## লগ ইন করা
@@ -178,6 +180,7 @@ hayabusa-x.x.x-win-x64.exe csv-timeline -d <DIR> -o timesketch-import.csv -p tim
 ### সার্চ বার
 
 শুধুমাত্র নির্দিষ্ট তীব্রতা স্তরের অ্যালার্ট দেখিয়ে শুরু করার জন্য এখানে কিছু সহজ কোয়েরি দেওয়া হলো:
+
 1. শুধুমাত্র critical অ্যালার্ট দেখানোর জন্য `Level:crit`।
 2. high এবং critical অ্যালার্ট দেখানোর জন্য `Level:crit OR Level:high`
 3. informational অ্যালার্ট লুকানোর জন্য `NOT Level:info`

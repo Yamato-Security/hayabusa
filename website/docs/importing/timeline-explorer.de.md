@@ -116,6 +116,7 @@ Wenn Sie sie auf etwas anderes als `Mixed` ändern, können Sie anschließend di
 
 Die `Match criteria` `Mixed` ist kompliziert, da sie manchmal `AND`-Logik und manchmal `OR`-Logik verwendet, aber sehr flexibel sein kann, sobald man sie verstanden hat.
 Sie funktioniert wie folgt:
+
 * Wenn Sie Wörter durch Leerzeichen trennen, wird dies als `OR`-Logik behandelt.
 * Wenn Sie Leerzeichen in Ihre Suche einbeziehen möchten, müssen Sie Anführungszeichen hinzufügen.
 * Stellen Sie einer Bedingung ein `+` voran für `AND`-Logik.

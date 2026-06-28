@@ -5,12 +5,14 @@ Les mots-clés spéciaux obsolètes et l'agrégation `count` sont toujours pris 
 ## Mots-clés spéciaux obsolètes
 
 Actuellement, les mots-clés spéciaux suivants peuvent être spécifiés :
+
 - `value` : correspond par chaîne de caractères (des caractères génériques et des pipes peuvent également être spécifiés).
 - `min_length` : correspond lorsque le nombre de caractères est supérieur ou égal au nombre spécifié.
 - `regexes` : correspond si l'une des expressions régulières contenues dans le fichier que vous spécifiez dans ce champ correspond.
 - `allowlist` : la règle sera ignorée s'il existe une correspondance dans la liste des expressions régulières contenues dans le fichier que vous spécifiez dans ce champ.
 
 Dans l'exemple ci-dessous, la règle correspondra si les conditions suivantes sont vraies :
+
 - `ServiceName` s'appelle `malicious-service` ou contient une expression régulière dans `./rules/config/regex/detectlist_suspicous_services.txt`.
 - `ImagePath` comporte au minimum 1000 caractères.
 - `ImagePath` n'a aucune correspondance dans l'`allowlist`.
@@ -32,6 +34,7 @@ detection:
 ### Fichiers d'exemple pour les mots-clés regexes et allowlist
 
 Hayabusa disposait de deux fichiers d'expressions régulières intégrés utilisés pour le fichier `./rules/hayabusa/default/alerts/System/7045_CreateOrModiftySystemProcess-WindowsService_MaliciousServiceInstalled.yml` :
+
 - `./rules/config/regex/detectlist_suspicous_services.txt` : pour détecter les noms de services suspects
 - `./rules/config/regex/allowlist_legitimate_services.txt` : pour autoriser les services légitimes
 
@@ -59,9 +62,11 @@ detection:
 ```
 
 Les conditions d'agrégation peuvent être définies au format suivant :
+
 - `count() {operator} {number}` : pour les événements de journal qui correspondent à la première condition avant le pipe, la condition correspondra si le nombre de journaux correspondants satisfait l'expression conditionnelle spécifiée par `{operator}` et `{number}`.
 
 `{operator}` peut être l'un des suivants :
+
 - `==` : si la valeur est égale à la valeur spécifiée, elle est considérée comme correspondant à la condition.
 - `>=` : si la valeur est supérieure ou égale à la valeur spécifiée, la condition est considérée comme remplie.
 - `>` : si la valeur est supérieure à la valeur spécifiée, la condition est considérée comme remplie.
@@ -71,6 +76,7 @@ Les conditions d'agrégation peuvent être définies au format suivant :
 `{number}` doit être un nombre.
 
 `timeframe` peut être défini comme suit :
+
 - `15s` : 15 secondes
 - `30m` : 30 minutes
 - `12h` : 12 heures

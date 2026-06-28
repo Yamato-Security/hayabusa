@@ -18,6 +18,7 @@ Em um Prompt de Comando/PowerShell ou no Windows Terminal, basta executar o bin�
 
 Ao usar o Prompt de Comando ou PowerShell integrado do Windows, você pode receber um erro de que o Hayabusa não conseguiu carregar nenhum arquivo .evtx se houver um espaço no caminho do seu arquivo ou diretório.
 Para carregar os arquivos .evtx corretamente, certifique-se de fazer o seguinte:
+
 1. Coloque o caminho do arquivo ou diretório entre aspas duplas.
 2. Se for um caminho de diretório, certifique-se de não incluir uma barra invertida como último caractere.
 
@@ -31,6 +32,7 @@ Isso corrigirá a maior parte da renderização do texto, exceto a exibição de
 ![Mojibake](../assets/screenshots/Mojibake.png)
 
 Você tem quatro opções para corrigir isso:
+
 1. Use o [Windows Terminal](https://learn.microsoft.com/en-us/windows/terminal/) em vez do Prompt de Comando ou PowerShell. (Recomendado)
 2. Use a fonte `MS Gothic`. Observe que as barras invertidas se transformarão em símbolos de Iene.
    ![MojibakeFix](../assets/screenshots/MojibakeFix.png)

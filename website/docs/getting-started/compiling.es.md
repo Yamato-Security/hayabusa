@@ -52,6 +52,7 @@ brew install openssl
 ## Notas de compilación en Linux
 
 Se requieren las siguientes dependencias de compilación:
+
 * openssl-devel (basado en Fedora) / libssl-dev (basado en Ubuntu) 
 * perl
 * musl-gcc

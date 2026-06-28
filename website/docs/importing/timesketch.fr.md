@@ -7,6 +7,7 @@
 Pour les petites investigations où vous analysez seul un fichier CSV de seulement quelques centaines de Mo, Timeline Explorer convient, cependant, lorsque vous travaillez avec des données plus volumineuses ou en équipe, un outil comme Timesketch est bien meilleur.
 
 Timesketch offre les avantages suivants :
+
 1. Il est très rapide et peut gérer de grandes quantités de données
 2. C'est un outil collaboratif permettant à plusieurs utilisateurs de l'utiliser simultanément
 3. Il fournit une analyse avancée des données, des histogrammes et des visualisations
@@ -52,6 +53,7 @@ git clone https://github.com/google/timesketch.git
 cd timesketch
 ```
 Démarrez le conteneur Docker en suivant les étapes ci-dessous.
+
 - https://github.com/google/timesketch/tree/master/docker/e2e#build-and-start-containers
 
 ## Connexion
@@ -178,6 +180,7 @@ Plus tard, depuis la barre latérale gauche, vous pouvez facilement accéder à 
 ### Barre de recherche
 
 Voici quelques requêtes pratiques pour commencer en n'affichant que les alertes avec certains niveaux de gravité :
+
 1. `Level:crit` pour n'afficher que les alertes critiques.
 2. `Level:crit OR Level:high` pour afficher les alertes hautes et critiques
 3. `NOT Level:info` pour masquer les alertes informationnelles

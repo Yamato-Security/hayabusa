@@ -5,12 +5,14 @@ Die veralteten Spezialschlüsselwörter und die `count`-Aggregation werden in Ha
 ## Veraltete Spezialschlüsselwörter
 
 Derzeit können die folgenden Spezialschlüsselwörter angegeben werden:
+
 - `value`: gleicht über eine Zeichenkette ab (Platzhalter und Pipes können ebenfalls angegeben werden).
 - `min_length`: gleicht ab, wenn die Anzahl der Zeichen größer oder gleich der angegebenen Zahl ist.
 - `regexes`: gleicht ab, wenn einer der regulären Ausdrücke in der Datei übereinstimmt, die Sie in diesem Feld angeben.
 - `allowlist`: die Regel wird übersprungen, wenn in der Liste der regulären Ausdrücke in der Datei, die Sie in diesem Feld angeben, eine Übereinstimmung gefunden wird.
 
 Im folgenden Beispiel gleicht die Regel ab, wenn das Folgende zutrifft:
+
 - `ServiceName` heißt `malicious-service` oder enthält einen regulären Ausdruck in `./rules/config/regex/detectlist_suspicous_services.txt`.
 - `ImagePath` hat mindestens 1000 Zeichen.
 - `ImagePath` hat keine Übereinstimmungen in der `allowlist`.
@@ -32,6 +34,7 @@ detection:
 ### Beispieldateien für die Schlüsselwörter regexes und allowlist
 
 Hayabusa hatte zwei integrierte Dateien mit regulären Ausdrücken, die für die Datei `./rules/hayabusa/default/alerts/System/7045_CreateOrModiftySystemProcess-WindowsService_MaliciousServiceInstalled.yml` verwendet wurden:
+
 - `./rules/config/regex/detectlist_suspicous_services.txt`: zum Erkennen verdächtiger Dienstnamen
 - `./rules/config/regex/allowlist_legitimate_services.txt`: zum Zulassen legitimer Dienste
 
@@ -59,9 +62,11 @@ detection:
 ```
 
 Aggregationsbedingungen können im folgenden Format definiert werden:
+
 - `count() {operator} {number}`: Für Logereignisse, die der ersten Bedingung vor der Pipe entsprechen, gleicht die Bedingung ab, wenn die Anzahl der übereinstimmenden Logs den durch `{operator}` und `{number}` angegebenen Bedingungsausdruck erfüllt.
 
 `{operator}` kann einer der folgenden sein:
+
 - `==`: Wenn der Wert gleich dem angegebenen Wert ist, wird er als die Bedingung erfüllend behandelt.
 - `>=`: Wenn der Wert größer oder gleich dem angegebenen Wert ist, gilt die Bedingung als erfüllt.
 - `>`: Wenn der Wert größer als der angegebene Wert ist, gilt die Bedingung als erfüllt.
@@ -71,6 +76,7 @@ Aggregationsbedingungen können im folgenden Format definiert werden:
 `{number}` muss eine Zahl sein.
 
 `timeframe` kann folgendermaßen definiert werden:
+
 - `15s`: 15 Sekunden
 - `30m`: 30 Minuten
 - `12h`: 12 Stunden

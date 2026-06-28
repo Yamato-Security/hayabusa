@@ -3,6 +3,7 @@
 Lütfen Hayabusa'nın derlenmiş ikili dosyalara sahip en son kararlı sürümünü indirin veya kaynak kodunu [Releases](https://github.com/Yamato-Security/hayabusa/releases) sayfasından derleyin.
 
 Aşağıdaki mimariler için ikili dosyalar sağlıyoruz:
+
 - Linux ARM 64-bit GNU (`hayabusa-x.x.x-lin-aarch64-gnu`)
 - Linux Intel 64-bit GNU (`hayabusa-x.x.x-lin-x64-gnu`)
 - Linux Intel 64-bit MUSL (`hayabusa-x.x.x-lin-x64-musl`)

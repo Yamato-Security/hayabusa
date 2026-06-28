@@ -34,6 +34,7 @@ Cuando arranque la VM, obtendrá una pantalla similar a esta:
 Tome nota de la URL de Kibana y la dirección IP del servidor SSH.
 
 Puede iniciar sesión con las siguientes credenciales:
+
 * Nombre de usuario: `elk_user`
 * Contraseña: `forensics`
 
@@ -147,6 +148,7 @@ Dado que hay muchos campos, es posible que desee escribir el nombre del campo qu
 ![Adding Columns](../assets/doc/ElasticStackImport/07-AddingColumns.png)
 
 Para empezar, recomendamos las siguientes columnas:
+
 - `Computer`
 - `EventID`
 - `Level`

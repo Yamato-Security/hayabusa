@@ -8,6 +8,7 @@ Primero, se explicarán los fundamentos de cómo crear una regla de selection.
 
 Para escribir lógica AND, usamos diccionarios anidados.
 La regla de detección a continuación define que **ambas condiciones** tienen que ser verdaderas para que la regla coincida.
+
 - EventID tiene que ser exactamente `7040`.
 - **AND**
 - Channel tiene que ser exactamente `System`.
@@ -22,6 +23,7 @@ detection:
 
 Para escribir lógica OR, usamos listas (diccionarios que comienzan con `-`).
 En la regla de detección a continuación, **cualquiera** de las condiciones hará que la regla se active.
+
 - EventID tiene que ser exactamente `7040`.
 - **OR**
 - Channel tiene que ser exactamente `System`.
@@ -36,6 +38,7 @@ detection:
 
 También podemos combinar lógica `AND` y `OR` como se muestra a continuación.
 En este caso, la regla coincide cuando las siguientes dos condiciones son ambas verdaderas.
+
 - EventID es exactamente `7040` **OR** `7041`.
 - **AND**
 - Channel es exactamente `System`.
@@ -302,10 +305,12 @@ detection:
 ```
 
 Se pueden usar los siguientes dos comodines.
+
 - `*`: Coincide con cualquier cadena de cero o más caracteres. (Internamente se convierte en la expresión regular `.*`)
 - `?`: Coincide con cualquier carácter individual. (Internamente convertido en la expresión regular `.`)
 
 Sobre el escape de comodines:
+
 - Los comodines (`*` y `?`) pueden escaparse usando una barra invertida: `\*`, `\?`.
 - Si desea usar una barra invertida justo antes de un comodín, entonces escriba `\\*` o `\\?`.
 - No se requiere escape si está usando barras invertidas por sí solas.
@@ -353,6 +358,7 @@ detection:
 ```
 
 Las siguientes expresiones se pueden usar para `condition`.
+
 - `{expression1} and {expression2}`: Requiere ambas {expression1} AND {expression2}
 - `{expression1} or {expression2}`: Requiere {expression1} OR {expression2}
 - `not {expression}`: Invierte la lógica de {expression}
@@ -391,6 +397,7 @@ detection:
 Hemos implementado todas las correlaciones de Sigma versión 2.0.0 como se define [aquí](https://github.com/SigmaHQ/sigma-specification/blob/version_2/specification/sigma-correlation-rules-specification.md).
 
 Correlaciones admitidas:
+
 - Recuento de eventos (`event_count`)
 - Recuento de valores (`value_count`)
 - Proximidad temporal (`temporal`)

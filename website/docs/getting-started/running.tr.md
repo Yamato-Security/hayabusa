@@ -18,6 +18,7 @@ Bir Command/PowerShell Prompt veya Windows Terminal içinde, uygun 32-bit veya 6
 
 Windows'ta yerleşik Command veya PowerShell istemini kullanırken, dosya veya dizin yolunuzda boşluk varsa Hayabusa'nın herhangi bir .evtx dosyası yükleyemediğine dair bir hata alabilirsiniz.
 .evtx dosyalarını düzgün şekilde yüklemek için aşağıdakileri yaptığınızdan emin olun:
+
 1. Dosya veya dizin yolunu çift tırnak içine alın.
 2. Bir dizin yoluysa, son karakter olarak ters eğik çizgi (backslash) eklemediğinizden emin olun.
 
@@ -31,6 +32,7 @@ Bu, kapanış mesajlarındaki Japonca karakterlerin görüntülenmesi dışında
 ![Mojibake](../assets/screenshots/Mojibake.png)
 
 Bunu düzeltmek için dört seçeneğiniz var:
+
 1. Command veya PowerShell istemi yerine [Windows Terminal](https://learn.microsoft.com/en-us/windows/terminal/) kullanın. (Önerilen)
 2. `MS Gothic` yazı tipini kullanın. Ters eğik çizgilerin Yen sembollerine dönüşeceğini unutmayın.
    ![MojibakeFix](../assets/screenshots/MojibakeFix.png)

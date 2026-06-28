@@ -52,6 +52,7 @@ brew install openssl
 ## หมายเหตุการคอมไพล์บน Linux
 
 จำเป็นต้องมี build dependencies ต่อไปนี้:
+
 * openssl-devel (Fedora-based) / libssl-dev (Ubuntu-based) 
 * perl
 * musl-gcc

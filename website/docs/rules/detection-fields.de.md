@@ -8,6 +8,7 @@ Zunächst werden die Grundlagen erklärt, wie man eine Selektionsregel erstellt.
 
 Um UND-Logik zu schreiben, verwenden wir verschachtelte Dictionaries.
 Die untenstehende Erkennungsregel definiert, dass **beide Bedingungen** wahr sein müssen, damit die Regel zutrifft.
+
 - EventID muss exakt `7040` sein.
 - **AND**
 - Channel muss exakt `System` sein.
@@ -22,6 +23,7 @@ detection:
 
 Um ODER-Logik zu schreiben, verwenden wir Listen (Dictionaries, die mit `-` beginnen).
 In der untenstehenden Erkennungsregel löst **eine der beiden** Bedingungen das Zutreffen der Regel aus.
+
 - EventID muss exakt `7040` sein.
 - **OR**
 - Channel muss exakt `System` sein.
@@ -36,6 +38,7 @@ detection:
 
 Wir können auch `AND`- und `OR`-Logik kombinieren, wie unten gezeigt.
 In diesem Fall trifft die Regel zu, wenn die folgenden beiden Bedingungen beide wahr sind.
+
 - EventID ist entweder exakt `7040` **OR** `7041`.
 - **AND**
 - Channel ist exakt `System`.
@@ -302,10 +305,12 @@ detection:
 ```
 
 Die folgenden beiden Platzhalter können verwendet werden.
+
 - `*`: Stimmt mit einer beliebigen Zeichenkette von null oder mehr Zeichen überein. (Intern wird er in den regulären Ausdruck `.*` konvertiert)
 - `?`: Stimmt mit einem einzelnen beliebigen Zeichen überein. (Intern in den regulären Ausdruck `.` konvertiert)
 
 Über das Escapen von Platzhaltern:
+
 - Platzhalter (`*` und `?`) können durch Verwendung eines Backslashes escaped werden: `\*`, `\?`.
 - Wenn Sie einen Backslash direkt vor einem Platzhalter verwenden möchten, schreiben Sie `\\*` oder `\\?`.
 - Escapen ist nicht erforderlich, wenn Sie Backslashes alleine verwenden.
@@ -353,6 +358,7 @@ detection:
 ```
 
 Die folgenden Ausdrücke können für `condition` verwendet werden.
+
 - `{expression1} and {expression2}`: Erfordert sowohl {expression1} UND {expression2}
 - `{expression1} or {expression2}`: Erfordert entweder {expression1} ODER {expression2}
 - `not {expression}`: Kehrt die Logik von {expression} um
@@ -391,6 +397,7 @@ detection:
 Wir haben alle Sigma-Version-2.0.0-Korrelationen implementiert, wie [hier](https://github.com/SigmaHQ/sigma-specification/blob/version_2/specification/sigma-correlation-rules-specification.md) definiert.
 
 Unterstützte Korrelationen:
+
 - Event Count (`event_count`)
 - Value Count (`value_count`)
 - Temporal Proximity (`temporal`)

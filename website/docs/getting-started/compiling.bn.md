@@ -52,6 +52,7 @@ brew install openssl
 ## Linux কম্পাইলিং নোট
 
 নিম্নলিখিত বিল্ড নির্ভরতাগুলি প্রয়োজন:
+
 * openssl-devel (Fedora-ভিত্তিক) / libssl-dev (Ubuntu-ভিত্তিক) 
 * perl
 * musl-gcc

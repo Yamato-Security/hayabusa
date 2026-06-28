@@ -116,6 +116,7 @@ Varsayılan `Match criteria` değeri `Mixed`'dir ancak `Or`, `And` veya `Exact` 
 
 `Mixed` `Match criteria` değeri karmaşıktır çünkü bazen `AND` mantığını, bazen de `OR` mantığını kullanır ancak öğrenildikten sonra çok esnek olabilir.
 Şu şekilde çalışır:
+
 * Kelimeleri boşluklarla ayırırsanız, `OR` mantığı olarak değerlendirilir.
 * Aramanıza boşluk eklemek isterseniz, tırnak işareti eklemeniz gerekir.
 * Bir koşulun önüne `+` koyarak `AND` mantığı uygulayın.

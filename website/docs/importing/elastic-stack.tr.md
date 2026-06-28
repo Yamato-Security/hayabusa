@@ -34,6 +34,7 @@ VM'yi başlattığınızda, buna benzer bir ekranla karşılaşacaksınız:
 Kibana URL'sini ve SSH sunucusunun IP adresini not edin.
 
 Aşağıdaki kimlik bilgileriyle oturum açabilirsiniz:
+
 * Kullanıcı adı: `elk_user`
 * Parola: `forensics`
 
@@ -147,6 +148,7 @@ Birçok alan olduğundan, aradığınız alan adının adını arama kutusuna ya
 ![Adding Columns](../assets/doc/ElasticStackImport/07-AddingColumns.png)
 
 Başlamak için aşağıdaki sütunları öneririz:
+
 - `Computer`
 - `EventID`
 - `Level`

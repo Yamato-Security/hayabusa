@@ -80,6 +80,7 @@ Timestamp · RuleTitle · Level · Computer · Channel · EventID · RecordID ·
 Diese Regeln zählen dieselben Ereignisse innerhalb eines Zeitraums mit **unterschiedlichen** Werten eines bestimmten Feldes.
 
 Beispiele:
+
 - Netzwerk-Scans, bei denen eine einzelne Quell-IP-Adresse versucht, sich mit vielen verschiedenen Ziel-IP-Adressen und/oder -Ports zu verbinden.
 - Password-Spraying-Angriffe, bei denen eine einzelne Quelle sich bei vielen verschiedenen Benutzern nicht authentifizieren kann.
 - Erkennung von Tools wie BloodHound, die innerhalb eines kurzen Zeitraums viele hoch privilegierte AD-Gruppen aufzählen.

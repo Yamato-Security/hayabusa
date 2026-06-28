@@ -3,6 +3,7 @@
 [こちら](https://github.com/SigmaHQ/sigma-specification/blob/version_2/specification/sigma-correlation-rules-specification.md)に定義されているSigmaバージョン2.0.0の相関ルールのすべてを実装しています。
 
 サポートされている相関ルール:
+
 - イベントカウント (`event_count`)
 - 値カウント (`value_count`)
 - 時間的近接性 (`temporal`)
@@ -92,6 +93,7 @@ Timestamp · RuleTitle · Level · Computer · Channel · EventID · RecordID ·
 これらのルールは、指定されたフィールドの**異なる**値を持つ同じイベントを一定の時間枠内でカウントします。
 
 例:
+
 - 1つの送信元IPアドレスが多数の異なる宛先IPアドレスやポートに接続しようとするネットワークスキャンの検知
 - 1つの送信元が多数の異なるユーザーに対して認証に失敗するパスワードスプレー攻撃の検知
 - 短時間で多数の高権限ADグループを列挙するBloodHoundのようなツールの検知

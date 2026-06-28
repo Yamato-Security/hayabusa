@@ -52,6 +52,7 @@ brew install openssl
 ## Linux 컴파일 참고 사항
 
 다음 빌드 의존성이 필요합니다:
+
 * openssl-devel (Fedora 기반) / libssl-dev (Ubuntu 기반) 
 * perl
 * musl-gcc

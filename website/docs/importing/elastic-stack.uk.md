@@ -34,6 +34,7 @@
 Зверніть увагу на URL-адресу Kibana та IP-адресу SSH-сервера.
 
 Ви можете увійти за допомогою таких облікових даних:
+
 * Ім'я користувача: `elk_user`
 * Пароль: `forensics`
 
@@ -147,6 +148,7 @@ The following indices are currently active in Elasticsearch:
 ![Adding Columns](../assets/doc/ElasticStackImport/07-AddingColumns.png)
 
 Для початку ми рекомендуємо такі стовпці:
+
 - `Computer`
 - `EventID`
 - `Level`

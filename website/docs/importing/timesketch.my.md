@@ -7,6 +7,7 @@
 သင်သည် တစ်ဦးတည်း အလုပ်လုပ်နေပြီး အရွယ်အစား MB ရာဂဏန်းအနည်းငယ်သာရှိသော CSV ဖိုင်တစ်ခုကိုသာ ခွဲခြမ်းစိတ်ဖြာနေသည့် သေးငယ်သော စုံစမ်းစစ်ဆေးမှုများအတွက် Timeline Explorer သည် သင့်တော်ပါသည်၊ သို့သော် သင်သည် ပိုကြီးသော data သို့မဟုတ် အဖွဲ့တစ်ဖွဲ့နှင့် အလုပ်လုပ်နေသည့်အခါ Timesketch ကဲ့သို့သော ကိရိယာတစ်ခုသည် များစွာ ပိုကောင်းပါသည်။
 
 Timesketch သည် အောက်ပါ အကျိုးကျေးဇူးများကို ပေးသည်-
+
 1. ၎င်းသည် အလွန်မြန်ပြီး ကြီးမားသော data ကို ကိုင်တွယ်နိုင်သည်
 2. ၎င်းသည် အသုံးပြုသူများစွာ တစ်ပြိုင်နက်တည်း အသုံးပြုနိုင်သော ပူးပေါင်းဆောင်ရွက်ရေး ကိရိယာတစ်ခုဖြစ်သည်
 3. ၎င်းသည် အဆင့်မြင့် data ခွဲခြမ်းစိတ်ဖြာမှု၊ histogram များနှင့် ပုံဖော်ပြသမှုများကို ပေးသည်
@@ -52,6 +53,7 @@ git clone https://github.com/google/timesketch.git
 cd timesketch
 ```
 အောက်ပါ အဆင့်များကို လိုက်နာ၍ Docker container ကို စတင်ပါ။
+
 - https://github.com/google/timesketch/tree/master/docker/e2e#build-and-start-containers
 
 ## Logging in
@@ -178,6 +180,7 @@ timestamp များ၏ အထက်နှင့် `Toggle Event Histogram` i
 ### Search bar
 
 သတ်မှတ်ထားသော severity level အချို့ရှိ alert များကိုသာ ပြသခြင်းဖြင့် စတင်ရန် အသုံးဝင်သော query အချို့ ဤနေရာတွင် ရှိသည်-
+
 1. critical alert များကိုသာ ပြသရန် `Level:crit`။
 2. high နှင့် critical alert များကို ပြသရန် `Level:crit OR Level:high`
 3. informational alert များကို ဖွက်ထားရန် `NOT Level:info`

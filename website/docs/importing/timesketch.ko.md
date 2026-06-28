@@ -7,6 +7,7 @@
 수백 MB 정도 크기의 CSV 파일만 분석하고 혼자 작업하는 소규모 조사의 경우 Timeline Explorer가 적합하지만, 더 큰 데이터를 다루거나 팀으로 작업할 때는 Timesketch와 같은 도구가 훨씬 좋습니다.
 
 Timesketch는 다음과 같은 이점을 제공합니다:
+
 1. 매우 빠르며 대용량 데이터를 처리할 수 있습니다
 2. 여러 사용자가 동시에 사용할 수 있는 협업 도구입니다
 3. 고급 데이터 분석, 히스토그램 및 시각화를 제공합니다
@@ -52,6 +53,7 @@ git clone https://github.com/google/timesketch.git
 cd timesketch
 ```
 아래 단계를 따라 Docker 컨테이너를 시작하세요.
+
 - https://github.com/google/timesketch/tree/master/docker/e2e#build-and-start-containers
 
 ## 로그인
@@ -178,6 +180,7 @@ sigma 규칙 로직을 이해하고 싶거나 설명, 참조 등을 찾아보려
 ### 검색 바
 
 특정 심각도 수준의 알림만 표시하는 것으로 시작할 수 있는 몇 가지 유용한 쿼리는 다음과 같습니다:
+
 1. `Level:crit`은 중요 알림만 표시합니다.
 2. `Level:crit OR Level:high`는 높음 및 중요 알림을 표시합니다
 3. `NOT Level:info`는 정보성 알림을 숨깁니다

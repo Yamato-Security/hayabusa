@@ -34,6 +34,7 @@ Hayabusa 的結果可以輕鬆匯入 Elastic Stack。
 請記下 Kibana 的 URL 以及 SSH 伺服器的 IP 位址。
 
 你可以使用下列憑證登入：
+
 * 使用者名稱：`elk_user`
 * 密碼：`forensics`
 
@@ -147,6 +148,7 @@ The following indices are currently active in Elasticsearch:
 ![Adding Columns](../assets/doc/ElasticStackImport/07-AddingColumns.png)
 
 一開始，我們建議使用下列欄位：
+
 - `Computer`
 - `EventID`
 - `Level`

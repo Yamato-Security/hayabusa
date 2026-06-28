@@ -5,12 +5,14 @@ As palavras-chave especiais descontinuadas e a agregação `count` ainda são su
 ## Palavras-chave especiais descontinuadas
 
 Atualmente, as seguintes palavras-chave especiais podem ser especificadas:
+
 - `value`: corresponde por string (curingas e pipes também podem ser especificados).
 - `min_length`: corresponde quando o número de caracteres é maior ou igual ao número especificado.
 - `regexes`: corresponde se uma das expressões regulares no arquivo que você especificar neste campo corresponder.
 - `allowlist`: a regra será ignorada se houver qualquer correspondência encontrada na lista de expressões regulares no arquivo que você especificar neste campo.
 
 No exemplo abaixo, a regra corresponderá se o seguinte for verdadeiro:
+
 - `ServiceName` é chamado de `malicious-service` ou contém uma expressão regular em `./rules/config/regex/detectlist_suspicous_services.txt`.
 - `ImagePath` tem no mínimo 1000 caracteres.
 - `ImagePath` não tem nenhuma correspondência na `allowlist`.
@@ -32,6 +34,7 @@ detection:
 ### Arquivos de exemplo das palavras-chave regexes e allowlist
 
 O Hayabusa tinha dois arquivos de expressões regulares integrados usados para o arquivo `./rules/hayabusa/default/alerts/System/7045_CreateOrModiftySystemProcess-WindowsService_MaliciousServiceInstalled.yml`:
+
 - `./rules/config/regex/detectlist_suspicous_services.txt`: para detectar nomes de serviços suspeitos
 - `./rules/config/regex/allowlist_legitimate_services.txt`: para permitir serviços legítimos
 
@@ -59,9 +62,11 @@ detection:
 ```
 
 As condições de agregação podem ser definidas no seguinte formato:
+
 - `count() {operator} {number}`: para eventos de log que correspondem à primeira condição antes do pipe, a condição corresponderá se o número de logs correspondentes satisfizer a expressão condicional especificada por `{operator}` e `{number}`.
 
 `{operator}` pode ser um dos seguintes:
+
 - `==`: se o valor for igual ao valor especificado, é tratado como correspondendo à condição.
 - `>=`: se o valor for maior ou igual ao valor especificado, a condição é considerada atendida.
 - `>`: se o valor for maior que o valor especificado, a condição é considerada atendida.
@@ -71,6 +76,7 @@ As condições de agregação podem ser definidas no seguinte formato:
 `{number}` deve ser um número.
 
 `timeframe` pode ser definido da seguinte forma:
+
 - `15s`: 15 segundos
 - `30m`: 30 minutos
 - `12h`: 12 horas

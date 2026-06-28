@@ -18,6 +18,7 @@ Command/PowerShell Prompt သို့မဟုတ် Windows Terminal တွင
 
 Windows ၏ built-in Command သို့မဟုတ် PowerShell prompt ကို အသုံးပြုသည့်အခါ သင်၏ file သို့မဟုတ် directory path တွင် space ပါဝင်ပါက Hayabusa သည် .evtx file များကို load မလုပ်နိုင်ကြောင်း error တစ်ခု သင်ရရှိနိုင်ပါသည်။
 .evtx file များကို မှန်ကန်စွာ load လုပ်နိုင်ရန် အောက်ပါတို့ကို ပြုလုပ်ရန် သေချာပါစေ-
+
 1. file သို့မဟုတ် directory path ကို double quote ဖြင့် ဝိုက်ထားပါ။
 2. directory path ဖြစ်ပါက နောက်ဆုံးစာလုံးအဖြစ် backslash ကို ထည့်သွင်းမထားရန် သေချာပါစေ။
 
@@ -31,6 +32,7 @@ Windows ပေါ်ရှိ default font `Lucida Console` ဖြင့် logo
 ![Mojibake](../assets/screenshots/Mojibake.png)
 
 ဤအရာကို ဖြေရှင်းရန် သင့်တွင် ရွေးချယ်စရာ လေးခု ရှိပါသည်-
+
 1. Command သို့မဟုတ် PowerShell prompt အစား [Windows Terminal](https://learn.microsoft.com/en-us/windows/terminal/) ကို အသုံးပြုပါ။ (အကြံပြုထားသည်)
 2. `MS Gothic` font ကို အသုံးပြုပါ။ backslash များသည် Yen သင်္ကေတများအဖြစ် ပြောင်းသွားမည်ကို သတိပြုပါ။
    ![MojibakeFix](../assets/screenshots/MojibakeFix.png)

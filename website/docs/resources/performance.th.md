@@ -42,6 +42,7 @@ Zach Mathis ([@yamatosecurity](https://twitter.com/yamatosecurity))
 
 ### ประสิทธิผล（ตัวอย่างจริงจาก Pull Request）  <!-- omit in toc -->
 ความเร็วจะปรับปรุงได้มากเพียงใดขึ้นอยู่กับโปรแกรม แต่ในตัวอย่างต่อไปนี้
+
 - [chg: build.rs(for vc runtime) to rustflags in config.toml and replace default global memory allocator with mimalloc. #777](https://github.com/Yamato-Security/hayabusa/pull/777)
 
 การเปลี่ยน memory allocator เป็น [mimalloc](https://github.com/microsoft/mimalloc) ส่งผลให้ประสิทธิภาพเพิ่มขึ้น 20-30% บน Intel CPU
@@ -78,6 +79,7 @@ fn main() {
 
 ### ประสิทธิผล（ตัวอย่างจริงจาก Pull Request）   <!-- omit in toc -->
 ในตัวอย่างต่อไปนี้ การประมวลผล IO เมื่อจัดการผลการตรวจจับทีละรายการสามารถทำได้นอกลูป:
+
 - [Improve speed by removing IO process before insert_message() #858](https://github.com/Yamato-Security/hayabusa/pull/858)
 
 ส่งผลให้ความเร็วปรับปรุงได้ประมาณ 20%
@@ -122,6 +124,7 @@ fn main() {
 
 ### ประสิทธิผล（ตัวอย่างจริงจาก Pull Request）   <!-- omit in toc -->
 ในตัวอย่างต่อไปนี้ การคอมไพล์ regular expression ทำนอกลูปและถูกแคชไว้
+
 - [cache regex for allowlist and regexes keyword. #174](https://github.com/Yamato-Security/hayabusa/pull/174)
 
 ส่งผลให้ความเร็วปรับปรุงได้อย่างมีนัยสำคัญ
@@ -161,6 +164,7 @@ fn main() {
 
 ### ประสิทธิผล（ตัวอย่างจริงจาก Pull Request）   <!-- omit in toc -->
 วิธีที่อธิบายข้างต้นถูกนำมาใช้ที่นี่
+
 - [Feature/improve output#253 #285](https://github.com/Yamato-Security/hayabusa/pull/285)
 
 และส่งผลให้ความเร็วปรับปรุงได้อย่างมีนัยสำคัญในการประมวลผลเอาต์พุต
@@ -206,6 +210,7 @@ fn main() {
 
 ### ประสิทธิผล（ตัวอย่างจริงจาก Pull Request）   <!-- omit in toc -->
 เนื่องจาก Hayabusa ต้องการการเปรียบเทียบสตริงแบบไม่สนใจตัวพิมพ์เล็กพิมพ์ใหญ่ เราจึงใช้ [to_lowercase()](https://doc.rust-lang.org/std/string/struct.String.html#method.to_lowercase) แล้วจึงใช้วิธีข้างต้น แม้กระนั้น ในตัวอย่างต่อไปนี้
+
 - [Imporving speed by changing wildcard search process from regular expression match to starts_with/ends_with match #890](https://github.com/Yamato-Security/hayabusa/pull/890)
 - [Improving speed by using eq_ignore_ascii_case() before regular expression match #884](https://github.com/Yamato-Security/hayabusa/pull/884)
 
@@ -254,6 +259,7 @@ fn main() {
 
 ### ประสิทธิผล（ตัวอย่างจริงจาก Pull Request）   <!-- omit in toc -->
 ในตัวอย่างต่อไปนี้ มีการใช้วิธีข้างต้น
+
 - [Improving speed by adding string length match before regular expression match #883](https://github.com/Yamato-Security/hayabusa/pull/883)
 
 ซึ่งปรับปรุงความเร็วได้ประมาณ 15%
@@ -301,6 +307,7 @@ fn main() {
 
 ### ประสิทธิผล（ตัวอย่างจริงจาก Pull Request）   <!-- omit in toc -->
 ในตัวอย่างต่อไปนี้ ด้วยการแทนที่การใช้ [clone()](https://doc.rust-lang.org/std/clone/trait.Clone.html), [to_string()](https://doc.rust-lang.org/std/string/trait.ToString.html) และ [to_owned()](https://doc.rust-lang.org/std/borrow/trait.ToOwned.html) ที่ไม่จำเป็น
+
 - [Reduce used memory and Skipped rule author, detect counts aggregation when --no-summary option is used #782](https://github.com/Yamato-Security/hayabusa/pull/782)
 
 เราสามารถลดการใช้หน่วยความจำได้อย่างมีนัยสำคัญ
@@ -380,6 +387,7 @@ fn main() {
 
 ### ประสิทธิผล（ตัวอย่างจริงจาก Pull Request）   <!-- omit in toc -->
 ตัวอย่างต่อไปนี้ใช้วิธีที่อธิบายข้างต้น:
+
 - [Reduce memory usage when reading JSONL file #921](https://github.com/Yamato-Security/hayabusa/pull/921)
 
 เมื่อทดสอบกับไฟล์ JSON ขนาด 1.7GB หน่วยความจำลดลง 75%
@@ -409,12 +417,14 @@ fn main() {
 
 ### ประสิทธิผล（ตัวอย่างจริงจาก Pull Request）   <!-- omit in toc -->
 ในตัวอย่างต่อไปนี้ สตริงสั้นถูกจัดการด้วย [CompactString](https://docs.rs/compact_str/latest/compact_str/):
+
 - [To reduce ram usage and performance, Replaced String with other crate #793](https://github.com/Yamato-Security/hayabusa/pull/793)
 
 สิ่งนี้ทำให้การใช้หน่วยความจำลดลงประมาณ 20%
 
 ## ลบฟิลด์ที่ไม่จำเป็นในโครงสร้างที่มีอายุยาว
 โครงสร้างที่ยังคงถูกเก็บไว้ในหน่วยความจำระหว่างการเริ่มต้นกระบวนการอาจส่งผลต่อการใช้หน่วยความจำโดยรวม ใน Hayabusa โครงสร้างต่อไปนี้ (ณ เวอร์ชัน 2.2.2) โดยเฉพาะอย่างยิ่ง ถูกเก็บไว้เป็นจำนวนมาก
+
 - [DetectInfo](https://github.com/Yamato-Security/hayabusa/blob/v2.2.2/src/detections/message.rs#L27-L36)
 - [LeafSelectNode](https://github.com/Yamato-Security/hayabusa/blob/v2.2.2/src/detections/rule/selectionnodes.rs#L234-L239)
 
@@ -456,6 +466,7 @@ pub struct DetectInfo {
 
 ### ประสิทธิผล（ตัวอย่างจริงจาก Pull Request）   <!-- omit in toc -->
 ในตัวอย่างต่อไปนี้ เมื่อทดสอบกับข้อมูลที่มีจำนวนเรกคอร์ดผลการตรวจจับประมาณ 1.5 ล้านรายการ
+
 - [Reduced memory usage of DetectInfo/EvtxRecordInfo #837](https://github.com/Yamato-Security/hayabusa/pull/837)
 - [Reduce memory usage by removing unnecessary regex #894](https://github.com/Yamato-Security/hayabusa/pull/894)
 
@@ -492,6 +503,7 @@ memory allocator บางตัวเก็บสถิติการใช้
 
 ### ตัวอย่าง   <!-- omit in toc -->
 การนำไปใช้ข้างต้นถูกนำมาใช้ในส่วนต่อไปนี้:
+
 - [add --debug option for printing mimalloc memory stats #822](https://github.com/Yamato-Security/hayabusa/pull/822)
 
 ใน Hayabusa หากคุณเพิ่มตัวเลือก `--debug` สถิติการใช้หน่วยความจำจะถูกส่งออกในตอนท้าย
@@ -524,6 +536,7 @@ memory allocator บางตัวเก็บสถิติการใช้
 
 ### ตัวอย่าง  <!-- omit in toc -->
 ส่วนต่อไปนี้มีตัวอย่างขั้นตอนการวัดประสิทธิภาพด้วย Hayabusa
+
 - [Example of obtaining Windows performance counters](https://github.com/Yamato-Security/hayabusa/issues/778#issuecomment-1296504766)
 
 ## ใช้ heaptrack
