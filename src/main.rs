@@ -3052,6 +3052,14 @@ Any hostnames added to the critical_systems.txt file will have all alerts above 
     }
 
     fn check_is_valid_args_num(&self, action: Option<&Action>) -> bool {
+        // Under `cargo test`, `env::args()` is the test harness's argv (e.g. it
+        // contains `--test-threads=1` or a test-name filter), not hayabusa's own
+        // arguments, so this "subcommand run with no args" heuristic would misfire
+        // and make the app print help and return early. Skip it in test builds.
+        // See https://github.com/Yamato-Security/hayabusa/issues/1170
+        if cfg!(test) {
+            return true;
+        }
         match action.as_ref().unwrap() {
             Action::CsvTimeline(_)
             | Action::JsonTimeline(_)
