@@ -505,7 +505,7 @@ mod tests {
         detections::{
             configs::{
                 Action, CommonOptions, Config, DetectCommonOption, EidMetricsOption, InputOption,
-                StoredStatic,
+                STORED_EKEY_ALIAS, StoredStatic,
             },
             utils::create_rec_info,
         },
@@ -560,6 +560,13 @@ mod tests {
                 clobber: false,
                 remove_duplicate_detections: false,
             }));
+
+        // `create_rec_info` reads the global `STORED_EKEY_ALIAS`, which starts as
+        // `None`. Initialize it here so the test passes in isolation (e.g. under
+        // `cargo nextest run`, which runs each test in its own process and so cannot
+        // rely on another test having populated it). See
+        // https://github.com/Yamato-Security/hayabusa/issues/1281
+        *STORED_EKEY_ALIAS.write().unwrap() = Some(dummy_stored_static.eventkey_alias.clone());
 
         let mut timeline = Timeline::new();
         // Test 1: When the channel of the record is included in the alias.
