@@ -2044,7 +2044,32 @@ pub struct Config {
 
 impl ConfigReader {
     pub fn new() -> Self {
-        let parse = Config::parse();
+        // `Config::parse()` reads std::env::args() and clap hard-exits the process
+        // on any argument it doesn't recognize. Under `cargo test` the process args
+        // belong to the test harness (e.g. `--test-threads=1` or a test-name
+        // filter), which would abort the whole test binary. `cfg!(test)` is no help
+        // here because the binary's tests link this library compiled *without* the
+        // test cfg, so detect the test binary at runtime instead: it lives under
+        // `target/.../deps/`. See https://github.com/Yamato-Security/hayabusa/issues/1170
+        let parse = Config::try_parse().unwrap_or_else(|e| {
+            let under_test = std::env::current_exe()
+                .map(|p| p.components().any(|c| c.as_os_str() == "deps"))
+                .unwrap_or(false);
+            // Only swallow the error kinds the harness itself produces: its flags
+            // (`--test-threads`, `--nocapture`, ...) parse as `UnknownArgument`, and
+            // a test-name filter parses as `InvalidSubcommand`. Genuine validation
+            // errors (bad values, conflicts, ...) still exit normally even here, so a
+            // real run is never silently swallowed.
+            let harness_arg = matches!(
+                e.kind(),
+                clap::error::ErrorKind::UnknownArgument | clap::error::ErrorKind::InvalidSubcommand
+            );
+            if under_test && harness_arg {
+                Config::parse_from(["hayabusa"])
+            } else {
+                e.exit()
+            }
+        });
         let help_term_width = if let Some((Width(w), _)) = terminal_size() {
             w as usize
         } else {
