@@ -266,7 +266,7 @@ This document is dynamically updated every time there is an update to Sigma or H
 - `|lt`: Checks if a field value is less than a certain number.
 - `|lte`: Checks if a field value is less than or equal to a certain number.
 - `|neq`: Checks if a field value is different from the specified value (the negation of a plain value match). It can be combined with other modifiers (`|contains|neq`, `|startswith|neq`, `|endswith|neq`, `|fieldref|neq`, ...) to negate them. When multiple values are specified in a list, the field must be different from **all** of them. A field that does not exist is treated as different from the value and therefore matches.
-- `|re`: Use case-sensitive regular expressions. (We are using the regex crate so please out the documentation at <https://docs.rs/regex/latest/regex/#syntax> to learn how to write supported regular expressions.)
+- `|re`: Use case-sensitive regular expressions. (We are using the regex crate so please check out the documentation at <https://docs.rs/regex/latest/regex/#syntax> to learn how to write supported regular expressions.)
     > Caution: [Regular expression syntax in Sigma rules](https://github.com/SigmaHQ/sigma-specification/blob/main/appendix/sigma-modifiers-appendix.md#regular-expression) uses PCRE with certain metacharacters for character classes, lookbehind, atomic grouping, etc... being unsupported. The Rust regex crate should be able to use all regular expressions in Sigma rules but there is a possibility of incompatibility. 
 - `|re|i`: (Insensitive) Use case-insensitive regular expressions.
 - `|re|m`: (Multi-line) Match across multiple lines. `^` / `$` match the start/end of line.
