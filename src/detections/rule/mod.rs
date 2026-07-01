@@ -386,6 +386,34 @@ impl DetectionNode {
             Box::new(or_node)
         } else if yaml.as_vec().is_some() && key_list.iter().any(|k: &str| k.contains("|all")) {
             // If "all" is in key_list, the child element array is interpreted as an AND condition.
+            // When `neq` is also present, De Morgan flips the connective:
+            // NOT(a AND b) == (NOT a) OR (NOT b), so build an OR node of the negated leaves instead.
+            let children: Vec<Box<dyn SelectionNode>> = yaml
+                .as_vec()
+                .unwrap()
+                .iter()
+                .map(|child_yaml| Self::parse_selection_recursively(key_list, child_yaml))
+                .collect();
+            if key_list
+                .iter()
+                .any(|k| k.split('|').skip(1).any(|m| m == "neq"))
+            {
+                let mut or_node = selectionnodes::OrSelectionNode::new();
+                or_node.child_nodes = children;
+                Box::new(or_node)
+            } else {
+                let mut and_node = selectionnodes::AndSelectionNode::new();
+                and_node.child_nodes = children;
+                Box::new(and_node)
+            }
+        } else if yaml.as_vec().is_some()
+            && key_list
+                .iter()
+                .any(|k| k.split('|').skip(1).any(|modifier| modifier == "neq"))
+        {
+            // `neq` negates the whole comparison, so a plain (OR-linked) list of values under a `neq`
+            // modifier means "different from ALL of them" (De Morgan: NOT(a OR b) == NOT a AND NOT b).
+            // Interpret the array as an AND condition instead of the usual OR.
             let mut and_node = selectionnodes::AndSelectionNode::new();
             yaml.as_vec().unwrap().iter().for_each(|child_yaml| {
                 let child_node = Self::parse_selection_recursively(key_list, child_yaml);
