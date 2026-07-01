@@ -438,17 +438,20 @@ impl SelectionNode for LeafSelectionNode {
                 }
                 // For arrays, the leaf matches if any element matches.
                 Value::Array(_) => {
-                    return event_data_value
-                        .as_array()
-                        .unwrap()
-                        .iter()
-                        .any(|array_element| {
-                            let event_value = utils::value_to_string(array_element);
-                            self.matcher
-                                .as_ref()
-                                .unwrap()
-                                .is_match(event_value.as_ref(), event_record)
-                        });
+                    let matcher = self.matcher.as_ref().unwrap();
+                    let per_element = |array_element: &Value| {
+                        let event_value = utils::value_to_string(array_element);
+                        matcher.is_match(event_value.as_ref(), event_record)
+                    };
+                    let array = event_data_value.as_array().unwrap();
+                    // For a negated matcher (`neq`), each element's result is already inverted, so the
+                    // negation must apply over the whole array: NOT(e1 OR e2 OR ...) == (NOT e1) AND (NOT e2) ...
+                    // Combine with `all` in that case; otherwise combine with `any` (a value matches if any element does).
+                    return if matcher.is_negated() {
+                        array.iter().all(per_element)
+                    } else {
+                        array.iter().any(per_element)
+                    };
                 }
                 _ => {
                     return self
@@ -674,6 +677,174 @@ mod tests {
         let record_json_str = r#"
         {
             "Event": {"System": {"EventID": 4103, "Channel": "not detect", "Computer":"DESKTOP-ICHIICHI"}},
+            "Event_attributes": {"xmlns": "http://schemas.microsoft.com/win/2004/08/events/event"}
+        }"#;
+
+        check_select(rule_str, record_json_str, false);
+    }
+
+    #[test]
+    fn test_neq_contains_all_detect() {
+        // `contains|all|neq` with a list negates the AND-linked comparison (De Morgan):
+        // NOT(contains "cur" AND contains "ity"). "curabc" contains "cur" but not "ity",
+        // so NOT(true AND false) = true -> MATCH.
+        let rule_str = r#"
+        enabled: true
+        detection:
+            selection:
+                Channel|contains|all|neq:
+                    - cur
+                    - ity
+        details: 'command=%CommandLine%'
+        "#;
+        let record_json_str = r#"
+        {
+            "Event": {"System": {"EventID": 4103, "Channel": "curabc"}},
+            "Event_attributes": {"xmlns": "http://schemas.microsoft.com/win/2004/08/events/event"}
+        }"#;
+        check_select(rule_str, record_json_str, true);
+    }
+
+    #[test]
+    fn test_neq_contains_all_notdetect() {
+        // NOT(contains "cur" AND contains "ity"). "curity" contains both, so NOT(true AND true) = false.
+        let rule_str = r#"
+        enabled: true
+        detection:
+            selection:
+                Channel|contains|all|neq:
+                    - cur
+                    - ity
+        details: 'command=%CommandLine%'
+        "#;
+        let record_json_str = r#"
+        {
+            "Event": {"System": {"EventID": 4103, "Channel": "curity"}},
+            "Event_attributes": {"xmlns": "http://schemas.microsoft.com/win/2004/08/events/event"}
+        }"#;
+        check_select(rule_str, record_json_str, false);
+    }
+
+    #[test]
+    fn test_neq_data_array_notdetect() {
+        // Multi-valued EventData.Data with neq: Data = ["X","Y"], `neq: X`.
+        // The negation applies over the whole field: NOT(any element == X). X is present, so NO MATCH.
+        // (This must agree with condition-level `not` on the same data.)
+        let rule_str = r#"
+        enabled: true
+        detection:
+            selection:
+                Data|neq: X
+        details: 'command=%CommandLine%'
+        "#;
+        let record_json_str = r#"
+        {
+            "Event": {"EventData": {"Data": ["X", "Y"]}, "System": {"EventID": 4103, "Channel": "Sec"}},
+            "Event_attributes": {"xmlns": "http://schemas.microsoft.com/win/2004/08/events/event"}
+        }"#;
+        check_select(rule_str, record_json_str, false);
+    }
+
+    #[test]
+    fn test_neq_data_array_detect() {
+        // Data = ["X","Y"], `neq: Z`. Z is absent, so NOT(any element == Z) = NOT(false) = MATCH.
+        let rule_str = r#"
+        enabled: true
+        detection:
+            selection:
+                Data|neq: Z
+        details: 'command=%CommandLine%'
+        "#;
+        let record_json_str = r#"
+        {
+            "Event": {"EventData": {"Data": ["X", "Y"]}, "System": {"EventID": 4103, "Channel": "Sec"}},
+            "Event_attributes": {"xmlns": "http://schemas.microsoft.com/win/2004/08/events/event"}
+        }"#;
+        check_select(rule_str, record_json_str, true);
+    }
+
+    #[test]
+    fn test_neq_repeated_is_idempotent() {
+        // Repeating `neq` is idempotent (matches Sigma's SigmaNegateModifier, which sets `negated = true`
+        // rather than toggling). `Channel|neq|neq: Security` against Channel=Security stays a single
+        // negation: NOT(Channel == Security) = false.
+        let rule_str = r#"
+        enabled: true
+        detection:
+            selection:
+                Channel|neq|neq: Security
+        details: 'command=%CommandLine%'
+        "#;
+        let record_json_str = r#"
+        {
+            "Event": {"System": {"EventID": 4103, "Channel": "Security"}},
+            "Event_attributes": {"xmlns": "http://schemas.microsoft.com/win/2004/08/events/event"}
+        }"#;
+        check_select(rule_str, record_json_str, false);
+    }
+
+    #[test]
+    fn test_neq_list_detect() {
+        // A list of values under `neq` means "different from ALL of them" (De Morgan).
+        // "PowerShell" differs from both "Security" and "System", so it matches.
+        let rule_str = r#"
+        enabled: true
+        detection:
+            selection:
+                Channel|neq:
+                    - Security
+                    - System
+        details: 'command=%CommandLine%'
+        "#;
+
+        let record_json_str = r#"
+        {
+            "Event": {"System": {"EventID": 4103, "Channel": "PowerShell"}},
+            "Event_attributes": {"xmlns": "http://schemas.microsoft.com/win/2004/08/events/event"}
+        }"#;
+
+        check_select(rule_str, record_json_str, true);
+    }
+
+    #[test]
+    fn test_neq_list_notdetect_first() {
+        // If the field equals any value in the `neq` list, it must not match.
+        // (If the list were treated as OR instead of AND, this would wrongly match.)
+        let rule_str = r#"
+        enabled: true
+        detection:
+            selection:
+                Channel|neq:
+                    - Security
+                    - System
+        details: 'command=%CommandLine%'
+        "#;
+
+        let record_json_str = r#"
+        {
+            "Event": {"System": {"EventID": 4103, "Channel": "Security"}},
+            "Event_attributes": {"xmlns": "http://schemas.microsoft.com/win/2004/08/events/event"}
+        }"#;
+
+        check_select(rule_str, record_json_str, false);
+    }
+
+    #[test]
+    fn test_neq_list_notdetect_second() {
+        // Same as above but matching the second value in the list.
+        let rule_str = r#"
+        enabled: true
+        detection:
+            selection:
+                Channel|neq:
+                    - Security
+                    - System
+        details: 'command=%CommandLine%'
+        "#;
+
+        let record_json_str = r#"
+        {
+            "Event": {"System": {"EventID": 4103, "Channel": "System"}},
             "Event_attributes": {"xmlns": "http://schemas.microsoft.com/win/2004/08/events/event"}
         }"#;
 
