@@ -778,6 +778,7 @@ nav:
   - Rules:
       - Overview: rules/index.md
       - Creating Rule Files: rules/creating-rules.md
+      - Sigma Rule Curation: rules/sigma-curation.md
       - Detection Fields: rules/detection-fields.md
       - Field Modifiers: rules/field-modifiers.md
       - Sigma Correlations: rules/correlations.md
