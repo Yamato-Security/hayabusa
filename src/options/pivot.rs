@@ -50,8 +50,9 @@ pub fn insert_pivot_keyword(event_record: &Value, eventkey_alias: &EventKeyAlias
     {
         if let Some(event_record_str) = get_serde_number_to_string(record_level, false) {
             let exclude_check_str = event_record_str.as_str();
-            // Continue if level is low or above.
-            if exclude_check_str == "infomational"
+            // Skip low-value records: informational, undefined, or unknown ("-") level.
+            // (Records of low or higher severity fall through and are processed below.)
+            if exclude_check_str == "informational"
                 || exclude_check_str == "undefined"
                 || exclude_check_str == "-"
             {
@@ -334,7 +335,7 @@ mod tests {
     }
 
     #[test]
-    fn insert_pivot_keyword_level_infomational() {
+    fn insert_pivot_keyword_level_informational() {
         // Serialize against other tests that mutate the global PIVOT_KEYWORD.
         let _pivot_keyword_lock = PIVOT_KEYWORD_TEST_LOCK
             .lock()
@@ -345,7 +346,7 @@ mod tests {
         {
             "Event": {
                 "System": {
-                    "Level": "infomational"
+                    "Level": "informational"
                 },
                 "EventData": {
                     "IpAddress": "10.0.0.2"
