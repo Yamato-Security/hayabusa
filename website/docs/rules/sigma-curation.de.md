@@ -464,11 +464,3 @@ poetry run python sigma-to-hayabusa-converter.py -r ../sigma -o ./converted_sigm
 ```
 
 Nach der Ausführung der obigen Befehle werden die in das Hayabusa-kompatible Format konvertierten Regeln in das Verzeichnis `./converted_sigma_rules` ausgegeben.
-
-## Autoren
-
-Dieses Dokument wurde von Zach Mathis (@yamatosecurity) erstellt und von Fukusuke Takahashi (@fukusuket) ins Japanische übersetzt.
-
-Die Implementierung und Pflege des Werkzeugs `sigma-to-hayabusa-converter.py` erfolgt durch Fukusuke Takahashi.
-
-Das ursprüngliche Umwandlungswerkzeug, das auf dem inzwischen veralteten Werkzeug `sigmac` basierte, wurde von ItiB ([@itiB_S144](https://x.com/itib_s144)) und James Takai / hachiyone (@hach1yon) implementiert.

@@ -464,11 +464,3 @@ poetry run python sigma-to-hayabusa-converter.py -r ../sigma -o ./converted_sigm
 ```
 
 အထက်ပါ command များကို execute ပြုလုပ်ပြီးနောက်၊ Hayabusa-compatible format အဖြစ် ပြောင်းလဲထားသော စည်းမျဉ်းများကို `./converted_sigma_rules` directory သို့ ထုတ်ပေးမည်ဖြစ်သည်။
-
-## ရေးသားသူများ
-
-ဤစာရွက်စာတမ်းကို Zach Mathis (@yamatosecurity) မှ ဖန်တီးခဲ့ပြီး Fukusuke Takahashi (@fukusuket) မှ ဂျပန်ဘာသာသို့ ဘာသာပြန်ဆိုခဲ့သည်။
-
-`sigma-to-hayabusa-converter.py` tool ၏ အကောင်အထည်ဖော်မှုနှင့် ထိန်းသိမ်းမှုကို Fukusuke Takahashi မှ ဆောင်ရွက်သည်။
-
-ယခုအခါ deprecated ဖြစ်သွားပြီဖြစ်သော `sigmac` tool အပေါ် အားကိုးခဲ့သည့် မူရင်းပြောင်းလဲမှု tool ကို ItiB ([@itiB_S144](https://x.com/itib_s144)) နှင့် James Takai / hachiyone (@hach1yon) တို့မှ အကောင်အထည်ဖော်ခဲ့သည်။

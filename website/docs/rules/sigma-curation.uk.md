@@ -464,11 +464,3 @@ poetry run python sigma-to-hayabusa-converter.py -r ../sigma -o ./converted_sigm
 ```
 
 Після виконання наведених вище команд правила, перетворені у сумісний з Hayabusa формат, будуть виведені в каталог `./converted_sigma_rules`.
-
-## Автори
-
-Цей документ створив Zach Mathis (@yamatosecurity), а японською переклав Fukusuke Takahashi (@fukusuket).
-
-Реалізацію та підтримку інструмента `sigma-to-hayabusa-converter.py` виконує Fukusuke Takahashi.
-
-Оригінальний інструмент перетворення, який покладався на нині застарілий інструмент `sigmac`, реалізували ItiB ([@itiB_S144](https://x.com/itib_s144)) та James Takai / hachiyone (@hach1yon).

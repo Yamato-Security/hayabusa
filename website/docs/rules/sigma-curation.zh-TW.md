@@ -464,11 +464,3 @@ poetry run python sigma-to-hayabusa-converter.py -r ../sigma -o ./converted_sigm
 ```
 
 執行上述命令後，轉換為 Hayabusa 相容格式的規則會輸出到 `./converted_sigma_rules` 目錄。
-
-## 作者
-
-本文件由 Zach Mathis（@yamatosecurity）撰寫，並由 Fukusuke Takahashi（@fukusuket）翻譯為日文。
-
-`sigma-to-hayabusa-converter.py` 工具的實作與維護由 Fukusuke Takahashi 負責。
-
-最初依賴現已淘汰的 `sigmac` 工具的轉換工具，由 ItiB（[@itiB_S144](https://x.com/itib_s144)）與 James Takai / hachiyone（@hach1yon）實作。

@@ -464,11 +464,3 @@ poetry run python sigma-to-hayabusa-converter.py -r ../sigma -o ./converted_sigm
 ```
 
 Yukarıdaki komutları çalıştırdıktan sonra, Hayabusa uyumlu biçime dönüştürülen kurallar `./converted_sigma_rules` dizinine çıktı olarak verilecektir.
-
-## Yazarlar
-
-Bu belge Zach Mathis (@yamatosecurity) tarafından oluşturulmuş ve Fukusuke Takahashi (@fukusuket) tarafından Japoncaya çevrilmiştir.
-
-`sigma-to-hayabusa-converter.py` aracının uygulanması ve bakımı Fukusuke Takahashi tarafından yapılmaktadır.
-
-Artık kullanımdan kaldırılmış olan `sigmac` aracına dayanan orijinal dönüştürme aracı, ItiB ([@itiB_S144](https://x.com/itib_s144)) ve James Takai / hachiyone (@hach1yon) tarafından uygulanmıştır.
