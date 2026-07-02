@@ -165,7 +165,7 @@ Some categories map to more than one service/EventID (shown in **bold**).
 
 **Category field challenges**
 
-As shown above, the same `category` can use multiple services and event IDs (indicated in **bold**). That means it is possible to use some Sigma rules designed for `sysmon` with similar built-in Windows `security` event logs, if the fields that the rule uses also exist in the built-in event log. In that case, the field names — and sometimes also the values — may need to be converted to match the field names and values of the built-in `security` event log. Although this may be as simple as renaming some field names for certain categories, for other categories it may require various conversions in field values as well. How we do this conversion, and the compatibility between `sysmon` logs and `security` logs, are explained in detail [below](#sysmon-and-built-in-event-comparison-and-rule-conversion).
+As shown above, the same `category` can use multiple services and event IDs (indicated in **bold**). That means it is possible to use some Sigma rules designed for `sysmon` with similar built-in Windows `security` event logs, if the fields that the rule uses also exist in the built-in event log. In that case, the field names — and sometimes also the values — may need to be converted to match the field names and values of the built-in `security` event log. Although this may be as simple as renaming some field names for certain categories, for other categories it may require various conversions in field values as well. How we do this conversion, and the compatibility between `sysmon` logs and `security` logs, are explained in detail [below](#sysmon-builtin-comparison).
 
 **Category mapping sources**
 
@@ -287,7 +287,7 @@ Before explaining in detail how we convert specific categories, here is the part
 
 There is only one [known bug](https://github.com/Yamato-Security/sigma-to-hayabusa-converter/issues/2) at the moment: comment lines in Sigma rules will not be included in the output rules unless the comments follow some source code.
 
-## Sysmon and built-in event comparison and rule conversion
+## Sysmon and built-in event comparison and rule conversion { #sysmon-builtin-comparison }
 
 ### Process creation
 
