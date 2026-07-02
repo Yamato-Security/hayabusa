@@ -1,0 +1,52 @@
+name: Sync field-modifier counts
+
+# Keep the "Supported Field Modifiers" tables in the docs in sync with the
+# upstream auto-generated source in the hayabusa-rules repo
+# (doc/SupportedSigmaFieldModifiers.md), which is regenerated whenever the Sigma
+# or Hayabusa rulesets change. Runs daily (and on demand); when the counts
+# change it commits the refreshed pages and triggers the docs deploy.
+
+on:
+  schedule:
+    - cron: "0 23 * * *" # daily at 23:00 UTC, ~2h after hayabusa-rules regenerates the table
+  workflow_dispatch:
+
+permissions:
+  contents: write # push the refreshed docs pages
+  actions: write # dispatch the docs deploy workflow
+
+concurrency:
+  group: sync-field-modifiers
+  cancel-in-progress: false
+
+jobs:
+  sync:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v7
+
+      - name: Set up Python
+        uses: actions/setup-python@v6
+        with:
+          python-version: "3.x"
+
+      - name: Sync field-modifier tables from hayabusa-rules
+        run: python website/scripts/sync_field_modifiers.py
+
+      - name: Commit changes and trigger docs deploy
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          if [ -z "$(git status --porcelain website/docs/rules/field-modifiers*.md)" ]; then
+            echo "Field-modifier tables are already up to date; nothing to commit."
+            exit 0
+          fi
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add website/docs/rules/field-modifiers*.md
+          git commit -m "docs: sync field-modifier counts from hayabusa-rules"
+          git push
+          # Pushes made with GITHUB_TOKEN do not trigger other workflows, so
+          # explicitly dispatch the docs deploy to publish the refreshed counts.
+          gh workflow run docs.yml --ref "${GITHUB_REF_NAME}"
