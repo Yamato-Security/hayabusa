@@ -409,7 +409,7 @@ impl EventMetrics {
                         }
                         RdsGtw => {
                             let user_with_domain = get_event_value_as_string(
-                                "RdsGtwUserName",
+                                "RdsGtwUsername",
                                 &record.record,
                                 &stored_static.eventkey_alias,
                             );
