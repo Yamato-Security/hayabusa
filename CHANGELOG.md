@@ -12,11 +12,12 @@ Added unique and total alert count to MITRE ATT&CK tactics found. (#1753) (@fuku
 - Fixed the scan progress bar not redrawing in place (each update was printed on a new line) during large scans, caused by literal carriage returns (`\r\n`) in the progress bar template. (#1760) (@YamatoSecurity)
 - Fixed a typo (`infomational` → `informational`) in the pivot keyword list level exclusion that prevented `informational`-level records from being excluded, so their field values polluted the pivot keyword lists. (#1804) (@YamatoSecurity)
 - Fixed a Markdown-injection issue in the HTML report: user-supplied values (e.g. computer names) were HTML-escaped but not Markdown-escaped, so a value like `[x](javascript:alert(1))` could render as a clickable `javascript:` link. Markdown metacharacters in user values are now escaped as well. (#1806) (@YamatoSecurity)
-- The exemption that keeps the null-UUID test rule out of the excluded/noisy rule counts compared the exclude-list file path instead of the rule ID, so it never applied and test rules inflated the `Excluded rules` count. (#1821) (@Shirofune-Security)
+- The exemption that keeps the null-UUID test rule out of the excluded/noisy rule counts compared the exclude-list file path instead of the rule ID, so it never applied and test rules inflated the `Excluded rules` count. (#1821) (@YamatoSecurity)
+- Unique detection percentages in the Results Summary (and the HTML report) were mirrored across levels: the percentage was computed with the reversed loop index, so e.g. the `critical` row showed `informational`'s percentage and vice versa (only `medium` was correct). (#1812) (@YamatoSecurity)
 
 **Other:**
 
-- Translated all remaining Japanese code comments to English, cleaned up and added many code comments for readability, and fixed misspelled internal identifiers. Comments and identifiers only; no behavior changes. (#1808) (@Shirofune-Security)
+- Translated all remaining Japanese code comments to English, cleaned up and added many code comments for readability, and fixed misspelled internal identifiers. Comments and identifiers only; no behavior changes. (#1808) (@YamatoSecurity)
 
 ## 3.9.0 [2026/04/29]
 
