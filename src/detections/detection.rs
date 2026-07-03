@@ -44,7 +44,7 @@ use super::configs::{
 };
 use super::message::{self, COMPUTER_MITRE_ATTCK_MAP, COMPUTER_MITRE_ATTCK_UNIQUE_KEYS};
 
-// Struct to hold information for one record of an event file.
+/// Struct to hold information for one record of an event file.
 #[derive(Clone, Debug)]
 pub struct EvtxRecordInfo {
     pub evtx_filepath: String, // File path of the event file, used when outputting logs.
@@ -60,6 +60,7 @@ impl EvtxRecordInfo {
     }
 }
 
+/// Holds all loaded detection rules and runs them against event records.
 #[derive(Debug)]
 pub struct Detection {
     rules: Vec<RuleNode>,
@@ -74,7 +75,8 @@ impl Detection {
         rt.block_on(self.execute_rules(records))
     }
 
-    // Parse the rule files.
+    /// Parses the rule files under the given path and returns the successfully initialized rules,
+    /// after applying the level/status/ID filters and resolving correlation rules.
     pub fn parse_rule_files(
         min_level: &str,
         target_level: &str,
@@ -138,7 +140,8 @@ impl Detection {
             });
             None
         };
-        // parse rule files
+        // Create a RuleNode from each loaded YAML document and keep only the rules that
+        // initialize successfully.
         let mut ret = rulefile_loader
             .files
             .clone()
@@ -158,10 +161,10 @@ impl Detection {
         ret
     }
 
-    // Execute multiple rules against multiple event records, one rule at a time.
+    // Execute all rules against all event records; each rule runs in its own async task.
     async fn execute_rules(mut self, records: Vec<EvtxRecordInfo>) -> (Self, Vec<DetectInfo>) {
         let records_arc = Arc::new(records);
-        // // Create a thread for each rule and start the threads.
+        // Spawn an async task for each rule and start executing them.
         let rules = self.rules;
         let handles: Vec<JoinHandle<(RuleNode, Vec<DetectInfo>)>> = rules
             .into_iter()
@@ -171,7 +174,7 @@ impl Detection {
             })
             .collect();
 
-        // Wait for all threads to complete execution.
+        // Wait for all tasks to complete execution.
         let mut rules = vec![];
         let mut all_log_records = vec![];
         for handle in handles {
@@ -182,15 +185,19 @@ impl Detection {
             }
         }
 
-        // rules.into_iter() is called at the top of this function, which transfers ownership through the rule in map to the rule passed as an argument to execute_rule, so self.rules no longer has ownership.
-        // Writing code that returns an object with a member variable that has lost ownership causes a compiler error (compile error E0382), so ownership is returned to self.rules here.
-        // To allow self.rules to regain ownership, Detection::execute_rule returns the rule passed as an argument as the return value.
+        // rules.into_iter() at the top of this function moved every rule out of self.rules and
+        // into execute_rule(), so self.rules no longer has ownership. Returning an object whose
+        // member variable has been moved out of is a compile error (E0382), so ownership is given
+        // back to self.rules here. This is why Detection::execute_rule returns the rule it
+        // received as an argument.
         self.rules = rules;
 
         (self, all_log_records)
     }
 
-    pub fn add_aggcondition_msges(
+    /// Creates the detection messages for rules with an aggregation condition
+    /// (count() rules and correlation rules). Must run after all records have been processed.
+    pub fn add_aggcondition_msgs(
         self,
         rt: &Runtime,
         stored_static: &StoredStatic,
@@ -198,6 +205,11 @@ impl Detection {
         rt.block_on(self.add_aggcondition_msg(stored_static))
     }
 
+    /// Evaluates a Sigma temporal correlation: for each aggregation result of the first
+    /// referenced rule (`ids[0]`), checks that every other referenced rule also produced a
+    /// result within `timeframe`. When `temporal_ordered` is true the other results must occur
+    /// at or after the base result; otherwise anywhere within +/- `timeframe` of the base result
+    /// counts. Returns the base results for which all referenced rules matched.
     fn detect_within_timeframe(
         ids: &[String],
         temporal_ref_all_results: &HashMap<String, Vec<AggResult>>,
@@ -243,6 +255,9 @@ impl Detection {
     async fn add_aggcondition_msg(&self, stored_static: &StoredStatic) -> Vec<DetectInfo> {
         let mut ret = vec![];
         let mut detected_temporal_refs: HashMap<String, Vec<AggResult>> = HashMap::new();
+        // First pass: evaluate each rule's aggregation condition. Results of rules referenced by
+        // a temporal correlation rule are stashed in detected_temporal_refs and are only output
+        // directly when the referenced rule has generate: true.
         for rule in &self.rules {
             if !rule.has_agg_condition() {
                 continue;
@@ -261,7 +276,8 @@ impl Detection {
                 }
             }
         }
-        // Temporal rules can only be evaluated after all individual rule evaluations are complete, so loop through rules again to evaluate temporal rules.
+        // Temporal correlation rules can only be evaluated after all individual rule evaluations
+        // are complete, so loop through the rules again to evaluate them.
         for rule in self.rules.iter() {
             let (ref_ids, temporal_ordered) = match &rule.correlation_type {
                 CorrelationType::Temporal(ref_ids) => (ref_ids, false),
@@ -321,7 +337,9 @@ impl Detection {
                 continue;
             }
 
-            // If no aggregation condition exists, proceed with output as-is.
+            // If the rule has no aggregation condition, output the detection as-is. Rules with an
+            // aggregation condition count matches inside rule.select() and their messages are
+            // created later by add_aggcondition_msg().
             if !agg_condition {
                 ret.push(Detection::create_log_record(
                     &rule,
@@ -334,7 +352,9 @@ impl Detection {
         (rule, ret)
     }
 
-    /// create log record
+    /// Creates a DetectInfo detection message for a single record that matched a rule, filling in
+    /// every column requested by the output profile (timestamp, channel, level, MITRE tags,
+    /// GeoIP data, etc.).
     fn create_log_record(
         rule: &RuleNode,
         record_info: &EvtxRecordInfo,
@@ -659,7 +679,7 @@ impl Detection {
                     if profile_converter.contains_key(key.as_str()) {
                         continue;
                     }
-                    // initialize GeoIP Tgt associated fields
+                    // Initialize the GeoIP Tgt-related fields.
                     profile_converter.insert("TgtASN", TgtASN("".into()));
                     profile_converter.insert("TgtCountry", TgtCountry("".into()));
                     profile_converter.insert("TgtCity", TgtCity("".into()));
@@ -731,7 +751,7 @@ impl Detection {
                     if profile_converter.contains_key(key.as_str()) {
                         continue;
                     }
-                    // initialize GeoIP Tgt associated fields
+                    // Initialize the GeoIP Src-related fields.
                     profile_converter.insert("SrcASN", SrcASN("".into()));
                     profile_converter.insert("SrcCountry", SrcCountry("".into()));
                     profile_converter.insert("SrcCity", SrcCity("".into()));
@@ -813,7 +833,9 @@ impl Detection {
                 event_id: eid.clone(),
             }
         };
-        // If the rule has a details entry, output it as-is; otherwise output the details entry configured for the provider and eventid combination.
+        // If the rule has a details entry, output it as-is. Otherwise fall back to the default
+        // details configured for this provider and event ID combination, and if none exists,
+        // output all of the record's field data.
         let details_fmt_str = match rule.yaml["details"].as_str() {
             Some(s) => s.to_string(),
             None => match stored_static
@@ -859,6 +881,9 @@ impl Detection {
         )
     }
 
+    /// Creates a DetectInfo detection message for one aggregation condition (count/correlation)
+    /// result. Record-specific profile columns are filled with "-" or with deduplicated joined
+    /// values taken from all of the records that contributed to the aggregation.
     fn create_agg_log_record(
         rule: &RuleNode,
         agg_result: AggResult,
@@ -1128,6 +1153,8 @@ impl Detection {
         )
     }
 
+    /// Extracts a value from each aggregated record, removes duplicates, and joins the sorted
+    /// values with " ¦ ".
     fn join_agg_values<F>(
         agg_record_time_infos: &[AggRecordTimeInfo],
         extractor: F,
@@ -1164,13 +1191,14 @@ impl Detection {
     /// Function that returns the detection output string for the count portion of the aggregation condition.
     fn create_count_output(rule: &RuleNode, agg_result: &AggResult) -> CompactString {
         let mut ret: String = "".to_string();
-        // Since it is assumed that the aggregation condition already exists when this function is called, the length of the agg_condition array is 2.
+        // This function is only called for rules that have an aggregation condition, so the
+        // unwrap() here is safe.
         let agg_condition = rule.get_agg_condition().unwrap();
         write!(ret, "Count:{}", agg_result.data).ok();
-        let mut sorted_filed_values = agg_result.field_values.clone();
-        sorted_filed_values.sort();
+        let mut sorted_field_values = agg_result.field_values.clone();
+        sorted_field_values.sort();
         if let Some(_field_name) = agg_condition._field_name.as_ref() {
-            write!(ret, " ¦ {}:{}", _field_name, sorted_filed_values.join("/")).ok();
+            write!(ret, " ¦ {}:{}", _field_name, sorted_field_values.join("/")).ok();
         }
 
         if let Some(_by_field_name) = agg_condition._by_field_name.as_ref() {
@@ -1190,6 +1218,9 @@ impl Detection {
         CompactString::from(ret)
     }
 
+    /// Pairs the comma-separated field names in `s1` with the comma-separated values in `s2` and
+    /// joins the resulting "name:value" pairs with " ¦ " (used for `count() by fieldA,fieldB`
+    /// output).
     fn zip_and_concat_strings(s1: &str, s2: &str) -> String {
         let v1: Vec<&str> = s1.split(',').collect();
         let v2: Vec<&str> = s2.split(',').collect();
@@ -1200,6 +1231,9 @@ impl Detection {
             .join(" ¦ ")
     }
 
+    /// Prints the rule loading summary to stdout (rule counts by category, status,
+    /// correlation/expand rules and the total) and accumulates the same lines for the HTML
+    /// report (except the expand-rule lines, which are printed to stdout only).
     pub fn print_rule_load_info(
         parse_yaml: &ParseYaml,
         err_rc: &u128,
@@ -1496,7 +1530,8 @@ impl Detection {
         }
     }
 
-    /// Retrieve the value of a given alias in a record.
+    /// Retrieves the value of the first alias that resolves in the record, or "-" when none of
+    /// the given aliases yield a value.
     fn get_alias_data(
         target_alias: Vec<&str>,
         record: &Value,
@@ -1607,7 +1642,7 @@ mod tests {
     }
 
     #[test]
-    fn test_output_aggregation_output_no_filed_by() {
+    fn test_output_aggregation_output_no_field_by() {
         let default_time = Utc.with_ymd_and_hms(1977, 1, 1, 0, 0, 0).unwrap();
         let agg_result: AggResult =
             AggResult::new(2, "_".to_string(), vec![], default_time, vec![]);

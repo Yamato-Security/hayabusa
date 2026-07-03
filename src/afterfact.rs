@@ -24,7 +24,7 @@ use terminal_size::Width;
 use terminal_size::terminal_size;
 
 use crate::detections::configs::{
-    Action, CONTROL_CHAT_REPLACE_MAP, CURRENT_EXE_PATH, GEOIP_DB_PARSER, StoredStatic,
+    Action, CONTROL_CHAR_REPLACE_MAP, CURRENT_EXE_PATH, GEOIP_DB_PARSER, StoredStatic,
     TimeFormatOptions,
 };
 use crate::detections::message::{AlertMessage, COMPUTER_MITRE_ATTCK_MAP, DetectInfo};
@@ -75,12 +75,17 @@ use crate::level::{_get_output_color, LEVEL, create_output_color_map};
 use crate::options::htmlreport;
 use crate::options::profile::Profile;
 
+/// The same display color expressed once for the termcolor crate (plain terminal output) and
+/// once for the comfy_table crate (table output).
 #[derive(Debug)]
 pub struct Colors {
     pub output_color: termcolor::Color,
     pub table_color: comfy_table::Color,
 }
 
+/// State accumulated while emitting detection results, used afterwards to build the results
+/// summary: detection counts broken down by level/date/computer/rule, timestamps for the
+/// detection frequency timeline, and the previous-record data needed for duplicate suppression.
 pub struct AfterfactInfo {
     pub tl_starttime: Option<DateTime<Utc>>,
     pub tl_endtime: Option<DateTime<Utc>>,
@@ -106,6 +111,8 @@ pub struct AfterfactInfo {
     pub prev_details_convert_map: HashMap<CompactString, Vec<CompactString>>,
 }
 
+/// The three per-level count maps (by date, by computer, by rule) created together in
+/// `AfterfactInfo::default`.
 struct InitLevelMapResult(
     HashMap<LEVEL, HashMap<CompactString, i128>>,
     HashMap<LEVEL, HashMap<CompactString, i128>>,
@@ -127,7 +134,8 @@ impl Default for AfterfactInfo {
             > = HashMap::new();
             let mut detect_counts_by_rule_and_level: HashMap<LEVEL, HashMap<CompactString, i128>> =
                 HashMap::new();
-            // Initialize aggregation variables by level and day.
+            // Pre-insert an empty inner map for every level so later per-level lookups always
+            // find an entry (several output functions rely on this and unwrap the result).
             for level_init in LEVEL::iter() {
                 detect_counts_by_date_and_level.insert(level_init.clone(), HashMap::new());
                 detect_counts_by_computer_and_level.insert(level_init.clone(), HashMap::new());
@@ -167,6 +175,9 @@ impl Default for AfterfactInfo {
     }
 }
 
+/// The writers used for result output: a termcolor writer for colored terminal display and a
+/// csv crate writer for the CSV/JSON output itself. `display_flag` is true when no output file
+/// was specified, i.e. results are displayed on the terminal.
 pub struct AfterfactWriter {
     disp_wtr: BufferWriter,
     disp_wtr_buf: Buffer,
@@ -174,6 +185,11 @@ pub struct AfterfactWriter {
     pub display_flag: bool,
 }
 
+/// Creates the result writer, targeting the file given with the output option if one was
+/// specified, otherwise stdout (the pivot-keywords-list and logon-summary commands write their
+/// own files elsewhere, so their writer stays on stdout). The csv writer is also (ab)used for
+/// JSON output by configuring
+/// it to perform no quoting and use newline as the delimiter.
 pub fn init_writer(stored_static: &StoredStatic) -> AfterfactWriter {
     let disp_wtr = BufferWriter::stdout(ColorChoice::Always);
     let mut disp_wtr_buf = disp_wtr.buffer();
@@ -188,7 +204,7 @@ pub fn init_writer(stored_static: &StoredStatic) -> AfterfactWriter {
         ) {
             Box::new(BufWriter::new(io::stdout()))
         } else {
-            // output to file
+            // Write the results to the specified output file.
             match File::create(path) {
                 Ok(file) => Box::new(BufWriter::new(file)),
                 Err(err) => {
@@ -199,7 +215,8 @@ pub fn init_writer(stored_static: &StoredStatic) -> AfterfactWriter {
         }
     } else {
         display_flag = true;
-        // stdoutput (termcolor crate color output is not csv writer)
+        // No output file was specified, so results go to stdout. Colored display output is
+        // produced through the termcolor writer (disp_wtr), not through this csv writer.
         Box::new(BufWriter::new(io::stdout()))
     };
 
@@ -215,7 +232,7 @@ pub fn init_writer(stored_static: &StoredStatic) -> AfterfactWriter {
         _ => WriterBuilder::new().from_writer(target),
     };
 
-    // emit csv
+    // Bundle the display writer and the CSV/JSON writer used by emit_csv and the summary output.
     AfterfactWriter {
         disp_wtr,
         disp_wtr_buf,
@@ -224,6 +241,8 @@ pub fn init_writer(stored_static: &StoredStatic) -> AfterfactWriter {
     }
 }
 
+/// Sorts and deduplicates all collected detections, writes them out, and prints the results
+/// summary. Exits the process if writing fails.
 pub fn output_afterfact(
     detect_infos: &mut [DetectInfo],
     afterfact_writer: &mut AfterfactWriter,
@@ -241,6 +260,10 @@ pub fn output_afterfact(
     }
 }
 
+/// Writes one batch of detections and folds it into the summary statistics. This is the
+/// streaming output path used in low-memory mode, where results are emitted per batch instead
+/// of being collected, sorted, and written all at once by `output_afterfact`. Exits the process
+/// if writing fails.
 pub fn emit_csv(
     detect_infos: &[DetectInfo],
     duplicate_idxes: &HashSet<usize>,
@@ -281,7 +304,8 @@ fn output_afterfact_inner(
         println!();
     }
 
-    // sort and filter detect infos
+    // Sort the detections, then determine which ones to drop as duplicates if the
+    // remove-duplicate-detections option is enabled.
     sort_detect_info(detect_infos);
     let duplicate_idxes = if stored_static
         .output_option
@@ -302,7 +326,7 @@ fn output_afterfact_inner(
         afterfact_info,
     )?;
 
-    // calculate statistic information
+    // Calculate the statistics for the results summary.
     calc_statistic_info(
         detect_infos,
         &duplicate_idxes,
@@ -323,6 +347,12 @@ fn emit_csv_inner(
     afterfact_writer: &mut AfterfactWriter,
     afterfact_info: &mut AfterfactInfo,
 ) -> io::Result<()> {
+    // Control characters in record field values were escaped earlier in the pipeline as
+    // "🛂r"/"🛂n"/"🛂t" (see utils::remove_sp_char). output_replacer first restores them to the
+    // real control characters, then output_remover flattens control characters to spaces for
+    // single-line output. With the multiline (or tab-separator) option, the "🛂🛂" marker used to
+    // join multi-valued entries and the " ¦ " field separator become line breaks (or tabs)
+    // instead.
     let output_replaced_maps: HashMap<&str, &str> =
         HashMap::from_iter(vec![("🛂r", "\r"), ("🛂n", "\n"), ("🛂t", "\t")]);
     let mut removed_replaced_maps: HashMap<&str, &str> =
@@ -343,7 +373,8 @@ fn emit_csv_inner(
         .build(removed_replaced_maps.keys())
         .unwrap();
 
-    // Variable to hold the previous record information for removing duplicate data.
+    // Prepare the per-level color map, then determine the output format and whether duplicate
+    // field data should be replaced with "DUP" (the remove-duplicate-data option).
     let color_map = create_output_color_map(stored_static.common_options.no_color);
     let (json_output_flag, jsonl_output_flag, remove_duplicate_data) =
         match &stored_static.config.action.as_ref().unwrap() {
@@ -364,9 +395,9 @@ fn emit_csv_inner(
             continue;
         }
         if afterfact_writer.display_flag && !(json_output_flag || jsonl_output_flag) {
-            // For standard output.
+            // Terminal display output.
             if !afterfact_info.has_displayed_header {
-                // Output only the header.
+                // Print the header row only once.
                 _get_serialized_disp_output(
                     &afterfact_writer.disp_wtr,
                     profile,
@@ -446,7 +477,7 @@ fn emit_csv_inner(
                 afterfact_writer.csv_writer.write_field("}")?;
             }
         } else {
-            // csv output format
+            // CSV output format
             if !afterfact_info.has_displayed_header {
                 afterfact_writer
                     .csv_writer
@@ -508,6 +539,9 @@ fn emit_csv_inner(
     Ok(())
 }
 
+/// Folds a batch of detections into `afterfact_info`: records the detection timestamps and the
+/// IDs of detected records, and (unless no-summary is set) updates the per-level counts by
+/// date, computer, and rule, plus the rule author statistics used by the results summary.
 fn calc_statistic_info(
     detect_infos: &[DetectInfo],
     duplicate_idxes: &HashSet<usize>,
@@ -625,6 +659,9 @@ fn calc_statistic_info(
     }
 }
 
+/// Prints everything that follows the timeline itself: the rule author table, the detection
+/// frequency timeline (if requested), and the results summary (event counts, detection counts
+/// per level/date/computer/rule). Also accumulates the same content for the HTML report if enabled.
 pub fn output_additional_afterfact(
     stored_static: &StoredStatic,
     afterfact_writer: &mut AfterfactWriter,
@@ -769,12 +806,12 @@ pub fn output_additional_afterfact(
             println!();
         }
 
-        let reducted_record_cnt: u128 =
+        let reduced_record_cnt: u128 =
             afterfact_info.record_cnt - afterfact_info.detected_record_idset.len() as u128;
-        let reducted_percent = if afterfact_info.record_cnt == 0 {
+        let reduced_percent = if afterfact_info.record_cnt == 0 {
             0 as f64
         } else {
-            (reducted_record_cnt as f64) / (afterfact_info.record_cnt as f64) * 100.0
+            (reduced_record_cnt as f64) / (afterfact_info.record_cnt as f64) * 100.0
         };
         write_color_buffer(
             &afterfact_writer.disp_wtr,
@@ -811,7 +848,7 @@ pub fn output_additional_afterfact(
         )
         .ok();
         let saved_alerts_output =
-            (afterfact_info.record_cnt - reducted_record_cnt).to_formatted_string(&Locale::en);
+            (afterfact_info.record_cnt - reduced_record_cnt).to_formatted_string(&Locale::en);
         write_color_buffer(
             &afterfact_writer.disp_wtr,
             get_writable_color(
@@ -850,8 +887,8 @@ pub fn output_additional_afterfact(
         .ok();
         let reduction_output = format!(
             "Data reduction: {} events ({:.2}%)",
-            reducted_record_cnt.to_formatted_string(&Locale::en),
-            reducted_percent
+            reduced_record_cnt.to_formatted_string(&Locale::en),
+            reduced_percent
         );
         write_color_buffer(
             &afterfact_writer.disp_wtr,
@@ -1062,6 +1099,9 @@ pub fn output_additional_afterfact(
     }
 }
 
+/// Sorts detections by detected time, level, event ID, rule path, computer name, record ID,
+/// and finally by the rendered field values, giving a total order so the output is
+/// deterministic.
 pub fn sort_detect_info(detect_infos: &mut [DetectInfo]) {
     detect_infos.sort_unstable_by(|a, b| {
         let cmp_time = a.detected_time.cmp(&b.detected_time);
@@ -1112,8 +1152,14 @@ pub fn sort_detect_info(detect_infos: &mut [DetectInfo]) {
     });
 }
 
+/// Returns the indexes of detections considered duplicates of an earlier detection with the
+/// same timestamp, comparing every profile field except EvtxFile (so the same event ingested
+/// from overlapping evtx files counts as a duplicate). Assumes `detect_infos` is already sorted
+/// by detected time. Note: the first record of each timestamp group is never added to the
+/// comparison set, so the second of two identical records is currently not flagged as a
+/// duplicate — only the third and later identical records are.
 pub fn get_duplicate_idxes(detect_infos: &mut [DetectInfo]) -> HashSet<usize> {
-    // filtet duplicate event
+    // Collect the indexes of duplicate events.
     let mut filtered_detect_infos = HashSet::new();
     let mut prev_detect_infos = HashSet::new();
     for (i, detect_info) in detect_infos.iter().enumerate() {
@@ -1157,7 +1203,8 @@ fn _get_table_color(
     color
 }
 
-/// print timeline histogram
+/// Prints the detection frequency timeline (a sparkline histogram of detection timestamps with
+/// time markers) to stdout. Requires at least 5 events to render.
 fn _print_timeline_hist(timestamps: &[i64], length: usize, side_margin_size: usize) {
     if timestamps.is_empty() {
         return;
@@ -1205,6 +1252,8 @@ fn _print_timeline_hist(timestamps: &[i64], length: usize, side_margin_size: usi
     buf_wtr.print(&wtr).ok();
 }
 
+/// Increments the counter for `entry_key` in the inner map for `level`, falling back to the
+/// UNDEFINED level's map if the level has no entry.
 fn countup_aggregation(
     count_map: &mut HashMap<LEVEL, HashMap<CompactString, i128>>,
     level: &LEVEL,
@@ -1218,16 +1267,19 @@ fn countup_aggregation(
     count_map.insert(level.clone(), detect_counts_by_rules);
 }
 
-/// columnt position. in cell
+/// Column position within a display cell, which determines where padding spaces are added:
 /// First: |<str> |
 /// Last: | <str>|
-/// Othre: | <str> |
+/// Other: | <str> |
 enum ColPos {
     First,
     Last,
     Other,
 }
 
+/// Writes one record (or, when `header` is true, the column header row) to the terminal in the
+/// "·"-separated display format, coloring the timestamp/level/rule-title fields by detection
+/// level and the field names/values inside the details sections individually.
 fn _get_serialized_disp_output(
     disp_wtr: &BufferWriter,
     data: &[(CompactString, Profile)],
@@ -1263,6 +1315,11 @@ fn _get_serialized_disp_output(
         write_color_buffer(
             disp_wtr,
             get_writable_color(None, no_color),
+            // The serializer above uses '|' as its delimiter; show those separators as '·' and
+            // then restore any '🦅' placeholders back to '|'. Historically cell values had
+            // literal '|' replaced with '🦅' before serialization so this delimiter
+            // substitution would not clobber them; nothing currently inserts that placeholder
+            // on this path, so the second replace is defensive/vestigial.
             &String::from_utf8(disp_serializer.into_inner().unwrap_or_default())
                 .unwrap_or_default()
                 .replace('|', "·")
@@ -1364,7 +1421,7 @@ fn _get_serialized_disp_output(
                 )
                 .ok();
             } else {
-                //1レコード分の最後の要素の改行
+                // Line break after the last element of one record (plus a blank separator line).
                 println!();
                 println!();
             }
@@ -1372,7 +1429,7 @@ fn _get_serialized_disp_output(
     }
 }
 
-/// return str position in output file
+/// Pads a cell value with spaces according to its column position in the display output.
 fn _format_cellpos(colval: &str, column: ColPos) -> String {
     match column {
         ColPos::First => format!("{colval} "),
@@ -1381,7 +1438,8 @@ fn _format_cellpos(colval: &str, column: ColPos) -> String {
     }
 }
 
-/// output info which unique detection count and all detection count information(separated by level and total) to stdout.
+/// Prints the total and unique detection counts (overall and per level, with percentages) to
+/// stdout, and accumulates the same information for the HTML report when enabled.
 fn _print_unique_results(
     counts_by_level: &[u128],
     unique_counts_by_level: &[u128],
@@ -1390,13 +1448,14 @@ fn _print_unique_results(
     html_output_stock: &mut Nested<String>,
     html_output_flag: bool,
 ) {
-    // the order in which are registered and the order of levels to be displayed are reversed
+    // The counts are stored in ascending level order, but levels are displayed from highest to
+    // lowest, so iterate over them in reverse.
     let mut counts_by_level_rev = counts_by_level.iter().rev();
     let mut unique_counts_by_level_rev = unique_counts_by_level.iter().rev();
 
     let total_count = counts_by_level.iter().sum::<u128>();
     let unique_total_count = unique_counts_by_level.iter().sum::<u128>();
-    // output total results
+    // Output the totals across all levels first.
     write_color_buffer(
         &BufferWriter::stdout(ColorChoice::Always),
         None,
@@ -1488,7 +1547,8 @@ fn _print_detection_summary_by_date(
         if level == LEVEL::UNDEFINED {
             continue;
         }
-        // output_levels is an array with undefined excluded from levels; each element is guaranteed to be initialized and Some, so unwrap is called directly.
+        // An inner map was inserted for every level when AfterfactInfo was initialized, so the
+        // lookup is guaranteed to be Some and unwrap is called directly.
         let detections_by_day = detect_counts_by_date.get(&level).unwrap();
         let mut max_detect_str = CompactString::default();
         let mut max_date: Option<&CompactString> = None;
@@ -1517,6 +1577,8 @@ fn _print_detection_summary_by_date(
         }
         let output_str = format!("{}: {}", level.to_full(), &max_detect_str);
         write!(wtr, "{output_str}").ok();
+        // Print a ", " separator after every level except the last displayed one (count() - 2
+        // because UNDEFINED, the final item of the reversed iteration, is skipped).
         if i != LEVEL::iter().count() - 2 {
             wtr.set_color(ColorSpec::new().set_fg(None)).ok();
             write!(wtr, ", ").ok();
@@ -1528,7 +1590,8 @@ fn _print_detection_summary_by_date(
     buf_wtr.print(&wtr).ok();
 }
 
-/// Output the computer name with the highest detection count for each level.
+/// Output the top 5 computers with the most unique detections for each level (the HTML report
+/// gets the full list).
 fn _print_detection_summary_by_computer(
     detect_counts_by_computer: &HashMap<LEVEL, HashMap<CompactString, i128>>,
     color_map: &HashMap<LEVEL, Colors>,
@@ -1544,7 +1607,8 @@ fn _print_detection_summary_by_computer(
         if level == LEVEL::UNDEFINED {
             continue;
         }
-        // output_levels is an array with undefined excluded from levels; each element is guaranteed to be initialized and Some, so unwrap is called directly.
+        // An inner map was inserted for every level when AfterfactInfo was initialized, so the
+        // lookup is guaranteed to be Some and unwrap is called directly.
         let detections_by_computer = detect_counts_by_computer.get(&level).unwrap();
         let mut result_vec = Nested::<String>::new();
         // Exclude entries where the computer name is "-" from the aggregation.
@@ -1594,7 +1658,9 @@ fn _print_detection_summary_by_computer(
     buf_wtr.print(&wtr).ok();
 }
 
-/// Function to output rules with the most detections for each level in table format.
+/// Output the rules with the most detections for each level in table format (top 5 per level;
+/// the HTML report gets the full list). Rule titles longer than `limit_num` characters are
+/// truncated with "...".
 fn _print_detection_summary_tables(
     detect_counts_by_rule_and_level: &HashMap<LEVEL, HashMap<CompactString, i128>>,
     color_map: &HashMap<LEVEL, Colors>,
@@ -1621,7 +1687,8 @@ fn _print_detection_summary_tables(
 
         col_color.push(_get_table_color(color_map, &level));
 
-        // output_levels is an array with undefined excluded from levels; each element is guaranteed to be initialized and Some, so unwrap is called directly.
+        // An inner map was inserted for every level when AfterfactInfo was initialized, so the
+        // lookup is guaranteed to be Some and unwrap is called directly.
         let detections_by_computer = detect_counts_by_rule_and_level.get(&level).unwrap();
         let mut sorted_detections: Vec<(&CompactString, &i128)> =
             detections_by_computer.iter().collect();
@@ -1631,7 +1698,7 @@ fn _print_detection_summary_tables(
         // order.
         sorted_detections.sort_by(|a, b| b.1.cmp(a.1).then_with(|| a.0.cmp(b.0)));
 
-        // For HTML output, output all content.
+        // For HTML output, list every rule rather than only the top five.
         if stored_static.html_report_flag {
             html_output_stock.push(format!(
                 "### All {} alerts: {{#all_{}_alerts}}",
@@ -1722,7 +1789,8 @@ fn _print_detection_summary_tables(
     println!("{tb}");
 }
 
-/// get timestamp to input datetime.
+/// Converts the given datetime to epoch seconds. Unless UTC or ISO 8601 output was requested,
+/// the local UTC offset is added so the value reflects local wall-clock time.
 fn _get_timestamp(output_option: &TimeFormatOptions, time: &DateTime<Utc>) -> i64 {
     if output_option.utc || output_option.iso_8601 {
         time.timestamp()
@@ -1736,7 +1804,10 @@ fn _get_timestamp(output_option: &TimeFormatOptions, time: &DateTime<Utc>) -> i6
     }
 }
 
-/// Function that returns an array when the value corresponds to details, MitreTactics, MitreTags, or OtherTags that are handled as arrays in JSON output.
+/// Splits the value into its elements for the profile members that are output as JSON arrays or
+/// objects: MitreTactics/MitreTags/OtherTags (": "-separated) and Details/AllFieldInfo/
+/// ExtraFieldInfo (" ¦ "-separated key-value pairs). Returns an empty Vec for everything else,
+/// and also for a details value that is a single element with no "key: value" structure.
 fn _get_json_vec(profile: &Profile, target_data: &String) -> Vec<String> {
     match profile {
         Profile::MitreTactics(_) | Profile::MitreTags(_) | Profile::OtherTags(_) => {
@@ -1754,7 +1825,11 @@ fn _get_json_vec(profile: &Profile, target_data: &String) -> Vec<String> {
     }
 }
 
-/// Function to output a string matching the JSON output format.
+/// Formats one key/value pair as a JSON fragment (`"key": value`), indenting it with
+/// `space_cnt` spaces. Values that parse as integers or booleans are emitted unquoted;
+/// `concat_flag` marks values that are already valid JSON (arrays/objects/pre-quoted strings)
+/// and must not be wrapped in quotes again. Control characters are replaced on both key and
+/// value via CONTROL_CHAR_REPLACE_MAP.
 fn _create_json_output_format(
     key: &str,
     value: &str,
@@ -1765,7 +1840,7 @@ fn _create_json_output_format(
     let head = if key_quote_exclude_flag {
         key.chars()
             .map(|x| {
-                if let Some(c) = CONTROL_CHAT_REPLACE_MAP.get(&x) {
+                if let Some(c) = CONTROL_CHAR_REPLACE_MAP.get(&x) {
                     c.to_string()
                 } else {
                     String::from(x)
@@ -1776,7 +1851,7 @@ fn _create_json_output_format(
         format!("\"{key}\"")
             .chars()
             .map(|x| {
-                if let Some(c) = CONTROL_CHAT_REPLACE_MAP.get(&x) {
+                if let Some(c) = CONTROL_CHAR_REPLACE_MAP.get(&x) {
                     c.to_string()
                 } else {
                     String::from(x)
@@ -1784,7 +1859,7 @@ fn _create_json_output_format(
             })
             .collect::<CompactString>()
     };
-    // 4 space is json indent.
+    // The indent is space_cnt spaces: 4 for top-level JSON keys, 8 for nested keys.
     if let Ok(i) = i64::from_str(value) {
         format!("{}{}: {}", " ".repeat(space_cnt), head, i)
     } else if let Ok(b) = bool::from_str(value) {
@@ -1797,7 +1872,7 @@ fn _create_json_output_format(
             value
                 .chars()
                 .map(|x| {
-                    if let Some(c) = CONTROL_CHAT_REPLACE_MAP.get(&x) {
+                    if let Some(c) = CONTROL_CHAR_REPLACE_MAP.get(&x) {
                         c.to_string()
                     } else {
                         String::from(x)
@@ -1813,7 +1888,7 @@ fn _create_json_output_format(
             value
                 .chars()
                 .map(|x| {
-                    if let Some(c) = CONTROL_CHAT_REPLACE_MAP.get(&x) {
+                    if let Some(c) = CONTROL_CHAR_REPLACE_MAP.get(&x) {
                         c.to_string()
                     } else {
                         String::from(x)
@@ -1824,7 +1899,8 @@ fn _create_json_output_format(
     }
 }
 
-/// Function that converts string values for JSON output to prevent errors in JSON output format.
+/// Escapes a string value (joining multi-part "key: value" input as needed) so it can be
+/// embedded in the JSON output without producing invalid JSON.
 fn _convert_valid_json_str(input: &[&str], concat_flag: bool) -> String {
     let con_cal = if input.len() == 1 {
         input[0].to_string()
@@ -1862,7 +1938,9 @@ fn _convert_valid_json_str(input: &[&str], concat_flag: bool) -> String {
     }
 }
 
-/// Function to output the object string for one detection in JSON output.
+/// Builds the JSON object body for one detection. Returns the body string (without the
+/// surrounding braces, which the caller adds) together with the updated previous-record field
+/// map used for duplicate-data suppression on the next record.
 pub fn output_json_str(
     detect_info: &DetectInfo,
     afterfact_info: &mut AfterfactInfo,
@@ -1904,12 +1982,14 @@ pub fn output_json_str(
                             == profile.to_value())
                         || (!&now.is_empty() && !&prev.is_empty() && now == prev);
                     if dup_flag {
-                        // If matched, update the message for the previous record and change the content of the field map for output.
-                        // Since it matches, do not update the previous message.
-                        // Use Profile::Literal to output the ordinary string "DUP".
+                        // Duplicate of the previous record: output the plain string "DUP"
+                        // instead of the value (Profile::Literal emits it as-is). The previous
+                        // message is intentionally NOT updated, so consecutive duplicates keep
+                        // being compared against the last non-duplicate value.
                         target_ext_field.push((field_name.clone(), Profile::Literal("DUP".into())));
                     } else {
-                        // If not matched, update the message for the previous record.
+                        // Not a duplicate: remember this value for comparison with the next
+                        // record.
                         next_prev_message.insert(field_name.clone(), profile.clone());
                         target_ext_field.push((field_name.clone(), profile.clone()));
                     }
@@ -1922,6 +2002,8 @@ pub fn output_json_str(
     } else {
         target_ext_field.clone_from(&detect_info.ext_field);
     }
+    // GeoIP enrichment fields that are folded into the Details (and AllFieldInfo) objects of
+    // the JSON output instead of being emitted as top-level keys.
     let key_add_to_details = [
         "SrcASN",
         "SrcCountry",
@@ -1972,7 +2054,9 @@ pub fn output_json_str(
             ));
         } else {
             match profile {
-                // process GeoIP profile in details sections to include GeoIP data in details section.
+                // GeoIP profile fields are skipped here because they are emitted inside the
+                // Details/AllFieldInfo sections instead (see the key_add_to_details handling
+                // below).
                 Profile::SrcASN(_)
                 | Profile::SrcCountry(_)
                 | Profile::SrcCity(_)
@@ -2016,12 +2100,12 @@ pub fn output_json_str(
                             }
                             continue;
                         }
-                        let splitted_agg_details = details_target_stock[0]
+                        let split_agg_details = details_target_stock[0]
                             .split(" ¦ ")
                             .map(|x| x.into())
                             .collect_vec();
                         process_target_stock(
-                            &splitted_agg_details,
+                            &split_agg_details,
                             &mut children_output_stock,
                             &mut children_output_order,
                         );
@@ -2042,7 +2126,9 @@ pub fn output_json_str(
                     }
                     output_stock.push(format!("    \"{key}\": {{"));
 
-                    // Array with display order restored to match the display order in the rule.
+                    // Rebuild the field order to match the order in which the fields appear in
+                    // the rule (recorded in children_output_order), since HashMap iteration
+                    // order is arbitrary.
                     let mut sorted_children_output_stock: Vec<(
                         &CompactString,
                         &Vec<CompactString>,
@@ -2178,6 +2264,9 @@ pub fn output_json_str(
     }
 }
 
+/// Splits each "key: value" detail entry and groups the values by key in
+/// `children_output_stock` (a key gets multiple values when it appears more than once, e.g.
+/// Data[1]/Data[2] fields), recording first-seen key order in `children_output_order`.
 fn process_target_stock(
     details_target_stock: &[CompactString],
     children_output_stock: &mut HashMap<CompactString, Vec<CompactString>>,
@@ -2199,7 +2288,8 @@ fn process_target_stock(
             .push(fmted_val.into());
     }
 }
-/// output detected rule author name function.
+/// Prints a table of the detected rule authors and the number of their rules that produced
+/// detections, laid out over `table_column_num` columns.
 fn output_detected_rule_authors(
     rule_author_counter: &HashMap<CompactString, i128>,
     table_column_num: usize,
@@ -2258,12 +2348,13 @@ fn output_detected_rule_authors(
     println!("{tb}");
 }
 
-/// Function to extract the author name from the given yaml_path and return it as an array.
+/// Extracts the individual author names from a rule's author string and returns them as an
+/// array.
 fn extract_author_name(author: &str) -> Nested<String> {
     let mut ret = Nested::<String>::new();
     for author in author.split(',').map(|s| {
-        // Only reference the first element of tmp, as descriptions after parentheses in each element are not treated as a name.
-        // Exclude double quotes and single quotes from the data here.
+        // Keep only the part before '(': a parenthesized remark after a name is a description,
+        // not part of the name. Double and single quotes are stripped from the names below.
         s.split('(').next().unwrap_or_default().to_string()
     }) {
         ret.extend(author.split(';'));
@@ -2278,7 +2369,8 @@ fn extract_author_name(author: &str) -> Nested<String> {
         .collect()
 }
 
-/// Function to add to html_output_stock the string for HTML-outputting the computer name detected by rules with MITRE ATT&CK Tactics attributes.
+/// Appends to `html_output_stock` a Markdown table of computer names and the MITRE ATT&CK
+/// tactics detected on them (with unique and total counts), for the HTML report.
 fn _output_html_computer_by_mitre_attck(html_output_stock: &mut Nested<String>) {
     html_output_stock.push("### MITRE ATT&CK Tactics:{#computers_with_mitre_attck_detections}");
     if COMPUTER_MITRE_ATTCK_MAP.is_empty() {

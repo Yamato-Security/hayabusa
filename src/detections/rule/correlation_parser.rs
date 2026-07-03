@@ -14,8 +14,12 @@ use uuid::Uuid;
 use yaml_rust2::Yaml;
 use yaml_rust2::yaml::Hash;
 
+// Maps a selection name (e.g. "selection1") to its compiled selection node, collected from the
+// rules referenced by a correlation rule.
 type Name2Selection = HashMap<String, Arc<Box<dyn SelectionNode>>>;
 
+/// Returns true if the rule's `id`, `title` or `name` equals the given reference string
+/// (a correlation rule may reference other rules by any of the three).
 fn is_referenced_rule(rule_node: &RuleNode, id_or_title: &str) -> bool {
     if let Some(hash) = rule_node.yaml.as_hash() {
         if let Some(id) = hash.get(&Yaml::String("id".to_string()))
@@ -36,6 +40,9 @@ fn is_referenced_rule(rule_node: &RuleNode, id_or_title: &str) -> bool {
     }
     false
 }
+/// Looks for a `field` entry among the `correlation.condition` key/value pairs. Only meaningful
+/// for `value_count` rules, where `field` names the field whose distinct values are counted;
+/// returns None for every other correlation type.
 fn find_condition_field_value(
     rule_type: Option<&Yaml>,
     pair: Vec<(&Yaml, &Yaml)>,
@@ -51,6 +58,8 @@ fn find_condition_field_value(
     None
 }
 
+/// Finds the first comparison entry (eq/lte/gte/lt/gt) among the `correlation.condition`
+/// key/value pairs and returns it as (operator token, threshold, optional value_count field).
 fn process_condition_pairs(
     pair: Vec<(&Yaml, &Yaml)>,
     field: Option<String>,
@@ -74,6 +83,8 @@ fn process_condition_pairs(
     Err("Failed to match any condition".into())
 }
 
+/// Parses the `condition` mapping of a correlation rule (the argument is the whole `correlation`
+/// mapping) into (comparison operator, threshold, optional `field` for value_count rules).
 fn parse_condition(
     yaml: &Yaml,
 ) -> Result<(AggregationConditionToken, i64, Option<String>), Box<dyn Error>> {
@@ -90,6 +101,8 @@ fn parse_condition(
     Err("Failed to parse condition".into())
 }
 
+/// ORs together the referenced rules' condition trees so that the merged correlation rule
+/// matches any event matched by any of the referenced rules.
 fn to_or_selection_node(related_rule_nodes: Vec<RuleNode>) -> OrSelectionNode {
     let mut or_selection_node = OrSelectionNode::new();
     for rule_node in related_rule_nodes {
@@ -100,6 +113,7 @@ fn to_or_selection_node(related_rule_nodes: Vec<RuleNode>) -> OrSelectionNode {
     or_selection_node
 }
 
+/// Returns the list of references (rule IDs, titles or names) under `correlation.rules`.
 fn get_related_rules_id(yaml: &Yaml) -> Result<Vec<String>, Box<dyn Error>> {
     let correlation = yaml["correlation"]
         .as_hash()
@@ -123,6 +137,8 @@ fn get_related_rules_id(yaml: &Yaml) -> Result<Vec<String>, Box<dyn Error>> {
     Ok(rules)
 }
 
+/// Returns the `correlation.group-by` field names joined with "," (the comma-separated format
+/// that count::create_count_key expects), or Ok(None) if the rule has no group-by key.
 fn get_group_by_from_yaml(yaml: &Yaml) -> Result<Option<String>, Box<dyn Error>> {
     let correlation = yaml["correlation"]
         .as_hash()
@@ -142,6 +158,9 @@ fn get_group_by_from_yaml(yaml: &Yaml) -> Result<Option<String>, Box<dyn Error>>
     }
     Ok(Some(group_by.join(",")))
 }
+/// Parses a `correlation.timespan` value such as "5m" into a TimeFrameInfo. Nearly the same as
+/// TimeFrameInfo::parse_tframe in count.rs, but returns an Err for an unknown unit suffix
+/// instead of logging it.
 fn parse_tframe(value: String) -> Result<TimeFrameInfo, Box<dyn Error>> {
     let ttype;
     let mut target_val = value.as_str();
@@ -165,6 +184,8 @@ fn parse_tframe(value: String) -> Result<TimeFrameInfo, Box<dyn Error>> {
     })
 }
 
+/// Resolves each reference in `correlation.rules` to freshly initialized copies of every
+/// matching rule and collects their named selections. Fails if a reference matches no rule.
 fn create_related_rule_nodes(
     related_rules_ids: &Vec<String>,
     other_rules: &[RuleNode],
@@ -191,6 +212,9 @@ fn create_related_rule_nodes(
     Ok((related_rule_nodes, name_to_selection))
 }
 
+/// Builds the DetectionNode of a merged `event_count`/`value_count` correlation rule: an OR over
+/// the referenced rules' conditions, plus an aggregation condition assembled from the rule's
+/// `condition`, `group-by` and `timespan` settings.
 fn create_detection(
     rule_node: &RuleNode,
     related_rule_nodes: Vec<RuleNode>,
@@ -220,6 +244,8 @@ fn create_detection(
     }
 }
 
+/// Records a correlation rule parse failure: prints the message when --verbose is set, stacks it
+/// for the error log file unless --quiet-errors is set, and bumps the parse error counter.
 fn error_log(
     rule_path: &str,
     reason: &str,
@@ -239,6 +265,13 @@ fn error_log(
     *parseerror_count += 1;
 }
 
+/// Converts an `event_count`/`value_count` correlation rule into a single self-contained
+/// RuleNode whose detection is an OR over the rules it references, tagged with the aggregation
+/// condition to evaluate. The `temporal`/`temporal_ordered` early-return is defensive only: in
+/// the current flow parse_correlation_rules partitions temporal rules out before this function
+/// is called, so they are expanded (without this validation) by parse_temporal_rules instead.
+/// On any validation failure the reason is logged and the rule is returned unchanged (it will
+/// simply never match).
 fn merge_referenced_rule(
     rule: RuleNode,
     other_rules: &mut Vec<RuleNode>,
@@ -302,6 +335,8 @@ fn merge_referenced_rule(
             && !referenced_ids.contains(&title.to_string())
             && !referenced_ids.contains(&name.to_string())
     };
+    // Unless `generate: true` is set, remove the referenced rules from the rule set so they do
+    // not also emit detections of their own.
     if !rule.yaml["correlation"]["generate"]
         .as_bool()
         .unwrap_or_default()
@@ -324,6 +359,9 @@ fn merge_referenced_rule(
             return rule;
         }
     };
+    // Build the merged rule: the correlation rule's own YAML (metadata and correlation settings)
+    // with the referenced rules' YAML embedded under the `detection` key, plus the pre-built
+    // DetectionNode.
     let referenced_yaml: Yaml =
         Yaml::Array(referenced_hashes.into_iter().map(Yaml::Hash).collect());
     let mut merged_yaml = rule.yaml.as_hash().unwrap().clone();
@@ -331,6 +369,20 @@ fn merge_referenced_rule(
     RuleNode::new_with_detection(rule.rulepath, Yaml::Hash(merged_yaml), detection)
 }
 
+/// Expands `temporal`/`temporal_ordered` correlation rules. Each referenced rule must be
+/// evaluated with the temporal rule's own group-by/timespan, so for every reference:
+/// - a referenced rule that is itself a correlation rule (e.g. an already merged event_count
+///   rule) is re-tagged CorrelationType::TemporalRef in place and kept under its existing id;
+/// - otherwise a copy of the referenced rule is registered under a fresh UUID, tagged
+///   TemporalRef, and given a "count() >= 1" aggregation condition over the temporal rule's
+///   group-by/timespan (one match per referenced rule suffices for a temporal correlation).
+///
+/// The temporal rule itself is rewritten to reference the ids actually used and receives the
+/// same "count() >= 1" aggregation condition; Detection::add_aggcondition_msg later combines the
+/// TemporalRef results per time window (each result is already aggregated per group-by value by
+/// its own rule, but group equality is not checked when combining). Unless `generate: true` is
+/// set, the original
+/// referenced rules are removed so they do not also emit detections of their own.
 fn parse_temporal_rules(
     temporal_rules: Vec<RuleNode>,
     other_rules: &mut Vec<RuleNode>,
@@ -351,12 +403,17 @@ fn parse_temporal_rules(
                             .as_bool()
                             .unwrap_or_default();
                         let mut new_yaml = other_rule.yaml.clone();
+                        // A referenced rule that is already a correlation rule aggregates its own
+                        // matches, so tag it in place and keep referencing it by its existing id.
                         if other_rule.correlation_type != CorrelationType::None {
                             other_rule.correlation_type =
                                 CorrelationType::TemporalRef(generate, ref_id.to_string());
                             temporal_ref_ids.push(Yaml::String(ref_id.to_string()));
                             continue;
                         }
+                        // Otherwise register a copy of the referenced rule under a fresh UUID so
+                        // that each temporal rule gets its own evaluation of the referenced rule
+                        // (group-by and timespan differ per temporal rule).
                         let new_id = Uuid::new_v4().to_string();
                         if let Some(hash) = new_yaml.as_mut_hash() {
                             hash.insert(
@@ -368,6 +425,9 @@ fn parse_temporal_rules(
                         let _ = node.init(stored_static);
                         node.correlation_type =
                             CorrelationType::TemporalRef(generate, new_id.to_string());
+                        // The copy counts matches per group-by value within the temporal rule's
+                        // timespan; "count() >= 1" because a single match of each referenced
+                        // rule is enough for the temporal correlation.
                         let group_by = get_group_by_from_yaml(&temporal.yaml);
                         let timespan = &temporal.yaml["correlation"]["timespan"].as_str().unwrap();
                         let time_frame = parse_tframe(timespan.to_string());
@@ -385,12 +445,16 @@ fn parse_temporal_rules(
                         node.detection = detection;
                         temporal_ref_rules.push(node);
                         temporal_ref_ids.push(Yaml::String(new_id.to_string()));
+                        // With generate: false (the default), the original referenced rule must
+                        // not emit detections of its own, so remember it for removal.
                         if !generate {
                             referenced_del_ids.insert(ref_id.to_string());
                         }
                     }
                 }
             }
+            // Rewrite the temporal rule so its correlation.rules list points at the ids the
+            // TemporalRef rules were registered under.
             let mut new_yaml = temporal_yaml.clone();
             new_yaml["correlation"]["rules"] = Yaml::Array(temporal_ref_ids);
             let mut node = RuleNode::new(temporal.rulepath.clone(), new_yaml);
@@ -407,6 +471,10 @@ fn parse_temporal_rules(
             parsed_temporal_rules.push(node);
         }
     }
+    // Remove the originals that were replaced by TemporalRef copies (generate: false), then add
+    // the copies. The copies must be added after the retain: they keep the original title/name,
+    // so when a rule was referenced by title or name, adding the copies earlier would delete
+    // them too.
     other_rules.retain(|rule| {
         let id = rule.yaml["id"].as_str().unwrap_or_default();
         let title = rule.yaml["title"].as_str().unwrap_or_default();
@@ -419,6 +487,13 @@ fn parse_temporal_rules(
     parsed_temporal_rules
 }
 
+/// Entry point for Sigma correlation rule support, called once after all rule files have been
+/// loaded: rewrites the rule set so that correlation rules become directly evaluable RuleNodes.
+/// `event_count`/`value_count` rules are merged with the rules they reference
+/// (merge_referenced_rule) first, then `temporal`/`temporal_ordered` rules are expanded
+/// (parse_temporal_rules) — in that order, so temporal rules can also reference already merged
+/// count-based correlation rules. Rules referenced with `generate: false` (the default) no
+/// longer emit their own detections. Non-correlation rules pass through unchanged.
 pub fn parse_correlation_rules(
     rule_nodes: Vec<RuleNode>,
     stored_static: &StoredStatic,

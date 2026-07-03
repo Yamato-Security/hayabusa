@@ -5,6 +5,15 @@ use std::{fs, io};
 use yaml_rust2::Yaml;
 use yaml_rust2::yaml::Hash;
 
+/// Applies placeholder replacement to the value of a `|expand` field.
+///
+/// For a string value, each known `%placeholder%` it contains is substituted independently with
+/// each of that placeholder's configured replacement values (a string containing multiple known
+/// placeholders yields variants in which the other placeholders remain unreplaced), turning the
+/// single string into an array of strings (Sigma treats a list of field values as an OR
+/// condition). A string that contains no known placeholder is returned unchanged. Array values
+/// are processed element by element via `process_yaml`, so only nested `|expand` keys inside
+/// them are expanded.
 fn process_value(
     value: &Yaml,
     replacements: &HashMap<String, Vec<String>>,
@@ -40,6 +49,17 @@ fn process_value(
     }
 }
 
+/// Recursively rewrites a rule YAML document, implementing the Sigma `|expand` field modifier.
+///
+/// Every mapping key that contains `|expand` has the modifier stripped from the key name and any
+/// `%placeholder%` tokens in its value replaced using `replacements` (loaded from
+/// `config/expand/*.txt` by [`read_expand_files`]).
+///
+/// The two out-parameters let the caller decide how to treat the rule:
+/// * `expand_found` is set to true when at least one `|expand` key was encountered.
+/// * `expand_enabled` is set to true when at least one replacement actually changed a value,
+///   i.e. a placeholder definition existed. Rules that use `|expand` but have no matching
+///   placeholder definitions are skipped by the caller (see `yaml.rs`).
 pub fn process_yaml(
     yaml: &Yaml,
     replacements: &HashMap<String, Vec<String>>,
@@ -87,6 +107,10 @@ pub fn process_yaml(
     }
 }
 
+/// Loads placeholder definitions from every `.txt` file directly under `dir` (normally
+/// `config/expand`). The file stem becomes the placeholder name wrapped in percent signs
+/// (e.g. `admins.txt` defines `%admins%`), and each line, trimmed of surrounding whitespace,
+/// becomes one replacement value. Files that contain no lines are ignored.
 pub fn read_expand_files<P: AsRef<Path>>(dir: P) -> io::Result<HashMap<String, Vec<String>>> {
     let mut expand_map = HashMap::new();
     if let Ok(entries) = fs::read_dir(dir) {

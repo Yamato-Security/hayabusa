@@ -14,6 +14,9 @@ use compact_str::CompactString;
 use hashbrown::{HashMap, HashSet};
 use std::path::Path;
 
+/// Grouping key for the logon-summary command. Logon events whose fields below all match are
+/// aggregated into a single row. The `dst_*` fields identify the account/computer that was logged
+/// on to, and the `src_*`/`source_*` fields identify where the logon came from.
 #[derive(Debug, Clone, Eq, Hash, PartialEq)]
 pub struct LoginEvent {
     pub channel: CompactString,
@@ -27,12 +30,21 @@ pub struct LoginEvent {
     pub source_ip: CompactString,
 }
 
+/// Accumulates statistics over all scanned records. Depending on the command being run, only some
+/// of the fields are populated: eid-metrics fills `stats_list`, logon-summary fills
+/// `stats_login_list`, computer-metrics fills `stats_computer` (from `computer_metrics.rs`),
+/// log-metrics fills `stats_logfile`, and csv-timeline/json-timeline only use the record count and
+/// time range kept in `total`/`start_time`/`end_time`.
 #[derive(Debug, Clone, Default)]
 pub struct EventMetrics {
+    // Total number of records scanned.
     pub total: usize,
+    // Path of the log file currently being aggregated.
     pub filepath: CompactString,
+    // Timestamps of the oldest and newest events seen so far.
     pub start_time: Option<DateTime<Utc>>,
     pub end_time: Option<DateTime<Utc>>,
+    // eid-metrics: record count keyed by (EventID, Channel), both lowercased.
     pub stats_list: HashMap<(CompactString, CompactString), usize>,
     pub stats_computer: HashMap<
         CompactString, // ComputerName
@@ -44,21 +56,28 @@ pub struct EventMetrics {
             usize,
         ),
     >,
+    // logon-summary: [successful, failed] logon counts per LoginEvent grouping key.
     pub stats_login_list: HashMap<LoginEvent, [usize; 2]>,
+    // log-metrics: per-log-file metrics (file size, event count, time range, computers, etc.).
     pub stats_logfile: Vec<LogMetrics>,
+    // (EventRecordID, timestamp) pairs that have already been counted. Used by the
+    // -X/--remove-duplicate-records option to skip duplicate records.
     pub counted_rec: HashSet<(String, String)>,
 }
 /**
 * Outputs statistics for Windows Event Logs.
 */
 impl EventMetrics {
+    /// Aggregation entry point for the eid-metrics command: updates the overall record count/time
+    /// range and counts records per (EventID, Channel).
     pub fn evt_stats_start(
         &mut self,
         records: &[EvtxRecordInfo],
         stored_static: &StoredStatic,
         (include_computer, exclude_computer): (&HashSet<CompactString>, &HashSet<CompactString>),
     ) {
-        // Get the timestamp of the first record, the timestamp of the last record, and the total number of records from records.
+        // Get the timestamps of the first and last records and the total number of records in
+        // this batch.
         self.stats_time_cnt(records, stored_static);
 
         // Only output statistics when the metrics option is specified as an argument.
@@ -70,6 +89,8 @@ impl EventMetrics {
         self.stats_eventid(records, stored_static, (include_computer, exclude_computer));
     }
 
+    /// Aggregation entry point for the logon-summary command: updates the overall record
+    /// count/time range and counts successful/failed logon events.
     pub fn logon_stats_start(&mut self, records: &[EvtxRecordInfo], stored_static: &StoredStatic) {
         // Only output statistics when the logon-summary option is specified as an argument.
         if !stored_static.logon_summary_flag {
@@ -79,6 +100,9 @@ impl EventMetrics {
         self.stats_login_eventid(records, stored_static);
     }
 
+    /// Aggregation entry point for the log-metrics command. Records arrive in batches: if an
+    /// entry for the same file that already contains the computer name of the batch's first
+    /// record exists, the batch is merged into it; otherwise a new per-file entry is created.
     pub fn logfile_stats_start(
         &mut self,
         records: &[EvtxRecordInfo],
@@ -122,17 +146,23 @@ impl EventMetrics {
         }
     }
 
+    /// Updates the total record count and widens the overall start/end time range based on the
+    /// given batch of records. Used by all commands that report the scanned time range.
     pub fn stats_time_cnt(&mut self, records: &[EvtxRecordInfo], stored_static: &StoredStatic) {
         if records.is_empty() {
             return;
         }
         self.filepath = CompactString::from(records[0].evtx_filepath.as_str());
+        // The evtx format was introduced with Windows Vista, released on 2007/1/30. Any timestamp
+        // older than that is treated as invalid data (see below).
         let dt: NaiveDateTime = NaiveDate::from_ymd_opt(2007, 1, 30)
             .unwrap()
             .and_hms_opt(0, 0, 0)
             .unwrap();
         let evtx_service_released_date = Some(DateTime::<Utc>::from_naive_utc_and_offset(dt, Utc));
         let mut check_start_end_time = |evttime: &str| {
+            // Try the standard evtx UTC format first, then fall back to the timezone-offset
+            // format used by Splunk JSON exports.
             let timestamp = match NaiveDateTime::parse_from_str(evttime, "%Y-%m-%dT%H:%M:%S%.fZ") {
                 Ok(without_timezone_datetime) => Some(DateTime::<Utc>::from_naive_utc_and_offset(
                     without_timezone_datetime,
@@ -179,6 +209,8 @@ impl EventMetrics {
                 self.end_time = timestamp;
             }
         };
+        // Records are assumed to be in roughly chronological order, so only the first and last
+        // record of the batch are examined instead of every record.
         let first = records.first();
         let last = records.last();
         let rec = [first, last];
@@ -204,7 +236,8 @@ impl EventMetrics {
         self.total += records.len();
     }
 
-    /// Aggregate by EventID
+    /// Counts each record per (EventID, Channel) pair, honoring the computer include/exclude
+    /// filters and optional duplicate-record removal.
     fn stats_eventid(
         &mut self,
         records: &[EvtxRecordInfo],
@@ -232,6 +265,8 @@ impl EventMetrics {
             if let Some(idnum) =
                 utils::get_event_value("EventID", &record.record, &stored_static.eventkey_alias)
             {
+                // With -X/--remove-duplicate-records, skip records whose
+                // (EventRecordID, timestamp) pair has already been counted.
                 if stored_static.metrics_remove_duplication {
                     let event = &record.record["Event"]["System"];
                     let rec_id = event["EventRecordID"].to_string();
@@ -254,8 +289,11 @@ impl EventMetrics {
             };
         }
     }
-    // Login event
+    /// Counts logon events for the logon-summary command: Security 4624 (successful logon),
+    /// Security 4625 (failed logon), RDS LocalSessionManager 21 and RDS Gateway 302 (both
+    /// counted as successful logons).
     fn stats_login_eventid(&mut self, records: &[EvtxRecordInfo], stored_static: &StoredStatic) {
+        // Maps the LogonType number to a human-readable label for display.
         let logontype_map: HashMap<&str, &str> = HashMap::from([
             ("0", "0 - System"),
             ("2", "2 - Interactive"),
@@ -315,6 +353,8 @@ impl EventMetrics {
                         RdsLsm => CompactString::from("RDS-LSM 21"),
                         RdsGtw => CompactString::from("RDS-GTW 302"),
                     };
+                    // The RDS events store the account as a single "DOMAIN\user" field, so the
+                    // user and domain parts are split out of it below.
                     let dst_user = match channel {
                         Sec => get_event_value_as_string(
                             "TargetUserName",
@@ -414,6 +454,8 @@ impl EventMetrics {
                             &stored_static.eventkey_alias,
                         ),
                     };
+                    // With -X/--remove-duplicate-records, skip records whose
+                    // (EventRecordID, timestamp) pair has already been counted.
                     if stored_static.metrics_remove_duplication {
                         let event = &record.record["Event"]["System"];
                         let rec_id = event["EventRecordID"].to_string();
@@ -426,7 +468,9 @@ impl EventMetrics {
                     }
 
                     let countlist: [usize; 2] = [0, 0];
-                    // At this point the EventID is either 4624 or 4625, so obtain the corresponding counter here.
+                    // Fetch (or initialize) the [successful, failed] counters for this logon
+                    // event. At this point the EventID is 4624, 4625, 21 or 302; 4625 counts as a
+                    // failed logon and the others as successful logons.
                     let count: &mut [usize; 2] = self
                         .stats_login_list
                         .entry(LoginEvent {
@@ -456,6 +500,8 @@ impl EventMetrics {
     }
 }
 
+/// Looks up `key` in the record (resolving it through eventkey_alias.txt) and returns the value
+/// as a string with all double/single quote characters removed, or "-" if the field is missing.
 fn get_event_value_as_string(
     key: &str,
     record: &serde_json::Value,
@@ -471,12 +517,15 @@ fn get_event_value_as_string(
     )
 }
 
+/// Event log channels that contain the logon events tracked by the logon-summary command.
 enum Channel {
-    Sec,
-    RdsLsm,
-    RdsGtw,
+    Sec,    // Security
+    RdsLsm, // Microsoft-Windows-TerminalServices-LocalSessionManager/Operational
+    RdsGtw, // Microsoft-Windows-TerminalServices-Gateway/Operational
 }
 
+/// Returns which channel the record's logon event belongs to if its (EventID, Channel) pair is
+/// one that the logon summary tracks, or None if the record is not a target logon event.
 fn is_target_event(idnum: i64, channel: &str) -> Option<Channel> {
     if (idnum == 4624 || idnum == 4625) && channel == "Security" {
         return Some(Sec);

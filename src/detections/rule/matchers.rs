@@ -17,22 +17,24 @@ use crate::detections::rule::fast_match::{
 use crate::detections::{detection::EvtxRecordInfo, utils};
 use downcast_rs::Downcast;
 
-// Represents the logic for comparing EventLog values at leaf nodes.
-// A class implementing this trait exists for each comparison logic, such as regex matching and character count limits.
-//
-// When creating a new class that implements LeafMatcher,
-// add an instance of the newly created class to the return value array of the get_matchers method of LeafSelectionNode.
+/// Represents the logic for comparing event log values at leaf nodes.
+/// A class implementing this trait exists for each kind of comparison logic, such as regex
+/// matching and character count limits.
+///
+/// When creating a new class that implements LeafMatcher,
+/// add an instance of the newly created class to the array returned by
+/// LeafSelectionNode::get_matchers().
 pub trait LeafMatcher: Downcast + Send + Sync {
     /// Determines whether this is a LeafMatcher matching the specified key_list.
     fn is_target_key(&self, key_list: &Nested<String>) -> bool;
 
-    /// Determines whether the JSON-format data specified as an argument matches.
-    /// Windows Event Log is converted to JSON format in main.rs, and that JSON-format Windows event log data comes here.
-    /// For example, for logic that matches using regex, write the regex matching process here.
+    /// Determines whether the given event value matches. The value comes from the Windows event
+    /// record after conversion to JSON in main.rs; e.g. a regex-based matcher performs its regex
+    /// matching here.
     fn is_match(&self, event_value: Option<&String>, recinfo: &EvtxRecordInfo) -> bool;
 
-    /// Describe the initialization logic here.
-    /// If parsing from the rule file fails due to an incorrect rule file format, etc., return an error in the Result return type.
+    /// Initializes the matcher from the rule file. Returns Err with parse error messages when
+    /// the rule file format is invalid.
     fn init(&mut self, key_list: &Nested<String>, select_value: &Yaml) -> Result<(), Vec<String>>;
 }
 downcast_rs::impl_downcast!(LeafMatcher);
@@ -189,8 +191,8 @@ impl LeafMatcher for AllowlistFileMatcher {
     }
 }
 
-/// Default match class.
-/// Handling wildcards and pipes.
+/// Default match class, used when no special matcher (min_length/regexes/allowlist) applies.
+/// Handles wildcards and pipes.
 pub struct DefaultMatcher {
     re: Option<Vec<Regex>>,
     fast_match: Option<Vec<FastMatch>>,
@@ -208,20 +210,26 @@ impl DefaultMatcher {
         }
     }
 
+    /// Returns the field name referenced by an equalsfield/endswithfield/fieldref-style pipe,
+    /// if this matcher uses one.
     pub fn get_eqfield_key(&self) -> Option<&String> {
         let pipe = self.pipes.first()?;
         pipe.get_eqfield()
     }
 
-    /// Determines whether this matcher matches the given regex.
+    /// Returns true if the value matches any of this matcher's compiled regexes.
+    /// Note that Regex::is_match() performs a substring search, so any anchoring must be
+    /// expressed in the pattern itself.
     fn is_regex_fullmatch(&self, value: &str) -> bool {
         self.re.as_ref().unwrap().iter().any(|x| x.is_match(value))
     }
 
-    /// Converts the field name in Hayabusa rule files and the pipe specified after it to a regex-format string.
-    /// Processing to convert wildcard strings to regex is also implemented in this method. Specify the wildcard string in pattern and PipeElement::Wildcard in pipes.
+    /// Converts a rule value (pattern) into a regex string by applying, in order, the pipes
+    /// specified after the field name in the rule file.
+    /// Wildcard-to-regex conversion is also implemented through this method: pass the wildcard
+    /// string as `pattern` and include PipeElement::Wildcard in `pipes`.
     fn from_pattern_to_regex_str(pattern: String, pipes: &[PipeElement]) -> String {
-        // Process the pattern with Pipe.
+        // Process the pattern with each pipe.
         pipes
             .iter()
             .fold(pattern, |acc, pipe| pipe.pipe_pattern(acc))
@@ -245,7 +253,7 @@ impl LeafMatcher for DefaultMatcher {
             return Ok(());
         }
 
-        // patternをパースする
+        // Parse the pattern.
         let yaml_value = match select_value {
             Yaml::Boolean(b) => Some(b.to_string()),
             Yaml::Integer(i) => Some(i.to_string()),
@@ -262,23 +270,29 @@ impl LeafMatcher for DefaultMatcher {
         }
         let mut pattern = Vec::new();
         pattern.push(yaml_value.unwrap());
-        // Pipeが指定されていればパースする
+        // If pipes are specified, parse them.
         let emp = String::default();
-        // 一つ目はただのキーで、2つめ以降がpipe
+        // The first element is just the field key; the second and subsequent elements are pipes.
 
         let mut keys_all: Vec<&str> = key_list.get(0).unwrap_or(&emp).split('|').collect(); // key_list cannot be empty.
 
-        // Correspondence between all and allOnly.
+        // Maps shorthand pipe names to the internal names accepted by PipeElement::new():
+        // "all" -> "allOnly" (for a leading "|all" key) and the regex flags "i"/"m"/"s" ->
+        // "reignorecase"/"remultiline"/"resingleline".
         let mut change_map: HashMap<&str, &str> = HashMap::new();
         change_map.insert("all", "allOnly");
         change_map.insert("i", "reignorecase");
         change_map.insert("m", "remultiline");
         change_map.insert("s", "resingleline");
 
-        // Detect the case where | is at the beginning, and change all -> allOnly.
+        // Detect the case where "|" is at the beginning of the key (no field name, e.g. "|all"),
+        // and rename all -> allOnly.
         if keys_all[0].is_empty() && keys_all.len() == 2 && keys_all[1] == "all" {
             keys_all[1] = change_map["all"];
         }
+        // Collapse two-part modifiers into a single pipe name so that each remaining element maps
+        // to exactly one PipeElement: "re|i"/"re|m"/"re|s" become the corresponding regex-flag
+        // pipes, and "fieldref|startswith" etc. become the dedicated fieldref pipes.
         if keys_all.len() >= 3 {
             if keys_all[1] == "re" {
                 if keys_all[2] == "i" {
@@ -303,7 +317,7 @@ impl LeafMatcher for DefaultMatcher {
 
         let keys_without_head = &keys_all[1..];
 
-        let mut err_msges = vec![];
+        let mut err_msgs = vec![];
         for key in keys_without_head.iter() {
             let pipe_element = PipeElement::new(key, &pattern[0], key_list);
             match pipe_element {
@@ -311,19 +325,19 @@ impl LeafMatcher for DefaultMatcher {
                     self.pipes.push(element);
                 }
                 Err(e) => {
-                    err_msges.push(e);
+                    err_msgs.push(e);
                 }
             }
         }
-        if !err_msges.is_empty() {
-            return Err(err_msges);
+        if !err_msgs.is_empty() {
+            return Err(err_msgs);
         }
         let n = self.pipes.len();
         if n == 0 {
             // Case without pipe.
             self.fast_match = convert_to_fast_match(&pattern[0], true);
         } else if n == 1 {
-            // Case with pipe.
+            // Case with a single pipe.
             self.fast_match = create_fast_match(&self.pipes, &pattern);
         } else if n == 2 {
             if self.pipes[0] == PipeElement::Base64 && self.pipes[1] == PipeElement::Contains {
@@ -334,15 +348,18 @@ impl LeafMatcher for DefaultMatcher {
             } else if self.pipes[0] == PipeElement::Base64offset
                 && self.pipes[1] == PipeElement::Contains
             {
-                self.fast_match = convert_to_base64_str(None, pattern[0].as_str(), &mut err_msges);
+                self.fast_match = convert_to_base64_str(None, pattern[0].as_str(), &mut err_msgs);
             } else if self.pipes[0] == PipeElement::Contains && self.pipes[1] == PipeElement::All
-            // For |contains|all, it has been designated as AndSelectionNode in a prior branch, so treat it as contains only here.
+            // |contains|all was already turned into an AndSelectionNode during parsing
+            // (rule/mod.rs), so treat it as a plain contains here.
             {
                 self.fast_match = convert_to_fast_match(format!("*{}*", pattern[0]).as_str(), true);
             } else if self.pipes[0] == PipeElement::Contains
                 && self.pipes[1] == PipeElement::Windash
             {
-                // For |contains|windash
+                // For |contains|windash: also match a variant of the pattern whose first
+                // dash-like character (hyphen, en/em dash, etc.) is replaced with "/", to cover
+                // the interchangeable option prefixes accepted by Windows commands.
                 let mut fastmatches =
                     convert_to_fast_match(format!("*{}*", pattern[0]).as_str(), true)
                         .unwrap_or_default();
@@ -370,7 +387,8 @@ impl LeafMatcher for DefaultMatcher {
             if self.pipes.contains(&PipeElement::Contains)
                 && self.pipes.contains(&PipeElement::All)
                 && self.pipes.contains(&PipeElement::Windash)
-            // For |contains|all|windash, it has been designated as AndSelectionNode in a prior branch, so treat it as contains and windash only here.
+            // |contains|all|windash was already turned into an AndSelectionNode during parsing
+            // (rule/mod.rs), so treat it as contains plus windash here.
             {
                 let mut fastmatches =
                     convert_to_fast_match(format!("*{}*", pattern[0]).as_str(), true)
@@ -395,6 +413,11 @@ impl LeafMatcher for DefaultMatcher {
                     || self.pipes[1] == PipeElement::Base64)
                 && self.pipes[2] == PipeElement::Contains
             {
+                // Encoding modifiers such as |utf16|base64offset|contains: the pattern is first
+                // encoded as UTF-16, then base64-encoded, and searched with contains.
+                // With base64offset, all three byte-alignment variants are generated, and plain
+                // |utf16| tries both byte orders; with base64, a single encoding is used
+                // (|utf16| meaning UTF-16LE with a BOM).
                 if self.pipes[1] == PipeElement::Base64offset {
                     let encode = &self.pipes[0];
                     let org_str = pattern[0].as_str();
@@ -402,12 +425,12 @@ impl LeafMatcher for DefaultMatcher {
                         let utf16_le_match = convert_to_base64_str(
                             Some(&PipeElement::Utf16Le),
                             org_str,
-                            &mut err_msges,
+                            &mut err_msgs,
                         );
                         let utf16_be_match = convert_to_base64_str(
                             Some(&PipeElement::Utf16Be),
                             org_str,
-                            &mut err_msges,
+                            &mut err_msgs,
                         );
                         if let Some(utf16_le_match) = utf16_le_match
                             && let Some(utf16_be_match) = utf16_be_match
@@ -418,7 +441,7 @@ impl LeafMatcher for DefaultMatcher {
                         }
                     } else {
                         self.fast_match =
-                            convert_to_base64_str(Some(encode), org_str, &mut err_msges);
+                            convert_to_base64_str(Some(encode), org_str, &mut err_msgs);
                     }
                 } else if self.pipes[1] == PipeElement::Base64 {
                     let encode = &self.pipes[0];
@@ -452,6 +475,7 @@ impl LeafMatcher for DefaultMatcher {
                 }
             }
         } else {
+            // Four or more pipes are not supported.
             let errmsg = format!(
                 "Multiple pipe elements cannot be used. key:{}",
                 utils::concat_selection_key(key_list)
@@ -465,7 +489,9 @@ impl LeafMatcher for DefaultMatcher {
             )
             && !self.key_list.is_empty()
         {
-            // Regex is not needed when replaced with FastMatch::Exact/Contains search.
+            // No regex needs to be compiled when the pattern was fully replaced with a
+            // FastMatch::Exact/Contains search. (Grep searches with an empty key list still need
+            // the regex, so they are excluded here.)
             return Ok(());
         }
         let is_eqfield = self.pipes.iter().any(|pipe_element| {
@@ -480,8 +506,9 @@ impl LeafMatcher for DefaultMatcher {
             )
         });
         if !is_eqfield {
-            // If it is not a regex, it represents a wildcard.
-            // Wildcards are matched using regex, so internally add a Pipe that converts wildcards to regex.
+            // If the pattern is not a regex (no |re pipe), it is interpreted as a wildcard
+            // expression. Wildcards are matched using regex internally, so append a pipe that
+            // converts the wildcard string into a regex.
             let is_re = self.pipes.iter().any(|pipe_element| {
                 matches!(
                     pipe_element,
@@ -498,7 +525,7 @@ impl LeafMatcher for DefaultMatcher {
             let mut re_result_vec = vec![];
             for p in pattern {
                 let pattern = DefaultMatcher::from_pattern_to_regex_str(p, &self.pipes);
-                // Convert the pattern processed by Pipe to regex.
+                // Compile the pipe-processed pattern into a regex.
                 if let Ok(re_result) = Regex::new(&pattern) {
                     re_result_vec.push(re_result);
                 } else {
@@ -516,6 +543,8 @@ impl LeafMatcher for DefaultMatcher {
 
     fn is_match(&self, event_value: Option<&String>, recinfo: &EvtxRecordInfo) -> bool {
         let pipe: &PipeElement = self.pipes.first().unwrap_or(&PipeElement::Wildcard);
+        // Pipes that implement their own matching (cidr, exists, field references and numeric
+        // comparisons) are handled first; all other kinds fall through to fast match/regex.
         let match_result = match pipe {
             PipeElement::Cidr(ip_result) => match ip_result {
                 Ok(matcher_ip) => {
@@ -524,10 +553,10 @@ impl LeafMatcher for DefaultMatcher {
                     let event_ip = IpAddr::from_str(event_value_str);
                     match event_ip {
                         Ok(target_ip) => Some(matcher_ip.contains(&target_ip)),
-                        Err(_) => Some(false), // For formats other than IP addresses.
+                        Err(_) => Some(false), // The event value is not an IP address.
                     }
                 }
-                Err(_) => Some(false), // For formats other than IP addresses.
+                Err(_) => Some(false), // The rule's cidr value is not a valid CIDR range.
             },
             PipeElement::Exists(..)
             | PipeElement::EqualsField(_)
@@ -551,7 +580,7 @@ impl LeafMatcher for DefaultMatcher {
                         };
                         Some(cmp_result)
                     }
-                    Err(_) => Some(false), // For non-numeric values.
+                    Err(_) => Some(false), // The event value is not numeric.
                 }
             }
             _ => None,
@@ -560,15 +589,15 @@ impl LeafMatcher for DefaultMatcher {
             return result;
         }
 
-        // If null is set in yaml.
-        // If keylist is empty (== JSON grep search), ignore.
+        // If null is set in the yaml and the key list is empty (i.e. a grep-style search over the
+        // whole record), there is nothing to match against, so never detect.
         if self.key_list.is_empty() && self.re.is_none() && self.fast_match.is_none() {
             return false;
         }
 
-        // If null is set in yaml.
+        // If null is set in the yaml.
         if self.re.is_none() && self.fast_match.is_none() {
-            // If the target field does not exist in the record, treat it as detected.
+            // A null value matches when the target field does not exist in the record.
             for v in self.key_list.iter() {
                 if recinfo.get_value(v).is_none() {
                     return true;
@@ -596,12 +625,13 @@ impl LeafMatcher for DefaultMatcher {
                 return is_match;
             }
         }
-        // If it could not be converted to character count/starts_with/ends_with search, compare using regex match.
+        // Fall back to a regex match when the pattern could not be handled by the fast match path
+        // (exact/starts_with/ends_with/contains).
         self.is_regex_fullmatch(event_value_str)
     }
 }
 
-/// Class representing elements specified by pipes (|).
+/// Represents the modifiers specified after pipes (|) in a rule field key.
 /// Needs refactoring.
 #[derive(PartialEq)]
 pub enum PipeElement {
@@ -709,8 +739,8 @@ impl PipeElement {
             _ => None,
         };
 
-        if let Some(elment) = pipe_element {
-            Ok(elment)
+        if let Some(element) = pipe_element {
+            Ok(element)
         } else {
             Err(format!(
                 "An unknown pipe element was specified. key:{}",
@@ -738,7 +768,7 @@ impl PipeElement {
             }
             PipeElement::EqualsField(eq_key) | PipeElement::FieldRef(eq_key) => {
                 let eq_value = recinfo.get_value(eq_key);
-                // If an eventkey specified does not exist in the Evtx record, set to false.
+                // If the specified event key does not exist in the evtx record, return false.
                 if event_value.is_none() || eq_value.is_none() {
                     return false;
                 }
@@ -755,7 +785,7 @@ impl PipeElement {
             }
             PipeElement::Endswithfield(eq_key) | PipeElement::FieldRefEndswith(eq_key) => {
                 let ends_value = recinfo.get_value(eq_key);
-                // If an eventkey specified does not exist in the Evtx record, set to false.
+                // If the specified event key does not exist in the evtx record, return false.
                 if event_value.is_none() || ends_value.is_none() {
                     return false;
                 }
@@ -777,9 +807,10 @@ impl PipeElement {
         }
     }
 
-    /// Processes the pattern with pipe.
+    /// Applies this pipe's transformation to the pattern.
     fn pipe_pattern(&self, pattern: String) -> String {
-        // When implementing polymorphism with an enum, all type implementations go into one method. For Java developers, this might feel odd.
+        // When implementing polymorphism with an enum, every variant's implementation ends up in a
+        // single method. This may feel odd to developers used to Java-style class hierarchies.
         let fn_add_asterisk_end = |patt: String| {
             if patt.ends_with("//*") {
                 patt
@@ -788,8 +819,9 @@ impl PipeElement {
             } else if patt.ends_with('*') {
                 patt
             } else if patt.ends_with('\\') {
-                // If the end is \ (one backslash), convert the end to \\* (two backslashes and an asterisk).
-                // A trailing \\* means one backslash followed by a wildcard pattern.
+                // If the pattern ends with \ (a single backslash), turn the ending into \\*
+                // (two backslashes and an asterisk): in wildcard notation a trailing \\* means a
+                // literal backslash followed by the * wildcard.
                 patt + "\\*"
             } else {
                 patt + "*"
@@ -824,7 +856,8 @@ impl PipeElement {
     }
 
     /// Pipe processing for PipeElement::Wildcard.
-    /// This processing could be included in pipe_pattern(), but became complex so it was separated into a separate function.
+    /// This processing could have been included in pipe_pattern(), but it became complex, so it
+    /// was split out into its own function.
     fn pipe_pattern_wildcard(pattern: String) -> String {
         let wildcards = vec!["*", "?"];
 
@@ -861,7 +894,8 @@ impl PipeElement {
                     break;
                 }
             }
-            // If hit in the above For loop, continue.
+            // If one of the wildcard branches above matched, idx has already been advanced, so
+            // continue with the next chunk.
             if prev_idx != idx {
                 continue;
             }
@@ -886,7 +920,9 @@ impl PipeElement {
                     // If not a wildcard, return the escaped string.
                     regex::escape(pattern)
                 } else {
-                    // When it is a wildcard.、"*"は".*"という正規表現に変換し、"?"は"."に変換する。
+                    // When it is a wildcard, convert "*" into a ".*"-style regex (an alternation
+                    // that additionally matches the newline, which "." alone does not) and convert
+                    // "?" into ".".
                     let wildcard_regex_value = if *pattern == "*" {
                         "(.|\\a|\\f|\\t|\\n|\\r|\\v)*"
                     } else {
@@ -899,8 +935,8 @@ impl PipeElement {
             },
         );
 
-        // sigma wildcards are case insensitive.
-        // Therefore, prepend a symbol indicating case insensitivity to the regex.
+        // Sigma wildcards are case-insensitive.
+        // Therefore, prepend the case-insensitive flag to the regex.
         "(?i)".to_string() + &ret
     }
 }
@@ -961,7 +997,7 @@ mod tests {
 
     #[test]
     fn test_rule_parse() {
-        // ルールファイルをYAML形式で読み込み
+        // Load the rule file in YAML format.
         let rule_str = r#"
         title: PowerShell Execution Pipeline
         description: hogehoge
@@ -991,19 +1027,19 @@ mod tests {
         let selection_node = &rule_node.detection.name_to_selection["selection"];
 
         // Root
-        let detection_childs = selection_node.get_childs();
-        assert_eq!(detection_childs.len(), 4);
+        let detection_children = selection_node.get_children();
+        assert_eq!(detection_children.len(), 4);
 
         // Channel
         {
             // Verify that LeafSelectionNode is correctly loaded.
-            let child_node = detection_childs[0];
+            let child_node = detection_children[0];
             assert!(child_node.is::<LeafSelectionNode>());
             let child_node = child_node.downcast_ref::<LeafSelectionNode>().unwrap();
             assert_eq!(child_node.get_key(), "Channel");
-            assert_eq!(child_node.get_childs().len(), 0);
+            assert_eq!(child_node.get_children().len(), 0);
 
-            // Verify that the comparison regex is correct.
+            // Verify that the comparison matcher is correct.
             let matcher = &child_node.matcher;
             assert!(matcher.is_some());
             let matcher = child_node.matcher.as_ref().unwrap();
@@ -1023,13 +1059,13 @@ mod tests {
         // EventID
         {
             // Verify that LeafSelectionNode is correctly loaded.
-            let child_node = detection_childs[1] as &dyn SelectionNode;
+            let child_node = detection_children[1] as &dyn SelectionNode;
             assert!(child_node.is::<LeafSelectionNode>());
             let child_node = child_node.downcast_ref::<LeafSelectionNode>().unwrap();
             assert_eq!(child_node.get_key(), "EventID");
-            assert_eq!(child_node.get_childs().len(), 0);
+            assert_eq!(child_node.get_children().len(), 0);
 
-            // Verify that the comparison regex is correct.
+            // Verify that the comparison matcher is correct.
             let matcher = &child_node.matcher;
             assert!(matcher.is_some());
             let matcher = child_node.matcher.as_ref().unwrap();
@@ -1041,10 +1077,10 @@ mod tests {
         // ContextInfo
         {
             // Verify that OrSelectionNode is correctly loaded.
-            let child_node = detection_childs[2] as &dyn SelectionNode;
+            let child_node = detection_children[2] as &dyn SelectionNode;
             assert!(child_node.is::<OrSelectionNode>());
             let child_node = child_node.downcast_ref::<OrSelectionNode>().unwrap();
-            let ancestors = child_node.get_childs();
+            let ancestors = child_node.get_children();
             assert_eq!(ancestors.len(), 2);
 
             // Test patterns where LeafSelectionNode is under OrSelectionNode.
@@ -1065,7 +1101,8 @@ mod tests {
                 vec![FastMatch::Exact("Host Application".to_string())]
             );
 
-            // Verify that the host application node, which is a LeafSelectionNode, is correct.
+            // Verify that the Japanese-locale host application node, which is a LeafSelectionNode,
+            // is correct.
             let hostapp_jp_node = ancestors[1] as &dyn SelectionNode;
             assert!(hostapp_jp_node.is::<LeafSelectionNode>());
             let hostapp_jp_node = hostapp_jp_node.downcast_ref::<LeafSelectionNode>().unwrap();
@@ -1086,10 +1123,10 @@ mod tests {
         // ImagePath
         {
             // Verify that AndSelectionNode is correctly loaded.
-            let child_node = detection_childs[3] as &dyn SelectionNode;
+            let child_node = detection_children[3] as &dyn SelectionNode;
             assert!(child_node.is::<AndSelectionNode>());
             let child_node = child_node.downcast_ref::<AndSelectionNode>().unwrap();
-            let ancestors = child_node.get_childs();
+            let ancestors = child_node.get_children();
             assert_eq!(ancestors.len(), 3);
 
             // Verify that min-len is correctly loaded.
@@ -1120,7 +1157,7 @@ mod tests {
                     .downcast_ref::<RegexesFileMatcher>()
                     .unwrap();
 
-                // Verify that the content matches regexes.txt.
+                // Verify that the contents match the regexes file.
                 let csvcontent = &ancestor_matcher.regexes;
 
                 assert_eq!(csvcontent.len(), 16);
@@ -1134,7 +1171,7 @@ mod tests {
                 );
             }
 
-            // Verify that allowlist.txt can be loaded.
+            // Verify that the allowlist file can be loaded.
             {
                 let ancestor_node = ancestors[2] as &dyn SelectionNode;
                 assert!(ancestor_node.is::<LeafSelectionNode>());
@@ -1287,7 +1324,7 @@ mod tests {
 
     #[test]
     fn test_notdetect_regex_emptystr() {
-        // Verify that exact matching also works with string-like data.
+        // Verify that an empty string value does not match.
         let rule_str = r#"
         enabled: true
         detection:
@@ -1307,7 +1344,7 @@ mod tests {
 
     #[test]
     fn test_notdetect_minlen() {
-        // Verify that minlen is correctly detected.
+        // Verify that min_length does not match when the value is shorter.
         let rule_str = r#"
         enabled: true
         detection:
@@ -1391,7 +1428,7 @@ mod tests {
 
     #[test]
     fn test_notdetect_minlen_and() {
-        // Verify that minlen is correctly detected.
+        // Verify that min_length does not match when the value is shorter.
         let rule_str = r#"
         enabled: true
         detection:
@@ -1452,8 +1489,10 @@ mod tests {
 
     #[test]
     fn test_detect_regexes() {
-        // Verify that regexes.txt is correctly detected.
-        // In this case, the EventID matches, but since it matches the allowlist, it should not be detected.
+        // Verify that the allowlist file is correctly handled (despite the test name, the rule
+        // only uses an allowlist).
+        // In this case, the EventID matches, but since it matches the allowlist, it should not be
+        // detected.
         let rule_str = r#"
         enabled: true
         detection:
@@ -2131,7 +2170,7 @@ mod tests {
     }
 
     #[test]
-    fn test_pipe_pattern_wildcard_backshash() {
+    fn test_pipe_pattern_wildcard_backslash() {
         let value = PipeElement::pipe_pattern_wildcard(r"\\ho\\ge\\".to_string());
         assert_eq!(r"(?i)\\\\ho\\\\ge\\\\", value);
     }
@@ -2146,7 +2185,7 @@ mod tests {
     }
 
     #[test]
-    fn test_pipe_pattern_wildcard_many_backshashs() {
+    fn test_pipe_pattern_wildcard_many_backslashes() {
         let value = PipeElement::pipe_pattern_wildcard(r"\\\*ho\\\*ge\\\".to_string());
         assert_eq!(
             r"(?i)\\\\(.|\a|\f|\t|\n|\r|\v)*ho\\\\(.|\a|\f|\t|\n|\r|\v)*ge\\\\\\",
@@ -2156,7 +2195,8 @@ mod tests {
 
     #[test]
     fn test_grep_match() {
-        // Wildcards match regardless of case.
+        // A selection written as a bare list (no field name) performs a grep-style match against
+        // the whole record.
         let rule_str = r#"
         enabled: true
         detection:
@@ -2175,7 +2215,8 @@ mod tests {
 
     #[test]
     fn test_grep_not_match() {
-        // Wildcards match regardless of case.
+        // A grep-style match (bare list, no field name) does not match a record that does not
+        // contain the value.
         let rule_str = r#"
         enabled: true
         detection:
@@ -2195,8 +2236,7 @@ mod tests {
 
     #[test]
     fn test_detect_value_keyword() {
-        // Also verify with string-like data.
-        // Since it is an exact match, verify that it does not match as a prefix.
+        // Verify that the "value:" keyword form matches exactly.
         let rule_str = r#"
         enabled: true
         detection:
@@ -2217,8 +2257,8 @@ mod tests {
 
     #[test]
     fn test_notdetect_value_keyword() {
-        // Also verify with string-like data.
-        // Since it is an exact match, verify that it does not match as a prefix.
+        // Verify that the "value:" keyword form is an exact match: a similar but different
+        // value (rule "Securiteen" vs record "Security") does not match.
         let rule_str = r#"
         enabled: true
         detection:
@@ -2573,7 +2613,7 @@ mod tests {
 
     #[test]
     fn test_field_null() {
-        // Verify that the target field does not exist when the value is null.
+        // Verify that a null value matches when the target field does not exist in the record.
         let rule_str = r#"
         enabled: true
         detection:
@@ -2595,7 +2635,8 @@ mod tests {
 
     #[test]
     fn test_field_null_not_detect() {
-        // Verify that the target field does not exist when the value is null.するテスト
+        // Test that a null value requires the target field to be absent: here the field exists,
+        // so the rule does not match.
         let rule_str = r#"
         enabled: true
         detection:
@@ -2671,7 +2712,8 @@ mod tests {
 
     #[test]
     fn test_wildcard_converted_starts_with_shorter_val_notdetect() {
-        // When a single wildcard is at the end but the characters to compare have fewer characters, it does not match.
+        // When a single wildcard is at the end but the event value is shorter than the pattern,
+        // it does not match.
         let rule_str = r#"
         enabled: true
         detection:
@@ -2747,7 +2789,8 @@ mod tests {
 
     #[test]
     fn test_wildcard_converted_ends_with_shorter_val_notdetect() {
-        // When a single wildcard is at the beginning but the characters to compare have fewer characters, it does not match.
+        // When a single wildcard is at the beginning, a value that does not end with the
+        // pattern's suffix does not match.
         let rule_str = r#"
         enabled: true
         detection:
@@ -2766,7 +2809,8 @@ mod tests {
 
     #[test]
     fn test_only_wildcard() {
-        // When there is only a wildcard, it is equivalent to ends_with matching.
+        // A pattern consisting of only a wildcard is converted to ends_with("") and therefore
+        // matches any value.
         let rule_str = r#"
         enabled: true
         detection:
@@ -2804,7 +2848,7 @@ mod tests {
 
     #[test]
     fn test_base64_contains() {
-        // Match for base64|contains.
+        // A pattern that matches base64|contains.
         let rule_str = r#"
         enabled: true
         detection:
@@ -2824,7 +2868,7 @@ mod tests {
 
     #[test]
     fn test_base64offset_contains() {
-        // Match for base64offset|contains.
+        // A pattern that matches base64offset|contains.
         let rule_str = r#"
         enabled: true
         detection:
@@ -2844,7 +2888,7 @@ mod tests {
 
     #[test]
     fn test_base64offset_contains_not_match() {
-        // Match for base64offset|contains.しないパターン
+        // A pattern that does not match base64offset|contains.
         let rule_str = r#"
         enabled: true
         detection:
@@ -2940,7 +2984,7 @@ mod tests {
 
     #[test]
     fn test_cidr_ip_field_not_exists_not_detect() {
-        // IPs not matching CIDR.
+        // When the IP address field does not exist in the record, the rule does not match.
         let rule_str = r#"
         enabled: true
         detection:
@@ -3033,7 +3077,7 @@ mod tests {
           }
         }"#;
 
-        check_select(rule_str, record_json_str, false); //★ expect false
+        check_select(rule_str, record_json_str, false); // Expect false: the backslash must match literally.
     }
 
     #[test]

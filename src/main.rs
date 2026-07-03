@@ -92,8 +92,8 @@ struct Contributors;
 #[global_allocator]
 static GLOBAL: MiMalloc = MiMalloc;
 
-// The number of records to load and scan at one time.
-// The number of records to load and scan at a time. 1000 gave the fastest results and lowest memory usage in test benchmarks.
+// The number of records to load and scan at a time. In test benchmarks, 1000 gave the fastest
+// results and the lowest memory usage.
 const MAX_DETECT_RECORDS: usize = 1000;
 
 fn main() {
@@ -106,6 +106,10 @@ fn main() {
     app.rt.shutdown_background();
 }
 
+/// RAII guard that disables WOW64 filesystem redirection while it is alive and restores the
+/// previous state on drop. Without this, a 32-bit binary running on 64-bit Windows would have
+/// paths like C:\Windows\System32\winevt\Logs silently redirected to SysWOW64 and could not read
+/// the real event logs. On non-Windows targets this is a no-op.
 struct Wow64RedirectionGuard {
     #[cfg(target_os = "windows")]
     old_state: *mut c_void,
@@ -142,6 +146,8 @@ impl Drop for Wow64RedirectionGuard {
     }
 }
 
+/// Application driver: owns the Tokio runtime used for record processing and the union of event
+/// field keys referenced by the loaded detection rules.
 pub struct App {
     rt: Runtime,
     rule_keys: Nested<String>,
@@ -155,6 +161,8 @@ impl App {
         }
     }
 
+    /// Dispatch and run the subcommand selected on the command line, then print the closing
+    /// summary output (elapsed time, error log, HTML report, etc.).
     fn exec(&mut self, app: &mut Command, stored_static: &mut StoredStatic) {
         if stored_static.profiles.is_none() {
             return;
@@ -191,7 +199,7 @@ impl App {
             return;
         }
 
-        // Show usage when no arguments.
+        // Show usage when no arguments are provided.
         if stored_static.config.action.is_none() {
             if !stored_static.common_options.quiet {
                 self.output_logo(stored_static);
@@ -224,7 +232,9 @@ impl App {
             return;
         }
 
-        // Prevent errors when running from a directory other than the current directory without the rules-config option.
+        // If the rules-config option was not specified (the path is still the default
+        // ./rules/config), resolve it relative to the executable's directory so that running
+        // Hayabusa from a different current directory does not cause errors.
         if stored_static.config_path == Path::new("./rules/config") {
             stored_static.config_path =
                 check_setting_path(&CURRENT_EXE_PATH.to_path_buf(), "rules/config", true).unwrap();
@@ -338,11 +348,11 @@ Any hostnames added to the critical_systems.txt file will have all alerts above 
                         checked_item_prefix: Style::new().color256(46).apply_to("✔".to_string()), // green
                         picked_item_prefix: Style::new().color256(214).apply_to("❯".to_string()), // orange
                         values_style: Style::new().color256(46), // green
-                        prompt_prefix: Style::new().color256(160).apply_to("?".to_string()), // orange
-                        prompt_suffix: Style::new().color256(15).apply_to("›".to_string()),  // cyan
-                        prompt_style: Style::new().color256(160).bold(),                     // red
-                        defaults_style: Style::new().color256(51),                           // cyan
-                        hint_style: Style::new().color256(214), // orange
+                        prompt_prefix: Style::new().color256(160).apply_to("?".to_string()), // red
+                        prompt_suffix: Style::new().color256(15).apply_to("›".to_string()), // white
+                        prompt_style: Style::new().color256(160).bold(), // red
+                        defaults_style: Style::new().color256(51), // cyan
+                        hint_style: Style::new().color256(214),  // orange
                         success_prefix: Style::new().color256(46).apply_to("✔".to_string()), // green
                         success_suffix: Style::new().color256(15).apply_to("·".to_string()), // white
                         ..Default::default()
@@ -429,7 +439,9 @@ Any hostnames added to the critical_systems.txt file will have all alerts above 
 
         match &stored_static.config.action.as_ref().unwrap() {
             Action::CsvTimeline(_) | Action::JsonTimeline(_) => {
-                // Prevent errors when running from a directory other than the current directory without the rules option.
+                // If the rules option was not specified (the path is still the default ./rules),
+                // resolve it relative to the executable's directory so that running Hayabusa from
+                // a different current directory does not cause errors.
                 if stored_static.output_option.as_ref().unwrap().rules == Path::new("./rules") {
                     if Path::new("./encoded_rules.yml").exists() {
                         stored_static.output_option.as_mut().unwrap().rules = check_setting_path(
@@ -454,7 +466,7 @@ Any hostnames added to the critical_systems.txt file will have all alerts above 
                 }
                 if let Some(html_path) = &stored_static.output_option.as_ref().unwrap().html_report
                 {
-                    // if already exists same html report file. output alert message and exit
+                    // If an HTML report file with the same name already exists, output an alert message and exit.
                     if !stored_static.output_option.as_ref().unwrap().clobber
                         && utils::check_file_expect_not_exist(
                             html_path.as_path(),
@@ -697,7 +709,8 @@ Any hostnames added to the critical_systems.txt file will have all alerts above 
                     _ => None,
                 };
                 println!();
-                // If an error occurs, do not output errors because there may be issues such as no internet connection.
+                // If an error occurs (e.g. no internet connection), ignore it and do not output
+                // an error message.
                 let latest_version_data = Update::get_latest_hayabusa_version().unwrap_or_default();
                 let now_version = &format!("v{}", env!("CARGO_PKG_VERSION"));
                 stored_static.include_status.insert("*".into());
@@ -965,7 +978,7 @@ Any hostnames added to the critical_systems.txt file will have all alerts above 
                 } else {
                     &opt.rules
                 };
-                // Check the rule config folder and files, and terminate if there are errors.
+                // Terminate with an alert if the rules directory does not exist.
                 if !rule_dir.exists() {
                     AlertMessage::alert(
                         "The rules directory does not exist. Please check the path.",
@@ -1143,6 +1156,8 @@ Any hostnames added to the critical_systems.txt file will have all alerts above 
         }
     }
 
+    /// Determine the input source (live analysis, directory tree, or single file), collect the
+    /// target files, and start the analysis.
     fn analysis_start(
         &mut self,
         target_extensions: &HashSet<String>,
@@ -1267,6 +1282,8 @@ Any hostnames added to the critical_systems.txt file will have all alerts above 
         }
     }
 
+    /// Recursively collect files under `dir_path` whose extension is one of `target_extensions`,
+    /// skipping hidden files (names starting with a dot).
     fn collect_evtxfiles(
         dir_path: &str,
         target_extensions: &HashSet<String>,
@@ -1345,6 +1362,9 @@ Any hostnames added to the critical_systems.txt file will have all alerts above 
         .ok();
     }
 
+    /// Run the scan over the collected files: show the rule-set wizard if enabled, load and
+    /// filter the detection rules, apply channel filters, analyze each file, and emit the
+    /// results.
     fn analysis_files(
         &mut self,
         mut evtx_files: Vec<PathBuf>,
@@ -1416,7 +1436,7 @@ Any hostnames added to the critical_systems.txt file will have all alerts above 
                 .lock()
                 .as_mut()
                 .unwrap()
-                .rap_checkpoint("Rule Parse Processing Time");
+                .lap_checkpoint("Rule Parse Processing Time");
             let mut rule_counter_wizard_map = HashMap::new();
             yaml::count_rules(
                 &stored_static.output_option.as_ref().unwrap().rules,
@@ -1432,7 +1452,13 @@ Any hostnames added to the critical_systems.txt file will have all alerts above 
                 true,
             )
             .ok();
-            let calcurate_wizard_rule_count = |exclude_noisytarget_flag: bool,
+            // Count the loadable rules per status (or per tag when target_tags is non-empty) at
+            // or above min_level, based on rule_counter_wizard_map, which is keyed as
+            // status -> level -> tag -> count. When exclude_noisytarget_flag is set, only the
+            // statuses in exclude_noisy_status are counted (used for the deprecated/unsupported/
+            // noisy prompts); otherwise those statuses are skipped, unless target_status contains
+            // "*", in which case all statuses (including the noisy/deprecated ones) are counted.
+            let calculate_wizard_rule_count = |exclude_noisytarget_flag: bool,
                                                exclude_noisy_status: Vec<&str>,
                                                min_level: &str,
                                                target_status: Vec<&str>,
@@ -1517,7 +1543,7 @@ Any hostnames added to the critical_systems.txt file will have all alerts above 
             let sections_rule_cnt = selections_status
                 .iter()
                 .map(|(_, (status, min_level))| {
-                    calcurate_wizard_rule_count(
+                    calculate_wizard_rule_count(
                         false,
                         ["excluded", "deprecated", "unsupported", "noisy"].to_vec(),
                         min_level,
@@ -1602,7 +1628,7 @@ Any hostnames added to the critical_systems.txt file will have all alerts above 
                     picked_item_prefix: Style::new().color256(214).apply_to("❯".to_string()), // orange
                     values_style: Style::new().color256(46), // green
                     prompt_prefix: Style::new().color256(214).apply_to("?".to_string()), // orange
-                    prompt_suffix: Style::new().color256(15).apply_to("›".to_string()), // cyan
+                    prompt_suffix: Style::new().color256(15).apply_to("›".to_string()), // white
                     defaults_style: Style::new().color256(51), // cyan
                     hint_style: Style::new().color256(214),  // orange
                     success_prefix: Style::new().color256(46).apply_to("✔".to_string()), // green
@@ -1624,7 +1650,7 @@ Any hostnames added to the critical_systems.txt file will have all alerts above 
             stored_static.output_option.as_mut().unwrap().min_level =
                 selections_status[selected_index].1.1.into();
 
-            let exclude_noisy_cnt = calcurate_wizard_rule_count(
+            let exclude_noisy_cnt = calculate_wizard_rule_count(
                 true,
                 ["excluded", "noisy", "deprecated", "unsupported"].to_vec(),
                 selections_status[selected_index].1.1,
@@ -1642,7 +1668,7 @@ Any hostnames added to the critical_systems.txt file will have all alerts above 
 
             let mut output_option = stored_static.output_option.clone().unwrap();
             let exclude_tags = output_option.exclude_tag.get_or_insert_with(Vec::new);
-            let tags_cnt = calcurate_wizard_rule_count(
+            let tags_cnt = calculate_wizard_rule_count(
                 false,
                 [].to_vec(),
                 selections_status[selected_index].1.1,
@@ -1691,7 +1717,7 @@ Any hostnames added to the critical_systems.txt file will have all alerts above 
             } else {
                 // If "4. All alert rules" or "5. All event and alert rules" was selected, ask questions about deprecated and unsupported rules.
                 if let Some(dep_cnt) = exclude_noisy_cnt.get("deprecated") {
-                    // deprecated rules load prompt
+                    // Prompt whether to load deprecated rules.
                     let prompt_fmt = format!(
                         "Include deprecated rules? ({} rules)",
                         dep_cnt.to_formatted_string(&Locale::en)
@@ -1711,7 +1737,7 @@ Any hostnames added to the critical_systems.txt file will have all alerts above 
                     }
                 }
                 if let Some(unsup_cnt) = exclude_noisy_cnt.get("unsupported") {
-                    // unsupported rules load prompt
+                    // Prompt whether to load unsupported rules.
                     let prompt_fmt = format!(
                         "Include unsupported rules? ({} rules)",
                         unsup_cnt.to_formatted_string(&Locale::en)
@@ -1739,7 +1765,7 @@ Any hostnames added to the critical_systems.txt file will have all alerts above 
                 .set_checkpoint(Local::now());
 
             if let Some(noisy_cnt) = exclude_noisy_cnt.get("noisy") {
-                // noisy rules load prompt
+                // Prompt whether to load noisy rules.
                 let prompt_fmt = format!(
                     "Include noisy rules? ({} rules)",
                     noisy_cnt.to_formatted_string(&Locale::en)
@@ -1867,7 +1893,7 @@ Any hostnames added to the critical_systems.txt file will have all alerts above 
                 .lock()
                 .as_mut()
                 .unwrap()
-                .rap_checkpoint("Rule Parse Processing Time");
+                .lap_checkpoint("Rule Parse Processing Time");
             CHECKPOINT
                 .lock()
                 .as_mut()
@@ -1901,7 +1927,7 @@ Any hostnames added to the critical_systems.txt file will have all alerts above 
                     stored_static.quiet_errors_flag,
                 );
                 if !stored_static.scan_all_evtx_files {
-                    evtx_files.retain(|e| channel_filter.scanable_rule_exists(e));
+                    evtx_files.retain(|e| channel_filter.scannable_rule_exists(e));
                     write_color_buffer(
                         &BufferWriter::stdout(ColorChoice::Always),
                         get_writable_color(
@@ -1922,7 +1948,7 @@ Any hostnames added to the critical_systems.txt file will have all alerts above 
                 }
                 if !stored_static.enable_all_rules {
                     rule_files.retain(|r| {
-                        channel_filter.rulepathes.contains(&r.rulepath)
+                        channel_filter.rule_paths.contains(&r.rulepath)
                             || !r.yaml["correlation"].is_badvalue()
                     });
                     let rules_after_channel_filter =
@@ -1984,7 +2010,7 @@ Any hostnames added to the critical_systems.txt file will have all alerts above 
             let rule_files = vec![node];
             let mut channel_filter =
                 create_channel_filter(&evtx_files, &rule_files, stored_static.quiet_errors_flag);
-            evtx_files.retain(|e| channel_filter.scanable_rule_exists(e));
+            evtx_files.retain(|e| channel_filter.scannable_rule_exists(e));
         }
 
         if matches!(
@@ -2005,7 +2031,7 @@ Any hostnames added to the critical_systems.txt file will have all alerts above 
             let rule_files = vec![node];
             let mut channel_filter =
                 create_channel_filter(&evtx_files, &rule_files, stored_static.quiet_errors_flag);
-            evtx_files.retain(|e| channel_filter.scanable_rule_exists(e));
+            evtx_files.retain(|e| channel_filter.scannable_rule_exists(e));
         }
 
         if let Some(Action::LogMetrics(opt)) = &stored_static.config.action {
@@ -2018,6 +2044,10 @@ Any hostnames added to the critical_systems.txt file will have all alerts above 
             );
         }
 
+        // Build the indicatif progress bar template. In the colored branch, the doubled braces
+        // in the format! call are escapes that produce literal braces, so the indicatif
+        // placeholders like {elapsed_precise} survive intact while the spinner and bar are
+        // wrapped in green truecolor escape sequences.
         let template = if stored_static.common_options.no_color {
             "[{elapsed_precise}] {human_pos} / {human_len} {spinner} [{bar:40}] {percent}%\n\n{msg}"
                 .to_string()
@@ -2029,7 +2059,7 @@ Any hostnames added to the critical_systems.txt file will have all alerts above 
             )
         };
 
-        let progress_style = ProgressStyle::with_template(&template) // Pass `&template` here
+        let progress_style = ProgressStyle::with_template(&template)
             .unwrap()
             .progress_chars("=> ");
 
@@ -2124,7 +2154,7 @@ Any hostnames added to the critical_systems.txt file will have all alerts above 
             .lock()
             .as_mut()
             .unwrap()
-            .rap_checkpoint("Analysis Processing Time");
+            .lap_checkpoint("Analysis Processing Time");
         CHECKPOINT
             .lock()
             .as_mut()
@@ -2149,7 +2179,7 @@ Any hostnames added to the critical_systems.txt file will have all alerts above 
             tl.config_critical_systems_dsp_msg(stored_static.common_options.no_color);
         }
         if is_timeline_cmd {
-            let mut log_records = detection.add_aggcondition_msges(&self.rt, stored_static);
+            let mut log_records = detection.add_aggcondition_msgs(&self.rt, stored_static);
             if stored_static.is_low_memory {
                 let empty_ids = HashSet::new();
                 afterfact::emit_csv(
@@ -2180,7 +2210,8 @@ Any hostnames added to the critical_systems.txt file will have all alerts above 
             } else {
                 style("Scanning finished.\n").color256(214).to_string()
             };
-            // Convert the ColoredString to a String before passing it
+            // The styled message was converted to a plain String above because
+            // finish_with_message requires a string type.
             if is_show_progress {
                 pb.finish_with_message(msg);
             } else {
@@ -2196,7 +2227,7 @@ Any hostnames added to the critical_systems.txt file will have all alerts above 
                 .ok();
             }
 
-            // output afterfact
+            // Output the post-detection results (afterfact processing).
             if stored_static.is_low_memory {
                 afterfact::output_additional_afterfact(
                     stored_static,
@@ -2224,7 +2255,7 @@ Any hostnames added to the critical_systems.txt file will have all alerts above 
             .lock()
             .as_mut()
             .unwrap()
-            .rap_checkpoint("Output Processing Time");
+            .lap_checkpoint("Output Processing Time");
         CHECKPOINT
             .lock()
             .as_mut()
@@ -2232,7 +2263,9 @@ Any hostnames added to the critical_systems.txt file will have all alerts above 
             .set_checkpoint(Local::now());
     }
 
-    // Analyze one Windows event log file.
+    /// Analyze one Windows .evtx event log file: iterate its records in chunks of
+    /// MAX_DETECT_RECORDS, apply the computer/EventID/channel/time filters, and run timeline
+    /// processing and rule detection on the surviving records.
     fn analysis_file(
         &self,
         (evtx_filepath, time_filter, target_event_ids, stored_static): (
@@ -2369,7 +2402,7 @@ Any hostnames added to the critical_systems.txt file will have all alerts above 
             ));
             tl.start(&records_per_detect, stored_static);
             if need_rule {
-                // detect event record by rule file
+                // Run the loaded detection rules against this batch of records.
                 let (detection_tmp, mut log_records) =
                     detection.start(&self.rt, records_per_detect);
 
@@ -2406,7 +2439,8 @@ Any hostnames added to the critical_systems.txt file will have all alerts above 
         (detection, record_cnt, tl, recover_records_cnt, detect_infos)
     }
 
-    // Perform filtering by time and channel, and return true if filtered.
+    /// Apply the computer, EventID, channel, and timestamp filters to a JSON record. Returns
+    /// true if the record should be filtered out (skipped).
     fn is_filtered_record(
         &self,
         (path, time_filter, target_event_ids, stored_static): (
@@ -2429,7 +2463,9 @@ Any hostnames added to the critical_systems.txt file will have all alerts above 
             return true;
         }
 
-        // EventIDがinclude_eidで指定されたものに合致しないまたはexclude_eidで指定されたものに合致した場合、EventID Filter optionが指定されていないかつtarget_eventids.txtで指定されたEventIDではない場合はフィルタリングする。
+        // Filter if the EventID does not match one specified in include_eid or matches one
+        // specified in exclude_eid, or if the EventID filter option is specified and the EventID
+        // is not one specified in target_eventids.txt.
         if self.is_filtered_by_eid(
             data,
             &stored_static.eventkey_alias,
@@ -2506,7 +2542,9 @@ Any hostnames added to the critical_systems.txt file will have all alerts above 
         false
     }
 
-    // Analyze one JSON-format event log file.
+    /// Analyze one JSON-format event log file (JSONL, JSON array, or Splunk exports): normalize
+    /// each record so it looks like an evtx-converted record (Event.System, Event.EventData,
+    /// etc.), then apply the filters and run timeline processing and rule detection.
     fn analysis_json_file(
         &self,
         (filepath, time_filter, target_event_ids, stored_static): (
@@ -2561,7 +2599,7 @@ Any hostnames added to the critical_systems.txt file will have all alerts above 
         loop {
             let mut records_per_detect = vec![];
             while records_per_detect.len() < MAX_DETECT_RECORDS {
-                // If parsing fails, output an error message.
+                // Read the next record; stop this chunk when the iterator is exhausted.
                 let next_rec = records.next();
                 if next_rec.is_none() {
                     break;
@@ -2569,7 +2607,9 @@ Any hostnames added to the critical_systems.txt file will have all alerts above 
                 let mut data = next_rec.unwrap();
                 let is_splunk_json = data["Event"]["EventData"]["result"].is_object();
                 is_splunk_api_json = !data["Event"]["EventData"]["rows"].is_null();
-                // Data such as Channel must exist in Event -> System, but considering other processing, the data from Event -> EventData is inserted as-is. clone is used because serde_json::Value does not implement the Copy trait.
+                // Data such as Channel must exist in Event -> System, but to keep the rest of
+                // the processing simple, the data from Event -> EventData is inserted as-is.
+                // clone() is used because serde_json::Value does not implement the Copy trait.
                 if is_splunk_api_json {
                     let tmp_data = data["Event"]["EventData"]["rows"].clone();
                     let tmp_data_value = data["Event"]["EventData"]["fields"].clone();
@@ -2581,7 +2621,11 @@ Any hostnames added to the critical_systems.txt file will have all alerts above 
                         let mut splunk_api_record = Value::Null;
                         for (v_idx, row_name) in fields_key.iter().enumerate() {
                             if let Some(row) = row_name.as_str() {
-                                // splunk api jsonの場合はrowsとfieldsのデータをEventDataに投入する。rawデータがはレコード情報がそのまま入っているのでその情報を投入したうえでsplunk api json関連のレコード類を投入する
+                                // For Splunk API JSON, the record comes as parallel "rows"
+                                // (values) and "fields" (names) arrays. Insert each value under
+                                // both Event.System and Event.EventData keyed by its field name:
+                                // later processing expects System fields (e.g. Channel, EventID)
+                                // under Event.System and reads field data from Event.EventData.
                                 splunk_api_record["Event"]["System"][row.to_string()] =
                                     splunk_api_rec[v_idx].clone();
                                 splunk_api_record["Event"]["EventData"][row.to_string()] =
@@ -2650,7 +2694,8 @@ Any hostnames added to the critical_systems.txt file will have all alerts above 
                         splunk_api_record["Event"]["System"]["Provider_attributes"]["Name"] =
                             splunk_api_record["Event"]["EventData"]["Name"].clone();
                         if stored_static.computer_metrics_flag {
-                            // The computer-metrics command does not perform detection, so only count and check the next record.
+                            // The computer-metrics command does not perform detection, so only
+                            // count the event by computer name.
                             countup_event_by_computer(
                                 &splunk_api_record,
                                 &stored_static.eventkey_alias,
@@ -2725,7 +2770,8 @@ Any hostnames added to the critical_systems.txt file will have all alerts above 
                 } else {
                     data["Event"]["System"]["Provider_attributes"]["Name"] =
                         data["Event"]["EventData"]["SourceName"].clone();
-                    // Since the content corresponding to the Computer name was found to be Hostname, clone and insert the data.
+                    // The field corresponding to the Computer name turned out to be Hostname, so
+                    // clone that value into System.Computer.
                     data["Event"]["System"]["Computer"] =
                         data["Event"]["EventData"]["Hostname"].clone();
                 }
@@ -2790,6 +2836,8 @@ Any hostnames added to the critical_systems.txt file will have all alerts above 
         (detection, record_cnt, tl, recover_records_cnt, detect_infos)
     }
 
+    /// Convert a chunk of raw JSON records into EvtxRecordInfo structs in parallel on the Tokio
+    /// runtime (one task per record).
     async fn create_rec_infos(
         records_per_detect: Vec<(Value, bool)>,
         path: &dyn Display,
@@ -2827,6 +2875,8 @@ Any hostnames added to the critical_systems.txt file will have all alerts above 
         ret
     }
 
+    /// Collect the deduplicated set of event field keys referenced by the detection sections of
+    /// all loaded rules.
     fn get_all_keys(&self, rules: &[RuleNode]) -> Nested<String> {
         let mut key_set = HashSet::new();
         for rule in rules {
@@ -2873,6 +2923,8 @@ Any hostnames added to the critical_systems.txt file will have all alerts above 
         }
     }
 
+    /// Returns true if the record should be filtered out based on its EventID (the include/
+    /// exclude EID options and the target_eventids.txt filter).
     fn is_filtered_by_eid(
         &self,
         data: &Value,
@@ -2901,6 +2953,8 @@ Any hostnames added to the critical_systems.txt file will have all alerts above 
             || (eid_filter && !self._is_target_event_id(data, target_event_ids, eventkey_alias))
     }
 
+    /// Open an .evtx file and return an EvtxParser configured for JSON output. Returns None
+    /// (after logging the error) if the file cannot be opened.
     fn evtx_to_jsons(
         &self,
         evtx_filepath: &PathBuf,
@@ -2938,7 +2992,7 @@ Any hostnames added to the critical_systems.txt file will have all alerts above 
         }
     }
 
-    /// output logo
+    /// Output the Hayabusa ASCII art logo.
     fn output_logo(&self, stored_static: &StoredStatic) {
         let logo = Arts::get("logo.txt").unwrap();
         let content = std::str::from_utf8(logo.data.as_ref()).unwrap_or_default();
@@ -2956,7 +3010,7 @@ Any hostnames added to the critical_systems.txt file will have all alerts above 
         .ok();
     }
 
-    /// output easter egg arts
+    /// Output seasonal easter egg ASCII art when the run date matches a special day.
     fn output_eggs(&self, exec_datestr: &str) {
         let mut eggs: HashMap<&str, (&str, Color)> = HashMap::new();
         eggs.insert("01/01", ("happynewyear.txt", Color::Rgb(255, 0, 0))); // Red
@@ -2983,6 +3037,8 @@ Any hostnames added to the critical_systems.txt file will have all alerts above 
         }
     }
 
+    /// Print a random line from the given messages file (rules/config/opening_messages.txt or
+    /// closing_messages.txt), unless quiet mode is enabled.
     fn output_open_close_message(
         &self,
         file_path: &str,
@@ -3035,7 +3091,9 @@ Any hostnames added to the critical_systems.txt file will have all alerts above 
         Ok(())
     }
 
-    /// check architecture
+    /// Check whether this binary's architecture matches the OS architecture. Returns false for a
+    /// 32-bit binary running on 64-bit Windows (WOW64), in which case filesystem redirection
+    /// must be disabled so the real System32 event logs can be read.
     fn is_matched_architecture_and_binary(&self) -> bool {
         if cfg!(target_os = "windows") {
             let is_processor_arch_32bit = env::var_os("PROCESSOR_ARCHITECTURE")
@@ -3051,6 +3109,9 @@ Any hostnames added to the critical_systems.txt file will have all alerts above 
         true
     }
 
+    /// Returns false when a subcommand that requires arguments was invoked with none (i.e. argv
+    /// only contains the program name and the subcommand), so that its help can be printed
+    /// instead of running.
     fn check_is_valid_args_num(&self, action: Option<&Action>) -> bool {
         // Under `cargo test`, `env::args()` is the test harness's argv (e.g. it
         // contains `--test-threads=1` or a test-name filter), not hayabusa's own
@@ -3256,7 +3317,7 @@ mod tests {
         // TODO add check
         // assert_eq!(MESSAGES.len(), 0);
 
-        // Create the test file.
+        // Delete the test file.
         remove_file("overwrite_csv_exit.csv").ok();
     }
 
@@ -3296,7 +3357,7 @@ mod tests {
         app.exec(&mut config_reader.app, &mut stored_static);
         // TODO add check
         // assert_ne!(MESSAGES.len(), 0);
-        // Create the test file.
+        // Delete the test file.
         remove_file("overwrite_csv_clobber.csv").ok();
     }
 
@@ -3337,7 +3398,7 @@ mod tests {
         // TODO add check
         // assert_eq!(MESSAGES.len(), 0);
 
-        // Create the test file.
+        // Delete the test file.
         remove_file("overwrite_json_exit.json").ok();
     }
 

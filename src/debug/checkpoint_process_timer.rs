@@ -5,15 +5,22 @@ use chrono::{DateTime, Local};
 use lazy_static::lazy_static;
 
 lazy_static! {
+    /// Global timer used to record how long each processing phase (rule parsing, analysis,
+    /// output) takes. Lap times are always collected; the per-phase breakdown is only printed
+    /// when the --debug option is set, while the accumulated total is always shown as the
+    /// "Elapsed time" in the results summary.
     pub static ref CHECKPOINT: Mutex<CheckPointProcessTimer> =
         Mutex::new(CheckPointProcessTimer::create_checkpoint_timer());
 }
 
+/// Stopwatch-style timer: `set_checkpoint` starts measuring and `lap_checkpoint` records the
+/// elapsed time since the last checkpoint as a labeled lap.
 pub struct CheckPointProcessTimer {
     prev_checkpoint: Option<DateTime<Local>>,
     stocked_results: Vec<CheckPointTimeStore>,
 }
 
+/// One recorded lap: a label and the elapsed time split into seconds and milliseconds.
 pub struct CheckPointTimeStore {
     pub output_str: String,
     pub sec: i64,
@@ -34,8 +41,12 @@ impl CheckPointProcessTimer {
         self.prev_checkpoint = Some(time);
     }
 
-    /// Gets the lap time and stores it in the output array.
-    pub fn rap_checkpoint(&mut self, output_str: &str) {
+    /// Records the time elapsed since the last checkpoint as a lap labeled `output_str` and
+    /// clears the checkpoint. Does nothing if no checkpoint has been set. If the most recently
+    /// stocked lap has the same label, the new lap time is added to it instead of creating a new
+    /// entry, so a phase that is timed repeatedly (e.g. once per input file) is reported as a
+    /// single total.
+    pub fn lap_checkpoint(&mut self, output_str: &str) {
         if self.prev_checkpoint.is_none() {
             return;
         }
@@ -60,7 +71,7 @@ impl CheckPointProcessTimer {
         self.prev_checkpoint = None;
     }
 
-    /// Outputs the stocked results.
+    /// Prints every stocked lap as "label: duration" (used for the --debug breakdown).
     pub fn output_stocked_result(&self) {
         for output in self.stocked_results.iter() {
             println!(
@@ -71,6 +82,9 @@ impl CheckPointProcessTimer {
         }
     }
 
+    /// Returns the sum of all stocked lap times — plus, if a checkpoint is currently running,
+    /// the time elapsed since it was set — formatted as a duration string. Used for the total
+    /// "Elapsed time" line in the results summary.
     pub fn calculate_all_stocked_results(&self) -> String {
         let mut s = 0;
         let mut ms = 0;
@@ -102,15 +116,15 @@ mod tests {
     }
 
     #[test]
-    fn test_rap_checkpoint() {
+    fn test_lap_checkpoint() {
         let mut actual = CheckPointProcessTimer {
             prev_checkpoint: None,
             stocked_results: Vec::new(),
         };
-        actual.rap_checkpoint("Test");
+        actual.lap_checkpoint("Test");
         let now: DateTime<Local> = Local::now();
         actual.set_checkpoint(now);
-        actual.rap_checkpoint("Test2");
+        actual.lap_checkpoint("Test2");
         actual.set_checkpoint(Local::now());
         assert!(actual.prev_checkpoint.is_some());
         assert_eq!(actual.stocked_results.len(), 1);
@@ -127,12 +141,12 @@ mod tests {
             prev_checkpoint: Some(now),
             stocked_results: Vec::new(),
         };
-        actual.rap_checkpoint("Test");
+        actual.lap_checkpoint("Test");
         actual.set_checkpoint(
             now.checked_add_signed(TimeDelta::try_seconds(1).unwrap_or_default())
                 .unwrap(),
         );
-        actual.rap_checkpoint("Test2");
+        actual.lap_checkpoint("Test2");
         actual.set_checkpoint(
             now.checked_add_signed(TimeDelta::try_seconds(1).unwrap_or_default())
                 .unwrap(),

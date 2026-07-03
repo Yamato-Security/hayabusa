@@ -17,6 +17,9 @@ pub struct DataFilterRule {
     pub replace_str: String,
 }
 
+/// Rule IDs to filter out at rule-loading time, mapped to the filter file (noisy_rules.txt or
+/// exclude_rules.txt) each ID came from. IDs from exclude_rules.txt are always skipped; IDs from
+/// noisy_rules.txt are skipped unless --enable-noisy-rules is set.
 #[derive(Clone, Debug)]
 pub struct RuleExclude {
     pub no_use_rule: HashMap<String, String>,
@@ -36,6 +39,8 @@ impl Default for RuleExclude {
     }
 }
 
+/// Loads the rule IDs listed in noisy_rules.txt and exclude_rules.txt under the config directory
+/// so that the corresponding detection rules can be skipped at rule-loading time.
 pub fn exclude_ids(stored_static: &StoredStatic) -> RuleExclude {
     let mut exclude_ids = RuleExclude::default();
     exclude_ids.insert_ids(
@@ -59,6 +64,9 @@ pub fn exclude_ids(stored_static: &StoredStatic) -> RuleExclude {
 
 impl RuleExclude {
     fn insert_ids(&mut self, filename: &str, stored_static: &StoredStatic) {
+        // ONE_CONFIG_MAP (the all-in-one config bundle) is keyed by bare file name, so strip the
+        // directory part. If the file is bundled there, read the ID list from the bundle instead
+        // of from disk.
         let re = Regex::new(r".*/").unwrap();
         let one_config_path = &re.replace(filename, "").to_string();
         let lines: Vec<String> = if ONE_CONFIG_MAP.contains_key(one_config_path) {
@@ -86,9 +94,10 @@ impl RuleExclude {
             reader.lines().map_while(Result::ok).collect()
         };
         for v in lines {
+            // Strip inline comments: everything after the first '#' is ignored.
             let v = v.split('#').collect::<Vec<&str>>()[0].trim().to_string();
             if v.is_empty() || !configs::IDS_REGEX.is_match(&v) {
-                // Ignore empty lines. Validate ID.
+                // Skip blank lines and entries that are not UUID-formatted rule IDs.
                 continue;
             }
             self.no_use_rule.insert(v, filename.to_owned());
@@ -96,6 +105,10 @@ impl RuleExclude {
     }
 }
 
+/// Reads only the first record of each evtx file to determine which channel the file holds, and
+/// groups the file paths by channel name. This assumes all records in a file share the channel of
+/// its first record. Files that fail to open are logged unless quiet_errors_flag is set; files
+/// whose first record cannot be parsed are skipped silently.
 fn peek_channel_from_evtx_first_record(
     evtx_files: &Vec<PathBuf>,
     quiet_errors_flag: bool,
@@ -133,10 +146,15 @@ fn peek_channel_from_evtx_first_record(
     channels
 }
 
+/// Matches the Channel values referenced by each rule against the channels actually present in
+/// the loaded evtx files. Returns the paths of the rules whose Channel matches at least one evtx
+/// channel, together with the matched channel names.
 fn extract_channel_from_rules(
     rule_files: &Vec<RuleNode>,
     evtx_channels: &HashSet<String>,
 ) -> (Vec<String>, Vec<String>) {
+    // Recursively walks a rule's YAML tree and records every evtx channel matched by any
+    // "Channel:" value found in it.
     fn visit_value(
         key: &str,
         value: &Yaml,
@@ -146,7 +164,9 @@ fn extract_channel_from_rules(
         match *value {
             Yaml::String(ref s) if key == "Channel" => {
                 if s.contains('*') {
-                    // When a wildcard is used for Channel in a Sigma rule
+                    // The rule uses a wildcard in its Channel value: strip the leading/trailing
+                    // wildcards and treat the remainder as a substring match against each evtx
+                    // channel name.
                     for ch in evtx_channels {
                         if ch.contains(s.trim_matches('*')) {
                             intersection_channels.push(ch.to_string());
@@ -170,19 +190,23 @@ fn extract_channel_from_rules(
         }
     }
     let mut intersection_channels = vec![];
-    let mut filtered_rulespathes = vec![];
+    let mut filtered_rule_paths = vec![];
     for rule in rule_files {
         let before_visit_len = intersection_channels.len();
         visit_value("", &rule.yaml, evtx_channels, &mut intersection_channels);
+        // If the visit added any channel, this rule targets at least one loaded evtx channel.
         if before_visit_len < intersection_channels.len() {
-            filtered_rulespathes.push(rule.rulepath.to_string());
+            filtered_rule_paths.push(rule.rulepath.to_string());
         }
     }
-    (filtered_rulespathes, intersection_channels)
+    (filtered_rule_paths, intersection_channels)
 }
 
+/// Result of matching rule Channel values against the channels found in the loaded evtx files.
+/// Used to skip evtx files that no loaded rule targets, and rules that no loaded evtx file can
+/// trigger.
 pub struct ChannelFilter {
-    pub rulepathes: Vec<String>,
+    pub rule_paths: Vec<String>, // paths of rules whose Channel matches some loaded evtx file
     pub intersec_channels: HashSet<String>, // intersection of evtx and rule channels
     pub evtx_channels_map: HashMap<String, Vec<PathBuf>>, // key=channel, val=list of evtx paths
 }
@@ -190,15 +214,17 @@ pub struct ChannelFilter {
 impl ChannelFilter {
     pub fn new() -> ChannelFilter {
         ChannelFilter {
-            rulepathes: vec![],
+            rule_paths: vec![],
             intersec_channels: HashSet::new(),
             evtx_channels_map: HashMap::new(),
         }
     }
 
-    pub fn scanable_rule_exists(&mut self, path: &PathBuf) -> bool {
-        for (channel, rulepathes) in &self.evtx_channels_map {
-            if rulepathes.contains(path) && self.intersec_channels.contains(channel) {
+    /// Returns true when the given evtx file holds a channel that at least one loaded rule
+    /// targets, i.e. scanning the file can possibly produce a detection.
+    pub fn scannable_rule_exists(&mut self, path: &PathBuf) -> bool {
+        for (channel, evtx_paths) in &self.evtx_channels_map {
+            if evtx_paths.contains(path) && self.intersec_channels.contains(channel) {
                 return true;
             }
         }
@@ -212,6 +238,9 @@ impl Default for ChannelFilter {
     }
 }
 
+/// Builds a ChannelFilter by peeking at the channel of each evtx file and intersecting those
+/// channels with the Channel values referenced by the loaded rules. Returns an empty filter when
+/// no channel could be read from any evtx file.
 pub fn create_channel_filter(
     evtx_files: &Vec<PathBuf>,
     rule_nodes: &Vec<RuleNode>,
@@ -221,7 +250,7 @@ pub fn create_channel_filter(
     if !channels.is_empty() {
         let (x, y) = extract_channel_from_rules(rule_nodes, &channels.keys().cloned().collect());
         ChannelFilter {
-            rulepathes: x,
+            rule_paths: x,
             intersec_channels: y.into_iter().collect(),
             evtx_channels_map: channels,
         }
@@ -230,6 +259,8 @@ pub fn create_channel_filter(
     }
 }
 
+/// Narrows down the evtx files to load according to the --include-channel/--exclude-channel and
+/// --include-filename/--exclude-filename command line options.
 pub fn filter_evtx_files(
     mut evtx_files: Vec<PathBuf>,
     include_channel: &Option<Vec<String>>,
@@ -243,6 +274,9 @@ pub fn filter_evtx_files(
     apply_filename_filter(evtx_files, exclude_filename, true)
 }
 
+/// Filters evtx files by the channel recorded in their first event. Builds a minimal synthetic
+/// rule that lists the requested channels and reuses the rule-vs-evtx channel matching logic
+/// (create_channel_filter) to decide which files match.
 fn apply_channel_filter(
     mut evtx_files: Vec<PathBuf>,
     channels: &Option<Vec<String>>,
@@ -264,15 +298,20 @@ detection:
         let yaml_data = YamlLoader::load_from_str(yaml_str.as_str());
         let maybe_doc = yaml_data.ok().and_then(|docs| docs.into_iter().next());
         if let Some(doc) = maybe_doc {
+            // The rule path label ("log-metrics") is arbitrary: only channel matching matters
+            // here, so the synthetic rule never surfaces to the user.
             let node = RuleNode::new("log-metrics".to_string(), doc);
             let node = vec![node];
             let mut channel_filter = create_channel_filter(&evtx_files, &node, false);
-            evtx_files.retain(|e| channel_filter.scanable_rule_exists(e) != is_exclude);
+            // Keep the files whose match result differs from is_exclude: matching files for an
+            // include filter, non-matching files for an exclude filter.
+            evtx_files.retain(|e| channel_filter.scannable_rule_exists(e) != is_exclude);
         }
     }
     evtx_files
 }
 
+/// Filters evtx files by file name using case-insensitive wildcard patterns (e.g. "*.evtx").
 fn apply_filename_filter(
     mut evtx_files: Vec<PathBuf>,
     patterns: &Option<Vec<String>>,
@@ -301,7 +340,7 @@ mod tests {
     use yaml_rust2::YamlLoader;
 
     #[test]
-    fn test_channel_filter_scanable_rule_exists() {
+    fn test_channel_filter_scannable_rule_exists() {
         let mut channel_filter = ChannelFilter::new();
         channel_filter
             .evtx_channels_map
@@ -310,8 +349,8 @@ mod tests {
             .intersec_channels
             .insert("channel1".to_string());
 
-        assert!(channel_filter.scanable_rule_exists(&PathBuf::from("path1")));
-        assert!(!channel_filter.scanable_rule_exists(&PathBuf::from("path2")));
+        assert!(channel_filter.scannable_rule_exists(&PathBuf::from("path1")));
+        assert!(!channel_filter.scannable_rule_exists(&PathBuf::from("path2")));
     }
 
     #[test]
@@ -421,6 +460,6 @@ mod tests {
         let rule = RuleNode::new("test_files/evtx/test1.evtx".to_string(), test_yaml_data);
         let rule_nodes = vec![rule];
         let result = create_channel_filter(&evtx_files, &rule_nodes, false);
-        assert_eq!(result.rulepathes.len(), 0);
+        assert_eq!(result.rule_paths.len(), 0);
     }
 }

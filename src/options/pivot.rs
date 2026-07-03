@@ -11,13 +11,20 @@ use crate::detections::utils::{
 
 use crate::detections::configs::{EventKeyAliasConfig, StoredStatic};
 
+/// One pivot keyword category (e.g. "Ip Addresses" or "Users") defined in the pivot keywords
+/// config file.
 #[derive(Debug)]
 pub struct PivotKeyword {
+    /// Unique field values harvested from the scanned records.
     pub keywords: IndexSet<String>,
+    /// Event field names (eventkey aliases) whose values should be collected for this category.
     pub fields: IndexSet<String>,
 }
 
 lazy_static! {
+    /// Global map of pivot keyword category name -> PivotKeyword. The categories and their fields
+    /// are loaded from the pivot keywords config file, and the keyword values are filled in while
+    /// scanning records.
     pub static ref PIVOT_KEYWORD: RwLock<IndexMap<String, PivotKeyword>> =
         RwLock::new(IndexMap::new());
 }
@@ -43,8 +50,8 @@ impl PivotKeyword {
     }
 }
 
-/// For records with a level greater than low, if a keyword is found in the record,
-/// insert it into PIVOT_KEYWORD.keywords.
+/// For records with a level of low or higher, collects the values of every configured pivot
+/// field found in the record into PIVOT_KEYWORD.keywords.
 pub fn insert_pivot_keyword(event_record: &Value, eventkey_alias: &EventKeyAliasConfig) {
     if let Some(record_level) = get_event_value("Event.System.Level", event_record, eventkey_alias)
     {
@@ -63,12 +70,17 @@ pub fn insert_pivot_keyword(event_record: &Value, eventkey_alias: &EventKeyAlias
         return;
     }
 
+    // For every pivot category, resolve each configured field against the record and collect its
+    // value.
     let mut pivots = PIVOT_KEYWORD.write().unwrap();
     pivots.iter_mut().for_each(|(_, pivot)| {
         for field in &pivot.fields {
             if let Some(array_str) = eventkey_alias.get_event_key(&String::from(field)) {
                 let mut is_exist_event_key = false;
                 let mut tmp_event_record: &Value = event_record;
+                // Walk the dot-separated event key path as far as it matches the record. If the
+                // walk stops on a JSON object (i.e. the full path did not resolve to a scalar),
+                // get_serde_number_to_string below returns None and the field is skipped.
                 for s in array_str.split('.') {
                     if let Some(record) = tmp_event_record.get(s) {
                         is_exist_event_key = true;
@@ -79,6 +91,8 @@ pub fn insert_pivot_keyword(event_record: &Value, eventkey_alias: &EventKeyAlias
                     let hash_value = get_serde_number_to_string(tmp_event_record, false);
 
                     if let Some(value) = hash_value {
+                        // Skip placeholder ("-") and localhost values, which are useless as pivot
+                        // keywords.
                         if value == "-" || value == "127.0.0.1" || value == "::1" {
                             continue;
                         }
@@ -90,7 +104,10 @@ pub fn insert_pivot_keyword(event_record: &Value, eventkey_alias: &EventKeyAlias
     });
 }
 
-// Functions related to standard output of pivot_keywords, etc.
+/// Formats one pivot keyword section for output. When `place` is "standard" the section is
+/// printed directly to stdout (with a colored header) and an empty string is returned; otherwise
+/// ("file") the formatted section is appended to `output` and returned so the caller can write it
+/// to a file.
 pub fn create_output(
     mut output: String,
     key: &String,
@@ -99,7 +116,7 @@ pub fn create_output(
     stored_static: &StoredStatic,
 ) -> String {
     if place == "standard" {
-        //headers
+        // Print the section header (category name and its fields) in green.
         let output = String::default();
         write_color_buffer(
             &BufferWriter::stdout(ColorChoice::Always),
@@ -109,7 +126,7 @@ pub fn create_output(
         )
         .ok();
 
-        //keywords_results
+        // Print the collected keyword values.
         let output = String::default();
         write_color_buffer(
             &BufferWriter::stdout(ColorChoice::Always),
@@ -125,12 +142,14 @@ pub fn create_output(
     }
 }
 
+/// Appends the section header, e.g. `Ip Addresses: ( %IpAddress% ):`, to `output`.
 pub fn fmt_headers(mut output: String, key: &String, pivot_keyword: &PivotKeyword) -> String {
     write!(output, "{key}: ( ").ok();
     for i in pivot_keyword.fields.iter() {
         write!(output, "%{i}% ").ok();
     }
 
+    // Only add a trailing newline when keyword values will follow the header.
     if pivot_keyword.keywords.is_empty() {
         write!(output, "):").ok();
     } else {
@@ -140,6 +159,7 @@ pub fn fmt_headers(mut output: String, key: &String, pivot_keyword: &PivotKeywor
     output
 }
 
+/// Appends each collected keyword value on its own line to `output`.
 pub fn fmt_keywords_results(mut output: String, pivot_keyword: &PivotKeyword) -> String {
     for i in pivot_keyword.keywords.iter() {
         writeln!(output, "{i}").ok();

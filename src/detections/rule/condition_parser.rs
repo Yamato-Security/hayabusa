@@ -10,19 +10,22 @@ use itertools::Itertools;
 use std::{sync::Arc, vec::IntoIter};
 
 lazy_static! {
+    // Token patterns tried in order during lexing: "(", ")", a space, and a selection name or
+    // keyword (and/or/not).
     pub static ref CONDITION_REGEXMAP: Vec<Regex> = vec![
         Regex::new(r"^\(").unwrap(),
         Regex::new(r"^\)").unwrap(),
         Regex::new(r"^ ").unwrap(),
         Regex::new(r"^[\w+]+").unwrap(),
     ];
+    // Matches the pipe character and everything after it (the aggregation part of a condition).
     pub static ref RE_PIPE: Regex = Regex::new(r"\|.*").unwrap();
     // Regular expression matching "all of selection*" and "1 of selection*".
     pub static ref OF_SELECTION: Regex = Regex::new(r"(all|1) of ([^*]+)\*").unwrap();
 }
 
 #[derive(Debug, Clone)]
-/// Tokens appearing during lexical analysis.
+/// Tokens appearing during lexical analysis of a condition expression.
 pub enum ConditionToken {
     LeftParenthesis,
     RightParenthesis,
@@ -33,14 +36,15 @@ pub enum ConditionToken {
     SelectionReference(String),
 
     // Pseudo tokens created to facilitate processing during parsing.
-    ParenthesisContainer(Box<ConditionToken>), // Token representing parentheses.
+    ParenthesisContainer(Box<ConditionToken>), // Token representing a parenthesized subexpression.
     AndContainer(IntoIter<ConditionToken>),    // Token to group conditions connected by AND.
     OrContainer(IntoIter<ConditionToken>),     // Token to group conditions connected by OR.
-    NotContainer(Box<ConditionToken>), // 「NOT」と「NOTで否定される式」をまとめるためのトークン この配列には要素が一つしか入らないが、他のContainerと同じように扱えるようにするためにVecにしている。あんまり良くない。
+    NotContainer(Box<ConditionToken>), // Token grouping a NOT and the expression it negates.
 }
 
 impl ConditionToken {
-    /// convert from ConditionToken into SelectionNode
+    /// Converts this ConditionToken into a SelectionNode. `name_2_node` maps the selection names
+    /// defined in the rule's detection section to their parsed selection nodes.
     pub fn into_selection_node(
         self,
         name_2_node: &HashMap<String, Arc<Box<dyn SelectionNode>>>,
@@ -82,6 +86,8 @@ impl ConditionToken {
                 let select_not_node = NotSelectionNode::new(select_sub_node);
                 Result::Ok(Box::new(select_not_node))
             }
+            // The raw lexer tokens below should all have been consumed while parsing, so reaching
+            // them here is an internal error.
             ConditionToken::LeftParenthesis => Result::Err("Unknown error".to_string()),
             ConditionToken::RightParenthesis => Result::Err("Unknown error".to_string()),
             ConditionToken::Space => Result::Err("Unknown error".to_string()),
@@ -91,6 +97,8 @@ impl ConditionToken {
         }
     }
 
+    /// Converts a lexed string into its ConditionToken. Anything that is not an operator,
+    /// a parenthesis or a space is treated as a selection name reference.
     pub fn to_condition_token(token: &str) -> ConditionToken {
         if token == "(" {
             ConditionToken::LeftParenthesis
@@ -110,15 +118,17 @@ impl ConditionToken {
     }
 }
 
+/// Compiles the condition expression of a rule's detection section into a SelectionNode tree.
 #[derive(Debug)]
 pub struct ConditionCompiler {}
 
-// Class that reads condition expressions.
 impl ConditionCompiler {
     pub fn new() -> Self {
         ConditionCompiler {}
     }
 
+    /// Compiles a condition string into a SelectionNode tree. `name_2_node` maps the selection
+    /// names defined in the rule's detection section to their parsed selection nodes.
     pub fn compile_condition(
         &self,
         condition_str: &str,
@@ -126,7 +136,8 @@ impl ConditionCompiler {
     ) -> Result<Box<dyn SelectionNode>, String> {
         let node_keys: Vec<String> = name_2_node.keys().cloned().collect();
         let condition_str = Self::convert_condition(condition_str, &node_keys);
-        // Pipes are not processed here.
+        // The aggregation part after a pipe (e.g. "| count() >= 1") is parsed elsewhere
+        // (see aggregation_parser.rs), so strip it here.
         let captured = self::RE_PIPE.captures(condition_str.as_str());
         let replaced_condition = if let Some(cap) = captured {
             let captured = cap.get(0).unwrap().as_str();
@@ -143,7 +154,9 @@ impl ConditionCompiler {
         }
     }
 
-    // Convert "all of selection*" and "1 of selection*" to normal and/or.
+    /// Expands the Sigma "all of selection*" and "1 of selection*" syntax into plain and/or
+    /// expressions over every selection name starting with the given prefix, e.g.
+    /// "all of selection*" becomes "(selection1 and selection2 and ...)".
     pub fn convert_condition(condition_str: &str, node_keys: &[String]) -> String {
         let mut converted_str = condition_str.to_string();
         for matched in OF_SELECTION.find_iter(condition_str) {
@@ -199,7 +212,8 @@ impl ConditionCompiler {
                 .iter()
                 .find_map(|regex| regex.captures(cur_condition_str));
             if captured.is_none() {
-                // Parsing is done under the policy that failing to match a token is not possible.
+                // Every character of a valid condition must match one of the token regexes, so
+                // failing to match means the condition contains an unusable character.
                 return Result::Err("An unusable character was found.".to_string());
             }
 
@@ -218,7 +232,9 @@ impl ConditionCompiler {
         Result::Ok(tokens)
     }
 
-    /// Parses only left and right parentheses. The returned array does not contain LeftParenthesis or RightParenthesis; instead they are converted to TokenContainers. A TokenContainer represents the section enclosed in parentheses.
+    /// Parses only the parentheses. The returned array contains no LeftParenthesis or
+    /// RightParenthesis tokens; each parenthesized section is recursively parsed and replaced
+    /// with a single ParenthesisContainer token.
     fn parse_parenthesis(
         &self,
         mut tokens: IntoIter<ConditionToken>,
@@ -252,7 +268,7 @@ impl ConditionCompiler {
                 return Result::Err("')' was expected but not found.".to_string());
             }
 
-            // Call recursively here.
+            // Recursively parse the tokens inside the parentheses.
             let parsed_sub_token = self.parse(sub_tokens.into_iter())?;
             let parenthesis_token =
                 ConditionToken::ParenthesisContainer(Box::new(parsed_sub_token));
@@ -270,14 +286,18 @@ impl ConditionCompiler {
         Result::Ok(ret)
     }
 
-    /// Parses AND and OR.
+    /// Parses AND and OR operators. AND binds tighter than OR: runs of AND-connected operands
+    /// are grouped into AndContainers first, and the resulting groups are then combined with an
+    /// OrContainer.
     fn parse_and_or_operator(&self, tokens: Vec<ConditionToken>) -> Result<ConditionToken, String> {
         if tokens.is_empty() {
             // Must not be called with length 0.
             return Result::Err("Unknown error.".to_string());
         }
 
-        // First, group tokens connected by AND or OR, like selection1 and "not selection2" in an expression like "selection1 and not selection2".
+        // First, collapse each operand between the logical operators into a single token; e.g. in
+        // "selection1 and not selection2", both "selection1" and "not selection2" become one
+        // token each.
         let tokens = self.to_operand_container(tokens)?;
 
         // AND/OR at the beginning or end is invalid.
@@ -285,19 +305,19 @@ impl ConditionCompiler {
             return Result::Err("An illegal logical operator(and, or) was found.".to_string());
         }
 
-        // OperandContainers and LogicalOperators (And and OR) alternate, so add each to their respective lists.
+        // Operands and logical operators (And/Or) must alternate, so split them into their
+        // respective lists while verifying the alternation.
         let mut operand_list = vec![];
         let mut operator_list = vec![];
         for (i, token) in tokens.into_iter().enumerate() {
             if (i % 2 == 1) != self.is_logical(&token) {
-                // At odd indices it is a LogicalOperator; at even indices it is an OperandContainer.
+                // Operands must sit at even indices and logical operators at odd indices.
                 return Result::Err(
                     "The use of a logical operator(and, or) was wrong.".to_string(),
                 );
             }
 
             if i % 2 == 0 {
-                // Call the function to recursively parse AND and OR here.
                 operand_list.push(token);
             } else {
                 operator_list.push(token);
@@ -307,19 +327,19 @@ impl ConditionCompiler {
         // First, group all parts connected by AND.
         let mut operand_ite = operand_list.into_iter();
         let mut operands = vec![];
-        let mut and_grops = vec![];
-        operator_list.push(ConditionToken::Or); // add "or token" as a sentinel
+        let mut and_groups = vec![];
+        operator_list.push(ConditionToken::Or); // sentinel Or to flush the final AND group
         for token in operator_list.iter() {
             if let ConditionToken::Or = token {
-                if and_grops.is_empty() {
+                if and_groups.is_empty() {
                     operands.push(operand_ite.next().unwrap());
                 } else {
-                    and_grops.push(operand_ite.next().unwrap());
-                    operands.push(ConditionToken::AndContainer(and_grops.into_iter()));
+                    and_groups.push(operand_ite.next().unwrap());
+                    operands.push(ConditionToken::AndContainer(and_groups.into_iter()));
                 }
-                and_grops = vec![];
+                and_groups = vec![];
             } else {
-                and_grops.push(operand_ite.next().unwrap());
+                and_groups.push(operand_ite.next().unwrap());
             }
         }
 
@@ -330,9 +350,11 @@ impl ConditionCompiler {
         Result::Ok(ConditionToken::OrContainer(operands.into_iter()))
     }
 
-    /// Parses the contents of an OperandContainer. Currently exists only to parse Not.
+    /// Parses one operand group (the tokens between two logical operators). Currently this only
+    /// needs to handle an optional leading Not.
     fn parse_operand_container(sub_tokens: Vec<ConditionToken>) -> Result<ConditionToken, String> {
-        // Currently, in the NOT case, there should be two items: "not" and "the name of the selection node modified by not".
+        // Currently, in the NOT case, there should be two items: "not" and "the name of the
+        // selection node negated by not".
         // If there is no NOT, there should be only one item: "the name of the selection node".
 
         // As stated above, there should never be three or more items.
@@ -343,12 +365,12 @@ impl ConditionCompiler {
             );
         }
 
-        // 0 should not be possible.
+        // An empty group should be impossible.
         if sub_tokens.is_empty() {
             return Result::Err("Unknown error.".to_string());
         }
 
-        // If there is only one item, NOT is not possible.
+        // With only one token, it must not be a Not (a lone "not" has nothing to negate).
         if sub_tokens.len() == 1 {
             let operand_subtoken = sub_tokens.into_iter().next().unwrap();
             if let ConditionToken::Not = operand_subtoken {
@@ -358,7 +380,8 @@ impl ConditionCompiler {
             return Result::Ok(operand_subtoken);
         }
 
-        // If there are two items, the first should be Not and the next should be something that is not Not.
+        // If there are two items, the first should be Not and the next should be something that
+        // is not Not.
         let mut sub_ite = sub_tokens.into_iter();
         let first_token = sub_ite.next().unwrap();
         let second_token = sub_ite.next().unwrap();
@@ -382,16 +405,20 @@ impl ConditionCompiler {
         matches!(token, ConditionToken::And | ConditionToken::Or)
     }
 
-    /// Converts sections that can be converted to ConditionToken::OperandContainer.
+    /// Collapses each run of consecutive non-operator tokens into a single operand token, so the
+    /// result alternates between operands and logical operators (And/Or).
     fn to_operand_container(
         &self,
         tokens: Vec<ConditionToken>,
     ) -> Result<Vec<ConditionToken>, String> {
         let mut ret = vec![];
-        let mut grouped_operands = vec![]; // Represents tokens between AND and OR. The Operand when AND and OR are treated as Operators.
+        // Tokens between two logical operators, i.e. one operand when And/Or are viewed as
+        // operators.
+        let mut grouped_operands = vec![];
         for token in tokens.into_iter() {
             if self.is_logical(&token) {
-                // This should be an error, but since errors are output later, do not output an error here.
+                // A logical operator with no preceding operand is really an error, but
+                // parse_and_or_operator reports it later, so just pass the token through here.
                 if grouped_operands.is_empty() {
                     ret.push(token);
                     continue;
@@ -428,6 +455,7 @@ mod tests {
     use crate::detections::{self, utils};
     use yaml_rust2::YamlLoader;
 
+    // Minimal event record shared by most of the tests in this module.
     const SIMPLE_RECORD_STR: &str = r#"
     {
       "Event": {
@@ -938,7 +966,7 @@ mod tests {
 
     #[test]
     fn test_condition_notparenthesis_detect() {
-        // Test using many parentheses in condition.
+        // Test combining parentheses and not in condition.
         let rule_str = r#"
         enabled: true
         detection:
@@ -1122,8 +1150,9 @@ mod tests {
     }
 
     #[test]
-    fn test_condition_err_condition_forbit_character() {
-        // An unreadable character is specified in condition.
+    fn test_condition_err_condition_forbid_character() {
+        // The condition contains a character that cannot be tokenized (the hyphen in
+        // "selection-1").
         let rule_str = r#"
         enabled: true
         detection:
@@ -1216,7 +1245,7 @@ mod tests {
 
     #[test]
     fn test_condition_err_no_logical() {
-        // Not connected by AND or OR.
+        // Using two selection names not connected by AND or OR is an error.
         let rule_str = r#"
         enabled: true
         detection:
@@ -1234,7 +1263,7 @@ mod tests {
 
     #[test]
     fn test_condition_err_first_logical() {
-        //
+        // A logical operator at the beginning of the condition is an error.
         let rule_str = r#"
         enabled: true
         detection:
@@ -1258,7 +1287,7 @@ mod tests {
 
     #[test]
     fn test_condition_err_last_logical() {
-        //
+        // A logical operator at the end of the condition is an error.
         let rule_str = r#"
         enabled: true
         detection:
@@ -1282,7 +1311,7 @@ mod tests {
 
     #[test]
     fn test_condition_err_consecutive_logical() {
-        //
+        // Consecutive logical operators are an error.
         let rule_str = r#"
         enabled: true
         detection:
@@ -1300,7 +1329,7 @@ mod tests {
 
     #[test]
     fn test_condition_err_only_not() {
-        //
+        // A not without an operand is an error.
         let rule_str = r#"
         enabled: true
         detection:

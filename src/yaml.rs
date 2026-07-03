@@ -23,16 +23,33 @@ lazy_static! {
     static ref DATE_REGEX: Regex = Regex::new(r"^\d{4}[-/]\d{1,2}[-/]\d{1,2}$").unwrap();
 }
 
+/// Loads detection rule YAML files from disk, applies all rule filtering options
+/// (level, status, category, tags, excluded/noisy rule IDs) and keeps the counters
+/// shown in the rule loading summary at startup.
 pub struct ParseYaml {
+    /// Rules that survived filtering, as (rule file path, parsed YAML document) pairs.
     pub files: Vec<(String, Yaml)>,
+    /// Number of loaded rules per `ruletype` value ("Other" when the key is missing).
     pub rulecounter: HashMap<CompactString, u128>,
+    /// Number of rules that were not loaded, keyed by the reason ("excluded" or "noisy").
     pub rule_load_cnt: HashMap<CompactString, u128>,
+    /// Number of rules per `status` value, including deprecated/unsupported rules that were
+    /// counted but then skipped.
     pub rule_status_cnt: HashMap<CompactString, u128>,
+    /// Number of correlation rules encountered.
     pub rule_cor_cnt: HashMap<CompactString, u128>,
+    /// For each rule ID referenced from a correlation rule's `rules` list, how many times it is
+    /// referenced.
     pub rule_cor_ref_cnt: HashMap<CompactString, u128>,
+    /// Number of rules that use the Sigma `|expand` field modifier.
     pub rule_expand_cnt: u128,
+    /// Number of `|expand` rules whose placeholders had definitions in config/expand and thus
+    /// remained enabled.
     pub rule_expand_enabled_cnt: u128,
+    /// Number of rules that failed to be read, parsed as YAML, or validated against the
+    /// Hayabusa rule format.
     pub errorrule_count: u128,
+    /// Status values to exclude, from the --exclude-status option.
     pub exclude_status: HashSet<String>,
     pub loaded_rule_ids: HashSet<CompactString>,
 }
@@ -62,6 +79,7 @@ impl ParseYaml {
         }
     }
 
+    /// Reads the entire file at `path` into a String.
     pub fn read_file(path: &PathBuf) -> Result<String, String> {
         let mut file_content = String::new();
 
@@ -75,6 +93,8 @@ impl ParseYaml {
         Ok(file_content)
     }
 
+    /// Reads an obfuscated rule file (encoded_rules.yml) and decodes it by XORing every byte
+    /// with 0xAA.
     fn read_encoded_file(path: &PathBuf) -> Result<String, String> {
         let mut fr = fs::File::open(path)
             .map(BufReader::new)
@@ -86,6 +106,8 @@ impl ParseYaml {
         Ok(decode_string)
     }
 
+    /// Counts correlation rules and, for each rule ID listed under a correlation rule's `rules`
+    /// key, how many correlation rules reference it.
     fn update_correlation_counts(&mut self, yaml_docs: &Vec<Yaml>) {
         for doc in yaml_docs {
             if let Some(correlation) = doc["correlation"].as_hash() {
@@ -99,7 +121,7 @@ impl ParseYaml {
                 {
                     for rule in rules_list {
                         if let Some(rule_str) = rule.as_str() {
-                            // Update rules count, storing each unique rule
+                            // Count how many correlation rules reference this rule ID.
                             let rule_entry = self
                                 .rule_cor_ref_cnt
                                 .entry(CompactString::from(rule_str))
@@ -112,6 +134,10 @@ impl ParseYaml {
         }
     }
 
+    /// Recursively loads every .yml rule file under `path` (or the single file itself if `path`
+    /// is a file), applies all rule filtering options (minimum/exact level, status, category,
+    /// tags, excluded/noisy rule IDs) and appends the surviving rules to `self.files`.
+    /// The returned String is always empty; only the io::Result part matters to callers.
     pub fn read_dir<P: AsRef<Path>>(
         &mut self,
         path: P,
@@ -133,6 +159,9 @@ impl ParseYaml {
                 path.as_ref().to_path_buf().display(),
                 err_contents
             );
+            // "(os error 123)" is Windows ERROR_INVALID_NAME (invalid path syntax), which
+            // typically happens when a quoted path ends with a backslash, which escapes the
+            // closing quote and mangles the command-line argument.
             if err_contents.ends_with("123)") {
                 errmsg = format!(
                     "{errmsg}. You may not be able to load evtx files when there are spaces in the directory path. Please enclose the path with double quotes and remove any trailing slash at the end of the path."
@@ -162,7 +191,8 @@ impl ParseYaml {
             {
                 return io::Result::Ok(String::default());
             }
-            // Do not immediately abort when loading individual files.
+            // Do not abort the whole loading process when an individual rule file cannot be read;
+            // just skip that file.
             let mut is_encoded = false;
             let read_content = if path
                 .as_ref()
@@ -198,11 +228,13 @@ impl ParseYaml {
                 }
             };
 
-            // Same here: do not immediately abort when loading individual files.
+            // Likewise, skip files that fail to parse as YAML instead of aborting the whole load.
             match YamlLoader::load_from_str(&read_content) {
                 Ok(contents) => {
                     Self::update_correlation_counts(self, &contents);
                     yaml_docs.extend(contents.into_iter().map(|yaml_content| {
+                        // encoded_rules.yml bundles many rules in one file; each document
+                        // records its original file path in the `rulefile` key.
                         let filepath = if is_encoded {
                             yaml_content["rulefile"]
                                 .as_str()
@@ -259,21 +291,22 @@ impl ParseYaml {
                 }
 
                 let path_str = path.to_str().unwrap();
-                // ignore if yml file in .git folder.
+                // Ignore yml files inside a .git folder.
                 if utils::contains_str(path_str, "/.git/")
                     || utils::contains_str(path_str, "\\.git\\")
                 {
                     return io::Result::Ok(ret);
                 }
 
-                // ignore if tool test yml file in hayabusa-rules.
+                // Ignore the sigmac tool test yml files bundled in the hayabusa-rules repository.
                 if utils::contains_str(path_str, "rules/tools/sigmac/test_files")
                     || utils::contains_str(path_str, "rules\\tools\\sigmac\\test_files")
                 {
                     return io::Result::Ok(ret);
                 }
 
-                // Do not immediately abort when loading individual files.
+                // Do not abort the whole loading process when an individual rule file cannot be read;
+                // just skip that file.
                 let read_content = match Self::read_file(&path) {
                     Ok(content) => content,
                     Err(e) => {
@@ -293,7 +326,7 @@ impl ParseYaml {
                     }
                 };
 
-                // Same here: do not immediately abort when loading individual files.
+                // Likewise, skip files that fail to parse as YAML instead of aborting the whole load.
                 match YamlLoader::load_from_str(&read_content) {
                     Ok(contents) => {
                         Self::update_correlation_counts(self, &contents);
@@ -327,6 +360,10 @@ impl ParseYaml {
         }
         let exist_output_opt = stored_static.output_option.is_some();
         let files = yaml_docs.into_iter().filter_map(|(filepath, yaml_doc)| {
+            // Expand Sigma `|expand` field modifiers using the placeholder definitions found in
+            // config/expand. `expand_found` is set when a rule uses `|expand`;
+            // `expand_enabled_found` is additionally set when at least one placeholder was
+            // actually replaced. Rules whose placeholders have no definitions are skipped.
             let mut expand_found = false;
             let mut expand_enabled_found = false;
             let place_holder_map = expand_map.as_ref().unwrap();
@@ -344,13 +381,15 @@ impl ParseYaml {
                     return Option::None;
                 }
             };
-            // Ignore excluded rules.
+            // Skip rules whose ID is listed in exclude_rules.txt or noisy_rules.txt.
             let rule_id = &yaml_doc["id"].as_str();
             if rule_id.is_some() {
                 if let Some(v) = exclude_ids
                     .no_use_rule
                     .get(&rule_id.unwrap_or(&String::default()).to_string())
                 {
+                    // `v` is the path of the list file that the rule ID came from
+                    // (exclude_rules.txt or noisy_rules.txt).
                     let entry_key = if utils::contains_str(v, "exclude_rule") {
                         "excluded"
                     } else {
@@ -371,6 +410,8 @@ impl ParseYaml {
                         return Option::None;
                     }
                 }
+                // When the -P/--proven-rules option is used, only load rules whose IDs are
+                // listed in proven_rules.txt.
                 if let Some(id) = rule_id
                     && !stored_static.target_ruleids.is_target(id, true)
                 {
@@ -406,7 +447,8 @@ impl ParseYaml {
                 }
             }
 
-            // Ignore rules below the specified level.
+            // Ignore rules below the minimum level and, when an exact target level is given
+            // (--exact-level), rules at any other level.
             let doc_level = &yaml_doc["level"]
                 .as_str()
                 .unwrap_or("informational")
@@ -422,7 +464,8 @@ impl ParseYaml {
             }
             let status = yaml_doc["status"].as_str();
             if let Some(s) = yaml_doc["status"].as_str() {
-                // Exclude rules whose status matches the excluded status option, or does not match the include_status option.
+                // Exclude rules whose status matches the --exclude-status option or does not
+                // match the --include-status option.
                 if self.exclude_status.contains(&s.to_string())
                     || !(is_contained_include_status_all_allowed
                         || stored_static.include_status.contains(s))
@@ -445,11 +488,15 @@ impl ParseYaml {
                                 .unwrap()
                                 .enable_unsupported_rules))
                 {
-                    // If the corresponding enable-xxx-rules option is not specified for deprecated or unsupported status, only count the status and then exclude.
+                    // Deprecated/unsupported rules are only counted, not loaded, unless the
+                    // corresponding --enable-deprecated-rules / --enable-unsupported-rules
+                    // option is given.
                     up_rule_status_cnt(s);
                     return Option::None;
                 }
             } else if !is_contained_include_status_all_allowed {
+                // Rules without a status are excluded for the scan commands unless all statuses
+                // are allowed with the wildcard "*".
                 let need_rules = matches!(
                     stored_static.config.action.as_ref().unwrap(),
                     Action::CsvTimeline(_) | Action::JsonTimeline(_) | Action::PivotKeywordsList(_)
@@ -498,7 +545,7 @@ impl ParseYaml {
                 }
             }
 
-            // Exclude rules that do not have the tags specified by the tags option.
+            // Exclude rules that do not carry any of the tags given by the --include-tag option.
             if exist_output_opt
                 && stored_static
                     .output_option
@@ -529,7 +576,7 @@ impl ParseYaml {
                 }
             }
 
-            // Exclude rules that have the tag specified by the exclude-tag option.
+            // Exclude rules that carry any of the tags given by the --exclude-tag option.
             if let Some(opt) = stored_static.output_option.as_ref()
                 && let Some(exclude_tag) = opt.exclude_tag.as_ref()
             {
@@ -567,6 +614,11 @@ impl ParseYaml {
 }
 
 /// Count rules hierarchically by status/level/tags for display in the scan wizard.
+/// The returned map is keyed by status ("excluded"/"noisy" for filtered rules), then by
+/// uppercased level, then by tag bucket ("detection.emerging_threats",
+/// "detection.threat_hunting", "sysmon", "other", or the "duplicated" adjustment bucket).
+/// Under the "excluded"/"noisy" keys the innermost key is instead the rule's lowercased
+/// status (e.g. "test", "experimental", "undefined") rather than a tag bucket.
 pub fn count_rules<P: AsRef<Path>>(
     path: P,
     exclude_ids: &RuleExclude,
@@ -593,7 +645,8 @@ pub fn count_rules<P: AsRef<Path>>(
             return HashMap::default();
         }
 
-        // Do not immediately abort when loading individual files.
+        // Do not abort the whole loading process when an individual rule file cannot be read;
+        // just skip that file.
         let mut is_encoded = false;
         let read_content = if path
             .as_ref()
@@ -613,13 +666,15 @@ pub fn count_rules<P: AsRef<Path>>(
             Err(_) => return HashMap::default(),
         };
 
-        // Same here: do not immediately abort when loading individual files.
+        // Likewise, skip files that fail to parse as YAML instead of aborting the whole load.
         let yaml_contents = match YamlLoader::load_from_str(&read_content) {
             Ok(contents) => contents,
             Err(_) => return HashMap::default(),
         };
 
         yaml_docs.extend(yaml_contents.into_iter().map(|yaml_content| {
+            // encoded_rules.yml bundles many rules in one file; each document records its
+            // original file path in the `rulefile` key.
             let filepath = if is_encoded {
                 yaml_content["rulefile"]
                     .as_str()
@@ -656,27 +711,28 @@ pub fn count_rules<P: AsRef<Path>>(
                 }
 
                 let path_str = path.to_str().unwrap();
-                // ignore if yml file in .git folder.
+                // Ignore yml files inside a .git folder.
                 if utils::contains_str(path_str, "/.git/")
                     || utils::contains_str(path_str, "\\.git\\")
                 {
                     return io::Result::Ok(ret);
                 }
 
-                // ignore if tool test yml file in hayabusa-rules.
+                // Ignore the sigmac tool test yml files bundled in the hayabusa-rules repository.
                 if utils::contains_str(path_str, "rules/tools/sigmac/test_files")
                     || utils::contains_str(path_str, "rules\\tools\\sigmac\\test_files")
                 {
                     return io::Result::Ok(ret);
                 }
 
-                // Do not immediately abort when loading individual files.
+                // Do not abort the whole loading process when an individual rule file cannot be read;
+                // just skip that file.
                 let read_content = match ParseYaml::read_file(&path) {
                     Ok(content) => content,
                     Err(_) => return io::Result::Ok(ret),
                 };
 
-                // Same here: do not immediately abort when loading individual files.
+                // Likewise, skip files that fail to parse as YAML instead of aborting the whole load.
                 let yaml_contents = match YamlLoader::load_from_str(&read_content) {
                     Ok(contents) => contents,
                     Err(e) => {
@@ -705,10 +761,10 @@ pub fn count_rules<P: AsRef<Path>>(
             .unwrap_or_default();
     }
     yaml_docs.into_iter().for_each(|(_filepath, yaml_doc)| {
-        // Ignore excluded rules.
         let empty = vec![];
         let rule_id = &yaml_doc["id"].as_str();
         let rule_tags_vec = yaml_doc["tags"].as_vec().unwrap_or(&empty);
+        // Collect the wizard-relevant tags that this rule carries.
         let included_target_tag_vec = {
             let target_wizard_tags = [
                 "detection.emerging_threats",
@@ -721,11 +777,15 @@ pub fn count_rules<P: AsRef<Path>>(
                 .filter_map(|s| s.as_str())
                 .collect_vec()
         };
+        // Rules whose ID is listed in exclude_rules.txt / noisy_rules.txt are counted under
+        // "excluded"/"noisy" instead of their own status.
         if rule_id.is_some()
             && let Some(v) = exclude_ids
                 .no_use_rule
                 .get(&rule_id.unwrap_or(&String::default()).to_string())
         {
+            // `v` is the path of the list file that the rule ID came from
+            // (exclude_rules.txt or noisy_rules.txt).
             let entry_key = if utils::contains_str(v, "exclude_rule") {
                 "excluded"
             } else {
@@ -758,7 +818,8 @@ pub fn count_rules<P: AsRef<Path>>(
         }
 
         if let Some(s) = yaml_doc["status"].as_str() {
-            // In the initial counting for the wizard, check the status and level, then skip further processing.
+            // The wizard's initial count only categorizes rules by status, level and wizard
+            // tags; none of the other load-time filters are applied here.
             let counter = result_container.entry(s.into()).or_insert(HashMap::new());
             if included_target_tag_vec.is_empty() {
                 *counter
@@ -773,6 +834,9 @@ pub fn count_rules<P: AsRef<Path>>(
                     .entry("other".into())
                     .or_insert(0) += 1;
             } else {
+                // A rule carrying more than one wizard tag is counted once per tag below, so
+                // record a negative adjustment of -(n-1) in the "duplicated" bucket to keep the
+                // grand total equal to the actual number of rules.
                 if included_target_tag_vec.len() > 1 {
                     *counter
                         .entry(
@@ -805,6 +869,9 @@ pub fn count_rules<P: AsRef<Path>>(
     result_container.to_owned()
 }
 
+/// Validates that a rule contains every key required by the Hayabusa rule format (correlation
+/// rules do not need `logsource`/`detection`) and that the `level`, `status` and `date` values
+/// are valid. On failure, returns all problems joined with " ¦ ".
 pub fn check_hayabusa_rule_fmt(yaml: &Yaml) -> Result<(), String> {
     let mut required_keys = vec![
         "author",
@@ -958,7 +1025,7 @@ mod tests {
     }
 
     #[test]
-    /// no specifed "level" arguments value is adapted default level(informational)
+    /// When no level argument is specified, the default level (informational) should be applied.
     fn test_default_level_read_yaml() {
         let path = Path::new("test_files/rules/level_yaml");
         let dummy_stored_static = create_dummy_stored_static();

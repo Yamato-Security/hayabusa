@@ -15,7 +15,9 @@ use termcolor::{BufferWriter, Color, ColorChoice};
 pub struct Update {}
 
 impl Update {
-    /// get latest hayabusa version number.
+    /// Gets the latest Hayabusa version number (release tag name) from the GitHub Releases API.
+    /// Note that the returned tag name keeps its JSON string quotes (Value::to_string), which the
+    /// caller strips.
     pub fn get_latest_hayabusa_version() -> Result<Option<String>, Box<dyn std::error::Error>> {
         let text =
             ureq::get("https://api.github.com/repos/Yamato-Security/hayabusa/releases/latest")
@@ -33,10 +35,11 @@ impl Update {
         }
     }
 
-    /// update rules(hayabusa-rules subrepository)
+    /// Updates the detection rules (the hayabusa-rules repository, checked out in the rules
+    /// folder or referenced as a git submodule), then prints which rule files changed.
     pub fn update_rules(
         rule_path: &str,
-        stored_staic: &StoredStatic,
+        stored_static: &StoredStatic,
     ) -> Result<String, git2::Error> {
         let mut result;
         let mut prev_modified_rules: HashMap<String, String> = HashMap::default();
@@ -50,17 +53,20 @@ impl Update {
                 true,
             )
             .ok();
-            // execution git clone of hayabusa-rules repository when failed open hayabusa repository.
+            // Neither the hayabusa repository nor the rules repository could be opened, so git
+            // clone the hayabusa-rules repository from scratch.
             result = Update::clone_rules(Path::new(rule_path));
         } else if hayabusa_rule_repo.is_ok() {
-            // case of exist hayabusa-rules repository
+            // The hayabusa-rules repository already exists: hard reset it to local main, then
+            // pull. If fetching origin/main fails here, no git clone fallback is attempted, so a
+            // failure most likely means a network error.
             Update::_repo_main_reset_hard(hayabusa_rule_repo.as_ref().unwrap())?;
-            // case of failed fetching origin/main, git clone is not executed so network error has occurred possibly.
-            prev_modified_rules = Update::get_updated_rules(rule_path, stored_staic);
+            prev_modified_rules = Update::get_updated_rules(rule_path, stored_static);
             result = Update::pull_repository(&hayabusa_rule_repo.unwrap());
         } else {
-            // case of no exist hayabusa-rules repository in rules.
-            // execute update because submodule information exists if hayabusa repository exists submodule information.
+            // The rules folder is not a git repository, but the hayabusa repository itself could
+            // be opened. If the hayabusa repository has submodule information (i.e. it is a
+            // source checkout), update the rules through the submodule.
 
             let rules_path = Path::new(rule_path);
             if !rules_path.exists() {
@@ -70,7 +76,8 @@ impl Update {
                 let hayabusa_repo = hayabusa_repo.unwrap();
                 let submodules = hayabusa_repo.submodules()?;
                 let mut is_success_submodule_update = true;
-                // submodule rules erase path is hard coding to avoid unintentional remove folder.
+                // The stale submodule metadata path to delete is hardcoded so that no unintended
+                // folder can be removed.
                 fs::remove_dir_all(".git/.submodule/rules").ok();
                 for mut submodule in submodules {
                     submodule.update(true, None)?;
@@ -93,22 +100,24 @@ impl Update {
                     true,
                 )
                 .ok();
-                // execution git clone of hayabusa-rules repository when failed open hayabusa repository.
+                // A custom rules path is not managed as a submodule, so git clone the
+                // hayabusa-rules repository into it instead.
                 result = Update::clone_rules(rules_path);
             }
         }
         if result.is_ok() {
-            let updated_modified_rules = Update::get_updated_rules(rule_path, stored_staic);
+            let updated_modified_rules = Update::get_updated_rules(rule_path, stored_static);
             result = Update::print_diff_modified_rule_dates(
                 prev_modified_rules,
                 updated_modified_rules,
-                stored_staic.common_options.no_color,
+                stored_static.common_options.no_color,
             );
         }
         result
     }
 
-    /// hard reset in main branch
+    /// Hard resets the repository to the head of its local main branch, discarding any local
+    /// changes.
     fn _repo_main_reset_hard(input_repo: &Repository) -> Result<(), git2::Error> {
         let branch = input_repo
             .find_branch("main", git2::BranchType::Local)
@@ -121,7 +130,8 @@ impl Update {
         }
     }
 
-    /// Pull(fetch and fast-forward merge) repositoryto input_repo.
+    /// Pulls (fetches and fast-forward merges) the remote main branch into input_repo. Only
+    /// fast-forward merges are supported; any other merge state is reported as an error.
     fn pull_repository(input_repo: &Repository) -> Result<String, git2::Error> {
         match input_repo
             .find_remote("origin")?
@@ -181,20 +191,24 @@ impl Update {
         }
     }
 
-    /// Create rules folder files Hashset. Format is "[rule title in yaml]|[filepath]|[filemodified date]|[rule type in yaml]"
+    /// Collects the current rule files into a map of file path ->
+    /// "[title]|[modified field, falling back to the date field]|[file path]|[rule type]|[parsed yaml]", used to diff
+    /// the rule set before and after an update. The full parsed YAML is included so that any
+    /// content change is detected even when the modified date stays the same.
     fn get_updated_rules(
         rule_folder_path: &str,
-        stored_staic: &StoredStatic,
+        stored_static: &StoredStatic,
     ) -> HashMap<String, String> {
-        let mut rulefile_loader = ParseYaml::new(stored_staic);
-        // level in read_dir is hard code to check all rules.
+        let mut rulefile_loader = ParseYaml::new(stored_static);
+        // The level passed to read_dir is hardcoded to INFORMATIONAL so that every rule is
+        // loaded.
         rulefile_loader
             .read_dir(
                 rule_folder_path,
                 "INFORMATIONAL",
                 "",
                 &filter::RuleExclude::new(),
-                stored_staic,
+                stored_static,
             )
             .ok();
 
@@ -214,7 +228,8 @@ impl Update {
         }))
     }
 
-    /// print updated rule files.
+    /// Prints the rule files that were added or changed by the update, followed by per-rule-type
+    /// update counts. Returns a message describing whether anything was updated.
     fn print_diff_modified_rule_dates(
         prev_sets: HashMap<String, String>,
         updated_sets: HashMap<String, String>,
