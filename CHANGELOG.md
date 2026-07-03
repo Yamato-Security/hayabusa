@@ -11,6 +11,7 @@ Added unique and total alert count to MITRE ATT&CK tactics found. (#1753) (@fuku
 - MITRE ATT&CK Tactics were not line-breaking properly in HTML reports (#1751) (@fukusuket)
 - Fixed the scan progress bar not redrawing in place (each update was printed on a new line) during large scans, caused by literal carriage returns (`\r\n`) in the progress bar template. (#1760) (@YamatoSecurity)
 - Fixed a typo (`infomational` → `informational`) in the pivot keyword list level exclusion that prevented `informational`-level records from being excluded, so their field values polluted the pivot keyword lists. (#1804) (@YamatoSecurity)
+- Fixed a Markdown-injection issue in the HTML report: user-supplied values (e.g. computer names) were HTML-escaped but not Markdown-escaped, so a value like `[x](javascript:alert(1))` could render as a clickable `javascript:` link. Markdown metacharacters in user values are now escaped as well. (#1806) (@YamatoSecurity)
 
 ## 3.9.0 [2026/04/29]
 
