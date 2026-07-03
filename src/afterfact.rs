@@ -1473,7 +1473,7 @@ fn _print_unique_results(
     let mut total_detect_md = vec!["- Total detections:".to_string()];
     let mut unique_detect_md = vec!["- Unique detections:".to_string()];
 
-    for (i, level_name) in LEVEL::iter().rev().enumerate() {
+    for level_name in LEVEL::iter().rev() {
         if level_name == LEVEL::UNDEFINED {
             continue;
         }
@@ -1487,7 +1487,7 @@ fn _print_unique_results(
         let unique_percent = if unique_total_count == 0 {
             0 as f64
         } else {
-            (unique_counts_by_level[i] as f64) / (unique_total_count as f64) * 100.0
+            (unique_count_by_level as f64) / (unique_total_count as f64) * 100.0
         };
         if html_output_flag {
             total_detect_md.push(format!(
