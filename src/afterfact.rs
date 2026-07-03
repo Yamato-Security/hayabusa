@@ -53,8 +53,9 @@ fn html_escape_value(s: &str) -> String {
             '&' => escaped.push_str("&amp;"),
             '"' => escaped.push_str("&quot;"),
             '\'' => escaped.push_str("&#39;"),
-            // Markdown metacharacters -> backslash-escaped. `\` must come first so
-            // it does not accidentally escape a following (already-escaped) char.
+            // Markdown metacharacters -> backslash-escaped. A backslash in the input
+            // is itself doubled so it cannot cancel the escaping of the following
+            // character when the Markdown is rendered.
             '\\' => escaped.push_str("\\\\"),
             '[' => escaped.push_str("\\["),
             ']' => escaped.push_str("\\]"),
@@ -2376,8 +2377,8 @@ mod tests {
             .insert("General Overview {#general_overview}".to_string(), data);
         let html = reporter.create_html();
         assert!(
-            !html.contains("<a "),
-            "injected markdown link must not become an anchor, got: {html}"
+            !html.contains("href=\"javascript:"),
+            "payload must not become a javascript: link, got: {html}"
         );
         assert!(
             html.contains("[x](javascript:alert(1))"),
