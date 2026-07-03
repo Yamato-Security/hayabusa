@@ -23,6 +23,9 @@ lazy_static! {
     static ref DATE_REGEX: Regex = Regex::new(r"^\d{4}[-/]\d{1,2}[-/]\d{1,2}$").unwrap();
 }
 
+/// Rule ID used by hayabusa's own test rules; exempted from the excluded/noisy rule counts.
+const TEST_RULE_ID: &str = "00000000-0000-0000-0000-000000000000";
+
 /// Loads detection rule YAML files from disk, applies all rule filtering options
 /// (level, status, category, tags, excluded/noisy rule IDs) and keeps the counters
 /// shown in the rule loading summary at startup.
@@ -395,8 +398,8 @@ impl ParseYaml {
                     } else {
                         "noisy"
                     };
-                    // For test rules (ID: 000...0), exclude them from the excluded rule count.
-                    if v != "00000000-0000-0000-0000-000000000000" {
+                    // Test rules (ID: 000...0) are exempted from the excluded/noisy rule counts.
+                    if rule_id.unwrap_or_default() != TEST_RULE_ID {
                         let entry = self.rule_load_cnt.entry(entry_key.into()).or_insert(0);
                         *entry += 1;
                     }
@@ -791,8 +794,8 @@ pub fn count_rules<P: AsRef<Path>>(
             } else {
                 "noisy"
             };
-            // For test rules (ID: 000...0), exclude them from the excluded rule count.
-            if v != "00000000-0000-0000-0000-000000000000" {
+            // Test rules (ID: 000...0) are exempted from the excluded/noisy rule counts.
+            if rule_id.unwrap_or_default() != TEST_RULE_ID {
                 let counter = result_container
                     .entry(entry_key.into())
                     .or_insert(HashMap::new());
@@ -1129,7 +1132,70 @@ mod tests {
             &dummy_stored_static,
         )
         .unwrap();
-        assert_eq!(yaml.rule_load_cnt.get("excluded").unwrap().to_owned(), 5);
+        // The excluded fixture rules all use the null-UUID test-rule ID
+        // (00000000-0000-0000-0000-000000000000), which must be exempted from the
+        // excluded rule count while still being excluded from loading.
+        assert_eq!(yaml.rule_load_cnt.get("excluded").unwrap().to_owned(), 0);
+        assert!(!yaml.files.is_empty());
+        assert!(
+            yaml.files
+                .iter()
+                .all(|(filepath, _)| !filepath.contains("exclude"))
+        );
+    }
+
+    #[test]
+    fn test_exclude_rules_file_real_uuid_still_counted() {
+        let path = Path::new("test_files/rules/yaml");
+        let mut dummy_stored_static = create_dummy_stored_static();
+        dummy_stored_static.include_status = HashSet::from_iter(vec![CompactString::from("*")]);
+        let mut yaml = yaml::ParseYaml::new(&dummy_stored_static);
+        let mut exclude_ids = RuleExclude::new();
+        // The real (non-test) rule ID of test_files/rules/yaml/noisy1.yml; the value only
+        // needs to contain "exclude_rule" to be classified under the "excluded" counter.
+        exclude_ids.no_use_rule.insert(
+            "0090ea60-f4a2-43a8-8657-3a9a4ddcf547".to_string(),
+            "exclude_rules.txt".to_string(),
+        );
+        yaml.read_dir(path, "", "", &exclude_ids, &dummy_stored_static)
+            .unwrap();
+        // A rule with a real UUID must still be counted as excluded and not loaded.
+        assert_eq!(yaml.rule_load_cnt.get("excluded").unwrap().to_owned(), 1);
+        assert!(
+            yaml.files
+                .iter()
+                .all(|(filepath, _)| !filepath.contains("noisy1"))
+        );
+    }
+
+    #[test]
+    fn test_count_rules_null_uuid_excluded_not_counted() {
+        let dummy_stored_static = create_dummy_stored_static();
+        let mut container = HashMap::new();
+        let result = yaml::count_rules(
+            Path::new("test_files/rules/yaml"),
+            &filter::exclude_ids(&dummy_stored_static),
+            &dummy_stored_static,
+            &mut container,
+        );
+        // The only fixture rules matching exclude_rules.txt use the null-UUID test-rule ID,
+        // which is exempted from the count, so no "excluded" entry is created.
+        assert!(!result.contains_key("excluded"));
+
+        // A rule with a real UUID in the exclude list is still counted.
+        let mut exclude_ids = RuleExclude::new();
+        exclude_ids.no_use_rule.insert(
+            "0090ea60-f4a2-43a8-8657-3a9a4ddcf547".to_string(),
+            "exclude_rules.txt".to_string(),
+        );
+        let mut container = HashMap::new();
+        let result = yaml::count_rules(
+            Path::new("test_files/rules/yaml"),
+            &exclude_ids,
+            &dummy_stored_static,
+            &mut container,
+        );
+        assert!(result.contains_key("excluded"));
     }
     #[test]
     fn test_all_noisy_rules_file() {
