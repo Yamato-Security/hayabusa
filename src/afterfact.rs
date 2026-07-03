@@ -2414,8 +2414,8 @@ mod tests {
     use hashbrown::HashMap;
     use serde_json::Value;
 
-    use crate::afterfact::AfterfactInfo;
     use crate::afterfact::_print_unique_results;
+    use crate::afterfact::AfterfactInfo;
     use crate::afterfact::format_time;
     use crate::afterfact::html_escape_value;
     use crate::afterfact::init_writer;
