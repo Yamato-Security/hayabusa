@@ -2415,6 +2415,7 @@ mod tests {
     use serde_json::Value;
 
     use crate::afterfact::AfterfactInfo;
+    use crate::afterfact::_print_unique_results;
     use crate::afterfact::format_time;
     use crate::afterfact::html_escape_value;
     use crate::afterfact::init_writer;
@@ -2434,6 +2435,47 @@ mod tests {
     use crate::detections::utils;
     use crate::level::LEVEL;
     use crate::options::profile::{Profile, load_profile};
+
+    #[test]
+    fn test_print_unique_results_percentages_align_with_levels() {
+        // The count arrays are indexed by LEVEL::index():
+        // [undefined, informational, low, medium, high, critical, emergency].
+        // Both arrays are deliberately asymmetric so every level has a distinct
+        // percentage; with the reversed-index regression (#1812) the critical row
+        // would show informational's percentage and vice versa.
+        let counts_by_level: Vec<u128> = vec![0, 60, 15, 30, 24, 21, 0]; // total 150
+        let unique_counts_by_level: Vec<u128> = vec![0, 5, 4, 3, 2, 1, 0]; // total 15
+        let mut html_output_stock = nested::Nested::<String>::new();
+        _print_unique_results(
+            &counts_by_level,
+            &unique_counts_by_level,
+            (
+                CompactString::from("Total"),
+                CompactString::from("detections"),
+            ),
+            &crate::level::create_output_color_map(true),
+            &mut html_output_stock,
+            true,
+        );
+        let lines: Vec<&str> = html_output_stock.iter().collect();
+        let expected = vec![
+            "- Total detections:",
+            "    - emergency: 0 (0.00%)",
+            "    - critical: 21 (14.00%)",
+            "    - high: 24 (16.00%)",
+            "    - medium: 30 (20.00%)",
+            "    - low: 15 (10.00%)",
+            "    - informational: 60 (40.00%)",
+            "- Unique detections:",
+            "    - emergency: 0 (0.00%)",
+            "    - critical: 1 (6.67%)",
+            "    - high: 2 (13.33%)",
+            "    - medium: 3 (20.00%)",
+            "    - low: 4 (26.67%)",
+            "    - informational: 5 (33.33%)",
+        ];
+        assert_eq!(lines, expected);
+    }
 
     #[test]
     fn test_html_escape_value_neutralises_markdown_and_html() {
