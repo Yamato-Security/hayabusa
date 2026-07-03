@@ -29,19 +29,38 @@ use crate::detections::configs::{
 };
 use crate::detections::message::{AlertMessage, COMPUTER_MITRE_ATTCK_MAP, DetectInfo};
 
-/// Escapes HTML special characters in user-supplied data values to prevent XSS
-/// when embedding them into Markdown that will be rendered as HTML.
-/// This should be applied only to dynamic data values (e.g. computer names from logs),
-/// not to the markdown template strings that may contain intentional HTML like `<br>`.
+/// Escapes user-supplied data values before embedding them into the Markdown that
+/// is rendered as HTML for the report, to prevent XSS and Markdown injection.
+///
+/// HTML special characters are entity-escaped (stops raw-HTML injection like
+/// `<script>`), and Markdown metacharacters that could otherwise form links or
+/// break table structure are backslash-escaped. The latter matters because the
+/// escaped values are placed inside Markdown list/link/table constructs and
+/// rendered by pulldown-cmark, which does not sanitize URL schemes: without it a
+/// value such as `[x](javascript:alert(1))` would render as a clickable
+/// `javascript:` anchor (click-to-execute XSS), and a `|` would break a table row.
+///
+/// This should be applied only to dynamic data values (e.g. computer names from
+/// logs), not to the Markdown template strings that may contain intentional HTML
+/// like `<br>` or intentional Markdown like table pipes.
 fn html_escape_value(s: &str) -> String {
     let mut escaped = String::with_capacity(s.len());
     for c in s.chars() {
         match c {
+            // HTML special characters -> entities.
             '<' => escaped.push_str("&lt;"),
             '>' => escaped.push_str("&gt;"),
             '&' => escaped.push_str("&amp;"),
             '"' => escaped.push_str("&quot;"),
             '\'' => escaped.push_str("&#39;"),
+            // Markdown metacharacters -> backslash-escaped. `\` must come first so
+            // it does not accidentally escape a following (already-escaped) char.
+            '\\' => escaped.push_str("\\\\"),
+            '[' => escaped.push_str("\\["),
+            ']' => escaped.push_str("\\]"),
+            '(' => escaped.push_str("\\("),
+            ')' => escaped.push_str("\\)"),
+            '|' => escaped.push_str("\\|"),
             _ => escaped.push(c),
         }
     }
@@ -2304,6 +2323,7 @@ mod tests {
 
     use crate::afterfact::AfterfactInfo;
     use crate::afterfact::format_time;
+    use crate::afterfact::html_escape_value;
     use crate::afterfact::init_writer;
     use crate::afterfact::output_afterfact_inner;
     use crate::afterfact::sort_detect_info;
@@ -2321,6 +2341,49 @@ mod tests {
     use crate::detections::utils;
     use crate::level::LEVEL;
     use crate::options::profile::{Profile, load_profile};
+
+    #[test]
+    fn test_html_escape_value_neutralises_markdown_and_html() {
+        // HTML special characters -> entities (blocks raw-HTML injection).
+        assert_eq!(
+            html_escape_value("a<b>c&d\"e'f"),
+            "a&lt;b&gt;c&amp;d&quot;e&#39;f"
+        );
+        // Markdown link syntax -> inert (brackets and parens are backslash-escaped),
+        // so `[x](javascript:...)` can no longer become a clickable anchor.
+        assert_eq!(html_escape_value("[x](y)"), "\\[x\\]\\(y\\)");
+        // Table pipe -> escaped, so it cannot break a table row.
+        assert_eq!(html_escape_value("a|b"), "a\\|b");
+        // Backslash -> doubled, so it cannot escape a following character.
+        assert_eq!(html_escape_value("a\\b"), "a\\\\b");
+        // Ordinary text is unchanged.
+        assert_eq!(html_escape_value("WORKSTATION-01"), "WORKSTATION-01");
+    }
+
+    #[test]
+    fn test_report_neutralises_markdown_link_injection() {
+        // End-to-end: a user value carrying Markdown link syntax with a `javascript:`
+        // URL must NOT render as a clickable anchor after html_escape_value +
+        // create_html (pulldown-cmark does not sanitize URL schemes).
+        let mut reporter = crate::options::htmlreport::HtmlReporter::default();
+        let mut data = nested::Nested::<String>::new();
+        data.push(format!(
+            "- {} (5)",
+            html_escape_value("[x](javascript:alert(1))")
+        ));
+        reporter
+            .md_datas
+            .insert("General Overview {#general_overview}".to_string(), data);
+        let html = reporter.create_html();
+        assert!(
+            !html.contains("<a "),
+            "injected markdown link must not become an anchor, got: {html}"
+        );
+        assert!(
+            html.contains("[x](javascript:alert(1))"),
+            "payload should render as inert literal text, got: {html}"
+        );
+    }
 
     /// `sort_detect_info` must be a total order so the `-s` output is
     /// deterministic: records equal on every primary key (here: same time/level/
