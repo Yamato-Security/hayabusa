@@ -902,7 +902,53 @@ mod tests {
             &false,
         ));
 
+        // Test 4: An RDS Gateway logon (EID 302) whose Username carries a "DOMAIN\user" value.
+        // Both the user and the domain are extracted from Event.UserData.EventInfo.Username via
+        // the RdsGtwUsername alias (regression test for #1809, where the dst_domain arm looked
+        // up the misspelled alias "RdsGtwUserName" and always yielded "-").
+        let rds_gtw_record_str = r#"{
+            "Event": {
+                "System": {
+                    "EventID": 302,
+                    "Channel": "Microsoft-Windows-TerminalServices-Gateway/Operational",
+                    "Computer": "GATEWAY01",
+                    "TimeCreated_attributes": {
+                        "SystemTime": "2022-12-23T00:00:00.000Z"
+                    }
+                },
+                "UserData": {
+                    "EventInfo": {
+                        "Username": "CONTOSO\\alice",
+                        "IpAddress": "10.0.0.5"
+                    }
+                }
+            },
+            "Event_attributes": {"xmlns": "http://schemas.microsoft.com/win/2004/08/events/event"}
+        }"#;
+        let rds_gtw_record = serde_json::from_str(rds_gtw_record_str).unwrap();
+        input_datas.push(create_rec_info(
+            rds_gtw_record,
+            "testpath3".to_string(),
+            &Nested::<String>::new(),
+            &false,
+            &false,
+        ));
+
         let mut expect: HashMap<LoginEvent, [usize; 2]> = HashMap::new();
+        expect.insert(
+            LoginEvent {
+                channel: "RDS-GTW 302".into(),
+                dst_user: "alice".into(),
+                dst_domain: "CONTOSO".into(),
+                hostname: "GATEWAY01".into(),
+                logontype: "-".into(),
+                src_user: "-".into(),
+                src_domain: "-".into(),
+                source_computer: "-".into(),
+                source_ip: "10.0.0.5".into(),
+            },
+            [1, 0],
+        );
         expect.insert(
             LoginEvent {
                 channel: "Sec 4624".into(),
@@ -952,7 +998,7 @@ mod tests {
             ))
         );
 
-        assert_eq!(timeline.stats.total, 3);
+        assert_eq!(timeline.stats.total, 4);
 
         for (k, v) in timeline.stats.stats_login_list.iter() {
             assert!(expect.contains_key(k));

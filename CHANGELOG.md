@@ -14,6 +14,7 @@ Added unique and total alert count to MITRE ATT&CK tactics found. (#1753) (@fuku
 - Fixed a Markdown-injection issue in the HTML report: user-supplied values (e.g. computer names) were HTML-escaped but not Markdown-escaped, so a value like `[x](javascript:alert(1))` could render as a clickable `javascript:` link. Markdown metacharacters in user values are now escaped as well. (#1806) (@YamatoSecurity)
 - The exemption that keeps the null-UUID test rule out of the excluded/noisy rule counts compared the exclude-list file path instead of the rule ID, so it never applied and test rules inflated the `Excluded rules` count. (#1821) (@YamatoSecurity)
 - Unique detection percentages in the Results Summary (and the HTML report) were mirrored across levels: the percentage was computed with the reversed loop index, so e.g. the `critical` row showed `informational`'s percentage and vice versa (only `medium` was correct). (#1812) (@YamatoSecurity)
+- `logon-summary`: the Target Domain column was always `-` for RDS Gateway logons (EID 302 in `Microsoft-Windows-TerminalServices-Gateway/Operational`) because the `dst_domain` lookup used the misspelled event key alias `RdsGtwUserName` instead of `RdsGtwUsername`, so the domain in `DOMAIN\user` values was silently dropped. (#1809) (@YamatoSecurity)
 
 **Other:**
 
