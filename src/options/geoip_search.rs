@@ -66,9 +66,7 @@ impl GeoIPSearch {
     }
 
     /// Checks whether target_ip falls within one of the CIDR ranges below, which are excluded
-    /// from GeoIP lookup and reported as "Private". Note that the IPv6 list includes 2000::/3
-    /// (global unicast), so effectively all IPv6 addresses except loopback are treated as
-    /// private.
+    /// from GeoIP lookup and reported as "Private".
     fn check_in_private_ip_range(&self, target_ip: &IpAddr) -> bool {
         let private_cidr = if target_ip.is_ipv4() {
             vec![
@@ -79,11 +77,9 @@ impl GeoIPSearch {
         } else {
             vec![
                 IpCidr::from_str("::/128").unwrap(),    // IPv6 Unspecified
-                IpCidr::from_str("2000::/3").unwrap(),  // IPv6 Global Unicast
                 IpCidr::from_str("FE80::/10").unwrap(), // IPv6 Link Local Unicast
-                IpCidr::from_str("FC00::/7").unwrap(),  // IPv6 Unique Local Address
-                IpCidr::from_str("FD00::/8").unwrap(),  // IPv6 Unique Local Address
-                IpCidr::from_str("FF00::/8").unwrap(),  // IPv6 Multicast Address
+                IpCidr::from_str("FC00::/7").unwrap(), // IPv6 Unique Local Address (covers FD00::/8)
+                IpCidr::from_str("FF00::/8").unwrap(), // IPv6 Multicast Address
             ]
         };
         for cidr in private_cidr {
@@ -234,7 +230,6 @@ mod tests {
             GeoIPSearch::check_exist_geo_ip_files(&Some(test_path.clone()), target_files.clone()),
             Ok(Some(test_path.clone()))
         );
-        IP_MAP.lock().unwrap().clear();
         let geo_ip = GeoIPSearch::new(&test_path, target_files);
         let expect = "🦅United Kingdom🦅Boxford";
         let actual = geo_ip.convert_ip_to_geo("2.125.160.216");
@@ -261,11 +256,13 @@ mod tests {
             Ok(Some(test_path.clone()))
         );
         let geo_ip = GeoIPSearch::new(&test_path, target_files);
+        // Use an address no other test looks up: tests run in parallel and share the global
+        // IP_MAP cache, so touching another test's address would be racy.
         IP_MAP.lock().unwrap().insert(
-            IpAddr::from_str("2.125.160.216").unwrap(),
+            IpAddr::from_str("2.125.160.217").unwrap(),
             "this is dummy".into(),
         );
-        let actual = geo_ip.convert_ip_to_geo("2.125.160.216");
+        let actual = geo_ip.convert_ip_to_geo("2.125.160.217");
         assert!(actual.is_ok());
         assert_eq!(CompactString::from("this is dummy"), actual.unwrap());
     }
@@ -284,7 +281,6 @@ mod tests {
             GeoIPSearch::check_exist_geo_ip_files(&Some(test_path.clone()), target_files.clone()),
             Ok(Some(test_path.clone()))
         );
-        IP_MAP.lock().unwrap().clear();
         let geo_ip = GeoIPSearch::new(&test_path, target_files);
         let loopback = geo_ip.convert_ip_to_geo("127.0.0.1");
         assert!(loopback.is_ok());
@@ -314,7 +310,6 @@ mod tests {
             GeoIPSearch::check_exist_geo_ip_files(&Some(test_path.clone()), target_files.clone()),
             Ok(Some(test_path.clone()))
         );
-        IP_MAP.lock().unwrap().clear();
         let geo_ip = GeoIPSearch::new(&test_path, target_files);
         let loopback = geo_ip.convert_ip_to_geo("::1");
         assert!(loopback.is_ok());
@@ -322,8 +317,20 @@ mod tests {
         let link_local = geo_ip.convert_ip_to_geo("fe80::123:33ef:fe11:1");
         assert!(link_local.is_ok());
         assert_eq!("Private🦅-🦅-", link_local.unwrap());
-        let global_unicast = geo_ip.convert_ip_to_geo("2001:1234:abcd:1234::1");
+        let unspecified = geo_ip.convert_ip_to_geo("::");
+        assert!(unspecified.is_ok());
+        assert_eq!("Private🦅-🦅-", unspecified.unwrap());
+        let unique_local = geo_ip.convert_ip_to_geo("fd12:3456:789a::1");
+        assert!(unique_local.is_ok());
+        assert_eq!("Private🦅-🦅-", unique_local.unwrap());
+        let multicast = geo_ip.convert_ip_to_geo("ff02::1");
+        assert!(multicast.is_ok());
+        assert_eq!("Private🦅-🦅-", multicast.unwrap());
+        // Global unicast addresses must be looked up in the databases instead of being
+        // reported as Private (issue #1819). 2001:218::/32 is Japan in the MaxMind test
+        // data (with no ASN or city entry, so those fields are empty).
+        let global_unicast = geo_ip.convert_ip_to_geo("2001:218::1");
         assert!(global_unicast.is_ok());
-        assert_eq!("Private🦅-🦅-", global_unicast.unwrap());
+        assert_eq!("🦅Japan🦅", global_unicast.unwrap());
     }
 }
