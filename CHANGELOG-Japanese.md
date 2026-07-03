@@ -16,6 +16,7 @@
 - Results Summary（およびHTMLレポート）のユニーク検知のパーセンテージがレベル間で鏡写しに入れ替わっていた問題を修正した。逆順ループのインデックスでパーセンテージを計算していたため、例えば`critical`の行に`informational`のパーセンテージが表示されていた（正しかったのは中央の`medium`のみ）。 (#1812) (@YamatoSecurity)
 - `logon-summary`コマンドで、RDSゲートウェイのログオン（`Microsoft-Windows-TerminalServices-Gateway/Operational`のEID 302）のTarget Domain列が常に`-`になっていた問題を修正した。`dst_domain`の抽出がイベントキーエイリアス`RdsGtwUsername`をスペルミスの`RdsGtwUserName`で参照していたため、`DOMAIN\user`形式の値からドメインが取得されていなかった。 (#1809) (@YamatoSecurity)
 - GeoIP機能がすべてのパブリックIPv6アドレスを`Private`として扱い、GeoIP検索を行っていなかった問題を修正した。IPv6のプライベート範囲リストにグローバルユニキャスト空間全体である`2000::/3`が含まれていたことが原因。あわせて冗長な`FD00::/8`（`FC00::/7`に包含される）も削除し、パブリックIPv6アドレスにASN・国・都市の情報が付与されるようにした。 (#1819) (@YamatoSecurity)
+- 正規表現マッチにフォールバックするワイルドカードのフィールドパターン（`?` を含む、途中に `*` がある、または非ASCII文字と `*` を含むパターン）が、アンカーなしの正規表現にコンパイルされ `Regex::is_match()`（部分一致検索）で照合されていた問題を修正した。このためフィールド値全体ではなくパターンを単に「含む」値にも一致し、誤検知が発生していた（例: `Channel: Sec?rity` が `MySec1rityLog` に、`net*user` が `mynetXuserZ` に一致）。これらのワイルドカード正規表現を値全体にアンカーするようにし、Sigmaの完全一致セマンティクスおよびHayabusaの高速マッチ経路（`Exact`/`StartsWith`/`EndsWith`）と整合させた。キーワード（grep）検索と `|re` 正規表現は意図的にアンカーなしのままとした。 (#1826) (@Shirofune-Security)
 
 ## 3.9.0 [2026/04/29]
 
