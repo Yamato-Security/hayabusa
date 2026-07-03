@@ -5,6 +5,7 @@ use std::path::{Path, PathBuf};
 use yaml_rust2::YamlLoader;
 use yaml_rust2::yaml::Hash;
 
+/// Recursively collects the paths of all `.yml` files under `dir`.
 fn list_yml_files<P: AsRef<Path>>(dir: P) -> Vec<String> {
     let mut yml_files = Vec::new();
     if let Ok(entries) = fs::read_dir(dir) {
@@ -22,6 +23,10 @@ fn list_yml_files<P: AsRef<Path>>(dir: P) -> Vec<String> {
     yml_files
 }
 
+/// Walks a rule's detection section and records every key that uses the `|expand` modifier,
+/// mapping the key (e.g. `CommandLine|expand`) to its string value, which is the placeholder
+/// (e.g. `%Admins_Workstations%`). Only string values are recorded; nested mappings are searched
+/// recursively, but list values are not descended into.
 fn extract_expand_keys_recursive(hash: &Hash, expand_keys: &mut HashMap<String, String>) {
     for (key, value) in hash {
         if let Some(key_str) = key.as_str() {
@@ -42,6 +47,10 @@ fn extract_expand_keys(detection: &Hash) -> HashMap<String, String> {
     expand_keys
 }
 
+/// Returns the set of placeholder strings (e.g. `%Admins_Workstations%`) referenced by `|expand`
+/// field modifiers in the detection sections of all `.yml` rules under `dir`. This backs the
+/// `expand-list` command, which shows users which placeholders they need to define in
+/// `config/expand`.
 pub fn expand_list(dir: &PathBuf) -> HashSet<String> {
     let yml_files = list_yml_files(dir);
     let mut result = HashSet::new();

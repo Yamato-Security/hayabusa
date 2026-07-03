@@ -14,6 +14,8 @@ use strum::{EnumIter, IntoEnumIterator};
 use termcolor::{BufferWriter, Color, ColorChoice};
 
 static CONFIG_CRITICAL_SYSTEMS: &str = "config/critical_systems.txt";
+
+// Categories of critical systems that can be detected from event logs.
 #[derive(Eq, Hash, PartialEq, Debug, Clone, EnumIter)]
 enum ComputerType {
     DomainController,
@@ -29,6 +31,10 @@ impl ComputerType {
     }
 }
 
+/// Implements the config-critical-systems command: scans Security-channel events for computers
+/// that appear to be domain controllers or file servers, and interactively offers to append their
+/// names to config/critical_systems.txt. Alerts for hosts listed in that file later get their
+/// severity level raised by one (see level.rs).
 #[derive(Clone, Debug)]
 pub struct ConfigCriticalSystems {
     computers: HashMap<ComputerType, HashSet<String>>,
@@ -60,12 +66,16 @@ impl ConfigCriticalSystems {
         }
     }
 
+    /// Classifies the computer that recorded the event as a domain controller or file server
+    /// based on Security-channel event IDs that only those roles log.
     fn find_critical_computers(&mut self, data: &Value) {
         if let Some(ch) = data["Event"]["System"]["Channel"].as_str()
             && let Some(id) = data["Event"]["System"]["EventID"].as_i64()
             && ch == "Security"
         {
             if id == 4768 {
+                // EID 4768 (a Kerberos authentication ticket (TGT) was requested) is only logged
+                // on domain controllers, so the recording computer must be a DC.
                 let v = data["Event"]["System"]["Computer"]
                     .as_str()
                     .unwrap_or_default()
@@ -75,6 +85,10 @@ impl ConfigCriticalSystems {
                     .or_default()
                     .insert(v);
             } else if id == 5145 {
+                // EID 5145 (a network share object was checked for access) indicates the
+                // recording computer is serving file shares. Ignore accesses to the IPC$
+                // named-pipe share, since every Windows host exposes it and it does not mean the
+                // host is a file server.
                 let share = data["Event"]["EventData"]["ShareName"]
                     .as_str()
                     .unwrap_or_default();
@@ -93,6 +107,9 @@ impl ConfigCriticalSystems {
         }
     }
 
+    /// For each computer type, prints the discovered host names and interactively asks the user
+    /// whether to append them to the critical systems config file. Appended entries are then
+    /// deduplicated and sorted together with any pre-existing ones.
     pub fn output_computers(&mut self, no_color: bool) {
         for computer_type in ComputerType::iter() {
             match self.computers.get(&computer_type) {
@@ -116,6 +133,8 @@ impl ConfigCriticalSystems {
                         .ok();
                     }
                     println!();
+                    // Theme for the dialoguer confirmation prompt: plain styles when --no-color
+                    // is set, otherwise Hayabusa's usual color scheme.
                     let color_theme = if no_color {
                         ColorfulTheme {
                             defaults_style: Style::new().for_stderr(),
@@ -151,7 +170,7 @@ impl ConfigCriticalSystems {
                             active_item_style: Style::new().color256(51), // cyan
                             values_style: Style::new().color256(46),      // green
                             prompt_prefix: Style::new().color256(214).apply_to("?".to_string()), // orange
-                            prompt_suffix: Style::new().color256(15).apply_to("›".to_string()), // cyan
+                            prompt_suffix: Style::new().color256(15).apply_to("›".to_string()), // white
                             defaults_style: Style::new().color256(51), // cyan
                             hint_style: Style::new().color256(214),    // orange
                             success_prefix: Style::new().color256(46).apply_to("✔".to_string()), // green
@@ -206,6 +225,7 @@ impl ConfigCriticalSystems {
     }
 }
 
+/// Rewrites the given file with its lines deduplicated and sorted alphabetically.
 fn sort_and_dedup_file(file_path: &Path) -> io::Result<()> {
     let file = fs::File::open(file_path)?;
     let reader = BufReader::new(file);

@@ -15,11 +15,15 @@ use std::path::Path;
 use std::sync::RwLock;
 use termcolor::{BufferWriter, Color, ColorChoice};
 
+/// Static assets for the HTML report (CSS, logo, favicon) embedded into the binary at compile
+/// time from config/html_report/.
 #[derive(Embed)]
 #[folder = "config/html_report/"]
 struct HtmlReportsConfig;
 
 lazy_static! {
+    /// Global accumulator for the HTML report contents. Sections are filled in while the analysis
+    /// runs and rendered to HTML at the end.
     pub static ref HTML_REPORTER: RwLock<HtmlReporter> = RwLock::new(HtmlReporter::new());
 }
 
@@ -29,9 +33,12 @@ lazy_static! {
 #[cfg(test)]
 pub(crate) static HTML_REPORTER_TEST_LOCK: std::sync::Mutex<()> = std::sync::Mutex::new(());
 
+/// Accumulates the markdown fragments that make up the HTML report.
 #[derive(Clone)]
 pub struct HtmlReporter {
+    /// Section names in the order they should appear in the report.
     pub section_order: Nested<String>,
+    /// Markdown lines per section name.
     pub md_datas: HashMap<String, Nested<String>>,
 }
 
@@ -44,7 +51,8 @@ impl HtmlReporter {
         }
     }
 
-    /// return converted String from md_data(markdown fmt string).
+    /// Renders the accumulated markdown data of every section (in section_order) into a single
+    /// HTML string.
     pub fn create_html(self) -> String {
         let mut options = Options::empty();
         options.insert(Options::ENABLE_TABLES);
@@ -77,6 +85,8 @@ impl Default for HtmlReporter {
     }
 }
 
+/// Returns true when the csv-timeline or json-timeline action was invoked with the
+/// -H/--HTML-report option.
 pub fn check_html_flag(config: &Config) -> bool {
     if config.action.as_ref().is_none() {
         return false;
@@ -88,7 +98,8 @@ pub fn check_html_flag(config: &Config) -> bool {
     }
 }
 
-/// get html report section data in HashMap
+/// Builds the initial section order and the empty per-section markdown map. The `{#id}` suffixes
+/// in the section names become HTML heading ids via the heading-attributes markdown extension.
 fn get_init_md_data_map() -> (Nested<String>, HashMap<String, Nested<String>>) {
     let mut ret = HashMap::new();
     let mut section_order = Nested::<String>::new();
@@ -103,6 +114,7 @@ fn get_init_md_data_map() -> (Nested<String>, HashMap<String, Nested<String>>) {
     (section_order, ret)
 }
 
+/// Appends markdown lines to the given section of the global HTML_REPORTER.
 pub fn add_md_data(section_name: &str, data: Nested<String>) {
     let mut md_with_section_data = HTML_REPORTER.write().unwrap().md_datas.to_owned();
     for c in data.iter() {
@@ -114,7 +126,8 @@ pub fn add_md_data(section_name: &str, data: Nested<String>) {
     HTML_REPORTER.write().unwrap().md_datas = md_with_section_data;
 }
 
-/// create html file
+/// Writes the HTML report to `path_str`, inlining the embedded CSS and embedding the logo and
+/// favicon images as base64 data URIs, then prints the output path to stdout.
 pub fn create_html_file(input_html: String, path_str: &str, no_color: bool) {
     let path = Path::new(path_str);
     if !path.parent().unwrap().exists() {
@@ -171,6 +184,8 @@ pub fn create_html_file(input_html: String, path_str: &str, no_color: bool) {
     .ok();
 }
 
+/// Determines the image type from the file's magic-number prefix (the hex encoding of its first
+/// bytes). Returns an empty string for unsupported types.
 fn get_file_type(hex: &str) -> &str {
     if hex.starts_with("ffd8ffe0") {
         return "jpeg";
@@ -182,6 +197,8 @@ fn get_file_type(hex: &str) -> &str {
     ""
 }
 
+/// Encodes an embedded image file as a `data:image/...;base64,` URI. Returns an empty string if
+/// the file is missing or not a supported image type.
 fn img_to_base64(path: &str) -> String {
     if let Some(file) = HtmlReportsConfig::get(path) {
         let vec = file.data.as_ref();

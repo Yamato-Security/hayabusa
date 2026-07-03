@@ -33,6 +33,12 @@ use crate::timeline::log_metrics::LogMetrics;
 use hashbrown::HashSet;
 use itertools::Itertools;
 
+/// Aggregated state for the non-detection commands (eid-metrics, logon-summary, log-metrics,
+/// search, extract-base64, config-critical-systems, computer-metrics). Records are fed in
+/// incrementally via `start()` (except for computer-metrics, which fills `stats.stats_computer`
+/// via `computer_metrics::countup_event_by_computer()`) and the collected results are rendered
+/// later by the `*_dsp_msg` methods. The detection commands csv-timeline/json-timeline also use
+/// this struct to track the total record count and the first/last event timestamps.
 #[derive(Debug, Clone)]
 pub struct Timeline {
     pub total_record_cnt: usize,
@@ -62,6 +68,9 @@ impl Timeline {
         }
     }
 
+    /// Dispatches a batch of loaded event records to the aggregator that matches the currently
+    /// running command. Called once per record chunk while the log files are being read; the
+    /// accumulated results are output afterwards by the corresponding `*_dsp_msg` method.
     pub fn start(&mut self, records: &[EvtxRecordInfo], stored_static: &StoredStatic) {
         if stored_static.metrics_flag {
             self.stats.evt_stats_start(
@@ -95,18 +104,19 @@ impl Timeline {
         }
     }
 
+    /// Output the computers found by the config-critical-systems command, grouped by system type.
     pub fn config_critical_systems_dsp_msg(&mut self, no_color: bool) {
         self.config_critical_systems.output_computers(no_color);
     }
 
-    /// Function to output the statistics message for the metrics command.
+    /// Function to output the statistics message for the eid-metrics command.
     pub fn tm_stats_dsp_msg(
         &mut self,
         event_timeline_config: &EventInfoConfig,
         stored_static: &StoredStatic,
     ) {
         // Create the output message.
-        let mut sammsges: Nested<String> = Nested::new();
+        let mut summary_msgs: Nested<String> = Nested::new();
         let total_event_record = format!(
             "\n\nTotal Event Records: {}\n",
             self.total_record_cnt.to_formatted_string(&Locale::en)
@@ -117,11 +127,11 @@ impl Timeline {
         match &stored_static.config.action.as_ref().unwrap() {
             Action::EidMetrics(option) => {
                 if option.input_args.filepath.is_some() {
-                    sammsges.push(format!("Evtx File Path: {}", self.stats.filepath));
+                    summary_msgs.push(format!("Evtx File Path: {}", self.stats.filepath));
                 }
-                sammsges.push(total_event_record);
+                summary_msgs.push(total_event_record);
                 if let Some(start_time) = self.stats.start_time {
-                    sammsges.push(format!(
+                    summary_msgs.push(format!(
                         "First Timestamp: {}",
                         utils::format_time(
                             &start_time,
@@ -135,7 +145,7 @@ impl Timeline {
                     ));
                 }
                 if let Some(end_time) = self.stats.end_time {
-                    sammsges.push(format!(
+                    summary_msgs.push(format!(
                         "Last Timestamp: {}\n",
                         utils::format_time(
                             &end_time,
@@ -149,7 +159,7 @@ impl Timeline {
                     ));
                 }
                 wtr = if let Some(csv_path) = option.output.as_ref() {
-                    // output to file
+                    // Output to file.
                     match File::create(csv_path) {
                         Ok(file) => {
                             target = Box::new(BufWriter::new(file));
@@ -185,15 +195,15 @@ impl Timeline {
 
         stats_tb.set_header(header_cells);
 
-        // Sort by aggregated count.
+        // Sort by aggregated count in descending order.
         let mut mapsorted: Vec<_> = self.stats.stats_list.iter().collect();
         mapsorted.sort_by(|x, y| y.1.cmp(x.1));
 
         // Generate an output message for each Event ID.
-        let stats_msges: Nested<Vec<CompactString>> =
+        let stats_msgs: Nested<Vec<CompactString>> =
             self.tm_stats_set_msg(mapsorted, event_timeline_config, stored_static);
 
-        for msgprint in sammsges.iter() {
+        for msgprint in summary_msgs.iter() {
             let mut parts = msgprint.splitn(2, ':');
             let first_part = parts.next().unwrap_or_default();
             let second_part = format!(": {}", parts.next().unwrap_or_default());
@@ -216,13 +226,13 @@ impl Timeline {
             .ok();
         }
         if wtr.is_some() {
-            for msg in stats_msges.iter() {
+            for msg in stats_msgs.iter() {
                 if let Some(ref mut w) = wtr {
                     w.write_record(msg.iter().map(|x| x.as_str())).ok();
                 }
             }
         }
-        stats_tb.add_rows(stats_msges.iter());
+        stats_tb.add_rows(stats_msgs.iter());
         let terminal_width = match terminal_size() {
             Some((Width(w), _)) => w,
             None => 100,
@@ -247,7 +257,7 @@ impl Timeline {
     /// Function to output the logon statistics message.
     pub fn tm_logon_stats_dsp_msg(&mut self, stored_static: &StoredStatic) {
         // Create the output message.
-        let mut sammsges: Vec<String> = Vec::new();
+        let mut summary_msgs: Vec<String> = Vec::new();
         let total_event_record = format!(
             "\n\nTotal Event Records: {}\n",
             self.total_record_cnt.to_formatted_string(&Locale::en)
@@ -256,12 +266,12 @@ impl Timeline {
             &stored_static.config.action.as_ref().unwrap()
         {
             if logon_summary_option.input_args.filepath.is_some() {
-                sammsges.push(format!("Evtx File Path: {}", self.stats.filepath));
+                summary_msgs.push(format!("Evtx File Path: {}", self.stats.filepath));
             }
-            sammsges.push(total_event_record);
+            summary_msgs.push(total_event_record);
 
             if let Some(start_time) = self.stats.start_time {
-                sammsges.push(format!(
+                summary_msgs.push(format!(
                     "First Timestamp: {}",
                     utils::format_time(
                         &start_time,
@@ -275,7 +285,7 @@ impl Timeline {
                 ));
             }
             if let Some(end_time) = self.stats.end_time {
-                sammsges.push(format!(
+                summary_msgs.push(format!(
                     "Last Timestamp: {}\n",
                     utils::format_time(
                         &end_time,
@@ -289,7 +299,7 @@ impl Timeline {
                 ));
             }
 
-            for msgprint in sammsges.iter() {
+            for msgprint in summary_msgs.iter() {
                 let mut parts = msgprint.splitn(2, ':');
                 let first_part = parts.next().unwrap_or_default();
                 let second_part = format!(": {}", parts.next().unwrap_or_default());
@@ -319,30 +329,31 @@ impl Timeline {
         }
     }
 
-    // Generate an output message for each Event ID.
+    /// Generates one output row per (event ID, channel) pair: count, percentage, abbreviated
+    /// channel, event ID and event title.
     fn tm_stats_set_msg(
         &self,
         mapsorted: Vec<(&(CompactString, CompactString), &usize)>,
         event_timeline_config: &EventInfoConfig,
         stored_static: &StoredStatic,
     ) -> Nested<Vec<CompactString>> {
-        let mut msges: Nested<Vec<CompactString>> = Nested::new();
+        let mut msgs: Nested<Vec<CompactString>> = Nested::new();
 
         for ((event_id, channel), event_cnt) in mapsorted.iter() {
             // Calculate the percentage of counts.
             let rate: f32 = **event_cnt as f32 / self.stats.total as f32;
             let fmted_channel = channel;
 
-            // Get event information (event title, etc.)
-            // Set information for entries registered in channel_eid_info.txt.
-            // Create one line of output message.
+            // Create one line of the output message. The event title is only known for
+            // channel/event-ID pairs registered in channel_eid_info.txt; everything else is
+            // reported as "Unknown".
             let ch = replace_channel_abbr(stored_static, fmted_channel);
 
             if event_timeline_config
                 .get_event_id(fmted_channel, event_id)
                 .is_some()
             {
-                msges.push(vec![
+                msgs.push(vec![
                     CompactString::from(format!("{event_cnt}")),
                     format!("{:.1}%", (rate * 1000.0).round() / 10.0).into(),
                     ch.trim().into(),
@@ -355,7 +366,7 @@ impl Timeline {
                     ),
                 ]);
             } else {
-                msges.push(vec![
+                msgs.push(vec![
                     CompactString::from(format!("{event_cnt}")),
                     format!("{:.1}%", (rate * 1000.0).round() / 10.0).into(),
                     ch.trim().into(),
@@ -364,7 +375,7 @@ impl Timeline {
                 ]);
             }
         }
-        msges
+        msgs
     }
 
     /// Generate output message for login statistics per user.
@@ -380,11 +391,11 @@ impl Timeline {
             write_color_buffer(&BufferWriter::stdout(ColorChoice::Always), None, "", false).ok();
         }
         if self.stats.stats_login_list.is_empty() {
-            let mut loginmsges: Vec<String> = Vec::new();
-            loginmsges.push("-----------------------------------------".to_string());
-            loginmsges.push("|     No logon events were detected.    |".to_string());
-            loginmsges.push("-----------------------------------------\n".to_string());
-            for msgprint in loginmsges.iter() {
+            let mut login_msgs: Vec<String> = Vec::new();
+            login_msgs.push("-----------------------------------------".to_string());
+            login_msgs.push("|     No logon events were detected.    |".to_string());
+            login_msgs.push("-----------------------------------------\n".to_string());
+            for msgprint in login_msgs.iter() {
                 println!("{msgprint}");
             }
         } else {
@@ -425,7 +436,7 @@ impl Timeline {
         }
         let mut wtr = if let Some(csv_path) = output {
             let file_name = csv_path.as_path().display().to_string() + "-" + logon_res + ".csv";
-            // output to file
+            // Output to file.
             match File::create(file_name) {
                 Ok(file) => {
                     target = Box::new(BufWriter::new(file));
@@ -447,15 +458,17 @@ impl Timeline {
         logins_stats_tb
             .load_preset(UTF8_FULL)
             .apply_modifier(UTF8_ROUND_CORNERS);
+        // The terminal table only shows a subset of the columns (count, event, target account,
+        // target computer, source computer, source IP address); the CSV output has all of them.
         let h = &header;
         logins_stats_tb.set_header([h[0], h[1], h[2], h[4], h[8], h[9]]);
-        // Set the logon results to aggregate.
+        // Index into the per-user [successful, failed] logon count pair.
         let vnum = match logon_res {
             "successful" => 0,
             "failed" => 1,
             &_ => 0,
         };
-        // Sort by aggregated count.
+        // Sort by aggregated count in descending order.
         let mut mapsorted: Vec<_> = self.stats.stats_login_list.iter().collect();
         mapsorted.sort_by(|x, y| y.1[vnum].cmp(&x.1[vnum]));
         for (e, values) in &mapsorted {
@@ -544,6 +557,8 @@ impl Timeline {
         }
     }
 
+    /// Output the log-metrics results (one row per log file) as CSV or as a terminal table,
+    /// sorted by event count in descending order.
     pub fn log_metrics_dsp_msg(&mut self, stored_static: &StoredStatic) {
         if let Action::LogMetrics(opt) = &stored_static.config.action.as_ref().unwrap() {
             let log_metrics = &mut self.stats.stats_logfile;
@@ -596,6 +611,8 @@ impl Timeline {
         }
     }
 
+    /// Output the strings collected by the extract-base64 command. Output failures are reported
+    /// according to the verbose/quiet-errors flags.
     pub fn extract_base64_dsp_msg(&mut self, stored_static: &StoredStatic) {
         match output_all(
             self.extracted_base64_records.clone(),
@@ -618,6 +635,10 @@ impl Timeline {
         }
     }
 
+    /// Builds one log-metrics output row for a single log file. Returns `None` when the file's
+    /// computers are dropped by the --include-computer / --exclude-computer filters. `sep` joins
+    /// multi-value cells (computers, channels, providers) unless overridden by the multiline or
+    /// tab-separator flags.
     fn create_record_array(
         rec: &LogMetrics,
         stored_static: &StoredStatic,
@@ -689,6 +710,9 @@ impl Timeline {
     }
 }
 
+/// Replaces a channel name with its abbreviation from channel_abbreviations.txt (looked up
+/// case-insensitively, falling back to the original name), then shortens generic terms using
+/// the abbreviations defined in generic_abbreviations.txt.
 fn replace_channel_abbr(stored_static: &StoredStatic, fmted_channel: &CompactString) -> String {
     stored_static.disp_abbr_generic.replace_all(
         stored_static
@@ -700,6 +724,9 @@ fn replace_channel_abbr(stored_static: &StoredStatic, fmted_channel: &CompactStr
     )
 }
 
+/// Replaces a provider name with its abbreviation from provider_abbreviations.txt (falling back
+/// to the original name), then shortens generic terms using the abbreviations defined in
+/// generic_abbreviations.txt.
 fn replace_provider_abbr(stored_static: &StoredStatic, fmted_provider: &CompactString) -> String {
     stored_static.disp_abbr_generic.replace_all(
         stored_static
@@ -742,7 +769,7 @@ mod tests {
         }))
     }
 
-    /// Test for statistics aggregation of the metrics command.
+    /// Test for the statistics aggregation of the logon-summary command.
     #[test]
     pub fn test_evt_logon_stats() {
         let mut dummy_stored_static =
@@ -789,7 +816,7 @@ mod tests {
         *STORED_EKEY_ALIAS.write().unwrap() = Some(dummy_stored_static.eventkey_alias.clone());
         let mut timeline = Timeline::default();
 
-        // Test that stats_time_cnt does nothing when there is no record information.
+        // Test that logon_stats_start does nothing when there is no record information.
         timeline.stats.logon_stats_start(&[], &dummy_stored_static);
 
         // Test 1: When there is no target Timestamp information.
@@ -819,7 +846,7 @@ mod tests {
         assert!(timeline.stats.end_time.is_none());
 
         // Test 2: When Event.System.TimeCreated_attributes.SystemTime contains a timestamp.
-        let tcreated_attribe_record_str = r#"{
+        let tcreated_attrib_record_str = r#"{
             "Event": {
                 "System": {
                     "EventID": "4624",
@@ -839,11 +866,11 @@ mod tests {
             "Event_attributes": {"xmlns": "http://schemas.microsoft.com/win/2004/08/events/event"}
         }"#;
 
-        let include_tcreated_attribe_record =
-            serde_json::from_str(tcreated_attribe_record_str).unwrap();
+        let include_tcreated_attrib_record =
+            serde_json::from_str(tcreated_attrib_record_str).unwrap();
         input_datas.clear();
         input_datas.push(create_rec_info(
-            include_tcreated_attribe_record,
+            include_tcreated_attrib_record,
             "testpath2".to_string(),
             &Nested::<String>::new(),
             &false,
@@ -851,7 +878,7 @@ mod tests {
         ));
 
         // Test 3: When Event.System.@timestamp contains a timestamp.
-        let timestamp_attribe_record_str = r#"{
+        let timestamp_attrib_record_str = r#"{
             "Event": {
                 "System": {
                     "EventID": 4625,
@@ -866,7 +893,7 @@ mod tests {
             },
             "Event_attributes": {"xmlns": "http://schemas.microsoft.com/win/2004/08/events/event"}
         }"#;
-        let include_timestamp_record = serde_json::from_str(timestamp_attribe_record_str).unwrap();
+        let include_timestamp_record = serde_json::from_str(timestamp_attrib_record_str).unwrap();
         input_datas.push(create_rec_info(
             include_timestamp_record,
             "testpath2".to_string(),
@@ -976,7 +1003,7 @@ mod tests {
         *STORED_EKEY_ALIAS.write().unwrap() = Some(dummy_stored_static.eventkey_alias.clone());
         let mut timeline = Timeline::default();
         let mut input_datas = vec![];
-        let timestamp_attribe_record_str = r#"{
+        let timestamp_attrib_record_str = r#"{
             "Event": {
                 "System": {
                     "EventID": 4625,
@@ -991,7 +1018,7 @@ mod tests {
             },
             "Event_attributes": {"xmlns": "http://schemas.microsoft.com/win/2004/08/events/event"}
         }"#;
-        let include_timestamp_record = serde_json::from_str(timestamp_attribe_record_str).unwrap();
+        let include_timestamp_record = serde_json::from_str(timestamp_attrib_record_str).unwrap();
         input_datas.push(create_rec_info(
             include_timestamp_record,
             "testpath2".to_string(),
@@ -1074,7 +1101,7 @@ mod tests {
         *STORED_EKEY_ALIAS.write().unwrap() = Some(dummy_stored_static.eventkey_alias.clone());
         let mut timeline = Timeline::default();
         let mut input_datas = vec![];
-        let tcreated_attribe_record_str = r#"{
+        let tcreated_attrib_record_str = r#"{
             "Event": {
                 "System": {
                     "EventID": 4624,
@@ -1093,18 +1120,18 @@ mod tests {
             },
             "Event_attributes": {"xmlns": "http://schemas.microsoft.com/win/2004/08/events/event"}
         }"#;
-        let include_tcreated_attribe_record =
-            serde_json::from_str(tcreated_attribe_record_str).unwrap();
+        let include_tcreated_attrib_record =
+            serde_json::from_str(tcreated_attrib_record_str).unwrap();
         input_datas.clear();
         input_datas.push(create_rec_info(
-            include_tcreated_attribe_record,
+            include_tcreated_attrib_record,
             "testpath2".to_string(),
             &Nested::<String>::new(),
             &false,
             &false,
         ));
 
-        let timestamp_attribe_record_str = r#"{
+        let timestamp_attrib_record_str = r#"{
             "Event": {
                 "System": {
                     "EventID": 4625,
@@ -1119,7 +1146,7 @@ mod tests {
             },
             "Event_attributes": {"xmlns": "http://schemas.microsoft.com/win/2004/08/events/event"}
         }"#;
-        let include_timestamp_record = serde_json::from_str(timestamp_attribe_record_str).unwrap();
+        let include_timestamp_record = serde_json::from_str(timestamp_attrib_record_str).unwrap();
         input_datas.push(create_rec_info(
             include_timestamp_record,
             "testpath2".to_string(),
@@ -1146,7 +1173,7 @@ mod tests {
             "Source IP Address",
         ];
 
-        // Login Successful csv output test
+        // CSV output test for successful logons.
         let expect_success_records = [[
             "1",
             "Sec 4624",
@@ -1173,7 +1200,7 @@ mod tests {
             }
         };
 
-        // Login Failed csv output test
+        // CSV output test for failed logons.
         header[0] = "Failed";
         let expect_failed_records = [[
             "1",

@@ -7,6 +7,8 @@ use hashbrown::{HashMap, HashSet};
 use lazy_static::lazy_static;
 use rust_embed::Embed;
 lazy_static! {
+    // Computer names listed in config/critical_systems.txt. Alerts for these hosts get their
+    // level raised by one step (see LEVEL::convert). Missing file means an empty set.
     static ref CRITICAL_SYSTEM: HashSet<String> = {
         let current = CURRENT_EXE_PATH.to_path_buf();
         let path = current.join("config/critical_systems.txt");
@@ -23,11 +25,15 @@ use strum::EnumIter;
 
 use termcolor::Color;
 
+/// Embedded copy of config/level_color.txt, used as a fallback when the file cannot be read
+/// from disk.
 #[derive(Embed)]
 #[folder = "config"]
 #[include = "level_color.txt"]
 struct LevelColor;
 
+/// Rule severity level. Variants are declared from lowest to highest severity; use index() for
+/// numeric comparison (e.g. minimum-level filtering).
 #[derive(Debug, Clone, PartialEq, Eq, EnumIter, Default, Hash)]
 pub enum LEVEL {
     #[default]
@@ -41,6 +47,8 @@ pub enum LEVEL {
 }
 
 impl LEVEL {
+    /// Parses a full level name (case-insensitive). Abbreviations such as "info" are not
+    /// accepted; any unrecognized string maps to UNDEFINED.
     pub fn from(s: &str) -> Self {
         let s = s.to_lowercase();
         let s = s.as_str();
@@ -78,6 +86,8 @@ impl LEVEL {
         }
     }
 
+    /// Numeric severity rank (higher = more severe), used for sorting detections and for
+    /// minimum-level filtering.
     pub fn index(&self) -> usize {
         match *self {
             LEVEL::UNDEFINED => 0,
@@ -90,6 +100,11 @@ impl LEVEL {
         }
     }
 
+    /// Raises the level by one step when any of the computer names is listed in
+    /// config/critical_systems.txt; otherwise returns the level unchanged. `computer` may
+    /// contain several names joined with " ¦ " (count/correlation results combine the computer
+    /// names of all contributing records).
+    /// INFORMATIONAL stays INFORMATIONAL and EMERGENCY is already the maximum.
     pub fn convert(&self, computer: &str) -> &LEVEL {
         // If the computer is included in CRITICAL_SYSTEM, raise the level.
         let computers = computer.split(" ¦ ");
@@ -116,7 +131,9 @@ impl PartialEq<str> for LEVEL {
     }
 }
 
-/// Reads the level_color.txt file and returns the corresponding text color mapping.
+/// Reads the level_color.txt file and returns the level-to-text-color mapping. Falls back to
+/// the embedded copy when the file cannot be read from disk, and returns an empty map (no
+/// coloring) when the no_color flag is set.
 pub fn create_output_color_map(no_color_flag: bool) -> HashMap<LEVEL, Colors> {
     let path = utils::check_setting_path(Path::new("."), "config/level_color.txt", false)
         .unwrap_or_else(|| {
@@ -147,7 +164,8 @@ pub fn create_output_color_map(no_color_flag: bool) -> HashMap<LEVEL, Colors> {
     let color_map_contents = match read_result {
         Ok(c) => c,
         Err(e) => {
-            // If there is no color information, only the normal white output will appear and it will not affect behavior, so it is treated as a warning.
+            // Missing color information only means output falls back to the default uncolored
+            // text and does not affect behavior, so it is treated as a warning, not an error.
             AlertMessage::warn(&e).ok();
             return color_map;
         }
@@ -210,7 +228,7 @@ mod tests {
     }
 
     #[test]
-    /// To confirm that empty character color mapping data is returned when the no_color flag is given.
+    /// Confirms that an empty color map is returned when the no_color flag is given.
     fn test_set_output_color_no_color_flag() {
         let expect: HashMap<LEVEL, Colors> = HashMap::new();
         check_hashmap_data(create_output_color_map(true), expect);

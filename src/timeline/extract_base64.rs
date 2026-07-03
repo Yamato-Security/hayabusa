@@ -20,9 +20,15 @@ use std::sync::LazyLock;
 use std::{fmt, str};
 use termcolor::{BufferWriter, Color, ColorChoice};
 
+// Matches runs of characters that can appear in a base64 token. \w also allows '_', which is not
+// valid base64, but every candidate token is verified by actually decoding it. Note that the '='
+// padding is not part of the token; see BASE64_PAD below.
 static TOKEN_REGEX: LazyLock<Regex> = LazyLock::new(|| Regex::new(r"[\w+/]+").unwrap());
+// Matches the <Base64String> placeholder followed by leftover '=' padding so that the padding can
+// be folded into the placeholder.
 static BASE64_PAD: LazyLock<Regex> = LazyLock::new(|| Regex::new(r"<Base64String>(=*)").unwrap());
 
+/// Metadata of the event record that a candidate base64 string was extracted from.
 struct EvtxInfo {
     ts: String,
     computer: String,
@@ -49,6 +55,7 @@ impl EvtxInfo {
     }
 }
 
+/// The channel/event ID combinations whose fields are scanned for base64-encoded payloads.
 #[derive(Clone)]
 enum Event {
     Sec4688,
@@ -72,6 +79,9 @@ impl fmt::Display for Event {
     }
 }
 
+/// A successfully decoded base64 token, classified by the encoding of its payload. Every variant
+/// carries the original base64 token; the text variants also carry the decoded string, and Binary
+/// carries the raw bytes together with the inferred file type.
 enum Base64Data {
     Utf8(String, String),
     Utf16Le(String, String),
@@ -82,6 +92,8 @@ enum Base64Data {
 
 impl Base64Data {
     fn new(token: &str, payload: &[u8]) -> Self {
+        // Check UTF-16 before UTF-8: ASCII text encoded as UTF-16 contains NUL bytes that would
+        // still pass the ASCII-oriented UTF-8 check, so testing UTF-8 first would misclassify it.
         if is_utf16_le(payload) {
             let s = utf16_le_to_string(payload).unwrap();
             return Base64Data::Utf16Le(token.to_string(), s);
@@ -110,6 +122,8 @@ impl Base64Data {
         }
     }
 
+    /// Returns the decoded text with control characters removed (so that multi-line payloads stay
+    /// on a single line in the output); empty for binary/unknown payloads.
     fn decoded_str(&self) -> String {
         match self {
             Base64Data::Utf8(_, s) | Base64Data::Utf16Le(_, s) | Base64Data::Utf16Be(_, s) => {
@@ -151,6 +165,9 @@ impl Base64Data {
         }
     }
 
+    /// Returns "Y" if the decoded text itself contains another plausible base64 token (i.e. the
+    /// payload was base64-encoded twice), using the same skip heuristics as
+    /// create_base64_extracted_record().
     fn is_double_encoding(&self) -> String {
         for token in tokenize(self.decoded_str().as_str()) {
             if is_base64(token) {
@@ -192,6 +209,10 @@ fn is_base64(s: &str) -> bool {
     }
 }
 
+// The three checks below classify a decoded payload as text. They are heuristics: payloads
+// shorter than 5 bytes are considered too ambiguous to classify, and only byte sequences that
+// decode to pure ASCII are accepted (so despite its name, is_utf8() rejects non-ASCII UTF-8 text
+// such as Japanese).
 fn is_utf8(bytes: &[u8]) -> bool {
     if bytes.is_empty() {
         return false;
@@ -222,6 +243,9 @@ fn is_utf16_be(bytes: &[u8]) -> bool {
     UTF_16BE.decode_without_bom_handling(bytes).0.is_ascii()
 }
 
+/// Returns the field values (paired with their event type) that commonly carry base64-encoded
+/// payloads: process creation command lines (Security 4688, Sysmon 1), service image paths
+/// (System 7045) and PowerShell script/payload fields (4103, 4104 and classic 400).
 fn extract_payload(data: &Value) -> Vec<(Value, Event)> {
     let ch = data["Event"]["System"]["Channel"].as_str();
     let id = data["Event"]["System"]["EventID"].as_i64();
@@ -264,6 +288,7 @@ fn extract_payload(data: &Value) -> Vec<(Value, Event)> {
         .collect()
 }
 
+/// Splits a field value into candidate base64 tokens.
 fn tokenize(payload_str: &str) -> Vec<&str> {
     TOKEN_REGEX
         .find_iter(payload_str)
@@ -271,6 +296,9 @@ fn tokenize(payload_str: &str) -> Vec<&str> {
         .collect()
 }
 
+// Note: chunks(2) assumes an even byte count; an odd-length slice would panic on chunk[1]. In
+// practice is_utf16_le()/is_utf16_be() reject odd-length data because the trailing lone byte
+// decodes to a non-ASCII replacement character.
 fn utf16_le_to_string(bytes: &[u8]) -> Result<String, FromUtf16Error> {
     let utf16_data: Vec<u16> = bytes
         .chunks(2)
@@ -287,6 +315,9 @@ fn utf16_be_to_string(bytes: &[u8]) -> Result<String, FromUtf16Error> {
     String::from_utf16(&utf16_data)
 }
 
+/// Builds one output row per valid base64 token found in the given field value, containing the
+/// record metadata, the token, its decoded form, the field value with the token replaced by a
+/// <Base64String> placeholder, and the classification columns.
 fn create_base64_extracted_record(
     file: &Path,
     possible_base64: &str,
@@ -299,9 +330,11 @@ fn create_base64_extracted_record(
     for token in tokenize(possible_base64) {
         if is_base64(token) {
             if token.len() < 10 || token.chars().all(|c| c.is_alphabetic()) {
-                // Skip short tokens and all alphabetic tokens
+                // Skip tokens that are too short or purely alphabetic: they are usually ordinary
+                // words that merely happen to decode as base64.
                 continue;
             }
+            // is_base64() already verified that one of the two decoders succeeds.
             let payload = match BASE64_STANDARD_NO_PAD.decode(token) {
                 Ok(payload) => payload,
                 Err(_) => BASE64_STANDARD.decode(token).unwrap(),
@@ -310,10 +343,14 @@ fn create_base64_extracted_record(
             if matches!(b64, Base64Data::Unknown(_)) {
                 continue;
             }
+            // Replace the token with a placeholder in the original field value, then fold any
+            // trailing '=' padding (which TOKEN_REGEX cannot capture) into the placeholder.
             let original = possible_base64
                 .replace(b64.base64_str().as_str(), "<Base64String>")
                 .to_string();
             let no_pad_original = BASE64_PAD.replace_all(original.as_str(), "<Base64String>");
+            // A token directly preceded by '-' is most likely a fragment of a hyphenated string
+            // (e.g. a GUID) rather than standalone base64, so skip it to avoid false positives.
             if no_pad_original.contains("-<Base64String>") {
                 continue;
             }
@@ -349,6 +386,8 @@ fn process_record(data: &Value, file: &Path, opt: &TimeFormatOptions) -> Vec<Vec
     records
 }
 
+/// Called for each batch of loaded event records when the extract-base64 command runs; returns
+/// the base64 rows extracted from the batch.
 pub fn process_evtx_record_infos(
     records: &[EvtxRecordInfo],
     opt: &TimeFormatOptions,
@@ -362,6 +401,9 @@ pub fn process_evtx_record_infos(
     all_records
 }
 
+/// Outputs the extracted rows as CSV when an output path is given, otherwise prints the first
+/// four columns as a table on the terminal. In both cases the decoded string of binary payloads
+/// is masked with "(Binary Data)".
 pub fn output_all(
     all_records: Vec<Vec<String>>,
     out_path: Option<&PathBuf>,
@@ -397,6 +439,7 @@ pub fn output_all(
         ];
         wtr.write_record(csv_header)?;
         for row in all_records.clone().iter_mut() {
+            // row[6] is the Binary column; row[3] (the decoded string) is not printable then.
             let binary = row[6].as_str();
             if binary == "Y" {
                 row[3] = "(Binary Data)".to_string();

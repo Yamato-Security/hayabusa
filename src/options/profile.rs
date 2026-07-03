@@ -18,11 +18,17 @@ use std::io::{BufWriter, Write};
 use std::path::Path;
 use yaml_rust2::{Yaml, YamlEmitter, YamlLoader};
 
+// Embeds all config/*.yaml files into the binary at build time so the standard profile files can
+// still be loaded when the config folder is missing on disk (see read_profile_data()).
 #[derive(Embed)]
 #[folder = "config/"]
 #[include = "*.yaml"]
 struct DefaultProfile;
 
+/// One output column of a timeline profile. Each variant corresponds to a `%Alias%` placeholder
+/// usable in profiles.yaml and identifies which piece of detection data fills the column. The
+/// inner `Cow` carries the column's data: empty when first parsed from profiles.yaml, later
+/// replaced via `convert()` with the value rendered for each detection.
 #[derive(Eq, PartialEq, Hash, Clone, Debug)]
 pub enum Profile {
     Timestamp(Cow<'static, str>),
@@ -58,6 +64,7 @@ pub enum Profile {
 }
 
 impl Profile {
+    /// Returns the inner value regardless of variant.
     pub fn to_value(&self) -> String {
         match &self {
             Timestamp(v) | Computer(v) | Channel(v) | Level(v) | EventID(v) | RecordID(v)
@@ -71,6 +78,8 @@ impl Profile {
         }
     }
 
+    /// Returns a copy of this variant carrying `converted_string` as its value. Used to fill a
+    /// profile column with the value rendered for the record currently being output.
     pub fn convert(&self, converted_string: &CompactString) -> Self {
         match self {
             Timestamp(_) => Timestamp(converted_string.to_owned().into()),
@@ -102,11 +111,14 @@ impl Profile {
             RecoveredRecord(_) => RecoveredRecord(converted_string.to_owned().into()),
             Details(_) => Details(converted_string.to_owned().into()),
             AllFieldInfo(_) => AllFieldInfo(converted_string.to_owned().into()),
+            // Literal is the only variant left: fixed strings are never converted per record.
             p => p.to_owned(),
         }
     }
 }
 
+/// Maps a `%Alias%` placeholder from profiles.yaml to its `Profile` variant. Any string that is
+/// not a known alias becomes a `Literal` and is output verbatim.
 impl From<&str> for Profile {
     fn from(alias: &str) -> Self {
         match alias {
@@ -138,7 +150,8 @@ impl From<&str> for Profile {
     }
 }
 
-// Process to load the profile at the specified path.
+// Loads the profile YAML at the specified path, falling back to the copy embedded in the binary
+// (see DefaultProfile) when the file does not exist on disk.
 fn read_profile_data(profile_path: &str) -> Result<Vec<Yaml>, String> {
     let profile_path_buf = Path::new(profile_path).to_path_buf();
     if let Ok(loaded_profile) = yaml::ParseYaml::read_file(&profile_path_buf) {
@@ -154,7 +167,8 @@ fn read_profile_data(profile_path: &str) -> Result<Vec<Yaml>, String> {
                 .to_str()
                 .unwrap_or_default(),
         );
-        // When loading a normal profile file.
+        // The file was not found on disk, but its file name matches one of the profile files
+        // bundled into the binary, so load the embedded copy instead.
         if let Some(path) = default_profile_name_path {
             match YamlLoader::load_from_str(
                 std::str::from_utf8(path.data.as_ref()).unwrap_or_default(),
@@ -170,7 +184,12 @@ fn read_profile_data(profile_path: &str) -> Result<Vec<Yaml>, String> {
     }
 }
 
-/// Function to load profile information.
+/// Loads the output profile as an ordered list of (column name, field kind) pairs. The profile
+/// named by the --profile option is used if one was given; otherwise the default profile is
+/// loaded. Reserved GeoIP columns are appended when a GeoIP database has been loaded, and a
+/// RecoveredRecord column is appended when record recovery is enabled. Returns None if
+/// `opt_stored_static` is None or the profile cannot be loaded (in the latter case an alert has
+/// already been printed).
 pub fn load_profile(
     default_profile_path: &str,
     profile_path: &str,
@@ -201,13 +220,16 @@ pub fn load_profile(
         }
     };
 
-    // If no results are returned after loading the profile, an Alert is issued, so output None to terminate the program.
+    // If loading the profile yielded no documents, an alert was already printed above, so return
+    // None to make the caller terminate the program.
     if profile_all.is_empty() {
         return None;
     }
     let profile_data = &profile_all[0];
     let mut ret: Vec<(CompactString, Profile)> = vec![];
 
+    // yaml-rust2 hashes preserve insertion order, so the output columns keep the order in which
+    // they are written in the profile file.
     if let Some(profile_name) = profile {
         let target_data = &profile_data[profile_name.as_str()];
         if !target_data.is_badvalue() {
@@ -247,7 +269,8 @@ pub fn load_profile(
                 ));
             });
     }
-    // insert preserved keyword when get-ip option specified.
+    // Append the reserved GeoIP output columns when the GeoIP option was specified (i.e. a GeoIP
+    // database has been loaded).
     if GEOIP_DB_PARSER.read().unwrap().is_some() {
         ret.push((CompactString::from("SrcASN"), SrcASN(Cow::default())));
         ret.push((
@@ -273,7 +296,9 @@ pub fn load_profile(
     Some(ret)
 }
 
-/// Function to set the default profile.
+/// Handles the set-default-profile action: overwrites the default profile file with the contents
+/// of the profile selected by --profile, and records the chosen profile name in
+/// default_profile_name.txt next to it.
 pub fn set_default_profile(
     default_profile_path: &str,
     profile_path: &str,
@@ -355,7 +380,8 @@ pub fn set_default_profile(
     }
 }
 
-/// Get profile name and tag list in yaml file.
+/// Returns one row per profile in the YAML file: the profile name followed by a comma-joined
+/// list of its column placeholders. Backs the list-profiles command.
 pub fn get_profile_list(profile_path: &str) -> Nested<Vec<String>> {
     let ymls = match read_profile_data(
         check_setting_path(&CURRENT_EXE_PATH.to_path_buf(), profile_path, true)
@@ -411,7 +437,8 @@ mod tests {
     }
 
     #[test]
-    /// Process tests sequentially because option settings prevent guaranteed idempotency of values.
+    /// Run these sub-tests sequentially: they set global option state (e.g. GEOIP_DB_PARSER), so
+    /// the results would not be deterministic if the tests ran in parallel.
     fn test_load_profile() {
         test_load_profile_without_profile_option();
         test_load_profile_no_exist_profile_files();

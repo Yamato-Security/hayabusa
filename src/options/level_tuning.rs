@@ -11,6 +11,8 @@ use termcolor::{BufferWriter, ColorChoice};
 pub struct LevelTuning {}
 
 impl LevelTuning {
+    /// Rewrites the `level:` line of every rule file whose `id` appears in the level tuning
+    /// CSV (rows of `id,new_level`), letting users persistently adjust rule severities.
     pub fn run(
         level_tuning_config_path: &str,
         rules_path: &str,
@@ -21,15 +23,20 @@ impl LevelTuning {
             Err(e) => return Result::Err(e.to_string()),
         };
 
-        // Read Tuning files
+        // Read the tuning file into a rule-id -> new-level map.
         let mut tuning_map: HashMap<String, String> = HashMap::new();
         read_result.iter().try_for_each(|line| -> Result<(), String> {
-            // If the first element also does not exist, it is skipped at the read_csv stage, so get(0) will not be None.
+            // Rows without any columns are already dropped at the read_csv stage, so first()
+            // is never None.
             let id = line.first().unwrap();
             if !configs::IDS_REGEX.is_match(id) {
                 return Result::Err(format!("Failed to read level tuning file. {id} is not correct id format, fix it."));
             }
 
+            // The level column accepts "info" as an abbreviation of "informational" and may
+            // carry a trailing inline comment after '#'
+            // (e.g. "high # 'Rule title' - Originally critical"); only the part before '#'
+            // is kept.
             let level = match line.get(1) {
                 Some(_level) => {
                     if _level.starts_with("informational")
@@ -45,16 +52,18 @@ impl LevelTuning {
                             return Result::Err("level tuning file's level must in informational, low, medium, high, critical".to_string())
                         }
                     }
-                // This error occurs when the header does not have two or more columns.
+                // This only happens when the CSV header row has fewer than two columns: the csv
+                // reader drops any row whose column count differs from the header's.
                 _ => return Result::Err("Failed to read level...".to_string())
             };
             tuning_map.insert(id.to_string(), level);
             Ok(())
         })?;
 
-        // Read Rule files
+        // Read the rule files.
         let mut rulefile_loader = ParseYaml::new(stored_static);
-        //noisy rules and exclude rules treats as update target
+        // An empty RuleExclude is passed so that noisy and excluded rules are also treated as
+        // update targets.
         let result_readdir = rulefile_loader.read_dir(
             rules_path,
             "informational",
@@ -66,7 +75,8 @@ impl LevelTuning {
             return Result::Err(format!("{}", e));
         }
 
-        // Convert rule files
+        // Rewrite the level of every loaded rule whose id appears in the tuning map, by plain
+        // string replacement of the "level: <old>" text in the rule file.
         for (path, rule) in rulefile_loader.files {
             if let Some(new_level) = tuning_map.get(rule["id"].as_str().unwrap()) {
                 write_color_buffer(

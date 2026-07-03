@@ -26,6 +26,7 @@ use std::io::BufWriter;
 use termcolor::{BufferWriter, Color, ColorChoice};
 use wildmatch::WildMatch;
 
+// Column headers for the search output (CSV header row / terminal column names).
 const OUTPUT_HEADERS: [&str; 8] = [
     "Timestamp",
     "EventTitle",
@@ -37,9 +38,14 @@ const OUTPUT_HEADERS: [&str; 8] = [
     "EvtxFile",
 ];
 
+/// Runs the `search` command: checks event records against the given keywords or regex and either
+/// collects the hits for sorted output or writes them out on the fly.
 #[derive(Debug, Clone)]
 pub struct EventSearch {
+    // Path of the evtx file that the record currently being processed came from.
     pub filepath: CompactString,
+    // Hit records collected for later sorting when the sort_events option is set. Tuple layout:
+    // (timestamp, hostname, channel, event ID, record ID, all field info, evtx file path).
     pub search_result: HashSet<(
         CompactString,
         CompactString,
@@ -49,6 +55,7 @@ pub struct EventSearch {
         CompactString,
         CompactString,
     )>,
+    // Total number of hits, counted even when records are written on the fly instead of collected.
     pub search_result_cnt: u64,
 }
 
@@ -72,7 +79,8 @@ impl EventSearch {
         }
     }
 
-    /// Function that calls the search process. Does not perform a search if keywords is empty.
+    /// Entry point of the search process. Runs the keyword search when keywords were given and
+    /// the regex search when a regex was given; otherwise does nothing.
     pub fn search_start(&mut self, records: &[EvtxRecordInfo], stored_static: &StoredStatic) {
         let search_option = stored_static.search_option.as_ref().unwrap();
         let default_details_abbr = self.get_default_details_mapping_table(stored_static);
@@ -93,7 +101,9 @@ impl EventSearch {
         }
     }
 
-    /// Function that returns whether information set in the filter exists within the event record.
+    /// Returns whether the event record satisfies every filter condition. For each filtered
+    /// field, all of its wildcard patterns must match the field value, which is resolved through
+    /// the event key aliases first and the raw EventData fields second.
     fn filter_record(
         &mut self,
         record: &EvtxRecordInfo,
@@ -128,6 +138,9 @@ impl EventSearch {
         })
     }
 
+    /// Builds a per-"Provider_EventID" table that maps full field names to their abbreviations
+    /// (e.g. "CommandLine" -> "Cmdline"), parsed from the default_details.txt templates of the
+    /// form "Cmdline: %CommandLine% ¦ Proc: %Image% ...". Used to shorten the AllFieldInfo output.
     fn get_default_details_mapping_table(
         &self,
         stored_static: &StoredStatic,
@@ -149,7 +162,8 @@ impl EventSearch {
         ret
     }
 
-    // check if a record contains the keywords specified in a search command option or not.
+    /// Checks each record against the keywords given in the search command options and collects
+    /// or outputs the matching records.
     fn search_keyword(
         &mut self,
         records: &[EvtxRecordInfo],
@@ -176,12 +190,13 @@ impl EventSearch {
         };
 
         for record in records.iter() {
-            // filtering
+            // Skip records that do not satisfy the filter conditions.
             if !self.filter_record(record, &filter_rule, &stored_static.eventkey_alias) {
                 continue;
             }
 
-            // check if the record contains keywords or not.
+            // Check whether the record contains the keywords (all of them when the and_logic
+            // option is set, otherwise any of them).
             let search_target = if case_insensitive_flag {
                 record.data_string.to_lowercase()
             } else {
@@ -214,13 +229,14 @@ impl EventSearch {
                 continue;
             }
 
-            // collect the hit record or output it on the fly
+            // Collect the hit record, or output it on the fly.
             let (timestamp, hostname, channel, eventid, recordid, allfieldinfo) =
                 extract_search_event_info(
                     record,
                     &stored_static.eventkey_alias,
                     stored_static.output_option.as_ref().unwrap(),
                 );
+            // Look up the field-name abbreviation table for this record's provider and event ID.
             let target_allfieldinfo_abbr_table = allfield_replace_table.get(
                 format!(
                     "{}_{}",
@@ -231,6 +247,9 @@ impl EventSearch {
                 )
                 .as_str(),
             );
+            // Replace the 🛂r/🛂n/🛂t placeholders (substituted for \r, \n and \t by
+            // utils::remove_sp_char) with a 🦅 sentinel, re-join the pieces with single spaces,
+            // and shorten full field names to their abbreviations.
             let allfieldinfo_newline_split = self.replace_all_field_info_abbr(
                 ALLFIELDINFO_SPECIAL_CHARS
                     .replace_all(&allfieldinfo, &["🦅", "🦅", "🦅"])
@@ -242,7 +261,8 @@ impl EventSearch {
             );
 
             if search_option.sort_events {
-                // we cannot sort all the records unless we get all the records; so we just collect the hit record at this code and we'll sort them later.
+                // We cannot sort the results until every record has been processed, so we just
+                // collect the hit records here and sort them later.
                 self.search_result.insert((
                     timestamp,
                     hostname,
@@ -254,8 +274,9 @@ impl EventSearch {
                 ));
                 self.search_result_cnt += 1;
             } else {
-                // sort_events option is false, the hit record is output on the fly.
-                // We don't want to collect the hit record into the memory, if possible, in order to reduce memory usage.
+                // The sort_events option is false, so the hit record is output on the fly.
+                // We avoid collecting hit records in memory whenever possible in order to reduce
+                // memory usage.
                 let hit_record = (
                     timestamp,
                     hostname,
@@ -276,7 +297,8 @@ impl EventSearch {
         }
     }
 
-    // check if a record matches the regex specified in a search command option or not.
+    /// Checks each record against the regex given in the search command options and collects or
+    /// outputs the matching records.
     fn search_regex(
         &mut self,
         records: &[EvtxRecordInfo],
@@ -295,24 +317,25 @@ impl EventSearch {
         let filter_rule = create_filter_rule(&search_option.filter);
         let mut wtr = ResultWriter::new(search_option);
         for record in records.iter() {
-            // we will skip this record if the record is filterd.
+            // Skip this record if it does not satisfy the filter conditions.
             if !self.filter_record(record, &filter_rule, &stored_static.eventkey_alias) {
                 continue;
             }
 
-            // check if the regex matches the record or not.
+            // Check whether the regex matches the record.
             self.filepath = CompactString::from(record.evtx_filepath.as_str());
             if !re.is_match(&record.data_string) {
                 continue;
             }
 
-            // collect the hit record or output it on the fly
+            // Collect the hit record, or output it on the fly.
             let (timestamp, hostname, channel, eventid, recordid, allfieldinfo) =
                 extract_search_event_info(
                     record,
                     &stored_static.eventkey_alias,
                     stored_static.output_option.as_ref().unwrap(),
                 );
+            // Look up the field-name abbreviation table for this record's provider and event ID.
             let target_allfieldinfo_abbr_table = allfield_replace_table.get(
                 format!(
                     "{}_{}",
@@ -323,6 +346,9 @@ impl EventSearch {
                 )
                 .as_str(),
             );
+            // Replace the 🛂r/🛂n/🛂t placeholders (substituted for \r, \n and \t by
+            // utils::remove_sp_char) with a 🦅 sentinel, re-join the pieces with single spaces,
+            // and shorten full field names to their abbreviations.
             let allfieldinfo_newline_split = self.replace_all_field_info_abbr(
                 ALLFIELDINFO_SPECIAL_CHARS
                     .replace_all(&allfieldinfo, &["🦅", "🦅", "🦅"])
@@ -334,7 +360,8 @@ impl EventSearch {
             );
 
             if search_option.sort_events {
-                // we cannot sort all the records unless we get all the records; so we just collect the hit record at this code and we'll sort them later.
+                // We cannot sort the results until every record has been processed, so we just
+                // collect the hit records here and sort them later.
                 self.search_result.insert((
                     timestamp,
                     hostname,
@@ -346,8 +373,9 @@ impl EventSearch {
                 ));
                 self.search_result_cnt += 1;
             } else {
-                // sort_events option is false, the hit record is output on the fly.
-                // We don't want to collect the hit record into the memory, if possible, in order to reduce memory usage.
+                // The sort_events option is false, so the hit record is output on the fly.
+                // We avoid collecting hit records in memory whenever possible in order to reduce
+                // memory usage.
                 let hit_record = (
                     timestamp,
                     hostname,
@@ -368,7 +396,9 @@ impl EventSearch {
         }
     }
 
-    /// Replace all the field info abbreviations in the given value with their full names.
+    /// Replaces full field names in the given AllFieldInfo string with their abbreviations from
+    /// default_details.txt (e.g. "CommandLine" -> "Cmdline"). Replacement is applied in ascending
+    /// order of field-name length.
     fn replace_all_field_info_abbr(
         &self,
         value: &str,
@@ -391,8 +421,12 @@ impl EventSearch {
     }
 }
 
+/// Writes search results either to the terminal (colored) or to a CSV/JSON/JSONL file, depending
+/// on the search options.
 pub struct ResultWriter {
+    // Terminal writer; Some only when no output file was specified.
     pub disp_wtr: Option<BufferWriter>,
+    // File writer; Some only when an output file was specified.
     pub file_wtr: Option<Writer<BufWriter<File>>>,
     written_record_num: u64,
 }
@@ -401,7 +435,7 @@ impl ResultWriter {
     pub fn new(search_option: &SearchOption) -> ResultWriter {
         let mut file_wtr = Option::None;
         if let Some(path) = &search_option.output {
-            // create new file if not exist and append if exist.
+            // Create the file if it does not exist, and append to it if it does.
             match OpenOptions::new().append(true).create(true).open(path) {
                 Ok(file) => {
                     if search_option.json_output || search_option.jsonl_output {
@@ -441,7 +475,9 @@ impl ResultWriter {
         }
     }
 
-    fn write_headder(&mut self, search_option: &SearchOption) {
+    /// Writes the output header: the CSV header row for file output, or the column names for
+    /// terminal output. JSON/JSONL output has no header.
+    fn write_header(&mut self, search_option: &SearchOption) {
         if search_option.output.is_some()
             && !search_option.json_output
             && !search_option.jsonl_output
@@ -463,6 +499,9 @@ impl ResultWriter {
         }
     }
 
+    /// Writes one search hit in the configured format: CSV or JSON/JSONL when writing to a file,
+    /// or a colored " · "-separated line when writing to the terminal. The header is written
+    /// first when is_write_header is true (i.e. for the first hit).
     pub fn write_record(
         &mut self,
         (timestamp, hostname, channel, event_id, record_id, all_field_info, evtx_file): (
@@ -479,7 +518,7 @@ impl ResultWriter {
         is_write_header: bool,
     ) {
         if is_write_header {
-            self.write_headder(search_option);
+            self.write_header(search_option);
         }
         self.written_record_num += 1;
 
@@ -508,6 +547,8 @@ impl ResultWriter {
         };
 
         let fmted_all_field_info = all_field_info.split_whitespace().join(" ");
+        // Depending on the output options, the " ¦ " separator between fields is replaced with a
+        // newline (multiline file output) or a tab.
         let all_field_info = if search_option.output.is_some() && stored_static.multiline_flag {
             fmted_all_field_info.replace(" ¦ ", "\r\n")
         } else if stored_static.tab_separator_flag {
@@ -537,6 +578,8 @@ impl ResultWriter {
         } else if search_option.output.is_some()
             && (search_option.json_output || search_option.jsonl_output)
         {
+            // For JSON/JSONL file output, wrap the fields produced by output_json_str() in curly
+            // braces.
             let file_wtr = self.file_wtr.as_mut().unwrap();
             file_wtr.write_field("{").ok();
             let mut detail_infos: HashMap<CompactString, Vec<CompactString>> = HashMap::default();
@@ -596,7 +639,8 @@ impl ResultWriter {
             for (record_field_idx, record_field_data) in record_data.iter().enumerate() {
                 let newline_flag = record_field_idx == record_data.len() - 1;
                 if record_field_idx == 6 {
-                    // Output the AllFieldInfo column.
+                    // Output the AllFieldInfo column: print each "name: value" pair in two
+                    // colors, with " ¦ " between pairs.
                     let all_field_sep_info = all_field_info.split('¦').collect::<Vec<&str>>();
                     for (field_idx, fields) in all_field_sep_info.iter().enumerate() {
                         let mut separated_fields_data =
@@ -661,7 +705,9 @@ impl ResultWriter {
     }
 }
 
-/// Function that creates filter conditions from filters.
+/// Parses the filter conditions ("FieldName:value" strings with wildcard support) into a map from
+/// field name to wildcard patterns. Surrounding double quotes are stripped, and conditions
+/// without a colon are ignored.
 fn create_filter_rule(filters: &[String]) -> HashMap<String, Vec<WildMatch>> {
     filters
         .iter()
@@ -669,10 +715,10 @@ fn create_filter_rule(filters: &[String]) -> HashMap<String, Vec<WildMatch>> {
             let prefix_trim_condition = filter_condition
                 .strip_prefix('"')
                 .unwrap_or(filter_condition);
-            let trimed_condition = prefix_trim_condition
+            let trimmed_condition = prefix_trim_condition
                 .strip_suffix('"')
                 .unwrap_or(prefix_trim_condition);
-            let condition = trimed_condition.split(':').map(|x| x.trim()).collect_vec();
+            let condition = trimmed_condition.split(':').map(|x| x.trim()).collect_vec();
             if condition.len() != 1 {
                 let acc_val = acc.entry(condition[0].to_string()).or_insert(vec![]);
                 condition[1..]
@@ -683,7 +729,8 @@ fn create_filter_rule(filters: &[String]) -> HashMap<String, Vec<WildMatch>> {
         })
 }
 
-/// Function that extracts information to output from event records matching the search conditions.
+/// Extracts the output fields (timestamp, hostname, channel, event ID, record ID, AllFieldInfo)
+/// from an event record that matched the search conditions.
 fn extract_search_event_info(
     record: &EvtxRecordInfo,
     eventkey_alias: &EventKeyAliasConfig,
@@ -696,6 +743,7 @@ fn extract_search_event_info(
     CompactString,
     CompactString,
 ) {
+    // Fall back to the UNIX epoch when the record's timestamp cannot be parsed.
     let default_time = Utc.with_ymd_and_hms(1970, 1, 1, 0, 0, 0).unwrap();
     let timestamp_datetime = message::get_event_time(&record.record, false).unwrap_or(default_time);
 
@@ -753,7 +801,9 @@ fn extract_search_event_info(
     )
 }
 
-/// Function that outputs search results to standard output or a CSV file.
+/// Outputs the collected search results to standard output or a file, followed by the total
+/// number of findings. When the sort_events option is false, the hits were already written on
+/// the fly, so only the summary is printed here.
 pub fn search_result_dsp_msg(
     event_search: &EventSearch,
     search_option: &SearchOption,
@@ -761,6 +811,7 @@ pub fn search_result_dsp_msg(
 ) {
     let mut wtr = ResultWriter::new(search_option);
     if search_option.sort_events {
+        // Sort hits by timestamp, then record ID (string comparison), then evtx file path.
         let hit_records = event_search
             .search_result
             .clone()
@@ -792,7 +843,7 @@ pub fn search_result_dsp_msg(
         }
     }
 
-    // if sort_events option is false, search results should have been already output.
+    // If the sort_events option is false, the search results have already been output on the fly.
     if event_search.search_result_cnt == 0 {
         write_color_buffer(
             &BufferWriter::stdout(ColorChoice::Always),

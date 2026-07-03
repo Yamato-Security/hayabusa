@@ -13,6 +13,10 @@ Added unique and total alert count to MITRE ATT&CK tactics found. (#1753) (@fuku
 - Fixed a typo (`infomational` → `informational`) in the pivot keyword list level exclusion that prevented `informational`-level records from being excluded, so their field values polluted the pivot keyword lists. (#1804) (@YamatoSecurity)
 - Fixed a Markdown-injection issue in the HTML report: user-supplied values (e.g. computer names) were HTML-escaped but not Markdown-escaped, so a value like `[x](javascript:alert(1))` could render as a clickable `javascript:` link. Markdown metacharacters in user values are now escaped as well. (#1806) (@YamatoSecurity)
 
+**Other:**
+
+- Translated all remaining Japanese code comments to English, cleaned up and added many code comments for readability, and fixed misspelled internal identifiers. Comments and identifiers only; no behavior changes. (#1808) (@Shirofune-Security)
+
 ## 3.9.0 [2026/04/29]
 
 **Enchancements:**

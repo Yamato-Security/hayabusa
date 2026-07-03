@@ -27,9 +27,8 @@ use std::io::{self, BufWriter, Write};
 use std::path::Path;
 use std::sync::Mutex;
 use termcolor::{BufferWriter, Color, ColorChoice};
-/*
- * This struct express log record
-*/
+/// Represents a single detection result: metadata of the matched rule, key values taken from the
+/// matched event record (or aggregation result), and the output profile fields to render.
 #[derive(Debug, Clone, PartialEq, Eq, Default)]
 pub struct DetectInfo {
     pub detected_time: DateTime<Utc>,
@@ -41,24 +40,38 @@ pub struct DetectInfo {
     pub computername: CompactString,
     pub rec_id: CompactString,
     pub eventid: CompactString,
+    // The rendered Details text. create_message() moves it into ext_field and clears it afterwards
+    // to save memory.
     pub detail: CompactString,
+    // Output profile columns as (column name, value) pairs.
     pub ext_field: Vec<(CompactString, Profile)>,
+    // Set only when the detection comes from an aggregation (count/correlation) rule.
     pub agg_result: Option<AggResult>,
+    // Per-field values keyed by "#Details" / "#AllFieldInfo" / "#ExtraFieldInfo", used by the JSON
+    // output writers to expand those profile fields themselves.
     pub details_convert_map: HashMap<CompactString, Vec<CompactString>>,
 }
 
+/// Namespace for console error/warning output and for writing the error log file.
 pub struct AlertMessage {}
 
+// Embedded fallback copy of config/mitre_tactics.txt, used when the file cannot be read from disk.
 #[derive(Embed)]
 #[folder = "config"]
 #[include = "mitre_tactics.txt"]
 struct Mitretactics;
 
 lazy_static! {
+    // Matches a %EventKeyAlias% placeholder in details/profile templates, e.g. %CommandLine%.
     #[derive(Debug,PartialEq, Eq, Ord, PartialOrd)]
     pub static ref ALIASREGEX: Regex = Regex::new(r"%[a-zA-Z0-9-_\[\]]+%").unwrap();
+    // Matches the 1-based array index suffix in aliases such as %Data[1]%.
     pub static ref SUFFIXREGEX: Regex = Regex::new(r"\[([0-9]+)\]").unwrap();
+    // Errors collected while a run is in progress; flushed to ./logs/errorlog-<timestamp>.log by
+    // AlertMessage::create_error_log().
     pub static ref ERROR_LOG_STACK: Mutex<Nested<String>> = Mutex::new(Nested::<String>::new());
+    // Maps a MITRE tag (e.g. "attack.impact") to its display name (e.g. "Impact"), loaded from
+    // config/mitre_tactics.txt.
     pub static ref TAGS_CONFIG: HashMap<CompactString, CompactString> = create_output_filter_config(
         utils::check_setting_path(&CURRENT_EXE_PATH.to_path_buf(), "config/mitre_tactics.txt", true)
             .unwrap().to_str()
@@ -66,12 +79,18 @@ lazy_static! {
         true,
         false
     );
+    // Per-computer MITRE ATT&CK tactic counts as (tactic, unique detection count, total detection
+    // count) tuples, collected for the HTML report.
     pub static ref COMPUTER_MITRE_ATTCK_MAP : DashMap<CompactString, Vec<(CompactString, i64, i64)>> = DashMap::new();
+    // "computer|tactic|rulepath" keys that have already been seen, so each rule increments the
+    // unique count in COMPUTER_MITRE_ATTCK_MAP only once per computer and tactic.
     pub static ref COMPUTER_MITRE_ATTCK_UNIQUE_KEYS : DashSet<CompactString> = DashSet::new();
 }
 
-/// Function to create a HashMap of full names for tags described by file paths and the strings to be replaced during display.
-/// ex. attack.impact,Impact
+/// Creates a HashMap from a CSV config file (e.g. mitre_tactics.txt or channel_abbreviations.txt)
+/// that maps a full name to the abbreviated string shown in its place in the output.
+/// e.g. the line "attack.impact,Impact" maps "attack.impact" to "Impact".
+/// Returns an empty map when `disable_abbreviation` is set, so that no abbreviation takes place.
 pub fn create_output_filter_config(
     path: &str,
     is_lower_case: bool,
@@ -84,6 +103,8 @@ pub fn create_output_filter_config(
     let read_result = match utils::read_csv(path) {
         Ok(c) => c,
         Err(e) => {
+            // Fall back to the embedded copy of mitre_tactics.txt when the file on disk cannot be
+            // read.
             if path.contains("mitre_tactics.txt") {
                 let mitre_tactics = Mitretactics::get("mitre_tactics.txt").unwrap();
                 utils::parse_csv(
@@ -109,6 +130,13 @@ pub fn create_output_filter_config(
     ret
 }
 
+/// Builds the final per-detection output by filling in each profile field of
+/// `detect_info.ext_field`: the Details template (`output`) and the other %alias% placeholders are
+/// replaced with values from the event record, AllFieldInfo is generated from all of the record's
+/// fields, and ExtraFieldInfo receives the record fields whose values do not already appear in
+/// Details. For the JSON timeline, per-field values are additionally stored in
+/// `details_convert_map` ("#Details" / "#AllFieldInfo" / "#ExtraFieldInfo") because the JSON
+/// writers expand those fields themselves.
 pub fn create_message(
     event_record: &Value,
     output: CompactString,
@@ -124,7 +152,8 @@ pub fn create_message(
     let mut record_details_info_map = HashMap::new();
     let mut sp_removed_details_in_record = vec![];
     if !is_agg {
-        // At this stage, get the map containing the content with aliases replaced in details and various key-value combinations.
+        // At this stage, obtain the details text with its %alias% placeholders replaced by record
+        // values, along with the individual key/value pairs that make up the details.
         let (removed_sp_parsed_detail, mut details_in_record) = parse_message(
             event_record,
             &output,
@@ -139,8 +168,9 @@ pub fn create_message(
         if is_json_timeline {
             record_details_info_map.insert("#Details".into(), sp_removed_details_in_record.clone());
         }
-        // retain processing to exclude special characters.
-        // To avoid excluding newline characters within Details, convert them to special characters including emoji.
+        // remove_sp_char() strips special (control) characters via retain(). So that the newline
+        // characters inside Details survive this, they are first converted to special placeholder
+        // sequences that include an emoji (e.g. "🛂n").
         let parsed_detail = remove_sp_char(removed_sp_parsed_detail);
         detect_info.detail = if parsed_detail.is_empty() {
             CompactString::from("-")
@@ -166,7 +196,8 @@ pub fn create_message(
                     replaced_profiles
                         .push((key.to_owned(), Details(detect_info.detail.clone().into())));
 
-                    // Empty the Details content to save memory.
+                    // Clear the Details content to save memory; the value now lives in
+                    // replaced_profiles.
                     detect_info.detail = CompactString::default();
                 }
             }
@@ -217,10 +248,14 @@ pub fn create_message(
                     continue;
                 }
                 let profile_all_field_info_prof = record_details_info_map.get("#AllFieldInfo");
+                // Collect the values already shown in Details so that ExtraFieldInfo only reports
+                // the record fields whose values are not part of Details.
                 let details_splits: HashSet<&str> = {
                     let details = sp_removed_details_in_record.iter().map(|x| {
                         let v = x.split_once(": ").unwrap_or_default().1;
-                        // Remove the trailing comma from the hash set used for matching, because the match determination in ExtraFieldInfo differs depending on whether a trailing comma is present.
+                        // Strip any trailing comma from the values put into the matching hash set;
+                        // otherwise the ExtraFieldInfo match result would differ depending on
+                        // whether or not a value carries a trailing comma.
                         v.strip_suffix(',').unwrap_or(v)
                     });
                     HashSet::from_iter(details)
@@ -286,7 +321,11 @@ pub fn create_message(
     detect_info
 }
 
-/// Function to replace sections enclosed in % in the message by referencing record information as aliases.
+/// Treats each %...% section in `output` as an alias and replaces it with the corresponding value
+/// looked up in the event record (via eventkey_alias.txt, falling back to Event.EventData.<name>).
+/// Returns the replaced message together with the "key: value" pairs that make up the details.
+/// For the JSON timeline the message itself is returned with its placeholders intact, because the
+/// afterfact output functions perform the replacement in that case.
 pub fn parse_message(
     event_record: &Value,
     output: &CompactString,
@@ -308,6 +347,8 @@ pub fn parse_message(
         let array_str = if let Some(_array_str) = eventkey_alias.get_event_key(target_str) {
             _array_str.to_string()
         } else {
+            // No alias definition exists, so fall back to looking the field up directly under
+            // Event.EventData.
             format!("Event.EventData.{target_str}")
         };
 
@@ -319,6 +360,9 @@ pub fn parse_message(
                 field = s;
             }
         }
+        // An alias like %Data[2]% selects a single element of the EventData "Data" array; the
+        // bracketed index is 1-based. A value below 1 skips the element selection, and since the
+        // bracketed name itself does not resolve to a record field, such an alias yields "n/a".
         let suffix_match = SUFFIXREGEX.captures(target_str);
         let suffix: i64 = match suffix_match {
             Some(cap) => cap.get(1).map_or(-1, |a| a.as_str().parse().unwrap_or(-1)),
@@ -357,6 +401,7 @@ pub fn parse_message(
                 }
             }
         } else {
+            // The alias could not be resolved to a value in this record.
             hash_map.push((
                 CompactString::from(full_target_str),
                 ["n/a".into()].to_vec(),
@@ -365,7 +410,8 @@ pub fn parse_message(
     }
     let mut details_key_and_value: Vec<CompactString> = vec![];
     for (k, v) in hash_map.iter() {
-        // For JSON output, the alias replacement processing is handled by the afterfact output functions, so it is not done here.
+        // For JSON output, the alias replacement processing is handled by the afterfact output
+        // functions, so it is not done here.
         if !json_timeline_flag {
             return_message = CompactString::new(return_message.replace(k.as_str(), v[0].as_str()));
         }
@@ -387,6 +433,8 @@ pub fn parse_message(
     (return_message, details_key_and_value)
 }
 
+/// Returns the record's creation time: Event.System.@timestamp for JSON input, or the SystemTime
+/// attribute of Event.System.TimeCreated for evtx input.
 pub fn get_event_time(event_record: &Value, json_input_flag: bool) -> Option<DateTime<Utc>> {
     let system_time = if json_input_flag {
         &event_record["Event"]["System"]["@timestamp"]
@@ -397,7 +445,9 @@ pub fn get_event_time(event_record: &Value, json_input_flag: bool) -> Option<Dat
 }
 
 impl AlertMessage {
-    /// Function that confirms the target directory exists, adds the initial boilerplate, and returns a BufWriter for the file.
+    /// Writes all errors accumulated in ERROR_LOG_STACK to ./logs/errorlog-<timestamp>.log
+    /// (creating the logs directory if needed and recording the command line that was run first),
+    /// then prints a red notice pointing to that file. Does nothing when --quiet-errors is set.
     pub fn create_error_log(quiet_errors_flag: bool, no_color: bool) {
         if quiet_errors_flag {
             return;
@@ -439,7 +489,7 @@ impl AlertMessage {
         write_color_buffer(&BufferWriter::stdout(ColorChoice::Always), None, "", false).ok();
     }
 
-    /// Function to display an ERROR message.
+    /// Function to display an [ERROR] message on stderr.
     pub fn alert(contents: &str) -> io::Result<()> {
         write_color_buffer(
             &BufferWriter::stderr(ColorChoice::Always),
@@ -449,7 +499,7 @@ impl AlertMessage {
         )
     }
 
-    /// Function to display a WARN message.
+    /// Function to display a [WARN] message on stderr.
     pub fn warn(contents: &str) -> io::Result<()> {
         write_color_buffer(
             &BufferWriter::stderr(ColorChoice::Always),
@@ -486,7 +536,8 @@ mod tests {
     }
 
     #[test]
-    /// Function to verify that the message is parsed using information from the target record for keys specified in output (already set in eventkey_alias.txt).
+    /// Verifies that %alias% keys in output (defined in eventkey_alias.txt) are replaced with the
+    /// corresponding values from the target record.
     fn test_parse_message() {
         let json_str = r#"
         {
@@ -529,6 +580,8 @@ mod tests {
     }
 
     #[test]
+    /// Verifies that a key with no eventkey_alias.txt entry is automatically looked up directly
+    /// under Event.EventData.
     fn test_parse_message_auto_search() {
         let json_str = r#"
         {
@@ -565,7 +618,8 @@ mod tests {
     }
 
     #[test]
-    /// Output test for when the key specified in output is not set in eventkey_alias.txt.
+    /// Output test for when the key specified in output is neither set in eventkey_alias.txt nor
+    /// present in the record: the value becomes "n/a".
     fn test_parse_message_not_exist_key_in_output() {
         let json_str = r#"
         {
@@ -606,7 +660,8 @@ mod tests {
         );
     }
     #[test]
-    /// output test when no exist info in target record output and described key-value data in eventkey_alias.txt
+    /// Output test for when the key specified in output is defined in eventkey_alias.txt but the
+    /// target record contains no corresponding value: the value becomes "n/a".
     fn test_parse_message_not_exist_value_in_record() {
         let json_str = r#"
         {
@@ -647,7 +702,8 @@ mod tests {
         );
     }
     #[test]
-    /// output test when no exist info in target record output and described key-value data in eventkey_alias.txt
+    /// Output test for an alias that refers to an array field (Data) without an index suffix: the
+    /// whole array is output as-is in its JSON form.
     fn test_parse_message_multiple_no_suffix_in_record() {
         let json_str = r#"
         {
@@ -693,7 +749,8 @@ mod tests {
         );
     }
     #[test]
-    /// output test when no exist info in target record output and described key-value data in eventkey_alias.txt
+    /// Output test for an alias with an index suffix (%Data[2]%): the second element of the Data
+    /// array is selected, since the suffix is 1-based.
     fn test_parse_message_multiple_with_suffix_in_record() {
         let json_str = r#"
         {
@@ -739,7 +796,8 @@ mod tests {
         );
     }
     #[test]
-    /// output test when no exist info in target record output and described key-value data in eventkey_alias.txt
+    /// Output test for an alias with an invalid index suffix (%Data[0]%): index suffixes are
+    /// 1-based, so no array element is selected and the value becomes "n/a".
     fn test_parse_message_multiple_no_exist_in_record() {
         let json_str = r#"
         {
@@ -785,7 +843,7 @@ mod tests {
         );
     }
     #[test]
-    /// test of loading output filter config by mitre_tactics.txt
+    /// Loading test for the output filter config in mitre_tactics.txt.
     fn test_load_mitre_tactics_log() {
         let actual =
             create_output_filter_config("test_files/config/mitre_tactics.txt", true, false);
@@ -797,8 +855,8 @@ mod tests {
     }
 
     #[test]
-    /// loading test to channel_abbrevations.txt
-    fn test_load_abbrevations() {
+    /// Loading test for channel_abbreviations.txt.
+    fn test_load_abbreviations() {
         let actual =
             create_output_filter_config("test_files/config/channel_abbreviations.txt", true, false);
         let actual2 =
@@ -812,7 +870,7 @@ mod tests {
     }
 
     #[test]
-    fn _get_default_defails() {
+    fn _get_default_details() {
         let expected: HashMap<CompactString, CompactString> = HashMap::from([
             ("Microsoft-Windows-PowerShell_4104".into(),"%ScriptBlockText%".into()),("Microsoft-Windows-Security-Auditing_4624".into(), "User: %TargetUserName% | Comp: %WorkstationName% | IP Addr: %IpAddress% | LID: %TargetLogonId% | Process: %ProcessName%".into()),
             ("Microsoft-Windows-Sysmon_1".into(), "Cmd: %CommandLine% | Process: %Image% | User: %User% | Parent Cmd: %ParentCommandLine% | LID: %LogonId% | PID: %ProcessId% | PGUID: %ProcessGuid%".into()),
@@ -831,7 +889,8 @@ mod tests {
         _check_hashmap_element(&expected, actual);
     }
 
-    /// check two HashMap element length and value
+    /// Asserts that both HashMaps have the same length and that every expected entry is present in
+    /// `actual` with the same value.
     fn _check_hashmap_element(
         expected: &HashMap<CompactString, CompactString>,
         actual: HashMap<CompactString, CompactString>,

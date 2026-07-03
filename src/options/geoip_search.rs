@@ -9,8 +9,13 @@ use std::sync::Mutex;
 use std::{net::IpAddr, str::FromStr};
 
 lazy_static! {
+    // Cache of IP address -> formatted geo data ("ASN🦅Country🦅City"), so each address is only
+    // looked up in the MaxMind databases once.
     pub static ref IP_MAP: Mutex<HashMap<IpAddr, CompactString>> = Mutex::new(HashMap::new());
 }
+
+/// Wraps the three MaxMind GeoLite2 database readers (ASN, Country, City) used to enrich IP
+/// addresses found in event records when the GeoIP option is enabled.
 pub struct GeoIPSearch {
     pub asn_reader: Reader<Vec<u8>>,
     pub country_reader: Reader<Vec<u8>>,
@@ -18,6 +23,8 @@ pub struct GeoIPSearch {
 }
 
 impl GeoIPSearch {
+    /// Opens the three .mmdb databases. `asn_country_city_filename` must list the ASN, Country
+    /// and City database file names in that order.
     pub fn new(path: &Path, asn_country_city_filename: Vec<&str>) -> GeoIPSearch {
         GeoIPSearch {
             asn_reader: maxminddb::Reader::open_readfile(path.join(asn_country_city_filename[0]))
@@ -31,7 +38,9 @@ impl GeoIPSearch {
         }
     }
 
-    /// check existence files in specified path by GeoIP option.
+    /// Checks that all .mmdb files required by the GeoIP option exist under the given
+    /// directory. Returns Ok(None) when the option was not specified, and an error listing
+    /// every missing file otherwise.
     pub fn check_exist_geo_ip_files(
         geo_ip_dir_path: &Option<PathBuf>,
         check_files: Vec<&str>,
@@ -56,7 +65,10 @@ impl GeoIPSearch {
         }
     }
 
-    /// check target_ip in private IP range.
+    /// Checks whether target_ip falls within one of the CIDR ranges below, which are excluded
+    /// from GeoIP lookup and reported as "Private". Note that the IPv6 list includes 2000::/3
+    /// (global unicast), so effectively all IPv6 addresses except loopback are treated as
+    /// private.
     fn check_in_private_ip_range(&self, target_ip: &IpAddr) -> bool {
         let private_cidr = if target_ip.is_ipv4() {
             vec![
@@ -82,11 +94,16 @@ impl GeoIPSearch {
         false
     }
 
-    /// convert IP address string to geo data
+    /// Resolves an IP address string to geo data in the form "ASN🦅Country🦅City" (the caller
+    /// splits on '🦅' to fill the SrcASN/SrcCountry/SrcCity etc. profile fields). Local and
+    /// private addresses get placeholder values without a database lookup.
     pub fn convert_ip_to_geo(&self, target_ip: &str) -> Result<String, MaxMindDbError> {
+        // Some events (e.g. RDP logons) record the literal string "LOCAL" instead of an IP
+        // address; the first literal checked below is the Japanese-localized equivalent.
         if target_ip == "ローカル" || target_ip == "LOCAL" {
             return Ok("Local🦅-🦅-".to_string());
         }
+        // Strip the IPv4-mapped IPv6 prefix so the address is handled as plain IPv4.
         let target = if target_ip.starts_with("::ffff:") {
             target_ip.replace("::ffff:", "")
         } else {
@@ -108,7 +125,8 @@ impl GeoIPSearch {
             return Ok("Private🦅-🦅-".to_string());
         }
 
-        // If the IP address is the same, the result obtained is the same, so the lookup process is omitted by obtaining the result of a hit from the cache.
+        // The same IP address always resolves to the same geo data, so return the cached result
+        // when available and skip the database lookups.
         if let Some(cached_data) = IP_MAP.lock().unwrap().get(&addr) {
             return Ok(cached_data.to_string());
         }
@@ -229,9 +247,10 @@ mod tests {
         let test_path = Path::new("test_files/mmdb").to_path_buf();
 
         // Test files from https://github.com/maxmind/MaxMind-DB/tree/a8ae5b4ac0aa730e2783f708cdaa208aca20e9ec/test-data
-        // GeoLite2-ASN.mmdb -> GeoLite2.ASN-Test.mmdb
-        // GeoLite2-Country.mmdb -> GeoLite2.Country-Test.mmdb
-        // GeoLite2-City.mmdb -> GeoLite2.City-Test.mmdb
+        // The upstream files were renamed locally as follows:
+        //   GeoLite2-ASN-Test.mmdb     -> GeoLite2-ASN.mmdb
+        //   GeoLite2-Country-Test.mmdb -> GeoLite2-Country.mmdb
+        //   GeoLite2-City-Test.mmdb    -> GeoLite2-City.mmdb
         let target_files = vec![
             "GeoLite2-ASN.mmdb",
             "GeoLite2-Country.mmdb",

@@ -1,6 +1,12 @@
 use hashbrown::HashMap;
 use serde_json::Value;
 
+/// Extracts extra fields from classic PowerShell events (channel "Windows PowerShell", event IDs
+/// 400/403/600/800). These events pack most of their useful information into one element of the
+/// EventData "Data" array as "Key=Value" lines, which rules cannot reference as fields. This
+/// parses that element and inserts each pair as a regular field of the record. Event ID 800
+/// stores the pairs in the second Data element (array index 1); the other event IDs store them
+/// in the third element (array index 2).
 pub fn extract_fields(
     channel: Option<String>,
     event_id: Option<String>,
@@ -17,6 +23,11 @@ pub fn extract_fields(
     }
 }
 
+/// Recursively searches `data` for an array node (the EventData "Data" array), parses its
+/// `data_index` element as "Key=Value" lines, and inserts the parsed pairs into the object that
+/// directly contains the array (i.e. as siblings of "Data" inside EventData), also recording the
+/// string values in `key_2_values`. The Some return value is only used internally to hand the
+/// parsed fields up one level to the containing object; the outermost call always returns None.
 fn extract_powershell_classic_fields(
     data: &mut Value,
     data_index: usize,
@@ -31,6 +42,8 @@ fn extract_powershell_classic_fields(
                     break;
                 }
             }
+            // A direct child array yielded fields: merge them into this object so they sit
+            // alongside the original "Data" array.
             if let Some(Value::Object(fields)) = extracted_fields {
                 for (key, val) in fields {
                     map.insert(key.clone(), val.clone());
@@ -44,6 +57,8 @@ fn extract_powershell_classic_fields(
             if let Some(val) = vec.get(data_index)
                 && let Some(powershell_data_str) = val.as_str()
             {
+                // Each "Key=Value" pair sits on its own line separated by "\n\t"; trailing
+                // CR/CRLF is trimmed and lines without '=' are ignored.
                 let fields_data: std::collections::HashMap<&str, &str> = powershell_data_str
                     .trim()
                     .split("\n\t")

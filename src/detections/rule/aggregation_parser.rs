@@ -3,7 +3,8 @@ use regex::Regex;
 
 lazy_static! {
     // Define the list of regular expressions used for lexical analysis here.
-    // This is based on the tokendefs of SigmaConditionTokenizer in toos/sigma/parser/condition.py in the Sigma GitHub repository.
+    // This is based on the tokendefs of SigmaConditionTokenizer in tools/sigma/parser/condition.py
+    // in the Sigma GitHub repository.
     pub static ref AGGREGATION_REGEXMAP: Vec<Regex> = vec![
         Regex::new(r"^count\( *\w* *\)").unwrap(), // count expression
         Regex::new(r"^ ").unwrap(),
@@ -15,40 +16,45 @@ lazy_static! {
         Regex::new(r"^>").unwrap(),
         Regex::new(r"^(\s*\w+\s*,)+\s*\w+|^\w+").unwrap(),
     ];
+    // Matches the aggregation part of a condition: everything from the pipe character to the end.
     pub static ref RE_PIPE: Regex = Regex::new(r"\|.*").unwrap();
 }
 
+/// Parsed form of an aggregation condition such as "count(SubjectUserName) by Computer >= 10".
 #[derive(Debug)]
 pub struct AggregationParseInfo {
-    pub _field_name: Option<String>, // Characters enclosed in parentheses of count.
-    pub _by_field_name: Option<String>, // String specified after count() by.
-    pub _cmp_op: AggregationConditionToken, // (Required) What was specified, such as < or >.
-    pub _cmp_num: i64,               // (Required) The number after < or > etc.
+    pub _field_name: Option<String>, // Field name inside the parentheses of count(); None for a plain count().
+    pub _by_field_name: Option<String>, // Field name(s) after the "by" keyword; comma-separated when multiple.
+    pub _cmp_op: AggregationConditionToken, // (Required) The comparison operator, e.g. < or >.
+    pub _cmp_num: i64,                  // (Required) The number to compare the count against.
 }
 
+/// A lexical token of an aggregation condition.
 #[derive(Debug)]
 pub enum AggregationConditionToken {
-    Count(String),   // count
-    Space,           // Whitespace
-    BY,              // by
-    EQ,              // Equal to ..
-    LE,              // Less than or equal to ..
-    LT,              // Less than ..
-    GE,              // Greater than or equal to ..
-    GT,              // Greater than .
-    Keyword(String), // Field name for BY
+    Count(String), // count(...); the String is the field name in the parentheses (may be empty)
+    Space,         // Whitespace
+    BY,            // by
+    EQ,            // Equal to (==)
+    LE,            // Less than or equal to (<=)
+    LT,            // Less than (<)
+    GE,            // Greater than or equal to (>=)
+    GT,            // Greater than (>)
+    Keyword(String), // Bare word: the field name(s) after "by" or the number after a comparison operator
 }
 
 /// Parses the AggregationCondition as defined in SIGMA rules.
 /// AggregationCondition refers to the part after the pipe in the expression specified in condition.
 #[derive(Debug)]
-pub struct AggegationConditionCompiler {}
+pub struct AggregationConditionCompiler {}
 
-impl AggegationConditionCompiler {
+impl AggregationConditionCompiler {
     pub fn new() -> Self {
-        AggegationConditionCompiler {}
+        AggregationConditionCompiler {}
     }
 
+    /// Compiles the aggregation part (everything after the pipe) of a condition string.
+    /// Returns Ok(None) when the condition contains no pipe, i.e. has no aggregation condition.
     pub fn compile(&self, condition_str: &str) -> Result<Option<AggregationParseInfo>, String> {
         let result = self.compile_body(condition_str);
         if let Result::Err(msg) = result {
@@ -96,7 +102,8 @@ impl AggegationConditionCompiler {
                 .iter()
                 .find_map(|regex| regex.captures(cur_condition_str));
             if captured.is_none() {
-                // Parsing is done under the policy that failing to match a token is not possible.
+                // The token definitions are meant to cover every valid input, so any character
+                // sequence that matches no token is treated as an error.
                 return Result::Err("An unusable character was found.".to_string());
             }
 
@@ -147,13 +154,15 @@ impl AggegationConditionCompiler {
                 count_field_name = Option::Some(field_name);
             }
         } else {
-            // Various patterns exist which makes this complex, but it should be noted that only the "count" keyword can be used.
+            // The Sigma spec defines other aggregation functions besides count, but supporting
+            // the many possible patterns would get complex, so only the count keyword is
+            // accepted here.
             return Result::Err("The aggregation condition can only use count.".to_string());
         }
 
         let token = token_ite.next();
         if token.is_none() {
-            // Missing logical operator is invalid.
+            // Missing comparison operator is invalid.
             return Result::Err(
                 "The count keyword needs a compare operator and number like '> 3'".to_string(),
             );
@@ -185,7 +194,7 @@ impl AggegationConditionCompiler {
 
         // Parse comparison operator and number.
         if token.is_none() {
-            // Missing logical operator is invalid.
+            // Missing comparison operator is invalid.
             return Result::Err(
                 "The count keyword needs a compare operator and number like '> 3'".to_string(),
             );
@@ -198,6 +207,8 @@ impl AggegationConditionCompiler {
             );
         }
 
+        // Space serves as a dummy token here: if the input ends right after the comparison
+        // operator, the if-let below falls through to the "needs a number" error.
         let token = token_ite.next().unwrap_or(AggregationConditionToken::Space);
         let cmp_number = if let AggregationConditionToken::Keyword(number) = token {
             let number: Result<i64, _> = number.parse();
@@ -225,7 +236,7 @@ impl AggegationConditionCompiler {
         Result::Ok(Option::Some(info))
     }
 
-    /// Converts a string to a ConditionToken.
+    /// Converts a matched token string into an AggregationConditionToken.
     fn to_enum(&self, token: &str) -> AggregationConditionToken {
         if token.starts_with("count(") {
             let count_field = token
@@ -256,13 +267,13 @@ impl AggegationConditionCompiler {
 #[cfg(test)]
 mod tests {
     use super::super::aggregation_parser::{
-        AggegationConditionCompiler, AggregationConditionToken,
+        AggregationConditionCompiler, AggregationConditionToken,
     };
 
     #[test]
-    fn test_aggegation_condition_compiler_no_count() {
+    fn test_aggregation_condition_compiler_no_count() {
         // Pattern without count.
-        let compiler = AggegationConditionCompiler::new();
+        let compiler = AggregationConditionCompiler::new();
         let result = compiler.compile("select1 and select2");
         assert!(result.is_ok());
         let result = result.unwrap();
@@ -270,7 +281,7 @@ mod tests {
     }
 
     #[test]
-    fn test_aggegation_condition_compiler_count_ope() {
+    fn test_aggregation_condition_compiler_count_ope() {
         // Normal case: no field inside count, try various operators.
         let token =
             check_aggregation_condition_ope("select1 and select2|count() > 32".to_string(), 32);
@@ -294,8 +305,8 @@ mod tests {
     }
 
     #[test]
-    fn test_aggegation_condition_compiler_count_by() {
-        let compiler = AggegationConditionCompiler::new();
+    fn test_aggregation_condition_compiler_count_by() {
+        let compiler = AggregationConditionCompiler::new();
         let result = compiler.compile("select1 or select2 | count() by iiibbb > 27");
 
         assert!(result.is_ok());
@@ -310,8 +321,8 @@ mod tests {
     }
 
     #[test]
-    fn test_aggegation_condition_compiler_count_by_multiple_fieilds() {
-        let compiler = AggegationConditionCompiler::new();
+    fn test_aggregation_condition_compiler_count_by_multiple_fields() {
+        let compiler = AggregationConditionCompiler::new();
         let result = compiler.compile("select1 or select2 | count() by iiibbb,aaabbb > 27");
         assert!(result.is_ok());
         let result = result.unwrap();
@@ -324,8 +335,8 @@ mod tests {
     }
 
     #[test]
-    fn test_aggegation_condition_compiler_count_by_multiple_fieilds_with_space() {
-        let compiler = AggegationConditionCompiler::new();
+    fn test_aggregation_condition_compiler_count_by_multiple_fields_with_space() {
+        let compiler = AggregationConditionCompiler::new();
         let result = compiler.compile("select1 or select2 | count() by iiibbb, aaabbb > 27");
         assert!(result.is_ok());
         let result = result.unwrap();
@@ -338,8 +349,8 @@ mod tests {
     }
 
     #[test]
-    fn test_aggegation_condition_compiler_count_field() {
-        let compiler = AggegationConditionCompiler::new();
+    fn test_aggregation_condition_compiler_count_field() {
+        let compiler = AggregationConditionCompiler::new();
         let result = compiler.compile("select1 or select2 | count( hogehoge    ) > 3");
 
         assert!(result.is_ok());
@@ -354,8 +365,8 @@ mod tests {
     }
 
     #[test]
-    fn test_aggegation_condition_compiler_count_all_field() {
-        let compiler = AggegationConditionCompiler::new();
+    fn test_aggregation_condition_compiler_count_all_field() {
+        let compiler = AggregationConditionCompiler::new();
         let result = compiler.compile("select1 or select2 | count( hogehoge) by snsn > 3");
 
         assert!(result.is_ok());
@@ -370,8 +381,8 @@ mod tests {
     }
 
     #[test]
-    fn test_aggegation_condition_compiler_only_pipe() {
-        let compiler = AggegationConditionCompiler::new();
+    fn test_aggregation_condition_compiler_only_pipe() {
+        let compiler = AggregationConditionCompiler::new();
         let result = compiler.compile("select1 or select2 |");
 
         assert!(result.is_err());
@@ -383,8 +394,8 @@ mod tests {
     }
 
     #[test]
-    fn test_aggegation_condition_compiler_unused_character() {
-        let compiler = AggegationConditionCompiler::new();
+    fn test_aggregation_condition_compiler_unused_character() {
+        let compiler = AggregationConditionCompiler::new();
         let result = compiler.compile("select1 or select2 | count( hogeess ) by ii-i > 33");
 
         assert!(result.is_err());
@@ -396,9 +407,9 @@ mod tests {
     }
 
     #[test]
-    fn test_aggegation_condition_compiler_not_count() {
+    fn test_aggregation_condition_compiler_not_count() {
         // Something other than count is at the beginning.
-        let compiler = AggegationConditionCompiler::new();
+        let compiler = AggregationConditionCompiler::new();
         let result = compiler.compile("select1 or select2 | by count( hogehoge) by snsn > 3");
 
         assert!(result.is_err());
@@ -406,9 +417,9 @@ mod tests {
     }
 
     #[test]
-    fn test_aggegation_condition_compiler_no_ope() {
+    fn test_aggregation_condition_compiler_no_ope() {
         // Missing comparison operator.
-        let compiler = AggegationConditionCompiler::new();
+        let compiler = AggregationConditionCompiler::new();
         let result = compiler.compile("select1 or select2 | count( hogehoge) 3");
 
         assert!(result.is_err());
@@ -416,9 +427,9 @@ mod tests {
     }
 
     #[test]
-    fn test_aggegation_condition_compiler_by() {
+    fn test_aggregation_condition_compiler_by() {
         // Nothing after by.
-        let compiler = AggegationConditionCompiler::new();
+        let compiler = AggregationConditionCompiler::new();
         let result = compiler.compile("select1 or select2 | count( hogehoge) by");
 
         assert!(result.is_err());
@@ -426,9 +437,9 @@ mod tests {
     }
 
     #[test]
-    fn test_aggegation_condition_compiler_no_ope_afterby() {
-        // Nothing after by.
-        let compiler = AggegationConditionCompiler::new();
+    fn test_aggregation_condition_compiler_no_ope_afterby() {
+        // No number after the comparison operator.
+        let compiler = AggregationConditionCompiler::new();
         let result = compiler.compile("select1 or select2 | count( hogehoge ) by hoe >");
 
         assert!(result.is_err());
@@ -436,9 +447,9 @@ mod tests {
     }
 
     #[test]
-    fn test_aggegation_condition_compiler_unneccesary_word() {
-        // Nothing after by.
-        let compiler = AggegationConditionCompiler::new();
+    fn test_aggregation_condition_compiler_unnecessary_word() {
+        // An extra token after the number.
+        let compiler = AggregationConditionCompiler::new();
         let result = compiler.compile("select1 or select2 | count( hogehoge ) by hoe > 3 33");
 
         assert!(result.is_err());
@@ -450,7 +461,7 @@ mod tests {
     }
 
     fn check_aggregation_condition_ope(expr: String, cmp_num: i64) -> AggregationConditionToken {
-        let compiler = AggegationConditionCompiler::new();
+        let compiler = AggregationConditionCompiler::new();
         let result = compiler.compile(&expr);
 
         assert!(result.is_ok());

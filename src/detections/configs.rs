@@ -35,16 +35,24 @@ lazy_static! {
     pub static ref GEOIP_FILTER: RwLock<Option<Vec<Yaml>>> = RwLock::new(None);
     pub static ref CURRENT_EXE_PATH: PathBuf =
         current_exe().unwrap().parent().unwrap().to_path_buf();
+    // Matches UUID-formatted ids (e.g. the "id" field of Sigma rules).
     pub static ref IDS_REGEX: Regex =
         Regex::new(r"^[0-9a-z]{8}-[0-9a-z]{4}-[0-9a-z]{4}-[0-9a-z]{4}-[0-9a-z]{12}$").unwrap();
-    pub static ref CONTROL_CHAT_REPLACE_MAP: HashMap<char, CompactString> =
-        create_control_chat_replace_map();
+    // Maps every C0 control character (0x00-0x1F, except line feed) to its JSON-style \u00XX escape.
+    pub static ref CONTROL_CHAR_REPLACE_MAP: HashMap<char, CompactString> =
+        create_control_char_replace_map();
+    // Matches the placeholder tokens that utils::remove_sp_char substitutes for \r, \n and \t
+    // inside field values, so that output code can later restore or strip them.
     pub static ref ALLFIELDINFO_SPECIAL_CHARS: AhoCorasick = AhoCorasickBuilder::new()
         .match_kind(MatchKind::LeftmostLongest)
         .build(["🛂r", "🛂n", "🛂t"])
         .unwrap();
+    // All-in-one config bundle (embedded file path -> file content). When rules_config_files.txt
+    // exists, its entries are used instead of the individual files under rules/config.
     pub static ref ONE_CONFIG_MAP: HashMap<String, String> =
         read_one_config_file(Path::new("rules_config_files.txt")).unwrap_or_default();
+    // Dash variants (hyphen, en dash, em dash, etc.) that the Sigma "windash" modifier treats as
+    // interchangeable.
     pub static ref WINDASH_CHARACTERS: Vec<char> = load_windash_characters(
         check_setting_path(
             &CURRENT_EXE_PATH.to_path_buf(),
@@ -55,9 +63,14 @@ lazy_static! {
         .to_str()
         .unwrap(),
     );
+    // (OS version, build number) -> (Windows product name, release date), loaded from
+    // windows_versions.csv.
     pub static ref WIN_VERSIONS: HashMap<(String, String), (String, String)> = load_win_versions();
 }
 
+/// Parses the all-in-one config bundle (rules_config_files.txt), in which multiple rule config
+/// files are concatenated with `---FILE_START---` / `path: ` / `---CONTENT---` / `---FILE_END---`
+/// markers. Returns a map from each embedded file path to its content.
 fn read_one_config_file(file_path: &Path) -> io::Result<HashMap<String, String>> {
     let file = File::open(file_path)?;
     let reader = io::BufReader::new(file);
@@ -87,6 +100,7 @@ fn read_one_config_file(file_path: &Path) -> io::Result<HashMap<String, String>>
     Ok(sections)
 }
 
+/// Holds the clap command definition (used for help output) together with the parsed CLI config.
 pub struct ConfigReader {
     pub app: Command,
     pub config: Option<Config>,
@@ -98,6 +112,8 @@ impl Default for ConfigReader {
     }
 }
 
+/// Application state resolved once at startup from the CLI options and config files, then shared
+/// read-only for the rest of the run (also published globally via the STORED_STATIC RwLock).
 #[derive(Debug, Clone)]
 pub struct StoredStatic {
     pub config: Config,
@@ -148,7 +164,7 @@ pub struct StoredStatic {
 }
 
 impl StoredStatic {
-    /// Function to store data from the information parsed in main.rs.
+    /// Builds the StoredStatic data set from the command-line options parsed in main.rs.
     pub fn create_static_data(input_config: Option<Config>) -> StoredStatic {
         let action_id = Action::to_usize(input_config.as_ref().unwrap().action.as_ref());
         let quiet_errors_flag = match &input_config.as_ref().unwrap().action {
@@ -786,6 +802,7 @@ impl StoredStatic {
                     .to_str()
                     .unwrap(),
             ),
+            // The numeric ids compared below come from Action::to_usize.
             logon_summary_flag: action_id == 2,
             metrics_flag: action_id == 3,
             search_flag: action_id == 10,
@@ -869,7 +886,8 @@ impl StoredStatic {
         );
         ret
     }
-    /// Function to read the default values of details from a file.
+    /// Reads the default `details` output templates (per provider and EID) from
+    /// default_details.txt.
     pub fn get_default_details(
         filepath: &str,
         disable_abbreviations: bool,
@@ -884,7 +902,8 @@ impl StoredStatic {
                 HashMap::new()
             }
             Ok(lines) => {
-                // The data is in the following format, listed in order of Provider Name, EID, Details output elements.
+                // Each line has the following format, in order: provider name, EID, then the
+                // default `details` output template, e.g.:
                 // Microsoft-Windows-Sysmon, 1, Cmdline: %CommandLine% ¦ Proc: %Image% ...
 
                 let mut ret: HashMap<CompactString, CompactString> = HashMap::new();
@@ -1104,6 +1123,8 @@ pub enum Action {
 }
 
 impl Action {
+    /// Returns a stable numeric id for the given subcommand (100 when no subcommand was given).
+    /// The action_id comparisons in create_static_data refer to these values.
     pub fn to_usize(action: Option<&Action>) -> usize {
         if let Some(a) = action {
             match a {
@@ -1128,6 +1149,8 @@ impl Action {
             100
         }
     }
+    /// Returns the CLI name of the given subcommand (an empty string when no subcommand was
+    /// given).
     pub fn get_action_name(action: Option<&Action>) -> &str {
         if let Some(a) = action {
             match a {
@@ -1596,7 +1619,7 @@ pub struct LogonSummaryOption {
     pub start_timeline: Option<String>,
 }
 
-/// Options can be set when outputting
+/// Options that can be set when outputting results (flattened into csv-timeline/json-timeline)
 #[derive(Args, Clone, Debug, Default)]
 #[clap(group(ArgGroup::new("level_rule_filtering").args(["min_level", "exact_level"]).multiple(false)))]
 pub struct OutputOption {
@@ -1821,7 +1844,8 @@ pub struct CsvOutputOption {
     #[arg(help_heading = Some("Output"), short = 'S', long="tab-separator", conflicts_with = "multiline", requires = "output", display_order = 490)]
     pub tab_separator: bool,
 
-    // display_order value is defined acronym of long option (A=10,B=20,...,Z=260,a=270, b=280...,z=520)
+    // The display_order value is derived from the first letter of the long option name
+    // (A=10, B=20, ..., Z=260, a=270, b=280, ..., z=520).
     /// Add GeoIP (ASN, city, country) info to IP addresses
     #[arg(
         help_heading = Some("Output"),
@@ -2086,6 +2110,7 @@ impl ConfigReader {
     }
 }
 
+/// A set of event IDs (target_event_IDs.txt) or rule IDs (proven_rules.txt) used as a filter.
 #[derive(Debug, Clone)]
 pub struct TargetIds {
     ids: HashSet<String>,
@@ -2105,7 +2130,8 @@ impl TargetIds {
     }
 
     pub fn is_target(&self, id: &str, flag_in_case_empty: bool) -> bool {
-        // If the content is empty: for EventId, target all EventIds. For RuleId, treat all RuleIds as not subject to filtering.
+        // An empty set means the filter is disabled, so return the caller-supplied default:
+        // for event IDs every event ID is targeted, and for rule IDs no rule is filtered out.
         if self.ids.is_empty() {
             return flag_in_case_empty;
         }
@@ -2118,7 +2144,8 @@ fn load_target_ids(path: &str) -> TargetIds {
     let lines = match utils::read_txt(path) {
         Ok(lines) => lines,
         Err(e) => {
-            // Treat it as an error if the file does not exist.
+            // A missing file is treated as an error: report it and return an empty
+            // (disabled) filter.
             AlertMessage::alert(&e).ok();
             return ret;
         }
@@ -2134,6 +2161,8 @@ fn load_target_ids(path: &str) -> TargetIds {
     ret
 }
 
+/// Event timestamp filter built from --timeline-start / --timeline-end / --time-offset.
+/// Events outside the [start_time, end_time] range are excluded from the scan.
 #[derive(Debug, Clone)]
 pub struct TargetEventTime {
     parse_success_flag: bool,
@@ -2143,6 +2172,8 @@ pub struct TargetEventTime {
 
 impl TargetEventTime {
     pub fn new(stored_static: &StoredStatic) -> Self {
+        // Parses an absolute timestamp into UTC; on failure, prints error_contents and clears
+        // parse_success_flag.
         let get_time =
             |input_time: Option<&String>, error_contents: &str, parse_success_flag: &mut bool| {
                 if let Some(time) = input_time {
@@ -2162,12 +2193,18 @@ impl TargetEventTime {
                 }
             };
 
+        // Converts a relative offset such as "1y3M30d24h30m10s" into an absolute start time
+        // (now minus the offset), returned as a "%Y-%m-%d %H:%M:%S %z" string for get_time.
         let get_time_offset = |time_offset: &Option<String>, parse_success_flag: &mut bool| {
-            if let Some(timeline_offline) = time_offset {
+            if let Some(timeline_offset) = time_offset {
+                // Supported unit suffixes; note that 'M' is months while 'm' is minutes.
                 let timekey = ['y', 'M', 'd', 'h', 'm', 's'];
                 let mut time_num = [0, 0, 0, 0, 0, 0];
                 for (idx, key) in timekey.iter().enumerate() {
-                    let mut timekey_splitter = timeline_offline.split(*key);
+                    // Extract the digits belonging to this unit: take the text before the unit
+                    // character and strip everything up to the last other unit character
+                    // (e.g. for 'M' in "1y3M": "1y3" -> "3").
+                    let mut timekey_splitter = timeline_offset.split(*key);
                     let mix_check = timekey_splitter.next();
                     let mixed_checker: Vec<&str> =
                         mix_check.unwrap_or_default().split(timekey).collect();
@@ -2198,6 +2235,7 @@ impl TargetEventTime {
                     *parse_success_flag = false;
                     return None;
                 }
+                // Subtract each component from the current time; years are folded into months.
                 let target_start_time = Local::now()
                     .checked_sub_months(Months::new(time_num[0] * 12))
                     .and_then(|dt| dt.checked_sub_months(Months::new(time_num[1])))
@@ -2374,6 +2412,7 @@ impl TargetEventTime {
     }
 
     pub fn is_target(&self, eventtime: &Option<DateTime<Utc>>) -> bool {
+        // Records without a timestamp are never filtered out.
         if eventtime.is_none() {
             return true;
         }
@@ -2391,9 +2430,15 @@ impl TargetEventTime {
     }
 }
 
+/// Lookup table built from eventkey_alias.txt that maps the short field aliases used in rules
+/// and config files (e.g. "Computer") to the full dot-separated JSON path of the event record
+/// (e.g. "Event.System.Computer").
 #[derive(Debug, Clone)]
 pub struct EventKeyAliasConfig {
+    // alias -> full event key (e.g. "Computer" -> "Event.System.Computer")
     key_to_eventkey: HashMap<String, String>,
+    // alias -> length of each dot-separated segment of the event key, so that callers can slice
+    // the key string without re-splitting it (see utils::get_event_value)
     key_to_split_eventkey: HashMap<String, Vec<usize>>,
 }
 
@@ -2423,7 +2468,7 @@ impl Default for EventKeyAliasConfig {
 pub fn load_eventkey_alias(path: &str) -> EventKeyAliasConfig {
     let mut config = EventKeyAliasConfig::new();
 
-    // Terminate with an error if eventkey_alias cannot be loaded.
+    // If eventkey_alias.txt cannot be read, report an error and return an empty config.
     let read_result = utils::read_csv(path);
     if let Err(e) = read_result {
         AlertMessage::alert(&e).ok();
@@ -2454,7 +2499,8 @@ pub fn load_eventkey_alias(path: &str) -> EventKeyAliasConfig {
     config
 }
 
-/// Load the config file and load the map of keys and fields into the PIVOT_KEYWORD global variable.
+/// Loads the pivot keyword config file and registers each "keyword.field" line into the
+/// PIVOT_KEYWORD global map.
 pub fn load_pivot_keywords(path: &str) {
     let read_result = match utils::read_txt(path) {
         Ok(v) => v,
@@ -2476,7 +2522,7 @@ pub fn load_pivot_keywords(path: &str) {
         let key = map.next().unwrap();
         let value = map.next().unwrap();
 
-        // If it does not exist, create the key.
+        // Create an empty entry for this keyword if it is not registered yet.
         PIVOT_KEYWORD
             .write()
             .unwrap()
@@ -2493,7 +2539,8 @@ pub fn load_pivot_keywords(path: &str) {
     });
 }
 
-/// Function to return the set of file extensions to investigate, from the extensions added by --target-file-ext. If --json-input is true, only json is targeted.
+/// Returns the set of file extensions to scan: the extra extensions added with
+/// --target-file-ext plus the default extension (evtx, or json/jsonl when --JSON-input is set).
 pub fn get_target_extensions(arg: Option<&Vec<String>>, json_input_flag: bool) -> HashSet<String> {
     let mut target_file_extensions: HashSet<String> = convert_option_vecs_to_hs(arg);
     if json_input_flag {
@@ -2511,6 +2558,7 @@ pub fn convert_option_vecs_to_hs(arg: Option<&Vec<String>>) -> HashSet<String> {
     ret
 }
 
+/// Returns a copy of the search options when the search subcommand was invoked, None otherwise.
 fn extract_search_options(config: &Config) -> Option<SearchOption> {
     match &config.action.as_ref()? {
         Action::Search(option) => Some(SearchOption {
@@ -2544,6 +2592,8 @@ fn extract_search_options(config: &Config) -> Option<SearchOption> {
 }
 
 /// Function to extract a struct containing option values related to output from the config.
+/// For actions other than csv-timeline/json-timeline, an equivalent OutputOption is synthesized
+/// from the action's own options so that downstream code can handle every action uniformly.
 fn extract_output_options(config: &Config) -> Option<OutputOption> {
     match &config.action.as_ref()? {
         Action::CsvTimeline(option) => Some(option.output_options.clone()),
@@ -2684,6 +2734,7 @@ fn extract_output_options(config: &Config) -> Option<OutputOption> {
     }
 }
 
+/// Human-readable title of an event (defaults to "Unknown").
 #[derive(Debug, Clone)]
 pub struct EventInfo {
     pub evttitle: String,
@@ -2701,6 +2752,7 @@ impl EventInfo {
         EventInfo { evttitle }
     }
 }
+/// Lookup of (channel (lowercased), event id) -> event title, loaded from channel_eid_info.txt.
 #[derive(Debug, Clone)]
 pub struct EventInfoConfig {
     eventinfo: HashMap<(String, String), EventInfo>,
@@ -2727,6 +2779,7 @@ impl EventInfoConfig {
 fn load_eventcode_info(path: &str) -> EventInfoConfig {
     let mut infodata = EventInfo::new();
     let mut config = EventInfoConfig::new();
+    // If channel_eid_info.txt cannot be read, report an error and return an empty config.
     let read_result = match utils::read_csv(path) {
         Ok(v) => v,
         Err(e) => {
@@ -2735,7 +2788,7 @@ fn load_eventcode_info(path: &str) -> EventInfoConfig {
         }
     };
 
-    // Terminate with an error if channel_eid_info.txt cannot be loaded.
+    // Each line is expected to contain: channel, event ID, event title.
     read_result.iter().for_each(|line| {
         if line.len() != 3 {
             return;
@@ -2756,7 +2809,9 @@ fn load_eventcode_info(path: &str) -> EventInfoConfig {
     config
 }
 
-fn create_control_chat_replace_map() -> HashMap<char, CompactString> {
+/// Builds a map from each ASCII control character (except line feed) to its JSON-style
+/// uppercase escape sequence (`\u0000` through `\u001F`).
+fn create_control_char_replace_map() -> HashMap<char, CompactString> {
     let mut ret = HashMap::new();
     let replace_char = '\0'..='\x1F';
     for c in replace_char.into_iter().filter(|x| x != &'\x0A') {
@@ -2771,6 +2826,9 @@ fn create_control_chat_replace_map() -> HashMap<char, CompactString> {
     ret
 }
 
+/// Loads the dash variant characters recognized by the Sigma "windash" modifier. The all-in-one
+/// config bundle takes precedence; otherwise the given file is read, and if it cannot be opened
+/// a built-in default set is used.
 pub fn load_windash_characters(file_path: &str) -> Vec<char> {
     if let Some(contents) = ONE_CONFIG_MAP.get("windash_characters.txt") {
         return contents
@@ -2796,6 +2854,8 @@ pub fn load_windash_characters(file_path: &str) -> Vec<char> {
     }
 }
 
+/// Loads windows_versions.csv into a map of (OS version, build number) -> (Windows product
+/// name, release date), used to resolve Windows OS names in computer-metrics.
 pub fn load_win_versions() -> HashMap<(String, String), (String, String)> {
     fn parse_csv<R: std::io::Read>(reader: R) -> HashMap<(String, String), (String, String)> {
         let mut map = HashMap::new();
@@ -2826,7 +2886,7 @@ mod tests {
     use super::{
         Action, CommonOptions, Config, CsvOutputOption, DetectCommonOption, InputOption,
         JSONOutputOption, OutputOption, StoredStatic, TargetEventTime,
-        create_control_chat_replace_map,
+        create_control_char_replace_map,
     };
     use crate::detections::configs::{
         self, EidMetricsOption, LogonSummaryOption, PivotKeywordOption, SearchOption,
@@ -2851,11 +2911,12 @@ mod tests {
     }
 
     #[test]
-    fn target_event_time_filter_containes_on_time() {
+    fn target_event_time_filter_contains_on_time() {
         let start_time = Some("2018-02-20T12:00:09Z".parse::<DateTime<Utc>>().unwrap());
         let end_time = Some("2020-03-30T12:00:09Z".parse::<DateTime<Utc>>().unwrap());
         let time_filter = TargetEventTime::set(true, start_time, end_time);
 
+        // Timestamps exactly on the start/end boundary must be treated as in range.
         assert!(time_filter.is_target(&start_time));
         assert!(time_filter.is_target(&end_time));
     }
@@ -2895,7 +2956,7 @@ mod tests {
                 )
             }));
         expect.remove(&'\x0A');
-        let actual = create_control_chat_replace_map();
+        let actual = create_control_char_replace_map();
         assert_eq!(expect, actual);
     }
 

@@ -11,15 +11,24 @@ use std::path::Path;
 use std::string::String;
 use yaml_rust2::{Yaml, YamlLoader};
 
+/// All field data conversion rules loaded from the data_mapping config files, keyed by the
+/// (channel, event ID) pair each rule set applies to.
 pub type FieldDataMap = HashMap<FieldDataMapKey, FieldDataMapEntry>;
+/// Conversion rules for one event type: lowercase field name -> converter for that field's value.
 pub type FieldDataMapEntry = HashMap<String, FieldDataConverter>;
 
+/// How a raw field value should be rewritten into a more readable form.
 #[derive(Debug, Clone)]
 pub enum FieldDataConverter {
+    /// Converts a hex string such as "0x44c" into its decimal representation.
     HexToDecimal,
+    /// Replaces substrings via an Aho-Corasick automaton whose patterns pair up with the Vec of
+    /// replacement strings (same index = same rule). The HashSet limits the rewrite to events
+    /// whose provider name is in the set; an empty set means any provider.
     ReplaceStr((AhoCorasick, Vec<String>), HashSet<String>),
 }
 
+/// Identifies the event type a mapping applies to: lowercase channel name plus event ID.
 #[derive(Debug, Eq, Hash, PartialEq, Default, Clone)]
 pub struct FieldDataMapKey {
     pub channel: CompactString,
@@ -27,6 +36,7 @@ pub struct FieldDataMapKey {
 }
 
 impl FieldDataMapKey {
+    /// Builds a key from the Channel and EventID values of a data_mapping YAML document.
     fn new(yaml_data: Yaml) -> FieldDataMapKey {
         FieldDataMapKey {
             channel: CompactString::from(
@@ -45,8 +55,13 @@ impl FieldDataMapKey {
     }
 }
 
+/// Parses one data_mapping YAML document (see rules/config/data_mapping/*.yaml) into the event
+/// type key it applies to and the per-field converters it defines. Returns default (empty) values
+/// when the document defines neither RewriteFieldData nor HexToDecimal.
 fn build_field_data_map(yaml_data: Yaml) -> (FieldDataMapKey, FieldDataMapEntry) {
     let rewrite_field_data = yaml_data["RewriteFieldData"].as_hash();
+    // HexToDecimal may be given as a single scalar or as a list of field names; normalize both
+    // forms into a list of YAML values.
     let hex2decimal = if let Some(s) = yaml_data["HexToDecimal"].as_str() {
         Some(YamlLoader::load_from_str(s).unwrap_or_default())
     } else {
@@ -55,6 +70,8 @@ fn build_field_data_map(yaml_data: Yaml) -> (FieldDataMapKey, FieldDataMapEntry)
     if rewrite_field_data.is_none() && hex2decimal.is_none() {
         return (FieldDataMapKey::default(), FieldDataMapEntry::default());
     }
+    // Provider_Name is optional and may be a single name or a list. When present, the string
+    // rewrites only apply to events emitted by one of these providers.
     let mut providers = HashSet::new();
     if let Some(providers_yaml) = yaml_data["Provider_Name"].as_vec() {
         for provider in providers_yaml {
@@ -71,6 +88,8 @@ fn build_field_data_map(yaml_data: Yaml) -> (FieldDataMapKey, FieldDataMapEntry)
             if field.is_empty() || replace_values.is_none() {
                 continue;
             }
+            // Each list element is a one-entry hash of pattern -> replacement. Collect them as
+            // parallel vectors, which is the form AhoCorasick's replace_all expects.
             let mut ptns = vec![];
             let mut reps = vec![];
             for rep_val in replace_values.unwrap() {
@@ -104,6 +123,11 @@ fn build_field_data_map(yaml_data: Yaml) -> (FieldDataMapKey, FieldDataMapEntry)
     (FieldDataMapKey::new(yaml_data), mapping)
 }
 
+/// Rewrites a field value according to the loaded data_mapping rules. Returns None when no
+/// mapping exists for the (channel, event ID) key or for the field (lowercase), in which case the
+/// caller should keep the original value. When a mapping exists but does not change the value
+/// (e.g. the provider does not match, or the value is not a valid hex string), the original
+/// string is returned wrapped in Some.
 pub fn convert_field_data(
     data_map: &FieldDataMap,
     data_map_key: &FieldDataMapKey,
@@ -116,6 +140,8 @@ pub fn convert_field_data(
         Some(data_map_entry) => match data_map_entry.get(field) {
             None => None,
             Some(ReplaceStr(x, providers)) => {
+                // A provider restriction is defined: pass the value through unchanged when this
+                // record's provider is not in the set.
                 if !providers.is_empty() {
                     let provider = get_serde_number_to_string(
                         &record["Event"]["System"]["Provider_attributes"]["Name"],
@@ -131,6 +157,8 @@ pub fn convert_field_data(
                 let _ = ac.try_stream_replace_all(field_data_str.as_bytes(), &mut wtr, rep);
                 Some(CompactString::from(std::str::from_utf8(&wtr).unwrap()))
             }
+            // Only values with a 0x/0X prefix that parse as u64 are converted; anything else is
+            // passed through unchanged.
             Some(HexToDecimal) => match field_data_str
                 .strip_prefix("0x")
                 .or_else(|| field_data_str.strip_prefix("0X"))
@@ -145,6 +173,7 @@ pub fn convert_field_data(
     }
 }
 
+/// Loads every YAML document from the .yaml files directly under the given directory.
 fn load_yaml_files(dir_path: &Path) -> Result<Vec<Yaml>, String> {
     let path = dir_path.as_os_str().to_str().unwrap_or_default();
     if !dir_path.exists() || !dir_path.is_dir() {
@@ -162,6 +191,9 @@ fn load_yaml_files(dir_path: &Path) -> Result<Vec<Yaml>, String> {
             .collect()),
         Err(e) => {
             let mut msg = format!("Failed to open field mapping dir[{path}]. ",);
+            // Windows OS error 123 (ERROR_INVALID_NAME): invalid path syntax. This typically
+            // happens when a quoted path ends with a backslash, which escapes the closing quote
+            // and mangles the command-line argument.
             if e.to_string().ends_with("123)") {
                 msg = format!(
                     "{msg}. You may not be able to load evtx files when there are spaces in the directory path. Please enclose the path with double quotes and remove any trailing slash at the end of the path."
@@ -173,7 +205,12 @@ fn load_yaml_files(dir_path: &Path) -> Result<Vec<Yaml>, String> {
     }
 }
 
+/// Builds the whole field data map, either from the all-in-one config bundle (when present) or
+/// from the .yaml files in the given data_mapping directory. Returns None when the directory
+/// cannot be read.
 pub fn create_field_data_map(dir_path: &Path) -> Option<FieldDataMap> {
+    // In the all-in-one config bundle, every embedded .yaml file except the GeoIP field mapping
+    // is assumed to be a data_mapping file.
     let one_config_values: Vec<String> = ONE_CONFIG_MAP
         .iter()
         .filter(|(key, _)| key.contains(".yaml") && !key.contains("geoip_field_mapping.yaml"))

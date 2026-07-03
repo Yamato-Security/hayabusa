@@ -26,13 +26,26 @@ pub fn create_rule(rulepath: String, yaml: Yaml) -> RuleNode {
     RuleNode::new(rulepath, yaml)
 }
 
+/// The `correlation.type` of a Sigma correlation rule.
 #[derive(Debug, PartialEq, Eq)]
 pub enum CorrelationType {
+    /// Not a correlation rule (also used for unknown correlation types).
     None,
+    /// `event_count`: counts matching events per group.
     EventCount,
+    /// `value_count`: counts distinct field values per group.
     ValueCount,
+    /// `temporal`: all referenced rules (matched by id, title or name) must match within the
+    /// timespan, in any order.
     Temporal(Vec<String>),
+    /// `temporal_ordered`: like `temporal`, but the referenced rules are expected to occur in
+    /// the listed order (the current implementation only checks order relative to the first
+    /// referenced rule's results).
     TemporalOrdered(Vec<String>),
+    /// Assigned by the correlation parser (never by `CorrelationType::new`) to a rule that is
+    /// referenced by a temporal correlation rule. The bool is the correlation rule's `generate`
+    /// flag (whether the referenced rule's own matches are also output) and the String is the
+    /// rule id used to link its results to the temporal rule.
     TemporalRef(bool, String),
 }
 
@@ -58,6 +71,8 @@ impl CorrelationType {
                     CorrelationType::TemporalOrdered(rules)
                 }
             }
+            // Unknown correlation types map to None; the correlation parser later rejects such
+            // rules with a parse error, so they never match.
             _ => CorrelationType::None,
         }
     }
@@ -72,6 +87,8 @@ pub struct RuleNode {
     pub correlation_type: CorrelationType,
 }
 
+// Debug cannot be derived because DetectionNode holds `dyn SelectionNode` trait objects, so this
+// implementation intentionally produces no output.
 impl Debug for RuleNode {
     fn fmt(&self, _f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         Result::Ok(())
@@ -89,6 +106,8 @@ impl RuleNode {
         }
     }
 
+    /// Creates a RuleNode with a pre-built DetectionNode. Used by the correlation parser, which
+    /// assembles the detection from the rules referenced by a correlation rule.
     fn new_with_detection(
         rule_path: String,
         yaml_data: Yaml,
@@ -103,13 +122,16 @@ impl RuleNode {
         }
     }
 
+    /// Parses and validates the rule's detection section, collecting all error messages.
     pub fn init(&mut self, stored_static: &StoredStatic) -> Result<(), Vec<String>> {
         let mut errmsgs: Vec<String> = vec![];
+        // Correlation rules get their DetectionNode built later by
+        // correlation_parser::parse_correlation_rules, so there is nothing to initialize here.
         if !&self.yaml["correlation"].is_badvalue() {
             return Result::Ok(());
         }
 
-        // detection node initialization
+        // Initialize the detection node.
         let detection_result = self.detection.init(&self.yaml["detection"], stored_static);
         if let Err(err_detail) = detection_result {
             errmsgs.extend(err_detail);
@@ -122,6 +144,9 @@ impl RuleNode {
         }
     }
 
+    /// Evaluates this rule's condition against a single event record. When the record matches and
+    /// the rule has an aggregation condition (count etc.), the record is also registered in
+    /// countdata for later aggregation evaluation.
     pub fn select(
         &mut self,
         event_record: &EvtxRecordInfo,
@@ -142,11 +167,11 @@ impl RuleNode {
         }
         result
     }
-    /// Function that returns whether an aggregation condition exists.
+    /// Returns whether an aggregation condition exists.
     pub fn has_agg_condition(&self) -> bool {
         self.detection.aggregation_condition.is_some()
     }
-    /// Function that returns the results of the Aggregation Condition as an array.
+    /// Returns the results of evaluating the aggregation condition as an array.
     pub fn judge_satisfy_aggcondition(&self, stored_static: &StoredStatic) -> Vec<AggResult> {
         let mut ret = Vec::new();
         if !self.has_agg_condition() {
@@ -158,10 +183,11 @@ impl RuleNode {
         ));
         ret
     }
+    /// Returns whether any records have been accumulated for count aggregation.
     pub fn check_exist_countdata(&self) -> bool {
         !self.countdata.is_empty()
     }
-    /// Function to get the AggregationParseInfo (Aggregation Condition) within a rule.
+    /// Returns the AggregationParseInfo (aggregation condition) of this rule, if any.
     pub fn get_agg_condition(&self) -> Option<&AggregationParseInfo> {
         if self.detection.aggregation_condition.as_ref().is_some() {
             return self.detection.aggregation_condition.as_ref();
@@ -170,7 +196,8 @@ impl RuleNode {
     }
 }
 
-// Get the list of keys defined in the detection of RuleNode.
+/// Collects every field key referenced by the leaf selection nodes in the rule's detection
+/// section. These keys determine which values are extracted up front from each event record.
 pub fn get_detection_keys(node: &RuleNode) -> Nested<String> {
     let mut ret = Nested::<String>::new();
     let detection = &node.detection;
@@ -199,9 +226,13 @@ pub fn get_detection_keys(node: &RuleNode) -> Nested<String> {
 
 /// Node representing the detection of a Rule file.
 pub struct DetectionNode {
+    /// Compiled selection trees, keyed by their name under the detection node (e.g. "selection").
     pub name_to_selection: HashMap<String, Arc<Box<dyn SelectionNode>>>,
+    /// The condition expression compiled into a single selection tree.
     pub condition: Option<Box<dyn SelectionNode>>,
+    /// The aggregation part of the condition (after the pipe), e.g. `count() by field > 3`.
     pub aggregation_condition: Option<AggregationParseInfo>,
+    /// The parsed `timeframe` value, used when evaluating the aggregation condition.
     pub timeframe: Option<TimeFrameInfo>,
 }
 
@@ -215,6 +246,7 @@ impl DetectionNode {
         }
     }
 
+    /// Builds a DetectionNode directly from pre-compiled parts. Used by the correlation parser.
     pub fn new_with_data(
         name_to_selection: HashMap<String, Arc<Box<dyn SelectionNode>>>,
         condition: Option<Box<dyn SelectionNode>>,
@@ -251,7 +283,8 @@ impl DetectionNode {
         let condition_str = if let Some(cond_str) = condition {
             *cond_str
         } else {
-            // If condition is not specified, adopt the selection if there is only one selection.
+            // If condition is not specified, use the sole selection as the condition; having two
+            // or more selections without a condition is an error.
             let mut keys = self.name_to_selection.keys();
             if keys.len() >= 2 {
                 return Result::Err(vec![
@@ -273,7 +306,7 @@ impl DetectionNode {
         }
 
         // Parse the aggregation condition (the part after the pipe in condition).
-        let agg_compiler = aggregation_parser::AggegationConditionCompiler::new();
+        let agg_compiler = aggregation_parser::AggregationConditionCompiler::new();
         let compile_result = agg_compiler.compile(condition_str);
         if let Result::Err(err_msg) = compile_result {
             err_msgs.push(err_msg);
@@ -301,7 +334,8 @@ impl DetectionNode {
         condition.select(event_record, eventkey_alias)
     }
 
-    /// Parses selection nodes.
+    /// Parses every named selection under the detection node into a selection tree and stores it
+    /// in name_to_selection.
     fn parse_name_to_selection(&mut self, detection_yaml: &Yaml) -> Result<(), Vec<String>> {
         let detection_hash = detection_yaml.as_hash();
         if detection_hash.is_none() {
@@ -350,7 +384,7 @@ impl DetectionNode {
         Result::Ok(())
     }
 
-    /// Parses selection.
+    /// Parses a single named selection into a selection tree.
     fn parse_selection(&self, selection_yaml: &Yaml) -> Option<Box<dyn SelectionNode>> {
         Option::Some(Self::parse_selection_recursively(
             &Nested::<String>::new(),
@@ -358,7 +392,9 @@ impl DetectionNode {
         ))
     }
 
-    /// Parses selection.
+    /// Recursively converts a selection's YAML into a tree of SelectionNodes: hashes become AND
+    /// nodes, arrays become OR nodes (or AND/All nodes when the `|all` modifier is present), and
+    /// scalars become leaf nodes holding the key path (`key_list`) and the value to match.
     fn parse_selection_recursively(
         key_list: &Nested<String>,
         yaml: &Yaml,
@@ -377,7 +413,8 @@ impl DetectionNode {
             });
             Box::new(and_node)
         } else if yaml.as_vec().is_some() && key_list.len() == 1 && key_list[0].eq("|all") {
-            // In the case of |all only,
+            // If the key is just "|all" (the keyless all modifier), every keyword in the list has
+            // to match, so combine the children with an AllSelectionNode (AND semantics).
             let mut or_node = selectionnodes::AllSelectionNode::new();
             yaml.as_vec().unwrap().iter().for_each(|child_yaml| {
                 let child_node = Self::parse_selection_recursively(key_list, child_yaml);
@@ -385,7 +422,8 @@ impl DetectionNode {
             });
             Box::new(or_node)
         } else if yaml.as_vec().is_some() && key_list.iter().any(|k: &str| k.contains("|all")) {
-            // If "all" is in key_list, the child element array is interpreted as an AND condition.
+            // If the key carries the |all modifier (e.g. field|contains|all), the array of child
+            // elements is interpreted as an AND condition.
             let mut and_node = selectionnodes::AndSelectionNode::new();
             yaml.as_vec().unwrap().iter().for_each(|child_yaml| {
                 let child_node = Self::parse_selection_recursively(key_list, child_yaml);
@@ -413,11 +451,12 @@ impl DetectionNode {
 #[derive(Debug, Clone, PartialEq, Eq, Default)]
 /// Struct that outputs the results of aggregation such as count.
 pub struct AggResult {
-    /// Value such as count.
+    /// The aggregated value, e.g. the count.
     pub data: i64,
-    /// Value within the record for the condition specified by count by.
+    /// The grouping value taken from the record for the field specified by "count() by".
     pub key: String,
-    /// Array of values in detected records for items specified inside the parentheses of count. If nothing is specified inside the parentheses, this is an array of length 0.
+    /// Array of values in detected records for the field specified inside the parentheses of
+    /// count. If nothing is specified inside the parentheses, this is an array of length 0.
     pub field_values: Vec<String>,
     /// Time of the first record in the detected block.
     pub start_timedate: DateTime<Utc>,
@@ -508,7 +547,8 @@ mod tests {
 
     #[test]
     fn test_detect_dotkey() {
-        // Cases where values are connected with "." instead of alias can be correctly detected.
+        // Verify that a key written as a dot-joined path (instead of an alias) is detected
+        // correctly.
         let rule_str = r#"
         enabled: true
         detection:
@@ -527,7 +567,8 @@ mod tests {
 
     #[test]
     fn test_notdetect_dotkey() {
-        // Verify that cases which should not be detected are not detected, for cases using "." instead of alias.
+        // Verify that a record which should not be detected is not detected when the key is a
+        // dot-joined path instead of an alias.
         let rule_str = r#"
         enabled: true
         detection:
@@ -546,7 +587,8 @@ mod tests {
 
     #[test]
     fn test_notdetect_differentkey() {
-        // Verify that cases which should not be detected are not detected, for cases using "." instead of alias.
+        // Verify that a record is not detected when the value of the rule's field (here the
+        // aliased key Channel) differs from the value in the record.
         let rule_str = r#"
         enabled: true
         detection:
@@ -566,8 +608,10 @@ mod tests {
 
     #[test]
     fn test_detect_attribute() {
-        // Test for cases where JSON is parsed in a special way when a value exists in the attribution part of an XML tag.
-        // The original XML looks like the following, and this is a test to detect Name or Guid in the Provider tag.
+        // Test for cases where JSON is parsed in a special way when a value exists in the
+        // attribute part of an XML tag.
+        // The original XML looks like the following, and this is a test to detect Name or Guid
+        // in the Provider tag.
         /*         - <Event xmlns="http://schemas.microsoft.com/win/2004/08/events/event">
         - <System>
           <Provider Name="Microsoft-Windows-Security-Auditing" Guid="{54849625-5478-4994-a5ba-3e3b0328c30d}" />
@@ -638,7 +682,7 @@ mod tests {
 
     #[test]
     fn test_notdetect_attribute() {
-        // Verify cases where XML tag attribution is not detected.
+        // Verify a case where a value in an XML tag attribute should not be detected.
         let rule_str = r#"
         enabled: true
         detection:
@@ -686,7 +730,8 @@ mod tests {
 
     #[test]
     fn test_detect_eventdata() {
-        // In a special XML format pattern, there is a tag called EventData, and a key-like value comes in the Name= part.
+        // In a special XML format pattern, there is a tag called EventData, and the value that
+        // acts as the field key comes in the Name= attribute.
         /* - <EventData>
         <Data Name="SubjectUserSid">S-1-5-21-2673273881-979819022-3746999991-1001</Data>
         <Data Name="SubjectUserName">takai</Data>
@@ -697,7 +742,8 @@ mod tests {
         <Data Name="TargetDomainName">DESKTOP-ICHIICH</Data>
         </EventData> */
 
-        // In that case, the JSON of the event parser looks like the following, so test that it can be correctly detected.
+        // In that case, the JSON produced by the event parser looks like the following, so test
+        // that it can be correctly detected.
         /*         {
             "Event": {
               "EventData": {
@@ -741,6 +787,8 @@ mod tests {
 
     #[test]
     fn test_detect_eventdata2() {
+        // Verify that an EventData field can be matched by its bare name: keys without an alias
+        // or dots fall back to Event.EventData.<key>.
         let rule_str = r#"
         enabled: true
         detection:
@@ -808,7 +856,8 @@ mod tests {
 
     #[test]
     fn test_detect_special_eventdata() {
-        // A further special case of EventData in the above test case, where there is no Name key inside the Data tag as shown below.
+        // A further special case of EventData beyond the above test case, where there is no Name
+        // key inside the Data tag as shown below.
         // For this reason, only the EventData key receives special handling in the rule file.
         // Currently, this case has only been confirmed with the downgrade_attack.yml rule.
         let rule_str = r"
@@ -862,7 +911,8 @@ mod tests {
 
     #[test]
     fn test_notdetect_special_eventdata() {
-        // A further special case of EventData in the above test case, where there is no Name key inside the Data tag as shown below.
+        // A further special case of EventData beyond the above test case, where there is no Name
+        // key inside the Data tag as shown below.
         // For this reason, only the EventData key receives special handling in the rule file.
         // Currently, this case has only been confirmed with the downgrade_attack.yml rule.
         let rule_str = r"
@@ -916,7 +966,7 @@ mod tests {
 
     #[test]
     fn test_use_strfeature_in_or_node() {
-        // Test that startswith can be used within an orNode.
+        // Test that startswith can also be used within an OR node (a list of values).
         let rule_str = r#"
         enabled: true
         detection:
@@ -975,7 +1025,7 @@ mod tests {
 
     #[test]
     fn test_detect_not_defined_selection() {
-        // Test that a warning is issued when an unknown string option is written in a rule.
+        // Test that an error is returned when the detection node has no content.
         let rule_str = r#"
         enabled: true
         detection:
@@ -992,7 +1042,7 @@ mod tests {
 
     #[test]
     fn test_use_allfeature_() {
-        // Test that when "all" is included via pipe, the items below are treated as AND conditions.
+        // Test that when the |all modifier is given, the listed values are combined with AND.
         let rule_str = r#"
         enabled: true
         detection:
@@ -1023,7 +1073,8 @@ mod tests {
           }
         }"#;
 
-        // case of
+        // A record that should not match: param2 contains "aut" but not "star", so contains|all
+        // fails.
         let record_json_str2 = r#"
         {
           "Event": {
@@ -1045,7 +1096,7 @@ mod tests {
         check_select(rule_str, record_json_str2, false);
     }
 
-    /// Test function to verify numbers for count.
+    /// Test helper that verifies the number of records accumulated for the count aggregation.
     fn _check_count(rule_str: &str, record_str: &str, key: &str, expect_count: i32) {
         let mut rule_yaml = YamlLoader::load_from_str(rule_str).unwrap().into_iter();
         let test = rule_yaml.next().unwrap();

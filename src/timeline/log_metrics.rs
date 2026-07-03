@@ -5,6 +5,9 @@ use crate::detections::utils;
 use chrono::{DateTime, NaiveDateTime, Utc};
 use std::collections::HashSet;
 
+/// Per-log-file summary statistics collected for the log-metrics command: file path/name/size,
+/// event count, first/last event timestamps, and the distinct computer names, channels and
+/// providers seen in the file.
 #[derive(Default, Debug, Clone)]
 pub struct LogMetrics {
     pub filepath: String,
@@ -27,6 +30,9 @@ impl LogMetrics {
             ..Default::default()
         }
     }
+    /// Folds a batch of records from this log file into the metrics: widens the first/last
+    /// timestamp range, collects each record's computer, channel and provider, and increments the
+    /// event count.
     pub fn update(&mut self, records: &[EvtxRecordInfo], stored_static: &StoredStatic) {
         for record in records {
             if let Some(evttime) = utils::get_event_value(
@@ -36,6 +42,7 @@ impl LogMetrics {
             )
             .map(|evt_value| evt_value.to_string().replace("\\\"", "").replace('"', ""))
             {
+                // Timestamps normally use the evtx UTC format, e.g. "2021-12-23T00:00:00.000Z".
                 let timestamp = match NaiveDateTime::parse_from_str(
                     evttime.as_str(),
                     "%Y-%m-%dT%H:%M:%S%.fZ",
@@ -44,6 +51,10 @@ impl LogMetrics {
                         DateTime::<Utc>::from_naive_utc_and_offset(without_timezone_datetime, Utc),
                     ),
                     Err(_) => {
+                        // Fall back to the format used by Splunk JSON exports, which carries an
+                        // explicit UTC offset (e.g. "2021-12-23T00:00:00.000+09:00"). Note that
+                        // NaiveDateTime parsing validates but discards the offset, so the local
+                        // time is stored as if it were UTC.
                         match NaiveDateTime::parse_from_str(
                             evttime.as_str(),
                             "%Y-%m-%dT%H:%M:%S%.3f%:z",
