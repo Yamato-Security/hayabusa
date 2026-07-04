@@ -2192,7 +2192,7 @@ Any hostnames added to the critical_systems.txt file will have all alerts above 
                 all_detect_infos.append(&mut log_records);
             }
             afterfact_info.timeline_start_time = timeline.stats.start_time;
-            afterfact_info.tl_endtime = timeline.stats.end_time;
+            afterfact_info.timeline_end_time = timeline.stats.end_time;
 
             let msg = if stored_static.output_path.is_some() {
                 if stored_static.common_options.no_color {

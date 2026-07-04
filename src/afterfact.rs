@@ -88,7 +88,7 @@ pub struct Colors {
 /// detection frequency timeline, and the previous-record data needed for duplicate suppression.
 pub struct AfterfactInfo {
     pub timeline_start_time: Option<DateTime<Utc>>,
-    pub tl_endtime: Option<DateTime<Utc>>,
+    pub timeline_end_time: Option<DateTime<Utc>>,
     pub detect_starttime: Option<DateTime<Utc>>,
     pub detect_endtime: Option<DateTime<Utc>>,
     pub record_cnt: u128,
@@ -150,7 +150,7 @@ impl Default for AfterfactInfo {
         };
         AfterfactInfo {
             timeline_start_time: Option::None,
-            tl_endtime: Option::None,
+            timeline_end_time: Option::None,
             detect_starttime: Option::None,
             detect_endtime: Option::None,
             record_cnt: 0,
@@ -754,12 +754,12 @@ pub fn output_additional_afterfact(
                 &stored_static.html_report_flag,
             );
         }
-        if let Some(tl_endtime) = afterfact_info.tl_endtime {
+        if let Some(timeline_end_time) = afterfact_info.timeline_end_time {
             output_and_data_stack_for_html(
                 &format!(
                     "Last timestamp: {}",
                     utils::format_time(
-                        &tl_endtime,
+                        &timeline_end_time,
                         false,
                         &stored_static
                             .output_option
@@ -993,11 +993,11 @@ pub fn output_additional_afterfact(
             )
             .ok();
         }
-        if let Some(tl_endtime) = afterfact_info.tl_endtime {
+        if let Some(timeline_end_time) = afterfact_info.timeline_end_time {
             let ts = format!(
                 "Last timestamp: {}",
                 format_time(
-                    &tl_endtime,
+                    &timeline_end_time,
                     false,
                     &stored_static
                         .output_option
@@ -2788,7 +2788,7 @@ mod tests {
         additional_afterfact.record_cnt = 1;
         additional_afterfact.recover_record_cnt = 0;
         additional_afterfact.timeline_start_time = Some(expect_tz);
-        additional_afterfact.tl_endtime = Some(expect_tz);
+        additional_afterfact.timeline_end_time = Some(expect_tz);
         let mut writer = init_writer(&stored_static);
 
         assert!(
@@ -3021,7 +3021,7 @@ mod tests {
         additional_afterfact.record_cnt = 1;
         additional_afterfact.recover_record_cnt = 0;
         additional_afterfact.timeline_start_time = Some(expect_tz);
-        additional_afterfact.tl_endtime = Some(expect_tz);
+        additional_afterfact.timeline_end_time = Some(expect_tz);
         let mut writer = init_writer(&stored_static);
         assert!(
             output_afterfact_inner(
@@ -3305,7 +3305,7 @@ mod tests {
         additional_afterfact.record_cnt = 1;
         additional_afterfact.recover_record_cnt = 0;
         additional_afterfact.timeline_start_time = Some(expect_tz);
-        additional_afterfact.tl_endtime = Some(expect_tz);
+        additional_afterfact.timeline_end_time = Some(expect_tz);
         let mut writer = init_writer(&stored_static);
         assert!(
             output_afterfact_inner(
@@ -3610,7 +3610,7 @@ mod tests {
         additional_afterfact.record_cnt = 1;
         additional_afterfact.recover_record_cnt = 0;
         additional_afterfact.timeline_start_time = Some(expect_tz);
-        additional_afterfact.tl_endtime = Some(expect_tz);
+        additional_afterfact.timeline_end_time = Some(expect_tz);
         let mut writer = init_writer(&stored_static);
         assert!(
             output_afterfact_inner(
@@ -3846,7 +3846,7 @@ mod tests {
         additional_afterfact.record_cnt = 1;
         additional_afterfact.recover_record_cnt = 0;
         additional_afterfact.timeline_start_time = Some(expect_tz);
-        additional_afterfact.tl_endtime = Some(expect_tz);
+        additional_afterfact.timeline_end_time = Some(expect_tz);
         let mut writer = init_writer(&stored_static);
         assert!(
             output_afterfact_inner(
@@ -4022,7 +4022,7 @@ mod tests {
         additional_afterfact.record_cnt = 1;
         additional_afterfact.recover_record_cnt = 0;
         additional_afterfact.timeline_start_time = Some(expect_tz);
-        additional_afterfact.tl_endtime = Some(expect_tz);
+        additional_afterfact.timeline_end_time = Some(expect_tz);
         let mut writer = init_writer(&stored_static);
         assert!(
             output_afterfact_inner(
@@ -4200,7 +4200,7 @@ mod tests {
         additional_afterfact.record_cnt = 1;
         additional_afterfact.recover_record_cnt = 0;
         additional_afterfact.timeline_start_time = Some(expect_tz);
-        additional_afterfact.tl_endtime = Some(expect_tz);
+        additional_afterfact.timeline_end_time = Some(expect_tz);
         let mut writer = init_writer(&stored_static);
         assert!(
             output_afterfact_inner(
