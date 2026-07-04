@@ -4,6 +4,7 @@
 
 **改善:**
 
+Sigma 2.1仕様の `|neq` および `|fieldref|neq` フィールド修飾子のサポートを追加した。`|neq` は比較を否定するもので、他の修飾子（`|contains|neq`、`|startswith|neq`、`|endswith|neq`、`|fieldref|neq` など）と組み合わせて使用できる。 (#1684) (@YamatoSecurity)
 検出されたMITRE ATT&CK戦術について、一意の件数と合計件数を追加した。 (#1753) (@fukusuket)
 
 **バグ修正:**
