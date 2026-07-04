@@ -1921,11 +1921,8 @@ fn _convert_valid_json_str(input: &[&str], concat_flag: bool) -> String {
     if char_cnt == 0 {
         joined_value
     } else if joined_value.starts_with('\"') {
-        let addition_header = if !joined_value.starts_with('\"') {
-            "\""
-        } else {
-            ""
-        };
+        // The value already starts with a quote, so no opening quote is prepended here; only a
+        // closing quote is added when the value does not already end with one.
         let addition_quote = if !joined_value.ends_with('\"') && concat_flag {
             "\""
         } else if !joined_value.ends_with('\"') {
@@ -1933,15 +1930,11 @@ fn _convert_valid_json_str(input: &[&str], concat_flag: bool) -> String {
         } else {
             ""
         };
-        [
-            addition_header,
-            &joined_value
-                .replace('🛂', "\\")
-                .replace('\\', "\\\\")
-                .replace('\"', "\\\""),
-            addition_quote,
-        ]
-        .join("")
+        let escaped = joined_value
+            .replace('🛂', "\\")
+            .replace('\\', "\\\\")
+            .replace('\"', "\\\"");
+        [escaped.as_str(), addition_quote].join("")
     } else {
         joined_value
             .replace('🛂', "\\")
@@ -2429,6 +2422,7 @@ mod tests {
     use hashbrown::HashMap;
     use serde_json::Value;
 
+    use crate::afterfact::_convert_valid_json_str;
     use crate::afterfact::_print_unique_results;
     use crate::afterfact::AfterfactInfo;
     use crate::afterfact::format_time;
@@ -3039,6 +3033,17 @@ mod tests {
             }
         };
         assert!(remove_file("./test_emit_csv_multiline.csv").is_ok());
+    }
+
+    /// A value that already starts with a quote is escaped with only a trailing quote added, and
+    /// no spurious leading quote (regression guard for #1832, where the always-empty
+    /// `addition_header` was removed from `_convert_valid_json_str`).
+    #[test]
+    fn test_convert_valid_json_str_quote_prefixed() {
+        // Value starts and ends with a quote: both quotes are backslash-escaped, nothing prepended.
+        assert_eq!(_convert_valid_json_str(&["\"hi\""], false), "\\\"hi\\\"");
+        // Starts with a quote but does not end with one: a closing escaped quote is appended.
+        assert_eq!(_convert_valid_json_str(&["\"hi"], false), "\\\"hi\\\"");
     }
 
     /// `get_duplicate_indices` must flag every identical copy after the first within a timestamp
