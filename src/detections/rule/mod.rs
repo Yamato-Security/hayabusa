@@ -415,12 +415,12 @@ impl DetectionNode {
         } else if yaml.as_vec().is_some() && key_list.len() == 1 && key_list[0].eq("|all") {
             // If the key is just "|all" (the keyless all modifier), every keyword in the list has
             // to match, so combine the children with an AllSelectionNode (AND semantics).
-            let mut or_node = selectionnodes::AllSelectionNode::new();
+            let mut all_node = selectionnodes::AllSelectionNode::new();
             yaml.as_vec().unwrap().iter().for_each(|child_yaml| {
                 let child_node = Self::parse_selection_recursively(key_list, child_yaml);
-                or_node.child_nodes.push(child_node);
+                all_node.child_nodes.push(child_node);
             });
-            Box::new(or_node)
+            Box::new(all_node)
         } else if yaml.as_vec().is_some() && key_list.iter().any(|k: &str| k.contains("|all")) {
             // If the key carries the |all modifier (e.g. field|contains|all), the array of child
             // elements is interpreted as an AND condition.
