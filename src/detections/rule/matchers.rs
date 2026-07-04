@@ -522,9 +522,25 @@ impl LeafMatcher for DefaultMatcher {
                 self.pipes.push(PipeElement::Wildcard);
             }
 
+            // Two regex paths intentionally keep substring (not full-value) semantics, so their
+            // wildcard regexes must stay unanchored: keyword (grep) searches, which have an empty
+            // key list, and the keyless `|all` modifier, whose leaf is matched against the entire
+            // record string rather than a single field (see selectionnodes.rs). Anchoring either
+            // to the whole value would break their contains-style matching.
+            let is_whole_record_search =
+                self.key_list.is_empty() || self.key_list.get(0).is_some_and(|k| k == "|all");
             let mut re_result_vec = vec![];
             for p in pattern {
                 let pattern = DefaultMatcher::from_pattern_to_regex_str(p, &self.pipes);
+                // Wildcard-derived regexes must match the entire field value (Sigma full-value
+                // semantics), but pipe_pattern_wildcard() produces an unanchored regex and
+                // Regex::is_match() searches substrings, so anchor them here. The whole-record
+                // searches above and |re-style user-supplied regexes are left untouched.
+                let pattern = if !is_re && !is_whole_record_search {
+                    format!("^(?:{pattern})$")
+                } else {
+                    pattern
+                };
                 // Compile the pipe-processed pattern into a regex.
                 if let Ok(re_result) = Regex::new(&pattern) {
                     re_result_vec.push(re_result);
@@ -2121,6 +2137,219 @@ mod tests {
         }"#;
 
         check_select(rule_str, record_json_str, true);
+    }
+
+    #[test]
+    fn test_wildcard_question_fullmatch() {
+        // A "?" wildcard matches exactly one character of the full value.
+        let rule_str = r#"
+        enabled: true
+        detection:
+            selection:
+                Channel: Sec?rity
+        details: 'command=%CommandLine%'
+        "#;
+
+        let record_json_str = r#"
+        {
+            "Event": {"System": {"EventID": 4103, "Channel": "Sec1rity"}},
+            "Event_attributes": {"xmlns": "http://schemas.microsoft.com/win/2004/08/events/event"}
+        }"#;
+
+        check_select(rule_str, record_json_str, true);
+    }
+
+    #[test]
+    fn test_wildcard_question_no_substring_match() {
+        // Patterns that fall back to regex matching (here because of "?") must match the whole
+        // value, not a substring of it (regression test for #1815).
+        let rule_str = r#"
+        enabled: true
+        detection:
+            selection:
+                Channel: Sec?rity
+        details: 'command=%CommandLine%'
+        "#;
+
+        let record_json_str = r#"
+        {
+            "Event": {"System": {"EventID": 4103, "Channel": "MySec1rityLog"}},
+            "Event_attributes": {"xmlns": "http://schemas.microsoft.com/win/2004/08/events/event"}
+        }"#;
+
+        check_select(rule_str, record_json_str, false);
+    }
+
+    #[test]
+    fn test_wildcard_midstring_asterisk_fullmatch() {
+        // A mid-string "*" wildcard (not convertible to a fast match) matches the full value.
+        let rule_str = r#"
+        enabled: true
+        detection:
+            selection:
+                Channel: net*user
+        details: 'command=%CommandLine%'
+        "#;
+
+        let record_json_str = r#"
+        {
+            "Event": {"System": {"EventID": 4103, "Channel": "netXYZuser"}},
+            "Event_attributes": {"xmlns": "http://schemas.microsoft.com/win/2004/08/events/event"}
+        }"#;
+
+        check_select(rule_str, record_json_str, true);
+    }
+
+    #[test]
+    fn test_wildcard_midstring_asterisk_no_substring_match() {
+        // A mid-string "*" wildcard must not match a value with extra leading/trailing
+        // characters (regression test for #1815).
+        let rule_str = r#"
+        enabled: true
+        detection:
+            selection:
+                Channel: net*user
+        details: 'command=%CommandLine%'
+        "#;
+
+        let record_json_str = r#"
+        {
+            "Event": {"System": {"EventID": 4103, "Channel": "mynetXuserZ"}},
+            "Event_attributes": {"xmlns": "http://schemas.microsoft.com/win/2004/08/events/event"}
+        }"#;
+
+        check_select(rule_str, record_json_str, false);
+    }
+
+    #[test]
+    fn test_wildcard_multibyte_asterisk_fullmatch() {
+        // Non-ASCII patterns with "*" always take the regex path; the prefix part must still
+        // be anchored to the start of the value.
+        let rule_str = r#"
+        enabled: true
+        detection:
+            selection:
+                Channel: ホスト*
+        details: 'command=%CommandLine%'
+        "#;
+
+        let record_json_str = r#"
+        {
+            "Event": {"System": {"EventID": 4103, "Channel": "ホストアプリケーション"}},
+            "Event_attributes": {"xmlns": "http://schemas.microsoft.com/win/2004/08/events/event"}
+        }"#;
+
+        check_select(rule_str, record_json_str, true);
+    }
+
+    #[test]
+    fn test_wildcard_multibyte_asterisk_no_substring_match() {
+        // A non-ASCII prefix pattern must not match a value that merely contains the prefix
+        // (regression test for #1815).
+        let rule_str = r#"
+        enabled: true
+        detection:
+            selection:
+                Channel: ホスト*
+        details: 'command=%CommandLine%'
+        "#;
+
+        let record_json_str = r#"
+        {
+            "Event": {"System": {"EventID": 4103, "Channel": "Myホストログ"}},
+            "Event_attributes": {"xmlns": "http://schemas.microsoft.com/win/2004/08/events/event"}
+        }"#;
+
+        check_select(rule_str, record_json_str, false);
+    }
+
+    #[test]
+    fn test_grep_substring_match_still_works() {
+        // Keyword (grep) searches with no field name intentionally keep substring semantics:
+        // anchoring added for field matches (#1815) must not apply here.
+        let rule_str = r#"
+        enabled: true
+        detection:
+            selection:
+                - ecurit
+        details: 'command=%CommandLine%'
+        "#;
+
+        let record_json_str = r#"
+        {
+            "Event": {"System": {"EventID": 4103, "Channel": "security", "Computer":"DESKTOP-ICHIICHI"}},
+            "Event_attributes": {"xmlns": "http://schemas.microsoft.com/win/2004/08/events/event"}
+        }"#;
+
+        check_select(rule_str, record_json_str, true);
+    }
+
+    #[test]
+    fn test_all_keyword_wildcard_substring_match() {
+        // A keyless `|all` selection is matched against the whole-record string with substring
+        // (contains) semantics, even when a value falls back to regex matching (here because of
+        // the `?` wildcard). The anchoring added for field matches (#1815) must not apply to the
+        // `|all` whole-record search, otherwise it would require the entire record to equal the
+        // pattern and never match. `Windo?s` matches the "Windows" contained in the Channel value.
+        let rule_str = r#"
+        enabled: true
+        detection:
+            selection:
+                '|all':
+                    - 'Windo?s'
+        details: 'command=%CommandLine%'
+        "#;
+
+        let record_json_str = r#"
+        {
+            "Event": {"System": {"EventID": 4103, "Channel": "Microsoft-Windows-Sysmon/Operational"}},
+            "Event_attributes": {"xmlns": "http://schemas.microsoft.com/win/2004/08/events/event"}
+        }"#;
+
+        check_select(rule_str, record_json_str, true);
+    }
+
+    #[test]
+    fn test_startswith_multibyte_fallback_fullmatch() {
+        // |startswith normally uses the fast path, but a non-ASCII event value makes
+        // starts_with_ignore_case() return None, so matching falls back to the wildcard regex.
+        // That fallback must remain a prefix match: "Secあ" starts with "Sec".
+        let rule_str = r#"
+        enabled: true
+        detection:
+            selection:
+                Channel|startswith: Sec
+        details: 'command=%CommandLine%'
+        "#;
+
+        let record_json_str = r#"
+        {
+            "Event": {"System": {"EventID": 4103, "Channel": "Secあ"}},
+            "Event_attributes": {"xmlns": "http://schemas.microsoft.com/win/2004/08/events/event"}
+        }"#;
+
+        check_select(rule_str, record_json_str, true);
+    }
+
+    #[test]
+    fn test_startswith_multibyte_fallback_no_substring_match() {
+        // The non-ASCII |startswith regex fallback must be anchored to the start of the value, so
+        // a value that merely contains the prefix later on does not match (#1815).
+        let rule_str = r#"
+        enabled: true
+        detection:
+            selection:
+                Channel|startswith: Sec
+        details: 'command=%CommandLine%'
+        "#;
+
+        let record_json_str = r#"
+        {
+            "Event": {"System": {"EventID": 4103, "Channel": "xSecあ"}},
+            "Event_attributes": {"xmlns": "http://schemas.microsoft.com/win/2004/08/events/event"}
+        }"#;
+
+        check_select(rule_str, record_json_str, false);
     }
 
     #[test]
