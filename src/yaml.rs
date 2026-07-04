@@ -104,9 +104,11 @@ impl ParseYaml {
             .map(BufReader::new)
             .map_err(|e| e.to_string())?;
         let mut encrypted_content = Vec::new();
-        let _ = file_reader.read_to_end(&mut encrypted_content);
-        let decode_content = encrypted_content.iter().map(|&b| b ^ 0xAA).collect(); // key: 0xAA
-        let decode_string = String::from_utf8(decode_content).expect("Invalid UTF-8 sequence");
+        file_reader
+            .read_to_end(&mut encrypted_content)
+            .map_err(|e| e.to_string())?;
+        let decode_content: Vec<u8> = encrypted_content.iter().map(|&b| b ^ 0xAA).collect(); // key: 0xAA
+        let decode_string = String::from_utf8(decode_content).map_err(|e| e.to_string())?;
         Ok(decode_string)
     }
 
@@ -1504,6 +1506,20 @@ mod tests {
         std::fs::remove_file(&test_path).expect("Failed to delete test file");
         assert!(result.is_ok());
         assert_eq!(result.unwrap(), "Hello");
+    }
+
+    #[test]
+    fn test_read_encoded_file_invalid_utf8_returns_err() {
+        // A byte that XOR-decodes (^0xAA) to 0xFF, which is not valid UTF-8. The function must
+        // return Err rather than panicking (regression test for #1831).
+        let test_path = PathBuf::from("test_encoded_file_invalid_utf8");
+        let encoded_content: Vec<u8> = vec![0xFF ^ 0xAA]; // decodes to 0xFF
+        let mut file = File::create(&test_path).expect("Failed to create test file");
+        file.write_all(&encoded_content)
+            .expect("Failed to write to test file");
+        let result = ParseYaml::read_encoded_file(&test_path);
+        std::fs::remove_file(&test_path).expect("Failed to delete test file");
+        assert!(result.is_err());
     }
 
     #[test]
