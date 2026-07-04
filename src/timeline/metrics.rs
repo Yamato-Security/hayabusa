@@ -125,10 +125,10 @@ impl EventMetrics {
             stored_static.quiet_errors_flag,
         );
         let file_size = ByteSize::b(file_size).to_string();
-        if let Some(existing_lm) = self.stats_logfile.iter_mut().find(|lm| {
-            lm.filepath == self.filepath.as_str()
-                && lm.filename == file_name
-                && lm.computers.contains(
+        if let Some(existing_lm) = self.stats_logfile.iter_mut().find(|log_metrics| {
+            log_metrics.filepath == self.filepath.as_str()
+                && log_metrics.filename == file_name
+                && log_metrics.computers.contains(
                     get_event_value_as_string(
                         "Computer",
                         &records[0].record,
@@ -140,9 +140,9 @@ impl EventMetrics {
         }) {
             existing_lm.update(records, stored_static);
         } else {
-            let mut lm = LogMetrics::new(self.filepath.as_str(), file_name, file_size);
-            lm.update(records, stored_static);
-            self.stats_logfile.push(lm);
+            let mut log_metrics = LogMetrics::new(self.filepath.as_str(), file_name, file_size);
+            log_metrics.update(records, stored_static);
+            self.stats_logfile.push(log_metrics);
         }
     }
 
@@ -262,7 +262,7 @@ impl EventMetrics {
             } else {
                 "-"
             };
-            if let Some(idnum) =
+            if let Some(event_id) =
                 utils::get_event_value("EventID", &record.record, &stored_static.eventkey_alias)
             {
                 // With -X/--remove-duplicate-records, skip records whose
@@ -281,7 +281,7 @@ impl EventMetrics {
                 let count: &mut usize = self
                     .stats_list
                     .entry((
-                        idnum.to_string().replace('\"', "").to_lowercase().into(),
+                        event_id.to_string().replace('\"', "").to_lowercase().into(),
                         channel.to_lowercase().into(),
                     ))
                     .or_insert(0);
@@ -312,7 +312,7 @@ impl EventMetrics {
             if let Some(evtid) =
                 utils::get_event_value("EventID", &record.record, &stored_static.eventkey_alias)
             {
-                let idnum: i64 = if evtid.is_number() {
+                let event_id: i64 = if evtid.is_number() {
                     evtid.as_i64().unwrap()
                 } else {
                     let rec_id = get_serde_number_to_string(
@@ -341,10 +341,10 @@ impl EventMetrics {
                     &record.record,
                     &stored_static.eventkey_alias,
                 );
-                if let Some(channel) = is_target_event(idnum, &channel) {
+                if let Some(channel) = is_target_event(event_id, &channel) {
                     let channel_name = match channel {
                         Sec => {
-                            if idnum == 4624 {
+                            if event_id == 4624 {
                                 CompactString::from("Sec 4624")
                             } else {
                                 CompactString::from("Sec 4625")
@@ -489,9 +489,9 @@ impl EventMetrics {
                             source_ip,
                         })
                         .or_insert(countlist);
-                    if idnum == 4624 || idnum == 21 || idnum == 302 {
+                    if event_id == 4624 || event_id == 21 || event_id == 302 {
                         count[0] += 1;
-                    } else if idnum == 4625 {
+                    } else if event_id == 4625 {
                         count[1] += 1;
                     }
                 }
@@ -526,16 +526,16 @@ enum Channel {
 
 /// Returns which channel the record's logon event belongs to if its (EventID, Channel) pair is
 /// one that the logon summary tracks, or None if the record is not a target logon event.
-fn is_target_event(idnum: i64, channel: &str) -> Option<Channel> {
-    if (idnum == 4624 || idnum == 4625) && channel == "Security" {
+fn is_target_event(event_id: i64, channel: &str) -> Option<Channel> {
+    if (event_id == 4624 || event_id == 4625) && channel == "Security" {
         return Some(Sec);
     }
-    if idnum == 21
+    if event_id == 21
         && channel == "Microsoft-Windows-TerminalServices-LocalSessionManager/Operational"
     {
         return Some(RdsLsm);
     }
-    if idnum == 302 && channel == "Microsoft-Windows-TerminalServices-Gateway/Operational" {
+    if event_id == 302 && channel == "Microsoft-Windows-TerminalServices-Gateway/Operational" {
         return Some(RdsGtw);
     }
     None
@@ -623,9 +623,9 @@ mod tests {
             "Event": {"System": {"EventID": 4103, "Channel": "Security", "Computer":"HAYABUSA-DESKTOP"}},
             "Event_attributes": {"xmlns": "http://schemas.microsoft.com/win/2004/08/events/event"}
         }"#;
-        let mut input_datas = vec![];
+        let mut input_records = vec![];
         let alias_ch_record = serde_json::from_str(alias_ch_record_str).unwrap();
-        input_datas.push(create_rec_info(
+        input_records.push(create_rec_info(
             alias_ch_record,
             "testpath".to_string(),
             &Nested::<String>::new(),
@@ -643,7 +643,7 @@ mod tests {
         expect.insert(("4103".into(), "security".into()), 1);
         expect.insert(("4104".into(), "notexistinalias".into()), 1);
         let no_alias_ch_record = serde_json::from_str(no_alias_ch_record_str).unwrap();
-        input_datas.push(create_rec_info(
+        input_records.push(create_rec_info(
             no_alias_ch_record,
             "testpath2".to_string(),
             &Nested::<String>::new(),
@@ -654,7 +654,7 @@ mod tests {
         let include_computer: HashSet<CompactString> = HashSet::new();
         let exclude_computer: HashSet<CompactString> = HashSet::new();
         timeline.stats.evt_stats_start(
-            &input_datas,
+            &input_records,
             &dummy_stored_static,
             (&include_computer, &exclude_computer),
         );

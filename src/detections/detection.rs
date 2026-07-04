@@ -50,13 +50,13 @@ pub struct EvtxRecordInfo {
     pub evtx_filepath: String, // File path of the event file, used when outputting logs.
     pub record: Value,         // Data for one record serialized in JSON format.
     pub data_string: String,   // Data within one record converted to a string.
-    pub key_2_value: HashMap<String, String>, // Map of hierarchical keys joined by "." and their values.
-    pub recovered_record: bool,               // Whether the record was recovered.
+    pub key_to_value: HashMap<String, String>, // Map of hierarchical keys joined by "." and their values.
+    pub recovered_record: bool,                // Whether the record was recovered.
 }
 
 impl EvtxRecordInfo {
     pub fn get_value(&self, key: &str) -> Option<&String> {
-        self.key_2_value.get(key)
+        self.key_to_value.get(key)
     }
 }
 
@@ -71,8 +71,8 @@ impl Detection {
         Detection { rules: rule_nodes }
     }
 
-    pub fn start(self, rt: &Runtime, records: Vec<EvtxRecordInfo>) -> (Self, Vec<DetectInfo>) {
-        rt.block_on(self.execute_rules(records))
+    pub fn start(self, runtime: &Runtime, records: Vec<EvtxRecordInfo>) -> (Self, Vec<DetectInfo>) {
+        runtime.block_on(self.execute_rules(records))
     }
 
     /// Parses the rule files under the given path and returns the successfully initialized rules,
@@ -106,7 +106,7 @@ impl Detection {
             }
             return vec![];
         }
-        let mut parseerror_count = rulefile_loader.errorrule_count;
+        let mut parse_error_count = rulefile_loader.error_rule_count;
         let return_if_success = |mut rule: RuleNode| {
             let err_msgs_result = rule.init(stored_static);
             if err_msgs_result.is_ok() {
@@ -136,7 +136,7 @@ impl Detection {
                             .push(format!("[WARN] {err_msg}"));
                     });
                 }
-                parseerror_count += 1;
+                parse_error_count += 1;
             });
             None
         };
@@ -149,14 +149,14 @@ impl Detection {
             .map(|rule_file_tuple| rule::create_rule(rule_file_tuple.0, rule_file_tuple.1))
             .filter_map(return_if_success)
             .collect();
-        ret = parse_correlation_rules(ret, stored_static, &mut parseerror_count);
+        ret = parse_correlation_rules(ret, stored_static, &mut parse_error_count);
         if !(stored_static.logon_summary_flag
             || stored_static.search_flag
             || stored_static.metrics_flag
             || stored_static.computer_metrics_flag
             || stored_static.log_metrics_flag)
         {
-            Detection::print_rule_load_info(&rulefile_loader, &parseerror_count, stored_static);
+            Detection::print_rule_load_info(&rulefile_loader, &parse_error_count, stored_static);
         }
         ret
     }
@@ -199,10 +199,10 @@ impl Detection {
     /// (count() rules and correlation rules). Must run after all records have been processed.
     pub fn add_aggcondition_msgs(
         self,
-        rt: &Runtime,
+        runtime: &Runtime,
         stored_static: &StoredStatic,
     ) -> Vec<DetectInfo> {
-        rt.block_on(self.add_aggcondition_msg(stored_static))
+        runtime.block_on(self.add_aggcondition_msg(stored_static))
     }
 
     /// Evaluates a Sigma temporal correlation: for each aggregation result of the first
@@ -229,13 +229,13 @@ impl Detection {
                     if let Some(target_records) = temporal_ref_all_results.get(id.as_str()) {
                         if temporal_ordered {
                             found = target_records.iter().any(|t| {
-                                (t.start_timedate >= last_base.start_timedate)
-                                    && (t.start_timedate <= last_base.start_timedate + timeframe)
+                                (t.start_datetime >= last_base.start_datetime)
+                                    && (t.start_datetime <= last_base.start_datetime + timeframe)
                             });
                         } else {
                             found = target_records.iter().any(|t| {
-                                (t.start_timedate >= base.start_timedate - timeframe)
-                                    && (t.start_timedate <= base.start_timedate + timeframe)
+                                (t.start_datetime >= base.start_datetime - timeframe)
+                                    && (t.start_datetime <= base.start_datetime + timeframe)
                             });
                         }
                         if !found {
@@ -376,7 +376,7 @@ impl Detection {
         } else {
             CompactString::from("")
         };
-        let ch_str =
+        let channel_str =
             &get_serde_number_to_string(&record_info.record["Event"]["System"]["Channel"], false)
                 .unwrap_or_default();
         let provider = get_serde_number_to_string(
@@ -442,14 +442,14 @@ impl Detection {
                         key.as_str(),
                         Channel(
                             stored_static
-                                .disp_abbr_generic
+                                .generic_abbr_matcher
                                 .replace_all(
                                     stored_static
-                                        .ch_config
-                                        .get(&ch_str.to_ascii_lowercase())
-                                        .unwrap_or(ch_str)
+                                        .channel_abbr_config
+                                        .get(&channel_str.to_ascii_lowercase())
+                                        .unwrap_or(channel_str)
                                         .as_str(),
-                                    &stored_static.disp_abbr_general_values,
+                                    &stored_static.generic_abbr_values,
                                 )
                                 .into(),
                         ),
@@ -534,7 +534,7 @@ impl Detection {
                         let mut v = COMPUTER_MITRE_ATTCK_MAP
                             .entry(computer_name_to_mitre_tactics.clone())
                             .or_default();
-                        let (_, attck_tac) = v.pair_mut();
+                        let (_, attack_tactics) = v.pair_mut();
                         for html_attck_tac in html_output_tactics_str {
                             let tactic_key: CompactString = html_attck_tac.into();
                             let unique_key = CompactString::from(format!(
@@ -543,13 +543,13 @@ impl Detection {
                             ));
                             let is_unique = COMPUTER_MITRE_ATTCK_UNIQUE_KEYS.insert(unique_key);
                             if let Some(entry) =
-                                attck_tac.iter_mut().find(|(t, _, _)| t == tactic_key)
+                                attack_tactics.iter_mut().find(|(t, _, _)| t == tactic_key)
                             {
                                 entry.1 += if is_unique { 1 } else { 0 };
                                 entry.2 += 1;
                             } else {
-                                attck_tac.push((tactic_key, if is_unique { 1 } else { 0 }, 1));
-                                attck_tac.sort_unstable_by(|a, b| a.0.cmp(&b.0));
+                                attack_tactics.push((tactic_key, if is_unique { 1 } else { 0 }, 1));
+                                attack_tactics.sort_unstable_by(|a, b| a.0.cmp(&b.0));
                             }
                         }
                     }
@@ -645,13 +645,13 @@ impl Detection {
                         key.as_str(),
                         Provider(
                             stored_static
-                                .disp_abbr_generic
+                                .generic_abbr_matcher
                                 .replace_all(
                                     stored_static
                                         .provider_abbr_config
                                         .get(&provider_value)
                                         .unwrap_or(&provider_value),
-                                    &stored_static.disp_abbr_general_values,
+                                    &stored_static.generic_abbr_values,
                                 )
                                 .into(),
                         ),
@@ -698,7 +698,7 @@ impl Detection {
                     for condition in target_condition.iter() {
                         geoip_target_flag = condition.as_hash().unwrap().iter().any(
                             |(target_channel, target_eids)| {
-                                ch_str.as_str() == target_channel.as_str().unwrap()
+                                channel_str.as_str() == target_channel.as_str().unwrap()
                                     && target_eids
                                         .as_vec()
                                         .unwrap()
@@ -771,7 +771,7 @@ impl Detection {
                     for condition in target_condition.iter() {
                         geoip_target_flag = condition.as_hash().unwrap().iter().any(
                             |(target_channel, target_eids)| {
-                                ch_str.as_str() == target_channel.as_str().unwrap()
+                                channel_str.as_str() == target_channel.as_str().unwrap()
                                     && target_eids
                                         .as_vec()
                                         .unwrap()
@@ -829,7 +829,7 @@ impl Detection {
             FieldDataMapKey::default()
         } else {
             FieldDataMapKey {
-                channel: ch_str.clone().to_lowercase(),
+                channel: channel_str.clone().to_lowercase(),
                 event_id: eid.clone(),
             }
         };
@@ -906,7 +906,7 @@ impl Detection {
                         key.as_str(),
                         Timestamp(
                             format_time(
-                                &agg_result.start_timedate,
+                                &agg_result.start_datetime,
                                 false,
                                 &stored_static
                                     .output_option
@@ -926,13 +926,13 @@ impl Detection {
                         key.as_str(),
                         Channel(
                             Detection::join_agg_values(&agg_result.agg_record_time_info, |x| {
-                                stored_static.disp_abbr_generic.replace_all(
+                                stored_static.generic_abbr_matcher.replace_all(
                                     stored_static
-                                        .ch_config
+                                        .channel_abbr_config
                                         .get(&CompactString::from(&x.channel.to_ascii_lowercase()))
                                         .unwrap_or(&CompactString::from(&x.channel))
                                         .as_str(),
-                                    &stored_static.disp_abbr_general_values,
+                                    &stored_static.generic_abbr_values,
                                 )
                             })
                             .into(),
@@ -1124,7 +1124,7 @@ impl Detection {
             }
         }
         let detect_info = DetectInfo {
-            detected_time: agg_result.start_timedate,
+            detected_time: agg_result.start_datetime,
             rulepath: CompactString::from(&rule.rulepath),
             ruleid: CompactString::from(rule.yaml["id"].as_str().unwrap_or("-")),
             ruletitle: CompactString::from(rule.yaml["title"].as_str().unwrap_or("-")),
@@ -1239,7 +1239,7 @@ impl Detection {
         err_rc: &u128,
         stored_static: &StoredStatic,
     ) {
-        let rc = &parse_yaml.rulecounter;
+        let rc = &parse_yaml.rule_type_cnt;
         let ld_rc = &parse_yaml.rule_load_cnt;
         let st_rc = &parse_yaml.rule_status_cnt;
         let cor_rc = &parse_yaml.rule_cor_cnt;

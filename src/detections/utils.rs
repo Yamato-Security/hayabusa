@@ -360,13 +360,13 @@ pub fn create_rec_info(
 
     // For example, getting the value of "Event.System.EventID" from a serde_json Value requires
     // three accesses: value["Event"]["System"]["EventID"]. To speed this up, the value is stored
-    // in the rec.key_2_value hashmap under the flat key "Event.System.EventID", so it can later
+    // in the rec.key_to_value hashmap under the flat key "Event.System.EventID", so it can later
     // be retrieved with a single lookup, which should improve performance. Also, retrieving
     // values from a serde_json Value like value["Event"] is somehow slow, so this might help
     // there too. In addition, serde_json internally uses the standard library hashmap, but using
     // hashbrown is reportedly faster; since the standard library adopted hashbrown, serde_json
     // has also been sped up.
-    let mut key_2_values = HashMap::new();
+    let mut flat_key_to_value = HashMap::new();
 
     let binding = STORED_EKEY_ALIAS.read().unwrap();
     let eventkey_alias = binding.as_ref().unwrap();
@@ -391,10 +391,10 @@ pub fn create_rec_info(
                 channel.clone_from(&val);
             }
         }
-        key_2_values.insert(key.to_string(), val.unwrap());
+        flat_key_to_value.insert(key.to_string(), val.unwrap());
     }
     if !*no_pwsh_field_extraction {
-        extract_fields(channel, event_id, &mut data, &mut key_2_values);
+        extract_fields(channel, event_id, &mut data, &mut flat_key_to_value);
     }
 
     // Create EvtxRecordInfo.
@@ -404,7 +404,7 @@ pub fn create_rec_info(
         evtx_filepath: path,
         record: data,
         data_string: data_str,
-        key_2_value: key_2_values,
+        key_to_value: flat_key_to_value,
         recovered_record: *recovered_record,
     }
 }
@@ -1180,7 +1180,7 @@ mod tests {
         let _html_reporter_lock = crate::options::htmlreport::HTML_REPORTER_TEST_LOCK
             .lock()
             .unwrap_or_else(|e| e.into_inner());
-        HTML_REPORTER.write().unwrap().md_datas.clear();
+        HTML_REPORTER.write().unwrap().section_markdown.clear();
         let stored_static = StoredStatic::create_static_data(Some(Config {
             action: Some(Action::CsvTimeline(CsvOutputOption {
                 output_options: OutputOption {
@@ -1203,7 +1203,7 @@ mod tests {
                 Nested::from_iter(vec!["- Output profile: super-verbose"]),
             ),
         ]);
-        for (k, v) in HTML_REPORTER.read().unwrap().md_datas.iter() {
+        for (k, v) in HTML_REPORTER.read().unwrap().section_markdown.iter() {
             assert!(expect.keys().any(|x| x == k));
             assert!(expect.values().any(|y| y == v));
         }

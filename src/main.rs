@@ -103,7 +103,7 @@ fn main() {
     config_reader.config = None;
     let mut app = App::new(stored_static.thread_number);
     app.exec(&mut config_reader.app, &mut stored_static);
-    app.rt.shutdown_background();
+    app.runtime.shutdown_background();
 }
 
 /// RAII guard that disables WOW64 filesystem redirection while it is alive and restores the
@@ -149,14 +149,14 @@ impl Drop for Wow64RedirectionGuard {
 /// Application driver: owns the Tokio runtime used for record processing and the union of event
 /// field keys referenced by the loaded detection rules.
 pub struct App {
-    rt: Runtime,
+    runtime: Runtime,
     rule_keys: Nested<String>,
 }
 
 impl App {
     pub fn new(thread_number: Option<usize>) -> App {
         App {
-            rt: utils::create_tokio_runtime(thread_number),
+            runtime: utils::create_tokio_runtime(thread_number),
             rule_keys: Nested::<String>::new(),
         }
     }
@@ -1681,10 +1681,10 @@ Any hostnames added to the critical_systems.txt file will have all alerts above 
             );
             // If anything other than "4. All alert rules" or "5. All event and alert rules" was selected, ask questions about tags.
             if selected_index < 3 {
-                if let Some(et_cnt) = tags_cnt.get("detection.emerging_threats") {
+                if let Some(emerging_threats_count) = tags_cnt.get("detection.emerging_threats") {
                     let prompt_fmt = format!(
                         "Include Emerging Threats rules? ({} rules)",
-                        et_cnt.to_formatted_string(&Locale::en)
+                        emerging_threats_count.to_formatted_string(&Locale::en)
                     );
                     let et_rules_load_flag = Confirm::with_theme(&color_theme)
                         .with_prompt(prompt_fmt)
@@ -1697,10 +1697,10 @@ Any hostnames added to the critical_systems.txt file will have all alerts above 
                         exclude_tags.push("detection.emerging_threats".into());
                     }
                 }
-                if let Some(th_cnt) = tags_cnt.get("detection.threat_hunting") {
+                if let Some(threat_hunting_count) = tags_cnt.get("detection.threat_hunting") {
                     let prompt_fmt = format!(
                         "Include Threat Hunting rules? ({} rules)",
-                        th_cnt.to_formatted_string(&Locale::en)
+                        threat_hunting_count.to_formatted_string(&Locale::en)
                     );
                     let th_rules_load_flag = Confirm::with_theme(&color_theme)
                         .with_prompt(prompt_fmt)
@@ -2062,15 +2062,15 @@ Any hostnames added to the critical_systems.txt file will have all alerts above 
             .unwrap()
             .progress_chars("=> ");
 
-        let pb = ProgressBar::with_draw_target(
+        let progress_bar = ProgressBar::with_draw_target(
             Some(evtx_files.len() as u64),
             ProgressDrawTarget::stdout_with_hz(10),
         )
         .with_tab_width(55);
-        pb.set_style(progress_style);
+        progress_bar.set_style(progress_style);
         self.rule_keys = self.get_all_keys(&rule_files);
         let mut detection = detection::Detection::new(rule_files);
-        let mut tl = Timeline::new();
+        let mut timeline = Timeline::new();
         *STORED_EKEY_ALIAS.write().unwrap() = Some(stored_static.eventkey_alias.clone());
         *STORED_STATIC.write().unwrap() = Some(stored_static.clone());
         let mut afterfact_info = AfterfactInfo::default();
@@ -2088,7 +2088,7 @@ Any hostnames added to the critical_systems.txt file will have all alerts above 
                     | Action::EidMetrics(_)
             );
         if is_show_progress {
-            pb.enable_steady_tick(Duration::from_millis(300));
+            progress_bar.enable_steady_tick(Duration::from_millis(300));
         }
         for evtx_file in evtx_files {
             if is_show_progress {
@@ -2104,7 +2104,7 @@ Any hostnames added to the critical_systems.txt file will have all alerts above 
                     file_size.display()
                 );
                 if !pb_msg.is_empty() {
-                    pb.set_message(pb_msg);
+                    progress_bar.set_message(pb_msg);
                 }
             }
 
@@ -2115,7 +2115,7 @@ Any hostnames added to the critical_systems.txt file will have all alerts above 
                     self.analysis_json_file(
                         (evtx_file, time_filter, target_event_ids, stored_static),
                         detection,
-                        tl.to_owned(),
+                        timeline.to_owned(),
                         &mut afterfact_writer,
                         &mut afterfact_info,
                     )
@@ -2123,18 +2123,18 @@ Any hostnames added to the critical_systems.txt file will have all alerts above 
                     self.analysis_file(
                         (evtx_file, time_filter, target_event_ids, stored_static),
                         detection,
-                        tl.to_owned(),
+                        timeline.to_owned(),
                         &mut afterfact_writer,
                         &mut afterfact_info,
                     )
                 };
             detection = detection_tmp;
-            tl = tl_tmp;
+            timeline = tl_tmp;
             afterfact_info.record_cnt += cnt_tmp as u128;
             afterfact_info.recover_record_cnt += recover_cnt_tmp as u128;
             all_detect_infos.append(&mut detect_infos);
             if is_show_progress {
-                pb.inc(1);
+                progress_bar.inc(1);
             }
         }
         let is_timeline_cmd = matches!(
@@ -2147,7 +2147,7 @@ Any hostnames added to the critical_systems.txt file will have all alerts above 
             } else {
                 style("Scanning finished.\n").color256(214).to_string()
             };
-            pb.finish_with_message(msg);
+            progress_bar.finish_with_message(msg);
         }
         CHECKPOINT
             .lock()
@@ -2161,24 +2161,24 @@ Any hostnames added to the critical_systems.txt file will have all alerts above 
             .set_checkpoint(Local::now());
 
         if stored_static.metrics_flag {
-            tl.tm_stats_dsp_msg(event_timeline_config, stored_static);
+            timeline.tm_stats_dsp_msg(event_timeline_config, stored_static);
         } else if stored_static.logon_summary_flag {
-            tl.tm_logon_stats_dsp_msg(stored_static);
+            timeline.tm_logon_stats_dsp_msg(stored_static);
         } else if stored_static.search_flag {
-            tl.search_dsp_msg(stored_static);
+            timeline.search_dsp_msg(stored_static);
         } else if stored_static.computer_metrics_flag {
-            tl.computer_metrics_dsp_msg(stored_static)
+            timeline.computer_metrics_dsp_msg(stored_static)
         } else if stored_static.log_metrics_flag {
-            tl.log_metrics_dsp_msg(stored_static)
+            timeline.log_metrics_dsp_msg(stored_static)
         } else if stored_static.extract_base64_flag {
-            tl.extract_base64_dsp_msg(stored_static)
+            timeline.extract_base64_dsp_msg(stored_static)
         } else if let Action::ConfigCriticalSystems(_) =
             &stored_static.config.action.as_ref().unwrap()
         {
-            tl.config_critical_systems_dsp_msg(stored_static.common_options.no_color);
+            timeline.config_critical_systems_dsp_msg(stored_static.common_options.no_color);
         }
         if is_timeline_cmd {
-            let mut log_records = detection.add_aggcondition_msgs(&self.rt, stored_static);
+            let mut log_records = detection.add_aggcondition_msgs(&self.runtime, stored_static);
             if stored_static.is_low_memory {
                 let empty_ids = HashSet::new();
                 afterfact::emit_csv(
@@ -2191,8 +2191,8 @@ Any hostnames added to the critical_systems.txt file will have all alerts above 
             } else {
                 all_detect_infos.append(&mut log_records);
             }
-            afterfact_info.tl_starttime = tl.stats.start_time;
-            afterfact_info.tl_endtime = tl.stats.end_time;
+            afterfact_info.timeline_start_time = timeline.stats.start_time;
+            afterfact_info.tl_endtime = timeline.stats.end_time;
 
             let msg = if stored_static.output_path.is_some() {
                 if stored_static.common_options.no_color {
@@ -2212,7 +2212,7 @@ Any hostnames added to the critical_systems.txt file will have all alerts above 
             // The styled message was converted to a plain String above because
             // finish_with_message requires a string type.
             if is_show_progress {
-                pb.finish_with_message(msg);
+                progress_bar.finish_with_message(msg);
             } else {
                 write_color_buffer(
                     &BufferWriter::stdout(ColorChoice::Always),
@@ -2274,7 +2274,7 @@ Any hostnames added to the critical_systems.txt file will have all alerts above 
             &StoredStatic,
         ),
         mut detection: detection::Detection,
-        mut tl: Timeline,
+        mut timeline: Timeline,
         afterfact_writer: &mut AfterfactWriter,
         afterfact_info: &mut AfterfactInfo,
     ) -> (
@@ -2290,7 +2290,7 @@ Any hostnames added to the critical_systems.txt file will have all alerts above 
         let mut recover_records_cnt = 0;
         let mut detect_infos: Vec<DetectInfo> = vec![];
         if parser.is_none() {
-            return (detection, record_cnt, tl, 0, detect_infos);
+            return (detection, record_cnt, timeline, 0, detect_infos);
         }
 
         let mut parser = parser.unwrap();
@@ -2339,7 +2339,7 @@ Any hostnames added to the critical_systems.txt file will have all alerts above 
 
                 let data = &record_result.as_ref().unwrap().data;
                 if stored_static.computer_metrics_flag {
-                    countup_event_by_computer(data, &stored_static.eventkey_alias, &mut tl);
+                    countup_event_by_computer(data, &stored_static.eventkey_alias, &mut timeline);
                     // The computer-metrics command does not perform detection, so only count and check the next record.
                     continue;
                 }
@@ -2393,17 +2393,17 @@ Any hostnames added to the critical_systems.txt file will have all alerts above 
                 break;
             }
 
-            let records_per_detect = self.rt.block_on(App::create_rec_infos(
+            let records_per_detect = self.runtime.block_on(App::create_rec_infos(
                 records_per_detect,
                 &path,
                 self.rule_keys.to_owned(),
                 stored_static.no_pwsh_field_extraction,
             ));
-            tl.start(&records_per_detect, stored_static);
+            timeline.start(&records_per_detect, stored_static);
             if need_rule {
                 // Run the loaded detection rules against this batch of records.
                 let (detection_tmp, mut log_records) =
-                    detection.start(&self.rt, records_per_detect);
+                    detection.start(&self.runtime, records_per_detect);
 
                 if let MinMaxResult::MinMax(min_time, max_time) =
                     log_records.iter().map(|info| info.detected_time).minmax()
@@ -2434,8 +2434,14 @@ Any hostnames added to the critical_systems.txt file will have all alerts above 
                 detection = detection_tmp;
             }
         }
-        tl.total_record_cnt += record_cnt;
-        (detection, record_cnt, tl, recover_records_cnt, detect_infos)
+        timeline.total_record_cnt += record_cnt;
+        (
+            detection,
+            record_cnt,
+            timeline,
+            recover_records_cnt,
+            detect_infos,
+        )
     }
 
     /// Apply the computer, EventID, channel, and timestamp filters to a JSON record. Returns
@@ -2553,7 +2559,7 @@ Any hostnames added to the critical_systems.txt file will have all alerts above 
             &StoredStatic,
         ),
         mut detection: detection::Detection,
-        mut tl: Timeline,
+        mut timeline: Timeline,
         afterfact_writer: &mut AfterfactWriter,
         afterfact_info: &mut AfterfactInfo,
     ) -> (
@@ -2589,7 +2595,13 @@ Any hostnames added to the critical_systems.txt file will have all alerts above 
                     Ok(values) => values,
                     Err(e) => {
                         AlertMessage::alert(&e).ok();
-                        return (detection, record_cnt, tl, recover_records_cnt, detect_infos);
+                        return (
+                            detection,
+                            record_cnt,
+                            timeline,
+                            recover_records_cnt,
+                            detect_infos,
+                        );
                     }
                 }
             }
@@ -2698,7 +2710,7 @@ Any hostnames added to the critical_systems.txt file will have all alerts above 
                             countup_event_by_computer(
                                 &splunk_api_record,
                                 &stored_static.eventkey_alias,
-                                &mut tl,
+                                &mut timeline,
                             );
                         }
                         if !self.is_filtered_record(
@@ -2776,7 +2788,7 @@ Any hostnames added to the critical_systems.txt file will have all alerts above 
                 }
 
                 if stored_static.computer_metrics_flag {
-                    countup_event_by_computer(&data, &stored_static.eventkey_alias, &mut tl);
+                    countup_event_by_computer(&data, &stored_static.eventkey_alias, &mut timeline);
                     // The computer-metrics command does not perform detection, so only count and check the next record.
                     continue;
                 }
@@ -2797,7 +2809,7 @@ Any hostnames added to the critical_systems.txt file will have all alerts above 
                 break;
             }
 
-            let records_per_detect = self.rt.block_on(App::create_rec_infos(
+            let records_per_detect = self.runtime.block_on(App::create_rec_infos(
                 records_per_detect,
                 &path,
                 self.rule_keys.to_owned(),
@@ -2805,7 +2817,7 @@ Any hostnames added to the critical_systems.txt file will have all alerts above 
             ));
 
             // Execute the timeline feature.
-            tl.start(&records_per_detect, stored_static);
+            timeline.start(&records_per_detect, stored_static);
 
             // Do not apply rules for the following commands.
             if !(stored_static.metrics_flag
@@ -2815,7 +2827,7 @@ Any hostnames added to the critical_systems.txt file will have all alerts above 
             {
                 // Detect using rule files.
                 let (detection_tmp, mut log_records) =
-                    detection.start(&self.rt, records_per_detect);
+                    detection.start(&self.runtime, records_per_detect);
                 if stored_static.is_low_memory {
                     let empty_ids = HashSet::new();
                     afterfact::emit_csv(
@@ -2831,8 +2843,14 @@ Any hostnames added to the critical_systems.txt file will have all alerts above 
                 detection = detection_tmp;
             }
         }
-        tl.total_record_cnt += record_cnt;
-        (detection, record_cnt, tl, recover_records_cnt, detect_infos)
+        timeline.total_record_cnt += record_cnt;
+        (
+            detection,
+            record_cnt,
+            timeline,
+            recover_records_cnt,
+            detect_infos,
+        )
     }
 
     /// Convert a chunk of raw JSON records into EvtxRecordInfo structs in parallel on the Tokio
@@ -3225,7 +3243,7 @@ mod tests {
             format!("- Start time: {}", Local::now().format("%Y/%m/%d %H:%M")),
         ];
 
-        let actual = &HTML_REPORTER.read().unwrap().md_datas;
+        let actual = &HTML_REPORTER.read().unwrap().section_markdown;
         let general_contents = actual.get("General Overview {#general_overview}").unwrap();
         assert_eq!(expect_general_contents.len(), general_contents.len());
 
@@ -3258,7 +3276,7 @@ mod tests {
         app.rule_keys = app.get_all_keys(&rule_files);
         let detection = detection::Detection::new(rule_files);
         let target_time_filter = TargetEventTime::new(&stored_static);
-        let tl = Timeline::default();
+        let timeline = Timeline::default();
         let target_event_ids = TargetIds::default();
         let mut afterfact_info = AfterfactInfo::default();
         let mut afterfact_writer = afterfact::init_writer(&stored_static);
@@ -3271,7 +3289,7 @@ mod tests {
                 &stored_static,
             ),
             detection,
-            tl,
+            timeline,
             &mut afterfact_writer,
             &mut afterfact_info,
         );
@@ -3661,7 +3679,7 @@ mod tests {
         app.rule_keys = app.get_all_keys(&rule_files);
         let detection = detection::Detection::new(rule_files);
         let target_time_filter = TargetEventTime::new(&stored_static);
-        let tl = Timeline::default();
+        let timeline = Timeline::default();
         let target_event_ids = TargetIds::default();
         let mut afterfact_info = AfterfactInfo::default();
         let mut afterfact_writer = afterfact::init_writer(&stored_static);
@@ -3674,7 +3692,7 @@ mod tests {
                 &stored_static,
             ),
             detection,
-            tl,
+            timeline,
             &mut afterfact_writer,
             &mut afterfact_info,
         );
@@ -3707,7 +3725,7 @@ mod tests {
         app.rule_keys = app.get_all_keys(&rule_files);
         let detection = detection::Detection::new(rule_files);
         let target_time_filter = TargetEventTime::new(&stored_static);
-        let tl = Timeline::default();
+        let timeline = Timeline::default();
         let target_event_ids = TargetIds::default();
         let mut afterfact_info = AfterfactInfo::default();
         let mut afterfact_writer = afterfact::init_writer(&stored_static);
@@ -3720,7 +3738,7 @@ mod tests {
                 &stored_static,
             ),
             detection,
-            tl,
+            timeline,
             &mut afterfact_writer,
             &mut afterfact_info,
         );
@@ -3754,7 +3772,7 @@ mod tests {
         app.rule_keys = app.get_all_keys(&rule_files);
         let detection = detection::Detection::new(rule_files);
         let target_time_filter = TargetEventTime::new(&stored_static);
-        let tl = Timeline::default();
+        let timeline = Timeline::default();
         let target_event_ids = TargetIds::default();
         let mut afterfact_info = AfterfactInfo::default();
         let mut afterfact_writer = afterfact::init_writer(&stored_static);
@@ -3767,7 +3785,7 @@ mod tests {
                 &stored_static,
             ),
             detection,
-            tl,
+            timeline,
             &mut afterfact_writer,
             &mut afterfact_info,
         );

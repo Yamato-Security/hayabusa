@@ -27,13 +27,13 @@ use std::path::PathBuf;
 pub fn countup_event_by_computer(
     record: &Value,
     eventkey_alias: &EventKeyAliasConfig,
-    tl: &mut Timeline,
+    timeline: &mut Timeline,
 ) {
     if let Some(computer_name) =
         utils::get_event_value("Event.System.Computer", record, eventkey_alias)
     {
         // Tuple fields: (OS info, boot time, timezone, last event timestamp, event count).
-        let val = tl
+        let val = timeline
             .stats
             .stats_computer
             .entry(computer_name.to_string().replace('\"', "").into())
@@ -58,12 +58,14 @@ pub fn countup_event_by_computer(
                     // windows_versions.csv into WIN_VERSIONS.
                     let ver = arr[0].as_str().unwrap_or_default().trim_matches('.');
                     let ver = ver.replace(".01", ".1").replace(".00", ".0");
-                    let bui = arr[1].as_str().unwrap_or_default().to_string();
-                    if let Some((win, data)) = WIN_VERSIONS.get(&(ver.clone(), bui.clone())) {
+                    let build_number = arr[1].as_str().unwrap_or_default().to_string();
+                    if let Some((win, data)) =
+                        WIN_VERSIONS.get(&(ver.clone(), build_number.clone()))
+                    {
                         *os_name = format!("Windows {win} ({data})").into();
                     } else {
                         // Unknown combination: fall back to showing the raw version and build.
-                        *os_name = format!("Version: {ver} Build: {bui}").into();
+                        *os_name = format!("Version: {ver} Build: {build_number}").into();
                     }
                 }
             } else if id == 6013 {

@@ -237,25 +237,25 @@ pub struct AggRecordTimeInfo {
 /// since no SIGMA rule was found that combines multiple units (days, hours, minutes, seconds) in
 /// timeframe.
 pub struct TimeFrameInfo {
-    pub timetype: String,
-    pub timenum: Result<i64, ParseIntError>,
+    pub time_unit: String,
+    pub time_value: Result<i64, ParseIntError>,
 }
 
 impl TimeFrameInfo {
     /// Function to parse a timeframe string such as "15m" and return a struct. An unknown unit
-    /// suffix is reported here; a non-numeric number part is kept as an Err in `timenum` and
+    /// suffix is reported here; a non-numeric number part is kept as an Err in `time_value` and
     /// reported later by get_sec_timeframe().
     pub fn parse_tframe(value: String, stored_static: &StoredStatic) -> TimeFrameInfo {
-        let mut ttype = "";
+        let mut time_unit = "";
         let mut target_val = value.as_str();
         if target_val.ends_with('s') {
-            ttype = "s";
+            time_unit = "s";
         } else if target_val.ends_with('m') {
-            ttype = "m";
+            time_unit = "m";
         } else if target_val.ends_with('h') {
-            ttype = "h";
+            time_unit = "h";
         } else if target_val.ends_with('d') {
-            ttype = "d";
+            time_unit = "d";
         } else {
             let errmsg = format!("Timeframe is invalid. Input value:{value}");
             if stored_static.verbose_flag {
@@ -268,12 +268,12 @@ impl TimeFrameInfo {
                     .push(format!("[ERROR] {errmsg}"));
             }
         }
-        if !ttype.is_empty() {
+        if !time_unit.is_empty() {
             target_val = &value[..value.len() - 1];
         }
         TimeFrameInfo {
-            timetype: ttype.to_string(),
-            timenum: target_val.parse::<i64>(),
+            time_unit: time_unit.to_string(),
+            time_value: target_val.parse::<i64>(),
         }
     }
 }
@@ -281,14 +281,14 @@ impl TimeFrameInfo {
 /// Function that returns the result of converting the timeframe value stored in TimeFrameInfo to seconds.
 pub fn get_sec_timeframe(rule: &RuleNode, stored_static: &StoredStatic) -> Option<i64> {
     let timeframe = rule.detection.timeframe.as_ref();
-    let tfi = timeframe?;
-    match &tfi.timenum {
+    let timeframe_info = timeframe?;
+    match &timeframe_info.time_value {
         Ok(n) => {
-            if tfi.timetype == "d" {
+            if timeframe_info.time_unit == "d" {
                 Some(n * 86400)
-            } else if tfi.timetype == "h" {
+            } else if timeframe_info.time_unit == "h" {
                 Some(n * 3600)
-            } else if tfi.timetype == "m" {
+            } else if timeframe_info.time_unit == "m" {
                 Some(n * 60)
             } else {
                 Some(*n)
@@ -348,13 +348,13 @@ fn _if_condition_fn_caller<T: FnMut() -> S, S, U: FnMut() -> S>(
  */
 trait CountStrategy {
     /**
-     * Adds the data of datas[idx] to the timeframe.
+     * Adds the data of records[idx] to the timeframe.
      */
-    fn add_data(&mut self, idx: i64, datas: &[AggRecordTimeInfo], rule: &RuleNode);
+    fn add_data(&mut self, idx: i64, records: &[AggRecordTimeInfo], rule: &RuleNode);
     /**
-     * Removes the data of datas[idx] from the timeframe.
+     * Removes the data of records[idx] from the timeframe.
      */
-    fn remove_data(&mut self, idx: i64, datas: &[AggRecordTimeInfo], rule: &RuleNode);
+    fn remove_data(&mut self, idx: i64, records: &[AggRecordTimeInfo], rule: &RuleNode);
     /**
      * Returns the value of count().
      */
@@ -362,7 +362,12 @@ trait CountStrategy {
     /**
      * Creates an AggResult.
      */
-    fn create_agg_result(&mut self, datas: &[AggRecordTimeInfo], cnt: i64, key: &str) -> AggResult;
+    fn create_agg_result(
+        &mut self,
+        records: &[AggRecordTimeInfo],
+        cnt: i64,
+        key: &str,
+    ) -> AggResult;
 }
 
 /**
@@ -370,32 +375,32 @@ trait CountStrategy {
  * counts the number of distinct values that field takes within the timeframe.
  */
 struct FieldStrategy {
-    value_2_cnt: HashMap<String, i64>,
+    value_counts: HashMap<String, i64>,
 }
 
 impl CountStrategy for FieldStrategy {
-    fn add_data(&mut self, idx: i64, datas: &[AggRecordTimeInfo], _rule: &RuleNode) {
-        if idx >= datas.len() as i64 || idx < 0 {
+    fn add_data(&mut self, idx: i64, records: &[AggRecordTimeInfo], _rule: &RuleNode) {
+        if idx >= records.len() as i64 || idx < 0 {
             return;
         }
 
-        let value = &datas[idx as usize].field_value;
-        let key_val = self.value_2_cnt.get_key_value_mut(value);
+        let value = &records[idx as usize].field_value;
+        let key_val = self.value_counts.get_key_value_mut(value);
         if let Some(kv) = key_val {
             let (_, val) = kv;
             *val += 1;
         } else {
-            self.value_2_cnt.insert(value.to_string(), 1);
+            self.value_counts.insert(value.to_string(), 1);
         }
     }
 
-    fn remove_data(&mut self, idx: i64, datas: &[AggRecordTimeInfo], _rule: &RuleNode) {
-        if idx >= datas.len() as i64 || idx < 0 {
+    fn remove_data(&mut self, idx: i64, records: &[AggRecordTimeInfo], _rule: &RuleNode) {
+        if idx >= records.len() as i64 || idx < 0 {
             return;
         }
 
-        let record_value = &datas[idx as usize].field_value;
-        let key_val = self.value_2_cnt.get_key_value_mut(record_value);
+        let record_value = &records[idx as usize].field_value;
+        let key_val = self.value_counts.get_key_value_mut(record_value);
         if key_val.is_none() {
             return;
         }
@@ -403,31 +408,31 @@ impl CountStrategy for FieldStrategy {
         let val: &mut i64 = key_val.unwrap().1;
         if val <= &mut 1 {
             // If the value becomes 0, delete the key itself.
-            self.value_2_cnt.remove(record_value);
+            self.value_counts.remove(record_value);
         } else {
             *val += -1; // Decrease the count.
         }
     }
 
     fn count(&mut self) -> i64 {
-        self.value_2_cnt.keys().len() as i64
+        self.value_counts.keys().len() as i64
     }
 
     fn create_agg_result(
         &mut self,
-        datas: &[AggRecordTimeInfo],
+        records: &[AggRecordTimeInfo],
         _cnt: i64,
         key: &str,
     ) -> AggResult {
         // drain() empties the map as it yields entries, so this also resets the counter for the
         // next timeframe window.
-        let values: Vec<String> = self.value_2_cnt.drain().map(|(key, _)| key).collect();
+        let values: Vec<String> = self.value_counts.drain().map(|(key, _)| key).collect();
         AggResult::new(
             values.len() as i64,
             key.to_string(),
             values,
-            datas.first().unwrap().time,
-            datas.to_vec(),
+            records.first().unwrap().time,
+            records.to_vec(),
         )
     }
 }
@@ -441,16 +446,16 @@ struct NoFieldStrategy {
 }
 
 impl CountStrategy for NoFieldStrategy {
-    fn add_data(&mut self, idx: i64, datas: &[AggRecordTimeInfo], _rule: &RuleNode) {
-        if idx >= datas.len() as i64 || idx < 0 {
+    fn add_data(&mut self, idx: i64, records: &[AggRecordTimeInfo], _rule: &RuleNode) {
+        if idx >= records.len() as i64 || idx < 0 {
             return;
         }
 
         self.cnt += 1;
     }
 
-    fn remove_data(&mut self, idx: i64, datas: &[AggRecordTimeInfo], _rule: &RuleNode) {
-        if idx >= datas.len() as i64 || idx < 0 {
+    fn remove_data(&mut self, idx: i64, records: &[AggRecordTimeInfo], _rule: &RuleNode) {
+        if idx >= records.len() as i64 || idx < 0 {
             return;
         }
 
@@ -461,13 +466,18 @@ impl CountStrategy for NoFieldStrategy {
         self.cnt
     }
 
-    fn create_agg_result(&mut self, datas: &[AggRecordTimeInfo], cnt: i64, key: &str) -> AggResult {
+    fn create_agg_result(
+        &mut self,
+        records: &[AggRecordTimeInfo],
+        cnt: i64,
+        key: &str,
+    ) -> AggResult {
         let ret = AggResult::new(
             cnt,
             key.to_string(),
             vec![],
-            datas.first().unwrap().time,
-            datas.to_vec(),
+            records.first().unwrap().time,
+            records.to_vec(),
         );
         self.cnt = 0; // Reset the counter for the next timeframe window.
         ret
@@ -479,32 +489,32 @@ fn _create_counter(rule: &RuleNode) -> Box<dyn CountStrategy> {
     let agg_cond = rule.get_agg_condition().unwrap();
     if agg_cond._field_name.is_some() {
         Box::new(FieldStrategy {
-            value_2_cnt: HashMap::new(),
+            value_counts: HashMap::new(),
         })
     } else {
         Box::new(NoFieldStrategy { cnt: 0 })
     }
 }
 
-fn _get_timestamp(idx: i64, datas: &[AggRecordTimeInfo]) -> i64 {
-    datas[idx as usize].time.timestamp()
+fn _get_timestamp(idx: i64, records: &[AggRecordTimeInfo]) -> i64 {
+    records[idx as usize].time.timestamp()
 }
 
-fn _get_timestamp_subsec_nano(idx: i64, datas: &[AggRecordTimeInfo]) -> u32 {
-    datas[idx as usize].time.timestamp_subsec_nanos()
+fn _get_timestamp_subsec_nano(idx: i64, records: &[AggRecordTimeInfo]) -> u32 {
+    records[idx as usize].time.timestamp_subsec_nanos()
 }
 
 // Determine whether all data from data[left] through data[right] (inclusive) fits within the
 // timeframe, i.e. whether the window can be extended to include data[right].
-// Assumes datas is sorted in ascending time order.
-fn _is_in_timeframe(left: i64, right: i64, frame: i64, datas: &[AggRecordTimeInfo]) -> bool {
-    let left_time = _get_timestamp(left, datas);
-    let left_time_nano = _get_timestamp_subsec_nano(left, datas);
+// Assumes records is sorted in ascending time order.
+fn _is_in_timeframe(left: i64, right: i64, frame: i64, records: &[AggRecordTimeInfo]) -> bool {
+    let left_time = _get_timestamp(left, records);
+    let left_time_nano = _get_timestamp_subsec_nano(left, records);
     // evtx SystemTime is recorded with up to 7 fractional digits of seconds, but timestamp()
     // truncates to whole seconds. When the right edge has a larger fractional part than the left,
     // round the difference up by one second so the sub-second part is taken into account.
-    let mut right_time = _get_timestamp(right, datas);
-    let right_time_nano = _get_timestamp_subsec_nano(right, datas);
+    let mut right_time = _get_timestamp(right, records);
+    let right_time_nano = _get_timestamp_subsec_nano(right, records);
     if right_time_nano > left_time_nano {
         right_time += 1;
     }
@@ -515,49 +525,49 @@ fn _is_in_timeframe(left: i64, right: i64, frame: i64, datas: &[AggRecordTimeInf
 /// AggResult for each timeframe window whose records satisfy the count condition.
 pub fn judge_timeframe(
     rule: &RuleNode,
-    time_datas: &[AggRecordTimeInfo],
+    time_records: &[AggRecordTimeInfo],
     key: &str,
     stored_static: &StoredStatic,
 ) -> Vec<AggResult> {
     let mut ret: Vec<AggResult> = Vec::new();
-    if time_datas.is_empty() {
+    if time_records.is_empty() {
         return ret;
     }
 
     // The processing below assumes the AggRecordTimeInfo entries are sorted in time order.
-    let mut datas = time_datas.to_owned();
-    datas.sort_by_key(|a| a.time);
+    let mut records = time_records.to_owned();
+    records.sort_by_key(|a| a.time);
 
     // If the rule has no timeframe setting, use the time difference between the first and last
     // elements as the timeframe.
     let def_frame =
-        datas.last().unwrap().time.timestamp() - datas.first().unwrap().time.timestamp();
+        records.last().unwrap().time.timestamp() - records.first().unwrap().time.timestamp();
     let frame = get_sec_timeframe(rule, stored_static).unwrap_or(def_frame);
 
     // Consider data[i] in the range left <= i < right to be data within the timeframe.
     let mut left: i64 = 0;
     let mut right: i64 = 0;
     let mut counter = _create_counter(rule);
-    let data_len = datas.len() as i64;
+    let data_len = records.len() as i64;
     // right is exclusive, so it may go one past the last index (hence the +1).
     while left < data_len && right < data_len + 1 {
         // Increment right as long as it is within the timeframe range.
-        while right < data_len && _is_in_timeframe(left, right, frame, &datas) {
-            counter.add_data(right, &datas, rule);
+        while right < data_len && _is_in_timeframe(left, right, frame, &records) {
+            counter.add_data(right, &records, rule);
             right += 1;
         }
 
         let cnt = counter.count();
         if select_aggcon(cnt, rule) {
             // A timeframe satisfying the condition was found.
-            ret.push(counter.create_agg_result(&datas[left as usize..right as usize], cnt, key));
+            ret.push(counter.create_agg_result(&records[left as usize..right as usize], cnt, key));
             left = right;
         } else {
             // The condition was not satisfied, so slide the window: take in data[right] and drop
             // data[left]. add_data/remove_data bounds-check, so right == data_len is a no-op.
-            counter.add_data(right, &datas, rule);
+            counter.add_data(right, &records, rule);
             right += 1;
-            counter.remove_data(left, &datas, rule);
+            counter.remove_data(left, &records, rule);
             left += 1;
         }
     }
@@ -1799,14 +1809,14 @@ mod tests {
             expect_data.push(expect_agg.data);
             expect_key.push(expect_agg.key);
             expect_field_values.push(expect_agg.field_values);
-            expect_start_timedate.push(expect_agg.start_timedate);
+            expect_start_timedate.push(expect_agg.start_datetime);
         }
         for agg_result in agg_results {
-            println!("{}", &agg_result.start_timedate);
-            // The unwrap doubles as the check that start_timedate was stored correctly:
+            println!("{}", &agg_result.start_datetime);
+            // The unwrap doubles as the check that start_datetime was stored correctly:
             // binary_search fails if it is not among the expected values.
             let index = expect_start_timedate
-                .binary_search(&agg_result.start_timedate)
+                .binary_search(&agg_result.start_datetime)
                 .unwrap();
             assert_eq!(agg_result.data, expect_data[index]);
             assert_eq!(agg_result.key, expect_key[index]);

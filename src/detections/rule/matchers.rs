@@ -271,10 +271,10 @@ impl LeafMatcher for DefaultMatcher {
         let mut pattern = Vec::new();
         pattern.push(yaml_value.unwrap());
         // If pipes are specified, parse them.
-        let emp = String::default();
+        let empty_str = String::default();
         // The first element is just the field key; the second and subsequent elements are pipes.
 
-        let mut keys_all: Vec<&str> = key_list.get(0).unwrap_or(&emp).split('|').collect(); // key_list cannot be empty.
+        let mut keys_all: Vec<&str> = key_list.get(0).unwrap_or(&empty_str).split('|').collect(); // key_list cannot be empty.
 
         // Maps shorthand pipe names to the internal names accepted by PipeElement::new():
         // "all" -> "allOnly" (for a leading "|all" key) and the regex flags "i"/"m"/"s" ->
@@ -420,16 +420,16 @@ impl LeafMatcher for DefaultMatcher {
                 // (|utf16| meaning UTF-16LE with a BOM).
                 if self.pipes[1] == PipeElement::Base64offset {
                     let encode = &self.pipes[0];
-                    let org_str = pattern[0].as_str();
+                    let original_str = pattern[0].as_str();
                     if encode == &PipeElement::Utf16 {
                         let utf16_le_match = convert_to_base64_str(
                             Some(&PipeElement::Utf16Le),
-                            org_str,
+                            original_str,
                             &mut err_msgs,
                         );
                         let utf16_be_match = convert_to_base64_str(
                             Some(&PipeElement::Utf16Be),
-                            org_str,
+                            original_str,
                             &mut err_msgs,
                         );
                         if let Some(utf16_le_match) = utf16_le_match
@@ -441,33 +441,33 @@ impl LeafMatcher for DefaultMatcher {
                         }
                     } else {
                         self.fast_match =
-                            convert_to_base64_str(Some(encode), org_str, &mut err_msgs);
+                            convert_to_base64_str(Some(encode), original_str, &mut err_msgs);
                     }
                 } else if self.pipes[1] == PipeElement::Base64 {
                     let encode = &self.pipes[0];
-                    let org_str = pattern[0].as_str();
+                    let original_str = pattern[0].as_str();
                     match encode {
                         PipeElement::Utf16 => {
                             self.fast_match = convert_to_fast_match(
-                                &format!("*{}*", &to_base64_utf16le_with_bom(org_str, true)),
+                                &format!("*{}*", &to_base64_utf16le_with_bom(original_str, true)),
                                 true,
                             );
                         }
                         PipeElement::Utf16Le | PipeElement::Wide => {
                             self.fast_match = convert_to_fast_match(
-                                &format!("*{}*", &to_base64_utf16le_with_bom(org_str, false)),
+                                &format!("*{}*", &to_base64_utf16le_with_bom(original_str, false)),
                                 true,
                             );
                         }
                         PipeElement::Utf16Be => {
                             self.fast_match = convert_to_fast_match(
-                                &format!("*{}*", &to_base64_utf16be(org_str)),
+                                &format!("*{}*", &to_base64_utf16be(original_str)),
                                 true,
                             );
                         }
                         _ => {
                             self.fast_match = convert_to_fast_match(
-                                &format!("*{}*", &to_base64_utf8(org_str)),
+                                &format!("*{}*", &to_base64_utf8(original_str)),
                                 true,
                             );
                         }
@@ -827,41 +827,41 @@ impl PipeElement {
     fn pipe_pattern(&self, pattern: String) -> String {
         // When implementing polymorphism with an enum, every variant's implementation ends up in a
         // single method. This may feel odd to developers used to Java-style class hierarchies.
-        let fn_add_asterisk_end = |patt: String| {
-            if patt.ends_with("//*") {
-                patt
-            } else if patt.ends_with("/*") {
-                patt + "*"
-            } else if patt.ends_with('*') {
-                patt
-            } else if patt.ends_with('\\') {
+        let add_asterisk_end = |pattern: String| {
+            if pattern.ends_with("//*") {
+                pattern
+            } else if pattern.ends_with("/*") {
+                pattern + "*"
+            } else if pattern.ends_with('*') {
+                pattern
+            } else if pattern.ends_with('\\') {
                 // If the pattern ends with \ (a single backslash), turn the ending into \\*
                 // (two backslashes and an asterisk): in wildcard notation a trailing \\* means a
                 // literal backslash followed by the * wildcard.
-                patt + "\\*"
+                pattern + "\\*"
             } else {
-                patt + "*"
+                pattern + "*"
             }
         };
-        let fn_add_asterisk_begin = |patt: String| {
-            if patt.starts_with("//*") {
-                patt
-            } else if patt.starts_with("/*") {
-                "*".to_string() + &patt
-            } else if patt.starts_with('*') {
-                patt
+        let fn_add_asterisk_begin = |pattern: String| {
+            if pattern.starts_with("//*") {
+                pattern
+            } else if pattern.starts_with("/*") {
+                "*".to_string() + &pattern
+            } else if pattern.starts_with('*') {
+                pattern
             } else {
-                "*".to_string() + &patt
+                "*".to_string() + &pattern
             }
         };
 
         match self {
             // For startswith, handle by appending a wildcard to the end of pattern.
-            PipeElement::Startswith => fn_add_asterisk_end(pattern),
+            PipeElement::Startswith => add_asterisk_end(pattern),
             // For endswith, handle by prepending a wildcard to the beginning of pattern.
             PipeElement::Endswith => fn_add_asterisk_begin(pattern),
             // For contains, handle by prepending and appending wildcards to pattern.
-            PipeElement::Contains => fn_add_asterisk_end(fn_add_asterisk_begin(pattern)),
+            PipeElement::Contains => add_asterisk_end(fn_add_asterisk_begin(pattern)),
             // Convert WildCard to regex.
             PipeElement::Wildcard => PipeElement::pipe_pattern_wildcard(pattern),
             PipeElement::ReIgnoreCase => "(?i)".to_string() + pattern.as_str(),

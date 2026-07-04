@@ -196,15 +196,15 @@ impl Timeline {
         stats_tb.set_header(header_cells);
 
         // Sort by aggregated count in descending order.
-        let mut mapsorted: Vec<_> = self.stats.stats_list.iter().collect();
-        mapsorted.sort_by(|x, y| y.1.cmp(x.1));
+        let mut sorted_entries: Vec<_> = self.stats.stats_list.iter().collect();
+        sorted_entries.sort_by(|x, y| y.1.cmp(x.1));
 
         // Generate an output message for each Event ID.
         let stats_msgs: Nested<Vec<CompactString>> =
-            self.tm_stats_set_msg(mapsorted, event_timeline_config, stored_static);
+            self.tm_stats_set_msg(sorted_entries, event_timeline_config, stored_static);
 
-        for msgprint in summary_msgs.iter() {
-            let mut parts = msgprint.splitn(2, ':');
+        for msg_line in summary_msgs.iter() {
+            let mut parts = msg_line.splitn(2, ':');
             let first_part = parts.next().unwrap_or_default();
             let second_part = format!(": {}", parts.next().unwrap_or_default());
             write_color_buffer(
@@ -299,8 +299,8 @@ impl Timeline {
                 ));
             }
 
-            for msgprint in summary_msgs.iter() {
-                let mut parts = msgprint.splitn(2, ':');
+            for msg_line in summary_msgs.iter() {
+                let mut parts = msg_line.splitn(2, ':');
                 let first_part = parts.next().unwrap_or_default();
                 let second_part = format!(": {}", parts.next().unwrap_or_default());
                 write_color_buffer(
@@ -333,13 +333,13 @@ impl Timeline {
     /// channel, event ID and event title.
     fn tm_stats_set_msg(
         &self,
-        mapsorted: Vec<(&(CompactString, CompactString), &usize)>,
+        sorted_entries: Vec<(&(CompactString, CompactString), &usize)>,
         event_timeline_config: &EventInfoConfig,
         stored_static: &StoredStatic,
     ) -> Nested<Vec<CompactString>> {
         let mut msgs: Nested<Vec<CompactString>> = Nested::new();
 
-        for ((event_id, channel), event_cnt) in mapsorted.iter() {
+        for ((event_id, channel), event_cnt) in sorted_entries.iter() {
             // Calculate the percentage of counts.
             let rate: f32 = **event_cnt as f32 / self.stats.total as f32;
             let fmted_channel = channel;
@@ -362,7 +362,7 @@ impl Timeline {
                         &event_timeline_config
                             .get_event_id(fmted_channel, event_id)
                             .unwrap()
-                            .evttitle,
+                            .event_title,
                     ),
                 ]);
             } else {
@@ -395,8 +395,8 @@ impl Timeline {
             login_msgs.push("-----------------------------------------".to_string());
             login_msgs.push("|     No logon events were detected.    |".to_string());
             login_msgs.push("-----------------------------------------\n".to_string());
-            for msgprint in login_msgs.iter() {
-                println!("{msgprint}");
+            for msg_line in login_msgs.iter() {
+                println!("{msg_line}");
             }
         } else {
             self.tm_loginstats_tb_dsp_msg("successful", output, no_color);
@@ -463,20 +463,20 @@ impl Timeline {
         let h = &header;
         logins_stats_tb.set_header([h[0], h[1], h[2], h[4], h[8], h[9]]);
         // Index into the per-user [successful, failed] logon count pair.
-        let vnum = match logon_res {
+        let result_index = match logon_res {
             "successful" => 0,
             "failed" => 1,
             &_ => 0,
         };
         // Sort by aggregated count in descending order.
-        let mut mapsorted: Vec<_> = self.stats.stats_login_list.iter().collect();
-        mapsorted.sort_by(|x, y| y.1[vnum].cmp(&x.1[vnum]));
-        for (e, values) in &mapsorted {
+        let mut sorted_entries: Vec<_> = self.stats.stats_login_list.iter().collect();
+        sorted_entries.sort_by(|x, y| y.1[result_index].cmp(&x.1[result_index]));
+        for (e, values) in &sorted_entries {
             // Do not display entries with a count of zero.
-            if values[vnum] == 0 {
+            if values[result_index] == 0 {
                 continue;
             } else {
-                let vnum_str = values[vnum].to_string();
+                let vnum_str = values[result_index].to_string();
                 let record_data = vec![
                     vnum_str.as_str(),
                     e.channel.as_str(),
@@ -669,12 +669,12 @@ impl Timeline {
         } else {
             sep
         };
-        let ab_ch: Vec<String> = rec
+        let abbreviated_channels: Vec<String> = rec
             .channels
             .iter()
             .map(|ch| replace_channel_abbr(stored_static, &CompactString::from(ch)))
             .collect();
-        let ab_provider: Vec<String> = rec
+        let abbreviated_providers: Vec<String> = rec
             .providers
             .iter()
             .map(|ch| replace_provider_abbr(stored_static, &CompactString::from(ch)))
@@ -703,8 +703,8 @@ impl Timeline {
                     .time_format_options,
             )
             .into(),
-            ab_ch.iter().sorted().join(sep),
-            ab_provider.iter().sorted().join(sep),
+            abbreviated_channels.iter().sorted().join(sep),
+            abbreviated_providers.iter().sorted().join(sep),
             rec.file_size.to_string(),
         ])
     }
@@ -714,13 +714,13 @@ impl Timeline {
 /// case-insensitively, falling back to the original name), then shortens generic terms using
 /// the abbreviations defined in generic_abbreviations.txt.
 fn replace_channel_abbr(stored_static: &StoredStatic, fmted_channel: &CompactString) -> String {
-    stored_static.disp_abbr_generic.replace_all(
+    stored_static.generic_abbr_matcher.replace_all(
         stored_static
-            .ch_config
+            .channel_abbr_config
             .get(&fmted_channel.to_ascii_lowercase())
             .unwrap_or(fmted_channel)
             .as_str(),
-        &stored_static.disp_abbr_general_values,
+        &stored_static.generic_abbr_values,
     )
 }
 
@@ -728,12 +728,12 @@ fn replace_channel_abbr(stored_static: &StoredStatic, fmted_channel: &CompactStr
 /// to the original name), then shortens generic terms using the abbreviations defined in
 /// generic_abbreviations.txt.
 fn replace_provider_abbr(stored_static: &StoredStatic, fmted_provider: &CompactString) -> String {
-    stored_static.disp_abbr_generic.replace_all(
+    stored_static.generic_abbr_matcher.replace_all(
         stored_static
             .provider_abbr_config
             .get(fmted_provider)
             .unwrap_or(fmted_provider),
-        &stored_static.disp_abbr_general_values,
+        &stored_static.generic_abbr_values,
     )
 }
 
@@ -830,9 +830,9 @@ mod tests {
             },
             "Event_attributes": {"xmlns": "http://schemas.microsoft.com/win/2004/08/events/event"}
         }"#;
-        let mut input_datas = vec![];
+        let mut input_records = vec![];
         let alias_ch_record = serde_json::from_str(no_timestamp_record_str).unwrap();
-        input_datas.push(create_rec_info(
+        input_records.push(create_rec_info(
             alias_ch_record,
             "testpath".to_string(),
             &Nested::<String>::new(),
@@ -841,7 +841,7 @@ mod tests {
         ));
         timeline
             .stats
-            .logon_stats_start(&input_datas, &dummy_stored_static);
+            .logon_stats_start(&input_records, &dummy_stored_static);
         assert!(timeline.stats.start_time.is_none());
         assert!(timeline.stats.end_time.is_none());
 
@@ -868,8 +868,8 @@ mod tests {
 
         let include_tcreated_attrib_record =
             serde_json::from_str(tcreated_attrib_record_str).unwrap();
-        input_datas.clear();
-        input_datas.push(create_rec_info(
+        input_records.clear();
+        input_records.push(create_rec_info(
             include_tcreated_attrib_record,
             "testpath2".to_string(),
             &Nested::<String>::new(),
@@ -894,7 +894,7 @@ mod tests {
             "Event_attributes": {"xmlns": "http://schemas.microsoft.com/win/2004/08/events/event"}
         }"#;
         let include_timestamp_record = serde_json::from_str(timestamp_attrib_record_str).unwrap();
-        input_datas.push(create_rec_info(
+        input_records.push(create_rec_info(
             include_timestamp_record,
             "testpath2".to_string(),
             &Nested::<String>::new(),
@@ -926,7 +926,7 @@ mod tests {
             "Event_attributes": {"xmlns": "http://schemas.microsoft.com/win/2004/08/events/event"}
         }"#;
         let rds_gtw_record = serde_json::from_str(rds_gtw_record_str).unwrap();
-        input_datas.push(create_rec_info(
+        input_records.push(create_rec_info(
             rds_gtw_record,
             "testpath3".to_string(),
             &Nested::<String>::new(),
@@ -980,7 +980,7 @@ mod tests {
 
         timeline
             .stats
-            .logon_stats_start(&input_datas, &dummy_stored_static);
+            .logon_stats_start(&input_records, &dummy_stored_static);
         assert_eq!(
             timeline.stats.start_time,
             Some(DateTime::<Utc>::from_naive_utc_and_offset(
@@ -1048,7 +1048,7 @@ mod tests {
             }));
         *STORED_EKEY_ALIAS.write().unwrap() = Some(dummy_stored_static.eventkey_alias.clone());
         let mut timeline = Timeline::default();
-        let mut input_datas = vec![];
+        let mut input_records = vec![];
         let timestamp_attrib_record_str = r#"{
             "Event": {
                 "System": {
@@ -1065,7 +1065,7 @@ mod tests {
             "Event_attributes": {"xmlns": "http://schemas.microsoft.com/win/2004/08/events/event"}
         }"#;
         let include_timestamp_record = serde_json::from_str(timestamp_attrib_record_str).unwrap();
-        input_datas.push(create_rec_info(
+        input_records.push(create_rec_info(
             include_timestamp_record,
             "testpath2".to_string(),
             &Nested::<String>::new(),
@@ -1077,7 +1077,7 @@ mod tests {
         let exclude_computer: HashSet<CompactString> = HashSet::new();
 
         timeline.stats.evt_stats_start(
-            &input_datas,
+            &input_records,
             &dummy_stored_static,
             (&include_computer, &exclude_computer),
         );
@@ -1146,7 +1146,7 @@ mod tests {
         dummy_stored_static.logon_summary_flag = true;
         *STORED_EKEY_ALIAS.write().unwrap() = Some(dummy_stored_static.eventkey_alias.clone());
         let mut timeline = Timeline::default();
-        let mut input_datas = vec![];
+        let mut input_records = vec![];
         let tcreated_attrib_record_str = r#"{
             "Event": {
                 "System": {
@@ -1168,8 +1168,8 @@ mod tests {
         }"#;
         let include_tcreated_attrib_record =
             serde_json::from_str(tcreated_attrib_record_str).unwrap();
-        input_datas.clear();
-        input_datas.push(create_rec_info(
+        input_records.clear();
+        input_records.push(create_rec_info(
             include_tcreated_attrib_record,
             "testpath2".to_string(),
             &Nested::<String>::new(),
@@ -1193,7 +1193,7 @@ mod tests {
             "Event_attributes": {"xmlns": "http://schemas.microsoft.com/win/2004/08/events/event"}
         }"#;
         let include_timestamp_record = serde_json::from_str(timestamp_attrib_record_str).unwrap();
-        input_datas.push(create_rec_info(
+        input_records.push(create_rec_info(
             include_timestamp_record,
             "testpath2".to_string(),
             &Nested::<String>::new(),
@@ -1203,7 +1203,7 @@ mod tests {
 
         timeline
             .stats
-            .logon_stats_start(&input_datas, &dummy_stored_static);
+            .logon_stats_start(&input_records, &dummy_stored_static);
 
         timeline.tm_logon_stats_dsp_msg(&dummy_stored_static);
         let mut header = [

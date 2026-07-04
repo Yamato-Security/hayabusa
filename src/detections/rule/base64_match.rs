@@ -12,13 +12,13 @@ use std::string::FromUtf8Error;
 /// `encode` optionally converts the pattern to UTF-16LE/BE before base64-encoding it.
 pub fn convert_to_base64_str(
     encode: Option<&PipeElement>,
-    org_str: &str,
+    original_str: &str,
     err_msgs: &mut Vec<String>,
 ) -> Option<Vec<FastMatch>> {
     let mut fastmatches = vec![];
     for i in 0..3 {
-        let convstr_b64 = make_base64_str(encode, org_str, i);
-        match convstr_b64 {
+        let encoded_result = make_base64_str(encode, original_str, i);
+        match encoded_result {
             Ok(b64_str) => {
                 let b64_s_null_filtered = b64_str.replace('\0', "");
                 let b64_offset_contents = base64_offset(i, b64_str, b64_s_null_filtered);
@@ -38,13 +38,13 @@ pub fn convert_to_base64_str(
     Some(fastmatches)
 }
 
-/// Base64-encodes `org_str` (as UTF-8, or as UTF-16LE/BE when `encode` says so) after prepending
+/// Base64-encodes `original_str` (as UTF-8, or as UTF-16LE/BE when `encode` says so) after prepending
 /// `variant_index` (0-2) dummy NUL bytes, which shifts the value to the corresponding offset
 /// within the base64 3-byte groups. The result can contain trailing NUL bytes because the output
 /// buffer is oversized; the caller strips them.
 fn make_base64_str(
     encode: Option<&PipeElement>,
-    org_str: &str,
+    original_str: &str,
     variant_index: usize,
 ) -> Result<String, FromUtf8Error> {
     let mut b64_result = vec![];
@@ -55,22 +55,22 @@ fn make_base64_str(
         match en {
             PipeElement::Utf16Be => {
                 let mut buffer = Vec::new();
-                for utf16 in org_str.encode_utf16() {
+                for utf16 in original_str.encode_utf16() {
                     buffer.write_all(&utf16.to_be_bytes()).unwrap();
                 }
                 target_byte.extend_from_slice(buffer.as_slice())
             }
             PipeElement::Utf16Le | PipeElement::Wide => {
                 let mut buffer = Vec::new();
-                for utf16 in org_str.encode_utf16() {
+                for utf16 in original_str.encode_utf16() {
                     buffer.write_all(&utf16.to_le_bytes()).unwrap();
                 }
                 target_byte.extend_from_slice(buffer.as_slice())
             }
-            _ => target_byte.extend_from_slice(org_str.as_bytes()),
+            _ => target_byte.extend_from_slice(original_str.as_bytes()),
         }
     } else {
-        target_byte.extend_from_slice(org_str.as_bytes());
+        target_byte.extend_from_slice(original_str.as_bytes());
     }
     // Reserve more than enough space for encode_slice(); unused bytes stay NUL.
     b64_result.resize_with(target_byte.len() * 4 / 3 + 4, || 0b0);

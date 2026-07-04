@@ -33,7 +33,7 @@ pub struct ParseYaml {
     /// Rules that survived filtering, as (rule file path, parsed YAML document) pairs.
     pub files: Vec<(String, Yaml)>,
     /// Number of loaded rules per `ruletype` value ("Other" when the key is missing).
-    pub rulecounter: HashMap<CompactString, u128>,
+    pub rule_type_cnt: HashMap<CompactString, u128>,
     /// Number of rules that were not loaded, keyed by the reason ("excluded" or "noisy").
     pub rule_load_cnt: HashMap<CompactString, u128>,
     /// Number of rules per `status` value, including deprecated/unsupported rules that were
@@ -51,7 +51,7 @@ pub struct ParseYaml {
     pub rule_expand_enabled_cnt: u128,
     /// Number of rules that failed to be read, parsed as YAML, or validated against the
     /// Hayabusa rule format.
-    pub errorrule_count: u128,
+    pub error_rule_count: u128,
     /// Status values to exclude, from the --exclude-status option.
     pub exclude_status: HashSet<String>,
     pub loaded_rule_ids: HashSet<CompactString>,
@@ -66,7 +66,7 @@ impl ParseYaml {
         };
         ParseYaml {
             files: Vec::new(),
-            rulecounter: HashMap::new(),
+            rule_type_cnt: HashMap::new(),
             rule_load_cnt: HashMap::from([("excluded".into(), 0_u128), ("noisy".into(), 0_u128)]),
             rule_status_cnt: HashMap::from([
                 ("deprecated".into(), 0_u128),
@@ -76,7 +76,7 @@ impl ParseYaml {
             rule_cor_ref_cnt: Default::default(),
             rule_expand_cnt: Default::default(),
             rule_expand_enabled_cnt: Default::default(),
-            errorrule_count: 0,
+            error_rule_count: 0,
             exclude_status: configs::convert_option_vecs_to_hs(exclude_status_vec.as_ref()),
             loaded_rule_ids: HashSet::new(),
         }
@@ -86,11 +86,12 @@ impl ParseYaml {
     pub fn read_file(path: &PathBuf) -> Result<String, String> {
         let mut file_content = String::new();
 
-        let mut fr = fs::File::open(path)
+        let mut file_reader = fs::File::open(path)
             .map(BufReader::new)
             .map_err(|e| e.to_string())?;
 
-        fr.read_to_string(&mut file_content)
+        file_reader
+            .read_to_string(&mut file_content)
             .map_err(|e| e.to_string())?;
 
         Ok(file_content)
@@ -99,11 +100,11 @@ impl ParseYaml {
     /// Reads an obfuscated rule file (encoded_rules.yml) and decodes it by XORing every byte
     /// with 0xAA.
     fn read_encoded_file(path: &PathBuf) -> Result<String, String> {
-        let mut fr = fs::File::open(path)
+        let mut file_reader = fs::File::open(path)
             .map(BufReader::new)
             .map_err(|e| e.to_string())?;
         let mut encrypted_content = Vec::new();
-        let _ = fr.read_to_end(&mut encrypted_content);
+        let _ = file_reader.read_to_end(&mut encrypted_content);
         let decode_content = encrypted_content.iter().map(|&b| b ^ 0xAA).collect(); // key: 0xAA
         let decode_string = String::from_utf8(decode_content).expect("Invalid UTF-8 sequence");
         Ok(decode_string)
@@ -226,7 +227,7 @@ impl ParseYaml {
                             .unwrap()
                             .push(format!("[WARN] {errmsg}"));
                     }
-                    self.errorrule_count += 1;
+                    self.error_rule_count += 1;
                     return io::Result::Ok(String::default());
                 }
             };
@@ -264,7 +265,7 @@ impl ParseYaml {
                             .unwrap()
                             .push(format!("[WARN] {errmsg}"));
                     }
-                    self.errorrule_count += 1;
+                    self.error_rule_count += 1;
                 }
             }
         } else {
@@ -324,7 +325,7 @@ impl ParseYaml {
                                 .unwrap()
                                 .push(format!("[WARN] {errmsg}"));
                         }
-                        self.errorrule_count += 1;
+                        self.error_rule_count += 1;
                         return io::Result::Ok(ret);
                     }
                 };
@@ -355,7 +356,7 @@ impl ParseYaml {
                                 .unwrap()
                                 .push(format!("[WARN] {errmsg}"));
                         }
-                        self.errorrule_count += 1;
+                        self.error_rule_count += 1;
                         io::Result::Ok(ret)
                     }
                 }
@@ -388,7 +389,7 @@ impl ParseYaml {
             let rule_id = &yaml_doc["id"].as_str();
             if rule_id.is_some() {
                 if let Some(v) = exclude_ids
-                    .no_use_rule
+                    .excluded_rule_sources
                     .get(&rule_id.unwrap_or(&String::default()).to_string())
                 {
                     // `v` is the path of the list file that the rule ID came from
@@ -424,12 +425,12 @@ impl ParseYaml {
                 }
             }
 
-            let mut up_rule_status_cnt = |status: &str| {
+            let mut bump_rule_status_cnt = |status: &str| {
                 let status_cnt = self.rule_status_cnt.entry(status.into()).or_insert(0);
                 *status_cnt += 1;
             };
 
-            let mut up_rule_load_cnt = |status: &str| {
+            let mut bump_rule_load_cnt = |status: &str| {
                 let entry = self.rule_load_cnt.entry(status.into()).or_insert(0);
                 *entry += 1;
             };
@@ -445,7 +446,7 @@ impl ParseYaml {
                             .unwrap()
                             .push(format!("[WARN] Invalid rule. {errmsg} ({filepath})"));
                     }
-                    self.errorrule_count += 1;
+                    self.error_rule_count += 1;
                     return Option::None;
                 }
             }
@@ -462,7 +463,7 @@ impl ParseYaml {
             if doc_level_num < args_level_num
                 || (target_level_num != 0 && doc_level_num != target_level_num)
             {
-                up_rule_load_cnt("excluded");
+                bump_rule_load_cnt("excluded");
                 return Option::None;
             }
             let status = yaml_doc["status"].as_str();
@@ -473,7 +474,7 @@ impl ParseYaml {
                     || !(is_contained_include_status_all_allowed
                         || stored_static.include_status.contains(s))
                 {
-                    up_rule_load_cnt("excluded");
+                    bump_rule_load_cnt("excluded");
                     return Option::None;
                 }
 
@@ -494,7 +495,7 @@ impl ParseYaml {
                     // Deprecated/unsupported rules are only counted, not loaded, unless the
                     // corresponding --enable-deprecated-rules / --enable-unsupported-rules
                     // option is given.
-                    up_rule_status_cnt(s);
+                    bump_rule_status_cnt(s);
                     return Option::None;
                 }
             } else if !is_contained_include_status_all_allowed {
@@ -505,7 +506,7 @@ impl ParseYaml {
                     Action::CsvTimeline(_) | Action::JsonTimeline(_) | Action::PivotKeywordsList(_)
                 );
                 if need_rules {
-                    up_rule_load_cnt("excluded");
+                    bump_rule_load_cnt("excluded");
                     return Option::None;
                 }
             }
@@ -537,13 +538,13 @@ impl ParseYaml {
                 if !include_category.is_empty()
                     && !include_category.contains(&category_in_rule.to_string())
                 {
-                    up_rule_load_cnt("excluded");
+                    bump_rule_load_cnt("excluded");
                     return Option::None;
                 }
                 if !exclude_category.is_empty()
                     && exclude_category.contains(&category_in_rule.to_string())
                 {
-                    up_rule_load_cnt("excluded");
+                    bump_rule_load_cnt("excluded");
                     return Option::None;
                 }
             }
@@ -570,11 +571,11 @@ impl ParseYaml {
                         target_tags.contains(&tag.as_str().unwrap_or_default().to_string())
                     });
                     if !is_match {
-                        up_rule_load_cnt("excluded");
+                        bump_rule_load_cnt("excluded");
                         return Option::None;
                     }
                 } else {
-                    up_rule_load_cnt("excluded");
+                    bump_rule_load_cnt("excluded");
                     return Option::None;
                 }
             }
@@ -589,21 +590,21 @@ impl ParseYaml {
                         exclude_tag.contains(&tag.as_str().unwrap_or_default().to_string())
                     });
                     if is_match {
-                        up_rule_load_cnt("excluded");
+                        bump_rule_load_cnt("excluded");
                         return Option::None;
                     }
                 }
             }
 
-            self.rulecounter.insert(
+            self.rule_type_cnt.insert(
                 yaml_doc["ruletype"].as_str().unwrap_or("Other").into(),
-                self.rulecounter
+                self.rule_type_cnt
                     .get(yaml_doc["ruletype"].as_str().unwrap_or("Other"))
                     .unwrap_or(&0)
                     + 1,
             );
 
-            up_rule_status_cnt(status.unwrap_or("undefined"));
+            bump_rule_status_cnt(status.unwrap_or("undefined"));
 
             if stored_static.verbose_flag {
                 println!("Loaded rule: {filepath}");
@@ -784,7 +785,7 @@ pub fn count_rules<P: AsRef<Path>>(
         // "excluded"/"noisy" instead of their own status.
         if rule_id.is_some()
             && let Some(v) = exclude_ids
-                .no_use_rule
+                .excluded_rule_sources
                 .get(&rule_id.unwrap_or(&String::default()).to_string())
         {
             // `v` is the path of the list file that the rule ID came from
@@ -989,7 +990,7 @@ mod tests {
     #[test]
     fn test_read_dir_yaml() {
         let exclude_ids = RuleExclude {
-            no_use_rule: HashMap::new(),
+            excluded_rule_sources: HashMap::new(),
         };
         let dummy_stored_static = create_dummy_stored_static();
         let mut yaml = yaml::ParseYaml::new(&dummy_stored_static);
@@ -1153,7 +1154,7 @@ mod tests {
         let mut exclude_ids = RuleExclude::new();
         // The real (non-test) rule ID of test_files/rules/yaml/noisy1.yml; the value only
         // needs to contain "exclude_rule" to be classified under the "excluded" counter.
-        exclude_ids.no_use_rule.insert(
+        exclude_ids.excluded_rule_sources.insert(
             "0090ea60-f4a2-43a8-8657-3a9a4ddcf547".to_string(),
             "exclude_rules.txt".to_string(),
         );
@@ -1184,7 +1185,7 @@ mod tests {
 
         // A rule with a real UUID in the exclude list is still counted.
         let mut exclude_ids = RuleExclude::new();
-        exclude_ids.no_use_rule.insert(
+        exclude_ids.excluded_rule_sources.insert(
             "0090ea60-f4a2-43a8-8657-3a9a4ddcf547".to_string(),
             "exclude_rules.txt".to_string(),
         );

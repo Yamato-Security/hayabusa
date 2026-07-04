@@ -75,7 +75,7 @@ impl Update {
             if rule_path == "./rules" {
                 let hayabusa_repo = hayabusa_repo.unwrap();
                 let submodules = hayabusa_repo.submodules()?;
-                let mut is_success_submodule_update = true;
+                let mut submodule_update_succeeded = true;
                 // The stale submodule metadata path to delete is hardcoded so that no unintended
                 // folder can be removed.
                 fs::remove_dir_all(".git/.submodule/rules").ok();
@@ -84,10 +84,10 @@ impl Update {
                     let submodule_repo = submodule.open()?;
                     if let Err(e) = Update::pull_repository(&submodule_repo) {
                         AlertMessage::alert(&format!("Failed submodule update. {e}")).ok();
-                        is_success_submodule_update = false;
+                        submodule_update_succeeded = false;
                     }
                 }
-                if is_success_submodule_update {
+                if submodule_update_succeeded {
                     result = Ok("Successed submodule update".to_string());
                 } else {
                     result = Err(git2::Error::from_str(&String::default()));

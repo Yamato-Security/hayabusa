@@ -149,10 +149,10 @@ impl EventSearch {
         let mut default_details_abbr: HashMap<CompactString, CompactString> = HashMap::new();
         for (k, v) in stored_static.default_details.iter() {
             v.split(" ¦ ").for_each(|x| {
-                let abbr_k_v = x.split(": ").collect_vec();
-                if abbr_k_v.len() == 2 {
-                    let abbr: CompactString = abbr_k_v[0].into();
-                    let full: CompactString = abbr_k_v[1].replace("%", "").trim().into();
+                let abbr_and_full = x.split(": ").collect_vec();
+                if abbr_and_full.len() == 2 {
+                    let abbr: CompactString = abbr_and_full[0].into();
+                    let full: CompactString = abbr_and_full[1].replace("%", "").trim().into();
                     default_details_abbr.insert(full, abbr);
                 }
             });
@@ -250,7 +250,7 @@ impl EventSearch {
             // Replace the 🛂r/🛂n/🛂t placeholders (substituted for \r, \n and \t by
             // utils::remove_sp_char) with a 🦅 sentinel, re-join the pieces with single spaces,
             // and shorten full field names to their abbreviations.
-            let allfieldinfo_newline_split = self.replace_all_field_info_abbr(
+            let abbreviated_all_field_info = self.replace_all_field_info_abbr(
                 ALLFIELDINFO_SPECIAL_CHARS
                     .replace_all(&allfieldinfo, &["🦅", "🦅", "🦅"])
                     .split('🦅')
@@ -269,7 +269,7 @@ impl EventSearch {
                     channel,
                     eventid,
                     recordid,
-                    allfieldinfo_newline_split,
+                    abbreviated_all_field_info,
                     self.filepath.clone(),
                 ));
                 self.search_result_cnt += 1;
@@ -283,7 +283,7 @@ impl EventSearch {
                     channel,
                     eventid,
                     recordid,
-                    allfieldinfo_newline_split,
+                    abbreviated_all_field_info,
                     self.filepath.clone(),
                 );
                 wtr.write_record(
@@ -349,7 +349,7 @@ impl EventSearch {
             // Replace the 🛂r/🛂n/🛂t placeholders (substituted for \r, \n and \t by
             // utils::remove_sp_char) with a 🦅 sentinel, re-join the pieces with single spaces,
             // and shorten full field names to their abbreviations.
-            let allfieldinfo_newline_split = self.replace_all_field_info_abbr(
+            let abbreviated_all_field_info = self.replace_all_field_info_abbr(
                 ALLFIELDINFO_SPECIAL_CHARS
                     .replace_all(&allfieldinfo, &["🦅", "🦅", "🦅"])
                     .split('🦅')
@@ -368,7 +368,7 @@ impl EventSearch {
                     channel,
                     eventid,
                     recordid,
-                    allfieldinfo_newline_split,
+                    abbreviated_all_field_info,
                     self.filepath.clone(),
                 ));
                 self.search_result_cnt += 1;
@@ -382,7 +382,7 @@ impl EventSearch {
                     channel,
                     eventid,
                     recordid,
-                    allfieldinfo_newline_split,
+                    abbreviated_all_field_info,
                     self.filepath.clone(),
                 );
                 wtr.write_record(
@@ -425,7 +425,7 @@ impl EventSearch {
 /// on the search options.
 pub struct ResultWriter {
     // Terminal writer; Some only when no output file was specified.
-    pub disp_wtr: Option<BufferWriter>,
+    pub display_writer: Option<BufferWriter>,
     // File writer; Some only when an output file was specified.
     pub file_wtr: Option<Writer<BufWriter<File>>>,
     written_record_num: u64,
@@ -462,14 +462,14 @@ impl ResultWriter {
             }
         };
 
-        let disp_wtr = if file_wtr.is_none() {
+        let display_writer = if file_wtr.is_none() {
             Some(BufferWriter::stdout(ColorChoice::Always))
         } else {
             Option::None
         };
 
         ResultWriter {
-            disp_wtr,
+            display_writer,
             file_wtr,
             written_record_num: 0,
         }
@@ -490,7 +490,7 @@ impl ResultWriter {
         } else if search_option.output.is_none() {
             // TODO hach1yon add logic, **result.isEmpty()**
             write_color_buffer(
-                self.disp_wtr.as_mut().unwrap(),
+                self.display_writer.as_mut().unwrap(),
                 None,
                 &OUTPUT_HEADERS.join(" · "),
                 true,
@@ -526,17 +526,17 @@ impl ResultWriter {
             .event_timeline_config
             .get_event_id(&channel.to_ascii_lowercase(), &event_id)
         {
-            CompactString::from(event_info.evttitle.as_str())
+            CompactString::from(event_info.event_title.as_str())
         } else {
             "-".into()
         };
-        let abbr_channel = stored_static.disp_abbr_generic.replace_all(
+        let abbr_channel = stored_static.generic_abbr_matcher.replace_all(
             stored_static
-                .ch_config
+                .channel_abbr_config
                 .get(&channel.to_ascii_lowercase())
                 .unwrap_or(&channel)
                 .as_str(),
-            &stored_static.disp_abbr_general_values,
+            &stored_static.generic_abbr_values,
         );
         let get_char_color = |output_char_color: Option<Color>| {
             if stored_static.common_options.no_color {
@@ -646,14 +646,14 @@ impl ResultWriter {
                         let mut separated_fields_data =
                             fields.split(':').map(|x| x.split_whitespace().join(" "));
                         write_color_buffer(
-                            self.disp_wtr.as_mut().unwrap(),
+                            self.display_writer.as_mut().unwrap(),
                             get_char_color(Some(Color::Rgb(255, 158, 61))),
                             &format!("{}: ", separated_fields_data.next().unwrap()),
                             newline_flag,
                         )
                         .ok();
                         write_color_buffer(
-                            self.disp_wtr.as_mut().unwrap(),
+                            self.display_writer.as_mut().unwrap(),
                             get_char_color(Some(Color::Rgb(0, 255, 255))),
                             separated_fields_data.join(":").trim(),
                             newline_flag,
@@ -661,7 +661,7 @@ impl ResultWriter {
                         .ok();
                         if field_idx != all_field_sep_info.len() - 1 {
                             write_color_buffer(
-                                self.disp_wtr.as_mut().unwrap(),
+                                self.display_writer.as_mut().unwrap(),
                                 None,
                                 " ¦ ",
                                 newline_flag,
@@ -672,7 +672,7 @@ impl ResultWriter {
                 } else if record_field_idx == 0 || record_field_idx == 1 {
                     // Display timestamp and event title in the same color.
                     write_color_buffer(
-                        self.disp_wtr.as_mut().unwrap(),
+                        self.display_writer.as_mut().unwrap(),
                         get_char_color(Some(Color::Rgb(0, 255, 0))),
                         record_field_data,
                         newline_flag,
@@ -680,7 +680,7 @@ impl ResultWriter {
                     .ok();
                 } else {
                     write_color_buffer(
-                        self.disp_wtr.as_mut().unwrap(),
+                        self.display_writer.as_mut().unwrap(),
                         None,
                         record_field_data,
                         newline_flag,
@@ -690,7 +690,7 @@ impl ResultWriter {
 
                 if !newline_flag {
                     write_color_buffer(
-                        self.disp_wtr.as_mut().unwrap(),
+                        self.display_writer.as_mut().unwrap(),
                         get_char_color(Some(Color::Rgb(238, 102, 97))),
                         " · ",
                         false,

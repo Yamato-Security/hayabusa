@@ -162,25 +162,25 @@ fn get_group_by_from_yaml(yaml: &Yaml) -> Result<Option<String>, Box<dyn Error>>
 /// TimeFrameInfo::parse_tframe in count.rs, but returns an Err for an unknown unit suffix
 /// instead of logging it.
 fn parse_tframe(value: String) -> Result<TimeFrameInfo, Box<dyn Error>> {
-    let ttype;
+    let time_unit;
     let mut target_val = value.as_str();
     if target_val.ends_with('s') {
-        ttype = "s";
+        time_unit = "s";
     } else if target_val.ends_with('m') {
-        ttype = "m";
+        time_unit = "m";
     } else if target_val.ends_with('h') {
-        ttype = "h";
+        time_unit = "h";
     } else if target_val.ends_with('d') {
-        ttype = "d";
+        time_unit = "d";
     } else {
         return Err("Invalid time frame".into());
     }
-    if !ttype.is_empty() {
+    if !time_unit.is_empty() {
         target_val = &value[..value.len() - 1];
     }
     Ok(TimeFrameInfo {
-        timetype: ttype.to_string(),
-        timenum: target_val.parse::<i64>(),
+        time_unit: time_unit.to_string(),
+        time_value: target_val.parse::<i64>(),
     })
 }
 
@@ -250,7 +250,7 @@ fn error_log(
     rule_path: &str,
     reason: &str,
     stored_static: &StoredStatic,
-    parseerror_count: &mut u128,
+    parse_error_count: &mut u128,
 ) {
     let msg = format!("Failed to parse rule. (FilePath : {rule_path}) {reason}");
     if stored_static.verbose_flag {
@@ -262,7 +262,7 @@ fn error_log(
             .unwrap()
             .push(format!("[WARN] {msg}"));
     }
-    *parseerror_count += 1;
+    *parse_error_count += 1;
 }
 
 /// Converts an `event_count`/`value_count` correlation rule into a single self-contained

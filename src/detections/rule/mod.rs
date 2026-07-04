@@ -459,7 +459,7 @@ pub struct AggResult {
     /// count. If nothing is specified inside the parentheses, this is an array of length 0.
     pub field_values: Vec<String>,
     /// Time of the first record in the detected block.
-    pub start_timedate: DateTime<Utc>,
+    pub start_datetime: DateTime<Utc>,
     /// All times and EventIDs of records in the detected block.
     pub agg_record_time_info: Vec<AggRecordTimeInfo>,
 }
@@ -476,7 +476,7 @@ impl AggResult {
             data: count_data,
             key: key_name,
             field_values: field_value,
-            start_timedate: event_start_timedate,
+            start_datetime: event_start_timedate,
             agg_record_time_info,
         }
     }

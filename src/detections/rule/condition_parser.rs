@@ -43,15 +43,15 @@ pub enum ConditionToken {
 }
 
 impl ConditionToken {
-    /// Converts this ConditionToken into a SelectionNode. `name_2_node` maps the selection names
+    /// Converts this ConditionToken into a SelectionNode. `name_to_node` maps the selection names
     /// defined in the rule's detection section to their parsed selection nodes.
     pub fn into_selection_node(
         self,
-        name_2_node: &HashMap<String, Arc<Box<dyn SelectionNode>>>,
+        name_to_node: &HashMap<String, Arc<Box<dyn SelectionNode>>>,
     ) -> Result<Box<dyn SelectionNode>, String> {
         match self {
             ConditionToken::SelectionReference(selection_name) => {
-                let selection_node = name_2_node.get(&selection_name);
+                let selection_node = name_to_node.get(&selection_name);
                 if let Some(select_node) = selection_node {
                     let selection_node = select_node;
                     let selection_node = Arc::clone(selection_node);
@@ -63,12 +63,12 @@ impl ConditionToken {
                 }
             }
             ConditionToken::ParenthesisContainer(sub_token) => {
-                Result::Ok((*sub_token).into_selection_node(name_2_node)?)
+                Result::Ok((*sub_token).into_selection_node(name_to_node)?)
             }
             ConditionToken::AndContainer(sub_tokens) => {
                 let mut select_and_node = AndSelectionNode::new();
                 for sub_token in sub_tokens {
-                    let sub_node = sub_token.into_selection_node(name_2_node)?;
+                    let sub_node = sub_token.into_selection_node(name_to_node)?;
                     select_and_node.child_nodes.push(sub_node);
                 }
                 Result::Ok(Box::new(select_and_node))
@@ -76,13 +76,13 @@ impl ConditionToken {
             ConditionToken::OrContainer(sub_tokens) => {
                 let mut select_or_node = OrSelectionNode::new();
                 for sub_token in sub_tokens {
-                    let sub_node = sub_token.into_selection_node(name_2_node)?;
+                    let sub_node = sub_token.into_selection_node(name_to_node)?;
                     select_or_node.child_nodes.push(sub_node);
                 }
                 Result::Ok(Box::new(select_or_node))
             }
             ConditionToken::NotContainer(sub_token) => {
-                let select_sub_node = sub_token.into_selection_node(name_2_node)?;
+                let select_sub_node = sub_token.into_selection_node(name_to_node)?;
                 let select_not_node = NotSelectionNode::new(select_sub_node);
                 Result::Ok(Box::new(select_not_node))
             }
@@ -127,14 +127,14 @@ impl ConditionCompiler {
         ConditionCompiler {}
     }
 
-    /// Compiles a condition string into a SelectionNode tree. `name_2_node` maps the selection
+    /// Compiles a condition string into a SelectionNode tree. `name_to_node` maps the selection
     /// names defined in the rule's detection section to their parsed selection nodes.
     pub fn compile_condition(
         &self,
         condition_str: &str,
-        name_2_node: &HashMap<String, Arc<Box<dyn SelectionNode>>>,
+        name_to_node: &HashMap<String, Arc<Box<dyn SelectionNode>>>,
     ) -> Result<Box<dyn SelectionNode>, String> {
-        let node_keys: Vec<String> = name_2_node.keys().cloned().collect();
+        let node_keys: Vec<String> = name_to_node.keys().cloned().collect();
         let condition_str = Self::convert_condition(condition_str, &node_keys);
         // The aggregation part after a pipe (e.g. "| count() >= 1") is parsed elsewhere
         // (see aggregation_parser.rs), so strip it here.
@@ -146,7 +146,7 @@ impl ConditionCompiler {
             condition_str.to_string()
         };
 
-        let result = self.compile_condition_body(&replaced_condition, name_2_node);
+        let result = self.compile_condition_body(&replaced_condition, name_to_node);
         if let Result::Err(msg) = result {
             Result::Err(format!("A condition parse error has occurred. {msg}"))
         } else {
@@ -184,13 +184,13 @@ impl ConditionCompiler {
     fn compile_condition_body(
         &self,
         condition_str: &str,
-        name_2_node: &HashMap<String, Arc<Box<dyn SelectionNode>>>,
+        name_to_node: &HashMap<String, Arc<Box<dyn SelectionNode>>>,
     ) -> Result<Box<dyn SelectionNode>, String> {
         let tokens = self.tokenize(condition_str)?;
 
         let parsed = self.parse(tokens.into_iter())?;
 
-        parsed.into_selection_node(name_2_node)
+        parsed.into_selection_node(name_to_node)
     }
 
     /// Executes syntactic analysis.

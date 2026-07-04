@@ -62,12 +62,12 @@ fn build_field_data_map(yaml_data: Yaml) -> (FieldDataMapKey, FieldDataMapEntry)
     let rewrite_field_data = yaml_data["RewriteFieldData"].as_hash();
     // HexToDecimal may be given as a single scalar or as a list of field names; normalize both
     // forms into a list of YAML values.
-    let hex2decimal = if let Some(s) = yaml_data["HexToDecimal"].as_str() {
+    let hex_to_decimal = if let Some(s) = yaml_data["HexToDecimal"].as_str() {
         Some(YamlLoader::load_from_str(s).unwrap_or_default())
     } else {
         yaml_data["HexToDecimal"].as_vec().map(|v| v.to_owned())
     };
-    if rewrite_field_data.is_none() && hex2decimal.is_none() {
+    if rewrite_field_data.is_none() && hex_to_decimal.is_none() {
         return (FieldDataMapKey::default(), FieldDataMapEntry::default());
     }
     // Provider_Name is optional and may be a single name or a list. When present, the string
@@ -90,30 +90,30 @@ fn build_field_data_map(yaml_data: Yaml) -> (FieldDataMapKey, FieldDataMapEntry)
             }
             // Each list element is a one-entry hash of pattern -> replacement. Collect them as
             // parallel vectors, which is the form AhoCorasick's replace_all expects.
-            let mut ptns = vec![];
-            let mut reps = vec![];
+            let mut patterns = vec![];
+            let mut replacements = vec![];
             for rep_val in replace_values.unwrap() {
                 let entry = rep_val.as_hash();
                 if entry.is_none() {
                     continue;
                 }
                 for (ptn, rep) in entry.unwrap().iter() {
-                    ptns.push(ptn.as_str().unwrap_or_default().to_string());
-                    reps.push(rep.as_str().unwrap_or_default().to_string());
+                    patterns.push(ptn.as_str().unwrap_or_default().to_string());
+                    replacements.push(rep.as_str().unwrap_or_default().to_string());
                 }
             }
-            let ac = AhoCorasick::new(ptns);
-            if ac.is_err() {
+            let automaton = AhoCorasick::new(patterns);
+            if automaton.is_err() {
                 continue;
             }
             mapping.insert(
                 field.to_string().to_lowercase(),
-                ReplaceStr((ac.unwrap(), reps), providers.clone()),
+                ReplaceStr((automaton.unwrap(), replacements), providers.clone()),
             );
         }
     }
 
-    if let Some(fields) = hex2decimal {
+    if let Some(fields) = hex_to_decimal {
         for field in fields {
             if let Some(key) = field.as_str() {
                 mapping.insert(key.to_lowercase(), HexToDecimal);
@@ -152,9 +152,9 @@ pub fn convert_field_data(
                         return Some(CompactString::from(field_data_str));
                     }
                 };
-                let (ac, rep) = x;
+                let (automaton, rep) = x;
                 let mut wtr = vec![];
-                let _ = ac.try_stream_replace_all(field_data_str.as_bytes(), &mut wtr, rep);
+                let _ = automaton.try_stream_replace_all(field_data_str.as_bytes(), &mut wtr, rep);
                 Some(CompactString::from(std::str::from_utf8(&wtr).unwrap()))
             }
             // Only values with a 0x/0X prefix that parse as u64 are converted; anything else is
@@ -365,8 +365,12 @@ mod tests {
         match r.1.get("elevatedtoken").unwrap() {
             FieldDataConverter::HexToDecimal => panic!(),
             FieldDataConverter::ReplaceStr(x, _) => {
-                let (ac, rp) = x;
-                let _ = ac.try_stream_replace_all("foo, %%1842, %%1843".as_bytes(), &mut wtr, rp);
+                let (automaton, rp) = x;
+                let _ = automaton.try_stream_replace_all(
+                    "foo, %%1842, %%1843".as_bytes(),
+                    &mut wtr,
+                    rp,
+                );
                 assert_eq!(b"foo, YES, NO".to_vec(), wtr);
             }
         }
@@ -374,8 +378,12 @@ mod tests {
             FieldDataConverter::HexToDecimal => panic!(),
             FieldDataConverter::ReplaceStr(x, _) => {
                 let mut wtr = vec![];
-                let (ac, rp) = x;
-                let _ = ac.try_stream_replace_all("foo, %%1832, %%1833".as_bytes(), &mut wtr, rp);
+                let (automaton, rp) = x;
+                let _ = automaton.try_stream_replace_all(
+                    "foo, %%1832, %%1833".as_bytes(),
+                    &mut wtr,
+                    rp,
+                );
                 assert_eq!(b"foo, A, B".to_vec(), wtr);
             }
         }
