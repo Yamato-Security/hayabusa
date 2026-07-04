@@ -70,9 +70,9 @@ impl GeoIPSearch {
     fn check_in_private_ip_range(&self, target_ip: &IpAddr) -> bool {
         let private_cidr = if target_ip.is_ipv4() {
             vec![
-                IpCidr::from_str("10/8").unwrap(),
-                IpCidr::from_str("172.16/12").unwrap(),
-                IpCidr::from_str("192.168/16").unwrap(),
+                IpCidr::from_str("10.0.0.0/8").unwrap(),
+                IpCidr::from_str("172.16.0.0/12").unwrap(),
+                IpCidr::from_str("192.168.0.0/16").unwrap(),
             ]
         } else {
             vec![

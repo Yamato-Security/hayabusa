@@ -1,9 +1,10 @@
 # 変更点
 
-## x.x.x
+## 3.10.0 [2026/07/04] - Independence Day Release
 
 **改善:**
 
+Sigma 2.1仕様の `|neq` および `|fieldref|neq` フィールド修飾子のサポートを追加した。`|neq` は比較を否定するもので、他の修飾子（`|contains|neq`、`|startswith|neq`、`|endswith|neq`、`|fieldref|neq` など）と組み合わせて使用できる。 (#1684) (@YamatoSecurity)
 検出されたMITRE ATT&CK戦術について、一意の件数と合計件数を追加した。 (#1753) (@fukusuket)
 
 **バグ修正:**
@@ -27,7 +28,7 @@
 - `hayabusa-evtx` クレートを `0.9.9` に更新し、その依存クレート（特に `thiserror` 1→2、`criterion` 0.5→0.8）をすべて最新版に更新した。挙動に変更はない。 (#1835) (@YamatoSecurity)
 - レビューで判明した2箇所のデッドコードを削除した。JSON文字列エスケープ処理の常に空になる `addition_header` 分岐と、相対時刻オフセット解析における到達しない分岐および単位ごとの `Vec` 割り当て。挙動に変更はない。 (#1834) (@YamatoSecurity)
 
-## 3.9.0 [2026/04/29]
+## 3.9.0 [2026/04/29] - Showa Day Release
 
 **改善:**
 
