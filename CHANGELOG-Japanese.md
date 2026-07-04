@@ -5,7 +5,7 @@
 **バグ修正:**
 
 - `update-rules` 実行後に表示される文法的に誤ったメッセージ「Successed submodule update」を「Submodule update succeeded」に修正した。 (#1840) (@YamatoSecurity)
-- `temporal`/`temporal_ordered` 相関が、参照ルールのマッチを結合する際にルールの `group-by` 値を検証していなかった問題を修正した。各参照ルールは group-by 値ごとに集計されるものの、タイムスタンプがタイムフレームに収まってさえいれば異なるグループ（例: 異なる Computer）のマッチ同士が相関してしまい、誤検知を生んでいた。参照ルールのマッチは、ベースとなるマッチと同じ group-by 値を持つことを要求するようにした。 (@Shirofune-Security)
+- `temporal`/`temporal_ordered` 相関が、参照ルールのマッチを結合する際にルールの `group-by` 値を検証していなかった問題を修正した。各参照ルールは group-by 値ごとに集計されるものの、タイムスタンプがタイムフレームに収まってさえいれば異なるグループ（例: 異なる Computer）のマッチ同士が相関してしまい、誤検知を生んでいた。参照ルールのマッチは、ベースとなるマッチと同じ group-by 値を持つことを要求するようにした。 (#1839) (@Shirofune-Security)
 
 **その他:**
 
