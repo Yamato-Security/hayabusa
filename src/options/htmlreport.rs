@@ -48,7 +48,7 @@ pub struct HtmlReporter {
     /// Section names in the order they should appear in the report.
     pub section_order: Nested<String>,
     /// Markdown lines per section name.
-    pub md_datas: HashMap<String, Nested<String>>,
+    pub section_markdown: HashMap<String, Nested<String>>,
 }
 
 impl HtmlReporter {
@@ -56,7 +56,7 @@ impl HtmlReporter {
         let (init_section_order, init_data) = get_init_md_data_map();
         HtmlReporter {
             section_order: init_section_order,
-            md_datas: init_data,
+            section_markdown: init_data,
         }
     }
 
@@ -70,7 +70,7 @@ impl HtmlReporter {
 
         let mut md_data = Nested::<String>::new();
         for section_name in self.section_order.iter() {
-            if let Some(v) = self.md_datas.get(section_name) {
+            if let Some(v) = self.section_markdown.get(section_name) {
                 md_data.push(format!("## {}\n", &section_name));
                 if v.is_empty() {
                     md_data.push("not found data.\n");
@@ -122,14 +122,14 @@ fn get_init_md_data_map() -> (Nested<String>, HashMap<String, Nested<String>>) {
 
 /// Appends markdown lines to the given section of the global HTML_REPORTER.
 pub fn add_md_data(section_name: &str, data: Nested<String>) {
-    let mut md_with_section_data = HTML_REPORTER.write().unwrap().md_datas.to_owned();
+    let mut md_with_section_data = HTML_REPORTER.write().unwrap().section_markdown.to_owned();
     for c in data.iter() {
         let entry = md_with_section_data
             .entry(section_name.to_owned())
             .or_insert(Nested::<String>::new());
         entry.push(c);
     }
-    HTML_REPORTER.write().unwrap().md_datas = md_with_section_data;
+    HTML_REPORTER.write().unwrap().section_markdown = md_with_section_data;
 }
 
 /// Writes the HTML report to `path_str`, inlining the embedded CSS and embedding the logo and
@@ -265,7 +265,7 @@ mod tests {
             "".to_string(),
         ]);
         html_reporter.section_order.push("No Exist Section");
-        html_reporter.md_datas.insert(
+        html_reporter.section_markdown.insert(
             "General Overview {#general_overview}".to_string(),
             general_data.to_owned(),
         );
@@ -292,7 +292,7 @@ mod tests {
     fn test_general_overview_section_key_is_rendered() {
         let mut reporter = HtmlReporter::new();
         reporter
-            .md_datas
+            .section_markdown
             .get_mut(GENERAL_OVERVIEW_SECTION)
             .expect(
                 "GENERAL_OVERVIEW_SECTION must be a rendered section registered in section_order",
@@ -307,7 +307,7 @@ mod tests {
         // render loop never reads, so it must not appear in the output.
         let mut buggy = HtmlReporter::new();
         buggy
-            .md_datas
+            .section_markdown
             .entry("General Overview #{general_overview}".to_string())
             .or_insert_with(Nested::<String>::new)
             .push("- Analyzed event files: 581");
@@ -394,7 +394,7 @@ mod tests {
             "".to_string(),
         ]);
         html_reporter.section_order.push("No Exist Section");
-        html_reporter.md_datas.insert(
+        html_reporter.section_markdown.insert(
             "General Overview {#general_overview}".to_string(),
             general_data.to_owned(),
         );
@@ -435,7 +435,7 @@ mod tests {
         let _html_reporter_lock = HTML_REPORTER_TEST_LOCK
             .lock()
             .unwrap_or_else(|e| e.into_inner());
-        HTML_REPORTER.write().unwrap().md_datas.clear();
+        HTML_REPORTER.write().unwrap().section_markdown.clear();
         let mut html_reporter = HtmlReporter::default();
         let mut general_data = Nested::<String>::new();
         general_data.extend(vec![
@@ -457,7 +457,7 @@ mod tests {
         htmlreport::add_md_data(expect_key, general_data.clone());
         let actual_html_reporter = HTML_REPORTER.read().unwrap().clone();
         let expect_general_data: Vec<&str> = general_data.iter().collect();
-        for (k, v) in actual_html_reporter.md_datas.iter() {
+        for (k, v) in actual_html_reporter.section_markdown.iter() {
             if k == expect_key {
                 assert_eq!(v.iter().collect::<Vec<&str>>(), expect_general_data);
             } else {

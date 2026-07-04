@@ -32,7 +32,7 @@ use termcolor::{BufferWriter, Color, ColorChoice};
 #[derive(Debug, Clone, PartialEq, Eq, Default)]
 pub struct DetectInfo {
     pub detected_time: DateTime<Utc>,
-    pub rulepath: CompactString,
+    pub rule_path: CompactString,
     pub ruleid: CompactString,
     pub ruletitle: CompactString,
     pub ruleauthor: CompactString,
@@ -40,11 +40,11 @@ pub struct DetectInfo {
     pub computername: CompactString,
     pub rec_id: CompactString,
     pub eventid: CompactString,
-    // The rendered Details text. create_message() moves it into ext_field and clears it afterwards
+    // The rendered Details text. create_message() moves it into output_fields and clears it afterwards
     // to save memory.
     pub detail: CompactString,
     // Output profile columns as (column name, value) pairs.
-    pub ext_field: Vec<(CompactString, Profile)>,
+    pub output_fields: Vec<(CompactString, Profile)>,
     // Set only when the detection comes from an aggregation (count/correlation) rule.
     pub agg_result: Option<AggResult>,
     // Per-field values keyed by "#Details" / "#AllFieldInfo" / "#ExtraFieldInfo", used by the JSON
@@ -82,7 +82,7 @@ lazy_static! {
     // Per-computer MITRE ATT&CK tactic counts as (tactic, unique detection count, total detection
     // count) tuples, collected for the HTML report.
     pub static ref COMPUTER_MITRE_ATTCK_MAP : DashMap<CompactString, Vec<(CompactString, i64, i64)>> = DashMap::new();
-    // "computer|tactic|rulepath" keys that have already been seen, so each rule increments the
+    // "computer|tactic|rule_path" keys that have already been seen, so each rule increments the
     // unique count in COMPUTER_MITRE_ATTCK_MAP only once per computer and tactic.
     pub static ref COMPUTER_MITRE_ATTCK_UNIQUE_KEYS : DashSet<CompactString> = DashSet::new();
 }
@@ -131,7 +131,7 @@ pub fn create_output_filter_config(
 }
 
 /// Builds the final per-detection output by filling in each profile field of
-/// `detect_info.ext_field`: the Details template (`output`) and the other %alias% placeholders are
+/// `detect_info.output_fields`: the Details template (`output`) and the other %alias% placeholders are
 /// replaced with values from the event record, AllFieldInfo is generated from all of the record's
 /// fields, and ExtraFieldInfo receives the record fields whose values do not already appear in
 /// Details. For the JSON timeline, per-field values are additionally stored in
@@ -150,7 +150,7 @@ pub fn create_message(
     ),
 ) -> DetectInfo {
     let mut record_details_info_map = HashMap::new();
-    let mut sp_removed_details_in_record = vec![];
+    let mut special_char_removed_details = vec![];
     if !is_agg {
         // At this stage, obtain the details text with its %alias% placeholders replaced by record
         // values, along with the individual key/value pairs that make up the details.
@@ -163,10 +163,10 @@ pub fn create_message(
             field_data_map,
         );
         details_in_record.drain(..).for_each(|v| {
-            sp_removed_details_in_record.push(remove_sp_char(v));
+            special_char_removed_details.push(remove_sp_char(v));
         });
         if is_json_timeline {
-            record_details_info_map.insert("#Details".into(), sp_removed_details_in_record.clone());
+            record_details_info_map.insert("#Details".into(), special_char_removed_details.clone());
         }
         // remove_sp_char() strips special (control) characters via retain(). So that the newline
         // characters inside Details survive this, they are first converted to special placeholder
@@ -186,7 +186,7 @@ pub fn create_message(
     }
     let mut replaced_profiles: Vec<(CompactString, Profile)> = vec![];
     let mut exist_all_field_info_in_ext_field = false;
-    for (key, profile) in detect_info.ext_field.iter() {
+    for (key, profile) in detect_info.output_fields.iter() {
         match profile {
             Details(_) => {
                 if detect_info.detail.is_empty() {
@@ -215,20 +215,22 @@ pub fn create_message(
                         );
                     }
                 } else {
-                    let recinfos = if let Some(c) = record_details_info_map.get("#AllFieldInfo") {
+                    let all_field_infos = if let Some(c) =
+                        record_details_info_map.get("#AllFieldInfo")
+                    {
                         c.to_owned()
                     } else {
                         utils::create_recordinfos(event_record, field_data_map_key, field_data_map)
                     };
                     if is_json_timeline {
-                        record_details_info_map.insert("#AllFieldInfo".into(), recinfos);
+                        record_details_info_map.insert("#AllFieldInfo".into(), all_field_infos);
                         replaced_profiles.push((key.to_owned(), AllFieldInfo("".into())));
                         continue;
                     }
-                    let rec = if recinfos.is_empty() {
+                    let rec = if all_field_infos.is_empty() {
                         "-".to_string()
                     } else if !is_json_timeline {
-                        recinfos.join(" ¦ ")
+                        all_field_infos.join(" ¦ ")
                     } else {
                         String::default()
                     };
@@ -251,7 +253,7 @@ pub fn create_message(
                 // Collect the values already shown in Details so that ExtraFieldInfo only reports
                 // the record fields whose values are not part of Details.
                 let details_splits: HashSet<&str> = {
-                    let details = sp_removed_details_in_record.iter().map(|x| {
+                    let details = special_char_removed_details.iter().map(|x| {
                         let v = x.split_once(": ").unwrap_or_default().1;
                         // Strip any trailing comma from the values put into the matching hash set;
                         // otherwise the ExtraFieldInfo match result would differ depending on
@@ -315,7 +317,7 @@ pub fn create_message(
     if !exist_all_field_info_in_ext_field {
         record_details_info_map.remove("#AllFieldInfo");
     }
-    detect_info.ext_field = replaced_profiles;
+    detect_info.output_fields = replaced_profiles;
     detect_info.details_convert_map = record_details_info_map;
 
     detect_info
@@ -344,7 +346,7 @@ pub fn parse_message(
             .unwrap()
             .strip_prefix('%')
             .unwrap();
-        let array_str = if let Some(_array_str) = eventkey_alias.get_event_key(target_str) {
+        let event_key_path = if let Some(_array_str) = eventkey_alias.get_event_key(target_str) {
             _array_str.to_string()
         } else {
             // No alias definition exists, so fall back to looking the field up directly under
@@ -354,7 +356,7 @@ pub fn parse_message(
 
         let mut tmp_event_record: &Value = event_record;
         let mut field = "";
-        for s in array_str.split('.') {
+        for s in event_key_path.split('.') {
             if let Some(record) = tmp_event_record.get(s) {
                 tmp_event_record = record;
                 field = s;

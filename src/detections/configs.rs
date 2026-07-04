@@ -119,9 +119,9 @@ pub struct StoredStatic {
     pub config: Config,
     pub config_path: PathBuf,
     pub eventkey_alias: EventKeyAliasConfig,
-    pub ch_config: HashMap<CompactString, CompactString>,
-    pub disp_abbr_generic: AhoCorasick,
-    pub disp_abbr_general_values: Vec<CompactString>,
+    pub channel_abbr_config: HashMap<CompactString, CompactString>,
+    pub generic_abbr_matcher: AhoCorasick,
+    pub generic_abbr_values: Vec<CompactString>,
     pub provider_abbr_config: HashMap<CompactString, CompactString>,
     pub quiet_errors_flag: bool,
     pub verbose_flag: bool,
@@ -397,7 +397,7 @@ impl StoredStatic {
             _ => false,
         };
 
-        let general_ch_abbr = create_output_filter_config(
+        let generic_abbreviations = create_output_filter_config(
             check_setting_path(config_path, "generic_abbreviations.txt", false)
                 .unwrap_or_else(|| {
                     check_setting_path(
@@ -739,7 +739,7 @@ impl StoredStatic {
         let mut ret = StoredStatic {
             config: input_config.as_ref().unwrap().to_owned(),
             config_path: config_path.to_path_buf(),
-            ch_config: create_output_filter_config(
+            channel_abbr_config: create_output_filter_config(
                 check_setting_path(config_path, "channel_abbreviations.txt", false)
                     .unwrap_or_else(|| {
                         check_setting_path(
@@ -754,12 +754,15 @@ impl StoredStatic {
                 true,
                 disable_abbreviation,
             ),
-            disp_abbr_generic: AhoCorasickBuilder::new()
+            generic_abbr_matcher: AhoCorasickBuilder::new()
                 .ascii_case_insensitive(true)
                 .match_kind(MatchKind::LeftmostLongest)
-                .build(general_ch_abbr.keys().map(|x| x.as_str()))
+                .build(generic_abbreviations.keys().map(|x| x.as_str()))
                 .unwrap(),
-            disp_abbr_general_values: general_ch_abbr.values().map(|x| x.to_owned()).collect_vec(),
+            generic_abbr_values: generic_abbreviations
+                .values()
+                .map(|x| x.to_owned())
+                .collect_vec(),
             provider_abbr_config: create_output_filter_config(
                 check_setting_path(config_path, "provider_abbreviations.txt", false)
                     .unwrap_or_else(|| {
@@ -2198,20 +2201,20 @@ impl TargetEventTime {
         let get_time_offset = |time_offset: &Option<String>, parse_success_flag: &mut bool| {
             if let Some(timeline_offset) = time_offset {
                 // Supported unit suffixes; note that 'M' is months while 'm' is minutes.
-                let timekey = ['y', 'M', 'd', 'h', 'm', 's'];
+                let time_units = ['y', 'M', 'd', 'h', 'm', 's'];
                 let mut time_num = [0, 0, 0, 0, 0, 0];
-                for (idx, key) in timekey.iter().enumerate() {
+                for (idx, key) in time_units.iter().enumerate() {
                     // Extract the digits belonging to this unit: take the text before the unit
                     // character and strip everything up to the last other unit character
                     // (e.g. for 'M' in "1y3M": "1y3" -> "3").
                     let mut timekey_splitter = timeline_offset.split(*key);
-                    let mix_check = timekey_splitter.next();
-                    let mixed_checker: Vec<&str> =
-                        mix_check.unwrap_or_default().split(timekey).collect();
-                    let target_num = if mixed_checker.is_empty() {
-                        mix_check.unwrap()
+                    let before_unit = timekey_splitter.next();
+                    let unit_digit_segments: Vec<&str> =
+                        before_unit.unwrap_or_default().split(time_units).collect();
+                    let target_num = if unit_digit_segments.is_empty() {
+                        before_unit.unwrap()
                     } else {
-                        mixed_checker[mixed_checker.len() - 1]
+                        unit_digit_segments[unit_digit_segments.len() - 1]
                     };
                     if target_num.is_empty() {
                         continue;
@@ -2737,7 +2740,7 @@ fn extract_output_options(config: &Config) -> Option<OutputOption> {
 /// Human-readable title of an event (defaults to "Unknown").
 #[derive(Debug, Clone)]
 pub struct EventInfo {
-    pub evttitle: String,
+    pub event_title: String,
 }
 
 impl Default for EventInfo {
@@ -2748,8 +2751,8 @@ impl Default for EventInfo {
 
 impl EventInfo {
     pub fn new() -> EventInfo {
-        let evttitle = "Unknown".to_string();
-        EventInfo { evttitle }
+        let event_title = "Unknown".to_string();
+        EventInfo { event_title }
     }
 }
 /// Lookup of (channel (lowercased), event id) -> event title, loaded from channel_eid_info.txt.
@@ -2777,7 +2780,7 @@ impl EventInfoConfig {
 }
 
 fn load_eventcode_info(path: &str) -> EventInfoConfig {
-    let mut infodata = EventInfo::new();
+    let mut event_info = EventInfo::new();
     let mut config = EventInfoConfig::new();
     // If channel_eid_info.txt cannot be read, report an error and return an empty config.
     let read_result = match utils::read_csv(path) {
@@ -2798,12 +2801,12 @@ fn load_eventcode_info(path: &str) -> EventInfoConfig {
         let channel = line.first().unwrap_or(empty);
         let eventcode = line.get(1).unwrap_or(empty);
         let event_title = line.get(2).unwrap_or(empty);
-        infodata = EventInfo {
-            evttitle: event_title.to_string(),
+        event_info = EventInfo {
+            event_title: event_title.to_string(),
         };
         config.eventinfo.insert(
             (channel.to_lowercase(), eventcode.to_owned()),
-            infodata.to_owned(),
+            event_info.to_owned(),
         );
     });
     config

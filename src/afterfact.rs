@@ -87,8 +87,8 @@ pub struct Colors {
 /// summary: detection counts broken down by level/date/computer/rule, timestamps for the
 /// detection frequency timeline, and the previous-record data needed for duplicate suppression.
 pub struct AfterfactInfo {
-    pub tl_starttime: Option<DateTime<Utc>>,
-    pub tl_endtime: Option<DateTime<Utc>>,
+    pub timeline_start_time: Option<DateTime<Utc>>,
+    pub timeline_end_time: Option<DateTime<Utc>>,
     pub detect_starttime: Option<DateTime<Utc>>,
     pub detect_endtime: Option<DateTime<Utc>>,
     pub record_cnt: u128,
@@ -149,8 +149,8 @@ impl Default for AfterfactInfo {
             )
         };
         AfterfactInfo {
-            tl_starttime: Option::None,
-            tl_endtime: Option::None,
+            timeline_start_time: Option::None,
+            timeline_end_time: Option::None,
             detect_starttime: Option::None,
             detect_endtime: Option::None,
             record_cnt: 0,
@@ -179,7 +179,7 @@ impl Default for AfterfactInfo {
 /// csv crate writer for the CSV/JSON output itself. `display_flag` is true when no output file
 /// was specified, i.e. results are displayed on the terminal.
 pub struct AfterfactWriter {
-    disp_wtr: BufferWriter,
+    display_writer: BufferWriter,
     disp_wtr_buf: Buffer,
     csv_writer: Writer<Box<dyn io::Write>>,
     pub display_flag: bool,
@@ -191,8 +191,8 @@ pub struct AfterfactWriter {
 /// JSON output by configuring
 /// it to perform no quoting and use newline as the delimiter.
 pub fn init_writer(stored_static: &StoredStatic) -> AfterfactWriter {
-    let disp_wtr = BufferWriter::stdout(ColorChoice::Always);
-    let mut disp_wtr_buf = disp_wtr.buffer();
+    let display_writer = BufferWriter::stdout(ColorChoice::Always);
+    let mut disp_wtr_buf = display_writer.buffer();
 
     disp_wtr_buf.set_color(ColorSpec::new().set_fg(None)).ok();
 
@@ -216,7 +216,7 @@ pub fn init_writer(stored_static: &StoredStatic) -> AfterfactWriter {
     } else {
         display_flag = true;
         // No output file was specified, so results go to stdout. Colored display output is
-        // produced through the termcolor writer (disp_wtr), not through this csv writer.
+        // produced through the termcolor writer (display_writer), not through this csv writer.
         Box::new(BufWriter::new(io::stdout()))
     };
 
@@ -234,7 +234,7 @@ pub fn init_writer(stored_static: &StoredStatic) -> AfterfactWriter {
 
     // Bundle the display writer and the CSV/JSON writer used by emit_csv and the summary output.
     AfterfactWriter {
-        disp_wtr,
+        display_writer,
         disp_wtr_buf,
         csv_writer: writer,
         display_flag,
@@ -404,7 +404,7 @@ fn emit_csv_inner(
             if !afterfact_info.has_displayed_header {
                 // Print the header row only once.
                 _get_serialized_disp_output(
-                    &afterfact_writer.disp_wtr,
+                    &afterfact_writer.display_writer,
                     profile,
                     true,
                     (&output_replacer, &output_replaced_maps),
@@ -418,8 +418,8 @@ fn emit_csv_inner(
                 afterfact_info.has_displayed_header = true;
             }
             _get_serialized_disp_output(
-                &afterfact_writer.disp_wtr,
-                &detect_info.ext_field,
+                &afterfact_writer.display_writer,
+                &detect_info.output_fields,
                 false,
                 (&output_replacer, &output_replaced_maps),
                 (&output_remover, &removed_replaced_maps),
@@ -444,7 +444,7 @@ fn emit_csv_inner(
                 .clone_from(&detect_info.details_convert_map);
             if afterfact_writer.display_flag {
                 write_color_buffer(
-                    &afterfact_writer.disp_wtr,
+                    &afterfact_writer.display_writer,
                     None,
                     &format!("{{ {} }}", &result.0),
                     true,
@@ -470,7 +470,7 @@ fn emit_csv_inner(
                 .clone_from(&detect_info.details_convert_map);
             if afterfact_writer.display_flag {
                 write_color_buffer(
-                    &afterfact_writer.disp_wtr,
+                    &afterfact_writer.display_writer,
                     None,
                     &format!("{{\n{}\n}}", &result.0),
                     true,
@@ -486,12 +486,12 @@ fn emit_csv_inner(
             if !afterfact_info.has_displayed_header {
                 afterfact_writer
                     .csv_writer
-                    .write_record(detect_info.ext_field.iter().map(|x| x.0.trim()))?;
+                    .write_record(detect_info.output_fields.iter().map(|x| x.0.trim()))?;
                 afterfact_info.has_displayed_header = true;
             }
             afterfact_writer
                 .csv_writer
-                .write_record(detect_info.ext_field.iter().map(|x| {
+                .write_record(detect_info.output_fields.iter().map(|x| {
                     match x.1 {
                         Profile::Details(_)
                         | Profile::AllFieldInfo(_)
@@ -579,22 +579,22 @@ fn calc_statistic_info(
             }
         }
         if !output_option.no_summary {
-            let level_suffix = detect_info.level.index();
+            let level_index = detect_info.level.index();
             let author_list = extract_author_name(&detect_info.ruleauthor);
             let author_str = author_list.iter().join(", ");
             afterfact_info.detect_rule_authors.insert(
-                detect_info.rulepath.to_owned(),
+                detect_info.rule_path.to_owned(),
                 author_str.to_string().into(),
             );
 
             if author_str != "-"
                 && !afterfact_info
                     .detected_rule_files
-                    .contains(&detect_info.rulepath)
+                    .contains(&detect_info.rule_path)
             {
                 afterfact_info
                     .detected_rule_files
-                    .insert(detect_info.rulepath.to_owned());
+                    .insert(detect_info.rule_path.to_owned());
                 for author in author_list.iter() {
                     *afterfact_info
                         .rule_author_counter
@@ -609,7 +609,7 @@ fn calc_statistic_info(
                 afterfact_info
                     .detected_rule_ids
                     .insert(detect_info.ruleid.to_owned());
-                afterfact_info.unique_detect_counts_by_level[level_suffix] += 1;
+                afterfact_info.unique_detect_counts_by_level[level_index] += 1;
             }
             let computer_names = match &detect_info.agg_result {
                 None => vec![detect_info.computername.clone()],
@@ -624,7 +624,7 @@ fn calc_statistic_info(
             };
             for computername in &computer_names {
                 let computer_rule_check_key =
-                    CompactString::from(format!("{}|{}", computername, &detect_info.rulepath));
+                    CompactString::from(format!("{}|{}", computername, &detect_info.rule_path));
                 if !afterfact_info
                     .detected_computer_and_rule_names
                     .contains(&computer_rule_check_key)
@@ -641,7 +641,7 @@ fn calc_statistic_info(
             }
             afterfact_info.rule_title_path_map.insert(
                 detect_info.ruletitle.to_owned(),
-                detect_info.rulepath.to_owned(),
+                detect_info.rule_path.to_owned(),
             );
 
             countup_aggregation(
@@ -658,8 +658,8 @@ fn calc_statistic_info(
                 &detect_info.level,
                 &detect_info.ruletitle,
             );
-            let level_suffix = detect_info.level.index();
-            afterfact_info.total_detect_counts_by_level[level_suffix] += 1;
+            let level_index = detect_info.level.index();
+            afterfact_info.total_detect_counts_by_level[level_index] += 1;
         }
     }
 }
@@ -684,7 +684,7 @@ pub fn output_additional_afterfact(
     let output_option = stored_static.output_option.as_ref().unwrap();
     if !output_option.no_summary && !afterfact_info.rule_author_counter.is_empty() {
         write_color_buffer(
-            &afterfact_writer.disp_wtr,
+            &afterfact_writer.display_writer,
             get_writable_color(
                 Some(Color::Rgb(0, 255, 0)),
                 stored_static.common_options.no_color,
@@ -694,7 +694,7 @@ pub fn output_additional_afterfact(
         )
         .ok();
         write_color_buffer(
-            &afterfact_writer.disp_wtr,
+            &afterfact_writer.display_writer,
             get_writable_color(None, stored_static.common_options.no_color),
             " ",
             true,
@@ -726,7 +726,7 @@ pub fn output_additional_afterfact(
     if !output_option.no_summary {
         afterfact_writer.disp_wtr_buf.clear();
         write_color_buffer(
-            &afterfact_writer.disp_wtr,
+            &afterfact_writer.display_writer,
             get_writable_color(
                 Some(Color::Rgb(0, 255, 0)),
                 stored_static.common_options.no_color,
@@ -736,12 +736,12 @@ pub fn output_additional_afterfact(
         )
         .ok();
 
-        if let Some(tl_starttime) = afterfact_info.tl_starttime {
+        if let Some(timeline_start_time) = afterfact_info.timeline_start_time {
             output_and_data_stack_for_html(
                 &format!(
                     "First timestamp: {}",
                     utils::format_time(
-                        &tl_starttime,
+                        &timeline_start_time,
                         false,
                         &stored_static
                             .output_option
@@ -754,12 +754,12 @@ pub fn output_additional_afterfact(
                 &stored_static.html_report_flag,
             );
         }
-        if let Some(tl_endtime) = afterfact_info.tl_endtime {
+        if let Some(timeline_end_time) = afterfact_info.timeline_end_time {
             output_and_data_stack_for_html(
                 &format!(
                     "Last timestamp: {}",
                     utils::format_time(
-                        &tl_endtime,
+                        &timeline_end_time,
                         false,
                         &stored_static
                             .output_option
@@ -819,7 +819,7 @@ pub fn output_additional_afterfact(
             (reduced_record_cnt as f64) / (afterfact_info.record_cnt as f64) * 100.0
         };
         write_color_buffer(
-            &afterfact_writer.disp_wtr,
+            &afterfact_writer.display_writer,
             get_writable_color(
                 Some(Color::Rgb(255, 255, 0)),
                 stored_static.common_options.no_color,
@@ -829,14 +829,14 @@ pub fn output_additional_afterfact(
         )
         .ok();
         write_color_buffer(
-            &afterfact_writer.disp_wtr,
+            &afterfact_writer.display_writer,
             get_writable_color(None, stored_static.common_options.no_color),
             " / ",
             false,
         )
         .ok();
         write_color_buffer(
-            &afterfact_writer.disp_wtr,
+            &afterfact_writer.display_writer,
             get_writable_color(
                 Some(Color::Rgb(0, 255, 255)),
                 stored_static.common_options.no_color,
@@ -846,7 +846,7 @@ pub fn output_additional_afterfact(
         )
         .ok();
         write_color_buffer(
-            &afterfact_writer.disp_wtr,
+            &afterfact_writer.display_writer,
             get_writable_color(None, stored_static.common_options.no_color),
             ": ",
             false,
@@ -855,7 +855,7 @@ pub fn output_additional_afterfact(
         let saved_alerts_output =
             (afterfact_info.record_cnt - reduced_record_cnt).to_formatted_string(&Locale::en);
         write_color_buffer(
-            &afterfact_writer.disp_wtr,
+            &afterfact_writer.display_writer,
             get_writable_color(
                 Some(Color::Rgb(255, 255, 0)),
                 stored_static.common_options.no_color,
@@ -865,7 +865,7 @@ pub fn output_additional_afterfact(
         )
         .ok();
         write_color_buffer(
-            &afterfact_writer.disp_wtr,
+            &afterfact_writer.display_writer,
             get_writable_color(None, stored_static.common_options.no_color),
             " / ",
             false,
@@ -874,7 +874,7 @@ pub fn output_additional_afterfact(
 
         let all_record_output = afterfact_info.record_cnt.to_formatted_string(&Locale::en);
         write_color_buffer(
-            &afterfact_writer.disp_wtr,
+            &afterfact_writer.display_writer,
             get_writable_color(
                 Some(Color::Rgb(0, 255, 255)),
                 stored_static.common_options.no_color,
@@ -884,7 +884,7 @@ pub fn output_additional_afterfact(
         )
         .ok();
         write_color_buffer(
-            &afterfact_writer.disp_wtr,
+            &afterfact_writer.display_writer,
             get_writable_color(None, stored_static.common_options.no_color),
             " (",
             false,
@@ -896,7 +896,7 @@ pub fn output_additional_afterfact(
             reduced_percent
         );
         write_color_buffer(
-            &afterfact_writer.disp_wtr,
+            &afterfact_writer.display_writer,
             get_writable_color(
                 Some(Color::Rgb(0, 255, 0)),
                 stored_static.common_options.no_color,
@@ -907,7 +907,7 @@ pub fn output_additional_afterfact(
         .ok();
 
         write_color_buffer(
-            &afterfact_writer.disp_wtr,
+            &afterfact_writer.display_writer,
             get_writable_color(None, stored_static.common_options.no_color),
             ")",
             true,
@@ -915,7 +915,7 @@ pub fn output_additional_afterfact(
         .ok();
         if stored_static.enable_recover_records {
             write_color_buffer(
-                &afterfact_writer.disp_wtr,
+                &afterfact_writer.display_writer,
                 get_writable_color(
                     Some(Color::Rgb(0, 255, 255)),
                     stored_static.common_options.no_color,
@@ -925,7 +925,7 @@ pub fn output_additional_afterfact(
             )
             .ok();
             write_color_buffer(
-                &afterfact_writer.disp_wtr,
+                &afterfact_writer.display_writer,
                 get_writable_color(None, stored_static.common_options.no_color),
                 ": ",
                 false,
@@ -935,7 +935,7 @@ pub fn output_additional_afterfact(
                 .recover_record_cnt
                 .to_formatted_string(&Locale::en);
             write_color_buffer(
-                &afterfact_writer.disp_wtr,
+                &afterfact_writer.display_writer,
                 get_writable_color(
                     Some(Color::Rgb(0, 255, 255)),
                     stored_static.common_options.no_color,
@@ -972,11 +972,11 @@ pub fn output_additional_afterfact(
             stored_static.html_report_flag,
         );
         println!();
-        if let Some(tl_starttime) = afterfact_info.tl_starttime {
+        if let Some(timeline_start_time) = afterfact_info.timeline_start_time {
             let ts = format!(
                 "First timestamp: {}",
                 format_time(
-                    &tl_starttime,
+                    &timeline_start_time,
                     false,
                     &stored_static
                         .output_option
@@ -993,11 +993,11 @@ pub fn output_additional_afterfact(
             )
             .ok();
         }
-        if let Some(tl_endtime) = afterfact_info.tl_endtime {
+        if let Some(timeline_end_time) = afterfact_info.timeline_end_time {
             let ts = format!(
                 "Last timestamp: {}",
                 format_time(
-                    &tl_endtime,
+                    &timeline_end_time,
                     false,
                     &stored_static
                         .output_option
@@ -1126,9 +1126,9 @@ pub fn sort_detect_info(detect_infos: &mut [DetectInfo]) {
             return event_id_cmp;
         }
 
-        let rulepath_cmp = a.rulepath.cmp(&b.rulepath);
-        if rulepath_cmp != Ordering::Equal {
-            return rulepath_cmp;
+        let rule_path_cmp = a.rule_path.cmp(&b.rule_path);
+        if rule_path_cmp != Ordering::Equal {
+            return rule_path_cmp;
         }
 
         let computer_cmp = a.computername.cmp(&b.computername);
@@ -1150,10 +1150,10 @@ pub fn sort_detect_info(detect_infos: &mut [DetectInfo]) {
         // fields), so their relative order does not affect the output. Only
         // reached when all keys above tie (rare) and short-circuits at the first
         // differing field, so the added cost is negligible.
-        a.ext_field
+        a.output_fields
             .iter()
             .map(|(_, p)| p.to_value())
-            .cmp(b.ext_field.iter().map(|(_, p)| p.to_value()))
+            .cmp(b.output_fields.iter().map(|(_, p)| p.to_value()))
     });
 }
 
@@ -1180,7 +1180,7 @@ pub fn get_duplicate_indices(detect_infos: &mut [DetectInfo]) -> HashSet<usize> 
         }
 
         let fields: Vec<&(CompactString, Profile)> = detect_info
-            .ext_field
+            .output_fields
             .iter()
             .filter(|(_, profile)| !matches!(profile, Profile::EvtxFile(_)))
             .collect();
@@ -1286,7 +1286,7 @@ enum ColPos {
 /// "·"-separated display format, coloring the timestamp/level/rule-title fields by detection
 /// level and the field names/values inside the details sections individually.
 fn _get_serialized_disp_output(
-    disp_wtr: &BufferWriter,
+    display_writer: &BufferWriter,
     data: &[(CompactString, Profile)],
     header: bool,
     (output_replacer, output_replaced_maps): (&AhoCorasick, &HashMap<&str, &str>),
@@ -1318,7 +1318,7 @@ fn _get_serialized_disp_output(
             .ok();
 
         write_color_buffer(
-            disp_wtr,
+            display_writer,
             get_writable_color(None, no_color),
             // The serializer above uses '|' as its delimiter; show those separators as '·' and
             // then restore any '🦅' placeholders back to '|'. Historically cell values had
@@ -1410,16 +1410,16 @@ fn _get_serialized_disp_output(
             let col_cnt = output_color_and_contents.len();
             for (field_idx, col_contents) in output_color_and_contents.iter().enumerate() {
                 for (c, color) in col_contents {
-                    write_color_buffer(disp_wtr, *color, c, false).ok();
+                    write_color_buffer(display_writer, *color, c, false).ok();
                 }
                 if field_idx != col_cnt - 1 {
-                    write_color_buffer(disp_wtr, None, "¦", false).ok();
+                    write_color_buffer(display_writer, None, "¦", false).ok();
                 }
             }
 
             if i != data_length - 1 {
                 write_color_buffer(
-                    disp_wtr,
+                    display_writer,
                     get_writable_color(Some(Color::Rgb(255, 158, 61)), no_color),
                     "·",
                     false,
@@ -1773,17 +1773,20 @@ fn _print_detection_summary_tables(
     tb.load_preset(UTF8_FULL)
         .apply_modifier(UTF8_ROUND_CORNERS)
         .set_style(TableComponent::VerticalLines, ' ');
-    let hlch = tb.style(TableComponent::HorizontalLines).unwrap();
-    let tbch = tb.style(TableComponent::TopBorder).unwrap();
+    let horizontal_line_char = tb.style(TableComponent::HorizontalLines).unwrap();
+    let top_border_char = tb.style(TableComponent::TopBorder).unwrap();
     for x in 0..output.len() / 2 {
         tb.add_row(vec![
             Cell::new(&output[2 * x][0]).fg(col_color[2 * x].unwrap_or(comfy_table::Color::Reset)),
             Cell::new(&output[2 * x + 1][0])
                 .fg(col_color[2 * x + 1].unwrap_or(comfy_table::Color::Reset)),
         ])
-        .set_style(TableComponent::MiddleIntersections, hlch)
-        .set_style(TableComponent::TopBorderIntersections, tbch)
-        .set_style(TableComponent::BottomBorderIntersections, hlch);
+        .set_style(TableComponent::MiddleIntersections, horizontal_line_char)
+        .set_style(TableComponent::TopBorderIntersections, top_border_char)
+        .set_style(
+            TableComponent::BottomBorderIntersections,
+            horizontal_line_char,
+        );
         tb.add_row(vec![
             Cell::new(output[2 * x].iter().skip(1).join("\n"))
                 .fg(col_color[2 * x].unwrap_or(comfy_table::Color::Reset)),
@@ -1907,28 +1910,32 @@ fn _create_json_output_format(
 /// Escapes a string value (joining multi-part "key: value" input as needed) so it can be
 /// embedded in the JSON output without producing invalid JSON.
 fn _convert_valid_json_str(input: &[&str], concat_flag: bool) -> String {
-    let con_cal = if input.len() == 1 {
+    let joined_value = if input.len() == 1 {
         input[0].to_string()
     } else if concat_flag {
         input.join(": ")
     } else {
         input[1..].join(": ")
     };
-    let char_cnt = con_cal.char_indices().count();
+    let char_cnt = joined_value.char_indices().count();
     if char_cnt == 0 {
-        con_cal
-    } else if con_cal.starts_with('\"') {
-        let addition_header = if !con_cal.starts_with('\"') { "\"" } else { "" };
-        let addition_quote = if !con_cal.ends_with('\"') && concat_flag {
+        joined_value
+    } else if joined_value.starts_with('\"') {
+        let addition_header = if !joined_value.starts_with('\"') {
             "\""
-        } else if !con_cal.ends_with('\"') {
+        } else {
+            ""
+        };
+        let addition_quote = if !joined_value.ends_with('\"') && concat_flag {
+            "\""
+        } else if !joined_value.ends_with('\"') {
             "\\\""
         } else {
             ""
         };
         [
             addition_header,
-            &con_cal
+            &joined_value
                 .replace('🛂', "\\")
                 .replace('\\', "\\\\")
                 .replace('\"', "\\\""),
@@ -1936,7 +1943,7 @@ fn _convert_valid_json_str(input: &[&str], concat_flag: bool) -> String {
         ]
         .join("")
     } else {
-        con_cal
+        joined_value
             .replace('🛂', "\\")
             .replace('\\', "\\\\")
             .replace('\"', "\\\"")
@@ -1956,10 +1963,10 @@ pub fn output_json_str(
     let mut target: Vec<String> = vec![];
     let mut target_ext_field = Vec::new();
     let ext_field_map: HashMap<CompactString, Profile> =
-        HashMap::from_iter(detect_info.ext_field.to_owned());
+        HashMap::from_iter(detect_info.output_fields.to_owned());
     let mut next_prev_message = afterfact_info.prev_message.clone();
     if remove_duplicate_flag {
-        for (field_name, profile) in detect_info.ext_field.iter() {
+        for (field_name, profile) in detect_info.output_fields.iter() {
             match profile {
                 Profile::Details(_) | Profile::AllFieldInfo(_) | Profile::ExtraFieldInfo(_) => {
                     let details_key = match profile {
@@ -2005,7 +2012,7 @@ pub fn output_json_str(
             }
         }
     } else {
-        target_ext_field.clone_from(&detect_info.ext_field);
+        target_ext_field.clone_from(&detect_info.output_fields);
     }
     // GeoIP enrichment fields that are folded into the Details (and AllFieldInfo) objects of
     // the JSON output instead of being emitted as top-level keys.
@@ -2317,8 +2324,8 @@ fn output_detected_rule_authors(
         .apply_modifier(UTF8_ROUND_CORNERS)
         .set_style(TableComponent::VerticalLines, ' ');
     let mut stored_by_column = vec![];
-    let hlch = tb.style(TableComponent::HorizontalLines).unwrap();
-    let tbch = tb.style(TableComponent::TopBorder).unwrap();
+    let horizontal_line_char = tb.style(TableComponent::HorizontalLines).unwrap();
+    let top_border_char = tb.style(TableComponent::TopBorder).unwrap();
     for x in 0..table_column_num {
         let mut tmp = Vec::new();
         for y in 0..div {
@@ -2346,9 +2353,12 @@ fn output_detected_rule_authors(
     }
     if !output.is_empty() {
         tb.add_row(output)
-            .set_style(TableComponent::MiddleIntersections, hlch)
-            .set_style(TableComponent::TopBorderIntersections, tbch)
-            .set_style(TableComponent::BottomBorderIntersections, hlch);
+            .set_style(TableComponent::MiddleIntersections, horizontal_line_char)
+            .set_style(TableComponent::TopBorderIntersections, top_border_char)
+            .set_style(
+                TableComponent::BottomBorderIntersections,
+                horizontal_line_char,
+            );
     }
     println!("{tb}");
 }
@@ -2513,7 +2523,7 @@ mod tests {
             html_escape_value("[x](javascript:alert(1))")
         ));
         reporter
-            .md_datas
+            .section_markdown
             .insert("General Overview {#general_overview}".to_string(), data);
         let html = reporter.create_html();
         assert!(
@@ -2535,7 +2545,7 @@ mod tests {
     fn test_sort_detect_info_deterministic_on_ties() {
         let make = |evtx: &str| DetectInfo {
             detected_time: Utc.with_ymd_and_hms(2020, 1, 1, 0, 0, 0).unwrap(),
-            rulepath: "rule.yml".into(),
+            rule_path: "rule.yml".into(),
             ruleid: "id".into(),
             ruletitle: "title".into(),
             ruleauthor: "author".into(),
@@ -2544,14 +2554,14 @@ mod tests {
             rec_id: "100".into(),
             eventid: "1".into(),
             detail: CompactString::default(),
-            ext_field: vec![(
+            output_fields: vec![(
                 CompactString::from("EvtxFile"),
                 Profile::EvtxFile(evtx.to_string().into()),
             )],
             agg_result: None,
             details_convert_map: HashMap::default(),
         };
-        let evtx_of = |d: &DetectInfo| d.ext_field[0].1.to_value();
+        let evtx_of = |d: &DetectInfo| d.output_fields[0].1.to_value();
 
         let mut a = vec![make("c.evtx"), make("a.evtx"), make("b.evtx")];
         let mut b = vec![make("b.evtx"), make("c.evtx"), make("a.evtx")];
@@ -2576,7 +2586,7 @@ mod tests {
             false,
         );
         let test_filepath: &str = "test.evtx";
-        let test_rulepath: &str = "test-rule.yml";
+        let test_rule_path: &str = "test-rule.yml";
         let test_rule_id: &str = "00000000-0000-0000-0000-000000000000";
         let test_title = "test_title";
         let test_level = LEVEL::HIGH;
@@ -2654,7 +2664,7 @@ mod tests {
                     "RecordInformation",
                     Profile::AllFieldInfo(test_recinfo.into()),
                 ),
-                ("RuleFile", Profile::RuleFile(test_rulepath.into())),
+                ("RuleFile", Profile::RuleFile(test_rule_path.into())),
                 ("EvtxFile", Profile::EvtxFile(test_filepath.into())),
                 ("Tags", Profile::MitreTags(test_attack.into())),
             ]);
@@ -2673,7 +2683,7 @@ mod tests {
                 CompactString::new(output),
                 DetectInfo {
                     detected_time: expect_time,
-                    rulepath: CompactString::from(test_rulepath),
+                    rule_path: CompactString::from(test_rule_path),
                     ruleid: test_rule_id.into(),
                     ruletitle: CompactString::from(test_title),
                     ruleauthor: CompactString::from("test_author"),
@@ -2681,7 +2691,7 @@ mod tests {
                     computername: CompactString::from(test_computername2),
                     eventid: CompactString::from(test_eventid),
                     detail: CompactString::default(),
-                    ext_field: output_profile.to_owned(),
+                    output_fields: output_profile.to_owned(),
                     agg_result: None,
                     details_convert_map: HashMap::default(),
                     rec_id: CompactString::default(),
@@ -2699,7 +2709,7 @@ mod tests {
                 CompactString::new(output),
                 DetectInfo {
                     detected_time: expect_time,
-                    rulepath: CompactString::from(test_rulepath),
+                    rule_path: CompactString::from(test_rule_path),
                     ruleid: test_rule_id.into(),
                     ruletitle: CompactString::from(test_title),
                     ruleauthor: CompactString::from("test_author"),
@@ -2707,7 +2717,7 @@ mod tests {
                     computername: CompactString::from(test_computername),
                     eventid: CompactString::from(test_eventid),
                     detail: CompactString::default(),
-                    ext_field: output_profile.to_owned(),
+                    output_fields: output_profile.to_owned(),
                     agg_result: None,
                     details_convert_map: HashMap::default(),
                     rec_id: CompactString::default(),
@@ -2741,7 +2751,7 @@ mod tests {
                 + "\",\""
                 + test_recinfo
                 + "\",\""
-                + test_rulepath
+                + test_rule_path
                 + "\",\""
                 + test_filepath
                 + "\",\""
@@ -2768,7 +2778,7 @@ mod tests {
                 + "\",\""
                 + test_recinfo
                 + "\",\""
-                + test_rulepath
+                + test_rule_path
                 + "\",\""
                 + test_filepath
                 + "\",\""
@@ -2777,8 +2787,8 @@ mod tests {
 
         additional_afterfact.record_cnt = 1;
         additional_afterfact.recover_record_cnt = 0;
-        additional_afterfact.tl_starttime = Some(expect_tz);
-        additional_afterfact.tl_endtime = Some(expect_tz);
+        additional_afterfact.timeline_start_time = Some(expect_tz);
+        additional_afterfact.timeline_end_time = Some(expect_tz);
         let mut writer = init_writer(&stored_static);
 
         assert!(
@@ -2809,7 +2819,7 @@ mod tests {
             false,
         );
         let test_filepath: &str = "test.evtx";
-        let test_rulepath: &str = "test-rule.yml";
+        let test_rule_path: &str = "test-rule.yml";
         let test_rule_id: &str = "00000000-0000-0000-0000-000000000000";
         let test_title = "test_title";
         let test_level = LEVEL::HIGH;
@@ -2899,7 +2909,7 @@ mod tests {
                 ("RecordID", Profile::RecordID(test_record_id.into())),
                 ("RuleTitle", Profile::RuleTitle(test_title.into())),
                 ("AllFieldInfo", Profile::AllFieldInfo(test_recinfo.into())),
-                ("RuleFile", Profile::RuleFile(test_rulepath.into())),
+                ("RuleFile", Profile::RuleFile(test_rule_path.into())),
                 ("EvtxFile", Profile::EvtxFile(test_filepath.into())),
                 ("Tags", Profile::MitreTags(test_attack.into())),
             ]);
@@ -2918,7 +2928,7 @@ mod tests {
                 CompactString::new(output),
                 DetectInfo {
                     detected_time: expect_time,
-                    rulepath: CompactString::from(test_rulepath),
+                    rule_path: CompactString::from(test_rule_path),
                     ruleid: test_rule_id.into(),
                     ruletitle: CompactString::from(test_title),
                     ruleauthor: CompactString::from("test_author"),
@@ -2926,7 +2936,7 @@ mod tests {
                     computername: CompactString::from(test_computername2),
                     eventid: CompactString::from(test_eventid),
                     detail: CompactString::default(),
-                    ext_field: output_profile.to_owned(),
+                    output_fields: output_profile.to_owned(),
                     agg_result: None,
                     details_convert_map: HashMap::default(),
                     rec_id: CompactString::default(),
@@ -2944,7 +2954,7 @@ mod tests {
                 CompactString::new(output),
                 DetectInfo {
                     detected_time: expect_time,
-                    rulepath: CompactString::from(test_rulepath),
+                    rule_path: CompactString::from(test_rule_path),
                     ruleid: test_rule_id.into(),
                     ruletitle: CompactString::from(test_title),
                     ruleauthor: CompactString::from("test_author"),
@@ -2952,7 +2962,7 @@ mod tests {
                     computername: CompactString::from(test_computername),
                     eventid: CompactString::from(test_eventid),
                     detail: CompactString::default(),
-                    ext_field: output_profile.to_owned(),
+                    output_fields: output_profile.to_owned(),
                     agg_result: None,
                     details_convert_map: HashMap::default(),
                     rec_id: CompactString::default(),
@@ -3010,8 +3020,8 @@ mod tests {
 
         additional_afterfact.record_cnt = 1;
         additional_afterfact.recover_record_cnt = 0;
-        additional_afterfact.tl_starttime = Some(expect_tz);
-        additional_afterfact.tl_endtime = Some(expect_tz);
+        additional_afterfact.timeline_start_time = Some(expect_tz);
+        additional_afterfact.timeline_end_time = Some(expect_tz);
         let mut writer = init_writer(&stored_static);
         assert!(
             output_afterfact_inner(
@@ -3043,7 +3053,7 @@ mod tests {
         fn make(time: DateTime<Utc>, detail: &str, evtx: &str) -> DetectInfo {
             DetectInfo {
                 detected_time: time,
-                rulepath: CompactString::from("rule.yml"),
+                rule_path: CompactString::from("rule.yml"),
                 ruleid: CompactString::from("id"),
                 ruletitle: CompactString::from("title"),
                 ruleauthor: CompactString::from("author"),
@@ -3052,7 +3062,7 @@ mod tests {
                 rec_id: CompactString::from("1"),
                 eventid: CompactString::from("1"),
                 detail: CompactString::default(),
-                ext_field: vec![
+                output_fields: vec![
                     (
                         CompactString::from("Details"),
                         Profile::Details(detail.to_string().into()),
@@ -3094,7 +3104,7 @@ mod tests {
             false,
         );
         let test_filepath: &str = "test.evtx";
-        let test_rulepath: &str = "test-rule.yml";
+        let test_rule_path: &str = "test-rule.yml";
         let test_rule_id: &str = "00000000-0000-0000-0000-000000000000";
         let test_title = "test_title";
         let test_level = LEVEL::HIGH;
@@ -3175,7 +3185,7 @@ mod tests {
                     "RecordInformation",
                     Profile::AllFieldInfo(test_recinfo.into()),
                 ),
-                ("RuleFile", Profile::RuleFile(test_rulepath.into())),
+                ("RuleFile", Profile::RuleFile(test_rule_path.into())),
                 ("EvtxFile", Profile::EvtxFile(test_filepath.into())),
                 ("Tags", Profile::MitreTags(test_attack.into())),
             ]);
@@ -3194,7 +3204,7 @@ mod tests {
                 CompactString::new(output),
                 DetectInfo {
                     detected_time: expect_time,
-                    rulepath: CompactString::from(test_rulepath),
+                    rule_path: CompactString::from(test_rule_path),
                     ruleid: test_rule_id.into(),
                     ruletitle: CompactString::from(test_title),
                     ruleauthor: CompactString::from("test_author"),
@@ -3202,7 +3212,7 @@ mod tests {
                     computername: CompactString::from(test_computername2),
                     eventid: CompactString::from(test_eventid),
                     detail: CompactString::default(),
-                    ext_field: output_profile.to_owned(),
+                    output_fields: output_profile.to_owned(),
                     agg_result: None,
                     details_convert_map: HashMap::default(),
                     rec_id: CompactString::default(),
@@ -3220,7 +3230,7 @@ mod tests {
                 CompactString::new(output),
                 DetectInfo {
                     detected_time: expect_time,
-                    rulepath: CompactString::from(test_rulepath),
+                    rule_path: CompactString::from(test_rule_path),
                     ruleid: test_rule_id.into(),
                     ruletitle: CompactString::from(test_title),
                     ruleauthor: CompactString::from("test_author"),
@@ -3228,7 +3238,7 @@ mod tests {
                     computername: CompactString::from(test_computername),
                     eventid: CompactString::from(test_eventid),
                     detail: CompactString::default(),
-                    ext_field: output_profile.to_owned(),
+                    output_fields: output_profile.to_owned(),
                     agg_result: None,
                     details_convert_map: HashMap::default(),
                     rec_id: CompactString::default(),
@@ -3262,7 +3272,7 @@ mod tests {
                 + "\",\""
                 + test_recinfo
                 + "\",\""
-                + test_rulepath
+                + test_rule_path
                 + "\",\""
                 + test_filepath
                 + "\",\""
@@ -3285,7 +3295,7 @@ mod tests {
                 + ",\""
                 + test_title
                 + "\",\"DUP\",\"DUP\",\""
-                + test_rulepath
+                + test_rule_path
                 + "\",\""
                 + test_filepath
                 + "\",\""
@@ -3294,8 +3304,8 @@ mod tests {
 
         additional_afterfact.record_cnt = 1;
         additional_afterfact.recover_record_cnt = 0;
-        additional_afterfact.tl_starttime = Some(expect_tz);
-        additional_afterfact.tl_endtime = Some(expect_tz);
+        additional_afterfact.timeline_start_time = Some(expect_tz);
+        additional_afterfact.timeline_end_time = Some(expect_tz);
         let mut writer = init_writer(&stored_static);
         assert!(
             output_afterfact_inner(
@@ -3325,7 +3335,7 @@ mod tests {
             false,
         );
         let test_filepath: &str = "test.evtx";
-        let test_rulepath: &str = "test-rule.yml";
+        let test_rule_path: &str = "test-rule.yml";
         let test_rule_id: &str = "00000000-0000-0000-0000-000000000000";
         let test_title = "test_title";
         let test_level = LEVEL::HIGH;
@@ -3406,7 +3416,7 @@ mod tests {
                     "RecordInformation",
                     Profile::AllFieldInfo(test_recinfo.into()),
                 ),
-                ("RuleFile", Profile::RuleFile(test_rulepath.into())),
+                ("RuleFile", Profile::RuleFile(test_rule_path.into())),
                 ("EvtxFile", Profile::EvtxFile(test_filepath.into())),
                 ("Tags", Profile::MitreTags(test_attack.into())),
             ]);
@@ -3427,7 +3437,7 @@ mod tests {
                 CompactString::new(output),
                 DetectInfo {
                     detected_time: expect_time,
-                    rulepath: CompactString::from(test_rulepath),
+                    rule_path: CompactString::from(test_rule_path),
                     ruleid: test_rule_id.into(),
                     ruletitle: CompactString::from(test_title),
                     ruleauthor: CompactString::from("test_author"),
@@ -3435,7 +3445,7 @@ mod tests {
                     computername: CompactString::from(test_computername2),
                     eventid: CompactString::from(test_eventid),
                     detail: CompactString::default(),
-                    ext_field: output_profile.to_owned(),
+                    output_fields: output_profile.to_owned(),
                     agg_result: None,
                     details_convert_map,
                     rec_id: CompactString::default(),
@@ -3453,7 +3463,7 @@ mod tests {
                 CompactString::new(output),
                 DetectInfo {
                     detected_time: expect_time,
-                    rulepath: CompactString::from(test_rulepath),
+                    rule_path: CompactString::from(test_rule_path),
                     ruleid: test_rule_id.into(),
                     ruletitle: CompactString::from(test_title),
                     ruleauthor: CompactString::from("test_author"),
@@ -3461,7 +3471,7 @@ mod tests {
                     computername: CompactString::from(test_computername),
                     eventid: CompactString::from(test_eventid),
                     detail: CompactString::default(),
-                    ext_field: output_profile.to_owned(),
+                    output_fields: output_profile.to_owned(),
                     agg_result: None,
                     details_convert_map: HashMap::default(),
                     rec_id: CompactString::default(),
@@ -3518,7 +3528,7 @@ mod tests {
                 ),
                 (
                     "RuleFile",
-                    CompactString::from("\"".to_string() + test_rulepath + "\""),
+                    CompactString::from("\"".to_string() + test_rule_path + "\""),
                 ),
                 (
                     "EvtxFile",
@@ -3567,7 +3577,7 @@ mod tests {
                 ("RecordInformation", "\"DUP\"".into()),
                 (
                     "RuleFile",
-                    CompactString::from("\"".to_string() + test_rulepath + "\""),
+                    CompactString::from("\"".to_string() + test_rule_path + "\""),
                 ),
                 (
                     "EvtxFile",
@@ -3599,8 +3609,8 @@ mod tests {
 
         additional_afterfact.record_cnt = 1;
         additional_afterfact.recover_record_cnt = 0;
-        additional_afterfact.tl_starttime = Some(expect_tz);
-        additional_afterfact.tl_endtime = Some(expect_tz);
+        additional_afterfact.timeline_start_time = Some(expect_tz);
+        additional_afterfact.timeline_end_time = Some(expect_tz);
         let mut writer = init_writer(&stored_static);
         assert!(
             output_afterfact_inner(
@@ -3630,7 +3640,7 @@ mod tests {
             false,
         );
         let test_filepath: &str = "test.evtx";
-        let test_rulepath: &str = "test-rule.yml";
+        let test_rule_path: &str = "test-rule.yml";
         let test_rule_id: &str = "00000000-0000-0000-0000-000000000000";
         let test_title = "test_title";
         let test_level = LEVEL::HIGH;
@@ -3715,7 +3725,7 @@ mod tests {
                     "RecordInformation",
                     Profile::AllFieldInfo(test_recinfo.into()),
                 ),
-                ("RuleFile", Profile::RuleFile(test_rulepath.into())),
+                ("RuleFile", Profile::RuleFile(test_rule_path.into())),
                 ("EvtxFile", Profile::EvtxFile(test_filepath.into())),
                 ("Tags", Profile::MitreTags(test_attack.into())),
             ]);
@@ -3736,7 +3746,7 @@ mod tests {
                 CompactString::new(output),
                 DetectInfo {
                     detected_time: expect_time,
-                    rulepath: CompactString::from(test_rulepath),
+                    rule_path: CompactString::from(test_rule_path),
                     ruleid: test_rule_id.into(),
                     ruletitle: CompactString::from(test_title),
                     ruleauthor: CompactString::from("test_author"),
@@ -3744,7 +3754,7 @@ mod tests {
                     computername: CompactString::from(test_computername),
                     eventid: CompactString::from(test_eventid),
                     detail: CompactString::default(),
-                    ext_field: output_profile.to_owned(),
+                    output_fields: output_profile.to_owned(),
                     agg_result: None,
                     details_convert_map,
                     rec_id: CompactString::default(),
@@ -3804,7 +3814,7 @@ mod tests {
             ),
             (
                 "RuleFile",
-                CompactString::from("\"".to_string() + test_rulepath + "\""),
+                CompactString::from("\"".to_string() + test_rule_path + "\""),
             ),
             (
                 "EvtxFile",
@@ -3835,8 +3845,8 @@ mod tests {
 
         additional_afterfact.record_cnt = 1;
         additional_afterfact.recover_record_cnt = 0;
-        additional_afterfact.tl_starttime = Some(expect_tz);
-        additional_afterfact.tl_endtime = Some(expect_tz);
+        additional_afterfact.timeline_start_time = Some(expect_tz);
+        additional_afterfact.timeline_end_time = Some(expect_tz);
         let mut writer = init_writer(&stored_static);
         assert!(
             output_afterfact_inner(
@@ -3866,7 +3876,7 @@ mod tests {
             false,
         );
         let test_filepath: &str = "test.evtx";
-        let test_rulepath: &str = "test-rule.yml";
+        let test_rule_path: &str = "test-rule.yml";
         let test_rule_id: &str = "00000000-0000-0000-0000-000000000000";
         let test_title = "test_title";
         let test_level = LEVEL::HIGH;
@@ -3950,7 +3960,7 @@ mod tests {
                     "RecordInformation",
                     Profile::AllFieldInfo(test_recinfo.into()),
                 ),
-                ("RuleFile", Profile::RuleFile(test_rulepath.into())),
+                ("RuleFile", Profile::RuleFile(test_rule_path.into())),
                 ("EvtxFile", Profile::EvtxFile(test_filepath.into())),
                 ("Tags", Profile::MitreTags(test_attack.into())),
             ]);
@@ -3971,7 +3981,7 @@ mod tests {
                 CompactString::new(output),
                 DetectInfo {
                     detected_time: expect_time,
-                    rulepath: CompactString::from(test_rulepath),
+                    rule_path: CompactString::from(test_rule_path),
                     ruleid: test_rule_id.into(),
                     ruletitle: CompactString::from(test_title),
                     ruleauthor: CompactString::from("test_author"),
@@ -3979,7 +3989,7 @@ mod tests {
                     computername: CompactString::from(test_computername2),
                     eventid: CompactString::from(test_eventid),
                     detail: CompactString::default(),
-                    ext_field: output_profile.to_owned(),
+                    output_fields: output_profile.to_owned(),
                     agg_result: None,
                     details_convert_map,
                     rec_id: CompactString::default(),
@@ -4011,8 +4021,8 @@ mod tests {
 
         additional_afterfact.record_cnt = 1;
         additional_afterfact.recover_record_cnt = 0;
-        additional_afterfact.tl_starttime = Some(expect_tz);
-        additional_afterfact.tl_endtime = Some(expect_tz);
+        additional_afterfact.timeline_start_time = Some(expect_tz);
+        additional_afterfact.timeline_end_time = Some(expect_tz);
         let mut writer = init_writer(&stored_static);
         assert!(
             output_afterfact_inner(
@@ -4042,7 +4052,7 @@ mod tests {
             false,
         );
         let test_filepath: &str = "test.evtx";
-        let test_rulepath: &str = "test-rule.yml";
+        let test_rule_path: &str = "test-rule.yml";
         let test_rule_id: &str = "00000000-0000-0000-0000-000000000000";
         let test_title = "test_title";
         let test_level = LEVEL::HIGH;
@@ -4127,7 +4137,7 @@ mod tests {
                     "RecordInformation",
                     Profile::AllFieldInfo(test_recinfo.into()),
                 ),
-                ("RuleFile", Profile::RuleFile(test_rulepath.into())),
+                ("RuleFile", Profile::RuleFile(test_rule_path.into())),
                 ("EvtxFile", Profile::EvtxFile(test_filepath.into())),
                 ("Tags", Profile::MitreTags(test_attack.into())),
             ]);
@@ -4149,7 +4159,7 @@ mod tests {
                 CompactString::new(output),
                 DetectInfo {
                     detected_time: expect_time,
-                    rulepath: CompactString::from(test_rulepath),
+                    rule_path: CompactString::from(test_rule_path),
                     ruleid: test_rule_id.into(),
                     ruletitle: CompactString::from(test_title),
                     ruleauthor: CompactString::from("test_author"),
@@ -4157,7 +4167,7 @@ mod tests {
                     computername: CompactString::from(test_computername2),
                     eventid: CompactString::from(test_eventid),
                     detail: CompactString::default(),
-                    ext_field: output_profile.to_owned(),
+                    output_fields: output_profile.to_owned(),
                     agg_result: None,
                     details_convert_map,
                     rec_id: CompactString::default(),
@@ -4189,8 +4199,8 @@ mod tests {
 
         additional_afterfact.record_cnt = 1;
         additional_afterfact.recover_record_cnt = 0;
-        additional_afterfact.tl_starttime = Some(expect_tz);
-        additional_afterfact.tl_endtime = Some(expect_tz);
+        additional_afterfact.timeline_start_time = Some(expect_tz);
+        additional_afterfact.timeline_end_time = Some(expect_tz);
         let mut writer = init_writer(&stored_static);
         assert!(
             output_afterfact_inner(

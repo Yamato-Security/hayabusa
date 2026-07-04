@@ -22,8 +22,8 @@ mod fast_match;
 mod matchers;
 mod selectionnodes;
 
-pub fn create_rule(rulepath: String, yaml: Yaml) -> RuleNode {
-    RuleNode::new(rulepath, yaml)
+pub fn create_rule(rule_path: String, yaml: Yaml) -> RuleNode {
+    RuleNode::new(rule_path, yaml)
 }
 
 /// The `correlation.type` of a Sigma correlation rule.
@@ -80,7 +80,7 @@ impl CorrelationType {
 
 /// Node representing a Rule file.
 pub struct RuleNode {
-    pub rulepath: String,
+    pub rule_path: String,
     pub yaml: Yaml,
     pub detection: DetectionNode,
     countdata: HashMap<String, Vec<AggRecordTimeInfo>>,
@@ -99,7 +99,7 @@ impl RuleNode {
     pub fn new(rule_path: String, yaml_data: Yaml) -> RuleNode {
         RuleNode {
             correlation_type: CorrelationType::new(&yaml_data),
-            rulepath: rule_path,
+            rule_path,
             yaml: yaml_data,
             detection: DetectionNode::new(),
             countdata: HashMap::new(),
@@ -115,7 +115,7 @@ impl RuleNode {
     ) -> RuleNode {
         RuleNode {
             correlation_type: CorrelationType::new(&yaml_data),
-            rulepath: rule_path,
+            rule_path,
             yaml: yaml_data,
             detection,
             countdata: HashMap::new(),
@@ -415,12 +415,12 @@ impl DetectionNode {
         } else if yaml.as_vec().is_some() && key_list.len() == 1 && key_list[0].eq("|all") {
             // If the key is just "|all" (the keyless all modifier), every keyword in the list has
             // to match, so combine the children with an AllSelectionNode (AND semantics).
-            let mut or_node = selectionnodes::AllSelectionNode::new();
+            let mut all_node = selectionnodes::AllSelectionNode::new();
             yaml.as_vec().unwrap().iter().for_each(|child_yaml| {
                 let child_node = Self::parse_selection_recursively(key_list, child_yaml);
-                or_node.child_nodes.push(child_node);
+                all_node.child_nodes.push(child_node);
             });
-            Box::new(or_node)
+            Box::new(all_node)
         } else if yaml.as_vec().is_some() && key_list.iter().any(|k: &str| k.contains("|all")) {
             // If the key carries the |all modifier (e.g. field|contains|all), the array of child
             // elements is interpreted as an AND condition.
@@ -459,7 +459,7 @@ pub struct AggResult {
     /// count. If nothing is specified inside the parentheses, this is an array of length 0.
     pub field_values: Vec<String>,
     /// Time of the first record in the detected block.
-    pub start_timedate: DateTime<Utc>,
+    pub start_datetime: DateTime<Utc>,
     /// All times and EventIDs of records in the detected block.
     pub agg_record_time_info: Vec<AggRecordTimeInfo>,
 }
@@ -476,7 +476,7 @@ impl AggResult {
             data: count_data,
             key: key_name,
             field_values: field_value,
-            start_timedate: event_start_timedate,
+            start_datetime: event_start_timedate,
             agg_record_time_info,
         }
     }

@@ -22,13 +22,13 @@ pub struct DataFilterRule {
 /// noisy_rules.txt are skipped unless --enable-noisy-rules is set.
 #[derive(Clone, Debug)]
 pub struct RuleExclude {
-    pub no_use_rule: HashMap<String, String>,
+    pub excluded_rule_sources: HashMap<String, String>,
 }
 
 impl RuleExclude {
     pub fn new() -> RuleExclude {
         RuleExclude {
-            no_use_rule: HashMap::new(),
+            excluded_rule_sources: HashMap::new(),
         }
     }
 }
@@ -100,7 +100,7 @@ impl RuleExclude {
                 // Skip blank lines and entries that are not UUID-formatted rule IDs.
                 continue;
             }
-            self.no_use_rule.insert(v, filename.to_owned());
+            self.excluded_rule_sources.insert(v, filename.to_owned());
         }
     }
 }
@@ -196,7 +196,7 @@ fn extract_channel_from_rules(
         visit_value("", &rule.yaml, evtx_channels, &mut intersection_channels);
         // If the visit added any channel, this rule targets at least one loaded evtx channel.
         if before_visit_len < intersection_channels.len() {
-            filtered_rule_paths.push(rule.rulepath.to_string());
+            filtered_rule_paths.push(rule.rule_path.to_string());
         }
     }
     (filtered_rule_paths, intersection_channels)
@@ -207,7 +207,7 @@ fn extract_channel_from_rules(
 /// trigger.
 pub struct ChannelFilter {
     pub rule_paths: Vec<String>, // paths of rules whose Channel matches some loaded evtx file
-    pub intersec_channels: HashSet<String>, // intersection of evtx and rule channels
+    pub intersection_channels: HashSet<String>, // intersection of evtx and rule channels
     pub evtx_channels_map: HashMap<String, Vec<PathBuf>>, // key=channel, val=list of evtx paths
 }
 
@@ -215,7 +215,7 @@ impl ChannelFilter {
     pub fn new() -> ChannelFilter {
         ChannelFilter {
             rule_paths: vec![],
-            intersec_channels: HashSet::new(),
+            intersection_channels: HashSet::new(),
             evtx_channels_map: HashMap::new(),
         }
     }
@@ -224,7 +224,7 @@ impl ChannelFilter {
     /// targets, i.e. scanning the file can possibly produce a detection.
     pub fn scannable_rule_exists(&mut self, path: &PathBuf) -> bool {
         for (channel, evtx_paths) in &self.evtx_channels_map {
-            if evtx_paths.contains(path) && self.intersec_channels.contains(channel) {
+            if evtx_paths.contains(path) && self.intersection_channels.contains(channel) {
                 return true;
             }
         }
@@ -251,7 +251,7 @@ pub fn create_channel_filter(
         let (x, y) = extract_channel_from_rules(rule_nodes, &channels.keys().cloned().collect());
         ChannelFilter {
             rule_paths: x,
-            intersec_channels: y.into_iter().collect(),
+            intersection_channels: y.into_iter().collect(),
             evtx_channels_map: channels,
         }
     } else {
@@ -346,7 +346,7 @@ mod tests {
             .evtx_channels_map
             .insert("channel1".to_string(), vec![PathBuf::from("path1")]);
         channel_filter
-            .intersec_channels
+            .intersection_channels
             .insert("channel1".to_string());
 
         assert!(channel_filter.scannable_rule_exists(&PathBuf::from("path1")));

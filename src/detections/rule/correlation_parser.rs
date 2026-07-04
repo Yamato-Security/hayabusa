@@ -162,25 +162,25 @@ fn get_group_by_from_yaml(yaml: &Yaml) -> Result<Option<String>, Box<dyn Error>>
 /// TimeFrameInfo::parse_tframe in count.rs, but returns an Err for an unknown unit suffix
 /// instead of logging it.
 fn parse_tframe(value: String) -> Result<TimeFrameInfo, Box<dyn Error>> {
-    let ttype;
+    let time_unit;
     let mut target_val = value.as_str();
     if target_val.ends_with('s') {
-        ttype = "s";
+        time_unit = "s";
     } else if target_val.ends_with('m') {
-        ttype = "m";
+        time_unit = "m";
     } else if target_val.ends_with('h') {
-        ttype = "h";
+        time_unit = "h";
     } else if target_val.ends_with('d') {
-        ttype = "d";
+        time_unit = "d";
     } else {
         return Err("Invalid time frame".into());
     }
-    if !ttype.is_empty() {
+    if !time_unit.is_empty() {
         target_val = &value[..value.len() - 1];
     }
     Ok(TimeFrameInfo {
-        timetype: ttype.to_string(),
-        timenum: target_val.parse::<i64>(),
+        time_unit: time_unit.to_string(),
+        time_value: target_val.parse::<i64>(),
     })
 }
 
@@ -198,7 +198,7 @@ fn create_related_rule_nodes(
         for other_rule in other_rules {
             if is_referenced_rule(other_rule, id) {
                 any_referenced = true;
-                let mut node = RuleNode::new(other_rule.rulepath.clone(), other_rule.yaml.clone());
+                let mut node = RuleNode::new(other_rule.rule_path.clone(), other_rule.yaml.clone());
                 let _ = node.init(stored_static);
                 name_to_selection.extend(node.detection.name_to_selection.clone());
                 related_rule_nodes.push(node);
@@ -250,7 +250,7 @@ fn error_log(
     rule_path: &str,
     reason: &str,
     stored_static: &StoredStatic,
-    parseerror_count: &mut u128,
+    parse_error_count: &mut u128,
 ) {
     let msg = format!("Failed to parse rule. (FilePath : {rule_path}) {reason}");
     if stored_static.verbose_flag {
@@ -262,7 +262,7 @@ fn error_log(
             .unwrap()
             .push(format!("[WARN] {msg}"));
     }
-    *parseerror_count += 1;
+    *parse_error_count += 1;
 }
 
 /// Converts an `event_count`/`value_count` correlation rule into a single self-contained
@@ -285,30 +285,30 @@ fn merge_referenced_rule(
         && rule_type != Some("temporal_ordered")
     {
         let m = "The type of correlation rule only supports event_count/value_count/temporal/temporal_ordered.";
-        error_log(&rule.rulepath, m, stored_static, parse_error_count);
+        error_log(&rule.rule_path, m, stored_static, parse_error_count);
         return rule;
     }
     let referenced_ids = match get_related_rules_id(&rule.yaml) {
         Ok(related_rules_ids) => related_rules_ids,
         Err(_) => {
             let m = "Referenced rule not found.";
-            error_log(&rule.rulepath, m, stored_static, parse_error_count);
+            error_log(&rule.rule_path, m, stored_static, parse_error_count);
             return rule;
         }
     };
     if referenced_ids.is_empty() {
         let m = "Referenced rule not found.";
-        error_log(&rule.rulepath, m, stored_static, parse_error_count);
+        error_log(&rule.rule_path, m, stored_static, parse_error_count);
         return rule;
     }
     if rule.yaml["correlation"]["timespan"].as_str().is_none() {
         let m = "key timespan not found.";
-        error_log(&rule.rulepath, m, stored_static, parse_error_count);
+        error_log(&rule.rule_path, m, stored_static, parse_error_count);
         return rule;
     }
     if rule.yaml["correlation"]["group-by"].as_vec().is_none() {
         let m = "key group-by  not found.";
-        error_log(&rule.rulepath, m, stored_static, parse_error_count);
+        error_log(&rule.rule_path, m, stored_static, parse_error_count);
         return rule;
     }
     if rule_type == Some("temporal") || rule_type == Some("temporal_ordered") {
@@ -319,7 +319,7 @@ fn merge_referenced_rule(
             Ok(result) => result,
             Err(e) => {
                 error_log(
-                    &rule.rulepath,
+                    &rule.rule_path,
                     e.to_string().as_str(),
                     stored_static,
                     parse_error_count,
@@ -351,7 +351,7 @@ fn merge_referenced_rule(
         Ok(detection) => detection,
         Err(e) => {
             error_log(
-                &rule.rulepath,
+                &rule.rule_path,
                 e.to_string().as_str(),
                 stored_static,
                 parse_error_count,
@@ -366,7 +366,7 @@ fn merge_referenced_rule(
         Yaml::Array(referenced_hashes.into_iter().map(Yaml::Hash).collect());
     let mut merged_yaml = rule.yaml.as_hash().unwrap().clone();
     merged_yaml.insert(Yaml::String("detection".to_string()), referenced_yaml);
-    RuleNode::new_with_detection(rule.rulepath, Yaml::Hash(merged_yaml), detection)
+    RuleNode::new_with_detection(rule.rule_path, Yaml::Hash(merged_yaml), detection)
 }
 
 /// Expands `temporal`/`temporal_ordered` correlation rules. Each referenced rule must be
@@ -421,7 +421,7 @@ fn parse_temporal_rules(
                                 Yaml::String(new_id.to_string()),
                             );
                         }
-                        let mut node = RuleNode::new(other_rule.rulepath.clone(), new_yaml);
+                        let mut node = RuleNode::new(other_rule.rule_path.clone(), new_yaml);
                         let _ = node.init(stored_static);
                         node.correlation_type =
                             CorrelationType::TemporalRef(generate, new_id.to_string());
@@ -457,7 +457,7 @@ fn parse_temporal_rules(
             // TemporalRef rules were registered under.
             let mut new_yaml = temporal_yaml.clone();
             new_yaml["correlation"]["rules"] = Yaml::Array(temporal_ref_ids);
-            let mut node = RuleNode::new(temporal.rulepath.clone(), new_yaml);
+            let mut node = RuleNode::new(temporal.rule_path.clone(), new_yaml);
             let group_by = get_group_by_from_yaml(&temporal.yaml);
             let timespan = &temporal.yaml["correlation"]["timespan"].as_str().unwrap();
             let time_frame = parse_tframe(timespan.to_string());

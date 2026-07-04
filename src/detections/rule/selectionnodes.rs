@@ -355,8 +355,8 @@ impl LeafSelectionNode {
             return String::default();
         }
 
-        let topkey = &self.key_list[0];
-        topkey.split('|').next().unwrap_or_default().to_string()
+        let first_key = &self.key_list[0];
+        first_key.split('|').next().unwrap_or_default().to_string()
     }
 
     /// Gets the value for this leaf's key from the event record JSON.
@@ -425,8 +425,8 @@ impl SelectionNode for LeafSelectionNode {
                     .is_match(Option::None, event_record);
             }
 
-            let eventdata_data = values.unwrap();
-            match eventdata_data {
+            let event_data_value = values.unwrap();
+            match event_data_value {
                 // For strings or numbers (not arrays), compare normally.
                 Value::Bool(_) | Value::Number(_) | Value::String(_) => {
                     let event_value = event_record.get_value(self.get_key());
@@ -438,12 +438,12 @@ impl SelectionNode for LeafSelectionNode {
                 }
                 // For arrays, the leaf matches if any element matches.
                 Value::Array(_) => {
-                    return eventdata_data
+                    return event_data_value
                         .as_array()
                         .unwrap()
                         .iter()
-                        .any(|ary_element| {
-                            let event_value = utils::value_to_string(ary_element);
+                        .any(|array_element| {
+                            let event_value = utils::value_to_string(array_element);
                             self.matcher
                                 .as_ref()
                                 .unwrap()

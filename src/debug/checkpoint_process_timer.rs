@@ -17,7 +17,7 @@ lazy_static! {
 /// elapsed time since the last checkpoint as a labeled lap.
 pub struct CheckPointProcessTimer {
     prev_checkpoint: Option<DateTime<Local>>,
-    stocked_results: Vec<CheckPointTimeStore>,
+    recorded_laps: Vec<CheckPointTimeStore>,
 }
 
 /// One recorded lap: a label and the elapsed time split into seconds and milliseconds.
@@ -32,7 +32,7 @@ impl CheckPointProcessTimer {
     pub fn create_checkpoint_timer() -> Self {
         CheckPointProcessTimer {
             prev_checkpoint: None,
-            stocked_results: Vec::new(),
+            recorded_laps: Vec::new(),
         }
     }
 
@@ -55,14 +55,14 @@ impl CheckPointProcessTimer {
         let duration = new_checkpoint - self.prev_checkpoint.unwrap();
         let s = duration.num_seconds();
         let ms = duration.num_milliseconds() - 1000 * s;
-        if !self.stocked_results.is_empty()
-            && self.stocked_results[self.stocked_results.len() - 1].output_str == output_str
+        if !self.recorded_laps.is_empty()
+            && self.recorded_laps[self.recorded_laps.len() - 1].output_str == output_str
         {
-            let stocked_last_idx = self.stocked_results.len() - 1;
-            self.stocked_results[stocked_last_idx].sec += s;
-            self.stocked_results[stocked_last_idx].msec += ms;
+            let last_lap_idx = self.recorded_laps.len() - 1;
+            self.recorded_laps[last_lap_idx].sec += s;
+            self.recorded_laps[last_lap_idx].msec += ms;
         } else {
-            self.stocked_results.push(CheckPointTimeStore {
+            self.recorded_laps.push(CheckPointTimeStore {
                 output_str: output_str.into(),
                 sec: s,
                 msec: ms,
@@ -73,7 +73,7 @@ impl CheckPointProcessTimer {
 
     /// Prints every stocked lap as "label: duration" (used for the --debug breakdown).
     pub fn output_stocked_result(&self) {
-        for output in self.stocked_results.iter() {
+        for output in self.recorded_laps.iter() {
             println!(
                 "{}: {}",
                 output.output_str,
@@ -88,7 +88,7 @@ impl CheckPointProcessTimer {
     pub fn calculate_all_stocked_results(&self) -> String {
         let mut s = 0;
         let mut ms = 0;
-        for output in self.stocked_results.iter() {
+        for output in self.recorded_laps.iter() {
             s += output.sec;
             ms += output.msec;
         }
@@ -119,7 +119,7 @@ mod tests {
     fn test_lap_checkpoint() {
         let mut actual = CheckPointProcessTimer {
             prev_checkpoint: None,
-            stocked_results: Vec::new(),
+            recorded_laps: Vec::new(),
         };
         actual.lap_checkpoint("Test");
         let now: DateTime<Local> = Local::now();
@@ -127,8 +127,8 @@ mod tests {
         actual.lap_checkpoint("Test2");
         actual.set_checkpoint(Local::now());
         assert!(actual.prev_checkpoint.is_some());
-        assert_eq!(actual.stocked_results.len(), 1);
-        assert!(actual.stocked_results[0].output_str == "Test2");
+        assert_eq!(actual.recorded_laps.len(), 1);
+        assert!(actual.recorded_laps[0].output_str == "Test2");
         assert_ne!(actual.prev_checkpoint.unwrap(), now);
 
         actual.output_stocked_result();
@@ -139,7 +139,7 @@ mod tests {
         let now = Local::now();
         let mut actual = CheckPointProcessTimer {
             prev_checkpoint: Some(now),
-            stocked_results: Vec::new(),
+            recorded_laps: Vec::new(),
         };
         actual.lap_checkpoint("Test");
         actual.set_checkpoint(
@@ -152,8 +152,8 @@ mod tests {
                 .unwrap(),
         );
         assert!(actual.prev_checkpoint.is_some());
-        assert_eq!(actual.stocked_results.len(), 2);
-        assert!(actual.stocked_results[0].output_str == "Test");
+        assert_eq!(actual.recorded_laps.len(), 2);
+        assert!(actual.recorded_laps[0].output_str == "Test");
         assert_ne!(actual.prev_checkpoint.unwrap(), now);
 
         actual.calculate_all_stocked_results();

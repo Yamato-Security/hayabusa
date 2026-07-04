@@ -11,7 +11,7 @@ pub fn extract_fields(
     channel: Option<String>,
     event_id: Option<String>,
     data: &mut Value,
-    key_2_values: &mut HashMap<String, String>,
+    flat_key_to_value: &mut HashMap<String, String>,
 ) {
     if let Some(ch) = channel
         && let Some(eid) = event_id
@@ -19,25 +19,26 @@ pub fn extract_fields(
         && (eid == "400" || eid == "403" || eid == "600" || eid == "800")
     {
         let target_data_index = if eid == "800" { 1 } else { 2 };
-        extract_powershell_classic_fields(data, target_data_index, key_2_values);
+        extract_powershell_classic_fields(data, target_data_index, flat_key_to_value);
     }
 }
 
 /// Recursively searches `data` for an array node (the EventData "Data" array), parses its
 /// `data_index` element as "Key=Value" lines, and inserts the parsed pairs into the object that
 /// directly contains the array (i.e. as siblings of "Data" inside EventData), also recording the
-/// string values in `key_2_values`. The Some return value is only used internally to hand the
+/// string values in `flat_key_to_value`. The Some return value is only used internally to hand the
 /// parsed fields up one level to the containing object; the outermost call always returns None.
 fn extract_powershell_classic_fields(
     data: &mut Value,
     data_index: usize,
-    key_2_values: &mut HashMap<String, String>,
+    flat_key_to_value: &mut HashMap<String, String>,
 ) -> Option<Value> {
     match data {
         Value::Object(map) => {
             let mut extracted_fields = None;
             for (_, val) in &mut *map {
-                extracted_fields = extract_powershell_classic_fields(val, data_index, key_2_values);
+                extracted_fields =
+                    extract_powershell_classic_fields(val, data_index, flat_key_to_value);
                 if extracted_fields.is_some() {
                     break;
                 }
@@ -48,7 +49,7 @@ fn extract_powershell_classic_fields(
                 for (key, val) in fields {
                     map.insert(key.clone(), val.clone());
                     if let Value::String(s) = val {
-                        key_2_values.insert(key, s.to_string());
+                        flat_key_to_value.insert(key, s.to_string());
                     }
                 }
             }

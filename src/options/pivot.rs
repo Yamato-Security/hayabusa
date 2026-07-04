@@ -75,19 +75,19 @@ pub fn insert_pivot_keyword(event_record: &Value, eventkey_alias: &EventKeyAlias
     let mut pivots = PIVOT_KEYWORD.write().unwrap();
     pivots.iter_mut().for_each(|(_, pivot)| {
         for field in &pivot.fields {
-            if let Some(array_str) = eventkey_alias.get_event_key(&String::from(field)) {
-                let mut is_exist_event_key = false;
+            if let Some(event_key_path) = eventkey_alias.get_event_key(&String::from(field)) {
+                let mut event_key_found = false;
                 let mut tmp_event_record: &Value = event_record;
                 // Walk the dot-separated event key path as far as it matches the record. If the
                 // walk stops on a JSON object (i.e. the full path did not resolve to a scalar),
                 // get_serde_number_to_string below returns None and the field is skipped.
-                for s in array_str.split('.') {
+                for s in event_key_path.split('.') {
                     if let Some(record) = tmp_event_record.get(s) {
-                        is_exist_event_key = true;
+                        event_key_found = true;
                         tmp_event_record = record;
                     }
                 }
-                if is_exist_event_key {
+                if event_key_found {
                     let hash_value = get_serde_number_to_string(tmp_event_record, false);
 
                     if let Some(value) = hash_value {

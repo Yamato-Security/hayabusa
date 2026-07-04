@@ -145,8 +145,8 @@ impl AggregationConditionCompiler {
             return Result::Err("There are no strings after the pipe(|).".to_string());
         }
 
-        let mut token_ite = tokens.into_iter();
-        let token = token_ite.next().unwrap();
+        let mut token_iter = tokens.into_iter();
+        let token = token_iter.next().unwrap();
 
         let mut count_field_name: Option<String> = Option::None;
         if let AggregationConditionToken::Count(field_name) = token {
@@ -160,7 +160,7 @@ impl AggregationConditionCompiler {
             return Result::Err("The aggregation condition can only use count.".to_string());
         }
 
-        let token = token_ite.next();
+        let token = token_iter.next();
         if token.is_none() {
             // Missing comparison operator is invalid.
             return Result::Err(
@@ -172,7 +172,7 @@ impl AggregationConditionCompiler {
         let mut by_field_name = Option::None;
         let token = token.unwrap();
         let token = if let AggregationConditionToken::BY = token {
-            let after_by = token_ite.next();
+            let after_by = token_iter.next();
             if after_by.is_none() {
                 // Nothing after BY is invalid.
                 return Result::Err(
@@ -182,7 +182,7 @@ impl AggregationConditionCompiler {
 
             if let AggregationConditionToken::Keyword(keyword) = after_by.unwrap() {
                 by_field_name = Option::Some(keyword);
-                token_ite.next()
+                token_iter.next()
             } else {
                 return Result::Err(
                     "The by keyword needs a field name like 'by EventID'".to_string(),
@@ -209,7 +209,9 @@ impl AggregationConditionCompiler {
 
         // Space serves as a dummy token here: if the input ends right after the comparison
         // operator, the if-let below falls through to the "needs a number" error.
-        let token = token_ite.next().unwrap_or(AggregationConditionToken::Space);
+        let token = token_iter
+            .next()
+            .unwrap_or(AggregationConditionToken::Space);
         let cmp_number = if let AggregationConditionToken::Keyword(number) = token {
             let number: Result<i64, _> = number.parse();
             if let Ok(num) = number {
@@ -223,7 +225,7 @@ impl AggregationConditionCompiler {
             return Result::Err("The compare operator needs a number like '> 3'.".to_string());
         };
 
-        if token_ite.next().is_some() {
+        if token_iter.next().is_some() {
             return Result::Err("An unnecessary word was found.".to_string());
         }
 
