@@ -178,7 +178,7 @@ impl App {
                     analysis_start_time.format("%Y/%m/%d %H:%M")
                 ),
             ]);
-            htmlreport::add_md_data("General Overview {#general_overview}", output_data);
+            htmlreport::add_md_data(htmlreport::GENERAL_OVERVIEW_SECTION, output_data);
         }
 
         // Output subcommand help when no arguments are provided. Subcommands that work without arguments do not output help.
@@ -431,7 +431,7 @@ Any hostnames added to the critical_systems.txt file will have all alerts above 
                     println!();
                     output_and_data_stack_for_html(
                         &format!("{message}: {file_str}"),
-                        "General Overview {#general_overview}",
+                        htmlreport::GENERAL_OVERVIEW_SECTION,
                         html_report_flag,
                     );
                 }
@@ -1041,7 +1041,7 @@ Any hostnames added to the critical_systems.txt file will have all alerts above 
             .calculate_all_stocked_results();
         output_and_data_stack_for_html(
             &format!("Elapsed time: {elapsed_output_str}"),
-            "General Overview {#general_overview}",
+            htmlreport::GENERAL_OVERVIEW_SECTION,
             &stored_static.html_report_flag,
         );
         write_color_buffer(
@@ -1643,10 +1643,9 @@ Any hostnames added to the critical_systems.txt file will have all alerts above 
                 .items(selection_status_items.as_slice())
                 .interact()
                 .unwrap();
-            status_append_output = Some(format!(
-                "- selected detection rule sets: {}",
-                selections_status[selected_index].0
-            ));
+            // Store just the selected rule-set label here; the HTML-report block below adds the
+            // "- Selected detection rule set: " prefix when it renders this line.
+            status_append_output = Some(selections_status[selected_index].0.to_string());
             stored_static.output_option.as_mut().unwrap().min_level =
                 selections_status[selected_index].1.1.into();
 
@@ -1818,10 +1817,10 @@ Any hostnames added to the critical_systems.txt file will have all alerts above 
                     "- Analyzed event files: {}",
                     evtx_files.len().to_formatted_string(&Locale::en)
                 ),
-                format!("- {total_size}"),
+                format!("- Total file size: {total_size}"),
             ]);
             if let Some(status_report) = status_append_output {
-                html_report_data.push(format!("- Selected deteciton rule set: {status_report}"));
+                html_report_data.push(format!("- Selected detection rule set: {status_report}"));
             }
             let exclude_tags_data = stored_static
                 .output_option
@@ -1835,7 +1834,7 @@ Any hostnames added to the critical_systems.txt file will have all alerts above 
                 html_report_data.push(format!("- Excluded tags: {exclude_tags_data}"));
             }
             output_data.extend(html_report_data.iter());
-            htmlreport::add_md_data("General Overview #{general_overview}", output_data);
+            htmlreport::add_md_data(htmlreport::GENERAL_OVERVIEW_SECTION, output_data);
         }
 
         let level = stored_static
