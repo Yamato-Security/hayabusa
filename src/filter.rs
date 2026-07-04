@@ -196,7 +196,7 @@ fn extract_channel_from_rules(
         visit_value("", &rule.yaml, evtx_channels, &mut intersection_channels);
         // If the visit added any channel, this rule targets at least one loaded evtx channel.
         if before_visit_len < intersection_channels.len() {
-            filtered_rule_paths.push(rule.rulepath.to_string());
+            filtered_rule_paths.push(rule.rule_path.to_string());
         }
     }
     (filtered_rule_paths, intersection_channels)

@@ -419,7 +419,7 @@ fn emit_csv_inner(
             }
             _get_serialized_disp_output(
                 &afterfact_writer.display_writer,
-                &detect_info.ext_field,
+                &detect_info.output_fields,
                 false,
                 (&output_replacer, &output_replaced_maps),
                 (&output_remover, &removed_replaced_maps),
@@ -486,12 +486,12 @@ fn emit_csv_inner(
             if !afterfact_info.has_displayed_header {
                 afterfact_writer
                     .csv_writer
-                    .write_record(detect_info.ext_field.iter().map(|x| x.0.trim()))?;
+                    .write_record(detect_info.output_fields.iter().map(|x| x.0.trim()))?;
                 afterfact_info.has_displayed_header = true;
             }
             afterfact_writer
                 .csv_writer
-                .write_record(detect_info.ext_field.iter().map(|x| {
+                .write_record(detect_info.output_fields.iter().map(|x| {
                     match x.1 {
                         Profile::Details(_)
                         | Profile::AllFieldInfo(_)
@@ -583,18 +583,18 @@ fn calc_statistic_info(
             let author_list = extract_author_name(&detect_info.ruleauthor);
             let author_str = author_list.iter().join(", ");
             afterfact_info.detect_rule_authors.insert(
-                detect_info.rulepath.to_owned(),
+                detect_info.rule_path.to_owned(),
                 author_str.to_string().into(),
             );
 
             if author_str != "-"
                 && !afterfact_info
                     .detected_rule_files
-                    .contains(&detect_info.rulepath)
+                    .contains(&detect_info.rule_path)
             {
                 afterfact_info
                     .detected_rule_files
-                    .insert(detect_info.rulepath.to_owned());
+                    .insert(detect_info.rule_path.to_owned());
                 for author in author_list.iter() {
                     *afterfact_info
                         .rule_author_counter
@@ -624,7 +624,7 @@ fn calc_statistic_info(
             };
             for computername in &computer_names {
                 let computer_rule_check_key =
-                    CompactString::from(format!("{}|{}", computername, &detect_info.rulepath));
+                    CompactString::from(format!("{}|{}", computername, &detect_info.rule_path));
                 if !afterfact_info
                     .detected_computer_and_rule_names
                     .contains(&computer_rule_check_key)
@@ -641,7 +641,7 @@ fn calc_statistic_info(
             }
             afterfact_info.rule_title_path_map.insert(
                 detect_info.ruletitle.to_owned(),
-                detect_info.rulepath.to_owned(),
+                detect_info.rule_path.to_owned(),
             );
 
             countup_aggregation(
@@ -1126,9 +1126,9 @@ pub fn sort_detect_info(detect_infos: &mut [DetectInfo]) {
             return event_id_cmp;
         }
 
-        let rulepath_cmp = a.rulepath.cmp(&b.rulepath);
-        if rulepath_cmp != Ordering::Equal {
-            return rulepath_cmp;
+        let rule_path_cmp = a.rule_path.cmp(&b.rule_path);
+        if rule_path_cmp != Ordering::Equal {
+            return rule_path_cmp;
         }
 
         let computer_cmp = a.computername.cmp(&b.computername);
@@ -1150,10 +1150,10 @@ pub fn sort_detect_info(detect_infos: &mut [DetectInfo]) {
         // fields), so their relative order does not affect the output. Only
         // reached when all keys above tie (rare) and short-circuits at the first
         // differing field, so the added cost is negligible.
-        a.ext_field
+        a.output_fields
             .iter()
             .map(|(_, p)| p.to_value())
-            .cmp(b.ext_field.iter().map(|(_, p)| p.to_value()))
+            .cmp(b.output_fields.iter().map(|(_, p)| p.to_value()))
     });
 }
 
@@ -1180,7 +1180,7 @@ pub fn get_duplicate_indices(detect_infos: &mut [DetectInfo]) -> HashSet<usize> 
         }
 
         let fields: Vec<&(CompactString, Profile)> = detect_info
-            .ext_field
+            .output_fields
             .iter()
             .filter(|(_, profile)| !matches!(profile, Profile::EvtxFile(_)))
             .collect();
@@ -1963,10 +1963,10 @@ pub fn output_json_str(
     let mut target: Vec<String> = vec![];
     let mut target_ext_field = Vec::new();
     let ext_field_map: HashMap<CompactString, Profile> =
-        HashMap::from_iter(detect_info.ext_field.to_owned());
+        HashMap::from_iter(detect_info.output_fields.to_owned());
     let mut next_prev_message = afterfact_info.prev_message.clone();
     if remove_duplicate_flag {
-        for (field_name, profile) in detect_info.ext_field.iter() {
+        for (field_name, profile) in detect_info.output_fields.iter() {
             match profile {
                 Profile::Details(_) | Profile::AllFieldInfo(_) | Profile::ExtraFieldInfo(_) => {
                     let details_key = match profile {
@@ -2012,7 +2012,7 @@ pub fn output_json_str(
             }
         }
     } else {
-        target_ext_field.clone_from(&detect_info.ext_field);
+        target_ext_field.clone_from(&detect_info.output_fields);
     }
     // GeoIP enrichment fields that are folded into the Details (and AllFieldInfo) objects of
     // the JSON output instead of being emitted as top-level keys.
@@ -2545,7 +2545,7 @@ mod tests {
     fn test_sort_detect_info_deterministic_on_ties() {
         let make = |evtx: &str| DetectInfo {
             detected_time: Utc.with_ymd_and_hms(2020, 1, 1, 0, 0, 0).unwrap(),
-            rulepath: "rule.yml".into(),
+            rule_path: "rule.yml".into(),
             ruleid: "id".into(),
             ruletitle: "title".into(),
             ruleauthor: "author".into(),
@@ -2554,14 +2554,14 @@ mod tests {
             rec_id: "100".into(),
             eventid: "1".into(),
             detail: CompactString::default(),
-            ext_field: vec![(
+            output_fields: vec![(
                 CompactString::from("EvtxFile"),
                 Profile::EvtxFile(evtx.to_string().into()),
             )],
             agg_result: None,
             details_convert_map: HashMap::default(),
         };
-        let evtx_of = |d: &DetectInfo| d.ext_field[0].1.to_value();
+        let evtx_of = |d: &DetectInfo| d.output_fields[0].1.to_value();
 
         let mut a = vec![make("c.evtx"), make("a.evtx"), make("b.evtx")];
         let mut b = vec![make("b.evtx"), make("c.evtx"), make("a.evtx")];
@@ -2586,7 +2586,7 @@ mod tests {
             false,
         );
         let test_filepath: &str = "test.evtx";
-        let test_rulepath: &str = "test-rule.yml";
+        let test_rule_path: &str = "test-rule.yml";
         let test_rule_id: &str = "00000000-0000-0000-0000-000000000000";
         let test_title = "test_title";
         let test_level = LEVEL::HIGH;
@@ -2664,7 +2664,7 @@ mod tests {
                     "RecordInformation",
                     Profile::AllFieldInfo(test_recinfo.into()),
                 ),
-                ("RuleFile", Profile::RuleFile(test_rulepath.into())),
+                ("RuleFile", Profile::RuleFile(test_rule_path.into())),
                 ("EvtxFile", Profile::EvtxFile(test_filepath.into())),
                 ("Tags", Profile::MitreTags(test_attack.into())),
             ]);
@@ -2683,7 +2683,7 @@ mod tests {
                 CompactString::new(output),
                 DetectInfo {
                     detected_time: expect_time,
-                    rulepath: CompactString::from(test_rulepath),
+                    rule_path: CompactString::from(test_rule_path),
                     ruleid: test_rule_id.into(),
                     ruletitle: CompactString::from(test_title),
                     ruleauthor: CompactString::from("test_author"),
@@ -2691,7 +2691,7 @@ mod tests {
                     computername: CompactString::from(test_computername2),
                     eventid: CompactString::from(test_eventid),
                     detail: CompactString::default(),
-                    ext_field: output_profile.to_owned(),
+                    output_fields: output_profile.to_owned(),
                     agg_result: None,
                     details_convert_map: HashMap::default(),
                     rec_id: CompactString::default(),
@@ -2709,7 +2709,7 @@ mod tests {
                 CompactString::new(output),
                 DetectInfo {
                     detected_time: expect_time,
-                    rulepath: CompactString::from(test_rulepath),
+                    rule_path: CompactString::from(test_rule_path),
                     ruleid: test_rule_id.into(),
                     ruletitle: CompactString::from(test_title),
                     ruleauthor: CompactString::from("test_author"),
@@ -2717,7 +2717,7 @@ mod tests {
                     computername: CompactString::from(test_computername),
                     eventid: CompactString::from(test_eventid),
                     detail: CompactString::default(),
-                    ext_field: output_profile.to_owned(),
+                    output_fields: output_profile.to_owned(),
                     agg_result: None,
                     details_convert_map: HashMap::default(),
                     rec_id: CompactString::default(),
@@ -2751,7 +2751,7 @@ mod tests {
                 + "\",\""
                 + test_recinfo
                 + "\",\""
-                + test_rulepath
+                + test_rule_path
                 + "\",\""
                 + test_filepath
                 + "\",\""
@@ -2778,7 +2778,7 @@ mod tests {
                 + "\",\""
                 + test_recinfo
                 + "\",\""
-                + test_rulepath
+                + test_rule_path
                 + "\",\""
                 + test_filepath
                 + "\",\""
@@ -2819,7 +2819,7 @@ mod tests {
             false,
         );
         let test_filepath: &str = "test.evtx";
-        let test_rulepath: &str = "test-rule.yml";
+        let test_rule_path: &str = "test-rule.yml";
         let test_rule_id: &str = "00000000-0000-0000-0000-000000000000";
         let test_title = "test_title";
         let test_level = LEVEL::HIGH;
@@ -2909,7 +2909,7 @@ mod tests {
                 ("RecordID", Profile::RecordID(test_record_id.into())),
                 ("RuleTitle", Profile::RuleTitle(test_title.into())),
                 ("AllFieldInfo", Profile::AllFieldInfo(test_recinfo.into())),
-                ("RuleFile", Profile::RuleFile(test_rulepath.into())),
+                ("RuleFile", Profile::RuleFile(test_rule_path.into())),
                 ("EvtxFile", Profile::EvtxFile(test_filepath.into())),
                 ("Tags", Profile::MitreTags(test_attack.into())),
             ]);
@@ -2928,7 +2928,7 @@ mod tests {
                 CompactString::new(output),
                 DetectInfo {
                     detected_time: expect_time,
-                    rulepath: CompactString::from(test_rulepath),
+                    rule_path: CompactString::from(test_rule_path),
                     ruleid: test_rule_id.into(),
                     ruletitle: CompactString::from(test_title),
                     ruleauthor: CompactString::from("test_author"),
@@ -2936,7 +2936,7 @@ mod tests {
                     computername: CompactString::from(test_computername2),
                     eventid: CompactString::from(test_eventid),
                     detail: CompactString::default(),
-                    ext_field: output_profile.to_owned(),
+                    output_fields: output_profile.to_owned(),
                     agg_result: None,
                     details_convert_map: HashMap::default(),
                     rec_id: CompactString::default(),
@@ -2954,7 +2954,7 @@ mod tests {
                 CompactString::new(output),
                 DetectInfo {
                     detected_time: expect_time,
-                    rulepath: CompactString::from(test_rulepath),
+                    rule_path: CompactString::from(test_rule_path),
                     ruleid: test_rule_id.into(),
                     ruletitle: CompactString::from(test_title),
                     ruleauthor: CompactString::from("test_author"),
@@ -2962,7 +2962,7 @@ mod tests {
                     computername: CompactString::from(test_computername),
                     eventid: CompactString::from(test_eventid),
                     detail: CompactString::default(),
-                    ext_field: output_profile.to_owned(),
+                    output_fields: output_profile.to_owned(),
                     agg_result: None,
                     details_convert_map: HashMap::default(),
                     rec_id: CompactString::default(),
@@ -3053,7 +3053,7 @@ mod tests {
         fn make(time: DateTime<Utc>, detail: &str, evtx: &str) -> DetectInfo {
             DetectInfo {
                 detected_time: time,
-                rulepath: CompactString::from("rule.yml"),
+                rule_path: CompactString::from("rule.yml"),
                 ruleid: CompactString::from("id"),
                 ruletitle: CompactString::from("title"),
                 ruleauthor: CompactString::from("author"),
@@ -3062,7 +3062,7 @@ mod tests {
                 rec_id: CompactString::from("1"),
                 eventid: CompactString::from("1"),
                 detail: CompactString::default(),
-                ext_field: vec![
+                output_fields: vec![
                     (
                         CompactString::from("Details"),
                         Profile::Details(detail.to_string().into()),
@@ -3104,7 +3104,7 @@ mod tests {
             false,
         );
         let test_filepath: &str = "test.evtx";
-        let test_rulepath: &str = "test-rule.yml";
+        let test_rule_path: &str = "test-rule.yml";
         let test_rule_id: &str = "00000000-0000-0000-0000-000000000000";
         let test_title = "test_title";
         let test_level = LEVEL::HIGH;
@@ -3185,7 +3185,7 @@ mod tests {
                     "RecordInformation",
                     Profile::AllFieldInfo(test_recinfo.into()),
                 ),
-                ("RuleFile", Profile::RuleFile(test_rulepath.into())),
+                ("RuleFile", Profile::RuleFile(test_rule_path.into())),
                 ("EvtxFile", Profile::EvtxFile(test_filepath.into())),
                 ("Tags", Profile::MitreTags(test_attack.into())),
             ]);
@@ -3204,7 +3204,7 @@ mod tests {
                 CompactString::new(output),
                 DetectInfo {
                     detected_time: expect_time,
-                    rulepath: CompactString::from(test_rulepath),
+                    rule_path: CompactString::from(test_rule_path),
                     ruleid: test_rule_id.into(),
                     ruletitle: CompactString::from(test_title),
                     ruleauthor: CompactString::from("test_author"),
@@ -3212,7 +3212,7 @@ mod tests {
                     computername: CompactString::from(test_computername2),
                     eventid: CompactString::from(test_eventid),
                     detail: CompactString::default(),
-                    ext_field: output_profile.to_owned(),
+                    output_fields: output_profile.to_owned(),
                     agg_result: None,
                     details_convert_map: HashMap::default(),
                     rec_id: CompactString::default(),
@@ -3230,7 +3230,7 @@ mod tests {
                 CompactString::new(output),
                 DetectInfo {
                     detected_time: expect_time,
-                    rulepath: CompactString::from(test_rulepath),
+                    rule_path: CompactString::from(test_rule_path),
                     ruleid: test_rule_id.into(),
                     ruletitle: CompactString::from(test_title),
                     ruleauthor: CompactString::from("test_author"),
@@ -3238,7 +3238,7 @@ mod tests {
                     computername: CompactString::from(test_computername),
                     eventid: CompactString::from(test_eventid),
                     detail: CompactString::default(),
-                    ext_field: output_profile.to_owned(),
+                    output_fields: output_profile.to_owned(),
                     agg_result: None,
                     details_convert_map: HashMap::default(),
                     rec_id: CompactString::default(),
@@ -3272,7 +3272,7 @@ mod tests {
                 + "\",\""
                 + test_recinfo
                 + "\",\""
-                + test_rulepath
+                + test_rule_path
                 + "\",\""
                 + test_filepath
                 + "\",\""
@@ -3295,7 +3295,7 @@ mod tests {
                 + ",\""
                 + test_title
                 + "\",\"DUP\",\"DUP\",\""
-                + test_rulepath
+                + test_rule_path
                 + "\",\""
                 + test_filepath
                 + "\",\""
@@ -3335,7 +3335,7 @@ mod tests {
             false,
         );
         let test_filepath: &str = "test.evtx";
-        let test_rulepath: &str = "test-rule.yml";
+        let test_rule_path: &str = "test-rule.yml";
         let test_rule_id: &str = "00000000-0000-0000-0000-000000000000";
         let test_title = "test_title";
         let test_level = LEVEL::HIGH;
@@ -3416,7 +3416,7 @@ mod tests {
                     "RecordInformation",
                     Profile::AllFieldInfo(test_recinfo.into()),
                 ),
-                ("RuleFile", Profile::RuleFile(test_rulepath.into())),
+                ("RuleFile", Profile::RuleFile(test_rule_path.into())),
                 ("EvtxFile", Profile::EvtxFile(test_filepath.into())),
                 ("Tags", Profile::MitreTags(test_attack.into())),
             ]);
@@ -3437,7 +3437,7 @@ mod tests {
                 CompactString::new(output),
                 DetectInfo {
                     detected_time: expect_time,
-                    rulepath: CompactString::from(test_rulepath),
+                    rule_path: CompactString::from(test_rule_path),
                     ruleid: test_rule_id.into(),
                     ruletitle: CompactString::from(test_title),
                     ruleauthor: CompactString::from("test_author"),
@@ -3445,7 +3445,7 @@ mod tests {
                     computername: CompactString::from(test_computername2),
                     eventid: CompactString::from(test_eventid),
                     detail: CompactString::default(),
-                    ext_field: output_profile.to_owned(),
+                    output_fields: output_profile.to_owned(),
                     agg_result: None,
                     details_convert_map,
                     rec_id: CompactString::default(),
@@ -3463,7 +3463,7 @@ mod tests {
                 CompactString::new(output),
                 DetectInfo {
                     detected_time: expect_time,
-                    rulepath: CompactString::from(test_rulepath),
+                    rule_path: CompactString::from(test_rule_path),
                     ruleid: test_rule_id.into(),
                     ruletitle: CompactString::from(test_title),
                     ruleauthor: CompactString::from("test_author"),
@@ -3471,7 +3471,7 @@ mod tests {
                     computername: CompactString::from(test_computername),
                     eventid: CompactString::from(test_eventid),
                     detail: CompactString::default(),
-                    ext_field: output_profile.to_owned(),
+                    output_fields: output_profile.to_owned(),
                     agg_result: None,
                     details_convert_map: HashMap::default(),
                     rec_id: CompactString::default(),
@@ -3528,7 +3528,7 @@ mod tests {
                 ),
                 (
                     "RuleFile",
-                    CompactString::from("\"".to_string() + test_rulepath + "\""),
+                    CompactString::from("\"".to_string() + test_rule_path + "\""),
                 ),
                 (
                     "EvtxFile",
@@ -3577,7 +3577,7 @@ mod tests {
                 ("RecordInformation", "\"DUP\"".into()),
                 (
                     "RuleFile",
-                    CompactString::from("\"".to_string() + test_rulepath + "\""),
+                    CompactString::from("\"".to_string() + test_rule_path + "\""),
                 ),
                 (
                     "EvtxFile",
@@ -3640,7 +3640,7 @@ mod tests {
             false,
         );
         let test_filepath: &str = "test.evtx";
-        let test_rulepath: &str = "test-rule.yml";
+        let test_rule_path: &str = "test-rule.yml";
         let test_rule_id: &str = "00000000-0000-0000-0000-000000000000";
         let test_title = "test_title";
         let test_level = LEVEL::HIGH;
@@ -3725,7 +3725,7 @@ mod tests {
                     "RecordInformation",
                     Profile::AllFieldInfo(test_recinfo.into()),
                 ),
-                ("RuleFile", Profile::RuleFile(test_rulepath.into())),
+                ("RuleFile", Profile::RuleFile(test_rule_path.into())),
                 ("EvtxFile", Profile::EvtxFile(test_filepath.into())),
                 ("Tags", Profile::MitreTags(test_attack.into())),
             ]);
@@ -3746,7 +3746,7 @@ mod tests {
                 CompactString::new(output),
                 DetectInfo {
                     detected_time: expect_time,
-                    rulepath: CompactString::from(test_rulepath),
+                    rule_path: CompactString::from(test_rule_path),
                     ruleid: test_rule_id.into(),
                     ruletitle: CompactString::from(test_title),
                     ruleauthor: CompactString::from("test_author"),
@@ -3754,7 +3754,7 @@ mod tests {
                     computername: CompactString::from(test_computername),
                     eventid: CompactString::from(test_eventid),
                     detail: CompactString::default(),
-                    ext_field: output_profile.to_owned(),
+                    output_fields: output_profile.to_owned(),
                     agg_result: None,
                     details_convert_map,
                     rec_id: CompactString::default(),
@@ -3814,7 +3814,7 @@ mod tests {
             ),
             (
                 "RuleFile",
-                CompactString::from("\"".to_string() + test_rulepath + "\""),
+                CompactString::from("\"".to_string() + test_rule_path + "\""),
             ),
             (
                 "EvtxFile",
@@ -3876,7 +3876,7 @@ mod tests {
             false,
         );
         let test_filepath: &str = "test.evtx";
-        let test_rulepath: &str = "test-rule.yml";
+        let test_rule_path: &str = "test-rule.yml";
         let test_rule_id: &str = "00000000-0000-0000-0000-000000000000";
         let test_title = "test_title";
         let test_level = LEVEL::HIGH;
@@ -3960,7 +3960,7 @@ mod tests {
                     "RecordInformation",
                     Profile::AllFieldInfo(test_recinfo.into()),
                 ),
-                ("RuleFile", Profile::RuleFile(test_rulepath.into())),
+                ("RuleFile", Profile::RuleFile(test_rule_path.into())),
                 ("EvtxFile", Profile::EvtxFile(test_filepath.into())),
                 ("Tags", Profile::MitreTags(test_attack.into())),
             ]);
@@ -3981,7 +3981,7 @@ mod tests {
                 CompactString::new(output),
                 DetectInfo {
                     detected_time: expect_time,
-                    rulepath: CompactString::from(test_rulepath),
+                    rule_path: CompactString::from(test_rule_path),
                     ruleid: test_rule_id.into(),
                     ruletitle: CompactString::from(test_title),
                     ruleauthor: CompactString::from("test_author"),
@@ -3989,7 +3989,7 @@ mod tests {
                     computername: CompactString::from(test_computername2),
                     eventid: CompactString::from(test_eventid),
                     detail: CompactString::default(),
-                    ext_field: output_profile.to_owned(),
+                    output_fields: output_profile.to_owned(),
                     agg_result: None,
                     details_convert_map,
                     rec_id: CompactString::default(),
@@ -4052,7 +4052,7 @@ mod tests {
             false,
         );
         let test_filepath: &str = "test.evtx";
-        let test_rulepath: &str = "test-rule.yml";
+        let test_rule_path: &str = "test-rule.yml";
         let test_rule_id: &str = "00000000-0000-0000-0000-000000000000";
         let test_title = "test_title";
         let test_level = LEVEL::HIGH;
@@ -4137,7 +4137,7 @@ mod tests {
                     "RecordInformation",
                     Profile::AllFieldInfo(test_recinfo.into()),
                 ),
-                ("RuleFile", Profile::RuleFile(test_rulepath.into())),
+                ("RuleFile", Profile::RuleFile(test_rule_path.into())),
                 ("EvtxFile", Profile::EvtxFile(test_filepath.into())),
                 ("Tags", Profile::MitreTags(test_attack.into())),
             ]);
@@ -4159,7 +4159,7 @@ mod tests {
                 CompactString::new(output),
                 DetectInfo {
                     detected_time: expect_time,
-                    rulepath: CompactString::from(test_rulepath),
+                    rule_path: CompactString::from(test_rule_path),
                     ruleid: test_rule_id.into(),
                     ruletitle: CompactString::from(test_title),
                     ruleauthor: CompactString::from("test_author"),
@@ -4167,7 +4167,7 @@ mod tests {
                     computername: CompactString::from(test_computername2),
                     eventid: CompactString::from(test_eventid),
                     detail: CompactString::default(),
-                    ext_field: output_profile.to_owned(),
+                    output_fields: output_profile.to_owned(),
                     agg_result: None,
                     details_convert_map,
                     rec_id: CompactString::default(),

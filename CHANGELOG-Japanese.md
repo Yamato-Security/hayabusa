@@ -22,7 +22,7 @@
 
 **その他:**
 
-- 可読性向上のため、`src/` 内の分かりにくい／Hayabusa固有の変数・引数・構造体フィールド名72個を、より明確で慣用的なRustの名前にリネームした（例: `datas`→`records`、`con_cal`→`joined_value`、`name_2_node`→`name_to_node`、`hlch`→`horizontal_line_char`）。内部識別子のみの変更で、挙動・出力に変化はない。 (#1830) (@YamatoSecurity)
+- 可読性向上のため、`src/` 内の分かりにくい／Hayabusa固有の変数・引数・構造体フィールド名74個を、より明確で慣用的なRustの名前にリネームした（例: `datas`→`records`、`con_cal`→`joined_value`、`name_2_node`→`name_to_node`、`hlch`→`horizontal_line_char`、`rulepath`→`rule_path`、`ext_field`→`output_fields`）。内部識別子のみの変更で、挙動・出力に変化はない。 (#1830) (@YamatoSecurity)
 
 ## 3.9.0 [2026/04/29]
 

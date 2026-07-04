@@ -22,8 +22,8 @@ mod fast_match;
 mod matchers;
 mod selectionnodes;
 
-pub fn create_rule(rulepath: String, yaml: Yaml) -> RuleNode {
-    RuleNode::new(rulepath, yaml)
+pub fn create_rule(rule_path: String, yaml: Yaml) -> RuleNode {
+    RuleNode::new(rule_path, yaml)
 }
 
 /// The `correlation.type` of a Sigma correlation rule.
@@ -80,7 +80,7 @@ impl CorrelationType {
 
 /// Node representing a Rule file.
 pub struct RuleNode {
-    pub rulepath: String,
+    pub rule_path: String,
     pub yaml: Yaml,
     pub detection: DetectionNode,
     countdata: HashMap<String, Vec<AggRecordTimeInfo>>,
@@ -99,7 +99,7 @@ impl RuleNode {
     pub fn new(rule_path: String, yaml_data: Yaml) -> RuleNode {
         RuleNode {
             correlation_type: CorrelationType::new(&yaml_data),
-            rulepath: rule_path,
+            rule_path,
             yaml: yaml_data,
             detection: DetectionNode::new(),
             countdata: HashMap::new(),
@@ -115,7 +115,7 @@ impl RuleNode {
     ) -> RuleNode {
         RuleNode {
             correlation_type: CorrelationType::new(&yaml_data),
-            rulepath: rule_path,
+            rule_path,
             yaml: yaml_data,
             detection,
             countdata: HashMap::new(),

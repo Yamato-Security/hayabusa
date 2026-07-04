@@ -1947,7 +1947,7 @@ Any hostnames added to the critical_systems.txt file will have all alerts above 
                 }
                 if !stored_static.enable_all_rules {
                     rule_files.retain(|r| {
-                        channel_filter.rule_paths.contains(&r.rulepath)
+                        channel_filter.rule_paths.contains(&r.rule_path)
                             || !r.yaml["correlation"].is_badvalue()
                     });
                     let rules_after_channel_filter =

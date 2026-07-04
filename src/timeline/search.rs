@@ -591,35 +591,35 @@ impl ResultWriter {
                     .collect_vec(),
             );
             let mut detect_info = DetectInfo::default();
-            detect_info.ext_field.push((
+            detect_info.output_fields.push((
                 CompactString::from("Timestamp"),
                 Profile::Timestamp(timestamp.into()),
             ));
-            detect_info.ext_field.push((
+            detect_info.output_fields.push((
                 CompactString::from("Hostname"),
                 Profile::Computer(hostname.into()),
             ));
-            detect_info.ext_field.push((
+            detect_info.output_fields.push((
                 CompactString::from("Channel"),
                 Profile::Channel(abbr_channel.into()),
             ));
-            detect_info.ext_field.push((
+            detect_info.output_fields.push((
                 CompactString::from("Event ID"),
                 Profile::EventID(event_id.into()),
             ));
-            detect_info.ext_field.push((
+            detect_info.output_fields.push((
                 CompactString::from("Record ID"),
                 Profile::RecordID(record_id.into()),
             ));
-            detect_info.ext_field.push((
+            detect_info.output_fields.push((
                 CompactString::from("EventTitle"),
                 Profile::Literal(event_title.into()),
             ));
-            detect_info.ext_field.push((
+            detect_info.output_fields.push((
                 CompactString::from("AllFieldInfo"),
                 Profile::AllFieldInfo(all_field_info.into()),
             ));
-            detect_info.ext_field.push((
+            detect_info.output_fields.push((
                 CompactString::from("EvtxFile"),
                 Profile::EvtxFile(evtx_file.into()),
             ));

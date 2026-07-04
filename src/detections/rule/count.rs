@@ -125,8 +125,8 @@ fn get_alias_value_in_record(
         None => {
             // This arm is meant to warn-and-continue, so building the diagnostic
             // must not itself panic on a record that also lacks an EventID (or a
-            // rulepath without a file name).
-            let rule_file = Path::new(&rule.rulepath)
+            // rule_path without a file name).
+            let rule_file = Path::new(&rule.rule_path)
                 .file_name()
                 .and_then(|s| s.to_str())
                 .unwrap_or("-");

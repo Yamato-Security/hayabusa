@@ -116,7 +116,7 @@ impl Detection {
             // Output an error if rule file parsing fails.
             err_msgs_result.err().iter().for_each(|err_msgs| {
                 let errmsg_body =
-                    format!("Failed to parse rule file. (FilePath : {})", rule.rulepath);
+                    format!("Failed to parse rule file. (FilePath : {})", rule.rule_path);
                 if stored_static.verbose_flag {
                     AlertMessage::warn(&errmsg_body).ok();
                     err_msgs.iter().for_each(|err_msg| {
@@ -490,7 +490,7 @@ impl Detection {
                 }
                 RuleFile(_) => {
                     let rule_file_path = CompactString::from(
-                        Path::new(&rule.rulepath)
+                        Path::new(&rule.rule_path)
                             .file_name()
                             .unwrap_or_default()
                             .to_str()
@@ -539,7 +539,7 @@ impl Detection {
                             let tactic_key: CompactString = html_attck_tac.into();
                             let unique_key = CompactString::from(format!(
                                 "{}|{}|{}",
-                                &computer_name_to_mitre_tactics, &tactic_key, &rule.rulepath
+                                &computer_name_to_mitre_tactics, &tactic_key, &rule.rule_path
                             ));
                             let is_unique = COMPUTER_MITRE_ATTCK_UNIQUE_KEYS.insert(unique_key);
                             if let Some(entry) =
@@ -853,7 +853,7 @@ impl Detection {
         };
         let detect_info = DetectInfo {
             detected_time: time,
-            rulepath: CompactString::from(&rule.rulepath),
+            rule_path: CompactString::from(&rule.rule_path),
             ruleid: CompactString::from(rule.yaml["id"].as_str().unwrap_or("-")),
             ruletitle: CompactString::from(rule.yaml["title"].as_str().unwrap_or("-")),
             ruleauthor: CompactString::from(rule.yaml["author"].as_str().unwrap_or("-")),
@@ -862,7 +862,7 @@ impl Detection {
             eventid: eid,
             rec_id,
             detail: CompactString::default(),
-            ext_field: stored_static.profiles.as_ref().unwrap().to_owned(),
+            output_fields: stored_static.profiles.as_ref().unwrap().to_owned(),
             agg_result: None,
             details_convert_map: HashMap::default(),
         };
@@ -981,7 +981,7 @@ impl Detection {
                 }
                 RuleFile(_) => {
                     let rule_file_path = CompactString::from(
-                        Path::new(&rule.rulepath)
+                        Path::new(&rule.rule_path)
                             .file_name()
                             .unwrap_or_default()
                             .to_str()
@@ -1125,7 +1125,7 @@ impl Detection {
         }
         let detect_info = DetectInfo {
             detected_time: agg_result.start_datetime,
-            rulepath: CompactString::from(&rule.rulepath),
+            rule_path: CompactString::from(&rule.rule_path),
             ruleid: CompactString::from(rule.yaml["id"].as_str().unwrap_or("-")),
             ruletitle: CompactString::from(rule.yaml["title"].as_str().unwrap_or("-")),
             ruleauthor: CompactString::from(rule.yaml["author"].as_str().unwrap_or("-")),
@@ -1134,7 +1134,7 @@ impl Detection {
             eventid: CompactString::from("-"),
             rec_id: CompactString::from("-"),
             detail: output,
-            ext_field: stored_static.profiles.as_ref().unwrap().to_owned(),
+            output_fields: stored_static.profiles.as_ref().unwrap().to_owned(),
             agg_result: Some(agg_result),
             details_convert_map: HashMap::default(),
         };
@@ -1783,7 +1783,7 @@ mod tests {
     #[test]
     fn test_insert_message_with_geoip() {
         let test_filepath: &str = "test.evtx";
-        let test_rulepath: &str = "test-rule.yml";
+        let test_rule_path: &str = "test-rule.yml";
         let dummy_action = Action::CsvTimeline(CsvOutputOption {
             output_options: OutputOption {
                 min_level: "informational".to_string(),
@@ -1833,7 +1833,7 @@ mod tests {
             }
         "#;
             let event: Value = serde_json::from_str(val).unwrap();
-            let dummy_rule = RuleNode::new(test_rulepath.to_string(), Yaml::from_str(""));
+            let dummy_rule = RuleNode::new(test_rule_path.to_string(), Yaml::from_str(""));
             let keys = detections::rule::get_detection_keys(&dummy_rule);
 
             let input_evtxrecord =
@@ -1855,9 +1855,9 @@ mod tests {
                     ),
                     ("TgtCity".into(), Profile::TgtCity("Boxford".into())),
                 ];
-                let ext_field = detect_info.ext_field.clone();
+                let output_fields = detect_info.output_fields.clone();
                 for expect in expect_geo_ip_data.iter() {
-                    assert!(ext_field.contains(expect));
+                    assert!(output_fields.contains(expect));
                 }
             };
         }
@@ -1866,7 +1866,7 @@ mod tests {
     #[test]
     fn test_filtered_insert_message_with_geoip() {
         let test_filepath: &str = "test.evtx";
-        let test_rulepath: &str = "test-rule.yml";
+        let test_rule_path: &str = "test-rule.yml";
         let dummy_action = Action::CsvTimeline(CsvOutputOption {
             output_options: OutputOption {
                 min_level: "informational".to_string(),
@@ -1916,7 +1916,7 @@ mod tests {
             }
         "#;
             let event: Value = serde_json::from_str(val).unwrap();
-            let dummy_rule = RuleNode::new(test_rulepath.to_string(), Yaml::from_str(""));
+            let dummy_rule = RuleNode::new(test_rule_path.to_string(), Yaml::from_str(""));
             let keys = detections::rule::get_detection_keys(&dummy_rule);
 
             let input_evtxrecord =
@@ -1934,9 +1934,9 @@ mod tests {
                     ("TgtCountry".into(), Profile::TgtCountry("".into())),
                     ("TgtCity".into(), Profile::TgtCity("".into())),
                 ];
-                let ext_field = detect_info.ext_field.clone();
+                let output_fields = detect_info.output_fields.clone();
                 for expect in expect_geo_ip_data.iter() {
-                    assert!(ext_field.contains(expect));
+                    assert!(output_fields.contains(expect));
                 }
             };
         }
@@ -2029,9 +2029,9 @@ mod tests {
                         "CommandRLine: hoge ¦ DestAddress: 2.125.160.216".into(),
                     ),
                 )];
-                let ext_field = detect_info.ext_field.clone();
+                let output_fields = detect_info.output_fields.clone();
                 for expect in expect_extra_field_data.iter() {
-                    assert!(ext_field.contains(expect));
+                    assert!(output_fields.contains(expect));
                 }
             };
         }
@@ -2117,8 +2117,8 @@ mod tests {
                 let stored_static: &StoredStatic = &stored_static.clone();
                 let detect_info = Detection::create_log_record(rule, record_info, stored_static);
 
-                println!("{:?}", detect_info.ext_field);
-                assert!(detect_info.ext_field.iter().any(|x| x
+                println!("{:?}", detect_info.output_fields);
+                assert!(detect_info.output_fields.iter().any(|x| x
                     == &(
                         CompactString::from("RuleAuthor"),
                         Profile::RuleAuthor("Test🛂🛂Test2🛂🛂Test3🛂🛂Test4".into())
