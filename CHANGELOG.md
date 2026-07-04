@@ -26,6 +26,7 @@
 
 - Translated all remaining Japanese code comments to English, cleaned up and added many code comments for readability, and fixed misspelled internal identifiers. Comments and identifiers only; no behavior changes. (#1808) (@YamatoSecurity)
 - Renamed 76 cryptic, misleading, or hayabusa-specific variable, parameter, and struct-field names in `src/` (e.g. `datas`→`records`, `con_cal`→`joined_value`, `name_2_node`→`name_to_node`, `hlch`→`horizontal_line_char`, `rulepath`→`rule_path`, `ext_field`→`output_fields`, and a misnamed `or_node`→`all_node` that actually held an AND-semantics `AllSelectionNode`) to clearer, idiomatic Rust names for readability. Internal identifiers only; no behavior or output changes. (#1830) (@YamatoSecurity)
+- Updated the `hayabusa-evtx` crate to `0.9.9`, bumping all of its dependencies (notably `thiserror` 1→2 and `criterion` 0.5→0.8) to their latest versions. No behavior change. (#1835) (@YamatoSecurity)
 - Removed two pieces of dead code surfaced during review: an always-empty `addition_header` branch in the JSON string escaper, and a never-taken branch plus a per-unit `Vec` allocation in the relative time-offset parser. No behavior change. (#1834) (@YamatoSecurity)
 
 ## 3.9.0 [2026/04/29]
