@@ -380,8 +380,8 @@ fn merge_referenced_rule(
 /// The temporal rule itself is rewritten to reference the ids actually used and receives the
 /// same "count() >= 1" aggregation condition; Detection::add_aggcondition_msg later combines the
 /// TemporalRef results per time window (each result is already aggregated per group-by value by
-/// its own rule, but group equality is not checked when combining). Unless `generate: true` is
-/// set, the original
+/// its own rule, and only results sharing the same group-by value are correlated together).
+/// Unless `generate: true` is set, the original
 /// referenced rules are removed so they do not also emit detections of their own.
 fn parse_temporal_rules(
     temporal_rules: Vec<RuleNode>,

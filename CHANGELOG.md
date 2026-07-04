@@ -5,6 +5,7 @@
 **Bug Fixes:**
 
 - Fixed the ungrammatical "Successed submodule update" message printed after `update-rules` (now "Submodule update succeeded"). (#1840) (@YamatoSecurity)
+- Fixed `temporal`/`temporal_ordered` correlations not enforcing the rule's `group-by` value when combining referenced-rule matches. Each referenced rule was aggregated per group-by value, but matches from different groups (e.g. different Computers) could still be correlated together as long as their timestamps fit the timeframe, producing false-positive alerts. Referenced-rule matches are now required to share the base match's group-by value. (@Shirofune-Security)
 
 **Other:**
 

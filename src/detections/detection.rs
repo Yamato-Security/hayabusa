@@ -207,9 +207,12 @@ impl Detection {
 
     /// Evaluates a Sigma temporal correlation: for each aggregation result of the first
     /// referenced rule (`ids[0]`), checks that every other referenced rule also produced a
-    /// result within `timeframe`. When `temporal_ordered` is true the other results must occur
-    /// at or after the base result; otherwise anywhere within +/- `timeframe` of the base result
-    /// counts. Returns the base results for which all referenced rules matched.
+    /// result within `timeframe`. Only results sharing the base result's `group-by` value
+    /// (`AggResult.key`) are considered, so events from different groups (e.g. different
+    /// Computers) are never correlated together. When `temporal_ordered` is true the other
+    /// results must occur at or after the base result; otherwise anywhere within +/-
+    /// `timeframe` of the base result counts. Returns the base results for which all
+    /// referenced rules matched.
     fn detect_within_timeframe(
         ids: &[String],
         temporal_ref_all_results: &HashMap<String, Vec<AggResult>>,
@@ -229,12 +232,14 @@ impl Detection {
                     if let Some(target_records) = temporal_ref_all_results.get(id.as_str()) {
                         if temporal_ordered {
                             found = target_records.iter().any(|t| {
-                                (t.start_datetime >= last_base.start_datetime)
+                                t.key == base.key
+                                    && (t.start_datetime >= last_base.start_datetime)
                                     && (t.start_datetime <= last_base.start_datetime + timeframe)
                             });
                         } else {
                             found = target_records.iter().any(|t| {
-                                (t.start_datetime >= base.start_datetime - timeframe)
+                                t.key == base.key
+                                    && (t.start_datetime >= base.start_datetime - timeframe)
                                     && (t.start_datetime <= base.start_datetime + timeframe)
                             });
                         }
@@ -1611,6 +1616,50 @@ mod tests {
             &dummy_stored_static,
         );
         assert_eq!(5, cole.len());
+    }
+
+    #[test]
+    fn test_detect_within_timeframe_enforces_group_by() {
+        use chrono::Duration;
+        use hashbrown::HashMap;
+
+        let base_time = Utc.with_ymd_and_hms(2024, 1, 1, 10, 0, 0).unwrap();
+        let at = |min: i64| base_time + Duration::minutes(min);
+        // `AggResult.key` holds the group-by value (e.g. the Computer name).
+        let agg = |key: &str, t| AggResult::new(1, key.to_string(), vec![], t, vec![]);
+        let ids = vec!["a".to_string(), "b".to_string()];
+        let timeframe = Duration::minutes(10);
+
+        // Base rule "a" matched for Host1, but rule "b" only matched for Host2 within the
+        // window. The correlation must NOT fire because the matches are from different groups.
+        let mut diff_group: HashMap<String, Vec<AggResult>> = HashMap::new();
+        diff_group.insert("a".to_string(), vec![agg("Host1", at(0))]);
+        diff_group.insert("b".to_string(), vec![agg("Host2", at(5))]);
+        for ordered in [true, false] {
+            assert!(
+                Detection::detect_within_timeframe(&ids, &diff_group, timeframe, ordered)
+                    .is_empty(),
+                "matches from different group-by values must not correlate (ordered={ordered})"
+            );
+        }
+
+        // When rule "b" also matched for Host1 within the window, the correlation fires and the
+        // returned base result is the Host1 group (the mismatched Host2 candidate is ignored).
+        let mut same_group: HashMap<String, Vec<AggResult>> = HashMap::new();
+        same_group.insert("a".to_string(), vec![agg("Host1", at(0))]);
+        same_group.insert(
+            "b".to_string(),
+            vec![agg("Host2", at(3)), agg("Host1", at(5))],
+        );
+        for ordered in [true, false] {
+            let res = Detection::detect_within_timeframe(&ids, &same_group, timeframe, ordered);
+            assert_eq!(
+                res.len(),
+                1,
+                "same-group matches should correlate (ordered={ordered})"
+            );
+            assert_eq!(res[0].key, "Host1");
+        }
     }
 
     #[test]
