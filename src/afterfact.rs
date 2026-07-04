@@ -1155,26 +1155,23 @@ pub fn sort_detect_info(detect_infos: &mut [DetectInfo]) {
 /// Returns the indexes of detections considered duplicates of an earlier detection with the
 /// same timestamp, comparing every profile field except EvtxFile (so the same event ingested
 /// from overlapping evtx files counts as a duplicate). Assumes `detect_infos` is already sorted
-/// by detected time. Note: the first record of each timestamp group is never added to the
-/// comparison set, so the second of two identical records is currently not flagged as a
-/// duplicate — only the third and later identical records are.
+/// by detected time, so records sharing a timestamp are contiguous. Within each timestamp group
+/// the first occurrence is kept and every later record with identical fields is flagged, so of N
+/// identical detections exactly one survives.
 pub fn get_duplicate_idxes(detect_infos: &mut [DetectInfo]) -> HashSet<usize> {
     // Collect the indexes of duplicate events.
     let mut filtered_detect_infos = HashSet::new();
     let mut prev_detect_infos = HashSet::new();
     for (i, detect_info) in detect_infos.iter().enumerate() {
-        if i == 0 {
-            continue;
-        }
-
-        let prev_detect_info = &detect_infos[i - 1];
-        if prev_detect_info
-            .detected_time
-            .cmp(&detect_info.detected_time)
-            != Ordering::Equal
+        // Records are sorted by time, so a change of timestamp starts a new group; reset the
+        // comparison set so duplicates are only matched within a single timestamp.
+        if i > 0
+            && detect_infos[i - 1]
+                .detected_time
+                .cmp(&detect_info.detected_time)
+                != Ordering::Equal
         {
             prev_detect_infos.clear();
-            continue;
         }
 
         let fields: Vec<&(CompactString, Profile)> = detect_info
@@ -1182,11 +1179,15 @@ pub fn get_duplicate_idxes(detect_infos: &mut [DetectInfo]) -> HashSet<usize> {
             .iter()
             .filter(|(_, profile)| !matches!(profile, Profile::EvtxFile(_)))
             .collect();
-        if prev_detect_infos.get(&fields).is_some() {
+        // Flag this record if an earlier one in the same group had identical fields; otherwise
+        // remember it as the surviving occurrence. Inserting the first record of each group
+        // (which the previous logic skipped) is what lets the second identical copy be flagged
+        // instead of slipping through.
+        if prev_detect_infos.contains(&fields) {
             filtered_detect_infos.insert(i);
-            continue;
+        } else {
+            prev_detect_infos.insert(fields);
         }
-        prev_detect_infos.insert(fields);
     }
 
     filtered_detect_infos
@@ -2409,7 +2410,7 @@ mod tests {
     use std::path::Path;
 
     use chrono::NaiveDateTime;
-    use chrono::{Local, TimeZone, Utc};
+    use chrono::{DateTime, Local, TimeZone, Utc};
     use compact_str::CompactString;
     use hashbrown::HashMap;
     use serde_json::Value;
@@ -2417,6 +2418,7 @@ mod tests {
     use crate::afterfact::_print_unique_results;
     use crate::afterfact::AfterfactInfo;
     use crate::afterfact::format_time;
+    use crate::afterfact::get_duplicate_idxes;
     use crate::afterfact::html_escape_value;
     use crate::afterfact::init_writer;
     use crate::afterfact::output_afterfact_inner;
@@ -3023,6 +3025,59 @@ mod tests {
             }
         };
         assert!(remove_file("./test_emit_csv_multiline.csv").is_ok());
+    }
+
+    /// `get_duplicate_idxes` must flag every identical copy after the first within a timestamp
+    /// group, including the second of only two copies (regression test for issue #1813, where the
+    /// first record of each group was never added to the comparison set so the second copy
+    /// survived). Duplicates are only matched within the same timestamp, ignoring the EvtxFile
+    /// column.
+    #[test]
+    fn test_get_duplicate_idxes_flags_second_and_later_copies() {
+        // A detection whose duplicate-relevant fields are `detail` (varying it makes a distinct
+        // detection) and whose EvtxFile source `evtx` must be ignored when comparing.
+        fn make(time: DateTime<Utc>, detail: &str, evtx: &str) -> DetectInfo {
+            DetectInfo {
+                detected_time: time,
+                rulepath: CompactString::from("rule.yml"),
+                ruleid: CompactString::from("id"),
+                ruletitle: CompactString::from("title"),
+                ruleauthor: CompactString::from("author"),
+                level: LEVEL::HIGH,
+                computername: CompactString::from("computer"),
+                rec_id: CompactString::from("1"),
+                eventid: CompactString::from("1"),
+                detail: CompactString::default(),
+                ext_field: vec![
+                    (
+                        CompactString::from("Details"),
+                        Profile::Details(detail.to_string().into()),
+                    ),
+                    (
+                        CompactString::from("EvtxFile"),
+                        Profile::EvtxFile(evtx.to_string().into()),
+                    ),
+                ],
+                agg_result: None,
+                details_convert_map: HashMap::default(),
+            }
+        }
+
+        let t1 = Utc.with_ymd_and_hms(2020, 1, 1, 0, 0, 0).unwrap();
+        let t2 = Utc.with_ymd_and_hms(2020, 1, 1, 0, 0, 1).unwrap();
+        // Sorted by time, as `get_duplicate_idxes` requires.
+        let mut detect_infos = vec![
+            make(t1, "A", "a.evtx"), // 0: first "A" in group t1 -> kept
+            make(t1, "A", "b.evtx"), // 1: second "A" (differs only in EvtxFile) -> duplicate
+            make(t1, "B", "c.evtx"), // 2: distinct detection -> kept
+            make(t2, "A", "a.evtx"), // 3: same fields as group t1 but new timestamp -> kept
+            make(t2, "A", "b.evtx"), // 4: second "A" in group t2 -> duplicate
+        ];
+
+        let dup = get_duplicate_idxes(&mut detect_infos);
+        let mut got: Vec<usize> = dup.into_iter().collect();
+        got.sort_unstable();
+        assert_eq!(got, vec![1, 4]);
     }
 
     #[test]
