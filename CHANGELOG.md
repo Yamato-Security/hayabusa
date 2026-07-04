@@ -5,6 +5,7 @@
 **Bug Fixes:**
 
 - Fixed the ungrammatical "Successed submodule update" message printed after `update-rules` (now "Submodule update succeeded"). (#1840) (@YamatoSecurity)
+- Fixed `temporal_ordered` correlations not enforcing event order beyond the first referenced rule: a no-op assignment (`last_base = base`) left every subsequent rule checked only against the base event's window, so out-of-order attack-chain events (e.g. A→C→B for a rule requiring A→B→C) were still matched. Each referenced rule is now required to match at or after the previous rule's matched event while staying within the timeframe window anchored at the base event. (#1810) (@Shirofune-Security)
 
 **Other:**
 
