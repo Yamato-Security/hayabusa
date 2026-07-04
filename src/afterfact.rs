@@ -1184,14 +1184,13 @@ pub fn get_duplicate_indices(detect_infos: &mut [DetectInfo]) -> HashSet<usize> 
             .iter()
             .filter(|(_, profile)| !matches!(profile, Profile::EvtxFile(_)))
             .collect();
-        // Flag this record if an earlier one in the same group had identical fields; otherwise
-        // remember it as the surviving occurrence. Inserting the first record of each group
-        // (which the previous logic skipped) is what lets the second identical copy be flagged
-        // instead of slipping through.
-        if prev_detect_infos.contains(&fields) {
+        // Remember this record as the surviving occurrence for its timestamp group.
+        // HashSet::insert returns false when an identical earlier record is already present,
+        // which flags this one as a duplicate in a single hash lookup. Inserting the first
+        // record of each group (which the previous logic skipped) is what lets the second
+        // identical copy be flagged instead of slipping through.
+        if !prev_detect_infos.insert(fields) {
             filtered_detect_infos.insert(i);
-        } else {
-            prev_detect_infos.insert(fields);
         }
     }
 
