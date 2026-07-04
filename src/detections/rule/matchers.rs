@@ -305,6 +305,17 @@ impl LeafMatcher for DefaultMatcher {
             keys_all.append(&mut rest);
         }
 
+        // `neq` has no field to negate on a keyless selection. The keyless `|all` whole-record path
+        // (in parse_selection_recursively) only fires when the key is exactly `|all`, so `|all|neq`
+        // would fall through to an empty-field match and, being negated, match every record. Reject
+        // the combination so such a rule fails to load with a clear message rather than misbehaving.
+        if self.neg_match && keys_all[0].is_empty() {
+            return Err(vec![
+                "The `neq` modifier cannot be combined with the keyless `|all` modifier."
+                    .to_string(),
+            ]);
+        }
+
         // Maps shorthand pipe names to the internal names accepted by PipeElement::new():
         // "all" -> "allOnly" (for a leading "|all" key) and the regex flags "i"/"m"/"s" ->
         // "reignorecase"/"remultiline"/"resingleline".

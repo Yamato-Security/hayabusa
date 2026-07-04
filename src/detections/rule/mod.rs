@@ -1052,6 +1052,36 @@ mod tests {
     }
 
     #[test]
+    fn test_neq_on_keyless_all_is_rejected() {
+        // `|all|neq` has no field to negate: the keyless `|all` whole-record path only handles an
+        // exact `|all` key, so this combination must be rejected at rule load rather than silently
+        // matching every record (regression test for the Copilot review on #1800).
+        let rule_str = r#"
+        enabled: true
+        detection:
+            selection:
+                '|all|neq':
+                    - foo
+                    - bar
+        details: 'Rule parse test'
+        "#;
+        let mut rule_yaml = YamlLoader::load_from_str(rule_str).unwrap().into_iter();
+        let mut rule_node = create_rule("testpath".to_string(), rule_yaml.next().unwrap());
+        let result = rule_node.init(&create_dummy_stored_static());
+        assert!(
+            result.is_err(),
+            "expected `|all|neq` to be rejected at init"
+        );
+        assert!(
+            result
+                .unwrap_err()
+                .iter()
+                .any(|m| m.contains("neq") && m.contains("|all")),
+            "error should explain the neq/|all conflict"
+        );
+    }
+
+    #[test]
     fn test_detect_not_defined_selection() {
         // Test that an error is returned when the detection node has no content.
         let rule_str = r#"
