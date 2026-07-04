@@ -424,6 +424,34 @@ impl DetectionNode {
         } else if yaml.as_vec().is_some() && key_list.iter().any(|k: &str| k.contains("|all")) {
             // If the key carries the |all modifier (e.g. field|contains|all), the array of child
             // elements is interpreted as an AND condition.
+            // When `neq` is also present, De Morgan flips the connective:
+            // NOT(a AND b) == (NOT a) OR (NOT b), so build an OR node of the negated leaves instead.
+            let children: Vec<Box<dyn SelectionNode>> = yaml
+                .as_vec()
+                .unwrap()
+                .iter()
+                .map(|child_yaml| Self::parse_selection_recursively(key_list, child_yaml))
+                .collect();
+            if key_list
+                .iter()
+                .any(|k| k.split('|').skip(1).any(|m| m == "neq"))
+            {
+                let mut or_node = selectionnodes::OrSelectionNode::new();
+                or_node.child_nodes = children;
+                Box::new(or_node)
+            } else {
+                let mut and_node = selectionnodes::AndSelectionNode::new();
+                and_node.child_nodes = children;
+                Box::new(and_node)
+            }
+        } else if yaml.as_vec().is_some()
+            && key_list
+                .iter()
+                .any(|k| k.split('|').skip(1).any(|modifier| modifier == "neq"))
+        {
+            // `neq` negates the whole comparison, so a plain (OR-linked) list of values under a `neq`
+            // modifier means "different from ALL of them" (De Morgan: NOT(a OR b) == NOT a AND NOT b).
+            // Interpret the array as an AND condition instead of the usual OR.
             let mut and_node = selectionnodes::AndSelectionNode::new();
             yaml.as_vec().unwrap().iter().for_each(|child_yaml| {
                 let child_node = Self::parse_selection_recursively(key_list, child_yaml);
@@ -1020,6 +1048,36 @@ mod tests {
                 "An unknown pipe element was specified. key:detection -> selection -> Channel|failed"
                     .to_string()
             ])
+        );
+    }
+
+    #[test]
+    fn test_neq_on_keyless_all_is_rejected() {
+        // `|all|neq` has no field to negate: the keyless `|all` whole-record path only handles an
+        // exact `|all` key, so this combination must be rejected at rule load rather than silently
+        // matching every record (regression test for the Copilot review on #1800).
+        let rule_str = r#"
+        enabled: true
+        detection:
+            selection:
+                '|all|neq':
+                    - foo
+                    - bar
+        details: 'Rule parse test'
+        "#;
+        let mut rule_yaml = YamlLoader::load_from_str(rule_str).unwrap().into_iter();
+        let mut rule_node = create_rule("testpath".to_string(), rule_yaml.next().unwrap());
+        let result = rule_node.init(&create_dummy_stored_static());
+        assert!(
+            result.is_err(),
+            "expected `|all|neq` to be rejected at init"
+        );
+        assert!(
+            result
+                .unwrap_err()
+                .iter()
+                .any(|m| m.contains("neq") && m.contains("|all")),
+            "error should explain the neq/|all conflict"
         );
     }
 

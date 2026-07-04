@@ -2,9 +2,10 @@
 
 ## x.x.x
 
-**Enchancements:**
+**Enhancements:**
 
-Added unique and total alert count to MITRE ATT&CK tactics found. (#1753) (@fukusuket)
+- Added support for the `|neq` and `|fieldref|neq` field modifiers from the Sigma 2.1 specification. `|neq` negates a comparison and can be combined with other modifiers (`|contains|neq`, `|startswith|neq`, `|endswith|neq`, `|fieldref|neq`, ...). (#1684) (@YamatoSecurity)
+- Added unique and total alert count to MITRE ATT&CK tactics found. (#1753) (@fukusuket)
 
 **Bug Fixes:**
 

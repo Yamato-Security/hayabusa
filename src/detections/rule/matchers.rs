@@ -36,6 +36,13 @@ pub trait LeafMatcher: Downcast + Send + Sync {
     /// Initializes the matcher from the rule file. Returns Err with parse error messages when
     /// the rule file format is invalid.
     fn init(&mut self, key_list: &Nested<String>, select_value: &Yaml) -> Result<(), Vec<String>>;
+
+    /// Whether this matcher negates its result (i.e. the `neq` modifier is used).
+    /// Callers that aggregate multiple values (e.g. multi-valued `EventData.Data`) need this so
+    /// that the negation is applied once over the whole comparison rather than per value.
+    fn is_negated(&self) -> bool {
+        false
+    }
 }
 downcast_rs::impl_downcast!(LeafMatcher);
 
@@ -198,6 +205,9 @@ pub struct DefaultMatcher {
     fast_match: Option<Vec<FastMatch>>,
     pipes: Vec<PipeElement>,
     key_list: Nested<String>,
+    // Set to true when the `neq` modifier is used. `neq` negates the whole comparison
+    // (equivalent to Sigma's SigmaNegateModifier), so the final match result is inverted.
+    neg_match: bool,
 }
 
 impl DefaultMatcher {
@@ -207,6 +217,7 @@ impl DefaultMatcher {
             fast_match: None,
             pipes: Vec::new(),
             key_list: Nested::<String>::new(),
+            neg_match: false,
         }
     }
 
@@ -275,6 +286,35 @@ impl LeafMatcher for DefaultMatcher {
         // The first element is just the field key; the second and subsequent elements are pipes.
 
         let mut keys_all: Vec<&str> = key_list.get(0).unwrap_or(&empty_str).split('|').collect(); // key_list cannot be empty.
+
+        // `neq` (Sigma's SigmaNegateModifier) negates the whole comparison. Detect it among the
+        // pipe modifiers (never the field name at index 0), strip it from the modifier chain, and
+        // flag the matcher so the final result is inverted in `is_match`. Because it is handled as
+        // a plain negation, it composes with any other modifier (plain value, contains, startswith,
+        // endswith, re, fieldref, fieldref|contains, ...).
+        if keys_all.len() >= 2 && keys_all[1..].contains(&"neq") {
+            self.neg_match = true;
+            let field = keys_all[0];
+            let mut rest: Vec<&str> = keys_all[1..]
+                .iter()
+                .copied()
+                .filter(|k| *k != "neq")
+                .collect();
+            keys_all = Vec::with_capacity(rest.len() + 1);
+            keys_all.push(field);
+            keys_all.append(&mut rest);
+        }
+
+        // `neq` has no field to negate on a keyless selection. The keyless `|all` whole-record path
+        // (in parse_selection_recursively) only fires when the key is exactly `|all`, so `|all|neq`
+        // would fall through to an empty-field match and, being negated, match every record. Reject
+        // the combination so such a rule fails to load with a clear message rather than misbehaving.
+        if self.neg_match && keys_all[0].is_empty() {
+            return Err(vec![
+                "The `neq` modifier cannot be combined with the keyless `|all` modifier."
+                    .to_string(),
+            ]);
+        }
 
         // Maps shorthand pipe names to the internal names accepted by PipeElement::new():
         // "all" -> "allOnly" (for a leading "|all" key) and the regex flags "i"/"m"/"s" ->
@@ -558,6 +598,20 @@ impl LeafMatcher for DefaultMatcher {
     }
 
     fn is_match(&self, event_value: Option<&String>, recinfo: &EvtxRecordInfo) -> bool {
+        let result = self.is_match_inner(event_value, recinfo);
+        // `neq` negates the whole comparison (Sigma's SigmaNegateModifier).
+        result ^ self.neg_match
+    }
+
+    fn is_negated(&self) -> bool {
+        self.neg_match
+    }
+}
+
+impl DefaultMatcher {
+    /// Performs the actual (non-negated) match. `is_match` inverts this result when the
+    /// `neq` modifier is present.
+    fn is_match_inner(&self, event_value: Option<&String>, recinfo: &EvtxRecordInfo) -> bool {
         let pipe: &PipeElement = self.pipes.first().unwrap_or(&PipeElement::Wildcard);
         // Pipes that implement their own matching (cidr, exists, field references and numeric
         // comparisons) are handled first; all other kinds fall through to fast match/regex.
@@ -2765,6 +2819,529 @@ mod tests {
             "Event": {"System": {"EventID": 4103, "Channel": "Security", "Computer": "Powershell" }},
             "Event_attributes": {"xmlns": "http://schemas.microsoft.com/win/2004/08/events/event"}
         }"#;
+        check_select(rule_str, record_json_str, false);
+    }
+
+    #[test]
+    fn test_neq_detect() {
+        // `neq` matches when the field value is different from the specified value.
+        let rule_str = r#"
+        detection:
+            selection:
+                Channel|neq: Security
+        details: 'command=%CommandLine%'
+        "#;
+
+        let record_json_str = r#"
+        {
+            "Event": {"System": {"EventID": 4103, "Channel": "PowerShell" }},
+            "Event_attributes": {"xmlns": "http://schemas.microsoft.com/win/2004/08/events/event"}
+        }"#;
+
+        check_select(rule_str, record_json_str, true);
+    }
+
+    #[test]
+    fn test_neq_notdetect() {
+        // `neq` does not match when the field value equals the specified value.
+        let rule_str = r#"
+        detection:
+            selection:
+                Channel|neq: Security
+        details: 'command=%CommandLine%'
+        "#;
+
+        let record_json_str = r#"
+        {
+            "Event": {"System": {"EventID": 4103, "Channel": "Security" }},
+            "Event_attributes": {"xmlns": "http://schemas.microsoft.com/win/2004/08/events/event"}
+        }"#;
+
+        check_select(rule_str, record_json_str, false);
+    }
+
+    #[test]
+    fn test_neq_case_insensitive_notdetect() {
+        // Like the plain value match, `neq` equality is case-insensitive, so "security" == "Security"
+        // and therefore `neq` does not match.
+        let rule_str = r#"
+        detection:
+            selection:
+                Channel|neq: security
+        details: 'command=%CommandLine%'
+        "#;
+
+        let record_json_str = r#"
+        {
+            "Event": {"System": {"EventID": 4103, "Channel": "Security" }},
+            "Event_attributes": {"xmlns": "http://schemas.microsoft.com/win/2004/08/events/event"}
+        }"#;
+
+        check_select(rule_str, record_json_str, false);
+    }
+
+    #[test]
+    fn test_neq_missing_field_detect() {
+        // A missing field is treated as different from the value (consistent with `not` in condition),
+        // so `neq` matches.
+        let rule_str = r#"
+        detection:
+            selection:
+                Channel|neq: Security
+        details: 'command=%CommandLine%'
+        "#;
+
+        let record_json_str = r#"
+        {
+            "Event": {"System": {"EventID": 4103 }},
+            "Event_attributes": {"xmlns": "http://schemas.microsoft.com/win/2004/08/events/event"}
+        }"#;
+
+        check_select(rule_str, record_json_str, true);
+    }
+
+    #[test]
+    fn test_neq_wildcard_notdetect() {
+        // Wildcards still apply to the value being negated: "Sec*" matches "Security", so `neq` does not match.
+        let rule_str = r#"
+        detection:
+            selection:
+                Channel|neq: Sec*
+        details: 'command=%CommandLine%'
+        "#;
+
+        let record_json_str = r#"
+        {
+            "Event": {"System": {"EventID": 4103, "Channel": "Security" }},
+            "Event_attributes": {"xmlns": "http://schemas.microsoft.com/win/2004/08/events/event"}
+        }"#;
+
+        check_select(rule_str, record_json_str, false);
+    }
+
+    #[test]
+    fn test_neq_wildcard_detect() {
+        // "Sec*" does not match "PowerShell", so `neq` matches.
+        let rule_str = r#"
+        detection:
+            selection:
+                Channel|neq: Sec*
+        details: 'command=%CommandLine%'
+        "#;
+
+        let record_json_str = r#"
+        {
+            "Event": {"System": {"EventID": 4103, "Channel": "PowerShell" }},
+            "Event_attributes": {"xmlns": "http://schemas.microsoft.com/win/2004/08/events/event"}
+        }"#;
+
+        check_select(rule_str, record_json_str, true);
+    }
+
+    #[test]
+    fn test_contains_neq_detect() {
+        // `contains|neq` matches when the field does NOT contain the value.
+        let rule_str = r#"
+        detection:
+            selection:
+                Channel|contains|neq: cur
+        details: 'command=%CommandLine%'
+        "#;
+
+        let record_json_str = r#"
+        {
+            "Event": {"System": {"EventID": 4103, "Channel": "System" }},
+            "Event_attributes": {"xmlns": "http://schemas.microsoft.com/win/2004/08/events/event"}
+        }"#;
+
+        check_select(rule_str, record_json_str, true);
+    }
+
+    #[test]
+    fn test_contains_neq_notdetect() {
+        // `contains|neq` does not match when the field contains the value ("Security" contains "cur").
+        let rule_str = r#"
+        detection:
+            selection:
+                Channel|contains|neq: cur
+        details: 'command=%CommandLine%'
+        "#;
+
+        let record_json_str = r#"
+        {
+            "Event": {"System": {"EventID": 4103, "Channel": "Security" }},
+            "Event_attributes": {"xmlns": "http://schemas.microsoft.com/win/2004/08/events/event"}
+        }"#;
+
+        check_select(rule_str, record_json_str, false);
+    }
+
+    #[test]
+    fn test_startswith_neq_detect() {
+        // `startswith|neq` matches when the field does NOT start with the value.
+        let rule_str = r#"
+        detection:
+            selection:
+                Channel|startswith|neq: Sec
+        details: 'command=%CommandLine%'
+        "#;
+
+        let record_json_str = r#"
+        {
+            "Event": {"System": {"EventID": 4103, "Channel": "System" }},
+            "Event_attributes": {"xmlns": "http://schemas.microsoft.com/win/2004/08/events/event"}
+        }"#;
+
+        check_select(rule_str, record_json_str, true);
+    }
+
+    #[test]
+    fn test_startswith_neq_notdetect() {
+        // `startswith|neq` does not match when the field starts with the value.
+        let rule_str = r#"
+        detection:
+            selection:
+                Channel|startswith|neq: Sec
+        details: 'command=%CommandLine%'
+        "#;
+
+        let record_json_str = r#"
+        {
+            "Event": {"System": {"EventID": 4103, "Channel": "Security" }},
+            "Event_attributes": {"xmlns": "http://schemas.microsoft.com/win/2004/08/events/event"}
+        }"#;
+
+        check_select(rule_str, record_json_str, false);
+    }
+
+    #[test]
+    fn test_endswith_neq_detect() {
+        // `endswith|neq` matches when the field does NOT end with the value.
+        let rule_str = r#"
+        detection:
+            selection:
+                Channel|endswith|neq: rity
+        details: 'command=%CommandLine%'
+        "#;
+
+        let record_json_str = r#"
+        {
+            "Event": {"System": {"EventID": 4103, "Channel": "System" }},
+            "Event_attributes": {"xmlns": "http://schemas.microsoft.com/win/2004/08/events/event"}
+        }"#;
+
+        check_select(rule_str, record_json_str, true);
+    }
+
+    #[test]
+    fn test_endswith_neq_notdetect() {
+        // `endswith|neq` does not match when the field ends with the value.
+        let rule_str = r#"
+        detection:
+            selection:
+                Channel|endswith|neq: rity
+        details: 'command=%CommandLine%'
+        "#;
+
+        let record_json_str = r#"
+        {
+            "Event": {"System": {"EventID": 4103, "Channel": "Security" }},
+            "Event_attributes": {"xmlns": "http://schemas.microsoft.com/win/2004/08/events/event"}
+        }"#;
+
+        check_select(rule_str, record_json_str, false);
+    }
+
+    #[test]
+    fn test_fieldref_neq_detect() {
+        // `fieldref|neq` matches when the two field values are different.
+        let rule_str = r#"
+        detection:
+            selection:
+                Channel|fieldref|neq: Computer
+        details: 'command=%CommandLine%'
+        "#;
+
+        let record_json_str = r#"
+        {
+            "Event": {"System": {"EventID": 4103, "Channel": "Security", "Computer": "PowerShell" }},
+            "Event_attributes": {"xmlns": "http://schemas.microsoft.com/win/2004/08/events/event"}
+        }"#;
+
+        check_select(rule_str, record_json_str, true);
+    }
+
+    #[test]
+    fn test_fieldref_neq_notdetect() {
+        // `fieldref|neq` does not match when the two field values are the same.
+        let rule_str = r#"
+        detection:
+            selection:
+                Channel|fieldref|neq: Computer
+        details: 'command=%CommandLine%'
+        "#;
+
+        let record_json_str = r#"
+        {
+            "Event": {"System": {"EventID": 4103, "Channel": "Security", "Computer": "Security" }},
+            "Event_attributes": {"xmlns": "http://schemas.microsoft.com/win/2004/08/events/event"}
+        }"#;
+
+        check_select(rule_str, record_json_str, false);
+    }
+
+    #[test]
+    fn test_fieldref_neq_missing_ref_detect() {
+        // If the referenced field is missing, the values are considered different, so `fieldref|neq` matches.
+        let rule_str = r#"
+        detection:
+            selection:
+                Channel|fieldref|neq: Computer
+        details: 'command=%CommandLine%'
+        "#;
+
+        let record_json_str = r#"
+        {
+            "Event": {"System": {"EventID": 4103, "Channel": "Security" }},
+            "Event_attributes": {"xmlns": "http://schemas.microsoft.com/win/2004/08/events/event"}
+        }"#;
+
+        check_select(rule_str, record_json_str, true);
+    }
+
+    #[test]
+    fn test_fieldref_contains_neq_detect() {
+        // `fieldref|contains|neq` matches when the left field does NOT contain the right field's value.
+        let rule_str = r#"
+        detection:
+            selection:
+                Channel|fieldref|contains|neq: Computer
+        details: 'command=%CommandLine%'
+        "#;
+
+        let record_json_str = r#"
+        {
+            "Event": {"System": {"EventID": 4103, "Channel": "Security", "Computer": "xyz" }},
+            "Event_attributes": {"xmlns": "http://schemas.microsoft.com/win/2004/08/events/event"}
+        }"#;
+
+        check_select(rule_str, record_json_str, true);
+    }
+
+    #[test]
+    fn test_fieldref_contains_neq_notdetect() {
+        // `fieldref|contains|neq` does not match when the left field contains the right field's value
+        // ("Security" contains "cur").
+        let rule_str = r#"
+        detection:
+            selection:
+                Channel|fieldref|contains|neq: Computer
+        details: 'command=%CommandLine%'
+        "#;
+
+        let record_json_str = r#"
+        {
+            "Event": {"System": {"EventID": 4103, "Channel": "Security", "Computer": "cur" }},
+            "Event_attributes": {"xmlns": "http://schemas.microsoft.com/win/2004/08/events/event"}
+        }"#;
+
+        check_select(rule_str, record_json_str, false);
+    }
+
+    #[test]
+    fn test_re_neq_detect() {
+        // `re|neq` matches when the (case-sensitive) regex does NOT match.
+        let rule_str = r#"
+        detection:
+            selection:
+                Channel|re|neq: ^Sec.*
+        details: 'command=%CommandLine%'
+        "#;
+
+        let record_json_str = r#"
+        {
+            "Event": {"System": {"EventID": 4103, "Channel": "System" }},
+            "Event_attributes": {"xmlns": "http://schemas.microsoft.com/win/2004/08/events/event"}
+        }"#;
+
+        check_select(rule_str, record_json_str, true);
+    }
+
+    #[test]
+    fn test_re_neq_notdetect() {
+        // `re|neq` does not match when the regex matches.
+        let rule_str = r#"
+        detection:
+            selection:
+                Channel|re|neq: ^Sec.*
+        details: 'command=%CommandLine%'
+        "#;
+
+        let record_json_str = r#"
+        {
+            "Event": {"System": {"EventID": 4103, "Channel": "Security" }},
+            "Event_attributes": {"xmlns": "http://schemas.microsoft.com/win/2004/08/events/event"}
+        }"#;
+
+        check_select(rule_str, record_json_str, false);
+    }
+
+    #[test]
+    fn test_re_i_neq_notdetect() {
+        // The `i` (case-insensitive) flag still composes with `neq`: "^sec.*" matches "Security"
+        // case-insensitively, so `re|i|neq` does not match.
+        let rule_str = r#"
+        detection:
+            selection:
+                Channel|re|i|neq: ^sec.*
+        details: 'command=%CommandLine%'
+        "#;
+
+        let record_json_str = r#"
+        {
+            "Event": {"System": {"EventID": 4103, "Channel": "Security" }},
+            "Event_attributes": {"xmlns": "http://schemas.microsoft.com/win/2004/08/events/event"}
+        }"#;
+
+        check_select(rule_str, record_json_str, false);
+    }
+
+    #[test]
+    fn test_gt_neq_equal_detect() {
+        // Numeric `gt|neq`: the value equal to the bound is NOT greater than it, so the base `gt`
+        // is false and `neq` matches.
+        let rule_str = r"
+        enabled: true
+        detection:
+            selection:
+                EventID|gt|neq: 1040
+            condition: selection
+        ";
+
+        let record_json_str = r#"
+        {
+            "Event": {"System": {"EventID": 1040 }},
+            "Event_attributes": {"xmlns": "http://schemas.microsoft.com/win/2004/08/events/event"}
+        }"#;
+
+        check_select(rule_str, record_json_str, true);
+    }
+
+    #[test]
+    fn test_gt_neq_greater_notdetect() {
+        // A value greater than the bound satisfies the base `gt`, so `gt|neq` does not match.
+        let rule_str = r"
+        enabled: true
+        detection:
+            selection:
+                EventID|gt|neq: 1040
+            condition: selection
+        ";
+
+        let record_json_str = r#"
+        {
+            "Event": {"System": {"EventID": 1041 }},
+            "Event_attributes": {"xmlns": "http://schemas.microsoft.com/win/2004/08/events/event"}
+        }"#;
+
+        check_select(rule_str, record_json_str, false);
+    }
+
+    #[test]
+    fn test_gt_neq_missing_field_detect() {
+        // A missing (or non-numeric) field makes the base `gt` false, so `gt|neq` matches
+        // (consistent with the missing-field behavior of the other `neq` forms).
+        let rule_str = r"
+        enabled: true
+        detection:
+            selection:
+                EventID|gt|neq: 1040
+            condition: selection
+        ";
+
+        let record_json_str = r#"
+        {
+            "Event": {"System": {"Channel": "Security" }},
+            "Event_attributes": {"xmlns": "http://schemas.microsoft.com/win/2004/08/events/event"}
+        }"#;
+
+        check_select(rule_str, record_json_str, true);
+    }
+
+    #[test]
+    fn test_cidr_neq_detect() {
+        // `cidr|neq` matches when the IP is NOT in the range (e.g. excluding an internal subnet).
+        let rule_str = r#"
+        detection:
+            selection:
+                IpAddress|cidr|neq: 192.168.0.0/16
+        details: 'command=%CommandLine%'
+        "#;
+
+        let record_json_str = r#"
+        {
+            "Event": {"System": {"EventID": 4624}, "EventData": {"IpAddress": "10.0.0.1"} },
+            "Event_attributes": {"xmlns": "http://schemas.microsoft.com/win/2004/08/events/event"}
+        }"#;
+
+        check_select(rule_str, record_json_str, true);
+    }
+
+    #[test]
+    fn test_cidr_neq_notdetect() {
+        // `cidr|neq` does not match when the IP is in the range.
+        let rule_str = r#"
+        detection:
+            selection:
+                IpAddress|cidr|neq: 192.168.0.0/16
+        details: 'command=%CommandLine%'
+        "#;
+
+        let record_json_str = r#"
+        {
+            "Event": {"System": {"EventID": 4624}, "EventData": {"IpAddress": "192.168.1.5"} },
+            "Event_attributes": {"xmlns": "http://schemas.microsoft.com/win/2004/08/events/event"}
+        }"#;
+
+        check_select(rule_str, record_json_str, false);
+    }
+
+    #[test]
+    fn test_contains_cased_neq_detect() {
+        // `contains|cased|neq` is case-sensitive: "security" does not contain "Sec" (different case),
+        // so `neq` matches.
+        let rule_str = r#"
+        detection:
+            selection:
+                Channel|contains|cased|neq: Sec
+        details: 'command=%CommandLine%'
+        "#;
+
+        let record_json_str = r#"
+        {
+            "Event": {"System": {"EventID": 4103, "Channel": "security" }},
+            "Event_attributes": {"xmlns": "http://schemas.microsoft.com/win/2004/08/events/event"}
+        }"#;
+
+        check_select(rule_str, record_json_str, true);
+    }
+
+    #[test]
+    fn test_contains_cased_neq_notdetect() {
+        // "Security" contains "Sec" (same case), so `contains|cased|neq` does not match.
+        let rule_str = r#"
+        detection:
+            selection:
+                Channel|contains|cased|neq: Sec
+        details: 'command=%CommandLine%'
+        "#;
+
+        let record_json_str = r#"
+        {
+            "Event": {"System": {"EventID": 4103, "Channel": "Security" }},
+            "Event_attributes": {"xmlns": "http://schemas.microsoft.com/win/2004/08/events/event"}
+        }"#;
+
         check_select(rule_str, record_json_str, false);
     }
 
