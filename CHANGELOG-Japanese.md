@@ -24,6 +24,7 @@
 **その他:**
 
 - 可読性向上のため、`src/` 内の分かりにくい・誤解を招く・Hayabusa固有の変数・引数・構造体フィールド名76個を、より明確で慣用的なRustの名前にリネームした（例: `datas`→`records`、`con_cal`→`joined_value`、`name_2_node`→`name_to_node`、`hlch`→`horizontal_line_char`、`rulepath`→`rule_path`、`ext_field`→`output_fields`、および実際にはAND条件の`AllSelectionNode`を保持していた誤名の`or_node`→`all_node`）。内部識別子のみの変更で、挙動・出力に変化はない。 (#1830) (@YamatoSecurity)
+- `hayabusa-evtx` クレートを `0.9.9` に更新し、その依存クレート（特に `thiserror` 1→2、`criterion` 0.5→0.8）をすべて最新版に更新した。挙動に変更はない。 (#1835) (@YamatoSecurity)
 - レビューで判明した2箇所のデッドコードを削除した。JSON文字列エスケープ処理の常に空になる `addition_header` 分岐と、相対時刻オフセット解析における到達しない分岐および単位ごとの `Vec` 割り当て。挙動に変更はない。 (#1834) (@YamatoSecurity)
 
 ## 3.9.0 [2026/04/29]
