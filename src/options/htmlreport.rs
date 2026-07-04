@@ -15,6 +15,15 @@ use std::path::Path;
 use std::sync::RwLock;
 use termcolor::{BufferWriter, Color, ColorChoice};
 
+/// Section keys for the HTML report. The `{#id}` suffix becomes the HTML heading's `id` attribute
+/// via the heading-attributes markdown extension. `add_md_data()` stores data under whatever key
+/// it is given, but `create_html()` only renders sections whose key appears in `section_order`
+/// (which is built from these constants). Every call site must therefore register data under one
+/// of these exact keys, or the data is silently dropped from the report (see issue #1818). Use
+/// these constants instead of repeating the literal so the keys cannot drift out of sync.
+pub const GENERAL_OVERVIEW_SECTION: &str = "General Overview {#general_overview}";
+pub const RESULTS_SUMMARY_SECTION: &str = "Results Summary {#results_summary}";
+
 /// Static assets for the HTML report (CSS, logo, favicon) embedded into the binary at compile
 /// time from config/html_report/.
 #[derive(Embed)]
@@ -103,10 +112,7 @@ pub fn check_html_flag(config: &Config) -> bool {
 fn get_init_md_data_map() -> (Nested<String>, HashMap<String, Nested<String>>) {
     let mut ret = HashMap::new();
     let mut section_order = Nested::<String>::new();
-    section_order.extend(vec![
-        "General Overview {#general_overview}",
-        "Results Summary {#results_summary}",
-    ]);
+    section_order.extend(vec![GENERAL_OVERVIEW_SECTION, RESULTS_SUMMARY_SECTION]);
     for section in section_order.iter() {
         ret.insert(section.to_owned(), Nested::<String>::new());
     }
@@ -225,7 +231,7 @@ mod tests {
 
     use nested::Nested;
 
-    use super::{HTML_REPORTER, HTML_REPORTER_TEST_LOCK, img_to_base64};
+    use super::{GENERAL_OVERVIEW_SECTION, HTML_REPORTER, HTML_REPORTER_TEST_LOCK, img_to_base64};
     use crate::{
         detections::configs::{
             Action, Config, CsvOutputOption, JSONOutputOption, OutputOption, StoredStatic,
@@ -275,6 +281,40 @@ mod tests {
         );
 
         assert_eq!(html_reporter.create_html(), expect_str);
+    }
+
+    // Regression test for #1818: General Overview data must be registered under the exact section
+    // key that create_html() renders (GENERAL_OVERVIEW_SECTION, the key held in section_order).
+    // The bug stored this data under the misspelled key "General Overview #{general_overview}"
+    // (`#` outside the braces), which is not in section_order, so create_html() silently dropped
+    // the analyzed-file count, total file size, selected rule set, and excluded tags.
+    #[test]
+    fn test_general_overview_section_key_is_rendered() {
+        let mut reporter = HtmlReporter::new();
+        reporter
+            .md_datas
+            .get_mut(GENERAL_OVERVIEW_SECTION)
+            .expect(
+                "GENERAL_OVERVIEW_SECTION must be a rendered section registered in section_order",
+            )
+            .push("- Analyzed event files: 581");
+        assert!(
+            reporter.create_html().contains("Analyzed event files: 581"),
+            "data added under GENERAL_OVERVIEW_SECTION should be rendered"
+        );
+
+        // Data stored under the pre-fix misspelled key lands in an orphan map entry that the
+        // render loop never reads, so it must not appear in the output.
+        let mut buggy = HtmlReporter::new();
+        buggy
+            .md_datas
+            .entry("General Overview #{general_overview}".to_string())
+            .or_insert_with(Nested::<String>::new)
+            .push("- Analyzed event files: 581");
+        assert!(
+            !buggy.create_html().contains("Analyzed event files: 581"),
+            "data added under the misspelled key must not be rendered"
+        );
     }
 
     #[test]
