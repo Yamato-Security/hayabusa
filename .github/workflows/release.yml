@@ -209,28 +209,6 @@ jobs:
           path: release-binaries-encoded-rules/*
           include-hidden-files: true
 
-      - name: Setup node
-        if: matrix.info.target == 'aarch64-apple-darwin'
-        uses: actions/setup-node@48b55a011bda9f5d6aeb4c2d9c7362e8dae4041e # v6.4.0
-        with:
-          node-version: 20
-
-      - name: Create PDF
-        if: matrix.info.target == 'aarch64-apple-darwin'
-        run: |
-          npm i -g md-to-pdf
-          md-to-pdf ./*.md --md-file-encoding utf-8
-          mv ./README.pdf ./README-${{ github.event.inputs.release_ver }}-English.pdf
-          mv ./README-Japanese.pdf ./README-${{ github.event.inputs.release_ver }}-Japanese.pdf
-
-      - name: Upload Document Artifacts
-        if: matrix.info.target == 'aarch64-apple-darwin'
-        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
-        with:
-          name: hayabusa-documents
-          path: |
-            ./*.pdf
-
   upload-all-platforms:
     needs: upload
     runs-on: ubuntu-latest
