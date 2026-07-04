@@ -58,9 +58,9 @@ impl CheckPointProcessTimer {
         if !self.recorded_laps.is_empty()
             && self.recorded_laps[self.recorded_laps.len() - 1].output_str == output_str
         {
-            let stocked_last_idx = self.recorded_laps.len() - 1;
-            self.recorded_laps[stocked_last_idx].sec += s;
-            self.recorded_laps[stocked_last_idx].msec += ms;
+            let last_lap_idx = self.recorded_laps.len() - 1;
+            self.recorded_laps[last_lap_idx].sec += s;
+            self.recorded_laps[last_lap_idx].msec += ms;
         } else {
             self.recorded_laps.push(CheckPointTimeStore {
                 output_str: output_str.into(),

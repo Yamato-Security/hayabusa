@@ -843,7 +843,7 @@ impl PipeElement {
                 pattern + "*"
             }
         };
-        let fn_add_asterisk_begin = |pattern: String| {
+        let add_asterisk_begin = |pattern: String| {
             if pattern.starts_with("//*") {
                 pattern
             } else if pattern.starts_with("/*") {
@@ -859,9 +859,9 @@ impl PipeElement {
             // For startswith, handle by appending a wildcard to the end of pattern.
             PipeElement::Startswith => add_asterisk_end(pattern),
             // For endswith, handle by prepending a wildcard to the beginning of pattern.
-            PipeElement::Endswith => fn_add_asterisk_begin(pattern),
+            PipeElement::Endswith => add_asterisk_begin(pattern),
             // For contains, handle by prepending and appending wildcards to pattern.
-            PipeElement::Contains => add_asterisk_end(fn_add_asterisk_begin(pattern)),
+            PipeElement::Contains => add_asterisk_end(add_asterisk_begin(pattern)),
             // Convert WildCard to regex.
             PipeElement::Wildcard => PipeElement::pipe_pattern_wildcard(pattern),
             PipeElement::ReIgnoreCase => "(?i)".to_string() + pattern.as_str(),
