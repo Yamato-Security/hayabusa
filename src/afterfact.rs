@@ -266,7 +266,7 @@ pub fn output_afterfact(
 /// if writing fails.
 pub fn emit_csv(
     detect_infos: &[DetectInfo],
-    duplicate_idxes: &HashSet<usize>,
+    duplicate_indices: &HashSet<usize>,
     stored_static: &StoredStatic,
     afterfact_writer: &mut AfterfactWriter,
     afterfact_info: &mut AfterfactInfo,
@@ -277,7 +277,7 @@ pub fn emit_csv(
 
     let result = emit_csv_inner(
         detect_infos,
-        duplicate_idxes,
+        duplicate_indices,
         stored_static,
         afterfact_writer,
         afterfact_info,
@@ -286,7 +286,12 @@ pub fn emit_csv(
         output_afterfact_err(Box::new(result.err().unwrap()));
     }
 
-    calc_statistic_info(detect_infos, duplicate_idxes, afterfact_info, stored_static);
+    calc_statistic_info(
+        detect_infos,
+        duplicate_indices,
+        afterfact_info,
+        stored_static,
+    );
 }
 
 fn output_afterfact_err(err: Box<dyn Error>) {
@@ -307,20 +312,20 @@ fn output_afterfact_inner(
     // Sort the detections, then determine which ones to drop as duplicates if the
     // remove-duplicate-detections option is enabled.
     sort_detect_info(detect_infos);
-    let duplicate_idxes = if stored_static
+    let duplicate_indices = if stored_static
         .output_option
         .as_ref()
         .unwrap()
         .remove_duplicate_detections
     {
-        get_duplicate_idxes(detect_infos)
+        get_duplicate_indices(detect_infos)
     } else {
         HashSet::new()
     };
 
     emit_csv_inner(
         detect_infos,
-        &duplicate_idxes,
+        &duplicate_indices,
         stored_static,
         afterfact_writer,
         afterfact_info,
@@ -329,7 +334,7 @@ fn output_afterfact_inner(
     // Calculate the statistics for the results summary.
     calc_statistic_info(
         detect_infos,
-        &duplicate_idxes,
+        &duplicate_indices,
         afterfact_info,
         stored_static,
     );
@@ -342,7 +347,7 @@ fn output_afterfact_inner(
 
 fn emit_csv_inner(
     detect_infos: &[DetectInfo],
-    duplicate_idxes: &HashSet<usize>,
+    duplicate_indices: &HashSet<usize>,
     stored_static: &StoredStatic,
     afterfact_writer: &mut AfterfactWriter,
     afterfact_info: &mut AfterfactInfo,
@@ -391,7 +396,7 @@ fn emit_csv_inner(
 
     let profile = stored_static.profiles.as_ref().unwrap();
     for (i, detect_info) in detect_infos.iter().enumerate() {
-        if duplicate_idxes.contains(&i) {
+        if duplicate_indices.contains(&i) {
             continue;
         }
         if afterfact_writer.display_flag && !(json_output_flag || jsonl_output_flag) {
@@ -544,13 +549,13 @@ fn emit_csv_inner(
 /// date, computer, and rule, plus the rule author statistics used by the results summary.
 fn calc_statistic_info(
     detect_infos: &[DetectInfo],
-    duplicate_idxes: &HashSet<usize>,
+    duplicate_indices: &HashSet<usize>,
     afterfact_info: &mut AfterfactInfo,
     stored_static: &StoredStatic,
 ) {
     let output_option = stored_static.output_option.as_ref().unwrap();
     for (i, detect_info) in detect_infos.iter().enumerate() {
-        if duplicate_idxes.contains(&i) {
+        if duplicate_indices.contains(&i) {
             continue;
         }
         afterfact_info
@@ -1158,7 +1163,7 @@ pub fn sort_detect_info(detect_infos: &mut [DetectInfo]) {
 /// by detected time, so records sharing a timestamp are contiguous. Within each timestamp group
 /// the first occurrence is kept and every later record with identical fields is flagged, so of N
 /// identical detections exactly one survives.
-pub fn get_duplicate_idxes(detect_infos: &mut [DetectInfo]) -> HashSet<usize> {
+pub fn get_duplicate_indices(detect_infos: &mut [DetectInfo]) -> HashSet<usize> {
     // Collect the indexes of duplicate events.
     let mut filtered_detect_infos = HashSet::new();
     let mut prev_detect_infos = HashSet::new();
@@ -2418,7 +2423,7 @@ mod tests {
     use crate::afterfact::_print_unique_results;
     use crate::afterfact::AfterfactInfo;
     use crate::afterfact::format_time;
-    use crate::afterfact::get_duplicate_idxes;
+    use crate::afterfact::get_duplicate_indices;
     use crate::afterfact::html_escape_value;
     use crate::afterfact::init_writer;
     use crate::afterfact::output_afterfact_inner;
@@ -3027,13 +3032,13 @@ mod tests {
         assert!(remove_file("./test_emit_csv_multiline.csv").is_ok());
     }
 
-    /// `get_duplicate_idxes` must flag every identical copy after the first within a timestamp
+    /// `get_duplicate_indices` must flag every identical copy after the first within a timestamp
     /// group, including the second of only two copies (regression test for issue #1813, where the
     /// first record of each group was never added to the comparison set so the second copy
     /// survived). Duplicates are only matched within the same timestamp, ignoring the EvtxFile
     /// column.
     #[test]
-    fn test_get_duplicate_idxes_flags_second_and_later_copies() {
+    fn test_get_duplicate_indices_flags_second_and_later_copies() {
         // A detection whose duplicate-relevant fields are `detail` (varying it makes a distinct
         // detection) and whose EvtxFile source `evtx` must be ignored when comparing.
         fn make(time: DateTime<Utc>, detail: &str, evtx: &str) -> DetectInfo {
@@ -3065,7 +3070,7 @@ mod tests {
 
         let t1 = Utc.with_ymd_and_hms(2020, 1, 1, 0, 0, 0).unwrap();
         let t2 = Utc.with_ymd_and_hms(2020, 1, 1, 0, 0, 1).unwrap();
-        // Sorted by time, as `get_duplicate_idxes` requires.
+        // Sorted by time, as `get_duplicate_indices` requires.
         let mut detect_infos = vec![
             make(t1, "A", "a.evtx"), // 0: first "A" in group t1 -> kept
             make(t1, "A", "b.evtx"), // 1: second "A" (differs only in EvtxFile) -> duplicate
@@ -3074,7 +3079,7 @@ mod tests {
             make(t2, "A", "b.evtx"), // 4: second "A" in group t2 -> duplicate
         ];
 
-        let dup = get_duplicate_idxes(&mut detect_infos);
+        let dup = get_duplicate_indices(&mut detect_infos);
         let mut got: Vec<usize> = dup.into_iter().collect();
         got.sort_unstable();
         assert_eq!(got, vec![1, 4]);
