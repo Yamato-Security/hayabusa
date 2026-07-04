@@ -2206,16 +2206,13 @@ impl TargetEventTime {
                 for (idx, key) in time_units.iter().enumerate() {
                     // Extract the digits belonging to this unit: take the text before the unit
                     // character and strip everything up to the last other unit character
-                    // (e.g. for 'M' in "1y3M": "1y3" -> "3").
-                    let mut timekey_splitter = timeline_offset.split(*key);
-                    let before_unit = timekey_splitter.next();
-                    let unit_digit_segments: Vec<&str> =
-                        before_unit.unwrap_or_default().split(time_units).collect();
-                    let target_num = if unit_digit_segments.is_empty() {
-                        before_unit.unwrap()
-                    } else {
-                        unit_digit_segments[unit_digit_segments.len() - 1]
-                    };
+                    // (e.g. for 'M' in "1y3M": "1y3" -> "3"). Both splits always yield at least one
+                    // element, so `.next()`/`.next_back()` are guaranteed to be `Some`.
+                    let before_unit = timeline_offset.split(*key).next().unwrap_or_default();
+                    let target_num = before_unit
+                        .split(time_units)
+                        .next_back()
+                        .unwrap_or_default();
                     if target_num.is_empty() {
                         continue;
                     }
