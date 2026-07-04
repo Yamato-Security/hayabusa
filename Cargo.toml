@@ -12,7 +12,7 @@ aho-corasick = "*"
 base64 = "*"
 bytesize = "2.*"
 chrono = "0.4.*"
-cidr-utils = "0.6.*"
+cidr-utils = "0.7.*"
 clap = { version = "4.*", features = ["derive", "cargo", "color"]}
 colored = "3"
 comfy-table = "7.*"
