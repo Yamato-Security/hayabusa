@@ -312,6 +312,13 @@ Windows တွင် အဆင့်များ -
 2. `\ProgramData\MaxMind/GeoIPUpdate\GeoIP.conf` ကို တည်းဖြတ်ပါ - MaxMind website သို့ login ဝင်ပြီးနောက် သင်ဖန်တီးသော `AccountID` နှင့် `LicenseKey` ကို ထည့်ပါ။ `EditionIDs` လိုင်းတွင် `EditionIDs GeoLite2-ASN GeoLite2-City GeoLite2-Country` ဟု ပါရှိစေရန် သေချာပါ။
 3. `geoipupdate` executable ကို run ပါ။
 
+Linux တွင် အဆင့်များ -
+
+1. `sudo apt install geoip-update` ဖြင့် install လုပ်ပါ။
+2. `sudo nano /etc/GeoIP.conf` ဖြင့် config file ကို တည်းဖြတ်ပါ။
+3. `sudo geoipupdate` ဖြင့် database file များကို update လုပ်ပါ။
+4. GeoIP အချက်အလက် ထည့်လိုသည့်အခါ `-G /var/lib/GeoIP/` ကို ထည့်ပါ။
+
 ### `csv-timeline` command config files
 
 `./rules/config/channel_abbreviations.txt`: channel အမည်များနှင့် ၎င်းတို့၏ အတိုကောက်များ၏ mapping များ။
