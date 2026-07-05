@@ -177,21 +177,34 @@ impl Default for AfterfactInfo {
     }
 }
 
+/// The timeline output sink. CSV goes through a `csv::Writer`; JSON/JSONL is written directly to
+/// the target (records separated by a newline — `first` tracks whether one has been written yet —
+/// reproducing the byte layout the CSV writer's `\n` delimiter previously produced, without
+/// abusing it as a plain-text sink).
+enum ResultWriter {
+    // Boxed: a `csv::Writer` is much larger than the `Json` variant.
+    Csv(Box<Writer<Box<dyn io::Write>>>),
+    Json {
+        writer: Box<dyn io::Write>,
+        first: bool,
+    },
+}
+
 /// The writers used for result output: a termcolor writer for colored terminal display and a
-/// csv crate writer for the CSV/JSON output itself. `display_flag` is true when no output file
-/// was specified, i.e. results are displayed on the terminal.
+/// `ResultWriter` for the timeline output itself (CSV via `csv::Writer`, JSON/JSONL written
+/// directly). `display_flag` is true when no output file was specified, i.e. results are
+/// displayed on the terminal.
 pub struct AfterfactWriter {
     display_writer: BufferWriter,
     disp_wtr_buf: Buffer,
-    csv_writer: Writer<Box<dyn io::Write>>,
+    result_writer: ResultWriter,
     pub display_flag: bool,
 }
 
 /// Creates the result writer, targeting the file given with the output option if one was
 /// specified, otherwise stdout (the pivot-keywords-list and logon-summary commands write their
-/// own files elsewhere, so their writer stays on stdout). The csv writer is also (ab)used for
-/// JSON output by configuring
-/// it to perform no quoting and use newline as the delimiter.
+/// own files elsewhere, so their writer stays on stdout). CSV output goes through a `csv::Writer`;
+/// JSON/JSONL output is written directly to the target.
 pub fn init_writer(stored_static: &StoredStatic) -> AfterfactWriter {
     let display_writer = BufferWriter::stdout(ColorChoice::Always);
     let mut disp_wtr_buf = display_writer.buffer();
@@ -218,27 +231,30 @@ pub fn init_writer(stored_static: &StoredStatic) -> AfterfactWriter {
     } else {
         display_flag = true;
         // No output file was specified, so results go to stdout. Colored display output is
-        // produced through the termcolor writer (display_writer), not through this csv writer.
+        // produced through the termcolor writer (display_writer), not through the result writer.
         Box::new(BufWriter::new(io::stdout()))
     };
 
     let writer = match &stored_static.config.action.as_ref().unwrap() {
-        Action::JsonTimeline(_) => WriterBuilder::new()
-            .delimiter(b'\n')
-            .double_quote(false)
-            .quote_style(QuoteStyle::Never)
-            .from_writer(target),
-        Action::CsvTimeline(_) => WriterBuilder::new()
-            .quote_style(QuoteStyle::NonNumeric)
-            .from_writer(target),
-        _ => WriterBuilder::new().from_writer(target),
+        // JSON/JSONL records serialize themselves; write them straight to the target.
+        Action::JsonTimeline(_) => ResultWriter::Json {
+            writer: target,
+            first: true,
+        },
+        Action::CsvTimeline(_) => ResultWriter::Csv(Box::new(
+            WriterBuilder::new()
+                .quote_style(QuoteStyle::NonNumeric)
+                .from_writer(target),
+        )),
+        _ => ResultWriter::Csv(Box::new(WriterBuilder::new().from_writer(target))),
     };
 
-    // Bundle the display writer and the CSV/JSON writer used by emit_csv and the summary output.
+    // Bundle the display writer (colored terminal display and the results summary) and the
+    // result writer (the CSV/JSON timeline output).
     AfterfactWriter {
         display_writer,
         disp_wtr_buf,
-        csv_writer: writer,
+        result_writer: writer,
         display_flag,
     }
 }
@@ -452,10 +468,15 @@ fn emit_csv_inner(
                     true,
                 )
                 .ok();
-            } else {
-                afterfact_writer
-                    .csv_writer
-                    .write_field(format!("{{ {} }}", &result.0))?;
+            } else if let ResultWriter::Json { writer, first } = &mut afterfact_writer.result_writer
+            {
+                // Separate records with a newline (the previous csv-writer delimiter), without a
+                // leading or trailing one.
+                if !*first {
+                    writer.write_all(b"\n")?;
+                }
+                *first = false;
+                write!(writer, "{{ {} }}", &result.0)?;
             }
         } else if json_output_flag {
             // JSON output
@@ -478,67 +499,69 @@ fn emit_csv_inner(
                     true,
                 )
                 .ok();
-            } else {
-                afterfact_writer.csv_writer.write_field("{")?;
-                afterfact_writer.csv_writer.write_field(&result.0)?;
-                afterfact_writer.csv_writer.write_field("}")?;
+            } else if let ResultWriter::Json { writer, first } = &mut afterfact_writer.result_writer
+            {
+                // The previous csv writer joined the "{", body and "}" fields with its `\n`
+                // delimiter; reproduce that layout, with records separated by a newline.
+                if !*first {
+                    writer.write_all(b"\n")?;
+                }
+                *first = false;
+                write!(writer, "{{\n{}\n}}", &result.0)?;
             }
-        } else {
+        } else if let ResultWriter::Csv(csv_writer) = &mut afterfact_writer.result_writer {
             // CSV output format
             if !afterfact_info.has_displayed_header {
-                afterfact_writer
-                    .csv_writer
-                    .write_record(detect_info.output_fields.iter().map(|x| x.0.trim()))?;
+                csv_writer.write_record(detect_info.output_fields.iter().map(|x| x.0.trim()))?;
                 afterfact_info.has_displayed_header = true;
             }
-            afterfact_writer
-                .csv_writer
-                .write_record(detect_info.output_fields.iter().map(|x| {
-                    match x.1 {
-                        Profile::Details(_)
-                        | Profile::AllFieldInfo(_)
-                        | Profile::ExtraFieldInfo(_) => {
-                            let ret = if remove_duplicate_data
-                                && x.1.to_value()
-                                    == afterfact_info
-                                        .prev_message
-                                        .get(&x.0)
-                                        .unwrap_or(&Profile::Literal("-".into()))
-                                        .to_value()
-                            {
-                                "DUP".to_string()
-                            } else {
-                                output_remover.replace_all(
-                                    &output_replacer
-                                        .replace_all(
-                                            &x.1.to_value(),
-                                            &output_replaced_maps.values().collect_vec(),
-                                        )
-                                        .split_whitespace()
-                                        .join(" "),
-                                    &removed_replaced_maps.values().collect_vec(),
-                                )
-                            };
-                            afterfact_info.prev_message.insert(x.0.clone(), x.1.clone());
-                            ret
-                        }
-                        _ => output_remover.replace_all(
-                            &output_replacer
-                                .replace_all(
-                                    &x.1.to_value(),
-                                    &output_replaced_maps.values().collect_vec(),
-                                )
-                                .split_whitespace()
-                                .join(" "),
-                            &removed_replaced_maps.values().collect_vec(),
-                        ),
+            csv_writer.write_record(detect_info.output_fields.iter().map(|x| {
+                match x.1 {
+                    Profile::Details(_) | Profile::AllFieldInfo(_) | Profile::ExtraFieldInfo(_) => {
+                        let ret = if remove_duplicate_data
+                            && x.1.to_value()
+                                == afterfact_info
+                                    .prev_message
+                                    .get(&x.0)
+                                    .unwrap_or(&Profile::Literal("-".into()))
+                                    .to_value()
+                        {
+                            "DUP".to_string()
+                        } else {
+                            output_remover.replace_all(
+                                &output_replacer
+                                    .replace_all(
+                                        &x.1.to_value(),
+                                        &output_replaced_maps.values().collect_vec(),
+                                    )
+                                    .split_whitespace()
+                                    .join(" "),
+                                &removed_replaced_maps.values().collect_vec(),
+                            )
+                        };
+                        afterfact_info.prev_message.insert(x.0.clone(), x.1.clone());
+                        ret
                     }
-                }))?;
+                    _ => output_remover.replace_all(
+                        &output_replacer
+                            .replace_all(
+                                &x.1.to_value(),
+                                &output_replaced_maps.values().collect_vec(),
+                            )
+                            .split_whitespace()
+                            .join(" "),
+                        &removed_replaced_maps.values().collect_vec(),
+                    ),
+                }
+            }))?;
         }
     }
 
     if !afterfact_writer.display_flag {
-        afterfact_writer.csv_writer.flush()?;
+        match &mut afterfact_writer.result_writer {
+            ResultWriter::Csv(csv_writer) => csv_writer.flush()?,
+            ResultWriter::Json { writer, .. } => writer.flush()?,
+        }
     }
     if json_output_flag && stored_static.output_path.is_none() {
         println!()

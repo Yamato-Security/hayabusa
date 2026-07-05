@@ -12,6 +12,7 @@
 - 3つのほぼ同一な検知セレクションノード型（`AndSelectionNode`、`AllSelectionNode`、`OrSelectionNode`）を、論理演算子 `All`/`Any` でパラメータ化した単一の `NarySelectionNode` に統合し、重複コード約105行を削除した。純粋なリファクタリングで、出力がバイト単位で同一であることを確認済み。 (#1843) (@YamatoSecurity)
 - `afterfact.rs` の手書きのJSON文字列エスケープ（`_convert_valid_json_str` の `.replace('🛂', "\\").replace('\\', "\\\\").replace('"', "\\\"")` の連鎖）を `serde_json` ベースのヘルパーに置き換え、バックスラッシュ・引用符・制御文字のエスケープを手作業ではなくシリアライザに任せるようにした。`csv-timeline` と `json-timeline` の出力はバイト単位で同一（サンプルevtxコーパスで検証、新しいリグレッションテストと既存の文字列一致テストで担保）。#1845 の最初のステップ。 (#1850) (@YamatoSecurity)
 - #1845 で追跡しているJSONシリアライズのリファクタリングの第2段階として、`json-timeline` のレコード生成を `serde_json` ベースに書き換えた: 各レコードを順序を保持した `serde_json` の値として組み立て、ライブラリにシリアライズさせるようにし、手書きの文字列連結（`_create_json_output_format`、`_convert_valid_json_str`、`json_escape_body`、`process_target_stock`）を削除した。`csv-timeline` の出力はバイト単位で同一。`json-timeline` のデータも同一（サンプルevtxコーパスに対する順序保持のカノニカル比較で検証済み）だが、繰り返し出現する `Details` の配列が複数行で出力されるようになり、JSONLは標準的なコンパクト形式（`"k":v`）になった。さらに、旧JSONL経路が値の中の連続スペースを除去して（著者一覧や `EvtxFile` のパスを壊して）いたデータ破損バグを修正し、値をそのまま保持するようにした。 (#1851) (@YamatoSecurity)
+- JSONシリアライズのリファクタリング（#1845）の第3段階として、`json-timeline` の出力をテキストシンクとして流用していた `csv::Writer` を経由せず、JSON/JSONLのレコードを（`ResultWriter` enum を介して）出力先へ直接書き込むようにした。`csv-timeline` は引き続き `csv::Writer` を使用する。`csv-timeline`・`json-timeline`（`-o`）・`json-timeline`（`-L`）の出力はバイト単位で同一（サンプルevtxコーパスで検証済み）。 (#1852) (@YamatoSecurity)
 
 ## 3.10.0 [2026/07/04] - Independence Day Release
 
