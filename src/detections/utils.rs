@@ -847,7 +847,7 @@ pub fn output_duration((mut s, mut ms): (i64, i64)) -> String {
 }
 
 /// Sanitizes a field value for single-line output: \n, \r and \t are replaced with the "🛂n",
-/// "🛂r" and "🛂t" placeholders (restored or stripped later by the output code in afterfact.rs),
+/// "🛂r" and "🛂t" placeholders (restored or stripped later by the output code in results.rs),
 /// runs of spaces are collapsed into one, all remaining control characters are removed, and the
 /// result is trimmed.
 pub fn remove_sp_char(record_value: CompactString) -> CompactString {
