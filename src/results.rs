@@ -88,7 +88,7 @@ pub struct Colors {
 /// State accumulated while emitting detection results, used afterwards to build the results
 /// summary: detection counts broken down by level/date/computer/rule, timestamps for the
 /// detection frequency timeline, and the previous-record data needed for duplicate suppression.
-pub struct AfterfactInfo {
+pub struct ResultOutputState {
     pub timeline_start_time: Option<DateTime<Utc>>,
     pub timeline_end_time: Option<DateTime<Utc>>,
     pub detect_starttime: Option<DateTime<Utc>>,
@@ -114,14 +114,14 @@ pub struct AfterfactInfo {
 }
 
 /// The three per-level count maps (by date, by computer, by rule) created together in
-/// `AfterfactInfo::default`.
+/// `ResultOutputState::default`.
 struct InitLevelMapResult(
     HashMap<LEVEL, HashMap<CompactString, i128>>,
     HashMap<LEVEL, HashMap<CompactString, i128>>,
     HashMap<LEVEL, HashMap<CompactString, i128>>,
 );
 
-impl Default for AfterfactInfo {
+impl Default for ResultOutputState {
     fn default() -> Self {
         let InitLevelMapResult(
             detect_counts_by_date_and_level,
@@ -150,7 +150,7 @@ impl Default for AfterfactInfo {
                 detect_counts_by_rule_and_level,
             )
         };
-        AfterfactInfo {
+        ResultOutputState {
             timeline_start_time: Option::None,
             timeline_end_time: Option::None,
             detect_starttime: Option::None,
@@ -194,7 +194,7 @@ enum ResultWriter {
 /// `ResultWriter` for the timeline output itself (CSV via `csv::Writer`, JSON/JSONL written
 /// directly). `display_flag` is true when no output file was specified, i.e. results are
 /// displayed on the terminal.
-pub struct AfterfactWriter {
+pub struct OutputWriter {
     display_writer: BufferWriter,
     disp_wtr_buf: Buffer,
     result_writer: ResultWriter,
@@ -205,7 +205,7 @@ pub struct AfterfactWriter {
 /// specified, otherwise stdout (the pivot-keywords-list and logon-summary commands write their
 /// own files elsewhere, so their writer stays on stdout). CSV output goes through a `csv::Writer`;
 /// JSON/JSONL output is written directly to the target.
-pub fn init_writer(stored_static: &StoredStatic) -> AfterfactWriter {
+pub fn init_writer(stored_static: &StoredStatic) -> OutputWriter {
     let display_writer = BufferWriter::stdout(ColorChoice::Always);
     let mut disp_wtr_buf = display_writer.buffer();
 
@@ -251,7 +251,7 @@ pub fn init_writer(stored_static: &StoredStatic) -> AfterfactWriter {
 
     // Bundle the display writer (colored terminal display and the results summary) and the
     // result writer (the CSV/JSON timeline output).
-    AfterfactWriter {
+    OutputWriter {
         display_writer,
         disp_wtr_buf,
         result_writer: writer,
@@ -261,33 +261,28 @@ pub fn init_writer(stored_static: &StoredStatic) -> AfterfactWriter {
 
 /// Sorts and deduplicates all collected detections, writes them out, and prints the results
 /// summary. Exits the process if writing fails.
-pub fn output_afterfact(
+pub fn output_results(
     detect_infos: &mut [DetectInfo],
-    afterfact_writer: &mut AfterfactWriter,
+    output_writer: &mut OutputWriter,
     stored_static: &StoredStatic,
-    afterfact_info: &mut AfterfactInfo,
+    result_state: &mut ResultOutputState,
 ) {
-    let ret = output_afterfact_inner(
-        detect_infos,
-        afterfact_writer,
-        stored_static,
-        afterfact_info,
-    );
+    let ret = output_results_inner(detect_infos, output_writer, stored_static, result_state);
     if ret.is_err() {
-        output_afterfact_err(Box::new(ret.err().unwrap()));
+        handle_output_error(Box::new(ret.err().unwrap()));
     }
 }
 
 /// Writes one batch of detections and folds it into the summary statistics. This is the
 /// streaming output path used in low-memory mode, where results are emitted per batch instead
-/// of being collected, sorted, and written all at once by `output_afterfact`. Exits the process
+/// of being collected, sorted, and written all at once by `output_results`. Exits the process
 /// if writing fails.
 pub fn emit_csv(
     detect_infos: &[DetectInfo],
     duplicate_indices: &HashSet<usize>,
     stored_static: &StoredStatic,
-    afterfact_writer: &mut AfterfactWriter,
-    afterfact_info: &mut AfterfactInfo,
+    output_writer: &mut OutputWriter,
+    result_state: &mut ResultOutputState,
 ) {
     if detect_infos.is_empty() {
         return;
@@ -297,33 +292,28 @@ pub fn emit_csv(
         detect_infos,
         duplicate_indices,
         stored_static,
-        afterfact_writer,
-        afterfact_info,
+        output_writer,
+        result_state,
     );
     if result.is_err() {
-        output_afterfact_err(Box::new(result.err().unwrap()));
+        handle_output_error(Box::new(result.err().unwrap()));
     }
 
-    calc_statistic_info(
-        detect_infos,
-        duplicate_indices,
-        afterfact_info,
-        stored_static,
-    );
+    calc_statistic_info(detect_infos, duplicate_indices, result_state, stored_static);
 }
 
-fn output_afterfact_err(err: Box<dyn Error>) {
+fn handle_output_error(err: Box<dyn Error>) {
     AlertMessage::alert(&format!("Failed to write CSV. {err}")).ok();
     process::exit(1);
 }
 
-fn output_afterfact_inner(
+fn output_results_inner(
     detect_infos: &mut [DetectInfo],
-    afterfact_writer: &mut AfterfactWriter,
+    output_writer: &mut OutputWriter,
     stored_static: &StoredStatic,
-    afterfact_info: &mut AfterfactInfo,
+    result_state: &mut ResultOutputState,
 ) -> io::Result<()> {
-    if afterfact_writer.display_flag {
+    if output_writer.display_flag {
         println!();
     }
 
@@ -345,20 +335,20 @@ fn output_afterfact_inner(
         detect_infos,
         &duplicate_indices,
         stored_static,
-        afterfact_writer,
-        afterfact_info,
+        output_writer,
+        result_state,
     )?;
 
     // Calculate the statistics for the results summary.
     calc_statistic_info(
         detect_infos,
         &duplicate_indices,
-        afterfact_info,
+        result_state,
         stored_static,
     );
-    afterfact_writer.disp_wtr_buf.clear();
+    output_writer.disp_wtr_buf.clear();
 
-    output_additional_afterfact(stored_static, afterfact_writer, afterfact_info);
+    output_result_summary(stored_static, output_writer, result_state);
 
     Ok(())
 }
@@ -367,8 +357,8 @@ fn emit_csv_inner(
     detect_infos: &[DetectInfo],
     duplicate_indices: &HashSet<usize>,
     stored_static: &StoredStatic,
-    afterfact_writer: &mut AfterfactWriter,
-    afterfact_info: &mut AfterfactInfo,
+    output_writer: &mut OutputWriter,
+    result_state: &mut ResultOutputState,
 ) -> io::Result<()> {
     // Control characters in record field values were escaped earlier in the pipeline as
     // "🛂r"/"🛂n"/"🛂t" (see utils::remove_sp_char). output_replacer first restores them to the
@@ -417,12 +407,12 @@ fn emit_csv_inner(
         if duplicate_indices.contains(&i) {
             continue;
         }
-        if afterfact_writer.display_flag && !(json_output_flag || jsonl_output_flag) {
+        if output_writer.display_flag && !(json_output_flag || jsonl_output_flag) {
             // Terminal display output.
-            if !afterfact_info.has_displayed_header {
+            if !result_state.has_displayed_header {
                 // Print the header row only once.
                 _get_serialized_disp_output(
-                    &afterfact_writer.display_writer,
+                    &output_writer.display_writer,
                     profile,
                     true,
                     (&output_replacer, &output_replaced_maps),
@@ -433,10 +423,10 @@ fn emit_csv_inner(
                         stored_static.common_options.no_color,
                     ),
                 );
-                afterfact_info.has_displayed_header = true;
+                result_state.has_displayed_header = true;
             }
             _get_serialized_disp_output(
-                &afterfact_writer.display_writer,
+                &output_writer.display_writer,
                 &detect_info.output_fields,
                 false,
                 (&output_replacer, &output_replaced_maps),
@@ -451,25 +441,24 @@ fn emit_csv_inner(
             // JSONL output format
             let result = output_json_str(
                 detect_info,
-                afterfact_info,
+                result_state,
                 jsonl_output_flag,
                 GEOIP_DB_PARSER.read().unwrap().is_some(),
                 remove_duplicate_data,
             );
-            afterfact_info.prev_message = result.1;
-            afterfact_info
+            result_state.prev_message = result.1;
+            result_state
                 .prev_details_convert_map
                 .clone_from(&detect_info.details_convert_map);
-            if afterfact_writer.display_flag {
+            if output_writer.display_flag {
                 write_color_buffer(
-                    &afterfact_writer.display_writer,
+                    &output_writer.display_writer,
                     None,
                     &format!("{{ {} }}", &result.0),
                     true,
                 )
                 .ok();
-            } else if let ResultWriter::Json { writer, first } = &mut afterfact_writer.result_writer
-            {
+            } else if let ResultWriter::Json { writer, first } = &mut output_writer.result_writer {
                 // Separate records with a newline (the previous csv-writer delimiter), without a
                 // leading or trailing one.
                 if !*first {
@@ -482,25 +471,24 @@ fn emit_csv_inner(
             // JSON output
             let result = output_json_str(
                 detect_info,
-                afterfact_info,
+                result_state,
                 jsonl_output_flag,
                 GEOIP_DB_PARSER.read().unwrap().is_some(),
                 remove_duplicate_data,
             );
-            afterfact_info.prev_message = result.1;
-            afterfact_info
+            result_state.prev_message = result.1;
+            result_state
                 .prev_details_convert_map
                 .clone_from(&detect_info.details_convert_map);
-            if afterfact_writer.display_flag {
+            if output_writer.display_flag {
                 write_color_buffer(
-                    &afterfact_writer.display_writer,
+                    &output_writer.display_writer,
                     None,
                     &format!("{{\n{}\n}}", &result.0),
                     true,
                 )
                 .ok();
-            } else if let ResultWriter::Json { writer, first } = &mut afterfact_writer.result_writer
-            {
+            } else if let ResultWriter::Json { writer, first } = &mut output_writer.result_writer {
                 // The previous csv writer joined the "{", body and "}" fields with its `\n`
                 // delimiter; reproduce that layout, with records separated by a newline.
                 if !*first {
@@ -509,18 +497,18 @@ fn emit_csv_inner(
                 *first = false;
                 write!(writer, "{{\n{}\n}}", &result.0)?;
             }
-        } else if let ResultWriter::Csv(csv_writer) = &mut afterfact_writer.result_writer {
+        } else if let ResultWriter::Csv(csv_writer) = &mut output_writer.result_writer {
             // CSV output format
-            if !afterfact_info.has_displayed_header {
+            if !result_state.has_displayed_header {
                 csv_writer.write_record(detect_info.output_fields.iter().map(|x| x.0.trim()))?;
-                afterfact_info.has_displayed_header = true;
+                result_state.has_displayed_header = true;
             }
             csv_writer.write_record(detect_info.output_fields.iter().map(|x| {
                 match x.1 {
                     Profile::Details(_) | Profile::AllFieldInfo(_) | Profile::ExtraFieldInfo(_) => {
                         let ret = if remove_duplicate_data
                             && x.1.to_value()
-                                == afterfact_info
+                                == result_state
                                     .prev_message
                                     .get(&x.0)
                                     .unwrap_or(&Profile::Literal("-".into()))
@@ -539,7 +527,7 @@ fn emit_csv_inner(
                                 &removed_replaced_maps.values().collect_vec(),
                             )
                         };
-                        afterfact_info.prev_message.insert(x.0.clone(), x.1.clone());
+                        result_state.prev_message.insert(x.0.clone(), x.1.clone());
                         ret
                     }
                     _ => output_remover.replace_all(
@@ -557,8 +545,8 @@ fn emit_csv_inner(
         }
     }
 
-    if !afterfact_writer.display_flag {
-        match &mut afterfact_writer.result_writer {
+    if !output_writer.display_flag {
+        match &mut output_writer.result_writer {
             ResultWriter::Csv(csv_writer) => csv_writer.flush()?,
             ResultWriter::Json { writer, .. } => writer.flush()?,
         }
@@ -569,13 +557,13 @@ fn emit_csv_inner(
     Ok(())
 }
 
-/// Folds a batch of detections into `afterfact_info`: records the detection timestamps and the
+/// Folds a batch of detections into `result_state`: records the detection timestamps and the
 /// IDs of detected records, and (unless no-summary is set) updates the per-level counts by
 /// date, computer, and rule, plus the rule author statistics used by the results summary.
 fn calc_statistic_info(
     detect_infos: &[DetectInfo],
     duplicate_indices: &HashSet<usize>,
-    afterfact_info: &mut AfterfactInfo,
+    result_state: &mut ResultOutputState,
     stored_static: &StoredStatic,
 ) {
     let output_option = stored_static.output_option.as_ref().unwrap();
@@ -583,12 +571,12 @@ fn calc_statistic_info(
         if duplicate_indices.contains(&i) {
             continue;
         }
-        afterfact_info
+        result_state
             .timestamps
             .push(detect_info.detected_time.timestamp());
         match &detect_info.agg_result {
             None => {
-                afterfact_info
+                result_state
                     .detected_record_idset
                     .insert(CompactString::from(format!(
                         "{}_{}",
@@ -597,7 +585,7 @@ fn calc_statistic_info(
             }
             Some(agg_result) => {
                 agg_result.agg_record_time_info.iter().for_each(|a| {
-                    afterfact_info
+                    result_state
                         .detected_record_idset
                         .insert(CompactString::from(format!("{}_{}", a.time, a.event_id)));
                 });
@@ -607,34 +595,31 @@ fn calc_statistic_info(
             let level_index = detect_info.level.index();
             let author_list = extract_author_name(&detect_info.ruleauthor);
             let author_str = author_list.iter().join(", ");
-            afterfact_info.detect_rule_authors.insert(
+            result_state.detect_rule_authors.insert(
                 detect_info.rule_path.to_owned(),
                 author_str.to_string().into(),
             );
 
             if author_str != "-"
-                && !afterfact_info
+                && !result_state
                     .detected_rule_files
                     .contains(&detect_info.rule_path)
             {
-                afterfact_info
+                result_state
                     .detected_rule_files
                     .insert(detect_info.rule_path.to_owned());
                 for author in author_list.iter() {
-                    *afterfact_info
+                    *result_state
                         .rule_author_counter
                         .entry(CompactString::from(author))
                         .or_insert(0) += 1;
                 }
             }
-            if !afterfact_info
-                .detected_rule_ids
-                .contains(&detect_info.ruleid)
-            {
-                afterfact_info
+            if !result_state.detected_rule_ids.contains(&detect_info.ruleid) {
+                result_state
                     .detected_rule_ids
                     .insert(detect_info.ruleid.to_owned());
-                afterfact_info.unique_detect_counts_by_level[level_index] += 1;
+                result_state.unique_detect_counts_by_level[level_index] += 1;
             }
             let computer_names = match &detect_info.agg_result {
                 None => vec![detect_info.computername.clone()],
@@ -650,27 +635,27 @@ fn calc_statistic_info(
             for computername in &computer_names {
                 let computer_rule_check_key =
                     CompactString::from(format!("{}|{}", computername, &detect_info.rule_path));
-                if !afterfact_info
+                if !result_state
                     .detected_computer_and_rule_names
                     .contains(&computer_rule_check_key)
                 {
-                    afterfact_info
+                    result_state
                         .detected_computer_and_rule_names
                         .insert(computer_rule_check_key);
                     countup_aggregation(
-                        &mut afterfact_info.detect_counts_by_computer_and_level,
+                        &mut result_state.detect_counts_by_computer_and_level,
                         &detect_info.level,
                         computername,
                     );
                 }
             }
-            afterfact_info.rule_title_path_map.insert(
+            result_state.rule_title_path_map.insert(
                 detect_info.ruletitle.to_owned(),
                 detect_info.rule_path.to_owned(),
             );
 
             countup_aggregation(
-                &mut afterfact_info.detect_counts_by_date_and_level,
+                &mut result_state.detect_counts_by_date_and_level,
                 &detect_info.level,
                 &format_time(
                     &detect_info.detected_time,
@@ -679,12 +664,12 @@ fn calc_statistic_info(
                 ),
             );
             countup_aggregation(
-                &mut afterfact_info.detect_counts_by_rule_and_level,
+                &mut result_state.detect_counts_by_rule_and_level,
                 &detect_info.level,
                 &detect_info.ruletitle,
             );
             let level_index = detect_info.level.index();
-            afterfact_info.total_detect_counts_by_level[level_index] += 1;
+            result_state.total_detect_counts_by_level[level_index] += 1;
         }
     }
 }
@@ -692,12 +677,12 @@ fn calc_statistic_info(
 /// Prints everything that follows the timeline itself: the rule author table, the detection
 /// frequency timeline (if requested), and the results summary (event counts, detection counts
 /// per level/date/computer/rule). Also accumulates the same content for the HTML report if enabled.
-pub fn output_additional_afterfact(
+pub fn output_result_summary(
     stored_static: &StoredStatic,
-    afterfact_writer: &mut AfterfactWriter,
-    afterfact_info: &AfterfactInfo,
+    output_writer: &mut OutputWriter,
+    result_state: &ResultOutputState,
 ) {
-    if afterfact_writer.display_flag {
+    if output_writer.display_flag {
         println!();
     }
 
@@ -707,9 +692,9 @@ pub fn output_additional_afterfact(
     };
 
     let output_option = stored_static.output_option.as_ref().unwrap();
-    if !output_option.no_summary && !afterfact_info.rule_author_counter.is_empty() {
+    if !output_option.no_summary && !result_state.rule_author_counter.is_empty() {
         write_color_buffer(
-            &afterfact_writer.display_writer,
+            &output_writer.display_writer,
             get_writable_color(
                 Some(Color::Rgb(0, 255, 0)),
                 stored_static.common_options.no_color,
@@ -719,7 +704,7 @@ pub fn output_additional_afterfact(
         )
         .ok();
         write_color_buffer(
-            &afterfact_writer.display_writer,
+            &output_writer.display_writer,
             get_writable_color(None, stored_static.common_options.no_color),
             " ",
             true,
@@ -738,20 +723,20 @@ pub fn output_additional_afterfact(
         } else {
             6
         };
-        output_detected_rule_authors(&afterfact_info.rule_author_counter, table_column_num);
+        output_detected_rule_authors(&result_state.rule_author_counter, table_column_num);
     }
 
     println!();
     if output_option.visualize_timeline {
-        _print_timeline_hist(&afterfact_info.timestamps, terminal_width, 3);
+        _print_timeline_hist(&result_state.timestamps, terminal_width, 3);
         println!();
     }
 
     let mut html_output_stock = Nested::<String>::new();
     if !output_option.no_summary {
-        afterfact_writer.disp_wtr_buf.clear();
+        output_writer.disp_wtr_buf.clear();
         write_color_buffer(
-            &afterfact_writer.display_writer,
+            &output_writer.display_writer,
             get_writable_color(
                 Some(Color::Rgb(0, 255, 0)),
                 stored_static.common_options.no_color,
@@ -761,7 +746,7 @@ pub fn output_additional_afterfact(
         )
         .ok();
 
-        if let Some(timeline_start_time) = afterfact_info.timeline_start_time {
+        if let Some(timeline_start_time) = result_state.timeline_start_time {
             output_and_data_stack_for_html(
                 &format!(
                     "First timestamp: {}",
@@ -779,7 +764,7 @@ pub fn output_additional_afterfact(
                 &stored_static.html_report_flag,
             );
         }
-        if let Some(timeline_end_time) = afterfact_info.timeline_end_time {
+        if let Some(timeline_end_time) = result_state.timeline_end_time {
             output_and_data_stack_for_html(
                 &format!(
                     "Last timestamp: {}",
@@ -798,7 +783,7 @@ pub fn output_additional_afterfact(
             );
             println!();
         }
-        if let Some(detect_starttime) = afterfact_info.detect_starttime {
+        if let Some(detect_starttime) = result_state.detect_starttime {
             output_and_data_stack_for_html(
                 &format!(
                     "First detection: {}",
@@ -816,7 +801,7 @@ pub fn output_additional_afterfact(
                 &stored_static.html_report_flag,
             );
         }
-        if let Some(detect_endtime) = afterfact_info.detect_endtime {
+        if let Some(detect_endtime) = result_state.detect_endtime {
             output_and_data_stack_for_html(
                 &format!(
                     "Last detection: {}",
@@ -837,14 +822,14 @@ pub fn output_additional_afterfact(
         }
 
         let reduced_record_cnt: u128 =
-            afterfact_info.record_cnt - afterfact_info.detected_record_idset.len() as u128;
-        let reduced_percent = if afterfact_info.record_cnt == 0 {
+            result_state.record_cnt - result_state.detected_record_idset.len() as u128;
+        let reduced_percent = if result_state.record_cnt == 0 {
             0 as f64
         } else {
-            (reduced_record_cnt as f64) / (afterfact_info.record_cnt as f64) * 100.0
+            (reduced_record_cnt as f64) / (result_state.record_cnt as f64) * 100.0
         };
         write_color_buffer(
-            &afterfact_writer.display_writer,
+            &output_writer.display_writer,
             get_writable_color(
                 Some(Color::Rgb(255, 255, 0)),
                 stored_static.common_options.no_color,
@@ -854,14 +839,14 @@ pub fn output_additional_afterfact(
         )
         .ok();
         write_color_buffer(
-            &afterfact_writer.display_writer,
+            &output_writer.display_writer,
             get_writable_color(None, stored_static.common_options.no_color),
             " / ",
             false,
         )
         .ok();
         write_color_buffer(
-            &afterfact_writer.display_writer,
+            &output_writer.display_writer,
             get_writable_color(
                 Some(Color::Rgb(0, 255, 255)),
                 stored_static.common_options.no_color,
@@ -871,16 +856,16 @@ pub fn output_additional_afterfact(
         )
         .ok();
         write_color_buffer(
-            &afterfact_writer.display_writer,
+            &output_writer.display_writer,
             get_writable_color(None, stored_static.common_options.no_color),
             ": ",
             false,
         )
         .ok();
         let saved_alerts_output =
-            (afterfact_info.record_cnt - reduced_record_cnt).to_formatted_string(&Locale::en);
+            (result_state.record_cnt - reduced_record_cnt).to_formatted_string(&Locale::en);
         write_color_buffer(
-            &afterfact_writer.display_writer,
+            &output_writer.display_writer,
             get_writable_color(
                 Some(Color::Rgb(255, 255, 0)),
                 stored_static.common_options.no_color,
@@ -890,16 +875,16 @@ pub fn output_additional_afterfact(
         )
         .ok();
         write_color_buffer(
-            &afterfact_writer.display_writer,
+            &output_writer.display_writer,
             get_writable_color(None, stored_static.common_options.no_color),
             " / ",
             false,
         )
         .ok();
 
-        let all_record_output = afterfact_info.record_cnt.to_formatted_string(&Locale::en);
+        let all_record_output = result_state.record_cnt.to_formatted_string(&Locale::en);
         write_color_buffer(
-            &afterfact_writer.display_writer,
+            &output_writer.display_writer,
             get_writable_color(
                 Some(Color::Rgb(0, 255, 255)),
                 stored_static.common_options.no_color,
@@ -909,7 +894,7 @@ pub fn output_additional_afterfact(
         )
         .ok();
         write_color_buffer(
-            &afterfact_writer.display_writer,
+            &output_writer.display_writer,
             get_writable_color(None, stored_static.common_options.no_color),
             " (",
             false,
@@ -921,7 +906,7 @@ pub fn output_additional_afterfact(
             reduced_percent
         );
         write_color_buffer(
-            &afterfact_writer.display_writer,
+            &output_writer.display_writer,
             get_writable_color(
                 Some(Color::Rgb(0, 255, 0)),
                 stored_static.common_options.no_color,
@@ -932,7 +917,7 @@ pub fn output_additional_afterfact(
         .ok();
 
         write_color_buffer(
-            &afterfact_writer.display_writer,
+            &output_writer.display_writer,
             get_writable_color(None, stored_static.common_options.no_color),
             ")",
             true,
@@ -940,7 +925,7 @@ pub fn output_additional_afterfact(
         .ok();
         if stored_static.enable_recover_records {
             write_color_buffer(
-                &afterfact_writer.display_writer,
+                &output_writer.display_writer,
                 get_writable_color(
                     Some(Color::Rgb(0, 255, 255)),
                     stored_static.common_options.no_color,
@@ -950,17 +935,17 @@ pub fn output_additional_afterfact(
             )
             .ok();
             write_color_buffer(
-                &afterfact_writer.display_writer,
+                &output_writer.display_writer,
                 get_writable_color(None, stored_static.common_options.no_color),
                 ": ",
                 false,
             )
             .ok();
-            let recovered_record_output = afterfact_info
+            let recovered_record_output = result_state
                 .recover_record_cnt
                 .to_formatted_string(&Locale::en);
             write_color_buffer(
-                &afterfact_writer.display_writer,
+                &output_writer.display_writer,
                 get_writable_color(
                     Some(Color::Rgb(0, 255, 255)),
                     stored_static.common_options.no_color,
@@ -978,7 +963,7 @@ pub fn output_additional_afterfact(
             html_output_stock.push(format!("- {reduction_output}"));
             html_output_stock.push(format!(
                 "- Recovered events analyzed: {}",
-                &afterfact_info
+                &result_state
                     .recover_record_cnt
                     .to_formatted_string(&Locale::en)
             ));
@@ -986,8 +971,8 @@ pub fn output_additional_afterfact(
 
         let color_map = create_output_color_map(stored_static.common_options.no_color);
         _print_unique_results(
-            &afterfact_info.total_detect_counts_by_level,
-            &afterfact_info.unique_detect_counts_by_level,
+            &result_state.total_detect_counts_by_level,
+            &result_state.unique_detect_counts_by_level,
             (
                 CompactString::from("Total | Unique"),
                 CompactString::from("detections"),
@@ -997,7 +982,7 @@ pub fn output_additional_afterfact(
             stored_static.html_report_flag,
         );
         println!();
-        if let Some(timeline_start_time) = afterfact_info.timeline_start_time {
+        if let Some(timeline_start_time) = result_state.timeline_start_time {
             let ts = format!(
                 "First timestamp: {}",
                 format_time(
@@ -1018,7 +1003,7 @@ pub fn output_additional_afterfact(
             )
             .ok();
         }
-        if let Some(timeline_end_time) = afterfact_info.timeline_end_time {
+        if let Some(timeline_end_time) = result_state.timeline_end_time {
             let ts = format!(
                 "Last timestamp: {}",
                 format_time(
@@ -1040,7 +1025,7 @@ pub fn output_additional_afterfact(
             .ok();
             println!();
         }
-        if let Some(detect_starttime) = afterfact_info.detect_starttime {
+        if let Some(detect_starttime) = result_state.detect_starttime {
             let ts = format!(
                 "First detection: {}",
                 format_time(
@@ -1061,7 +1046,7 @@ pub fn output_additional_afterfact(
             )
             .ok();
         }
-        if let Some(detect_endtime) = afterfact_info.detect_endtime {
+        if let Some(detect_endtime) = result_state.detect_endtime {
             let ts = format!(
                 "Last detection: {}",
                 format_time(
@@ -1085,7 +1070,7 @@ pub fn output_additional_afterfact(
         }
 
         _print_detection_summary_by_date(
-            &afterfact_info.detect_counts_by_date_and_level,
+            &result_state.detect_counts_by_date_and_level,
             &color_map,
             &mut html_output_stock,
             stored_static,
@@ -1097,7 +1082,7 @@ pub fn output_additional_afterfact(
         }
 
         _print_detection_summary_by_computer(
-            &afterfact_info.detect_counts_by_computer_and_level,
+            &result_state.detect_counts_by_computer_and_level,
             &color_map,
             &mut html_output_stock,
             stored_static,
@@ -1108,11 +1093,11 @@ pub fn output_additional_afterfact(
         }
 
         _print_detection_summary_tables(
-            &afterfact_info.detect_counts_by_rule_and_level,
+            &result_state.detect_counts_by_rule_and_level,
             &color_map,
             (
-                &afterfact_info.rule_title_path_map,
-                &afterfact_info.detect_rule_authors,
+                &result_state.rule_title_path_map,
+                &result_state.detect_rule_authors,
             ),
             &mut html_output_stock,
             stored_static,
@@ -1577,7 +1562,7 @@ fn _print_detection_summary_by_date(
         if level == LEVEL::UNDEFINED {
             continue;
         }
-        // An inner map was inserted for every level when AfterfactInfo was initialized, so the
+        // An inner map was inserted for every level when ResultOutputState was initialized, so the
         // lookup is guaranteed to be Some and unwrap is called directly.
         let detections_by_day = detect_counts_by_date.get(&level).unwrap();
         let mut max_detect_str = CompactString::default();
@@ -1637,7 +1622,7 @@ fn _print_detection_summary_by_computer(
         if level == LEVEL::UNDEFINED {
             continue;
         }
-        // An inner map was inserted for every level when AfterfactInfo was initialized, so the
+        // An inner map was inserted for every level when ResultOutputState was initialized, so the
         // lookup is guaranteed to be Some and unwrap is called directly.
         let detections_by_computer = detect_counts_by_computer.get(&level).unwrap();
         let mut result_vec = Nested::<String>::new();
@@ -1717,7 +1702,7 @@ fn _print_detection_summary_tables(
 
         col_color.push(_get_table_color(color_map, &level));
 
-        // An inner map was inserted for every level when AfterfactInfo was initialized, so the
+        // An inner map was inserted for every level when ResultOutputState was initialized, so the
         // lookup is guaranteed to be Some and unwrap is called directly.
         let detections_by_computer = detect_counts_by_rule_and_level.get(&level).unwrap();
         let mut sorted_detections: Vec<(&CompactString, &i128)> =
@@ -1964,7 +1949,7 @@ fn serialize_record_body(record: IndexMap<String, JsonNode>, jsonl: bool) -> Str
 /// map used for duplicate-data suppression on the next record.
 pub fn output_json_str(
     detect_info: &DetectInfo,
-    afterfact_info: &mut AfterfactInfo,
+    result_state: &mut ResultOutputState,
     jsonl_output_flag: bool,
     is_included_geo_ip: bool,
     remove_duplicate_flag: bool,
@@ -1973,7 +1958,7 @@ pub fn output_json_str(
     let mut target_ext_field = Vec::new();
     let ext_field_map: HashMap<CompactString, Profile> =
         HashMap::from_iter(detect_info.output_fields.to_owned());
-    let mut next_prev_message = afterfact_info.prev_message.clone();
+    let mut next_prev_message = result_state.prev_message.clone();
     if remove_duplicate_flag {
         for (field_name, profile) in detect_info.output_fields.iter() {
             match profile {
@@ -1990,12 +1975,12 @@ pub fn output_json_str(
                         .details_convert_map
                         .get(format!("#{details_key}").as_str())
                         .unwrap_or(&empty);
-                    let prev = afterfact_info
+                    let prev = result_state
                         .prev_details_convert_map
                         .get(format!("#{details_key}").as_str())
                         .unwrap_or(&empty);
                     let dup_flag = (!profile.to_value().is_empty()
-                        && afterfact_info
+                        && result_state
                             .prev_message
                             .get(field_name)
                             .unwrap_or(&Profile::Literal("".into()))
@@ -2308,17 +2293,6 @@ mod tests {
     use hashbrown::HashMap;
     use serde_json::Value;
 
-    use crate::afterfact::_print_unique_results;
-    use crate::afterfact::AfterfactInfo;
-    use crate::afterfact::format_time;
-    use crate::afterfact::get_duplicate_indices;
-    use crate::afterfact::html_escape_value;
-    use crate::afterfact::init_writer;
-    use crate::afterfact::json_scalar;
-    use crate::afterfact::json_string;
-    use crate::afterfact::output_afterfact_inner;
-    use crate::afterfact::restore_placeholders;
-    use crate::afterfact::sort_detect_info;
     use crate::detections::configs::Action;
     use crate::detections::configs::CURRENT_EXE_PATH;
     use crate::detections::configs::Config;
@@ -2333,6 +2307,17 @@ mod tests {
     use crate::detections::utils;
     use crate::level::LEVEL;
     use crate::options::profile::{Profile, load_profile};
+    use crate::results::_print_unique_results;
+    use crate::results::ResultOutputState;
+    use crate::results::format_time;
+    use crate::results::get_duplicate_indices;
+    use crate::results::html_escape_value;
+    use crate::results::init_writer;
+    use crate::results::json_scalar;
+    use crate::results::json_string;
+    use crate::results::output_results_inner;
+    use crate::results::restore_placeholders;
+    use crate::results::sort_detect_info;
 
     #[test]
     fn test_print_unique_results_percentages_align_with_levels() {
@@ -2460,7 +2445,7 @@ mod tests {
 
     #[test]
     fn test_emit_csv_output() {
-        let mut additional_afterfact = AfterfactInfo::default();
+        let mut result_state = ResultOutputState::default();
         let mut detect_infos = vec![];
         let mock_ch_filter = message::create_output_filter_config(
             "test_files/config/channel_abbreviations.txt",
@@ -2667,18 +2652,18 @@ mod tests {
                 + test_attack
                 + "\"\n";
 
-        additional_afterfact.record_cnt = 1;
-        additional_afterfact.recover_record_cnt = 0;
-        additional_afterfact.timeline_start_time = Some(expect_tz);
-        additional_afterfact.timeline_end_time = Some(expect_tz);
+        result_state.record_cnt = 1;
+        result_state.recover_record_cnt = 0;
+        result_state.timeline_start_time = Some(expect_tz);
+        result_state.timeline_end_time = Some(expect_tz);
         let mut writer = init_writer(&stored_static);
 
         assert!(
-            output_afterfact_inner(
+            output_results_inner(
                 &mut detect_infos,
                 &mut writer,
                 &stored_static,
-                &mut additional_afterfact,
+                &mut result_state,
             )
             .is_ok()
         );
@@ -2693,7 +2678,7 @@ mod tests {
 
     #[test]
     fn test_emit_csv_output_with_multiline_opt() {
-        let mut additional_afterfact = AfterfactInfo::default();
+        let mut result_state = ResultOutputState::default();
         let mut detect_infos = vec![];
         let mock_ch_filter = message::create_output_filter_config(
             "test_files/config/channel_abbreviations.txt",
@@ -2900,17 +2885,17 @@ mod tests {
                 + &test_recinfo.replace(" ¦ ", "\r\n")
                 + "\"\n";
 
-        additional_afterfact.record_cnt = 1;
-        additional_afterfact.recover_record_cnt = 0;
-        additional_afterfact.timeline_start_time = Some(expect_tz);
-        additional_afterfact.timeline_end_time = Some(expect_tz);
+        result_state.record_cnt = 1;
+        result_state.recover_record_cnt = 0;
+        result_state.timeline_start_time = Some(expect_tz);
+        result_state.timeline_end_time = Some(expect_tz);
         let mut writer = init_writer(&stored_static);
         assert!(
-            output_afterfact_inner(
+            output_results_inner(
                 &mut detect_infos,
                 &mut writer,
                 &stored_static,
-                &mut additional_afterfact,
+                &mut result_state,
             )
             .is_ok()
         );
@@ -3012,7 +2997,7 @@ mod tests {
 
     #[test]
     fn test_emit_csv_output_with_remove_duplicate_opt() {
-        let mut additional_afterfact = AfterfactInfo::default();
+        let mut result_state = ResultOutputState::default();
         let mut detect_infos = vec![];
         let mock_ch_filter = message::create_output_filter_config(
             "test_files/config/channel_abbreviations.txt",
@@ -3218,17 +3203,17 @@ mod tests {
                 + test_attack
                 + "\"\n";
 
-        additional_afterfact.record_cnt = 1;
-        additional_afterfact.recover_record_cnt = 0;
-        additional_afterfact.timeline_start_time = Some(expect_tz);
-        additional_afterfact.timeline_end_time = Some(expect_tz);
+        result_state.record_cnt = 1;
+        result_state.recover_record_cnt = 0;
+        result_state.timeline_start_time = Some(expect_tz);
+        result_state.timeline_end_time = Some(expect_tz);
         let mut writer = init_writer(&stored_static);
         assert!(
-            output_afterfact_inner(
+            output_results_inner(
                 &mut detect_infos,
                 &mut writer,
                 &stored_static,
-                &mut additional_afterfact,
+                &mut result_state,
             )
             .is_ok()
         );
@@ -3243,7 +3228,7 @@ mod tests {
 
     #[test]
     fn test_emit_json_output_with_remove_duplicate_opt() {
-        let mut additional_afterfact = AfterfactInfo::default();
+        let mut result_state = ResultOutputState::default();
         let mut detect_infos = vec![];
         let mock_ch_filter = message::create_output_filter_config(
             "test_files/config/channel_abbreviations.txt",
@@ -3523,17 +3508,17 @@ mod tests {
             expect_str = expect_str.to_string() + &expect_json;
         }
 
-        additional_afterfact.record_cnt = 1;
-        additional_afterfact.recover_record_cnt = 0;
-        additional_afterfact.timeline_start_time = Some(expect_tz);
-        additional_afterfact.timeline_end_time = Some(expect_tz);
+        result_state.record_cnt = 1;
+        result_state.recover_record_cnt = 0;
+        result_state.timeline_start_time = Some(expect_tz);
+        result_state.timeline_end_time = Some(expect_tz);
         let mut writer = init_writer(&stored_static);
         assert!(
-            output_afterfact_inner(
+            output_results_inner(
                 &mut detect_infos,
                 &mut writer,
                 &stored_static,
-                &mut additional_afterfact,
+                &mut result_state,
             )
             .is_ok()
         );
@@ -3548,7 +3533,7 @@ mod tests {
 
     #[test]
     fn test_emit_json_output_with_multiple_data_in_details() {
-        let mut additional_afterfact = AfterfactInfo::default();
+        let mut result_state = ResultOutputState::default();
         let mut detect_infos = vec![];
         let mock_ch_filter = message::create_output_filter_config(
             "test_files/config/channel_abbreviations.txt",
@@ -3759,17 +3744,17 @@ mod tests {
             expect_str = expect_str.to_string() + &expect_json;
         }
 
-        additional_afterfact.record_cnt = 1;
-        additional_afterfact.recover_record_cnt = 0;
-        additional_afterfact.timeline_start_time = Some(expect_tz);
-        additional_afterfact.timeline_end_time = Some(expect_tz);
+        result_state.record_cnt = 1;
+        result_state.recover_record_cnt = 0;
+        result_state.timeline_start_time = Some(expect_tz);
+        result_state.timeline_end_time = Some(expect_tz);
         let mut writer = init_writer(&stored_static);
         assert!(
-            output_afterfact_inner(
+            output_results_inner(
                 &mut detect_infos,
                 &mut writer,
                 &stored_static,
-                &mut additional_afterfact,
+                &mut result_state,
             )
             .is_ok()
         );
@@ -3784,7 +3769,7 @@ mod tests {
 
     #[test]
     fn test_emit_csv_json_output() {
-        let mut additional_afterfact = AfterfactInfo::default();
+        let mut result_state = ResultOutputState::default();
         let mut detect_infos = vec![];
         let mock_ch_filter = message::create_output_filter_config(
             "test_files/config/channel_abbreviations.txt",
@@ -3935,17 +3920,17 @@ mod tests {
             "\"Tags\": [\n        \"execution/txxxx.yyy\"\n    ]",
         ];
 
-        additional_afterfact.record_cnt = 1;
-        additional_afterfact.recover_record_cnt = 0;
-        additional_afterfact.timeline_start_time = Some(expect_tz);
-        additional_afterfact.timeline_end_time = Some(expect_tz);
+        result_state.record_cnt = 1;
+        result_state.recover_record_cnt = 0;
+        result_state.timeline_start_time = Some(expect_tz);
+        result_state.timeline_end_time = Some(expect_tz);
         let mut writer = init_writer(&stored_static);
         assert!(
-            output_afterfact_inner(
+            output_results_inner(
                 &mut detect_infos,
                 &mut writer,
                 &stored_static,
-                &mut additional_afterfact,
+                &mut result_state,
             )
             .is_ok()
         );
@@ -3960,7 +3945,7 @@ mod tests {
 
     #[test]
     fn test_emit_csv_jsonl_output() {
-        let mut additional_afterfact = AfterfactInfo::default();
+        let mut result_state = ResultOutputState::default();
         let mut detect_infos = vec![];
         let mock_ch_filter = message::create_output_filter_config(
             "test_files/config/channel_abbreviations.txt",
@@ -4113,17 +4098,17 @@ mod tests {
             "\"Tags\":[\"execution/txxxx.yyy\"]",
         ];
 
-        additional_afterfact.record_cnt = 1;
-        additional_afterfact.recover_record_cnt = 0;
-        additional_afterfact.timeline_start_time = Some(expect_tz);
-        additional_afterfact.timeline_end_time = Some(expect_tz);
+        result_state.record_cnt = 1;
+        result_state.recover_record_cnt = 0;
+        result_state.timeline_start_time = Some(expect_tz);
+        result_state.timeline_end_time = Some(expect_tz);
         let mut writer = init_writer(&stored_static);
         assert!(
-            output_afterfact_inner(
+            output_results_inner(
                 &mut detect_infos,
                 &mut writer,
                 &stored_static,
-                &mut additional_afterfact,
+                &mut result_state,
             )
             .is_ok()
         );

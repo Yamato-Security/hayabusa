@@ -14,7 +14,6 @@ use dialoguer::Confirm;
 use dialoguer::{Select, theme::ColorfulTheme};
 use evtx::{EvtxParser, ParserSettings, RecordAllocation};
 use hashbrown::{HashMap, HashSet};
-use hayabusa::afterfact::{self, AfterfactInfo, AfterfactWriter};
 use hayabusa::debug::checkpoint_process_timer::CHECKPOINT;
 use hayabusa::detections::configs::{
     Action, CURRENT_EXE_PATH, ConfigReader, EventKeyAliasConfig, ONE_CONFIG_MAP, STORED_EKEY_ALIAS,
@@ -35,6 +34,7 @@ use hayabusa::options::pivot::PIVOT_KEYWORD;
 use hayabusa::options::pivot::create_output;
 use hayabusa::options::profile::set_default_profile;
 use hayabusa::options::{expand_list::expand_list, level_tuning::LevelTuning, update::Update};
+use hayabusa::results::{self, OutputWriter, ResultOutputState};
 use hayabusa::timeline::computer_metrics::countup_event_by_computer;
 use hayabusa::{detections::configs, timeline::timelines::Timeline};
 use hayabusa::{detections::utils::write_color_buffer, filter};
@@ -2073,9 +2073,9 @@ Any hostnames added to the critical_systems.txt file will have all alerts above 
         let mut timeline = Timeline::new();
         *STORED_EKEY_ALIAS.write().unwrap() = Some(stored_static.eventkey_alias.clone());
         *STORED_STATIC.write().unwrap() = Some(stored_static.clone());
-        let mut afterfact_info = AfterfactInfo::default();
+        let mut result_state = ResultOutputState::default();
         let mut all_detect_infos = vec![];
-        let mut afterfact_writer = afterfact::init_writer(stored_static);
+        let mut output_writer = results::init_writer(stored_static);
         let is_show_progress = stored_static.output_path.is_some()
             || matches!(
                 stored_static.config.action.as_ref().unwrap(),
@@ -2116,22 +2116,22 @@ Any hostnames added to the critical_systems.txt file will have all alerts above 
                         (evtx_file, time_filter, target_event_ids, stored_static),
                         detection,
                         timeline.to_owned(),
-                        &mut afterfact_writer,
-                        &mut afterfact_info,
+                        &mut output_writer,
+                        &mut result_state,
                     )
                 } else {
                     self.analysis_file(
                         (evtx_file, time_filter, target_event_ids, stored_static),
                         detection,
                         timeline.to_owned(),
-                        &mut afterfact_writer,
-                        &mut afterfact_info,
+                        &mut output_writer,
+                        &mut result_state,
                     )
                 };
             detection = detection_tmp;
             timeline = tl_tmp;
-            afterfact_info.record_cnt += cnt_tmp as u128;
-            afterfact_info.recover_record_cnt += recover_cnt_tmp as u128;
+            result_state.record_cnt += cnt_tmp as u128;
+            result_state.recover_record_cnt += recover_cnt_tmp as u128;
             all_detect_infos.append(&mut detect_infos);
             if is_show_progress {
                 progress_bar.inc(1);
@@ -2181,18 +2181,18 @@ Any hostnames added to the critical_systems.txt file will have all alerts above 
             let mut log_records = detection.add_aggcondition_msgs(&self.runtime, stored_static);
             if stored_static.is_low_memory {
                 let empty_ids = HashSet::new();
-                afterfact::emit_csv(
+                results::emit_csv(
                     &log_records,
                     &empty_ids,
                     stored_static,
-                    &mut afterfact_writer,
-                    &mut afterfact_info,
+                    &mut output_writer,
+                    &mut result_state,
                 );
             } else {
                 all_detect_infos.append(&mut log_records);
             }
-            afterfact_info.timeline_start_time = timeline.stats.start_time;
-            afterfact_info.timeline_end_time = timeline.stats.end_time;
+            result_state.timeline_start_time = timeline.stats.start_time;
+            result_state.timeline_end_time = timeline.stats.end_time;
 
             let msg = if stored_static.output_path.is_some() {
                 if stored_static.common_options.no_color {
@@ -2226,19 +2226,15 @@ Any hostnames added to the critical_systems.txt file will have all alerts above 
                 .ok();
             }
 
-            // Output the post-detection results (afterfact processing).
+            // Output the post-detection results (results output processing).
             if stored_static.is_low_memory {
-                afterfact::output_additional_afterfact(
-                    stored_static,
-                    &mut afterfact_writer,
-                    &afterfact_info,
-                );
+                results::output_result_summary(stored_static, &mut output_writer, &result_state);
             } else {
-                afterfact::output_afterfact(
+                results::output_results(
                     &mut all_detect_infos,
-                    &mut afterfact_writer,
+                    &mut output_writer,
                     stored_static,
-                    &mut afterfact_info,
+                    &mut result_state,
                 );
             }
 
@@ -2275,8 +2271,8 @@ Any hostnames added to the critical_systems.txt file will have all alerts above 
         ),
         mut detection: detection::Detection,
         mut timeline: Timeline,
-        afterfact_writer: &mut AfterfactWriter,
-        afterfact_info: &mut AfterfactInfo,
+        output_writer: &mut OutputWriter,
+        result_state: &mut ResultOutputState,
     ) -> (
         detection::Detection,
         usize,
@@ -2408,25 +2404,25 @@ Any hostnames added to the critical_systems.txt file will have all alerts above 
                 if let MinMaxResult::MinMax(min_time, max_time) =
                     log_records.iter().map(|info| info.detected_time).minmax()
                 {
-                    if afterfact_info.detect_starttime.is_none()
-                        || afterfact_info.detect_starttime.unwrap() > min_time
+                    if result_state.detect_starttime.is_none()
+                        || result_state.detect_starttime.unwrap() > min_time
                     {
-                        afterfact_info.detect_starttime = Some(min_time);
+                        result_state.detect_starttime = Some(min_time);
                     }
-                    if afterfact_info.detect_endtime.is_none()
-                        || afterfact_info.detect_endtime.unwrap() < max_time
+                    if result_state.detect_endtime.is_none()
+                        || result_state.detect_endtime.unwrap() < max_time
                     {
-                        afterfact_info.detect_endtime = Some(max_time);
+                        result_state.detect_endtime = Some(max_time);
                     }
                 }
                 if stored_static.is_low_memory {
                     let empty_ids = HashSet::new();
-                    afterfact::emit_csv(
+                    results::emit_csv(
                         &log_records,
                         &empty_ids,
                         stored_static,
-                        afterfact_writer,
-                        afterfact_info,
+                        output_writer,
+                        result_state,
                     );
                 } else {
                     detect_infos.append(&mut log_records);
@@ -2560,8 +2556,8 @@ Any hostnames added to the critical_systems.txt file will have all alerts above 
         ),
         mut detection: detection::Detection,
         mut timeline: Timeline,
-        afterfact_writer: &mut AfterfactWriter,
-        afterfact_info: &mut AfterfactInfo,
+        output_writer: &mut OutputWriter,
+        result_state: &mut ResultOutputState,
     ) -> (
         detection::Detection,
         usize,
@@ -2830,12 +2826,12 @@ Any hostnames added to the critical_systems.txt file will have all alerts above 
                     detection.start(&self.runtime, records_per_detect);
                 if stored_static.is_low_memory {
                     let empty_ids = HashSet::new();
-                    afterfact::emit_csv(
+                    results::emit_csv(
                         &log_records,
                         &empty_ids,
                         stored_static,
-                        afterfact_writer,
-                        afterfact_info,
+                        output_writer,
+                        result_state,
                     );
                 } else {
                     detect_infos.append(&mut log_records);
@@ -3166,7 +3162,6 @@ mod tests {
 
     use crate::App;
     use hayabusa::{
-        afterfact::{self, AfterfactInfo},
         detections::{
             configs::{
                 Action, ComputerMetricsOption, Config, ConfigReader, CsvOutputOption,
@@ -3178,6 +3173,7 @@ mod tests {
             rule::create_rule,
         },
         options::htmlreport::HTML_REPORTER,
+        results::{self, ResultOutputState},
         timeline::timelines::Timeline,
     };
 
@@ -3278,8 +3274,8 @@ mod tests {
         let target_time_filter = TargetEventTime::new(&stored_static);
         let timeline = Timeline::default();
         let target_event_ids = TargetIds::default();
-        let mut afterfact_info = AfterfactInfo::default();
-        let mut afterfact_writer = afterfact::init_writer(&stored_static);
+        let mut result_state = ResultOutputState::default();
+        let mut output_writer = results::init_writer(&stored_static);
 
         let actual = app.analysis_json_file(
             (
@@ -3290,8 +3286,8 @@ mod tests {
             ),
             detection,
             timeline,
-            &mut afterfact_writer,
-            &mut afterfact_info,
+            &mut output_writer,
+            &mut result_state,
         );
         assert_eq!(actual.1, 2);
         // TODO add check
@@ -3681,8 +3677,8 @@ mod tests {
         let target_time_filter = TargetEventTime::new(&stored_static);
         let timeline = Timeline::default();
         let target_event_ids = TargetIds::default();
-        let mut afterfact_info = AfterfactInfo::default();
-        let mut afterfact_writer = afterfact::init_writer(&stored_static);
+        let mut result_state = ResultOutputState::default();
+        let mut output_writer = results::init_writer(&stored_static);
 
         let actual = app.analysis_json_file(
             (
@@ -3693,8 +3689,8 @@ mod tests {
             ),
             detection,
             timeline,
-            &mut afterfact_writer,
-            &mut afterfact_info,
+            &mut output_writer,
+            &mut result_state,
         );
         assert_eq!(actual.1, 2);
         assert_eq!(actual.4.len(), 1);
@@ -3727,8 +3723,8 @@ mod tests {
         let target_time_filter = TargetEventTime::new(&stored_static);
         let timeline = Timeline::default();
         let target_event_ids = TargetIds::default();
-        let mut afterfact_info = AfterfactInfo::default();
-        let mut afterfact_writer = afterfact::init_writer(&stored_static);
+        let mut result_state = ResultOutputState::default();
+        let mut output_writer = results::init_writer(&stored_static);
 
         let actual = app.analysis_json_file(
             (
@@ -3739,8 +3735,8 @@ mod tests {
             ),
             detection,
             timeline,
-            &mut afterfact_writer,
-            &mut afterfact_info,
+            &mut output_writer,
+            &mut result_state,
         );
         assert_eq!(actual.1, 2);
         assert_eq!(actual.4.len(), 0);
@@ -3774,8 +3770,8 @@ mod tests {
         let target_time_filter = TargetEventTime::new(&stored_static);
         let timeline = Timeline::default();
         let target_event_ids = TargetIds::default();
-        let mut afterfact_info = AfterfactInfo::default();
-        let mut afterfact_writer = afterfact::init_writer(&stored_static);
+        let mut result_state = ResultOutputState::default();
+        let mut output_writer = results::init_writer(&stored_static);
 
         let actual = app.analysis_json_file(
             (
@@ -3786,8 +3782,8 @@ mod tests {
             ),
             detection,
             timeline,
-            &mut afterfact_writer,
-            &mut afterfact_info,
+            &mut output_writer,
+            &mut result_state,
         );
         assert_eq!(actual.1, 2);
         assert_eq!(actual.4.len(), 0);

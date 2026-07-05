@@ -1,8 +1,8 @@
-use crate::afterfact::Colors;
 use crate::detections::configs::CURRENT_EXE_PATH;
 use crate::detections::message::AlertMessage;
 use crate::detections::utils;
 use crate::detections::utils::parse_csv;
+use crate::results::Colors;
 use hashbrown::{HashMap, HashSet};
 use lazy_static::lazy_static;
 use rust_embed::Embed;
@@ -214,8 +214,8 @@ pub fn _get_output_color(color_map: &HashMap<LEVEL, Colors>, level: &LEVEL) -> O
 
 #[cfg(test)]
 mod tests {
-    use crate::afterfact::Colors;
     use crate::level::{_get_output_color, LEVEL, create_output_color_map};
+    use crate::results::Colors;
     use hashbrown::HashMap;
     use termcolor::Color;
 

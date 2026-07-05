@@ -327,7 +327,7 @@ pub fn create_message(
 /// looked up in the event record (via eventkey_alias.txt, falling back to Event.EventData.<name>).
 /// Returns the replaced message together with the "key: value" pairs that make up the details.
 /// For the JSON timeline the message itself is returned with its placeholders intact, because the
-/// afterfact output functions perform the replacement in that case.
+/// results output functions perform the replacement in that case.
 pub fn parse_message(
     event_record: &Value,
     output: &CompactString,
@@ -412,7 +412,7 @@ pub fn parse_message(
     }
     let mut details_key_and_value: Vec<CompactString> = vec![];
     for (k, v) in hash_map.iter() {
-        // For JSON output, the alias replacement processing is handled by the afterfact output
+        // For JSON output, the alias replacement processing is handled by the results output
         // functions, so it is not done here.
         if !json_timeline_flag {
             return_message = CompactString::new(return_message.replace(k.as_str(), v[0].as_str()));

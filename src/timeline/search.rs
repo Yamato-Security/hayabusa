@@ -1,10 +1,9 @@
-use crate::afterfact::AfterfactInfo;
 use crate::detections::configs::{ALLFIELDINFO_SPECIAL_CHARS, OutputOption, SearchOption};
 use crate::detections::field_data_map::FieldDataMapKey;
 use crate::detections::message::{self, DetectInfo};
 use crate::detections::utils::{format_time, get_writable_color};
+use crate::results::ResultOutputState;
 use crate::{
-    afterfact::output_json_str,
     detections::{
         configs::{Action, EventKeyAliasConfig, StoredStatic},
         detection::EvtxRecordInfo,
@@ -12,6 +11,7 @@ use crate::{
         utils::{self, write_color_buffer},
     },
     options::profile::Profile,
+    results::output_json_str,
 };
 use chrono::{TimeZone, Utc};
 use compact_str::CompactString;
@@ -624,10 +624,10 @@ impl ResultWriter {
                 Profile::EvtxFile(evtx_file.into()),
             ));
             detect_info.details_convert_map = detail_infos;
-            let mut afterfact_info = AfterfactInfo::default();
+            let mut result_state = ResultOutputState::default();
             let (output_json_str_ret, _) = output_json_str(
                 &detect_info,
-                &mut afterfact_info,
+                &mut result_state,
                 search_option.jsonl_output,
                 false,
                 false,
