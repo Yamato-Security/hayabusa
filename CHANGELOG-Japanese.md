@@ -4,7 +4,7 @@
 
 **バグ修正:**
 
-- `update-rules` 実行後に表示される文法的に誤ったメッセージ「Successed submodule update」を「Succeeded submodule update」に修正した。 (#1840) (@YamatoSecurity)
+- `update-rules` 実行後に表示される文法的に誤ったメッセージ「Successed submodule update」を「Submodule update succeeded」に修正した。 (#1840) (@YamatoSecurity)
 
 **その他:**
 

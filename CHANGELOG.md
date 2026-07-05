@@ -4,7 +4,7 @@
 
 **Bug Fixes:**
 
-- Fixed the ungrammatical "Successed submodule update" message printed after `update-rules` (now "Succeeded submodule update"). (#1840) (@YamatoSecurity)
+- Fixed the ungrammatical "Successed submodule update" message printed after `update-rules` (now "Submodule update succeeded"). (#1840) (@YamatoSecurity)
 
 **Other:**
 

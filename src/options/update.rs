@@ -88,7 +88,7 @@ impl Update {
                     }
                 }
                 if submodule_update_succeeded {
-                    result = Ok("Succeeded submodule update".to_string());
+                    result = Ok("Submodule update succeeded".to_string());
                 } else {
                     result = Err(git2::Error::from_str(&String::default()));
                 }
