@@ -15,10 +15,10 @@ pub trait SelectionNode: Downcast + Send + Sync {
 
     /// Performs initialization.
     /// Since this method can return errors, report here when the rule file is invalid and a
-    /// SelectionNode cannot be constructed. NarySelectionNode and the like also implement a new()
-    /// function in addition to init(), but new() is only meant to create an instance and should
-    /// not contain lengthy processing. This keeps the error handling for rule file parsing
-    /// consolidated in init().
+    /// SelectionNode cannot be constructed. NarySelectionNode and the like also provide lightweight
+    /// constructors (e.g. `new`/`and`/`or`) in addition to init(), but those are only meant to
+    /// create an instance and should not contain lengthy processing. This keeps the error handling
+    /// for rule file parsing consolidated in init().
     fn init(&mut self) -> Result<(), Vec<String>>;
 
     /// Gets the child nodes ("child" in the graph-theory sense).
