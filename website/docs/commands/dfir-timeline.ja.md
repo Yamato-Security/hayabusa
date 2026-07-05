@@ -312,6 +312,13 @@ Windowsでの手順:
 2. `\ProgramData\MaxMind/GeoIPUpdate\GeoIP.conf`を編集する: MaxMindのウェブサイトにログインした後に作成した`AccountID`と`LicenseKey`を入れる。`EditionIDs`の行に、`EditionIDs GeoLite2-ASN GeoLite2-City GeoLite2-Country`とあることを確認する。
 3. `geoipupdate`を実行する。
 
+Linuxでの手順:
+
+1. `sudo apt install geoip-update`でインストールする。
+2. `sudo nano /etc/GeoIP.conf`で設定ファイルを編集する。
+3. `sudo geoipupdate`でデータベースファイルを更新する。
+4. GeoIP情報を追加する場合は、`-G /var/lib/GeoIP/`を追加する。
+
 ### `csv-timeline`コマンドの設定ファイル
 
 `./rules/config/channel_abbreviations.txt`: チャンネル名とその略称のマッピング。

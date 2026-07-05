@@ -312,6 +312,13 @@ Langkah-langkah pada Windows:
 2. Edit `\ProgramData\MaxMind/GeoIPUpdate\GeoIP.conf`: Masukkan `AccountID` dan `LicenseKey` yang Anda buat setelah masuk ke situs web MaxMind. Pastikan baris `EditionIDs` berbunyi `EditionIDs GeoLite2-ASN GeoLite2-City GeoLite2-Country`.
 3. Jalankan executable `geoipupdate`.
 
+Langkah-langkah pada Linux:
+
+1. Instal dengan `sudo apt install geoip-update`.
+2. Edit file konfigurasi dengan `sudo nano /etc/GeoIP.conf`.
+3. Perbarui file database dengan `sudo geoipupdate`.
+4. Tambahkan `-G /var/lib/GeoIP/` saat Anda ingin menambahkan informasi GeoIP.
+
 ### File konfigurasi perintah `csv-timeline`
 
 `./rules/config/channel_abbreviations.txt`: Pemetaan nama channel dan singkatannya.

@@ -312,6 +312,13 @@ Windows'ta adımlar:
 2. `\ProgramData\MaxMind/GeoIPUpdate\GeoIP.conf` dosyasını düzenleyin: MaxMind web sitesine giriş yaptıktan sonra oluşturduğunuz `AccountID` ve `LicenseKey` bilgilerinizi girin. `EditionIDs` satırının `EditionIDs GeoLite2-ASN GeoLite2-City GeoLite2-Country` dediğinden emin olun.
 3. `geoipupdate` yürütülebilir dosyasını çalıştırın.
 
+Linux'ta adımlar:
+
+1. `sudo apt install geoip-update` ile kurun.
+2. Yapılandırma dosyasını `sudo nano /etc/GeoIP.conf` ile düzenleyin.
+3. Veritabanı dosyalarını `sudo geoipupdate` ile güncelleyin.
+4. GeoIP bilgisi eklemek istediğinizde `-G /var/lib/GeoIP/` ekleyin.
+
 ### `csv-timeline` komutu yapılandırma dosyaları
 
 `./rules/config/channel_abbreviations.txt`: Kanal adlarının ve kısaltmalarının eşlemeleri.

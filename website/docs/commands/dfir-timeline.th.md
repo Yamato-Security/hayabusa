@@ -312,6 +312,13 @@ hayabusa.exe csv-timeline -d ../hayabusa-sample-evtx --RFC-3339 -o timesketch-im
 2. แก้ไข `\ProgramData\MaxMind/GeoIPUpdate\GeoIP.conf`: ใส่ `AccountID` และ `LicenseKey` ของคุณที่สร้างขึ้นหลังจากเข้าสู่ระบบเว็บไซต์ MaxMind ตรวจสอบให้แน่ใจว่าบรรทัด `EditionIDs` ระบุว่า `EditionIDs GeoLite2-ASN GeoLite2-City GeoLite2-Country`
 3. รันไฟล์ปฏิบัติการ `geoipupdate`
 
+ขั้นตอนบน Linux:
+
+1. ติดตั้งด้วย `sudo apt install geoip-update`
+2. แก้ไขไฟล์กำหนดค่าด้วย `sudo nano /etc/GeoIP.conf`
+3. อัปเดตไฟล์ฐานข้อมูลด้วย `sudo geoipupdate`
+4. เพิ่ม `-G /var/lib/GeoIP/` เมื่อคุณต้องการเพิ่มข้อมูล GeoIP
+
 ### ไฟล์กำหนดค่าของคำสั่ง `csv-timeline`
 
 `./rules/config/channel_abbreviations.txt`: การแมประหว่างชื่อช่องและตัวย่อของช่อง
