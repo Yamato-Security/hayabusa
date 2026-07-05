@@ -1909,6 +1909,34 @@ fn _create_json_output_format(
     }
 }
 
+/// JSON-escapes a string body using `serde_json` (so escaping of `\`, `"` and any control
+/// characters is handled by the serializer instead of by hand), returning the escaped text
+/// *without* the surrounding quotes serde_json adds.
+///
+/// The `🛂` placeholders that `remove_sp_char` leaves in place of `\n`/`\r`/`\t` are first
+/// restored to a literal backslash, so a marker such as `🛂n` becomes the two characters `\`
+/// and `n`, and serde_json then escapes the backslash to yield `\\n` — byte-for-byte identical
+/// to the previous hand-rolled
+/// `.replace('🛂', "\\").replace('\\', "\\\\").replace('"', "\\\"")` chain (values reaching
+/// here contain no raw control characters; `remove_sp_char` has already stripped them).
+fn json_escape_body(value: &str) -> String {
+    let restored = value.replace('🛂', "\\");
+    // serde_json escapes `\`, `"` and control chars and wraps the result in quotes; strip
+    // those quotes to get the escaped body. Serializing a string cannot fail and always
+    // yields a quoted string, so the fallback is unreachable in practice — it just keeps the
+    // output valid JSON (manual `\`/`"` escaping, matching the previous behaviour) if that
+    // ever changes, rather than emitting the raw string.
+    serde_json::to_string(&restored)
+        .ok()
+        .and_then(|quoted| {
+            quoted
+                .strip_prefix('"')
+                .and_then(|body| body.strip_suffix('"'))
+                .map(str::to_owned)
+        })
+        .unwrap_or_else(|| restored.replace('\\', "\\\\").replace('"', "\\\""))
+}
+
 /// Escapes a string value (joining multi-part "key: value" input as needed) so it can be
 /// embedded in the JSON output without producing invalid JSON.
 fn _convert_valid_json_str(input: &[&str], concat_flag: bool) -> String {
@@ -1932,16 +1960,10 @@ fn _convert_valid_json_str(input: &[&str], concat_flag: bool) -> String {
         } else {
             ""
         };
-        let escaped = joined_value
-            .replace('🛂', "\\")
-            .replace('\\', "\\\\")
-            .replace('\"', "\\\"");
+        let escaped = json_escape_body(&joined_value);
         [escaped.as_str(), addition_quote].join("")
     } else {
-        joined_value
-            .replace('🛂', "\\")
-            .replace('\\', "\\\\")
-            .replace('\"', "\\\"")
+        json_escape_body(&joined_value)
     }
 }
 
@@ -2435,6 +2457,7 @@ mod tests {
     use crate::afterfact::get_duplicate_indices;
     use crate::afterfact::html_escape_value;
     use crate::afterfact::init_writer;
+    use crate::afterfact::json_escape_body;
     use crate::afterfact::output_afterfact_inner;
     use crate::afterfact::sort_detect_info;
     use crate::detections::configs::Action;
@@ -3050,6 +3073,36 @@ mod tests {
         assert_eq!(_convert_valid_json_str(&["\"hi\""], false), "\\\"hi\\\"");
         // Starts with a quote but does not end with one: a closing escaped quote is appended.
         assert_eq!(_convert_valid_json_str(&["\"hi"], false), "\\\"hi\\\"");
+    }
+
+    /// Byte-for-byte regression guard for the escaping produced by `_convert_valid_json_str`
+    /// (and its `json_escape_body` helper), locking the exact output the previous hand-rolled
+    /// `.replace('🛂', "\\").replace('\\', "\\\\").replace('"', "\\\"")` chain produced so the
+    /// serde_json-backed implementation stays byte-identical.
+    #[test]
+    fn test_convert_valid_json_str_escaping_is_byte_exact() {
+        // `remove_sp_char` placeholders: `🛂n`/`🛂r`/`🛂t` -> `\\n`/`\\r`/`\\t`
+        // (a literal backslash followed by n/r/t, i.e. the backslash is itself escaped).
+        assert_eq!(_convert_valid_json_str(&["🛂n"], false), "\\\\n");
+        assert_eq!(_convert_valid_json_str(&["🛂r"], false), "\\\\r");
+        assert_eq!(_convert_valid_json_str(&["🛂t"], false), "\\\\t");
+        assert_eq!(_convert_valid_json_str(&["a🛂nb"], false), "a\\\\nb");
+        // Real backslashes are doubled.
+        assert_eq!(
+            _convert_valid_json_str(&["path C:\\a\\b"], false),
+            "path C:\\\\a\\\\b"
+        );
+        // Interior double quotes are backslash-escaped.
+        assert_eq!(_convert_valid_json_str(&["quo\"te"], false), "quo\\\"te");
+        // Non-ASCII (multibyte / emoji) passes through unescaped.
+        assert_eq!(_convert_valid_json_str(&["emoji 😀"], false), "emoji 😀");
+        assert_eq!(_convert_valid_json_str(&["多字节"], false), "多字节");
+        // Empty input is returned unchanged.
+        assert_eq!(_convert_valid_json_str(&[""], false), "");
+        // The helper strips the quotes serde_json adds and restores `🛂` to a backslash.
+        assert_eq!(json_escape_body("plain"), "plain");
+        assert_eq!(json_escape_body("🛂n"), "\\\\n");
+        assert_eq!(json_escape_body("a\\b\"c"), "a\\\\b\\\"c");
     }
 
     /// `get_duplicate_indices` must flag every identical copy after the first within a timestamp

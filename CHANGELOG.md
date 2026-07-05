@@ -10,6 +10,7 @@
 
 - Scoped the MITRE ATT&CK tactics HTML-report accumulators (`COMPUTER_MITRE_ATTCK_MAP` and `COMPUTER_MITRE_ATTCK_UNIQUE_KEYS`) to a single report by clearing them after the table is emitted, so a report generated later in the same process no longer leaks keys or undercounts the per-tactic unique count; also removed an intermediate `Vec` when joining the tactic cells. No behavior change for normal single-report runs. (#1840) (@YamatoSecurity)
 - Collapsed the three near-identical detection-selection node types (`AndSelectionNode`, `AllSelectionNode`, `OrSelectionNode`) into a single `NarySelectionNode` parameterised by a logical `All`/`Any` operator, removing ~105 lines of duplicated code. Pure refactor; output verified byte-identical. (#1843) (@YamatoSecurity)
+- Replaced the hand-rolled JSON string escaping in `afterfact.rs` (`_convert_valid_json_str`'s `.replace('🛂', "\\").replace('\\', "\\\\").replace('"', "\\\"")` chain) with a `serde_json`-backed helper, so backslash/quote/control-character escaping is handled by the serializer instead of by inspection. Byte-identical `csv-timeline` and `json-timeline` output (verified on the sample-evtx corpus; locked by a new regression test and the existing exact-string emit tests); first step of #1845. (#1850) (@YamatoSecurity)
 
 ## 3.10.0 [2026/07/04] - Independence Day Release
 

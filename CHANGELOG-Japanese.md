@@ -10,6 +10,7 @@
 
 - HTMLレポートのMITRE ATT&CKタクティクの集計用グローバル変数（`COMPUTER_MITRE_ATTCK_MAP` と `COMPUTER_MITRE_ATTCK_UNIQUE_KEYS`）を、テーブル出力後にクリアすることで単一レポートの範囲に限定した。これにより、同一プロセス内で後続のレポートを生成してもキーが残留してタクティクごとのユニーク数が過少カウントされることがなくなった。あわせて、タクティクのセルを結合する際の中間 `Vec` を削除した。通常の（単一レポートの）実行では挙動に変更はない。 (#1840) (@YamatoSecurity)
 - 3つのほぼ同一な検知セレクションノード型（`AndSelectionNode`、`AllSelectionNode`、`OrSelectionNode`）を、論理演算子 `All`/`Any` でパラメータ化した単一の `NarySelectionNode` に統合し、重複コード約105行を削除した。純粋なリファクタリングで、出力がバイト単位で同一であることを確認済み。 (#1843) (@YamatoSecurity)
+- `afterfact.rs` の手書きのJSON文字列エスケープ（`_convert_valid_json_str` の `.replace('🛂', "\\").replace('\\', "\\\\").replace('"', "\\\"")` の連鎖）を `serde_json` ベースのヘルパーに置き換え、バックスラッシュ・引用符・制御文字のエスケープを手作業ではなくシリアライザに任せるようにした。`csv-timeline` と `json-timeline` の出力はバイト単位で同一（サンプルevtxコーパスで検証、新しいリグレッションテストと既存の文字列一致テストで担保）。#1845 の最初のステップ。 (#1850) (@YamatoSecurity)
 
 ## 3.10.0 [2026/07/04] - Independence Day Release
 
