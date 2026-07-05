@@ -249,7 +249,8 @@ pub fn init_writer(stored_static: &StoredStatic) -> AfterfactWriter {
         _ => ResultWriter::Csv(Box::new(WriterBuilder::new().from_writer(target))),
     };
 
-    // Bundle the display writer and the result writer used by emit_csv and the summary output.
+    // Bundle the display writer (colored terminal display and the results summary) and the
+    // result writer (the CSV/JSON timeline output).
     AfterfactWriter {
         display_writer,
         disp_wtr_buf,
