@@ -7,7 +7,7 @@ use crate::detections::rule::aggregation_parser::{
     AggregationConditionToken, AggregationParseInfo,
 };
 use crate::detections::rule::count::TimeFrameInfo;
-use crate::detections::rule::selectionnodes::{OrSelectionNode, SelectionNode};
+use crate::detections::rule::selectionnodes::{NarySelectionNode, SelectionNode};
 use crate::detections::rule::{CorrelationType, DetectionNode, RuleNode};
 use hashbrown::{HashMap, HashSet};
 use uuid::Uuid;
@@ -103,8 +103,8 @@ fn parse_condition(
 
 /// ORs together the referenced rules' condition trees so that the merged correlation rule
 /// matches any event matched by any of the referenced rules.
-fn to_or_selection_node(related_rule_nodes: Vec<RuleNode>) -> OrSelectionNode {
-    let mut or_selection_node = OrSelectionNode::new();
+fn to_or_selection_node(related_rule_nodes: Vec<RuleNode>) -> NarySelectionNode {
+    let mut or_selection_node = NarySelectionNode::or();
     for rule_node in related_rule_nodes {
         or_selection_node
             .child_nodes

@@ -390,7 +390,7 @@ impl LeafMatcher for DefaultMatcher {
             {
                 self.fast_match = convert_to_base64_str(None, pattern[0].as_str(), &mut err_msgs);
             } else if self.pipes[0] == PipeElement::Contains && self.pipes[1] == PipeElement::All
-            // |contains|all was already turned into an AndSelectionNode during parsing
+            // |contains|all was already turned into an AND-op NarySelectionNode during parsing
             // (rule/mod.rs), so treat it as a plain contains here.
             {
                 self.fast_match = convert_to_fast_match(format!("*{}*", pattern[0]).as_str(), true);
@@ -427,7 +427,7 @@ impl LeafMatcher for DefaultMatcher {
             if self.pipes.contains(&PipeElement::Contains)
                 && self.pipes.contains(&PipeElement::All)
                 && self.pipes.contains(&PipeElement::Windash)
-            // |contains|all|windash was already turned into an AndSelectionNode during parsing
+            // |contains|all|windash was already turned into an AND-op NarySelectionNode during parsing
             // (rule/mod.rs), so treat it as contains plus windash here.
             {
                 let mut fastmatches =
@@ -1018,7 +1018,7 @@ mod tests {
     };
 
     use super::super::selectionnodes::{
-        AndSelectionNode, LeafSelectionNode, OrSelectionNode, SelectionNode,
+        LeafSelectionNode, LogicalOp, NarySelectionNode, SelectionNode,
     };
     use crate::detections::configs::{
         Action, Config, CsvOutputOption, OutputOption, STORED_EKEY_ALIAS, StoredStatic,
@@ -1146,14 +1146,15 @@ mod tests {
 
         // ContextInfo
         {
-            // Verify that OrSelectionNode is correctly loaded.
+            // Verify that an OR-op NarySelectionNode is correctly loaded.
             let child_node = detection_children[2] as &dyn SelectionNode;
-            assert!(child_node.is::<OrSelectionNode>());
-            let child_node = child_node.downcast_ref::<OrSelectionNode>().unwrap();
+            assert!(child_node.is::<NarySelectionNode>());
+            let child_node = child_node.downcast_ref::<NarySelectionNode>().unwrap();
+            assert_eq!(child_node.op, LogicalOp::Any);
             let ancestors = child_node.get_children();
             assert_eq!(ancestors.len(), 2);
 
-            // Test patterns where LeafSelectionNode is under OrSelectionNode.
+            // Test patterns where LeafSelectionNode is under the OR node.
             // Verify that the Host Application node, which is a LeafSelectionNode, is correct.
             let hostapp_en_node = ancestors[0] as &dyn SelectionNode;
             assert!(hostapp_en_node.is::<LeafSelectionNode>());
@@ -1192,10 +1193,11 @@ mod tests {
 
         // ImagePath
         {
-            // Verify that AndSelectionNode is correctly loaded.
+            // Verify that an AND-op NarySelectionNode is correctly loaded.
             let child_node = detection_children[3] as &dyn SelectionNode;
-            assert!(child_node.is::<AndSelectionNode>());
-            let child_node = child_node.downcast_ref::<AndSelectionNode>().unwrap();
+            assert!(child_node.is::<NarySelectionNode>());
+            let child_node = child_node.downcast_ref::<NarySelectionNode>().unwrap();
+            assert_eq!(child_node.op, LogicalOp::All);
             let ancestors = child_node.get_children();
             assert_eq!(ancestors.len(), 3);
 
