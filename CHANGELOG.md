@@ -9,6 +9,7 @@
 **Other:**
 
 - Scoped the MITRE ATT&CK tactics HTML-report accumulators (`COMPUTER_MITRE_ATTCK_MAP` and `COMPUTER_MITRE_ATTCK_UNIQUE_KEYS`) to a single report by clearing them after the table is emitted, so a report generated later in the same process no longer leaks keys or undercounts the per-tactic unique count; also removed an intermediate `Vec` when joining the tactic cells. No behavior change for normal single-report runs. (#1840) (@YamatoSecurity)
+- Collapsed the three near-identical detection-selection node types (`AndSelectionNode`, `AllSelectionNode`, `OrSelectionNode`) into a single `NarySelectionNode` parameterised by a logical `All`/`Any` operator, removing ~105 lines of duplicated code. Pure refactor; output verified byte-identical. (#1843) (@YamatoSecurity)
 
 ## 3.10.0 [2026/07/04] - Independence Day Release
 

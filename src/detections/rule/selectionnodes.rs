@@ -15,10 +15,10 @@ pub trait SelectionNode: Downcast + Send + Sync {
 
     /// Performs initialization.
     /// Since this method can return errors, report here when the rule file is invalid and a
-    /// SelectionNode cannot be constructed. AndSelectionNode and the like also implement a new()
-    /// function in addition to init(), but new() is only meant to create an instance and should
-    /// not contain lengthy processing. This keeps the error handling for rule file parsing
-    /// consolidated in init().
+    /// SelectionNode cannot be constructed. NarySelectionNode and the like also provide lightweight
+    /// constructors (e.g. `new`/`and`/`or`) in addition to init(), but those are only meant to
+    /// create an instance and should not contain lengthy processing. This keeps the error handling
+    /// for rule file parsing consolidated in init().
     fn init(&mut self) -> Result<(), Vec<String>>;
 
     /// Gets the child nodes ("child" in the graph-theory sense).
@@ -31,162 +31,57 @@ pub trait SelectionNode: Downcast + Send + Sync {
 // node types such as LeafSelectionNode.
 downcast_rs::impl_downcast!(SelectionNode);
 
-/// Node representing an AND condition under detection-selection.
-/// Built from a YAML hash (every key/value pair must match), from a value list whose field key
-/// carries the `|all` modifier, or for `and` operators in condition expressions; matches only
-/// when all child nodes match.
-pub struct AndSelectionNode {
+/// Logical combinator for a [`NarySelectionNode`]'s children.
+#[derive(Clone, Copy, PartialEq, Eq, Debug)]
+pub enum LogicalOp {
+    /// AND: the node matches only when **all** children match. Built from a YAML hash (every
+    /// key/value pair must match), from a value list whose field key carries the `|all` modifier,
+    /// and for `and` operators in condition expressions.
+    All,
+    /// OR: the node matches when **any** child matches. Built from a YAML array of values, for `or`
+    /// operators in condition expressions, and when the correlation parser merges referenced rules.
+    Any,
+}
+
+/// Node combining child selection nodes with a logical AND ([`LogicalOp::All`]) or OR
+/// ([`LogicalOp::Any`]). Replaces the former separate AndSelectionNode / AllSelectionNode /
+/// OrSelectionNode types, which differed only in the combinator used by `select`.
+pub struct NarySelectionNode {
+    pub op: LogicalOp,
     pub child_nodes: Vec<Box<dyn SelectionNode>>,
 }
 
-impl AndSelectionNode {
-    pub fn new() -> AndSelectionNode {
-        AndSelectionNode {
+impl NarySelectionNode {
+    pub fn new(op: LogicalOp) -> NarySelectionNode {
+        NarySelectionNode {
+            op,
             child_nodes: vec![],
         }
     }
+
+    /// Convenience constructor for an AND node (matches only when every child matches).
+    pub fn and() -> NarySelectionNode {
+        NarySelectionNode::new(LogicalOp::All)
+    }
+
+    /// Convenience constructor for an OR node (matches when any child matches).
+    pub fn or() -> NarySelectionNode {
+        NarySelectionNode::new(LogicalOp::Any)
+    }
 }
 
-impl SelectionNode for AndSelectionNode {
+impl SelectionNode for NarySelectionNode {
     fn select(&self, event_record: &EvtxRecordInfo, eventkey_alias: &EventKeyAliasConfig) -> bool {
-        self.child_nodes
-            .iter()
-            .all(|child_node| child_node.select(event_record, eventkey_alias))
-    }
-
-    fn init(&mut self) -> Result<(), Vec<String>> {
-        let err_msgs = self
-            .child_nodes
-            .iter_mut()
-            .map(|child_node| {
-                let res = child_node.init();
-                if let Err(err) = res { err } else { vec![] }
-            })
-            .fold(
-                vec![],
-                |mut acc: Vec<String>, cur: Vec<String>| -> Vec<String> {
-                    acc.extend(cur);
-                    acc
-                },
-            );
-
-        if err_msgs.is_empty() {
-            Result::Ok(())
-        } else {
-            Result::Err(err_msgs)
+        match self.op {
+            LogicalOp::All => self
+                .child_nodes
+                .iter()
+                .all(|child_node| child_node.select(event_record, eventkey_alias)),
+            LogicalOp::Any => self
+                .child_nodes
+                .iter()
+                .any(|child_node| child_node.select(event_record, eventkey_alias)),
         }
-    }
-
-    fn get_children(&self) -> Vec<&dyn SelectionNode> {
-        let mut ret = vec![];
-        self.child_nodes.iter().for_each(|child_node| {
-            ret.push(child_node.as_ref());
-        });
-
-        ret
-    }
-
-    fn get_descendants(&self) -> Vec<&dyn SelectionNode> {
-        let mut ret = self.get_children();
-
-        self.child_nodes
-            .iter()
-            .flat_map(|child_node| child_node.get_descendants())
-            .for_each(|descendant_node| {
-                ret.push(descendant_node);
-            });
-
-        ret
-    }
-}
-
-/// Node for the keyless `|all` modifier under detection-selection: every keyword in the value
-/// list must match. Matching behaves like AndSelectionNode, but it is kept as a distinct type.
-pub struct AllSelectionNode {
-    pub child_nodes: Vec<Box<dyn SelectionNode>>,
-}
-
-impl AllSelectionNode {
-    pub fn new() -> AllSelectionNode {
-        AllSelectionNode {
-            child_nodes: vec![],
-        }
-    }
-}
-
-impl SelectionNode for AllSelectionNode {
-    fn select(&self, event_record: &EvtxRecordInfo, eventkey_alias: &EventKeyAliasConfig) -> bool {
-        self.child_nodes
-            .iter()
-            .all(|child_node| child_node.select(event_record, eventkey_alias))
-    }
-
-    fn init(&mut self) -> Result<(), Vec<String>> {
-        let err_msgs = self
-            .child_nodes
-            .iter_mut()
-            .map(|child_node| {
-                let res = child_node.init();
-                if let Err(err) = res { err } else { vec![] }
-            })
-            .fold(
-                vec![],
-                |mut acc: Vec<String>, cur: Vec<String>| -> Vec<String> {
-                    acc.extend(cur);
-                    acc
-                },
-            );
-
-        if err_msgs.is_empty() {
-            Result::Ok(())
-        } else {
-            Result::Err(err_msgs)
-        }
-    }
-
-    fn get_children(&self) -> Vec<&dyn SelectionNode> {
-        let mut ret = vec![];
-        self.child_nodes.iter().for_each(|child_node| {
-            ret.push(child_node.as_ref());
-        });
-
-        ret
-    }
-
-    fn get_descendants(&self) -> Vec<&dyn SelectionNode> {
-        let mut ret = self.get_children();
-
-        self.child_nodes
-            .iter()
-            .flat_map(|child_node| child_node.get_descendants())
-            .for_each(|descendant_node| {
-                ret.push(descendant_node);
-            });
-
-        ret
-    }
-}
-
-/// Node representing an OR condition under detection-selection.
-/// Built from a YAML array of values, for `or` operators in condition expressions, or when the
-/// correlation parser merges referenced rules; matches when any child node matches.
-pub struct OrSelectionNode {
-    pub child_nodes: Vec<Box<dyn SelectionNode>>,
-}
-
-impl OrSelectionNode {
-    pub fn new() -> OrSelectionNode {
-        OrSelectionNode {
-            child_nodes: vec![],
-        }
-    }
-}
-
-impl SelectionNode for OrSelectionNode {
-    fn select(&self, event_record: &EvtxRecordInfo, eventkey_alias: &EventKeyAliasConfig) -> bool {
-        self.child_nodes
-            .iter()
-            .any(|child_node| child_node.select(event_record, eventkey_alias))
     }
 
     fn init(&mut self) -> Result<(), Vec<String>> {

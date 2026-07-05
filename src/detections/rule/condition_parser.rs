@@ -1,9 +1,7 @@
 use lazy_static::lazy_static;
 use regex::Regex;
 
-use self::selectionnodes::{
-    AndSelectionNode, NotSelectionNode, OrSelectionNode, RefSelectionNode, SelectionNode,
-};
+use self::selectionnodes::{NarySelectionNode, NotSelectionNode, RefSelectionNode, SelectionNode};
 use super::selectionnodes;
 use hashbrown::HashMap;
 use itertools::Itertools;
@@ -66,7 +64,7 @@ impl ConditionToken {
                 Result::Ok((*sub_token).into_selection_node(name_to_node)?)
             }
             ConditionToken::AndContainer(sub_tokens) => {
-                let mut select_and_node = AndSelectionNode::new();
+                let mut select_and_node = NarySelectionNode::and();
                 for sub_token in sub_tokens {
                     let sub_node = sub_token.into_selection_node(name_to_node)?;
                     select_and_node.child_nodes.push(sub_node);
@@ -74,7 +72,7 @@ impl ConditionToken {
                 Result::Ok(Box::new(select_and_node))
             }
             ConditionToken::OrContainer(sub_tokens) => {
-                let mut select_or_node = OrSelectionNode::new();
+                let mut select_or_node = NarySelectionNode::or();
                 for sub_token in sub_tokens {
                     let sub_node = sub_token.into_selection_node(name_to_node)?;
                     select_or_node.child_nodes.push(sub_node);

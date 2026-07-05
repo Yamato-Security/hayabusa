@@ -402,7 +402,7 @@ impl DetectionNode {
         if yaml.as_hash().is_some() {
             // Associative arrays are interpreted as AND conditions.
             let yaml_hash = yaml.as_hash().unwrap();
-            let mut and_node = selectionnodes::AndSelectionNode::new();
+            let mut and_node = selectionnodes::NarySelectionNode::and();
 
             yaml_hash.keys().for_each(|hash_key| {
                 let child_yaml = yaml_hash.get(hash_key).unwrap();
@@ -414,8 +414,8 @@ impl DetectionNode {
             Box::new(and_node)
         } else if yaml.as_vec().is_some() && key_list.len() == 1 && key_list[0].eq("|all") {
             // If the key is just "|all" (the keyless all modifier), every keyword in the list has
-            // to match, so combine the children with an AllSelectionNode (AND semantics).
-            let mut all_node = selectionnodes::AllSelectionNode::new();
+            // to match, so combine the children with an AND-op NarySelectionNode (AND semantics).
+            let mut all_node = selectionnodes::NarySelectionNode::and();
             yaml.as_vec().unwrap().iter().for_each(|child_yaml| {
                 let child_node = Self::parse_selection_recursively(key_list, child_yaml);
                 all_node.child_nodes.push(child_node);
@@ -436,11 +436,11 @@ impl DetectionNode {
                 .iter()
                 .any(|k| k.split('|').skip(1).any(|m| m == "neq"))
             {
-                let mut or_node = selectionnodes::OrSelectionNode::new();
+                let mut or_node = selectionnodes::NarySelectionNode::or();
                 or_node.child_nodes = children;
                 Box::new(or_node)
             } else {
-                let mut and_node = selectionnodes::AndSelectionNode::new();
+                let mut and_node = selectionnodes::NarySelectionNode::and();
                 and_node.child_nodes = children;
                 Box::new(and_node)
             }
@@ -452,7 +452,7 @@ impl DetectionNode {
             // `neq` negates the whole comparison, so a plain (OR-linked) list of values under a `neq`
             // modifier means "different from ALL of them" (De Morgan: NOT(a OR b) == NOT a AND NOT b).
             // Interpret the array as an AND condition instead of the usual OR.
-            let mut and_node = selectionnodes::AndSelectionNode::new();
+            let mut and_node = selectionnodes::NarySelectionNode::and();
             yaml.as_vec().unwrap().iter().for_each(|child_yaml| {
                 let child_node = Self::parse_selection_recursively(key_list, child_yaml);
                 and_node.child_nodes.push(child_node);
@@ -460,7 +460,7 @@ impl DetectionNode {
             Box::new(and_node)
         } else if yaml.as_vec().is_some() {
             // Arrays are interpreted as OR conditions.
-            let mut or_node = selectionnodes::OrSelectionNode::new();
+            let mut or_node = selectionnodes::NarySelectionNode::or();
             yaml.as_vec().unwrap().iter().for_each(|child_yaml| {
                 let child_node = Self::parse_selection_recursively(key_list, child_yaml);
                 or_node.child_nodes.push(child_node);
