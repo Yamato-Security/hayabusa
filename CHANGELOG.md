@@ -1,5 +1,15 @@
 # Changes
 
+## x.x.x [xxxx/xx/xx]
+
+**Bug Fixes:**
+
+- Fixed the ungrammatical "Successed submodule update" message printed after `update-rules` (now "Succeeded submodule update"). (#1840) (@YamatoSecurity)
+
+**Other:**
+
+- Scoped the MITRE ATT&CK tactics HTML-report accumulators (`COMPUTER_MITRE_ATTCK_MAP` and `COMPUTER_MITRE_ATTCK_UNIQUE_KEYS`) to a single report by clearing them after the table is emitted, so a report generated later in the same process no longer leaks keys or undercounts the per-tactic unique count; also removed an intermediate `Vec` when joining the tactic cells. No behavior change for normal single-report runs. (#1840) (@YamatoSecurity)
+
 ## 3.10.0 [2026/07/04] - Independence Day Release
 
 **Enhancements:**

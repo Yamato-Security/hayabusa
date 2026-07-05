@@ -1,5 +1,15 @@
 # 変更点
 
+## x.x.x [xxxx/xx/xx]
+
+**バグ修正:**
+
+- `update-rules` 実行後に表示される文法的に誤ったメッセージ「Successed submodule update」を「Succeeded submodule update」に修正した。 (#1840) (@YamatoSecurity)
+
+**その他:**
+
+- HTMLレポートのMITRE ATT&CKタクティクの集計用グローバル変数（`COMPUTER_MITRE_ATTCK_MAP` と `COMPUTER_MITRE_ATTCK_UNIQUE_KEYS`）を、テーブル出力後にクリアすることで単一レポートの範囲に限定した。これにより、同一プロセス内で後続のレポートを生成してもキーが残留してタクティクごとのユニーク数が過少カウントされることがなくなった。あわせて、タクティクのセルを結合する際の中間 `Vec` を削除した。通常の（単一レポートの）実行では挙動に変更はない。 (#1840) (@YamatoSecurity)
+
 ## 3.10.0 [2026/07/04] - Independence Day Release
 
 **改善:**
