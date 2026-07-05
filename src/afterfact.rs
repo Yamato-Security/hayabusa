@@ -12,20 +12,20 @@ use comfy_table::presets::UTF8_FULL;
 use comfy_table::*;
 use compact_str::CompactString;
 use csv::{QuoteStyle, Writer, WriterBuilder};
-use hashbrown::hash_map::RawEntryMut;
 use hashbrown::{HashMap, HashSet};
+use indexmap::IndexMap;
 use itertools::Itertools;
 use krapslog::{build_sparkline, build_time_markers};
 use nested::Nested;
 use num_format::{Locale, ToFormattedString};
+use serde::ser::{Serialize, SerializeMap, Serializer};
 use strum::IntoEnumIterator;
 use termcolor::{Buffer, BufferWriter, Color, ColorChoice, ColorSpec, WriteColor};
 use terminal_size::Width;
 use terminal_size::terminal_size;
 
 use crate::detections::configs::{
-    Action, CONTROL_CHAR_REPLACE_MAP, CURRENT_EXE_PATH, GEOIP_DB_PARSER, StoredStatic,
-    TimeFormatOptions,
+    Action, CURRENT_EXE_PATH, GEOIP_DB_PARSER, StoredStatic, TimeFormatOptions,
 };
 use crate::detections::message::{
     AlertMessage, COMPUTER_MITRE_ATTCK_MAP, COMPUTER_MITRE_ATTCK_UNIQUE_KEYS, DetectInfo,
@@ -1835,135 +1835,104 @@ fn _get_json_vec(profile: &Profile, target_data: &String) -> Vec<String> {
     }
 }
 
-/// Formats one key/value pair as a JSON fragment (`"key": value`), indenting it with
-/// `space_cnt` spaces. Values that parse as integers or booleans are emitted unquoted;
-/// `concat_flag` marks values that are already valid JSON (arrays/objects/pre-quoted strings)
-/// and must not be wrapped in quotes again. Control characters are replaced on both key and
-/// value via CONTROL_CHAR_REPLACE_MAP.
-fn _create_json_output_format(
-    key: &str,
-    value: &str,
-    key_quote_exclude_flag: bool,
-    concat_flag: bool,
-    space_cnt: usize,
-) -> String {
-    let head = if key_quote_exclude_flag {
-        key.chars()
-            .map(|x| {
-                if let Some(c) = CONTROL_CHAR_REPLACE_MAP.get(&x) {
-                    c.to_string()
-                } else {
-                    String::from(x)
+/// An ordered JSON value used to assemble one timeline record. Objects preserve key
+/// insertion order (via `IndexMap`) so the output keeps the rule/field order — unlike
+/// `serde_json::Map`, which sorts keys. Leaves are plain `serde_json::Value`s (scalars or
+/// arrays), so `serde_json` performs all escaping and number/bool serialization.
+enum JsonNode {
+    Leaf(serde_json::Value),
+    Object(IndexMap<String, JsonNode>),
+}
+
+impl Serialize for JsonNode {
+    fn serialize<S: Serializer>(&self, serializer: S) -> Result<S::Ok, S::Error> {
+        match self {
+            JsonNode::Leaf(value) => value.serialize(serializer),
+            // Serialize entries in insertion order (IndexMap iteration order), instead of the
+            // key-sorted order a `serde_json::Map` would produce.
+            JsonNode::Object(map) => {
+                let mut m = serializer.serialize_map(Some(map.len()))?;
+                for (k, v) in map {
+                    m.serialize_entry(k, v)?;
                 }
-            })
-            .collect::<CompactString>()
-    } else {
-        format!("\"{key}\"")
-            .chars()
-            .map(|x| {
-                if let Some(c) = CONTROL_CHAR_REPLACE_MAP.get(&x) {
-                    c.to_string()
-                } else {
-                    String::from(x)
-                }
-            })
-            .collect::<CompactString>()
-    };
-    // The indent is space_cnt spaces: 4 for top-level JSON keys, 8 for nested keys.
-    if let Ok(i) = i64::from_str(value) {
-        format!("{}{}: {}", " ".repeat(space_cnt), head, i)
-    } else if let Ok(b) = bool::from_str(value) {
-        format!("{}{}: {}", " ".repeat(space_cnt), head, b)
-    } else if concat_flag {
-        format!(
-            "{}{}: {}",
-            " ".repeat(space_cnt),
-            head,
-            value
-                .chars()
-                .map(|x| {
-                    if let Some(c) = CONTROL_CHAR_REPLACE_MAP.get(&x) {
-                        c.to_string()
-                    } else {
-                        String::from(x)
-                    }
-                })
-                .collect::<CompactString>()
-        )
-    } else {
-        format!(
-            "{}{}: \"{}\"",
-            " ".repeat(space_cnt),
-            head,
-            value
-                .chars()
-                .map(|x| {
-                    if let Some(c) = CONTROL_CHAR_REPLACE_MAP.get(&x) {
-                        c.to_string()
-                    } else {
-                        String::from(x)
-                    }
-                })
-                .collect::<CompactString>()
-        )
+                m.end()
+            }
+        }
     }
 }
 
-/// JSON-escapes a string body using `serde_json` (so escaping of `\`, `"` and any control
-/// characters is handled by the serializer instead of by hand), returning the escaped text
-/// *without* the surrounding quotes serde_json adds.
-///
-/// The `🛂` placeholders that `remove_sp_char` leaves in place of `\n`/`\r`/`\t` are first
-/// restored to a literal backslash, so a marker such as `🛂n` becomes the two characters `\`
-/// and `n`, and serde_json then escapes the backslash to yield `\\n` — byte-for-byte identical
-/// to the previous hand-rolled
-/// `.replace('🛂', "\\").replace('\\', "\\\\").replace('"', "\\\"")` chain (values reaching
-/// here contain no raw control characters; `remove_sp_char` has already stripped them).
-fn json_escape_body(value: &str) -> String {
-    let restored = value.replace('🛂', "\\");
-    // serde_json escapes `\`, `"` and control chars and wraps the result in quotes; strip
-    // those quotes to get the escaped body. Serializing a string cannot fail and always
-    // yields a quoted string, so the fallback is unreachable in practice — it just keeps the
-    // output valid JSON (manual `\`/`"` escaping, matching the previous behaviour) if that
-    // ever changes, rather than emitting the raw string.
-    serde_json::to_string(&restored)
-        .ok()
-        .and_then(|quoted| {
-            quoted
-                .strip_prefix('"')
-                .and_then(|body| body.strip_suffix('"'))
-                .map(str::to_owned)
-        })
-        .unwrap_or_else(|| restored.replace('\\', "\\\\").replace('"', "\\\""))
+/// Converts a field-value string to a JSON scalar, reproducing the previous type-guessing:
+/// an i64-parseable value becomes a JSON number, `true`/`false` becomes a boolean, and
+/// anything else becomes a string (with the `🛂` placeholders restored).
+fn json_scalar(value: &str) -> serde_json::Value {
+    if let Ok(i) = i64::from_str(value) {
+        serde_json::Value::from(i)
+    } else if let Ok(b) = bool::from_str(value) {
+        serde_json::Value::from(b)
+    } else {
+        serde_json::Value::String(restore_placeholders(value))
+    }
 }
 
-/// Escapes a string value (joining multi-part "key: value" input as needed) so it can be
-/// embedded in the JSON output without producing invalid JSON.
-fn _convert_valid_json_str(input: &[&str], concat_flag: bool) -> String {
-    let joined_value = if input.len() == 1 {
-        input[0].to_string()
-    } else if concat_flag {
-        input.join(": ")
+/// A JSON string leaf (no type-guessing) — used for array elements, which are always emitted
+/// as strings.
+fn json_string(value: &str) -> serde_json::Value {
+    serde_json::Value::String(restore_placeholders(value))
+}
+
+/// Restores the `🛂` control-char placeholders to backslashes and reproduces the previous
+/// `_convert_valid_json_str` quirk where a value starting with a double quote but not ending
+/// with one had a closing quote appended (kept for byte-identical JSON data).
+fn restore_placeholders(value: &str) -> String {
+    let mut restored = value.replace('🛂', "\\");
+    if value.starts_with('"') && !value.ends_with('"') {
+        restored.push('"');
+    }
+    restored
+}
+
+/// Splits each "key: value" detail entry (on the first colon), trims both sides, and groups
+/// the values by key preserving first-seen key order. A key that appears more than once
+/// (e.g. Data[1]/Data[2]) collects multiple values, later emitted as a JSON array.
+fn group_details_raw(stock: &[CompactString]) -> IndexMap<String, Vec<String>> {
+    let mut map: IndexMap<String, Vec<String>> = IndexMap::new();
+    for contents in stock {
+        let (key, value) = contents.split_once(':').unwrap_or_default();
+        map.entry(key.trim().to_string())
+            .or_default()
+            .push(value.trim().to_string());
+    }
+    map
+}
+
+/// Serializes one record and returns the body *without* the surrounding object braces, so the
+/// caller's wrapping (`{\n...\n}` for JSON, `{ ... }` for JSONL) reproduces the full object.
+/// JSON uses a 4-space pretty formatter; JSONL is compact.
+fn serialize_record_body(record: IndexMap<String, JsonNode>, jsonl: bool) -> String {
+    if record.is_empty() {
+        return String::new();
+    }
+    let node = JsonNode::Object(record);
+    // Serializing this in-memory JsonNode (string keys, serde_json::Value leaves) to a String /
+    // Vec<u8> cannot fail; `expect` surfaces a would-be bug loudly instead of silently emitting
+    // empty/malformed JSON.
+    if jsonl {
+        let full = serde_json::to_string(&node).expect("JsonNode serialization is infallible");
+        full.strip_prefix('{')
+            .and_then(|s| s.strip_suffix('}'))
+            .unwrap_or(&full)
+            .to_string()
     } else {
-        input[1..].join(": ")
-    };
-    let char_cnt = joined_value.char_indices().count();
-    if char_cnt == 0 {
-        joined_value
-    } else if joined_value.starts_with('\"') {
-        // The value already starts with a quote, so no opening quote is prepended here; only a
-        // closing quote is added when the value does not already end with one.
-        let addition_quote = if !joined_value.ends_with('\"') && concat_flag {
-            "\""
-        } else if !joined_value.ends_with('\"') {
-            "\\\""
-        } else {
-            ""
-        };
-        let escaped = json_escape_body(&joined_value);
-        [escaped.as_str(), addition_quote].join("")
-    } else {
-        json_escape_body(&joined_value)
+        let mut buf = Vec::new();
+        let formatter = serde_json::ser::PrettyFormatter::with_indent(b"    ");
+        let mut ser = serde_json::Serializer::with_formatter(&mut buf, formatter);
+        node.serialize(&mut ser)
+            .expect("JsonNode serialization is infallible");
+        let full = String::from_utf8(buf).expect("serde_json output is valid UTF-8");
+        full.strip_prefix("{\n")
+            .and_then(|s| s.strip_suffix("\n}"))
+            .unwrap_or(&full)
+            .to_string()
     }
 }
 
@@ -1977,7 +1946,7 @@ pub fn output_json_str(
     is_included_geo_ip: bool,
     remove_duplicate_flag: bool,
 ) -> (String, HashMap<CompactString, Profile>) {
-    let mut target: Vec<String> = vec![];
+    let mut record: IndexMap<String, JsonNode> = IndexMap::new();
     let mut target_ext_field = Vec::new();
     let ext_field_map: HashMap<CompactString, Profile> =
         HashMap::from_iter(detect_info.output_fields.to_owned());
@@ -2067,20 +2036,20 @@ pub fn output_json_str(
             ))
             && vec_data.is_empty()
         {
+            // A `Details` value of "-" is emitted as an empty object.
             if matches!(profile, Profile::Details(_)) && val == "-" {
-                target.push(format!("{}\"{}\": {{}}", " ".repeat(4), key));
+                record.insert(key.to_string(), JsonNode::Object(IndexMap::new()));
                 continue;
             }
+            // Plain scalar field. `_convert_valid_json_str` used to drop everything before the
+            // first ": " for multi-segment values (keeping `input[1..]`); reproduce that here.
             let tmp_val: Vec<&str> = val.split(": ").collect();
-            let output_val =
-                _convert_valid_json_str(&tmp_val, matches!(profile, Profile::AllFieldInfo(_)));
-            target.push(_create_json_output_format(
-                key,
-                output_val.trim(),
-                key.starts_with('\"'),
-                output_val.starts_with('\"'),
-                4,
-            ));
+            let joined = if tmp_val.len() == 1 {
+                val.to_string()
+            } else {
+                tmp_val[1..].join(": ")
+            };
+            record.insert(key.to_string(), JsonNode::Leaf(json_scalar(joined.trim())));
         } else {
             match profile {
                 // GeoIP profile fields are skipped here because they are emitted inside the
@@ -2093,16 +2062,12 @@ pub fn output_json_str(
                 | Profile::TgtCountry(_)
                 | Profile::TgtCity(_) => continue,
                 Profile::RecoveredRecord(data) => {
-                    target.push(_create_json_output_format(
-                        "RecoveredRecord",
-                        data,
-                        false,
-                        data.starts_with('\"'),
-                        4,
-                    ));
+                    record.insert(
+                        "RecoveredRecord".to_string(),
+                        JsonNode::Leaf(json_scalar(data)),
+                    );
                 }
                 Profile::Details(_) | Profile::AllFieldInfo(_) | Profile::ExtraFieldInfo(_) => {
-                    let mut output_stock: Vec<String> = vec![];
                     let details_key = match profile {
                         Profile::Details(_) => "Details",
                         Profile::AllFieldInfo(_) => "AllFieldInfo",
@@ -2116,206 +2081,76 @@ pub fn output_json_str(
                         continue;
                     }
                     let details_target_stock = details_target_stocks.unwrap();
-                    let mut children_output_stock: HashMap<CompactString, Vec<CompactString>> =
-                        HashMap::new();
-                    let mut children_output_order = vec![];
-                    if detect_info.agg_result.is_some() {
+                    // Group the "key: value" detail entries into ordered (key -> values).
+                    let grouped = if detect_info.agg_result.is_some() {
                         if details_target_stock.is_empty() || details_target_stock[0] == "-" {
-                            output_stock.push(format!("{}\"{}\": {{}}", " ".repeat(4), key));
-                            if jsonl_output_flag {
-                                target.push(output_stock.join(""));
-                            } else {
-                                target.push(output_stock.join("\n"));
-                            }
+                            record.insert(key.to_string(), JsonNode::Object(IndexMap::new()));
                             continue;
                         }
-                        let split_agg_details = details_target_stock[0]
+                        let split_agg_details: Vec<CompactString> = details_target_stock[0]
                             .split(" ¦ ")
                             .map(|x| x.into())
-                            .collect_vec();
-                        process_target_stock(
-                            &split_agg_details,
-                            &mut children_output_stock,
-                            &mut children_output_order,
-                        );
+                            .collect();
+                        group_details_raw(&split_agg_details)
                     } else if details_target_stock.is_empty() {
-                        output_stock.push(format!("{}\"{}\": {{}}", " ".repeat(4), key));
-                        if jsonl_output_flag {
-                            target.push(output_stock.join(""));
-                        } else {
-                            target.push(output_stock.join("\n"));
-                        }
+                        record.insert(key.to_string(), JsonNode::Object(IndexMap::new()));
                         continue;
                     } else {
-                        process_target_stock(
-                            details_target_stock,
-                            &mut children_output_stock,
-                            &mut children_output_order,
-                        );
-                    }
-                    output_stock.push(format!("    \"{key}\": {{"));
-
-                    // Rebuild the field order to match the order in which the fields appear in
-                    // the rule (recorded in children_output_order), since HashMap iteration
-                    // order is arbitrary.
-                    let mut sorted_children_output_stock: Vec<(
-                        &CompactString,
-                        &Vec<CompactString>,
-                    )> = children_output_stock.iter().collect_vec();
-                    for (k, v) in children_output_stock.iter() {
-                        let index_in_rule =
-                            children_output_order.iter().position(|x| x == k).unwrap();
-                        sorted_children_output_stock[index_in_rule] = (k, v);
-                    }
-                    for (idx, (c_key, c_val)) in sorted_children_output_stock.iter().enumerate() {
-                        let fmted_c_val = if c_val.len() == 1 {
-                            c_val[0].to_string()
+                        group_details_raw(details_target_stock)
+                    };
+                    let mut details_obj: IndexMap<String, JsonNode> = IndexMap::new();
+                    for (c_key, c_vals) in grouped {
+                        let node = if c_vals.len() == 1 {
+                            JsonNode::Leaf(json_scalar(&c_vals[0]))
                         } else {
-                            format!(
-                                "[{}]",
-                                c_val.iter().map(|x| { format!("\"{x}\"") }).join(", ")
-                            )
+                            // A field that repeats becomes an array of string values.
+                            JsonNode::Leaf(serde_json::Value::Array(
+                                c_vals.iter().map(|v| json_string(v)).collect(),
+                            ))
                         };
-                        if idx != children_output_stock.len() - 1 {
-                            output_stock.push(format!(
-                                "{},",
-                                _create_json_output_format(
-                                    c_key,
-                                    &fmted_c_val,
-                                    c_key.starts_with('\"'),
-                                    fmted_c_val.starts_with('\"') || c_val.len() != 1,
-                                    8
-                                )
-                            ));
-                        } else {
-                            let last_contents_end = if is_included_geo_ip
-                                && !matches!(profile, Profile::ExtraFieldInfo(_))
-                                && !valid_key_add_to_details.is_empty()
-                            {
-                                ","
-                            } else {
-                                ""
-                            };
-                            output_stock.push(format!(
-                                "{}{last_contents_end}",
-                                _create_json_output_format(
-                                    c_key,
-                                    &fmted_c_val,
-                                    c_key.starts_with('\"'),
-                                    fmted_c_val.starts_with('\"') || c_val.len() != 1,
-                                    8,
-                                )
-                            ));
-                        }
+                        details_obj.insert(c_key, node);
                     }
+                    // Fold GeoIP enrichment fields into Details/AllFieldInfo (not ExtraFieldInfo).
                     if is_included_geo_ip && !matches!(profile, Profile::ExtraFieldInfo(_)) {
-                        for (geo_ip_field_cnt, target_key) in
-                            valid_key_add_to_details.iter().enumerate()
-                        {
-                            let val = ext_field_map
+                        for target_key in valid_key_add_to_details.iter() {
+                            let geo_val = ext_field_map
                                 .get(&CompactString::from(*target_key))
                                 .unwrap()
                                 .to_value();
-                            let output_end_fmt =
-                                if geo_ip_field_cnt == valid_key_add_to_details.len() - 1 {
-                                    ""
-                                } else {
-                                    ","
-                                };
-                            output_stock.push(format!(
-                                "{}{output_end_fmt}",
-                                _create_json_output_format(
-                                    target_key,
-                                    &val,
-                                    target_key.starts_with('\"'),
-                                    val.starts_with('\"'),
-                                    8
-                                )
-                            ));
+                            details_obj.insert(
+                                target_key.to_string(),
+                                JsonNode::Leaf(json_scalar(&geo_val)),
+                            );
                         }
                     }
-                    output_stock.push("    }".to_string());
-                    if jsonl_output_flag {
-                        target.push(output_stock.join(""));
-                    } else {
-                        target.push(output_stock.join("\n"));
-                    }
+                    record.insert(key.to_string(), JsonNode::Object(details_obj));
                 }
                 Profile::MitreTags(_) | Profile::MitreTactics(_) | Profile::OtherTags(_) => {
-                    let key = _convert_valid_json_str(&[key.as_str()], false);
-                    let values = val.split(": ").filter(|x| x.trim() != "");
-                    let values_len = values.clone().count();
-                    if values_len == 0 {
+                    let values: Vec<&str> = val.split(": ").filter(|x| x.trim() != "").collect();
+                    if values.is_empty() {
                         continue;
                     }
-                    let mut value: Vec<String> = vec![];
-                    for (idx, tag_val) in values.enumerate() {
-                        if idx == 0 {
-                            value.push("[\n".to_string());
-                        }
-                        let insert_val = format!(
-                            "        \"{}\"",
-                            tag_val.split('¦').map(|x| x.trim()).join("\", \"")
-                        );
-                        value.push(insert_val);
-                        if idx != values_len - 1 {
-                            value.push(",\n".to_string());
+                    // Each "value" may itself hold several `¦`-separated tags; flatten them all
+                    // into one array of trimmed strings.
+                    let mut elems: Vec<serde_json::Value> = vec![];
+                    for tag_val in values {
+                        for part in tag_val.split('¦') {
+                            elems.push(json_string(part.trim()));
                         }
                     }
-                    value.push("\n    ]".to_string());
-
-                    let fmted_val = if jsonl_output_flag {
-                        value.iter().map(|x| x.replace('\n', "")).join("")
-                    } else {
-                        value.join("")
-                    };
-                    target.push(_create_json_output_format(
-                        &key,
-                        fmted_val.trim(),
-                        key.starts_with('\"'),
-                        true,
-                        4,
-                    ));
+                    record.insert(
+                        key.to_string(),
+                        JsonNode::Leaf(serde_json::Value::Array(elems)),
+                    );
                 }
                 _ => {}
             }
         }
     }
-    if jsonl_output_flag {
-        // JSONL output
-        (
-            target.into_iter().map(|x| x.replace("  ", "")).join(","),
-            next_prev_message,
-        )
-    } else {
-        // JSON format output
-        (target.join(",\n"), next_prev_message)
-    }
-}
-
-/// Splits each "key: value" detail entry and groups the values by key in
-/// `children_output_stock` (a key gets multiple values when it appears more than once, e.g.
-/// Data[1]/Data[2] fields), recording first-seen key order in `children_output_order`.
-fn process_target_stock(
-    details_target_stock: &[CompactString],
-    children_output_stock: &mut HashMap<CompactString, Vec<CompactString>>,
-    children_output_order: &mut Vec<CompactString>,
-) {
-    for contents in details_target_stock.iter() {
-        let (key, value) = contents.split_once(':').unwrap_or_default();
-        let output_key = _convert_valid_json_str(&[key.trim()], false);
-        let fmted_val = _convert_valid_json_str(&[value.trim()], false);
-        if let RawEntryMut::Vacant(_) = children_output_stock
-            .raw_entry_mut()
-            .from_key(output_key.as_str())
-        {
-            children_output_order.push(output_key.clone().into());
-        }
-        children_output_stock
-            .entry(output_key.into())
-            .or_insert(vec![])
-            .push(fmted_val.into());
-    }
+    (
+        serialize_record_body(record, jsonl_output_flag),
+        next_prev_message,
+    )
 }
 /// Prints a table of the detected rule authors and the number of their rules that produced
 /// detections, laid out over `table_column_num` columns.
@@ -2450,15 +2285,16 @@ mod tests {
     use hashbrown::HashMap;
     use serde_json::Value;
 
-    use crate::afterfact::_convert_valid_json_str;
     use crate::afterfact::_print_unique_results;
     use crate::afterfact::AfterfactInfo;
     use crate::afterfact::format_time;
     use crate::afterfact::get_duplicate_indices;
     use crate::afterfact::html_escape_value;
     use crate::afterfact::init_writer;
-    use crate::afterfact::json_escape_body;
+    use crate::afterfact::json_scalar;
+    use crate::afterfact::json_string;
     use crate::afterfact::output_afterfact_inner;
+    use crate::afterfact::restore_placeholders;
     use crate::afterfact::sort_detect_info;
     use crate::detections::configs::Action;
     use crate::detections::configs::CURRENT_EXE_PATH;
@@ -3064,45 +2900,38 @@ mod tests {
         assert!(remove_file("./test_emit_csv_multiline.csv").is_ok());
     }
 
-    /// A value that already starts with a quote is escaped with only a trailing quote added, and
-    /// no spurious leading quote (regression guard for #1832, where the always-empty
-    /// `addition_header` was removed from `_convert_valid_json_str`).
+    /// Regression guard for the escaping / control-char-placeholder behaviour that moved from the
+    /// deleted `_convert_valid_json_str` into `restore_placeholders` + `json_scalar`/`json_string`.
     #[test]
-    fn test_convert_valid_json_str_quote_prefixed() {
-        // Value starts and ends with a quote: both quotes are backslash-escaped, nothing prepended.
-        assert_eq!(_convert_valid_json_str(&["\"hi\""], false), "\\\"hi\\\"");
-        // Starts with a quote but does not end with one: a closing escaped quote is appended.
-        assert_eq!(_convert_valid_json_str(&["\"hi"], false), "\\\"hi\\\"");
-    }
-
-    /// Byte-for-byte regression guard for the escaping produced by `_convert_valid_json_str`
-    /// (and its `json_escape_body` helper), locking the exact output the previous hand-rolled
-    /// `.replace('🛂', "\\").replace('\\', "\\\\").replace('"', "\\\"")` chain produced so the
-    /// serde_json-backed implementation stays byte-identical.
-    #[test]
-    fn test_convert_valid_json_str_escaping_is_byte_exact() {
-        // `remove_sp_char` placeholders: `🛂n`/`🛂r`/`🛂t` -> `\\n`/`\\r`/`\\t`
-        // (a literal backslash followed by n/r/t, i.e. the backslash is itself escaped).
-        assert_eq!(_convert_valid_json_str(&["🛂n"], false), "\\\\n");
-        assert_eq!(_convert_valid_json_str(&["🛂r"], false), "\\\\r");
-        assert_eq!(_convert_valid_json_str(&["🛂t"], false), "\\\\t");
-        assert_eq!(_convert_valid_json_str(&["a🛂nb"], false), "a\\\\nb");
-        // Real backslashes are doubled.
+    fn test_json_scalar_and_placeholder_restoration() {
+        use serde_json::json;
+        // `remove_sp_char` placeholders `🛂n`/`🛂r`/`🛂t` restore to a literal backslash + letter.
+        assert_eq!(restore_placeholders("🛂n"), "\\n");
+        assert_eq!(restore_placeholders("a🛂tb"), "a\\tb");
+        assert_eq!(restore_placeholders("plain"), "plain");
+        assert_eq!(restore_placeholders("C:\\path"), "C:\\path");
+        // Leading-quote quirk: a value starting with a quote but not ending with one gets a
+        // closing quote appended (preserved for byte-identical data).
+        assert_eq!(restore_placeholders("\"C:\\a\" x"), "\"C:\\a\" x\"");
+        assert_eq!(restore_placeholders("\"quoted\""), "\"quoted\"");
+        // json_scalar type-guessing: ints/bools unquoted, everything else a string.
+        assert_eq!(json_scalar("1111"), json!(1111));
+        assert_eq!(json_scalar("-5"), json!(-5));
+        assert_eq!(json_scalar("true"), json!(true));
+        assert_eq!(json_scalar("false"), json!(false));
+        assert_eq!(json_scalar("007"), json!(7));
+        assert_eq!(json_scalar("1.5"), json!("1.5"));
+        assert_eq!(json_scalar("hello"), json!("hello"));
+        assert_eq!(json_scalar("🛂n"), json!("\\n"));
+        // json_string never type-guesses (array elements are always strings).
+        assert_eq!(json_string("1111"), json!("1111"));
+        assert_eq!(json_string("🛂r"), json!("\\r"));
+        // A quote-prefixed value serializes to well-formed JSON that round-trips.
+        let serialized = serde_json::to_string(&json_scalar("\"weird")).unwrap();
         assert_eq!(
-            _convert_valid_json_str(&["path C:\\a\\b"], false),
-            "path C:\\\\a\\\\b"
+            serde_json::from_str::<String>(&serialized).unwrap(),
+            "\"weird\""
         );
-        // Interior double quotes are backslash-escaped.
-        assert_eq!(_convert_valid_json_str(&["quo\"te"], false), "quo\\\"te");
-        // Non-ASCII (multibyte / emoji) passes through unescaped.
-        assert_eq!(_convert_valid_json_str(&["emoji 😀"], false), "emoji 😀");
-        assert_eq!(_convert_valid_json_str(&["多字节"], false), "多字节");
-        // Empty input is returned unchanged.
-        assert_eq!(_convert_valid_json_str(&[""], false), "");
-        // The helper strips the quotes serde_json adds and restores `🛂` to a backslash.
-        assert_eq!(json_escape_body("plain"), "plain");
-        assert_eq!(json_escape_body("🛂n"), "\\\\n");
-        assert_eq!(json_escape_body("a\\b\"c"), "a\\\\b\\\"c");
     }
 
     /// `get_duplicate_indices` must flag every identical copy after the first within a timestamp
@@ -4246,19 +4075,19 @@ mod tests {
         }
         let expect = vec![
             "{ ",
-            "\"Timestamp\": \"1996-02-27 01:05:01.000 +00:00\",",
-            "\"Computer\": \"testcomputer\",",
-            "\"Channel\": \"Sec\",",
-            "\"Level\": \"high\",",
-            "\"EventID\": 1111,",
-            "\"MitreAttack\": [\"execution/txxxx.yyy\"],",
-            "\"RecordID\": 11111,",
-            "\"RuleTitle\": \"test_title\",",
-            "\"Details\": \"pokepoke\",",
-            "\"RecordInformation\": {\"CommandRLine\": \"hoge\"},",
-            "\"RuleFile\": \"test-rule.yml\",",
-            "\"EvtxFile\": \"test.evtx\",",
-            "\"Tags\": [\"execution/txxxx.yyy\"]",
+            "\"Timestamp\":\"1996-02-27 01:05:01.000 +00:00\",",
+            "\"Computer\":\"testcomputer\",",
+            "\"Channel\":\"Sec\",",
+            "\"Level\":\"high\",",
+            "\"EventID\":1111,",
+            "\"MitreAttack\":[\"execution/txxxx.yyy\"],",
+            "\"RecordID\":11111,",
+            "\"RuleTitle\":\"test_title\",",
+            "\"Details\":\"pokepoke\",",
+            "\"RecordInformation\":{\"CommandRLine\":\"hoge\"},",
+            "\"RuleFile\":\"test-rule.yml\",",
+            "\"EvtxFile\":\"test.evtx\",",
+            "\"Tags\":[\"execution/txxxx.yyy\"]",
         ];
 
         additional_afterfact.record_cnt = 1;
