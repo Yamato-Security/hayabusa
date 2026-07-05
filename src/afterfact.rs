@@ -27,7 +27,9 @@ use crate::detections::configs::{
     Action, CONTROL_CHAR_REPLACE_MAP, CURRENT_EXE_PATH, GEOIP_DB_PARSER, StoredStatic,
     TimeFormatOptions,
 };
-use crate::detections::message::{AlertMessage, COMPUTER_MITRE_ATTCK_MAP, DetectInfo};
+use crate::detections::message::{
+    AlertMessage, COMPUTER_MITRE_ATTCK_MAP, COMPUTER_MITRE_ATTCK_UNIQUE_KEYS, DetectInfo,
+};
 
 /// Escapes user-supplied data values before embedding them into the Markdown that
 /// is rendered as HTML for the report, to prevent XSS and Markdown injection.
@@ -2405,10 +2407,14 @@ fn _output_html_computer_by_mitre_attck(html_output_stock: &mut Nested<String>) 
                 .value()
                 .iter()
                 .map(|(tactic, unique, total)| format!("{} ({} &#124; {})", tactic, unique, total))
-                .collect::<Vec<_>>()
                 .join("<br>")
         ));
     }
+    // Scope the accumulated counts to this single report: clear both accumulators after the table is
+    // emitted so a subsequent report generated in the same process (e.g. across tests) starts clean
+    // instead of leaking keys and undercounting `unique`.
+    COMPUTER_MITRE_ATTCK_MAP.clear();
+    COMPUTER_MITRE_ATTCK_UNIQUE_KEYS.clear();
 }
 
 #[cfg(test)]
