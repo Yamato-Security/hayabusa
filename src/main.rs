@@ -153,6 +153,43 @@ pub struct App {
     rule_keys: Nested<String>,
 }
 
+/// The stream-vs-buffer policy for detection results, applied at every detection site.
+/// `stored_static.is_low_memory` is set for an unsorted csv/json timeline (the case that permits
+/// streaming — it is broader than the explicit `--low-memory` flag): each batch is then emitted to
+/// the writer immediately. Otherwise the records are buffered in `buffer` so they can be sorted and
+/// written once at the end.
+fn emit_or_buffer(
+    log_records: &mut Vec<DetectInfo>,
+    buffer: &mut Vec<DetectInfo>,
+    stored_static: &StoredStatic,
+    output_writer: &mut OutputWriter,
+    result_state: &mut ResultOutputState,
+) {
+    if stored_static.is_low_memory {
+        let empty_ids = HashSet::new();
+        results::emit_csv(
+            log_records,
+            &empty_ids,
+            stored_static,
+            output_writer,
+            result_state,
+        );
+    } else {
+        buffer.append(log_records);
+    }
+}
+
+/// Per-batch policy for `process_detection_batch`, as named fields so the two flags cannot be
+/// swapped at a call site.
+struct BatchPolicy {
+    /// Run the detection rules on this batch (false for metrics / logon-summary / search commands,
+    /// which do not detect).
+    run_rules: bool,
+    /// Widen the results-summary detection time span from this batch's hits. The evtx path does
+    /// this; the JSON path does not.
+    update_time_range: bool,
+}
+
 impl App {
     pub fn new(thread_number: Option<usize>) -> App {
         App {
@@ -2179,18 +2216,13 @@ Any hostnames added to the critical_systems.txt file will have all alerts above 
         }
         if is_timeline_cmd {
             let mut log_records = detection.add_aggcondition_msgs(&self.runtime, stored_static);
-            if stored_static.is_low_memory {
-                let empty_ids = HashSet::new();
-                results::emit_csv(
-                    &log_records,
-                    &empty_ids,
-                    stored_static,
-                    &mut output_writer,
-                    &mut result_state,
-                );
-            } else {
-                all_detect_infos.append(&mut log_records);
-            }
+            emit_or_buffer(
+                &mut log_records,
+                &mut all_detect_infos,
+                stored_static,
+                &mut output_writer,
+                &mut result_state,
+            );
             result_state.timeline_start_time = timeline.stats.start_time;
             result_state.timeline_end_time = timeline.stats.end_time;
 
@@ -2389,46 +2421,17 @@ Any hostnames added to the critical_systems.txt file will have all alerts above 
                 break;
             }
 
-            let records_per_detect = self.runtime.block_on(App::create_rec_infos(
-                records_per_detect,
-                &path,
-                self.rule_keys.to_owned(),
-                stored_static.no_pwsh_field_extraction,
-            ));
-            timeline.start(&records_per_detect, stored_static);
-            if need_rule {
-                // Run the loaded detection rules against this batch of records.
-                let (detection_tmp, mut log_records) =
-                    detection.start(&self.runtime, records_per_detect);
-
-                if let MinMaxResult::MinMax(min_time, max_time) =
-                    log_records.iter().map(|info| info.detected_time).minmax()
-                {
-                    if result_state.detect_starttime.is_none()
-                        || result_state.detect_starttime.unwrap() > min_time
-                    {
-                        result_state.detect_starttime = Some(min_time);
-                    }
-                    if result_state.detect_endtime.is_none()
-                        || result_state.detect_endtime.unwrap() < max_time
-                    {
-                        result_state.detect_endtime = Some(max_time);
-                    }
-                }
-                if stored_static.is_low_memory {
-                    let empty_ids = HashSet::new();
-                    results::emit_csv(
-                        &log_records,
-                        &empty_ids,
-                        stored_static,
-                        output_writer,
-                        result_state,
-                    );
-                } else {
-                    detect_infos.append(&mut log_records);
-                }
-                detection = detection_tmp;
-            }
+            detection = self.process_detection_batch(
+                (records_per_detect, &path),
+                detection,
+                &mut timeline,
+                stored_static,
+                (&mut detect_infos, output_writer, result_state),
+                BatchPolicy {
+                    run_rules: need_rule,
+                    update_time_range: true,
+                },
+            );
         }
         timeline.total_record_cnt += record_cnt;
         (
@@ -2438,6 +2441,67 @@ Any hostnames added to the critical_systems.txt file will have all alerts above 
             recover_records_cnt,
             detect_infos,
         )
+    }
+
+    /// Runs one accumulated batch of records through the shared detection pipeline tail: build
+    /// EvtxRecordInfo structs, feed the timeline, and (when `run_rules`) run the rules and either
+    /// stream or buffer the results. `update_time_range` widens the results-summary detection time
+    /// span (the evtx path does this; the JSON path does not). This is the tail that was
+    /// copy-pasted at the end of both the evtx and JSON batch loops.
+    fn process_detection_batch(
+        &self,
+        (records_per_detect, path): (Vec<(Value, bool)>, &dyn Display),
+        mut detection: detection::Detection,
+        timeline: &mut Timeline,
+        stored_static: &StoredStatic,
+        (detect_infos, output_writer, result_state): (
+            &mut Vec<DetectInfo>,
+            &mut OutputWriter,
+            &mut ResultOutputState,
+        ),
+        policy: BatchPolicy,
+    ) -> detection::Detection {
+        let BatchPolicy {
+            run_rules,
+            update_time_range,
+        } = policy;
+        let records_per_detect = self.runtime.block_on(App::create_rec_infos(
+            records_per_detect,
+            path,
+            self.rule_keys.to_owned(),
+            stored_static.no_pwsh_field_extraction,
+        ));
+        timeline.start(&records_per_detect, stored_static);
+        if run_rules {
+            // Run the loaded detection rules against this batch of records.
+            let (detection_tmp, mut log_records) =
+                detection.start(&self.runtime, records_per_detect);
+
+            if update_time_range
+                && let MinMaxResult::MinMax(min_time, max_time) =
+                    log_records.iter().map(|info| info.detected_time).minmax()
+            {
+                if result_state.detect_starttime.is_none()
+                    || result_state.detect_starttime.unwrap() > min_time
+                {
+                    result_state.detect_starttime = Some(min_time);
+                }
+                if result_state.detect_endtime.is_none()
+                    || result_state.detect_endtime.unwrap() < max_time
+                {
+                    result_state.detect_endtime = Some(max_time);
+                }
+            }
+            emit_or_buffer(
+                &mut log_records,
+                detect_infos,
+                stored_static,
+                output_writer,
+                result_state,
+            );
+            detection = detection_tmp;
+        }
+        detection
     }
 
     /// Apply the computer, EventID, channel, and timestamp filters to a JSON record. Returns
@@ -2805,39 +2869,20 @@ Any hostnames added to the critical_systems.txt file will have all alerts above 
                 break;
             }
 
-            let records_per_detect = self.runtime.block_on(App::create_rec_infos(
-                records_per_detect,
-                &path,
-                self.rule_keys.to_owned(),
-                stored_static.no_pwsh_field_extraction,
-            ));
-
-            // Execute the timeline feature.
-            timeline.start(&records_per_detect, stored_static);
-
-            // Do not apply rules for the following commands.
-            if !(stored_static.metrics_flag
-                || stored_static.logon_summary_flag
-                || stored_static.log_metrics_flag
-                || stored_static.search_flag)
-            {
-                // Detect using rule files.
-                let (detection_tmp, mut log_records) =
-                    detection.start(&self.runtime, records_per_detect);
-                if stored_static.is_low_memory {
-                    let empty_ids = HashSet::new();
-                    results::emit_csv(
-                        &log_records,
-                        &empty_ids,
-                        stored_static,
-                        output_writer,
-                        result_state,
-                    );
-                } else {
-                    detect_infos.append(&mut log_records);
-                }
-                detection = detection_tmp;
-            }
+            detection = self.process_detection_batch(
+                (records_per_detect, &path),
+                detection,
+                &mut timeline,
+                stored_static,
+                (&mut detect_infos, output_writer, result_state),
+                BatchPolicy {
+                    run_rules: !(stored_static.metrics_flag
+                        || stored_static.logon_summary_flag
+                        || stored_static.log_metrics_flag
+                        || stored_static.search_flag),
+                    update_time_range: false,
+                },
+            );
         }
         timeline.total_record_cnt += record_cnt;
         (
@@ -3290,8 +3335,9 @@ mod tests {
             &mut result_state,
         );
         assert_eq!(actual.1, 2);
-        // TODO add check
-        //assert_eq!(MESSAGES.len(), 2);
+        // Buffered (not low-memory): both matching records are collected into detect_infos rather
+        // than streamed (the low-memory variant asserts this is 0).
+        assert_eq!(actual.4.len(), 2);
     }
 
     #[test]
@@ -3787,5 +3833,49 @@ mod tests {
         );
         assert_eq!(actual.1, 2);
         assert_eq!(actual.4.len(), 0);
+    }
+
+    // A focused test of the extracted stream-vs-buffer policy: the default (sorted) mode moves the
+    // batch into the buffer and drains it from the input; low-memory (unsorted) mode emits the
+    // batch and leaves the buffer untouched. This locks down `emit_or_buffer` independently of the
+    // evtx/JSON accumulation paths.
+    #[test]
+    fn test_emit_or_buffer_policy() {
+        let stored_static = create_dummy_stored_static();
+        *STORED_EKEY_ALIAS.write().unwrap() = Some(stored_static.eventkey_alias.clone());
+        *STORED_STATIC.write().unwrap() = Some(stored_static.clone());
+        let mut output_writer = results::init_writer(&stored_static);
+        let mut result_state = ResultOutputState::default();
+
+        // Buffered: records move into the buffer and the input list is emptied.
+        let mut buffer = vec![];
+        let mut log_records = vec![
+            hayabusa::detections::message::DetectInfo::default(),
+            hayabusa::detections::message::DetectInfo::default(),
+        ];
+        crate::emit_or_buffer(
+            &mut log_records,
+            &mut buffer,
+            &stored_static,
+            &mut output_writer,
+            &mut result_state,
+        );
+        assert_eq!(buffer.len(), 2);
+        assert!(log_records.is_empty());
+
+        // Low-memory (unsorted timeline): the batch is streamed, so the buffer stays empty.
+        let mut low = create_dummy_stored_static();
+        low.is_low_memory = true;
+        let mut low_writer = results::init_writer(&low);
+        let mut buffer_low = vec![];
+        let mut log_records_low = vec![hayabusa::detections::message::DetectInfo::default()];
+        crate::emit_or_buffer(
+            &mut log_records_low,
+            &mut buffer_low,
+            &low,
+            &mut low_writer,
+            &mut result_state,
+        );
+        assert!(buffer_low.is_empty());
     }
 }
