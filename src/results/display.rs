@@ -26,6 +26,7 @@ pub(crate) fn _get_serialized_disp_output(
     data: &[(CompactString, Profile)],
     header: bool,
     (output_remover, remover_vals): (&AhoCorasick, &[&str]),
+    rule_author_multiline: bool,
     no_color: bool,
     level_color: Option<Color>,
 ) {
@@ -76,9 +77,19 @@ pub(crate) fn _get_serialized_disp_output(
             } else {
                 ColPos::Other
             };
+            // In multiline/tab mode the rule authors were formerly joined with a `🛂🛂` marker that
+            // this display path's whitespace collapse reduced to single spaces. Reproduce that by
+            // replacing the `,`/`/`/`;` author separators with spaces before the collapse;
+            // consecutive separators (e.g. a `//` inside a URL) collapse to one space, as before.
+            let value = match d.1 {
+                Profile::RuleAuthor(_) if rule_author_multiline => {
+                    d.1.to_value().replace([',', '/', ';'], " ")
+                }
+                _ => d.1.to_value(),
+            };
             let display_contents = _format_cellpos(
                 &output_remover
-                    .replace_all(&d.1.to_value().split_whitespace().join(" "), remover_vals)
+                    .replace_all(&value.split_whitespace().join(" "), remover_vals)
                     .split_ascii_whitespace()
                     .join(" "),
                 col_pos,
