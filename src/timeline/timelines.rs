@@ -754,8 +754,8 @@ mod tests {
     use crate::{
         detections::{
             configs::{
-                Action, CommonOptions, Config, DetectCommonOption, EidMetricsOption, InputOption,
-                LogonSummaryOption, STORED_EKEY_ALIAS, StoredStatic,
+                Action, ClobberOption, CommonOptions, Config, DetectCommonOption, EidMetricsOption,
+                InputOption, LogonSummaryOption, STORED_EKEY_ALIAS, StoredStatic, TimeRangeOption,
             },
             utils::create_rec_info,
         },
@@ -807,9 +807,11 @@ mod tests {
                     utc: false,
                 },
                 output: None,
-                clobber: false,
-                end_timeline: None,
-                start_timeline: None,
+                clobber_opt: ClobberOption { clobber: false },
+                time_range: TimeRangeOption {
+                    end_timeline: None,
+                    start_timeline: None,
+                },
                 remove_duplicate_detections: false,
             }));
         dummy_stored_static.logon_summary_flag = true;
@@ -1043,7 +1045,7 @@ mod tests {
                     utc: false,
                 },
                 output: Some(Path::new("./test_tm_stats.csv").to_path_buf()),
-                clobber: false,
+                clobber_opt: ClobberOption { clobber: false },
                 remove_duplicate_detections: false,
             }));
         *STORED_EKEY_ALIAS.write().unwrap() = Some(dummy_stored_static.eventkey_alias.clone());
@@ -1138,9 +1140,11 @@ mod tests {
                     utc: false,
                 },
                 output: Some(Path::new("./test_tm_logon_stats").to_path_buf()),
-                clobber: false,
-                end_timeline: None,
-                start_timeline: None,
+                clobber_opt: ClobberOption { clobber: false },
+                time_range: TimeRangeOption {
+                    end_timeline: None,
+                    start_timeline: None,
+                },
                 remove_duplicate_detections: false,
             }));
         dummy_stored_static.logon_summary_flag = true;

@@ -504,7 +504,11 @@ Any hostnames added to the critical_systems.txt file will have all alerts above 
                 if let Some(html_path) = &stored_static.output_option.as_ref().unwrap().html_report
                 {
                     // If an HTML report file with the same name already exists, output an alert message and exit.
-                    if !stored_static.output_option.as_ref().unwrap().clobber
+                    if !stored_static
+                        .output_option
+                        .as_ref()
+                        .unwrap()
+                        .is_clobber_enabled()
                         && utils::check_file_expect_not_exist(
                             html_path.as_path(),
                             format!(
@@ -517,7 +521,11 @@ Any hostnames added to the critical_systems.txt file will have all alerts above 
                     }
                 }
                 if let Some(path) = &stored_static.output_path
-                    && !stored_static.output_option.as_ref().unwrap().clobber
+                    && !stored_static
+                        .output_option
+                        .as_ref()
+                        .unwrap()
+                        .is_clobber_enabled()
                     && utils::check_file_expect_not_exist(
                         path.as_path(),
                         format!(
@@ -553,7 +561,11 @@ Any hostnames added to the critical_systems.txt file will have all alerts above 
                 if let Some(path) = &stored_static.output_path {
                     for suffix in &["-successful.csv", "-failed.csv"] {
                         let output_file = format!("{}{suffix}", path.to_str().unwrap());
-                        if !stored_static.output_option.as_ref().unwrap().clobber
+                        if !stored_static
+                            .output_option
+                            .as_ref()
+                            .unwrap()
+                            .is_clobber_enabled()
                             && utils::check_file_expect_not_exist(
                                 Path::new(output_file.as_str()),
                                 format!(
@@ -590,7 +602,11 @@ Any hostnames added to the critical_systems.txt file will have all alerts above 
             | Action::Search(_)
             | Action::ExtractBase64(_) => {
                 if let Some(path) = &stored_static.output_path
-                    && !stored_static.output_option.as_ref().unwrap().clobber
+                    && !stored_static
+                        .output_option
+                        .as_ref()
+                        .unwrap()
+                        .is_clobber_enabled()
                     && utils::check_file_expect_not_exist(
                         path.as_path(),
                         format!(
@@ -635,7 +651,7 @@ Any hostnames added to the critical_systems.txt file will have all alerts above 
                     pivot_key_unions.iter().for_each(|(key, _)| {
                         let keywords_file_name =
                             csv_path.as_path().display().to_string() + "-" + key + ".txt";
-                        if !stored_static.output_option.as_ref().unwrap().clobber && utils::check_file_expect_not_exist(
+                        if !stored_static.output_option.as_ref().unwrap().is_clobber_enabled() && utils::check_file_expect_not_exist(
                             Path::new(&keywords_file_name),
                             format!(
                                 " The file {} already exists. Please specify a different filename or add the -C, --clobber option to overwrite.",
@@ -3209,10 +3225,10 @@ mod tests {
     use hayabusa::{
         detections::{
             configs::{
-                Action, ComputerMetricsOption, Config, ConfigReader, CsvOutputOption,
-                DetectCommonOption, EidMetricsOption, InputOption, JSONOutputOption,
-                LogonSummaryOption, OutputOption, STORED_EKEY_ALIAS, STORED_STATIC, StoredStatic,
-                TargetEventTime, TargetIds,
+                Action, ClobberOption, ComputerMetricsOption, Config, ConfigReader,
+                CsvOutputOption, DetectCommonOption, EidMetricsOption, InputOption,
+                JSONOutputOption, LogonSummaryOption, OutputOption, STORED_EKEY_ALIAS,
+                STORED_STATIC, StoredStatic, TargetEventTime, TargetIds,
             },
             detection,
             rule::create_rule,
@@ -3398,7 +3414,7 @@ mod tests {
                     json_input: true,
                     ..Default::default()
                 },
-                clobber: true,
+                clobber_opt: ClobberOption { clobber: true },
                 no_wizard: true,
                 ..Default::default()
             },
@@ -3479,7 +3495,7 @@ mod tests {
                     json_input: true,
                     ..Default::default()
                 },
-                clobber: true,
+                clobber_opt: ClobberOption { clobber: true },
                 no_wizard: true,
                 ..Default::default()
             },
@@ -3550,7 +3566,7 @@ mod tests {
                 json_input: true,
                 ..Default::default()
             },
-            clobber: true,
+            clobber_opt: ClobberOption { clobber: true },
             ..Default::default()
         });
         let config = Some(Config {
@@ -3616,7 +3632,7 @@ mod tests {
                 json_input: true,
                 ..Default::default()
             },
-            clobber: true,
+            clobber_opt: ClobberOption { clobber: true },
             ..Default::default()
         });
         let config = Some(Config {
@@ -3678,7 +3694,7 @@ mod tests {
                 ..Default::default()
             },
             json_input: true,
-            clobber: true,
+            clobber_opt: ClobberOption { clobber: true },
             ..Default::default()
         });
         let config = Some(Config {
