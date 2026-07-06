@@ -678,12 +678,12 @@ fn countup_aggregation(
     level: &LEVEL,
     entry_key: &str,
 ) {
-    // Mutate the inner map in place instead of cloning it, incrementing, and re-inserting (which
-    // made every call O(n) in the map size). `ResultOutputState::default` pre-populates the map
-    // with an inner map for every `LEVEL`, and all callers pass a real `LEVEL`, so the key is
-    // always present — a single `get_mut` suffices.
-    let detect_counts_by_rules = count_map.get_mut(level).unwrap();
+    let mut detect_counts_by_rules = count_map
+        .get(level)
+        .unwrap_or_else(|| count_map.get(&LEVEL::UNDEFINED).unwrap())
+        .to_owned();
     *detect_counts_by_rules.entry(entry_key.into()).or_insert(0) += 1;
+    count_map.insert(level.clone(), detect_counts_by_rules);
 }
 /// Prints the total and unique detection counts (overall and per level, with percentages) to
 /// stdout, and accumulates the same information for the HTML report when enabled.
