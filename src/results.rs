@@ -360,31 +360,29 @@ fn emit_csv_inner(
     output_writer: &mut OutputWriter,
     result_state: &mut ResultOutputState,
 ) -> io::Result<()> {
-    // Control characters in record field values were escaped earlier in the pipeline as
-    // "🛂r"/"🛂n"/"🛂t" (see utils::remove_sp_char). output_replacer first restores them to the
-    // real control characters, then output_remover flattens control characters to spaces for
-    // single-line output. With the multiline (or tab-separator) option, the "🛂🛂" marker used to
-    // join multi-valued entries and the " ¦ " field separator become line breaks (or tabs)
-    // instead.
-    let output_replaced_maps: HashMap<&str, &str> =
-        HashMap::from_iter(vec![("🛂r", "\r"), ("🛂n", "\n"), ("🛂t", "\t")]);
-    let mut removed_replaced_maps: HashMap<&str, &str> =
-        HashMap::from_iter(vec![("\n", " "), ("\r", " "), ("\t", " ")]);
+    // Field values reach here with real `\n`/`\r`/`\t` (kept by utils::remove_sp_char). For
+    // single-line output the whole value is whitespace-collapsed and output_remover flattens any
+    // remaining control characters to spaces; with the multiline (or tab-separator) option the
+    // "🛂🛂" marker used to join multi-valued entries and the " ¦ " field separator become line
+    // breaks (or tabs) instead. Keep the (pattern, replacement) pairs in a single ordered list so
+    // the automaton's patterns and the replacement slice line up — `AhoCorasick::replace_all`
+    // indexes the replacements by pattern id.
+    let mut removed_replaced_pairs: Vec<(&str, &str)> = vec![("\n", " "), ("\r", " "), ("\t", " ")];
     if stored_static.multiline_flag {
-        removed_replaced_maps.insert("🛂🛂", "\r\n");
-        removed_replaced_maps.insert(" ¦ ", "\r\n");
+        removed_replaced_pairs.push(("🛂🛂", "\r\n"));
+        removed_replaced_pairs.push((" ¦ ", "\r\n"));
     } else if stored_static.tab_separator_flag {
-        removed_replaced_maps.insert("🛂🛂", "\t");
-        removed_replaced_maps.insert(" ¦ ", "\t");
+        removed_replaced_pairs.push(("🛂🛂", "\t"));
+        removed_replaced_pairs.push((" ¦ ", "\t"));
     }
-    let output_replacer = AhoCorasickBuilder::new()
-        .match_kind(MatchKind::LeftmostLongest)
-        .build(output_replaced_maps.keys())
-        .unwrap();
     let output_remover = AhoCorasickBuilder::new()
         .match_kind(MatchKind::LeftmostLongest)
-        .build(removed_replaced_maps.keys())
+        .build(removed_replaced_pairs.iter().map(|(pattern, _)| *pattern))
         .unwrap();
+    let remover_vals: Vec<&str> = removed_replaced_pairs
+        .iter()
+        .map(|(_, replacement)| *replacement)
+        .collect();
 
     // Prepare the per-level color map, then determine the output format and whether duplicate
     // field data should be replaced with "DUP" (the remove-duplicate-data option).
@@ -415,8 +413,7 @@ fn emit_csv_inner(
                     &output_writer.display_writer,
                     profile,
                     true,
-                    (&output_replacer, &output_replaced_maps),
-                    (&output_remover, &removed_replaced_maps),
+                    (&output_remover, &remover_vals),
                     stored_static.common_options.no_color,
                     get_writable_color(
                         _get_output_color(&color_map, &detect_info.level),
@@ -429,8 +426,7 @@ fn emit_csv_inner(
                 &output_writer.display_writer,
                 &detect_info.output_fields,
                 false,
-                (&output_replacer, &output_replaced_maps),
-                (&output_remover, &removed_replaced_maps),
+                (&output_remover, &remover_vals),
                 stored_static.common_options.no_color,
                 get_writable_color(
                     _get_output_color(&color_map, &detect_info.level),
@@ -517,29 +513,15 @@ fn emit_csv_inner(
                             "DUP".to_string()
                         } else {
                             output_remover.replace_all(
-                                &output_replacer
-                                    .replace_all(
-                                        &x.1.to_value(),
-                                        &output_replaced_maps.values().collect_vec(),
-                                    )
-                                    .split_whitespace()
-                                    .join(" "),
-                                &removed_replaced_maps.values().collect_vec(),
+                                &x.1.to_value().split_whitespace().join(" "),
+                                &remover_vals,
                             )
                         };
                         result_state.prev_message.insert(x.0.clone(), x.1.clone());
                         ret
                     }
-                    _ => output_remover.replace_all(
-                        &output_replacer
-                            .replace_all(
-                                &x.1.to_value(),
-                                &output_replaced_maps.values().collect_vec(),
-                            )
-                            .split_whitespace()
-                            .join(" "),
-                        &removed_replaced_maps.values().collect_vec(),
-                    ),
+                    _ => output_remover
+                        .replace_all(&x.1.to_value().split_whitespace().join(" "), &remover_vals),
                 }
             }))?;
         }
@@ -1299,8 +1281,7 @@ fn _get_serialized_disp_output(
     display_writer: &BufferWriter,
     data: &[(CompactString, Profile)],
     header: bool,
-    (output_replacer, output_replaced_maps): (&AhoCorasick, &HashMap<&str, &str>),
-    (output_remover, removed_replaced_maps): (&AhoCorasick, &HashMap<&str, &str>),
+    (output_remover, remover_vals): (&AhoCorasick, &[&str]),
     no_color: bool,
     level_color: Option<Color>,
 ) {
@@ -1353,16 +1334,7 @@ fn _get_serialized_disp_output(
             };
             let display_contents = _format_cellpos(
                 &output_remover
-                    .replace_all(
-                        &output_replacer
-                            .replace_all(
-                                &d.1.to_value(),
-                                &output_replaced_maps.values().collect_vec(),
-                            )
-                            .split_whitespace()
-                            .join(" "),
-                        &removed_replaced_maps.values().collect_vec(),
-                    )
+                    .replace_all(&d.1.to_value().split_whitespace().join(" "), remover_vals)
                     .split_ascii_whitespace()
                     .join(" "),
                 col_pos,
@@ -1389,14 +1361,8 @@ fn _get_serialized_disp_output(
                                     "{} ",
                                     output_remover
                                         .replace_all(
-                                            &output_replacer
-                                                .replace_all(
-                                                    val,
-                                                    &output_replaced_maps.values().collect_vec(),
-                                                )
-                                                .split_whitespace()
-                                                .join(" "),
-                                            &removed_replaced_maps.values().collect_vec(),
+                                            &val.split_whitespace().join(" "),
+                                            remover_vals,
                                         )
                                         .split_ascii_whitespace()
                                         .join(" ")
@@ -1871,32 +1837,33 @@ impl Serialize for JsonNode {
 
 /// Converts a field-value string to a JSON scalar, reproducing the previous type-guessing:
 /// an i64-parseable value becomes a JSON number, `true`/`false` becomes a boolean, and
-/// anything else becomes a string (with the `🛂` placeholders restored).
+/// anything else becomes a string. Any real `\n`/`\r`/`\t` in the value are escaped by
+/// `serde_json` (as of #1849; previously they were `🛂n`/`🛂r`/`🛂t` placeholders rendered as the
+/// visible text `\\n`/`\\r`/`\\t`).
 fn json_scalar(value: &str) -> serde_json::Value {
     if let Ok(i) = i64::from_str(value) {
         serde_json::Value::from(i)
     } else if let Ok(b) = bool::from_str(value) {
         serde_json::Value::from(b)
     } else {
-        serde_json::Value::String(restore_placeholders(value))
+        serde_json::Value::String(close_unterminated_quote(value))
     }
 }
 
 /// A JSON string leaf (no type-guessing) — used for array elements, which are always emitted
 /// as strings.
 fn json_string(value: &str) -> serde_json::Value {
-    serde_json::Value::String(restore_placeholders(value))
+    serde_json::Value::String(close_unterminated_quote(value))
 }
 
-/// Restores the `🛂` control-char placeholders to backslashes and reproduces the previous
-/// `_convert_valid_json_str` quirk where a value starting with a double quote but not ending
-/// with one had a closing quote appended (kept for byte-identical JSON data).
-fn restore_placeholders(value: &str) -> String {
-    let mut restored = value.replace('🛂', "\\");
+/// Reproduces the previous `_convert_valid_json_str` quirk where a value starting with a double
+/// quote but not ending with one had a closing quote appended (kept for byte-identical JSON data).
+fn close_unterminated_quote(value: &str) -> String {
+    let mut out = value.to_string();
     if value.starts_with('"') && !value.ends_with('"') {
-        restored.push('"');
+        out.push('"');
     }
-    restored
+    out
 }
 
 /// Splits each "key: value" detail entry (on the first colon), trims both sides, and groups
@@ -2309,6 +2276,7 @@ mod tests {
     use crate::options::profile::{Profile, load_profile};
     use crate::results::_print_unique_results;
     use crate::results::ResultOutputState;
+    use crate::results::close_unterminated_quote;
     use crate::results::format_time;
     use crate::results::get_duplicate_indices;
     use crate::results::html_escape_value;
@@ -2316,7 +2284,6 @@ mod tests {
     use crate::results::json_scalar;
     use crate::results::json_string;
     use crate::results::output_results_inner;
-    use crate::results::restore_placeholders;
     use crate::results::sort_detect_info;
 
     #[test]
@@ -2908,20 +2875,24 @@ mod tests {
         assert!(remove_file("./test_emit_csv_multiline.csv").is_ok());
     }
 
-    /// Regression guard for the escaping / control-char-placeholder behaviour that moved from the
-    /// deleted `_convert_valid_json_str` into `restore_placeholders` + `json_scalar`/`json_string`.
+    /// Regression guard for the escaping / control-char behaviour that moved from the deleted
+    /// `_convert_valid_json_str` into `json_scalar`/`json_string` + `close_unterminated_quote`.
+    /// As of #1849 real `\n`/`\r`/`\t` are kept in field values and escaped by serde_json (a value
+    /// containing a newline now serializes to the JSON escape `\n`, not the old visible `\\n`).
     #[test]
-    fn test_json_scalar_and_placeholder_restoration() {
+    fn test_json_scalar_and_quote_quirk() {
         use serde_json::json;
-        // `remove_sp_char` placeholders `🛂n`/`🛂r`/`🛂t` restore to a literal backslash + letter.
-        assert_eq!(restore_placeholders("🛂n"), "\\n");
-        assert_eq!(restore_placeholders("a🛂tb"), "a\\tb");
-        assert_eq!(restore_placeholders("plain"), "plain");
-        assert_eq!(restore_placeholders("C:\\path"), "C:\\path");
+        // Real control chars are escaped by serde_json: a `\n` value serializes to a JSON `\n`.
+        assert_eq!(json_scalar("a\nb"), json!("a\nb"));
+        assert_eq!(json_scalar("a\tb"), json!("a\tb"));
+        assert_eq!(json_string("x\ry"), json!("x\ry"));
+        // close_unterminated_quote leaves ordinary text untouched.
+        assert_eq!(close_unterminated_quote("plain"), "plain");
+        assert_eq!(close_unterminated_quote("C:\\path"), "C:\\path");
         // Leading-quote quirk: a value starting with a quote but not ending with one gets a
         // closing quote appended (preserved for byte-identical data).
-        assert_eq!(restore_placeholders("\"C:\\a\" x"), "\"C:\\a\" x\"");
-        assert_eq!(restore_placeholders("\"quoted\""), "\"quoted\"");
+        assert_eq!(close_unterminated_quote("\"C:\\a\" x"), "\"C:\\a\" x\"");
+        assert_eq!(close_unterminated_quote("\"quoted\""), "\"quoted\"");
         // json_scalar type-guessing: ints/bools unquoted, everything else a string.
         assert_eq!(json_scalar("1111"), json!(1111));
         assert_eq!(json_scalar("-5"), json!(-5));
@@ -2930,10 +2901,8 @@ mod tests {
         assert_eq!(json_scalar("007"), json!(7));
         assert_eq!(json_scalar("1.5"), json!("1.5"));
         assert_eq!(json_scalar("hello"), json!("hello"));
-        assert_eq!(json_scalar("🛂n"), json!("\\n"));
         // json_string never type-guesses (array elements are always strings).
         assert_eq!(json_string("1111"), json!("1111"));
-        assert_eq!(json_string("🛂r"), json!("\\r"));
         // A quote-prefixed value serializes to well-formed JSON that round-trips.
         let serialized = serde_json::to_string(&json_scalar("\"weird")).unwrap();
         assert_eq!(

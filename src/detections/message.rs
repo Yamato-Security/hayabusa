@@ -168,9 +168,9 @@ pub fn create_message(
         if is_json_timeline {
             record_details_info_map.insert("#Details".into(), special_char_removed_details.clone());
         }
-        // remove_sp_char() strips special (control) characters via retain(). So that the newline
-        // characters inside Details survive this, they are first converted to special placeholder
-        // sequences that include an emoji (e.g. "🛂n").
+        // remove_sp_char() strips control characters via retain() but keeps \n/\r/\t so the
+        // newlines inside Details survive to the output stage, which escapes them (JSON) or
+        // flattens them to spaces (CSV/search) per output format.
         let parsed_detail = remove_sp_char(removed_sp_parsed_detail);
         detect_info.detail = if parsed_detail.is_empty() {
             CompactString::from("-")

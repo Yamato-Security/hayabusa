@@ -846,24 +846,45 @@ pub fn output_duration((mut s, mut ms): (i64, i64)) -> String {
     format!("{h:02}:{m:02}:{s:02}.{ms:03}")
 }
 
-/// Sanitizes a field value for single-line output: \n, \r and \t are replaced with the "🛂n",
-/// "🛂r" and "🛂t" placeholders (restored or stripped later by the output code in results.rs),
-/// runs of spaces are collapsed into one, all remaining control characters are removed, and the
-/// result is trimmed.
+/// Sanitizes a field value for single-line output: runs of spaces are collapsed into one, all
+/// control characters except `\n`/`\r`/`\t` are removed, and leading/trailing spaces are trimmed.
+/// The kept `\n`/`\r`/`\t` are escaped or flattened per output format later — serde_json escapes
+/// them in JSON, while the CSV and `search` output paths collapse them to spaces.
+///
+/// NOTE (#1849): previously `\n`/`\r`/`\t` were replaced here with the `🛂n`/`🛂r`/`🛂t` placeholder
+/// sequences and restored/re-escaped by the output code. Keeping them as real characters removed
+/// that round-trip, but it is a deliberate BEHAVIOR CHANGE with two effects on JSON output —
+/// verified against the full sample-evtx corpus, where CSV output stays byte-identical and JSON
+/// differs only by these two things:
+///
+///   1. An interior newline/tab/CR inside a value now serializes as a proper `\n`/`\t`/`\r` JSON
+///      escape (a real newline when the JSON is parsed) instead of the old visible `\\n`/`\\t`/`\\r`
+///      two-character text.
+///   2. Leading/trailing `\n`/`\r`/`\t` (with the spaces next to them) in a value are now trimmed
+///      away: this function preserves them, but the downstream `.trim()` calls in the JSON
+///      `Details` grouping now see real whitespace instead of the opaque `🛂` placeholders that
+///      used to survive them. No interior content is lost.
+///
+/// CSV/`search` output is unchanged (control characters are still collapsed to a space). If either
+/// effect was actually relied on — e.g. a downstream consumer expected the visible `\\n` text, or
+/// expected leading/trailing newlines to be preserved — this will need to be reverted to the
+/// placeholder approach; see issue #1849.
 pub fn remove_sp_char(record_value: CompactString) -> CompactString {
-    let mut newline_replaced_cs: String = record_value
-        .replace('\n', "🛂n")
-        .replace('\r', "🛂r")
-        .replace('\t', "🛂t");
+    let mut cleaned: String = record_value.into();
     let mut prev = 'a';
-    newline_replaced_cs.retain(|ch| {
-        let retain_flag = (prev == ' ' && ch == ' ') || ch.is_control();
-        if !retain_flag {
+    cleaned.retain(|ch| {
+        // Collapse runs of spaces and drop every control character except `\n`/`\r`/`\t`, which
+        // are kept and handled per output format later.
+        let drop = (prev == ' ' && ch == ' ')
+            || (ch.is_control() && ch != '\n' && ch != '\r' && ch != '\t');
+        if !drop {
             prev = ch;
         }
-        !retain_flag
+        !drop
     });
-    newline_replaced_cs.trim().into()
+    // Trim only spaces so any leading/trailing `\n`/`\r`/`\t` are preserved (the previous code
+    // kept them because they were opaque `🛂` placeholders at that point).
+    cleaned.trim_matches(' ').into()
 }
 
 /// Returns the size of the file in bytes, or 0 if its metadata cannot be read (in which case a
