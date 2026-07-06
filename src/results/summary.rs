@@ -182,7 +182,12 @@ pub fn output_result_summary(
         .ok();
 
         println!();
-        let table_column_num = if terminal_width <= 105 {
+        let table_column_num = if terminal_width <= 72 {
+            // A 2-column authors table is up to ~73 chars wide (a 27-char author + " (NNN)" count
+            // + comfy_table padding/borders), so on a narrower terminal fall back to a single
+            // column instead of letting the table overflow/wrap.
+            1
+        } else if terminal_width <= 105 {
             2
         } else if terminal_width < 140 {
             3
@@ -615,6 +620,14 @@ fn _print_timeline_hist(timestamps: &[i64], length: usize, side_margin_size: usi
     }
 
     let title = "Detection Frequency Timeline";
+    // On a very narrow terminal there is not enough room to draw the histogram. Skip it rather
+    // than underflow the `usize` width math below — an underflow would make `" ".repeat(...)`
+    // attempt an enormous allocation and pass a huge width to the sparkline/marker builders.
+    let inner_width = length.saturating_sub(side_margin_size * 2);
+    if length < title.len() || inner_width == 0 {
+        buf_wtr.print(&wtr).ok();
+        return;
+    }
     let header_row_space = (length - title.len()) / 2;
     writeln!(wtr, "{}{}", " ".repeat(header_row_space), title).ok();
     println!();
@@ -626,17 +639,34 @@ fn _print_timeline_hist(timestamps: &[i64], length: usize, side_margin_size: usi
     };
     let marker_num = min(timestamp_marker_max, 18);
 
-    let (header_raw, footer_raw) =
-        build_time_markers(timestamps, marker_num, length - (side_margin_size * 2));
-    let sparkline = build_sparkline(timestamps, length - (side_margin_size * 2), 5_usize);
+    let (header_raw, footer_raw) = build_time_markers(timestamps, marker_num, inner_width);
+    let sparkline = build_sparkline(timestamps, inner_width, 5_usize);
     for header_str in header_raw.lines() {
-        writeln!(wtr, "{}{}", " ".repeat(side_margin_size - 1), header_str).ok();
+        writeln!(
+            wtr,
+            "{}{}",
+            " ".repeat(side_margin_size.saturating_sub(1)),
+            header_str
+        )
+        .ok();
     }
     for line in sparkline.lines() {
-        writeln!(wtr, "{}{}", " ".repeat(side_margin_size - 1), line).ok();
+        writeln!(
+            wtr,
+            "{}{}",
+            " ".repeat(side_margin_size.saturating_sub(1)),
+            line
+        )
+        .ok();
     }
     for footer_str in footer_raw.lines() {
-        writeln!(wtr, "{}{}", " ".repeat(side_margin_size - 1), footer_str).ok();
+        writeln!(
+            wtr,
+            "{}{}",
+            " ".repeat(side_margin_size.saturating_sub(1)),
+            footer_str
+        )
+        .ok();
     }
 
     buf_wtr.print(&wtr).ok();
@@ -648,12 +678,12 @@ fn countup_aggregation(
     level: &LEVEL,
     entry_key: &str,
 ) {
-    let mut detect_counts_by_rules = count_map
-        .get(level)
-        .unwrap_or_else(|| count_map.get(&LEVEL::UNDEFINED).unwrap())
-        .to_owned();
+    // Mutate the inner map in place instead of cloning it, incrementing, and re-inserting (which
+    // made every call O(n) in the map size). `ResultOutputState::default` pre-populates the map
+    // with an inner map for every `LEVEL`, and all callers pass a real `LEVEL`, so the key is
+    // always present — a single `get_mut` suffices.
+    let detect_counts_by_rules = count_map.get_mut(level).unwrap();
     *detect_counts_by_rules.entry(entry_key.into()).or_insert(0) += 1;
-    count_map.insert(level.clone(), detect_counts_by_rules);
 }
 /// Prints the total and unique detection counts (overall and per level, with percentages) to
 /// stdout, and accumulates the same information for the HTML report when enabled.
@@ -1017,13 +1047,10 @@ fn output_detected_rule_authors(
     // among equal-count authors.
     sorted_authors.sort_by(|a, b| b.1.cmp(a.1).then_with(|| a.0.cmp(b.0)));
     let authors_num = sorted_authors.len();
-    let div = if authors_num <= table_column_num {
-        1
-    } else if !authors_num.is_multiple_of(4) {
-        authors_num / table_column_num + 1
-    } else {
-        authors_num / table_column_num
-    };
+    // Ceiling division to fill `table_column_num` columns. (Previously this used a hard-coded
+    // `is_multiple_of(4)`, which only matched the real column count at terminal widths where
+    // table_column_num == 4 — at other widths it over-/under-counted rows, giving uneven tables.)
+    let div = authors_num.div_ceil(table_column_num);
     let mut tb = Table::new();
     tb.load_preset(UTF8_FULL)
         .apply_modifier(UTF8_ROUND_CORNERS)
