@@ -384,10 +384,10 @@ impl StoredStatic {
             _ => None,
         };
         let disable_abbreviation = match &input_config.as_ref().unwrap().action {
-            Some(Action::CsvTimeline(opt)) => opt.disable_abbreviations,
-            Some(Action::JsonTimeline(opt)) => opt.disable_abbreviations,
-            Some(Action::Search(opt)) => opt.disable_abbreviations,
-            Some(Action::LogMetrics(opt)) => opt.disable_abbreviations,
+            Some(Action::CsvTimeline(opt)) => opt.disable_abbreviations_opt.disable_abbreviations,
+            Some(Action::JsonTimeline(opt)) => opt.disable_abbreviations_opt.disable_abbreviations,
+            Some(Action::Search(opt)) => opt.disable_abbreviations_opt.disable_abbreviations,
+            Some(Action::LogMetrics(opt)) => opt.disable_abbreviations_opt.disable_abbreviations,
             _ => false,
         };
 
@@ -1175,6 +1175,31 @@ impl Action {
 }
 
 #[derive(Args, Clone, Debug, Default)]
+pub struct ClobberOption {
+    /// Overwrite files when saving
+    #[arg(help_heading = Some("General Options"), short='C', long = "clobber", display_order = 290, requires = "output")]
+    pub clobber: bool,
+}
+
+#[derive(Args, Clone, Debug, Default)]
+pub struct TimeRangeOption {
+    /// End time of the event logs to load (ex: "2022-02-22 23:59:59 +09:00")
+    #[arg(help_heading = Some("Filtering"), long = "timeline-end", value_name = "DATE", display_order = 460)]
+    pub end_timeline: Option<String>,
+
+    /// Start time of the event logs to load (ex: "2020-02-22 00:00:00 +09:00")
+    #[arg(help_heading = Some("Filtering"), long = "timeline-start", value_name = "DATE", display_order = 460)]
+    pub start_timeline: Option<String>,
+}
+
+#[derive(Args, Clone, Debug, Default)]
+pub struct DisableAbbreviationsOption {
+    /// Disable abbreviations
+    #[arg(help_heading = Some("Output"), short='b', long = "disable-abbreviations", display_order = 60)]
+    pub disable_abbreviations: bool,
+}
+
+#[derive(Args, Clone, Debug, Default)]
 pub struct DetectCommonOption {
     /// Scan JSON formatted logs instead of .evtx (.json or .jsonl)
     #[arg(help_heading = Some("General Options"), short = 'J', long = "JSON-input", conflicts_with = "live_analysis", display_order = 360)]
@@ -1330,13 +1355,8 @@ pub struct SearchOption {
     )]
     pub filter: Vec<String>,
 
-    /// End time of the event logs to load (ex: "2022-02-22 23:59:59 +09:00")
-    #[arg(help_heading = Some("Filtering"), long = "timeline-end", value_name = "DATE", display_order = 460)]
-    pub end_timeline: Option<String>,
-
-    /// Start time of the event logs to load (ex: "2020-02-22 00:00:00 +09:00")
-    #[arg(help_heading = Some("Filtering"), long = "timeline-start", value_name = "DATE", display_order = 460)]
-    pub start_timeline: Option<String>,
+    #[clap(flatten)]
+    pub time_range: TimeRangeOption,
 
     /// Save the search results in CSV format (ex: search.csv)
     #[arg(
@@ -1389,9 +1409,8 @@ pub struct SearchOption {
     #[arg(help_heading = Some("Output"), short = 'S', long="tab-separator", requires = "output", conflicts_with = "multiline", display_order = 490)]
     pub tab_separator: bool,
 
-    /// Overwrite files when saving
-    #[arg(help_heading = Some("General Options"), short='C', long = "clobber", display_order = 290, requires = "output")]
-    pub clobber: bool,
+    #[clap(flatten)]
+    pub clobber_opt: ClobberOption,
 
     /// Save the search results in JSON format (ex: -J -o results.json)
     #[arg(help_heading = Some("Output"), short = 'J', long = "JSON-output", conflicts_with_all = ["jsonl_output", "multiline"], requires = "output", display_order = 100)]
@@ -1404,9 +1423,8 @@ pub struct SearchOption {
     #[clap(flatten)]
     pub time_format_options: TimeFormatOptions,
 
-    /// Disable abbreviations
-    #[arg(help_heading = Some("Output"), short='b', long = "disable-abbreviations", display_order = 60)]
-    pub disable_abbreviations: bool,
+    #[clap(flatten)]
+    pub disable_abbreviations_opt: DisableAbbreviationsOption,
 
     /// Sort results before saving the file (warning: this uses much more memory!)
     #[arg(help_heading = Some("General Options"), short='s', long = "sort", display_order = 600)]
@@ -1476,9 +1494,8 @@ pub struct EidMetricsOption {
     #[clap(flatten)]
     pub time_format_options: TimeFormatOptions,
 
-    /// Overwrite files when saving
-    #[arg(help_heading = Some("General Options"), short='C', long = "clobber", display_order = 290, requires = "output")]
-    pub clobber: bool,
+    #[clap(flatten)]
+    pub clobber_opt: ClobberOption,
 }
 
 #[derive(Args, Clone, Debug, Default)]
@@ -1549,13 +1566,8 @@ pub struct PivotKeywordOption {
     #[arg(help_heading = Some("Filtering"), short = 'n', long = "enable-noisy-rules", requires = "no_wizard", display_order = 311)]
     pub enable_noisy_rules: bool,
 
-    /// End time of the event logs to load (ex: "2022-02-22 23:59:59 +09:00")
-    #[arg(help_heading = Some("Filtering"), long = "timeline-end", value_name = "DATE", display_order = 460)]
-    pub end_timeline: Option<String>,
-
-    /// Start time of the event logs to load (ex: "2020-02-22 00:00:00 +09:00")
-    #[arg(help_heading = Some("Filtering"), long = "timeline-start", value_name = "DATE", display_order = 460)]
-    pub start_timeline: Option<String>,
+    #[clap(flatten)]
+    pub time_range: TimeRangeOption,
 
     /// Scan only common EIDs for faster speed (./rules/config/target_event_IDs.txt)
     #[arg(help_heading = Some("Filtering"), short = 'E', long = "EID-filter", display_order = 50)]
@@ -1572,9 +1584,8 @@ pub struct PivotKeywordOption {
     #[clap(flatten)]
     pub detect_common_options: DetectCommonOption,
 
-    /// Overwrite files when saving
-    #[arg(help_heading = Some("General Options"), short='C', long = "clobber", display_order = 290, requires = "output")]
-    pub clobber: bool,
+    #[clap(flatten)]
+    pub clobber_opt: ClobberOption,
 
     /// Do not ask questions. Scan for all events and alerts.
     #[arg(help_heading = Some("General Options"), short = 'w', long = "no-wizard", display_order = 400)]
@@ -1603,17 +1614,11 @@ pub struct LogonSummaryOption {
     #[clap(flatten)]
     pub time_format_options: TimeFormatOptions,
 
-    /// Overwrite files when saving
-    #[arg(help_heading = Some("General Options"), short='C', long = "clobber", display_order = 290, requires = "output")]
-    pub clobber: bool,
+    #[clap(flatten)]
+    pub clobber_opt: ClobberOption,
 
-    /// End time of the event logs to load (ex: "2022-02-22 23:59:59 +09:00")
-    #[arg(help_heading = Some("Filtering"), long = "timeline-end", value_name = "DATE", display_order = 460)]
-    pub end_timeline: Option<String>,
-
-    /// Start time of the event logs to load (ex: "2020-02-22 00:00:00 +09:00")
-    #[arg(help_heading = Some("Filtering"), long = "timeline-start", value_name = "DATE", display_order = 460)]
-    pub start_timeline: Option<String>,
+    #[clap(flatten)]
+    pub time_range: TimeRangeOption,
 }
 
 /// Options that can be set when outputting results (flattened into csv-timeline/json-timeline)
@@ -1687,13 +1692,8 @@ pub struct OutputOption {
     #[arg(help_heading = Some("Filtering"), short = 'n', long = "enable-noisy-rules", requires = "no_wizard", display_order = 311)]
     pub enable_noisy_rules: bool,
 
-    /// End time of the event logs to load (ex: "2022-02-22 23:59:59 +09:00")
-    #[arg(help_heading = Some("Filtering"), long = "timeline-end", value_name = "DATE", display_order = 460)]
-    pub end_timeline: Option<String>,
-
-    /// Start time of the event logs to load (ex: "2020-02-22 00:00:00 +09:00")
-    #[arg(help_heading = Some("Filtering"), long = "timeline-start", value_name = "DATE", display_order = 460)]
-    pub start_timeline: Option<String>,
+    #[clap(flatten)]
+    pub time_range: TimeRangeOption,
 
     /// Scan only common EIDs for faster speed (./rules/config/target_event_IDs.txt)
     #[arg(help_heading = Some("Filtering"), short = 'E', long = "EID-filter", conflicts_with_all=["include_eid","exclude_eid"], display_order = 50)]
@@ -1746,9 +1746,8 @@ pub struct OutputOption {
     #[arg(help_heading = Some("Display Settings"), short = 'N', long = "no-summary", conflicts_with = "html_report", display_order = 401)]
     pub no_summary: bool,
 
-    /// Overwrite files when saving
-    #[arg(help_heading = Some("General Options"), short='C', long = "clobber", display_order = 290, requires = "output")]
-    pub clobber: bool,
+    #[clap(flatten)]
+    pub clobber_opt: ClobberOption,
 
     /// Disable field data mapping
     #[arg(help_heading = Some("Output"), short = 'F', long = "no-field-data-mapping", display_order = 400)]
@@ -1787,6 +1786,14 @@ pub struct OutputOption {
     /// Scan all evtx files regardless of loaded rules (disable channel filter for evtx files)
     #[arg(help_heading = Some("Filtering"), short='a', long = "scan-all-evtx-files", display_order = 450)]
     pub scan_all_evtx_files: bool,
+}
+
+impl OutputOption {
+    /// Whether existing output files may be overwritten (the `-C`/`--clobber` flag, now carried by
+    /// the flattened `ClobberOption`).
+    pub fn is_clobber_enabled(&self) -> bool {
+        self.clobber_opt.clobber
+    }
 }
 
 #[derive(Copy, Args, Clone, Debug, Default)]
@@ -1857,9 +1864,8 @@ pub struct CsvOutputOption {
     #[arg(help_heading = Some("Output"), short = 'o', long, value_name = "FILE", display_order = 410)]
     pub output: Option<PathBuf>,
 
-    /// Disable abbreviations
-    #[arg(help_heading = Some("Output"), short='b', long = "disable-abbreviations", display_order = 60)]
-    pub disable_abbreviations: bool,
+    #[clap(flatten)]
+    pub disable_abbreviations_opt: DisableAbbreviationsOption,
 }
 
 #[derive(Args, Clone, Debug, Default)]
@@ -1885,9 +1891,8 @@ pub struct JSONOutputOption {
     )]
     pub geo_ip: Option<PathBuf>,
 
-    /// Disable abbreviations
-    #[arg(help_heading = Some("Output"), short='b', long = "disable-abbreviations", display_order = 60)]
-    pub disable_abbreviations: bool,
+    #[clap(flatten)]
+    pub disable_abbreviations_opt: DisableAbbreviationsOption,
 }
 
 #[derive(Args, Clone, Debug, Default)]
@@ -1930,9 +1935,8 @@ pub struct ComputerMetricsOption {
     #[arg(help_heading = Some("Display Settings"), short = 'v', long, display_order = 480)]
     pub verbose: bool,
 
-    /// Overwrite files when saving
-    #[arg(help_heading = Some("General Options"), short='C', long = "clobber", display_order = 290, requires = "output")]
-    pub clobber: bool,
+    #[clap(flatten)]
+    pub clobber_opt: ClobberOption,
 
     /// Enable checksum validation
     #[arg(help_heading = Some("General Options"), short = 'V', long = "validate-checksums", display_order = 480)]
@@ -1965,13 +1969,11 @@ pub struct LogMetricsOption {
     #[arg(help_heading = Some("Output"), short = 'S', long="tab-separator", conflicts_with = "multiline", display_order = 490)]
     pub tab_separator: bool,
 
-    /// Overwrite files when saving
-    #[arg(help_heading = Some("General Options"), short='C', long = "clobber", display_order = 290, requires = "output")]
-    pub clobber: bool,
+    #[clap(flatten)]
+    pub clobber_opt: ClobberOption,
 
-    /// Disable abbreviations
-    #[arg(help_heading = Some("Output"), short='b', long = "disable-abbreviations", display_order = 60)]
-    pub disable_abbreviations: bool,
+    #[clap(flatten)]
+    pub disable_abbreviations_opt: DisableAbbreviationsOption,
 
     /// Only include specified channels (ex: System,Security)
     #[arg(help_heading = Some("Filtering"),long = "include-channel", value_name = "CHANNEL...", conflicts_with = "exclude_channel", use_value_delimiter = true, value_delimiter = ',',display_order = 355)]
@@ -2008,9 +2010,8 @@ pub struct ExtractBase64Option {
     #[clap(flatten)]
     pub time_format_options: TimeFormatOptions,
 
-    /// Overwrite files when saving
-    #[arg(help_heading = Some("General Options"), short='C', long = "clobber", display_order = 290, requires = "output")]
-    pub clobber: bool,
+    #[clap(flatten)]
+    pub clobber_opt: ClobberOption,
 }
 
 #[derive(Args, Clone, Debug, Default)]
@@ -2274,13 +2275,13 @@ impl TargetEventTime {
                     )
                 } else {
                     get_time(
-                        option.output_options.start_timeline.as_ref(),
+                        option.output_options.time_range.start_timeline.as_ref(),
                         "start-timeline field: the timestamp format is not correct.",
                         &mut parse_success_flag,
                     )
                 };
                 let end_time = get_time(
-                    option.output_options.end_timeline.as_ref(),
+                    option.output_options.time_range.end_timeline.as_ref(),
                     "end-timeline field: the timestamp format is not correct.",
                     &mut parse_success_flag,
                 );
@@ -2295,13 +2296,13 @@ impl TargetEventTime {
                     )
                 } else {
                     get_time(
-                        option.output_options.start_timeline.as_ref(),
+                        option.output_options.time_range.start_timeline.as_ref(),
                         "start-timeline field: the timestamp format is not correct.",
                         &mut parse_success_flag,
                     )
                 };
                 let end_time = get_time(
-                    option.output_options.end_timeline.as_ref(),
+                    option.output_options.time_range.end_timeline.as_ref(),
                     "end-timeline field: the timestamp format is not correct.",
                     &mut parse_success_flag,
                 );
@@ -2316,13 +2317,13 @@ impl TargetEventTime {
                     )
                 } else {
                     get_time(
-                        option.start_timeline.as_ref(),
+                        option.time_range.start_timeline.as_ref(),
                         "start-timeline field: the timestamp format is not correct.",
                         &mut parse_success_flag,
                     )
                 };
                 let end_time = get_time(
-                    option.end_timeline.as_ref(),
+                    option.time_range.end_timeline.as_ref(),
                     "end-timeline field: the timestamp format is not correct.",
                     &mut parse_success_flag,
                 );
@@ -2337,13 +2338,13 @@ impl TargetEventTime {
                     )
                 } else {
                     get_time(
-                        option.start_timeline.as_ref(),
+                        option.time_range.start_timeline.as_ref(),
                         "start-timeline field: the timestamp format is not correct.",
                         &mut parse_success_flag,
                     )
                 };
                 let end_time = get_time(
-                    option.end_timeline.as_ref(),
+                    option.time_range.end_timeline.as_ref(),
                     "end-timeline field: the timestamp format is not correct.",
                     &mut parse_success_flag,
                 );
@@ -2358,13 +2359,13 @@ impl TargetEventTime {
                     )
                 } else {
                     get_time(
-                        option.start_timeline.as_ref(),
+                        option.time_range.start_timeline.as_ref(),
                         "start-timeline field: the timestamp format is not correct.",
                         &mut parse_success_flag,
                     )
                 };
                 let end_time = get_time(
-                    option.end_timeline.as_ref(),
+                    option.time_range.end_timeline.as_ref(),
                     "end-timeline field: the timestamp format is not correct.",
                     &mut parse_success_flag,
                 );
@@ -2569,14 +2570,13 @@ fn extract_search_options(config: &Config) -> Option<SearchOption> {
             config: option.config.clone(),
             verbose: option.verbose,
             multiline: option.multiline,
-            clobber: option.clobber,
+            clobber_opt: option.clobber_opt.clone(),
             json_output: option.json_output,
             jsonl_output: option.jsonl_output,
             time_format_options: option.time_format_options.clone(),
             and_logic: option.and_logic,
-            disable_abbreviations: option.disable_abbreviations,
-            start_timeline: option.start_timeline.clone(),
-            end_timeline: option.end_timeline.clone(),
+            disable_abbreviations_opt: option.disable_abbreviations_opt.clone(),
+            time_range: option.time_range.clone(),
             sort_events: option.sort_events,
             tab_separator: option.tab_separator,
             validate_checksums: option.validate_checksums,
@@ -2599,15 +2599,14 @@ fn extract_output_options(config: &Config) -> Option<OutputOption> {
             exclude_status: option.exclude_status.clone(),
             min_level: option.min_level.clone(),
             exact_level: option.exact_level.clone(),
-            end_timeline: option.end_timeline.clone(),
-            start_timeline: option.start_timeline.clone(),
+            time_range: option.time_range.clone(),
             eid_filter: option.eid_filter,
             time_format_options: TimeFormatOptions::default(),
             rules: Path::new("./rules").to_path_buf(),
             common_options: option.common_options,
             detect_common_options: option.detect_common_options.clone(),
             enable_unsupported_rules: option.enable_unsupported_rules,
-            clobber: option.clobber,
+            clobber_opt: option.clobber_opt.clone(),
             include_tag: option.include_tag.clone(),
             exclude_tag: option.exclude_tag.clone(),
             include_eid: option.include_eid.clone(),
@@ -2621,7 +2620,7 @@ fn extract_output_options(config: &Config) -> Option<OutputOption> {
             time_format_options: option.time_format_options.clone(),
             common_options: option.common_options,
             detect_common_options: option.detect_common_options.clone(),
-            clobber: option.clobber,
+            clobber_opt: option.clobber_opt.clone(),
             no_wizard: true,
             ..Default::default()
         }),
@@ -2631,7 +2630,7 @@ fn extract_output_options(config: &Config) -> Option<OutputOption> {
             rules: Path::new("./rules").to_path_buf(),
             common_options: option.common_options,
             detect_common_options: option.detect_common_options.clone(),
-            clobber: option.clobber,
+            clobber_opt: option.clobber_opt.clone(),
             no_wizard: true,
             ..Default::default()
         }),
@@ -2640,7 +2639,7 @@ fn extract_output_options(config: &Config) -> Option<OutputOption> {
             time_format_options: option.time_format_options.clone(),
             common_options: option.common_options,
             detect_common_options: option.detect_common_options.clone(),
-            clobber: option.clobber,
+            clobber_opt: option.clobber_opt.clone(),
             no_wizard: true,
             ..Default::default()
         }),
@@ -2659,7 +2658,7 @@ fn extract_output_options(config: &Config) -> Option<OutputOption> {
                 exclude_computer: None,
             },
             time_format_options: TimeFormatOptions::default(),
-            clobber: option.clobber,
+            clobber_opt: option.clobber_opt.clone(),
             no_wizard: true,
             ..Default::default()
         }),
@@ -2668,7 +2667,7 @@ fn extract_output_options(config: &Config) -> Option<OutputOption> {
             common_options: option.common_options,
             detect_common_options: option.detect_common_options.clone(),
             time_format_options: option.time_format_options.clone(),
-            clobber: option.clobber,
+            clobber_opt: option.clobber_opt.clone(),
             no_wizard: true,
             ..Default::default()
         }),
@@ -2687,7 +2686,7 @@ fn extract_output_options(config: &Config) -> Option<OutputOption> {
                 include_computer: None,
                 exclude_computer: None,
             },
-            clobber: option.clobber,
+            clobber_opt: option.clobber_opt.clone(),
             no_wizard: true,
             ..Default::default()
         }),
@@ -2878,8 +2877,8 @@ mod tests {
     use std::default::Default;
 
     use super::{
-        Action, CommonOptions, Config, CsvOutputOption, DetectCommonOption, InputOption,
-        JSONOutputOption, OutputOption, StoredStatic, TargetEventTime,
+        Action, ClobberOption, CommonOptions, Config, CsvOutputOption, DetectCommonOption,
+        InputOption, JSONOutputOption, OutputOption, StoredStatic, TargetEventTime,
         create_control_char_replace_map,
     };
     use crate::detections::configs::{
@@ -3019,7 +3018,7 @@ mod tests {
                 },
                 keywords: Some(vec!["mimikatz".to_string()]),
                 ignore_case: true,
-                clobber: true,
+                clobber_opt: ClobberOption { clobber: true },
                 sort_events: true,
                 ..Default::default()
             })),
@@ -3040,7 +3039,7 @@ mod tests {
                     time_offset: Some("1h1m".to_string()),
                     ..Default::default()
                 },
-                clobber: true,
+                clobber_opt: ClobberOption { clobber: true },
                 detect_common_options: DetectCommonOption {
                     json_input: true,
                     ..Default::default()
@@ -3063,7 +3062,7 @@ mod tests {
                     time_offset: Some("1y1d1h".to_string()),
                     ..Default::default()
                 },
-                clobber: true,
+                clobber_opt: ClobberOption { clobber: true },
                 detect_common_options: DetectCommonOption {
                     json_input: true,
                     ..Default::default()
@@ -3090,7 +3089,7 @@ mod tests {
                     time_offset: Some("1y1M1s".to_string()),
                     ..Default::default()
                 },
-                clobber: true,
+                clobber_opt: ClobberOption { clobber: true },
                 detect_common_options: DetectCommonOption {
                     json_input: true,
                     ..Default::default()
@@ -3109,5 +3108,27 @@ mod tests {
             (393..=397).contains(&actual_diff_day)
                 && actual_diff.num_seconds() - (actual_diff_day * 24 * 60 * 60) == 1
         );
+    }
+
+    // Regression guard for the #[clap(flatten)] de-duplication: the shared args must stay exposed
+    // on the same subcommands. Introspect the clap Command rather than parsing.
+    #[test]
+    fn test_flattened_clap_args_present() {
+        use clap::CommandFactory;
+        let cmd = Config::command();
+        let sub = |name: &str| {
+            cmd.get_subcommands()
+                .find(|s| s.get_name() == name)
+                .unwrap_or_else(|| panic!("subcommand {name} missing"))
+                .clone()
+        };
+        let has =
+            |c: &clap::Command, long: &str| c.get_arguments().any(|a| a.get_long() == Some(long));
+        let csv = sub("csv-timeline");
+        assert!(has(&csv, "clobber"));
+        assert!(has(&csv, "timeline-start"));
+        assert!(has(&csv, "timeline-end"));
+        assert!(has(&sub("eid-metrics"), "clobber"));
+        assert!(has(&sub("search"), "disable-abbreviations"));
     }
 }

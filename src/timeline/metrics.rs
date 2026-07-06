@@ -553,8 +553,8 @@ mod tests {
     use crate::{
         detections::{
             configs::{
-                Action, CommonOptions, Config, DetectCommonOption, EidMetricsOption, InputOption,
-                STORED_EKEY_ALIAS, StoredStatic,
+                Action, ClobberOption, CommonOptions, Config, DetectCommonOption, EidMetricsOption,
+                InputOption, STORED_EKEY_ALIAS, StoredStatic,
             },
             utils::create_rec_info,
         },
@@ -606,7 +606,7 @@ mod tests {
                     utc: false,
                 },
                 output: None,
-                clobber: false,
+                clobber_opt: ClobberOption { clobber: false },
                 remove_duplicate_detections: false,
             }));
 

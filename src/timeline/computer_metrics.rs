@@ -240,8 +240,8 @@ mod tests {
 
     use crate::{
         detections::configs::{
-            Action, CommonOptions, ComputerMetricsOption, Config, InputOption, STORED_EKEY_ALIAS,
-            STORED_STATIC, StoredStatic,
+            Action, ClobberOption, CommonOptions, ComputerMetricsOption, Config, InputOption,
+            STORED_EKEY_ALIAS, STORED_STATIC, StoredStatic,
         },
         timeline::{
             computer_metrics::{computer_metrics_dsp_msg, countup_event_by_computer},
@@ -278,7 +278,7 @@ mod tests {
                 config: Path::new("./rules/config").to_path_buf(),
                 verbose: false,
                 output: output.clone(),
-                clobber: true,
+                clobber_opt: ClobberOption { clobber: true },
                 validate_checksums: false,
             }));
         *STORED_EKEY_ALIAS.write().unwrap() = Some(dummy_stored_static.eventkey_alias.clone());

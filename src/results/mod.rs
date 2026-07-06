@@ -445,6 +445,7 @@ mod tests {
     use crate::detections::configs::CURRENT_EXE_PATH;
     use crate::detections::configs::Config;
     use crate::detections::configs::CsvOutputOption;
+    use crate::detections::configs::DisableAbbreviationsOption;
     use crate::detections::configs::JSONOutputOption;
     use crate::detections::configs::OutputOption;
     use crate::detections::configs::StoredStatic;
@@ -1717,7 +1718,9 @@ mod tests {
             geo_ip: None,
             output: Some(Path::new("./test_multiple_data_in_details.json").to_path_buf()),
             jsonl_timeline: false,
-            disable_abbreviations: false,
+            disable_abbreviations_opt: DisableAbbreviationsOption {
+                disable_abbreviations: false,
+            },
         });
         let dummy_config = Some(Config {
             action: Some(dummy_action),
