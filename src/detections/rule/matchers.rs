@@ -11,9 +11,7 @@ use crate::detections::configs::WINDASH_CHARACTERS;
 use crate::detections::rule::base64_match::{
     convert_to_base64_str, to_base64_utf8, to_base64_utf16be, to_base64_utf16le_with_bom,
 };
-use crate::detections::rule::fast_match::{
-    FastMatch, check_fast_match, convert_to_fast_match, create_fast_match,
-};
+use crate::detections::rule::fast_match::{FastMatch, check_fast_match, convert_to_fast_match};
 use crate::detections::{detection::EvtxRecordInfo, utils};
 use downcast_rs::Downcast;
 
@@ -247,6 +245,222 @@ impl DefaultMatcher {
     }
 }
 
+/// How the pattern is wrapped before matching (the surrounding wildcards).
+#[derive(PartialEq)]
+enum Wrap {
+    /// The bare pattern with no surrounding wildcards (no `contains`/`startswith`/`endswith`).
+    None,
+    StartsWith,
+    EndsWith,
+    Contains,
+    /// The keyless `|all` form, which uses the internal `allOnly*` sentinel prefix.
+    AllOnly,
+}
+
+/// Whether the pattern is base64-encoded before matching.
+#[derive(PartialEq)]
+enum Encoding {
+    Plain,
+    Base64,
+    Base64offset,
+}
+
+/// Whether the pattern is UTF-16-encoded before the base64 step (only meaningful with `Encoding`
+/// other than `Plain`).
+#[derive(PartialEq)]
+enum Utf16Kind {
+    None,
+    /// `|utf16`: both byte orders (base64offset) / UTF-16LE with a BOM (base64).
+    Utf16,
+    Utf16Le,
+    Utf16Be,
+    Wide,
+}
+
+/// A field's fast-path pipe modifiers, normalized from the pipe list in a single pass.
+///
+/// `from_pipes` folds the modifiers into these canonical fields (O(n)) instead of matching a
+/// hand-enumerated table of pipe tuples; `build_fast_match` then maps a recognized plan to a
+/// `FastMatch` list. Because the plan is built by a single scan it is order- and count-independent:
+/// for the canonical Sigma modifier order (every real rule) it produces exactly the same matcher the
+/// former table did, but a non-canonical order the old index-based table missed — e.g.
+/// `|cased|contains` or `|contains|base64` — is now normalized like its canonical form instead of
+/// silently falling back to the regex path (which ignored the missed modifier). See the
+/// `test_reordered_*` / `test_utf16_base64_contains_*` tests. `from_pipes` returns `None` when the
+/// list contains a modifier the fast path does not build a `FastMatch` for (regex, field reference,
+/// numeric comparison, cidr, exists, …), and `build_fast_match` returns `None` for a
+/// recognized-but-unsupported combination; in both cases the caller uses the regex path.
+struct MatchPlan {
+    wrap: Wrap,
+    encoding: Encoding,
+    utf16: Utf16Kind,
+    cased: bool,
+    windash: bool,
+    all: bool,
+}
+
+impl MatchPlan {
+    fn from_pipes(pipes: &[PipeElement]) -> Option<MatchPlan> {
+        let mut plan = MatchPlan {
+            wrap: Wrap::None,
+            encoding: Encoding::Plain,
+            utf16: Utf16Kind::None,
+            cased: false,
+            windash: false,
+            all: false,
+        };
+        for pipe in pipes {
+            match pipe {
+                PipeElement::Startswith => plan.wrap = Wrap::StartsWith,
+                PipeElement::Endswith => plan.wrap = Wrap::EndsWith,
+                PipeElement::Contains => plan.wrap = Wrap::Contains,
+                PipeElement::AllOnly => plan.wrap = Wrap::AllOnly,
+                PipeElement::Base64 => plan.encoding = Encoding::Base64,
+                PipeElement::Base64offset => plan.encoding = Encoding::Base64offset,
+                PipeElement::Utf16 => plan.utf16 = Utf16Kind::Utf16,
+                PipeElement::Utf16Le => plan.utf16 = Utf16Kind::Utf16Le,
+                PipeElement::Utf16Be => plan.utf16 = Utf16Kind::Utf16Be,
+                PipeElement::Wide => plan.utf16 = Utf16Kind::Wide,
+                PipeElement::Cased => plan.cased = true,
+                PipeElement::Windash => plan.windash = true,
+                PipeElement::All => plan.all = true,
+                // Any other modifier is handled off the fast path (regex, field reference, numeric,
+                // cidr, exists, …); leave the fast matcher unset so the caller builds a regex.
+                _ => return None,
+            }
+        }
+        Some(plan)
+    }
+
+    /// Builds the `FastMatch` list for a recognized plan, or `None` when the fast path does not
+    /// handle the combination (the caller then falls back to the regex path). `pattern` may gain a
+    /// dash-replaced variant for the `|contains|all|windash` form, matching the original behavior.
+    fn build_fast_match(
+        &self,
+        pattern: &mut Vec<String>,
+        err_msgs: &mut Vec<String>,
+    ) -> Option<Vec<FastMatch>> {
+        match self.encoding {
+            Encoding::Plain => {
+                // UTF-16 only applies together with a base64 encoding.
+                if self.utf16 != Utf16Kind::None {
+                    return None;
+                }
+                match self.wrap {
+                    Wrap::None => {
+                        if self.cased || self.windash || self.all {
+                            return None;
+                        }
+                        convert_to_fast_match(&pattern[0], true)
+                    }
+                    Wrap::StartsWith | Wrap::EndsWith => {
+                        if self.windash || self.all {
+                            return None;
+                        }
+                        let wrapped = if self.wrap == Wrap::StartsWith {
+                            format!("{}*", pattern[0])
+                        } else {
+                            format!("*{}", pattern[0])
+                        };
+                        // `|cased` makes the comparison case-sensitive (ignore_case = false).
+                        convert_to_fast_match(&wrapped, !self.cased)
+                    }
+                    Wrap::AllOnly => {
+                        if self.cased || self.windash || self.all {
+                            return None;
+                        }
+                        convert_to_fast_match(&format!("allOnly*{}*", pattern[0]), true)
+                    }
+                    Wrap::Contains if self.windash => {
+                        // For |contains|windash: also match a variant of the pattern whose first
+                        // dash-like character (hyphen, en/em dash, etc.) is replaced with "/", to
+                        // cover the interchangeable option prefixes accepted by Windows commands.
+                        if self.cased {
+                            return None;
+                        }
+                        let windash_chars = WINDASH_CHARACTERS.as_slice();
+                        // |contains|all|windash was already turned into an AND-op NarySelectionNode
+                        // during parsing; it additionally records the dash-replaced variant in
+                        // `pattern` for the regex fallback, so preserve that here.
+                        if self.all {
+                            pattern.push(pattern[0].replacen(windash_chars, "/", 1));
+                        }
+                        let mut fastmatches =
+                            convert_to_fast_match(&format!("*{}*", pattern[0]), true)
+                                .unwrap_or_default();
+                        fastmatches.extend(
+                            convert_to_fast_match(
+                                &format!("*{}*", pattern[0].replacen(windash_chars, "/", 1)),
+                                true,
+                            )
+                            .unwrap_or_default(),
+                        );
+                        (!fastmatches.is_empty()).then_some(fastmatches)
+                    }
+                    Wrap::Contains => {
+                        // |contains, |contains|all (parse-split, treated as plain contains), or
+                        // |contains|cased (case-sensitive).
+                        if self.all && self.cased {
+                            return None;
+                        }
+                        convert_to_fast_match(&format!("*{}*", pattern[0]), !self.cased)
+                    }
+                }
+            }
+            Encoding::Base64 => {
+                // |base64|contains, optionally UTF-16-encoded first (|utf16|base64|contains).
+                if self.wrap != Wrap::Contains || self.cased || self.windash || self.all {
+                    return None;
+                }
+                let original = pattern[0].as_str();
+                let encoded = match self.utf16 {
+                    Utf16Kind::None => to_base64_utf8(original),
+                    // |utf16|base64 means UTF-16LE with a BOM.
+                    Utf16Kind::Utf16 => to_base64_utf16le_with_bom(original, true),
+                    Utf16Kind::Utf16Le | Utf16Kind::Wide => {
+                        to_base64_utf16le_with_bom(original, false)
+                    }
+                    Utf16Kind::Utf16Be => to_base64_utf16be(original),
+                };
+                convert_to_fast_match(&format!("*{encoded}*"), true)
+            }
+            Encoding::Base64offset => {
+                // |base64offset|contains (all three byte-alignment variants), optionally UTF-16
+                // encoded first. Plain |utf16| tries both byte orders.
+                if self.wrap != Wrap::Contains || self.cased || self.windash || self.all {
+                    return None;
+                }
+                let original = pattern[0].as_str();
+                match self.utf16 {
+                    Utf16Kind::None => convert_to_base64_str(None, original, err_msgs),
+                    Utf16Kind::Utf16 => {
+                        let le =
+                            convert_to_base64_str(Some(&PipeElement::Utf16Le), original, err_msgs);
+                        let be =
+                            convert_to_base64_str(Some(&PipeElement::Utf16Be), original, err_msgs);
+                        match (le, be) {
+                            (Some(mut le), Some(be)) => {
+                                le.extend(be);
+                                Some(le)
+                            }
+                            _ => None,
+                        }
+                    }
+                    Utf16Kind::Utf16Le => {
+                        convert_to_base64_str(Some(&PipeElement::Utf16Le), original, err_msgs)
+                    }
+                    Utf16Kind::Utf16Be => {
+                        convert_to_base64_str(Some(&PipeElement::Utf16Be), original, err_msgs)
+                    }
+                    Utf16Kind::Wide => {
+                        convert_to_base64_str(Some(&PipeElement::Wide), original, err_msgs)
+                    }
+                }
+            }
+        }
+    }
+}
+
 impl LeafMatcher for DefaultMatcher {
     fn is_target_key(&self, key_list: &Nested<String>) -> bool {
         if key_list.len() <= 1 {
@@ -372,156 +586,20 @@ impl LeafMatcher for DefaultMatcher {
         if !err_msgs.is_empty() {
             return Err(err_msgs);
         }
-        let n = self.pipes.len();
-        if n == 0 {
-            // Case without pipe.
-            self.fast_match = convert_to_fast_match(&pattern[0], true);
-        } else if n == 1 {
-            // Case with a single pipe.
-            self.fast_match = create_fast_match(&self.pipes, &pattern);
-        } else if n == 2 {
-            if self.pipes[0] == PipeElement::Base64 && self.pipes[1] == PipeElement::Contains {
-                self.fast_match = convert_to_fast_match(
-                    &format!("*{}*", &to_base64_utf8(pattern[0].as_str())),
-                    true,
-                );
-            } else if self.pipes[0] == PipeElement::Base64offset
-                && self.pipes[1] == PipeElement::Contains
-            {
-                self.fast_match = convert_to_base64_str(None, pattern[0].as_str(), &mut err_msgs);
-            } else if self.pipes[0] == PipeElement::Contains && self.pipes[1] == PipeElement::All
-            // |contains|all was already turned into an AND-op NarySelectionNode during parsing
-            // (rule/mod.rs), so treat it as a plain contains here.
-            {
-                self.fast_match = convert_to_fast_match(format!("*{}*", pattern[0]).as_str(), true);
-            } else if self.pipes[0] == PipeElement::Contains
-                && self.pipes[1] == PipeElement::Windash
-            {
-                // For |contains|windash: also match a variant of the pattern whose first
-                // dash-like character (hyphen, en/em dash, etc.) is replaced with "/", to cover
-                // the interchangeable option prefixes accepted by Windows commands.
-                let mut fastmatches =
-                    convert_to_fast_match(format!("*{}*", pattern[0]).as_str(), true)
-                        .unwrap_or_default();
-                let windash_chars = WINDASH_CHARACTERS.as_slice();
-                fastmatches.extend(
-                    convert_to_fast_match(
-                        format!("*{}*", pattern[0].replacen(windash_chars, "/", 1)).as_str(),
-                        true,
-                    )
-                    .unwrap_or_default(),
-                );
-                if !fastmatches.is_empty() {
-                    self.fast_match = Some(fastmatches);
-                }
-            } else if self.pipes[1] == PipeElement::Cased {
-                if self.pipes[0] == PipeElement::Startswith {
-                    self.fast_match = convert_to_fast_match(&format!("{}*", pattern[0]), false);
-                } else if self.pipes[0] == PipeElement::Endswith {
-                    self.fast_match = convert_to_fast_match(&format!("*{}", pattern[0]), false);
-                } else if self.pipes[0] == PipeElement::Contains {
-                    self.fast_match = convert_to_fast_match(&format!("*{}*", pattern[0]), false);
-                }
-            }
-        } else if n == 3 {
-            if self.pipes.contains(&PipeElement::Contains)
-                && self.pipes.contains(&PipeElement::All)
-                && self.pipes.contains(&PipeElement::Windash)
-            // |contains|all|windash was already turned into an AND-op NarySelectionNode during parsing
-            // (rule/mod.rs), so treat it as contains plus windash here.
-            {
-                let mut fastmatches =
-                    convert_to_fast_match(format!("*{}*", pattern[0]).as_str(), true)
-                        .unwrap_or_default();
-                let windash_chars = WINDASH_CHARACTERS.as_slice();
-                pattern.push(pattern[0].replacen(windash_chars, "/", 1));
-                fastmatches.extend(
-                    convert_to_fast_match(
-                        format!("*{}*", pattern[0].replacen(windash_chars, "/", 1)).as_str(),
-                        true,
-                    )
-                    .unwrap_or_default(),
-                );
-                if !fastmatches.is_empty() {
-                    self.fast_match = Some(fastmatches);
-                }
-            } else if (self.pipes[0] == PipeElement::Utf16
-                || self.pipes[0] == PipeElement::Utf16Le
-                || self.pipes[0] == PipeElement::Utf16Be
-                || self.pipes[0] == PipeElement::Wide)
-                && (self.pipes[1] == PipeElement::Base64offset
-                    || self.pipes[1] == PipeElement::Base64)
-                && self.pipes[2] == PipeElement::Contains
-            {
-                // Encoding modifiers such as |utf16|base64offset|contains: the pattern is first
-                // encoded as UTF-16, then base64-encoded, and searched with contains.
-                // With base64offset, all three byte-alignment variants are generated, and plain
-                // |utf16| tries both byte orders; with base64, a single encoding is used
-                // (|utf16| meaning UTF-16LE with a BOM).
-                if self.pipes[1] == PipeElement::Base64offset {
-                    let encode = &self.pipes[0];
-                    let original_str = pattern[0].as_str();
-                    if encode == &PipeElement::Utf16 {
-                        let utf16_le_match = convert_to_base64_str(
-                            Some(&PipeElement::Utf16Le),
-                            original_str,
-                            &mut err_msgs,
-                        );
-                        let utf16_be_match = convert_to_base64_str(
-                            Some(&PipeElement::Utf16Be),
-                            original_str,
-                            &mut err_msgs,
-                        );
-                        if let Some(utf16_le_match) = utf16_le_match
-                            && let Some(utf16_be_match) = utf16_be_match
-                        {
-                            let mut matches = utf16_le_match;
-                            matches.extend(utf16_be_match);
-                            self.fast_match = Some(matches);
-                        }
-                    } else {
-                        self.fast_match =
-                            convert_to_base64_str(Some(encode), original_str, &mut err_msgs);
-                    }
-                } else if self.pipes[1] == PipeElement::Base64 {
-                    let encode = &self.pipes[0];
-                    let original_str = pattern[0].as_str();
-                    match encode {
-                        PipeElement::Utf16 => {
-                            self.fast_match = convert_to_fast_match(
-                                &format!("*{}*", &to_base64_utf16le_with_bom(original_str, true)),
-                                true,
-                            );
-                        }
-                        PipeElement::Utf16Le | PipeElement::Wide => {
-                            self.fast_match = convert_to_fast_match(
-                                &format!("*{}*", &to_base64_utf16le_with_bom(original_str, false)),
-                                true,
-                            );
-                        }
-                        PipeElement::Utf16Be => {
-                            self.fast_match = convert_to_fast_match(
-                                &format!("*{}*", &to_base64_utf16be(original_str)),
-                                true,
-                            );
-                        }
-                        _ => {
-                            self.fast_match = convert_to_fast_match(
-                                &format!("*{}*", &to_base64_utf8(original_str)),
-                                true,
-                            );
-                        }
-                    }
-                }
-            }
-        } else {
-            // Four or more pipes are not supported.
+        // Four or more pipe modifiers are not supported.
+        if self.pipes.len() >= 4 {
             let errmsg = format!(
                 "Multiple pipe elements cannot be used. key:{}",
                 utils::concat_selection_key(key_list)
             );
             return Err(vec![errmsg]);
         }
+        // Normalize the pipe modifiers into a canonical MatchPlan and build the fast matcher from
+        // it in one pass, replacing the former hand-enumerated table of pipe-count/tuple cases. An
+        // unrecognized combination yields no fast matcher and the regex path below handles it.
+        self.fast_match = MatchPlan::from_pipes(&self.pipes)
+            .and_then(|plan| plan.build_fast_match(&mut pattern, &mut err_msgs));
+
         if self.fast_match.is_some()
             && matches!(
                 &self.fast_match.as_ref().unwrap()[0],
@@ -3692,6 +3770,96 @@ mod tests {
         }"#;
 
         check_select(rule_str, record_json_str, true);
+    }
+
+    // The following tests pin the order-independent behavior introduced with `MatchPlan`: a
+    // non-canonical modifier order is now normalized the same as the canonical order, instead of
+    // missing the former index-based fast-path table and silently falling back to a wildcard regex
+    // that ignored the modifier. Sigma fixes modifier order, so real rules only ever use the
+    // canonical order (covered by the tests above); these lock in the non-canonical behavior.
+    #[test]
+    fn test_reordered_cased_contains_is_case_sensitive() {
+        // |cased|contains == |contains|cased (case-sensitive substring). The old order-sensitive
+        // table missed this order and fell back to a case-insensitive regex (ignoring |cased).
+        let rule_str = r#"
+        enabled: true
+        detection:
+            selection:
+                TargetUserName|cased|contains: "Administrators"
+        details: 'user %MemberName%'
+        "#;
+        let match_rec = r#"{"Event": {"System": {"EventID": 4732, "Channel": "Security"}, "EventData": {"TargetUserName": "TestAdministratorsTest"}}}"#;
+        let case_mismatch_rec = r#"{"Event": {"System": {"EventID": 4732, "Channel": "Security"}, "EventData": {"TargetUserName": "testadministratorstest"}}}"#;
+        check_select(rule_str, match_rec, true);
+        // Case-sensitive: a value differing only in case must NOT match.
+        check_select(rule_str, case_mismatch_rec, false);
+    }
+
+    #[test]
+    fn test_reordered_contains_base64() {
+        // |contains|base64 == |base64|contains (pattern is base64-encoded before the substring
+        // search). The old order-sensitive table ignored base64 in this order.
+        let rule_str = r#"
+        enabled: true
+        detection:
+            selection:
+                Payload|contains|base64:
+                    - "http://"
+        details: 'x'
+        "#;
+        let record_json_str = r#"{
+            "Event": {"System": {"EventID": 4103, "Channel": "Security", "Computer": "Tester"}, "EventData":{"Payload": "aHR0cDovLw"}},
+            "Event_attributes": {"xmlns": "http://schemas.microsoft.com/win/2004/08/events/event"}
+        }"#;
+        check_select(rule_str, record_json_str, true);
+    }
+
+    #[test]
+    fn test_reordered_contains_base64offset() {
+        // |contains|base64offset == |base64offset|contains.
+        let rule_str = r#"
+        enabled: true
+        detection:
+            selection:
+                Payload|contains|base64offset:
+                    - "http://"
+        details: 'x'
+        "#;
+        let record_json_str = r#"{
+            "Event": {"System": {"EventID": 4103, "Channel": "Security", "Computer": "Tester"}, "EventData":{"Payload": "aHR0cDovL"}},
+            "Event_attributes": {"xmlns": "http://schemas.microsoft.com/win/2004/08/events/event"}
+        }"#;
+        check_select(rule_str, record_json_str, true);
+    }
+
+    #[test]
+    fn test_utf16_base64_contains_canonical_and_reordered() {
+        // |utf16|base64|contains encodes the pattern as UTF-16LE (with a BOM) then base64. This
+        // path had no unit coverage before; verify both the canonical order and the reordered
+        // |base64|utf16|contains (which the old index-based table did not recognize).
+        let canonical = r#"
+        enabled: true
+        detection:
+            selection:
+                Payload|utf16|base64|contains:
+                    - "http://"
+        details: 'x'
+        "#;
+        let reordered = r#"
+        enabled: true
+        detection:
+            selection:
+                Payload|base64|utf16|contains:
+                    - "http://"
+        details: 'x'
+        "#;
+        // Payload holds base64(BOM + UTF-16LE("http://")).
+        let record_json_str = r#"{
+            "Event": {"System": {"EventID": 4103, "Channel": "Security", "Computer": "Tester"}, "EventData":{"Payload": "//5oAHQAdABwADoALwAvAA"}},
+            "Event_attributes": {"xmlns": "http://schemas.microsoft.com/win/2004/08/events/event"}
+        }"#;
+        check_select(canonical, record_json_str, true);
+        check_select(reordered, record_json_str, true);
     }
 
     #[test]

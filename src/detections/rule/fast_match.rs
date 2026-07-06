@@ -73,8 +73,9 @@ pub fn convert_to_fast_match(s: &str, ignore_case: bool) -> Option<Vec<FastMatch
         // that contain wildcards.
         return None;
     } else if s.starts_with("allOnly*") && s.ends_with('*') && wildcard_count == 2 {
-        // "allOnly*" is the sentinel prefix added by create_fast_match() for the "|all" modifier:
-        // strip it (8 chars) and the trailing '*', and unescape doubled backslashes.
+        // "allOnly*" is the sentinel prefix added by MatchPlan::build_fast_match() (matchers.rs)
+        // for the "|all" modifier: strip it (8 chars) and the trailing '*', and unescape doubled
+        // backslashes.
         let removed_asterisk = s[8..(s.len() - 1)].replace(r"\\", r"\");
         if ignore_case {
             return Some(vec![FastMatch::AllOnly(removed_asterisk.to_lowercase())]);
@@ -170,31 +171,6 @@ pub fn check_fast_match(
             // Variant lists are only ever built from Contains entries.
             _ => false,
         }))
-    }
-}
-
-/// Builds the fast matcher for a field with a single leading pipe modifier by rewriting the
-/// pattern into the wildcard form understood by convert_to_fast_match(). "allOnly" uses the
-/// internal "allOnly*" sentinel prefix, which is not Sigma syntax.
-pub fn create_fast_match(pipes: &[PipeElement], pattern: &[String]) -> Option<Vec<FastMatch>> {
-    if let Some(element) = pipes.first() {
-        match element {
-            PipeElement::Startswith => {
-                convert_to_fast_match(format!("{}*", pattern[0]).as_str(), true)
-            }
-            PipeElement::Endswith => {
-                convert_to_fast_match(format!("*{}", pattern[0]).as_str(), true)
-            }
-            PipeElement::Contains => {
-                convert_to_fast_match(format!("*{}*", pattern[0]).as_str(), true)
-            }
-            PipeElement::AllOnly => {
-                convert_to_fast_match(format!("allOnly*{}*", pattern[0]).as_str(), true)
-            }
-            _ => None,
-        }
-    } else {
-        None
     }
 }
 
