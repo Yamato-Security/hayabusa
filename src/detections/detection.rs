@@ -584,17 +584,9 @@ impl Detection {
                     profile_converter.insert(key.as_str(), OtherTags(tags.into()));
                 }
                 RuleAuthor(_) => {
-                    let author = if stored_static.multiline_flag || stored_static.tab_separator_flag
-                    {
-                        rule.yaml["author"]
-                            .as_str()
-                            .unwrap_or("-")
-                            .split([',', '/', ';'])
-                            .map(|x| x.trim())
-                            .join("🛂🛂")
-                    } else {
-                        rule.yaml["author"].as_str().unwrap_or("-").to_string()
-                    };
+                    // Store the raw author string; the multi-author formatting for multiline/tab
+                    // CSV is applied at the output boundary (see results::csv::emit_csv_inner).
+                    let author = rule.yaml["author"].as_str().unwrap_or("-").to_string();
                     profile_converter.insert(key.as_str(), RuleAuthor(author.into()));
                 }
                 RuleCreationDate(_) => {
@@ -1044,17 +1036,9 @@ impl Detection {
                     profile_converter.insert(key.as_str(), OtherTags(tags.into()));
                 }
                 RuleAuthor(_) => {
-                    let author = if stored_static.multiline_flag || stored_static.tab_separator_flag
-                    {
-                        rule.yaml["author"]
-                            .as_str()
-                            .unwrap_or("-")
-                            .split([',', '/', ';'])
-                            .map(|x| x.trim())
-                            .join("🛂🛂")
-                    } else {
-                        rule.yaml["author"].as_str().unwrap_or("-").to_string()
-                    };
+                    // Store the raw author string; the multi-author formatting for multiline/tab
+                    // CSV is applied at the output boundary (see results::csv::emit_csv_inner).
+                    let author = rule.yaml["author"].as_str().unwrap_or("-").to_string();
                     profile_converter.insert(key.as_str(), RuleAuthor(author.into()));
                 }
                 RuleCreationDate(_) => {
@@ -2118,10 +2102,12 @@ mod tests {
                 let detect_info = Detection::create_log_record(rule, record_info, stored_static);
 
                 println!("{:?}", detect_info.output_fields);
+                // The RuleAuthor field now holds the raw author string; the multiline/tab
+                // author formatting is applied at CSV emit time (results::csv).
                 assert!(detect_info.output_fields.iter().any(|x| x
                     == &(
                         CompactString::from("RuleAuthor"),
-                        Profile::RuleAuthor("Test🛂🛂Test2🛂🛂Test3🛂🛂Test4".into())
+                        Profile::RuleAuthor("Test, Test2/Test3; Test4 ".into())
                     )));
             }
         }

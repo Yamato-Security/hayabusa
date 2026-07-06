@@ -43,6 +43,17 @@ pub fn emit_csv(
 
     calc_statistic_info(detect_infos, duplicate_indices, result_state, stored_static);
 }
+/// Formats a raw multi-author `RuleAuthor` string for multiline/tab CSV output: split on the
+/// `,` / `/` / `;` separators used in rule YAML, normalize each author's internal whitespace, and
+/// join the authors with `sep` (`\r\n` for multiline, `\t` for tab-separator). Reproduces the CSV
+/// file output the former `🛂🛂` marker + `output_remover` round-trip produced. (The terminal
+/// display path collapses separators to spaces itself; see `_get_serialized_disp_output`.)
+fn format_rule_author(raw: &str, sep: &str) -> String {
+    raw.split([',', '/', ';'])
+        .map(|a| a.split_whitespace().join(" "))
+        .join(sep)
+}
+
 pub(crate) fn emit_csv_inner(
     detect_infos: &[DetectInfo],
     duplicate_indices: &HashSet<usize>,
@@ -53,16 +64,16 @@ pub(crate) fn emit_csv_inner(
     // Field values reach here with real `\n`/`\r`/`\t` (kept by utils::remove_sp_char). For
     // single-line output the whole value is whitespace-collapsed and output_remover flattens any
     // remaining control characters to spaces; with the multiline (or tab-separator) option the
-    // "🛂🛂" marker used to join multi-valued entries and the " ¦ " field separator become line
-    // breaks (or tabs) instead. Keep the (pattern, replacement) pairs in a single ordered list so
-    // the automaton's patterns and the replacement slice line up — `AhoCorasick::replace_all`
-    // indexes the replacements by pattern id.
+    // " ¦ " field separator becomes a line break (or tab) instead. (Multi-valued RuleAuthor values
+    // are split and joined per output mode in the write loop below.) Keep the (pattern, replacement)
+    // pairs in a single ordered list so the automaton's patterns and the replacement slice line up —
+    // `AhoCorasick::replace_all` indexes the replacements by pattern id.
+    let multiline_flag = stored_static.multiline_flag;
+    let tab_separator_flag = stored_static.tab_separator_flag;
     let mut removed_replaced_pairs: Vec<(&str, &str)> = vec![("\n", " "), ("\r", " "), ("\t", " ")];
-    if stored_static.multiline_flag {
-        removed_replaced_pairs.push(("🛂🛂", "\r\n"));
+    if multiline_flag {
         removed_replaced_pairs.push((" ¦ ", "\r\n"));
-    } else if stored_static.tab_separator_flag {
-        removed_replaced_pairs.push(("🛂🛂", "\t"));
+    } else if tab_separator_flag {
         removed_replaced_pairs.push((" ¦ ", "\t"));
     }
     let output_remover = AhoCorasickBuilder::new()
@@ -104,6 +115,7 @@ pub(crate) fn emit_csv_inner(
                     profile,
                     true,
                     (&output_remover, &remover_vals),
+                    multiline_flag || tab_separator_flag,
                     stored_static.common_options.no_color,
                     get_writable_color(
                         _get_output_color(&color_map, &detect_info.level),
@@ -117,6 +129,7 @@ pub(crate) fn emit_csv_inner(
                 &detect_info.output_fields,
                 false,
                 (&output_remover, &remover_vals),
+                multiline_flag || tab_separator_flag,
                 stored_static.common_options.no_color,
                 get_writable_color(
                     _get_output_color(&color_map, &detect_info.level),
@@ -210,6 +223,13 @@ pub(crate) fn emit_csv_inner(
                         result_state.prev_message.insert(x.0.clone(), x.1.clone());
                         ret
                     }
+                    Profile::RuleAuthor(_) if multiline_flag || tab_separator_flag => {
+                        // Put each author on its own line (multiline) or tab (tab-separator).
+                        format_rule_author(
+                            &x.1.to_value(),
+                            if multiline_flag { "\r\n" } else { "\t" },
+                        )
+                    }
                     _ => output_remover
                         .replace_all(&x.1.to_value().split_whitespace().join(" "), &remover_vals),
                 }
@@ -227,4 +247,27 @@ pub(crate) fn emit_csv_inner(
         println!()
     }
     Ok(())
+}
+
+#[cfg(test)]
+mod tests {
+    use super::format_rule_author;
+
+    #[test]
+    fn test_format_rule_author() {
+        // Mixed `,` / `/` / `;` separators, per-author trim + internal-whitespace collapse.
+        assert_eq!(
+            format_rule_author("Test, Test2/Test3; Test4 ", "\r\n"),
+            "Test\r\nTest2\r\nTest3\r\nTest4"
+        );
+        assert_eq!(
+            format_rule_author("Test, Test2/Test3; Test4 ", "\t"),
+            "Test\tTest2\tTest3\tTest4"
+        );
+        // Internal double-space inside an author name is collapsed to one.
+        assert_eq!(format_rule_author("Florian  Roth", "\r\n"), "Florian Roth");
+        // A single author (the "-" placeholder or a lone name) is unchanged.
+        assert_eq!(format_rule_author("-", "\r\n"), "-");
+        assert_eq!(format_rule_author("Zach Mathis", "\t"), "Zach Mathis");
+    }
 }
