@@ -4,6 +4,7 @@
 
 **Bug Fixes:**
 
+- Fixed narrow-terminal issues in the results summary (and an unrelated aggregation perf issue in the same file): `_print_timeline_hist` did unchecked `usize` subtraction that could underflow on a very narrow terminal (huge allocation / hang) — it now skips the histogram when there is no room and uses `saturating_sub`; the rule-authors table computed its row count with a hard-coded `is_multiple_of(4)` instead of the actual column count (uneven tables at most widths) — now `authors_num.div_ceil(table_column_num)`; the rule-authors table now falls back to a single column on very narrow terminals (≤72 chars) instead of overflowing/wrapping; and `countup_aggregation` now mutates the per-level count map in place via `get_mut` instead of cloning and re-inserting it on every call (was O(n)). Timeline output is unaffected. (#1858) (@YamatoSecurity)
 - Fixed the ungrammatical "Successed submodule update" message printed after `update-rules` (now "Submodule update succeeded"). (#1840) (@YamatoSecurity)
 
 **Other:**
