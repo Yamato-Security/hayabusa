@@ -17,6 +17,7 @@
 - 分かりにくい `afterfact` モジュールとその識別子を、内容を表す結果出力向けの名前にリネームした: `src/afterfact.rs`→`src/results.rs`、`AfterfactInfo`→`ResultOutputState`、`AfterfactWriter`→`OutputWriter`、`output_afterfact`→`output_results`、`output_additional_afterfact`→`output_result_summary`、ローカル変数の `afterfact_info`/`afterfact_writer`→`result_state`/`output_writer`。純粋なリネームで挙動に変更はない（全テストがパス）。 (#1853) (@YamatoSecurity)
 - `remove_sp_char` が制御文字の除去から `\n`/`\r`/`\t` を守るために使っていた `🛂` 絵文字のセンチネル（プレースホルダ）を削除した（#1845 リファクタリングの最終段階）。実際の文字をそのまま保持し、出力形式ごとに処理するようにした（JSONは `serde_json` がエスケープ、CSV/`search` はスペースに畳み込む）。**`csv-timeline` の出力はバイト単位で同一**。**`json-timeline` の出力は変化する**: 値の内部の改行/タブ/CRが従来の可視テキスト `\\n` ではなく本来の `\n`/`\t`/`\r` エスケープとしてシリアライズされ、`Details` 値の先頭・末尾の改行はトリムされるようになった。サンプルevtxコーパスで検証済み（JSONの差分はこの2点のみで、内部の内容は失われない）。 (#1849) (@YamatoSecurity)
 - 約4,092行の `src/results.rs` を `src/results/` モジュールディレクトリ（`mod.rs` と `csv.rs`・`json.rs`・`display.rs`・`summary.rs`・`html_stock.rs`）に分割し、ライターの構築、CSV/JSON/ターミナル表示の出力、サマリーレンダラーと統計、HTMLストックの組み立てを分離した。純粋なコードの移動で、出力はバイト単位で同一（サンプルevtxコーパスで検証済み）、全テストがパスする。 (#1856) (@YamatoSecurity)
+- 最後に残っていた `🛂` 絵文字センチネルマーカー（`--multiline`/`--tab-separator` のCSV（およびターミナル表示）で複数のルール作者 `RuleAuthor` を結合するために使っていた `🛂🛂` 区切り）を削除した。作者文字列をそのまま保持し、マーカーを経由する代わりに出力の段階で出力モードごとに分割・結合するようにした。出力はバイト単位で同一（サンプルevtxコーパスの default/multiline/tab CSV・JSON・ターミナル表示で検証済み）。#1849 で始めた絵文字センチネルの削除を完了した。 (#1860) (@YamatoSecurity)
 
 ## 3.10.0 [2026/07/04] - Independence Day Release
 
