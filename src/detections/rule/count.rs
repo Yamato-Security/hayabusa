@@ -1,5 +1,4 @@
 use crate::detections::configs::EventKeyAliasConfig;
-use crate::detections::configs::STORED_EKEY_ALIAS;
 use crate::detections::configs::StoredStatic;
 use crate::detections::detection::EvtxRecordInfo;
 use crate::detections::message;
@@ -25,13 +24,14 @@ pub fn count(
     verbose_flag: bool,
     quiet_errors_flag: bool,
     json_input_flag: bool,
+    eventkey_alias: &EventKeyAliasConfig,
 ) {
     let key: String = create_count_key(
         rule,
         &evtx_rec.record,
         verbose_flag,
         quiet_errors_flag,
-        STORED_EKEY_ALIAS.read().unwrap().as_ref().unwrap(),
+        eventkey_alias,
     );
     let binding = String::default();
     let field_name = match rule.get_agg_condition() {
@@ -49,10 +49,17 @@ pub fn count(
         false,
         verbose_flag,
         quiet_errors_flag,
-        STORED_EKEY_ALIAS.read().unwrap().as_ref().unwrap(),
+        eventkey_alias,
     )
     .unwrap_or_default();
-    countup(rule, key, field_value, evtx_rec, json_input_flag);
+    countup(
+        rule,
+        key,
+        field_value,
+        evtx_rec,
+        json_input_flag,
+        eventkey_alias,
+    );
 }
 
 /// Function to increment the count of detected records for the given `count() by` grouping key,
@@ -64,6 +71,7 @@ pub fn countup(
     field_value: String,
     evtx_rec: &EvtxRecordInfo,
     json_input_flag: bool,
+    eventkey_alias: &EventKeyAliasConfig,
 ) {
     let record = &evtx_rec.record;
     let default_time = Utc.with_ymd_and_hms(1977, 1, 1, 0, 0, 0).unwrap();
@@ -71,27 +79,15 @@ pub fn countup(
     // A record missing EventID/Computer/Channel must not panic and abort the whole
     // scan; default to an empty string (mirrors the `unwrap_or(default_time)` used
     // for `time` just above).
-    let event_id = utils::get_event_value(
-        "Event.System.EventID",
-        record,
-        STORED_EKEY_ALIAS.read().unwrap().as_ref().unwrap(),
-    )
-    .map(|v| v.to_string().trim_matches('\"').to_string())
-    .unwrap_or_default();
-    let computer = utils::get_event_value(
-        "Event.System.Computer",
-        record,
-        STORED_EKEY_ALIAS.read().unwrap().as_ref().unwrap(),
-    )
-    .map(|v| v.to_string().trim_matches('\"').to_string())
-    .unwrap_or_default();
-    let channel = utils::get_event_value(
-        "Event.System.Channel",
-        record,
-        STORED_EKEY_ALIAS.read().unwrap().as_ref().unwrap(),
-    )
-    .map(|v| v.to_string().trim_matches('\"').to_string())
-    .unwrap_or_default();
+    let event_id = utils::get_event_value("Event.System.EventID", record, eventkey_alias)
+        .map(|v| v.to_string().trim_matches('\"').to_string())
+        .unwrap_or_default();
+    let computer = utils::get_event_value("Event.System.Computer", record, eventkey_alias)
+        .map(|v| v.to_string().trim_matches('\"').to_string())
+        .unwrap_or_default();
+    let channel = utils::get_event_value("Event.System.Channel", record, eventkey_alias)
+        .map(|v| v.to_string().trim_matches('\"').to_string())
+        .unwrap_or_default();
     let evtx_file_path = evtx_rec.evtx_filepath.to_string();
     let value_map = rule.countdata.entry(key).or_default();
     value_map.push(AggRecordTimeInfo {
@@ -582,7 +578,6 @@ mod tests {
     use crate::detections::configs::Config;
     use crate::detections::configs::CsvOutputOption;
     use crate::detections::configs::OutputOption;
-    use crate::detections::configs::STORED_EKEY_ALIAS;
     use crate::detections::configs::StoredStatic;
     use crate::detections::rule::AggResult;
     use crate::detections::rule::create_rule;
@@ -779,10 +774,16 @@ mod tests {
         let mut rule_node = create_rule("testpath".to_string(), test);
         rule_node.init(&create_dummy_stored_static()).unwrap();
         let dummy_stored_static = create_dummy_stored_static();
-        *STORED_EKEY_ALIAS.write().unwrap() = Some(dummy_stored_static.eventkey_alias.clone());
         let record: serde_json::Value = serde_json::from_str(record_str).unwrap();
         let keys = detections::rule::get_detection_keys(&rule_node);
-        let recinfo = utils::create_rec_info(record, "testpath".to_owned(), &keys, &false, &false);
+        let recinfo = utils::create_rec_info(
+            record,
+            "testpath".to_owned(),
+            &keys,
+            &false,
+            &false,
+            &dummy_stored_static.eventkey_alias,
+        );
         let matched = rule_node.select(
             &recinfo,
             dummy_stored_static.verbose_flag,
@@ -983,7 +984,6 @@ mod tests {
         let test = rule_yaml.next().unwrap();
         let mut rule_node = create_rule("testpath".to_string(), test);
         let dummy_stored_static = create_dummy_stored_static();
-        *STORED_EKEY_ALIAS.write().unwrap() = Some(dummy_stored_static.eventkey_alias.clone());
 
         let init_result = rule_node.init(&dummy_stored_static);
         assert!(init_result.is_ok());
@@ -992,8 +992,14 @@ mod tests {
             match serde_json::from_str(record) {
                 Ok(rec) => {
                     let keys = detections::rule::get_detection_keys(&rule_node);
-                    let recinfo =
-                        utils::create_rec_info(rec, "testpath".to_owned(), &keys, &false, &false);
+                    let recinfo = utils::create_rec_info(
+                        rec,
+                        "testpath".to_owned(),
+                        &keys,
+                        &false,
+                        &false,
+                        &dummy_stored_static.eventkey_alias,
+                    );
                     let _result = rule_node.select(
                         &recinfo,
                         dummy_stored_static.verbose_flag,
@@ -1765,7 +1771,6 @@ mod tests {
             panic!("Failed to init rulenode");
         }
         let dummy_stored_static = create_dummy_stored_static();
-        *STORED_EKEY_ALIAS.write().unwrap() = Some(dummy_stored_static.eventkey_alias.clone());
 
         for record_str in records_str {
             match serde_json::from_str(record_str) {
@@ -1777,6 +1782,7 @@ mod tests {
                         &keys,
                         &false,
                         &false,
+                        &dummy_stored_static.eventkey_alias,
                     );
                     let result = &rule_node.select(
                         &recinfo,

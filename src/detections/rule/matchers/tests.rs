@@ -5,9 +5,7 @@ use super::FastMatch;
 use super::{
     AllowlistFileMatcher, DefaultMatcher, MinlengthMatcher, PipeElement, RegexesFileMatcher,
 };
-use crate::detections::configs::{
-    Action, Config, CsvOutputOption, OutputOption, STORED_EKEY_ALIAS, StoredStatic,
-};
+use crate::detections::configs::{Action, Config, CsvOutputOption, OutputOption, StoredStatic};
 use crate::detections::rule::tests::parse_rule_from_str;
 use crate::detections::{self, utils};
 
@@ -25,13 +23,17 @@ fn check_select(rule_str: &str, record_str: &str, expect_select: bool) {
         ..Default::default()
     }));
 
-    *STORED_EKEY_ALIAS.write().unwrap() = Some(dummy_stored_static.eventkey_alias.clone());
-
     match serde_json::from_str(record_str) {
         Ok(record) => {
             let keys = detections::rule::get_detection_keys(&rule_node);
-            let recinfo =
-                utils::create_rec_info(record, "testpath".to_owned(), &keys, &false, &false);
+            let recinfo = utils::create_rec_info(
+                record,
+                "testpath".to_owned(),
+                &keys,
+                &false,
+                &false,
+                &dummy_stored_static.eventkey_alias,
+            );
             assert_eq!(
                 rule_node.select(
                     &recinfo,

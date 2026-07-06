@@ -554,7 +554,7 @@ mod tests {
         detections::{
             configs::{
                 Action, ClobberOption, CommonOptions, Config, DetectCommonOption, EidMetricsOption,
-                InputOption, STORED_EKEY_ALIAS, StoredStatic,
+                InputOption, StoredStatic,
             },
             utils::create_rec_info,
         },
@@ -610,13 +610,6 @@ mod tests {
                 remove_duplicate_detections: false,
             }));
 
-        // `create_rec_info` reads the global `STORED_EKEY_ALIAS`, which starts as
-        // `None`. Initialize it here so the test passes in isolation (e.g. under
-        // `cargo nextest run`, which runs each test in its own process and so cannot
-        // rely on another test having populated it). See
-        // https://github.com/Yamato-Security/hayabusa/issues/1281
-        *STORED_EKEY_ALIAS.write().unwrap() = Some(dummy_stored_static.eventkey_alias.clone());
-
         let mut timeline = Timeline::new();
         // Test 1: When the channel of the record is included in the alias.
         let alias_ch_record_str = r#"{
@@ -631,6 +624,7 @@ mod tests {
             &Nested::<String>::new(),
             &false,
             &false,
+            &dummy_stored_static.eventkey_alias,
         ));
 
         // Test 2: When the channel name of the record is not included in the alias.
@@ -649,6 +643,7 @@ mod tests {
             &Nested::<String>::new(),
             &false,
             &false,
+            &dummy_stored_static.eventkey_alias,
         ));
 
         let include_computer: HashSet<CompactString> = HashSet::new();
