@@ -1,4 +1,4 @@
-use crate::detections::configs::{ALLFIELDINFO_SPECIAL_CHARS, OutputOption, SearchOption};
+use crate::detections::configs::{OutputOption, SearchOption};
 use crate::detections::field_data_map::FieldDataMapKey;
 use crate::detections::message::{self, DetectInfo};
 use crate::detections::utils::{format_time, get_writable_color};
@@ -247,13 +247,12 @@ impl EventSearch {
                 )
                 .as_str(),
             );
-            // Replace the 🛂r/🛂n/🛂t placeholders (substituted for \r, \n and \t by
-            // utils::remove_sp_char) with a 🦅 sentinel, re-join the pieces with single spaces,
-            // and shorten full field names to their abbreviations.
+            // Field values now carry real \r/\n/\t (kept by utils::remove_sp_char); split on
+            // them, drop empty pieces, re-join with single spaces, and shorten full field names
+            // to their abbreviations.
             let abbreviated_all_field_info = self.replace_all_field_info_abbr(
-                ALLFIELDINFO_SPECIAL_CHARS
-                    .replace_all(&allfieldinfo, &["🦅", "🦅", "🦅"])
-                    .split('🦅')
+                allfieldinfo
+                    .split(['\r', '\n', '\t'])
                     .filter(|x| !x.is_empty())
                     .join(" ")
                     .as_str(),
@@ -346,13 +345,12 @@ impl EventSearch {
                 )
                 .as_str(),
             );
-            // Replace the 🛂r/🛂n/🛂t placeholders (substituted for \r, \n and \t by
-            // utils::remove_sp_char) with a 🦅 sentinel, re-join the pieces with single spaces,
-            // and shorten full field names to their abbreviations.
+            // Field values now carry real \r/\n/\t (kept by utils::remove_sp_char); split on
+            // them, drop empty pieces, re-join with single spaces, and shorten full field names
+            // to their abbreviations.
             let abbreviated_all_field_info = self.replace_all_field_info_abbr(
-                ALLFIELDINFO_SPECIAL_CHARS
-                    .replace_all(&allfieldinfo, &["🦅", "🦅", "🦅"])
-                    .split('🦅')
+                allfieldinfo
+                    .split(['\r', '\n', '\t'])
                     .filter(|x| !x.is_empty())
                     .join(" ")
                     .as_str(),

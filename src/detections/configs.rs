@@ -41,12 +41,6 @@ lazy_static! {
     // Maps every C0 control character (0x00-0x1F, except line feed) to its JSON-style \u00XX escape.
     pub static ref CONTROL_CHAR_REPLACE_MAP: HashMap<char, CompactString> =
         create_control_char_replace_map();
-    // Matches the placeholder tokens that utils::remove_sp_char substitutes for \r, \n and \t
-    // inside field values, so that output code can later restore or strip them.
-    pub static ref ALLFIELDINFO_SPECIAL_CHARS: AhoCorasick = AhoCorasickBuilder::new()
-        .match_kind(MatchKind::LeftmostLongest)
-        .build(["🛂r", "🛂n", "🛂t"])
-        .unwrap();
     // All-in-one config bundle (embedded file path -> file content). When rules_config_files.txt
     // exists, its entries are used instead of the individual files under rules/config.
     pub static ref ONE_CONFIG_MAP: HashMap<String, String> =
