@@ -29,7 +29,6 @@ use yaml_rust2::{Yaml, YamlLoader};
 
 lazy_static! {
     pub static ref STORED_STATIC: RwLock<Option<StoredStatic>> = RwLock::new(None);
-    pub static ref STORED_EKEY_ALIAS: RwLock<Option<EventKeyAliasConfig>> = RwLock::new(None);
     pub static ref GEOIP_DB_PARSER: RwLock<Option<GeoIPSearch>> = RwLock::new(None);
     pub static ref GEOIP_DB_YAML: RwLock<Option<HashMap<CompactString, Yaml>>> = RwLock::new(None);
     pub static ref GEOIP_FILTER: RwLock<Option<Vec<Yaml>>> = RwLock::new(None);

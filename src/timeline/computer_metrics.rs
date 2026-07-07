@@ -241,7 +241,7 @@ mod tests {
     use crate::{
         detections::configs::{
             Action, ClobberOption, CommonOptions, ComputerMetricsOption, Config, InputOption,
-            STORED_EKEY_ALIAS, STORED_STATIC, StoredStatic,
+            STORED_STATIC, StoredStatic,
         },
         timeline::{
             computer_metrics::{computer_metrics_dsp_msg, countup_event_by_computer},
@@ -281,7 +281,6 @@ mod tests {
                 clobber_opt: ClobberOption { clobber: true },
                 validate_checksums: false,
             }));
-        *STORED_EKEY_ALIAS.write().unwrap() = Some(dummy_stored_static.eventkey_alias.clone());
         let mut timeline = Timeline::default();
         let first_test_record_str = r#"{
             "Event": {

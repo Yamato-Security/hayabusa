@@ -444,9 +444,7 @@ impl ConditionCompiler {
 
 #[cfg(test)]
 mod tests {
-    use crate::detections::configs::{
-        Action, Config, CsvOutputOption, OutputOption, STORED_EKEY_ALIAS, StoredStatic,
-    };
+    use crate::detections::configs::{Action, Config, CsvOutputOption, OutputOption, StoredStatic};
     use crate::detections::rule::condition_parser::ConditionCompiler;
     use crate::detections::rule::create_rule;
     use crate::detections::rule::tests::parse_rule_from_str;
@@ -495,12 +493,17 @@ mod tests {
     fn check_select(rule_str: &str, record_str: &str, expect_select: bool) {
         let mut rule_node = parse_rule_from_str(rule_str);
         let dummy_stored_static = create_dummy_stored_static();
-        *STORED_EKEY_ALIAS.write().unwrap() = Some(dummy_stored_static.eventkey_alias.clone());
         match serde_json::from_str(record_str) {
             Ok(record) => {
                 let keys = detections::rule::get_detection_keys(&rule_node);
-                let recinfo =
-                    utils::create_rec_info(record, "testpath".to_owned(), &keys, &false, &false);
+                let recinfo = utils::create_rec_info(
+                    record,
+                    "testpath".to_owned(),
+                    &keys,
+                    &false,
+                    &false,
+                    &dummy_stored_static.eventkey_alias,
+                );
                 assert_eq!(
                     rule_node.select(
                         &recinfo,

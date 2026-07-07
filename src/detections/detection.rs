@@ -17,7 +17,6 @@ use tokio::{runtime::Runtime, spawn, task::JoinHandle};
 use yaml_rust2::Yaml;
 
 use crate::detections::configs::Action;
-use crate::detections::configs::STORED_EKEY_ALIAS;
 use crate::detections::field_data_map::FieldDataMapKey;
 use crate::detections::message::{AlertMessage, DetectInfo, ERROR_LOG_STACK, TAGS_CONFIG};
 use crate::detections::rule::correlation_parser::parse_correlation_rules;
@@ -402,8 +401,7 @@ impl Detection {
 
         let mut profile_converter: HashMap<&str, Profile> = HashMap::new();
         let tags_config_values: Vec<&CompactString> = TAGS_CONFIG.values().collect();
-        let binding = STORED_EKEY_ALIAS.read().unwrap();
-        let eventkey_alias = binding.as_ref().unwrap();
+        let eventkey_alias = &stored_static.eventkey_alias;
         let is_json_timeline = matches!(stored_static.config.action, Some(Action::JsonTimeline(_)));
         let computer_name = CompactString::from(
             record_info.record["Event"]["System"]["Computer"]
@@ -1122,8 +1120,7 @@ impl Detection {
             agg_result: Some(agg_result),
             details_convert_map: HashMap::default(),
         };
-        let binding = STORED_EKEY_ALIAS.read().unwrap();
-        let eventkey_alias = binding.as_ref().unwrap();
+        let eventkey_alias = &stored_static.eventkey_alias;
 
         let field_data_map_key = FieldDataMapKey::default();
 
@@ -1556,7 +1553,6 @@ mod tests {
     use crate::detections::configs::Config;
     use crate::detections::configs::CsvOutputOption;
     use crate::detections::configs::OutputOption;
-    use crate::detections::configs::STORED_EKEY_ALIAS;
     use crate::detections::configs::StoredStatic;
     use crate::detections::configs::load_eventkey_alias;
     use crate::detections::detection::Detection;
@@ -1795,7 +1791,6 @@ mod tests {
                 .to_str()
                 .unwrap(),
             );
-            *STORED_EKEY_ALIAS.write().unwrap() = Some(eventkey_alias);
 
             let val = r#"
             {
@@ -1820,8 +1815,14 @@ mod tests {
             let dummy_rule = RuleNode::new(test_rule_path.to_string(), Yaml::from_str(""));
             let keys = detections::rule::get_detection_keys(&dummy_rule);
 
-            let input_evtxrecord =
-                utils::create_rec_info(event, test_filepath.to_owned(), &keys, &false, &false);
+            let input_evtxrecord = utils::create_rec_info(
+                event,
+                test_filepath.to_owned(),
+                &keys,
+                &false,
+                &false,
+                &eventkey_alias,
+            );
             {
                 let rule = &dummy_rule;
                 let record_info = &input_evtxrecord;
@@ -1878,7 +1879,6 @@ mod tests {
                 .to_str()
                 .unwrap(),
             );
-            *STORED_EKEY_ALIAS.write().unwrap() = Some(eventkey_alias);
 
             let val = r#"
             {
@@ -1903,8 +1903,14 @@ mod tests {
             let dummy_rule = RuleNode::new(test_rule_path.to_string(), Yaml::from_str(""));
             let keys = detections::rule::get_detection_keys(&dummy_rule);
 
-            let input_evtxrecord =
-                utils::create_rec_info(event, test_filepath.to_owned(), &keys, &false, &false);
+            let input_evtxrecord = utils::create_rec_info(
+                event,
+                test_filepath.to_owned(),
+                &keys,
+                &false,
+                &false,
+                &eventkey_alias,
+            );
             {
                 let rule = &dummy_rule;
                 let record_info = &input_evtxrecord;
@@ -1961,7 +1967,6 @@ mod tests {
                 .to_str()
                 .unwrap(),
             );
-            *STORED_EKEY_ALIAS.write().unwrap() = Some(eventkey_alias);
 
             let val = r#"
             {
@@ -1999,8 +2004,14 @@ mod tests {
             assert!(rule_node.init(&create_dummy_stored_static()).is_ok());
 
             let keys = detections::rule::get_detection_keys(&rule_node);
-            let input_evtxrecord =
-                utils::create_rec_info(event, test_filepath.to_owned(), &keys, &false, &false);
+            let input_evtxrecord = utils::create_rec_info(
+                event,
+                test_filepath.to_owned(),
+                &keys,
+                &false,
+                &false,
+                &eventkey_alias,
+            );
             {
                 let rule = &rule_node;
                 let record_info = &input_evtxrecord;
@@ -2055,7 +2066,6 @@ mod tests {
                 .to_str()
                 .unwrap(),
             );
-            *STORED_EKEY_ALIAS.write().unwrap() = Some(eventkey_alias);
 
             let val = r#"
             {
@@ -2093,8 +2103,14 @@ mod tests {
             assert!(rule_node.init(&create_dummy_stored_static()).is_ok());
 
             let keys = detections::rule::get_detection_keys(&rule_node);
-            let input_evtxrecord =
-                utils::create_rec_info(event, test_filepath.to_owned(), &keys, &false, &false);
+            let input_evtxrecord = utils::create_rec_info(
+                event,
+                test_filepath.to_owned(),
+                &keys,
+                &false,
+                &false,
+                &eventkey_alias,
+            );
             {
                 let rule = &rule_node;
                 let record_info = &input_evtxrecord;

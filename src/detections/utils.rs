@@ -31,7 +31,7 @@ use crate::detections::field_data_map::{FieldDataMap, FieldDataMapKey, convert_f
 use crate::detections::field_extract::extract_fields;
 use crate::options::htmlreport;
 
-use super::configs::{EventKeyAliasConfig, OutputOption, STORED_EKEY_ALIAS};
+use super::configs::{EventKeyAliasConfig, OutputOption};
 use super::detection::EvtxRecordInfo;
 use super::message::{AlertMessage, ERROR_LOG_STACK};
 use rust_embed::Embed;
@@ -355,6 +355,7 @@ pub fn create_rec_info(
     keys: &Nested<String>,
     recovered_record: &bool,
     no_pwsh_field_extraction: &bool,
+    eventkey_alias: &EventKeyAliasConfig,
 ) -> EvtxRecordInfo {
     // Processing for performance optimization.
 
@@ -368,8 +369,6 @@ pub fn create_rec_info(
     // has also been sped up.
     let mut flat_key_to_value = HashMap::new();
 
-    let binding = STORED_EKEY_ALIAS.read().unwrap();
-    let eventkey_alias = binding.as_ref().unwrap();
     let mut event_id = None;
     let mut channel = None;
     for key in keys.iter() {

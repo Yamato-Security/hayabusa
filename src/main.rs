@@ -16,8 +16,8 @@ use evtx::{EvtxParser, ParserSettings, RecordAllocation};
 use hashbrown::{HashMap, HashSet};
 use hayabusa::debug::checkpoint_process_timer::CHECKPOINT;
 use hayabusa::detections::configs::{
-    Action, CURRENT_EXE_PATH, ConfigReader, EventKeyAliasConfig, ONE_CONFIG_MAP, STORED_EKEY_ALIAS,
-    STORED_STATIC, StoredStatic, TargetEventTime, TargetIds, load_pivot_keywords,
+    Action, CURRENT_EXE_PATH, ConfigReader, EventKeyAliasConfig, ONE_CONFIG_MAP, STORED_STATIC,
+    StoredStatic, TargetEventTime, TargetIds, load_pivot_keywords,
 };
 use hayabusa::detections::detection::{self, EvtxRecordInfo};
 use hayabusa::detections::message::{AlertMessage, DetectInfo, ERROR_LOG_STACK, get_event_time};
@@ -188,6 +188,15 @@ struct BatchPolicy {
     /// Widen the results-summary detection time span from this batch's hits. The evtx path does
     /// this; the JSON path does not.
     update_time_range: bool,
+}
+
+/// The inputs `create_rec_info` needs, built once per scanned file so the alias config (and rule
+/// keys) are cloned a single time — into `Arc`s shared across every detection batch and per-record
+/// task — instead of being re-cloned for each batch. The `Arc`s are cheap to clone into each task.
+struct RecordBuildContext {
+    rule_keys: Arc<Nested<String>>,
+    eventkey_alias: Arc<EventKeyAliasConfig>,
+    no_pwsh_field_extraction: bool,
 }
 
 impl App {
@@ -2124,7 +2133,6 @@ Any hostnames added to the critical_systems.txt file will have all alerts above 
         self.rule_keys = self.get_all_keys(&rule_files);
         let mut detection = detection::Detection::new(rule_files);
         let mut timeline = Timeline::new();
-        *STORED_EKEY_ALIAS.write().unwrap() = Some(stored_static.eventkey_alias.clone());
         *STORED_STATIC.write().unwrap() = Some(stored_static.clone());
         let mut result_state = ResultOutputState::default();
         let mut all_detect_infos = vec![];
@@ -2346,6 +2354,11 @@ Any hostnames added to the critical_systems.txt file will have all alerts above 
             stored_static.config.action.as_ref().unwrap(),
             Action::CsvTimeline(_) | Action::JsonTimeline(_) | Action::PivotKeywordsList(_)
         );
+        let rec_ctx = RecordBuildContext {
+            rule_keys: Arc::new(self.rule_keys.to_owned()),
+            eventkey_alias: Arc::new(stored_static.eventkey_alias.clone()),
+            no_pwsh_field_extraction: stored_static.no_pwsh_field_extraction,
+        };
         loop {
             let mut records_per_detect = vec![];
             while records_per_detect.len() < MAX_DETECT_RECORDS {
@@ -2438,7 +2451,7 @@ Any hostnames added to the critical_systems.txt file will have all alerts above 
             }
 
             detection = self.process_detection_batch(
-                (records_per_detect, &path),
+                (records_per_detect, &path, &rec_ctx),
                 detection,
                 &mut timeline,
                 stored_static,
@@ -2466,7 +2479,11 @@ Any hostnames added to the critical_systems.txt file will have all alerts above 
     /// copy-pasted at the end of both the evtx and JSON batch loops.
     fn process_detection_batch(
         &self,
-        (records_per_detect, path): (Vec<(Value, bool)>, &dyn Display),
+        (records_per_detect, path, rec_ctx): (
+            Vec<(Value, bool)>,
+            &dyn Display,
+            &RecordBuildContext,
+        ),
         mut detection: detection::Detection,
         timeline: &mut Timeline,
         stored_static: &StoredStatic,
@@ -2484,8 +2501,9 @@ Any hostnames added to the critical_systems.txt file will have all alerts above 
         let records_per_detect = self.runtime.block_on(App::create_rec_infos(
             records_per_detect,
             path,
-            self.rule_keys.to_owned(),
-            stored_static.no_pwsh_field_extraction,
+            Arc::clone(&rec_ctx.rule_keys),
+            Arc::clone(&rec_ctx.eventkey_alias),
+            rec_ctx.no_pwsh_field_extraction,
         ));
         timeline.start(&records_per_detect, stored_static);
         if run_rules {
@@ -2683,6 +2701,11 @@ Any hostnames added to the critical_systems.txt file will have all alerts above 
             }
         };
 
+        let rec_ctx = RecordBuildContext {
+            rule_keys: Arc::new(self.rule_keys.to_owned()),
+            eventkey_alias: Arc::new(stored_static.eventkey_alias.clone()),
+            no_pwsh_field_extraction: stored_static.no_pwsh_field_extraction,
+        };
         loop {
             let mut records_per_detect = vec![];
             while records_per_detect.len() < MAX_DETECT_RECORDS {
@@ -2886,7 +2909,7 @@ Any hostnames added to the critical_systems.txt file will have all alerts above 
             }
 
             detection = self.process_detection_batch(
-                (records_per_detect, &path),
+                (records_per_detect, &path, &rec_ctx),
                 detection,
                 &mut timeline,
                 stored_static,
@@ -2915,18 +2938,19 @@ Any hostnames added to the critical_systems.txt file will have all alerts above 
     async fn create_rec_infos(
         records_per_detect: Vec<(Value, bool)>,
         path: &dyn Display,
-        rule_keys: Nested<String>,
+        rule_keys: Arc<Nested<String>>,
+        eventkey_alias: Arc<EventKeyAliasConfig>,
         no_pwsh_field_extraction: bool,
     ) -> Vec<EvtxRecordInfo> {
         let no_pwsh_field_extraction = Arc::new(no_pwsh_field_extraction);
         let path = Arc::new(path.to_string());
-        let rule_keys = Arc::new(rule_keys);
         let threads: Vec<JoinHandle<EvtxRecordInfo>> = {
             let this = records_per_detect.into_iter().map(
                 |(rec, recovered_record_flag)| -> JoinHandle<EvtxRecordInfo> {
                     let arc_rule_keys = Arc::clone(&rule_keys);
                     let arc_path = Arc::clone(&path);
                     let arc_no_pwsh_field_extraction = Arc::clone(&no_pwsh_field_extraction);
+                    let arc_eventkey_alias = Arc::clone(&eventkey_alias);
                     spawn(async move {
                         utils::create_rec_info(
                             rec,
@@ -2934,6 +2958,7 @@ Any hostnames added to the critical_systems.txt file will have all alerts above 
                             &arc_rule_keys,
                             &recovered_record_flag,
                             &arc_no_pwsh_field_extraction,
+                            &arc_eventkey_alias,
                         )
                     })
                 },
@@ -3227,8 +3252,8 @@ mod tests {
             configs::{
                 Action, ClobberOption, ComputerMetricsOption, Config, ConfigReader,
                 CsvOutputOption, DetectCommonOption, EidMetricsOption, InputOption,
-                JSONOutputOption, LogonSummaryOption, OutputOption, STORED_EKEY_ALIAS,
-                STORED_STATIC, StoredStatic, TargetEventTime, TargetIds,
+                JSONOutputOption, LogonSummaryOption, OutputOption, STORED_STATIC, StoredStatic,
+                TargetEventTime, TargetIds,
             },
             detection,
             rule::create_rule,
@@ -3313,7 +3338,6 @@ mod tests {
     fn test_analysis_json_file() {
         let mut app = App::new(None);
         let stored_static = create_dummy_stored_static();
-        *STORED_EKEY_ALIAS.write().unwrap() = Some(stored_static.eventkey_alias.clone());
         *STORED_STATIC.write().unwrap() = Some(stored_static.clone());
 
         let rule_str = r#"
@@ -3385,7 +3409,6 @@ mod tests {
             debug: false,
         });
         let mut stored_static = StoredStatic::create_static_data(config);
-        *STORED_EKEY_ALIAS.write().unwrap() = Some(stored_static.eventkey_alias.clone());
         *STORED_STATIC.write().unwrap() = Some(stored_static.clone());
         let mut config_reader = ConfigReader::new();
         app.exec(&mut config_reader.app, &mut stored_static);
@@ -3426,7 +3449,6 @@ mod tests {
             debug: false,
         });
         let mut stored_static = StoredStatic::create_static_data(config);
-        *STORED_EKEY_ALIAS.write().unwrap() = Some(stored_static.eventkey_alias.clone());
         *STORED_STATIC.write().unwrap() = Some(stored_static.clone());
         let mut config_reader = ConfigReader::new();
         app.exec(&mut config_reader.app, &mut stored_static);
@@ -3466,7 +3488,6 @@ mod tests {
             debug: false,
         });
         let mut stored_static = StoredStatic::create_static_data(config);
-        *STORED_EKEY_ALIAS.write().unwrap() = Some(stored_static.eventkey_alias.clone());
         *STORED_STATIC.write().unwrap() = Some(stored_static.clone());
         let mut config_reader = ConfigReader::new();
         app.exec(&mut config_reader.app, &mut stored_static);
@@ -3507,7 +3528,6 @@ mod tests {
             debug: false,
         });
         let mut stored_static = StoredStatic::create_static_data(config);
-        *STORED_EKEY_ALIAS.write().unwrap() = Some(stored_static.eventkey_alias.clone());
         *STORED_STATIC.write().unwrap() = Some(stored_static.clone());
         let mut config_reader = ConfigReader::new();
         app.exec(&mut config_reader.app, &mut stored_static);
@@ -3539,7 +3559,6 @@ mod tests {
             debug: false,
         });
         let mut stored_static = StoredStatic::create_static_data(config);
-        *STORED_EKEY_ALIAS.write().unwrap() = Some(stored_static.eventkey_alias.clone());
         *STORED_STATIC.write().unwrap() = Some(stored_static.clone());
         let mut config_reader = ConfigReader::new();
         app.exec(&mut config_reader.app, &mut stored_static);
@@ -3574,7 +3593,6 @@ mod tests {
             debug: false,
         });
         let mut stored_static = StoredStatic::create_static_data(config);
-        *STORED_EKEY_ALIAS.write().unwrap() = Some(stored_static.eventkey_alias.clone());
         *STORED_STATIC.write().unwrap() = Some(stored_static.clone());
         let mut config_reader = ConfigReader::new();
         app.exec(&mut config_reader.app, &mut stored_static);
@@ -3606,7 +3624,6 @@ mod tests {
             debug: false,
         });
         let mut stored_static = StoredStatic::create_static_data(config);
-        *STORED_EKEY_ALIAS.write().unwrap() = Some(stored_static.eventkey_alias.clone());
         *STORED_STATIC.write().unwrap() = Some(stored_static.clone());
         let mut config_reader = ConfigReader::new();
         app.exec(&mut config_reader.app, &mut stored_static);
@@ -3640,7 +3657,6 @@ mod tests {
             debug: false,
         });
         let mut stored_static = StoredStatic::create_static_data(config);
-        *STORED_EKEY_ALIAS.write().unwrap() = Some(stored_static.eventkey_alias.clone());
         *STORED_STATIC.write().unwrap() = Some(stored_static.clone());
         let mut config_reader = ConfigReader::new();
         app.exec(&mut config_reader.app, &mut stored_static);
@@ -3671,7 +3687,6 @@ mod tests {
             debug: false,
         });
         let mut stored_static = StoredStatic::create_static_data(config);
-        *STORED_EKEY_ALIAS.write().unwrap() = Some(stored_static.eventkey_alias.clone());
         *STORED_STATIC.write().unwrap() = Some(stored_static.clone());
         let mut config_reader = ConfigReader::new();
         app.exec(&mut config_reader.app, &mut stored_static);
@@ -3702,7 +3717,6 @@ mod tests {
             debug: false,
         });
         let mut stored_static = StoredStatic::create_static_data(config);
-        *STORED_EKEY_ALIAS.write().unwrap() = Some(stored_static.eventkey_alias.clone());
         *STORED_STATIC.write().unwrap() = Some(stored_static.clone());
         let mut config_reader = ConfigReader::new();
         app.exec(&mut config_reader.app, &mut stored_static);
@@ -3716,7 +3730,6 @@ mod tests {
     fn test_analysis_json_file_include_eid() {
         let mut app = App::new(None);
         let mut stored_static = create_dummy_stored_static();
-        *STORED_EKEY_ALIAS.write().unwrap() = Some(stored_static.eventkey_alias.clone());
         stored_static.include_eid = HashSet::from_iter(vec!["10".into()]);
         *STORED_STATIC.write().unwrap() = Some(stored_static.clone());
 
@@ -3762,7 +3775,6 @@ mod tests {
     fn test_analysis_json_file_exclude_eid() {
         let mut app = App::new(None);
         let mut stored_static = create_dummy_stored_static();
-        *STORED_EKEY_ALIAS.write().unwrap() = Some(stored_static.eventkey_alias.clone());
         stored_static.exclude_eid = HashSet::from_iter(vec!["10".into(), "11".into()]);
         *STORED_STATIC.write().unwrap() = Some(stored_static.clone());
 
@@ -3808,7 +3820,6 @@ mod tests {
     fn test_analysis_json_file_low_memory_mode() {
         let mut app = App::new(None);
         let mut stored_static = create_dummy_stored_static();
-        *STORED_EKEY_ALIAS.write().unwrap() = Some(stored_static.eventkey_alias.clone());
         stored_static.include_eid = HashSet::from_iter(vec!["10".into()]);
         stored_static.is_low_memory = true;
         *STORED_STATIC.write().unwrap() = Some(stored_static.clone());
@@ -3858,7 +3869,6 @@ mod tests {
     #[test]
     fn test_emit_or_buffer_policy() {
         let stored_static = create_dummy_stored_static();
-        *STORED_EKEY_ALIAS.write().unwrap() = Some(stored_static.eventkey_alias.clone());
         *STORED_STATIC.write().unwrap() = Some(stored_static.clone());
         let mut output_writer = results::init_writer(&stored_static);
         let mut result_state = ResultOutputState::default();

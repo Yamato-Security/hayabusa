@@ -755,7 +755,7 @@ mod tests {
         detections::{
             configs::{
                 Action, ClobberOption, CommonOptions, Config, DetectCommonOption, EidMetricsOption,
-                InputOption, LogonSummaryOption, STORED_EKEY_ALIAS, StoredStatic, TimeRangeOption,
+                InputOption, LogonSummaryOption, StoredStatic, TimeRangeOption,
             },
             utils::create_rec_info,
         },
@@ -815,7 +815,6 @@ mod tests {
                 remove_duplicate_detections: false,
             }));
         dummy_stored_static.logon_summary_flag = true;
-        *STORED_EKEY_ALIAS.write().unwrap() = Some(dummy_stored_static.eventkey_alias.clone());
         let mut timeline = Timeline::default();
 
         // Test that logon_stats_start does nothing when there is no record information.
@@ -840,6 +839,7 @@ mod tests {
             &Nested::<String>::new(),
             &false,
             &false,
+            &dummy_stored_static.eventkey_alias,
         ));
         timeline
             .stats
@@ -877,6 +877,7 @@ mod tests {
             &Nested::<String>::new(),
             &false,
             &false,
+            &dummy_stored_static.eventkey_alias,
         ));
 
         // Test 3: When Event.System.@timestamp contains a timestamp.
@@ -902,6 +903,7 @@ mod tests {
             &Nested::<String>::new(),
             &false,
             &false,
+            &dummy_stored_static.eventkey_alias,
         ));
 
         // Test 4: An RDS Gateway logon (EID 302) whose Username carries a "DOMAIN\user" value.
@@ -934,6 +936,7 @@ mod tests {
             &Nested::<String>::new(),
             &false,
             &false,
+            &dummy_stored_static.eventkey_alias,
         ));
 
         let mut expect: HashMap<LoginEvent, [usize; 2]> = HashMap::new();
@@ -1048,7 +1051,6 @@ mod tests {
                 clobber_opt: ClobberOption { clobber: false },
                 remove_duplicate_detections: false,
             }));
-        *STORED_EKEY_ALIAS.write().unwrap() = Some(dummy_stored_static.eventkey_alias.clone());
         let mut timeline = Timeline::default();
         let mut input_records = vec![];
         let timestamp_attrib_record_str = r#"{
@@ -1073,6 +1075,7 @@ mod tests {
             &Nested::<String>::new(),
             &false,
             &false,
+            &dummy_stored_static.eventkey_alias,
         ));
 
         let include_computer: HashSet<CompactString> = HashSet::new();
@@ -1148,7 +1151,6 @@ mod tests {
                 remove_duplicate_detections: false,
             }));
         dummy_stored_static.logon_summary_flag = true;
-        *STORED_EKEY_ALIAS.write().unwrap() = Some(dummy_stored_static.eventkey_alias.clone());
         let mut timeline = Timeline::default();
         let mut input_records = vec![];
         let tcreated_attrib_record_str = r#"{
@@ -1179,6 +1181,7 @@ mod tests {
             &Nested::<String>::new(),
             &false,
             &false,
+            &dummy_stored_static.eventkey_alias,
         ));
 
         let timestamp_attrib_record_str = r#"{
@@ -1203,6 +1206,7 @@ mod tests {
             &Nested::<String>::new(),
             &false,
             &false,
+            &dummy_stored_static.eventkey_alias,
         ));
 
         timeline
