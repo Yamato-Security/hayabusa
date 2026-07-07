@@ -3351,6 +3351,65 @@ mod tests {
         assert!(lines.iter().any(|l| l.starts_with("- Start time: ")));
     }
 
+    // End-to-end guard for the HtmlReporter threading: run `exec` with `--html-report` against a
+    // JSON fixture and assert the rendered report file contains the sections `exec`'s single
+    // threaded reporter accumulates. This proves `exec` builds one reporter, threads it through
+    // analysis, and renders that same instance (which the header-helper unit test cannot).
+    #[test]
+    fn test_exec_html_report_end_to_end() {
+        let report_path = "test_exec_html_report_e2e.html";
+        let csv_path = "test_exec_html_report_e2e.csv";
+        let mut app = App::new(None);
+        let action = Action::CsvTimeline(CsvOutputOption {
+            output_options: OutputOption {
+                input_args: InputOption {
+                    filepath: Some(Path::new("test_files/evtx/test.json").to_path_buf()),
+                    ..Default::default()
+                },
+                min_level: "informational".to_string(),
+                rules: Path::new("./test_files/rules/yaml/test_json_detect.yml").to_path_buf(),
+                detect_common_options: DetectCommonOption {
+                    json_input: true,
+                    config: Path::new("./rules/config").to_path_buf(),
+                    ..Default::default()
+                },
+                html_report: Some(Path::new(report_path).to_path_buf()),
+                no_wizard: true,
+                ..Default::default()
+            },
+            output: Some(Path::new(csv_path).to_path_buf()),
+            ..Default::default()
+        });
+        let config = Some(Config {
+            action: Some(action),
+            debug: false,
+        });
+        let mut stored_static = StoredStatic::create_static_data(config);
+        *STORED_STATIC.write().unwrap() = Some(stored_static.clone());
+        let mut config_reader = ConfigReader::new();
+        app.exec(&mut config_reader.app, &mut stored_static);
+
+        let html = std::fs::read_to_string(report_path)
+            .expect("exec should have written the HTML report file");
+        // The reporter exec threaded from start-up (General Overview: command line + start time)
+        // through the summary path (Results Summary) is what gets rendered to the file.
+        assert!(
+            html.contains("General Overview"),
+            "report is missing the General Overview section"
+        );
+        assert!(
+            html.contains("Command line:"),
+            "report is missing the General Overview command-line entry"
+        );
+        assert!(
+            html.contains("Results Summary"),
+            "report is missing the Results Summary section"
+        );
+
+        std::fs::remove_file(report_path).ok();
+        std::fs::remove_file(csv_path).ok();
+    }
+
     #[test]
     fn test_analysis_json_file() {
         let mut app = App::new(None);
