@@ -21,7 +21,7 @@ use std::env::current_exe;
 use std::fs::File;
 use std::io::BufRead;
 use std::path::{Path, PathBuf};
-use std::sync::RwLock;
+use std::sync::{Arc, RwLock};
 use std::{fs, io, process};
 use strum::IntoEnumIterator;
 use terminal_size::{Width, terminal_size};
@@ -29,9 +29,6 @@ use yaml_rust2::{Yaml, YamlLoader};
 
 lazy_static! {
     pub static ref STORED_STATIC: RwLock<Option<StoredStatic>> = RwLock::new(None);
-    pub static ref GEOIP_DB_PARSER: RwLock<Option<GeoIPSearch>> = RwLock::new(None);
-    pub static ref GEOIP_DB_YAML: RwLock<Option<HashMap<CompactString, Yaml>>> = RwLock::new(None);
-    pub static ref GEOIP_FILTER: RwLock<Option<Vec<Yaml>>> = RwLock::new(None);
     pub static ref CURRENT_EXE_PATH: PathBuf =
         current_exe().unwrap().parent().unwrap().to_path_buf();
     // Matches UUID-formatted ids (e.g. the "id" field of Sigma rules).
@@ -112,6 +109,13 @@ pub struct StoredStatic {
     pub config: Config,
     pub config_path: PathBuf,
     pub eventkey_alias: EventKeyAliasConfig,
+    /// The loaded MaxMind GeoIP database reader, set only when `--geo-ip` is specified. Wrapped in
+    /// `Arc` so `StoredStatic` stays `Clone` even though `GeoIPSearch` is not.
+    pub geo_ip_search: Option<Arc<GeoIPSearch>>,
+    /// The geoip field-mapping config (SrcIP/TgtIP alias lists), set only when `--geo-ip` is used.
+    pub geo_ip_db_yaml: Option<HashMap<CompactString, Yaml>>,
+    /// The geoip filter config (channel/EID conditions), set only when `--geo-ip` is used.
+    pub geo_ip_filter: Option<Vec<Yaml>>,
     pub channel_abbr_config: HashMap<CompactString, CompactString>,
     pub generic_abbr_matcher: AhoCorasick,
     pub generic_abbr_values: Vec<CompactString>,
@@ -304,15 +308,18 @@ impl StoredStatic {
             AlertMessage::alert(&err_msg).ok();
             process::exit(1);
         }
+        let mut geo_ip_search: Option<Arc<GeoIPSearch>> = None;
+        let mut geo_ip_filter: Option<Vec<Yaml>> = None;
+        let mut geo_ip_db_yaml: Option<HashMap<CompactString, Yaml>> = None;
         if let Some(geo_ip_db_path) = geo_ip_db_result.unwrap() {
-            *GEOIP_DB_PARSER.write().unwrap() = Some(GeoIPSearch::new(
+            geo_ip_search = Some(Arc::new(GeoIPSearch::new(
                 &geo_ip_db_path,
                 vec![
                     "GeoLite2-ASN.mmdb",
                     "GeoLite2-Country.mmdb",
                     "GeoLite2-City.mmdb",
                 ],
-            ));
+            )));
             let geo_ip_file_path = check_setting_path(config_path, "geoip_field_mapping", false)
                 .unwrap_or_else(|| {
                     check_setting_path(
@@ -347,7 +354,7 @@ impl StoredStatic {
             };
             let target_map = &geo_ip_mapping[0];
             let empty_yaml_vec: Vec<Yaml> = vec![];
-            *GEOIP_FILTER.write().unwrap() = Some(
+            geo_ip_filter = Some(
                 target_map["Filter"]
                     .as_vec()
                     .unwrap_or(&empty_yaml_vec)
@@ -368,7 +375,7 @@ impl StoredStatic {
                     );
                 }
             }
-            *GEOIP_DB_YAML.write().unwrap() = Some(static_geoip_conf);
+            geo_ip_db_yaml = Some(static_geoip_conf);
         };
         let output_path = match &input_config.as_ref().unwrap().action {
             Some(Action::CsvTimeline(opt)) => opt.output.as_ref(),
@@ -798,6 +805,9 @@ impl StoredStatic {
                     .to_str()
                     .unwrap(),
             ),
+            geo_ip_search,
+            geo_ip_db_yaml,
+            geo_ip_filter,
             // The numeric ids compared below come from Action::to_usize.
             logon_summary_flag: action_id == 2,
             metrics_flag: action_id == 3,

@@ -4,7 +4,7 @@ use aho_corasick::{AhoCorasickBuilder, MatchKind};
 use hashbrown::HashSet;
 use itertools::Itertools;
 
-use crate::detections::configs::{Action, GEOIP_DB_PARSER, StoredStatic};
+use crate::detections::configs::{Action, StoredStatic};
 use crate::detections::message::DetectInfo;
 use crate::detections::utils::{get_writable_color, write_color_buffer};
 use crate::level::{_get_output_color, create_output_color_map};
@@ -142,7 +142,7 @@ pub(crate) fn emit_csv_inner(
                 detect_info,
                 result_state,
                 jsonl_output_flag,
-                GEOIP_DB_PARSER.read().unwrap().is_some(),
+                stored_static.geo_ip_search.is_some(),
                 remove_duplicate_data,
             );
             result_state.prev_message = result.1;
@@ -172,7 +172,7 @@ pub(crate) fn emit_csv_inner(
                 detect_info,
                 result_state,
                 jsonl_output_flag,
-                GEOIP_DB_PARSER.read().unwrap().is_some(),
+                stored_static.geo_ip_search.is_some(),
                 remove_duplicate_data,
             );
             result_state.prev_message = result.1;

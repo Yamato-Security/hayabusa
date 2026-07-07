@@ -1,4 +1,4 @@
-use crate::detections::configs::{Action, CURRENT_EXE_PATH, GEOIP_DB_PARSER, StoredStatic};
+use crate::detections::configs::{Action, CURRENT_EXE_PATH, StoredStatic};
 use crate::detections::message::AlertMessage;
 use crate::detections::utils::check_setting_path;
 use crate::options::profile::Profile::{
@@ -271,7 +271,7 @@ pub fn load_profile(
     }
     // Append the reserved GeoIP output columns when the GeoIP option was specified (i.e. a GeoIP
     // database has been loaded).
-    if GEOIP_DB_PARSER.read().unwrap().is_some() {
+    if opt_stored_static.unwrap().geo_ip_search.is_some() {
         ret.push((CompactString::from("SrcASN"), SrcASN(Cow::default())));
         ret.push((
             CompactString::from("SrcCountry"),
@@ -416,9 +416,7 @@ pub fn get_profile_list(profile_path: &str) -> Nested<Vec<String>> {
 #[cfg(test)]
 mod tests {
 
-    use crate::detections::configs::{
-        Action, Config, CsvOutputOption, GEOIP_DB_PARSER, OutputOption, StoredStatic,
-    };
+    use crate::detections::configs::{Action, Config, CsvOutputOption, OutputOption, StoredStatic};
     use crate::options::profile::{Profile, get_profile_list, load_profile};
     use compact_str::CompactString;
     use nested::Nested;
@@ -437,8 +435,7 @@ mod tests {
     }
 
     #[test]
-    /// Run these sub-tests sequentially: they set global option state (e.g. GEOIP_DB_PARSER), so
-    /// the results would not be deterministic if the tests ran in parallel.
+    /// The profile-loading assertions below are grouped into a single test and run sequentially.
     fn test_load_profile() {
         test_load_profile_without_profile_option();
         test_load_profile_no_exist_profile_files();
@@ -519,7 +516,6 @@ mod tests {
                 },
                 ..Default::default()
             }));
-        *GEOIP_DB_PARSER.write().unwrap() = None;
         assert_eq!(
             Some(expect),
             load_profile(

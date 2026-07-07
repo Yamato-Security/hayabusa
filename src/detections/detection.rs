@@ -38,9 +38,7 @@ use crate::options::profile::Profile::{
 };
 use crate::yaml::ParseYaml;
 
-use super::configs::{
-    EventKeyAliasConfig, GEOIP_DB_PARSER, GEOIP_DB_YAML, GEOIP_FILTER, STORED_STATIC, StoredStatic,
-};
+use super::configs::{EventKeyAliasConfig, STORED_STATIC, StoredStatic};
 use super::message::{self, COMPUTER_MITRE_ATTCK_MAP, COMPUTER_MITRE_ATTCK_UNIQUE_KEYS};
 
 /// Struct to hold information for one record of an event file.
@@ -673,8 +671,7 @@ impl Detection {
                     profile_converter.insert("TgtASN", TgtASN("".into()));
                     profile_converter.insert("TgtCountry", TgtCountry("".into()));
                     profile_converter.insert("TgtCity", TgtCity("".into()));
-                    let binding = GEOIP_DB_YAML.read().unwrap();
-                    let geo_ip_mapping = binding.as_ref().unwrap();
+                    let geo_ip_mapping = stored_static.geo_ip_db_yaml.as_ref().unwrap();
                     if geo_ip_mapping.is_empty() {
                         continue;
                     }
@@ -682,8 +679,7 @@ impl Detection {
                     if target_alias.is_none() {
                         continue;
                     }
-                    let binding = GEOIP_FILTER.read().unwrap();
-                    let target_condition = binding.as_ref().unwrap();
+                    let target_condition = stored_static.geo_ip_filter.as_ref().unwrap();
                     let mut geoip_target_flag = false;
                     for condition in target_condition.iter() {
                         geoip_target_flag = condition.as_hash().unwrap().iter().any(
@@ -714,9 +710,8 @@ impl Detection {
                         eventkey_alias,
                         false,
                     );
-                    let geo_data = GEOIP_DB_PARSER
-                        .read()
-                        .unwrap()
+                    let geo_data = stored_static
+                        .geo_ip_search
                         .as_ref()
                         .unwrap()
                         .convert_ip_to_geo(&alias_data);
@@ -745,18 +740,16 @@ impl Detection {
                     profile_converter.insert("SrcASN", SrcASN("".into()));
                     profile_converter.insert("SrcCountry", SrcCountry("".into()));
                     profile_converter.insert("SrcCity", SrcCity("".into()));
-                    let binding = GEOIP_DB_YAML.read().unwrap();
-                    let geo_ip_mapping = binding.as_ref().unwrap();
+                    let geo_ip_mapping = stored_static.geo_ip_db_yaml.as_ref().unwrap();
                     if geo_ip_mapping.is_empty() {
                         continue;
                     }
                     let target_alias = &geo_ip_mapping.get("SrcIP");
-                    if target_alias.is_none() || GEOIP_FILTER.read().unwrap().is_none() {
+                    if target_alias.is_none() || stored_static.geo_ip_filter.is_none() {
                         continue;
                     }
 
-                    let binding = GEOIP_FILTER.read().unwrap();
-                    let target_condition = binding.as_ref().unwrap();
+                    let target_condition = stored_static.geo_ip_filter.as_ref().unwrap();
                     let mut geoip_target_flag = false;
                     for condition in target_condition.iter() {
                         geoip_target_flag = condition.as_hash().unwrap().iter().any(
@@ -789,9 +782,8 @@ impl Detection {
                         false,
                     );
 
-                    let geo_data = GEOIP_DB_PARSER
-                        .read()
-                        .unwrap()
+                    let geo_data = stored_static
+                        .geo_ip_search
                         .as_ref()
                         .unwrap()
                         .convert_ip_to_geo(&alias_data);
