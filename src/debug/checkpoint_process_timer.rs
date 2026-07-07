@@ -1,17 +1,5 @@
-use std::sync::Mutex;
-
 use crate::detections::utils::output_duration;
 use chrono::{DateTime, Local};
-use lazy_static::lazy_static;
-
-lazy_static! {
-    /// Global timer used to record how long each processing phase (rule parsing, analysis,
-    /// output) takes. Lap times are always collected; the per-phase breakdown is only printed
-    /// when the --debug option is set, while the accumulated total is always shown as the
-    /// "Elapsed time" in the results summary.
-    pub static ref CHECKPOINT: Mutex<CheckPointProcessTimer> =
-        Mutex::new(CheckPointProcessTimer::create_checkpoint_timer());
-}
 
 /// Stopwatch-style timer: `set_checkpoint` starts measuring and `lap_checkpoint` records the
 /// elapsed time since the last checkpoint as a labeled lap.
@@ -28,7 +16,7 @@ pub struct CheckPointTimeStore {
 }
 
 impl CheckPointProcessTimer {
-    /// Creates the struct data to be initially inserted into the static variable.
+    /// Creates a fresh, empty checkpoint timer (no start point set, no laps recorded yet).
     pub fn create_checkpoint_timer() -> Self {
         CheckPointProcessTimer {
             prev_checkpoint: None,
