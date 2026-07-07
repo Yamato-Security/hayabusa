@@ -53,6 +53,7 @@ pub(crate) fn html_escape_value(s: &str) -> String {
     escaped
 }
 use crate::level::LEVEL;
+use crate::options::htmlreport::HtmlReporter;
 use crate::options::profile::Profile;
 
 mod csv;
@@ -264,8 +265,15 @@ pub fn output_results(
     output_writer: &mut OutputWriter,
     stored_static: &StoredStatic,
     result_state: &mut ResultOutputState,
+    html_reporter: &mut HtmlReporter,
 ) {
-    let ret = output_results_inner(detect_infos, output_writer, stored_static, result_state);
+    let ret = output_results_inner(
+        detect_infos,
+        output_writer,
+        stored_static,
+        result_state,
+        html_reporter,
+    );
     if ret.is_err() {
         handle_output_error(Box::new(ret.err().unwrap()));
     }
@@ -281,6 +289,7 @@ fn output_results_inner(
     output_writer: &mut OutputWriter,
     stored_static: &StoredStatic,
     result_state: &mut ResultOutputState,
+    html_reporter: &mut HtmlReporter,
 ) -> io::Result<()> {
     if output_writer.display_flag {
         println!();
@@ -317,7 +326,7 @@ fn output_results_inner(
     );
     output_writer.disp_wtr_buf.clear();
 
-    output_result_summary(stored_static, output_writer, result_state);
+    output_result_summary(stored_static, output_writer, result_state, html_reporter);
 
     Ok(())
 }
@@ -455,6 +464,7 @@ mod tests {
     use crate::detections::message::DetectInfo;
     use crate::detections::utils;
     use crate::level::LEVEL;
+    use crate::options::htmlreport::{GENERAL_OVERVIEW_SECTION, HtmlReporter};
     use crate::options::profile::{Profile, load_profile};
     use crate::results::_print_unique_results;
     use crate::results::ResultOutputState;
@@ -540,7 +550,7 @@ mod tests {
         ));
         reporter
             .section_markdown
-            .insert("General Overview {#general_overview}".to_string(), data);
+            .insert(GENERAL_OVERVIEW_SECTION.to_string(), data);
         let html = reporter.create_html();
         assert!(
             !html.contains("href=\"javascript:"),
@@ -813,6 +823,7 @@ mod tests {
                 &mut writer,
                 &stored_static,
                 &mut result_state,
+                &mut HtmlReporter::default(),
             )
             .is_ok()
         );
@@ -1045,6 +1056,7 @@ mod tests {
                 &mut writer,
                 &stored_static,
                 &mut result_state,
+                &mut HtmlReporter::default(),
             )
             .is_ok()
         );
@@ -1365,6 +1377,7 @@ mod tests {
                 &mut writer,
                 &stored_static,
                 &mut result_state,
+                &mut HtmlReporter::default(),
             )
             .is_ok()
         );
@@ -1670,6 +1683,7 @@ mod tests {
                 &mut writer,
                 &stored_static,
                 &mut result_state,
+                &mut HtmlReporter::default(),
             )
             .is_ok()
         );
@@ -1908,6 +1922,7 @@ mod tests {
                 &mut writer,
                 &stored_static,
                 &mut result_state,
+                &mut HtmlReporter::default(),
             )
             .is_ok()
         );
@@ -2084,6 +2099,7 @@ mod tests {
                 &mut writer,
                 &stored_static,
                 &mut result_state,
+                &mut HtmlReporter::default(),
             )
             .is_ok()
         );
@@ -2262,6 +2278,7 @@ mod tests {
                 &mut writer,
                 &stored_static,
                 &mut result_state,
+                &mut HtmlReporter::default(),
             )
             .is_ok()
         );

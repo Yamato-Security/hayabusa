@@ -740,11 +740,12 @@ pub fn output_and_data_stack_for_html(
     output_str: &str,
     section_name: &str,
     html_report_flag: &bool,
+    html_reporter: &mut htmlreport::HtmlReporter,
 ) {
     if *html_report_flag {
         let mut output_data = Nested::<String>::new();
         output_data.extend(vec![format!("- {output_str}")]);
-        htmlreport::add_md_data(section_name, output_data);
+        html_reporter.add_md_data(section_name, output_data);
     }
 }
 
@@ -756,7 +757,12 @@ pub fn contains_str(input: &str, check: &str) -> bool {
 
 /// Outputs the active output profile name, either to the terminal or to the HTML report
 /// depending on the stdout argument.
-pub fn output_profile_name(output_option: &Option<OutputOption>, stdout: bool, no_color: bool) {
+pub fn output_profile_name(
+    output_option: &Option<OutputOption>,
+    stdout: bool,
+    no_color: bool,
+    html_reporter: &mut htmlreport::HtmlReporter,
+) {
     // output profile name
     if let Some(profile_opt) = output_option {
         // Determine the default profile name, preferring config/default_profile_name.txt on
@@ -805,8 +811,8 @@ pub fn output_profile_name(output_option: &Option<OutputOption>, stdout: bool, n
         // HTML report, so the stdout argument controls which of the two this call produces (the
         // function is called once for each).
         if !stdout && profile_opt.html_report.is_some() {
-            htmlreport::add_md_data(
-                "General Overview {#general_overview}",
+            html_reporter.add_md_data(
+                htmlreport::GENERAL_OVERVIEW_SECTION,
                 Nested::from_iter(vec![format!("- {output_saved_str}")]),
             );
         }
@@ -924,7 +930,7 @@ mod tests {
             configs::{Action, Config, CsvOutputOption, OutputOption, StoredStatic},
             utils::{self, check_setting_path, make_ascii_titlecase},
         },
-        options::htmlreport::HTML_REPORTER,
+        options::htmlreport::{GENERAL_OVERVIEW_SECTION, HtmlReporter, RESULTS_SUMMARY_SECTION},
     };
 
     #[test]
@@ -1196,11 +1202,7 @@ mod tests {
 
     #[test]
     fn test_output_profile() {
-        // Serialize against other tests that mutate the global HTML_REPORTER.
-        let _html_reporter_lock = crate::options::htmlreport::HTML_REPORTER_TEST_LOCK
-            .lock()
-            .unwrap_or_else(|e| e.into_inner());
-        HTML_REPORTER.write().unwrap().section_markdown.clear();
+        let mut html_reporter = HtmlReporter::default();
         let stored_static = StoredStatic::create_static_data(Some(Config {
             action: Some(Action::CsvTimeline(CsvOutputOption {
                 output_options: OutputOption {
@@ -1214,16 +1216,26 @@ mod tests {
             })),
             ..Default::default()
         }));
-        output_profile_name(&stored_static.output_option, true, false);
-        output_profile_name(&stored_static.output_option, false, false);
+        output_profile_name(
+            &stored_static.output_option,
+            true,
+            false,
+            &mut html_reporter,
+        );
+        output_profile_name(
+            &stored_static.output_option,
+            false,
+            false,
+            &mut html_reporter,
+        );
         let expect: HashMap<&str, Nested<String>> = HashMap::from_iter(vec![
-            ("Results Summary {#results_summary}", Nested::new()),
+            (RESULTS_SUMMARY_SECTION, Nested::new()),
             (
-                "General Overview {#general_overview}",
+                GENERAL_OVERVIEW_SECTION,
                 Nested::from_iter(vec!["- Output profile: super-verbose"]),
             ),
         ]);
-        for (k, v) in HTML_REPORTER.read().unwrap().section_markdown.iter() {
+        for (k, v) in html_reporter.section_markdown.iter() {
             assert!(expect.keys().any(|x| x == k));
             assert!(expect.values().any(|y| y == v));
         }

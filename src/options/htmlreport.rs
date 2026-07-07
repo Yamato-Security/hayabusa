@@ -5,14 +5,12 @@ use base64::engine::general_purpose;
 use hashbrown::HashMap;
 use horrorshow::helper::doctype;
 use horrorshow::prelude::*;
-use lazy_static::lazy_static;
 use nested::Nested;
 use pulldown_cmark::{Options, Parser, html};
 use rust_embed::Embed;
 use std::fs::{File, create_dir};
 use std::io::{BufWriter, Write};
 use std::path::Path;
-use std::sync::RwLock;
 use termcolor::{BufferWriter, Color, ColorChoice};
 
 /// Section keys for the HTML report. The `{#id}` suffix becomes the HTML heading's `id` attribute
@@ -29,18 +27,6 @@ pub const RESULTS_SUMMARY_SECTION: &str = "Results Summary {#results_summary}";
 #[derive(Embed)]
 #[folder = "config/html_report/"]
 struct HtmlReportsConfig;
-
-lazy_static! {
-    /// Global accumulator for the HTML report contents. Sections are filled in while the analysis
-    /// runs and rendered to HTML at the end.
-    pub static ref HTML_REPORTER: RwLock<HtmlReporter> = RwLock::new(HtmlReporter::new());
-}
-
-/// Serializes the tests that mutate the process-global `HTML_REPORTER`
-/// (clear/populate/read) so they don't race under the parallel test harness.
-/// Each such test must hold this lock for its whole body.
-#[cfg(test)]
-pub(crate) static HTML_REPORTER_TEST_LOCK: std::sync::Mutex<()> = std::sync::Mutex::new(());
 
 /// Accumulates the markdown fragments that make up the HTML report.
 #[derive(Clone)]
@@ -60,9 +46,20 @@ impl HtmlReporter {
         }
     }
 
+    /// Appends markdown lines to the given section of the report.
+    pub fn add_md_data(&mut self, section_name: &str, data: Nested<String>) {
+        for c in data.iter() {
+            let entry = self
+                .section_markdown
+                .entry(section_name.to_owned())
+                .or_insert(Nested::<String>::new());
+            entry.push(c);
+        }
+    }
+
     /// Renders the accumulated markdown data of every section (in section_order) into a single
     /// HTML string.
-    pub fn create_html(self) -> String {
+    pub fn create_html(&self) -> String {
         let mut options = Options::empty();
         options.insert(Options::ENABLE_TABLES);
         options.insert(Options::ENABLE_HEADING_ATTRIBUTES);
@@ -118,18 +115,6 @@ fn get_init_md_data_map() -> (Nested<String>, HashMap<String, Nested<String>>) {
     }
 
     (section_order, ret)
-}
-
-/// Appends markdown lines to the given section of the global HTML_REPORTER.
-pub fn add_md_data(section_name: &str, data: Nested<String>) {
-    let mut md_with_section_data = HTML_REPORTER.write().unwrap().section_markdown.to_owned();
-    for c in data.iter() {
-        let entry = md_with_section_data
-            .entry(section_name.to_owned())
-            .or_insert(Nested::<String>::new());
-        entry.push(c);
-    }
-    HTML_REPORTER.write().unwrap().section_markdown = md_with_section_data;
 }
 
 /// Writes the HTML report to `path_str`, inlining the embedded CSS and embedding the logo and
@@ -231,7 +216,7 @@ mod tests {
 
     use nested::Nested;
 
-    use super::{GENERAL_OVERVIEW_SECTION, HTML_REPORTER, HTML_REPORTER_TEST_LOCK, img_to_base64};
+    use super::{GENERAL_OVERVIEW_SECTION, img_to_base64};
     use crate::{
         detections::configs::{
             Action, Config, CsvOutputOption, JSONOutputOption, OutputOption, StoredStatic,
@@ -266,7 +251,7 @@ mod tests {
         ]);
         html_reporter.section_order.push("No Exist Section");
         html_reporter.section_markdown.insert(
-            "General Overview {#general_overview}".to_string(),
+            GENERAL_OVERVIEW_SECTION.to_string(),
             general_data.to_owned(),
         );
         let gen_data = general_data.iter().collect::<Vec<&str>>();
@@ -395,7 +380,7 @@ mod tests {
         ]);
         html_reporter.section_order.push("No Exist Section");
         html_reporter.section_markdown.insert(
-            "General Overview {#general_overview}".to_string(),
+            GENERAL_OVERVIEW_SECTION.to_string(),
             general_data.to_owned(),
         );
         let gen_data = general_data.iter().collect::<Vec<&str>>();
@@ -431,11 +416,6 @@ mod tests {
 
     #[test]
     fn test_add_md_data() {
-        // Serialize against other tests that mutate the global HTML_REPORTER.
-        let _html_reporter_lock = HTML_REPORTER_TEST_LOCK
-            .lock()
-            .unwrap_or_else(|e| e.into_inner());
-        HTML_REPORTER.write().unwrap().section_markdown.clear();
         let mut html_reporter = HtmlReporter::default();
         let mut general_data = Nested::<String>::new();
         general_data.extend(vec![
@@ -454,10 +434,9 @@ mod tests {
         ]);
         html_reporter.section_order.push("No Exist Section");
         let expect_key = "AddTest {#add_test}";
-        htmlreport::add_md_data(expect_key, general_data.clone());
-        let actual_html_reporter = HTML_REPORTER.read().unwrap().clone();
+        html_reporter.add_md_data(expect_key, general_data.clone());
         let expect_general_data: Vec<&str> = general_data.iter().collect();
-        for (k, v) in actual_html_reporter.section_markdown.iter() {
+        for (k, v) in html_reporter.section_markdown.iter() {
             if k == expect_key {
                 assert_eq!(v.iter().collect::<Vec<&str>>(), expect_general_data);
             } else {

@@ -23,7 +23,7 @@ use crate::detections::utils::{
     write_color_buffer,
 };
 use crate::level::{_get_output_color, LEVEL, create_output_color_map};
-use crate::options::htmlreport;
+use crate::options::htmlreport::{self, RESULTS_SUMMARY_SECTION};
 
 use super::html_stock::_output_html_computer_by_mitre_attck;
 use super::{Colors, OutputWriter, ResultOutputState, html_escape_value};
@@ -151,6 +151,7 @@ pub fn output_result_summary(
     stored_static: &StoredStatic,
     output_writer: &mut OutputWriter,
     result_state: &ResultOutputState,
+    html_reporter: &mut htmlreport::HtmlReporter,
 ) {
     if output_writer.display_flag {
         println!();
@@ -235,8 +236,9 @@ pub fn output_result_summary(
                             .time_format_options
                     )
                 ),
-                "Results Summary {#results_summary}",
+                RESULTS_SUMMARY_SECTION,
                 &stored_static.html_report_flag,
+                html_reporter,
             );
         }
         if let Some(timeline_end_time) = result_state.timeline_end_time {
@@ -253,8 +255,9 @@ pub fn output_result_summary(
                             .time_format_options
                     )
                 ),
-                "Results Summary {#results_summary}",
+                RESULTS_SUMMARY_SECTION,
                 &stored_static.html_report_flag,
+                html_reporter,
             );
             println!();
         }
@@ -272,8 +275,9 @@ pub fn output_result_summary(
                             .time_format_options
                     )
                 ),
-                "Results Summary {#results_summary}",
+                RESULTS_SUMMARY_SECTION,
                 &stored_static.html_report_flag,
+                html_reporter,
             );
         }
         if let Some(detect_endtime) = result_state.detect_endtime {
@@ -290,8 +294,9 @@ pub fn output_result_summary(
                             .time_format_options
                     )
                 ),
-                "Results Summary {#results_summary}",
+                RESULTS_SUMMARY_SECTION,
                 &stored_static.html_report_flag,
+                html_reporter,
             );
             println!();
         }
@@ -585,7 +590,7 @@ pub fn output_result_summary(
     }
     if stored_static.html_report_flag {
         _output_html_computer_by_mitre_attck(&mut html_output_stock);
-        htmlreport::add_md_data("Results Summary {#results_summary}", html_output_stock);
+        html_reporter.add_md_data(RESULTS_SUMMARY_SECTION, html_output_stock);
     }
 }
 fn _get_table_color(

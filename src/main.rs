@@ -29,7 +29,7 @@ use hayabusa::detections::utils::{
 };
 use hayabusa::filter::{create_channel_filter, filter_evtx_files};
 use hayabusa::level::LEVEL;
-use hayabusa::options::htmlreport::{self, HTML_REPORTER};
+use hayabusa::options::htmlreport::{self, HtmlReporter};
 use hayabusa::options::pivot::PIVOT_KEYWORD;
 use hayabusa::options::pivot::create_output;
 use hayabusa::options::profile::set_default_profile;
@@ -202,6 +202,23 @@ struct RecordBuildContext {
     no_pwsh_field_extraction: bool,
 }
 
+/// Records the run's General Overview report header — the invoking command line and the analysis
+/// start time. Shared by `exec` and its test so the two cannot drift.
+fn add_general_overview_header(
+    html_reporter: &mut HtmlReporter,
+    analysis_start_time: DateTime<Local>,
+) {
+    let mut output_data = Nested::<String>::new();
+    output_data.extend(vec![
+        format!("- Command line: {}", env::args().join(" ")),
+        format!(
+            "- Start time: {}",
+            analysis_start_time.format("%Y/%m/%d %H:%M")
+        ),
+    ]);
+    html_reporter.add_md_data(htmlreport::GENERAL_OVERVIEW_SECTION, output_data);
+}
+
 impl App {
     pub fn new(thread_number: Option<usize>) -> App {
         App {
@@ -218,17 +235,10 @@ impl App {
             return;
         }
 
+        let mut html_reporter = HtmlReporter::new();
         let analysis_start_time: DateTime<Local> = Local::now();
         if stored_static.html_report_flag {
-            let mut output_data = Nested::<String>::new();
-            output_data.extend(vec![
-                format!("- Command line: {}", env::args().join(" ")),
-                format!(
-                    "- Start time: {}",
-                    analysis_start_time.format("%Y/%m/%d %H:%M")
-                ),
-            ]);
-            htmlreport::add_md_data(htmlreport::GENERAL_OVERVIEW_SECTION, output_data);
+            add_general_overview_header(&mut html_reporter, analysis_start_time);
         }
 
         // Output subcommand help when no arguments are provided. Subcommands that work without arguments do not output help.
@@ -449,39 +459,42 @@ Any hostnames added to the critical_systems.txt file will have all alerts above 
             HashSet::default()
         };
         let no_color = stored_static.common_options.no_color;
-        let output_saved_file =
-            |output_path: &Option<PathBuf>, message: &str, html_report_flag: &bool| {
-                if let Some(path) = output_path
-                    && let Ok(metadata) = fs::metadata(path)
-                {
-                    let output_saved_str = format!("{message}:");
-                    write_color_buffer(
-                        &BufferWriter::stdout(ColorChoice::Always),
-                        get_writable_color(Some(Color::Rgb(0, 255, 0)), no_color),
-                        &output_saved_str,
-                        false,
-                    )
-                    .ok();
-                    let file_str = format!(
-                        " {} ({})",
-                        path.display(),
-                        ByteSize::b(metadata.len()).display()
-                    );
-                    write_color_buffer(
-                        &BufferWriter::stdout(ColorChoice::Always),
-                        None,
-                        &file_str,
-                        true,
-                    )
-                    .ok();
-                    println!();
-                    output_and_data_stack_for_html(
-                        &format!("{message}: {file_str}"),
-                        htmlreport::GENERAL_OVERVIEW_SECTION,
-                        html_report_flag,
-                    );
-                }
-            };
+        let output_saved_file = |output_path: &Option<PathBuf>,
+                                 message: &str,
+                                 html_report_flag: &bool,
+                                 html_reporter: &mut HtmlReporter| {
+            if let Some(path) = output_path
+                && let Ok(metadata) = fs::metadata(path)
+            {
+                let output_saved_str = format!("{message}:");
+                write_color_buffer(
+                    &BufferWriter::stdout(ColorChoice::Always),
+                    get_writable_color(Some(Color::Rgb(0, 255, 0)), no_color),
+                    &output_saved_str,
+                    false,
+                )
+                .ok();
+                let file_str = format!(
+                    " {} ({})",
+                    path.display(),
+                    ByteSize::b(metadata.len()).display()
+                );
+                write_color_buffer(
+                    &BufferWriter::stdout(ColorChoice::Always),
+                    None,
+                    &file_str,
+                    true,
+                )
+                .ok();
+                println!();
+                output_and_data_stack_for_html(
+                    &format!("{message}: {file_str}"),
+                    htmlreport::GENERAL_OVERVIEW_SECTION,
+                    html_report_flag,
+                    html_reporter,
+                );
+            }
+        };
 
         match &stored_static.config.action.as_ref().unwrap() {
             Action::CsvTimeline(_) | Action::JsonTimeline(_) => {
@@ -552,17 +565,24 @@ Any hostnames added to the critical_systems.txt file will have all alerts above 
                     println!();
                     return;
                 }
-                self.analysis_start(&target_extensions, &time_filter, stored_static);
+                self.analysis_start(
+                    &target_extensions,
+                    &time_filter,
+                    stored_static,
+                    &mut html_reporter,
+                );
 
                 output_profile_name(
                     &stored_static.output_option,
                     false,
                     stored_static.common_options.no_color,
+                    &mut html_reporter,
                 );
                 output_saved_file(
                     &stored_static.output_path,
                     "Saved file",
                     &stored_static.html_report_flag,
+                    &mut html_reporter,
                 );
             }
             Action::LogonSummary(_) => {
@@ -588,7 +608,12 @@ Any hostnames added to the critical_systems.txt file will have all alerts above 
                         target_output_path.push(output_file);
                     }
                 }
-                self.analysis_start(&target_extensions, &time_filter, stored_static);
+                self.analysis_start(
+                    &target_extensions,
+                    &time_filter,
+                    stored_static,
+                    &mut html_reporter,
+                );
                 for target_path in target_output_path.iter() {
                     let mut msg = "";
                     if target_path.ends_with("-successful.csv") {
@@ -601,6 +626,7 @@ Any hostnames added to the critical_systems.txt file will have all alerts above 
                         &Some(Path::new(target_path).to_path_buf()),
                         msg,
                         &stored_static.html_report_flag,
+                        &mut html_reporter,
                     );
                 }
                 println!();
@@ -626,11 +652,17 @@ Any hostnames added to the critical_systems.txt file will have all alerts above 
                 {
                     return;
                 }
-                self.analysis_start(&target_extensions, &time_filter, stored_static);
+                self.analysis_start(
+                    &target_extensions,
+                    &time_filter,
+                    stored_static,
+                    &mut html_reporter,
+                );
                 output_saved_file(
                     &stored_static.output_path,
                     "Saved results",
                     &stored_static.html_report_flag,
+                    &mut html_reporter,
                 );
             }
             Action::PivotKeywordsList(_) => {
@@ -676,7 +708,12 @@ Any hostnames added to the critical_systems.txt file will have all alerts above 
                     return;
                 }
 
-                self.analysis_start(&target_extensions, &time_filter, stored_static);
+                self.analysis_start(
+                    &target_extensions,
+                    &time_filter,
+                    stored_static,
+                    &mut html_reporter,
+                );
 
                 let pivot_key_unions = PIVOT_KEYWORD.read().unwrap();
                 if let Some(pivot_file) = &stored_static.output_path {
@@ -1088,7 +1125,12 @@ Any hostnames added to the critical_systems.txt file will have all alerts above 
                 return;
             }
             Action::ConfigCriticalSystems(_) => {
-                self.analysis_start(&target_extensions, &time_filter, stored_static);
+                self.analysis_start(
+                    &target_extensions,
+                    &time_filter,
+                    stored_static,
+                    &mut html_reporter,
+                );
                 let _ = self.output_open_close_message("closing_messages.txt", stored_static);
                 return;
             }
@@ -1101,6 +1143,7 @@ Any hostnames added to the critical_systems.txt file will have all alerts above 
             &format!("Elapsed time: {elapsed_output_str}"),
             htmlreport::GENERAL_OVERVIEW_SECTION,
             &stored_static.html_report_flag,
+            &mut html_reporter,
         );
         write_color_buffer(
             &BufferWriter::stdout(ColorChoice::Always),
@@ -1174,7 +1217,7 @@ Any hostnames added to the critical_systems.txt file will have all alerts above 
                 )
                 .ok();
                 if stored_static.html_report_flag {
-                    let html_str = HTML_REPORTER.read().unwrap().to_owned().create_html();
+                    let html_str = html_reporter.create_html();
                     htmlreport::create_html_file(
                         html_str,
                         stored_static
@@ -1221,6 +1264,7 @@ Any hostnames added to the critical_systems.txt file will have all alerts above 
         target_extensions: &HashSet<String>,
         time_filter: &TargetEventTime,
         stored_static: &mut StoredStatic,
+        html_reporter: &mut HtmlReporter,
     ) {
         if stored_static.output_option.is_none() {
         } else if let Some(output_option) = stored_static.output_option.as_ref()
@@ -1235,6 +1279,7 @@ Any hostnames added to the critical_systems.txt file will have all alerts above 
                 live_analysis_list.unwrap(),
                 time_filter,
                 stored_static.borrow_mut(),
+                html_reporter,
             );
         } else if let Some(output_option) = &stored_static.output_option.as_ref()
             && let Some(directories) = &output_option.input_args.directory
@@ -1251,7 +1296,12 @@ Any hostnames added to the critical_systems.txt file will have all alerts above 
                 AlertMessage::alert("No .evtx files were found.").ok();
                 return;
             }
-            self.analysis_files(evtx_files, time_filter, stored_static.borrow_mut());
+            self.analysis_files(
+                evtx_files,
+                time_filter,
+                stored_static.borrow_mut(),
+                html_reporter,
+            );
         } else {
             // For cases other than directory and live_analysis, a filepath is specified.
             if let Some(input_args) = &stored_static.output_option.as_ref()
@@ -1297,6 +1347,7 @@ Any hostnames added to the critical_systems.txt file will have all alerts above 
                     vec![check_path.to_path_buf()],
                     time_filter,
                     stored_static.borrow_mut(),
+                    html_reporter,
                 );
             }
         }
@@ -1428,6 +1479,7 @@ Any hostnames added to the critical_systems.txt file will have all alerts above 
         mut evtx_files: Vec<PathBuf>,
         time_filter: &TargetEventTime,
         stored_static: &mut StoredStatic,
+        html_reporter: &mut HtmlReporter,
     ) {
         let event_timeline_config = &stored_static.event_timeline_config;
         let target_event_ids = &stored_static.target_eventids;
@@ -1884,7 +1936,7 @@ Any hostnames added to the critical_systems.txt file will have all alerts above 
                 html_report_data.push(format!("- Excluded tags: {exclude_tags_data}"));
             }
             output_data.extend(html_report_data.iter());
-            htmlreport::add_md_data(htmlreport::GENERAL_OVERVIEW_SECTION, output_data);
+            html_reporter.add_md_data(htmlreport::GENERAL_OVERVIEW_SECTION, output_data);
         }
 
         let level = stored_static
@@ -1937,6 +1989,7 @@ Any hostnames added to the critical_systems.txt file will have all alerts above 
                 &stored_static.output_option.as_ref().unwrap().rules,
                 &filter::exclude_ids(stored_static),
                 stored_static,
+                html_reporter,
             );
             self.checkpoint.lap_checkpoint("Rule Parse Processing Time");
             self.checkpoint.set_checkpoint(Local::now());
@@ -2018,6 +2071,7 @@ Any hostnames added to the critical_systems.txt file will have all alerts above 
                 &stored_static.output_option,
                 true,
                 stored_static.common_options.no_color,
+                html_reporter,
             );
             println!();
             write_color_buffer(
@@ -2256,13 +2310,19 @@ Any hostnames added to the critical_systems.txt file will have all alerts above 
 
             // Output the post-detection results (results output processing).
             if stored_static.is_low_memory {
-                results::output_result_summary(stored_static, &mut output_writer, &result_state);
+                results::output_result_summary(
+                    stored_static,
+                    &mut output_writer,
+                    &result_state,
+                    html_reporter,
+                );
             } else {
                 results::output_results(
                     &mut all_detect_infos,
                     &mut output_writer,
                     stored_static,
                     &mut result_state,
+                    html_reporter,
                 );
             }
 
@@ -3205,12 +3265,11 @@ mod tests {
         path::Path,
     };
 
-    use chrono::Local;
+    use chrono::{DateTime, Local};
     use hashbrown::HashSet;
-    use itertools::Itertools;
     use yaml_rust2::YamlLoader;
 
-    use crate::App;
+    use crate::{App, add_general_overview_header};
     use hayabusa::{
         detections::{
             configs::{
@@ -3222,7 +3281,7 @@ mod tests {
             detection,
             rule::create_rule,
         },
-        options::htmlreport::HTML_REPORTER,
+        options::htmlreport::{GENERAL_OVERVIEW_SECTION, HtmlReporter},
         results::{self, ResultOutputState},
         timeline::timelines::Timeline,
     };
@@ -3277,25 +3336,78 @@ mod tests {
 
     #[test]
     fn test_exec_general_html_output() {
+        // Exercise the real header helper that exec calls, so the test and exec cannot drift.
+        let analysis_start_time: DateTime<Local> = Local::now();
+        let mut html_reporter = HtmlReporter::new();
+        add_general_overview_header(&mut html_reporter, analysis_start_time);
+
+        let general_contents = html_reporter
+            .section_markdown
+            .get(GENERAL_OVERVIEW_SECTION)
+            .unwrap();
+        let lines: Vec<&str> = general_contents.iter().collect();
+        assert_eq!(lines.len(), 2);
+        assert!(lines.iter().any(|l| l.starts_with("- Command line: ")));
+        assert!(lines.iter().any(|l| l.starts_with("- Start time: ")));
+    }
+
+    // End-to-end guard for the HtmlReporter threading: run `exec` with `--html-report` against a
+    // JSON fixture and assert the rendered report file contains the sections `exec`'s single
+    // threaded reporter accumulates. This proves `exec` builds one reporter, threads it through
+    // analysis, and renders that same instance (which the header-helper unit test cannot).
+    #[test]
+    fn test_exec_html_report_end_to_end() {
+        let report_path = "test_exec_html_report_e2e.html";
+        let csv_path = "test_exec_html_report_e2e.csv";
         let mut app = App::new(None);
+        let action = Action::CsvTimeline(CsvOutputOption {
+            output_options: OutputOption {
+                input_args: InputOption {
+                    filepath: Some(Path::new("test_files/evtx/test.json").to_path_buf()),
+                    ..Default::default()
+                },
+                min_level: "informational".to_string(),
+                rules: Path::new("./test_files/rules/yaml/test_json_detect.yml").to_path_buf(),
+                detect_common_options: DetectCommonOption {
+                    json_input: true,
+                    config: Path::new("./rules/config").to_path_buf(),
+                    ..Default::default()
+                },
+                html_report: Some(Path::new(report_path).to_path_buf()),
+                no_wizard: true,
+                ..Default::default()
+            },
+            output: Some(Path::new(csv_path).to_path_buf()),
+            ..Default::default()
+        });
+        let config = Some(Config {
+            action: Some(action),
+            debug: false,
+        });
+        let mut stored_static = StoredStatic::create_static_data(config);
+        *STORED_STATIC.write().unwrap() = Some(stored_static.clone());
         let mut config_reader = ConfigReader::new();
-        let mut stored_static = StoredStatic::create_static_data(config_reader.config);
-        config_reader.config = None;
-        stored_static.config.action = None;
-        stored_static.html_report_flag = true;
         app.exec(&mut config_reader.app, &mut stored_static);
-        let expect_general_contents = [
-            format!("- Command line: {}", std::env::args().join(" ")),
-            format!("- Start time: {}", Local::now().format("%Y/%m/%d %H:%M")),
-        ];
 
-        let actual = &HTML_REPORTER.read().unwrap().section_markdown;
-        let general_contents = actual.get("General Overview {#general_overview}").unwrap();
-        assert_eq!(expect_general_contents.len(), general_contents.len());
+        let html = std::fs::read_to_string(report_path)
+            .expect("exec should have written the HTML report file");
+        // The reporter exec threaded from start-up (General Overview: command line + start time)
+        // through the summary path (Results Summary) is what gets rendered to the file.
+        assert!(
+            html.contains("General Overview"),
+            "report is missing the General Overview section"
+        );
+        assert!(
+            html.contains("Command line:"),
+            "report is missing the General Overview command-line entry"
+        );
+        assert!(
+            html.contains("Results Summary"),
+            "report is missing the Results Summary section"
+        );
 
-        for actual_general_contents in general_contents.iter() {
-            assert!(expect_general_contents.contains(&actual_general_contents.to_string()));
-        }
+        std::fs::remove_file(report_path).ok();
+        std::fs::remove_file(csv_path).ok();
     }
 
     #[test]
