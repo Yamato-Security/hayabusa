@@ -80,6 +80,7 @@ impl Detection {
         rulespath: &Path,
         exclude_ids: &filter::RuleExclude,
         stored_static: &StoredStatic,
+        html_reporter: &mut htmlreport::HtmlReporter,
     ) -> Vec<RuleNode> {
         // Execute rule file parsing.
         let mut rulefile_loader = ParseYaml::new(stored_static);
@@ -153,7 +154,12 @@ impl Detection {
             || stored_static.computer_metrics_flag
             || stored_static.log_metrics_flag)
         {
-            Detection::print_rule_load_info(&rulefile_loader, &parse_error_count, stored_static);
+            Detection::print_rule_load_info(
+                &rulefile_loader,
+                &parse_error_count,
+                stored_static,
+                html_reporter,
+            );
         }
         ret
     }
@@ -1211,6 +1217,7 @@ impl Detection {
         parse_yaml: &ParseYaml,
         err_rc: &u128,
         stored_static: &StoredStatic,
+        html_reporter: &mut htmlreport::HtmlReporter,
     ) {
         let rc = &parse_yaml.rule_type_cnt;
         let ld_rc = &parse_yaml.rule_load_cnt;
@@ -1499,7 +1506,7 @@ impl Detection {
             html_report_stock.push(format!("- {tmp_total_detect_output}"));
         }
         if !html_report_stock.is_empty() {
-            htmlreport::add_md_data("General Overview {#general_overview}", html_report_stock);
+            html_reporter.add_md_data(htmlreport::GENERAL_OVERVIEW_SECTION, html_report_stock);
         }
     }
 
@@ -1581,6 +1588,7 @@ mod tests {
             opt_rule_path,
             &filter::exclude_ids(&dummy_stored_static),
             &dummy_stored_static,
+            &mut crate::options::htmlreport::HtmlReporter::default(),
         );
         assert_eq!(5, cole.len());
     }
