@@ -14,7 +14,7 @@ use dialoguer::Confirm;
 use dialoguer::{Select, theme::ColorfulTheme};
 use evtx::{EvtxParser, ParserSettings, RecordAllocation};
 use hashbrown::{HashMap, HashSet};
-use hayabusa::debug::checkpoint_process_timer::CHECKPOINT;
+use hayabusa::debug::checkpoint_process_timer::CheckPointProcessTimer;
 use hayabusa::detections::configs::{
     Action, CURRENT_EXE_PATH, ConfigReader, EventKeyAliasConfig, ONE_CONFIG_MAP, STORED_STATIC,
     StoredStatic, TargetEventTime, TargetIds, load_pivot_keywords,
@@ -151,6 +151,9 @@ impl Drop for Wow64RedirectionGuard {
 pub struct App {
     runtime: Runtime,
     rule_keys: Nested<String>,
+    /// Records how long each processing phase takes; printed per-phase only with `--debug`,
+    /// with the accumulated total shown as "Elapsed time" in the results summary.
+    checkpoint: CheckPointProcessTimer,
 }
 
 /// The stream-vs-buffer policy for detection results, applied at every detection site.
@@ -204,6 +207,7 @@ impl App {
         App {
             runtime: utils::create_tokio_runtime(thread_number),
             rule_keys: Nested::<String>::new(),
+            checkpoint: CheckPointProcessTimer::create_checkpoint_timer(),
         }
     }
 
@@ -435,11 +439,7 @@ Any hostnames added to the critical_systems.txt file will have all alerts above 
             false,
         )
         .ok();
-        CHECKPOINT
-            .lock()
-            .as_mut()
-            .unwrap()
-            .set_checkpoint(analysis_start_time);
+        self.checkpoint.set_checkpoint(analysis_start_time);
         let target_extensions = if let Some(output_option) = stored_static.output_option.as_ref() {
             configs::get_target_extensions(
                 output_option.detect_common_options.evtx_file_ext.as_ref(),
@@ -1096,11 +1096,7 @@ Any hostnames added to the critical_systems.txt file will have all alerts above 
         }
 
         // Output processing time.
-        let elapsed_output_str = CHECKPOINT
-            .lock()
-            .as_mut()
-            .unwrap()
-            .calculate_all_stocked_results();
+        let elapsed_output_str = self.checkpoint.calculate_all_stocked_results();
         output_and_data_stack_for_html(
             &format!("Elapsed time: {elapsed_output_str}"),
             htmlreport::GENERAL_OVERVIEW_SECTION,
@@ -1209,7 +1205,7 @@ Any hostnames added to the critical_systems.txt file will have all alerts above 
 
         // When the debug flag is set, output statistics such as memory usage to the screen.
         if stored_static.config.debug {
-            CHECKPOINT.lock().as_ref().unwrap().output_stocked_result();
+            self.checkpoint.output_stocked_result();
             println!();
             println!("Memory usage stats:");
             unsafe {
@@ -1494,11 +1490,7 @@ Any hostnames added to the critical_systems.txt file will have all alerts above 
             Action::CsvTimeline(_) | Action::JsonTimeline(_) | Action::PivotKeywordsList(_)
         ) && !stored_static.output_option.as_ref().unwrap().no_wizard;
         if need_wizard {
-            CHECKPOINT
-                .lock()
-                .as_mut()
-                .unwrap()
-                .lap_checkpoint("Rule Parse Processing Time");
+            self.checkpoint.lap_checkpoint("Rule Parse Processing Time");
             let mut rule_counter_wizard_map = HashMap::new();
             yaml::count_rules(
                 &stored_static.output_option.as_ref().unwrap().rules,
@@ -1819,11 +1811,7 @@ Any hostnames added to the critical_systems.txt file will have all alerts above 
                 }
             }
 
-            CHECKPOINT
-                .lock()
-                .as_mut()
-                .unwrap()
-                .set_checkpoint(Local::now());
+            self.checkpoint.set_checkpoint(Local::now());
 
             if let Some(noisy_cnt) = exclude_noisy_cnt.get("noisy") {
                 // Prompt whether to load noisy rules.
@@ -1950,16 +1938,8 @@ Any hostnames added to the critical_systems.txt file will have all alerts above 
                 &filter::exclude_ids(stored_static),
                 stored_static,
             );
-            CHECKPOINT
-                .lock()
-                .as_mut()
-                .unwrap()
-                .lap_checkpoint("Rule Parse Processing Time");
-            CHECKPOINT
-                .lock()
-                .as_mut()
-                .unwrap()
-                .set_checkpoint(Local::now());
+            self.checkpoint.lap_checkpoint("Rule Parse Processing Time");
+            self.checkpoint.set_checkpoint(Local::now());
             if rule_files.is_empty() {
                 AlertMessage::alert(
                         "No rules were loaded. Please download the latest rules with the update-rules command.\r\n",
@@ -2210,16 +2190,8 @@ Any hostnames added to the critical_systems.txt file will have all alerts above 
             };
             progress_bar.finish_with_message(msg);
         }
-        CHECKPOINT
-            .lock()
-            .as_mut()
-            .unwrap()
-            .lap_checkpoint("Analysis Processing Time");
-        CHECKPOINT
-            .lock()
-            .as_mut()
-            .unwrap()
-            .set_checkpoint(Local::now());
+        self.checkpoint.lap_checkpoint("Analysis Processing Time");
+        self.checkpoint.set_checkpoint(Local::now());
 
         if stored_static.metrics_flag {
             timeline.tm_stats_dsp_msg(event_timeline_config, stored_static);
@@ -2302,16 +2274,8 @@ Any hostnames added to the critical_systems.txt file will have all alerts above 
                 let _ = file.write_all(b"\n");
             }
         }
-        CHECKPOINT
-            .lock()
-            .as_mut()
-            .unwrap()
-            .lap_checkpoint("Output Processing Time");
-        CHECKPOINT
-            .lock()
-            .as_mut()
-            .unwrap()
-            .set_checkpoint(Local::now());
+        self.checkpoint.lap_checkpoint("Output Processing Time");
+        self.checkpoint.set_checkpoint(Local::now());
     }
 
     /// Analyze one Windows .evtx event log file: iterate its records in chunks of
