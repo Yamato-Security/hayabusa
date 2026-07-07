@@ -109,8 +109,12 @@ pub struct StoredStatic {
     pub config: Config,
     pub config_path: PathBuf,
     pub eventkey_alias: EventKeyAliasConfig,
+    /// The loaded MaxMind GeoIP database reader, set only when `--geo-ip` is specified. Wrapped in
+    /// `Arc` so `StoredStatic` stays `Clone` even though `GeoIPSearch` is not.
     pub geo_ip_search: Option<Arc<GeoIPSearch>>,
+    /// The geoip field-mapping config (SrcIP/TgtIP alias lists), set only when `--geo-ip` is used.
     pub geo_ip_db_yaml: Option<HashMap<CompactString, Yaml>>,
+    /// The geoip filter config (channel/EID conditions), set only when `--geo-ip` is used.
     pub geo_ip_filter: Option<Vec<Yaml>>,
     pub channel_abbr_config: HashMap<CompactString, CompactString>,
     pub generic_abbr_matcher: AhoCorasick,
