@@ -210,9 +210,13 @@ impl Detection {
 
     /// Evaluates a Sigma temporal correlation: for each aggregation result of the first
     /// referenced rule (`ids[0]`), checks that every other referenced rule also produced a
-    /// result within `timeframe`. When `temporal_ordered` is true the other results must occur
-    /// at or after the base result; otherwise anywhere within +/- `timeframe` of the base result
-    /// counts. Returns the base results for which all referenced rules matched.
+    /// result within `timeframe`. Only results sharing the base result's `group-by` value
+    /// (`AggResult.key`) are considered, so events from different groups (e.g. different
+    /// Computers) are never correlated together. When `temporal_ordered` is true the referenced
+    /// rules must match in the order they are listed: each match must occur at or after the
+    /// previous rule's match and within the single timeframe window anchored at the base result.
+    /// When false, any result within +/- `timeframe` of the base result counts. Returns the
+    /// base results for which all referenced rules matched.
     fn detect_within_timeframe(
         ids: &[String],
         temporal_ref_all_results: &HashMap<String, Vec<AggResult>>,
@@ -226,25 +230,39 @@ impl Detection {
         {
             for base in base_records {
                 let mut found = false;
-                let mut last_base = base;
+                // Ordered correlations must match the referenced rules in sequence, so track the
+                // timestamp the next rule is allowed to match at. It starts at the base event and
+                // advances to each matched event; every match must also stay within the timeframe
+                // window anchored at the base event.
+                let mut order_floor = base.start_datetime;
+                let window_end = base.start_datetime + timeframe;
                 for id in ids.iter().skip(1) {
                     found = false;
                     if let Some(target_records) = temporal_ref_all_results.get(id.as_str()) {
                         if temporal_ordered {
-                            found = target_records.iter().any(|t| {
-                                (t.start_datetime >= last_base.start_datetime)
-                                    && (t.start_datetime <= last_base.start_datetime + timeframe)
-                            });
+                            // Only consider matches sharing the base's group-by value
+                            // (AggResult.key), then pick the earliest candidate at or after the
+                            // previous match so the remaining rules keep the widest window.
+                            if let Some(next) = target_records
+                                .iter()
+                                .filter(|t| t.key == base.key)
+                                .map(|t| t.start_datetime)
+                                .filter(|&t| t >= order_floor && t <= window_end)
+                                .min()
+                            {
+                                found = true;
+                                order_floor = next;
+                            }
                         } else {
                             found = target_records.iter().any(|t| {
-                                (t.start_datetime >= base.start_datetime - timeframe)
+                                t.key == base.key
+                                    && (t.start_datetime >= base.start_datetime - timeframe)
                                     && (t.start_datetime <= base.start_datetime + timeframe)
                             });
                         }
                         if !found {
                             break;
                         }
-                        last_base = base;
                     }
                 }
                 if found {
@@ -1595,6 +1613,101 @@ mod tests {
             &mut crate::options::htmlreport::HtmlReporter::default(),
         );
         assert_eq!(5, cole.len());
+    }
+
+    #[test]
+    fn test_detect_within_timeframe_enforces_group_by() {
+        use chrono::Duration;
+        use hashbrown::HashMap;
+
+        let base_time = Utc.with_ymd_and_hms(2024, 1, 1, 10, 0, 0).unwrap();
+        let at = |min: i64| base_time + Duration::minutes(min);
+        // `AggResult.key` holds the group-by value (e.g. the Computer name).
+        let agg = |key: &str, t| AggResult::new(1, key.to_string(), vec![], t, vec![]);
+        let ids = vec!["a".to_string(), "b".to_string()];
+        let timeframe = Duration::minutes(10);
+
+        // Base rule "a" matched for Host1, but rule "b" only matched for Host2 within the
+        // window. The correlation must NOT fire because the matches are from different groups.
+        let mut diff_group: HashMap<String, Vec<AggResult>> = HashMap::new();
+        diff_group.insert("a".to_string(), vec![agg("Host1", at(0))]);
+        diff_group.insert("b".to_string(), vec![agg("Host2", at(5))]);
+        for ordered in [true, false] {
+            assert!(
+                Detection::detect_within_timeframe(&ids, &diff_group, timeframe, ordered)
+                    .is_empty(),
+                "matches from different group-by values must not correlate (ordered={ordered})"
+            );
+        }
+
+        // When rule "b" also matched for Host1 within the window, the correlation fires and the
+        // returned base result is the Host1 group (the mismatched Host2 candidate is ignored).
+        let mut same_group: HashMap<String, Vec<AggResult>> = HashMap::new();
+        same_group.insert("a".to_string(), vec![agg("Host1", at(0))]);
+        same_group.insert(
+            "b".to_string(),
+            vec![agg("Host2", at(3)), agg("Host1", at(5))],
+        );
+        for ordered in [true, false] {
+            let res = Detection::detect_within_timeframe(&ids, &same_group, timeframe, ordered);
+            assert_eq!(
+                res.len(),
+                1,
+                "same-group matches should correlate (ordered={ordered})"
+            );
+            assert_eq!(res[0].key, "Host1");
+        }
+    }
+
+    #[test]
+    fn test_detect_within_timeframe_ordered_enforces_order() {
+        use chrono::Duration;
+        use hashbrown::HashMap;
+
+        let base = Utc.with_ymd_and_hms(2024, 1, 1, 10, 0, 0).unwrap();
+        let at = |min: i64| base + Duration::minutes(min);
+        let agg = |t| AggResult::new(1, "_".to_string(), vec![], t, vec![]);
+        let ids = vec!["a".to_string(), "b".to_string(), "c".to_string()];
+        let timeframe = Duration::minutes(10);
+
+        // In-order events a(0) -> b(5) -> c(8) satisfy an ordered correlation.
+        let mut in_order: HashMap<String, Vec<AggResult>> = HashMap::new();
+        in_order.insert("a".to_string(), vec![agg(at(0))]);
+        in_order.insert("b".to_string(), vec![agg(at(5))]);
+        in_order.insert("c".to_string(), vec![agg(at(8))]);
+        assert_eq!(
+            Detection::detect_within_timeframe(&ids, &in_order, timeframe, true).len(),
+            1,
+            "in-order events should satisfy an ordered correlation"
+        );
+
+        // Out-of-order events a(0), c(2), b(5): the rule order is a,b,c but c occurs before b,
+        // so an ordered correlation must NOT fire (regression test for issue #1810).
+        let mut out_of_order: HashMap<String, Vec<AggResult>> = HashMap::new();
+        out_of_order.insert("a".to_string(), vec![agg(at(0))]);
+        out_of_order.insert("b".to_string(), vec![agg(at(5))]);
+        out_of_order.insert("c".to_string(), vec![agg(at(2))]);
+        assert!(
+            Detection::detect_within_timeframe(&ids, &out_of_order, timeframe, true).is_empty(),
+            "out-of-order events must not satisfy an ordered correlation"
+        );
+
+        // The same events DO satisfy an unordered temporal correlation.
+        assert_eq!(
+            Detection::detect_within_timeframe(&ids, &out_of_order, timeframe, false).len(),
+            1,
+            "an unordered correlation ignores event order"
+        );
+
+        // Events that fall outside the timeframe window are not correlated even when ordered.
+        let mut out_of_window: HashMap<String, Vec<AggResult>> = HashMap::new();
+        out_of_window.insert("a".to_string(), vec![agg(at(0))]);
+        out_of_window.insert("b".to_string(), vec![agg(at(5))]);
+        out_of_window.insert("c".to_string(), vec![agg(at(12))]);
+        assert!(
+            Detection::detect_within_timeframe(&ids, &out_of_window, timeframe, true).is_empty(),
+            "events beyond the timeframe window must not correlate"
+        );
     }
 
     #[test]
