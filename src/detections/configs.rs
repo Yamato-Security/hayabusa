@@ -6,7 +6,7 @@ use crate::detections::utils;
 use crate::level::LEVEL;
 use crate::options::geoip_search::GeoIPSearch;
 use crate::options::htmlreport;
-use crate::options::pivot::PIVOT_KEYWORD;
+use crate::options::pivot::PivotKeywordMap;
 use crate::options::profile::{Profile, load_profile};
 use aho_corasick::{AhoCorasick, AhoCorasickBuilder, MatchKind};
 use chrono::{DateTime, Days, Duration, Local, Months, Utc};
@@ -131,6 +131,11 @@ pub struct StoredStatic {
     pub search_option: Option<SearchOption>,
     pub output_option: Option<OutputOption>,
     pub pivot_keyword_list_flag: bool,
+    /// Pivot keyword accumulator for the `pivot-keywords-list` command: categories/fields are
+    /// loaded up front and the keyword values are filled in from the per-record parallel tasks.
+    /// `Arc<RwLock<..>>` so the clone published to the `STORED_STATIC` global shares the same map
+    /// (replaces the former `PIVOT_KEYWORD` process global).
+    pub pivot_keyword: Arc<RwLock<PivotKeywordMap>>,
     pub default_details: HashMap<CompactString, CompactString>,
     pub html_report_flag: bool,
     pub profiles: Option<Vec<(CompactString, Profile)>>,
@@ -818,6 +823,7 @@ impl StoredStatic {
             search_option: extract_search_options(input_config.as_ref().unwrap()),
             output_option: extract_output_options(input_config.as_ref().unwrap()),
             pivot_keyword_list_flag: action_id == 4,
+            pivot_keyword: Arc::new(RwLock::new(PivotKeywordMap::new())),
             quiet_errors_flag,
             verbose_flag,
             html_report_flag: htmlreport::check_html_flag(input_config.as_ref().unwrap()),
@@ -2503,9 +2509,9 @@ pub fn load_eventkey_alias(path: &str) -> EventKeyAliasConfig {
     config
 }
 
-/// Loads the pivot keyword config file and registers each "keyword.field" line into the
-/// PIVOT_KEYWORD global map.
-pub fn load_pivot_keywords(path: &str) {
+/// Loads the pivot keyword config file and registers each "keyword.field" line into the given
+/// pivot keyword map.
+pub fn load_pivot_keywords(path: &str, pivot_keyword: &RwLock<PivotKeywordMap>) {
     let read_result = match utils::read_txt(path) {
         Ok(v) => v,
         Err(e) => {
@@ -2526,18 +2532,11 @@ pub fn load_pivot_keywords(path: &str) {
         let key = map.next().unwrap();
         let value = map.next().unwrap();
 
-        // Create an empty entry for this keyword if it is not registered yet.
-        PIVOT_KEYWORD
-            .write()
-            .unwrap()
+        // Create an empty entry for this keyword if it is not registered yet, then add the field.
+        let mut pivots = pivot_keyword.write().unwrap();
+        pivots
             .entry(key.to_string())
-            .or_default();
-
-        PIVOT_KEYWORD
-            .write()
-            .unwrap()
-            .get_mut(key)
-            .unwrap()
+            .or_default()
             .fields
             .insert(value.to_string());
     });

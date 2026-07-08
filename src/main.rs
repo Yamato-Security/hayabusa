@@ -30,7 +30,6 @@ use hayabusa::detections::utils::{
 use hayabusa::filter::{create_channel_filter, filter_evtx_files};
 use hayabusa::level::LEVEL;
 use hayabusa::options::htmlreport::{self, HtmlReporter};
-use hayabusa::options::pivot::PIVOT_KEYWORD;
 use hayabusa::options::pivot::create_output;
 use hayabusa::options::profile::set_default_profile;
 use hayabusa::options::{expand_list::expand_list, level_tuning::LevelTuning, update::Update};
@@ -675,6 +674,7 @@ Any hostnames added to the critical_systems.txt file will have all alerts above 
                     .unwrap()
                     .to_str()
                     .unwrap(),
+                    &stored_static.pivot_keyword,
                 );
                 if Path::new("./encoded_rules.yml").exists() {
                     stored_static.output_option.as_mut().unwrap().rules = check_setting_path(
@@ -688,7 +688,7 @@ Any hostnames added to the critical_systems.txt file will have all alerts above 
                 // When outputting a file with the pivot feature, if a file with the same name already exists, output an error and terminate.
                 let mut error_flag = false;
                 if let Some(csv_path) = &stored_static.output_path {
-                    let pivot_key_unions = PIVOT_KEYWORD.read().unwrap();
+                    let pivot_key_unions = stored_static.pivot_keyword.read().unwrap();
                     pivot_key_unions.iter().for_each(|(key, _)| {
                         let keywords_file_name =
                             csv_path.as_path().display().to_string() + "-" + key + ".txt";
@@ -715,7 +715,7 @@ Any hostnames added to the critical_systems.txt file will have all alerts above 
                     &mut html_reporter,
                 );
 
-                let pivot_key_unions = PIVOT_KEYWORD.read().unwrap();
+                let pivot_key_unions = stored_static.pivot_keyword.read().unwrap();
                 if let Some(pivot_file) = &stored_static.output_path {
                     // For file output
                     pivot_key_unions.iter().for_each(|(key, pivot_keyword)| {

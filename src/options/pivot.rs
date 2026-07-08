@@ -1,5 +1,4 @@
 use indexmap::{IndexMap, IndexSet};
-use lazy_static::lazy_static;
 use serde_json::Value;
 use std::fmt::Write as _;
 use std::sync::RwLock;
@@ -21,19 +20,11 @@ pub struct PivotKeyword {
     pub fields: IndexSet<String>,
 }
 
-lazy_static! {
-    /// Global map of pivot keyword category name -> PivotKeyword. The categories and their fields
-    /// are loaded from the pivot keywords config file, and the keyword values are filled in while
-    /// scanning records.
-    pub static ref PIVOT_KEYWORD: RwLock<IndexMap<String, PivotKeyword>> =
-        RwLock::new(IndexMap::new());
-}
-
-/// Serializes the tests that mutate the process-global `PIVOT_KEYWORD`
-/// (clear/load/insert/read) so they don't race under the parallel test harness.
-/// Each such test must hold this lock for its whole body.
-#[cfg(test)]
-pub(crate) static PIVOT_KEYWORD_TEST_LOCK: std::sync::Mutex<()> = std::sync::Mutex::new(());
+/// Map of pivot keyword category name -> PivotKeyword. The categories and their fields are loaded
+/// from the pivot keywords config file, and the keyword values are filled in while scanning
+/// records. Owned by `StoredStatic::pivot_keyword` (behind an `Arc<RwLock<..>>` so the per-record
+/// parallel tasks can fill it in) rather than a process global.
+pub type PivotKeywordMap = IndexMap<String, PivotKeyword>;
 
 impl Default for PivotKeyword {
     fn default() -> Self {
@@ -51,8 +42,12 @@ impl PivotKeyword {
 }
 
 /// For records with a level of low or higher, collects the values of every configured pivot
-/// field found in the record into PIVOT_KEYWORD.keywords.
-pub fn insert_pivot_keyword(event_record: &Value, eventkey_alias: &EventKeyAliasConfig) {
+/// field found in the record into the `pivot_keyword` map's keyword sets.
+pub fn insert_pivot_keyword(
+    event_record: &Value,
+    eventkey_alias: &EventKeyAliasConfig,
+    pivot_keyword: &RwLock<PivotKeywordMap>,
+) {
     if let Some(record_level) = get_event_value("Event.System.Level", event_record, eventkey_alias)
     {
         if let Some(event_record_str) = get_serde_number_to_string(record_level, false) {
@@ -72,7 +67,7 @@ pub fn insert_pivot_keyword(event_record: &Value, eventkey_alias: &EventKeyAlias
 
     // For every pivot category, resolve each configured field against the record and collect its
     // value.
-    let mut pivots = PIVOT_KEYWORD.write().unwrap();
+    let mut pivots = pivot_keyword.write().unwrap();
     pivots.iter_mut().for_each(|(_, pivot)| {
         for field in &pivot.fields {
             if let Some(event_key_path) = eventkey_alias.get_event_key(&String::from(field)) {
@@ -173,19 +168,14 @@ mod tests {
     use crate::detections::configs::load_eventkey_alias;
     use crate::detections::configs::load_pivot_keywords;
     use crate::detections::utils;
-    use crate::options::pivot::PIVOT_KEYWORD;
-    use crate::options::pivot::PIVOT_KEYWORD_TEST_LOCK;
-    use crate::options::pivot::insert_pivot_keyword;
+    use crate::options::pivot::{PivotKeywordMap, insert_pivot_keyword};
     use serde_json;
+    use std::sync::RwLock;
 
     #[test]
     fn insert_pivot_keyword_local_ip4() {
-        // Serialize against other tests that mutate the global PIVOT_KEYWORD.
-        let _pivot_keyword_lock = PIVOT_KEYWORD_TEST_LOCK
-            .lock()
-            .unwrap_or_else(|e| e.into_inner());
-        PIVOT_KEYWORD.write().unwrap().clear();
-        load_pivot_keywords("test_files/config/pivot_keywords.txt");
+        let pivot_keyword = RwLock::new(PivotKeywordMap::new());
+        load_pivot_keywords("test_files/config/pivot_keywords.txt", &pivot_keyword);
         let record_json_str = r#"
         {
             "Event": {
@@ -209,10 +199,11 @@ mod tests {
                 .to_str()
                 .unwrap(),
             ),
+            &pivot_keyword,
         );
 
         assert!(
-            !PIVOT_KEYWORD
+            !pivot_keyword
                 .write()
                 .unwrap()
                 .get_mut("Ip Addresses")
@@ -224,12 +215,8 @@ mod tests {
 
     #[test]
     fn insert_pivot_keyword_ip4() {
-        // Serialize against other tests that mutate the global PIVOT_KEYWORD.
-        let _pivot_keyword_lock = PIVOT_KEYWORD_TEST_LOCK
-            .lock()
-            .unwrap_or_else(|e| e.into_inner());
-        PIVOT_KEYWORD.write().unwrap().clear();
-        load_pivot_keywords("test_files/config/pivot_keywords.txt");
+        let pivot_keyword = RwLock::new(PivotKeywordMap::new());
+        load_pivot_keywords("test_files/config/pivot_keywords.txt", &pivot_keyword);
         let record_json_str = r#"
         {
             "Event": {
@@ -253,10 +240,11 @@ mod tests {
                 .to_str()
                 .unwrap(),
             ),
+            &pivot_keyword,
         );
 
         assert!(
-            PIVOT_KEYWORD
+            pivot_keyword
                 .write()
                 .unwrap()
                 .get_mut("Ip Addresses")
@@ -268,12 +256,8 @@ mod tests {
 
     #[test]
     fn insert_pivot_keyword_ip_empty() {
-        // Serialize against other tests that mutate the global PIVOT_KEYWORD.
-        let _pivot_keyword_lock = PIVOT_KEYWORD_TEST_LOCK
-            .lock()
-            .unwrap_or_else(|e| e.into_inner());
-        PIVOT_KEYWORD.write().unwrap().clear();
-        load_pivot_keywords("test_files/config/pivot_keywords.txt");
+        let pivot_keyword = RwLock::new(PivotKeywordMap::new());
+        load_pivot_keywords("test_files/config/pivot_keywords.txt", &pivot_keyword);
         let record_json_str = r#"
         {
             "Event": {
@@ -297,10 +281,11 @@ mod tests {
                 .to_str()
                 .unwrap(),
             ),
+            &pivot_keyword,
         );
 
         assert!(
-            !PIVOT_KEYWORD
+            !pivot_keyword
                 .write()
                 .unwrap()
                 .get_mut("Ip Addresses")
@@ -312,12 +297,8 @@ mod tests {
 
     #[test]
     fn insert_pivot_keyword_local_ip6() {
-        // Serialize against other tests that mutate the global PIVOT_KEYWORD.
-        let _pivot_keyword_lock = PIVOT_KEYWORD_TEST_LOCK
-            .lock()
-            .unwrap_or_else(|e| e.into_inner());
-        PIVOT_KEYWORD.write().unwrap().clear();
-        load_pivot_keywords("test_files/config/pivot_keywords.txt");
+        let pivot_keyword = RwLock::new(PivotKeywordMap::new());
+        load_pivot_keywords("test_files/config/pivot_keywords.txt", &pivot_keyword);
         let record_json_str = r#"
         {
             "Event": {
@@ -341,10 +322,11 @@ mod tests {
                 .to_str()
                 .unwrap(),
             ),
+            &pivot_keyword,
         );
 
         assert!(
-            !PIVOT_KEYWORD
+            !pivot_keyword
                 .write()
                 .unwrap()
                 .get_mut("Ip Addresses")
@@ -356,12 +338,8 @@ mod tests {
 
     #[test]
     fn insert_pivot_keyword_level_informational() {
-        // Serialize against other tests that mutate the global PIVOT_KEYWORD.
-        let _pivot_keyword_lock = PIVOT_KEYWORD_TEST_LOCK
-            .lock()
-            .unwrap_or_else(|e| e.into_inner());
-        PIVOT_KEYWORD.write().unwrap().clear();
-        load_pivot_keywords("test_files/config/pivot_keywords.txt");
+        let pivot_keyword = RwLock::new(PivotKeywordMap::new());
+        load_pivot_keywords("test_files/config/pivot_keywords.txt", &pivot_keyword);
         let record_json_str = r#"
         {
             "Event": {
@@ -385,10 +363,11 @@ mod tests {
                 .to_str()
                 .unwrap(),
             ),
+            &pivot_keyword,
         );
 
         assert!(
-            !PIVOT_KEYWORD
+            !pivot_keyword
                 .write()
                 .unwrap()
                 .get_mut("Ip Addresses")
@@ -400,12 +379,8 @@ mod tests {
 
     #[test]
     fn insert_pivot_keyword_level_low() {
-        // Serialize against other tests that mutate the global PIVOT_KEYWORD.
-        let _pivot_keyword_lock = PIVOT_KEYWORD_TEST_LOCK
-            .lock()
-            .unwrap_or_else(|e| e.into_inner());
-        PIVOT_KEYWORD.write().unwrap().clear();
-        load_pivot_keywords("test_files/config/pivot_keywords.txt");
+        let pivot_keyword = RwLock::new(PivotKeywordMap::new());
+        load_pivot_keywords("test_files/config/pivot_keywords.txt", &pivot_keyword);
         let record_json_str = r#"
         {
             "Event": {
@@ -429,10 +404,11 @@ mod tests {
                 .to_str()
                 .unwrap(),
             ),
+            &pivot_keyword,
         );
 
         assert!(
-            PIVOT_KEYWORD
+            pivot_keyword
                 .write()
                 .unwrap()
                 .get_mut("Ip Addresses")
@@ -444,12 +420,8 @@ mod tests {
 
     #[test]
     fn insert_pivot_keyword_level_none() {
-        // Serialize against other tests that mutate the global PIVOT_KEYWORD.
-        let _pivot_keyword_lock = PIVOT_KEYWORD_TEST_LOCK
-            .lock()
-            .unwrap_or_else(|e| e.into_inner());
-        PIVOT_KEYWORD.write().unwrap().clear();
-        load_pivot_keywords("test_files/config/pivot_keywords.txt");
+        let pivot_keyword = RwLock::new(PivotKeywordMap::new());
+        load_pivot_keywords("test_files/config/pivot_keywords.txt", &pivot_keyword);
         let record_json_str = r#"
         {
             "Event": {
@@ -473,10 +445,11 @@ mod tests {
                 .to_str()
                 .unwrap(),
             ),
+            &pivot_keyword,
         );
 
         assert!(
-            !PIVOT_KEYWORD
+            !pivot_keyword
                 .write()
                 .unwrap()
                 .get_mut("Ip Addresses")

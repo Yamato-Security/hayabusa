@@ -336,7 +336,11 @@ impl Detection {
             }
 
             if stored_static.pivot_keyword_list_flag {
-                insert_pivot_keyword(&record_info.record, &stored_static.eventkey_alias);
+                insert_pivot_keyword(
+                    &record_info.record,
+                    &stored_static.eventkey_alias,
+                    &stored_static.pivot_keyword,
+                );
                 continue;
             }
 
