@@ -1,6 +1,6 @@
 use crate::detections::configs::{Action, EventInfoConfig, StoredStatic};
 use crate::detections::detection::EvtxRecordInfo;
-use crate::detections::message::{AlertMessage, ERROR_LOG_STACK};
+use crate::detections::message::AlertMessage;
 use crate::detections::utils::{
     self, get_writable_color, make_ascii_titlecase, write_color_buffer,
 };
@@ -626,7 +626,8 @@ impl Timeline {
                     AlertMessage::alert(&errmsg).ok();
                 }
                 if !stored_static.quiet_errors_flag {
-                    ERROR_LOG_STACK
+                    stored_static
+                        .error_log_stack
                         .lock()
                         .unwrap()
                         .push(format!("[ERROR] {errmsg}"));

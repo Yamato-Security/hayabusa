@@ -6,7 +6,11 @@ use chrono::{DateTime, Utc};
 use hashbrown::HashMap;
 use nested::Nested;
 use std::cmp::PartialEq;
-use std::{fmt::Debug, sync::Arc, vec};
+use std::{
+    fmt::Debug,
+    sync::{Arc, Mutex},
+    vec,
+};
 use yaml_rust2::Yaml;
 
 use self::aggregation_parser::AggregationParseInfo;
@@ -154,6 +158,7 @@ impl RuleNode {
         quiet_errors_flag: bool,
         json_input_flag: bool,
         eventkey_alias: &EventKeyAliasConfig,
+        error_log_stack: &Mutex<Nested<String>>,
     ) -> bool {
         let result = self.detection.select(event_record, eventkey_alias);
         if result && self.has_agg_condition() {
@@ -164,6 +169,7 @@ impl RuleNode {
                 quiet_errors_flag,
                 json_input_flag,
                 eventkey_alias,
+                error_log_stack,
             );
         }
         result
@@ -568,7 +574,8 @@ mod tests {
                         dummy_stored_static.verbose_flag,
                         dummy_stored_static.quiet_errors_flag,
                         dummy_stored_static.json_input_flag,
-                        &dummy_stored_static.eventkey_alias
+                        &dummy_stored_static.eventkey_alias,
+                        &dummy_stored_static.error_log_stack
                     ),
                     expect_select
                 );
@@ -1185,6 +1192,7 @@ mod tests {
                     dummy_stored_static.quiet_errors_flag,
                     dummy_stored_static.json_input_flag,
                     &dummy_stored_static.eventkey_alias,
+                    &dummy_stored_static.error_log_stack,
                 );
                 assert!(rule_node.detection.aggregation_condition.is_some());
                 assert!(result);

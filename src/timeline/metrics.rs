@@ -1,4 +1,3 @@
-use crate::detections::message::ERROR_LOG_STACK;
 use crate::detections::utils::{get_file_size, get_serde_number_to_string};
 use crate::detections::{
     configs::{EventKeyAliasConfig, StoredStatic},
@@ -123,6 +122,7 @@ impl EventMetrics {
             path,
             stored_static.verbose_flag,
             stored_static.quiet_errors_flag,
+            &stored_static.error_log_stack,
         );
         let file_size = ByteSize::b(file_size).to_string();
         if let Some(existing_lm) = self.stats_logfile.iter_mut().find(|log_metrics| {
@@ -180,7 +180,8 @@ impl EventMetrics {
                                 AlertMessage::alert(&errmsg).ok();
                             }
                             if !stored_static.quiet_errors_flag {
-                                ERROR_LOG_STACK
+                                stored_static
+                                    .error_log_stack
                                     .lock()
                                     .unwrap()
                                     .push(format!("[ERROR] {errmsg}"));
@@ -198,7 +199,7 @@ impl EventMetrics {
                     self.start_time = timestamp;
                 } else {
                     // Date data before 2007/1/30, when evtx was released, is treated as invalid format data.
-                    ERROR_LOG_STACK.lock().unwrap().push(format!(
+                    stored_static.error_log_stack.lock().unwrap().push(format!(
                         "[ERROR] Invalid record found.\nEventFile:{}\nTimestamp:{}\n",
                         self.filepath,
                         timestamp.unwrap()
@@ -328,7 +329,8 @@ impl EventMetrics {
                         AlertMessage::alert(&errmsg).ok();
                     }
                     if !stored_static.quiet_errors_flag {
-                        ERROR_LOG_STACK
+                        stored_static
+                            .error_log_stack
                             .lock()
                             .unwrap()
                             .push(format!("[ERROR] {errmsg}"));

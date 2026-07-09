@@ -9,6 +9,7 @@ use std::io::{BufRead, BufReader};
 use std::path::{Path, PathBuf};
 use std::str;
 use std::string::String;
+use std::sync::Mutex;
 use std::thread::available_parallelism;
 use std::vec;
 use std::{fs, io};
@@ -33,7 +34,7 @@ use crate::options::htmlreport;
 
 use super::configs::{EventKeyAliasConfig, OutputOption};
 use super::detection::EvtxRecordInfo;
-use super::message::{AlertMessage, ERROR_LOG_STACK};
+use super::message::AlertMessage;
 use rust_embed::Embed;
 
 /// Embedded copy of config/default_profile_name.txt, used as a fallback when the file does not
@@ -894,7 +895,12 @@ pub fn remove_sp_char(record_value: CompactString) -> CompactString {
 
 /// Returns the size of the file in bytes, or 0 if its metadata cannot be read (in which case a
 /// warning is shown and/or stacked depending on the verbose and quiet-errors flags).
-pub fn get_file_size(file_path: &Path, verbose_flag: bool, quiet_errors_flag: bool) -> u64 {
+pub fn get_file_size(
+    file_path: &Path,
+    verbose_flag: bool,
+    quiet_errors_flag: bool,
+    error_log_stack: &Mutex<Nested<String>>,
+) -> u64 {
     match fs::metadata(file_path) {
         Ok(res) => res.len(),
         Err(err) => {
@@ -902,7 +908,7 @@ pub fn get_file_size(file_path: &Path, verbose_flag: bool, quiet_errors_flag: bo
                 AlertMessage::warn(&err.to_string()).ok();
             }
             if !quiet_errors_flag {
-                ERROR_LOG_STACK
+                error_log_stack
                     .lock()
                     .unwrap()
                     .push(format!("[WARN] {err}"));

@@ -2,7 +2,7 @@ use std::error::Error;
 use std::sync::Arc;
 
 use crate::detections::configs::StoredStatic;
-use crate::detections::message::{AlertMessage, ERROR_LOG_STACK};
+use crate::detections::message::AlertMessage;
 use crate::detections::rule::aggregation_parser::{
     AggregationConditionToken, AggregationParseInfo,
 };
@@ -257,7 +257,8 @@ fn error_log(
         AlertMessage::alert(msg.as_str()).ok();
     }
     if !stored_static.quiet_errors_flag {
-        ERROR_LOG_STACK
+        stored_static
+            .error_log_stack
             .lock()
             .unwrap()
             .push(format!("[WARN] {msg}"));
