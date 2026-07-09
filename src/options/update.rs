@@ -220,7 +220,7 @@ impl Update {
                     "{}|{}|{}|{}|{:?}",
                     yaml["title"].as_str().unwrap_or(&String::default()),
                     yaml["modified"].as_str().unwrap_or(yaml_date),
-                    &filepath,
+                    filepath,
                     yaml["ruletype"].as_str().unwrap_or("Other"),
                     yaml
                 ),

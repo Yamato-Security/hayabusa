@@ -16,8 +16,8 @@ pub(crate) fn _output_html_computer_by_mitre_attck(html_output_stock: &mut Neste
         .iter()
         .sorted_by(|a, b| {
             Ord::cmp(
-                &format!("{}-{}", &b.value()[b.value().len() - 1].0, b.key()),
-                &format!("{}-{}", &a.value()[a.value().len() - 1].0, a.key()),
+                &format!("{}-{}", b.value()[b.value().len() - 1].0, b.key()),
+                &format!("{}-{}", a.value()[a.value().len() - 1].0, a.key()),
             )
         })
         .enumerate()

@@ -322,7 +322,7 @@ impl EventMetrics {
                     .unwrap_or("n/a".into());
                     let errmsg = format!(
                         "Failed to parse event ID from event file: {}\nEvent record ID: {}\n",
-                        &record.evtx_filepath, rec_id
+                        record.evtx_filepath, rec_id
                     );
                     if stored_static.verbose_flag {
                         AlertMessage::alert(&errmsg).ok();

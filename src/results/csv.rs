@@ -153,7 +153,7 @@ pub(crate) fn emit_csv_inner(
                 write_color_buffer(
                     &output_writer.display_writer,
                     None,
-                    &format!("{{ {} }}", &result.0),
+                    &format!("{{ {} }}", result.0),
                     true,
                 )
                 .ok();
@@ -164,7 +164,7 @@ pub(crate) fn emit_csv_inner(
                     writer.write_all(b"\n")?;
                 }
                 *first = false;
-                write!(writer, "{{ {} }}", &result.0)?;
+                write!(writer, "{{ {} }}", result.0)?;
             }
         } else if json_output_flag {
             // JSON output
@@ -183,7 +183,7 @@ pub(crate) fn emit_csv_inner(
                 write_color_buffer(
                     &output_writer.display_writer,
                     None,
-                    &format!("{{\n{}\n}}", &result.0),
+                    &format!("{{\n{}\n}}", result.0),
                     true,
                 )
                 .ok();
@@ -194,7 +194,7 @@ pub(crate) fn emit_csv_inner(
                     writer.write_all(b"\n")?;
                 }
                 *first = false;
-                write!(writer, "{{\n{}\n}}", &result.0)?;
+                write!(writer, "{{\n{}\n}}", result.0)?;
             }
         } else if let ResultWriter::Csv(csv_writer) = &mut output_writer.result_writer {
             // CSV output format
