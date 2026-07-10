@@ -604,6 +604,8 @@ mod tests {
 
     #[test]
     fn test_emit_csv_output() {
+        let output_tmp_dir = tempfile::tempdir().unwrap();
+        let out_test_emit_csv_csv = output_tmp_dir.path().join("test_emit_csv.csv");
         let mut result_state = ResultOutputState::default();
         let mut detect_infos = vec![];
         let mock_ch_filter = message::create_output_filter_config(
@@ -633,7 +635,7 @@ mod tests {
                 min_level: "informational".to_string(),
                 ..Default::default()
             },
-            output: Some(Path::new("./test_emit_csv.csv").to_path_buf()),
+            output: Some(out_test_emit_csv_csv.clone()),
             ..Default::default()
         });
         let dummy_config = Some(Config {
@@ -827,17 +829,20 @@ mod tests {
             )
             .is_ok()
         );
-        match read_to_string("./test_emit_csv.csv") {
+        match read_to_string(&out_test_emit_csv_csv) {
             Err(_) => panic!("Failed to open file."),
             Ok(s) => {
                 assert_eq!(s, expect);
             }
         };
-        assert!(remove_file("./test_emit_csv.csv").is_ok());
+        assert!(remove_file(&out_test_emit_csv_csv).is_ok());
     }
 
     #[test]
     fn test_emit_csv_output_with_multiline_opt() {
+        let output_tmp_dir = tempfile::tempdir().unwrap();
+        let out_test_emit_csv_multiline_csv =
+            output_tmp_dir.path().join("test_emit_csv_multiline.csv");
         let mut result_state = ResultOutputState::default();
         let mut detect_infos = vec![];
         let mock_ch_filter = message::create_output_filter_config(
@@ -870,7 +875,7 @@ mod tests {
                 no_wizard: true,
                 ..Default::default()
             },
-            output: Some(Path::new("./test_emit_csv_multiline.csv").to_path_buf()),
+            output: Some(out_test_emit_csv_multiline_csv.clone()),
             multiline: true,
             ..Default::default()
         });
@@ -1060,13 +1065,13 @@ mod tests {
             )
             .is_ok()
         );
-        match read_to_string("./test_emit_csv_multiline.csv") {
+        match read_to_string(&out_test_emit_csv_multiline_csv) {
             Err(_) => panic!("Failed to open file."),
             Ok(s) => {
                 assert_eq!(s, expect);
             }
         };
-        assert!(remove_file("./test_emit_csv_multiline.csv").is_ok());
+        assert!(remove_file(&out_test_emit_csv_multiline_csv).is_ok());
     }
 
     /// Regression guard for the escaping / control-char behaviour that moved from the deleted
@@ -1160,6 +1165,10 @@ mod tests {
 
     #[test]
     fn test_emit_csv_output_with_remove_duplicate_opt() {
+        let output_tmp_dir = tempfile::tempdir().unwrap();
+        let out_test_emit_csv_remove_duplicate_csv = output_tmp_dir
+            .path()
+            .join("test_emit_csv_remove_duplicate.csv");
         let mut result_state = ResultOutputState::default();
         let mut detect_infos = vec![];
         let mock_ch_filter = message::create_output_filter_config(
@@ -1192,7 +1201,7 @@ mod tests {
                 no_wizard: true,
                 ..Default::default()
             },
-            output: Some(Path::new("./test_emit_csv_remove_duplicate.csv").to_path_buf()),
+            output: Some(out_test_emit_csv_remove_duplicate_csv.clone()),
             ..Default::default()
         });
         let dummy_config = Some(Config {
@@ -1381,17 +1390,21 @@ mod tests {
             )
             .is_ok()
         );
-        match read_to_string("./test_emit_csv_remove_duplicate.csv") {
+        match read_to_string(&out_test_emit_csv_remove_duplicate_csv) {
             Err(_) => panic!("Failed to open file."),
             Ok(s) => {
                 assert_eq!(s, expect);
             }
         };
-        assert!(remove_file("./test_emit_csv_remove_duplicate.csv").is_ok());
+        assert!(remove_file(&out_test_emit_csv_remove_duplicate_csv).is_ok());
     }
 
     #[test]
     fn test_emit_json_output_with_remove_duplicate_opt() {
+        let output_tmp_dir = tempfile::tempdir().unwrap();
+        let out_test_emit_csv_remove_duplicate_json = output_tmp_dir
+            .path()
+            .join("test_emit_csv_remove_duplicate.json");
         let mut result_state = ResultOutputState::default();
         let mut detect_infos = vec![];
         let mock_ch_filter = message::create_output_filter_config(
@@ -1424,7 +1437,7 @@ mod tests {
                 no_wizard: true,
                 ..Default::default()
             },
-            output: Some(Path::new("./test_emit_csv_remove_duplicate.json").to_path_buf()),
+            output: Some(out_test_emit_csv_remove_duplicate_json.clone()),
             ..Default::default()
         });
         let dummy_config = Some(Config {
@@ -1687,17 +1700,21 @@ mod tests {
             )
             .is_ok()
         );
-        match read_to_string("./test_emit_csv_remove_duplicate.json") {
+        match read_to_string(&out_test_emit_csv_remove_duplicate_json) {
             Err(_) => panic!("Failed to open file."),
             Ok(s) => {
                 assert_eq!(s, expect_str);
             }
         };
-        assert!(remove_file("./test_emit_csv_remove_duplicate.json").is_ok());
+        assert!(remove_file(&out_test_emit_csv_remove_duplicate_json).is_ok());
     }
 
     #[test]
     fn test_emit_json_output_with_multiple_data_in_details() {
+        let output_tmp_dir = tempfile::tempdir().unwrap();
+        let out_test_multiple_data_in_details_json = output_tmp_dir
+            .path()
+            .join("test_multiple_data_in_details.json");
         let mut result_state = ResultOutputState::default();
         let mut detect_infos = vec![];
         let mock_ch_filter = message::create_output_filter_config(
@@ -1730,7 +1747,7 @@ mod tests {
                 ..Default::default()
             },
             geo_ip: None,
-            output: Some(Path::new("./test_multiple_data_in_details.json").to_path_buf()),
+            output: Some(out_test_multiple_data_in_details_json.clone()),
             jsonl_timeline: false,
             disable_abbreviations_opt: DisableAbbreviationsOption {
                 disable_abbreviations: false,
@@ -1926,17 +1943,19 @@ mod tests {
             )
             .is_ok()
         );
-        match read_to_string("./test_multiple_data_in_details.json") {
+        match read_to_string(&out_test_multiple_data_in_details_json) {
             Err(_) => panic!("Failed to open file."),
             Ok(s) => {
                 assert_eq!(s, expect_str);
             }
         };
-        assert!(remove_file("./test_multiple_data_in_details.json").is_ok());
+        assert!(remove_file(&out_test_multiple_data_in_details_json).is_ok());
     }
 
     #[test]
     fn test_emit_csv_json_output() {
+        let output_tmp_dir = tempfile::tempdir().unwrap();
+        let out_test_emit_csv_json_json = output_tmp_dir.path().join("test_emit_csv_json.json");
         let mut result_state = ResultOutputState::default();
         let mut detect_infos = vec![];
         let mock_ch_filter = message::create_output_filter_config(
@@ -1967,7 +1986,7 @@ mod tests {
                 no_wizard: true,
                 ..Default::default()
             },
-            output: Some(Path::new("./test_emit_csv_json.json").to_path_buf()),
+            output: Some(out_test_emit_csv_json_json.clone()),
             ..Default::default()
         });
 
@@ -2103,17 +2122,19 @@ mod tests {
             )
             .is_ok()
         );
-        match read_to_string("./test_emit_csv_json.json") {
+        match read_to_string(&out_test_emit_csv_json_json) {
             Err(_) => panic!("Failed to open file."),
             Ok(s) => {
                 assert_eq!(s, format!("{}\n}}", expect.join("\n    ")));
             }
         };
-        assert!(remove_file("./test_emit_csv_json.json").is_ok());
+        assert!(remove_file(&out_test_emit_csv_json_json).is_ok());
     }
 
     #[test]
     fn test_emit_csv_jsonl_output() {
+        let output_tmp_dir = tempfile::tempdir().unwrap();
+        let out_test_emit_csv_jsonl_jsonl = output_tmp_dir.path().join("test_emit_csv_jsonl.jsonl");
         let mut result_state = ResultOutputState::default();
         let mut detect_infos = vec![];
         let mock_ch_filter = message::create_output_filter_config(
@@ -2144,7 +2165,7 @@ mod tests {
                 no_wizard: true,
                 ..Default::default()
             },
-            output: Some(Path::new("./test_emit_csv_jsonl.jsonl").to_path_buf()),
+            output: Some(out_test_emit_csv_jsonl_jsonl.clone()),
             jsonl_timeline: true,
             ..Default::default()
         });
@@ -2282,12 +2303,12 @@ mod tests {
             )
             .is_ok()
         );
-        match read_to_string("./test_emit_csv_jsonl.jsonl") {
+        match read_to_string(&out_test_emit_csv_jsonl_jsonl) {
             Err(_) => panic!("Failed to open file."),
             Ok(s) => {
                 assert_eq!(s, format!("{} }}", expect.join("")));
             }
         };
-        assert!(remove_file("./test_emit_csv_jsonl.jsonl").is_ok());
+        assert!(remove_file(&out_test_emit_csv_jsonl_jsonl).is_ok());
     }
 }

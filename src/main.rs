@@ -3496,9 +3496,11 @@ mod tests {
 
     #[test]
     fn test_same_file_output_csv_exit() {
+        let output_tmp_dir = tempfile::tempdir().unwrap();
+        let out_overwrite_csv_exit_csv = output_tmp_dir.path().join("overwrite_csv_exit.csv");
         // Create an empty file first.
         let mut app = App::new(None);
-        File::create("overwrite_csv_exit.csv").ok();
+        File::create(&out_overwrite_csv_exit_csv).ok();
         let action = Action::CsvTimeline(CsvOutputOption {
             output_options: OutputOption {
                 input_args: InputOption {
@@ -3515,7 +3517,7 @@ mod tests {
                 no_wizard: true,
                 ..Default::default()
             },
-            output: Some(Path::new("overwrite_csv_exit.csv").to_path_buf()),
+            output: Some(out_overwrite_csv_exit_csv.clone()),
             ..Default::default()
         });
         let config = Some(Config {
@@ -3529,14 +3531,16 @@ mod tests {
         // assert_eq!(MESSAGES.len(), 0);
 
         // Delete the test file.
-        remove_file("overwrite_csv_exit.csv").ok();
+        remove_file(&out_overwrite_csv_exit_csv).ok();
     }
 
     #[test]
     fn test_overwrite_csv() {
+        let output_tmp_dir = tempfile::tempdir().unwrap();
+        let out_overwrite_csv_clobber_csv = output_tmp_dir.path().join("overwrite_csv_clobber.csv");
         // Create an empty file first.
         let mut app = App::new(None);
-        File::create("overwrite_csv_clobber.csv").ok();
+        File::create(&out_overwrite_csv_clobber_csv).ok();
         let action = Action::CsvTimeline(CsvOutputOption {
             output_options: OutputOption {
                 input_args: InputOption {
@@ -3554,7 +3558,7 @@ mod tests {
                 no_wizard: true,
                 ..Default::default()
             },
-            output: Some(Path::new("overwrite_csv_clobber.csv").to_path_buf()),
+            output: Some(out_overwrite_csv_clobber_csv.clone()),
             ..Default::default()
         });
         let config = Some(Config {
@@ -3567,14 +3571,16 @@ mod tests {
         // TODO add check
         // assert_ne!(MESSAGES.len(), 0);
         // Delete the test file.
-        remove_file("overwrite_csv_clobber.csv").ok();
+        remove_file(&out_overwrite_csv_clobber_csv).ok();
     }
 
     #[test]
     fn test_same_file_output_json_exit() {
+        let output_tmp_dir = tempfile::tempdir().unwrap();
+        let out_overwrite_json_exit_json = output_tmp_dir.path().join("overwrite_json_exit.json");
         // Create an empty file first.
         let mut app = App::new(None);
-        File::create("overwrite_json_exit.json").ok();
+        File::create(&out_overwrite_json_exit_json).ok();
         let action = Action::JsonTimeline(JSONOutputOption {
             output_options: OutputOption {
                 input_args: InputOption {
@@ -3592,7 +3598,7 @@ mod tests {
                 no_wizard: true,
                 ..Default::default()
             },
-            output: Some(Path::new("overwrite_json_exit.json").to_path_buf()),
+            output: Some(out_overwrite_json_exit_json.clone()),
             ..Default::default()
         });
         let config = Some(Config {
@@ -3606,14 +3612,17 @@ mod tests {
         // assert_eq!(MESSAGES.len(), 0);
 
         // Delete the test file.
-        remove_file("overwrite_json_exit.json").ok();
+        remove_file(&out_overwrite_json_exit_json).ok();
     }
 
     #[test]
     fn test_overwrite_json() {
+        let output_tmp_dir = tempfile::tempdir().unwrap();
+        let out_overwrite_json_clobber_json =
+            output_tmp_dir.path().join("overwrite_json_clobber.json");
         // Create an empty file first.
         let mut app = App::new(None);
-        File::create("overwrite_json_clobber.json").ok();
+        File::create(&out_overwrite_json_clobber_json).ok();
         let action = Action::JsonTimeline(JSONOutputOption {
             output_options: OutputOption {
                 input_args: InputOption {
@@ -3631,7 +3640,7 @@ mod tests {
                 no_wizard: true,
                 ..Default::default()
             },
-            output: Some(Path::new("overwrite_json_clobber.json").to_path_buf()),
+            output: Some(out_overwrite_json_clobber_json.clone()),
             ..Default::default()
         });
         let config = Some(Config {
@@ -3644,16 +3653,19 @@ mod tests {
         // TODO add check
         // assert_ne!(MESSAGES.len(), 0);
         // Delete the test file.
-        remove_file("overwrite_json_clobber.json").ok();
+        remove_file(&out_overwrite_json_clobber_json).ok();
     }
 
     #[test]
     fn test_same_file_output_metric_csv_exit() {
+        let output_tmp_dir = tempfile::tempdir().unwrap();
+        let out_overwrite_metric_exit_csv = output_tmp_dir.path().join("overwrite_metric_exit.csv");
+        let out_overwrite_metric_exit = output_tmp_dir.path().join("overwrite_metric_exit");
         // Create an empty file first.
         let mut app = App::new(None);
-        File::create("overwrite_metric_exit.csv").ok();
+        File::create(&out_overwrite_metric_exit_csv).ok();
         let action = Action::EidMetrics(EidMetricsOption {
-            output: Some(Path::new("overwrite_metric_exit.csv").to_path_buf()),
+            output: Some(out_overwrite_metric_exit_csv.clone()),
             input_args: InputOption {
                 filepath: Some(Path::new("test_files/evtx/test_metrics.json").to_path_buf()),
                 ..Default::default()
@@ -3671,21 +3683,24 @@ mod tests {
         let mut stored_static = StoredStatic::create_static_data(config);
         let mut config_reader = ConfigReader::new();
         app.exec(&mut config_reader.app, &mut stored_static);
-        let meta = fs::metadata("overwrite_metric_exit.csv").unwrap();
+        let meta = fs::metadata(&out_overwrite_metric_exit_csv).unwrap();
         assert_eq!(meta.len(), 0);
 
         // Delete the test file.
-        remove_file("overwrite_metric_exit.csv").ok();
-        remove_file("overwrite_metric_exit").ok();
+        remove_file(&out_overwrite_metric_exit_csv).ok();
+        remove_file(&out_overwrite_metric_exit).ok();
     }
 
     #[test]
     fn test_same_file_output_metric_csv() {
+        let output_tmp_dir = tempfile::tempdir().unwrap();
+        let out_overwrite_metric_clobber_csv =
+            output_tmp_dir.path().join("overwrite_metric_clobber.csv");
         // Create an empty file first.
         let mut app = App::new(None);
-        File::create("overwrite_metric_clobber.csv").ok();
+        File::create(&out_overwrite_metric_clobber_csv).ok();
         let action = Action::EidMetrics(EidMetricsOption {
-            output: Some(Path::new("overwrite_metric_clobber.csv").to_path_buf()),
+            output: Some(out_overwrite_metric_clobber_csv.clone()),
             input_args: InputOption {
                 filepath: Some(Path::new("test_files/evtx/test_metrics.json").to_path_buf()),
                 ..Default::default()
@@ -3704,19 +3719,24 @@ mod tests {
         let mut stored_static = StoredStatic::create_static_data(config);
         let mut config_reader = ConfigReader::new();
         app.exec(&mut config_reader.app, &mut stored_static);
-        let meta = fs::metadata("overwrite_metric_clobber.csv").unwrap();
+        let meta = fs::metadata(&out_overwrite_metric_clobber_csv).unwrap();
         assert_ne!(meta.len(), 0);
         // Delete the test file.
-        remove_file("overwrite_metric_clobber.csv").ok();
+        remove_file(&out_overwrite_metric_clobber_csv).ok();
     }
 
     #[test]
     fn test_same_file_output_logon_summary_csv_exit() {
+        let output_tmp_dir = tempfile::tempdir().unwrap();
+        let out_overwrite_logon_exit_successful_csv = output_tmp_dir
+            .path()
+            .join("overwrite_logon_exit-successful.csv");
+        let out_overwrite_logon_exit = output_tmp_dir.path().join("overwrite_logon_exit");
         // Create an empty file first.
         let mut app = App::new(None);
-        File::create("overwrite_logon_exit-successful.csv").ok();
+        File::create(&out_overwrite_logon_exit_successful_csv).ok();
         let action = Action::LogonSummary(LogonSummaryOption {
-            output: Some(Path::new("overwrite_logon_exit").to_path_buf()),
+            output: Some(out_overwrite_logon_exit.clone()),
             input_args: InputOption {
                 filepath: Some(Path::new("test_files/evtx/test_metrics.json").to_path_buf()),
                 ..Default::default()
@@ -3734,20 +3754,28 @@ mod tests {
         let mut stored_static = StoredStatic::create_static_data(config);
         let mut config_reader = ConfigReader::new();
         app.exec(&mut config_reader.app, &mut stored_static);
-        let meta = fs::metadata("overwrite_logon_exit-successful.csv").unwrap();
+        let meta = fs::metadata(&out_overwrite_logon_exit_successful_csv).unwrap();
         assert_eq!(meta.len(), 0);
 
         // Delete the test file.
-        remove_file("overwrite_logon_exit-successful.csv").ok();
+        remove_file(&out_overwrite_logon_exit_successful_csv).ok();
     }
 
     #[test]
     fn test_same_file_output_logon_summary_csv() {
+        let output_tmp_dir = tempfile::tempdir().unwrap();
+        let out_overwrite_logon_clobber_successful_csv = output_tmp_dir
+            .path()
+            .join("overwrite_logon_clobber-successful.csv");
+        let out_overwrite_logon_clobber_failed_csv = output_tmp_dir
+            .path()
+            .join("overwrite_logon_clobber-failed.csv");
+        let out_overwrite_logon_clobber = output_tmp_dir.path().join("overwrite_logon_clobber");
         // Create an empty file first.
         let mut app = App::new(None);
-        File::create("overwrite_logon_clobber-successful.csv").ok();
+        File::create(&out_overwrite_logon_clobber_successful_csv).ok();
         let action = Action::LogonSummary(LogonSummaryOption {
-            output: Some(Path::new("overwrite_logon_clobber").to_path_buf()),
+            output: Some(out_overwrite_logon_clobber.clone()),
             input_args: InputOption {
                 filepath: Some(Path::new("test_files/evtx/test_metrics.json").to_path_buf()),
                 ..Default::default()
@@ -3766,20 +3794,24 @@ mod tests {
         let mut stored_static = StoredStatic::create_static_data(config);
         let mut config_reader = ConfigReader::new();
         app.exec(&mut config_reader.app, &mut stored_static);
-        let meta = fs::metadata("overwrite_logon_clobber-successful.csv").unwrap();
+        let meta = fs::metadata(&out_overwrite_logon_clobber_successful_csv).unwrap();
         assert_ne!(meta.len(), 0);
         // Delete the test files (LogonSummary writes both -successful and -failed).
-        remove_file("overwrite_logon_clobber-successful.csv").ok();
-        remove_file("overwrite_logon_clobber-failed.csv").ok();
+        remove_file(&out_overwrite_logon_clobber_successful_csv).ok();
+        remove_file(&out_overwrite_logon_clobber_failed_csv).ok();
     }
 
     #[test]
     fn test_same_file_output_computer_metrics_exit() {
+        let output_tmp_dir = tempfile::tempdir().unwrap();
+        let out_overwrite_computer_exit_csv =
+            output_tmp_dir.path().join("overwrite_computer_exit.csv");
+        let out_overwrite_computer_exit = output_tmp_dir.path().join("overwrite_computer_exit");
         // Create an empty file first.
         let mut app = App::new(None);
-        File::create("overwrite_computer_exit.csv").ok();
+        File::create(&out_overwrite_computer_exit_csv).ok();
         let action = Action::ComputerMetrics(ComputerMetricsOption {
-            output: Some(Path::new("overwrite_computer_exit.csv").to_path_buf()),
+            output: Some(out_overwrite_computer_exit_csv.clone()),
             input_args: InputOption {
                 filepath: Some(Path::new("test_files/evtx/test_metrics.json").to_path_buf()),
                 ..Default::default()
@@ -3795,20 +3827,23 @@ mod tests {
         let mut stored_static = StoredStatic::create_static_data(config);
         let mut config_reader = ConfigReader::new();
         app.exec(&mut config_reader.app, &mut stored_static);
-        let meta = fs::metadata("overwrite_computer_exit.csv").unwrap();
+        let meta = fs::metadata(&out_overwrite_computer_exit_csv).unwrap();
         assert_eq!(meta.len(), 0);
         // Delete the test file.
-        remove_file("overwrite_computer_exit").ok();
-        remove_file("overwrite_computer_exit.csv").ok();
+        remove_file(&out_overwrite_computer_exit).ok();
+        remove_file(&out_overwrite_computer_exit_csv).ok();
     }
 
     #[test]
     fn test_same_file_output_computer_metrics_csv() {
+        let output_tmp_dir = tempfile::tempdir().unwrap();
+        let out_overwrite_computer_clobber_csv =
+            output_tmp_dir.path().join("overwrite_computer_clobber.csv");
         // Create an empty file first.
         let mut app = App::new(None);
-        File::create("overwrite_computer_clobber.csv").ok();
+        File::create(&out_overwrite_computer_clobber_csv).ok();
         let action = Action::ComputerMetrics(ComputerMetricsOption {
-            output: Some(Path::new("overwrite_computer_clobber.csv").to_path_buf()),
+            output: Some(out_overwrite_computer_clobber_csv.clone()),
             input_args: InputOption {
                 filepath: Some(Path::new("test_files/evtx/test_metrics.json").to_path_buf()),
                 ..Default::default()
@@ -3824,10 +3859,10 @@ mod tests {
         let mut stored_static = StoredStatic::create_static_data(config);
         let mut config_reader = ConfigReader::new();
         app.exec(&mut config_reader.app, &mut stored_static);
-        let meta = fs::metadata("overwrite_computer_clobber.csv").unwrap();
+        let meta = fs::metadata(&out_overwrite_computer_clobber_csv).unwrap();
         assert_ne!(meta.len(), 0);
         // Delete the test file.
-        remove_file("overwrite_computer_clobber.csv").ok();
+        remove_file(&out_overwrite_computer_clobber_csv).ok();
     }
 
     #[test]

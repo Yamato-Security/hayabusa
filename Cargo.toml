@@ -63,6 +63,11 @@ encoding_rs = "0.8.35"
 uuid = { version = "1", features = ["v4"] }
 winapi = { version = "0.3.9", features = ["wow64apiset"] }
 
+[dev-dependencies]
+# Used by the file-output unit tests to write into a unique per-test temporary
+# directory instead of the repository root, so the tests are safe to run in parallel.
+tempfile = "3"
+
 [profile.dev]
 debug-assertions = false
 
