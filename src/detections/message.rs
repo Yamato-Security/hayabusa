@@ -12,7 +12,6 @@ use crate::options::profile::Profile::{
 };
 use chrono::{DateTime, Local, Utc};
 use compact_str::CompactString;
-use dashmap::{DashMap, DashSet};
 use hashbrown::HashMap;
 use hashbrown::HashSet;
 use itertools::Itertools;
@@ -76,12 +75,6 @@ lazy_static! {
         true,
         false
     );
-    // Per-computer MITRE ATT&CK tactic counts as (tactic, unique detection count, total detection
-    // count) tuples, collected for the HTML report.
-    pub static ref COMPUTER_MITRE_ATTCK_MAP : DashMap<CompactString, Vec<(CompactString, i64, i64)>> = DashMap::new();
-    // "computer|tactic|rule_path" keys that have already been seen, so each rule increments the
-    // unique count in COMPUTER_MITRE_ATTCK_MAP only once per computer and tactic.
-    pub static ref COMPUTER_MITRE_ATTCK_UNIQUE_KEYS : DashSet<CompactString> = DashSet::new();
 }
 
 /// Creates a HashMap from a CSV config file (e.g. mitre_tactics.txt or channel_abbreviations.txt)

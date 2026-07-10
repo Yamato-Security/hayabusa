@@ -589,7 +589,7 @@ pub fn output_result_summary(
         }
     }
     if stored_static.html_report_flag {
-        _output_html_computer_by_mitre_attck(&mut html_output_stock);
+        _output_html_computer_by_mitre_attck(&mut html_output_stock, stored_static);
         html_reporter.add_md_data(RESULTS_SUMMARY_SECTION, html_output_stock);
     }
 }

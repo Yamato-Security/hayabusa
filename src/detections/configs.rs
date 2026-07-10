@@ -12,6 +12,7 @@ use aho_corasick::{AhoCorasick, AhoCorasickBuilder, MatchKind};
 use chrono::{DateTime, Days, Duration, Local, Months, Utc};
 use clap::{ArgAction, ArgGroup, Args, ColorChoice, Command, CommandFactory, Parser, Subcommand};
 use compact_str::CompactString;
+use dashmap::{DashMap, DashSet};
 use hashbrown::{HashMap, HashSet};
 use itertools::Itertools;
 use lazy_static::lazy_static;
@@ -102,6 +103,10 @@ impl Default for ConfigReader {
     }
 }
 
+/// Per-computer MITRE ATT&CK tactic accumulator for the HTML report: computer name -> list of
+/// (tactic name, unique alert count, total alert count).
+pub type ComputerMitreAttckMap = DashMap<CompactString, Vec<(CompactString, i64, i64)>>;
+
 /// Application state resolved once at startup from the CLI options and config files, then shared
 /// read-only for the rest of the run. A per-scan snapshot is wrapped in an `Arc` and cloned into
 /// the per-rule parallel tasks in `Detection::execute_rules` (this replaced the former
@@ -144,6 +149,15 @@ pub struct StoredStatic {
     /// tasks too (e.g. a `count(field)` miss). Replaces the former `ERROR_LOG_STACK` process
     /// global.
     pub error_log_stack: Arc<Mutex<Nested<String>>>,
+    /// Per-computer MITRE ATT&CK tactics for the HTML report. `Arc<DashMap<..>>` so the per-scan
+    /// snapshot cloned into the parallel tasks shares the same map — entries are pushed from the
+    /// per-record parallel tasks (`create_log_record` in `execute_rule`) and read back when the
+    /// report is rendered. Replaces the former `COMPUTER_MITRE_ATTCK_MAP` process global.
+    pub computer_mitre_attck_map: Arc<ComputerMitreAttckMap>,
+    /// Set of `"computer|tactic|rule path"` keys already counted, distinguishing a tactic's unique
+    /// alert count from its total. `Arc<DashSet<..>>` for the same reason as `computer_mitre_attck_map`;
+    /// replaces the former `COMPUTER_MITRE_ATTCK_UNIQUE_KEYS` global.
+    pub computer_mitre_attck_unique_keys: Arc<DashSet<CompactString>>,
     pub default_details: HashMap<CompactString, CompactString>,
     pub html_report_flag: bool,
     pub profiles: Option<Vec<(CompactString, Profile)>>,
@@ -833,6 +847,8 @@ impl StoredStatic {
             pivot_keyword_list_flag: action_id == 4,
             pivot_keyword: Arc::new(RwLock::new(PivotKeywordMap::new())),
             error_log_stack: Arc::new(Mutex::new(Nested::<String>::new())),
+            computer_mitre_attck_map: Arc::new(DashMap::new()),
+            computer_mitre_attck_unique_keys: Arc::new(DashSet::new()),
             quiet_errors_flag,
             verbose_flag,
             html_report_flag: htmlreport::check_html_flag(input_config.as_ref().unwrap()),
