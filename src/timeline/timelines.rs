@@ -1014,6 +1014,8 @@ mod tests {
 
     #[test]
     pub fn test_tm_stats_dsp_msg() {
+        let output_tmp_dir = tempfile::tempdir().unwrap();
+        let out_test_tm_stats_csv = output_tmp_dir.path().join("test_tm_stats.csv");
         let dummy_stored_static =
             create_dummy_stored_static(Action::EidMetrics(EidMetricsOption {
                 input_args: InputOption {
@@ -1048,7 +1050,7 @@ mod tests {
                     us_time: false,
                     utc: false,
                 },
-                output: Some(Path::new("./test_tm_stats.csv").to_path_buf()),
+                output: Some(out_test_tm_stats_csv.clone()),
                 clobber_opt: ClobberOption { clobber: false },
                 remove_duplicate_detections: false,
             }));
@@ -1097,18 +1099,25 @@ mod tests {
         let expect = "Total,%,Channel,ID,Event\n".to_owned()
             + &expect_records.join(&"\n").join(",").replace(",\n,", "\n")
             + "\n";
-        match read_to_string("./test_tm_stats.csv") {
+        match read_to_string(&out_test_tm_stats_csv) {
             Err(_) => panic!("Failed to open file."),
             Ok(s) => {
                 assert_eq!(s, expect);
             }
         };
         // Delete the file after the test.
-        assert!(remove_file("./test_tm_stats.csv").is_ok());
+        assert!(remove_file(&out_test_tm_stats_csv).is_ok());
     }
 
     #[test]
     pub fn test_tm_logon_stats_dsp_msg() {
+        let output_tmp_dir = tempfile::tempdir().unwrap();
+        let out_test_tm_logon_stats_successful_csv = output_tmp_dir
+            .path()
+            .join("test_tm_logon_stats-successful.csv");
+        let out_test_tm_logon_stats_failed_csv =
+            output_tmp_dir.path().join("test_tm_logon_stats-failed.csv");
+        let out_test_tm_logon_stats = output_tmp_dir.path().join("test_tm_logon_stats");
         let mut dummy_stored_static =
             create_dummy_stored_static(Action::LogonSummary(LogonSummaryOption {
                 input_args: InputOption {
@@ -1143,7 +1152,7 @@ mod tests {
                     us_time: false,
                     utc: false,
                 },
-                output: Some(Path::new("./test_tm_logon_stats").to_path_buf()),
+                output: Some(out_test_tm_logon_stats.clone()),
                 clobber_opt: ClobberOption { clobber: false },
                 time_range: TimeRangeOption {
                     end_timeline: None,
@@ -1248,7 +1257,7 @@ mod tests {
                 .join(",")
                 .replace(",\n,", "\n")
             + "\n";
-        match read_to_string("./test_tm_logon_stats-successful.csv") {
+        match read_to_string(&out_test_tm_logon_stats_successful_csv) {
             Err(_) => panic!("Failed to open file."),
             Ok(s) => {
                 assert_eq!(s, expect_success);
@@ -1277,21 +1286,21 @@ mod tests {
                 .replace(",\n,", "\n")
             + "\n";
 
-        match read_to_string("./test_tm_logon_stats-successful.csv") {
+        match read_to_string(&out_test_tm_logon_stats_successful_csv) {
             Err(_) => panic!("Failed to open file."),
             Ok(s) => {
                 assert_eq!(s, expect_success);
             }
         };
 
-        match read_to_string("./test_tm_logon_stats-failed.csv") {
+        match read_to_string(&out_test_tm_logon_stats_failed_csv) {
             Err(_) => panic!("Failed to open file."),
             Ok(s) => {
                 assert_eq!(s, expect_failed);
             }
         };
         // Delete the file after the test.
-        assert!(remove_file("./test_tm_logon_stats-successful.csv").is_ok());
-        assert!(remove_file("./test_tm_logon_stats-failed.csv").is_ok());
+        assert!(remove_file(&out_test_tm_logon_stats_successful_csv).is_ok());
+        assert!(remove_file(&out_test_tm_logon_stats_failed_csv).is_ok());
     }
 }

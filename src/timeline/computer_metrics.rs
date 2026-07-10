@@ -251,13 +251,15 @@ mod tests {
 
     #[test]
     pub fn test_computer_metrics_dsp_msg() {
+        let output_tmp_dir = tempfile::tempdir().unwrap();
+        let out_test_computer_metrics_csv = output_tmp_dir.path().join("test_computer_metrics.csv");
         fn create_dummy_stored_static(action: Action) -> StoredStatic {
             StoredStatic::create_static_data(Some(Config {
                 action: Some(action),
                 debug: false,
             }))
         }
-        let output = Some(Path::new("./test_computer_metrics.csv").to_path_buf());
+        let output = Some(out_test_computer_metrics_csv.clone());
         let dummy_stored_static =
             create_dummy_stored_static(Action::ComputerMetrics(ComputerMetricsOption {
                 input_args: InputOption {
@@ -345,7 +347,7 @@ mod tests {
         ];
         let expect_str =
             header.join(",") + "\n" + &expect.join(&"\n").join(",").replace(",\n,", "\n") + "\n";
-        match read_to_string("./test_computer_metrics.csv") {
+        match read_to_string(&out_test_computer_metrics_csv) {
             Err(_) => panic!("Failed to open file."),
             Ok(s) => {
                 assert_eq!(s, expect_str);
@@ -353,6 +355,6 @@ mod tests {
         };
 
         // Delete the file after the test.
-        assert!(remove_file("./test_computer_metrics.csv").is_ok());
+        assert!(remove_file(&out_test_computer_metrics_csv).is_ok());
     }
 }

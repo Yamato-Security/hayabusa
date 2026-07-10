@@ -209,10 +209,7 @@ fn img_to_base64(path: &str) -> String {
 #[cfg(test)]
 mod tests {
 
-    use std::{
-        fs::{read_to_string, remove_dir_all},
-        path::Path,
-    };
+    use std::{fs::read_to_string, path::Path};
 
     use nested::Nested;
 
@@ -362,6 +359,8 @@ mod tests {
 
     #[test]
     fn test_create_html_file() {
+        let output_tmp_dir = tempfile::tempdir().unwrap();
+        let html_path = output_tmp_dir.path().join("test_create_html_file.html");
         let mut html_reporter = HtmlReporter::default();
         let mut general_data = Nested::<String>::new();
         general_data.extend(vec![
@@ -395,7 +394,7 @@ mod tests {
         );
         htmlreport::create_html_file(
             html_reporter.create_html(),
-            "./test-html/test_create_html_file.html",
+            html_path.to_str().unwrap(),
             false,
         );
 
@@ -407,11 +406,7 @@ mod tests {
         );
         let footer = "</section></body></html>\n";
         let expect = format!("{header}{expect_str}{footer}");
-        assert_eq!(
-            read_to_string("./test-html/test_create_html_file.html").unwrap(),
-            expect
-        );
-        assert!(remove_dir_all("./test-html").is_ok());
+        assert_eq!(read_to_string(&html_path).unwrap(), expect);
     }
 
     #[test]
