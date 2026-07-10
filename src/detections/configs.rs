@@ -29,7 +29,6 @@ use terminal_size::{Width, terminal_size};
 use yaml_rust2::{Yaml, YamlLoader};
 
 lazy_static! {
-    pub static ref STORED_STATIC: RwLock<Option<StoredStatic>> = RwLock::new(None);
     pub static ref CURRENT_EXE_PATH: PathBuf =
         current_exe().unwrap().parent().unwrap().to_path_buf();
     // Matches UUID-formatted ids (e.g. the "id" field of Sigma rules).
@@ -104,7 +103,9 @@ impl Default for ConfigReader {
 }
 
 /// Application state resolved once at startup from the CLI options and config files, then shared
-/// read-only for the rest of the run (also published globally via the STORED_STATIC RwLock).
+/// read-only for the rest of the run. A per-scan snapshot is wrapped in an `Arc` and cloned into
+/// the per-rule parallel tasks in `Detection::execute_rules` (this replaced the former
+/// `STORED_STATIC` process global).
 #[derive(Debug, Clone)]
 pub struct StoredStatic {
     pub config: Config,
@@ -134,14 +135,14 @@ pub struct StoredStatic {
     pub pivot_keyword_list_flag: bool,
     /// Pivot keyword accumulator for the `pivot-keywords-list` command: categories/fields are
     /// loaded up front and the keyword values are filled in from the per-record parallel tasks.
-    /// `Arc<RwLock<..>>` so the clone published to the `STORED_STATIC` global shares the same map
-    /// (replaces the former `PIVOT_KEYWORD` process global).
+    /// `Arc<RwLock<..>>` so the per-scan snapshot cloned into the parallel tasks shares the same
+    /// map (replaces the former `PIVOT_KEYWORD` process global).
     pub pivot_keyword: Arc<RwLock<PivotKeywordMap>>,
     /// Errors collected while a run is in progress, flushed to `./logs/errorlog-<timestamp>.log`
-    /// by `AlertMessage::create_error_log()`. `Arc<Mutex<..>>` so the clone published to the
-    /// `STORED_STATIC` global shares the same stack — errors are pushed from the per-record
-    /// parallel tasks too (e.g. a `count(field)` miss). Replaces the former `ERROR_LOG_STACK`
-    /// process global.
+    /// by `AlertMessage::create_error_log()`. `Arc<Mutex<..>>` so the per-scan snapshot cloned into
+    /// the parallel tasks shares the same stack — errors are pushed from the per-record parallel
+    /// tasks too (e.g. a `count(field)` miss). Replaces the former `ERROR_LOG_STACK` process
+    /// global.
     pub error_log_stack: Arc<Mutex<Nested<String>>>,
     pub default_details: HashMap<CompactString, CompactString>,
     pub html_report_flag: bool,

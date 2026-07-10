@@ -38,7 +38,7 @@ use crate::options::profile::Profile::{
 };
 use crate::yaml::ParseYaml;
 
-use super::configs::{EventKeyAliasConfig, STORED_STATIC, StoredStatic};
+use super::configs::{EventKeyAliasConfig, StoredStatic};
 use super::message::{self, COMPUTER_MITRE_ATTCK_MAP, COMPUTER_MITRE_ATTCK_UNIQUE_KEYS};
 
 /// Struct to hold information for one record of an event file.
@@ -68,8 +68,13 @@ impl Detection {
         Detection { rules: rule_nodes }
     }
 
-    pub fn start(self, runtime: &Runtime, records: Vec<EvtxRecordInfo>) -> (Self, Vec<DetectInfo>) {
-        runtime.block_on(self.execute_rules(records))
+    pub fn start(
+        self,
+        runtime: &Runtime,
+        records: Vec<EvtxRecordInfo>,
+        stored_static: Arc<StoredStatic>,
+    ) -> (Self, Vec<DetectInfo>) {
+        runtime.block_on(self.execute_rules(records, stored_static))
     }
 
     /// Parses the rule files under the given path and returns the successfully initialized rules,
@@ -168,17 +173,25 @@ impl Detection {
     }
 
     // Execute all rules against all event records; each rule runs in its own async task.
-    async fn execute_rules(mut self, records: Vec<EvtxRecordInfo>) -> (Self, Vec<DetectInfo>) {
+    async fn execute_rules(
+        mut self,
+        records: Vec<EvtxRecordInfo>,
+        stored_static: Arc<StoredStatic>,
+    ) -> (Self, Vec<DetectInfo>) {
         let records_arc = Arc::new(records);
         // Spawn an async task for each rule and start executing them.
         let rules = self.rules;
-        let handles: Vec<JoinHandle<(RuleNode, Vec<DetectInfo>)>> = rules
-            .into_iter()
-            .map(|rule| {
-                let records_cloned = Arc::clone(&records_arc);
-                spawn(async move { Detection::execute_rule(rule, records_cloned) })
-            })
-            .collect();
+        let handles: Vec<JoinHandle<(RuleNode, Vec<DetectInfo>)>> =
+            rules
+                .into_iter()
+                .map(|rule| {
+                    let records_cloned = Arc::clone(&records_arc);
+                    let stored_static_cloned = Arc::clone(&stored_static);
+                    spawn(async move {
+                        Detection::execute_rule(rule, records_cloned, stored_static_cloned)
+                    })
+                })
+                .collect();
 
         // Wait for all tasks to complete execution.
         let mut rules = vec![];
@@ -339,10 +352,10 @@ impl Detection {
     fn execute_rule(
         mut rule: RuleNode,
         records: Arc<Vec<EvtxRecordInfo>>,
+        stored_static: Arc<StoredStatic>,
     ) -> (RuleNode, Vec<DetectInfo>) {
         let agg_condition = rule.has_agg_condition();
-        let binding = STORED_STATIC.read().unwrap();
-        let stored_static = binding.as_ref().unwrap();
+        let stored_static = stored_static.as_ref();
         let mut ret = vec![];
         for record_info in records.as_ref() {
             let result = rule.select(

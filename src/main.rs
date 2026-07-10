@@ -16,8 +16,8 @@ use evtx::{EvtxParser, ParserSettings, RecordAllocation};
 use hashbrown::{HashMap, HashSet};
 use hayabusa::debug::checkpoint_process_timer::CheckPointProcessTimer;
 use hayabusa::detections::configs::{
-    Action, CURRENT_EXE_PATH, ConfigReader, EventKeyAliasConfig, ONE_CONFIG_MAP, STORED_STATIC,
-    StoredStatic, TargetEventTime, TargetIds, load_pivot_keywords,
+    Action, CURRENT_EXE_PATH, ConfigReader, EventKeyAliasConfig, ONE_CONFIG_MAP, StoredStatic,
+    TargetEventTime, TargetIds, load_pivot_keywords,
 };
 use hayabusa::detections::detection::{self, EvtxRecordInfo};
 use hayabusa::detections::message::{AlertMessage, DetectInfo, get_event_time};
@@ -2180,7 +2180,12 @@ Any hostnames added to the critical_systems.txt file will have all alerts above 
         self.rule_keys = self.get_all_keys(&rule_files);
         let mut detection = detection::Detection::new(rule_files);
         let mut timeline = Timeline::new();
-        *STORED_STATIC.write().unwrap() = Some(stored_static.clone());
+        // Snapshot `stored_static` once and share it with the per-rule parallel tasks in
+        // `Detection::execute_rules` via cheap `Arc::clone`s. The Arc-wrapped inner fields
+        // (e.g. error_log_stack, pivot_keyword) stay shared with the live `stored_static`,
+        // so accumulation from the parallel path is still visible; the plain config/flag
+        // fields are read-only during the scan.
+        let stored_static_arc = Arc::new(stored_static.clone());
         let mut result_state = ResultOutputState::default();
         let mut all_detect_infos = vec![];
         let mut output_writer = results::init_writer(stored_static);
@@ -2223,6 +2228,7 @@ Any hostnames added to the critical_systems.txt file will have all alerts above 
                 {
                     self.analysis_json_file(
                         (evtx_file, time_filter, target_event_ids, stored_static),
+                        &stored_static_arc,
                         detection,
                         timeline.to_owned(),
                         &mut output_writer,
@@ -2231,6 +2237,7 @@ Any hostnames added to the critical_systems.txt file will have all alerts above 
                 } else {
                     self.analysis_file(
                         (evtx_file, time_filter, target_event_ids, stored_static),
+                        &stored_static_arc,
                         detection,
                         timeline.to_owned(),
                         &mut output_writer,
@@ -2363,6 +2370,7 @@ Any hostnames added to the critical_systems.txt file will have all alerts above 
             &TargetIds,
             &StoredStatic,
         ),
+        stored_static_arc: &Arc<StoredStatic>,
         mut detection: detection::Detection,
         mut timeline: Timeline,
         output_writer: &mut OutputWriter,
@@ -2494,6 +2502,7 @@ Any hostnames added to the critical_systems.txt file will have all alerts above 
                 detection,
                 &mut timeline,
                 stored_static,
+                stored_static_arc,
                 (&mut detect_infos, output_writer, result_state),
                 BatchPolicy {
                     run_rules: need_rule,
@@ -2516,6 +2525,7 @@ Any hostnames added to the critical_systems.txt file will have all alerts above 
     /// stream or buffer the results. `update_time_range` widens the results-summary detection time
     /// span (the evtx path does this; the JSON path does not). This is the tail that was
     /// copy-pasted at the end of both the evtx and JSON batch loops.
+    #[allow(clippy::too_many_arguments)]
     fn process_detection_batch(
         &self,
         (records_per_detect, path, rec_ctx): (
@@ -2526,6 +2536,9 @@ Any hostnames added to the critical_systems.txt file will have all alerts above 
         mut detection: detection::Detection,
         timeline: &mut Timeline,
         stored_static: &StoredStatic,
+        // A snapshot of `stored_static` shared with the per-rule parallel tasks in
+        // `Detection::execute_rules`; see the Arc created in `analysis_files`.
+        stored_static_arc: &Arc<StoredStatic>,
         (detect_infos, output_writer, result_state): (
             &mut Vec<DetectInfo>,
             &mut OutputWriter,
@@ -2547,8 +2560,11 @@ Any hostnames added to the critical_systems.txt file will have all alerts above 
         timeline.start(&records_per_detect, stored_static);
         if run_rules {
             // Run the loaded detection rules against this batch of records.
-            let (detection_tmp, mut log_records) =
-                detection.start(&self.runtime, records_per_detect);
+            let (detection_tmp, mut log_records) = detection.start(
+                &self.runtime,
+                records_per_detect,
+                Arc::clone(stored_static_arc),
+            );
 
             if update_time_range
                 && let MinMaxResult::MinMax(min_time, max_time) =
@@ -2692,6 +2708,7 @@ Any hostnames added to the critical_systems.txt file will have all alerts above 
             &TargetIds,
             &StoredStatic,
         ),
+        stored_static_arc: &Arc<StoredStatic>,
         mut detection: detection::Detection,
         mut timeline: Timeline,
         output_writer: &mut OutputWriter,
@@ -2955,6 +2972,7 @@ Any hostnames added to the critical_systems.txt file will have all alerts above 
                 detection,
                 &mut timeline,
                 stored_static,
+                stored_static_arc,
                 (&mut detect_infos, output_writer, result_state),
                 BatchPolicy {
                     run_rules: !(stored_static.metrics_flag
@@ -3282,6 +3300,7 @@ mod tests {
     use std::{
         fs::{self, File, remove_file},
         path::Path,
+        sync::Arc,
     };
 
     use chrono::{DateTime, Local};
@@ -3294,8 +3313,8 @@ mod tests {
             configs::{
                 Action, ClobberOption, ComputerMetricsOption, Config, ConfigReader,
                 CsvOutputOption, DetectCommonOption, EidMetricsOption, InputOption,
-                JSONOutputOption, LogonSummaryOption, OutputOption, STORED_STATIC, StoredStatic,
-                TargetEventTime, TargetIds,
+                JSONOutputOption, LogonSummaryOption, OutputOption, StoredStatic, TargetEventTime,
+                TargetIds,
             },
             detection,
             rule::create_rule,
@@ -3404,7 +3423,6 @@ mod tests {
             debug: false,
         });
         let mut stored_static = StoredStatic::create_static_data(config);
-        *STORED_STATIC.write().unwrap() = Some(stored_static.clone());
         let mut config_reader = ConfigReader::new();
         app.exec(&mut config_reader.app, &mut stored_static);
 
@@ -3433,7 +3451,7 @@ mod tests {
     fn test_analysis_json_file() {
         let mut app = App::new(None);
         let stored_static = create_dummy_stored_static();
-        *STORED_STATIC.write().unwrap() = Some(stored_static.clone());
+        let stored_static_arc = Arc::new(stored_static.clone());
 
         let rule_str = r#"
         enabled: true
@@ -3464,6 +3482,7 @@ mod tests {
                 &target_event_ids,
                 &stored_static,
             ),
+            &stored_static_arc,
             detection,
             timeline,
             &mut output_writer,
@@ -3504,7 +3523,6 @@ mod tests {
             debug: false,
         });
         let mut stored_static = StoredStatic::create_static_data(config);
-        *STORED_STATIC.write().unwrap() = Some(stored_static.clone());
         let mut config_reader = ConfigReader::new();
         app.exec(&mut config_reader.app, &mut stored_static);
         // TODO add check
@@ -3544,7 +3562,6 @@ mod tests {
             debug: false,
         });
         let mut stored_static = StoredStatic::create_static_data(config);
-        *STORED_STATIC.write().unwrap() = Some(stored_static.clone());
         let mut config_reader = ConfigReader::new();
         app.exec(&mut config_reader.app, &mut stored_static);
         // TODO add check
@@ -3583,7 +3600,6 @@ mod tests {
             debug: false,
         });
         let mut stored_static = StoredStatic::create_static_data(config);
-        *STORED_STATIC.write().unwrap() = Some(stored_static.clone());
         let mut config_reader = ConfigReader::new();
         app.exec(&mut config_reader.app, &mut stored_static);
         // TODO add check
@@ -3623,7 +3639,6 @@ mod tests {
             debug: false,
         });
         let mut stored_static = StoredStatic::create_static_data(config);
-        *STORED_STATIC.write().unwrap() = Some(stored_static.clone());
         let mut config_reader = ConfigReader::new();
         app.exec(&mut config_reader.app, &mut stored_static);
         // TODO add check
@@ -3654,7 +3669,6 @@ mod tests {
             debug: false,
         });
         let mut stored_static = StoredStatic::create_static_data(config);
-        *STORED_STATIC.write().unwrap() = Some(stored_static.clone());
         let mut config_reader = ConfigReader::new();
         app.exec(&mut config_reader.app, &mut stored_static);
         let meta = fs::metadata("overwrite_metric_exit.csv").unwrap();
@@ -3688,7 +3702,6 @@ mod tests {
             debug: false,
         });
         let mut stored_static = StoredStatic::create_static_data(config);
-        *STORED_STATIC.write().unwrap() = Some(stored_static.clone());
         let mut config_reader = ConfigReader::new();
         app.exec(&mut config_reader.app, &mut stored_static);
         let meta = fs::metadata("overwrite_metric_clobber.csv").unwrap();
@@ -3719,7 +3732,6 @@ mod tests {
             debug: false,
         });
         let mut stored_static = StoredStatic::create_static_data(config);
-        *STORED_STATIC.write().unwrap() = Some(stored_static.clone());
         let mut config_reader = ConfigReader::new();
         app.exec(&mut config_reader.app, &mut stored_static);
         let meta = fs::metadata("overwrite_logon_exit-successful.csv").unwrap();
@@ -3752,7 +3764,6 @@ mod tests {
             debug: false,
         });
         let mut stored_static = StoredStatic::create_static_data(config);
-        *STORED_STATIC.write().unwrap() = Some(stored_static.clone());
         let mut config_reader = ConfigReader::new();
         app.exec(&mut config_reader.app, &mut stored_static);
         let meta = fs::metadata("overwrite_logon_clobber-successful.csv").unwrap();
@@ -3782,7 +3793,6 @@ mod tests {
             debug: false,
         });
         let mut stored_static = StoredStatic::create_static_data(config);
-        *STORED_STATIC.write().unwrap() = Some(stored_static.clone());
         let mut config_reader = ConfigReader::new();
         app.exec(&mut config_reader.app, &mut stored_static);
         let meta = fs::metadata("overwrite_computer_exit.csv").unwrap();
@@ -3812,7 +3822,6 @@ mod tests {
             debug: false,
         });
         let mut stored_static = StoredStatic::create_static_data(config);
-        *STORED_STATIC.write().unwrap() = Some(stored_static.clone());
         let mut config_reader = ConfigReader::new();
         app.exec(&mut config_reader.app, &mut stored_static);
         let meta = fs::metadata("overwrite_computer_clobber.csv").unwrap();
@@ -3826,7 +3835,7 @@ mod tests {
         let mut app = App::new(None);
         let mut stored_static = create_dummy_stored_static();
         stored_static.include_eid = HashSet::from_iter(vec!["10".into()]);
-        *STORED_STATIC.write().unwrap() = Some(stored_static.clone());
+        let stored_static_arc = Arc::new(stored_static.clone());
 
         let rule_str = r#"
         enabled: true
@@ -3857,6 +3866,7 @@ mod tests {
                 &target_event_ids,
                 &stored_static,
             ),
+            &stored_static_arc,
             detection,
             timeline,
             &mut output_writer,
@@ -3871,7 +3881,7 @@ mod tests {
         let mut app = App::new(None);
         let mut stored_static = create_dummy_stored_static();
         stored_static.exclude_eid = HashSet::from_iter(vec!["10".into(), "11".into()]);
-        *STORED_STATIC.write().unwrap() = Some(stored_static.clone());
+        let stored_static_arc = Arc::new(stored_static.clone());
 
         let rule_str = r#"
         enabled: true
@@ -3902,6 +3912,7 @@ mod tests {
                 &target_event_ids,
                 &stored_static,
             ),
+            &stored_static_arc,
             detection,
             timeline,
             &mut output_writer,
@@ -3917,7 +3928,7 @@ mod tests {
         let mut stored_static = create_dummy_stored_static();
         stored_static.include_eid = HashSet::from_iter(vec!["10".into()]);
         stored_static.is_low_memory = true;
-        *STORED_STATIC.write().unwrap() = Some(stored_static.clone());
+        let stored_static_arc = Arc::new(stored_static.clone());
 
         let rule_str = r#"
         enabled: true
@@ -3948,6 +3959,7 @@ mod tests {
                 &target_event_ids,
                 &stored_static,
             ),
+            &stored_static_arc,
             detection,
             timeline,
             &mut output_writer,
@@ -3964,7 +3976,6 @@ mod tests {
     #[test]
     fn test_emit_or_buffer_policy() {
         let stored_static = create_dummy_stored_static();
-        *STORED_STATIC.write().unwrap() = Some(stored_static.clone());
         let mut output_writer = results::init_writer(&stored_static);
         let mut result_state = ResultOutputState::default();
 

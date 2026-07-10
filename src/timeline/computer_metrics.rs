@@ -241,7 +241,7 @@ mod tests {
     use crate::{
         detections::configs::{
             Action, ClobberOption, CommonOptions, ComputerMetricsOption, Config, InputOption,
-            STORED_STATIC, StoredStatic,
+            StoredStatic,
         },
         timeline::{
             computer_metrics::{computer_metrics_dsp_msg, countup_event_by_computer},
@@ -307,8 +307,6 @@ mod tests {
             &dummy_stored_static.eventkey_alias,
             &mut timeline,
         );
-
-        *STORED_STATIC.write().unwrap() = Some(dummy_stored_static.clone());
 
         let second_test_record_str = r#"{
             "Event": {
