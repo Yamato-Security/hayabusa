@@ -67,9 +67,6 @@ lazy_static! {
     pub static ref ALIASREGEX: Regex = Regex::new(r"%[a-zA-Z0-9-_\[\]]+%").unwrap();
     // Matches the 1-based array index suffix in aliases such as %Data[1]%.
     pub static ref SUFFIXREGEX: Regex = Regex::new(r"\[([0-9]+)\]").unwrap();
-    // Errors collected while a run is in progress; flushed to ./logs/errorlog-<timestamp>.log by
-    // AlertMessage::create_error_log().
-    pub static ref ERROR_LOG_STACK: Mutex<Nested<String>> = Mutex::new(Nested::<String>::new());
     // Maps a MITRE tag (e.g. "attack.impact") to its display name (e.g. "Impact"), loaded from
     // config/mitre_tactics.txt.
     pub static ref TAGS_CONFIG: HashMap<CompactString, CompactString> = create_output_filter_config(
@@ -447,10 +444,14 @@ pub fn get_event_time(event_record: &Value, json_input_flag: bool) -> Option<Dat
 }
 
 impl AlertMessage {
-    /// Writes all errors accumulated in ERROR_LOG_STACK to ./logs/errorlog-<timestamp>.log
+    /// Writes all errors accumulated in the error log stack to ./logs/errorlog-<timestamp>.log
     /// (creating the logs directory if needed and recording the command line that was run first),
     /// then prints a red notice pointing to that file. Does nothing when --quiet-errors is set.
-    pub fn create_error_log(quiet_errors_flag: bool, no_color: bool) {
+    pub fn create_error_log(
+        quiet_errors_flag: bool,
+        no_color: bool,
+        error_log_stack: &Mutex<Nested<String>>,
+    ) {
         if quiet_errors_flag {
             return;
         }
@@ -475,7 +476,7 @@ impl AlertMessage {
                 .as_bytes(),
             )
             .ok();
-        let error_logs = ERROR_LOG_STACK.lock().unwrap();
+        let error_logs = error_log_stack.lock().unwrap();
         error_logs.iter().for_each(|error_log| {
             writeln!(error_log_writer, "{error_log}").ok();
         });

@@ -41,6 +41,7 @@ fn check_select(rule_str: &str, record_str: &str, expect_select: bool) {
                     dummy_stored_static.quiet_errors_flag,
                     dummy_stored_static.json_input_flag,
                     &dummy_stored_static.eventkey_alias,
+                    &dummy_stored_static.error_log_stack,
                 ),
                 expect_select
             );

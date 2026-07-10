@@ -3,15 +3,16 @@ use crate::detections::configs::StoredStatic;
 use crate::detections::detection::EvtxRecordInfo;
 use crate::detections::message;
 use crate::detections::message::AlertMessage;
-use crate::detections::message::ERROR_LOG_STACK;
 use crate::detections::rule::AggResult;
 use crate::detections::rule::RuleNode;
 use crate::detections::rule::aggregation_parser::AggregationConditionToken;
 use chrono::{DateTime, TimeZone, Utc};
 use hashbrown::HashMap;
+use nested::Nested;
 use serde_json::Value;
 use std::num::ParseIntError;
 use std::path::Path;
+use std::sync::Mutex;
 
 use crate::detections::utils;
 
@@ -25,6 +26,7 @@ pub fn count(
     quiet_errors_flag: bool,
     json_input_flag: bool,
     eventkey_alias: &EventKeyAliasConfig,
+    error_log_stack: &Mutex<Nested<String>>,
 ) {
     let key: String = create_count_key(
         rule,
@@ -32,6 +34,7 @@ pub fn count(
         verbose_flag,
         quiet_errors_flag,
         eventkey_alias,
+        error_log_stack,
     );
     let binding = String::default();
     let field_name = match rule.get_agg_condition() {
@@ -50,6 +53,7 @@ pub fn count(
         verbose_flag,
         quiet_errors_flag,
         eventkey_alias,
+        error_log_stack,
     )
     .unwrap_or_default();
     countup(
@@ -104,6 +108,7 @@ pub fn countup(
 /// removed. The double quotes are removed to prevent extra quotes from appearing in the result
 /// display. `is_by_alias` indicates whether the alias came from the `count() by` clause (true) or
 /// from the field inside the count() parentheses (false); it only affects the error message text.
+#[allow(clippy::too_many_arguments)]
 fn get_alias_value_in_record(
     rule: &RuleNode,
     alias: &str,
@@ -112,6 +117,7 @@ fn get_alias_value_in_record(
     verbose_flag: bool,
     quiet_errors_flag: bool,
     eventkey_alias: &EventKeyAliasConfig,
+    error_log_stack: &Mutex<Nested<String>>,
 ) -> Option<String> {
     if alias.is_empty() {
         return None;
@@ -141,7 +147,7 @@ fn get_alias_value_in_record(
                 AlertMessage::alert(&errmsg).ok();
             }
             if !quiet_errors_flag {
-                ERROR_LOG_STACK
+                error_log_stack
                     .lock()
                     .unwrap()
                     .push(format!("[ERROR] {errmsg}"));
@@ -161,6 +167,7 @@ pub fn create_count_key(
     verbose_flag: bool,
     quiet_errors_flag: bool,
     eventkey_alias: &EventKeyAliasConfig,
+    error_log_stack: &Mutex<Nested<String>>,
 ) -> String {
     let agg_condition = rule.get_agg_condition().unwrap();
     if let Some(_by_field_name) = agg_condition._by_field_name.as_ref() {
@@ -177,6 +184,7 @@ pub fn create_count_key(
                         verbose_flag,
                         quiet_errors_flag,
                         eventkey_alias,
+                        error_log_stack,
                     )
                     .unwrap_or_else(|| "_".to_string()),
                 );
@@ -193,6 +201,7 @@ pub fn create_count_key(
                 verbose_flag,
                 quiet_errors_flag,
                 eventkey_alias,
+                error_log_stack,
             )
             .unwrap_or_else(|| "_".to_string())
         }
@@ -258,7 +267,8 @@ impl TimeFrameInfo {
                 AlertMessage::alert(&errmsg).ok();
             }
             if !stored_static.quiet_errors_flag {
-                ERROR_LOG_STACK
+                stored_static
+                    .error_log_stack
                     .lock()
                     .unwrap()
                     .push(format!("[ERROR] {errmsg}"));
@@ -296,7 +306,8 @@ pub fn get_sec_timeframe(rule: &RuleNode, stored_static: &StoredStatic) -> Optio
                 AlertMessage::alert(&errmsg).ok();
             }
             if !stored_static.quiet_errors_flag {
-                ERROR_LOG_STACK
+                stored_static
+                    .error_log_stack
                     .lock()
                     .unwrap()
                     .push(format!("[ERROR] {errmsg}"));
@@ -790,6 +801,7 @@ mod tests {
             dummy_stored_static.quiet_errors_flag,
             dummy_stored_static.json_input_flag,
             &dummy_stored_static.eventkey_alias,
+            &dummy_stored_static.error_log_stack,
         );
         assert!(matched, "record should match selection1");
         rule_node.judge_satisfy_aggcondition(&dummy_stored_static)
@@ -1006,6 +1018,7 @@ mod tests {
                         dummy_stored_static.quiet_errors_flag,
                         dummy_stored_static.json_input_flag,
                         &dummy_stored_static.eventkey_alias,
+                        &dummy_stored_static.error_log_stack,
                     );
                 }
                 Err(_) => {
@@ -1790,6 +1803,7 @@ mod tests {
                         dummy_stored_static.quiet_errors_flag,
                         dummy_stored_static.json_input_flag,
                         &dummy_stored_static.eventkey_alias,
+                        &dummy_stored_static.error_log_stack,
                     );
                     assert_eq!(result, &true);
                 }

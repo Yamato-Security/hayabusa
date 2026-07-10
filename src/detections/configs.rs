@@ -15,13 +15,14 @@ use compact_str::CompactString;
 use hashbrown::{HashMap, HashSet};
 use itertools::Itertools;
 use lazy_static::lazy_static;
+use nested::Nested;
 use regex::Regex;
 use std::cmp::PartialEq;
 use std::env::current_exe;
 use std::fs::File;
 use std::io::BufRead;
 use std::path::{Path, PathBuf};
-use std::sync::{Arc, RwLock};
+use std::sync::{Arc, Mutex, RwLock};
 use std::{fs, io, process};
 use strum::IntoEnumIterator;
 use terminal_size::{Width, terminal_size};
@@ -136,6 +137,12 @@ pub struct StoredStatic {
     /// `Arc<RwLock<..>>` so the clone published to the `STORED_STATIC` global shares the same map
     /// (replaces the former `PIVOT_KEYWORD` process global).
     pub pivot_keyword: Arc<RwLock<PivotKeywordMap>>,
+    /// Errors collected while a run is in progress, flushed to `./logs/errorlog-<timestamp>.log`
+    /// by `AlertMessage::create_error_log()`. `Arc<Mutex<..>>` so the clone published to the
+    /// `STORED_STATIC` global shares the same stack — errors are pushed from the per-record
+    /// parallel tasks too (e.g. a `count(field)` miss). Replaces the former `ERROR_LOG_STACK`
+    /// process global.
+    pub error_log_stack: Arc<Mutex<Nested<String>>>,
     pub default_details: HashMap<CompactString, CompactString>,
     pub html_report_flag: bool,
     pub profiles: Option<Vec<(CompactString, Profile)>>,
@@ -824,6 +831,7 @@ impl StoredStatic {
             output_option: extract_output_options(input_config.as_ref().unwrap()),
             pivot_keyword_list_flag: action_id == 4,
             pivot_keyword: Arc::new(RwLock::new(PivotKeywordMap::new())),
+            error_log_stack: Arc::new(Mutex::new(Nested::<String>::new())),
             quiet_errors_flag,
             verbose_flag,
             html_report_flag: htmlreport::check_html_flag(input_config.as_ref().unwrap()),

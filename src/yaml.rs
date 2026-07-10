@@ -3,7 +3,6 @@ extern crate yaml_rust2;
 
 use crate::detections::configs::{self, Action, CURRENT_EXE_PATH, StoredStatic};
 use crate::detections::message::AlertMessage;
-use crate::detections::message::ERROR_LOG_STACK;
 use crate::detections::utils;
 use crate::filter::RuleExclude;
 use crate::level::LEVEL;
@@ -177,7 +176,8 @@ impl ParseYaml {
                 AlertMessage::alert(&errmsg)?;
             }
             if !stored_static.quiet_errors_flag {
-                ERROR_LOG_STACK
+                stored_static
+                    .error_log_stack
                     .lock()
                     .unwrap()
                     .push(format!("[ERROR] {errmsg}"));
@@ -224,7 +224,8 @@ impl ParseYaml {
                         AlertMessage::warn(&errmsg)?;
                     }
                     if !stored_static.quiet_errors_flag {
-                        ERROR_LOG_STACK
+                        stored_static
+                            .error_log_stack
                             .lock()
                             .unwrap()
                             .push(format!("[WARN] {errmsg}"));
@@ -262,7 +263,8 @@ impl ParseYaml {
                         AlertMessage::warn(&errmsg)?;
                     }
                     if !stored_static.quiet_errors_flag {
-                        ERROR_LOG_STACK
+                        stored_static
+                            .error_log_stack
                             .lock()
                             .unwrap()
                             .push(format!("[WARN] {errmsg}"));
@@ -322,7 +324,8 @@ impl ParseYaml {
                             AlertMessage::warn(&errmsg)?;
                         }
                         if !stored_static.quiet_errors_flag {
-                            ERROR_LOG_STACK
+                            stored_static
+                                .error_log_stack
                                 .lock()
                                 .unwrap()
                                 .push(format!("[WARN] {errmsg}"));
@@ -353,7 +356,8 @@ impl ParseYaml {
                             AlertMessage::warn(&errmsg)?;
                         }
                         if !stored_static.quiet_errors_flag {
-                            ERROR_LOG_STACK
+                            stored_static
+                                .error_log_stack
                                 .lock()
                                 .unwrap()
                                 .push(format!("[WARN] {errmsg}"));
@@ -443,7 +447,8 @@ impl ParseYaml {
                         AlertMessage::warn(&errmsg).ok();
                     }
                     if !stored_static.quiet_errors_flag {
-                        ERROR_LOG_STACK
+                        stored_static
+                            .error_log_stack
                             .lock()
                             .unwrap()
                             .push(format!("[WARN] Invalid rule. {errmsg} ({filepath})"));
@@ -748,7 +753,8 @@ pub fn count_rules<P: AsRef<Path>>(
                             AlertMessage::warn(&errmsg)?;
                         }
                         if !stored_static.quiet_errors_flag {
-                            ERROR_LOG_STACK
+                            stored_static
+                                .error_log_stack
                                 .lock()
                                 .unwrap()
                                 .push(format!("[WARN] {errmsg}"));

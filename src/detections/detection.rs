@@ -18,7 +18,7 @@ use yaml_rust2::Yaml;
 
 use crate::detections::configs::Action;
 use crate::detections::field_data_map::FieldDataMapKey;
-use crate::detections::message::{AlertMessage, DetectInfo, ERROR_LOG_STACK, TAGS_CONFIG};
+use crate::detections::message::{AlertMessage, DetectInfo, TAGS_CONFIG};
 use crate::detections::rule::correlation_parser::parse_correlation_rules;
 use crate::detections::rule::count::{AggRecordTimeInfo, get_sec_timeframe};
 use crate::detections::rule::{self, AggResult, CorrelationType, RuleNode};
@@ -97,7 +97,8 @@ impl Detection {
                 AlertMessage::alert(&errmsg).ok();
             }
             if !stored_static.quiet_errors_flag {
-                ERROR_LOG_STACK
+                stored_static
+                    .error_log_stack
                     .lock()
                     .unwrap()
                     .push(format!("[ERROR] {errmsg}"));
@@ -123,12 +124,14 @@ impl Detection {
                     println!();
                 }
                 if !stored_static.quiet_errors_flag {
-                    ERROR_LOG_STACK
+                    stored_static
+                        .error_log_stack
                         .lock()
                         .unwrap()
                         .push(format!("[WARN] {errmsg_body}"));
                     err_msgs.iter().for_each(|err_msg| {
-                        ERROR_LOG_STACK
+                        stored_static
+                            .error_log_stack
                             .lock()
                             .unwrap()
                             .push(format!("[WARN] {err_msg}"));
@@ -348,6 +351,7 @@ impl Detection {
                 stored_static.quiet_errors_flag,
                 stored_static.json_input_flag,
                 &stored_static.eventkey_alias,
+                &stored_static.error_log_stack,
             );
             if !result {
                 continue;

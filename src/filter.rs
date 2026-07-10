@@ -1,14 +1,16 @@
 use crate::detections::configs::{self, ONE_CONFIG_MAP, StoredStatic};
-use crate::detections::message::{AlertMessage, ERROR_LOG_STACK};
+use crate::detections::message::AlertMessage;
 use crate::detections::rule::RuleNode;
 use evtx::EvtxParser;
 use hashbrown::HashMap;
 use itertools::Itertools;
+use nested::Nested;
 use regex::Regex;
 use std::collections::HashSet;
 use std::fs::File;
 use std::io::{BufRead, BufReader};
 use std::path::PathBuf;
+use std::sync::Mutex;
 use yaml_rust2::{Yaml, YamlLoader};
 
 #[derive(Debug)]
@@ -83,7 +85,8 @@ impl RuleExclude {
                     AlertMessage::warn(&format!("{filename} does not exist")).ok();
                 }
                 if !stored_static.quiet_errors_flag {
-                    ERROR_LOG_STACK
+                    stored_static
+                        .error_log_stack
                         .lock()
                         .unwrap()
                         .push(format!("{filename} does not exist"));
@@ -112,6 +115,7 @@ impl RuleExclude {
 fn peek_channel_from_evtx_first_record(
     evtx_files: &Vec<PathBuf>,
     quiet_errors_flag: bool,
+    error_log_stack: &Mutex<Nested<String>>,
 ) -> HashMap<String, Vec<PathBuf>> {
     let mut channels = HashMap::new();
     for path in evtx_files {
@@ -135,7 +139,7 @@ fn peek_channel_from_evtx_first_record(
             }
             Err(_) => {
                 if !quiet_errors_flag {
-                    ERROR_LOG_STACK
+                    error_log_stack
                         .lock()
                         .unwrap()
                         .push(format!("Failed to open evtx file: {}", path.display()));
@@ -245,8 +249,10 @@ pub fn create_channel_filter(
     evtx_files: &Vec<PathBuf>,
     rule_nodes: &Vec<RuleNode>,
     quiet_errors_flag: bool,
+    error_log_stack: &Mutex<Nested<String>>,
 ) -> ChannelFilter {
-    let channels = peek_channel_from_evtx_first_record(evtx_files, quiet_errors_flag);
+    let channels =
+        peek_channel_from_evtx_first_record(evtx_files, quiet_errors_flag, error_log_stack);
     if !channels.is_empty() {
         let (x, y) = extract_channel_from_rules(rule_nodes, &channels.keys().cloned().collect());
         ChannelFilter {
@@ -267,9 +273,10 @@ pub fn filter_evtx_files(
     include_filename: &Option<Vec<String>>,
     exclude_channel: &Option<Vec<String>>,
     exclude_filename: &Option<Vec<String>>,
+    error_log_stack: &Mutex<Nested<String>>,
 ) -> Vec<PathBuf> {
-    evtx_files = apply_channel_filter(evtx_files, include_channel, false);
-    evtx_files = apply_channel_filter(evtx_files, exclude_channel, true);
+    evtx_files = apply_channel_filter(evtx_files, include_channel, false, error_log_stack);
+    evtx_files = apply_channel_filter(evtx_files, exclude_channel, true, error_log_stack);
     evtx_files = apply_filename_filter(evtx_files, include_filename, false);
     apply_filename_filter(evtx_files, exclude_filename, true)
 }
@@ -281,6 +288,7 @@ fn apply_channel_filter(
     mut evtx_files: Vec<PathBuf>,
     channels: &Option<Vec<String>>,
     is_exclude: bool,
+    error_log_stack: &Mutex<Nested<String>>,
 ) -> Vec<PathBuf> {
     if let Some(channels) = channels {
         let channels_yaml = channels
@@ -302,7 +310,8 @@ detection:
             // here, so the synthetic rule never surfaces to the user.
             let node = RuleNode::new("log-metrics".to_string(), doc);
             let node = vec![node];
-            let mut channel_filter = create_channel_filter(&evtx_files, &node, false);
+            let mut channel_filter =
+                create_channel_filter(&evtx_files, &node, false, error_log_stack);
             // Keep the files whose match result differs from is_exclude: matching files for an
             // include filter, non-matching files for an exclude filter.
             evtx_files.retain(|e| channel_filter.scannable_rule_exists(e) != is_exclude);
@@ -356,7 +365,8 @@ mod tests {
     #[test]
     fn test_peek_channel_from_evtx_first_record_invalid_evtx() {
         let evtx_files = vec![PathBuf::from("test_files/evtx/test1.evtx")];
-        let result = peek_channel_from_evtx_first_record(&evtx_files, false);
+        let result =
+            peek_channel_from_evtx_first_record(&evtx_files, false, &Mutex::new(Nested::new()));
         assert!(result.is_empty());
     }
 
@@ -459,7 +469,8 @@ mod tests {
         let test_yaml_data = rule_yaml.next().unwrap();
         let rule = RuleNode::new("test_files/evtx/test1.evtx".to_string(), test_yaml_data);
         let rule_nodes = vec![rule];
-        let result = create_channel_filter(&evtx_files, &rule_nodes, false);
+        let result =
+            create_channel_filter(&evtx_files, &rule_nodes, false, &Mutex::new(Nested::new()));
         assert_eq!(result.rule_paths.len(), 0);
     }
 }

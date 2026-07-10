@@ -20,7 +20,7 @@ use hayabusa::detections::configs::{
     StoredStatic, TargetEventTime, TargetIds, load_pivot_keywords,
 };
 use hayabusa::detections::detection::{self, EvtxRecordInfo};
-use hayabusa::detections::message::{AlertMessage, DetectInfo, ERROR_LOG_STACK, get_event_time};
+use hayabusa::detections::message::{AlertMessage, DetectInfo, get_event_time};
 use hayabusa::detections::rule::{RuleNode, get_detection_keys};
 use hayabusa::detections::utils;
 use hayabusa::detections::utils::{
@@ -1237,10 +1237,11 @@ Any hostnames added to the critical_systems.txt file will have all alerts above 
         }
 
         // If the -Q option is specified or there are no parse errors, the error stack is 0 and no error log file is generated.
-        if !ERROR_LOG_STACK.lock().unwrap().is_empty() {
+        if !stored_static.error_log_stack.lock().unwrap().is_empty() {
             AlertMessage::create_error_log(
                 stored_static.quiet_errors_flag,
                 stored_static.common_options.no_color,
+                &stored_static.error_log_stack,
             );
         }
         println!();
@@ -1417,7 +1418,8 @@ Any hostnames added to the critical_systems.txt file will have all alerts above 
                 AlertMessage::alert(&errmsg).ok();
             }
             if !stored_static.quiet_errors_flag {
-                ERROR_LOG_STACK
+                stored_static
+                    .error_log_stack
                     .lock()
                     .unwrap()
                     .push(format!("[ERROR] {errmsg}"));
@@ -1515,6 +1517,7 @@ Any hostnames added to the critical_systems.txt file will have all alerts above 
                 file_path,
                 stored_static.verbose_flag,
                 stored_static.quiet_errors_flag,
+                &stored_static.error_log_stack,
             );
             total_file_size += ByteSize::b(file_size);
         }
@@ -2019,6 +2022,7 @@ Any hostnames added to the critical_systems.txt file will have all alerts above 
                     &evtx_files,
                     &rule_files,
                     stored_static.quiet_errors_flag,
+                    &stored_static.error_log_stack,
                 );
                 if !stored_static.scan_all_evtx_files {
                     evtx_files.retain(|e| channel_filter.scannable_rule_exists(e));
@@ -2103,8 +2107,12 @@ Any hostnames added to the critical_systems.txt file will have all alerts above 
                 yaml_data.ok().unwrap_or_default().first().unwrap().clone(),
             );
             let rule_files = vec![node];
-            let mut channel_filter =
-                create_channel_filter(&evtx_files, &rule_files, stored_static.quiet_errors_flag);
+            let mut channel_filter = create_channel_filter(
+                &evtx_files,
+                &rule_files,
+                stored_static.quiet_errors_flag,
+                &stored_static.error_log_stack,
+            );
             evtx_files.retain(|e| channel_filter.scannable_rule_exists(e));
         }
 
@@ -2124,8 +2132,12 @@ Any hostnames added to the critical_systems.txt file will have all alerts above 
                 yaml_data.ok().unwrap_or_default().first().unwrap().clone(),
             );
             let rule_files = vec![node];
-            let mut channel_filter =
-                create_channel_filter(&evtx_files, &rule_files, stored_static.quiet_errors_flag);
+            let mut channel_filter = create_channel_filter(
+                &evtx_files,
+                &rule_files,
+                stored_static.quiet_errors_flag,
+                &stored_static.error_log_stack,
+            );
             evtx_files.retain(|e| channel_filter.scannable_rule_exists(e));
         }
 
@@ -2136,6 +2148,7 @@ Any hostnames added to the critical_systems.txt file will have all alerts above 
                 &opt.include_filename,
                 &opt.exclude_channel,
                 &opt.exclude_filename,
+                &stored_static.error_log_stack,
             );
         }
 
@@ -2191,6 +2204,7 @@ Any hostnames added to the critical_systems.txt file will have all alerts above 
                     &evtx_file,
                     stored_static.verbose_flag,
                     stored_static.quiet_errors_flag,
+                    &stored_static.error_log_stack,
                 );
                 let file_size = ByteSize::b(size);
                 let pb_msg = format!(
@@ -2410,7 +2424,8 @@ Any hostnames added to the critical_systems.txt file will have all alerts above 
                         AlertMessage::alert(&errmsg).ok();
                     }
                     if !quiet_errors_flag {
-                        ERROR_LOG_STACK
+                        stored_static
+                            .error_log_stack
                             .lock()
                             .unwrap()
                             .push(format!("[ERROR] {errmsg}"));
@@ -2650,7 +2665,8 @@ Any hostnames added to the critical_systems.txt file will have all alerts above 
                         AlertMessage::alert(&errmsg).ok();
                     }
                     if !stored_static.quiet_errors_flag {
-                        ERROR_LOG_STACK
+                        stored_static
+                            .error_log_stack
                             .lock()
                             .unwrap()
                             .push(format!("[ERROR] {errmsg}"));
@@ -2799,7 +2815,8 @@ Any hostnames added to the critical_systems.txt file will have all alerts above 
                                         AlertMessage::warn(&errmsg).ok();
                                     }
                                     if !stored_static.quiet_errors_flag {
-                                        ERROR_LOG_STACK
+                                        stored_static
+                                            .error_log_stack
                                             .lock()
                                             .unwrap()
                                             .push(format!("[WARN] {errmsg}"));
@@ -2875,7 +2892,8 @@ Any hostnames added to the critical_systems.txt file will have all alerts above 
                         AlertMessage::warn(&errmsg).ok();
                     }
                     if !stored_static.quiet_errors_flag {
-                        ERROR_LOG_STACK
+                        stored_static
+                            .error_log_stack
                             .lock()
                             .unwrap()
                             .push(format!("[WARN] {errmsg}"));
@@ -3105,7 +3123,8 @@ Any hostnames added to the critical_systems.txt file will have all alerts above 
                     AlertMessage::alert(&errmsg).ok();
                 }
                 if !stored_static.quiet_errors_flag {
-                    ERROR_LOG_STACK
+                    stored_static
+                        .error_log_stack
                         .lock()
                         .unwrap()
                         .push(format!("[ERROR] {errmsg}"));
