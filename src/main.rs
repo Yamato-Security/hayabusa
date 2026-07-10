@@ -354,81 +354,7 @@ impl App {
             stored_static.config.action.as_ref().unwrap(),
             Action::ConfigCriticalSystems(_)
         ) {
-            let msg = "This command tries to find critical systems like domain controllers and file servers by checking for logs that should only exist in those systems.
-It will search for Security 4768 (Kerberos TGT requested) events to determine if it is a domain controller.
-It will search for Security 5145 (Network Share File Access) events to determine if it is a file server.
-Any hostnames added to the critical_systems.txt file will have all alerts above low increased by one level with a maximum of emergency level.";
-            write_color_buffer(
-                &BufferWriter::stdout(ColorChoice::Always),
-                get_writable_color(
-                    Some(Color::Rgb(255, 175, 0)),
-                    stored_static.common_options.no_color,
-                ),
-                msg,
-                true,
-            )
-            .ok();
-            println!();
-            let conf = &CURRENT_EXE_PATH.to_path_buf().join("config");
-            if !conf.exists() {
-                fs::create_dir(conf).ok();
-            }
-            let config_path = conf.join("critical_systems.txt");
-            if !config_path.exists() {
-                fs::write(&config_path, "").ok();
-            }
-            if let Ok(metadata) = fs::metadata(&config_path)
-                && metadata.len() > 0
-            {
-                let color_theme = if stored_static.common_options.no_color {
-                    ColorfulTheme {
-                        defaults_style: Style::new().for_stderr(),
-                        prompt_style: Style::new().for_stderr().bold(),
-                        prompt_prefix: style("?".to_string()).for_stderr(),
-                        prompt_suffix: style("›".to_string()).for_stderr(),
-                        success_prefix: style("✔".to_string()).for_stderr(),
-                        success_suffix: style("·".to_string()).for_stderr(),
-                        error_prefix: style("✘".to_string()).for_stderr(),
-                        error_style: Style::new().for_stderr(),
-                        hint_style: Style::new().for_stderr(),
-                        values_style: Style::new().for_stderr(),
-                        active_item_style: Style::new().for_stderr(),
-                        inactive_item_style: Style::new().for_stderr(),
-                        active_item_prefix: style("❯".to_string()).for_stderr(),
-                        inactive_item_prefix: style(" ".to_string()).for_stderr(),
-                        checked_item_prefix: style("✔".to_string()).for_stderr(),
-                        unchecked_item_prefix: style("⬚".to_string()).for_stderr(),
-                        picked_item_prefix: style("❯".to_string()).for_stderr(),
-                        unpicked_item_prefix: style(" ".to_string()).for_stderr(),
-                    }
-                } else {
-                    ColorfulTheme {
-                        active_item_prefix: Style::new().color256(214).apply_to("❯".to_string()), // orange
-                        checked_item_prefix: Style::new().color256(46).apply_to("✔".to_string()), // green
-                        picked_item_prefix: Style::new().color256(214).apply_to("❯".to_string()), // orange
-                        values_style: Style::new().color256(46), // green
-                        prompt_prefix: Style::new().color256(160).apply_to("?".to_string()), // red
-                        prompt_suffix: Style::new().color256(15).apply_to("›".to_string()), // white
-                        prompt_style: Style::new().color256(160).bold(), // red
-                        defaults_style: Style::new().color256(51), // cyan
-                        hint_style: Style::new().color256(214),  // orange
-                        success_prefix: Style::new().color256(46).apply_to("✔".to_string()), // green
-                        success_suffix: Style::new().color256(15).apply_to("·".to_string()), // white
-                        ..Default::default()
-                    }
-                };
-                let prompt_fmt = "Warning: the config/critical_systems.txt file is not empty. Would you like to erase the contents first?";
-                let config_clear = Confirm::with_theme(&color_theme)
-                    .with_prompt(prompt_fmt)
-                    .default(true)
-                    .show_default(true)
-                    .interact()
-                    .unwrap();
-                if config_clear {
-                    fs::write(config_path, "").expect("Failed to clear the file");
-                }
-                println!();
-            }
+            Self::prompt_critical_systems_config(stored_static);
         }
 
         write_color_buffer(
@@ -495,7 +421,8 @@ Any hostnames added to the critical_systems.txt file will have all alerts above 
             }
         };
 
-        match &stored_static.config.action.as_ref().unwrap() {
+        let action = stored_static.config.action.clone().unwrap();
+        match &action {
             Action::CsvTimeline(_) | Action::JsonTimeline(_) => {
                 // If the rules option was not specified (the path is still the default ./rules),
                 // resolve it relative to the executable's directory so that running Hayabusa from
@@ -715,413 +642,26 @@ Any hostnames added to the critical_systems.txt file will have all alerts above 
                     &mut html_reporter,
                 );
 
-                let pivot_key_unions = stored_static.pivot_keyword.read().unwrap();
-                if let Some(pivot_file) = &stored_static.output_path {
-                    // For file output
-                    pivot_key_unions.iter().for_each(|(key, pivot_keyword)| {
-                        let mut f = BufWriter::new(
-                            File::create(
-                                pivot_file.as_path().display().to_string() + "-" + key + ".txt",
-                            )
-                            .unwrap(),
-                        );
-                        f.write_all(
-                            create_output(
-                                String::default(),
-                                key,
-                                pivot_keyword,
-                                "file",
-                                stored_static,
-                            )
-                            .as_bytes(),
-                        )
-                        .unwrap();
-                    });
-                    println!();
-                    println!();
-                    write_color_buffer(
-                        &BufferWriter::stdout(ColorChoice::Always),
-                        get_writable_color(
-                            Some(Color::Rgb(0, 255, 0)),
-                            stored_static.common_options.no_color,
-                        ),
-                        "Pivot keyword results were saved to the following files: ",
-                        true,
-                    )
-                    .ok();
-                    let mut output = "".to_string();
-                    pivot_key_unions.iter().for_each(|(key, _)| {
-                        writeln!(
-                            output,
-                            "{}",
-                            (pivot_file.as_path().display().to_string() + "-" + key + ".txt")
-                        )
-                        .ok();
-                    });
-                    write_color_buffer(
-                        &BufferWriter::stdout(ColorChoice::Always),
-                        get_writable_color(None, stored_static.common_options.no_color),
-                        output.as_str(),
-                        true,
-                    )
-                    .ok();
-                } else {
-                    // For standard output
-                    let output = "The following pivot keywords were found:";
-                    write_color_buffer(
-                        &BufferWriter::stdout(ColorChoice::Always),
-                        get_writable_color(
-                            Some(Color::Rgb(0, 255, 0)),
-                            stored_static.common_options.no_color,
-                        ),
-                        output,
-                        true,
-                    )
-                    .ok();
-                    pivot_key_unions.iter().for_each(|(key, pivot_keyword)| {
-                        create_output(
-                            String::default(),
-                            key,
-                            pivot_keyword,
-                            "standard",
-                            stored_static,
-                        );
-
-                        if pivot_keyword.keywords.is_empty() {
-                            write_color_buffer(
-                                &BufferWriter::stdout(ColorChoice::Always),
-                                get_writable_color(
-                                    Some(Color::Red),
-                                    stored_static.common_options.no_color,
-                                ),
-                                "No keywords found\n",
-                                true,
-                            )
-                            .ok();
-                        }
-                    });
-                }
+                Self::run_pivot_keywords_output(stored_static);
             }
             Action::UpdateRules(_) => {
-                let update_target = match &stored_static.config.action.as_ref().unwrap() {
-                    Action::UpdateRules(option) => Some(option.rules.to_owned()),
-                    _ => None,
-                };
-                println!();
-                // If an error occurs (e.g. no internet connection), ignore it and do not output
-                // an error message.
-                let latest_version_data = Update::get_latest_hayabusa_version().unwrap_or_default();
-                let now_version = &format!("v{}", env!("CARGO_PKG_VERSION"));
-                stored_static.include_status.insert("*".into());
-                let rule_encoded =
-                    check_setting_path(&CURRENT_EXE_PATH.to_path_buf(), "encoded_rules.yml", true)
-                        .unwrap();
-                if rule_encoded.exists() {
-                    let url = "https://raw.githubusercontent.com/Yamato-Security/hayabusa-encoded-rules/main/encoded_rules.yml";
-                    match get(url).call() {
-                        Ok(mut res) => {
-                            let mut dst = File::create(Path::new("./encoded_rules.yml")).unwrap();
-                            dst.write_all(res.body_mut().read_to_vec().unwrap().as_slice())
-                                .unwrap();
-                            write_color_buffer(
-                                &BufferWriter::stdout(ColorChoice::Always),
-                                get_writable_color(
-                                    Some(Color::Rgb(255, 175, 0)),
-                                    stored_static.common_options.no_color,
-                                ),
-                                "Rules file encoded_rules.yml updated successfully.",
-                                true,
-                            )
-                            .ok();
-                        }
-                        Err(_) => {
-                            AlertMessage::alert("Failed to update rules.").ok();
-                        }
-                    }
-
-                    if !ONE_CONFIG_MAP.is_empty() {
-                        let url = "https://raw.githubusercontent.com/Yamato-Security/hayabusa-encoded-rules/refs/heads/main/rules_config_files.txt";
-                        match get(url).call() {
-                            Ok(mut res) => {
-                                let mut dst =
-                                    File::create(Path::new("./rules_config_files.txt")).unwrap();
-                                dst.write_all(res.body_mut().read_to_string().unwrap().as_bytes())
-                                    .unwrap();
-                                write_color_buffer(
-                                    &BufferWriter::stdout(ColorChoice::Always),
-                                    get_writable_color(
-                                        Some(Color::Rgb(255, 175, 0)),
-                                        stored_static.common_options.no_color,
-                                    ),
-                                    "Config file rules_config_files.txt updated successfully.",
-                                    true,
-                                )
-                                .ok();
-                            }
-                            Err(_) => {
-                                AlertMessage::alert("Failed to update config file.").ok();
-                            }
-                        }
-                    }
-                } else {
-                    match Update::update_rules(
-                        update_target.unwrap().to_str().unwrap(),
-                        stored_static,
-                    ) {
-                        Ok(output) => {
-                            if output != "You currently have the latest rules." {
-                                write_color_buffer(
-                                    &BufferWriter::stdout(ColorChoice::Always),
-                                    get_writable_color(
-                                        Some(Color::Rgb(255, 175, 0)),
-                                        stored_static.common_options.no_color,
-                                    ),
-                                    "Rules updated successfully.",
-                                    true,
-                                )
-                                .ok();
-                            }
-                        }
-                        Err(e) => {
-                            if e.message().is_empty() {
-                                AlertMessage::alert("Failed to update rules.").ok();
-                            } else {
-                                AlertMessage::alert(&format!("Failed to update rules. {e:?}  "))
-                                    .ok();
-                            }
-                        }
-                    }
-                }
-                let split_now_version = &now_version
-                    .replace("-dev", "")
-                    .replace("v", "")
-                    .split('.')
-                    .filter_map(|x| x.parse().ok())
-                    .collect::<Vec<i8>>();
-                let split_latest_version = &latest_version_data
-                    .as_ref()
-                    .unwrap_or(now_version)
-                    .replace('"', "")
-                    .replace("v", "")
-                    .split('.')
-                    .filter_map(|x| x.parse().ok())
-                    .collect::<Vec<i8>>();
-                if split_latest_version > split_now_version {
-                    write_color_buffer(
-                        &BufferWriter::stdout(ColorChoice::Always),
-                        get_writable_color(
-                            Some(Color::Rgb(255, 175, 0)),
-                            stored_static.common_options.no_color,
-                        ),
-                        &format!(
-                            "There is a new version of Hayabusa: {}",
-                            latest_version_data.unwrap().replace('\"', "")
-                        ),
-                        true,
-                    )
-                    .ok();
-                    write_color_buffer(
-                        &BufferWriter::stdout(ColorChoice::Always),
-                        get_writable_color(
-                            Some(Color::Rgb(255, 175, 0)),
-                            stored_static.common_options.no_color,
-                        ),
-                        "You can download it at https://github.com/Yamato-Security/hayabusa/releases",
-                        true,
-                    )
-                    .ok();
-                }
-                println!();
-                let _ = self.output_open_close_message("closing_messages.txt", stored_static);
+                self.run_update_rules(stored_static);
                 return;
             }
             Action::LevelTuning(option) => {
-                let level_tuning_config_path =
-                    if option.level_tuning.to_str().unwrap() != "./rules/config/level_tuning.txt" {
-                        check_setting_path(
-                            option
-                                .level_tuning
-                                .parent()
-                                .unwrap_or_else(|| Path::new("")),
-                            option
-                                .level_tuning
-                                .file_name()
-                                .unwrap()
-                                .to_str()
-                                .unwrap_or_default(),
-                            false,
-                        )
-                        .unwrap_or_else(|| {
-                            check_setting_path(
-                                &CURRENT_EXE_PATH.to_path_buf(),
-                                "rules/config/level_tuning.txt",
-                                true,
-                            )
-                            .unwrap()
-                        })
-                        .display()
-                        .to_string()
-                    } else {
-                        check_setting_path(&stored_static.config_path, "level_tuning.txt", false)
-                            .unwrap_or_else(|| {
-                                check_setting_path(
-                                    &CURRENT_EXE_PATH.to_path_buf(),
-                                    "rules/config/level_tuning.txt",
-                                    true,
-                                )
-                                .unwrap()
-                            })
-                            .display()
-                            .to_string()
-                    };
-
-                let rules_path = if stored_static.output_option.as_ref().is_some() {
-                    stored_static
-                        .output_option
-                        .as_ref()
-                        .unwrap()
-                        .rules
-                        .as_os_str()
-                        .to_str()
-                        .unwrap()
-                } else {
-                    "./rules"
-                };
-
-                if Path::new(&level_tuning_config_path).exists() {
-                    stored_static.include_status.insert("*".into());
-                    if let Err(err) =
-                        LevelTuning::run(&level_tuning_config_path, rules_path, stored_static)
-                    {
-                        AlertMessage::alert(&err).ok();
-                    }
-                } else {
-                    AlertMessage::alert(
-                        "Need rule_levels.txt file to use --level-tuning option [default: ./rules/config/level_tuning.txt]",
-                    )
-                    .ok();
-                }
-                let _ = self.output_open_close_message("closing_messages.txt", stored_static);
+                self.run_level_tuning(option, stored_static);
                 return;
             }
             Action::SetDefaultProfile(_) => {
-                println!();
-                let is_existed_config_path = CURRENT_EXE_PATH.to_path_buf().join("config").exists()
-                    || Path::new("config").exists();
-                if !is_existed_config_path {
-                    println!(
-                        "Default profile cannot be set due to the absence of a config folder. Please check the config folder."
-                    );
-                    return;
-                }
-                if let Err(e) = set_default_profile(
-                    check_setting_path(
-                        &CURRENT_EXE_PATH.to_path_buf(),
-                        "config/default_profile.yaml",
-                        true,
-                    )
-                    .unwrap()
-                    .to_str()
-                    .unwrap(),
-                    check_setting_path(
-                        &CURRENT_EXE_PATH.to_path_buf(),
-                        "config/profiles.yaml",
-                        true,
-                    )
-                    .unwrap()
-                    .to_str()
-                    .unwrap(),
-                    stored_static,
-                ) {
-                    AlertMessage::alert(&e).ok();
-                }
-                let _ = self.output_open_close_message("closing_messages.txt", stored_static);
+                self.run_set_default_profile(stored_static);
                 return;
             }
             Action::ListProfiles(_) => {
-                let profile_list = options::profile::get_profile_list("config/profiles.yaml");
-                write_color_buffer(
-                    &BufferWriter::stdout(ColorChoice::Always),
-                    get_writable_color(
-                        Some(Color::Rgb(0, 255, 0)),
-                        stored_static.common_options.no_color,
-                    ),
-                    "List of available profiles:",
-                    true,
-                )
-                .ok();
-                for profile in profile_list.iter() {
-                    write_color_buffer(
-                        &BufferWriter::stdout(ColorChoice::Always),
-                        Some(Color::Rgb(0, 255, 0)),
-                        &format!("- {:<25}", &format!("{}:", profile[0])),
-                        false,
-                    )
-                    .ok();
-                    write_color_buffer(
-                        &BufferWriter::stdout(ColorChoice::Always),
-                        None,
-                        &profile[1],
-                        true,
-                    )
-                    .ok();
-                }
-                println!();
-                let _ = self.output_open_close_message("closing_messages.txt", stored_static);
+                self.run_list_profiles(stored_static);
                 return;
             }
             Action::ExpandList(opt) => {
-                let encoded_rule_dir = Path::new("./encoded_rules.yml");
-                let rule_dir = if encoded_rule_dir.exists() {
-                    &encoded_rule_dir.to_path_buf()
-                } else {
-                    &opt.rules
-                };
-                // Terminate with an alert if the rules directory does not exist.
-                if !rule_dir.exists() {
-                    AlertMessage::alert(
-                        "The rules directory does not exist. Please check the path.",
-                    )
-                    .ok();
-                    return;
-                }
-                println!();
-                let result = expand_list(rule_dir);
-                let result: Vec<&String> = result.iter().collect();
-                if result.is_empty() {
-                    write_color_buffer(
-                        &BufferWriter::stdout(ColorChoice::Always),
-                        get_writable_color(
-                            Some(Color::Rgb(255, 175, 0)),
-                            stored_static.common_options.no_color,
-                        ),
-                        "No expanded rules found.",
-                        true,
-                    )
-                    .ok();
-                } else {
-                    write_color_buffer(
-                        &BufferWriter::stdout(ColorChoice::Always),
-                        get_writable_color(
-                            Some(Color::Rgb(0, 255, 0)),
-                            stored_static.common_options.no_color,
-                        ),
-                        &format!("{:?} unique expand placeholders found:", result.len()),
-                        true,
-                    )
-                    .ok();
-                    for expand in result {
-                        write_color_buffer(
-                            &BufferWriter::stdout(ColorChoice::Always),
-                            None,
-                            &expand.replace("%", ""),
-                            true,
-                        )
-                        .ok();
-                    }
-                }
-                println!();
-                let _ = self.output_open_close_message("closing_messages.txt", stored_static);
+                self.run_expand_list(opt, stored_static);
                 return;
             }
             Action::ConfigCriticalSystems(_) => {
@@ -1137,13 +677,493 @@ Any hostnames added to the critical_systems.txt file will have all alerts above 
             _ => {}
         }
 
+        self.print_closing_summary(stored_static, &mut html_reporter);
+    }
+
+    fn prompt_critical_systems_config(stored_static: &StoredStatic) {
+        let msg = "This command tries to find critical systems like domain controllers and file servers by checking for logs that should only exist in those systems.
+It will search for Security 4768 (Kerberos TGT requested) events to determine if it is a domain controller.
+It will search for Security 5145 (Network Share File Access) events to determine if it is a file server.
+Any hostnames added to the critical_systems.txt file will have all alerts above low increased by one level with a maximum of emergency level.";
+        write_color_buffer(
+            &BufferWriter::stdout(ColorChoice::Always),
+            get_writable_color(
+                Some(Color::Rgb(255, 175, 0)),
+                stored_static.common_options.no_color,
+            ),
+            msg,
+            true,
+        )
+        .ok();
+        println!();
+        let conf = &CURRENT_EXE_PATH.to_path_buf().join("config");
+        if !conf.exists() {
+            fs::create_dir(conf).ok();
+        }
+        let config_path = conf.join("critical_systems.txt");
+        if !config_path.exists() {
+            fs::write(&config_path, "").ok();
+        }
+        if let Ok(metadata) = fs::metadata(&config_path)
+            && metadata.len() > 0
+        {
+            let color_theme = if stored_static.common_options.no_color {
+                ColorfulTheme {
+                    defaults_style: Style::new().for_stderr(),
+                    prompt_style: Style::new().for_stderr().bold(),
+                    prompt_prefix: style("?".to_string()).for_stderr(),
+                    prompt_suffix: style("›".to_string()).for_stderr(),
+                    success_prefix: style("✔".to_string()).for_stderr(),
+                    success_suffix: style("·".to_string()).for_stderr(),
+                    error_prefix: style("✘".to_string()).for_stderr(),
+                    error_style: Style::new().for_stderr(),
+                    hint_style: Style::new().for_stderr(),
+                    values_style: Style::new().for_stderr(),
+                    active_item_style: Style::new().for_stderr(),
+                    inactive_item_style: Style::new().for_stderr(),
+                    active_item_prefix: style("❯".to_string()).for_stderr(),
+                    inactive_item_prefix: style(" ".to_string()).for_stderr(),
+                    checked_item_prefix: style("✔".to_string()).for_stderr(),
+                    unchecked_item_prefix: style("⬚".to_string()).for_stderr(),
+                    picked_item_prefix: style("❯".to_string()).for_stderr(),
+                    unpicked_item_prefix: style(" ".to_string()).for_stderr(),
+                }
+            } else {
+                ColorfulTheme {
+                    active_item_prefix: Style::new().color256(214).apply_to("❯".to_string()), // orange
+                    checked_item_prefix: Style::new().color256(46).apply_to("✔".to_string()), // green
+                    picked_item_prefix: Style::new().color256(214).apply_to("❯".to_string()), // orange
+                    values_style: Style::new().color256(46), // green
+                    prompt_prefix: Style::new().color256(160).apply_to("?".to_string()), // red
+                    prompt_suffix: Style::new().color256(15).apply_to("›".to_string()), // white
+                    prompt_style: Style::new().color256(160).bold(), // red
+                    defaults_style: Style::new().color256(51), // cyan
+                    hint_style: Style::new().color256(214),  // orange
+                    success_prefix: Style::new().color256(46).apply_to("✔".to_string()), // green
+                    success_suffix: Style::new().color256(15).apply_to("·".to_string()), // white
+                    ..Default::default()
+                }
+            };
+            let prompt_fmt = "Warning: the config/critical_systems.txt file is not empty. Would you like to erase the contents first?";
+            let config_clear = Confirm::with_theme(&color_theme)
+                .with_prompt(prompt_fmt)
+                .default(true)
+                .show_default(true)
+                .interact()
+                .unwrap();
+            if config_clear {
+                fs::write(config_path, "").expect("Failed to clear the file");
+            }
+            println!();
+        }
+    }
+
+    fn run_pivot_keywords_output(stored_static: &StoredStatic) {
+        let pivot_key_unions = stored_static.pivot_keyword.read().unwrap();
+        if let Some(pivot_file) = &stored_static.output_path {
+            // For file output
+            pivot_key_unions.iter().for_each(|(key, pivot_keyword)| {
+                let mut f = BufWriter::new(
+                    File::create(pivot_file.as_path().display().to_string() + "-" + key + ".txt")
+                        .unwrap(),
+                );
+                f.write_all(
+                    create_output(String::default(), key, pivot_keyword, "file", stored_static)
+                        .as_bytes(),
+                )
+                .unwrap();
+            });
+            println!();
+            println!();
+            write_color_buffer(
+                &BufferWriter::stdout(ColorChoice::Always),
+                get_writable_color(
+                    Some(Color::Rgb(0, 255, 0)),
+                    stored_static.common_options.no_color,
+                ),
+                "Pivot keyword results were saved to the following files: ",
+                true,
+            )
+            .ok();
+            let mut output = "".to_string();
+            pivot_key_unions.iter().for_each(|(key, _)| {
+                writeln!(
+                    output,
+                    "{}",
+                    (pivot_file.as_path().display().to_string() + "-" + key + ".txt")
+                )
+                .ok();
+            });
+            write_color_buffer(
+                &BufferWriter::stdout(ColorChoice::Always),
+                get_writable_color(None, stored_static.common_options.no_color),
+                output.as_str(),
+                true,
+            )
+            .ok();
+        } else {
+            // For standard output
+            let output = "The following pivot keywords were found:";
+            write_color_buffer(
+                &BufferWriter::stdout(ColorChoice::Always),
+                get_writable_color(
+                    Some(Color::Rgb(0, 255, 0)),
+                    stored_static.common_options.no_color,
+                ),
+                output,
+                true,
+            )
+            .ok();
+            pivot_key_unions.iter().for_each(|(key, pivot_keyword)| {
+                create_output(
+                    String::default(),
+                    key,
+                    pivot_keyword,
+                    "standard",
+                    stored_static,
+                );
+
+                if pivot_keyword.keywords.is_empty() {
+                    write_color_buffer(
+                        &BufferWriter::stdout(ColorChoice::Always),
+                        get_writable_color(Some(Color::Red), stored_static.common_options.no_color),
+                        "No keywords found\n",
+                        true,
+                    )
+                    .ok();
+                }
+            });
+        }
+    }
+
+    fn run_update_rules(&self, stored_static: &mut StoredStatic) {
+        let update_target = match &stored_static.config.action.as_ref().unwrap() {
+            Action::UpdateRules(option) => Some(option.rules.to_owned()),
+            _ => None,
+        };
+        println!();
+        // If an error occurs (e.g. no internet connection), ignore it and do not output
+        // an error message.
+        let latest_version_data = Update::get_latest_hayabusa_version().unwrap_or_default();
+        let now_version = &format!("v{}", env!("CARGO_PKG_VERSION"));
+        stored_static.include_status.insert("*".into());
+        let rule_encoded =
+            check_setting_path(&CURRENT_EXE_PATH.to_path_buf(), "encoded_rules.yml", true).unwrap();
+        if rule_encoded.exists() {
+            let url = "https://raw.githubusercontent.com/Yamato-Security/hayabusa-encoded-rules/main/encoded_rules.yml";
+            match get(url).call() {
+                Ok(mut res) => {
+                    let mut dst = File::create(Path::new("./encoded_rules.yml")).unwrap();
+                    dst.write_all(res.body_mut().read_to_vec().unwrap().as_slice())
+                        .unwrap();
+                    write_color_buffer(
+                        &BufferWriter::stdout(ColorChoice::Always),
+                        get_writable_color(
+                            Some(Color::Rgb(255, 175, 0)),
+                            stored_static.common_options.no_color,
+                        ),
+                        "Rules file encoded_rules.yml updated successfully.",
+                        true,
+                    )
+                    .ok();
+                }
+                Err(_) => {
+                    AlertMessage::alert("Failed to update rules.").ok();
+                }
+            }
+
+            if !ONE_CONFIG_MAP.is_empty() {
+                let url = "https://raw.githubusercontent.com/Yamato-Security/hayabusa-encoded-rules/refs/heads/main/rules_config_files.txt";
+                match get(url).call() {
+                    Ok(mut res) => {
+                        let mut dst = File::create(Path::new("./rules_config_files.txt")).unwrap();
+                        dst.write_all(res.body_mut().read_to_string().unwrap().as_bytes())
+                            .unwrap();
+                        write_color_buffer(
+                            &BufferWriter::stdout(ColorChoice::Always),
+                            get_writable_color(
+                                Some(Color::Rgb(255, 175, 0)),
+                                stored_static.common_options.no_color,
+                            ),
+                            "Config file rules_config_files.txt updated successfully.",
+                            true,
+                        )
+                        .ok();
+                    }
+                    Err(_) => {
+                        AlertMessage::alert("Failed to update config file.").ok();
+                    }
+                }
+            }
+        } else {
+            match Update::update_rules(update_target.unwrap().to_str().unwrap(), stored_static) {
+                Ok(output) => {
+                    if output != "You currently have the latest rules." {
+                        write_color_buffer(
+                            &BufferWriter::stdout(ColorChoice::Always),
+                            get_writable_color(
+                                Some(Color::Rgb(255, 175, 0)),
+                                stored_static.common_options.no_color,
+                            ),
+                            "Rules updated successfully.",
+                            true,
+                        )
+                        .ok();
+                    }
+                }
+                Err(e) => {
+                    if e.message().is_empty() {
+                        AlertMessage::alert("Failed to update rules.").ok();
+                    } else {
+                        AlertMessage::alert(&format!("Failed to update rules. {e:?}  ")).ok();
+                    }
+                }
+            }
+        }
+        let split_now_version = &now_version
+            .replace("-dev", "")
+            .replace("v", "")
+            .split('.')
+            .filter_map(|x| x.parse().ok())
+            .collect::<Vec<i8>>();
+        let split_latest_version = &latest_version_data
+            .as_ref()
+            .unwrap_or(now_version)
+            .replace('"', "")
+            .replace("v", "")
+            .split('.')
+            .filter_map(|x| x.parse().ok())
+            .collect::<Vec<i8>>();
+        if split_latest_version > split_now_version {
+            write_color_buffer(
+                &BufferWriter::stdout(ColorChoice::Always),
+                get_writable_color(
+                    Some(Color::Rgb(255, 175, 0)),
+                    stored_static.common_options.no_color,
+                ),
+                &format!(
+                    "There is a new version of Hayabusa: {}",
+                    latest_version_data.unwrap().replace('\"', "")
+                ),
+                true,
+            )
+            .ok();
+            write_color_buffer(
+                &BufferWriter::stdout(ColorChoice::Always),
+                get_writable_color(
+                    Some(Color::Rgb(255, 175, 0)),
+                    stored_static.common_options.no_color,
+                ),
+                "You can download it at https://github.com/Yamato-Security/hayabusa/releases",
+                true,
+            )
+            .ok();
+        }
+        println!();
+        let _ = self.output_open_close_message("closing_messages.txt", stored_static);
+    }
+
+    fn run_level_tuning(
+        &self,
+        option: &configs::LevelTuningOption,
+        stored_static: &mut StoredStatic,
+    ) {
+        let level_tuning_config_path =
+            if option.level_tuning.to_str().unwrap() != "./rules/config/level_tuning.txt" {
+                check_setting_path(
+                    option
+                        .level_tuning
+                        .parent()
+                        .unwrap_or_else(|| Path::new("")),
+                    option
+                        .level_tuning
+                        .file_name()
+                        .unwrap()
+                        .to_str()
+                        .unwrap_or_default(),
+                    false,
+                )
+                .unwrap_or_else(|| {
+                    check_setting_path(
+                        &CURRENT_EXE_PATH.to_path_buf(),
+                        "rules/config/level_tuning.txt",
+                        true,
+                    )
+                    .unwrap()
+                })
+                .display()
+                .to_string()
+            } else {
+                check_setting_path(&stored_static.config_path, "level_tuning.txt", false)
+                    .unwrap_or_else(|| {
+                        check_setting_path(
+                            &CURRENT_EXE_PATH.to_path_buf(),
+                            "rules/config/level_tuning.txt",
+                            true,
+                        )
+                        .unwrap()
+                    })
+                    .display()
+                    .to_string()
+            };
+
+        let rules_path = if stored_static.output_option.as_ref().is_some() {
+            stored_static
+                .output_option
+                .as_ref()
+                .unwrap()
+                .rules
+                .as_os_str()
+                .to_str()
+                .unwrap()
+        } else {
+            "./rules"
+        };
+
+        if Path::new(&level_tuning_config_path).exists() {
+            stored_static.include_status.insert("*".into());
+            if let Err(err) = LevelTuning::run(&level_tuning_config_path, rules_path, stored_static)
+            {
+                AlertMessage::alert(&err).ok();
+            }
+        } else {
+            AlertMessage::alert(
+                        "Need rule_levels.txt file to use --level-tuning option [default: ./rules/config/level_tuning.txt]",
+                    )
+                    .ok();
+        }
+        let _ = self.output_open_close_message("closing_messages.txt", stored_static);
+    }
+
+    fn run_set_default_profile(&self, stored_static: &StoredStatic) {
+        println!();
+        let is_existed_config_path =
+            CURRENT_EXE_PATH.to_path_buf().join("config").exists() || Path::new("config").exists();
+        if !is_existed_config_path {
+            println!(
+                "Default profile cannot be set due to the absence of a config folder. Please check the config folder."
+            );
+            return;
+        }
+        if let Err(e) = set_default_profile(
+            check_setting_path(
+                &CURRENT_EXE_PATH.to_path_buf(),
+                "config/default_profile.yaml",
+                true,
+            )
+            .unwrap()
+            .to_str()
+            .unwrap(),
+            check_setting_path(
+                &CURRENT_EXE_PATH.to_path_buf(),
+                "config/profiles.yaml",
+                true,
+            )
+            .unwrap()
+            .to_str()
+            .unwrap(),
+            stored_static,
+        ) {
+            AlertMessage::alert(&e).ok();
+        }
+        let _ = self.output_open_close_message("closing_messages.txt", stored_static);
+    }
+
+    fn run_list_profiles(&self, stored_static: &StoredStatic) {
+        let profile_list = options::profile::get_profile_list("config/profiles.yaml");
+        write_color_buffer(
+            &BufferWriter::stdout(ColorChoice::Always),
+            get_writable_color(
+                Some(Color::Rgb(0, 255, 0)),
+                stored_static.common_options.no_color,
+            ),
+            "List of available profiles:",
+            true,
+        )
+        .ok();
+        for profile in profile_list.iter() {
+            write_color_buffer(
+                &BufferWriter::stdout(ColorChoice::Always),
+                Some(Color::Rgb(0, 255, 0)),
+                &format!("- {:<25}", &format!("{}:", profile[0])),
+                false,
+            )
+            .ok();
+            write_color_buffer(
+                &BufferWriter::stdout(ColorChoice::Always),
+                None,
+                &profile[1],
+                true,
+            )
+            .ok();
+        }
+        println!();
+        let _ = self.output_open_close_message("closing_messages.txt", stored_static);
+    }
+
+    fn run_expand_list(&self, opt: &configs::ExpandListOption, stored_static: &StoredStatic) {
+        let encoded_rule_dir = Path::new("./encoded_rules.yml");
+        let rule_dir = if encoded_rule_dir.exists() {
+            &encoded_rule_dir.to_path_buf()
+        } else {
+            &opt.rules
+        };
+        // Terminate with an alert if the rules directory does not exist.
+        if !rule_dir.exists() {
+            AlertMessage::alert("The rules directory does not exist. Please check the path.").ok();
+            return;
+        }
+        println!();
+        let result = expand_list(rule_dir);
+        let result: Vec<&String> = result.iter().collect();
+        if result.is_empty() {
+            write_color_buffer(
+                &BufferWriter::stdout(ColorChoice::Always),
+                get_writable_color(
+                    Some(Color::Rgb(255, 175, 0)),
+                    stored_static.common_options.no_color,
+                ),
+                "No expanded rules found.",
+                true,
+            )
+            .ok();
+        } else {
+            write_color_buffer(
+                &BufferWriter::stdout(ColorChoice::Always),
+                get_writable_color(
+                    Some(Color::Rgb(0, 255, 0)),
+                    stored_static.common_options.no_color,
+                ),
+                &format!("{:?} unique expand placeholders found:", result.len()),
+                true,
+            )
+            .ok();
+            for expand in result {
+                write_color_buffer(
+                    &BufferWriter::stdout(ColorChoice::Always),
+                    None,
+                    &expand.replace("%", ""),
+                    true,
+                )
+                .ok();
+            }
+        }
+        println!();
+        let _ = self.output_open_close_message("closing_messages.txt", stored_static);
+    }
+
+    fn print_closing_summary(
+        &self,
+        stored_static: &StoredStatic,
+        html_reporter: &mut HtmlReporter,
+    ) {
         // Output processing time.
         let elapsed_output_str = self.checkpoint.calculate_all_stocked_results();
         output_and_data_stack_for_html(
             &format!("Elapsed time: {elapsed_output_str}"),
             htmlreport::GENERAL_OVERVIEW_SECTION,
             &stored_static.html_report_flag,
-            &mut html_reporter,
+            html_reporter,
         );
         write_color_buffer(
             &BufferWriter::stdout(ColorChoice::Always),
