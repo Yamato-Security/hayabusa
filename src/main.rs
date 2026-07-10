@@ -3395,8 +3395,9 @@ mod tests {
     // analysis, and renders that same instance (which the header-helper unit test cannot).
     #[test]
     fn test_exec_html_report_end_to_end() {
-        let report_path = "test_exec_html_report_e2e.html";
-        let csv_path = "test_exec_html_report_e2e.csv";
+        let output_tmp_dir = tempfile::tempdir().unwrap();
+        let report_path = output_tmp_dir.path().join("test_exec_html_report_e2e.html");
+        let csv_path = output_tmp_dir.path().join("test_exec_html_report_e2e.csv");
         let mut app = App::new(None);
         let action = Action::CsvTimeline(CsvOutputOption {
             output_options: OutputOption {
@@ -3411,11 +3412,11 @@ mod tests {
                     config: Path::new("./rules/config").to_path_buf(),
                     ..Default::default()
                 },
-                html_report: Some(Path::new(report_path).to_path_buf()),
+                html_report: Some(report_path.clone()),
                 no_wizard: true,
                 ..Default::default()
             },
-            output: Some(Path::new(csv_path).to_path_buf()),
+            output: Some(csv_path.clone()),
             ..Default::default()
         });
         let config = Some(Config {
@@ -3426,7 +3427,7 @@ mod tests {
         let mut config_reader = ConfigReader::new();
         app.exec(&mut config_reader.app, &mut stored_static);
 
-        let html = std::fs::read_to_string(report_path)
+        let html = std::fs::read_to_string(&report_path)
             .expect("exec should have written the HTML report file");
         // The reporter exec threaded from start-up (General Overview: command line + start time)
         // through the summary path (Results Summary) is what gets rendered to the file.
@@ -3443,8 +3444,8 @@ mod tests {
             "report is missing the Results Summary section"
         );
 
-        std::fs::remove_file(report_path).ok();
-        std::fs::remove_file(csv_path).ok();
+        std::fs::remove_file(&report_path).ok();
+        std::fs::remove_file(&csv_path).ok();
     }
 
     #[test]
