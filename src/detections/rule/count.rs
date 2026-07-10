@@ -1818,7 +1818,7 @@ mod tests {
             expect_start_timedate.push(expect_agg.start_datetime);
         }
         for agg_result in agg_results {
-            println!("{}", &agg_result.start_datetime);
+            println!("{}", agg_result.start_datetime);
             // The unwrap doubles as the check that start_datetime was stored correctly:
             // binary_search fails if it is not among the expected values.
             let index = expect_start_timedate

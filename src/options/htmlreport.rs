@@ -68,7 +68,7 @@ impl HtmlReporter {
         let mut md_data = Nested::<String>::new();
         for section_name in self.section_order.iter() {
             if let Some(v) = self.section_markdown.get(section_name) {
-                md_data.push(format!("## {}\n", &section_name));
+                md_data.push(format!("## {}\n", section_name));
                 if v.is_empty() {
                     md_data.push("not found data.\n");
                 } else {

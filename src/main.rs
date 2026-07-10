@@ -273,8 +273,8 @@ impl App {
             write_color_buffer(&BufferWriter::stdout(ColorChoice::Always), None, "", true).ok();
             self.output_eggs(&format!(
                 "{:02}/{:02}",
-                &analysis_start_time.month(),
-                &analysis_start_time.day()
+                analysis_start_time.month(),
+                analysis_start_time.day()
             ));
         }
         let _guard = if !self.is_matched_architecture_and_binary() {
@@ -696,7 +696,7 @@ Any hostnames added to the critical_systems.txt file will have all alerts above 
                             Path::new(&keywords_file_name),
                             format!(
                                 " The file {} already exists. Please specify a different filename or add the -C, --clobber option to overwrite.",
-                                &keywords_file_name
+                                keywords_file_name
                             ),
                         ) {
                             error_flag = true
@@ -754,7 +754,7 @@ Any hostnames added to the critical_systems.txt file will have all alerts above 
                         writeln!(
                             output,
                             "{}",
-                            &(pivot_file.as_path().display().to_string() + "-" + key + ".txt")
+                            (pivot_file.as_path().display().to_string() + "-" + key + ".txt")
                         )
                         .ok();
                     });
@@ -2195,7 +2195,7 @@ Any hostnames added to the critical_systems.txt file will have all alerts above 
                 let file_size = ByteSize::b(size);
                 let pb_msg = format!(
                     "{:?} ({})",
-                    &evtx_file.to_str().unwrap_or_default().replace('\\', "/"),
+                    evtx_file.to_str().unwrap_or_default().replace('\\', "/"),
                     file_size.display()
                 );
                 if !pb_msg.is_empty() {
@@ -2640,7 +2640,7 @@ Any hostnames added to the critical_systems.txt file will have all alerts above 
                     let errmsg = format!(
                         "Timestamp parse error. Filepath: {},{} {}",
                         path,
-                        &target_timestamp
+                        target_timestamp
                             .to_string()
                             .replace("\\\"", "")
                             .replace('"', ""),
@@ -2789,7 +2789,7 @@ Any hostnames added to the critical_systems.txt file will have all alerts above 
                                     let errmsg = format!(
                                         "Timestamp parse error. Filepath: {},{} {}",
                                         path,
-                                        &splunk_api_record["Event"]["System"]["SystemTime"]
+                                        splunk_api_record["Event"]["System"]["SystemTime"]
                                             .to_string()
                                             .replace("\\\"", "")
                                             .replace('"', ""),

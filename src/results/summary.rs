@@ -105,7 +105,7 @@ pub(crate) fn calc_statistic_info(
             };
             for computername in &computer_names {
                 let computer_rule_check_key =
-                    CompactString::from(format!("{}|{}", computername, &detect_info.rule_path));
+                    CompactString::from(format!("{}|{}", computername, detect_info.rule_path));
                 if !result_state
                     .detected_computer_and_rule_names
                     .contains(&computer_rule_check_key)
@@ -438,12 +438,12 @@ pub fn output_result_summary(
         println!();
 
         if stored_static.html_report_flag {
-            html_output_stock.push(format!("- Events with hits: {}", &saved_alerts_output));
-            html_output_stock.push(format!("- Total events analyzed: {}", &all_record_output));
+            html_output_stock.push(format!("- Events with hits: {}", saved_alerts_output));
+            html_output_stock.push(format!("- Total events analyzed: {}", all_record_output));
             html_output_stock.push(format!("- {reduction_output}"));
             html_output_stock.push(format!(
                 "- Recovered events analyzed: {}",
-                &result_state
+                result_state
                     .recover_record_cnt
                     .to_formatted_string(&Locale::en)
             ));
@@ -826,7 +826,7 @@ fn _print_detection_summary_by_date(
         if !exist_max_data {
             max_detect_str = "n/a".into();
         }
-        let output_str = format!("{}: {}", level.to_full(), &max_detect_str);
+        let output_str = format!("{}: {}", level.to_full(), max_detect_str);
         write!(wtr, "{output_str}").ok();
         // Print a ", " separator after every level except the last displayed one (count() - 2
         // because UNDEFINED, the final item of the reversed iteration, is skipped).
@@ -903,7 +903,7 @@ fn _print_detection_summary_by_computer(
 
         wtr.set_color(ColorSpec::new().set_fg(_get_output_color(color_map, &level)))
             .ok();
-        writeln!(wtr, "{}: {}", level.to_full(), &result_str).ok();
+        writeln!(wtr, "{}: {}", level.to_full(), result_str).ok();
     }
     buf_wtr.print(&wtr).ok();
 }
@@ -977,7 +977,7 @@ fn _print_detection_summary_tables(
                     html_output_stock.push(format!(
                         "- [{}]({}) ({}) - {}",
                         html_escape_value(x.0),
-                        &rule_path.replace('\\', "/"),
+                        rule_path.replace('\\', "/"),
                         x.1.to_formatted_string(&Locale::en),
                         html_escape_value(
                             rule_detect_author_map

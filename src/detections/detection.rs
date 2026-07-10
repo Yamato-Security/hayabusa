@@ -563,7 +563,7 @@ impl Detection {
                             let tactic_key: CompactString = html_attck_tac.into();
                             let unique_key = CompactString::from(format!(
                                 "{}|{}|{}",
-                                &computer_name_to_mitre_tactics, &tactic_key, &rule.rule_path
+                                computer_name_to_mitre_tactics, tactic_key, rule.rule_path
                             ));
                             let is_unique = COMPUTER_MITRE_ATTCK_UNIQUE_KEYS.insert(unique_key);
                             if let Some(entry) =
