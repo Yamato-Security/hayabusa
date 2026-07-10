@@ -39,7 +39,7 @@ use crate::options::profile::Profile::{
 use crate::yaml::ParseYaml;
 
 use super::configs::{EventKeyAliasConfig, StoredStatic};
-use super::message::{self, COMPUTER_MITRE_ATTCK_MAP, COMPUTER_MITRE_ATTCK_UNIQUE_KEYS};
+use super::message;
 
 /// Struct to hold information for one record of an event file.
 #[derive(Clone, Debug)]
@@ -572,7 +572,8 @@ impl Detection {
                         .map(|x| x.split(',').nth(1).unwrap_or_default())
                         .collect_vec();
                     if stored_static.html_report_flag && !html_output_tactics_str.is_empty() {
-                        let mut v = COMPUTER_MITRE_ATTCK_MAP
+                        let mut v = stored_static
+                            .computer_mitre_attck_map
                             .entry(computer_name_to_mitre_tactics.clone())
                             .or_default();
                         let (_, attack_tactics) = v.pair_mut();
@@ -582,7 +583,9 @@ impl Detection {
                                 "{}|{}|{}",
                                 computer_name_to_mitre_tactics, tactic_key, rule.rule_path
                             ));
-                            let is_unique = COMPUTER_MITRE_ATTCK_UNIQUE_KEYS.insert(unique_key);
+                            let is_unique = stored_static
+                                .computer_mitre_attck_unique_keys
+                                .insert(unique_key);
                             if let Some(entry) =
                                 attack_tactics.iter_mut().find(|(t, _, _)| t == tactic_key)
                             {

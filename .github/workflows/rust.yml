@@ -74,6 +74,4 @@ jobs:
         env:
           RUST_BACKTRACE: full
       - name: Run tests
-        env:
-          RUST_TEST_THREADS: 1
         run: cargo test --verbose

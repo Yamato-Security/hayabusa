@@ -1,18 +1,22 @@
 use itertools::Itertools;
 use nested::Nested;
 
-use crate::detections::message::{COMPUTER_MITRE_ATTCK_MAP, COMPUTER_MITRE_ATTCK_UNIQUE_KEYS};
+use crate::detections::configs::StoredStatic;
 
 use super::html_escape_value;
 
 /// Appends to `html_output_stock` a Markdown table of computer names and the MITRE ATT&CK
 /// tactics detected on them (with unique and total counts), for the HTML report.
-pub(crate) fn _output_html_computer_by_mitre_attck(html_output_stock: &mut Nested<String>) {
+pub(crate) fn _output_html_computer_by_mitre_attck(
+    html_output_stock: &mut Nested<String>,
+    stored_static: &StoredStatic,
+) {
     html_output_stock.push("### MITRE ATT&CK Tactics:{#computers_with_mitre_attck_detections}");
-    if COMPUTER_MITRE_ATTCK_MAP.is_empty() {
+    if stored_static.computer_mitre_attck_map.is_empty() {
         html_output_stock.push("- No computers were detected with MITRE ATT&CK Tactics.<br>Make sure you run Hayabusa with a profile that includes %MitreTactics% in order to get this info.<br>");
     }
-    for (idx, sorted_output_map) in COMPUTER_MITRE_ATTCK_MAP
+    for (idx, sorted_output_map) in stored_static
+        .computer_mitre_attck_map
         .iter()
         .sorted_by(|a, b| {
             Ord::cmp(
@@ -39,6 +43,6 @@ pub(crate) fn _output_html_computer_by_mitre_attck(html_output_stock: &mut Neste
     // Scope the accumulated counts to this single report: clear both accumulators after the table is
     // emitted so a subsequent report generated in the same process (e.g. across tests) starts clean
     // instead of leaking keys and undercounting `unique`.
-    COMPUTER_MITRE_ATTCK_MAP.clear();
-    COMPUTER_MITRE_ATTCK_UNIQUE_KEYS.clear();
+    stored_static.computer_mitre_attck_map.clear();
+    stored_static.computer_mitre_attck_unique_keys.clear();
 }
