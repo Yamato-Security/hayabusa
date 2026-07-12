@@ -29,6 +29,25 @@ pub struct LoginEvent {
     pub source_ip: CompactString,
 }
 
+/// Per-grouping-key aggregate for the logon-summary command. Index 0 is successful logons and
+/// index 1 is failed logons; alongside the counts, the earliest (`first`) and latest (`last`)
+/// event timestamp seen for each is tracked so the output can show the logon/attempt time range.
+#[derive(Debug, Clone, Default)]
+pub struct LogonStats {
+    pub counts: [usize; 2],
+    pub first: [Option<DateTime<Utc>>; 2],
+    pub last: [Option<DateTime<Utc>>; 2],
+}
+
+/// Parse an evtx `SystemTime` string into a UTC datetime, trying the standard evtx UTC format and
+/// then the timezone-offset format used by Splunk JSON exports (matching `stats_time_cnt`).
+fn parse_evtx_datetime(evttime: &str) -> Option<DateTime<Utc>> {
+    NaiveDateTime::parse_from_str(evttime, "%Y-%m-%dT%H:%M:%S%.fZ")
+        .or_else(|_| NaiveDateTime::parse_from_str(evttime, "%Y-%m-%dT%H:%M:%S%.3f%:z"))
+        .ok()
+        .map(|ndt| DateTime::<Utc>::from_naive_utc_and_offset(ndt, Utc))
+}
+
 /// Accumulates statistics over all scanned records. Depending on the command being run, only some
 /// of the fields are populated: eid-metrics fills `stats_list`, logon-summary fills
 /// `stats_login_list`, computer-metrics fills `stats_computer` (from `computer_metrics.rs`),
@@ -55,8 +74,8 @@ pub struct EventMetrics {
             usize,
         ),
     >,
-    // logon-summary: [successful, failed] logon counts per LoginEvent grouping key.
-    pub stats_login_list: HashMap<LoginEvent, [usize; 2]>,
+    // logon-summary: [successful, failed] logon counts + first/last timestamps per grouping key.
+    pub stats_login_list: HashMap<LoginEvent, LogonStats>,
     // log-metrics: per-log-file metrics (file size, event count, time range, computers, etc.).
     pub stats_logfile: Vec<LogMetrics>,
     // (EventRecordID, timestamp) pairs that have already been counted. Used by the
@@ -469,11 +488,10 @@ impl EventMetrics {
                         self.counted_rec.insert(counted);
                     }
 
-                    let countlist: [usize; 2] = [0, 0];
-                    // Fetch (or initialize) the [successful, failed] counters for this logon
-                    // event. At this point the EventID is 4624, 4625, 21 or 302; 4625 counts as a
-                    // failed logon and the others as successful logons.
-                    let count: &mut [usize; 2] = self
+                    // Fetch (or initialize) the aggregate for this logon event. At this point the
+                    // EventID is 4624, 4625, 21 or 302; 4625 counts as a failed logon (index 1)
+                    // and the others as successful logons (index 0).
+                    let entry: &mut LogonStats = self
                         .stats_login_list
                         .entry(LoginEvent {
                             channel: channel_name,
@@ -490,11 +508,34 @@ impl EventMetrics {
                             source_computer,
                             source_ip,
                         })
-                        .or_insert(countlist);
-                    if event_id == 4624 || event_id == 21 || event_id == 302 {
-                        count[0] += 1;
-                    } else if event_id == 4625 {
-                        count[1] += 1;
+                        .or_default();
+                    let idx = if event_id == 4625 { 1 } else { 0 };
+                    entry.counts[idx] += 1;
+                    // Widen the first/last timestamp range for this grouping and result type.
+                    // Try TimeCreated SystemTime first, then fall back to @timestamp (as in
+                    // stats_time_cnt).
+                    if let Some(ts) = utils::get_event_value(
+                        "Event.System.TimeCreated_attributes.SystemTime",
+                        &record.record,
+                        &stored_static.eventkey_alias,
+                    )
+                    .or_else(|| {
+                        utils::get_event_value(
+                            "Event.System.@timestamp",
+                            &record.record,
+                            &stored_static.eventkey_alias,
+                        )
+                    })
+                    .map(|v| v.to_string().replace("\\\"", "").replace('"', ""))
+                    .as_deref()
+                    .and_then(parse_evtx_datetime)
+                    {
+                        if entry.first[idx].is_none() || Some(ts) < entry.first[idx] {
+                            entry.first[idx] = Some(ts);
+                        }
+                        if entry.last[idx].is_none() || Some(ts) > entry.last[idx] {
+                            entry.last[idx] = Some(ts);
+                        }
                     }
                 }
             };
