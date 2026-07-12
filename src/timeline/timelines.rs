@@ -325,6 +325,7 @@ impl Timeline {
             self.tm_loginstats_tb_set_msg(
                 &logon_summary_option.output,
                 stored_static.common_options.no_color,
+                stored_static,
             );
         }
     }
@@ -379,7 +380,12 @@ impl Timeline {
     }
 
     /// Generate output message for login statistics per user.
-    fn tm_loginstats_tb_set_msg(&self, output: &Option<PathBuf>, no_color: bool) {
+    fn tm_loginstats_tb_set_msg(
+        &self,
+        output: &Option<PathBuf>,
+        no_color: bool,
+        stored_static: &StoredStatic,
+    ) {
         if output.is_none() {
             write_color_buffer(
                 &BufferWriter::stdout(ColorChoice::Always),
@@ -399,19 +405,33 @@ impl Timeline {
                 println!("{msg_line}");
             }
         } else {
-            self.tm_loginstats_tb_dsp_msg("successful", output, no_color);
+            self.tm_loginstats_tb_dsp_msg("successful", output, no_color, stored_static);
             if output.is_none() {
                 println!("\n\n");
             }
-            self.tm_loginstats_tb_dsp_msg("failed", output, no_color);
+            self.tm_loginstats_tb_dsp_msg("failed", output, no_color, stored_static);
         }
     }
 
     /// Output login statistics per user.
-    fn tm_loginstats_tb_dsp_msg(&self, logon_res: &str, output: &Option<PathBuf>, no_color: bool) {
+    fn tm_loginstats_tb_dsp_msg(
+        &self,
+        logon_res: &str,
+        output: &Option<PathBuf>,
+        no_color: bool,
+        stored_static: &StoredStatic,
+    ) {
         let header_column = make_ascii_titlecase(logon_res);
+        // Successful logons show logon times; failed logons show attempt times.
+        let (first_label, last_label) = if logon_res == "failed" {
+            ("First Attempt", "Last Attempt")
+        } else {
+            ("First Logon", "Last Logon")
+        };
         let header = vec![
             header_column.as_str(),
+            first_label,
+            last_label,
             "Event",
             "Target Account",
             "Target Domain",
@@ -458,27 +478,42 @@ impl Timeline {
         logins_stats_tb
             .load_preset(UTF8_FULL)
             .apply_modifier(UTF8_ROUND_CORNERS);
-        // The terminal table only shows a subset of the columns (count, event, target account,
-        // target computer, source computer, source IP address); the CSV output has all of them.
+        // The terminal table only shows a subset of the columns (count, first/last time, event,
+        // target account, target computer, source computer, source IP); the CSV has all of them.
         let h = &header;
-        logins_stats_tb.set_header([h[0], h[1], h[2], h[4], h[8], h[9]]);
-        // Index into the per-user [successful, failed] logon count pair.
+        logins_stats_tb.set_header([h[0], h[1], h[2], h[3], h[4], h[6], h[10], h[11]]);
+        // Index into the per-user [successful, failed] count/first/last arrays.
         let result_index = match logon_res {
             "successful" => 0,
             "failed" => 1,
             &_ => 0,
         };
+        let tfo = &stored_static
+            .output_option
+            .as_ref()
+            .unwrap()
+            .time_format_options;
         // Sort by aggregated count in descending order.
         let mut sorted_entries: Vec<_> = self.stats.stats_login_list.iter().collect();
-        sorted_entries.sort_by(|x, y| y.1[result_index].cmp(&x.1[result_index]));
+        sorted_entries.sort_by(|x, y| y.1.counts[result_index].cmp(&x.1.counts[result_index]));
         for (e, values) in &sorted_entries {
             // Do not display entries with a count of zero.
-            if values[result_index] == 0 {
+            if values.counts[result_index] == 0 {
                 continue;
             } else {
-                let vnum_str = values[result_index].to_string();
+                let vnum_str = values.counts[result_index].to_string();
+                let first_str = match values.first[result_index] {
+                    Some(t) => utils::format_time(&t, false, tfo).to_string(),
+                    None => "-".to_string(),
+                };
+                let last_str = match values.last[result_index] {
+                    Some(t) => utils::format_time(&t, false, tfo).to_string(),
+                    None => "-".to_string(),
+                };
                 let record_data = vec![
                     vnum_str.as_str(),
+                    first_str.as_str(),
+                    last_str.as_str(),
                     e.channel.as_str(),
                     e.dst_user.as_str(),
                     e.dst_domain.as_str(),
@@ -493,7 +528,7 @@ impl Timeline {
                     w.write_record(&record_data).ok();
                 }
                 let r = record_data;
-                logins_stats_tb.add_row([r[0], r[1], r[2], r[4], r[8], r[9]]);
+                logins_stats_tb.add_row([r[0], r[1], r[2], r[3], r[4], r[6], r[10], r[11]]);
             }
         }
         // If there is no row data, display a message indicating no detections.
@@ -1006,9 +1041,25 @@ mod tests {
 
         assert_eq!(timeline.stats.total, 4);
 
+        let dt = |s: &str| {
+            Some(DateTime::<Utc>::from_naive_utc_and_offset(
+                NaiveDateTime::parse_from_str(s, "%Y-%m-%dT%H:%M:%S%.fZ").unwrap(),
+                Utc,
+            ))
+        };
         for (k, v) in timeline.stats.stats_login_list.iter() {
             assert!(expect.contains_key(k));
-            assert_eq!(expect.get(k).unwrap(), v);
+            assert_eq!(expect.get(k).unwrap(), &v.counts);
+            // Each grouping here has a single record, so first == last == that record's time.
+            // Sec 4625 exercises the @timestamp fallback; the others use TimeCreated SystemTime.
+            let (idx, want) = match k.channel.as_str() {
+                "Sec 4624" => (0, dt("2021-12-23T00:00:00.000Z")),
+                "Sec 4625" => (1, dt("2022-12-23T00:00:00.000Z")),
+                "RDS-GTW 302" => (0, dt("2022-12-23T00:00:00.000Z")),
+                _ => continue,
+            };
+            assert_eq!(v.first[idx], want, "first for {}", k.channel);
+            assert_eq!(v.last[idx], want, "last for {}", k.channel);
         }
     }
 
@@ -1224,39 +1275,32 @@ mod tests {
             .logon_stats_start(&input_records, &dummy_stored_static);
 
         timeline.tm_logon_stats_dsp_msg(&dummy_stored_static);
-        let mut header = [
-            "Successful",
-            "Event",
-            "Target Account",
-            "Target Domain",
-            "Target Computer",
-            "Logon Type",
-            "Source Account",
-            "Source Domain",
-            "Source Computer",
-            "Source IP Address",
-        ];
+        // Expected first/last timestamps, formatted the same way the code does (so the test is
+        // independent of the local timezone). Successful logon uses SystemTime 2021-12-23;
+        // failed logon uses @timestamp 2022-12-23.
+        let tfo = &dummy_stored_static
+            .output_option
+            .as_ref()
+            .unwrap()
+            .time_format_options;
+        let mkdt = |s: &str| {
+            DateTime::<Utc>::from_naive_utc_and_offset(
+                NaiveDateTime::parse_from_str(s, "%Y-%m-%dT%H:%M:%S%.fZ").unwrap(),
+                Utc,
+            )
+        };
+        let success_t =
+            crate::detections::utils::format_time(&mkdt("2021-12-23T00:00:00.000Z"), false, tfo)
+                .to_string();
+        let failed_t =
+            crate::detections::utils::format_time(&mkdt("2022-12-23T00:00:00.000Z"), false, tfo)
+                .to_string();
 
         // CSV output test for successful logons.
-        let expect_success_records = [[
-            "1",
-            "Sec 4624",
-            "testuser",
-            "-",
-            "HAYABUSA-DESKTOP",
-            "3 - Network",
-            "-",
-            "-",
-            "HAYABUSA",
-            "192.168.100.200",
-        ]];
-        let expect_success = header.join(",")
-            + "\n"
-            + &expect_success_records
-                .join(&"\n")
-                .join(",")
-                .replace(",\n,", "\n")
-            + "\n";
+        let expect_success = format!(
+            "Successful,First Logon,Last Logon,Event,Target Account,Target Domain,Target Computer,Logon Type,Source Account,Source Domain,Source Computer,Source IP Address\n\
+             1,{success_t},{success_t},Sec 4624,testuser,-,HAYABUSA-DESKTOP,3 - Network,-,-,HAYABUSA,192.168.100.200\n"
+        );
         match read_to_string(&out_test_tm_logon_stats_successful_csv) {
             Err(_) => panic!("Failed to open file."),
             Ok(s) => {
@@ -1265,26 +1309,10 @@ mod tests {
         };
 
         // CSV output test for failed logons.
-        header[0] = "Failed";
-        let expect_failed_records = [[
-            "1",
-            "Sec 4625",
-            "testuser",
-            "-",
-            "HAYABUSA-DESKTOP",
-            "0 - System",
-            "-",
-            "-",
-            "-",
-            "-",
-        ]];
-        let expect_failed = header.join(",")
-            + "\n"
-            + &expect_failed_records
-                .join(&"\n")
-                .join(",")
-                .replace(",\n,", "\n")
-            + "\n";
+        let expect_failed = format!(
+            "Failed,First Attempt,Last Attempt,Event,Target Account,Target Domain,Target Computer,Logon Type,Source Account,Source Domain,Source Computer,Source IP Address\n\
+             1,{failed_t},{failed_t},Sec 4625,testuser,-,HAYABUSA-DESKTOP,0 - System,-,-,-,-\n"
+        );
 
         match read_to_string(&out_test_tm_logon_stats_successful_csv) {
             Err(_) => panic!("Failed to open file."),
