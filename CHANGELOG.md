@@ -4,7 +4,7 @@
 
 **Enhancements:**
 
-- Added `First Logon`/`Last Logon` columns to the `logon-summary` successful-logons table and `First Attempt`/`Last Attempt` columns to the failed-logons table, showing the time range over which each account/source combination logged on (or attempted to). (#1882) (@Shirofune-Security)
+- Added `First Logon`/`Last Logon` columns to the `logon-summary` successful-logons table and `First Attempt`/`Last Attempt` columns to the failed-logons table, showing the time range over which each account/source combination logged on (or attempted to). (#1883) (@Shirofune-Security)
 
 **Bug Fixes:**
 

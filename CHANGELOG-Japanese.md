@@ -4,7 +4,7 @@
 
 **改善:**
 
-- `logon-summary` の成功ログオンテーブルに `First Logon`/`Last Logon` 列を、失敗ログオンテーブルに `First Attempt`/`Last Attempt` 列を追加した。各アカウント/ソースの組み合わせがログオン（または試行）した時間の範囲を表示する。 (#1882) (@Shirofune-Security)
+- `logon-summary` の成功ログオンテーブルに `First Logon`/`Last Logon` 列を、失敗ログオンテーブルに `First Attempt`/`Last Attempt` 列を追加した。各アカウント/ソースの組み合わせがログオン（または試行）した時間の範囲を表示する。 (#1883) (@Shirofune-Security)
 
 **バグ修正:**
 
