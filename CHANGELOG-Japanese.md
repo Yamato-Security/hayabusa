@@ -4,6 +4,7 @@
 
 **改善:**
 
+- `extract-base64` コマンドに、PowerShellのイベントID `4100`/`4102`（Microsoft-Windows-PowerShell/Operational および PowerShellCore/Operational）と、クラシックの `403`/`600`（Windows PowerShell）を追加した。`4100`/`4102` は `ContextInfo`（`Host Application = powershell -encodedcommand ...`）と `Payload` フィールドを、`403`/`600` は既存の `400` と同様に `EventData.Data` の詳細ブロックをスキャンする。 (#1889) (@YamatoSecurity)
 - `logon-summary` の成功ログオンテーブルに `First Logon`/`Last Logon` 列を、失敗ログオンテーブルに `First Attempt`/`Last Attempt` 列を追加した。各アカウント/ソースの組み合わせがログオン（または試行）した時間の範囲を表示する。 (#1883) (@YamatoSecurity)
 
 **バグ修正:**
