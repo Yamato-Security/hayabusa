@@ -3,7 +3,6 @@ use crate::detections::configs::StoredStatic;
 use crate::detections::detection::EvtxRecordInfo;
 use crate::detections::message;
 use crate::detections::message::AlertMessage;
-use crate::detections::rule::AggResult;
 use crate::detections::rule::RuleNode;
 use crate::detections::rule::aggregation_parser::AggregationConditionToken;
 use chrono::{DateTime, TimeZone, Utc};
@@ -235,6 +234,40 @@ pub struct AggRecordTimeInfo {
     pub computer: String,
     pub channel: String,
     pub evtx_file_path: String,
+}
+
+#[derive(Debug, Clone, PartialEq, Eq, Default)]
+/// Struct that outputs the results of aggregation such as count.
+pub struct AggResult {
+    /// The aggregated value, e.g. the count.
+    pub data: i64,
+    /// The grouping value taken from the record for the field specified by "count() by".
+    pub key: String,
+    /// Array of values in detected records for the field specified inside the parentheses of
+    /// count. If nothing is specified inside the parentheses, this is an array of length 0.
+    pub field_values: Vec<String>,
+    /// Time of the first record in the detected block.
+    pub start_datetime: DateTime<Utc>,
+    /// All times and EventIDs of records in the detected block.
+    pub agg_record_time_info: Vec<AggRecordTimeInfo>,
+}
+
+impl AggResult {
+    pub fn new(
+        count_data: i64,
+        key_name: String,
+        field_value: Vec<String>,
+        event_start_timedate: DateTime<Utc>,
+        agg_record_time_info: Vec<AggRecordTimeInfo>,
+    ) -> AggResult {
+        AggResult {
+            data: count_data,
+            key: key_name,
+            field_values: field_value,
+            start_datetime: event_start_timedate,
+            agg_record_time_info,
+        }
+    }
 }
 
 #[derive(Debug)]
@@ -584,13 +617,13 @@ pub fn judge_timeframe(
 
 #[cfg(test)]
 mod tests {
+    use super::AggResult;
     use crate::detections;
     use crate::detections::configs::Action;
     use crate::detections::configs::Config;
     use crate::detections::configs::CsvOutputOption;
     use crate::detections::configs::OutputOption;
     use crate::detections::configs::StoredStatic;
-    use crate::detections::rule::AggResult;
     use crate::detections::rule::create_rule;
     use crate::detections::utils;
     use chrono::DateTime;
