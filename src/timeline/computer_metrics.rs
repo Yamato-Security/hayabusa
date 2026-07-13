@@ -254,10 +254,10 @@ mod tests {
         let output_tmp_dir = tempfile::tempdir().unwrap();
         let out_test_computer_metrics_csv = output_tmp_dir.path().join("test_computer_metrics.csv");
         fn create_dummy_stored_static(action: Action) -> StoredStatic {
-            StoredStatic::create_static_data(Some(Config {
+            StoredStatic::create_static_data(Config {
                 action: Some(action),
                 debug: false,
-            }))
+            })
         }
         let output = Some(out_test_computer_metrics_csv.clone());
         let dummy_stored_static =

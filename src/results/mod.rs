@@ -638,10 +638,10 @@ mod tests {
             output: Some(out_test_emit_csv_csv.clone()),
             ..Default::default()
         });
-        let dummy_config = Some(Config {
+        let dummy_config = Config {
             action: Some(dummy_action),
             debug: false,
-        });
+        };
         let stored_static = StoredStatic::create_static_data(dummy_config);
         let output_profile: Vec<(CompactString, Profile)> = load_profile(
             "test_files/config/default_profile.yaml",
@@ -879,10 +879,10 @@ mod tests {
             multiline: true,
             ..Default::default()
         });
-        let dummy_config = Some(Config {
+        let dummy_config = Config {
             action: Some(dummy_action),
             debug: false,
-        });
+        };
         let mut stored_static = StoredStatic::create_static_data(dummy_config);
         let output_profile: Vec<(CompactString, Profile)> = load_profile(
             "test_files/config/default_profile.yaml",
@@ -1204,10 +1204,10 @@ mod tests {
             output: Some(out_test_emit_csv_remove_duplicate_csv.clone()),
             ..Default::default()
         });
-        let dummy_config = Some(Config {
+        let dummy_config = Config {
             action: Some(dummy_action),
             debug: false,
-        });
+        };
         let stored_static = StoredStatic::create_static_data(dummy_config);
         let output_profile: Vec<(CompactString, Profile)> = load_profile(
             "test_files/config/default_profile.yaml",
@@ -1440,10 +1440,10 @@ mod tests {
             output: Some(out_test_emit_csv_remove_duplicate_json.clone()),
             ..Default::default()
         });
-        let dummy_config = Some(Config {
+        let dummy_config = Config {
             action: Some(dummy_action),
             debug: false,
-        });
+        };
         let stored_static = StoredStatic::create_static_data(dummy_config);
         let output_profile: Vec<(CompactString, Profile)> = load_profile(
             "test_files/config/default_profile.yaml",
@@ -1753,10 +1753,10 @@ mod tests {
                 disable_abbreviations: false,
             },
         });
-        let dummy_config = Some(Config {
+        let dummy_config = Config {
             action: Some(dummy_action),
             debug: false,
-        });
+        };
         let stored_static = StoredStatic::create_static_data(dummy_config);
         let output_profile: Vec<(CompactString, Profile)> = load_profile(
             "test_files/config/default_profile.yaml",
@@ -1990,10 +1990,10 @@ mod tests {
             ..Default::default()
         });
 
-        let dummy_config = Some(Config {
+        let dummy_config = Config {
             action: Some(json_dummy_action),
             debug: false,
-        });
+        };
         let stored_static = StoredStatic::create_static_data(dummy_config);
         let output_profile: Vec<(CompactString, Profile)> = load_profile(
             "test_files/config/default_profile.yaml",
@@ -2170,10 +2170,10 @@ mod tests {
             ..Default::default()
         });
 
-        let dummy_config = Some(Config {
+        let dummy_config = Config {
             action: Some(json_dummy_action),
             debug: false,
-        });
+        };
         let stored_static = StoredStatic::create_static_data(dummy_config);
         let output_profile: Vec<(CompactString, Profile)> = load_profile(
             "test_files/config/default_profile.yaml",

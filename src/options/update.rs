@@ -308,7 +308,7 @@ mod tests {
 
     #[test]
     fn test_get_updated_rules() {
-        let mut dummy_stored_static = StoredStatic::create_static_data(Some(Config {
+        let mut dummy_stored_static = StoredStatic::create_static_data(Config {
             action: Some(Action::UpdateRules(UpdateOption {
                 rules: Path::new("./rules").to_path_buf(),
                 common_options: CommonOptions {
@@ -318,7 +318,7 @@ mod tests {
                 },
             })),
             debug: false,
-        }));
+        });
         dummy_stored_static.include_status.insert("*".into());
         let prev_modified_rules =
             Update::get_updated_rules("test_files/rules/level_yaml", &dummy_stored_static);
@@ -331,7 +331,7 @@ mod tests {
 
     #[test]
     fn test_no_diff_print_diff_modified_rule_dates() {
-        let dummy_stored_static = StoredStatic::create_static_data(Some(Config {
+        let dummy_stored_static = StoredStatic::create_static_data(Config {
             action: Some(Action::UpdateRules(UpdateOption {
                 rules: Path::new("./rules").to_path_buf(),
                 common_options: CommonOptions {
@@ -341,7 +341,7 @@ mod tests {
                 },
             })),
             debug: false,
-        }));
+        });
         let prev_modified_rules =
             Update::get_updated_rules("test_files/rules/level_yaml", &dummy_stored_static);
         let dummy_after_updated_rules = prev_modified_rules.clone();
@@ -360,7 +360,7 @@ mod tests {
 
     #[test]
     fn test_diff_print_diff_modified_rule_dates() {
-        let dummy_stored_static = StoredStatic::create_static_data(Some(Config {
+        let dummy_stored_static = StoredStatic::create_static_data(Config {
             action: Some(Action::UpdateRules(UpdateOption {
                 rules: Path::new("./rules").to_path_buf(),
                 common_options: CommonOptions {
@@ -370,7 +370,7 @@ mod tests {
                 },
             })),
             debug: false,
-        }));
+        });
         let prev_modified_rules =
             Update::get_updated_rules("test_files/rules/level_yaml", &dummy_stored_static);
         let mut dummy_after_updated_rules = prev_modified_rules.clone();

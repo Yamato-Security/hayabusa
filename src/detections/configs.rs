@@ -187,11 +187,40 @@ pub struct StoredStatic {
     pub validate_checksum: bool,
 }
 
+/// Resolves a bundled config file: prefer `<config_path>/<name>`, otherwise fall back to the
+/// `rules/config/<name>` copy shipped next to the executable. Collapses the config-file fallback
+/// chain that was previously copy-pasted for every setting file.
+fn resolve_config_file(config_path: &Path, name: &str) -> PathBuf {
+    check_setting_path(config_path, name, false).unwrap_or_else(|| {
+        check_setting_path(
+            &CURRENT_EXE_PATH.to_path_buf(),
+            &format!("rules/config/{name}"),
+            true,
+        )
+        .unwrap()
+    })
+}
+
+/// Returns true when `level` is one of the recognized detection levels (case-insensitive).
+fn is_valid_level(level: &str) -> bool {
+    LEVEL::iter().any(|l| l.eq(level.to_lowercase().as_str()))
+}
+
+/// Builds a `HashSet<CompactString>` from an optional list of computer/EID filter values.
+/// Mirrors the `.as_ref().unwrap_or(&vec![]).iter().map(CompactString::from).collect()` idiom
+/// that was repeated for every subcommand's include/exclude filters.
+fn compact_string_set(values: Option<&Vec<String>>) -> HashSet<CompactString> {
+    values
+        .map(|v| v.iter().map(CompactString::from).collect())
+        .unwrap_or_default()
+}
+
 impl StoredStatic {
     /// Builds the StoredStatic data set from the command-line options parsed in main.rs.
-    pub fn create_static_data(input_config: Option<Config>) -> StoredStatic {
-        let action_id = Action::to_usize(input_config.as_ref().unwrap().action.as_ref());
-        let quiet_errors_flag = match &input_config.as_ref().unwrap().action {
+    pub fn create_static_data(config: Config) -> StoredStatic {
+        let action = config.action.as_ref();
+        let action_id = Action::to_usize(action);
+        let quiet_errors_flag = match action {
             Some(Action::CsvTimeline(opt)) => opt.output_options.detect_common_options.quiet_errors,
             Some(Action::JsonTimeline(opt)) => {
                 opt.output_options.detect_common_options.quiet_errors
@@ -206,7 +235,7 @@ impl StoredStatic {
             Some(Action::LogMetrics(opt)) => opt.detect_common_options.quiet_errors,
             _ => false,
         };
-        let common_options = match &input_config.as_ref().unwrap().action {
+        let common_options = match action {
             Some(Action::CsvTimeline(opt)) => opt.output_options.common_options,
             Some(Action::JsonTimeline(opt)) => opt.output_options.common_options,
             Some(Action::LevelTuning(opt)) => opt.common_options,
@@ -229,7 +258,7 @@ impl StoredStatic {
             },
         };
         let binding = Path::new("./rules/config").to_path_buf();
-        let config_path = match &input_config.as_ref().unwrap().action {
+        let config_path = match action {
             Some(Action::CsvTimeline(opt)) => &opt.output_options.detect_common_options.config,
             Some(Action::JsonTimeline(opt)) => &opt.output_options.detect_common_options.config,
             Some(Action::LogonSummary(opt)) => &opt.detect_common_options.config,
@@ -241,7 +270,7 @@ impl StoredStatic {
             Some(Action::LogMetrics(opt)) => &opt.detect_common_options.config,
             _ => &binding,
         };
-        let verbose_flag = match &input_config.as_ref().unwrap().action {
+        let verbose_flag = match action {
             Some(Action::CsvTimeline(opt)) => opt.output_options.detect_common_options.verbose,
             Some(Action::JsonTimeline(opt)) => opt.output_options.detect_common_options.verbose,
             Some(Action::LogonSummary(opt)) => opt.detect_common_options.verbose,
@@ -253,7 +282,7 @@ impl StoredStatic {
             Some(Action::LogMetrics(opt)) => opt.detect_common_options.verbose,
             _ => false,
         };
-        let json_input_flag = match &input_config.as_ref().unwrap().action {
+        let json_input_flag = match action {
             Some(Action::CsvTimeline(opt)) => opt.output_options.detect_common_options.json_input,
             Some(Action::JsonTimeline(opt)) => opt.output_options.detect_common_options.json_input,
             Some(Action::LogonSummary(opt)) => opt.detect_common_options.json_input,
@@ -264,46 +293,25 @@ impl StoredStatic {
             Some(Action::LogMetrics(opt)) => opt.detect_common_options.json_input,
             _ => false,
         };
-        let is_valid_min_level = match &input_config.as_ref().unwrap().action {
-            Some(Action::CsvTimeline(opt)) => LEVEL::iter()
-                .any(|level| level.eq(opt.output_options.min_level.to_lowercase().as_str())),
-            Some(Action::JsonTimeline(opt)) => LEVEL::iter()
-                .any(|level| level.eq(opt.output_options.min_level.to_lowercase().as_str())),
-            Some(Action::PivotKeywordsList(opt)) => {
-                LEVEL::iter().any(|level| level.eq(opt.min_level.to_lowercase().as_str()))
-            }
+        let is_valid_min_level = match action {
+            Some(Action::CsvTimeline(opt)) => is_valid_level(&opt.output_options.min_level),
+            Some(Action::JsonTimeline(opt)) => is_valid_level(&opt.output_options.min_level),
+            Some(Action::PivotKeywordsList(opt)) => is_valid_level(&opt.min_level),
             _ => true,
         };
-        let is_valid_exact_level = match &input_config.as_ref().unwrap().action {
-            Some(Action::CsvTimeline(opt)) => {
-                opt.output_options.exact_level.is_none()
-                    || LEVEL::iter().any(|level| {
-                        level.eq(opt
-                            .output_options
-                            .exact_level
-                            .as_ref()
-                            .unwrap()
-                            .to_lowercase()
-                            .as_str())
-                    })
-            }
-            Some(Action::JsonTimeline(opt)) => {
-                opt.output_options.exact_level.is_none()
-                    || LEVEL::iter().any(|level| {
-                        level.eq(opt
-                            .output_options
-                            .exact_level
-                            .as_ref()
-                            .unwrap()
-                            .to_lowercase()
-                            .as_str())
-                    })
-            }
+        let is_valid_exact_level = match action {
+            Some(Action::CsvTimeline(opt)) => opt
+                .output_options
+                .exact_level
+                .as_ref()
+                .is_none_or(|l| is_valid_level(l)),
+            Some(Action::JsonTimeline(opt)) => opt
+                .output_options
+                .exact_level
+                .as_ref()
+                .is_none_or(|l| is_valid_level(l)),
             Some(Action::PivotKeywordsList(opt)) => {
-                opt.exact_level.is_none()
-                    || LEVEL::iter().any(|level| {
-                        level.eq(opt.exact_level.as_ref().unwrap().to_lowercase().as_str())
-                    })
+                opt.exact_level.as_ref().is_none_or(|l| is_valid_level(l))
             }
             _ => true,
         };
@@ -312,7 +320,7 @@ impl StoredStatic {
             process::exit(1);
         }
 
-        let geo_ip_db_result = match &input_config.as_ref().unwrap().action {
+        let geo_ip_db_result = match action {
             Some(Action::CsvTimeline(opt)) => GeoIPSearch::check_exist_geo_ip_files(
                 &opt.geo_ip,
                 vec![
@@ -404,7 +412,7 @@ impl StoredStatic {
             }
             geo_ip_db_yaml = Some(static_geoip_conf);
         };
-        let output_path = match &input_config.as_ref().unwrap().action {
+        let output_path = match action {
             Some(Action::CsvTimeline(opt)) => opt.output.as_ref(),
             Some(Action::JsonTimeline(opt)) => opt.output.as_ref(),
             Some(Action::EidMetrics(opt)) => opt.output.as_ref(),
@@ -416,7 +424,7 @@ impl StoredStatic {
             Some(Action::LogMetrics(opt)) => opt.output.as_ref(),
             _ => None,
         };
-        let disable_abbreviation = match &input_config.as_ref().unwrap().action {
+        let disable_abbreviation = match action {
             Some(Action::CsvTimeline(opt)) => opt.disable_abbreviations_opt.disable_abbreviations,
             Some(Action::JsonTimeline(opt)) => opt.disable_abbreviations_opt.disable_abbreviations,
             Some(Action::Search(opt)) => opt.disable_abbreviations_opt.disable_abbreviations,
@@ -425,231 +433,119 @@ impl StoredStatic {
         };
 
         let generic_abbreviations = create_output_filter_config(
-            check_setting_path(config_path, "generic_abbreviations.txt", false)
-                .unwrap_or_else(|| {
-                    check_setting_path(
-                        &CURRENT_EXE_PATH.to_path_buf(),
-                        "rules/config/generic_abbreviations.txt",
-                        true,
-                    )
-                    .unwrap()
-                })
+            resolve_config_file(config_path, "generic_abbreviations.txt")
                 .to_str()
                 .unwrap(),
             false,
             disable_abbreviation,
         );
-        let multiline_flag = match &input_config.as_ref().unwrap().action {
+        let multiline_flag = match action {
             Some(Action::CsvTimeline(opt)) => opt.multiline,
             Some(Action::Search(opt)) => opt.multiline,
             Some(Action::LogMetrics(opt)) => opt.multiline,
             _ => false,
         };
-        let tab_separator_flag = match &input_config.as_ref().unwrap().action {
+        let tab_separator_flag = match action {
             Some(Action::CsvTimeline(opt)) => opt.tab_separator,
             Some(Action::Search(opt)) => opt.tab_separator,
             Some(Action::LogMetrics(opt)) => opt.tab_separator,
             _ => false,
         };
-        let proven_rule_flag = match &input_config.as_ref().unwrap().action {
+        let proven_rule_flag = match action {
             Some(Action::CsvTimeline(opt)) => opt.output_options.proven_rules,
             Some(Action::JsonTimeline(opt)) => opt.output_options.proven_rules,
             _ => false,
         };
         let target_ruleids = if proven_rule_flag {
             load_target_ids(
-                check_setting_path(config_path, "proven_rules.txt", false)
-                    .unwrap_or_else(|| {
-                        check_setting_path(
-                            &CURRENT_EXE_PATH.to_path_buf(),
-                            "rules/config/proven_rules.txt",
-                            true,
-                        )
-                        .unwrap()
-                    })
+                resolve_config_file(config_path, "proven_rules.txt")
                     .to_str()
                     .unwrap(),
             )
         } else {
             TargetIds::default()
         };
-        let include_computer: HashSet<CompactString> = match &input_config.as_ref().unwrap().action
-        {
-            Some(Action::CsvTimeline(opt)) => opt
-                .output_options
-                .detect_common_options
-                .include_computer
-                .as_ref()
-                .unwrap_or(&vec![])
-                .iter()
-                .map(CompactString::from)
-                .collect(),
-            Some(Action::JsonTimeline(opt)) => opt
-                .output_options
-                .detect_common_options
-                .include_computer
-                .as_ref()
-                .unwrap_or(&vec![])
-                .iter()
-                .map(CompactString::from)
-                .collect(),
-            Some(Action::EidMetrics(opt)) => opt
-                .detect_common_options
-                .include_computer
-                .as_ref()
-                .unwrap_or(&vec![])
-                .iter()
-                .map(CompactString::from)
-                .collect(),
-            Some(Action::ExtractBase64(opt)) => opt
-                .detect_common_options
-                .include_computer
-                .as_ref()
-                .unwrap_or(&vec![])
-                .iter()
-                .map(CompactString::from)
-                .collect(),
-            Some(Action::PivotKeywordsList(opt)) => opt
-                .detect_common_options
-                .include_computer
-                .as_ref()
-                .unwrap_or(&vec![])
-                .iter()
-                .map(CompactString::from)
-                .collect(),
-            Some(Action::LogonSummary(opt)) => opt
-                .detect_common_options
-                .include_computer
-                .as_ref()
-                .unwrap_or(&vec![])
-                .iter()
-                .map(CompactString::from)
-                .collect(),
-            Some(Action::LogMetrics(opt)) => opt
-                .detect_common_options
-                .include_computer
-                .as_ref()
-                .unwrap_or(&vec![])
-                .iter()
-                .map(CompactString::from)
-                .collect(),
+        let include_computer: HashSet<CompactString> = match action {
+            Some(Action::CsvTimeline(opt)) => compact_string_set(
+                opt.output_options
+                    .detect_common_options
+                    .include_computer
+                    .as_ref(),
+            ),
+            Some(Action::JsonTimeline(opt)) => compact_string_set(
+                opt.output_options
+                    .detect_common_options
+                    .include_computer
+                    .as_ref(),
+            ),
+            Some(Action::EidMetrics(opt)) => {
+                compact_string_set(opt.detect_common_options.include_computer.as_ref())
+            }
+            Some(Action::ExtractBase64(opt)) => {
+                compact_string_set(opt.detect_common_options.include_computer.as_ref())
+            }
+            Some(Action::PivotKeywordsList(opt)) => {
+                compact_string_set(opt.detect_common_options.include_computer.as_ref())
+            }
+            Some(Action::LogonSummary(opt)) => {
+                compact_string_set(opt.detect_common_options.include_computer.as_ref())
+            }
+            Some(Action::LogMetrics(opt)) => {
+                compact_string_set(opt.detect_common_options.include_computer.as_ref())
+            }
             _ => HashSet::default(),
         };
-        let exclude_computer: HashSet<CompactString> = match &input_config.as_ref().unwrap().action
-        {
-            Some(Action::CsvTimeline(opt)) => opt
-                .output_options
-                .detect_common_options
-                .exclude_computer
-                .as_ref()
-                .unwrap_or(&vec![])
-                .iter()
-                .map(CompactString::from)
-                .collect(),
-            Some(Action::JsonTimeline(opt)) => opt
-                .output_options
-                .detect_common_options
-                .exclude_computer
-                .as_ref()
-                .unwrap_or(&vec![])
-                .iter()
-                .map(CompactString::from)
-                .collect(),
-            Some(Action::EidMetrics(opt)) => opt
-                .detect_common_options
-                .exclude_computer
-                .as_ref()
-                .unwrap_or(&vec![])
-                .iter()
-                .map(CompactString::from)
-                .collect(),
-            Some(Action::ExtractBase64(opt)) => opt
-                .detect_common_options
-                .exclude_computer
-                .as_ref()
-                .unwrap_or(&vec![])
-                .iter()
-                .map(CompactString::from)
-                .collect(),
-            Some(Action::PivotKeywordsList(opt)) => opt
-                .detect_common_options
-                .exclude_computer
-                .as_ref()
-                .unwrap_or(&vec![])
-                .iter()
-                .map(CompactString::from)
-                .collect(),
-            Some(Action::LogonSummary(opt)) => opt
-                .detect_common_options
-                .exclude_computer
-                .as_ref()
-                .unwrap_or(&vec![])
-                .iter()
-                .map(CompactString::from)
-                .collect(),
-            Some(Action::LogMetrics(opt)) => opt
-                .detect_common_options
-                .exclude_computer
-                .as_ref()
-                .unwrap_or(&vec![])
-                .iter()
-                .map(CompactString::from)
-                .collect(),
+        let exclude_computer: HashSet<CompactString> = match action {
+            Some(Action::CsvTimeline(opt)) => compact_string_set(
+                opt.output_options
+                    .detect_common_options
+                    .exclude_computer
+                    .as_ref(),
+            ),
+            Some(Action::JsonTimeline(opt)) => compact_string_set(
+                opt.output_options
+                    .detect_common_options
+                    .exclude_computer
+                    .as_ref(),
+            ),
+            Some(Action::EidMetrics(opt)) => {
+                compact_string_set(opt.detect_common_options.exclude_computer.as_ref())
+            }
+            Some(Action::ExtractBase64(opt)) => {
+                compact_string_set(opt.detect_common_options.exclude_computer.as_ref())
+            }
+            Some(Action::PivotKeywordsList(opt)) => {
+                compact_string_set(opt.detect_common_options.exclude_computer.as_ref())
+            }
+            Some(Action::LogonSummary(opt)) => {
+                compact_string_set(opt.detect_common_options.exclude_computer.as_ref())
+            }
+            Some(Action::LogMetrics(opt)) => {
+                compact_string_set(opt.detect_common_options.exclude_computer.as_ref())
+            }
             _ => HashSet::default(),
         };
-        let include_eid: HashSet<CompactString> = match &input_config.as_ref().unwrap().action {
-            Some(Action::CsvTimeline(opt)) => opt
-                .output_options
-                .include_eid
-                .as_ref()
-                .unwrap_or(&vec![])
-                .iter()
-                .map(CompactString::from)
-                .collect(),
-            Some(Action::JsonTimeline(opt)) => opt
-                .output_options
-                .include_eid
-                .as_ref()
-                .unwrap_or(&vec![])
-                .iter()
-                .map(CompactString::from)
-                .collect(),
-            Some(Action::PivotKeywordsList(opt)) => opt
-                .include_eid
-                .as_ref()
-                .unwrap_or(&vec![])
-                .iter()
-                .map(CompactString::from)
-                .collect(),
+        let include_eid: HashSet<CompactString> = match action {
+            Some(Action::CsvTimeline(opt)) => {
+                compact_string_set(opt.output_options.include_eid.as_ref())
+            }
+            Some(Action::JsonTimeline(opt)) => {
+                compact_string_set(opt.output_options.include_eid.as_ref())
+            }
+            Some(Action::PivotKeywordsList(opt)) => compact_string_set(opt.include_eid.as_ref()),
             _ => HashSet::default(),
         };
-        let exclude_eid: HashSet<CompactString> = match &input_config.as_ref().unwrap().action {
-            Some(Action::CsvTimeline(opt)) => opt
-                .output_options
-                .exclude_eid
-                .as_ref()
-                .unwrap_or(&vec![])
-                .iter()
-                .map(CompactString::from)
-                .collect(),
-            Some(Action::JsonTimeline(opt)) => opt
-                .output_options
-                .exclude_eid
-                .as_ref()
-                .unwrap_or(&vec![])
-                .iter()
-                .map(CompactString::from)
-                .collect(),
-            Some(Action::PivotKeywordsList(opt)) => opt
-                .exclude_eid
-                .as_ref()
-                .unwrap_or(&vec![])
-                .iter()
-                .map(CompactString::from)
-                .collect(),
+        let exclude_eid: HashSet<CompactString> = match action {
+            Some(Action::CsvTimeline(opt)) => {
+                compact_string_set(opt.output_options.exclude_eid.as_ref())
+            }
+            Some(Action::JsonTimeline(opt)) => {
+                compact_string_set(opt.output_options.exclude_eid.as_ref())
+            }
+            Some(Action::PivotKeywordsList(opt)) => compact_string_set(opt.exclude_eid.as_ref()),
             _ => HashSet::default(),
         };
-        let no_field_data_mapping_flag = match &input_config.as_ref().unwrap().action {
+        let no_field_data_mapping_flag = match action {
             Some(Action::CsvTimeline(opt)) => opt.output_options.no_field,
             Some(Action::JsonTimeline(opt)) => opt.output_options.no_field,
             _ => false,
@@ -658,27 +554,19 @@ impl StoredStatic {
             None
         } else {
             create_field_data_map(Path::new(
-                check_setting_path(config_path, "data_mapping", false)
-                    .unwrap_or_else(|| {
-                        check_setting_path(
-                            &CURRENT_EXE_PATH.to_path_buf(),
-                            "rules/config/data_mapping",
-                            true,
-                        )
-                        .unwrap()
-                    })
+                resolve_config_file(config_path, "data_mapping")
                     .to_str()
                     .unwrap(),
             ))
         };
 
-        let no_pwsh_field_extraction_flag = match &input_config.as_ref().unwrap().action {
+        let no_pwsh_field_extraction_flag = match action {
             Some(Action::CsvTimeline(opt)) => opt.output_options.no_pwsh_field_extraction,
             Some(Action::JsonTimeline(opt)) => opt.output_options.no_pwsh_field_extraction,
             _ => false,
         };
 
-        let enable_recover_records = match &input_config.as_ref().unwrap().action {
+        let enable_recover_records = match action {
             Some(Action::CsvTimeline(opt)) => opt.output_options.input_args.recover_records,
             Some(Action::JsonTimeline(opt)) => opt.output_options.input_args.recover_records,
             Some(Action::EidMetrics(opt)) => opt.input_args.recover_records,
@@ -689,7 +577,7 @@ impl StoredStatic {
             Some(Action::LogMetrics(opt)) => opt.input_args.recover_records,
             _ => false,
         };
-        let time_offset = match &input_config.as_ref().unwrap().action {
+        let time_offset = match action {
             Some(Action::CsvTimeline(opt)) => opt.output_options.input_args.time_offset.clone(),
             Some(Action::JsonTimeline(opt)) => opt.output_options.input_args.time_offset.clone(),
             Some(Action::EidMetrics(opt)) => opt.input_args.time_offset.clone(),
@@ -701,7 +589,7 @@ impl StoredStatic {
             Some(Action::LogMetrics(opt)) => opt.input_args.time_offset.clone(),
             _ => None,
         };
-        let include_status: HashSet<CompactString> = match &input_config.as_ref().unwrap().action {
+        let include_status: HashSet<CompactString> = match action {
             Some(Action::CsvTimeline(opt)) => opt
                 .output_options
                 .include_status
@@ -727,27 +615,27 @@ impl StoredStatic {
                 .collect(),
             _ => HashSet::default(),
         };
-        let is_low_memory = match &input_config.as_ref().unwrap().action {
+        let is_low_memory = match action {
             Some(Action::CsvTimeline(opt)) => !opt.output_options.sort_events,
             Some(Action::JsonTimeline(opt)) => !opt.output_options.sort_events,
             _ => false,
         };
-        let enable_all_rules = match &input_config.as_ref().unwrap().action {
+        let enable_all_rules = match action {
             Some(Action::CsvTimeline(opt)) => opt.output_options.enable_all_rules,
             Some(Action::JsonTimeline(opt)) => opt.output_options.enable_all_rules,
             _ => false,
         };
-        let scan_all_evtx_files = match &input_config.as_ref().unwrap().action {
+        let scan_all_evtx_files = match action {
             Some(Action::CsvTimeline(opt)) => opt.output_options.scan_all_evtx_files,
             Some(Action::JsonTimeline(opt)) => opt.output_options.scan_all_evtx_files,
             _ => false,
         };
-        let metrics_remove_duplication = match &input_config.as_ref().unwrap().action {
+        let metrics_remove_duplication = match action {
             Some(Action::EidMetrics(opt)) => opt.remove_duplicate_detections,
             Some(Action::LogonSummary(opt)) => opt.remove_duplicate_detections,
             _ => false,
         };
-        let validate_checksum = match &input_config.as_ref().unwrap().action {
+        let validate_checksum = match action {
             Some(Action::CsvTimeline(opt)) => {
                 opt.output_options.detect_common_options.validate_checksums
             }
@@ -764,18 +652,10 @@ impl StoredStatic {
             _ => false,
         };
         let mut ret = StoredStatic {
-            config: input_config.as_ref().unwrap().to_owned(),
+            config: config.to_owned(),
             config_path: config_path.to_path_buf(),
             channel_abbr_config: create_output_filter_config(
-                check_setting_path(config_path, "channel_abbreviations.txt", false)
-                    .unwrap_or_else(|| {
-                        check_setting_path(
-                            &CURRENT_EXE_PATH.to_path_buf(),
-                            "rules/config/channel_abbreviations.txt",
-                            true,
-                        )
-                        .unwrap()
-                    })
+                resolve_config_file(config_path, "channel_abbreviations.txt")
                     .to_str()
                     .unwrap(),
                 true,
@@ -791,44 +671,20 @@ impl StoredStatic {
                 .map(|x| x.to_owned())
                 .collect_vec(),
             provider_abbr_config: create_output_filter_config(
-                check_setting_path(config_path, "provider_abbreviations.txt", false)
-                    .unwrap_or_else(|| {
-                        check_setting_path(
-                            &CURRENT_EXE_PATH.to_path_buf(),
-                            "rules/config/provider_abbreviations.txt",
-                            true,
-                        )
-                        .unwrap()
-                    })
+                resolve_config_file(config_path, "provider_abbreviations.txt")
                     .to_str()
                     .unwrap(),
                 false,
                 disable_abbreviation,
             ),
             default_details: Self::get_default_details(
-                check_setting_path(config_path, "default_details.txt", false)
-                    .unwrap_or_else(|| {
-                        check_setting_path(
-                            &CURRENT_EXE_PATH.to_path_buf(),
-                            "rules/config/default_details.txt",
-                            true,
-                        )
-                        .unwrap()
-                    })
+                resolve_config_file(config_path, "default_details.txt")
                     .to_str()
                     .unwrap(),
                 disable_abbreviation,
             ),
             eventkey_alias: load_eventkey_alias(
-                check_setting_path(config_path, "eventkey_alias.txt", false)
-                    .unwrap_or_else(|| {
-                        check_setting_path(
-                            &CURRENT_EXE_PATH.to_path_buf(),
-                            "rules/config/eventkey_alias.txt",
-                            true,
-                        )
-                        .unwrap()
-                    })
+                resolve_config_file(config_path, "eventkey_alias.txt")
                     .to_str()
                     .unwrap(),
             ),
@@ -842,8 +698,8 @@ impl StoredStatic {
             computer_metrics_flag: action_id == 11,
             log_metrics_flag: action_id == 12,
             extract_base64_flag: action_id == 13,
-            search_option: extract_search_options(input_config.as_ref().unwrap()),
-            output_option: extract_output_options(input_config.as_ref().unwrap()),
+            search_option: extract_search_options(&config),
+            output_option: extract_output_options(&config),
             pivot_keyword_list_flag: action_id == 4,
             pivot_keyword: Arc::new(RwLock::new(PivotKeywordMap::new())),
             error_log_stack: Arc::new(Mutex::new(Nested::<String>::new())),
@@ -851,32 +707,16 @@ impl StoredStatic {
             computer_mitre_attck_unique_keys: Arc::new(DashSet::new()),
             quiet_errors_flag,
             verbose_flag,
-            html_report_flag: htmlreport::check_html_flag(input_config.as_ref().unwrap()),
+            html_report_flag: htmlreport::check_html_flag(&config),
             profiles: None,
-            thread_number: check_thread_number(input_config.as_ref().unwrap()),
+            thread_number: check_thread_number(&config),
             event_timeline_config: load_eventcode_info(
-                check_setting_path(config_path, "channel_eid_info.txt", false)
-                    .unwrap_or_else(|| {
-                        check_setting_path(
-                            &CURRENT_EXE_PATH.to_path_buf(),
-                            "rules/config/channel_eid_info.txt",
-                            true,
-                        )
-                        .unwrap()
-                    })
+                resolve_config_file(config_path, "channel_eid_info.txt")
                     .to_str()
                     .unwrap(),
             ),
             target_eventids: load_target_ids(
-                check_setting_path(config_path, "target_event_IDs.txt", false)
-                    .unwrap_or_else(|| {
-                        check_setting_path(
-                            &CURRENT_EXE_PATH.to_path_buf(),
-                            "rules/config/target_event_IDs.txt",
-                            true,
-                        )
-                        .unwrap()
-                    })
+                resolve_config_file(config_path, "target_event_IDs.txt")
                     .to_str()
                     .unwrap(),
             ),
@@ -2988,7 +2828,7 @@ mod tests {
 
     #[test]
     fn test_time_offset_csv() {
-        let csv_timeline = StoredStatic::create_static_data(Some(Config {
+        let csv_timeline = StoredStatic::create_static_data(Config {
             action: Some(Action::CsvTimeline(CsvOutputOption {
                 output_options: OutputOption {
                     input_args: InputOption {
@@ -3006,7 +2846,7 @@ mod tests {
                 ..Default::default()
             })),
             debug: false,
-        }));
+        });
         let now = Utc::now();
         let actual = TargetEventTime::new(&csv_timeline);
         let actual_diff = now - actual.start_time.unwrap();
@@ -3015,7 +2855,7 @@ mod tests {
 
     #[test]
     fn test_time_offset_json() {
-        let json_timeline = StoredStatic::create_static_data(Some(Config {
+        let json_timeline = StoredStatic::create_static_data(Config {
             action: Some(Action::JsonTimeline(JSONOutputOption {
                 output_options: OutputOption {
                     input_args: InputOption {
@@ -3033,7 +2873,7 @@ mod tests {
                 ..Default::default()
             })),
             debug: false,
-        }));
+        });
         let now = Utc::now();
         let actual = TargetEventTime::new(&json_timeline);
         let actual_diff = now - actual.start_time.unwrap();
@@ -3042,7 +2882,7 @@ mod tests {
 
     #[test]
     fn test_time_offset_search() {
-        let json_timeline = StoredStatic::create_static_data(Some(Config {
+        let json_timeline = StoredStatic::create_static_data(Config {
             action: Some(Action::Search(SearchOption {
                 common_options: CommonOptions::default(),
                 input_args: InputOption {
@@ -3056,7 +2896,7 @@ mod tests {
                 ..Default::default()
             })),
             debug: false,
-        }));
+        });
         let now = Utc::now();
         let actual = TargetEventTime::new(&json_timeline);
         let actual_diff = now - actual.start_time.unwrap();
@@ -3065,7 +2905,7 @@ mod tests {
 
     #[test]
     fn test_time_offset_eid_metrics() {
-        let eid_metrics = StoredStatic::create_static_data(Some(Config {
+        let eid_metrics = StoredStatic::create_static_data(Config {
             action: Some(Action::EidMetrics(EidMetricsOption {
                 common_options: CommonOptions::default(),
                 input_args: InputOption {
@@ -3080,7 +2920,7 @@ mod tests {
                 ..Default::default()
             })),
             debug: false,
-        }));
+        });
         let now = Utc::now();
         let actual = TargetEventTime::new(&eid_metrics);
         let actual_diff = now - actual.start_time.unwrap();
@@ -3089,7 +2929,7 @@ mod tests {
 
     #[test]
     fn test_time_offset_logon_summary() {
-        let logon_summary = StoredStatic::create_static_data(Some(Config {
+        let logon_summary = StoredStatic::create_static_data(Config {
             action: Some(Action::LogonSummary(LogonSummaryOption {
                 input_args: InputOption {
                     time_offset: Some("1y1d1h".to_string()),
@@ -3103,7 +2943,7 @@ mod tests {
                 ..Default::default()
             })),
             debug: false,
-        }));
+        });
         let now = Utc::now();
         let actual = TargetEventTime::new(&logon_summary);
         let actual_diff = now - actual.start_time.unwrap();
@@ -3116,7 +2956,7 @@ mod tests {
 
     #[test]
     fn test_time_offset_pivot() {
-        let pivot_keywords_list = StoredStatic::create_static_data(Some(Config {
+        let pivot_keywords_list = StoredStatic::create_static_data(Config {
             action: Some(Action::PivotKeywordsList(PivotKeywordOption {
                 input_args: InputOption {
                     time_offset: Some("1y1M1s".to_string()),
@@ -3132,7 +2972,7 @@ mod tests {
                 ..Default::default()
             })),
             debug: false,
-        }));
+        });
         let now = Utc::now();
         let actual = TargetEventTime::new(&pivot_keywords_list);
         let actual_diff = now - actual.start_time.unwrap();

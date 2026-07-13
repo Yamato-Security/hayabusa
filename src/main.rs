@@ -98,7 +98,7 @@ const MAX_DETECT_RECORDS: usize = 1000;
 fn main() {
     let mut config_reader = ConfigReader::new();
     // Create the parsed command information and store it in a static variable.
-    let mut stored_static = StoredStatic::create_static_data(config_reader.config);
+    let mut stored_static = StoredStatic::create_static_data(config_reader.config.unwrap());
     config_reader.config = None;
     let mut app = App::new(stored_static.thread_number);
     app.exec(&mut config_reader.app, &mut stored_static);
@@ -3345,7 +3345,7 @@ mod tests {
     };
 
     fn create_dummy_stored_static() -> StoredStatic {
-        StoredStatic::create_static_data(Some(Config {
+        StoredStatic::create_static_data(Config {
             action: Some(Action::CsvTimeline(CsvOutputOption {
                 output_options: OutputOption {
                     min_level: "informational".to_string(),
@@ -3360,7 +3360,7 @@ mod tests {
                 ..Default::default()
             })),
             debug: false,
-        }))
+        })
     }
 
     #[test]
@@ -3386,7 +3386,7 @@ mod tests {
     fn test_exec_none_storedstatic() {
         let mut app = App::new(None);
         let mut config_reader = ConfigReader::new();
-        let mut stored_static = StoredStatic::create_static_data(config_reader.config);
+        let mut stored_static = StoredStatic::create_static_data(config_reader.config.unwrap());
         config_reader.config = None;
         stored_static.profiles = None;
         app.exec(&mut config_reader.app, &mut stored_static);
@@ -3439,10 +3439,10 @@ mod tests {
             output: Some(csv_path.clone()),
             ..Default::default()
         });
-        let config = Some(Config {
+        let config = Config {
             action: Some(action),
             debug: false,
-        });
+        };
         let mut stored_static = StoredStatic::create_static_data(config);
         let mut config_reader = ConfigReader::new();
         app.exec(&mut config_reader.app, &mut stored_static);
@@ -3541,10 +3541,10 @@ mod tests {
             output: Some(out_overwrite_csv_exit_csv.clone()),
             ..Default::default()
         });
-        let config = Some(Config {
+        let config = Config {
             action: Some(action),
             debug: false,
-        });
+        };
         let mut stored_static = StoredStatic::create_static_data(config);
         let mut config_reader = ConfigReader::new();
         app.exec(&mut config_reader.app, &mut stored_static);
@@ -3582,10 +3582,10 @@ mod tests {
             output: Some(out_overwrite_csv_clobber_csv.clone()),
             ..Default::default()
         });
-        let config = Some(Config {
+        let config = Config {
             action: Some(action),
             debug: false,
-        });
+        };
         let mut stored_static = StoredStatic::create_static_data(config);
         let mut config_reader = ConfigReader::new();
         app.exec(&mut config_reader.app, &mut stored_static);
@@ -3622,10 +3622,10 @@ mod tests {
             output: Some(out_overwrite_json_exit_json.clone()),
             ..Default::default()
         });
-        let config = Some(Config {
+        let config = Config {
             action: Some(action),
             debug: false,
-        });
+        };
         let mut stored_static = StoredStatic::create_static_data(config);
         let mut config_reader = ConfigReader::new();
         app.exec(&mut config_reader.app, &mut stored_static);
@@ -3664,10 +3664,10 @@ mod tests {
             output: Some(out_overwrite_json_clobber_json.clone()),
             ..Default::default()
         });
-        let config = Some(Config {
+        let config = Config {
             action: Some(action),
             debug: false,
-        });
+        };
         let mut stored_static = StoredStatic::create_static_data(config);
         let mut config_reader = ConfigReader::new();
         app.exec(&mut config_reader.app, &mut stored_static);
@@ -3697,10 +3697,10 @@ mod tests {
             },
             ..Default::default()
         });
-        let config = Some(Config {
+        let config = Config {
             action: Some(action),
             debug: false,
-        });
+        };
         let mut stored_static = StoredStatic::create_static_data(config);
         let mut config_reader = ConfigReader::new();
         app.exec(&mut config_reader.app, &mut stored_static);
@@ -3733,10 +3733,10 @@ mod tests {
             clobber_opt: ClobberOption { clobber: true },
             ..Default::default()
         });
-        let config = Some(Config {
+        let config = Config {
             action: Some(action),
             debug: false,
-        });
+        };
         let mut stored_static = StoredStatic::create_static_data(config);
         let mut config_reader = ConfigReader::new();
         app.exec(&mut config_reader.app, &mut stored_static);
@@ -3768,10 +3768,10 @@ mod tests {
             },
             ..Default::default()
         });
-        let config = Some(Config {
+        let config = Config {
             action: Some(action),
             debug: false,
-        });
+        };
         let mut stored_static = StoredStatic::create_static_data(config);
         let mut config_reader = ConfigReader::new();
         app.exec(&mut config_reader.app, &mut stored_static);
@@ -3808,10 +3808,10 @@ mod tests {
             clobber_opt: ClobberOption { clobber: true },
             ..Default::default()
         });
-        let config = Some(Config {
+        let config = Config {
             action: Some(action),
             debug: false,
-        });
+        };
         let mut stored_static = StoredStatic::create_static_data(config);
         let mut config_reader = ConfigReader::new();
         app.exec(&mut config_reader.app, &mut stored_static);
@@ -3841,10 +3841,10 @@ mod tests {
             json_input: true,
             ..Default::default()
         });
-        let config = Some(Config {
+        let config = Config {
             action: Some(action),
             debug: false,
-        });
+        };
         let mut stored_static = StoredStatic::create_static_data(config);
         let mut config_reader = ConfigReader::new();
         app.exec(&mut config_reader.app, &mut stored_static);
@@ -3873,10 +3873,10 @@ mod tests {
             clobber_opt: ClobberOption { clobber: true },
             ..Default::default()
         });
-        let config = Some(Config {
+        let config = Config {
             action: Some(action),
             debug: false,
-        });
+        };
         let mut stored_static = StoredStatic::create_static_data(config);
         let mut config_reader = ConfigReader::new();
         app.exec(&mut config_reader.app, &mut stored_static);
