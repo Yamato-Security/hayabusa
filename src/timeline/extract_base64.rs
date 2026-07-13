@@ -63,7 +63,11 @@ enum Event {
     System7045,
     PwSh4104,
     PwSh4103,
+    PwSh4102,
+    PwSh4100,
     PwShClassic400,
+    PwShClassic403,
+    PwShClassic600,
 }
 
 impl fmt::Display for Event {
@@ -74,7 +78,11 @@ impl fmt::Display for Event {
             Event::System7045 => write!(f, "Sys 7045"),
             Event::PwSh4104 => write!(f, "PwSh 4104"),
             Event::PwSh4103 => write!(f, "PwSh 4103"),
+            Event::PwSh4102 => write!(f, "PwSh 4102"),
+            Event::PwSh4100 => write!(f, "PwSh 4100"),
             Event::PwShClassic400 => write!(f, "PwShClassic 400"),
+            Event::PwShClassic403 => write!(f, "PwShClassic 403"),
+            Event::PwShClassic600 => write!(f, "PwShClassic 600"),
         }
     }
 }
@@ -243,9 +251,28 @@ fn is_utf16_be(bytes: &[u8]) -> bool {
     UTF_16BE.decode_without_bom_handling(bytes).0.is_ascii()
 }
 
+fn get_event_data_value(data: &Value, field_name: &str) -> Value {
+    let event_data = &data["Event"]["EventData"];
+    let direct_value = event_data[field_name].clone();
+    if !direct_value.is_null() {
+        return direct_value;
+    }
+
+    if let Some(values) = event_data["Data"].as_array() {
+        for value in values {
+            if value["@Name"].as_str() == Some(field_name) {
+                return value["#text"].clone();
+            }
+        }
+    }
+
+    Value::Null
+}
+
 /// Returns the field values (paired with their event type) that commonly carry base64-encoded
 /// payloads: process creation command lines (Security 4688, Sysmon 1), service image paths
-/// (System 7045) and PowerShell script/payload fields (4103, 4104 and classic 400).
+/// (System 7045) and PowerShell script/payload fields (4100, 4102, 4103, 4104 and classic
+/// 400/403/600).
 fn extract_payload(data: &Value) -> Vec<(Value, Event)> {
     let ch = data["Event"]["System"]["Channel"].as_str();
     let id = data["Event"]["System"]["EventID"].as_i64();
@@ -271,11 +298,30 @@ fn extract_payload(data: &Value) -> Vec<(Value, Event)> {
             || ch == "PowerShellCore/Operational")
             && id == 4103
         {
-            let v = data["Event"]["EventData"]["Payload"].clone();
+            let v = get_event_data_value(data, "Payload");
             values.push((v, Event::PwSh4103));
+        } else if (ch == "Microsoft-Windows-PowerShell/Operational"
+            || ch == "PowerShellCore/Operational")
+            && (id == 4100 || id == 4102)
+        {
+            let event = if id == 4100 {
+                Event::PwSh4100
+            } else {
+                Event::PwSh4102
+            };
+            let v = get_event_data_value(data, "ContextInfo");
+            values.push((v, event.clone()));
+            let v = get_event_data_value(data, "Payload");
+            values.push((v, event));
         } else if ch == "Windows PowerShell" && id == 400 {
             let v = data["Event"]["EventData"]["Data"][2].clone();
             values.push((v, Event::PwShClassic400));
+        } else if ch == "Windows PowerShell" && id == 403 {
+            let v = data["Event"]["EventData"]["Data"][2].clone();
+            values.push((v, Event::PwShClassic403));
+        } else if ch == "Windows PowerShell" && id == 600 {
+            let v = data["Event"]["EventData"]["Data"][2].clone();
+            values.push((v, Event::PwShClassic600));
         } else if ch == "System" && id == 7045 {
             let v = data["Event"]["EventData"]["ImagePath"].clone();
             values.push((v, Event::System7045));
@@ -559,5 +605,119 @@ mod tests {
             },
         );
         assert_eq!(result, expected);
+    }
+
+    fn powershell_record(channel: &str, event_id: i64, event_data: Value) -> Value {
+        json!({
+            "Event": {
+                "System": {
+                    "Channel": channel,
+                    "EventID": event_id,
+                    "TimeCreated_attributes": {
+                        "SystemTime": "2021-12-23T00:00:00.000Z"
+                    },
+                    "Computer": "HAYABUSA-DESKTOP",
+                    "EventRecordID": 12345
+                },
+                "EventData": event_data
+            }
+        })
+    }
+
+    fn extract_test_record(data: &Value) -> Vec<Vec<String>> {
+        process_record(
+            data,
+            Path::new("test.evtx"),
+            &TimeFormatOptions {
+                iso_8601: true,
+                ..Default::default()
+            },
+        )
+    }
+
+    #[test]
+    fn powershell_operational_4100_extracts_context_info_from_named_data() {
+        let data = powershell_record(
+            "Microsoft-Windows-PowerShell/Operational",
+            4100,
+            json!({
+                "Data": [
+                    {
+                        "@Name": "ContextInfo",
+                        "#text": "Host Application = powershell -encodedcommand dGVzdCBjb21tYW5k,"
+                    },
+                    {
+                        "@Name": "UserData"
+                    },
+                    {
+                        "@Name": "Payload",
+                        "#text": "Error Message = no encoded command here"
+                    }
+                ]
+            }),
+        );
+
+        let result = extract_test_record(&data);
+        assert_eq!(result.len(), 1);
+        assert_eq!(result[0][2], "dGVzdCBjb21tYW5k");
+        assert_eq!(result[0][3], "test command");
+        assert_eq!(result[0][10], "PwSh 4100");
+        assert!(
+            result[0][4].contains("Host Application = powershell -encodedcommand <Base64String>")
+        );
+    }
+
+    #[test]
+    fn powershell_operational_4102_extracts_payload_from_named_data() {
+        let data = powershell_record(
+            "Microsoft-Windows-PowerShell/Operational",
+            4102,
+            json!({
+                "Data": [
+                    {
+                        "@Name": "ContextInfo",
+                        "#text": "Host Application = powershell"
+                    },
+                    {
+                        "@Name": "Payload",
+                        "#text": "Error Message = dGVzdCBjb21tYW5k"
+                    }
+                ]
+            }),
+        );
+
+        let result = extract_test_record(&data);
+        assert_eq!(result.len(), 1);
+        assert_eq!(result[0][2], "dGVzdCBjb21tYW5k");
+        assert_eq!(result[0][3], "test command");
+        assert_eq!(result[0][10], "PwSh 4102");
+        assert_eq!(result[0][4], "Error Message = <Base64String>");
+    }
+
+    #[test]
+    fn powershell_classic_403_and_600_extract_data_index_2() {
+        for (event_id, event_name) in [(403, "PwShClassic 403"), (600, "PwShClassic 600")] {
+            let data = powershell_record(
+                "Windows PowerShell",
+                event_id,
+                json!({
+                    "Data": [
+                        "Available",
+                        "None",
+                        "HostApplication=powershell -encodedcommand dGVzdCBjb21tYW5k"
+                    ]
+                }),
+            );
+
+            let result = extract_test_record(&data);
+            assert_eq!(result.len(), 1);
+            assert_eq!(result[0][2], "dGVzdCBjb21tYW5k");
+            assert_eq!(result[0][3], "test command");
+            assert_eq!(result[0][10], event_name);
+            assert_eq!(
+                result[0][4],
+                "HostApplication=powershell -encodedcommand <Base64String>"
+            );
+        }
     }
 }
