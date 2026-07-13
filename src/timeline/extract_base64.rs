@@ -63,7 +63,11 @@ enum Event {
     System7045,
     PwSh4104,
     PwSh4103,
+    PwSh4102,
+    PwSh4100,
     PwShClassic400,
+    PwShClassic403,
+    PwShClassic600,
 }
 
 impl fmt::Display for Event {
@@ -74,7 +78,11 @@ impl fmt::Display for Event {
             Event::System7045 => write!(f, "Sys 7045"),
             Event::PwSh4104 => write!(f, "PwSh 4104"),
             Event::PwSh4103 => write!(f, "PwSh 4103"),
+            Event::PwSh4102 => write!(f, "PwSh 4102"),
+            Event::PwSh4100 => write!(f, "PwSh 4100"),
             Event::PwShClassic400 => write!(f, "PwShClassic 400"),
+            Event::PwShClassic403 => write!(f, "PwShClassic 403"),
+            Event::PwShClassic600 => write!(f, "PwShClassic 600"),
         }
     }
 }
@@ -245,7 +253,8 @@ fn is_utf16_be(bytes: &[u8]) -> bool {
 
 /// Returns the field values (paired with their event type) that commonly carry base64-encoded
 /// payloads: process creation command lines (Security 4688, Sysmon 1), service image paths
-/// (System 7045) and PowerShell script/payload fields (4103, 4104 and classic 400).
+/// (System 7045) and PowerShell script/payload fields (4100, 4102, 4103, 4104 and classic
+/// 400/403/600).
 fn extract_payload(data: &Value) -> Vec<(Value, Event)> {
     let ch = data["Event"]["System"]["Channel"].as_str();
     let id = data["Event"]["System"]["EventID"].as_i64();
@@ -273,9 +282,33 @@ fn extract_payload(data: &Value) -> Vec<(Value, Event)> {
         {
             let v = data["Event"]["EventData"]["Payload"].clone();
             values.push((v, Event::PwSh4103));
+        } else if (ch == "Microsoft-Windows-PowerShell/Operational"
+            || ch == "PowerShellCore/Operational")
+            && (id == 4100 || id == 4102)
+        {
+            // 4100 (executing pipeline) and 4102 (execution error) record the invoked command in
+            // ContextInfo ("Host Application = powershell -encodedcommand ...") and the error text
+            // in Payload; scan both.
+            let event = if id == 4100 {
+                Event::PwSh4100
+            } else {
+                Event::PwSh4102
+            };
+            let v = data["Event"]["EventData"]["ContextInfo"].clone();
+            values.push((v, event.clone()));
+            let v = data["Event"]["EventData"]["Payload"].clone();
+            values.push((v, event));
         } else if ch == "Windows PowerShell" && id == 400 {
             let v = data["Event"]["EventData"]["Data"][2].clone();
             values.push((v, Event::PwShClassic400));
+        } else if ch == "Windows PowerShell" && id == 403 {
+            // Classic engine/provider lifecycle events pack "HostApplication=..." into the third
+            // Data element, the same source as event ID 400.
+            let v = data["Event"]["EventData"]["Data"][2].clone();
+            values.push((v, Event::PwShClassic403));
+        } else if ch == "Windows PowerShell" && id == 600 {
+            let v = data["Event"]["EventData"]["Data"][2].clone();
+            values.push((v, Event::PwShClassic600));
         } else if ch == "System" && id == 7045 {
             let v = data["Event"]["EventData"]["ImagePath"].clone();
             values.push((v, Event::System7045));
@@ -559,5 +592,142 @@ mod tests {
             },
         );
         assert_eq!(result, expected);
+    }
+
+    /// Builds a record with the given channel/event ID and `EventData`, then runs the extractor.
+    /// `EventData` is written in hayabusa's real evtx serialization: named `<Data Name="X">`
+    /// elements become flat `EventData.X` string keys, and unnamed `<Data>` elements become a flat
+    /// `EventData.Data` string array.
+    fn ps_extract(channel: &str, event_id: i64, event_data: Value) -> Vec<Vec<String>> {
+        let data = json!({
+            "Event": {
+                "System": {
+                    "Channel": channel,
+                    "EventID": event_id,
+                    "TimeCreated_attributes": {"SystemTime": "2021-12-23T00:00:00.000Z"},
+                    "Computer": "HAYABUSA-DESKTOP",
+                    "EventRecordID": 12345
+                },
+                "EventData": event_data
+            }
+        });
+        process_record(
+            &data,
+            Path::new("test.evtx"),
+            &TimeFormatOptions {
+                iso_8601: true,
+                ..Default::default()
+            },
+        )
+    }
+
+    #[test]
+    fn powershell_operational_4100_extracts_base64_from_flat_context_info() {
+        // Real 4100 events carry the invoked command in a flat EventData.ContextInfo string
+        // ("Host Application = powershell -encodedcommand <b64>"); Payload has no base64 here.
+        let result = ps_extract(
+            "Microsoft-Windows-PowerShell/Operational",
+            4100,
+            json!({
+                "ContextInfo": "        Host Application = powershell -encodedcommand dGVzdCBjb21tYW5k\r\n",
+                "UserData": "",
+                "Payload": "Error Message = the operation failed"
+            }),
+        );
+        assert_eq!(result.len(), 1);
+        assert_eq!(result[0][2], "dGVzdCBjb21tYW5k");
+        assert_eq!(result[0][3], "test command");
+        assert_eq!(result[0][10], "PwSh 4100");
+        assert!(result[0][4].contains("-encodedcommand <Base64String>"));
+    }
+
+    #[test]
+    fn powershell_operational_4102_extracts_base64_from_flat_payload() {
+        // 4102 events can carry base64 in the flat EventData.Payload (error text); ContextInfo
+        // here has none, proving both flat fields are scanned.
+        let result = ps_extract(
+            "Microsoft-Windows-PowerShell/Operational",
+            4102,
+            json!({
+                "ContextInfo": "        Host Application = powershell\r\n",
+                "Payload": "Error Message = dGVzdCBjb21tYW5k"
+            }),
+        );
+        assert_eq!(result.len(), 1);
+        assert_eq!(result[0][2], "dGVzdCBjb21tYW5k");
+        assert_eq!(result[0][3], "test command");
+        assert_eq!(result[0][10], "PwSh 4102");
+    }
+
+    #[test]
+    fn powershell_operational_4100_scans_both_context_info_and_payload() {
+        // base64 in BOTH flat fields yields two hits.
+        let result = ps_extract(
+            "Microsoft-Windows-PowerShell/Operational",
+            4100,
+            json!({
+                "ContextInfo": "Host Application = powershell -encodedcommand dGVzdCBjb21tYW5k",
+                "Payload": "Error Message = aGVsbG8gd29ybGQ="
+            }),
+        );
+        assert_eq!(result.len(), 2);
+        let decoded: Vec<&str> = result.iter().map(|r| r[3].as_str()).collect();
+        assert!(decoded.contains(&"test command"));
+        assert!(decoded.contains(&"hello world"));
+        assert!(result.iter().all(|r| r[10] == "PwSh 4100"));
+    }
+
+    #[test]
+    fn powershell_core_operational_4100_is_also_scanned() {
+        let result = ps_extract(
+            "PowerShellCore/Operational",
+            4100,
+            json!({
+                "ContextInfo": "Host Application = pwsh -encodedcommand dGVzdCBjb21tYW5k",
+                "Payload": ""
+            }),
+        );
+        assert_eq!(result.len(), 1);
+        assert_eq!(result[0][2], "dGVzdCBjb21tYW5k");
+        assert_eq!(result[0][10], "PwSh 4100");
+    }
+
+    #[test]
+    fn powershell_classic_403_and_600_extract_from_data_index_2() {
+        // Real classic events serialize their unnamed <Data> elements as a flat string array; the
+        // "Key=Value" detail blob (with HostApplication) is the third element (index 2), the same
+        // source used by the existing event ID 400 handler.
+        for (event_id, event_name) in [(403, "PwShClassic 403"), (600, "PwShClassic 600")] {
+            let result = ps_extract(
+                "Windows PowerShell",
+                event_id,
+                json!({
+                    "Data": [
+                        "Stopped",
+                        "Available",
+                        "\tNewEngineState=Stopped\r\n\tHostApplication=powershell -encodedcommand dGVzdCBjb21tYW5k\r\n\tEngineVersion=5.1"
+                    ]
+                }),
+            );
+            assert_eq!(result.len(), 1, "event {event_id}");
+            assert_eq!(result[0][2], "dGVzdCBjb21tYW5k");
+            assert_eq!(result[0][3], "test command");
+            assert_eq!(result[0][10], event_name);
+        }
+    }
+
+    #[test]
+    fn powershell_operational_4100_without_base64_yields_nothing() {
+        // A real, benign 4100 (plain powershell.exe path, no encoded command) produces no rows.
+        let result = ps_extract(
+            "Microsoft-Windows-PowerShell/Operational",
+            4100,
+            json!({
+                "ContextInfo": "        Host Application = C:\\Windows\\System32\\WindowsPowerShell\\v1.0\\powershell.exe\r\n",
+                "UserData": "",
+                "Payload": "Error Message = the requested operation failed"
+            }),
+        );
+        assert!(result.is_empty());
     }
 }
