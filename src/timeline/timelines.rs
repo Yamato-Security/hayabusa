@@ -799,10 +799,10 @@ mod tests {
     };
 
     fn create_dummy_stored_static(action: Action) -> StoredStatic {
-        StoredStatic::create_static_data(Some(Config {
+        StoredStatic::create_static_data(Config {
             action: Some(action),
             debug: false,
-        }))
+        })
     }
 
     /// Test for the statistics aggregation of the logon-summary command.

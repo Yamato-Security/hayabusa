@@ -222,10 +222,10 @@ mod tests {
     };
 
     fn create_dummy_stored_static(action: Option<Action>) -> StoredStatic {
-        StoredStatic::create_static_data(Some(Config {
+        StoredStatic::create_static_data(Config {
             action,
             debug: false,
-        }))
+        })
     }
 
     #[test]

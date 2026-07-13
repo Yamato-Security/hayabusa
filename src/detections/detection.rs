@@ -1605,7 +1605,7 @@ mod tests {
     use crate::options::profile::Profile;
 
     fn create_dummy_stored_static() -> StoredStatic {
-        StoredStatic::create_static_data(Some(Config {
+        StoredStatic::create_static_data(Config {
             action: Some(Action::CsvTimeline(CsvOutputOption {
                 output_options: OutputOption {
                     min_level: "informational".to_string(),
@@ -1616,7 +1616,7 @@ mod tests {
                 ..Default::default()
             })),
             ..Default::default()
-        }))
+        })
     }
 
     #[test]
@@ -1912,10 +1912,10 @@ mod tests {
             output: Some(Path::new("./test_emit_csv.csv").to_path_buf()),
             ..Default::default()
         });
-        let dummy_config = Some(Config {
+        let dummy_config = Config {
             action: Some(dummy_action),
             debug: false,
-        });
+        };
         let stored_static = StoredStatic::create_static_data(dummy_config);
         {
             let eventkey_alias = load_eventkey_alias(
@@ -2000,10 +2000,10 @@ mod tests {
             output: Some(Path::new("./test_emit_csv.csv").to_path_buf()),
             ..Default::default()
         });
-        let dummy_config = Some(Config {
+        let dummy_config = Config {
             action: Some(dummy_action),
             debug: false,
-        });
+        };
         let stored_static = StoredStatic::create_static_data(dummy_config);
         {
             let eventkey_alias = load_eventkey_alias(
@@ -2084,10 +2084,10 @@ mod tests {
             multiline: true,
             ..Default::default()
         });
-        let dummy_config = Some(Config {
+        let dummy_config = Config {
             action: Some(dummy_action),
             debug: false,
-        });
+        };
         let mut stored_static = StoredStatic::create_static_data(dummy_config);
         stored_static.profiles.as_mut().unwrap().push((
             "ExtraFieldInfo".into(),
@@ -2182,10 +2182,10 @@ mod tests {
             multiline: true,
             ..Default::default()
         });
-        let dummy_config = Some(Config {
+        let dummy_config = Config {
             action: Some(dummy_action),
             debug: false,
-        });
+        };
         let mut stored_static = StoredStatic::create_static_data(dummy_config);
         stored_static
             .profiles

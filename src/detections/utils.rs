@@ -1209,7 +1209,7 @@ mod tests {
     #[test]
     fn test_output_profile() {
         let mut html_reporter = HtmlReporter::default();
-        let stored_static = StoredStatic::create_static_data(Some(Config {
+        let stored_static = StoredStatic::create_static_data(Config {
             action: Some(Action::CsvTimeline(CsvOutputOption {
                 output_options: OutputOption {
                     profile: Some("super-verbose".to_string()),
@@ -1221,7 +1221,7 @@ mod tests {
                 ..Default::default()
             })),
             ..Default::default()
-        }));
+        });
         output_profile_name(
             &stored_static.output_option,
             true,
