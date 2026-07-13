@@ -8,4 +8,5 @@ mod matchers;
 mod rulenode;
 mod selectionnodes;
 
+pub use count::AggResult;
 pub use rulenode::*;

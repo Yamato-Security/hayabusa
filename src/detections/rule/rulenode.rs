@@ -1,4 +1,3 @@
-use chrono::{DateTime, Utc};
 use hashbrown::HashMap;
 use nested::Nested;
 use std::cmp::PartialEq;
@@ -14,7 +13,7 @@ use crate::detections::detection::EvtxRecordInfo;
 
 use super::aggregation_parser::{self, AggregationParseInfo};
 use super::condition_parser;
-use super::count::{self, AggRecordTimeInfo, TimeFrameInfo};
+use super::count::{self, AggRecordTimeInfo, AggResult, TimeFrameInfo};
 use super::selectionnodes::{self, LeafSelectionNode, SelectionNode};
 
 pub fn create_rule(rule_path: String, yaml: Yaml) -> RuleNode {
@@ -470,40 +469,6 @@ impl DetectionNode {
                 key_list.clone(),
                 yaml.to_owned(),
             ))
-        }
-    }
-}
-
-#[derive(Debug, Clone, PartialEq, Eq, Default)]
-/// Struct that outputs the results of aggregation such as count.
-pub struct AggResult {
-    /// The aggregated value, e.g. the count.
-    pub data: i64,
-    /// The grouping value taken from the record for the field specified by "count() by".
-    pub key: String,
-    /// Array of values in detected records for the field specified inside the parentheses of
-    /// count. If nothing is specified inside the parentheses, this is an array of length 0.
-    pub field_values: Vec<String>,
-    /// Time of the first record in the detected block.
-    pub start_datetime: DateTime<Utc>,
-    /// All times and EventIDs of records in the detected block.
-    pub agg_record_time_info: Vec<AggRecordTimeInfo>,
-}
-
-impl AggResult {
-    pub fn new(
-        count_data: i64,
-        key_name: String,
-        field_value: Vec<String>,
-        event_start_timedate: DateTime<Utc>,
-        agg_record_time_info: Vec<AggRecordTimeInfo>,
-    ) -> AggResult {
-        AggResult {
-            data: count_data,
-            key: key_name,
-            field_values: field_value,
-            start_datetime: event_start_timedate,
-            agg_record_time_info,
         }
     }
 }
