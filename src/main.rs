@@ -218,6 +218,185 @@ fn add_general_overview_header(
     html_reporter.add_md_data(htmlreport::GENERAL_OVERVIEW_SECTION, output_data);
 }
 
+/// Filter used by [`calculate_wizard_rule_count`] to select which loadable rules to tally.
+struct WizardCountFilter<'a> {
+    /// When true, count only the statuses listed in `exclude_noisy_status` (used for the
+    /// deprecated/unsupported/noisy prompts); when false, those statuses are skipped unless
+    /// `target_status` contains "*", in which case all statuses are counted.
+    exclude_noisytarget_flag: bool,
+    exclude_noisy_status: Vec<&'a str>,
+    min_level: &'a str,
+    target_status: Vec<&'a str>,
+    target_tags: Vec<&'a str>,
+}
+
+/// Count the loadable rules per status (or per tag when `filter.target_tags` is non-empty) at or
+/// above `filter.min_level`, based on `rule_counter_wizard_map` (keyed as status -> level -> tag
+/// -> count). Promoted from the closure that was embedded in `analysis_files`'s scan wizard.
+fn calculate_wizard_rule_count(
+    rule_counter_wizard_map: &HashMap<
+        CompactString,
+        HashMap<CompactString, HashMap<CompactString, i128>>,
+    >,
+    filter: WizardCountFilter,
+) -> HashMap<CompactString, i128> {
+    let WizardCountFilter {
+        exclude_noisytarget_flag,
+        exclude_noisy_status,
+        min_level,
+        target_status,
+        target_tags,
+    } = filter;
+    let mut ret = HashMap::new();
+    if exclude_noisytarget_flag {
+        for s in exclude_noisy_status {
+            let mut ret_cnt = 0;
+            if let Some(target_status_count) = rule_counter_wizard_map.get(s) {
+                target_status_count.iter().for_each(|(rule_level, value)| {
+                    let doc_level_num = LEVEL::from(rule_level.as_str()).index();
+                    let args_level_num = LEVEL::from(min_level).index();
+                    if doc_level_num >= args_level_num {
+                        ret_cnt += value.iter().map(|(_, cnt)| cnt).sum::<i128>()
+                    }
+                });
+            }
+            if ret_cnt > 0 {
+                ret.insert(CompactString::from(s), ret_cnt);
+            }
+        }
+    } else {
+        let all_status_flag = target_status.contains(&"*");
+        for s in rule_counter_wizard_map.keys() {
+            // Skip aggregation for items that do not match the specified status.
+            if (exclude_noisy_status.contains(&s.as_str()) || !target_status.contains(&s.as_str()))
+                && !all_status_flag
+            {
+                continue;
+            }
+            let mut ret_cnt = 0;
+            if let Some(target_status_count) = rule_counter_wizard_map.get(s) {
+                target_status_count.iter().for_each(|(rule_level, value)| {
+                    let doc_level_num = LEVEL::from(rule_level.as_str()).index();
+                    let args_level_num = LEVEL::from(min_level).index();
+                    if doc_level_num >= args_level_num {
+                        if !target_tags.is_empty() {
+                            for (tag, cnt) in value.iter() {
+                                if target_tags.contains(&tag.as_str()) {
+                                    let matched_tag_cnt = ret.entry(tag.clone());
+                                    *matched_tag_cnt.or_insert(0) += cnt;
+                                }
+                            }
+                        } else {
+                            ret_cnt += value.iter().map(|(_, cnt)| cnt).sum::<i128>()
+                        }
+                    }
+                });
+                if ret_cnt > 0 {
+                    ret.insert(s.clone(), ret_cnt);
+                }
+            }
+        }
+    }
+    ret
+}
+
+/// Apply the ad-hoc channel filters used by the non-timeline subcommands: `logon-summary` and
+/// `config-critical-systems` each narrow `evtx_files` to those containing their required
+/// channels, and `log-metrics` applies its include/exclude channel/filename filters.
+fn apply_channel_filters(
+    mut evtx_files: Vec<PathBuf>,
+    stored_static: &StoredStatic,
+) -> Vec<PathBuf> {
+    if stored_static.logon_summary_flag && !stored_static.json_input_flag {
+        // Create a channel filter for the logon summary.
+        let yaml_str = r#"
+            detection:
+                selection:
+                    Channel:
+                        - Security
+                        - Microsoft-Windows-TerminalServices-Gateway/Operational
+                        - Microsoft-Windows-TerminalServices-LocalSessionManager/Operational
+            "#;
+        let yaml_data = YamlLoader::load_from_str(yaml_str);
+        let node = RuleNode::new(
+            "logon".to_string(),
+            yaml_data.ok().unwrap_or_default().first().unwrap().clone(),
+        );
+        let rule_files = vec![node];
+        let mut channel_filter = create_channel_filter(
+            &evtx_files,
+            &rule_files,
+            stored_static.quiet_errors_flag,
+            &stored_static.error_log_stack,
+        );
+        evtx_files.retain(|e| channel_filter.scannable_rule_exists(e));
+    }
+
+    if matches!(
+        stored_static.config.action.as_ref().unwrap(),
+        Action::ConfigCriticalSystems(_)
+    ) {
+        // Create a channel filter for config-critical-systems.
+        let yaml_str = r#"
+            detection:
+                selection:
+                    Channel: Security
+            "#;
+        let yaml_data = YamlLoader::load_from_str(yaml_str);
+        let node = RuleNode::new(
+            "config-critical-systems".to_string(),
+            yaml_data.ok().unwrap_or_default().first().unwrap().clone(),
+        );
+        let rule_files = vec![node];
+        let mut channel_filter = create_channel_filter(
+            &evtx_files,
+            &rule_files,
+            stored_static.quiet_errors_flag,
+            &stored_static.error_log_stack,
+        );
+        evtx_files.retain(|e| channel_filter.scannable_rule_exists(e));
+    }
+
+    if let Some(Action::LogMetrics(opt)) = &stored_static.config.action {
+        evtx_files = filter_evtx_files(
+            evtx_files,
+            &opt.include_channel,
+            &opt.include_filename,
+            &opt.exclude_channel,
+            &opt.exclude_filename,
+            &stored_static.error_log_stack,
+        );
+    }
+    evtx_files
+}
+
+/// Build the indicatif progress bar (spinner + bar) used for the per-file scan.
+fn build_progress_bar(stored_static: &StoredStatic, file_count: u64) -> ProgressBar {
+    // Build the indicatif progress bar template. In the colored branch, the doubled braces
+    // in the format! call are escapes that produce literal braces, so the indicatif
+    // placeholders like {elapsed_precise} survive intact while the spinner and bar are
+    // wrapped in green truecolor escape sequences.
+    let template = if stored_static.common_options.no_color {
+        "[{elapsed_precise}] {human_pos} / {human_len} {spinner} [{bar:40}] {percent}%\n\n{msg}"
+            .to_string()
+    } else {
+        let spinner = "{spinner}".truecolor(0, 255, 0).to_string();
+        let bar = "{bar:40}".truecolor(0, 255, 0).to_string();
+        format!(
+            "[{{elapsed_precise}}] {{human_pos}} / {{human_len}} {spinner} [{bar}] {{percent}}%\n\n{{msg}}",
+        )
+    };
+
+    let progress_style = ProgressStyle::with_template(&template)
+        .unwrap()
+        .progress_chars("=> ");
+
+    let progress_bar =
+        ProgressBar::with_draw_target(Some(file_count), ProgressDrawTarget::stdout_with_hz(10))
+            .with_tab_width(55);
+    progress_bar.set_style(progress_style);
+    progress_bar
+}
 impl App {
     pub fn new(thread_number: Option<usize>) -> App {
         App {
@@ -1493,72 +1672,11 @@ Any hostnames added to the critical_systems.txt file will have all alerts above 
         .ok();
     }
 
-    /// Run the scan over the collected files: show the rule-set wizard if enabled, load and
-    /// filter the detection rules, apply channel filters, analyze each file, and emit the
-    /// results.
-    fn analysis_files(
-        &mut self,
-        mut evtx_files: Vec<PathBuf>,
-        time_filter: &TargetEventTime,
-        stored_static: &mut StoredStatic,
-        html_reporter: &mut HtmlReporter,
-    ) {
-        let event_timeline_config = &stored_static.event_timeline_config;
-        let target_event_ids = &stored_static.target_eventids;
-        let target_level = stored_static
-            .output_option
-            .as_ref()
-            .unwrap()
-            .exact_level
-            .as_ref()
-            .unwrap_or(&String::default())
-            .to_uppercase();
-        write_color_buffer(
-            &BufferWriter::stdout(ColorChoice::Always),
-            get_writable_color(
-                Some(Color::Rgb(0, 255, 0)),
-                stored_static.common_options.no_color,
-            ),
-            "Total event log files: ",
-            false,
-        )
-        .ok();
-        let log_files = &evtx_files.len().to_formatted_string(&Locale::en);
-        write_color_buffer(
-            &BufferWriter::stdout(ColorChoice::Always),
-            None,
-            log_files,
-            true,
-        )
-        .ok();
-        let mut total_file_size = ByteSize::b(0);
-        for file_path in &evtx_files {
-            let file_size = get_file_size(
-                file_path,
-                stored_static.verbose_flag,
-                stored_static.quiet_errors_flag,
-                &stored_static.error_log_stack,
-            );
-            total_file_size += ByteSize::b(file_size);
-        }
-        write_color_buffer(
-            &BufferWriter::stdout(ColorChoice::Always),
-            get_writable_color(
-                Some(Color::Rgb(0, 255, 0)),
-                stored_static.common_options.no_color,
-            ),
-            "Total file size: ",
-            false,
-        )
-        .ok();
-        let total_size = total_file_size;
-        write_color_buffer(
-            &BufferWriter::stdout(ColorChoice::Always),
-            None,
-            &total_file_size.display().to_string(),
-            true,
-        )
-        .ok();
+    /// Show the interactive rule-set wizard (Core / Core+ / Core++ / All) when it is enabled
+    /// for the current action, prompt for emerging-threats / threat-hunting / deprecated /
+    /// unsupported / noisy / sysmon rule inclusion, and apply the choices to `stored_static`.
+    /// Returns the selected rule-set label for the HTML report, or `None` when it did not run.
+    fn run_scan_wizard(&mut self, stored_static: &mut StoredStatic) -> Option<String> {
         let mut status_append_output = None;
         let need_wizard = matches!(
             stored_static.config.action.as_ref().unwrap(),
@@ -1581,71 +1699,6 @@ Any hostnames added to the critical_systems.txt file will have all alerts above 
                 true,
             )
             .ok();
-            // Count the loadable rules per status (or per tag when target_tags is non-empty) at
-            // or above min_level, based on rule_counter_wizard_map, which is keyed as
-            // status -> level -> tag -> count. When exclude_noisytarget_flag is set, only the
-            // statuses in exclude_noisy_status are counted (used for the deprecated/unsupported/
-            // noisy prompts); otherwise those statuses are skipped, unless target_status contains
-            // "*", in which case all statuses (including the noisy/deprecated ones) are counted.
-            let calculate_wizard_rule_count = |exclude_noisytarget_flag: bool,
-                                               exclude_noisy_status: Vec<&str>,
-                                               min_level: &str,
-                                               target_status: Vec<&str>,
-                                               target_tags: Vec<&str>|
-             -> HashMap<CompactString, i128> {
-                let mut ret = HashMap::new();
-                if exclude_noisytarget_flag {
-                    for s in exclude_noisy_status {
-                        let mut ret_cnt = 0;
-                        if let Some(target_status_count) = rule_counter_wizard_map.get(s) {
-                            target_status_count.iter().for_each(|(rule_level, value)| {
-                                let doc_level_num = LEVEL::from(rule_level.as_str()).index();
-                                let args_level_num = LEVEL::from(min_level).index();
-                                if doc_level_num >= args_level_num {
-                                    ret_cnt += value.iter().map(|(_, cnt)| cnt).sum::<i128>()
-                                }
-                            });
-                        }
-                        if ret_cnt > 0 {
-                            ret.insert(CompactString::from(s), ret_cnt);
-                        }
-                    }
-                } else {
-                    let all_status_flag = target_status.contains(&"*");
-                    for s in rule_counter_wizard_map.keys() {
-                        // Skip aggregation for items that do not match the specified status.
-                        if (exclude_noisy_status.contains(&s.as_str())
-                            || !target_status.contains(&s.as_str()))
-                            && !all_status_flag
-                        {
-                            continue;
-                        }
-                        let mut ret_cnt = 0;
-                        if let Some(target_status_count) = rule_counter_wizard_map.get(s) {
-                            target_status_count.iter().for_each(|(rule_level, value)| {
-                                let doc_level_num = LEVEL::from(rule_level.as_str()).index();
-                                let args_level_num = LEVEL::from(min_level).index();
-                                if doc_level_num >= args_level_num {
-                                    if !target_tags.is_empty() {
-                                        for (tag, cnt) in value.iter() {
-                                            if target_tags.contains(&tag.as_str()) {
-                                                let matched_tag_cnt = ret.entry(tag.clone());
-                                                *matched_tag_cnt.or_insert(0) += cnt;
-                                            }
-                                        }
-                                    } else {
-                                        ret_cnt += value.iter().map(|(_, cnt)| cnt).sum::<i128>()
-                                    }
-                                }
-                            });
-                            if ret_cnt > 0 {
-                                ret.insert(s.clone(), ret_cnt);
-                            }
-                        }
-                    }
-                }
-                ret
-            };
             let selections_status = &[
                 (
                     "1. Core ( status: test, stable | level: high, critical )",
@@ -1673,11 +1726,20 @@ Any hostnames added to the critical_systems.txt file will have all alerts above 
                 .iter()
                 .map(|(_, (status, min_level))| {
                     calculate_wizard_rule_count(
-                        false,
-                        ["excluded", "deprecated", "unsupported", "noisy"].to_vec(),
-                        min_level,
-                        status.to_vec(),
-                        [].to_vec(),
+                        &rule_counter_wizard_map,
+                        WizardCountFilter {
+                            exclude_noisytarget_flag: false,
+                            exclude_noisy_status: [
+                                "excluded",
+                                "deprecated",
+                                "unsupported",
+                                "noisy",
+                            ]
+                            .to_vec(),
+                            min_level,
+                            target_status: status.to_vec(),
+                            target_tags: [].to_vec(),
+                        },
                     )
                 })
                 .collect_vec();
@@ -1779,11 +1841,15 @@ Any hostnames added to the critical_systems.txt file will have all alerts above 
                 selections_status[selected_index].1.1.into();
 
             let exclude_noisy_cnt = calculate_wizard_rule_count(
-                true,
-                ["excluded", "noisy", "deprecated", "unsupported"].to_vec(),
-                selections_status[selected_index].1.1,
-                [].to_vec(),
-                [].to_vec(),
+                &rule_counter_wizard_map,
+                WizardCountFilter {
+                    exclude_noisytarget_flag: true,
+                    exclude_noisy_status: ["excluded", "noisy", "deprecated", "unsupported"]
+                        .to_vec(),
+                    min_level: selections_status[selected_index].1.1,
+                    target_status: [].to_vec(),
+                    target_tags: [].to_vec(),
+                },
             );
 
             stored_static.include_status.extend(
@@ -1797,16 +1863,19 @@ Any hostnames added to the critical_systems.txt file will have all alerts above 
             let mut output_option = stored_static.output_option.clone().unwrap();
             let exclude_tags = output_option.exclude_tag.get_or_insert_with(Vec::new);
             let tags_cnt = calculate_wizard_rule_count(
-                false,
-                [].to_vec(),
-                selections_status[selected_index].1.1,
-                selections_status[selected_index].1.0.clone(),
-                [
-                    "detection.emerging_threats",
-                    "detection.threat_hunting",
-                    "sysmon",
-                ]
-                .to_vec(),
+                &rule_counter_wizard_map,
+                WizardCountFilter {
+                    exclude_noisytarget_flag: false,
+                    exclude_noisy_status: [].to_vec(),
+                    min_level: selections_status[selected_index].1.1,
+                    target_status: selections_status[selected_index].1.0.clone(),
+                    target_tags: [
+                        "detection.emerging_threats",
+                        "detection.threat_hunting",
+                        "sysmon",
+                    ]
+                    .to_vec(),
+                },
             );
             // If anything other than "4. All alert rules" or "5. All event and alert rules" was selected, ask questions about tags.
             if selected_index < 3 {
@@ -1934,6 +2003,76 @@ Any hostnames added to the critical_systems.txt file will have all alerts above 
         } else if stored_static.include_status.is_empty() {
             stored_static.include_status.insert("*".into());
         }
+        status_append_output
+    }
+
+    /// Run the scan over the collected files: show the rule-set wizard if enabled, load and
+    /// filter the detection rules, apply channel filters, analyze each file, and emit the
+    /// results.
+    fn analysis_files(
+        &mut self,
+        mut evtx_files: Vec<PathBuf>,
+        time_filter: &TargetEventTime,
+        stored_static: &mut StoredStatic,
+        html_reporter: &mut HtmlReporter,
+    ) {
+        let target_level = stored_static
+            .output_option
+            .as_ref()
+            .unwrap()
+            .exact_level
+            .as_ref()
+            .unwrap_or(&String::default())
+            .to_uppercase();
+        write_color_buffer(
+            &BufferWriter::stdout(ColorChoice::Always),
+            get_writable_color(
+                Some(Color::Rgb(0, 255, 0)),
+                stored_static.common_options.no_color,
+            ),
+            "Total event log files: ",
+            false,
+        )
+        .ok();
+        let log_files = &evtx_files.len().to_formatted_string(&Locale::en);
+        write_color_buffer(
+            &BufferWriter::stdout(ColorChoice::Always),
+            None,
+            log_files,
+            true,
+        )
+        .ok();
+        let mut total_file_size = ByteSize::b(0);
+        for file_path in &evtx_files {
+            let file_size = get_file_size(
+                file_path,
+                stored_static.verbose_flag,
+                stored_static.quiet_errors_flag,
+                &stored_static.error_log_stack,
+            );
+            total_file_size += ByteSize::b(file_size);
+        }
+        write_color_buffer(
+            &BufferWriter::stdout(ColorChoice::Always),
+            get_writable_color(
+                Some(Color::Rgb(0, 255, 0)),
+                stored_static.common_options.no_color,
+            ),
+            "Total file size: ",
+            false,
+        )
+        .ok();
+        let total_size = total_file_size;
+        write_color_buffer(
+            &BufferWriter::stdout(ColorChoice::Always),
+            None,
+            &total_file_size.display().to_string(),
+            true,
+        )
+        .ok();
+        let status_append_output = self.run_scan_wizard(stored_static);
+        let event_timeline_config = &stored_static.event_timeline_config;
+        let target_event_ids = &stored_static.target_eventids;
 
         if stored_static.html_report_flag {
             let mut output_data = Nested::<String>::new();
@@ -2111,92 +2250,9 @@ Any hostnames added to the critical_systems.txt file will have all alerts above 
             println!();
         }
 
-        if stored_static.logon_summary_flag && !stored_static.json_input_flag {
-            // Create a channel filter for the logon summary.
-            let yaml_str = r#"
-            detection:
-                selection:
-                    Channel:
-                        - Security
-                        - Microsoft-Windows-TerminalServices-Gateway/Operational
-                        - Microsoft-Windows-TerminalServices-LocalSessionManager/Operational
-            "#;
-            let yaml_data = YamlLoader::load_from_str(yaml_str);
-            let node = RuleNode::new(
-                "logon".to_string(),
-                yaml_data.ok().unwrap_or_default().first().unwrap().clone(),
-            );
-            let rule_files = vec![node];
-            let mut channel_filter = create_channel_filter(
-                &evtx_files,
-                &rule_files,
-                stored_static.quiet_errors_flag,
-                &stored_static.error_log_stack,
-            );
-            evtx_files.retain(|e| channel_filter.scannable_rule_exists(e));
-        }
+        evtx_files = apply_channel_filters(evtx_files, stored_static);
 
-        if matches!(
-            stored_static.config.action.as_ref().unwrap(),
-            Action::ConfigCriticalSystems(_)
-        ) {
-            // Create a channel filter for config-critical-systems.
-            let yaml_str = r#"
-            detection:
-                selection:
-                    Channel: Security
-            "#;
-            let yaml_data = YamlLoader::load_from_str(yaml_str);
-            let node = RuleNode::new(
-                "config-critical-systems".to_string(),
-                yaml_data.ok().unwrap_or_default().first().unwrap().clone(),
-            );
-            let rule_files = vec![node];
-            let mut channel_filter = create_channel_filter(
-                &evtx_files,
-                &rule_files,
-                stored_static.quiet_errors_flag,
-                &stored_static.error_log_stack,
-            );
-            evtx_files.retain(|e| channel_filter.scannable_rule_exists(e));
-        }
-
-        if let Some(Action::LogMetrics(opt)) = &stored_static.config.action {
-            evtx_files = filter_evtx_files(
-                evtx_files,
-                &opt.include_channel,
-                &opt.include_filename,
-                &opt.exclude_channel,
-                &opt.exclude_filename,
-                &stored_static.error_log_stack,
-            );
-        }
-
-        // Build the indicatif progress bar template. In the colored branch, the doubled braces
-        // in the format! call are escapes that produce literal braces, so the indicatif
-        // placeholders like {elapsed_precise} survive intact while the spinner and bar are
-        // wrapped in green truecolor escape sequences.
-        let template = if stored_static.common_options.no_color {
-            "[{elapsed_precise}] {human_pos} / {human_len} {spinner} [{bar:40}] {percent}%\n\n{msg}"
-                .to_string()
-        } else {
-            let spinner = "{spinner}".truecolor(0, 255, 0).to_string();
-            let bar = "{bar:40}".truecolor(0, 255, 0).to_string();
-            format!(
-                "[{{elapsed_precise}}] {{human_pos}} / {{human_len}} {spinner} [{bar}] {{percent}}%\n\n{{msg}}",
-            )
-        };
-
-        let progress_style = ProgressStyle::with_template(&template)
-            .unwrap()
-            .progress_chars("=> ");
-
-        let progress_bar = ProgressBar::with_draw_target(
-            Some(evtx_files.len() as u64),
-            ProgressDrawTarget::stdout_with_hz(10),
-        )
-        .with_tab_width(55);
-        progress_bar.set_style(progress_style);
+        let progress_bar = build_progress_bar(stored_static, evtx_files.len() as u64);
         self.rule_keys = self.get_all_keys(&rule_files);
         let mut detection = detection::Detection::new(rule_files);
         let mut timeline = Timeline::new();
@@ -4065,5 +4121,91 @@ mod tests {
             &mut result_state,
         );
         assert!(buffer_low.is_empty());
+    }
+
+    #[test]
+    fn test_calculate_wizard_rule_count() {
+        use crate::{WizardCountFilter, calculate_wizard_rule_count};
+        use compact_str::CompactString;
+        use hashbrown::HashMap;
+
+        // Build one status's `level -> tag -> count` map.
+        fn lvl(
+            pairs: &[(&str, &[(&str, i128)])],
+        ) -> HashMap<CompactString, HashMap<CompactString, i128>> {
+            pairs
+                .iter()
+                .map(|(level, tags)| {
+                    (
+                        CompactString::from(*level),
+                        tags.iter()
+                            .map(|(t, c)| (CompactString::from(*t), *c))
+                            .collect(),
+                    )
+                })
+                .collect()
+        }
+
+        // status -> level -> tag -> count
+        let mut map: HashMap<CompactString, HashMap<CompactString, HashMap<CompactString, i128>>> =
+            HashMap::new();
+        map.insert(
+            "stable".into(),
+            lvl(&[
+                ("high", &[("sysmon", 3), ("detection.emerging_threats", 2)]),
+                ("low", &[("", 5)]),
+            ]),
+        );
+        map.insert("test".into(), lvl(&[("critical", &[("", 4)])]));
+        map.insert("deprecated".into(), lvl(&[("high", &[("", 7)])]));
+        map.insert("noisy".into(), lvl(&[("medium", &[("", 9)])]));
+
+        // (A) Per-status counts at/above HIGH, skipping the noisy/deprecated statuses.
+        let a = calculate_wizard_rule_count(
+            &map,
+            WizardCountFilter {
+                exclude_noisytarget_flag: false,
+                exclude_noisy_status: ["excluded", "deprecated", "unsupported", "noisy"].to_vec(),
+                min_level: "high",
+                target_status: ["test", "stable"].to_vec(),
+                target_tags: [].to_vec(),
+            },
+        );
+        assert_eq!(a.get("stable"), Some(&5)); // 3 + 2 at HIGH; LOW(5) is below HIGH
+        assert_eq!(a.get("test"), Some(&4)); // CRITICAL >= HIGH
+        assert_eq!(a.get("deprecated"), None); // excluded status
+        assert_eq!(a.get("noisy"), None);
+        assert_eq!(a.len(), 2);
+
+        // (B) Exclude-noisy mode: count only the listed noisy statuses, at/above MEDIUM.
+        let b = calculate_wizard_rule_count(
+            &map,
+            WizardCountFilter {
+                exclude_noisytarget_flag: true,
+                exclude_noisy_status: ["deprecated", "noisy"].to_vec(),
+                min_level: "medium",
+                target_status: [].to_vec(),
+                target_tags: [].to_vec(),
+            },
+        );
+        assert_eq!(b.get("deprecated"), Some(&7));
+        assert_eq!(b.get("noisy"), Some(&9));
+        assert_eq!(b.len(), 2);
+
+        // (C) Tag counts: only the requested tags at/above HIGH for the "stable" status; no
+        // per-status entry is produced when `target_tags` is set.
+        let c = calculate_wizard_rule_count(
+            &map,
+            WizardCountFilter {
+                exclude_noisytarget_flag: false,
+                exclude_noisy_status: [].to_vec(),
+                min_level: "high",
+                target_status: ["stable"].to_vec(),
+                target_tags: ["sysmon", "detection.emerging_threats"].to_vec(),
+            },
+        );
+        assert_eq!(c.get("sysmon"), Some(&3));
+        assert_eq!(c.get("detection.emerging_threats"), Some(&2));
+        assert_eq!(c.len(), 2);
     }
 }
