@@ -6,7 +6,7 @@ use crate::detections::{
     utils,
 };
 use crate::timeline::log_metrics::LogMetrics;
-use crate::timeline::metrics::Channel::{RdsGtw, RdsLsm, Sec};
+use crate::timeline::metrics::Channel::{RdsGtw, RdsLsm, RdsRcm, Sec};
 use bytesize::ByteSize;
 use chrono::{DateTime, NaiveDate, NaiveDateTime, Utc};
 use compact_str::CompactString;
@@ -310,8 +310,9 @@ impl EventMetrics {
         }
     }
     /// Counts logon events for the logon-summary command: Security 4624 (successful logon),
-    /// Security 4625 (failed logon), RDS LocalSessionManager 21 and RDS Gateway 302 (both
-    /// counted as successful logons).
+    /// Security 4625 (failed logon), and the RDP events that survive Security-log flooding —
+    /// RDS LocalSessionManager 21/25 (logon/reconnect), RemoteConnectionManager 1149 (network-level
+    /// authentication) and RDS Gateway 302 (RD Gateway logon) — all counted as successful logons.
     fn stats_login_eventid(&mut self, records: &[EvtxRecordInfo], stored_static: &StoredStatic) {
         // Maps the LogonType number to a human-readable label for display.
         let logontype_map: HashMap<&str, &str> = HashMap::from([
@@ -371,7 +372,8 @@ impl EventMetrics {
                                 CompactString::from("Sec 4625")
                             }
                         }
-                        RdsLsm => CompactString::from("RDS-LSM 21"),
+                        RdsLsm => CompactString::from(format!("RDS-LSM {event_id}")),
+                        RdsRcm => CompactString::from("RDS-RCM 1149"),
                         RdsGtw => CompactString::from("RDS-GTW 302"),
                     };
                     // The RDS events store the account as a single "DOMAIN\user" field, so the
@@ -394,6 +396,12 @@ impl EventMetrics {
                                 .unwrap_or(&user_with_domain);
                             CompactString::from(user)
                         }
+                        // 1149 stores the user (Param1) and domain (Param2) in separate fields.
+                        RdsRcm => get_event_value_as_string(
+                            "UserDataParam1",
+                            &record.record,
+                            &stored_static.eventkey_alias,
+                        ),
                         RdsGtw => {
                             let user_with_domain = get_event_value_as_string(
                                 "RdsGtwUsername",
@@ -428,6 +436,11 @@ impl EventMetrics {
                             let domain = user_with_domain.rsplit_once('\\').map(|x| x.0);
                             CompactString::from(domain.unwrap_or("-"))
                         }
+                        RdsRcm => get_event_value_as_string(
+                            "UserDataParam2",
+                            &record.record,
+                            &stored_static.eventkey_alias,
+                        ),
                         RdsGtw => {
                             let user_with_domain = get_event_value_as_string(
                                 "RdsGtwUsername",
@@ -469,6 +482,11 @@ impl EventMetrics {
                             &record.record,
                             &stored_static.eventkey_alias,
                         ),
+                        RdsRcm => get_event_value_as_string(
+                            "UserDataParam3",
+                            &record.record,
+                            &stored_static.eventkey_alias,
+                        ),
                         RdsGtw => get_event_value_as_string(
                             "RdsGtwIpAddress",
                             &record.record,
@@ -489,8 +507,8 @@ impl EventMetrics {
                     }
 
                     // Fetch (or initialize) the aggregate for this logon event. At this point the
-                    // EventID is 4624, 4625, 21 or 302; 4625 counts as a failed logon (index 1)
-                    // and the others as successful logons (index 0).
+                    // EventID is 4624, 4625, 21, 25, 1149 or 302; 4625 counts as a failed logon
+                    // (index 1) and the others as successful logons (index 0).
                     let entry: &mut LogonStats = self
                         .stats_login_list
                         .entry(LoginEvent {
@@ -564,6 +582,7 @@ fn get_event_value_as_string(
 enum Channel {
     Sec,    // Security
     RdsLsm, // Microsoft-Windows-TerminalServices-LocalSessionManager/Operational
+    RdsRcm, // Microsoft-Windows-TerminalServices-RemoteConnectionManager/Operational
     RdsGtw, // Microsoft-Windows-TerminalServices-Gateway/Operational
 }
 
@@ -573,10 +592,19 @@ fn is_target_event(event_id: i64, channel: &str) -> Option<Channel> {
     if (event_id == 4624 || event_id == 4625) && channel == "Security" {
         return Some(Sec);
     }
-    if event_id == 21
+    // 21 = RDP session logon, 25 = RDP session reconnect. Both survive the Security-log flooding
+    // that can evict the matching 4624, so they are counted as successful logons.
+    if (event_id == 21 || event_id == 25)
         && channel == "Microsoft-Windows-TerminalServices-LocalSessionManager/Operational"
     {
         return Some(RdsLsm);
+    }
+    // 1149 = "User authentication succeeded" (network-level authentication); carries the user and
+    // source IP even when the corresponding 4624 has been flooded out.
+    if event_id == 1149
+        && channel == "Microsoft-Windows-TerminalServices-RemoteConnectionManager/Operational"
+    {
+        return Some(RdsRcm);
     }
     if event_id == 302 && channel == "Microsoft-Windows-TerminalServices-Gateway/Operational" {
         return Some(RdsGtw);
@@ -702,5 +730,26 @@ mod tests {
             assert!(expect.contains_key(&k));
             assert_eq!(expect.get(&k).unwrap(), &v);
         }
+    }
+
+    #[test]
+    fn test_is_target_event_covers_rdp_channels() {
+        use super::Channel::{RdsGtw, RdsLsm, RdsRcm, Sec};
+        use super::is_target_event;
+        let lsm = "Microsoft-Windows-TerminalServices-LocalSessionManager/Operational";
+        let rcm = "Microsoft-Windows-TerminalServices-RemoteConnectionManager/Operational";
+        let gtw = "Microsoft-Windows-TerminalServices-Gateway/Operational";
+        // Security 4624/4625
+        assert!(matches!(is_target_event(4624, "Security"), Some(Sec)));
+        assert!(matches!(is_target_event(4625, "Security"), Some(Sec)));
+        // RDP logon sources (21/302 existed; 25 and 1149 are new)
+        assert!(matches!(is_target_event(21, lsm), Some(RdsLsm))); // session logon
+        assert!(matches!(is_target_event(25, lsm), Some(RdsLsm))); // session reconnect
+        assert!(matches!(is_target_event(1149, rcm), Some(RdsRcm))); // NLA authentication
+        assert!(matches!(is_target_event(302, gtw), Some(RdsGtw))); // RD Gateway
+        // Non-logon EIDs and channel mismatches must be ignored.
+        assert!(is_target_event(22, lsm).is_none()); // 22 = shell start, not a logon
+        assert!(is_target_event(1149, lsm).is_none()); // right EID, wrong channel
+        assert!(is_target_event(4624, lsm).is_none());
     }
 }
