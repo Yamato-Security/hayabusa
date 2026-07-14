@@ -4,7 +4,8 @@ name: Sync field-modifier counts
 # upstream auto-generated source in the hayabusa-rules repo
 # (doc/SupportedSigmaFieldModifiers.md), which is regenerated whenever the Sigma
 # or Hayabusa rulesets change. Runs daily (and on demand); when the counts
-# change it commits the refreshed pages and triggers the docs deploy.
+# change it opens a pull request against main so the protected-branch rules are
+# respected. The docs deploy triggers automatically when the PR is merged.
 
 on:
   schedule:
@@ -12,8 +13,8 @@ on:
   workflow_dispatch:
 
 permissions:
-  contents: write # push the refreshed docs pages
-  actions: write # dispatch the docs deploy workflow
+  contents: write      # push the sync branch
+  pull-requests: write # open pull requests
 
 concurrency:
   group: sync-field-modifiers
@@ -34,7 +35,7 @@ jobs:
       - name: Sync field-modifier tables from hayabusa-rules
         run: python website/scripts/sync_field_modifiers.py
 
-      - name: Commit changes and trigger docs deploy
+      - name: Commit changes and open pull request
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
@@ -44,9 +45,18 @@ jobs:
           fi
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          BRANCH="auto/sync-field-modifiers-$(date +%Y%m%d)"
+          # Skip if today's sync branch already exists on origin (re-run safety).
+          if git ls-remote --exit-code origin "refs/heads/${BRANCH}" >/dev/null 2>&1; then
+            echo "Sync branch ${BRANCH} already exists; skipping."
+            exit 0
+          fi
+          git checkout -b "${BRANCH}"
           git add website/docs/rules/field-modifiers*.md
           git commit -m "docs: sync field-modifier counts from hayabusa-rules"
-          git push
-          # Pushes made with GITHUB_TOKEN do not trigger other workflows, so
-          # explicitly dispatch the docs deploy to publish the refreshed counts.
-          gh workflow run docs.yml --ref "${GITHUB_REF_NAME}"
+          git push origin "${BRANCH}"
+          gh pr create \
+            --title "docs: sync field-modifier counts from hayabusa-rules" \
+            --body "Automated sync of field-modifier counts from hayabusa-rules." \
+            --base main \
+            --head "${BRANCH}"
