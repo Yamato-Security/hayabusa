@@ -111,27 +111,28 @@ pub(in crate::detections::rule::matchers) fn wildcard_to_regex(pattern: String) 
     }
 
     // Convert from SIGMA rule wildcard notation to regex notation.
-    let ret = pattern_splits.iter().enumerate().fold(
-        String::default(),
-        |acc: String, (idx, pattern)| {
-            let regex_value = if idx % 2 == 0 {
-                // If not a wildcard, return the escaped string.
-                regex::escape(pattern)
-            } else {
-                // When it is a wildcard, convert "*" into a ".*"-style regex (an alternation
-                // that additionally matches the newline, which "." alone does not) and convert
-                // "?" into ".".
-                let wildcard_regex_value = if *pattern == "*" {
-                    "(.|\\a|\\f|\\t|\\n|\\r|\\v)*"
+    let ret =
+        pattern_splits
+            .iter()
+            .enumerate()
+            .fold(String::default(), |acc: String, (idx, pattern)| {
+                let regex_value = if idx % 2 == 0 {
+                    // If not a wildcard, return the escaped string.
+                    regex::escape(pattern)
                 } else {
-                    "."
+                    // When it is a wildcard, convert "*" into a ".*"-style regex (an alternation
+                    // that additionally matches the newline, which "." alone does not) and convert
+                    // "?" into ".".
+                    let wildcard_regex_value = if *pattern == "*" {
+                        "(.|\\a|\\f|\\t|\\n|\\r|\\v)*"
+                    } else {
+                        "."
+                    };
+                    wildcard_regex_value.to_string()
                 };
-                wildcard_regex_value.to_string()
-            };
 
-            format!("{acc}{regex_value}")
-        },
-    );
+                format!("{acc}{regex_value}")
+            });
 
     // Sigma wildcards are case-insensitive.
     // Therefore, prepend the case-insensitive flag to the regex.

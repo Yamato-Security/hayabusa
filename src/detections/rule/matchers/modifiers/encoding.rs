@@ -7,7 +7,7 @@
 
 use super::PipeElement;
 use crate::detections::rule::base64_match::{
-    convert_to_base64_str, to_base64_utf16be, to_base64_utf16le_with_bom, to_base64_utf8,
+    convert_to_base64_str, to_base64_utf8, to_base64_utf16be, to_base64_utf16le_with_bom,
 };
 use crate::detections::rule::fast_match::FastMatch;
 
@@ -67,8 +67,12 @@ pub(in crate::detections::rule::matchers) fn base64offset_fast_match(
                 _ => None,
             }
         }
-        Utf16Kind::Utf16Le => convert_to_base64_str(Some(&PipeElement::Utf16Le), original, err_msgs),
-        Utf16Kind::Utf16Be => convert_to_base64_str(Some(&PipeElement::Utf16Be), original, err_msgs),
+        Utf16Kind::Utf16Le => {
+            convert_to_base64_str(Some(&PipeElement::Utf16Le), original, err_msgs)
+        }
+        Utf16Kind::Utf16Be => {
+            convert_to_base64_str(Some(&PipeElement::Utf16Be), original, err_msgs)
+        }
         Utf16Kind::Wide => convert_to_base64_str(Some(&PipeElement::Wide), original, err_msgs),
     }
 }
