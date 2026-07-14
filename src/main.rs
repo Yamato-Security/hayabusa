@@ -316,6 +316,7 @@ fn apply_channel_filters(
                         - Security
                         - Microsoft-Windows-TerminalServices-Gateway/Operational
                         - Microsoft-Windows-TerminalServices-LocalSessionManager/Operational
+                        - Microsoft-Windows-TerminalServices-RemoteConnectionManager/Operational
             "#;
         let yaml_data = YamlLoader::load_from_str(yaml_str);
         let node = RuleNode::new(
