@@ -6,7 +6,7 @@ use crate::detections::{
     utils,
 };
 use crate::timeline::log_metrics::LogMetrics;
-use crate::timeline::metrics::Channel::{RdsGtw, RdsLsm, RdsRcm, Sec};
+use crate::timeline::metrics::Channel::{RdsGtw, RdsLsm, RdsRcm, Sec, Sec4778};
 use bytesize::ByteSize;
 use chrono::{DateTime, NaiveDate, NaiveDateTime, Utc};
 use compact_str::CompactString;
@@ -310,9 +310,11 @@ impl EventMetrics {
         }
     }
     /// Counts logon events for the logon-summary command: Security 4624 (successful logon),
-    /// Security 4625 (failed logon), and the RDP events that survive Security-log flooding —
-    /// RDS LocalSessionManager 21/25 (logon/reconnect), RemoteConnectionManager 1149 (network-level
-    /// authentication) and RDS Gateway 302 (RD Gateway logon) — all counted as successful logons.
+    /// Security 4625 (failed logon), Security 4778/4779 (RDP session reconnect/disconnect, which
+    /// carry the client's workstation name), and the RDP operational events that survive
+    /// Security-log flooding — RDS LocalSessionManager 21/25 (logon/reconnect), RemoteConnectionManager
+    /// 1149 (network-level authentication) and RDS Gateway 302 (RD Gateway logon). All but 4625 are
+    /// counted as successful logons.
     fn stats_login_eventid(&mut self, records: &[EvtxRecordInfo], stored_static: &StoredStatic) {
         // Maps the LogonType number to a human-readable label for display.
         let logontype_map: HashMap<&str, &str> = HashMap::from([
@@ -365,13 +367,8 @@ impl EventMetrics {
                 );
                 if let Some(channel) = is_target_event(event_id, &channel) {
                     let channel_name = match channel {
-                        Sec => {
-                            if event_id == 4624 {
-                                CompactString::from("Sec 4624")
-                            } else {
-                                CompactString::from("Sec 4625")
-                            }
-                        }
+                        // 4624/4625 and 4778/4779 all live in the Security log.
+                        Sec | Sec4778 => CompactString::from(format!("Sec {event_id}")),
                         RdsLsm => CompactString::from(format!("RDS-LSM {event_id}")),
                         RdsRcm => CompactString::from("RDS-RCM 1149"),
                         RdsGtw => CompactString::from("RDS-GTW 302"),
@@ -381,6 +378,11 @@ impl EventMetrics {
                     let dst_user = match channel {
                         Sec => get_event_value_as_string(
                             "TargetUserName",
+                            &record.record,
+                            &stored_static.eventkey_alias,
+                        ),
+                        Sec4778 => get_event_value_as_string(
+                            "AccountName",
                             &record.record,
                             &stored_static.eventkey_alias,
                         ),
@@ -427,6 +429,11 @@ impl EventMetrics {
                             &record.record,
                             &stored_static.eventkey_alias,
                         ),
+                        Sec4778 => get_event_value_as_string(
+                            "AccountDomain",
+                            &record.record,
+                            &stored_static.eventkey_alias,
+                        ),
                         RdsLsm => {
                             let user_with_domain = get_event_value_as_string(
                                 "UserDataUser",
@@ -466,14 +473,28 @@ impl EventMetrics {
                         &record.record,
                         &stored_static.eventkey_alias,
                     );
-                    let source_computer = get_event_value_as_string(
-                        "WorkstationName",
-                        &record.record,
-                        &stored_static.eventkey_alias,
-                    );
+                    // 4778/4779 record the RDP client's workstation name in ClientName; the other
+                    // sources use the Security WorkstationName (absent, i.e. "-", for the RDS logs).
+                    let source_computer = match channel {
+                        Sec4778 => get_event_value_as_string(
+                            "ClientName",
+                            &record.record,
+                            &stored_static.eventkey_alias,
+                        ),
+                        _ => get_event_value_as_string(
+                            "WorkstationName",
+                            &record.record,
+                            &stored_static.eventkey_alias,
+                        ),
+                    };
                     let source_ip = match channel {
                         Sec => get_event_value_as_string(
                             "IpAddress",
+                            &record.record,
+                            &stored_static.eventkey_alias,
+                        ),
+                        Sec4778 => get_event_value_as_string(
+                            "ClientAddress",
                             &record.record,
                             &stored_static.eventkey_alias,
                         ),
@@ -507,8 +528,8 @@ impl EventMetrics {
                     }
 
                     // Fetch (or initialize) the aggregate for this logon event. At this point the
-                    // EventID is 4624, 4625, 21, 25, 1149 or 302; 4625 counts as a failed logon
-                    // (index 1) and the others as successful logons (index 0).
+                    // EventID is 4624, 4625, 4778, 4779, 21, 25, 1149 or 302; 4625 counts as a
+                    // failed logon (index 1) and the others as successful logons (index 0).
                     let entry: &mut LogonStats = self
                         .stats_login_list
                         .entry(LoginEvent {
@@ -580,10 +601,11 @@ fn get_event_value_as_string(
 
 /// Event log channels that contain the logon events tracked by the logon-summary command.
 enum Channel {
-    Sec,    // Security
-    RdsLsm, // Microsoft-Windows-TerminalServices-LocalSessionManager/Operational
-    RdsRcm, // Microsoft-Windows-TerminalServices-RemoteConnectionManager/Operational
-    RdsGtw, // Microsoft-Windows-TerminalServices-Gateway/Operational
+    Sec,     // Security (4624/4625)
+    Sec4778, // Security 4778/4779 (RDP session reconnect/disconnect; carries the client name)
+    RdsLsm,  // Microsoft-Windows-TerminalServices-LocalSessionManager/Operational
+    RdsRcm,  // Microsoft-Windows-TerminalServices-RemoteConnectionManager/Operational
+    RdsGtw,  // Microsoft-Windows-TerminalServices-Gateway/Operational
 }
 
 /// Returns which channel the record's logon event belongs to if its (EventID, Channel) pair is
@@ -591,6 +613,11 @@ enum Channel {
 fn is_target_event(event_id: i64, channel: &str) -> Option<Channel> {
     if (event_id == 4624 || event_id == 4625) && channel == "Security" {
         return Some(Sec);
+    }
+    // 4778 = session reconnected, 4779 = session disconnected. Unlike the RDS operational events
+    // these carry the RDP client's workstation name (ClientName) and client IP (ClientAddress).
+    if (event_id == 4778 || event_id == 4779) && channel == "Security" {
+        return Some(Sec4778);
     }
     // 21 = RDP session logon, 25 = RDP session reconnect. Both survive the Security-log flooding
     // that can evict the matching 4624, so they are counted as successful logons.
@@ -734,14 +761,16 @@ mod tests {
 
     #[test]
     fn test_is_target_event_covers_rdp_channels() {
-        use super::Channel::{RdsGtw, RdsLsm, RdsRcm, Sec};
+        use super::Channel::{RdsGtw, RdsLsm, RdsRcm, Sec, Sec4778};
         use super::is_target_event;
         let lsm = "Microsoft-Windows-TerminalServices-LocalSessionManager/Operational";
         let rcm = "Microsoft-Windows-TerminalServices-RemoteConnectionManager/Operational";
         let gtw = "Microsoft-Windows-TerminalServices-Gateway/Operational";
-        // Security 4624/4625
+        // Security 4624/4625 and the RDP reconnect/disconnect pair 4778/4779
         assert!(matches!(is_target_event(4624, "Security"), Some(Sec)));
         assert!(matches!(is_target_event(4625, "Security"), Some(Sec)));
+        assert!(matches!(is_target_event(4778, "Security"), Some(Sec4778)));
+        assert!(matches!(is_target_event(4779, "Security"), Some(Sec4778)));
         // RDP logon sources (21/302 existed; 25 and 1149 are new)
         assert!(matches!(is_target_event(21, lsm), Some(RdsLsm))); // session logon
         assert!(matches!(is_target_event(25, lsm), Some(RdsLsm))); // session reconnect
