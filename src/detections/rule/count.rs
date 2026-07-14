@@ -603,10 +603,13 @@ pub fn judge_timeframe(
             ret.push(counter.create_agg_result(&records[left as usize..right as usize], cnt, key));
             left = right;
         } else {
-            // The condition was not satisfied, so slide the window: take in data[right] and drop
-            // data[left]. add_data/remove_data bounds-check, so right == data_len is a no-op.
-            counter.add_data(right, &records, rule);
-            right += 1;
+            // The condition was not satisfied, so slide the window forward by dropping data[left].
+            // `right` is left untouched: the next iteration's inner loop re-extends it from
+            // `left + 1`, re-checking each candidate with `_is_in_timeframe`. Previously this branch
+            // also did an unchecked `add_data(right)` (and `right += 1`), which pulled records[right]
+            // — already known to be outside the timeframe from records[left] — into the window; when
+            // its field value was new that could push count(field) over the threshold across a span
+            // longer than the timeframe, producing a false-positive AggResult (issue #1811).
             counter.remove_data(left, &records, rule);
             left += 1;
         }
@@ -1064,6 +1067,100 @@ mod tests {
             rule_node.countdata.get(&"_".to_owned()).unwrap().len() as i32,
             2
         );
+        let judge_result = rule_node.judge_satisfy_aggcondition(&dummy_stored_static);
+        assert_eq!(judge_result.len(), 0);
+    }
+    #[test]
+    /// Regression test for #1811: the sliding window in `judge_timeframe` must not pull a record
+    /// that is outside the timeframe into a window. Two records share EventID 4624 five seconds
+    /// apart, and a third with EventID 4625 arrives ten minutes later. With `count(EventID) >= 2`
+    /// and a one-minute timeframe there is never a one-minute window containing two distinct
+    /// EventIDs, so no alert must be produced. Before the fix, the slide branch did an unchecked
+    /// `add_data(right)`, so the out-of-timeframe 4625 record was combined with the 4624 record
+    /// into a window spanning ten minutes, producing a false-positive AggResult.
+    fn test_count_field_timeframe_no_out_of_frame_false_positive() {
+        let record0: &str = r#"
+        {
+          "Event": {
+            "System": {
+              "EventID": 4624,
+              "Channel": "System",
+              "TimeCreated_attributes": { "SystemTime": "2021-01-01T00:00:00Z" }
+            }
+          },
+          "Event_attributes": { "xmlns": "http://schemas.microsoft.com/win/2004/08/events/event" }
+        }"#;
+        let record1: &str = r#"
+        {
+          "Event": {
+            "System": {
+              "EventID": 4624,
+              "Channel": "System",
+              "TimeCreated_attributes": { "SystemTime": "2021-01-01T00:00:05Z" }
+            }
+          },
+          "Event_attributes": { "xmlns": "http://schemas.microsoft.com/win/2004/08/events/event" }
+        }"#;
+        let record2: &str = r#"
+        {
+          "Event": {
+            "System": {
+              "EventID": 4625,
+              "Channel": "System",
+              "TimeCreated_attributes": { "SystemTime": "2021-01-01T00:10:00Z" }
+            }
+          },
+          "Event_attributes": { "xmlns": "http://schemas.microsoft.com/win/2004/08/events/event" }
+        }"#;
+        let rule_str = r#"
+        enabled: true
+        detection:
+            selection1:
+                Channel: 'System'
+            condition: selection1 | count(EventID) >= 2
+            timeframe: 1m
+        details: 'count field timeframe regression'
+        "#;
+        let mut rule_yaml = YamlLoader::load_from_str(rule_str).unwrap().into_iter();
+        let test = rule_yaml.next().unwrap();
+        let mut rule_node = create_rule("testpath".to_string(), test);
+        let dummy_stored_static = create_dummy_stored_static();
+
+        let init_result = rule_node.init(&dummy_stored_static);
+        assert!(init_result.is_ok());
+        let target = vec![record0, record1, record2];
+        for record in target {
+            match serde_json::from_str(record) {
+                Ok(rec) => {
+                    let keys = detections::rule::get_detection_keys(&rule_node);
+                    let recinfo = utils::create_rec_info(
+                        rec,
+                        "testpath".to_owned(),
+                        &keys,
+                        &false,
+                        &false,
+                        &dummy_stored_static.eventkey_alias,
+                    );
+                    let _result = rule_node.select(
+                        &recinfo,
+                        dummy_stored_static.verbose_flag,
+                        dummy_stored_static.quiet_errors_flag,
+                        dummy_stored_static.json_input_flag,
+                        &dummy_stored_static.eventkey_alias,
+                        &dummy_stored_static.error_log_stack,
+                    );
+                }
+                Err(_) => {
+                    panic!("failed to parse json record.");
+                }
+            }
+        }
+        // All three records match the selection and are counted.
+        assert_eq!(
+            rule_node.countdata.get(&"_".to_owned()).unwrap().len() as i32,
+            3
+        );
+        // No one-minute window holds two distinct EventIDs, so there must be no alert.
         let judge_result = rule_node.judge_satisfy_aggcondition(&dummy_stored_static);
         assert_eq!(judge_result.len(), 0);
     }
