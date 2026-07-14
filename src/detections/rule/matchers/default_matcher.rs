@@ -1,17 +1,14 @@
 use std::collections::HashMap;
-use std::net::IpAddr;
-use std::str::FromStr;
 
 use nested::Nested;
 use regex::Regex;
 use yaml_rust2::Yaml;
 
 use super::LeafMatcher;
+use super::modifiers::ValueMatcher;
+use super::modifiers::encoding::{self, Encoding, Utf16Kind};
 use super::pipe_element::PipeElement;
 use crate::detections::configs::WINDASH_CHARACTERS;
-use crate::detections::rule::base64_match::{
-    convert_to_base64_str, to_base64_utf8, to_base64_utf16be, to_base64_utf16le_with_bom,
-};
 use crate::detections::rule::fast_match::{FastMatch, check_fast_match, convert_to_fast_match};
 use crate::detections::{detection::EvtxRecordInfo, utils};
 
@@ -76,25 +73,8 @@ enum Wrap {
     AllOnly,
 }
 
-/// Whether the pattern is base64-encoded before matching.
-#[derive(PartialEq)]
-enum Encoding {
-    Plain,
-    Base64,
-    Base64offset,
-}
-
-/// Whether the pattern is UTF-16-encoded before the base64 step (only meaningful with `Encoding`
-/// other than `Plain`).
-#[derive(PartialEq)]
-enum Utf16Kind {
-    None,
-    /// `|utf16`: both byte orders (base64offset) / UTF-16LE with a BOM (base64).
-    Utf16,
-    Utf16Le,
-    Utf16Be,
-    Wide,
-}
+// `Encoding` and `Utf16Kind` (the base64 / UTF-16 classification) live in the `encoding` category
+// module and are imported above.
 
 /// A field's fast-path pipe modifiers, normalized from the pipe list in a single pass.
 ///
@@ -231,16 +211,7 @@ impl MatchPlan {
                 if self.wrap != Wrap::Contains || self.cased || self.windash || self.all {
                     return None;
                 }
-                let original = pattern[0].as_str();
-                let encoded = match self.utf16 {
-                    Utf16Kind::None => to_base64_utf8(original),
-                    // |utf16|base64 means UTF-16LE with a BOM.
-                    Utf16Kind::Utf16 => to_base64_utf16le_with_bom(original, true),
-                    Utf16Kind::Utf16Le | Utf16Kind::Wide => {
-                        to_base64_utf16le_with_bom(original, false)
-                    }
-                    Utf16Kind::Utf16Be => to_base64_utf16be(original),
-                };
+                let encoded = encoding::base64_encoded(&self.utf16, pattern[0].as_str());
                 convert_to_fast_match(&format!("*{encoded}*"), true)
             }
             Encoding::Base64offset => {
@@ -249,32 +220,7 @@ impl MatchPlan {
                 if self.wrap != Wrap::Contains || self.cased || self.windash || self.all {
                     return None;
                 }
-                let original = pattern[0].as_str();
-                match self.utf16 {
-                    Utf16Kind::None => convert_to_base64_str(None, original, err_msgs),
-                    Utf16Kind::Utf16 => {
-                        let le =
-                            convert_to_base64_str(Some(&PipeElement::Utf16Le), original, err_msgs);
-                        let be =
-                            convert_to_base64_str(Some(&PipeElement::Utf16Be), original, err_msgs);
-                        match (le, be) {
-                            (Some(mut le), Some(be)) => {
-                                le.extend(be);
-                                Some(le)
-                            }
-                            _ => None,
-                        }
-                    }
-                    Utf16Kind::Utf16Le => {
-                        convert_to_base64_str(Some(&PipeElement::Utf16Le), original, err_msgs)
-                    }
-                    Utf16Kind::Utf16Be => {
-                        convert_to_base64_str(Some(&PipeElement::Utf16Be), original, err_msgs)
-                    }
-                    Utf16Kind::Wide => {
-                        convert_to_base64_str(Some(&PipeElement::Wide), original, err_msgs)
-                    }
-                }
+                encoding::base64offset_fast_match(&self.utf16, pattern[0].as_str(), err_msgs)
             }
         }
     }
@@ -511,48 +457,10 @@ impl DefaultMatcher {
     fn is_match_inner(&self, event_value: Option<&String>, recinfo: &EvtxRecordInfo) -> bool {
         let pipe: &PipeElement = self.pipes.first().unwrap_or(&PipeElement::Wildcard);
         // Pipes that implement their own matching (cidr, exists, field references and numeric
-        // comparisons) are handled first; all other kinds fall through to fast match/regex.
-        let match_result = match pipe {
-            PipeElement::Cidr(ip_result) => match ip_result {
-                Ok(matcher_ip) => {
-                    let val = String::default();
-                    let event_value_str = event_value.unwrap_or(&val);
-                    let event_ip = IpAddr::from_str(event_value_str);
-                    match event_ip {
-                        Ok(target_ip) => Some(matcher_ip.contains(&target_ip)),
-                        Err(_) => Some(false), // The event value is not an IP address.
-                    }
-                }
-                Err(_) => Some(false), // The rule's cidr value is not a valid CIDR range.
-            },
-            PipeElement::Exists(..)
-            | PipeElement::EqualsField(_)
-            | PipeElement::FieldRef(_)
-            | PipeElement::FieldRefStartswith(_)
-            | PipeElement::FieldRefContains(_)
-            | PipeElement::FieldRefEndswith(_)
-            | PipeElement::Endswithfield(_) => Some(pipe.is_eqfield_match(event_value, recinfo)),
-            PipeElement::Gt(_) | PipeElement::Lt(_) | PipeElement::Gte(_) | PipeElement::Lte(_) => {
-                let val = String::default();
-                let event_val_str = event_value.unwrap_or(&val);
-                let event_val_int = event_val_str.parse::<usize>();
-                match event_val_int {
-                    Ok(event_val) => {
-                        let cmp_result = match pipe {
-                            PipeElement::Gt(n) => event_val > *n,
-                            PipeElement::Lt(n) => event_val < *n,
-                            PipeElement::Gte(n) => event_val >= *n,
-                            PipeElement::Lte(n) => event_val <= *n,
-                            _ => false,
-                        };
-                        Some(cmp_result)
-                    }
-                    Err(_) => Some(false), // The event value is not numeric.
-                }
-            }
-            _ => None,
-        };
-        if let Some(result) = match_result {
+        // comparisons) match the value directly through their modifier category module via the
+        // `ValueMatcher` trait; every other kind returns `None` here and falls through to the
+        // fast-match/regex path below.
+        if let Some(result) = pipe.value_match(event_value, recinfo) {
             return result;
         }
 

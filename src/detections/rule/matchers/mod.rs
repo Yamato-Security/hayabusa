@@ -6,6 +6,7 @@ use downcast_rs::Downcast;
 
 mod default_matcher;
 mod leaf_matchers;
+mod modifiers;
 mod pipe_element;
 
 #[cfg(test)]
