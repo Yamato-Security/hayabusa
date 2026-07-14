@@ -355,15 +355,17 @@ impl StoredStatic {
                     "GeoLite2-City.mmdb",
                 ],
             )));
-            let geo_ip_file_path = check_setting_path(config_path, "geoip_field_mapping", false)
-                .unwrap_or_else(|| {
-                    check_setting_path(
-                        &CURRENT_EXE_PATH.to_path_buf(),
-                        "rules/config/geoip_field_mapping.yaml",
-                        true,
-                    )
-                    .unwrap()
-                });
+            let geo_ip_file_path =
+                check_setting_path(config_path, "geoip_field_mapping.yaml", false).unwrap_or_else(
+                    || {
+                        check_setting_path(
+                            &CURRENT_EXE_PATH.to_path_buf(),
+                            "rules/config/geoip_field_mapping.yaml",
+                            true,
+                        )
+                        .unwrap()
+                    },
+                );
             if !geo_ip_file_path.exists()
                 && !ONE_CONFIG_MAP.contains_key("geoip_field_mapping.yaml")
             {

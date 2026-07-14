@@ -132,7 +132,7 @@ pub fn read_txt(filename: &str) -> Result<Nested<String>, String> {
 pub fn read_jsonl_to_value(path: &str) -> Result<Box<dyn Iterator<Item = Value>>, String> {
     let f = File::open(path);
     if f.is_err() {
-        return Err("Cannot open file. [file:{path}]".to_string());
+        return Err(format!("Cannot open file. [file:{path}]"));
     }
     let reader = BufReader::new(f.unwrap());
     let mut peekable_lines = reader.lines().peekable();
@@ -160,7 +160,7 @@ pub fn read_jsonl_to_value(path: &str) -> Result<Box<dyn Iterator<Item = Value>>
 pub fn read_json_to_value(path: &str) -> Result<Box<dyn Iterator<Item = Value>>, String> {
     let f = fs::read_to_string(path);
     if f.is_err() {
-        return Err("Cannot open file. [file:{path}]".to_string());
+        return Err(format!("Cannot open file. [file:{path}]"));
     }
     let contents = f.unwrap();
     let json_values: Result<Vec<Value>, Error> = serde_json::from_str(&contents);
@@ -938,6 +938,51 @@ mod tests {
         },
         options::htmlreport::{GENERAL_OVERVIEW_SECTION, HtmlReporter, RESULTS_SUMMARY_SECTION},
     };
+
+    #[test]
+    /// #1816: the "Cannot open file" error from the JSON/JSONL readers must interpolate the path,
+    /// not print the literal placeholder `{path}`.
+    fn test_read_json_open_error_includes_path() {
+        // `.err().unwrap()` rather than `.unwrap_err()`: the Ok type is a boxed iterator that does
+        // not implement Debug.
+        let bogus_jsonl = "/nonexistent/hayabusa_test_does_not_exist.jsonl";
+        let err = super::read_jsonl_to_value(bogus_jsonl).err().unwrap();
+        assert!(
+            err.contains(bogus_jsonl),
+            "jsonl error should include the path: {err}"
+        );
+        assert!(
+            !err.contains("{path}"),
+            "jsonl error still has the placeholder: {err}"
+        );
+
+        let bogus_json = "/nonexistent/hayabusa_test_does_not_exist.json";
+        let err = super::read_json_to_value(bogus_json).err().unwrap();
+        assert!(
+            err.contains(bogus_json),
+            "json error should include the path: {err}"
+        );
+        assert!(
+            !err.contains("{path}"),
+            "json error still has the placeholder: {err}"
+        );
+    }
+
+    #[test]
+    /// #1825: check_setting_path must locate geoip_field_mapping.yaml in a custom (`-c`) config
+    /// dir. The previous extensionless lookup ("geoip_field_mapping") never matched the real file.
+    fn test_check_setting_path_geoip_yaml_extension() {
+        let dir = tempfile::tempdir().unwrap();
+        std::fs::write(
+            dir.path().join("geoip_field_mapping.yaml"),
+            "example: mapping\n",
+        )
+        .unwrap();
+        // The corrected lookup (with the .yaml extension) finds the file in the custom dir.
+        assert!(check_setting_path(dir.path(), "geoip_field_mapping.yaml", false).is_some());
+        // The old extensionless lookup did not — this was the bug.
+        assert!(check_setting_path(dir.path(), "geoip_field_mapping", false).is_none());
+    }
 
     #[test]
     fn test_create_recordinfos() {
