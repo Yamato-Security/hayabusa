@@ -4,6 +4,7 @@
 
 **改善:**
 
+- `logon-summary` コマンドが、Terminal Services の運用ログからも RDP ログオンを集計するようにした。既存の LocalSessionManager `21` と Gateway `302` に加えて、RemoteConnectionManager/Operational `1149`（ネットワークレベル認証）と LocalSessionManager/Operational `25`（セッション再接続）を対象に追加した。これにより、対応する Security `4624` がログからあふれて消えている場合でも、RDP ログオンを集計できる。 (#1893) (@YamatoSecurity)
 - `extract-base64` コマンドに、PowerShellのイベントID `4100`/`4102`（Microsoft-Windows-PowerShell/Operational および PowerShellCore/Operational）と、クラシックの `403`/`600`（Windows PowerShell）を追加した。`4100`/`4102` は `ContextInfo`（`Host Application = powershell -encodedcommand ...`）と `Payload` フィールドを、`403`/`600` は既存の `400` と同様に `EventData.Data` の詳細ブロックをスキャンする。 (#1889) (@YamatoSecurity)
 - `logon-summary` の成功ログオンテーブルに `First Logon`/`Last Logon` 列を、失敗ログオンテーブルに `First Attempt`/`Last Attempt` 列を追加した。各アカウント/ソースの組み合わせがログオン（または試行）した時間の範囲を表示する。 (#1883) (@YamatoSecurity)
 

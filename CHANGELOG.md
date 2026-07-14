@@ -4,6 +4,7 @@
 
 **Enhancements:**
 
+- The `logon-summary` command now also counts RDP logons from the Terminal Services operational logs — RemoteConnectionManager/Operational `1149` (network-level authentication) and LocalSessionManager/Operational `25` (session reconnect), on top of the existing LocalSessionManager `21` and Gateway `302` — so RDP logons are still summarized when the matching Security `4624` has been flooded out of the log. (#1893) (@YamatoSecurity)
 - Added PowerShell event IDs `4100`/`4102` (Microsoft-Windows-PowerShell/Operational and PowerShellCore/Operational) and classic `403`/`600` (Windows PowerShell) to the `extract-base64` command. `4100`/`4102` scan the `ContextInfo` (`Host Application = powershell -encodedcommand ...`) and `Payload` fields; `403`/`600` scan the `EventData.Data` detail blob like the existing `400`. (#1889) (@YamatoSecurity)
 - Added `First Logon`/`Last Logon` columns to the `logon-summary` successful-logons table and `First Attempt`/`Last Attempt` columns to the failed-logons table, showing the time range over which each account/source combination logged on (or attempted to). (#1883) (@YamatoSecurity)
 
