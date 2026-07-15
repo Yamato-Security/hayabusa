@@ -3,13 +3,13 @@ name: Sync field-modifier counts
 # Keep the "Supported Field Modifiers" tables in the docs in sync with the
 # upstream auto-generated source in the hayabusa-rules repo
 # (doc/SupportedSigmaFieldModifiers.md), which is regenerated whenever the Sigma
-# or Hayabusa rulesets change. Runs daily (and on demand); when the counts
+# or Hayabusa rulesets change. Runs monthly (and on demand); when the counts
 # change it opens a pull request against main so the protected-branch rules are
 # respected. The docs deploy triggers automatically when the PR is merged.
 
 on:
   schedule:
-    - cron: "0 23 * * *" # daily at 23:00 UTC, ~2h after hayabusa-rules regenerates the table
+    - cron: "0 23 1 * *" # monthly, at 23:00 UTC on the 1st (use workflow_dispatch for an ad-hoc sync)
   workflow_dispatch:
 
 permissions:
