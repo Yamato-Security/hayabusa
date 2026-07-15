@@ -33,6 +33,15 @@ use crate::timeline::log_metrics::LogMetrics;
 use hashbrown::HashSet;
 use itertools::Itertools;
 
+/// Maximum width of the "Event" column in the `eid-metrics` table. Uses saturating subtraction so a
+/// terminal narrower than 55 columns does not underflow `terminal_width - 55`: previously that
+/// panicked with "attempt to subtract with overflow" in overflow-checked (dev/test) builds and
+/// silently wrapped to a huge value in release builds, defeating the 45-character floor and letting
+/// the table overflow the very narrow terminals the floor was meant to handle. (#1817)
+fn eid_metrics_event_col_width(terminal_width: u16) -> u16 {
+    cmp::max(terminal_width.saturating_sub(55), 45)
+}
+
 /// Aggregated state for the non-detection commands (eid-metrics, logon-summary, log-metrics,
 /// search, extract-base64, config-critical-systems, computer-metrics). Records are fed in
 /// incrementally via `start()` (except for computer-metrics, which fills `stats.stats_computer`
@@ -243,7 +252,7 @@ impl Timeline {
             UpperBoundary(Fixed(9)),  // Maximum number of characters for "percent"
             UpperBoundary(Fixed(20)), // Maximum number of characters for "Channel"
             UpperBoundary(Fixed(12)), // Maximum number of characters for "ID"
-            UpperBoundary(Fixed(cmp::max(terminal_width - 55, 45))), // Maximum number of characters for "Event"
+            UpperBoundary(Fixed(eid_metrics_event_col_width(terminal_width))), // Maximum number of characters for "Event"
         ];
         for (column_index, column) in stats_tb.column_iter_mut().enumerate() {
             let constraint = constraints.get(column_index).unwrap();
@@ -779,6 +788,18 @@ mod tests {
         fs::{read_to_string, remove_file},
         path::Path,
     };
+
+    #[test]
+    /// #1817: the eid-metrics "Event" column width must not underflow `terminal_width - 55` on a
+    /// terminal narrower than 55 columns (previously panicked in debug builds and wrapped to a huge
+    /// value in release, defeating the 45-character floor).
+    fn test_eid_metrics_event_col_width() {
+        assert_eq!(super::eid_metrics_event_col_width(0), 45); // would underflow with `- 55`
+        assert_eq!(super::eid_metrics_event_col_width(40), 45); // narrow terminal
+        assert_eq!(super::eid_metrics_event_col_width(100), 45); // 100-55=45, at the floor
+        assert_eq!(super::eid_metrics_event_col_width(101), 46); // just above the floor
+        assert_eq!(super::eid_metrics_event_col_width(200), 145);
+    }
 
     use chrono::{DateTime, NaiveDateTime, Utc};
     use compact_str::CompactString;
