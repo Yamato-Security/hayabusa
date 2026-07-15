@@ -1,4 +1,4 @@
-use crate::detections::utils::{get_file_size, get_serde_number_to_string};
+use crate::detections::utils::{get_file_size, get_serde_number_to_string, parse_evtx_timestamp};
 use crate::detections::{
     configs::{EventKeyAliasConfig, StoredStatic},
     detection::EvtxRecordInfo,
@@ -39,13 +39,10 @@ pub struct LogonStats {
     pub last: [Option<DateTime<Utc>>; 2],
 }
 
-/// Parse an evtx `SystemTime` string into a UTC datetime, trying the standard evtx UTC format and
-/// then the timezone-offset format used by Splunk JSON exports (matching `stats_time_cnt`).
+/// Parse an evtx `SystemTime` string into a UTC datetime via the shared offset-aware parser
+/// (handles the standard evtx UTC format and the Splunk JSON offset format).
 fn parse_evtx_datetime(evttime: &str) -> Option<DateTime<Utc>> {
-    NaiveDateTime::parse_from_str(evttime, "%Y-%m-%dT%H:%M:%S%.fZ")
-        .or_else(|_| NaiveDateTime::parse_from_str(evttime, "%Y-%m-%dT%H:%M:%S%.3f%:z"))
-        .ok()
-        .map(|ndt| DateTime::<Utc>::from_naive_utc_and_offset(ndt, Utc))
+    parse_evtx_timestamp(evttime).ok()
 }
 
 /// Accumulates statistics over all scanned records. Depending on the command being run, only some
@@ -180,34 +177,21 @@ impl EventMetrics {
             .unwrap();
         let evtx_service_released_date = Some(DateTime::<Utc>::from_naive_utc_and_offset(dt, Utc));
         let mut check_start_end_time = |evttime: &str| {
-            // Try the standard evtx UTC format first, then fall back to the timezone-offset
-            // format used by Splunk JSON exports.
-            let timestamp = match NaiveDateTime::parse_from_str(evttime, "%Y-%m-%dT%H:%M:%S%.fZ") {
-                Ok(without_timezone_datetime) => Some(DateTime::<Utc>::from_naive_utc_and_offset(
-                    without_timezone_datetime,
-                    Utc,
-                )),
-                Err(_) => {
-                    match NaiveDateTime::parse_from_str(evttime, "%Y-%m-%dT%H:%M:%S%.3f%:z") {
-                        Ok(splunk_json_datetime) => Some(
-                            DateTime::<Utc>::from_naive_utc_and_offset(splunk_json_datetime, Utc),
-                        ),
-                        Err(e) => {
-                            let errmsg =
-                                format!("Timestamp parse error.\nInput: {evttime}\nError: {e}\n");
-                            if stored_static.verbose_flag {
-                                AlertMessage::alert(&errmsg).ok();
-                            }
-                            if !stored_static.quiet_errors_flag {
-                                stored_static
-                                    .error_log_stack
-                                    .lock()
-                                    .unwrap()
-                                    .push(format!("[ERROR] {errmsg}"));
-                            }
-                            None
-                        }
+            let timestamp = match parse_evtx_timestamp(evttime) {
+                Ok(ts) => Some(ts),
+                Err(e) => {
+                    let errmsg = format!("Timestamp parse error.\nInput: {evttime}\nError: {e}\n");
+                    if stored_static.verbose_flag {
+                        AlertMessage::alert(&errmsg).ok();
                     }
+                    if !stored_static.quiet_errors_flag {
+                        stored_static
+                            .error_log_stack
+                            .lock()
+                            .unwrap()
+                            .push(format!("[ERROR] {errmsg}"));
+                    }
+                    None
                 }
             };
             if timestamp.is_none() {

@@ -15,7 +15,7 @@ use std::vec;
 use std::{fs, io};
 
 use chrono::Local;
-use chrono::{DateTime, TimeZone, Utc};
+use chrono::{DateTime, NaiveDateTime, TimeZone, Utc};
 use compact_str::{CompactString, ToCompactString};
 use hashbrown::{HashMap, HashSet};
 use itertools::Itertools;
@@ -89,6 +89,20 @@ pub fn value_to_string(value: &Value) -> Option<String> {
         Value::String(s) => Option::Some(s.trim().to_string()),
         Value::Array(_) => Option::None,
         Value::Object(_) => Option::None,
+    }
+}
+
+/// Parses an evtx event `SystemTime` string into a UTC instant. Handles the standard evtx UTC
+/// format ("2021-12-23T00:00:00.000Z") and the Splunk JSON export format, which carries an explicit
+/// UTC offset ("2021-12-23T00:00:00.000+09:00"). The offset is applied via `with_timezone(&Utc)`;
+/// parsing that second form as a `NaiveDateTime` (as several timeline aggregators used to) silently
+/// discards the offset, so the local wall-clock time was stored as if it were UTC and skewed
+/// First/Last Timestamp summaries and logon-summary times. (#1820)
+pub fn parse_evtx_timestamp(evttime: &str) -> Result<DateTime<Utc>, chrono::ParseError> {
+    match NaiveDateTime::parse_from_str(evttime, "%Y-%m-%dT%H:%M:%S%.fZ") {
+        Ok(naive) => Ok(DateTime::<Utc>::from_naive_utc_and_offset(naive, Utc)),
+        Err(_) => DateTime::parse_from_str(evttime, "%Y-%m-%dT%H:%M:%S%.3f%:z")
+            .map(|dt| dt.with_timezone(&Utc)),
     }
 }
 
@@ -982,6 +996,30 @@ mod tests {
         assert!(check_setting_path(dir.path(), "geoip_field_mapping.yaml", false).is_some());
         // The old extensionless lookup did not — this was the bug.
         assert!(check_setting_path(dir.path(), "geoip_field_mapping", false).is_none());
+    }
+
+    #[test]
+    /// #1820: `parse_evtx_timestamp` must apply the Splunk-JSON UTC offset instead of discarding it
+    /// (used by log-metrics and the eid-metrics/logon-summary time-range aggregators).
+    fn test_parse_evtx_timestamp_applies_offset() {
+        use chrono::{TimeZone, Utc};
+        // evtx UTC format ("...Z") is stored as-is.
+        assert_eq!(
+            super::parse_evtx_timestamp("2021-12-23T00:00:00.000Z").unwrap(),
+            Utc.with_ymd_and_hms(2021, 12, 23, 0, 0, 0).unwrap()
+        );
+        // Splunk JSON "+09:00": the same instant is 9 hours earlier in UTC (previously stored as
+        // 00:00:00Z, skewing First/Last Timestamp by 9 hours).
+        assert_eq!(
+            super::parse_evtx_timestamp("2021-12-23T00:00:00.000+09:00").unwrap(),
+            Utc.with_ymd_and_hms(2021, 12, 22, 15, 0, 0).unwrap()
+        );
+        // A negative offset is applied too.
+        assert_eq!(
+            super::parse_evtx_timestamp("2021-12-23T00:00:00.000-05:00").unwrap(),
+            Utc.with_ymd_and_hms(2021, 12, 23, 5, 0, 0).unwrap()
+        );
+        assert!(super::parse_evtx_timestamp("not a timestamp").is_err());
     }
 
     #[test]
