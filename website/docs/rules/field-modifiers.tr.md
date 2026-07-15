@@ -1,5 +1,7 @@
 # Desteklenen Alan Niteleyicileri
 
+Bu sayfa, tüm Sigma alan niteleyicilerinin dinamik olarak oluşturulmuş bir listesini ve bunların Sigma ve Hayabusa kurallarında ne sıklıkla kullanıldığını içerir.
+
 ## Hayabusa tarafından desteklenen alan niteleyicileri
 | Alan Niteleyici                |   Sigma Sayısı |   Hayabusa Sayısı |
 |:------------------------------|--------------:|-----------------:|
@@ -57,6 +59,5 @@
 ## Hayabusa tarafından desteklenmeyen korelasyon kuralları
 Şu anda her şey destekleniyor.
 
-Bu belge, en güncel kurallara göre dinamik olarak güncellenmektedir.  
-Son Güncelleme: 2026/04/28  
-Yazar: Fukusuke Takahashi
+Bu belge, en güncel kurallara göre her ay dinamik olarak güncellenmektedir.  
+Son Güncelleme: 2026/07/15

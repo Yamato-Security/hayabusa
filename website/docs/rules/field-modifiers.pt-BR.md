@@ -1,5 +1,7 @@
 # Modificadores de Campo Suportados
 
+Esta página contém uma lista gerada dinamicamente de todos os modificadores de campo do Sigma e com que frequência eles são usados em regras Sigma e Hayabusa.
+
 ## Modificadores de campo suportados pelo Hayabusa
 | Field Modifier                |   Sigma Count |   Hayabusa Count |
 |:------------------------------|--------------:|-----------------:|
@@ -57,6 +59,5 @@ Atualmente, tudo é suportado.
 ## Regras de correlação não suportadas pelo Hayabusa
 Atualmente, tudo é suportado.
 
-Este documento é atualizado dinamicamente com base nas regras mais recentes.  
-Última Atualização: 2026/04/28  
-Autor: Fukusuke Takahashi
+Este documento é atualizado dinamicamente todos os meses com base nas regras mais recentes.  
+Última Atualização: 2026/07/15
