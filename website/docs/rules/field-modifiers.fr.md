@@ -1,5 +1,7 @@
 # Modificateurs de champ pris en charge
 
+Cette page contient une liste générée dynamiquement de tous les modificateurs de champ Sigma ainsi que la fréquence de leur utilisation dans les règles Sigma et Hayabusa.
+
 ## Modificateurs de champ pris en charge par Hayabusa
 | Field Modifier                |   Sigma Count |   Hayabusa Count |
 |:------------------------------|--------------:|-----------------:|
@@ -57,6 +59,5 @@ Actuellement, tout est pris en charge.
 ## Règles de corrélation non prises en charge par Hayabusa
 Actuellement, tout est pris en charge.
 
-Ce document est mis à jour dynamiquement en fonction des dernières règles.  
-Dernière mise à jour : 2026/04/28  
-Auteur : Fukusuke Takahashi
+Ce document est mis à jour dynamiquement chaque mois en fonction des dernières règles.  
+Dernière mise à jour : 2026/07/15

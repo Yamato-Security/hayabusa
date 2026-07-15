@@ -1,5 +1,7 @@
 # Field Modifier yang Didukung
 
+Halaman ini berisi daftar yang dihasilkan secara dinamis dari semua field modifier Sigma dan seberapa sering digunakan dalam aturan Sigma dan Hayabusa.
+
 ## Field modifier yang didukung Hayabusa
 | Field Modifier                |   Sigma Count |   Hayabusa Count |
 |:------------------------------|--------------:|-----------------:|
@@ -57,6 +59,5 @@ Saat ini, semuanya didukung.
 ## Aturan korelasi yang tidak didukung Hayabusa
 Saat ini, semuanya didukung.
 
-Dokumen ini diperbarui secara dinamis berdasarkan aturan terbaru.  
-Pembaruan Terakhir: 2026/04/28  
-Penulis: Fukusuke Takahashi
+Dokumen ini diperbarui secara dinamis setiap bulan berdasarkan aturan terbaru.  
+Pembaruan Terakhir: 2026/07/15

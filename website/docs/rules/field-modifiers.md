@@ -1,5 +1,7 @@
 # Supported Field Modifiers
 
+This page contains a dynamically generated list of all of the Sigma field modifiers and how often they are used in Sigma and Hayabusa rules.
+
 ## Hayabusa supported field modifiers
 | Field Modifier                |   Sigma Count |   Hayabusa Count |
 |:------------------------------|--------------:|-----------------:|
@@ -57,6 +59,5 @@ Currently, everything is supported.
 ## Hayabusa unsupported correlations rules
 Currently, everything is supported.
 
-This document is being dynamically updated based on the latest rules.  
-Last Update: 2026/04/28  
-Author: Fukusuke Takahashi
+This document is being dynamically updated monthly based on the latest rules.  
+Last Update: 2026/07/15
