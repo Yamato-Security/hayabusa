@@ -11,6 +11,7 @@
 
 **Bug Fixes:**
 
+- Fixed `-c` (custom rules config directory) being ignored by `pivot-keywords-list`, which always loaded `pivot_keywords.txt` from the bundled config next to the executable. It now resolves `pivot_keywords.txt` through the `-c` directory (falling back to the bundled copy), the same way every other config file is loaded. (#1902) (@YamatoSecurity)
 - Fixed the `read_jsonl_to_value`/`read_json_to_value` file-open error printing the literal placeholder `{path}` instead of the file path (the error string was a plain string literal rather than a `format!`). (#1897) (@YamatoSecurity)
 - Fixed a `u16` underflow in the `eid-metrics` table's "Event" column width on terminals narrower than 55 columns: `terminal_width - 55` underflowed before the 45-character floor could apply, panicking in overflow-checked builds and wrapping to a huge value in release builds (leaving the column effectively uncapped). It now uses saturating subtraction. (#1897) (@YamatoSecurity)
 - Fixed Splunk-JSON timestamps carrying an explicit UTC offset (e.g. `+09:00`) being parsed as a `NaiveDateTime`, which discards the offset and stored the local wall-clock time as if it were UTC — skewing the `log-metrics` First/Last Timestamp columns as well as the `eid-metrics`/`logon-summary` time ranges (`EventMetrics::stats_time_cnt` and `parse_evtx_datetime`). The timeline aggregators now share one offset-aware parser (`utils::parse_evtx_timestamp`) that applies the offset. (#1897) (@YamatoSecurity)
