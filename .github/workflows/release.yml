@@ -45,6 +45,10 @@ jobs:
             target: "aarch64-unknown-linux-gnu",
           }
           - {
+            os: "ubuntu-latest",
+            target: "aarch64-unknown-linux-musl",
+          }
+          - {
             os: "macos-latest",
             target: "aarch64-apple-darwin",
           }
@@ -90,6 +94,24 @@ jobs:
         run: |
           sudo apt-get update
           sudo apt-get install musl-tools
+
+      - name: Install aarch64-unknown-linux-musl toolchain
+        if: matrix.info.target == 'aarch64-unknown-linux-musl'
+        run: |
+          # Cross-compiling to aarch64 musl needs a real aarch64 musl toolchain: musl-tools only
+          # ships an x86_64 musl-gcc, and linking with the glibc gcc-aarch64-linux-gnu produces a
+          # binary that is killed at startup (issue #1332). This static toolchain builds the C
+          # dependencies (vendored OpenSSL, mimalloc) and links against musl correctly.
+          curl -sSL https://musl.cc/aarch64-linux-musl-cross.tgz | tar -xz -C "$HOME"
+          echo "$HOME/aarch64-linux-musl-cross/bin" >> "$GITHUB_PATH"
+          echo "CC_aarch64_unknown_linux_musl=aarch64-linux-musl-gcc" >> "$GITHUB_ENV"
+          echo "CXX_aarch64_unknown_linux_musl=aarch64-linux-musl-g++" >> "$GITHUB_ENV"
+          echo "AR_aarch64_unknown_linux_musl=aarch64-linux-musl-ar" >> "$GITHUB_ENV"
+          cat << EOF >> ./.cargo/config.toml
+
+          [target.aarch64-unknown-linux-musl]
+          linker = "aarch64-linux-musl-gcc"
+          EOF
 
       - name: Build Hayabusa binary
         run: |
@@ -151,6 +173,8 @@ jobs:
                 mv release-binaries/hayabusa release-binaries/hayabusa-${{ github.event.inputs.release_ver }}-lin-x64-musl ;;
             'aarch64-unknown-linux-gnu')
                 mv release-binaries/hayabusa release-binaries/hayabusa-${{ github.event.inputs.release_ver }}-lin-aarch64-gnu ;;
+            'aarch64-unknown-linux-musl')
+                mv release-binaries/hayabusa release-binaries/hayabusa-${{ github.event.inputs.release_ver }}-lin-aarch64-musl ;;
             'aarch64-apple-darwin')
                 mv release-binaries/hayabusa release-binaries/hayabusa-${{ github.event.inputs.release_ver }}-mac-aarch64 ;;
             'x86_64-apple-darwin')
@@ -174,6 +198,8 @@ jobs:
               echo "artifact_name=hayabusa-${{ github.event.inputs.release_ver }}-lin-x64-musl" >> $GITHUB_OUTPUT ;;
             'aarch64-unknown-linux-gnu')
               echo "artifact_name=hayabusa-${{ github.event.inputs.release_ver }}-lin-aarch64-gnu" >> $GITHUB_OUTPUT ;;
+            'aarch64-unknown-linux-musl')
+              echo "artifact_name=hayabusa-${{ github.event.inputs.release_ver }}-lin-aarch64-musl" >> $GITHUB_OUTPUT ;;
             'aarch64-apple-darwin')
               echo "artifact_name=hayabusa-${{ github.event.inputs.release_ver }}-mac-aarch64" >> $GITHUB_OUTPUT ;;
             'x86_64-apple-darwin')

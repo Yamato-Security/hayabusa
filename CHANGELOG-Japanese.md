@@ -4,6 +4,7 @@
 
 **改善:**
 
+- Linux aarch64（ARM64）の musl リリースバイナリ（`hayabusa-<ver>-lin-aarch64-musl`）を追加した。正しく動作するよう、適切な aarch64 musl クロスツールチェインでビルドしている。（これまで報告されていた実行失敗は、musl ターゲットを glibc の `aarch64-linux-gnu-gcc` でリンクしていたためで、起動時に kill されるバイナリが生成されていた。） (#1332) (@YamatoSecurity)
 - `logon-summary` コマンドが、RDP のセッションイベントも集計するようにした。既存の LocalSessionManager `21` と Gateway `302` に加えて、Security `4778`/`4779`（セッションの再接続/切断。RDP クライアントのワークステーション名とIPを含む）と、Terminal Services の運用ログの RemoteConnectionManager/Operational `1149`（ネットワークレベル認証）・LocalSessionManager/Operational `25`（セッション再接続）を対象に追加した。これにより、対応する Security `4624` がログからあふれて消えている場合でも RDP ログオンを集計でき、再接続/切断では接続元クライアントのホスト名も表示される。 (#1893) (@YamatoSecurity)
 - `extract-base64` コマンドに、PowerShellのイベントID `4100`/`4102`（Microsoft-Windows-PowerShell/Operational および PowerShellCore/Operational）と、クラシックの `403`/`600`（Windows PowerShell）を追加した。`4100`/`4102` は `ContextInfo`（`Host Application = powershell -encodedcommand ...`）と `Payload` フィールドを、`403`/`600` は既存の `400` と同様に `EventData.Data` の詳細ブロックをスキャンする。 (#1889) (@YamatoSecurity)
 - `logon-summary` の成功ログオンテーブルに `First Logon`/`Last Logon` 列を、失敗ログオンテーブルに `First Attempt`/`Last Attempt` 列を追加した。各アカウント/ソースの組み合わせがログオン（または試行）した時間の範囲を表示する。 (#1883) (@YamatoSecurity)
