@@ -22,7 +22,7 @@ csv = "1.4.*"
 dashmap = "*"
 dialoguer = "*"
 downcast-rs = "2.*"
-evtx = { git = "https://github.com/Yamato-Security/hayabusa-evtx.git" , features = ["fast-alloc"] , rev = "730edad702b43c5e5c8c5680afdbc5ffd2691353" } # 0.9.9 2026/07/04 update
+evtx = { git = "https://github.com/Yamato-Security/hayabusa-evtx.git" , features = ["fast-alloc"] , rev = "68a50d9cf251e5fcb7ce1e87cb26749cd1179984" } # 0.9.10 2026/07/17 update
 # Enable the vendored-OpenSSL HTTPS/TLS backend for libgit2. The wildcard
 # `0.*` resolved to a build of libgit2 with no TLS transport, so `update-rules`
 # failed with `class=Ssl (16) - there is no TLS stream available`. The project

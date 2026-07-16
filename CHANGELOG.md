@@ -11,6 +11,7 @@
 
 **Bug Fixes:**
 
+- Fixed `ComplexData` event fields (e.g. the `IdleState`/`PerfState` values in Kernel-Processor-Power EID `26`) not being extracted correctly: the two `Name` attributes collapsed into a `Name` array and the field values were dropped entirely. They are now keyed by their `Name` attribute like normal `<Data>` fields (fixed in the bundled `hayabusa-evtx`, bumped to `0.9.10`). (#1520) (@YamatoSecurity)
 - Fixed `-c` (custom rules config directory) being ignored by `pivot-keywords-list`, which always loaded `pivot_keywords.txt` from the bundled config next to the executable. It now resolves `pivot_keywords.txt` through the `-c` directory (falling back to the bundled copy), the same way every other config file is loaded. (#1902) (@YamatoSecurity)
 - Fixed the `read_jsonl_to_value`/`read_json_to_value` file-open error printing the literal placeholder `{path}` instead of the file path (the error string was a plain string literal rather than a `format!`). (#1897) (@YamatoSecurity)
 - Fixed a `u16` underflow in the `eid-metrics` table's "Event" column width on terminals narrower than 55 columns: `terminal_width - 55` underflowed before the 45-character floor could apply, panicking in overflow-checked builds and wrapping to a huge value in release builds (leaving the column effectively uncapped). It now uses saturating subtraction. (#1897) (@YamatoSecurity)

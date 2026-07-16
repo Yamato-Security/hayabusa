@@ -11,6 +11,7 @@
 
 **バグ修正:**
 
+- `ComplexData` のイベントフィールド（例: Kernel-Processor-Power EID `26` の `IdleState`/`PerfState` の値）が正しく抽出されない問題を修正した。2つの `Name` 属性が `Name` の配列にまとめられ、フィールドの値が失われていた。通常の `<Data>` フィールドと同様に、`Name` 属性をキーとして展開するようにした（同梱の `hayabusa-evtx` を `0.9.10` に更新して修正）。 (#1520) (@YamatoSecurity)
 - `pivot-keywords-list` で `-c`（カスタムのルール設定ディレクトリ）が無視され、常に実行ファイル同梱の `pivot_keywords.txt` を読み込んでいた問題を修正した。他の設定ファイルと同様に、`pivot_keywords.txt` を `-c` ディレクトリ経由で解決するようにした（存在しない場合は同梱コピーにフォールバック）。 (#1902) (@YamatoSecurity)
 - `read_jsonl_to_value`/`read_json_to_value` のファイルオープンエラーが、ファイルパスの代わりにプレースホルダー `{path}` をそのまま出力していた問題を修正した（エラー文字列が `format!` ではなく通常の文字列リテラルだった）。 (#1897) (@YamatoSecurity)
 - `eid-metrics` テーブルの「Event」列の幅計算で、55桁未満のターミナルで `u16` のアンダーフローが発生する問題を修正した。`terminal_width - 55` が45文字の下限を適用する前にアンダーフローし、オーバーフローチェック有効のビルドではパニックし、リリースビルドでは巨大な値にラップしていた（列の上限が実質無効になっていた）。飽和減算を使うようにした。 (#1897) (@YamatoSecurity)
