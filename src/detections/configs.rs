@@ -189,8 +189,9 @@ pub struct StoredStatic {
 
 /// Resolves a bundled config file: prefer `<config_path>/<name>`, otherwise fall back to the
 /// `rules/config/<name>` copy shipped next to the executable. Collapses the config-file fallback
-/// chain that was previously copy-pasted for every setting file.
-fn resolve_config_file(config_path: &Path, name: &str) -> PathBuf {
+/// chain that was previously copy-pasted for every setting file. `config_path` is the `-c` custom
+/// rules-config directory, so honoring it here is what makes `-c` apply to every config file.
+pub fn resolve_config_file(config_path: &Path, name: &str) -> PathBuf {
     check_setting_path(config_path, name, false).unwrap_or_else(|| {
         check_setting_path(
             &CURRENT_EXE_PATH.to_path_buf(),
@@ -3005,5 +3006,22 @@ mod tests {
         assert!(has(&csv, "timeline-end"));
         assert!(has(&sub("eid-metrics"), "clobber"));
         assert!(has(&sub("search"), "disable-abbreviations"));
+    }
+
+    /// #1046: `resolve_config_file` — used for `pivot_keywords.txt` and every other config file —
+    /// must honor the `-c` custom config directory, preferring `<config_path>/<name>` when present
+    /// (rather than always reading the bundled copy next to the executable).
+    #[test]
+    fn resolve_config_file_honors_custom_config_dir() {
+        let dir = tempfile::tempdir().unwrap();
+        std::fs::write(
+            dir.path().join("pivot_keywords.txt"),
+            "Custom Users.SubjectUserName\n",
+        )
+        .unwrap();
+        assert_eq!(
+            super::resolve_config_file(dir.path(), "pivot_keywords.txt"),
+            dir.path().join("pivot_keywords.txt")
+        );
     }
 }

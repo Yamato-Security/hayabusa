@@ -17,7 +17,7 @@ use hashbrown::{HashMap, HashSet};
 use hayabusa::debug::checkpoint_process_timer::CheckPointProcessTimer;
 use hayabusa::detections::configs::{
     Action, CURRENT_EXE_PATH, ConfigReader, EventKeyAliasConfig, ONE_CONFIG_MAP, StoredStatic,
-    TargetEventTime, TargetIds, load_pivot_keywords,
+    TargetEventTime, TargetIds, load_pivot_keywords, resolve_config_file,
 };
 use hayabusa::detections::detection::{self, EvtxRecordInfo};
 use hayabusa::detections::message::{AlertMessage, DetectInfo, get_event_time};
@@ -772,15 +772,13 @@ impl App {
                 );
             }
             Action::PivotKeywordsList(_) => {
+                // Resolve pivot_keywords.txt through the `-c` custom config directory (falling back
+                // to the bundled copy), the same way every other config file is loaded, so that
+                // `-c <dir>` can supply a custom pivot_keywords.txt (issue #1046).
                 load_pivot_keywords(
-                    check_setting_path(
-                        &CURRENT_EXE_PATH.to_path_buf(),
-                        "rules/config/pivot_keywords.txt",
-                        true,
-                    )
-                    .unwrap()
-                    .to_str()
-                    .unwrap(),
+                    resolve_config_file(&stored_static.config_path, "pivot_keywords.txt")
+                        .to_str()
+                        .unwrap(),
                     &stored_static.pivot_keyword,
                 );
                 if Path::new("./encoded_rules.yml").exists() {
