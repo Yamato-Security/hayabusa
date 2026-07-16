@@ -11,6 +11,7 @@
 
 **バグ修正:**
 
+- `pivot-keywords-list` で `-c`（カスタムのルール設定ディレクトリ）が無視され、常に実行ファイル同梱の `pivot_keywords.txt` を読み込んでいた問題を修正した。他の設定ファイルと同様に、`pivot_keywords.txt` を `-c` ディレクトリ経由で解決するようにした（存在しない場合は同梱コピーにフォールバック）。 (#1902) (@YamatoSecurity)
 - `read_jsonl_to_value`/`read_json_to_value` のファイルオープンエラーが、ファイルパスの代わりにプレースホルダー `{path}` をそのまま出力していた問題を修正した（エラー文字列が `format!` ではなく通常の文字列リテラルだった）。 (#1897) (@YamatoSecurity)
 - `eid-metrics` テーブルの「Event」列の幅計算で、55桁未満のターミナルで `u16` のアンダーフローが発生する問題を修正した。`terminal_width - 55` が45文字の下限を適用する前にアンダーフローし、オーバーフローチェック有効のビルドではパニックし、リリースビルドでは巨大な値にラップしていた（列の上限が実質無効になっていた）。飽和減算を使うようにした。 (#1897) (@YamatoSecurity)
 - 明示的な UTC オフセット（例: `+09:00`）を持つ Splunk-JSON のタイムスタンプが `NaiveDateTime` で解析されてオフセットが破棄され、ローカルの時計時刻がそのまま UTC として保存されていた問題を修正した。これにより `log-metrics` の First/Last Timestamp 列に加えて `eid-metrics`/`logon-summary` の時刻範囲（`EventMetrics::stats_time_cnt` と `parse_evtx_datetime`）もずれていた。タイムラインの集計処理は、オフセットを適用する共通のパーサー（`utils::parse_evtx_timestamp`）を使うようにした。 (#1897) (@YamatoSecurity)
