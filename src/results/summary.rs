@@ -581,7 +581,7 @@ pub fn output_result_summary(
             ),
             &mut html_output_stock,
             stored_static,
-            cmp::min((terminal_width / 2) - 15, 200),
+            cmp::min((terminal_width / 2).saturating_sub(15), 200),
         );
         println!();
         if stored_static.html_report_flag {
@@ -907,6 +907,20 @@ fn _print_detection_summary_by_computer(
     }
     buf_wtr.print(&wtr).ok();
 }
+
+/// Returns the prefix of `s` containing at most `max` characters, cut at a UTF-8 char boundary.
+///
+/// Rule titles and Sigma author names are arbitrary user-supplied UTF-8 (Hayabusa is used heavily
+/// with Japanese rules), so a raw byte slice like `&s[..n]` panics with "byte index N is not a
+/// char boundary" whenever `n` lands inside a multi-byte character. Slicing by character index
+/// avoids that and also matches the display-width intent better than a byte count.
+fn truncate_chars(s: &str, max: usize) -> &str {
+    match s.char_indices().nth(max) {
+        Some((byte_idx, _)) => &s[..byte_idx],
+        None => s, // fewer than (or exactly) `max` chars: nothing to truncate
+    }
+}
+
 /// Output the rules with the most detections for each level in table format (top 5 per level;
 /// the HTML report gets the full list). Rule titles longer than `limit_num` characters are
 /// truncated with "...".
@@ -992,8 +1006,11 @@ fn _print_detection_summary_tables(
 
         let take_cnt = 5;
         for x in sorted_detections.iter().take(take_cnt) {
-            let output_title = if x.0.len() > limit_num - 3 {
-                format!("{}...", &x.0[..(limit_num - 3)])
+            // Truncate by character (not byte) count so a multi-byte title never slices mid-char,
+            // and `saturating_sub` so a very narrow terminal degrades instead of underflowing.
+            let title_limit = limit_num.saturating_sub(3).max(1);
+            let output_title = if x.0.chars().count() > title_limit {
+                format!("{}...", truncate_chars(x.0.as_str(), title_limit))
             } else {
                 x.0.to_string()
             };
@@ -1067,11 +1084,14 @@ fn output_detected_rule_authors(
         let mut tmp = Vec::new();
         for y in 0..div {
             if y * table_column_num + x < sorted_authors.len() {
-                // Limit length to 27 to prevent the table from wrapping
-                let filter_author = if sorted_authors[y * table_column_num + x].0.len() <= 27 {
-                    sorted_authors[y * table_column_num + x].0.to_string()
+                // Limit length to 27 characters to prevent the table from wrapping. Count/slice
+                // by character (not byte) so a non-ASCII author name (e.g. "Ömer Günal") is never
+                // sliced mid-character.
+                let author = &sorted_authors[y * table_column_num + x].0;
+                let filter_author = if author.chars().count() <= 27 {
+                    author.to_string()
                 } else {
-                    format!("{}...", &sorted_authors[y * table_column_num + x].0[0..24])
+                    format!("{}...", truncate_chars(author, 24))
                 };
                 tmp.push(format!(
                     "{} ({})",
@@ -1118,4 +1138,33 @@ fn extract_author_name(author: &str) -> Nested<String> {
                 .collect::<String>()
         })
         .collect()
+}
+
+#[cfg(test)]
+mod tests {
+    use super::truncate_chars;
+
+    #[test]
+    fn truncate_chars_never_splits_a_multibyte_char() {
+        // A Japanese title byte-sliced at 32 (`&s[..32]`) would panic: byte 32 is mid-character.
+        let title = "PowerShell 実行ポリシー変更の検出テスト";
+        let out = truncate_chars(title, 20);
+        assert_eq!(out.chars().count(), 20);
+        assert!(title.starts_with(out));
+        // The helper must be boundary-safe for every possible max up to the char count.
+        let char_count = title.chars().count();
+        for max in 0..=char_count + 2 {
+            let t = truncate_chars(title, max);
+            assert!(title.is_char_boundary(t.len()));
+            assert_eq!(t.chars().count(), max.min(char_count));
+        }
+    }
+
+    #[test]
+    fn truncate_chars_returns_whole_string_when_short_enough() {
+        let author = "Ömer Günal"; // non-ASCII, 10 chars / 12 bytes
+        assert_eq!(truncate_chars(author, 27), author);
+        assert_eq!(truncate_chars(author, 10), author);
+        assert_eq!(truncate_chars("", 5), "");
+    }
 }
