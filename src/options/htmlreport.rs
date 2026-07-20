@@ -48,12 +48,12 @@ impl HtmlReporter {
 
     /// Appends markdown lines to the given section of the report.
     pub fn add_md_data(&mut self, section_name: &str, data: Nested<String>) {
-        for c in data.iter() {
+        for line in data.iter() {
             let entry = self
                 .section_markdown
                 .entry(section_name.to_owned())
                 .or_insert(Nested::<String>::new());
-            entry.push(c);
+            entry.push(line);
         }
     }
 
@@ -67,12 +67,12 @@ impl HtmlReporter {
 
         let mut md_data = Nested::<String>::new();
         for section_name in self.section_order.iter() {
-            if let Some(v) = self.section_markdown.get(section_name) {
+            if let Some(section_data) = self.section_markdown.get(section_name) {
                 md_data.push(format!("## {}\n", section_name));
-                if v.is_empty() {
+                if section_data.is_empty() {
                     md_data.push("not found data.\n");
                 } else {
-                    md_data.push(v.iter().collect::<Vec<&str>>().join("\n"));
+                    md_data.push(section_data.iter().collect::<Vec<&str>>().join("\n"));
                 }
             }
         }
@@ -431,11 +431,14 @@ mod tests {
         let expect_key = "AddTest {#add_test}";
         html_reporter.add_md_data(expect_key, general_data.clone());
         let expect_general_data: Vec<&str> = general_data.iter().collect();
-        for (k, v) in html_reporter.section_markdown.iter() {
-            if k == expect_key {
-                assert_eq!(v.iter().collect::<Vec<&str>>(), expect_general_data);
+        for (section_name, section_data) in html_reporter.section_markdown.iter() {
+            if section_name == expect_key {
+                assert_eq!(
+                    section_data.iter().collect::<Vec<&str>>(),
+                    expect_general_data
+                );
             } else {
-                assert_eq!(v.len(), 0);
+                assert_eq!(section_data.len(), 0);
             }
         }
     }

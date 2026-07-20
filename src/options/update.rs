@@ -235,11 +235,15 @@ impl Update {
         updated_sets: HashMap<String, String>,
         no_color: bool,
     ) -> Result<String, git2::Error> {
-        let diff = updated_sets.iter().filter_map(|(k, v)| {
-            if let Some(prev_val) = prev_sets.get(k) {
-                if prev_val != v { Some(v) } else { None }
+        let diff = updated_sets.iter().filter_map(|(filepath, updated_val)| {
+            if let Some(prev_val) = prev_sets.get(filepath) {
+                if prev_val != updated_val {
+                    Some(updated_val)
+                } else {
+                    None
+                }
             } else {
-                Some(v)
+                Some(updated_val)
             }
         });
         let mut update_count_by_rule_type: HashMap<String, u128> = HashMap::new();

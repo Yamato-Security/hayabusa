@@ -76,14 +76,14 @@ impl ConfigCriticalSystems {
             if id == 4768 {
                 // EID 4768 (a Kerberos authentication ticket (TGT) was requested) is only logged
                 // on domain controllers, so the recording computer must be a DC.
-                let v = data["Event"]["System"]["Computer"]
+                let computer = data["Event"]["System"]["Computer"]
                     .as_str()
                     .unwrap_or_default()
                     .to_string();
                 self.computers
                     .entry(ComputerType::DomainController)
                     .or_default()
-                    .insert(v);
+                    .insert(computer);
             } else if id == 5145 {
                 // EID 5145 (a network share object was checked for access) indicates the
                 // recording computer is serving file shares. Ignore accesses to the IPC$
@@ -95,14 +95,14 @@ impl ConfigCriticalSystems {
                 if share == r"\\*\IPC$" {
                     return;
                 }
-                let v = data["Event"]["System"]["Computer"]
+                let computer = data["Event"]["System"]["Computer"]
                     .as_str()
                     .unwrap_or_default()
                     .to_string();
                 self.computers
                     .entry(ComputerType::FileServer)
                     .or_default()
-                    .insert(v);
+                    .insert(computer);
             }
         }
     }

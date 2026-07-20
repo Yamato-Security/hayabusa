@@ -59,54 +59,55 @@ pub fn ends_with_ignore_case(event_value_str: &str, match_str: &str) -> Option<b
 /// the regex engine can handle. When `ignore_case` is true, Contains/AllOnly patterns are stored
 /// lowercased and check_fast_match() lowercases the event value before comparing;
 /// Exact/StartsWith/EndsWith compare ASCII case-insensitively at match time instead.
-pub fn convert_to_fast_match(s: &str, ignore_case: bool) -> Option<Vec<FastMatch>> {
-    let wildcard_count = s.chars().filter(|c| *c == '*').count();
+pub fn convert_to_fast_match(pattern: &str, ignore_case: bool) -> Option<Vec<FastMatch>> {
+    let wildcard_count = pattern.chars().filter(|c| *c == '*').count();
     // A pattern ending in \* is a literal asterisk rather than a wildcard, whereas \\* is an
     // escaped backslash followed by a wildcard.
-    let is_literal_asterisk = |s: &str| s.ends_with(r"\*") && !s.ends_with(r"\\*");
-    if utils::contains_str(s, "?")
-        || s.ends_with(r"\\\*")
-        || (!s.is_ascii() && utils::contains_str(s, "*"))
+    let is_literal_asterisk =
+        |pattern: &str| pattern.ends_with(r"\*") && !pattern.ends_with(r"\\*");
+    if utils::contains_str(pattern, "?")
+        || pattern.ends_with(r"\\\*")
+        || (!pattern.is_ascii() && utils::contains_str(pattern, "*"))
     {
         // Patterns that fast matching cannot express use the regex match only: '?' wildcards,
         // a literal backslash followed by a literal asterisk at the end, and non-ASCII patterns
         // that contain wildcards.
         return None;
-    } else if s.starts_with("allOnly*") && s.ends_with('*') && wildcard_count == 2 {
+    } else if pattern.starts_with("allOnly*") && pattern.ends_with('*') && wildcard_count == 2 {
         // "allOnly*" is the sentinel prefix added by MatchPlan::build_fast_match() (matchers.rs)
         // for the "|all" modifier: strip it (8 chars) and the trailing '*', and unescape doubled
         // backslashes.
-        let removed_asterisk = s[8..(s.len() - 1)].replace(r"\\", r"\");
+        let removed_asterisk = pattern[8..(pattern.len() - 1)].replace(r"\\", r"\");
         if ignore_case {
             return Some(vec![FastMatch::AllOnly(removed_asterisk.to_lowercase())]);
         }
         return Some(vec![FastMatch::AllOnly(removed_asterisk)]);
-    } else if s.starts_with('*')
-        && s.ends_with('*')
+    } else if pattern.starts_with('*')
+        && pattern.ends_with('*')
         && wildcard_count == 2
-        && !is_literal_asterisk(s)
+        && !is_literal_asterisk(pattern)
     {
-        let removed_asterisk = s[1..(s.len() - 1)].replace(r"\\", r"\");
+        let removed_asterisk = pattern[1..(pattern.len() - 1)].replace(r"\\", r"\");
         // If * is only at the beginning and end, convert to contains.
         if ignore_case {
             return Some(vec![FastMatch::Contains(removed_asterisk.to_lowercase())]);
         }
         return Some(vec![FastMatch::Contains(removed_asterisk)]);
-    } else if s.starts_with('*') && wildcard_count == 1 && !is_literal_asterisk(s) {
+    } else if pattern.starts_with('*') && wildcard_count == 1 && !is_literal_asterisk(pattern) {
         // If * is only at the beginning, convert to ends_with.
-        return Some(vec![FastMatch::EndsWith(s[1..].replace(r"\\", r"\"))]);
-    } else if s.ends_with('*') && wildcard_count == 1 && !is_literal_asterisk(s) {
+        return Some(vec![FastMatch::EndsWith(pattern[1..].replace(r"\\", r"\"))]);
+    } else if pattern.ends_with('*') && wildcard_count == 1 && !is_literal_asterisk(pattern) {
         // If * is only at the end, convert to starts_with.
         return Some(vec![FastMatch::StartsWith(
-            s[..(s.len() - 1)].replace(r"\\", r"\"),
+            pattern[..(pattern.len() - 1)].replace(r"\\", r"\"),
         )]);
-    } else if utils::contains_str(s, "*") {
+    } else if utils::contains_str(pattern, "*") {
         // Patterns with * in the middle cannot be converted to starts_with/ends_with, so use the
         // regex match only.
         return None;
     }
     // If the pattern contains no wildcard at all, it is an exact (case-insensitive) match.
-    Some(vec![FastMatch::Exact(s.replace(r"\\", r"\"))])
+    Some(vec![FastMatch::Exact(pattern.replace(r"\\", r"\"))])
 }
 
 /// Evaluates the fast matchers against a field value. Returns None when the fast path cannot

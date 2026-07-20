@@ -19,7 +19,7 @@ impl LevelTuning {
         stored_static: &StoredStatic,
     ) -> Result<(), String> {
         let read_result = match utils::read_csv(level_tuning_config_path) {
-            Ok(c) => c,
+            Ok(csv_data) => csv_data,
             Err(e) => return Result::Err(e.to_string()),
         };
 

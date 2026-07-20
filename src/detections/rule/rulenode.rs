@@ -418,7 +418,7 @@ impl DetectionNode {
                 all_node.child_nodes.push(child_node);
             });
             Box::new(all_node)
-        } else if yaml.as_vec().is_some() && key_list.iter().any(|k: &str| k.contains("|all")) {
+        } else if yaml.as_vec().is_some() && key_list.iter().any(|key: &str| key.contains("|all")) {
             // If the key carries the |all modifier (e.g. field|contains|all), the array of child
             // elements is interpreted as an AND condition.
             // When `neq` is also present, De Morgan flips the connective:
@@ -431,7 +431,7 @@ impl DetectionNode {
                 .collect();
             if key_list
                 .iter()
-                .any(|k| k.split('|').skip(1).any(|m| m == "neq"))
+                .any(|key| key.split('|').skip(1).any(|modifier| modifier == "neq"))
             {
                 let mut or_node = selectionnodes::NarySelectionNode::or();
                 or_node.child_nodes = children;
@@ -444,7 +444,7 @@ impl DetectionNode {
         } else if yaml.as_vec().is_some()
             && key_list
                 .iter()
-                .any(|k| k.split('|').skip(1).any(|modifier| modifier == "neq"))
+                .any(|key| key.split('|').skip(1).any(|modifier| modifier == "neq"))
         {
             // `neq` negates the whole comparison, so a plain (OR-linked) list of values under a `neq`
             // modifier means "different from ALL of them" (De Morgan: NOT(a OR b) == NOT a AND NOT b).
@@ -1045,7 +1045,7 @@ pub(crate) mod tests {
             result
                 .unwrap_err()
                 .iter()
-                .any(|m| m.contains("neq") && m.contains("|all")),
+                .any(|msg| msg.contains("neq") && msg.contains("|all")),
             "error should explain the neq/|all conflict"
         );
     }

@@ -110,16 +110,17 @@ impl EventSearch {
         filter_rule: &HashMap<String, Vec<WildMatch>>,
         eventkey_alias: &EventKeyAliasConfig,
     ) -> bool {
-        filter_rule.iter().all(|(k, v)| {
+        filter_rule.iter().all(|(field_name, patterns)| {
             let alias_target_val = utils::get_serde_number_to_string(
-                utils::get_event_value(k, &record.record, eventkey_alias)
+                utils::get_event_value(field_name, &record.record, eventkey_alias)
                     .unwrap_or(&serde_json::Value::Null),
                 true,
             )
             .unwrap_or_else(|| "n/a".into())
             .replace(['"', '\''], "");
             // If matched by alias, there is no need to search fields not registered in the alias, so return true.
-            if v.iter()
+            if patterns
+                .iter()
                 .all(|search_target| search_target.matches(&alias_target_val))
             {
                 return true;
@@ -127,13 +128,14 @@ impl EventSearch {
 
             // Also search fields not registered in the alias.
             let allfieldinfo = match utils::get_serde_number_to_string(
-                &record.record["Event"]["EventData"][k],
+                &record.record["Event"]["EventData"][field_name],
                 true,
             ) {
                 Some(eventdata) => eventdata,
                 _ => CompactString::new("-"),
             };
-            v.iter()
+            patterns
+                .iter()
                 .all(|search_target| search_target.matches(&allfieldinfo))
         })
     }
@@ -147,16 +149,16 @@ impl EventSearch {
     ) -> HashMap<CompactString, HashMap<CompactString, CompactString>> {
         let mut ret: HashMap<CompactString, HashMap<CompactString, CompactString>> = HashMap::new();
         let mut default_details_abbr: HashMap<CompactString, CompactString> = HashMap::new();
-        for (k, v) in stored_static.default_details.iter() {
-            v.split(" ¦ ").for_each(|x| {
-                let abbr_and_full = x.split(": ").collect_vec();
+        for (provider_eventid, details_template) in stored_static.default_details.iter() {
+            details_template.split(" ¦ ").for_each(|field_template| {
+                let abbr_and_full = field_template.split(": ").collect_vec();
                 if abbr_and_full.len() == 2 {
                     let abbr: CompactString = abbr_and_full[0].into();
                     let full: CompactString = abbr_and_full[1].replace("%", "").trim().into();
                     default_details_abbr.insert(full, abbr);
                 }
             });
-            ret.insert(k.clone(), default_details_abbr.clone());
+            ret.insert(provider_eventid.clone(), default_details_abbr.clone());
             default_details_abbr.clear();
         }
         ret
@@ -314,7 +316,7 @@ impl EventSearch {
         let abbreviated_all_field_info = self.replace_all_field_info_abbr(
             allfieldinfo
                 .split(['\r', '\n', '\t'])
-                .filter(|x| !x.is_empty())
+                .filter(|segment| !segment.is_empty())
                 .join(" ")
                 .as_str(),
             target_allfieldinfo_abbr_table,
@@ -364,18 +366,18 @@ impl EventSearch {
         value: &str,
         all_field_info_abbr: Option<&HashMap<CompactString, CompactString>>,
     ) -> CompactString {
-        let mut pairs = if let Some(s) = all_field_info_abbr {
-            s.iter().collect::<Vec<_>>()
+        let mut pairs = if let Some(abbr_map) = all_field_info_abbr {
+            abbr_map.iter().collect::<Vec<_>>()
         } else {
             vec![]
         };
         if pairs.is_empty() {
             return value.into();
         }
-        pairs.sort_unstable_by_key(|a| a.0.len());
+        pairs.sort_unstable_by_key(|pair| pair.0.len());
         let mut all_field_info = value.to_string();
-        for (k, v) in pairs {
-            all_field_info = all_field_info.replace(k.as_str(), v.as_str());
+        for (full_name, abbr) in pairs {
+            all_field_info = all_field_info.replace(full_name.as_str(), abbr.as_str());
         }
         all_field_info.into()
     }
@@ -603,8 +605,9 @@ impl ResultWriter {
                     // colors, with " ¦ " between pairs.
                     let all_field_sep_info = all_field_info.split('¦').collect::<Vec<&str>>();
                     for (field_idx, fields) in all_field_sep_info.iter().enumerate() {
-                        let mut separated_fields_data =
-                            fields.split(':').map(|x| x.split_whitespace().join(" "));
+                        let mut separated_fields_data = fields
+                            .split(':')
+                            .map(|part| part.split_whitespace().join(" "));
                         write_color_buffer(
                             self.display_writer.as_mut().unwrap(),
                             get_char_color(Some(Color::Rgb(255, 158, 61))),
@@ -683,7 +686,7 @@ fn create_filter_rule(filters: &[String]) -> HashMap<String, Vec<WildMatch>> {
                 let acc_val = acc.entry(condition[0].to_string()).or_insert(vec![]);
                 condition[1..]
                     .iter()
-                    .for_each(|x| acc_val.push(WildMatch::new(x)));
+                    .for_each(|pattern| acc_val.push(WildMatch::new(pattern)));
             }
             acc
         })

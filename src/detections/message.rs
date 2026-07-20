@@ -91,7 +91,7 @@ pub fn create_output_filter_config(
         return ret;
     }
     let read_result = match utils::read_csv(path) {
-        Ok(c) => c,
+        Ok(csv_rows) => csv_rows,
         Err(e) => {
             // Fall back to the embedded copy of mitre_tactics.txt when the file on disk cannot be
             // read.
@@ -152,8 +152,8 @@ pub fn create_message(
             field_data_map_key,
             field_data_map,
         );
-        details_in_record.drain(..).for_each(|v| {
-            special_char_removed_details.push(remove_sp_char(v));
+        details_in_record.drain(..).for_each(|detail| {
+            special_char_removed_details.push(remove_sp_char(detail));
         });
         if is_json_timeline {
             record_details_info_map.insert("#Details".into(), special_char_removed_details.clone());
@@ -205,10 +205,10 @@ pub fn create_message(
                         );
                     }
                 } else {
-                    let all_field_infos = if let Some(c) =
+                    let all_field_infos = if let Some(all_field_info_val) =
                         record_details_info_map.get("#AllFieldInfo")
                     {
-                        c.to_owned()
+                        all_field_info_val.to_owned()
                     } else {
                         utils::create_recordinfos(event_record, field_data_map_key, field_data_map)
                     };
@@ -243,12 +243,12 @@ pub fn create_message(
                 // Collect the values already shown in Details so that ExtraFieldInfo only reports
                 // the record fields whose values are not part of Details.
                 let details_splits: HashSet<&str> = {
-                    let details = special_char_removed_details.iter().map(|x| {
-                        let v = x.split_once(": ").unwrap_or_default().1;
+                    let details = special_char_removed_details.iter().map(|detail| {
+                        let value = detail.split_once(": ").unwrap_or_default().1;
                         // Strip any trailing comma from the values put into the matching hash set;
                         // otherwise the ExtraFieldInfo match result would differ depending on
                         // whether or not a value carries a trailing comma.
-                        v.strip_suffix(',').unwrap_or(v)
+                        value.strip_suffix(',').unwrap_or(value)
                     });
                     HashSet::from_iter(details)
                 };
@@ -264,8 +264,8 @@ pub fn create_message(
                 };
                 let extra_field_vec = profile_all_field_info
                     .iter()
-                    .filter(|x| {
-                        let value = x.split_once(": ").unwrap_or_default().1;
+                    .filter(|field_info| {
+                        let value = field_info.split_once(": ").unwrap_or_default().1;
                         !details_splits.contains(value)
                     })
                     .map(|y| y.to_owned())
@@ -290,10 +290,10 @@ pub fn create_message(
                 ))
             }
             _ => {
-                if let Some(p) = profile_converter.get(key.as_str()) {
+                if let Some(converter_profile) = profile_converter.get(key.as_str()) {
                     let (parsed_message, _) = &parse_message(
                         event_record,
-                        &CompactString::new(p.to_value()),
+                        &CompactString::new(converter_profile.to_value()),
                         eventkey_alias,
                         is_json_timeline,
                         field_data_map_key,
@@ -346,10 +346,10 @@ pub fn parse_message(
 
         let mut tmp_event_record: &Value = event_record;
         let mut field = "";
-        for s in event_key_path.split('.') {
-            if let Some(record) = tmp_event_record.get(s) {
+        for path_segment in event_key_path.split('.') {
+            if let Some(record) = tmp_event_record.get(path_segment) {
                 tmp_event_record = record;
-                field = s;
+                field = path_segment;
             }
         }
         // An alias like %Data[2]% selects a single element of the EventData "Data" array; the
@@ -357,7 +357,9 @@ pub fn parse_message(
         // bracketed name itself does not resolve to a record field, such an alias yields "n/a".
         let suffix_match = SUFFIXREGEX.captures(target_str);
         let suffix: i64 = match suffix_match {
-            Some(cap) => cap.get(1).map_or(-1, |a| a.as_str().parse().unwrap_or(-1)),
+            Some(cap) => cap
+                .get(1)
+                .map_or(-1, |index_match| index_match.as_str().parse().unwrap_or(-1)),
             None => -1,
         };
         if suffix >= 1 {
@@ -401,16 +403,18 @@ pub fn parse_message(
         }
     }
     let mut details_key_and_value: Vec<CompactString> = vec![];
-    for (k, v) in hash_map.iter() {
+    for (placeholder, field_values) in hash_map.iter() {
         // For JSON output, the alias replacement processing is handled by the results output
         // functions, so it is not done here.
         if !json_timeline_flag {
-            return_message = CompactString::new(return_message.replace(k.as_str(), v[0].as_str()));
+            return_message = CompactString::new(
+                return_message.replace(placeholder.as_str(), field_values[0].as_str()),
+            );
         }
         for detail_contents in details_key.iter() {
-            if detail_contents.contains(k.as_str()) {
+            if detail_contents.contains(placeholder.as_str()) {
                 let key = detail_contents.split_once(": ").unwrap_or_default().0;
-                details_key_and_value.push(format!("{}: {}", key, v[0]).into());
+                details_key_and_value.push(format!("{}: {}", key, field_values[0]).into());
                 break;
             }
         }
@@ -892,8 +896,8 @@ mod tests {
         actual: HashMap<CompactString, CompactString>,
     ) {
         assert_eq!(expected.len(), actual.len());
-        for (k, v) in expected.iter() {
-            assert!(actual.get(k).unwrap_or(&CompactString::default()) == v);
+        for (key, value) in expected.iter() {
+            assert!(actual.get(key).unwrap_or(&CompactString::default()) == value);
         }
     }
 }

@@ -285,31 +285,31 @@ fn merge_referenced_rule(
         && rule_type != Some("temporal")
         && rule_type != Some("temporal_ordered")
     {
-        let m = "The type of correlation rule only supports event_count/value_count/temporal/temporal_ordered.";
-        error_log(&rule.rule_path, m, stored_static, parse_error_count);
+        let msg = "The type of correlation rule only supports event_count/value_count/temporal/temporal_ordered.";
+        error_log(&rule.rule_path, msg, stored_static, parse_error_count);
         return rule;
     }
     let referenced_ids = match get_related_rules_id(&rule.yaml) {
         Ok(related_rules_ids) => related_rules_ids,
         Err(_) => {
-            let m = "Referenced rule not found.";
-            error_log(&rule.rule_path, m, stored_static, parse_error_count);
+            let msg = "Referenced rule not found.";
+            error_log(&rule.rule_path, msg, stored_static, parse_error_count);
             return rule;
         }
     };
     if referenced_ids.is_empty() {
-        let m = "Referenced rule not found.";
-        error_log(&rule.rule_path, m, stored_static, parse_error_count);
+        let msg = "Referenced rule not found.";
+        error_log(&rule.rule_path, msg, stored_static, parse_error_count);
         return rule;
     }
     if rule.yaml["correlation"]["timespan"].as_str().is_none() {
-        let m = "key timespan not found.";
-        error_log(&rule.rule_path, m, stored_static, parse_error_count);
+        let msg = "key timespan not found.";
+        error_log(&rule.rule_path, msg, stored_static, parse_error_count);
         return rule;
     }
     if rule.yaml["correlation"]["group-by"].as_vec().is_none() {
-        let m = "key group-by  not found.";
-        error_log(&rule.rule_path, m, stored_static, parse_error_count);
+        let msg = "key group-by  not found.";
+        error_log(&rule.rule_path, msg, stored_static, parse_error_count);
         return rule;
     }
     if rule_type == Some("temporal") || rule_type == Some("temporal_ordered") {

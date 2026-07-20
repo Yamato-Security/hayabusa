@@ -193,8 +193,8 @@ impl Timeline {
         for header_str in &header {
             header_cells.push(Cell::new(header_str).set_alignment(CellAlignment::Center));
         }
-        if let Some(ref mut w) = wtr {
-            w.write_record(&header).ok();
+        if let Some(ref mut writer) = wtr {
+            writer.write_record(&header).ok();
         }
 
         let mut stats_tb = Table::new();
@@ -236,14 +236,14 @@ impl Timeline {
         }
         if wtr.is_some() {
             for msg in stats_msgs.iter() {
-                if let Some(ref mut w) = wtr {
-                    w.write_record(msg.iter().map(|x| x.as_str())).ok();
+                if let Some(ref mut writer) = wtr {
+                    writer.write_record(msg.iter().map(|x| x.as_str())).ok();
                 }
             }
         }
         stats_tb.add_rows(stats_msgs.iter());
         let terminal_width = match terminal_size() {
-            Some((Width(w), _)) => w,
+            Some((Width(width), _)) => width,
             None => 100,
         };
 
@@ -479,8 +479,8 @@ impl Timeline {
         } else {
             None
         };
-        if let Some(ref mut w) = wtr {
-            w.write_record(&header).ok();
+        if let Some(ref mut writer) = wtr {
+            writer.write_record(&header).ok();
         }
 
         let mut logins_stats_tb = Table::new();
@@ -489,8 +489,17 @@ impl Timeline {
             .apply_modifier(UTF8_ROUND_CORNERS);
         // The terminal table only shows a subset of the columns (count, first/last time, event,
         // target account, target computer, source computer, source IP); the CSV has all of them.
-        let h = &header;
-        logins_stats_tb.set_header([h[0], h[1], h[2], h[3], h[4], h[6], h[10], h[11]]);
+        let header_ref = &header;
+        logins_stats_tb.set_header([
+            header_ref[0],
+            header_ref[1],
+            header_ref[2],
+            header_ref[3],
+            header_ref[4],
+            header_ref[6],
+            header_ref[10],
+            header_ref[11],
+        ]);
         // Index into the per-user [successful, failed] count/first/last arrays.
         let result_index = match logon_res {
             "successful" => 0,
@@ -505,39 +514,41 @@ impl Timeline {
         // Sort by aggregated count in descending order.
         let mut sorted_entries: Vec<_> = self.stats.stats_login_list.iter().collect();
         sorted_entries.sort_by(|x, y| y.1.counts[result_index].cmp(&x.1.counts[result_index]));
-        for (e, values) in &sorted_entries {
+        for (login_event, values) in &sorted_entries {
             // Do not display entries with a count of zero.
             if values.counts[result_index] == 0 {
                 continue;
             } else {
                 let vnum_str = values.counts[result_index].to_string();
                 let first_str = match values.first[result_index] {
-                    Some(t) => utils::format_time(&t, false, tfo).to_string(),
+                    Some(timestamp) => utils::format_time(&timestamp, false, tfo).to_string(),
                     None => "-".to_string(),
                 };
                 let last_str = match values.last[result_index] {
-                    Some(t) => utils::format_time(&t, false, tfo).to_string(),
+                    Some(timestamp) => utils::format_time(&timestamp, false, tfo).to_string(),
                     None => "-".to_string(),
                 };
                 let record_data = vec![
                     vnum_str.as_str(),
                     first_str.as_str(),
                     last_str.as_str(),
-                    e.channel.as_str(),
-                    e.dst_user.as_str(),
-                    e.dst_domain.as_str(),
-                    e.hostname.as_str(),
-                    e.logontype.as_str(),
-                    e.src_user.as_str(),
-                    e.src_domain.as_str(),
-                    e.source_computer.as_str(),
-                    e.source_ip.as_str(),
+                    login_event.channel.as_str(),
+                    login_event.dst_user.as_str(),
+                    login_event.dst_domain.as_str(),
+                    login_event.hostname.as_str(),
+                    login_event.logontype.as_str(),
+                    login_event.src_user.as_str(),
+                    login_event.src_domain.as_str(),
+                    login_event.source_computer.as_str(),
+                    login_event.source_ip.as_str(),
                 ];
-                if let Some(ref mut w) = wtr {
-                    w.write_record(&record_data).ok();
+                if let Some(ref mut writer) = wtr {
+                    writer.write_record(&record_data).ok();
                 }
-                let r = record_data;
-                logins_stats_tb.add_row([r[0], r[1], r[2], r[3], r[4], r[6], r[10], r[11]]);
+                let row = record_data;
+                logins_stats_tb.add_row([
+                    row[0], row[1], row[2], row[3], row[4], row[6], row[10], row[11],
+                ]);
             }
         }
         // If there is no row data, display a message indicating no detections.
@@ -622,8 +633,8 @@ impl Timeline {
                 let mut wrt = WriterBuilder::new().from_writer(file);
                 let _ = wrt.write_record(header);
                 for rec in &mut *log_metrics {
-                    if let Some(r) = Self::create_record_array(rec, stored_static, " ¦") {
-                        let _ = wrt.write_record(r);
+                    if let Some(row) = Self::create_record_array(rec, stored_static, " ¦") {
+                        let _ = wrt.write_record(row);
                     }
                 }
             } else {
@@ -633,16 +644,16 @@ impl Timeline {
                     .set_content_arrangement(ContentArrangement::DynamicFullWidth)
                     .set_header(&header);
                 for rec in &mut *log_metrics {
-                    if let Some(r) = Self::create_record_array(rec, stored_static, "\n") {
+                    if let Some(row) = Self::create_record_array(rec, stored_static, "\n") {
                         tb.add_row(vec![
-                            Cell::new(r[0].to_string()),
-                            Cell::new(r[1].to_string()),
-                            Cell::new(r[2].to_string()),
-                            Cell::new(r[3].to_string()),
-                            Cell::new(r[4].to_string()),
-                            Cell::new(r[5].to_string()),
-                            Cell::new(r[6].to_string()),
-                            Cell::new(r[7].to_string()),
+                            Cell::new(row[0].to_string()),
+                            Cell::new(row[1].to_string()),
+                            Cell::new(row[2].to_string()),
+                            Cell::new(row[3].to_string()),
+                            Cell::new(row[4].to_string()),
+                            Cell::new(row[5].to_string()),
+                            Cell::new(row[6].to_string()),
+                            Cell::new(row[7].to_string()),
                         ]);
                     }
                 }
@@ -1062,25 +1073,25 @@ mod tests {
 
         assert_eq!(timeline.stats.total, 4);
 
-        let dt = |s: &str| {
+        let dt = |date_str: &str| {
             Some(DateTime::<Utc>::from_naive_utc_and_offset(
-                NaiveDateTime::parse_from_str(s, "%Y-%m-%dT%H:%M:%S%.fZ").unwrap(),
+                NaiveDateTime::parse_from_str(date_str, "%Y-%m-%dT%H:%M:%S%.fZ").unwrap(),
                 Utc,
             ))
         };
-        for (k, v) in timeline.stats.stats_login_list.iter() {
-            assert!(expect.contains_key(k));
-            assert_eq!(expect.get(k).unwrap(), &v.counts);
+        for (login_event, values) in timeline.stats.stats_login_list.iter() {
+            assert!(expect.contains_key(login_event));
+            assert_eq!(expect.get(login_event).unwrap(), &values.counts);
             // Each grouping here has a single record, so first == last == that record's time.
             // Sec 4625 exercises the @timestamp fallback; the others use TimeCreated SystemTime.
-            let (idx, want) = match k.channel.as_str() {
+            let (idx, want) = match login_event.channel.as_str() {
                 "Sec 4624" => (0, dt("2021-12-23T00:00:00.000Z")),
                 "Sec 4625" => (1, dt("2022-12-23T00:00:00.000Z")),
                 "RDS-GTW 302" => (0, dt("2022-12-23T00:00:00.000Z")),
                 _ => continue,
             };
-            assert_eq!(v.first[idx], want, "first for {}", k.channel);
-            assert_eq!(v.last[idx], want, "last for {}", k.channel);
+            assert_eq!(values.first[idx], want, "first for {}", login_event.channel);
+            assert_eq!(values.last[idx], want, "last for {}", login_event.channel);
         }
     }
 
@@ -1173,8 +1184,8 @@ mod tests {
             + "\n";
         match read_to_string(&out_test_tm_stats_csv) {
             Err(_) => panic!("Failed to open file."),
-            Ok(s) => {
-                assert_eq!(s, expect);
+            Ok(contents) => {
+                assert_eq!(contents, expect);
             }
         };
         // Delete the file after the test.
@@ -1304,9 +1315,9 @@ mod tests {
             .as_ref()
             .unwrap()
             .time_format_options;
-        let mkdt = |s: &str| {
+        let mkdt = |date_str: &str| {
             DateTime::<Utc>::from_naive_utc_and_offset(
-                NaiveDateTime::parse_from_str(s, "%Y-%m-%dT%H:%M:%S%.fZ").unwrap(),
+                NaiveDateTime::parse_from_str(date_str, "%Y-%m-%dT%H:%M:%S%.fZ").unwrap(),
                 Utc,
             )
         };
@@ -1324,8 +1335,8 @@ mod tests {
         );
         match read_to_string(&out_test_tm_logon_stats_successful_csv) {
             Err(_) => panic!("Failed to open file."),
-            Ok(s) => {
-                assert_eq!(s, expect_success);
+            Ok(contents) => {
+                assert_eq!(contents, expect_success);
             }
         };
 
@@ -1337,15 +1348,15 @@ mod tests {
 
         match read_to_string(&out_test_tm_logon_stats_successful_csv) {
             Err(_) => panic!("Failed to open file."),
-            Ok(s) => {
-                assert_eq!(s, expect_success);
+            Ok(contents) => {
+                assert_eq!(contents, expect_success);
             }
         };
 
         match read_to_string(&out_test_tm_logon_stats_failed_csv) {
             Err(_) => panic!("Failed to open file."),
-            Ok(s) => {
-                assert_eq!(s, expect_failed);
+            Ok(contents) => {
+                assert_eq!(contents, expect_failed);
             }
         };
         // Delete the file after the test.

@@ -28,10 +28,10 @@ use crate::detections::message::{AlertMessage, DetectInfo};
 /// This should be applied only to dynamic data values (e.g. computer names from
 /// logs), not to the Markdown template strings that may contain intentional HTML
 /// like `<br>` or intentional Markdown like table pipes.
-pub(crate) fn html_escape_value(s: &str) -> String {
-    let mut escaped = String::with_capacity(s.len());
-    for c in s.chars() {
-        match c {
+pub(crate) fn html_escape_value(value: &str) -> String {
+    let mut escaped = String::with_capacity(value.len());
+    for ch in value.chars() {
+        match ch {
             // HTML special characters -> entities.
             '<' => escaped.push_str("&lt;"),
             '>' => escaped.push_str("&gt;"),
@@ -47,7 +47,7 @@ pub(crate) fn html_escape_value(s: &str) -> String {
             '(' => escaped.push_str("\\("),
             ')' => escaped.push_str("\\)"),
             '|' => escaped.push_str("\\|"),
-            _ => escaped.push(c),
+            _ => escaped.push(ch),
         }
     }
     escaped
@@ -379,8 +379,12 @@ pub fn sort_detect_info(detect_infos: &mut [DetectInfo]) {
         // differing field, so the added cost is negligible.
         a.output_fields
             .iter()
-            .map(|(_, p)| p.to_value())
-            .cmp(b.output_fields.iter().map(|(_, p)| p.to_value()))
+            .map(|(_, profile)| profile.to_value())
+            .cmp(
+                b.output_fields
+                    .iter()
+                    .map(|(_, profile)| profile.to_value()),
+            )
     });
 }
 
@@ -587,7 +591,7 @@ mod tests {
             agg_result: None,
             details_convert_map: HashMap::default(),
         };
-        let evtx_of = |d: &DetectInfo| d.output_fields[0].1.to_value();
+        let evtx_of = |detect_info: &DetectInfo| detect_info.output_fields[0].1.to_value();
 
         let mut a = vec![make("c.evtx"), make("a.evtx"), make("b.evtx")];
         let mut b = vec![make("b.evtx"), make("c.evtx"), make("a.evtx")];
@@ -831,8 +835,8 @@ mod tests {
         );
         match read_to_string(&out_test_emit_csv_csv) {
             Err(_) => panic!("Failed to open file."),
-            Ok(s) => {
-                assert_eq!(s, expect);
+            Ok(contents) => {
+                assert_eq!(contents, expect);
             }
         };
         assert!(remove_file(&out_test_emit_csv_csv).is_ok());
@@ -1067,8 +1071,8 @@ mod tests {
         );
         match read_to_string(&out_test_emit_csv_multiline_csv) {
             Err(_) => panic!("Failed to open file."),
-            Ok(s) => {
-                assert_eq!(s, expect);
+            Ok(contents) => {
+                assert_eq!(contents, expect);
             }
         };
         assert!(remove_file(&out_test_emit_csv_multiline_csv).is_ok());
@@ -1392,8 +1396,8 @@ mod tests {
         );
         match read_to_string(&out_test_emit_csv_remove_duplicate_csv) {
             Err(_) => panic!("Failed to open file."),
-            Ok(s) => {
-                assert_eq!(s, expect);
+            Ok(contents) => {
+                assert_eq!(contents, expect);
             }
         };
         assert!(remove_file(&out_test_emit_csv_remove_duplicate_csv).is_ok());
@@ -1702,8 +1706,8 @@ mod tests {
         );
         match read_to_string(&out_test_emit_csv_remove_duplicate_json) {
             Err(_) => panic!("Failed to open file."),
-            Ok(s) => {
-                assert_eq!(s, expect_str);
+            Ok(contents) => {
+                assert_eq!(contents, expect_str);
             }
         };
         assert!(remove_file(&out_test_emit_csv_remove_duplicate_json).is_ok());
@@ -1945,8 +1949,8 @@ mod tests {
         );
         match read_to_string(&out_test_multiple_data_in_details_json) {
             Err(_) => panic!("Failed to open file."),
-            Ok(s) => {
-                assert_eq!(s, expect_str);
+            Ok(contents) => {
+                assert_eq!(contents, expect_str);
             }
         };
         assert!(remove_file(&out_test_multiple_data_in_details_json).is_ok());
@@ -2124,8 +2128,8 @@ mod tests {
         );
         match read_to_string(&out_test_emit_csv_json_json) {
             Err(_) => panic!("Failed to open file."),
-            Ok(s) => {
-                assert_eq!(s, format!("{}\n}}", expect.join("\n    ")));
+            Ok(contents) => {
+                assert_eq!(contents, format!("{}\n}}", expect.join("\n    ")));
             }
         };
         assert!(remove_file(&out_test_emit_csv_json_json).is_ok());
@@ -2305,8 +2309,8 @@ mod tests {
         );
         match read_to_string(&out_test_emit_csv_jsonl_jsonl) {
             Err(_) => panic!("Failed to open file."),
-            Ok(s) => {
-                assert_eq!(s, format!("{} }}", expect.join("")));
+            Ok(contents) => {
+                assert_eq!(contents, format!("{} }}", expect.join("")));
             }
         };
         assert!(remove_file(&out_test_emit_csv_jsonl_jsonl).is_ok());

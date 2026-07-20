@@ -49,10 +49,10 @@ pub enum LEVEL {
 impl LEVEL {
     /// Parses a full level name (case-insensitive). Abbreviations such as "info" are not
     /// accepted; any unrecognized string maps to UNDEFINED.
-    pub fn from(s: &str) -> Self {
-        let s = s.to_lowercase();
-        let s = s.as_str();
-        match s {
+    pub fn from(level_str: &str) -> Self {
+        let level_str = level_str.to_lowercase();
+        let level_str = level_str.as_str();
+        match level_str {
             "informational" => LEVEL::INFORMATIONAL,
             "low" => LEVEL::LOW,
             "medium" => LEVEL::MEDIUM,
@@ -108,8 +108,8 @@ impl LEVEL {
     pub fn convert(&self, computer: &str) -> &LEVEL {
         // If the computer is included in CRITICAL_SYSTEM, raise the level.
         let computers = computer.split(" ¦ ");
-        for c in computers {
-            if CRITICAL_SYSTEM.contains(c) {
+        for computer_name in computers {
+            if CRITICAL_SYSTEM.contains(computer_name) {
                 return match self {
                     LEVEL::INFORMATIONAL => &LEVEL::INFORMATIONAL,
                     LEVEL::LOW => &LEVEL::MEDIUM,
@@ -145,7 +145,7 @@ pub fn create_output_color_map(no_color_flag: bool) -> HashMap<LEVEL, Colors> {
             .unwrap_or_default()
         });
     let read_result = match utils::read_csv(path.to_str().unwrap()) {
-        Ok(c) => Ok(c),
+        Ok(records) => Ok(records),
         Err(_) => {
             let level_color = LevelColor::get("level_color.txt").unwrap();
             let embed_level_color =
@@ -162,7 +162,7 @@ pub fn create_output_color_map(no_color_flag: bool) -> HashMap<LEVEL, Colors> {
         return color_map;
     }
     let color_map_contents = match read_result {
-        Ok(c) => c,
+        Ok(records) => records,
         Err(e) => {
             // Missing color information only means output falls back to the default uncolored
             // text and does not affect behavior, so it is treated as a warning, not an error.
@@ -206,8 +206,8 @@ pub fn create_output_color_map(no_color_flag: bool) -> HashMap<LEVEL, Colors> {
 
 pub fn _get_output_color(color_map: &HashMap<LEVEL, Colors>, level: &LEVEL) -> Option<Color> {
     let mut color = None;
-    if let Some(c) = color_map.get(level) {
-        color = Some(c.output_color);
+    if let Some(colors) = color_map.get(level) {
+        color = Some(colors.output_color);
     }
     color
 }
@@ -221,9 +221,12 @@ mod tests {
 
     fn check_hashmap_data(target: HashMap<LEVEL, Colors>, expected: HashMap<LEVEL, Colors>) {
         assert_eq!(target.len(), expected.len());
-        for (k, v) in target {
-            assert!(expected.get(&k).is_some());
-            assert_eq!(format!("{v:?}"), format!("{:?}", expected.get(&k).unwrap()));
+        for (level, colors) in target {
+            assert!(expected.get(&level).is_some());
+            assert_eq!(
+                format!("{colors:?}"),
+                format!("{:?}", expected.get(&level).unwrap())
+            );
         }
     }
 

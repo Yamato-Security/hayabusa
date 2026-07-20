@@ -249,9 +249,9 @@ fn calculate_wizard_rule_count(
     } = filter;
     let mut ret = HashMap::new();
     if exclude_noisytarget_flag {
-        for s in exclude_noisy_status {
+        for status in exclude_noisy_status {
             let mut ret_cnt = 0;
-            if let Some(target_status_count) = rule_counter_wizard_map.get(s) {
+            if let Some(target_status_count) = rule_counter_wizard_map.get(status) {
                 target_status_count.iter().for_each(|(rule_level, value)| {
                     let doc_level_num = LEVEL::from(rule_level.as_str()).index();
                     let args_level_num = LEVEL::from(min_level).index();
@@ -261,20 +261,21 @@ fn calculate_wizard_rule_count(
                 });
             }
             if ret_cnt > 0 {
-                ret.insert(CompactString::from(s), ret_cnt);
+                ret.insert(CompactString::from(status), ret_cnt);
             }
         }
     } else {
         let all_status_flag = target_status.contains(&"*");
-        for s in rule_counter_wizard_map.keys() {
+        for status in rule_counter_wizard_map.keys() {
             // Skip aggregation for items that do not match the specified status.
-            if (exclude_noisy_status.contains(&s.as_str()) || !target_status.contains(&s.as_str()))
+            if (exclude_noisy_status.contains(&status.as_str())
+                || !target_status.contains(&status.as_str()))
                 && !all_status_flag
             {
                 continue;
             }
             let mut ret_cnt = 0;
-            if let Some(target_status_count) = rule_counter_wizard_map.get(s) {
+            if let Some(target_status_count) = rule_counter_wizard_map.get(status) {
                 target_status_count.iter().for_each(|(rule_level, value)| {
                     let doc_level_num = LEVEL::from(rule_level.as_str()).index();
                     let args_level_num = LEVEL::from(min_level).index();
@@ -292,7 +293,7 @@ fn calculate_wizard_rule_count(
                     }
                 });
                 if ret_cnt > 0 {
-                    ret.insert(s.clone(), ret_cnt);
+                    ret.insert(status.clone(), ret_cnt);
                 }
             }
         }
@@ -330,7 +331,7 @@ fn apply_channel_filters(
             stored_static.quiet_errors_flag,
             &stored_static.error_log_stack,
         );
-        evtx_files.retain(|e| channel_filter.scannable_rule_exists(e));
+        evtx_files.retain(|evtx_file| channel_filter.scannable_rule_exists(evtx_file));
     }
 
     if matches!(
@@ -355,7 +356,7 @@ fn apply_channel_filters(
             stored_static.quiet_errors_flag,
             &stored_static.error_log_stack,
         );
-        evtx_files.retain(|e| channel_filter.scannable_rule_exists(e));
+        evtx_files.retain(|evtx_file| channel_filter.scannable_rule_exists(evtx_file));
     }
 
     if let Some(Action::LogMetrics(opt)) = &stored_static.config.action {
@@ -941,15 +942,16 @@ Any hostnames added to the critical_systems.txt file will have all alerts above 
         if let Some(pivot_file) = &stored_static.output_path {
             // For file output
             pivot_key_unions.iter().for_each(|(key, pivot_keyword)| {
-                let mut f = BufWriter::new(
+                let mut writer = BufWriter::new(
                     File::create(pivot_file.as_path().display().to_string() + "-" + key + ".txt")
                         .unwrap(),
                 );
-                f.write_all(
-                    create_output(String::default(), key, pivot_keyword, "file", stored_static)
-                        .as_bytes(),
-                )
-                .unwrap();
+                writer
+                    .write_all(
+                        create_output(String::default(), key, pivot_keyword, "file", stored_static)
+                            .as_bytes(),
+                    )
+                    .unwrap();
             });
             println!();
             println!();
@@ -1102,7 +1104,7 @@ Any hostnames added to the critical_systems.txt file will have all alerts above 
             .replace("-dev", "")
             .replace("v", "")
             .split('.')
-            .filter_map(|x| x.parse().ok())
+            .filter_map(|part| part.parse().ok())
             .collect::<Vec<i8>>();
         let split_latest_version = &latest_version_data
             .as_ref()
@@ -1110,7 +1112,7 @@ Any hostnames added to the critical_systems.txt file will have all alerts above 
             .replace('"', "")
             .replace("v", "")
             .split('.')
-            .filter_map(|x| x.parse().ok())
+            .filter_map(|part| part.parse().ok())
             .collect::<Vec<i8>>();
         if split_latest_version > split_now_version {
             write_color_buffer(
@@ -1626,12 +1628,12 @@ Any hostnames added to the critical_systems.txt file will have all alerts above 
         }
 
         let mut ret = vec![];
-        for e in entries.unwrap() {
-            if e.is_err() {
+        for entry in entries.unwrap() {
+            if entry.is_err() {
                 continue;
             }
 
-            let path = e.unwrap().path();
+            let path = entry.unwrap().path();
             if path.is_dir() {
                 path.to_str().map(|path_str| {
                     let subdir_ret =
@@ -2183,7 +2185,7 @@ Any hostnames added to the critical_systems.txt file will have all alerts above 
                     &stored_static.error_log_stack,
                 );
                 if !stored_static.scan_all_evtx_files {
-                    evtx_files.retain(|e| channel_filter.scannable_rule_exists(e));
+                    evtx_files.retain(|evtx_file| channel_filter.scannable_rule_exists(evtx_file));
                     write_color_buffer(
                         &BufferWriter::stdout(ColorChoice::Always),
                         get_writable_color(
@@ -2203,9 +2205,9 @@ Any hostnames added to the critical_systems.txt file will have all alerts above 
                     .ok();
                 }
                 if !stored_static.enable_all_rules {
-                    rule_files.retain(|r| {
-                        channel_filter.rule_paths.contains(&r.rule_path)
-                            || !r.yaml["correlation"].is_badvalue()
+                    rule_files.retain(|rule| {
+                        channel_filter.rule_paths.contains(&rule.rule_path)
+                            || !rule.yaml["correlation"].is_badvalue()
                     });
                     let rules_after_channel_filter =
                         rule_files.len().to_formatted_string(&Locale::en);
@@ -2968,7 +2970,7 @@ Any hostnames added to the critical_systems.txt file will have all alerts above 
                     data["Event"]["System"] = data["Event"]["EventData"].clone();
                 } else if let Some(first) = data["Event"]["EventData"]
                     .as_array()
-                    .and_then(|a| a.first())
+                    .and_then(|array| array.first())
                 {
                     data["Event"]["System"] = first.clone();
                 }
@@ -3287,9 +3289,9 @@ Any hostnames added to the critical_systems.txt file will have all alerts above 
             format!("rules/config/{file_path}").as_str(),
             true,
         );
-        if let Some(f) = checked_path {
-            if f.exists() {
-                let file = File::open(f)?;
+        if let Some(path) = checked_path {
+            if path.exists() {
+                let file = File::open(path)?;
                 let lines: Vec<String> =
                     io::BufReader::new(file).lines().collect::<Result<_, _>>()?;
                 if let Some(random_line) = lines.choose(&mut rand::rng()) {
@@ -3460,8 +3462,12 @@ mod tests {
             .unwrap();
         let lines: Vec<&str> = general_contents.iter().collect();
         assert_eq!(lines.len(), 2);
-        assert!(lines.iter().any(|l| l.starts_with("- Command line: ")));
-        assert!(lines.iter().any(|l| l.starts_with("- Start time: ")));
+        assert!(
+            lines
+                .iter()
+                .any(|line| line.starts_with("- Command line: "))
+        );
+        assert!(lines.iter().any(|line| line.starts_with("- Start time: ")));
     }
 
     // End-to-end guard for the HtmlReporter threading: run `exec` with `--html-report` against a
@@ -4138,7 +4144,7 @@ mod tests {
                     (
                         CompactString::from(*level),
                         tags.iter()
-                            .map(|(t, c)| (CompactString::from(*t), *c))
+                            .map(|(tag, count)| (CompactString::from(*tag), *count))
                             .collect(),
                     )
                 })
@@ -4160,7 +4166,7 @@ mod tests {
         map.insert("noisy".into(), lvl(&[("medium", &[("", 9)])]));
 
         // (A) Per-status counts at/above HIGH, skipping the noisy/deprecated statuses.
-        let a = calculate_wizard_rule_count(
+        let per_status_counts = calculate_wizard_rule_count(
             &map,
             WizardCountFilter {
                 exclude_noisytarget_flag: false,
@@ -4170,14 +4176,14 @@ mod tests {
                 target_tags: [].to_vec(),
             },
         );
-        assert_eq!(a.get("stable"), Some(&5)); // 3 + 2 at HIGH; LOW(5) is below HIGH
-        assert_eq!(a.get("test"), Some(&4)); // CRITICAL >= HIGH
-        assert_eq!(a.get("deprecated"), None); // excluded status
-        assert_eq!(a.get("noisy"), None);
-        assert_eq!(a.len(), 2);
+        assert_eq!(per_status_counts.get("stable"), Some(&5)); // 3 + 2 at HIGH; LOW(5) is below HIGH
+        assert_eq!(per_status_counts.get("test"), Some(&4)); // CRITICAL >= HIGH
+        assert_eq!(per_status_counts.get("deprecated"), None); // excluded status
+        assert_eq!(per_status_counts.get("noisy"), None);
+        assert_eq!(per_status_counts.len(), 2);
 
         // (B) Exclude-noisy mode: count only the listed noisy statuses, at/above MEDIUM.
-        let b = calculate_wizard_rule_count(
+        let noisy_status_counts = calculate_wizard_rule_count(
             &map,
             WizardCountFilter {
                 exclude_noisytarget_flag: true,
@@ -4187,13 +4193,13 @@ mod tests {
                 target_tags: [].to_vec(),
             },
         );
-        assert_eq!(b.get("deprecated"), Some(&7));
-        assert_eq!(b.get("noisy"), Some(&9));
-        assert_eq!(b.len(), 2);
+        assert_eq!(noisy_status_counts.get("deprecated"), Some(&7));
+        assert_eq!(noisy_status_counts.get("noisy"), Some(&9));
+        assert_eq!(noisy_status_counts.len(), 2);
 
         // (C) Tag counts: only the requested tags at/above HIGH for the "stable" status; no
         // per-status entry is produced when `target_tags` is set.
-        let c = calculate_wizard_rule_count(
+        let tag_counts = calculate_wizard_rule_count(
             &map,
             WizardCountFilter {
                 exclude_noisytarget_flag: false,
@@ -4203,8 +4209,8 @@ mod tests {
                 target_tags: ["sysmon", "detection.emerging_threats"].to_vec(),
             },
         );
-        assert_eq!(c.get("sysmon"), Some(&3));
-        assert_eq!(c.get("detection.emerging_threats"), Some(&2));
-        assert_eq!(c.len(), 2);
+        assert_eq!(tag_counts.get("sysmon"), Some(&3));
+        assert_eq!(tag_counts.get("detection.emerging_threats"), Some(&2));
+        assert_eq!(tag_counts.len(), 2);
     }
 }

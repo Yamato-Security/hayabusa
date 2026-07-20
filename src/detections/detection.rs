@@ -261,19 +261,19 @@ impl Detection {
                             // previous match so the remaining rules keep the widest window.
                             if let Some(next) = target_records
                                 .iter()
-                                .filter(|t| t.key == base.key)
-                                .map(|t| t.start_datetime)
-                                .filter(|&t| t >= order_floor && t <= window_end)
+                                .filter(|target| target.key == base.key)
+                                .map(|target| target.start_datetime)
+                                .filter(|&time| time >= order_floor && time <= window_end)
                                 .min()
                             {
                                 found = true;
                                 order_floor = next;
                             }
                         } else {
-                            found = target_records.iter().any(|t| {
-                                t.key == base.key
-                                    && (t.start_datetime >= base.start_datetime - timeframe)
-                                    && (t.start_datetime <= base.start_datetime + timeframe)
+                            found = target_records.iter().any(|target| {
+                                target.key == base.key
+                                    && (target.start_datetime >= base.start_datetime - timeframe)
+                                    && (target.start_datetime <= base.start_datetime + timeframe)
                             });
                         }
                         if !found {
@@ -323,7 +323,7 @@ impl Detection {
             };
             if ref_ids
                 .iter()
-                .all(|x| detected_temporal_refs.contains_key(x))
+                .all(|ref_id| detected_temporal_refs.contains_key(ref_id))
             {
                 let mut data = HashMap::new();
                 for id in ref_ids {
@@ -408,7 +408,7 @@ impl Detection {
             .as_ref()
             .unwrap()
             .iter()
-            .any(|(_s, p)| *p == RecordID(Default::default()))
+            .any(|(_s, profile)| *profile == RecordID(Default::default()))
         {
             get_serde_number_to_string(
                 &record_info.record["Event"]["System"]["EventRecordID"],
@@ -553,12 +553,12 @@ impl Detection {
                 MitreTactics(_) => {
                     let tactics = tag_info
                         .iter()
-                        .filter(|x| tags_config_values.contains(&&CompactString::from(*x)));
+                        .filter(|tag| tags_config_values.contains(&&CompactString::from(*tag)));
                     // .map(|x| TAGS_CONFIG.get(x.into()).unwrap());
                     let output_tactics_str = CompactString::from(
                         tactics
                             .clone()
-                            .filter_map(|x| x.split(',').next())
+                            .filter_map(|tag| tag.split(',').next())
                             .join(" ¦ "),
                     );
 
@@ -569,14 +569,14 @@ impl Detection {
 
                     let html_output_tactics_str = tactics
                         .into_iter()
-                        .map(|x| x.split(',').nth(1).unwrap_or_default())
+                        .map(|tag| tag.split(',').nth(1).unwrap_or_default())
                         .collect_vec();
                     if stored_static.html_report_flag && !html_output_tactics_str.is_empty() {
-                        let mut v = stored_static
+                        let mut computer_entry = stored_static
                             .computer_mitre_attck_map
                             .entry(computer_name_to_mitre_tactics.clone())
                             .or_default();
-                        let (_, attack_tactics) = v.pair_mut();
+                        let (_, attack_tactics) = computer_entry.pair_mut();
                         for html_attck_tac in html_output_tactics_str {
                             let tactic_key: CompactString = html_attck_tac.into();
                             let unique_key = CompactString::from(format!(
@@ -602,14 +602,14 @@ impl Detection {
                 MitreTags(_) => {
                     let techniques = tag_info
                         .iter()
-                        .filter(|x| {
-                            !tags_config_values.contains(&&CompactString::from(*x))
-                                && (x.starts_with("attack.t")
-                                    || x.starts_with("attack.g")
-                                    || x.starts_with("attack.s"))
+                        .filter(|tag| {
+                            !tags_config_values.contains(&&CompactString::from(*tag))
+                                && (tag.starts_with("attack.t")
+                                    || tag.starts_with("attack.g")
+                                    || tag.starts_with("attack.s"))
                         })
-                        .map(|y| {
-                            let replaced_tag = y.replace("attack.", "");
+                        .map(|tag| {
+                            let replaced_tag = tag.replace("attack.", "");
                             make_ascii_titlecase(&replaced_tag)
                         })
                         .join(" ¦ ");
@@ -618,11 +618,11 @@ impl Detection {
                 OtherTags(_) => {
                     let tags = tag_info
                         .iter()
-                        .filter(|x| {
-                            !(TAGS_CONFIG.values().contains(&CompactString::from(*x))
-                                || x.starts_with("attack.t")
-                                || x.starts_with("attack.g")
-                                || x.starts_with("attack.s"))
+                        .filter(|tag| {
+                            !(TAGS_CONFIG.values().contains(&CompactString::from(*tag))
+                                || tag.starts_with("attack.t")
+                                || tag.starts_with("attack.g")
+                                || tag.starts_with("attack.s"))
                         })
                         .join(" ¦ ");
                     profile_converter.insert(key.as_str(), OtherTags(tags.into()));
@@ -752,7 +752,7 @@ impl Detection {
                             .as_vec()
                             .unwrap()
                             .iter()
-                            .map(|x| x.as_str().unwrap())
+                            .map(|alias| alias.as_str().unwrap())
                             .collect(),
                         &record_info.record,
                         eventkey_alias,
@@ -769,7 +769,7 @@ impl Detection {
                     let binding = geo_data.unwrap();
                     let mut tgt_data = binding
                         .split('🦅')
-                        .map(|x| if x.is_empty() { "" } else { x });
+                        .map(|geo_field| if geo_field.is_empty() { "" } else { geo_field });
                     profile_converter
                         .entry("TgtASN")
                         .and_modify(|p| *p = TgtASN(tgt_data.next().unwrap().to_owned().into()));
@@ -823,7 +823,7 @@ impl Detection {
                             .as_vec()
                             .unwrap()
                             .iter()
-                            .map(|x| x.as_str().unwrap())
+                            .map(|alias| alias.as_str().unwrap())
                             .collect(),
                         &record_info.record,
                         eventkey_alias,
@@ -841,7 +841,7 @@ impl Detection {
                     let binding = geo_data.unwrap();
                     let mut src_data = binding
                         .split('🦅')
-                        .map(|x| if x.is_empty() { "" } else { x });
+                        .map(|geo_field| if geo_field.is_empty() { "" } else { geo_field });
                     profile_converter
                         .entry("SrcASN")
                         .and_modify(|p| *p = SrcASN(src_data.next().unwrap().to_owned().into()));
@@ -867,7 +867,7 @@ impl Detection {
         // details configured for this provider and event ID combination, and if none exists,
         // output all of the record's field data.
         let details_fmt_str = match rule.yaml["details"].as_str() {
-            Some(s) => s.to_string(),
+            Some(details) => details.to_string(),
             None => match stored_static
                 .default_details
                 .get(&CompactString::from(format!("{provider}_{eid}")))
@@ -1033,11 +1033,11 @@ impl Detection {
                 MitreTactics(_) => {
                     let tactics = tag_info
                         .iter()
-                        .filter(|x| tags_config_values.contains(&&CompactString::from(*x)));
+                        .filter(|tag| tags_config_values.contains(&&CompactString::from(*tag)));
                     let output_tactics_str = CompactString::from(
                         tactics
                             .clone()
-                            .filter_map(|x| x.split(',').next())
+                            .filter_map(|tag| tag.split(',').next())
                             .join(" ¦ "),
                     );
                     profile_converter.insert(
@@ -1048,14 +1048,14 @@ impl Detection {
                 MitreTags(_) => {
                     let techniques = tag_info
                         .iter()
-                        .filter(|x| {
-                            !tags_config_values.contains(&&CompactString::from(*x))
-                                && (x.starts_with("attack.t")
-                                    || x.starts_with("attack.g")
-                                    || x.starts_with("attack.s"))
+                        .filter(|tag| {
+                            !tags_config_values.contains(&&CompactString::from(*tag))
+                                && (tag.starts_with("attack.t")
+                                    || tag.starts_with("attack.g")
+                                    || tag.starts_with("attack.s"))
                         })
-                        .map(|y| {
-                            let replaced_tag = y.replace("attack.", "");
+                        .map(|tag| {
+                            let replaced_tag = tag.replace("attack.", "");
                             make_ascii_titlecase(&replaced_tag)
                         })
                         .join(" ¦ ");
@@ -1064,11 +1064,11 @@ impl Detection {
                 OtherTags(_) => {
                     let tags = tag_info
                         .iter()
-                        .filter(|x| {
-                            !(tags_config_values.contains(&&CompactString::from(*x))
-                                || x.starts_with("attack.t")
-                                || x.starts_with("attack.g")
-                                || x.starts_with("attack.s"))
+                        .filter(|tag| {
+                            !(tags_config_values.contains(&&CompactString::from(*tag))
+                                || tag.starts_with("attack.t")
+                                || tag.starts_with("attack.g")
+                                || tag.starts_with("attack.s"))
                         })
                         .join(" ¦ ");
                     profile_converter.insert(key.as_str(), OtherTags(tags.into()));
@@ -1326,14 +1326,14 @@ impl Detection {
         let output_opt = stored_static.output_option.as_ref().unwrap();
         let enable_deprecated_flag = output_opt.enable_deprecated_rules;
         let enable_unsupported_flag = output_opt.enable_unsupported_rules;
-        let is_filtered_rule_flag = |x: &CompactString| {
-            x == "deprecated" && !enable_deprecated_flag
-                || x == "unsupported" && !enable_unsupported_flag
+        let is_filtered_rule_flag = |status: &CompactString| {
+            status == "deprecated" && !enable_deprecated_flag
+                || status == "unsupported" && !enable_unsupported_flag
         };
         let total_loaded_rule_cnt: u128 = sorted_st_rc
             .iter()
-            .filter(|(k, _)| !is_filtered_rule_flag(k))
-            .map(|(_, v)| *v)
+            .filter(|(status, _)| !is_filtered_rule_flag(status))
+            .map(|(_, count)| *count)
             .sum();
         sorted_st_rc.sort_by(|a, b| a.0.cmp(b.0));
         sorted_st_rc.into_iter().for_each(|(key, value)| {
@@ -1643,7 +1643,7 @@ mod tests {
         let base_time = Utc.with_ymd_and_hms(2024, 1, 1, 10, 0, 0).unwrap();
         let at = |min: i64| base_time + Duration::minutes(min);
         // `AggResult.key` holds the group-by value (e.g. the Computer name).
-        let agg = |key: &str, t| AggResult::new(1, key.to_string(), vec![], t, vec![]);
+        let agg = |key: &str, time| AggResult::new(1, key.to_string(), vec![], time, vec![]);
         let ids = vec!["a".to_string(), "b".to_string()];
         let timeframe = Duration::minutes(10);
 
@@ -1686,7 +1686,7 @@ mod tests {
 
         let base = Utc.with_ymd_and_hms(2024, 1, 1, 10, 0, 0).unwrap();
         let at = |min: i64| base + Duration::minutes(min);
-        let agg = |t| AggResult::new(1, "_".to_string(), vec![], t, vec![]);
+        let agg = |time| AggResult::new(1, "_".to_string(), vec![], time, vec![]);
         let ids = vec!["a".to_string(), "b".to_string(), "c".to_string()];
         let timeframe = Duration::minutes(10);
 
@@ -2257,7 +2257,7 @@ mod tests {
                 println!("{:?}", detect_info.output_fields);
                 // The RuleAuthor field now holds the raw author string; the multiline/tab
                 // author formatting is applied at CSV emit time (results::csv).
-                assert!(detect_info.output_fields.iter().any(|x| x
+                assert!(detect_info.output_fields.iter().any(|field| field
                     == &(
                         CompactString::from("RuleAuthor"),
                         Profile::RuleAuthor("Test, Test2/Test3; Test4 ".into())

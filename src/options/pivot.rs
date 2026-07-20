@@ -76,8 +76,8 @@ pub fn insert_pivot_keyword(
                 // Walk the dot-separated event key path as far as it matches the record. If the
                 // walk stops on a JSON object (i.e. the full path did not resolve to a scalar),
                 // get_serde_number_to_string below returns None and the field is skipped.
-                for s in event_key_path.split('.') {
-                    if let Some(record) = tmp_event_record.get(s) {
+                for segment in event_key_path.split('.') {
+                    if let Some(record) = tmp_event_record.get(segment) {
                         event_key_found = true;
                         tmp_event_record = record;
                     }
@@ -140,8 +140,8 @@ pub fn create_output(
 /// Appends the section header, e.g. `Ip Addresses: ( %IpAddress% ):`, to `output`.
 pub fn fmt_headers(mut output: String, key: &String, pivot_keyword: &PivotKeyword) -> String {
     write!(output, "{key}: ( ").ok();
-    for i in pivot_keyword.fields.iter() {
-        write!(output, "%{i}% ").ok();
+    for field in pivot_keyword.fields.iter() {
+        write!(output, "%{field}% ").ok();
     }
 
     // Only add a trailing newline when keyword values will follow the header.
@@ -156,8 +156,8 @@ pub fn fmt_headers(mut output: String, key: &String, pivot_keyword: &PivotKeywor
 
 /// Appends each collected keyword value on its own line to `output`.
 pub fn fmt_keywords_results(mut output: String, pivot_keyword: &PivotKeyword) -> String {
-    for i in pivot_keyword.keywords.iter() {
-        writeln!(output, "{i}").ok();
+    for keyword in pivot_keyword.keywords.iter() {
+        writeln!(output, "{keyword}").ok();
     }
     output
 }

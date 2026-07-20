@@ -42,9 +42,9 @@ impl EvtxInfo {
         let default_time = Utc.with_ymd_and_hms(1970, 1, 1, 0, 0, 0).unwrap();
         let ts = get_event_time(val, false).unwrap_or(default_time);
         let ts = format_time(&ts, false, ts_fmt_opt);
-        let d = &val["Event"]["System"];
-        let computer = d["Computer"].as_str().unwrap_or_default().to_string();
-        let rec_id = d["EventRecordID"].as_i64().unwrap().to_string();
+        let system = &val["Event"]["System"];
+        let computer = system["Computer"].as_str().unwrap_or_default().to_string();
+        let rec_id = system["EventRecordID"].as_i64().unwrap().to_string();
         Self {
             ts: ts.to_string(),
             computer,
@@ -103,18 +103,18 @@ impl Base64Data {
         // Check UTF-16 before UTF-8: ASCII text encoded as UTF-16 contains NUL bytes that would
         // still pass the ASCII-oriented UTF-8 check, so testing UTF-8 first would misclassify it.
         if is_utf16_le(payload) {
-            let s = utf16_le_to_string(payload).unwrap();
-            return Base64Data::Utf16Le(token.to_string(), s);
+            let decoded = utf16_le_to_string(payload).unwrap();
+            return Base64Data::Utf16Le(token.to_string(), decoded);
         } else if is_utf16_be(payload) {
-            let s = utf16_be_to_string(payload).unwrap();
-            return Base64Data::Utf16Be(token.to_string(), s);
+            let decoded = utf16_be_to_string(payload).unwrap();
+            return Base64Data::Utf16Be(token.to_string(), decoded);
         } else if is_utf8(payload) {
-            let s = str::from_utf8(payload).unwrap();
-            return Base64Data::Utf8(token.to_string(), s.to_string());
+            let decoded = str::from_utf8(payload).unwrap();
+            return Base64Data::Utf8(token.to_string(), decoded.to_string());
         } else {
             let kind = infer::get(payload);
-            if let Some(k) = kind {
-                return Base64Data::Binary(token.to_string(), payload.to_vec(), Some(k));
+            if let Some(file_type) = kind {
+                return Base64Data::Binary(token.to_string(), payload.to_vec(), Some(file_type));
             }
         }
         Base64Data::Unknown(token.to_string())
@@ -209,11 +209,11 @@ impl fmt::Display for Base64Data {
     }
 }
 
-fn is_base64(s: &str) -> bool {
-    if BASE64_STANDARD_NO_PAD.decode(s).is_ok() {
+fn is_base64(token: &str) -> bool {
+    if BASE64_STANDARD_NO_PAD.decode(token).is_ok() {
         true
     } else {
-        BASE64_STANDARD.decode(s).is_ok()
+        BASE64_STANDARD.decode(token).is_ok()
     }
 }
 
@@ -263,25 +263,25 @@ fn extract_payload(data: &Value) -> Vec<(Value, Event)> {
         && let Some(id) = id
     {
         if ch == "Security" && id == 4688 {
-            let v = data["Event"]["EventData"]["CommandLine"].clone();
-            values.push((v, Event::Sec4688));
+            let command_line = data["Event"]["EventData"]["CommandLine"].clone();
+            values.push((command_line, Event::Sec4688));
         } else if ch == "Microsoft-Windows-Sysmon/Operational" && id == 1 {
-            let v = data["Event"]["EventData"]["CommandLine"].clone();
-            values.push((v, Event::Sysmon1));
-            let v = data["Event"]["EventData"]["ParentCommandLine"].clone();
-            values.push((v, Event::Sysmon1));
+            let command_line = data["Event"]["EventData"]["CommandLine"].clone();
+            values.push((command_line, Event::Sysmon1));
+            let parent_command_line = data["Event"]["EventData"]["ParentCommandLine"].clone();
+            values.push((parent_command_line, Event::Sysmon1));
         } else if (ch == "Microsoft-Windows-PowerShell/Operational"
             || ch == "PowerShellCore/Operational")
             && id == 4104
         {
-            let v = data["Event"]["EventData"]["ScriptBlockText"].clone();
-            values.push((v, Event::PwSh4104));
+            let script_block_text = data["Event"]["EventData"]["ScriptBlockText"].clone();
+            values.push((script_block_text, Event::PwSh4104));
         } else if (ch == "Microsoft-Windows-PowerShell/Operational"
             || ch == "PowerShellCore/Operational")
             && id == 4103
         {
-            let v = data["Event"]["EventData"]["Payload"].clone();
-            values.push((v, Event::PwSh4103));
+            let payload = data["Event"]["EventData"]["Payload"].clone();
+            values.push((payload, Event::PwSh4103));
         } else if (ch == "Microsoft-Windows-PowerShell/Operational"
             || ch == "PowerShellCore/Operational")
             && (id == 4100 || id == 4102)
@@ -294,29 +294,29 @@ fn extract_payload(data: &Value) -> Vec<(Value, Event)> {
             } else {
                 Event::PwSh4102
             };
-            let v = data["Event"]["EventData"]["ContextInfo"].clone();
-            values.push((v, event.clone()));
-            let v = data["Event"]["EventData"]["Payload"].clone();
-            values.push((v, event));
+            let context_info = data["Event"]["EventData"]["ContextInfo"].clone();
+            values.push((context_info, event.clone()));
+            let payload = data["Event"]["EventData"]["Payload"].clone();
+            values.push((payload, event));
         } else if ch == "Windows PowerShell" && id == 400 {
-            let v = data["Event"]["EventData"]["Data"][2].clone();
-            values.push((v, Event::PwShClassic400));
+            let data_element = data["Event"]["EventData"]["Data"][2].clone();
+            values.push((data_element, Event::PwShClassic400));
         } else if ch == "Windows PowerShell" && id == 403 {
             // Classic engine/provider lifecycle events pack "HostApplication=..." into the third
             // Data element, the same source as event ID 400.
-            let v = data["Event"]["EventData"]["Data"][2].clone();
-            values.push((v, Event::PwShClassic403));
+            let data_element = data["Event"]["EventData"]["Data"][2].clone();
+            values.push((data_element, Event::PwShClassic403));
         } else if ch == "Windows PowerShell" && id == 600 {
-            let v = data["Event"]["EventData"]["Data"][2].clone();
-            values.push((v, Event::PwShClassic600));
+            let data_element = data["Event"]["EventData"]["Data"][2].clone();
+            values.push((data_element, Event::PwShClassic600));
         } else if ch == "System" && id == 7045 {
-            let v = data["Event"]["EventData"]["ImagePath"].clone();
-            values.push((v, Event::System7045));
+            let image_path = data["Event"]["EventData"]["ImagePath"].clone();
+            values.push((image_path, Event::System7045));
         }
     }
     values
         .iter()
-        .filter(|(v, _)| !v.is_null())
+        .filter(|(value, _)| !value.is_null())
         .cloned()
         .collect()
 }
@@ -484,7 +484,7 @@ pub fn output_all(
         let term_header = ["Timestamp", "Computer", "Base64 String", "Decoded String"];
         let term_header_cells: Vec<Cell> = term_header
             .iter()
-            .map(|s| Cell::new(s).set_alignment(CellAlignment::Center))
+            .map(|header| Cell::new(header).set_alignment(CellAlignment::Center))
             .collect();
         let mut table = Table::new();
         table
@@ -671,10 +671,10 @@ mod tests {
             }),
         );
         assert_eq!(result.len(), 2);
-        let decoded: Vec<&str> = result.iter().map(|r| r[3].as_str()).collect();
+        let decoded: Vec<&str> = result.iter().map(|row| row[3].as_str()).collect();
         assert!(decoded.contains(&"test command"));
         assert!(decoded.contains(&"hello world"));
-        assert!(result.iter().all(|r| r[10] == "PwSh 4100"));
+        assert!(result.iter().all(|row| row[10] == "PwSh 4100"));
     }
 
     #[test]

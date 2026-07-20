@@ -129,12 +129,12 @@ pub fn read_txt(filename: &str) -> Result<Nested<String>, String> {
                 .map(|s| s.to_string()),
         ));
     }
-    let f = File::open(filepath);
-    if f.is_err() {
+    let file = File::open(filepath);
+    if file.is_err() {
         let errmsg = format!("Cannot open file. [file:{filename}]");
         return Err(errmsg);
     }
-    let reader = BufReader::new(f.unwrap());
+    let reader = BufReader::new(file.unwrap());
     Ok(Nested::from_iter(
         reader.lines().map(|line| line.unwrap_or_default()),
     ))
@@ -144,11 +144,11 @@ pub fn read_txt(filename: &str) -> Result<Nested<String>, String> {
 /// object in {"Event": {"EventData": ...}} so that it has the same shape as an evtx-derived
 /// record.
 pub fn read_jsonl_to_value(path: &str) -> Result<Box<dyn Iterator<Item = Value>>, String> {
-    let f = File::open(path);
-    if f.is_err() {
+    let file = File::open(path);
+    if file.is_err() {
         return Err(format!("Cannot open file. [file:{path}]"));
     }
-    let reader = BufReader::new(f.unwrap());
+    let reader = BufReader::new(file.unwrap());
     let mut peekable_lines = reader.lines().peekable();
     let first_line = peekable_lines.peek().unwrap();
     let is_jsonl = match first_line {
@@ -160,8 +160,8 @@ pub fn read_jsonl_to_value(path: &str) -> Result<Box<dyn Iterator<Item = Value>>
             .filter_map(|s| s.ok())
             .filter(|s| !s.trim().is_empty())
             .map(|line| {
-                let v: Value = serde_json::from_str(&line).unwrap();
-                json!({"Event":{"EventData": v}})
+                let value: Value = serde_json::from_str(&line).unwrap();
+                json!({"Event":{"EventData": value}})
             });
         return Ok(Box::new(ret));
     }
@@ -172,11 +172,11 @@ pub fn read_jsonl_to_value(path: &str) -> Result<Box<dyn Iterator<Item = Value>>
 /// `jq -c`) into an iterator of serde_json Values, wrapping each record in
 /// {"Event": {"EventData": ...}} so that it has the same shape as an evtx-derived record.
 pub fn read_json_to_value(path: &str) -> Result<Box<dyn Iterator<Item = Value>>, String> {
-    let f = fs::read_to_string(path);
-    if f.is_err() {
+    let read_result = fs::read_to_string(path);
+    if read_result.is_err() {
         return Err(format!("Cannot open file. [file:{path}]"));
     }
-    let contents = f.unwrap();
+    let contents = read_result.unwrap();
     let json_values: Result<Vec<Value>, Error> = serde_json::from_str(&contents);
     let value_converter = |record: Value| json!({"Event":{"EventData": record}});
     match json_values {
@@ -215,12 +215,12 @@ pub fn read_csv(filename: &str) -> Result<Nested<Vec<String>>, String> {
         let csv_res = parse_csv(ONE_CONFIG_MAP.get(one_config_path).unwrap());
         return Ok(csv_res);
     }
-    let f = File::open(filename);
-    if f.is_err() {
+    let file = File::open(filename);
+    if file.is_err() {
         return Err(format!("Cannot open file. [file:{filename}]"));
     }
     let mut contents: String = String::new();
-    let read_res = f.unwrap().read_to_string(&mut contents);
+    let read_res = file.unwrap().read_to_string(&mut contents);
     if let Err(e) = read_res {
         return Err(e.to_string());
     }
@@ -234,15 +234,15 @@ pub fn read_csv(filename: &str) -> Result<Nested<Vec<String>>, String> {
 pub fn parse_csv(file_contents: &str) -> Nested<Vec<String>> {
     let mut ret = Nested::<Vec<String>>::new();
     let mut rdr = csv::ReaderBuilder::new().from_reader(file_contents.as_bytes());
-    rdr.records().for_each(|r| {
-        if r.is_err() {
+    rdr.records().for_each(|record| {
+        if record.is_err() {
             return;
         }
 
-        let line = r.unwrap();
-        let mut v = vec![];
-        line.iter().for_each(|s| v.push(s.to_string()));
-        ret.push(v);
+        let line = record.unwrap();
+        let mut row = vec![];
+        line.iter().for_each(|field| row.push(field.to_string()));
+        ret.push(row);
     });
 
     ret
@@ -558,13 +558,13 @@ fn _collect_recordinfo<'a>(
             if let Some(strval) = strval {
                 // Replace control characters and whitespace with plain spaces, except for
                 // \r, \n and \t, which are handled later by remove_sp_char.
-                let mut strval = strval.chars().fold(String::default(), |mut acc, c| {
-                    if (c.is_control() || c.is_ascii_whitespace())
-                        && !['\r', '\n', '\t'].contains(&c)
+                let mut strval = strval.chars().fold(String::default(), |mut acc, ch| {
+                    if (ch.is_control() || ch.is_ascii_whitespace())
+                        && !['\r', '\n', '\t'].contains(&ch)
                     {
                         acc.push(' ');
                     } else {
-                        acc.push(c);
+                        acc.push(ch);
                     };
                     acc
                 });
@@ -598,15 +598,15 @@ fn _collect_recordinfo<'a>(
 /**
  * Function to capitalize the first character.
  */
-pub fn make_ascii_titlecase(s: &str) -> CompactString {
-    let mut c = s.trim().chars();
-    match c.next() {
+pub fn make_ascii_titlecase(input: &str) -> CompactString {
+    let mut chars = input.trim().chars();
+    match chars.next() {
         None => CompactString::default(),
         Some(f) => {
             if !f.is_ascii() {
-                CompactString::from(s)
+                CompactString::from(input)
             } else {
-                f.to_uppercase().collect::<CompactString>() + c.as_str()
+                f.to_uppercase().collect::<CompactString>() + chars.as_str()
             }
         }
     }
@@ -854,16 +854,16 @@ pub fn is_filtered_by_computer_name(
 /// Creates an output string in hh:mm:ss.fff format from the given seconds and milliseconds.
 /// Both components are negated only when the seconds component is negative; a negative
 /// milliseconds value with a zero seconds component is not normalized.
-pub fn output_duration((mut s, mut ms): (i64, i64)) -> String {
-    if s < 0 {
-        s = -s;
+pub fn output_duration((mut seconds, mut ms): (i64, i64)) -> String {
+    if seconds < 0 {
+        seconds = -seconds;
         ms = -ms;
     }
-    let h = s / 3600;
-    s %= 3600;
-    let m = s / 60;
-    s %= 60;
-    format!("{h:02}:{m:02}:{s:02}.{ms:03}")
+    let hours = seconds / 3600;
+    seconds %= 3600;
+    let minutes = seconds / 60;
+    seconds %= 60;
+    format!("{hours:02}:{minutes:02}:{seconds:02}.{ms:03}")
 }
 
 /// Sanitizes a field value for single-line output: runs of spaces are collapsed into one, all
@@ -1226,8 +1226,8 @@ mod tests {
     #[test]
     fn test_json_array_file_to_serde_json_value() {
         // Non-existent paths return Err.
-        let r = utils::read_json_to_value("invalid path");
-        assert!(r.is_err());
+        let result = utils::read_json_to_value("invalid path");
+        assert!(result.is_err());
 
         // Verify that JSON (Array) format can be converted.
         let path = "test_files/evtx/test.json";
@@ -1247,11 +1247,11 @@ mod tests {
     #[test]
     fn test_jsonl_file_to_serde_json_value() {
         // Non-existent paths return Err.
-        let r = utils::read_jsonl_to_value("invalid path");
-        assert!(r.is_err());
+        let result = utils::read_jsonl_to_value("invalid path");
+        assert!(result.is_err());
         // JSON (Array) format formatted with newlines also returns Err.
-        let r = utils::read_jsonl_to_value("test_files/evtx/test.json");
-        assert!(r.is_err());
+        let result = utils::read_jsonl_to_value("test_files/evtx/test.json");
+        assert!(result.is_err());
 
         // Verify that JSONL format can be converted.
         let path = "test_files/evtx/test.jsonl";
@@ -1271,8 +1271,8 @@ mod tests {
     #[test]
     fn test_jq_c_file_to_serde_json_value() {
         // Non-existent paths return Err.
-        let r = utils::read_json_to_value("invalid path");
-        assert!(r.is_err());
+        let result = utils::read_json_to_value("invalid path");
+        assert!(result.is_err());
 
         // Verify that the JSON format of jq command output can be converted.
         let path = "test_files/evtx/test-jq-output.json";
@@ -1324,9 +1324,9 @@ mod tests {
                 Nested::from_iter(vec!["- Output profile: super-verbose"]),
             ),
         ]);
-        for (k, v) in html_reporter.section_markdown.iter() {
-            assert!(expect.keys().any(|x| x == k));
-            assert!(expect.values().any(|y| y == v));
+        for (key, value) in html_reporter.section_markdown.iter() {
+            assert!(expect.keys().any(|x| x == key));
+            assert!(expect.values().any(|y| y == value));
         }
     }
 
@@ -1396,14 +1396,14 @@ mod tests {
             .and_hms_milli_opt(1, 23, 45, 678)
             .unwrap();
         let duration = time1 - time2;
-        let s = duration.num_seconds();
-        let ms = duration.num_milliseconds() - 1000 * s;
+        let seconds = duration.num_seconds();
+        let ms = duration.num_milliseconds() - 1000 * seconds;
 
-        assert_eq!(output_duration((s, ms)), "25:11:03.322".to_string());
+        assert_eq!(output_duration((seconds, ms)), "25:11:03.322".to_string());
 
         let duration = time2 - time1;
-        let s = duration.num_seconds();
-        let ms = duration.num_milliseconds() - 1000 * s;
-        assert_eq!(output_duration((s, ms)), "25:11:03.322".to_string());
+        let seconds = duration.num_seconds();
+        let ms = duration.num_milliseconds() - 1000 * seconds;
+        assert_eq!(output_duration((seconds, ms)), "25:11:03.322".to_string());
     }
 }

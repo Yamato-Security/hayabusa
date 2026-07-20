@@ -79,8 +79,8 @@ impl RuleExclude {
                 .map(|s| s.to_string())
                 .collect()
         } else {
-            let f = File::open(filename);
-            if f.is_err() {
+            let file = File::open(filename);
+            if file.is_err() {
                 if stored_static.verbose_flag {
                     AlertMessage::warn(&format!("{filename} does not exist")).ok();
                 }
@@ -93,17 +93,18 @@ impl RuleExclude {
                 }
                 return;
             }
-            let reader = BufReader::new(f.unwrap());
+            let reader = BufReader::new(file.unwrap());
             reader.lines().map_while(Result::ok).collect()
         };
-        for v in lines {
+        for line in lines {
             // Strip inline comments: everything after the first '#' is ignored.
-            let v = v.split('#').collect::<Vec<&str>>()[0].trim().to_string();
-            if v.is_empty() || !configs::IDS_REGEX.is_match(&v) {
+            let rule_id = line.split('#').collect::<Vec<&str>>()[0].trim().to_string();
+            if rule_id.is_empty() || !configs::IDS_REGEX.is_match(&rule_id) {
                 // Skip blank lines and entries that are not UUID-formatted rule IDs.
                 continue;
             }
-            self.excluded_rule_sources.insert(v, filename.to_owned());
+            self.excluded_rule_sources
+                .insert(rule_id, filename.to_owned());
         }
     }
 }
@@ -181,13 +182,18 @@ fn extract_channel_from_rules(
                 }
             }
             Yaml::Hash(ref map) => {
-                for (k, v) in map {
-                    visit_value(k.as_str().unwrap(), v, evtx_channels, intersection_channels);
+                for (entry_key, entry_value) in map {
+                    visit_value(
+                        entry_key.as_str().unwrap(),
+                        entry_value,
+                        evtx_channels,
+                        intersection_channels,
+                    );
                 }
             }
             Yaml::Array(ref seq) => {
-                for v in seq {
-                    visit_value(key, v, evtx_channels, intersection_channels);
+                for element in seq {
+                    visit_value(key, element, evtx_channels, intersection_channels);
                 }
             }
             _ => {}
@@ -254,10 +260,11 @@ pub fn create_channel_filter(
     let channels =
         peek_channel_from_evtx_first_record(evtx_files, quiet_errors_flag, error_log_stack);
     if !channels.is_empty() {
-        let (x, y) = extract_channel_from_rules(rule_nodes, &channels.keys().cloned().collect());
+        let (filtered_rule_paths, intersection_channels) =
+            extract_channel_from_rules(rule_nodes, &channels.keys().cloned().collect());
         ChannelFilter {
-            rule_paths: x,
-            intersection_channels: y.into_iter().collect(),
+            rule_paths: filtered_rule_paths,
+            intersection_channels: intersection_channels.into_iter().collect(),
             evtx_channels_map: channels,
         }
     } else {
@@ -293,7 +300,7 @@ fn apply_channel_filter(
     if let Some(channels) = channels {
         let channels_yaml = channels
             .iter()
-            .map(|c| format!("            - '{}'", c))
+            .map(|channel| format!("            - '{}'", channel))
             .join("\n");
         let yaml_str = format!(
             r#"
@@ -314,7 +321,7 @@ detection:
                 create_channel_filter(&evtx_files, &node, false, error_log_stack);
             // Keep the files whose match result differs from is_exclude: matching files for an
             // include filter, non-matching files for an exclude filter.
-            evtx_files.retain(|e| channel_filter.scannable_rule_exists(e) != is_exclude);
+            evtx_files.retain(|path| channel_filter.scannable_rule_exists(path) != is_exclude);
         }
     }
     evtx_files
@@ -329,7 +336,7 @@ fn apply_filename_filter(
     if let Some(patterns) = patterns {
         evtx_files.retain(|path| {
             path.file_name()
-                .and_then(|n| n.to_str())
+                .and_then(|name| name.to_str())
                 .is_some_and(|filename| {
                     let matches = patterns.iter().any(|pattern| {
                         wildmatch::WildMatch::new(pattern.to_ascii_lowercase().as_str())

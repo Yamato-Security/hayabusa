@@ -322,15 +322,15 @@ pub fn get_sec_timeframe(rule: &RuleNode, stored_static: &StoredStatic) -> Optio
     let timeframe = rule.detection.timeframe.as_ref();
     let timeframe_info = timeframe?;
     match &timeframe_info.time_value {
-        Ok(n) => {
+        Ok(time_value) => {
             if timeframe_info.time_unit == "d" {
-                Some(n * 86400)
+                Some(time_value * 86400)
             } else if timeframe_info.time_unit == "h" {
-                Some(n * 3600)
+                Some(time_value * 3600)
             } else if timeframe_info.time_unit == "m" {
-                Some(n * 60)
+                Some(time_value * 60)
             } else {
-                Some(*n)
+                Some(*time_value)
             }
         }
         Err(err) => {
@@ -576,7 +576,7 @@ pub fn judge_timeframe(
 
     // The processing below assumes the AggRecordTimeInfo entries are sorted in time order.
     let mut records = time_records.to_owned();
-    records.sort_by_key(|a| a.time);
+    records.sort_by_key(|record| record.time);
 
     // If the rule has no timeframe setting, use the time difference between the first and last
     // elements as the timeframe.

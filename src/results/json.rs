@@ -46,11 +46,11 @@ impl Serialize for JsonNode {
             // Serialize entries in insertion order (IndexMap iteration order), instead of the
             // key-sorted order a `serde_json::Map` would produce.
             JsonNode::Object(map) => {
-                let mut m = serializer.serialize_map(Some(map.len()))?;
-                for (k, v) in map {
-                    m.serialize_entry(k, v)?;
+                let mut map_ser = serializer.serialize_map(Some(map.len()))?;
+                for (key, value) in map {
+                    map_ser.serialize_entry(key, value)?;
                 }
-                m.end()
+                map_ser.end()
             }
         }
     }
@@ -61,10 +61,10 @@ impl Serialize for JsonNode {
 /// `serde_json` (as of #1849; previously they were `🛂n`/`🛂r`/`🛂t` placeholders rendered as the
 /// visible text `\\n`/`\\r`/`\\t`).
 pub(crate) fn json_scalar(value: &str) -> serde_json::Value {
-    if let Ok(i) = i64::from_str(value) {
-        serde_json::Value::from(i)
-    } else if let Ok(b) = bool::from_str(value) {
-        serde_json::Value::from(b)
+    if let Ok(int_value) = i64::from_str(value) {
+        serde_json::Value::from(int_value)
+    } else if let Ok(bool_value) = bool::from_str(value) {
+        serde_json::Value::from(bool_value)
     } else {
         serde_json::Value::String(close_unterminated_quote(value))
     }
@@ -295,7 +295,7 @@ pub fn output_json_str(
                         } else {
                             // A field that repeats becomes an array of string values.
                             JsonNode::Leaf(serde_json::Value::Array(
-                                c_vals.iter().map(|v| json_string(v)).collect(),
+                                c_vals.iter().map(|value| json_string(value)).collect(),
                             ))
                         };
                         details_obj.insert(c_key, node);

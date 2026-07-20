@@ -48,8 +48,8 @@ fn extract_powershell_classic_fields(
             if let Some(Value::Object(fields)) = extracted_fields {
                 for (key, val) in fields {
                     map.insert(key.clone(), val.clone());
-                    if let Value::String(s) = val {
-                        flat_key_to_value.insert(key, s.to_string());
+                    if let Value::String(value_str) = val {
+                        flat_key_to_value.insert(key, value_str.to_string());
                     }
                 }
             }
@@ -63,8 +63,8 @@ fn extract_powershell_classic_fields(
                 let fields_data: std::collections::HashMap<&str, &str> = powershell_data_str
                     .trim()
                     .split("\n\t")
-                    .map(|s| s.trim_end_matches("\r\n").trim_end_matches('\r'))
-                    .filter_map(|s| s.split_once('='))
+                    .map(|line| line.trim_end_matches("\r\n").trim_end_matches('\r'))
+                    .filter_map(|line| line.split_once('='))
                     .collect();
                 if let Ok(extracted_fields) = serde_json::to_value(fields_data) {
                     return Some(extracted_fields);

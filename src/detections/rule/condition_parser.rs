@@ -170,7 +170,7 @@ impl ConditionCompiler {
                 .replace("1 of ", "");
             let replaced_condition = node_keys
                 .iter()
-                .filter(|x| x.starts_with(target_node_key_prefix.as_str()))
+                .filter(|node_key| node_key.starts_with(target_node_key_prefix.as_str()))
                 .join(sep);
             converted_str =
                 converted_str.replace(match_str, format!("({replaced_condition})").as_str())
