@@ -10,7 +10,9 @@ use crate::options::pivot::PivotKeywordMap;
 use crate::options::profile::{Profile, load_profile};
 use aho_corasick::{AhoCorasick, AhoCorasickBuilder, MatchKind};
 use chrono::{DateTime, Days, Duration, Local, Months, Utc};
-use clap::{ArgAction, ArgGroup, Args, ColorChoice, Command, CommandFactory, Parser, Subcommand};
+use clap::{
+    ArgAction, ArgGroup, Args, ColorChoice, Command, CommandFactory, Parser, Subcommand, ValueEnum,
+};
 use compact_str::CompactString;
 use dashmap::{DashMap, DashSet};
 use hashbrown::{HashMap, HashSet};
@@ -222,8 +224,7 @@ impl StoredStatic {
         let action = config.action.as_ref();
         let action_id = Action::to_usize(action);
         let quiet_errors_flag = match action {
-            Some(Action::CsvTimeline(opt)) => opt.output_options.detect_common_options.quiet_errors,
-            Some(Action::JsonTimeline(opt)) => {
+            Some(Action::DfirTimeline(opt)) => {
                 opt.output_options.detect_common_options.quiet_errors
             }
             Some(Action::LogonSummary(opt)) => opt.detect_common_options.quiet_errors,
@@ -237,8 +238,7 @@ impl StoredStatic {
             _ => false,
         };
         let common_options = match action {
-            Some(Action::CsvTimeline(opt)) => opt.output_options.common_options,
-            Some(Action::JsonTimeline(opt)) => opt.output_options.common_options,
+            Some(Action::DfirTimeline(opt)) => opt.output_options.common_options,
             Some(Action::LevelTuning(opt)) => opt.common_options,
             Some(Action::LogonSummary(opt)) => opt.common_options,
             Some(Action::EidMetrics(opt)) => opt.common_options,
@@ -260,8 +260,7 @@ impl StoredStatic {
         };
         let binding = Path::new("./rules/config").to_path_buf();
         let config_path = match action {
-            Some(Action::CsvTimeline(opt)) => &opt.output_options.detect_common_options.config,
-            Some(Action::JsonTimeline(opt)) => &opt.output_options.detect_common_options.config,
+            Some(Action::DfirTimeline(opt)) => &opt.output_options.detect_common_options.config,
             Some(Action::LogonSummary(opt)) => &opt.detect_common_options.config,
             Some(Action::EidMetrics(opt)) => &opt.detect_common_options.config,
             Some(Action::ExtractBase64(opt)) => &opt.detect_common_options.config,
@@ -272,8 +271,7 @@ impl StoredStatic {
             _ => &binding,
         };
         let verbose_flag = match action {
-            Some(Action::CsvTimeline(opt)) => opt.output_options.detect_common_options.verbose,
-            Some(Action::JsonTimeline(opt)) => opt.output_options.detect_common_options.verbose,
+            Some(Action::DfirTimeline(opt)) => opt.output_options.detect_common_options.verbose,
             Some(Action::LogonSummary(opt)) => opt.detect_common_options.verbose,
             Some(Action::EidMetrics(opt)) => opt.detect_common_options.verbose,
             Some(Action::ExtractBase64(opt)) => opt.detect_common_options.verbose,
@@ -284,8 +282,7 @@ impl StoredStatic {
             _ => false,
         };
         let json_input_flag = match action {
-            Some(Action::CsvTimeline(opt)) => opt.output_options.detect_common_options.json_input,
-            Some(Action::JsonTimeline(opt)) => opt.output_options.detect_common_options.json_input,
+            Some(Action::DfirTimeline(opt)) => opt.output_options.detect_common_options.json_input,
             Some(Action::LogonSummary(opt)) => opt.detect_common_options.json_input,
             Some(Action::EidMetrics(opt)) => opt.detect_common_options.json_input,
             Some(Action::ExtractBase64(opt)) => opt.detect_common_options.json_input,
@@ -295,18 +292,12 @@ impl StoredStatic {
             _ => false,
         };
         let is_valid_min_level = match action {
-            Some(Action::CsvTimeline(opt)) => is_valid_level(&opt.output_options.min_level),
-            Some(Action::JsonTimeline(opt)) => is_valid_level(&opt.output_options.min_level),
+            Some(Action::DfirTimeline(opt)) => is_valid_level(&opt.output_options.min_level),
             Some(Action::PivotKeywordsList(opt)) => is_valid_level(&opt.min_level),
             _ => true,
         };
         let is_valid_exact_level = match action {
-            Some(Action::CsvTimeline(opt)) => opt
-                .output_options
-                .exact_level
-                .as_ref()
-                .is_none_or(|level| is_valid_level(level)),
-            Some(Action::JsonTimeline(opt)) => opt
+            Some(Action::DfirTimeline(opt)) => opt
                 .output_options
                 .exact_level
                 .as_ref()
@@ -323,15 +314,7 @@ impl StoredStatic {
         }
 
         let geo_ip_db_result = match action {
-            Some(Action::CsvTimeline(opt)) => GeoIPSearch::check_exist_geo_ip_files(
-                &opt.geo_ip,
-                vec![
-                    "GeoLite2-ASN.mmdb",
-                    "GeoLite2-Country.mmdb",
-                    "GeoLite2-City.mmdb",
-                ],
-            ),
-            Some(Action::JsonTimeline(opt)) => GeoIPSearch::check_exist_geo_ip_files(
+            Some(Action::DfirTimeline(opt)) => GeoIPSearch::check_exist_geo_ip_files(
                 &opt.geo_ip,
                 vec![
                     "GeoLite2-ASN.mmdb",
@@ -417,8 +400,7 @@ impl StoredStatic {
             geo_ip_db_yaml = Some(static_geoip_conf);
         };
         let output_path = match action {
-            Some(Action::CsvTimeline(opt)) => opt.output.as_ref(),
-            Some(Action::JsonTimeline(opt)) => opt.output.as_ref(),
+            Some(Action::DfirTimeline(opt)) => opt.output.as_ref(),
             Some(Action::EidMetrics(opt)) => opt.output.as_ref(),
             Some(Action::ExtractBase64(opt)) => opt.output.as_ref(),
             Some(Action::PivotKeywordsList(opt)) => opt.output.as_ref(),
@@ -429,8 +411,7 @@ impl StoredStatic {
             _ => None,
         };
         let disable_abbreviation = match action {
-            Some(Action::CsvTimeline(opt)) => opt.disable_abbreviations_opt.disable_abbreviations,
-            Some(Action::JsonTimeline(opt)) => opt.disable_abbreviations_opt.disable_abbreviations,
+            Some(Action::DfirTimeline(opt)) => opt.disable_abbreviations_opt.disable_abbreviations,
             Some(Action::Search(opt)) => opt.disable_abbreviations_opt.disable_abbreviations,
             Some(Action::LogMetrics(opt)) => opt.disable_abbreviations_opt.disable_abbreviations,
             _ => false,
@@ -444,20 +425,19 @@ impl StoredStatic {
             disable_abbreviation,
         );
         let multiline_flag = match action {
-            Some(Action::CsvTimeline(opt)) => opt.multiline,
+            Some(Action::DfirTimeline(opt)) => opt.multiline,
             Some(Action::Search(opt)) => opt.multiline,
             Some(Action::LogMetrics(opt)) => opt.multiline,
             _ => false,
         };
         let tab_separator_flag = match action {
-            Some(Action::CsvTimeline(opt)) => opt.tab_separator,
+            Some(Action::DfirTimeline(opt)) => opt.tab_separator,
             Some(Action::Search(opt)) => opt.tab_separator,
             Some(Action::LogMetrics(opt)) => opt.tab_separator,
             _ => false,
         };
         let proven_rule_flag = match action {
-            Some(Action::CsvTimeline(opt)) => opt.output_options.proven_rules,
-            Some(Action::JsonTimeline(opt)) => opt.output_options.proven_rules,
+            Some(Action::DfirTimeline(opt)) => opt.output_options.proven_rules,
             _ => false,
         };
         let target_ruleids = if proven_rule_flag {
@@ -470,13 +450,7 @@ impl StoredStatic {
             TargetIds::default()
         };
         let include_computer: HashSet<CompactString> = match action {
-            Some(Action::CsvTimeline(opt)) => compact_string_set(
-                opt.output_options
-                    .detect_common_options
-                    .include_computer
-                    .as_ref(),
-            ),
-            Some(Action::JsonTimeline(opt)) => compact_string_set(
+            Some(Action::DfirTimeline(opt)) => compact_string_set(
                 opt.output_options
                     .detect_common_options
                     .include_computer
@@ -500,13 +474,7 @@ impl StoredStatic {
             _ => HashSet::default(),
         };
         let exclude_computer: HashSet<CompactString> = match action {
-            Some(Action::CsvTimeline(opt)) => compact_string_set(
-                opt.output_options
-                    .detect_common_options
-                    .exclude_computer
-                    .as_ref(),
-            ),
-            Some(Action::JsonTimeline(opt)) => compact_string_set(
+            Some(Action::DfirTimeline(opt)) => compact_string_set(
                 opt.output_options
                     .detect_common_options
                     .exclude_computer
@@ -530,28 +498,21 @@ impl StoredStatic {
             _ => HashSet::default(),
         };
         let include_eid: HashSet<CompactString> = match action {
-            Some(Action::CsvTimeline(opt)) => {
-                compact_string_set(opt.output_options.include_eid.as_ref())
-            }
-            Some(Action::JsonTimeline(opt)) => {
+            Some(Action::DfirTimeline(opt)) => {
                 compact_string_set(opt.output_options.include_eid.as_ref())
             }
             Some(Action::PivotKeywordsList(opt)) => compact_string_set(opt.include_eid.as_ref()),
             _ => HashSet::default(),
         };
         let exclude_eid: HashSet<CompactString> = match action {
-            Some(Action::CsvTimeline(opt)) => {
-                compact_string_set(opt.output_options.exclude_eid.as_ref())
-            }
-            Some(Action::JsonTimeline(opt)) => {
+            Some(Action::DfirTimeline(opt)) => {
                 compact_string_set(opt.output_options.exclude_eid.as_ref())
             }
             Some(Action::PivotKeywordsList(opt)) => compact_string_set(opt.exclude_eid.as_ref()),
             _ => HashSet::default(),
         };
         let no_field_data_mapping_flag = match action {
-            Some(Action::CsvTimeline(opt)) => opt.output_options.no_field,
-            Some(Action::JsonTimeline(opt)) => opt.output_options.no_field,
+            Some(Action::DfirTimeline(opt)) => opt.output_options.no_field,
             _ => false,
         };
         let field_data_map = if no_field_data_mapping_flag {
@@ -565,14 +526,12 @@ impl StoredStatic {
         };
 
         let no_pwsh_field_extraction_flag = match action {
-            Some(Action::CsvTimeline(opt)) => opt.output_options.no_pwsh_field_extraction,
-            Some(Action::JsonTimeline(opt)) => opt.output_options.no_pwsh_field_extraction,
+            Some(Action::DfirTimeline(opt)) => opt.output_options.no_pwsh_field_extraction,
             _ => false,
         };
 
         let enable_recover_records = match action {
-            Some(Action::CsvTimeline(opt)) => opt.output_options.input_args.recover_records,
-            Some(Action::JsonTimeline(opt)) => opt.output_options.input_args.recover_records,
+            Some(Action::DfirTimeline(opt)) => opt.output_options.input_args.recover_records,
             Some(Action::EidMetrics(opt)) => opt.input_args.recover_records,
             Some(Action::ExtractBase64(opt)) => opt.input_args.recover_records,
             Some(Action::LogonSummary(opt)) => opt.input_args.recover_records,
@@ -582,8 +541,7 @@ impl StoredStatic {
             _ => false,
         };
         let time_offset = match action {
-            Some(Action::CsvTimeline(opt)) => opt.output_options.input_args.time_offset.clone(),
-            Some(Action::JsonTimeline(opt)) => opt.output_options.input_args.time_offset.clone(),
+            Some(Action::DfirTimeline(opt)) => opt.output_options.input_args.time_offset.clone(),
             Some(Action::EidMetrics(opt)) => opt.input_args.time_offset.clone(),
             Some(Action::ExtractBase64(opt)) => opt.input_args.time_offset.clone(),
             Some(Action::LogonSummary(opt)) => opt.input_args.time_offset.clone(),
@@ -594,15 +552,7 @@ impl StoredStatic {
             _ => None,
         };
         let include_status: HashSet<CompactString> = match action {
-            Some(Action::CsvTimeline(opt)) => opt
-                .output_options
-                .include_status
-                .as_ref()
-                .unwrap_or(&vec![])
-                .iter()
-                .map(|x| x.into())
-                .collect(),
-            Some(Action::JsonTimeline(opt)) => opt
+            Some(Action::DfirTimeline(opt)) => opt
                 .output_options
                 .include_status
                 .as_ref()
@@ -620,18 +570,15 @@ impl StoredStatic {
             _ => HashSet::default(),
         };
         let is_low_memory = match action {
-            Some(Action::CsvTimeline(opt)) => !opt.output_options.sort_events,
-            Some(Action::JsonTimeline(opt)) => !opt.output_options.sort_events,
+            Some(Action::DfirTimeline(opt)) => !opt.output_options.sort_events,
             _ => false,
         };
         let enable_all_rules = match action {
-            Some(Action::CsvTimeline(opt)) => opt.output_options.enable_all_rules,
-            Some(Action::JsonTimeline(opt)) => opt.output_options.enable_all_rules,
+            Some(Action::DfirTimeline(opt)) => opt.output_options.enable_all_rules,
             _ => false,
         };
         let scan_all_evtx_files = match action {
-            Some(Action::CsvTimeline(opt)) => opt.output_options.scan_all_evtx_files,
-            Some(Action::JsonTimeline(opt)) => opt.output_options.scan_all_evtx_files,
+            Some(Action::DfirTimeline(opt)) => opt.output_options.scan_all_evtx_files,
             _ => false,
         };
         let metrics_remove_duplication = match action {
@@ -640,10 +587,7 @@ impl StoredStatic {
             _ => false,
         };
         let validate_checksum = match action {
-            Some(Action::CsvTimeline(opt)) => {
-                opt.output_options.detect_common_options.validate_checksums
-            }
-            Some(Action::JsonTimeline(opt)) => {
+            Some(Action::DfirTimeline(opt)) => {
                 opt.output_options.detect_common_options.validate_checksums
             }
             Some(Action::LogonSummary(opt)) => opt.detect_common_options.validate_checksums,
@@ -839,8 +783,7 @@ impl StoredStatic {
 /// Function to extract thread_number information from config.
 fn check_thread_number(config: &Config) -> Option<usize> {
     match config.action.as_ref()? {
-        Action::CsvTimeline(opt) => opt.output_options.detect_common_options.thread_number,
-        Action::JsonTimeline(opt) => opt.output_options.detect_common_options.thread_number,
+        Action::DfirTimeline(opt) => opt.output_options.detect_common_options.thread_number,
         Action::LogonSummary(opt) => opt.detect_common_options.thread_number,
         Action::EidMetrics(opt) => opt.detect_common_options.thread_number,
         Action::ExtractBase64(opt) => opt.detect_common_options.thread_number,
@@ -856,23 +799,13 @@ fn check_thread_number(config: &Config) -> Option<usize> {
 pub enum Action {
     #[clap(
         author = "Yamato Security (https://github.com/Yamato-Security/hayabusa - @SecurityYamato)",
-        help_template = "\nHayabusa v3.10.0 - Independence Day Release\n{author-with-newline}\n{usage-heading}\n  hayabusa.exe csv-timeline <INPUT> [OPTIONS]\n\n{all-args}",
+        help_template = "\nHayabusa v3.10.0 - Independence Day Release\n{author-with-newline}\n{usage-heading}\n  hayabusa.exe dfir-timeline <INPUT> [OPTIONS]\n\n{all-args}",
         term_width = 400,
         display_order = 292,
         disable_help_flag = true
     )]
-    /// Create a DFIR timeline and save it in CSV format
-    CsvTimeline(CsvOutputOption),
-
-    #[clap(
-        author = "Yamato Security (https://github.com/Yamato-Security/hayabusa - @SecurityYamato)",
-        help_template = "\nHayabusa v3.10.0 - Independence Day Release\n{author-with-newline}\n{usage-heading}\n  hayabusa.exe json-timeline <INPUT> [OPTIONS]\n\n{all-args}",
-        term_width = 400,
-        display_order = 360,
-        disable_help_flag = true
-    )]
-    /// Create a DFIR timeline and save it in JSON/JSONL format
-    JsonTimeline(JSONOutputOption),
+    /// Create a DFIR timeline (CSV by default; JSON or JSONL via -t, --output-type)
+    DfirTimeline(DfirTimelineOption),
 
     #[clap(
         author = "Yamato Security (https://github.com/Yamato-Security/hayabusa - @SecurityYamato)",
@@ -1009,8 +942,7 @@ impl Action {
     pub fn to_usize(action: Option<&Action>) -> usize {
         if let Some(a) = action {
             match a {
-                Action::CsvTimeline(_) => 0,
-                Action::JsonTimeline(_) => 1,
+                Action::DfirTimeline(_) => 0,
                 Action::LogonSummary(_) => 2,
                 Action::EidMetrics(_) => 3,
                 Action::PivotKeywordsList(_) => 4,
@@ -1035,8 +967,7 @@ impl Action {
     pub fn get_action_name(action: Option<&Action>) -> &str {
         if let Some(a) = action {
             match a {
-                Action::CsvTimeline(_) => "csv-timeline",
-                Action::JsonTimeline(_) => "json-timeline",
+                Action::DfirTimeline(_) => "dfir-timeline",
                 Action::LogonSummary(_) => "logon-summary",
                 Action::EidMetrics(_) => "eid-metrics",
                 Action::PivotKeywordsList(_) => "pivot-keywords-list",
@@ -1100,7 +1031,6 @@ pub struct DetectCommonOption {
     /// Number of threads (default: optimal number for performance)
     #[arg(
         help_heading = Some("General Options"),
-        short = 't',
         long = "threads",
         value_name = "NUMBER",
         display_order = 460
@@ -1258,7 +1188,6 @@ pub struct SearchOption {
     /// Number of threads (default: optimal number for performance)
     #[arg(
             help_heading = Some("General Options"),
-            short = 't',
             long = "threads",
             value_name = "NUMBER",
             display_order = 460
@@ -1641,9 +1570,9 @@ pub struct OutputOption {
     #[arg(help_heading = Some("Output"), long = "no-pwsh-field-extraction", display_order = 410)]
     pub no_pwsh_field_extraction: bool,
 
-    /// Duplicate field data will be replaced with "DUP"
+    /// Duplicate field data will be replaced with "DUP" (CSV output only)
     #[arg(
-            help_heading = Some("Output"),
+            help_heading = Some("CSV Output"),
             short = 'R',
             long = "remove-duplicate-data",
             requires = "sort_events",
@@ -1719,17 +1648,40 @@ pub struct InputOption {
     pub time_offset: Option<String>,
 }
 
+/// Output format for `dfir-timeline`, selectable with `-t, --output-type` (case-insensitive,
+/// default CSV).
+#[derive(ValueEnum, Clone, Copy, Debug, PartialEq, Eq, Default)]
+pub enum OutputType {
+    #[default]
+    Csv,
+    Json,
+    Jsonl,
+}
+
 #[derive(Args, Clone, Debug, Default)]
-pub struct CsvOutputOption {
+pub struct DfirTimelineOption {
     #[clap(flatten)]
     pub output_options: OutputOption,
 
-    /// Separate event field information by newline characters
-    #[arg(help_heading = Some("Output"), short = 'M', long="multiline", conflicts_with = "tab_separator", display_order = 390)]
+    /// Output format: csv (default), json, or jsonl (case-insensitive, e.g. -t JSONL)
+    #[arg(
+        help_heading = Some("Output"),
+        short = 't',
+        long = "output-type",
+        value_enum,
+        value_name = "OUTPUT_FORMAT",
+        ignore_case = true,
+        default_value = "csv",
+        display_order = 411
+    )]
+    pub output_type: OutputType,
+
+    /// Separate event field information by newline characters (CSV output only)
+    #[arg(help_heading = Some("CSV Output"), short = 'M', long="multiline", conflicts_with = "tab_separator", display_order = 390)]
     pub multiline: bool,
 
-    /// Separate event field information by tabs
-    #[arg(help_heading = Some("Output"), short = 'S', long="tab-separator", conflicts_with = "multiline", requires = "output", display_order = 490)]
+    /// Separate event field information by tabs (CSV output only)
+    #[arg(help_heading = Some("CSV Output"), short = 'S', long="tab-separator", conflicts_with = "multiline", requires = "output", display_order = 490)]
     pub tab_separator: bool,
 
     // The display_order value is derived from the first letter of the long option name
@@ -1744,36 +1696,9 @@ pub struct CsvOutputOption {
     )]
     pub geo_ip: Option<PathBuf>,
 
-    /// Save the timeline in CSV format (ex: results.csv)
+    /// Save the timeline to a file (ex: results.csv)
     #[arg(help_heading = Some("Output"), short = 'o', long, value_name = "FILE", display_order = 410)]
     pub output: Option<PathBuf>,
-
-    #[clap(flatten)]
-    pub disable_abbreviations_opt: DisableAbbreviationsOption,
-}
-
-#[derive(Args, Clone, Debug, Default)]
-pub struct JSONOutputOption {
-    #[clap(flatten)]
-    pub output_options: OutputOption,
-
-    /// Save the timeline in JSON format (ex: results.json)
-    #[arg(help_heading = Some("Output"), short = 'o', long, value_name = "FILE", display_order = 410)]
-    pub output: Option<PathBuf>,
-
-    /// Save the timeline in JSONL format (ex: -L -o results.jsonl)
-    #[arg(help_heading = Some("Output"), short = 'L', long = "JSONL-output", requires = "output", display_order = 100)]
-    pub jsonl_timeline: bool,
-
-    /// Add GeoIP (ASN, city, country) info to IP addresses
-    #[arg(
-        help_heading = Some("Output"),
-        short = 'G',
-        long = "GeoIP",
-        value_name = "MAXMIND-DB-DIR",
-        display_order = 70
-    )]
-    pub geo_ip: Option<PathBuf>,
 
     #[clap(flatten)]
     pub disable_abbreviations_opt: DisableAbbreviationsOption,
@@ -2153,28 +2078,7 @@ impl TargetEventTime {
         let mut parse_success_flag = true;
         let time_offset = get_time_offset(&stored_static.time_offset, &mut parse_success_flag);
         match &stored_static.config.action.as_ref().unwrap() {
-            Action::CsvTimeline(option) => {
-                let start_time = if time_offset.is_some() {
-                    get_time(
-                        time_offset.as_ref(),
-                        "Invalid timeline offset. Please use one of the following formats: 1y, 3M, 30d, 24h, 30m",
-                        &mut parse_success_flag,
-                    )
-                } else {
-                    get_time(
-                        option.output_options.time_range.start_timeline.as_ref(),
-                        "start-timeline field: the timestamp format is not correct.",
-                        &mut parse_success_flag,
-                    )
-                };
-                let end_time = get_time(
-                    option.output_options.time_range.end_timeline.as_ref(),
-                    "end-timeline field: the timestamp format is not correct.",
-                    &mut parse_success_flag,
-                );
-                Self::set(parse_success_flag, start_time, end_time)
-            }
-            Action::JsonTimeline(option) => {
+            Action::DfirTimeline(option) => {
                 let start_time = if time_offset.is_some() {
                     get_time(
                         time_offset.as_ref(),
@@ -2470,8 +2374,7 @@ fn extract_search_options(config: &Config) -> Option<SearchOption> {
 /// from the action's own options so that downstream code can handle every action uniformly.
 fn extract_output_options(config: &Config) -> Option<OutputOption> {
     match &config.action.as_ref()? {
-        Action::CsvTimeline(option) => Some(option.output_options.clone()),
-        Action::JsonTimeline(option) => Some(option.output_options.clone()),
+        Action::DfirTimeline(option) => Some(option.output_options.clone()),
         Action::PivotKeywordsList(option) => Some(OutputOption {
             input_args: option.input_args.clone(),
             enable_deprecated_rules: option.enable_deprecated_rules,
@@ -2757,9 +2660,8 @@ mod tests {
     use std::default::Default;
 
     use super::{
-        Action, ClobberOption, CommonOptions, Config, CsvOutputOption, DetectCommonOption,
-        InputOption, JSONOutputOption, OutputOption, StoredStatic, TargetEventTime,
-        create_control_char_replace_map,
+        Action, ClobberOption, CommonOptions, Config, DetectCommonOption, DfirTimelineOption,
+        InputOption, OutputOption, StoredStatic, TargetEventTime, create_control_char_replace_map,
     };
     use crate::detections::configs::{
         self, EidMetricsOption, LogonSummaryOption, PivotKeywordOption, SearchOption,
@@ -2836,7 +2738,7 @@ mod tests {
     #[test]
     fn test_time_offset_csv() {
         let csv_timeline = StoredStatic::create_static_data(Config {
-            action: Some(Action::CsvTimeline(CsvOutputOption {
+            action: Some(Action::DfirTimeline(DfirTimelineOption {
                 output_options: OutputOption {
                     input_args: InputOption {
                         time_offset: Some("1d".to_string()),
@@ -2863,7 +2765,7 @@ mod tests {
     #[test]
     fn test_time_offset_json() {
         let json_timeline = StoredStatic::create_static_data(Config {
-            action: Some(Action::JsonTimeline(JSONOutputOption {
+            action: Some(Action::DfirTimeline(DfirTimelineOption {
                 output_options: OutputOption {
                     input_args: InputOption {
                         time_offset: Some("1y".to_string()),
@@ -3007,10 +2909,12 @@ mod tests {
                 .get_arguments()
                 .any(|arg| arg.get_long() == Some(long))
         };
-        let csv = sub("csv-timeline");
-        assert!(has(&csv, "clobber"));
-        assert!(has(&csv, "timeline-start"));
-        assert!(has(&csv, "timeline-end"));
+        let dfir = sub("dfir-timeline");
+        assert!(has(&dfir, "clobber"));
+        assert!(has(&dfir, "timeline-start"));
+        assert!(has(&dfir, "timeline-end"));
+        assert!(has(&dfir, "output-type"));
+        assert!(has(&dfir, "multiline"));
         assert!(has(&sub("eid-metrics"), "clobber"));
         assert!(has(&sub("search"), "disable-abbreviations"));
     }

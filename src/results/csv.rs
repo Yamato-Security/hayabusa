@@ -4,7 +4,7 @@ use aho_corasick::{AhoCorasickBuilder, MatchKind};
 use hashbrown::HashSet;
 use itertools::Itertools;
 
-use crate::detections::configs::{Action, StoredStatic};
+use crate::detections::configs::{Action, OutputType, StoredStatic};
 use crate::detections::message::DetectInfo;
 use crate::detections::utils::{get_writable_color, write_color_buffer};
 use crate::level::{_get_output_color, create_output_color_map};
@@ -90,14 +90,11 @@ pub(crate) fn emit_csv_inner(
     let color_map = create_output_color_map(stored_static.common_options.no_color);
     let (json_output_flag, jsonl_output_flag, remove_duplicate_data) =
         match &stored_static.config.action.as_ref().unwrap() {
-            Action::JsonTimeline(option) => (
-                true,
-                option.jsonl_timeline,
+            Action::DfirTimeline(option) => (
+                matches!(option.output_type, OutputType::Json | OutputType::Jsonl),
+                matches!(option.output_type, OutputType::Jsonl),
                 option.output_options.remove_duplicate_data,
             ),
-            Action::CsvTimeline(option) => {
-                (false, false, option.output_options.remove_duplicate_data)
-            }
             _ => (false, false, false),
         };
 
