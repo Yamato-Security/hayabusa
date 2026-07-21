@@ -33,13 +33,13 @@ pub(crate) fn _get_serialized_disp_output(
     let data_length = data.len();
     let mut ret = Nested::<String>::new();
     if header {
-        for (i, d) in data.iter().enumerate() {
+        for (i, entry) in data.iter().enumerate() {
             if i == 0 {
-                ret.push(_format_cellpos(&d.0, ColPos::First))
+                ret.push(_format_cellpos(&entry.0, ColPos::First))
             } else if i == data_length - 1 {
-                ret.push(_format_cellpos(&d.0, ColPos::Last))
+                ret.push(_format_cellpos(&entry.0, ColPos::Last))
             } else {
-                ret.push(_format_cellpos(&d.0, ColPos::Other))
+                ret.push(_format_cellpos(&entry.0, ColPos::Other))
             }
         }
         let mut disp_serializer = WriterBuilder::new()
@@ -69,7 +69,7 @@ pub(crate) fn _get_serialized_disp_output(
         )
         .ok();
     } else {
-        for (i, d) in data.iter().enumerate() {
+        for (i, entry) in data.iter().enumerate() {
             let col_pos = if i == 0 {
                 ColPos::First
             } else if i == data_length - 1 {
@@ -81,11 +81,11 @@ pub(crate) fn _get_serialized_disp_output(
             // this display path's whitespace collapse reduced to single spaces. Reproduce that by
             // replacing the `,`/`/`/`;` author separators with spaces before the collapse;
             // consecutive separators (e.g. a `//` inside a URL) collapse to one space, as before.
-            let value = match d.1 {
+            let value = match entry.1 {
                 Profile::RuleAuthor(_) if rule_author_multiline => {
-                    d.1.to_value().replace([',', '/', ';'], " ")
+                    entry.1.to_value().replace([',', '/', ';'], " ")
                 }
-                _ => d.1.to_value(),
+                _ => entry.1.to_value(),
             };
             let display_contents = _format_cellpos(
                 &output_remover
@@ -94,7 +94,7 @@ pub(crate) fn _get_serialized_disp_output(
                     .join(" "),
                 col_pos,
             );
-            let output_color_and_contents = match d.1 {
+            let output_color_and_contents = match entry.1 {
                 Profile::Timestamp(_) | Profile::Level(_) | Profile::RuleTitle(_) => {
                     vec![vec![(
                         display_contents,
@@ -103,8 +103,8 @@ pub(crate) fn _get_serialized_disp_output(
                 }
                 Profile::AllFieldInfo(_) | Profile::Details(_) | Profile::ExtraFieldInfo(_) => {
                     let mut output_str_char_pair = vec![];
-                    for c in display_contents.split('¦') {
-                        if let Some((field, val)) = c.split_once(':') {
+                    for segment in display_contents.split('¦') {
+                        if let Some((field, val)) = segment.split_once(':') {
                             let mut field_val_col_pair = vec![];
                             field_val_col_pair.push((
                                 format!(" {}: ", field.trim()),
@@ -140,8 +140,8 @@ pub(crate) fn _get_serialized_disp_output(
 
             let col_cnt = output_color_and_contents.len();
             for (field_idx, col_contents) in output_color_and_contents.iter().enumerate() {
-                for (c, color) in col_contents {
-                    write_color_buffer(display_writer, *color, c, false).ok();
+                for (content, color) in col_contents {
+                    write_color_buffer(display_writer, *color, content, false).ok();
                 }
                 if field_idx != col_cnt - 1 {
                     write_color_buffer(display_writer, None, "¦", false).ok();

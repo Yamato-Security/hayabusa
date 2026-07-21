@@ -50,7 +50,7 @@ pub fn emit_csv(
 /// display path collapses separators to spaces itself; see `_get_serialized_disp_output`.)
 fn format_rule_author(raw: &str, sep: &str) -> String {
     raw.split([',', '/', ';'])
-        .map(|a| a.split_whitespace().join(" "))
+        .map(|author| author.split_whitespace().join(" "))
         .join(sep)
 }
 
@@ -199,39 +199,44 @@ pub(crate) fn emit_csv_inner(
         } else if let ResultWriter::Csv(csv_writer) = &mut output_writer.result_writer {
             // CSV output format
             if !result_state.has_displayed_header {
-                csv_writer.write_record(detect_info.output_fields.iter().map(|x| x.0.trim()))?;
+                csv_writer
+                    .write_record(detect_info.output_fields.iter().map(|field| field.0.trim()))?;
                 result_state.has_displayed_header = true;
             }
-            csv_writer.write_record(detect_info.output_fields.iter().map(|x| {
-                match x.1 {
+            csv_writer.write_record(detect_info.output_fields.iter().map(|field| {
+                match field.1 {
                     Profile::Details(_) | Profile::AllFieldInfo(_) | Profile::ExtraFieldInfo(_) => {
                         let ret = if remove_duplicate_data
-                            && x.1.to_value()
+                            && field.1.to_value()
                                 == result_state
                                     .prev_message
-                                    .get(&x.0)
+                                    .get(&field.0)
                                     .unwrap_or(&Profile::Literal("-".into()))
                                     .to_value()
                         {
                             "DUP".to_string()
                         } else {
                             output_remover.replace_all(
-                                &x.1.to_value().split_whitespace().join(" "),
+                                &field.1.to_value().split_whitespace().join(" "),
                                 &remover_vals,
                             )
                         };
-                        result_state.prev_message.insert(x.0.clone(), x.1.clone());
+                        result_state
+                            .prev_message
+                            .insert(field.0.clone(), field.1.clone());
                         ret
                     }
                     Profile::RuleAuthor(_) if multiline_flag || tab_separator_flag => {
                         // Put each author on its own line (multiline) or tab (tab-separator).
                         format_rule_author(
-                            &x.1.to_value(),
+                            &field.1.to_value(),
                             if multiline_flag { "\r\n" } else { "\t" },
                         )
                     }
-                    _ => output_remover
-                        .replace_all(&x.1.to_value().split_whitespace().join(" "), &remover_vals),
+                    _ => output_remover.replace_all(
+                        &field.1.to_value().split_whitespace().join(" "),
+                        &remover_vals,
+                    ),
                 }
             }))?;
         }

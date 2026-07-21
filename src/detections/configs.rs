@@ -305,15 +305,16 @@ impl StoredStatic {
                 .output_options
                 .exact_level
                 .as_ref()
-                .is_none_or(|l| is_valid_level(l)),
+                .is_none_or(|level| is_valid_level(level)),
             Some(Action::JsonTimeline(opt)) => opt
                 .output_options
                 .exact_level
                 .as_ref()
-                .is_none_or(|l| is_valid_level(l)),
-            Some(Action::PivotKeywordsList(opt)) => {
-                opt.exact_level.as_ref().is_none_or(|l| is_valid_level(l))
-            }
+                .is_none_or(|level| is_valid_level(level)),
+            Some(Action::PivotKeywordsList(opt)) => opt
+                .exact_level
+                .as_ref()
+                .is_none_or(|level| is_valid_level(level)),
             _ => true,
         };
         if !is_valid_min_level || !is_valid_exact_level {
@@ -1958,7 +1959,10 @@ impl ConfigReader {
         // `target/.../deps/`. See https://github.com/Yamato-Security/hayabusa/issues/1170
         let parse = Config::try_parse().unwrap_or_else(|e| {
             let under_test = std::env::current_exe()
-                .map(|p| p.components().any(|c| c.as_os_str() == "deps"))
+                .map(|path| {
+                    path.components()
+                        .any(|component| component.as_os_str() == "deps")
+                })
                 .unwrap_or(false);
             // Only swallow the error kinds the harness itself produces: its flags
             // (`--test-threads`, `--nocapture`, ...) parse as `UnknownArgument`, and
@@ -1975,8 +1979,8 @@ impl ConfigReader {
                 e.exit()
             }
         });
-        let help_term_width = if let Some((Width(w), _)) = terminal_size() {
-            w as usize
+        let help_term_width = if let Some((Width(width), _)) = terminal_size() {
+            width as usize
         } else {
             400
         };
@@ -2381,7 +2385,7 @@ pub fn load_eventkey_alias(path: &str) -> EventKeyAliasConfig {
 /// pivot keyword map.
 pub fn load_pivot_keywords(path: &str, pivot_keyword: &RwLock<PivotKeywordMap>) {
     let read_result = match utils::read_txt(path) {
-        Ok(v) => v,
+        Ok(lines) => lines,
         Err(e) => {
             AlertMessage::alert(&e).ok();
             return;
@@ -2650,7 +2654,7 @@ fn load_eventcode_info(path: &str) -> EventInfoConfig {
     let mut config = EventInfoConfig::new();
     // If channel_eid_info.txt cannot be read, report an error and return an empty config.
     let read_result = match utils::read_csv(path) {
-        Ok(v) => v,
+        Ok(lines) => lines,
         Err(e) => {
             AlertMessage::alert(&e).ok();
             return config;
@@ -2683,12 +2687,12 @@ fn load_eventcode_info(path: &str) -> EventInfoConfig {
 fn create_control_char_replace_map() -> HashMap<char, CompactString> {
     let mut ret = HashMap::new();
     let replace_char = '\0'..='\x1F';
-    for c in replace_char.into_iter().filter(|x| x != &'\x0A') {
+    for control_char in replace_char.into_iter().filter(|x| x != &'\x0A') {
         ret.insert(
-            c,
+            control_char,
             CompactString::from(format!(
                 "\\u00{}",
-                format!("{:02x}", c as u8).to_uppercase()
+                format!("{:02x}", control_char as u8).to_uppercase()
             )),
         );
     }
@@ -2708,9 +2712,9 @@ pub fn load_windash_characters(file_path: &str) -> Vec<char> {
     let mut characters = Vec::from(['-', '–', '—', '―']);
     let file = File::open(file_path);
     match file {
-        Ok(f) => {
+        Ok(opened_file) => {
             characters = Vec::new();
-            let reader = io::BufReader::new(f);
+            let reader = io::BufReader::new(opened_file);
             for line in reader.lines() {
                 let line = line.unwrap();
                 if let Some(ch) = line.chars().next() {
@@ -2815,12 +2819,12 @@ mod tests {
     #[test]
     fn test_create_control_char_replace_map() {
         let mut expect: HashMap<char, CompactString> =
-            HashMap::from_iter(('\0'..='\x1F').map(|c| {
+            HashMap::from_iter(('\0'..='\x1F').map(|control_char| {
                 (
-                    c as u8 as char,
+                    control_char as u8 as char,
                     CompactString::from(format!(
                         "\\u00{}",
-                        format!("{:02x}", c as u8).to_uppercase()
+                        format!("{:02x}", control_char as u8).to_uppercase()
                     )),
                 )
             }));
@@ -2994,12 +2998,15 @@ mod tests {
         let cmd = Config::command();
         let sub = |name: &str| {
             cmd.get_subcommands()
-                .find(|s| s.get_name() == name)
+                .find(|subcommand| subcommand.get_name() == name)
                 .unwrap_or_else(|| panic!("subcommand {name} missing"))
                 .clone()
         };
-        let has =
-            |c: &clap::Command, long: &str| c.get_arguments().any(|a| a.get_long() == Some(long));
+        let has = |command: &clap::Command, long: &str| {
+            command
+                .get_arguments()
+                .any(|arg| arg.get_long() == Some(long))
+        };
         let csv = sub("csv-timeline");
         assert!(has(&csv, "clobber"));
         assert!(has(&csv, "timeline-start"));

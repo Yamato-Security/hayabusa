@@ -46,7 +46,11 @@ impl DefaultMatcher {
     /// Note that Regex::is_match() performs a substring search, so any anchoring must be
     /// expressed in the pattern itself.
     fn is_regex_fullmatch(&self, value: &str) -> bool {
-        self.re.as_ref().unwrap().iter().any(|x| x.is_match(value))
+        self.re
+            .as_ref()
+            .unwrap()
+            .iter()
+            .any(|regex| regex.is_match(value))
     }
 
     /// Converts a rule value (pattern) into a regex string by applying, in order, the pipes
@@ -277,7 +281,7 @@ impl LeafMatcher for DefaultMatcher {
             let mut rest: Vec<&str> = keys_all[1..]
                 .iter()
                 .copied()
-                .filter(|k| *k != "neq")
+                .filter(|key| *key != "neq")
                 .collect();
             keys_all = Vec::with_capacity(rest.len() + 1);
             keys_all.push(field);
@@ -411,10 +415,10 @@ impl LeafMatcher for DefaultMatcher {
             // record string rather than a single field (see selectionnodes.rs). Anchoring either
             // to the whole value would break their contains-style matching.
             let is_whole_record_search =
-                self.key_list.is_empty() || self.key_list.get(0).is_some_and(|k| k == "|all");
+                self.key_list.is_empty() || self.key_list.get(0).is_some_and(|key| key == "|all");
             let mut re_result_vec = vec![];
-            for p in pattern {
-                let pattern = DefaultMatcher::from_pattern_to_regex_str(p, &self.pipes);
+            for pattern_str in pattern {
+                let pattern = DefaultMatcher::from_pattern_to_regex_str(pattern_str, &self.pipes);
                 // Wildcard-derived regexes must match the entire field value (Sigma full-value
                 // semantics), but pipe_pattern_wildcard() produces an unanchored regex and
                 // Regex::is_match() searches substrings, so anchor them here. The whole-record
@@ -473,8 +477,8 @@ impl DefaultMatcher {
         // If null is set in the yaml.
         if self.re.is_none() && self.fast_match.is_none() {
             // A null value matches when the target field does not exist in the record.
-            for v in self.key_list.iter() {
-                if recinfo.get_value(v).is_none() {
+            for key in self.key_list.iter() {
+                if recinfo.get_value(key).is_none() {
                     return true;
                 }
             }
@@ -493,7 +497,7 @@ impl DefaultMatcher {
                 .as_ref()
                 .unwrap()
                 .iter()
-                .any(|x| x.is_match(event_value_str));
+                .any(|regex| regex.is_match(event_value_str));
         } else if let Some(fast_matcher) = &self.fast_match {
             let fast_match_result = check_fast_match(&self.pipes, event_value_str, fast_matcher);
             if let Some(is_match) = fast_match_result {

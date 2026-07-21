@@ -237,10 +237,10 @@ pub fn load_profile(
                 .as_hash()
                 .unwrap()
                 .into_iter()
-                .for_each(|(k, v)| {
+                .for_each(|(column_name, alias)| {
                     ret.push((
-                        CompactString::from(k.as_str().unwrap()),
-                        Profile::from(v.as_str().unwrap()),
+                        CompactString::from(column_name.as_str().unwrap()),
+                        Profile::from(alias.as_str().unwrap()),
                     ));
                 });
         } else {
@@ -262,10 +262,10 @@ pub fn load_profile(
             .as_hash()
             .unwrap()
             .into_iter()
-            .for_each(|(k, v)| {
+            .for_each(|(column_name, alias)| {
                 ret.push((
-                    CompactString::from(k.as_str().unwrap()),
-                    Profile::from(v.as_str().unwrap()),
+                    CompactString::from(column_name.as_str().unwrap()),
+                    Profile::from(alias.as_str().unwrap()),
                 ));
             });
     }
@@ -397,10 +397,10 @@ pub fn get_profile_list(profile_path: &str) -> Nested<Vec<String>> {
     };
     let mut ret = Nested::<Vec<String>>::new();
     for yml in ymls.iter() {
-        for (k, v) in yml.as_hash().unwrap() {
+        for (profile_name, profile_columns) in yml.as_hash().unwrap() {
             let mut row = vec![];
-            row.push(k.as_str().unwrap().to_string());
-            let tmp: Vec<String> = v
+            row.push(profile_name.as_str().unwrap().to_string());
+            let tmp: Vec<String> = profile_columns
                 .as_hash()
                 .unwrap()
                 .values()

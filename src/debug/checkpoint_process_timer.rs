@@ -41,18 +41,18 @@ impl CheckPointProcessTimer {
         let new_checkpoint = Local::now();
 
         let duration = new_checkpoint - self.prev_checkpoint.unwrap();
-        let s = duration.num_seconds();
-        let ms = duration.num_milliseconds() - 1000 * s;
+        let seconds = duration.num_seconds();
+        let ms = duration.num_milliseconds() - 1000 * seconds;
         if !self.recorded_laps.is_empty()
             && self.recorded_laps[self.recorded_laps.len() - 1].output_str == output_str
         {
             let last_lap_idx = self.recorded_laps.len() - 1;
-            self.recorded_laps[last_lap_idx].sec += s;
+            self.recorded_laps[last_lap_idx].sec += seconds;
             self.recorded_laps[last_lap_idx].msec += ms;
         } else {
             self.recorded_laps.push(CheckPointTimeStore {
                 output_str: output_str.into(),
-                sec: s,
+                sec: seconds,
                 msec: ms,
             });
         }
@@ -74,18 +74,18 @@ impl CheckPointProcessTimer {
     /// the time elapsed since it was set — formatted as a duration string. Used for the total
     /// "Elapsed time" line in the results summary.
     pub fn calculate_all_stocked_results(&self) -> String {
-        let mut s = 0;
+        let mut seconds = 0;
         let mut ms = 0;
         for output in self.recorded_laps.iter() {
-            s += output.sec;
+            seconds += output.sec;
             ms += output.msec;
         }
         if let Some(prev_check) = self.prev_checkpoint {
             let duration = Local::now() - prev_check;
-            s += duration.num_seconds();
+            seconds += duration.num_seconds();
             ms += duration.num_milliseconds() - 1000 * duration.num_seconds();
         }
-        output_duration((s, ms))
+        output_duration((seconds, ms))
     }
 }
 

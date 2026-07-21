@@ -25,11 +25,9 @@ fn process_value(
             let mut replaced_values = vec![];
             for (placeholder, replace_list) in replacements {
                 if val_str.contains(placeholder) {
-                    replaced_values.extend(
-                        replace_list
-                            .iter()
-                            .map(|s| Yaml::String(val_str.replace(placeholder, s))),
-                    );
+                    replaced_values.extend(replace_list.iter().map(|replacement| {
+                        Yaml::String(val_str.replace(placeholder, replacement))
+                    }));
                 }
             }
             if replaced_values.is_empty() {

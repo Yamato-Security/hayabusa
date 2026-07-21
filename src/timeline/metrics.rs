@@ -424,7 +424,7 @@ impl EventMetrics {
                                 &record.record,
                                 &stored_static.eventkey_alias,
                             );
-                            let domain = user_with_domain.rsplit_once('\\').map(|x| x.0);
+                            let domain = user_with_domain.rsplit_once('\\').map(|parts| parts.0);
                             CompactString::from(domain.unwrap_or("-"))
                         }
                         RdsRcm => get_event_value_as_string(
@@ -438,7 +438,7 @@ impl EventMetrics {
                                 &record.record,
                                 &stored_static.eventkey_alias,
                             );
-                            let domain = user_with_domain.rsplit_once('\\').map(|x| x.0);
+                            let domain = user_with_domain.rsplit_once('\\').map(|parts| parts.0);
                             CompactString::from(domain.unwrap_or("-"))
                         }
                     };
@@ -549,7 +549,7 @@ impl EventMetrics {
                             &stored_static.eventkey_alias,
                         )
                     })
-                    .map(|v| v.to_string().replace("\\\"", "").replace('"', ""))
+                    .map(|evt_value| evt_value.to_string().replace("\\\"", "").replace('"', ""))
                     .as_deref()
                     .and_then(parse_evtx_datetime)
                     {
@@ -737,9 +737,9 @@ mod tests {
         );
         assert_eq!(timeline.stats.stats_list.len(), expect.len());
 
-        for (k, v) in timeline.stats.stats_list {
-            assert!(expect.contains_key(&k));
-            assert_eq!(expect.get(&k).unwrap(), &v);
+        for (key, count) in timeline.stats.stats_list {
+            assert!(expect.contains_key(&key));
+            assert_eq!(expect.get(&key).unwrap(), &count);
         }
     }
 

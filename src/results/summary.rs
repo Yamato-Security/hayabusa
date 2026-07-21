@@ -55,11 +55,17 @@ pub(crate) fn calc_statistic_info(
                     )));
             }
             Some(agg_result) => {
-                agg_result.agg_record_time_info.iter().for_each(|a| {
-                    result_state
-                        .detected_record_idset
-                        .insert(CompactString::from(format!("{}_{}", a.time, a.event_id)));
-                });
+                agg_result
+                    .agg_record_time_info
+                    .iter()
+                    .for_each(|record_time_info| {
+                        result_state
+                            .detected_record_idset
+                            .insert(CompactString::from(format!(
+                                "{}_{}",
+                                record_time_info.time, record_time_info.event_id
+                            )));
+                    });
             }
         }
         if !output_option.no_summary {
@@ -97,7 +103,7 @@ pub(crate) fn calc_statistic_info(
                 Some(agg) => agg
                     .agg_record_time_info
                     .iter()
-                    .map(|a| CompactString::from(a.computer.clone()))
+                    .map(|record_time_info| CompactString::from(record_time_info.computer.clone()))
                     .collect::<std::collections::HashSet<_>>() // Convert to HashSet to remove duplicates
                     .into_iter()
                     .sorted()
@@ -598,8 +604,8 @@ fn _get_table_color(
     level: &LEVEL,
 ) -> Option<comfy_table::Color> {
     let mut color = None;
-    if let Some(c) = color_map.get(level) {
-        color = Some(c.table_color);
+    if let Some(colors) = color_map.get(level) {
+        color = Some(colors.table_color);
     }
     color
 }
@@ -864,7 +870,7 @@ fn _print_detection_summary_by_computer(
         // Exclude entries where the computer name is "-" from the aggregation.
         let mut sorted_detections: Vec<(&CompactString, &i128)> = detections_by_computer
             .iter()
-            .filter(|a| a.0.as_str() != "-")
+            .filter(|detection| detection.0.as_str() != "-")
             .collect();
 
         // Sort by count descending, then by name ascending so equal-count
@@ -879,20 +885,20 @@ fn _print_detection_summary_by_computer(
                 level.to_full(),
                 level.to_full(),
             ));
-            for x in sorted_detections.iter() {
+            for detection in sorted_detections.iter() {
                 html_output_stock.push(format!(
                     "- {} ({})",
-                    html_escape_value(x.0),
-                    x.1.to_formatted_string(&Locale::en)
+                    html_escape_value(detection.0),
+                    detection.1.to_formatted_string(&Locale::en)
                 ));
             }
             html_output_stock.push("");
         }
-        for x in sorted_detections.iter().take(5) {
+        for detection in sorted_detections.iter().take(5) {
             result_vec.push(format!(
                 "{} ({})",
-                x.0,
-                x.1.to_formatted_string(&Locale::en)
+                detection.0,
+                detection.1.to_formatted_string(&Locale::en)
             ));
         }
         let result_str = if result_vec.is_empty() {
@@ -973,14 +979,16 @@ fn _print_detection_summary_tables(
                 check_setting_path(&CURRENT_EXE_PATH.to_path_buf(), "encoded_rules.yml", true)
                     .unwrap();
             let is_encoded_rule = rule_encoded.exists() && rule_encoded.to_path_buf() == rule_path;
-            for x in sorted_detections.iter() {
+            for detection in sorted_detections.iter() {
                 let not_found_str = CompactString::from_str("<Not Found Path>").unwrap();
-                let rule_path = rule_title_path_map.get(x.0).unwrap_or(&not_found_str);
+                let rule_path = rule_title_path_map
+                    .get(detection.0)
+                    .unwrap_or(&not_found_str);
                 if is_encoded_rule {
                     html_output_stock.push(format!(
                         "- {} ({}) - {}",
-                        html_escape_value(x.0),
-                        x.1.to_formatted_string(&Locale::en),
+                        html_escape_value(detection.0),
+                        detection.1.to_formatted_string(&Locale::en),
                         html_escape_value(
                             rule_detect_author_map
                                 .get(rule_path)
@@ -990,9 +998,9 @@ fn _print_detection_summary_tables(
                 } else {
                     html_output_stock.push(format!(
                         "- [{}]({}) ({}) - {}",
-                        html_escape_value(x.0),
+                        html_escape_value(detection.0),
                         rule_path.replace('\\', "/"),
-                        x.1.to_formatted_string(&Locale::en),
+                        detection.1.to_formatted_string(&Locale::en),
                         html_escape_value(
                             rule_detect_author_map
                                 .get(rule_path)
@@ -1005,18 +1013,18 @@ fn _print_detection_summary_tables(
         }
 
         let take_cnt = 5;
-        for x in sorted_detections.iter().take(take_cnt) {
+        for detection in sorted_detections.iter().take(take_cnt) {
             // Truncate by character (not byte) count so a multi-byte title never slices mid-char,
             // and `saturating_sub` so a very narrow terminal degrades instead of underflowing.
             let title_limit = limit_num.saturating_sub(3).max(1);
-            let output_title = if x.0.chars().count() > title_limit {
-                format!("{}...", truncate_chars(x.0.as_str(), title_limit))
+            let output_title = if detection.0.chars().count() > title_limit {
+                format!("{}...", truncate_chars(detection.0.as_str(), title_limit))
             } else {
-                x.0.to_string()
+                detection.0.to_string()
             };
             col_output.push(format!(
                 "{output_title} ({})",
-                x.1.to_formatted_string(&Locale::en)
+                detection.1.to_formatted_string(&Locale::en)
             ));
         }
         let na_cnt = if sorted_detections.len() > take_cnt {
@@ -1123,17 +1131,22 @@ fn output_detected_rule_authors(
 /// array.
 fn extract_author_name(author: &str) -> Nested<String> {
     let mut ret = Nested::<String>::new();
-    for author in author.split(',').map(|s| {
+    for author in author.split(',').map(|author_segment| {
         // Keep only the part before '(': a parenthesized remark after a name is a description,
         // not part of the name. Double and single quotes are stripped from the names below.
-        s.split('(').next().unwrap_or_default().to_string()
+        author_segment
+            .split('(')
+            .next()
+            .unwrap_or_default()
+            .to_string()
     }) {
         ret.extend(author.split(';'));
     }
 
     ret.iter()
-        .map(|r| {
-            r.split('/')
+        .map(|author_name| {
+            author_name
+                .split('/')
                 .map(|p| p.trim().replace(['"', '\''], ""))
                 .collect::<String>()
         })
@@ -1154,9 +1167,9 @@ mod tests {
         // The helper must be boundary-safe for every possible max up to the char count.
         let char_count = title.chars().count();
         for max in 0..=char_count + 2 {
-            let t = truncate_chars(title, max);
-            assert!(title.is_char_boundary(t.len()));
-            assert_eq!(t.chars().count(), max.min(char_count));
+            let truncated = truncate_chars(title, max);
+            assert!(title.is_char_boundary(truncated.len()));
+            assert_eq!(truncated.chars().count(), max.min(char_count));
         }
     }
 
