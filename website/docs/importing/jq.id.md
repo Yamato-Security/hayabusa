@@ -120,7 +120,7 @@ Format JSON ideal jika Anda juga akan melakukan beberapa pemeriksaan manual.
 
 # Membuat File Hasil JSON
 
-Pada versi Hayabusa 2.x saat ini, Anda dapat menyimpan hasil dalam JSON dengan `hayabusa json-timeline -d <directory> -o results.json` atau `hayabusa json-timeline -d <directory> -J -o results.jsonl` untuk format JSONL.
+Pada versi Hayabusa 2.x saat ini, Anda dapat menyimpan hasil dalam JSON dengan `hayabusa dfir-timeline -t json -d <directory> -o results.json` atau `hayabusa dfir-timeline -t json -d <directory> -J -o results.jsonl` untuk format JSONL.
 
 Hayabusa akan menggunakan profil `standard` default dan hanya menyimpan jumlah data minimal untuk analisis dalam object `Details`.
 Jika Anda ingin menyimpan semua informasi field asli dalam log .evtx, Anda dapat menggunakan profil `all-field-info` dengan opsi `--profile all-field-info`.

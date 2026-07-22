@@ -47,7 +47,7 @@ Fixed multiple progress bars issue. (#1740) (@fukusuket)
 
 **New Features:**
 
-- Added a `-V, --validate-checksums` option to check chunk header checksums in the `csv-timeline` and `json-timeline` commands. (#1709) (@fukusuket)
+- Added a `-V, --validate-checksums` option to check chunk header checksums in the `dfir-timeline` and `dfir-timeline` commands. (#1709) (@fukusuket)
 
 **Enhancements:**
 
@@ -65,7 +65,7 @@ Fixed multiple progress bars issue. (#1740) (@fukusuket)
 **Enhancements:**
 
 - Event and record IDs with multiple possibilities due to correlation rules are now outputted as empty strings instead of `-` for easier parsing. (#1694) (@fukusuket)
-- We now output first and last detection timestamps instead of just the first and last timestamps found in the `Results Summary` of the `csv-timeline` and `json-timeline` commands. (#1688) (@fukusuket)
+- We now output first and last detection timestamps instead of just the first and last timestamps found in the `Results Summary` of the `dfir-timeline` and `dfir-timeline` commands. (#1688) (@fukusuket)
 - The guide on how to import Hayabusa JSONL results into SOF-ELK (Elastic Stack) was updated. (#1091) (@yamatosecurity)
 - Output an empty string instead of `-` in the rule's modified date if it is not defined to make importing into a SIEM easier. (#1702) (@yamatosecurity)
 - Empty fields in rule metadata like `RuleModifiedDate`, etc... are not outputted to JSON if they are empty in order to make parsing easier and decrease file size. (#1702) (@fukusuket)
@@ -74,7 +74,7 @@ Fixed multiple progress bars issue. (#1740) (@fukusuket)
 
 - `-T, --visualize-timeline` would output incorrect results if `-s, --sort` was not specified so we now require `-s` when `-T` is used. (#1690) (@yamatosecurity)
 - Records outside the range specified by the time range options (`--timeline-start`/`--timeline-end`) were being displayed because we were filtering with the timestamps in the record headers instead of the timestamps in the records themselves. (#1689) (@fukusuket)
-- GeoIP lookup was not working with `json-timeline`. (#1693) (@fukusuket)
+- GeoIP lookup was not working with `dfir-timeline`. (#1693) (@fukusuket)
 - The `search` command would not consistently abbreviate fields. (#1697) (@fukusuket)
 
 ## 3.5.0 [2025/08/16] - Obon Release
@@ -146,7 +146,7 @@ Fixed multiple progress bars issue. (#1740) (@fukusuket)
 - `-X, --remove-duplicate-detections` option to `eid-metrics` and `logon-summary` commands. (#1552) (@fukusuket)
 - New "Emergency Alerts" and severity level adjustment based on critical systems. Add a list of the computer names of critical systems (Ex: Domain Controllers, File Servers, etc...) to `config/critical_systems.txt` and all of the alerts above `low` will be adjusted one higher. That is, `low` will become `medium`, `medium` will become `high`, etc... `critical` alerts will become new `emergency` alerts. (#1551) (@fukusuket)
 - New `config-critical-systems` command to automatically find domain controllers and file servers to add to the `./config/critical_systems.txt` file. (#1570) (@fukusuket)
-- Added a `-S, --tab-separator` option in the `csv-timeline`, `search` and `log-metrics` commands to separate field information by tabs. (#1587) (@fukusuket)
+- Added a `-S, --tab-separator` option in the `dfir-timeline`, `search` and `log-metrics` commands to separate field information by tabs. (#1587) (@fukusuket)
 
 **Enhancements:**
 
@@ -193,7 +193,7 @@ Fixed multiple progress bars issue. (#1740) (@fukusuket)
 
 **Bug Fixes:**
 
-- Sorting with `csv-timeline` was not done perfectly when record IDs were outputted. (#1519) (@fukusuket)
+- Sorting with `dfir-timeline` was not done perfectly when record IDs were outputted. (#1519) (@fukusuket)
 - `-J, --JSON-input` would only accept `.json` files, not `.jsonl` files so now both are supported. (#1530) (@fukusuket)
 
 ## 2.19.0 [2024/11/26] - "Every Day Is A Good Day" Release
@@ -203,8 +203,8 @@ Fixed multiple progress bars issue. (#1740) (@fukusuket)
 - Support for the `gt`, `gte`, `lt`, `lte` field modifiers. (#1433) (@fukusuket)
 - New `log-metrics` command to get information about `.evtx` files. (computer names, event count, first timestamp, last timestamp, channels, providers) (#1474) (@fukusuket)
 - New `-b, --disable-abbreviations` options for the following commands to disable `Channel` and `Provider` abbreviations for when you want to check the original values. (#1485) (@fukusuket)
-  * `csv-timeline`
-  * `json-timeline`
+  * `dfir-timeline`
+  * `dfir-timeline`
   * `eid-metrics`
   * `log-metrics`
   * `search`
@@ -227,8 +227,8 @@ Fixed multiple progress bars issue. (#1740) (@fukusuket)
 **Bug Fixes:**
 
 - `logon-summary` command would sometimes crash with corrupted logs. (#1477) (@fukusuket)
-- Some results would be displayed after the progress bar when outputting results to the terminal with `csv-timeline` and `json-timeline`. (#1459) (@fukusuket)
-- The detailed field value results in aggregation rule alerts were not sorted so `csv-timeline` and `json-timeline` would not output completely exact results each time. (#1466) (@fukusuket)
+- Some results would be displayed after the progress bar when outputting results to the terminal with `dfir-timeline` and `dfir-timeline`. (#1459) (@fukusuket)
+- The detailed field value results in aggregation rule alerts were not sorted so `dfir-timeline` and `dfir-timeline` would not output completely exact results each time. (#1466) (@fukusuket)
 - Updated `hayabusa-evtx` crate to `0.8.12`. (@yamatosecurity)
   - JSON field output order is now preserved according to the original XML. (omerbenamram/evtx #241)
   - Multiple sub-nodes with attributes and the same name would be overwritten and only the last one kept. (omerbenamram/evtx #245)
@@ -303,11 +303,11 @@ Fixed multiple progress bars issue. (#1740) (@fukusuket)
 
 **New Features:**
 
-- By default now, only rules that are applicable to loaded evtx files will be enabled. This is based on the `Channel` field in `.evtx` file and `.yml` rule. For example, if `Security.evtx` was being scanned, then only rules that have `Channel: Security` defined will be used against this file. In our benchmarks, this usually gives a speed benefit of around 20% when scanning single `evtx` files but can give up a 10x speed performance depending on the file. If you think there are multiple channels being used in a single `.evtx` file or you want to use rules that do not have the `Channel` field defined in order to scan all `.evtx` files regardless of the channel, then you can turn off this filtering with the `-A, --enable-all-rules` option in `csv-timeline` and `json-timeline`.  (#1317) (@fukusuket)
+- By default now, only rules that are applicable to loaded evtx files will be enabled. This is based on the `Channel` field in `.evtx` file and `.yml` rule. For example, if `Security.evtx` was being scanned, then only rules that have `Channel: Security` defined will be used against this file. In our benchmarks, this usually gives a speed benefit of around 20% when scanning single `evtx` files but can give up a 10x speed performance depending on the file. If you think there are multiple channels being used in a single `.evtx` file or you want to use rules that do not have the `Channel` field defined in order to scan all `.evtx` files regardless of the channel, then you can turn off this filtering with the `-A, --enable-all-rules` option in `dfir-timeline` and `dfir-timeline`.  (#1317) (@fukusuket)
   - Currently, the only two detection rules that do not have `Channel` defined and are intended to scan all `.evtx` files are the following:
     - [Possible Hidden Shellcode](https://github.com/Yamato-Security/hayabusa-rules/blob/main/hayabusa/builtin/UnkwnChannEID_Med_PossibleHiddenShellcode.yml)
     - [Mimikatz Use](https://github.com/SigmaHQ/sigma/blob/master/rules/windows/builtin/win_alert_mimikatz_keywords.yml)
-- By default now, `.evtx` files that have applicable rules will be loaded. So for example, if you are scanning a directory of various event logs but only enable a rule that is looking for `Channel: Security` then Hayabusa will ignore all non-security event logs. In our benchmarks, this gives a speed benefit of around 10% with normal scans and up to 60%+ performance increase when scanning with a single rule. If you want to load all `.evtx` files regardless of channel, then you can turn off this filtering with the `-a, --scan-all-evtx-files` option in `csv-timeline` and `json-timeline`. (#1318) (@fukusuket)
+- By default now, `.evtx` files that have applicable rules will be loaded. So for example, if you are scanning a directory of various event logs but only enable a rule that is looking for `Channel: Security` then Hayabusa will ignore all non-security event logs. In our benchmarks, this gives a speed benefit of around 10% with normal scans and up to 60%+ performance increase when scanning with a single rule. If you want to load all `.evtx` files regardless of channel, then you can turn off this filtering with the `-a, --scan-all-evtx-files` option in `dfir-timeline` and `dfir-timeline`. (#1318) (@fukusuket)
 - Note: Channel filtering only works with .evtx files and you will receive an error if you try to load event logs from a JSON file with `-J, --json-input` and also specify `-A` or `-a`. (#1345) (@fukusuket)
 - Support for Sigma Correlation's Event Count. (#1337) (@fukusuket)
 - Support for Sigma Correlation's Value Count. (#1338) (@fukusuket)
@@ -347,7 +347,7 @@ Fixed multiple progress bars issue. (#1740) (@fukusuket)
 - Removed unused crates. (@YamatoSecurity)
 - JSON input now supports the format exported from Splunk. (#1083) (@hitenkoku)
 - Performance enchancements. (#1277, #1278) (@fukusuket)
-- Reordered `search` result fields to look similar to the `csv-timeline` command results. (#1297) (@hitenkoku)
+- Reordered `search` result fields to look similar to the `dfir-timeline` command results. (#1297) (@hitenkoku)
 - Added master piece character in ascii art eggs. R.I.P. lovely master hidden behind the gas mask. (#1304) (@hitenkoku)
 - Unified help option format in `computer-metrics` command with other commands. (#1314) (@hitenkoku)
 
@@ -363,13 +363,13 @@ Fixed multiple progress bars issue. (#1740) (@fukusuket)
 
 - Adjusted the `search` command's Filter option to be an exact match and support wildcard characters. (#1240) (@hitenkoku)
 - Any time there is a change in a detection rule, it will be displayed when running the `update-rules` command. Previously, only rules that updated their `modified` field would be displayed. (#1243) (@hitenkoku)
-- The `json-timeline` command now outputs in JSON format when outputting to the terminal. (#1197) (@hitenkoku)
+- The `dfir-timeline` command now outputs in JSON format when outputting to the terminal. (#1197) (@hitenkoku)
 - Added support for parsing JSON input when the data is inside an array. (#1248) (@hitenkoku)
 - Changed the `‖` separator into a `·` separator to make it easier to read and render properly on older terminals. (#1258) (@YamatoSecurity)
 - Added a `-h, --help` option to General Options for all commands. (#1255) (@hitenkoku)
-- Changed the `Details` output in the `json-timeline` command from alphabetical order to the original order.
+- Changed the `Details` output in the `dfir-timeline` command from alphabetical order to the original order.
 - Loading detection rules is now skipped when running commands that do not need them. (#1263) (@hitenkoku)
-- Improved the standard output colors in the `csv-timeline` command. (#1271) (@hitenkoku)
+- Improved the standard output colors in the `dfir-timeline` command. (#1271) (@hitenkoku)
 - Refactoring and performance enhancements. (#1268, #1260) (@hach1yon)
 
 **Bug Fixes:**
@@ -384,12 +384,12 @@ Fixed multiple progress bars issue. (#1740) (@fukusuket)
 
 - `%MitreTactics%`, `%MitreTags%`, `%OtherTags%` fields are now outputted as an array of strings in JSON output. (#1230) (@hitenkoku)
 - Added a summary of MITRE ATT&CK tactics that were detected for each computer in the HTML report. In order to use this feature, you need to use a profile that includes the `%MitreTactics%` field. (#1226) (@hitenkoku)
-- Output messages about reporting issues and false positives when using `csv-timeline` or `json-timeline` commands. (#1236) (@hitenkoku)
+- Output messages about reporting issues and false positives when using `dfir-timeline` or `dfir-timeline` commands. (#1236) (@hitenkoku)
 
 **Bug Fixes:**
 
 - In JSON output, multiple field names with the same names were not outputted as an array so only one result would be returned when parsing with `jq`. We fixed this by outputting multiple field data with the same field name inside an array. (#1202) (@hitenkoku)
-- Fixed a bug in the `csv-timeline`, `json-timeline`, `eid-metrics`, `logon-summary`, `pivot-keywords-list` and `search` commands so that Hayabusa will quit whenever no input option (`-l`, `-f` or `-d`) is specified. (#1235) (@hitenkoku)
+- Fixed a bug in the `dfir-timeline`, `dfir-timeline`, `eid-metrics`, `logon-summary`, `pivot-keywords-list` and `search` commands so that Hayabusa will quit whenever no input option (`-l`, `-f` or `-d`) is specified. (#1235) (@hitenkoku)
 
 ## 2.11.0 [2023/12/03] "Nasi Lemak Release"
 
@@ -450,9 +450,9 @@ Fixed multiple progress bars issue. (#1740) (@fukusuket)
 **New Features:**
 
 - Added support for `HexToDecimal` in the field mapping configuration files to convert hex values to decimal. (Useful for converting the original process IDs from hex to decimal.) (#1133) (@fukusuket)
-- Added `-x, --recover-records` option to `csv-timeline` and `json-timeline` to recover evtx records through file carving in evtx slack space. (#952) (@hitenkoku) (Evtx carving feature is thanks to @forensicmatt)
-- Added `-X, --remove-duplicate-detections` option to `csv-timeline` and `json-timeline` to not output any duplicate detection entries. (Useful when you use `-x`, include backup logs or logs extracted from VSS with duplicate data, etc...)
-- Added a `--timeline-offset` option to `csv-timeline`, `json-timeline`, `logon-summary`, `eid-metrics`, `pivot-keywords-list` and `search` commands to scan just recent events based on a offset of years, months, days, hours, etc... (#1159) (@hitenkoku)
+- Added `-x, --recover-records` option to `dfir-timeline` and `dfir-timeline` to recover evtx records through file carving in evtx slack space. (#952) (@hitenkoku) (Evtx carving feature is thanks to @forensicmatt)
+- Added `-X, --remove-duplicate-detections` option to `dfir-timeline` and `dfir-timeline` to not output any duplicate detection entries. (Useful when you use `-x`, include backup logs or logs extracted from VSS with duplicate data, etc...)
+- Added a `--timeline-offset` option to `dfir-timeline`, `dfir-timeline`, `logon-summary`, `eid-metrics`, `pivot-keywords-list` and `search` commands to scan just recent events based on a offset of years, months, days, hours, etc... (#1159) (@hitenkoku)
 - Added a `-a, --and-logic` option in the `search` command to search keywords with AND logic. (#1162) (@hitenkoku)
 
 **Other:**
@@ -464,15 +464,15 @@ Fixed multiple progress bars issue. (#1740) (@fukusuket)
 **New Features:**
 
 - Certain code numbers are now mapped to human-readable messages based on the `.yaml` config files in `./rules/config/data_mapping`. (Example: `%%2307` will be converted to `ACCOUNT LOCKOUT`). You can turn off this behavior with the `-F, --no-field-data-mapping` option. (#177) (@fukusuket)
-- Added the `-R, --remove-duplicate-data` option in the `csv-timeline` command to replace duplicate field data with the string `DUP` in the `%Details%`, `%AllFieldInfo%`, `%ExtraFieldInfo%` columns to reduce file size. (#1056) (@hitenkoku)
-- Added the `-P, --proven-rules` option in `csv-timeline` and `json-timeline` commands. When used, Hayabusa will only load rules that have been proven to work. These are defined by rule ID in the `./rules/config/proven_rules.txt` config file. (#1115) (@hitenkoku)
-- Added the `--include-tag` option to `csv-timeline` and `json-timeline` commands to only load rules with the specified `tags` field. (#1108) (@hitenkoku)
-- Added the `--exclude-tag` option to `csv-timeline` and `json-timeline` commands to exclude rules with specific `tags` from being loaded. (#1118) (@hitenkoku)
-- Added `--include-category` and `--exclude-category` options to `csv-timeline` and `json-timeline` commands. When using `--include-category`, only rules with the specified `category` field will be loaded. `--exclude-category` will exclude rules from being loaded based on `category`. (#1119) (@hitenkoku)
+- Added the `-R, --remove-duplicate-data` option in the `dfir-timeline` command to replace duplicate field data with the string `DUP` in the `%Details%`, `%AllFieldInfo%`, `%ExtraFieldInfo%` columns to reduce file size. (#1056) (@hitenkoku)
+- Added the `-P, --proven-rules` option in `dfir-timeline` and `dfir-timeline` commands. When used, Hayabusa will only load rules that have been proven to work. These are defined by rule ID in the `./rules/config/proven_rules.txt` config file. (#1115) (@hitenkoku)
+- Added the `--include-tag` option to `dfir-timeline` and `dfir-timeline` commands to only load rules with the specified `tags` field. (#1108) (@hitenkoku)
+- Added the `--exclude-tag` option to `dfir-timeline` and `dfir-timeline` commands to exclude rules with specific `tags` from being loaded. (#1118) (@hitenkoku)
+- Added `--include-category` and `--exclude-category` options to `dfir-timeline` and `dfir-timeline` commands. When using `--include-category`, only rules with the specified `category` field will be loaded. `--exclude-category` will exclude rules from being loaded based on `category`. (#1119) (@hitenkoku)
 - Added the `computer-metrics` command to list up how many events there are based on computer name. (#1116) (@hitenkoku)
-- Added `--include-computer` and `--exclude-computer` options to `csv-timeline`, `json-timeline`, `metrics`, `logon-summary` and `pivot-keywords-list` commands. The `--include-computer` option only scans the specified computer(s). `--exclude-computer` excludes them. (#1117) (@hitenkoku)
-- Added `--include-eid` and `--exclude-eid` options to `csv-timeline`, `json-timeline`, and `pivot-keywords-list` commands. The `--include-eid` option only scans the specified EventID(s). `--exclude-eid` excludes them. (#1130) (@hitenkoku)
-- Added the `-R, --remove-duplicate-data` option to the `json-timeline` command to replace duplicate field data with the string `DUP` in the `%Details%`, `%AllFieldInfo%`, `%ExtraFieldInfo%` fields to reduce file size. (#1134) (@hitenkoku)
+- Added `--include-computer` and `--exclude-computer` options to `dfir-timeline`, `dfir-timeline`, `metrics`, `logon-summary` and `pivot-keywords-list` commands. The `--include-computer` option only scans the specified computer(s). `--exclude-computer` excludes them. (#1117) (@hitenkoku)
+- Added `--include-eid` and `--exclude-eid` options to `dfir-timeline`, `dfir-timeline`, and `pivot-keywords-list` commands. The `--include-eid` option only scans the specified EventID(s). `--exclude-eid` excludes them. (#1130) (@hitenkoku)
+- Added the `-R, --remove-duplicate-data` option to the `dfir-timeline` command to replace duplicate field data with the string `DUP` in the `%Details%`, `%AllFieldInfo%`, `%ExtraFieldInfo%` fields to reduce file size. (#1134) (@hitenkoku)
 
 **Enhancements:**
 
@@ -487,10 +487,10 @@ Fixed multiple progress bars issue. (#1740) (@fukusuket)
 
 **Bug Fixes:**
 
-- The total number of records being displayed in the `metrics` and `logon-summary` commands differed from the `csv-timeline` command. (#1105) (@hitenkoku)
+- The total number of records being displayed in the `metrics` and `logon-summary` commands differed from the `dfir-timeline` command. (#1105) (@hitenkoku)
 - Changed rule count by rule ID instead of path. (#1113) (@hitenkoku)
 - Fixed a problem with incorrect field splitting in the `CommandLine` field in JSON output. (#1145) (@hitenkoku)
-- `--timeline-start` and `--timeline-end` were not working correctly with the `json-timeline` command. (#1148) (@hitenkoku)
+- `--timeline-start` and `--timeline-end` were not working correctly with the `dfir-timeline` command. (#1148) (@hitenkoku)
 - `--timeline-start` and `--timeline-end` were not working correctly with the `pivot-keywords-list` command. (#1150) (@hitenkoku)
 
 **Other:**
@@ -512,7 +512,7 @@ Fixed multiple progress bars issue. (#1740) (@fukusuket)
 - The output profile name is now outputted to standard output and in the HTML report. (#1055) (@hitenkoku)
 - Added rule author names next to rule alerts in the HTML report. (#1065) (@hitenkoku)
 - Made the table width shorter to prevent tables breaking in smaller terminal sizes. (#1071) (@hitenkoku)
-- Added the `-C, --clobber` option to overwrite existing output files in `csv-timeline`, `json-timeline`, `metrics`, `logon-summary`, and `search` commands. (#1063) (@YamatoSecurity, @hitenkoku)
+- Added the `-C, --clobber` option to overwrite existing output files in `dfir-timeline`, `dfir-timeline`, `metrics`, `logon-summary`, and `search` commands. (#1063) (@YamatoSecurity, @hitenkoku)
 - Made the HTML report portable by embedding the images and inlining CSS. (#1078) (@hitenkoku, thanks for the suggestion from @joswr1ght)
 - Speed improvements in the output. (#1088) (@hitenkoku, @fukusuket)
 - The `metrics` command now performs word wrapping to make sure the table gets rendered correctly. (#1067) (@garigariganzy)
@@ -520,9 +520,9 @@ Fixed multiple progress bars issue. (#1740) (@fukusuket)
 
 **Bug Fixes:**
 
-- `MitreTactics`, `MitreTags`, `OtherTags` fields were not being outputted in the `json-timeline` command. (#1062) (@hitenkoku)
+- `MitreTactics`, `MitreTags`, `OtherTags` fields were not being outputted in the `dfir-timeline` command. (#1062) (@hitenkoku)
 - The detection frequency timeline (`-T`) would not output when the `no-summary` option was also enabled. (#1072) (@hitenkoku)
-- Control characters would not be escaped in the `json-timeline` command causing a JSON parsing error. (#1068) (@hitenkoku)
+- Control characters would not be escaped in the `dfir-timeline` command causing a JSON parsing error. (#1068) (@hitenkoku)
 - In the `metrics` command, channels would not be abbreviated if they were lowercase. (#1066) (@garigariganzy)
 - Fixed an issue where some fields were misaligned in the JSON output. (#1086) (@hitenkoku)
 
@@ -545,7 +545,7 @@ Fixed multiple progress bars issue. (#1740) (@fukusuket)
 - Added `-M, --multiline` option to search command. (#1017) (@hitenkoku)
 - Deleted return characters in the output of the `search` command. (#1003) (@hitenkoku)
 - `regex` crate updated to 1.8 which allows unnecessary escapes in regular expressions reducing parsing errors. (#1018) (@YamatoSecurity)
-- Deleted return characters in output of the `csv-timeline` command. (#1019) (@hitenkoku)
+- Deleted return characters in output of the `dfir-timeline` command. (#1019) (@hitenkoku)
 - Don't show new version information with the `update-rules` command when building a newer dev build. (#1028) (@hitenkoku)
 - Sorted `search` timeline order. (#1033) (@hitenkoku)
 - Enhanced `pivot-keywords-list` terminal output. (#1022) (@kazuminn)
@@ -565,7 +565,7 @@ Fixed multiple progress bars issue. (#1740) (@fukusuket)
 **Enhancements:**
 
 - Alphabetically sorted commands. (#991) (@hitenkoku)
-- Added attribute information of `Event.UserData` to the output of `AllFieldInfo` in `csv-timeline`, `json-timeline` and `search` commands. (#1006) (@hitenkoku)
+- Added attribute information of `Event.UserData` to the output of `AllFieldInfo` in `dfir-timeline`, `dfir-timeline` and `search` commands. (#1006) (@hitenkoku)
 - Updated Aho-Corasick crate to 1.0. (#1013) (@hitenkoku)
 
 **Bug Fixes:**
@@ -589,13 +589,13 @@ Fixed multiple progress bars issue. (#1740) (@fukusuket)
 
 **Enhancements:**
 
-- Added `-M, --multiline` option in the `csv-timeline` command. (#972) (@hitenkoku)
+- Added `-M, --multiline` option in the `dfir-timeline` command. (#972) (@hitenkoku)
 
 ## 2.3.1 [2023/03/18] "TMCIT Release-2"
 
 **Enhancements:**
 
-- Added double quotes in CSV fields of `csv-timeline` output to support multiple lines in fields. (#965) (@hitenkoku)
+- Added double quotes in CSV fields of `dfir-timeline` output to support multiple lines in fields. (#965) (@hitenkoku)
 - Updated `logon-summary` headers. (#964) (@yamatosecurity)
 - Added short-hand option `-D` for `--enable-deprecated-rules` and `-u` for `--enable-unsupported-rules`. (@yamatosecurity)
 - Reordered option in Filtering and changed option help contents. (#969) (@hitenkoku)
@@ -632,7 +632,7 @@ Fixed multiple progress bars issue. (#1740) (@fukusuket)
 
 - Reorganized the grouping of command line options. (#918) (@hitenkoku)
 - Reduced memory usage by approximately 75% when reading JSONL formatted logs. (#921) (@fukusuket)
-- Channel names are now further abbreviated in the metrics, json-timeline, csv-timeline commands according to `rules/config/generic_abbreviations.txt`. (#923) (@hitenkoku)
+- Channel names are now further abbreviated in the metrics, dfir-timeline, dfir-timeline commands according to `rules/config/generic_abbreviations.txt`. (#923) (@hitenkoku)
 - Reduced parsing errors by updating the evtx crate. (@YamatoSecurity)
 - Provider names (`%Provider%` field) are now abbreviated like channel names according to `rules/config/provider_abbreviations.txt` and `rules/config/generic_abbreviations.txt`. (#932) (@hitenkoku)
 - Print the first and last timestamps in the metrics command when the `-d` directory option is used. (#935) (@hitenkoku)
@@ -847,7 +847,7 @@ Fixed multiple progress bars issue. (#1740) (@fukusuket)
 
 - Customizable output of fields defined at `config/profiles.yaml` and `config/default_profile.yaml`. (#165) (@hitenkoku)
 - Implemented the `null` keyword for rule detection. It is used to check if a target field exists or not. (#643) (@hitenkoku)
-- Added output to JSON option (`-j` and `--json-timeline` )  (#654) (@hitenkoku)
+- Added output to JSON option (`-j` and `--dfir-timeline` )  (#654) (@hitenkoku)
 
 **Enhancements:**
 

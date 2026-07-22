@@ -65,7 +65,7 @@
 
 Запустіть Hayabusa та збережіть результати у JSONL.
 
-Наприклад: `./hayabusa json-timeline -L -d ../hayabusa-sample-evtx -w -p super-verbose -G /opt/homebrew/var/GeoIP -o results.jsonl`
+Наприклад: `./hayabusa dfir-timeline -t jsonl -d ../hayabusa-sample-evtx -w -p super-verbose -G /opt/homebrew/var/GeoIP -o results.jsonl`
 
 ## Необов'язково: видалення старих імпортованих даних
 

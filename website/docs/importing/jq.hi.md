@@ -120,7 +120,7 @@ JSON प्रारूप आदर्श है यदि आप कुछ म
 
 # JSON परिणाम फ़ाइलें बनाना
 
-Hayabusa के वर्तमान 2.x संस्करण में, आप परिणामों को JSON में `hayabusa json-timeline -d <directory> -o results.json` के साथ या JSONL प्रारूप के लिए `hayabusa json-timeline -d <directory> -J -o results.jsonl` के साथ सहेज सकते हैं।
+Hayabusa के वर्तमान 2.x संस्करण में, आप परिणामों को JSON में `hayabusa dfir-timeline -t json -d <directory> -o results.json` के साथ या JSONL प्रारूप के लिए `hayabusa dfir-timeline -t json -d <directory> -J -o results.jsonl` के साथ सहेज सकते हैं।
 
 Hayabusa डिफ़ॉल्ट `standard` प्रोफ़ाइल का उपयोग करेगा और विश्लेषण के लिए केवल न्यूनतम मात्रा में डेटा `Details` ऑब्जेक्ट में सहेजेगा।
 यदि आप .evtx लॉग में सभी मूल फ़ील्ड जानकारी सहेजना चाहते हैं, तो आप `--profile all-field-info` विकल्प के साथ `all-field-info` प्रोफ़ाइल का उपयोग कर सकते हैं।

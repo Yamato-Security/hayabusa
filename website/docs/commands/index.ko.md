@@ -14,8 +14,8 @@
 * `config-critical-systems`: 도메인 컨트롤러 및 파일 서버와 같은 중요 시스템을 찾습니다.
 
 ## DFIR 타임라인 명령어:
-* `csv-timeline`: 타임라인을 CSV 형식으로 저장합니다.
-* `json-timeline`: 타임라인을 JSON/JSONL 형식으로 저장합니다.
+* `dfir-timeline`: 타임라인을 CSV 형식으로 저장합니다.
+* `dfir-timeline`: 타임라인을 JSON/JSONL 형식으로 저장합니다.
 * `level-tuning`: 경고의 `level`을 사용자 지정으로 조정합니다.
 * `list-profiles`: 사용 가능한 출력 프로필을 나열합니다.
 * `set-default-profile`: 기본 프로필을 변경합니다.

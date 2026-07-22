@@ -120,7 +120,7 @@ JSON 형식은 일부 수동 확인도 수행할 경우 이상적입니다.
 
 # JSON 결과 파일 생성
 
-현재 2.x 버전의 Hayabusa에서는 `hayabusa json-timeline -d <directory> -o results.json`으로 결과를 JSON으로 저장하거나, JSONL 형식의 경우 `hayabusa json-timeline -d <directory> -J -o results.jsonl`로 저장할 수 있습니다.
+현재 2.x 버전의 Hayabusa에서는 `hayabusa dfir-timeline -t json -d <directory> -o results.json`으로 결과를 JSON으로 저장하거나, JSONL 형식의 경우 `hayabusa dfir-timeline -t json -d <directory> -J -o results.jsonl`로 저장할 수 있습니다.
 
 Hayabusa는 기본 `standard` 프로파일을 사용하며 `Details` 객체에 분석을 위한 최소한의 데이터만 저장합니다.
 .evtx 로그의 모든 원본 필드 정보를 저장하고 싶다면, `--profile all-field-info` 옵션과 함께 `all-field-info` 프로파일을 사용할 수 있습니다.

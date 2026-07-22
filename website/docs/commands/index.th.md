@@ -14,8 +14,8 @@
 * `config-critical-systems`: ค้นหาระบบสำคัญ เช่น โดเมนคอนโทรลเลอร์และไฟล์เซิร์ฟเวอร์
 
 ## คำสั่งไทม์ไลน์ DFIR:
-* `csv-timeline`: บันทึกไทม์ไลน์ในรูปแบบ CSV
-* `json-timeline`: บันทึกไทม์ไลน์ในรูปแบบ JSON/JSONL
+* `dfir-timeline`: บันทึกไทม์ไลน์ในรูปแบบ CSV
+* `dfir-timeline`: บันทึกไทม์ไลน์ในรูปแบบ JSON/JSONL
 * `level-tuning`: ปรับแต่ง `level` ของการแจ้งเตือนแบบกำหนดเอง
 * `list-profiles`: แสดงรายการโปรไฟล์เอาต์พุตที่มีอยู่
 * `set-default-profile`: เปลี่ยนโปรไฟล์เริ่มต้น

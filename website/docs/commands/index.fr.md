@@ -14,8 +14,8 @@
 * `config-critical-systems` : Trouve les systèmes critiques tels que les contrôleurs de domaine et les serveurs de fichiers.
 
 ## Commandes de chronologie DFIR :
-* `csv-timeline` : Enregistre la chronologie au format CSV.
-* `json-timeline` : Enregistre la chronologie au format JSON/JSONL.
+* `dfir-timeline` : Enregistre la chronologie au format CSV.
+* `dfir-timeline` : Enregistre la chronologie au format JSON/JSONL.
 * `level-tuning` : Ajuste de manière personnalisée le `level` des alertes.
 * `list-profiles` : Liste les profils de sortie disponibles.
 * `set-default-profile` : Modifie le profil par défaut.

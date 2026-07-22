@@ -14,8 +14,8 @@
 * `config-critical-systems`: Encontra sistemas críticos como controladores de domínio e servidores de arquivos.
 
 ## Comandos de Linha do Tempo de DFIR:
-* `csv-timeline`: Salva a linha do tempo no formato CSV.
-* `json-timeline`: Salva a linha do tempo no formato JSON/JSONL.
+* `dfir-timeline`: Salva a linha do tempo no formato CSV.
+* `dfir-timeline`: Salva a linha do tempo no formato JSON/JSONL.
 * `level-tuning`: Ajusta de forma personalizada o `level` dos alertas.
 * `list-profiles`: Lista os perfis de saída disponíveis.
 * `set-default-profile`: Altera o perfil padrão.

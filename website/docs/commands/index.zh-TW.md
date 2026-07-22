@@ -14,8 +14,8 @@
 * `config-critical-systems`: 尋找網域控制站與檔案伺服器等關鍵系統。
 
 ## DFIR 時間軸命令：
-* `csv-timeline`: 以 CSV 格式儲存時間軸。
-* `json-timeline`: 以 JSON/JSONL 格式儲存時間軸。
+* `dfir-timeline`: 以 CSV 格式儲存時間軸。
+* `dfir-timeline`: 以 JSON/JSONL 格式儲存時間軸。
 * `level-tuning`: 自訂調整警示的 `level`。
 * `list-profiles`: 列出可用的輸出設定檔。
 * `set-default-profile`: 變更預設設定檔。

@@ -120,7 +120,7 @@ JSON biçimi, ayrıca bazı manuel kontroller de yapacaksanız idealdir.
 
 # JSON Sonuç Dosyaları Oluşturma
 
-Hayabusa'nın mevcut 2.x sürümünde, sonuçları JSON olarak `hayabusa json-timeline -d <directory> -o results.json` ile veya JSONL biçimi için `hayabusa json-timeline -d <directory> -J -o results.jsonl` ile kaydedebilirsiniz.
+Hayabusa'nın mevcut 2.x sürümünde, sonuçları JSON olarak `hayabusa dfir-timeline -t json -d <directory> -o results.json` ile veya JSONL biçimi için `hayabusa dfir-timeline -t json -d <directory> -J -o results.jsonl` ile kaydedebilirsiniz.
 
 Hayabusa varsayılan `standard` profilini kullanır ve `Details` nesnesinde analiz için yalnızca asgari miktarda veriyi kaydeder.
 .evtx günlüklerindeki tüm orijinal alan bilgisini kaydetmek isterseniz, `--profile all-field-info` seçeneği ile `all-field-info` profilini kullanabilirsiniz.
