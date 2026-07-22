@@ -92,7 +92,7 @@ La siguiente información puede mostrarse con los perfiles de salida integrados:
 |%RuleModifiedDate% | El campo `modified` en la regla de detección YML. |
 |%RuleTitle% | El campo `title` en la regla de detección YML. |
 |%Status% | El campo `status` en la regla de detección YML. |
-|%Timestamp% | El formato predeterminado es `YYYY-MM-DD HH:mm:ss.sss +hh:mm`. Campo `<Event><System><TimeCreated SystemTime>` en el registro de eventos. La zona horaria predeterminada será la zona horaria local, pero puede cambiar la zona horaria a UTC con la opción `--UTC`. |
+|%Timestamp% | El formato predeterminado es `YYYY-MM-DD HH:mm:ss.sss +hh:mm`. Campo `<Event><System><TimeCreated SystemTime>` en el registro de eventos. La zona horaria predeterminada será la zona horaria local, pero puede cambiar la zona horaria a UTC con la opción `--utc`. |
 
 #### Alias de campo de perfil adicional
 

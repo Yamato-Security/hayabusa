@@ -194,7 +194,7 @@ Fixed multiple progress bars issue. (#1740) (@fukusuket)
 **Bug Fixes:**
 
 - Sorting with `dfir-timeline` was not done perfectly when record IDs were outputted. (#1519) (@fukusuket)
-- `-J, --JSON-input` would only accept `.json` files, not `.jsonl` files so now both are supported. (#1530) (@fukusuket)
+- `-J, --json-input` would only accept `.json` files, not `.jsonl` files so now both are supported. (#1530) (@fukusuket)
 
 ## 2.19.0 [2024/11/26] - "Every Day Is A Good Day" Release
 
@@ -481,7 +481,7 @@ Fixed multiple progress bars issue. (#1740) (@fukusuket)
 - Added the `-C, --clobber` option to overwrite existing output files in the `pivot-keywords-list` command. (#1125) (@hitenkoku)
 - Renamed the `metrics` command to `eid-metrics`. (#1128) (@hitenkoku)
 - Reduced progress bar width to leave room for adjustment of the terminal. (#1135) (@hitenkoku)
-- Added support for outputing timestamps in the following formats in the `search` command: `--European-time`, `--ISO-8601`, `--RFC-2822`, `--RFC-3339`, `--US-time`, `--US-military-time`, `-U, --UTC`. (#1040) (@hitenkoku)
+- Added support for outputing timestamps in the following formats in the `search` command: `--european-time`, `--iso-8601`, `--rfc-2822`, `--rfc-3339`, `--us-time`, `--us-military-time`, `-U, --utc`. (#1040) (@hitenkoku)
 - Replaced the ETA time in the progress bar with elapsed time as the ETA time was not accurate. (#1143) (@YamatoSecurity)
 - Added `--timeline-start` and `--timeline-end` to the `logon-summary` command. (#1152) (@hitenkoku)
 
@@ -649,8 +649,8 @@ Fixed multiple progress bars issue. (#1740) (@fukusuket)
 
 **New Features:**
 
-- Added support for input of JSON-formatted event logs (`-J, --JSON-input`). (#386) (@hitenkoku)
-- Log enrichment by outputting the ASN organization, city and country of source and destination IP addresses based on MaxMind GeoIP databases (`-G, --GeoIP`). (#879) (@hitenkoku)
+- Added support for input of JSON-formatted event logs (`-J, --json-input`). (#386) (@hitenkoku)
+- Log enrichment by outputting the ASN organization, city and country of source and destination IP addresses based on MaxMind GeoIP databases (`-G, --geo-ip`). (#879) (@hitenkoku)
 - Added the `-e, --exact-level` option to scan for only specific rule levels. (#899) (@hitenkoku)
 
 **Enhancements:**
@@ -665,7 +665,7 @@ Fixed multiple progress bars issue. (#1740) (@fukusuket)
 - Improved `-T, --visualize-timeline` by increasing the height of the markers to make it easier to read. (#902) (@hitenkoku)
 - Reduced memory usage by approximately 50% when reading JSON/L formatted logs. (#906) (@fukusuket)
 - Alphabetically sorted options based on their long names. (#904) (@hitenkoku)
-- Added JSON input support (`-J, --JSON-input` option) for `logon-summary`, `metrics` and `pivot-keywords-list` commands. (#908) (@hitenkoku)
+- Added JSON input support (`-J, --json-input` option) for `logon-summary`, `metrics` and `pivot-keywords-list` commands. (#908) (@hitenkoku)
 
 **Bug Fixes:**
 
@@ -734,7 +734,7 @@ Fixed multiple progress bars issue. (#1740) (@fukusuket)
 
 **New Features:**
 
-- Added the `--ISO-8601` output time format option. This good to use when importing to Elastic Stack. It is exactly the same as what is in the original log.  (#767) (@hitenkoku)
+- Added the `--iso-8601` output time format option. This good to use when importing to Elastic Stack. It is exactly the same as what is in the original log.  (#767) (@hitenkoku)
 
 **Enhancements:**
 
@@ -925,7 +925,7 @@ Fixed multiple progress bars issue. (#1740) (@fukusuket)
 
 - Debug symbols are stripped by default for smaller Linux and macOS binaries. (#568) (@YamatoSecurity)
 - Updated crate packages (@YamatoSecurity)
-- Added new output time format options. (`--US-time`, `--US-military-time`, `--European-time`) (#574) (@hitenkoku)
+- Added new output time format options. (`--us-time`, `--us-military-time`, `--european-time`) (#574) (@hitenkoku)
 - Changed the output time format when `--rfc-3339` option is enabled. (#574) (@hitenkoku)
 - Changed the `-R / --display-record-id` option to `-R / --hide-record-id` and now by default the event record ID is displayed. You can hide the record ID with `-R / --hide-record-id`. (#579) (@hitenkoku)
 - Added rule loading message. (#583) (@hitenkoku)

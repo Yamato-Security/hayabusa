@@ -194,7 +194,7 @@ MITRE ATT&CK v19に対応した。(@fukusuket)
 **バグ修正:**
 
 - レコードIDが出力されるとき、`dfir-timeline`によるソートが完璧に行われなかった。 (#1519) (@fukusuket)
-- `J, --JSON-input`は、`.json`ファイルしか対応していなかったので、`.jsonl`ファイルにも対応した。 (#1530) (@fukusuket)
+- `J, --json-input`は、`.json`ファイルしか対応していなかったので、`.jsonl`ファイルにも対応した。 (#1530) (@fukusuket)
 
 ## 2.19.0 [2024/11/26] - "Every Day Is A Good Day" Release
 
@@ -482,7 +482,7 @@ MITRE ATT&CK v19に対応した。(@fukusuket)
 - `pivot-keywords-list`コマンドに対して、出力ファイルを上書きするための`-C, --clobber`オプションを追加した。 (#1125) (@hitenkoku)
 - `metrics`コマンドを`eid-metrics`に変更した。 (#1128) (@hitenkoku)
 - 端末の調整に余裕を持たせるため、プログレスバーの幅を減らした。 (#1135) (@hitenkoku)
-- `search`コマンドで出力時間フォーマットのオプションをサポートした。(`--European-time`, `--ISO-8601`, `--RFC-2822`, `--RFC-3339`, `--US-time`, `--US-military-time`, `-U, --UTC`) (#1040) (@hitenkoku)
+- `search`コマンドで出力時間フォーマットのオプションをサポートした。(`--european-time`, `--iso-8601`, `--rfc-2822`, `--rfc-3339`, `--us-time`, `--us-military-time`, `-U, --utc`) (#1040) (@hitenkoku)
 - プログレスバーのETA時間が正確でなかったため、経過時間に置き換えた。 (#1143) (@YamatoSecurity)
 - `logon-summary`コマンドで`--timeline-start`と`--timeline-end`オプションを追加した。 (#1152) (@hitenkoku)
 
@@ -650,8 +650,8 @@ MITRE ATT&CK v19に対応した。(@fukusuket)
 
 **新機能:**
 
-- JSON形式のイベントログファイルの入力(`-J, --JSON-input`)に対応した。 (#386) (@hitenkoku)
-- MaxMindのGeoIPデータベースに基づき、送信元および送信先IPアドレスのASN組織、都市、国を出力することによるログエンリッチメント(`-G, --GeoIP`)を実現した。 (#879) (@hitenkoku)
+- JSON形式のイベントログファイルの入力(`-J, --json-input`)に対応した。 (#386) (@hitenkoku)
+- MaxMindのGeoIPデータベースに基づき、送信元および送信先IPアドレスのASN組織、都市、国を出力することによるログエンリッチメント(`-G, --geo-ip`)を実現した。 (#879) (@hitenkoku)
 - `-e, --exact-level`オプションで指定したレベルに対する結果のみを取得する機能を追加した。 (#899) (@hitenkoku)
 
 **改善:**
@@ -666,7 +666,7 @@ MITRE ATT&CK v19に対応した。(@fukusuket)
 - ライブラリの更新によって`-T, --visualize-timeline`の出力を複数行にするように変更した。 (#902) (@hitenkoku)
 - JSON/L形式のログを読み込む際のメモリ使用量を約50%削減した。 (#906) (@fukusuket)
 - Longオプションを基にしたオプションの並べ替えを行った。 (#904) (@hitenkoku)
-- `-J, --JSON-input`オプションを`logon-summary`, `metrics`, `pivot-keywords-list`コマンドに対応させた。 (#908) (@hitenkoku)
+- `-J, --json-input`オプションを`logon-summary`, `metrics`, `pivot-keywords-list`コマンドに対応させた。 (#908) (@hitenkoku)
 
 **バグ修正:**
 
@@ -734,7 +734,7 @@ MITRE ATT&CK v19に対応した。(@fukusuket)
 
 **新機能:**
 
-- 新たな時刻表示のオプションとして`--ISO-8601`を追加した。 (#574) (@hitenkoku)
+- 新たな時刻表示のオプションとして`--iso-8601`を追加した。 (#574) (@hitenkoku)
 
 **改善:**
 
@@ -921,7 +921,7 @@ MITRE ATT&CK v19に対応した。(@fukusuket)
 
 - LinuxとmacOSのバイナリサイズをより小さくするために、デバッグシンボルをストリップします。(#568) (@YamatoSecurity)
 - Crateパッケージの更新 (@YamatoSecurity)
-- 新たな時刻表示のオプションとして`--US-time`、`--US-military-time`、`--European-time`の3つを追加した (#574) (@hitenkoku)
+- 新たな時刻表示のオプションとして`--us-time`、`--us-military-time`、`--european-time`の3つを追加した (#574) (@hitenkoku)
 - `--rfc-3339` オプションの時刻表示形式を変更した。 (#574) (@hitenkoku)
 - `-R/ --display-record-id`オプションを`-R/ --hide-record-id`に変更。レコードIDはデフォルトで出力するようにして`-R`オプションを付けた際に表示しないように変更した。(#579) (@hitenkoku)
 - ルール読み込み時のメッセージを追加した。 (#583) (@hitenkoku)

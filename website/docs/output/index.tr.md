@@ -92,7 +92,7 @@ Aşağıdaki bilgiler yerleşik çıktı profilleriyle çıktılanabilir:
 |%RuleModifiedDate% | YML algılama kuralındaki `modified` alanı. |
 |%RuleTitle% | YML algılama kuralındaki `title` alanı. |
 |%Status% | YML algılama kuralındaki `status` alanı. |
-|%Timestamp% | Varsayılan `YYYY-MM-DD HH:mm:ss.sss +hh:mm` biçimidir. Olay günlüğündeki `<Event><System><TimeCreated SystemTime>` alanı. Varsayılan saat dilimi yerel saat dilimi olacaktır ancak `--UTC` seçeneğiyle saat dilimini UTC olarak değiştirebilirsiniz. |
+|%Timestamp% | Varsayılan `YYYY-MM-DD HH:mm:ss.sss +hh:mm` biçimidir. Olay günlüğündeki `<Event><System><TimeCreated SystemTime>` alanı. Varsayılan saat dilimi yerel saat dilimi olacaktır ancak `--utc` seçeneğiyle saat dilimini UTC olarak değiştirebilirsiniz. |
 
 #### Ek Profil Alan Takma Adı
 

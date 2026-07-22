@@ -73,10 +73,10 @@ cd timesketch
 لسوء الحظ، لا تستطيع Timesketch حاليًا استيراد تنسيق `JSONL` الخاص بـ Hayabusa، لذا أنشئ وارفع جدولًا زمنيًا بتنسيق CSV باستخدام الأمر التالي:
 
 ```shell
-hayabusa-x.x.x-win-x64.exe dfir-timeline -d <DIR> -o timesketch-import.csv -p timesketch-verbose --ISO-8601
+hayabusa-x.x.x-win-x64.exe dfir-timeline -d <DIR> -o timesketch-import.csv -p timesketch-verbose --iso-8601
 ```
 
-> ملاحظة: من الضروري اختيار ملف تعريف `timesketch*` وتحديد الطابع الزمني كـ `--ISO-8601` لـ UTC أو `--RFC-3339` للوقت المحلي. يمكنك إضافة خيارات Hayabusa أخرى إذا رغبت، ولكن لا تضف خيار `-M, --multiline` لأن أحرف السطر الجديد ستفسد عملية الاستيراد.
+> ملاحظة: من الضروري اختيار ملف تعريف `timesketch*` وتحديد الطابع الزمني كـ `--iso-8601` لـ UTC أو `--rfc-3339` للوقت المحلي. يمكنك إضافة خيارات Hayabusa أخرى إذا رغبت، ولكن لا تضف خيار `-M, --multiline` لأن أحرف السطر الجديد ستفسد عملية الاستيراد.
 
 في مربع حوار "Select file to upload"، سمِّ جدولك الزمني باسم مثل `hayabusa`، واختر فاصل CSV `Comma (,)` وانقر على `SUBMIT`.
 

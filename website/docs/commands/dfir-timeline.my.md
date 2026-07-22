@@ -99,7 +99,7 @@ Input:
 General Options:
   -C, --clobber                        Overwrite files when saving
   -h, --help                           Show the help menu
-  -J, --JSON-input                     Scan JSON formatted logs instead of .evtx (.json or .jsonl)
+  -J, --json-input                     Scan JSON formatted logs instead of .evtx (.json or .jsonl)
   -w, --no-wizard                      Do not ask questions. Scan for all events and alerts
   -Q, --quiet-errors                   Quiet errors mode: do not save error logs
   -x, --recover-records                Carve evtx records from slack space (default: disabled)
@@ -111,7 +111,7 @@ General Options:
   -V, --validate-checksums             Enable checksum validation
 
 Filtering:
-  -E, --EID-filter                      Scan only common EIDs for faster speed (./rules/config/target_event_IDs.txt)
+  -E, --eid-filter                      Scan only common EIDs for faster speed (./rules/config/target_event_IDs.txt)
   -A, --enable-all-rules                Enable all rules regardless of loaded evtx files (disable channel filter for rules)
   -D, --enable-deprecated-rules         Enable rules with a status of deprecated
   -n, --enable-noisy-rules              Enable rules set to noisy (./rules/config/noisy_rules.txt)
@@ -136,34 +136,34 @@ Filtering:
 
 Output:
   -b, --disable-abbreviations        Disable abbreviations
-  -G, --GeoIP <MAXMIND-DB-DIR>       Add GeoIP (ASN, city, country) info to IP addresses
-  -H, --HTML-report <FILE>           Save Results Summary details to an HTML report (ex: results.html)
+  -G, --geo-ip <MAXMIND-DB-DIR>       Add GeoIP (ASN, city, country) info to IP addresses
+  -H, --html-report <FILE>           Save Results Summary details to an HTML report (ex: results.html)
   -F, --no-field-data-mapping        Disable field data mapping
       --no-pwsh-field-extraction     Disable field extraction of PowerShell classic logs
   -o, --output <FILE>                Save the timeline to a file (ex: results.csv)
   -t, --output-type <OUTPUT_FORMAT>  Output format: csv (default), json, or jsonl (case-insensitive, e.g. -t JSONL) [default: csv] [possible values: csv, json, jsonl]
   -p, --profile <PROFILE>            Specify output profile
-  -X, --remove-duplicate-detections  Remove duplicate detections (default: disabled)
+  -X, --remove-duplicate-detections  Remove duplicate detections (sort required)
 
 Display Settings:
   -K, --no-color            Disable color output
   -N, --no-summary          Do not display Results Summary for faster speed
   -q, --quiet               Quiet mode: do not display the launch banner
   -v, --verbose             Output verbose information
-  -T, --visualize-timeline  Output event frequency timeline (terminal needs to support unicode)
+  -T, --visualize-timeline  Output event frequency timeline (terminal needs to support unicode, sort required)
 
 Time Format:
-      --European-time     Output timestamp in European time format (ex: 22-02-2022 22:00:00.123 +02:00)
-  -O, --ISO-8601          Output timestamp in original ISO-8601 format (ex: 2022-02-22T10:10:10.1234567Z) (Always UTC)
-      --RFC-2822          Output timestamp in RFC 2822 format (ex: Fri, 22 Feb 2022 22:00:00 -0600)
-      --RFC-3339          Output timestamp in RFC 3339 format (ex: 2022-02-22 22:00:00.123456-06:00)
-      --US-military-time  Output timestamp in US military time format (ex: 02-22-2022 22:00:00.123 -06:00)
-      --US-time           Output timestamp in US time format (ex: 02-22-2022 10:00:00.123 PM -06:00)
-  -U, --UTC               Output time in UTC format (default: local time)
+      --european-time     Output timestamp in European time format (ex: 22-02-2022 22:00:00.123 +02:00)
+  -O, --iso-8601          Output timestamp in original ISO-8601 format (ex: 2022-02-22T10:10:10.1234567Z) (Always UTC)
+      --rfc-2822          Output timestamp in RFC 2822 format (ex: Fri, 22 Feb 2022 22:00:00 -0600)
+      --rfc-3339          Output timestamp in RFC 3339 format (ex: 2022-02-22 22:00:00.123456-06:00)
+      --us-military-time  Output timestamp in US military time format (ex: 02-22-2022 22:00:00.123 -06:00)
+      --us-time           Output timestamp in US time format (ex: 02-22-2022 10:00:00.123 PM -06:00)
+  -U, --utc               Output time in UTC format (default: local time)
 
 CSV Output:
   -M, --multiline              Separate event field information by newline characters (CSV output only)
-  -R, --remove-duplicate-data  Duplicate field data will be replaced with "DUP" (CSV output only)
+  -R, --remove-duplicate-data  Duplicate field data will be replaced with "DUP" (CSV output only, sort required)
   -S, --tab-separator          Separate event field information by tabs (CSV output only)
 ```
 
@@ -287,7 +287,7 @@ Error: An error occurred while trying to serialize binary xml to output.
 * [Timesketch](https://timesketch.org/) သို့ import လုပ်ရန် သင့်တော်သော CSV format ဖြင့် output ထုတ်ပါ -
 
 ```
-hayabusa.exe dfir-timeline -d ../hayabusa-sample-evtx --RFC-3339 -o timesketch-import.csv -p timesketch -U
+hayabusa.exe dfir-timeline -d ../hayabusa-sample-evtx --rfc-3339 -o timesketch-import.csv -p timesketch -U
 ```
 
 * Quiet error mode -
@@ -368,7 +368,7 @@ firewall များနှင့် IDS များကဲ့သို့ မ�
 ဤ rule များသည် များသောအားဖြင့် သဘာဝအားဖြင့်ဖြစ်စေ false positive များကြောင့်ဖြစ်စေ noisy ဖြစ်ပါသည်။
 
 `./rules/config/target_event_IDs.txt`: EID filter ကို enable လုပ်ထားပါက ဤဖိုင်တွင် သတ်မှတ်ထားသော event ID များကိုသာ scan လုပ်ပါမည်။
-default အနေဖြင့် Hayabusa သည် event အားလုံးကို scan လုပ်ပါမည်၊ သို့သော် စွမ်းဆောင်ရည်ကို တိုးတက်စေလိုပါက `-E, --EID-filter` option ကို အသုံးပြုပါ။
+default အနေဖြင့် Hayabusa သည် event အားလုံးကို scan လုပ်ပါမည်၊ သို့သော် စွမ်းဆောင်ရည်ကို တိုးတက်စေလိုပါက `-E, --eid-filter` option ကို အသုံးပြုပါ။
 ဤသည်က များသောအားဖြင့် 10~25% မြန်နှုန်းတိုးတက်မှု ဖြစ်စေပါသည်။
 
 ## `level-tuning` command

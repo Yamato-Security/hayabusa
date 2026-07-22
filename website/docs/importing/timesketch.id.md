@@ -73,10 +73,10 @@ Setelah Anda mengklik `+ ADD TIMELINE`, Anda akan melihat kotak dialog yang memi
 Sayangnya, Timesketch saat ini tidak dapat mengimpor format `JSONL` Hayabusa, jadi buat dan unggah lini masa CSV dengan perintah berikut:
 
 ```shell
-hayabusa-x.x.x-win-x64.exe dfir-timeline -d <DIR> -o timesketch-import.csv -p timesketch-verbose --ISO-8601
+hayabusa-x.x.x-win-x64.exe dfir-timeline -d <DIR> -o timesketch-import.csv -p timesketch-verbose --iso-8601
 ```
 
-> Catatan: Anda perlu memilih profil `timesketch*` dan menentukan timestamp sebagai `--ISO-8601` untuk UTC atau `--RFC-3339` untuk waktu lokal. Anda dapat menambahkan opsi Hayabusa lainnya jika Anda mau, namun, jangan tambahkan opsi `-M, --multiline` karena karakter baris baru akan merusak proses impor.
+> Catatan: Anda perlu memilih profil `timesketch*` dan menentukan timestamp sebagai `--iso-8601` untuk UTC atau `--rfc-3339` untuk waktu lokal. Anda dapat menambahkan opsi Hayabusa lainnya jika Anda mau, namun, jangan tambahkan opsi `-M, --multiline` karena karakter baris baru akan merusak proses impor.
 
 Pada kotak dialog "Select file to upload", beri nama lini masa Anda dengan sesuatu seperti `hayabusa`, pilih pembatas CSV `Comma (,)` dan klik `SUBMIT`.
 
