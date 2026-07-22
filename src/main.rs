@@ -692,7 +692,7 @@ impl App {
                 if stored_static.json_input_flag
                     && (stored_static.scan_all_evtx_files || stored_static.enable_all_rules)
                 {
-                    AlertMessage::alert("It is not necessary to specify -A (--enable-all-rules) or -a (--scan-all-evtx-files) with -J (--JSON-input) because the default channel filter only works with EVTX files.").ok();
+                    AlertMessage::alert("It is not necessary to specify -A (--enable-all-rules) or -a (--scan-all-evtx-files) with -J (--json-input) because the default channel filter only works with EVTX files.").ok();
                     println!();
                     return;
                 }
@@ -1560,7 +1560,7 @@ Any hostnames added to the critical_systems.txt file will have all alerts above 
                     .starts_with('.')
                 {
                     AlertMessage::alert(
-                        "-f (--filepath) only accepts .evtx files. Hidden files are ignored. If you want to input event logs in JSON format, please specify -J (--JSON-input).",
+                        "-f (--filepath) only accepts .evtx files. Hidden files are ignored. If you want to input event logs in JSON format, please specify -J (--json-input).",
                     )
                     .ok();
                     return;

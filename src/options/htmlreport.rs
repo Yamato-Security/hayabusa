@@ -92,7 +92,7 @@ impl Default for HtmlReporter {
 }
 
 /// Returns true when the csv-timeline or json-timeline action was invoked with the
-/// -H/--HTML-report option.
+/// -H/--html-report option.
 pub fn check_html_flag(config: &Config) -> bool {
     if config.action.as_ref().is_none() {
         return false;

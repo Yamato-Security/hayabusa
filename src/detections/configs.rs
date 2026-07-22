@@ -1035,7 +1035,7 @@ pub struct DisableAbbreviationsOption {
 #[derive(Args, Clone, Debug, Default)]
 pub struct DetectCommonOption {
     /// Scan JSON formatted logs instead of .evtx (.json or .jsonl)
-    #[arg(help_heading = Some("General Options"), short = 'J', long = "JSON-input", conflicts_with = "live_analysis", display_order = 360)]
+    #[arg(help_heading = Some("General Options"), short = 'J', long = "json-input", conflicts_with = "live_analysis", display_order = 360)]
     pub json_input: bool,
 
     /// Enable checksum validation
@@ -1096,31 +1096,31 @@ pub struct DefaultProfileOption {
 #[derive(Args, Clone, Debug, Default)]
 pub struct TimeFormatOptions {
     /// Output timestamp in European time format (ex: 22-02-2022 22:00:00.123 +02:00)
-    #[arg(help_heading = Some("Time Format"), long = "European-time", display_order = 50)]
+    #[arg(help_heading = Some("Time Format"), long = "european-time", display_order = 50)]
     pub european_time: bool,
 
     /// Output timestamp in original ISO-8601 format (ex: 2022-02-22T10:10:10.1234567Z) (Always UTC)
-    #[arg(help_heading = Some("Time Format"), short = 'O', long = "ISO-8601", display_order = 90)]
+    #[arg(help_heading = Some("Time Format"), short = 'O', long = "iso-8601", display_order = 90)]
     pub iso_8601: bool,
 
     /// Output timestamp in RFC 2822 format (ex: Fri, 22 Feb 2022 22:00:00 -0600)
-    #[arg(help_heading = Some("Time Format"), long = "RFC-2822", display_order = 180)]
+    #[arg(help_heading = Some("Time Format"), long = "rfc-2822", display_order = 180)]
     pub rfc_2822: bool,
 
     /// Output timestamp in RFC 3339 format (ex: 2022-02-22 22:00:00.123456-06:00)
-    #[arg(help_heading = Some("Time Format"), long = "RFC-3339", display_order = 180)]
+    #[arg(help_heading = Some("Time Format"), long = "rfc-3339", display_order = 180)]
     pub rfc_3339: bool,
 
     /// Output timestamp in US military time format (ex: 02-22-2022 22:00:00.123 -06:00)
-    #[arg(help_heading = Some("Time Format"), long = "US-military-time", display_order = 210)]
+    #[arg(help_heading = Some("Time Format"), long = "us-military-time", display_order = 210)]
     pub us_military_time: bool,
 
     /// Output timestamp in US time format (ex: 02-22-2022 10:00:00.123 PM -06:00)
-    #[arg(help_heading = Some("Time Format"), long = "US-time", display_order = 210)]
+    #[arg(help_heading = Some("Time Format"), long = "us-time", display_order = 210)]
     pub us_time: bool,
 
     /// Output time in UTC format (default: local time)
-    #[arg(help_heading = Some("Time Format"), short = 'U', long = "UTC", display_order = 210)]
+    #[arg(help_heading = Some("Time Format"), short = 'U', long = "utc", display_order = 210)]
     pub utc: bool,
 }
 
@@ -1244,11 +1244,11 @@ pub struct SearchOption {
     pub clobber_opt: ClobberOption,
 
     /// Save the search results in JSON format (ex: -J -o results.json)
-    #[arg(help_heading = Some("Output"), short = 'J', long = "JSON-output", conflicts_with_all = ["jsonl_output", "multiline"], requires = "output", display_order = 100)]
+    #[arg(help_heading = Some("Output"), short = 'J', long = "json-output", conflicts_with_all = ["jsonl_output", "multiline"], requires = "output", display_order = 100)]
     pub json_output: bool,
 
     /// Save the search results in JSONL format (ex: -L -o results.jsonl)
-    #[arg(help_heading = Some("Output"), short = 'L', long = "JSONL-output", conflicts_with_all = ["jsonl_output", "multiline"], requires = "output", display_order = 100)]
+    #[arg(help_heading = Some("Output"), short = 'L', long = "jsonl-output", conflicts_with_all = ["jsonl_output", "multiline"], requires = "output", display_order = 100)]
     pub jsonl_output: bool,
 
     #[clap(flatten)]
@@ -1401,7 +1401,7 @@ pub struct PivotKeywordOption {
     pub time_range: TimeRangeOption,
 
     /// Scan only common EIDs for faster speed (./rules/config/target_event_IDs.txt)
-    #[arg(help_heading = Some("Filtering"), short = 'E', long = "EID-filter", display_order = 50)]
+    #[arg(help_heading = Some("Filtering"), short = 'E', long = "eid-filter", display_order = 50)]
     pub eid_filter: bool,
 
     /// Scan only specified EIDs for faster speed (ex: 1) (ex: 1,4688)
@@ -1459,7 +1459,7 @@ pub struct OutputOption {
     #[clap(flatten)]
     pub input_args: InputOption,
 
-    /// Duplicate field data will be replaced with "DUP" (CSV output only)
+    /// Duplicate field data will be replaced with "DUP" (CSV output only. sort required.)
     #[arg(
             help_heading = Some("CSV Output"),
             short = 'R',
@@ -1537,7 +1537,7 @@ pub struct OutputOption {
     pub time_range: TimeRangeOption,
 
     /// Scan only common EIDs for faster speed (./rules/config/target_event_IDs.txt)
-    #[arg(help_heading = Some("Filtering"), short = 'E', long = "EID-filter", conflicts_with_all=["include_eid","exclude_eid"], display_order = 50)]
+    #[arg(help_heading = Some("Filtering"), short = 'E', long = "eid-filter", conflicts_with_all=["include_eid","exclude_eid"], display_order = 50)]
     pub eid_filter: bool,
 
     /// Scan with only proven rules for faster speed (./rules/config/proven_rules.txt)
@@ -1562,7 +1562,7 @@ pub struct OutputOption {
     #[clap(flatten)]
     pub time_format_options: TimeFormatOptions,
 
-    /// Output event frequency timeline (terminal needs to support unicode)
+    /// Output event frequency timeline (terminal needs to support unicode. sort required.)
     #[arg(help_heading = Some("Display Settings"), short = 'T', long = "visualize-timeline", display_order = 490, requires = "sort_events")]
     pub visualize_timeline: bool,
 
@@ -1580,7 +1580,7 @@ pub struct OutputOption {
     pub rules: PathBuf,
 
     /// Save Results Summary details to an HTML report (ex: results.html)
-    #[arg(help_heading = Some("Output"), short = 'H', long="HTML-report", conflicts_with = "no_summary", value_name = "FILE", display_order = 80, requires = "output")]
+    #[arg(help_heading = Some("Output"), short = 'H', long="html-report", conflicts_with = "no_summary", value_name = "FILE", display_order = 80, requires = "output")]
     pub html_report: Option<PathBuf>,
 
     /// Do not display Results Summary for faster speed
@@ -1598,7 +1598,7 @@ pub struct OutputOption {
     #[arg(help_heading = Some("Output"), long = "no-pwsh-field-extraction", display_order = 410)]
     pub no_pwsh_field_extraction: bool,
 
-    /// Remove duplicate detections (default: disabled)
+    /// Remove duplicate detections (sort required)
     #[arg(help_heading = Some("Output"), short = 'X', long = "remove-duplicate-detections", requires = "sort_events", display_order = 441)]
     pub remove_duplicate_detections: bool,
 
@@ -1710,7 +1710,7 @@ pub struct DfirTimelineOption {
     #[arg(
         help_heading = Some("Output"),
         short = 'G',
-        long = "GeoIP",
+        long = "geo-ip",
         value_name = "MAXMIND-DB-DIR",
         display_order = 70
     )]
@@ -1737,7 +1737,7 @@ pub struct ComputerMetricsOption {
     pub common_options: CommonOptions,
 
     /// Scan JSON formatted logs instead of .evtx (.json or .jsonl)
-    #[arg(help_heading = Some("General Options"), short = 'J', long = "JSON-input", conflicts_with = "live_analysis", display_order = 390)]
+    #[arg(help_heading = Some("General Options"), short = 'J', long = "json-input", conflicts_with = "live_analysis", display_order = 390)]
     pub json_input: bool,
 
     /// Specify additional evtx file extensions (ex: evtx_data)
@@ -2339,7 +2339,7 @@ pub fn load_pivot_keywords(path: &str, pivot_keyword: &RwLock<PivotKeywordMap>) 
 }
 
 /// Returns the set of file extensions to scan: the extra extensions added with
-/// --target-file-ext plus the default extension (evtx, or json/jsonl when --JSON-input is set).
+/// --target-file-ext plus the default extension (evtx, or json/jsonl when --json-input is set).
 pub fn get_target_extensions(arg: Option<&Vec<String>>, json_input_flag: bool) -> HashSet<String> {
     let mut target_file_extensions: HashSet<String> = convert_option_vecs_to_hs(arg);
     if json_input_flag {
