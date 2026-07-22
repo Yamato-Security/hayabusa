@@ -795,11 +795,29 @@ fn check_thread_number(config: &Config) -> Option<usize> {
 }
 
 // Clap definitions for command generation.
+
+/// Release name shown in the CLI help banner (e.g. "Independence Day Release").
+/// This is the only value to update when naming a new release; the version
+/// number is pulled automatically from Cargo.toml (`CARGO_PKG_VERSION`).
+pub const RELEASE_NAME: &str = "Independence Day Release";
+
+/// Builds a clap `help_template` banner. The first line is
+/// `Hayabusa v<version> - <RELEASE_NAME>` (version from Cargo.toml) and `body`
+/// is appended verbatim, so it must start with a newline.
+fn help_banner(body: &str) -> String {
+    format!(
+        "\nHayabusa v{} - {}{}",
+        env!("CARGO_PKG_VERSION"),
+        RELEASE_NAME,
+        body
+    )
+}
+
 #[derive(Subcommand, Clone, Debug)]
 pub enum Action {
     #[clap(
         author = "Yamato Security (https://github.com/Yamato-Security/hayabusa - @SecurityYamato)",
-        help_template = "\nHayabusa v3.10.0 - Independence Day Release\n{author-with-newline}\n{usage-heading}\n  hayabusa.exe dfir-timeline <INPUT> [OPTIONS]\n\n{all-args}",
+        help_template = help_banner("\n{author-with-newline}\n{usage-heading}\n  hayabusa.exe dfir-timeline <INPUT> [OPTIONS]\n\n{all-args}"),
         term_width = 400,
         display_order = 292,
         disable_help_flag = true
@@ -809,7 +827,7 @@ pub enum Action {
 
     #[clap(
         author = "Yamato Security (https://github.com/Yamato-Security/hayabusa - @SecurityYamato)",
-        help_template = "\nHayabusa v3.10.0 - Independence Day Release\n{author-with-newline}\n{usage-heading}\n  hayabusa.exe log-metrics <INPUT> [OPTIONS]\n\n{all-args}",
+        help_template = help_banner("\n{author-with-newline}\n{usage-heading}\n  hayabusa.exe log-metrics <INPUT> [OPTIONS]\n\n{all-args}"),
         term_width = 400,
         display_order = 382,
         disable_help_flag = true
@@ -819,7 +837,7 @@ pub enum Action {
 
     #[clap(
         author = "Yamato Security (https://github.com/Yamato-Security/hayabusa - @SecurityYamato)",
-        help_template = "\nHayabusa v3.10.0 - Independence Day Release\n{author-with-newline}\n{usage-heading}\n  hayabusa.exe logon-summary <INPUT> [OPTIONS]\n\n{all-args}",
+        help_template = help_banner("\n{author-with-newline}\n{usage-heading}\n  hayabusa.exe logon-summary <INPUT> [OPTIONS]\n\n{all-args}"),
         term_width = 400,
         display_order = 383,
         disable_help_flag = true
@@ -829,7 +847,7 @@ pub enum Action {
 
     #[clap(
         author = "Yamato Security (https://github.com/Yamato-Security/hayabusa - @SecurityYamato)",
-        help_template = "\nHayabusa v3.10.0 - Independence Day Release\n{author-with-newline}\n{usage-heading}\n  hayabusa.exe eid-metrics <INPUT> [OPTIONS]\n\n{all-args}",
+        help_template = help_banner("\n{author-with-newline}\n{usage-heading}\n  hayabusa.exe eid-metrics <INPUT> [OPTIONS]\n\n{all-args}"),
         term_width = 400,
         display_order = 310,
         disable_help_flag = true
@@ -839,7 +857,7 @@ pub enum Action {
 
     #[clap(
         author = "Yamato Security (https://github.com/Yamato-Security/hayabusa - @SecurityYamato)",
-        help_template = "\nHayabusa v3.10.0 - Independence Day Release\n{author-with-newline}\n{usage-heading}\n  hayabusa.exe expand-list <INPUT> [OPTIONS]\n\n{all-args}",
+        help_template = help_banner("\n{author-with-newline}\n{usage-heading}\n  hayabusa.exe expand-list <INPUT> [OPTIONS]\n\n{all-args}"),
         term_width = 400,
         display_order = 311,
         disable_help_flag = true
@@ -849,7 +867,7 @@ pub enum Action {
 
     #[clap(
         author = "Yamato Security (https://github.com/Yamato-Security/hayabusa - @SecurityYamato)",
-        help_template = "\nHayabusa v3.10.0 - Independence Day Release\n{author-with-newline}\n{usage-heading}\n  hayabusa.exe extract-base64 <INPUT> [OPTIONS]\n\n{all-args}",
+        help_template = help_banner("\n{author-with-newline}\n{usage-heading}\n  hayabusa.exe extract-base64 <INPUT> [OPTIONS]\n\n{all-args}"),
         term_width = 400,
         display_order = 311,
         disable_help_flag = true
@@ -859,7 +877,7 @@ pub enum Action {
 
     #[clap(
         author = "Yamato Security (https://github.com/Yamato-Security/hayabusa - @SecurityYamato)",
-        help_template = "\nHayabusa v3.10.0 - Independence Day Release\n{author-with-newline}\n{usage-heading}\n  hayabusa.exe pivot-keywords-list <INPUT> [OPTIONS]\n\n{all-args}",
+        help_template = help_banner("\n{author-with-newline}\n{usage-heading}\n  hayabusa.exe pivot-keywords-list <INPUT> [OPTIONS]\n\n{all-args}"),
         term_width = 400,
         display_order = 420,
         disable_help_flag = true
@@ -869,7 +887,7 @@ pub enum Action {
 
     #[clap(
         author = "Yamato Security (https://github.com/Yamato-Security/hayabusa - @SecurityYamato)",
-        help_template = "\nHayabusa v3.10.0 - Independence Day Release\n{author-with-newline}\n{usage-heading}\n  hayabusa.exe search <INPUT> <--keywords \"<KEYWORDS>\" OR --regex \"<REGEX>\"> [OPTIONS]\n\n{all-args}",
+        help_template = help_banner("\n{author-with-newline}\n{usage-heading}\n  hayabusa.exe search <INPUT> <--keywords \"<KEYWORDS>\" OR --regex \"<REGEX>\"> [OPTIONS]\n\n{all-args}"),
         term_width = 400,
         display_order = 450,
         disable_help_flag = true
@@ -879,7 +897,7 @@ pub enum Action {
 
     #[clap(
         author = "Yamato Security (https://github.com/Yamato-Security/hayabusa - @SecurityYamato)",
-        help_template = "\nHayabusa v3.10.0 - Independence Day Release\n{author-with-newline}\n{usage-heading}\n  {usage}\n\n{all-args}",
+        help_template = help_banner("\n{author-with-newline}\n{usage-heading}\n  {usage}\n\n{all-args}"),
         term_width = 400,
         display_order = 470,
         disable_help_flag = true
@@ -889,7 +907,7 @@ pub enum Action {
 
     #[clap(
         author = "Yamato Security (https://github.com/Yamato-Security/hayabusa - @SecurityYamato)",
-        help_template = "\nHayabusa v3.10.0 - Independence Day Release\n{author-with-newline}\n{usage-heading}\n  {usage}\n\n{all-args}",
+        help_template = help_banner("\n{author-with-newline}\n{usage-heading}\n  {usage}\n\n{all-args}"),
         term_width = 400,
         display_order = 380,
         disable_help_flag = true
@@ -899,7 +917,7 @@ pub enum Action {
 
     #[clap(
         author = "Yamato Security (https://github.com/Yamato-Security/hayabusa - @SecurityYamato)",
-        help_template = "\nHayabusa v3.10.0 - Independence Day Release\n{author-with-newline}\n{usage-heading}\n  {usage}\n\n{all-args}",
+        help_template = help_banner("\n{author-with-newline}\n{usage-heading}\n  {usage}\n\n{all-args}"),
         term_width = 400,
         display_order = 451,
         disable_help_flag = true
@@ -917,7 +935,7 @@ pub enum Action {
 
     #[clap(
         author = "Yamato Security (https://github.com/Yamato-Security/hayabusa - @SecurityYamato)",
-        help_template = "\nHayabusa v3.10.0 - Independence Day Release\n{author-with-newline}\n{usage-heading}\n  hayabusa.exe computer-metrics <INPUT> [OPTIONS]\n\n{all-args}",
+        help_template = help_banner("\n{author-with-newline}\n{usage-heading}\n  hayabusa.exe computer-metrics <INPUT> [OPTIONS]\n\n{all-args}"),
         term_width = 400,
         display_order = 290,
         disable_help_flag = true
@@ -927,7 +945,7 @@ pub enum Action {
 
     #[clap(
         author = "Yamato Security (https://github.com/Yamato-Security/hayabusa - @SecurityYamato)",
-        help_template = "\nHayabusa v3.10.0 - Independence Day Release\n{author-with-newline}\n{usage-heading}\n  hayabusa.exe config-critical-systems <INPUT> [OPTIONS]\n\n{all-args}",
+        help_template = help_banner("\n{author-with-newline}\n{usage-heading}\n  hayabusa.exe config-critical-systems <INPUT> [OPTIONS]\n\n{all-args}"),
         term_width = 400,
         display_order = 291,
         disable_help_flag = true
@@ -1862,7 +1880,7 @@ pub struct ConfigCriticalSystemsOption {
 #[derive(Parser, Clone, Debug, Default)]
 #[clap(
     author = "Yamato Security (https://github.com/Yamato-Security/hayabusa - @SecurityYamato)",
-    help_template = "\nHayabusa v3.10.0 - Independence Day Release\n{author-with-newline}\n{usage-heading}\n  hayabusa.exe <COMMAND> [OPTIONS]\n  hayabusa.exe help <COMMAND> or hayabusa.exe <COMMAND> -h\n\n{all-args}{options}",
+    help_template = help_banner("\n{author-with-newline}\n{usage-heading}\n  hayabusa.exe <COMMAND> [OPTIONS]\n  hayabusa.exe help <COMMAND> or hayabusa.exe <COMMAND> -h\n\n{all-args}{options}"),
     term_width = 400,
     disable_help_flag = true
 )]
