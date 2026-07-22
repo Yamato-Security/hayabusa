@@ -16,7 +16,7 @@ cidr-utils = "0.7.*"
 clap = { version = "4.*", features = ["derive", "cargo", "color"]}
 colored = "3"
 comfy-table = "7.*"
-compact_str = "0.9.*"
+compact_str = "0.10.*"
 console = "0.16.*"
 csv = "1.4.*"
 dashmap = "*"
