@@ -804,7 +804,7 @@ pub enum Action {
         display_order = 292,
         disable_help_flag = true
     )]
-    /// Create a DFIR timeline (CSV by default; JSON or JSONL via -t, --output-type)
+    /// Create a DFIR timeline
     DfirTimeline(DfirTimelineOption),
 
     #[clap(
