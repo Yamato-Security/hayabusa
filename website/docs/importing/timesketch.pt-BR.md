@@ -73,14 +73,14 @@ Depois de clicar em `+ ADD TIMELINE`, você verá uma caixa de diálogo pedindo 
 Infelizmente, o Timesketch atualmente não consegue importar o formato `JSONL` do Hayabusa, então crie e envie uma linha do tempo em CSV com o seguinte comando:
 
 ```shell
-hayabusa-x.x.x-win-x64.exe csv-timeline -d <DIR> -o timesketch-import.csv -p timesketch-verbose --ISO-8601
+hayabusa-x.x.x-win-x64.exe dfir-timeline -d <DIR> -o timesketch-import.csv -p timesketch-verbose --ISO-8601
 ```
 
 > Nota: É necessário escolher um perfil `timesketch*` e especificar o timestamp como `--ISO-8601` para UTC ou `--RFC-3339` para horário local. Você pode adicionar outras opções do Hayabusa se desejar, porém, não adicione a opção `-M, --multiline`, pois os caracteres de quebra de linha corromperão a importação.
 
 Na caixa de diálogo "Select file to upload", nomeie sua linha do tempo como algo do tipo `hayabusa`, escolha o delimitador CSV `Comma (,)` e clique em `SUBMIT`.
 
-> Se o seu arquivo CSV for grande demais para enviar, você pode dividir o arquivo em vários arquivos CSV com o comando [split-csv-timeline](https://github.com/Yamato-Security/takajo?tab=readme-ov-file#split-csv-timeline-command) do Takajo.
+> Se o seu arquivo CSV for grande demais para enviar, você pode dividir o arquivo em vários arquivos CSV com o comando [split-dfir-timeline](https://github.com/Yamato-Security/takajo?tab=readme-ov-file#split-dfir-timeline-command) do Takajo.
 
 Enquanto o arquivo estiver sendo importado, você verá um círculo girando, então aguarde até que termine e você veja `hayabusa` aparecer.
 

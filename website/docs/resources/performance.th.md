@@ -562,7 +562,7 @@ memory allocator บางตัวเก็บสถิติการใช้
      ```
 
 4. สร้าง release build: `cargo build --release`
-5. รัน `heaptrack hayabusa csv-timeline -d sample -o out.csv`
+5. รัน `heaptrack hayabusa dfir-timeline -d sample -o out.csv`
 
 ตอนนี้เมื่อ Hayabusa รันเสร็จ ผลลัพธ์ของ heaptrack จะเปิดในแอปพลิเคชัน GUI โดยอัตโนมัติ
 

@@ -120,7 +120,7 @@ Das JSON-Format ist ideal, wenn Sie auch einige manuelle Überprüfungen vornehm
 
 # Erstellen von JSON-Ergebnisdateien
 
-In der aktuellen 2.x-Version von Hayabusa können Sie die Ergebnisse in JSON mit `hayabusa json-timeline -d <directory> -o results.json` oder `hayabusa json-timeline -d <directory> -J -o results.jsonl` für das JSONL-Format speichern.
+In der aktuellen 2.x-Version von Hayabusa können Sie die Ergebnisse in JSON mit `hayabusa dfir-timeline -t json -d <directory> -o results.json` oder `hayabusa dfir-timeline -t json -d <directory> -J -o results.jsonl` für das JSONL-Format speichern.
 
 Hayabusa verwendet das standardmäßige `standard`-Profil und speichert nur die minimale Datenmenge zur Analyse im `Details`-Objekt.
 Wenn Sie alle ursprünglichen Feldinformationen in den .evtx-Logs speichern möchten, können Sie das `all-field-info`-Profil mit der Option `--profile all-field-info` verwenden.

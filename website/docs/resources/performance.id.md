@@ -562,7 +562,7 @@ Prasyarat: Berikut adalah prosedur untuk Ubuntu 22.04. Anda tidak dapat mengguna
      ```
 
 4. Build sebuah release build: `cargo build --release`
-5. Jalankan `heaptrack hayabusa csv-timeline -d sample -o out.csv`
+5. Jalankan `heaptrack hayabusa dfir-timeline -d sample -o out.csv`
 
 Sekarang ketika Hayabusa selesai berjalan, hasil heaptrack akan otomatis terbuka di aplikasi GUI.
 

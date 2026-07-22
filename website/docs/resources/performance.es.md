@@ -562,7 +562,7 @@ Requisitos previos: A continuación se muestra el procedimiento para Ubuntu 22.0
      ```
 
 4. Compila una compilación de release: `cargo build --release`
-5. Ejecuta `heaptrack hayabusa csv-timeline -d sample -o out.csv`
+5. Ejecuta `heaptrack hayabusa dfir-timeline -d sample -o out.csv`
 
 Ahora, cuando Hayabusa termine de ejecutarse, los resultados de heaptrack se abrirán automáticamente en una aplicación GUI.
 

@@ -14,8 +14,8 @@
 * `config-critical-systems`: डोमेन कंट्रोलर्स और फ़ाइल सर्वर जैसे महत्वपूर्ण सिस्टम खोजें।
 
 ## DFIR टाइमलाइन कमांड:
-* `csv-timeline`: टाइमलाइन को CSV प्रारूप में सहेजें।
-* `json-timeline`: टाइमलाइन को JSON/JSONL प्रारूप में सहेजें।
+* `dfir-timeline`: टाइमलाइन को CSV प्रारूप में सहेजें।
+* `dfir-timeline`: टाइमलाइन को JSON/JSONL प्रारूप में सहेजें।
 * `level-tuning`: अलर्ट्स के `level` को कस्टम ट्यून करें।
 * `list-profiles`: उपलब्ध आउटपुट प्रोफाइल सूचीबद्ध करें।
 * `set-default-profile`: डिफ़ॉल्ट प्रोफाइल बदलें।

@@ -14,8 +14,8 @@
 * `config-critical-systems`: domain controllers နှင့် file servers ကဲ့သို့ အရေးပါသော စနစ်များကို ရှာဖွေပါ။
 
 ## DFIR Timeline အမိန့်များ:
-* `csv-timeline`: timeline ကို CSV ဖော်မတ်ဖြင့် သိမ်းဆည်းပါ။
-* `json-timeline`: timeline ကို JSON/JSONL ဖော်မတ်ဖြင့် သိမ်းဆည်းပါ။
+* `dfir-timeline`: timeline ကို CSV ဖော်မတ်ဖြင့် သိမ်းဆည်းပါ။
+* `dfir-timeline`: timeline ကို JSON/JSONL ဖော်မတ်ဖြင့် သိမ်းဆည်းပါ။
 * `level-tuning`: သတိပေးချက်များ၏ `level` ကို စိတ်ကြိုက် ချိန်ညှိပါ။
 * `list-profiles`: ရရှိနိုင်သော output profiles များကို စာရင်းပြုစုပါ။
 * `set-default-profile`: မူရင်း profile ကို ပြောင်းလဲပါ။

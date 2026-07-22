@@ -65,7 +65,7 @@ Sebelum mengimpor data, pastikan untuk memperbarui SOF-ELK dengan perintah `sudo
 
 Jalankan Hayabusa dan simpan hasil ke JSONL.
 
-Mis: `./hayabusa json-timeline -L -d ../hayabusa-sample-evtx -w -p super-verbose -G /opt/homebrew/var/GeoIP -o results.jsonl`
+Mis: `./hayabusa dfir-timeline -t jsonl -d ../hayabusa-sample-evtx -w -p super-verbose -G /opt/homebrew/var/GeoIP -o results.jsonl`
 
 ## Opsional: Menghapus data lama yang telah diimpor
 

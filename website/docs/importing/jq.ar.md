@@ -120,7 +120,7 @@ Zach Mathis ([@yamatosecurity](https://twitter.com/yamatosecurity)) - 2023/03/22
 
 # إنشاء ملفات نتائج JSON
 
-في الإصدار الحالي 2.x من Hayabusa، يمكنك حفظ النتائج بصيغة JSON باستخدام `hayabusa json-timeline -d <directory> -o results.json` أو `hayabusa json-timeline -d <directory> -J -o results.jsonl` لصيغة JSONL.
+في الإصدار الحالي 2.x من Hayabusa، يمكنك حفظ النتائج بصيغة JSON باستخدام `hayabusa dfir-timeline -t json -d <directory> -o results.json` أو `hayabusa dfir-timeline -t json -d <directory> -J -o results.jsonl` لصيغة JSONL.
 
 سيستخدم Hayabusa ملف التعريف الافتراضي `standard` ويحفظ فقط الحد الأدنى من البيانات للتحليل في كائن `Details`.
 إذا كنت تريد حفظ جميع معلومات الحقول الأصلية في سجلات .evtx، يمكنك استخدام ملف التعريف `all-field-info` مع الخيار `--profile all-field-info`.

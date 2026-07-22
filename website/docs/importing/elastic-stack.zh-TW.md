@@ -65,7 +65,7 @@ Hayabusa 的結果可以輕鬆匯入 Elastic Stack。
 
 執行 Hayabusa 並將結果儲存為 JSONL。
 
-例如：`./hayabusa json-timeline -L -d ../hayabusa-sample-evtx -w -p super-verbose -G /opt/homebrew/var/GeoIP -o results.jsonl`
+例如：`./hayabusa dfir-timeline -t jsonl -d ../hayabusa-sample-evtx -w -p super-verbose -G /opt/homebrew/var/GeoIP -o results.jsonl`
 
 ## 選用：刪除舊的已匯入資料
 

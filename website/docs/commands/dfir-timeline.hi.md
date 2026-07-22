@@ -2,7 +2,7 @@
 
 ## स्कैन विज़ार्ड
 
-`csv-timeline` और `json-timeline` कमांड में अब एक स्कैन विज़ार्ड डिफ़ॉल्ट रूप से सक्षम है।
+`dfir-timeline` कमांड में अब एक स्कैन विज़ार्ड डिफ़ॉल्ट रूप से सक्षम है।
 इसका उद्देश्य उपयोगकर्ताओं को अपनी आवश्यकताओं और प्राथमिकताओं के अनुसार यह आसानी से चुनने में मदद करना है कि वे किन डिटेक्शन नियमों को सक्षम करना चाहते हैं।
 लोड किए जाने वाले डिटेक्शन नियमों के सेट Sigma परियोजना की आधिकारिक सूचियों पर आधारित हैं।
 विवरण [इस ब्लॉग पोस्ट](https://blog.sigmahq.io/introducing-sigma-rule-packages-releases-76043ce42e81) में समझाया गया है।
@@ -68,22 +68,28 @@ Sigma नियमों के लिए, चैनल और इवेंट I
 - [Possible Hidden Shellcode](https://github.com/Yamato-Security/hayabusa-rules/blob/main/hayabusa/builtin/UnkwnChannEID_Med_PossibleHiddenShellcode.yml)
 - [Mimikatz Use](https://github.com/SigmaHQ/sigma/blob/master/rules/windows/builtin/win_alert_mimikatz_keywords.yml)
 
-यदि आप इन दो नियमों का उपयोग करना चाहते हैं और लोड की गई `.evtx` फ़ाइलों के विरुद्ध सभी नियमों को स्कैन करना चाहते हैं, तो आपको `csv-timeline` और `json-timeline` कमांड में `-A, --enable-all-rules` विकल्प जोड़ना होगा।
+यदि आप इन दो नियमों का उपयोग करना चाहते हैं और लोड की गई `.evtx` फ़ाइलों के विरुद्ध सभी नियमों को स्कैन करना चाहते हैं, तो आपको `dfir-timeline` कमांड में `-A, --enable-all-rules` विकल्प जोड़ना होगा।
 हमारे बेंचमार्क में, नियम फ़िल्टरिंग आमतौर पर इस आधार पर 20% से 10x गति सुधार देती है कि कौन सी फ़ाइलें स्कैन की जा रही हैं और निश्चित रूप से कम मेमोरी का उपयोग करती है।
 
 `.evtx` फ़ाइलों को लोड करते समय भी चैनल फ़िल्टरिंग का उपयोग किया जाता है।
 उदाहरण के लिए, यदि आप एक ऐसा नियम निर्दिष्ट करते हैं जो `Security` चैनल वाले इवेंट खोजता है, तो उन `.evtx` फ़ाइलों को लोड करने का कोई मतलब नहीं है जो `Security` लॉग से नहीं हैं।
 हमारे बेंचमार्क में, यह सामान्य स्कैन के साथ लगभग 10% की गति लाभ देता है और एकल नियम के साथ स्कैन करते समय 60%+ तक प्रदर्शन वृद्धि देता है।
-यदि आप निश्चित हैं कि एक ही `.evtx` फ़ाइल के अंदर कई चैनलों का उपयोग किया जा रहा है, उदाहरण के लिए किसी ने कई `.evtx` फ़ाइलों को एक साथ मर्ज करने के लिए एक टूल का उपयोग किया है, तो आप `csv-timeline` और `json-timeline` कमांड में `-a, --scan-all-evtx-files` विकल्प के साथ इस फ़िल्टरिंग को अक्षम कर सकते हैं।
+यदि आप निश्चित हैं कि एक ही `.evtx` फ़ाइल के अंदर कई चैनलों का उपयोग किया जा रहा है, उदाहरण के लिए किसी ने कई `.evtx` फ़ाइलों को एक साथ मर्ज करने के लिए एक टूल का उपयोग किया है, तो आप `dfir-timeline` कमांड में `-a, --scan-all-evtx-files` विकल्प के साथ इस फ़िल्टरिंग को अक्षम कर सकते हैं।
 
 > नोट: चैनल फ़िल्टरिंग केवल `.evtx` फ़ाइलों के साथ काम करती है और यदि आप `-J, --json-input` के साथ JSON फ़ाइल से इवेंट लॉग लोड करने का प्रयास करते हैं और साथ ही `-A` या `-a` भी निर्दिष्ट करते हैं तो आपको एक त्रुटि प्राप्त होगी।
 
-## `csv-timeline` कमांड
+## `dfir-timeline` कमांड
 
-`csv-timeline` कमांड CSV प्रारूप में इवेंट की एक फ़ोरेंसिक टाइमलाइन बनाएगा।
+`dfir-timeline` कमांड इवेंट की एक फ़ोरेंसिक टाइमलाइन बनाता है। `-t, --output-type` के साथ आउटपुट प्रारूप चुनें: `csv` (डिफ़ॉल्ट), `json`, या `jsonl`। यह मान केस-असंवेदनशील है (उदा: `-t JSONL`)।
+
+- **CSV** छोटी टाइमलाइन (आमतौर पर 2GB से कम) को LibreOffice या Timeline Explorer जैसे टूल में आयात करने के लिए अच्छा है (सभी इवेंट फ़ील्ड एक बड़े `Details` कॉलम में रखे जाते हैं)।
+- **JSON** `jq` जैसे टूल के साथ बड़े परिणामों के अधिक विस्तृत विश्लेषण के लिए सबसे अच्छा है, क्योंकि `Details` फ़ील्ड अलग किए जाते हैं।
+- **JSONL** JSON की तुलना में तेज़ है और छोटी फ़ाइल बनाता है, जो Elastic Stack जैसे टूल में आयात करने के लिए आदर्श है।
+
+**CSV आउटपुट** विकल्प `-M, --multiline`, `-S, --tab-separator`, और `-R, --remove-duplicate-data` केवल CSV आउटपुट पर लागू होते हैं और यदि इन्हें गैर-CSV `-t` के साथ जोड़ा जाए तो एक त्रुटि उत्पन्न करेंगे।
 
 ```
-Usage: csv-timeline <INPUT> [OPTIONS]
+  hayabusa.exe dfir-timeline <INPUT> [OPTIONS]
 
 Input:
   -d, --directory <DIR>  Directory of multiple .evtx files
@@ -99,9 +105,10 @@ General Options:
   -x, --recover-records                Carve evtx records from slack space (default: disabled)
   -r, --rules <DIR/FILE>               Specify a custom rule directory or file (default: ./rules)
   -c, --rules-config <DIR>             Specify custom rule config directory (default: ./rules/config)
-  -s, --sort                           Sort events before saving the file. (warning: this uses much more memory!)
-  -t, --threads <NUMBER>               Number of threads (default: optimal number for performance)
+  -s, --sort                           Sort results before saving the file (warning: this uses much more memory!)
       --target-file-ext <FILE-EXT...>  Specify additional evtx file extensions (ex: evtx_data)
+      --threads <NUMBER>               Number of threads (default: optimal number for performance)
+  -V, --validate-checksums             Enable checksum validation
 
 Filtering:
   -E, --EID-filter                      Scan only common EIDs for faster speed (./rules/config/target_event_IDs.txt)
@@ -131,14 +138,12 @@ Output:
   -b, --disable-abbreviations        Disable abbreviations
   -G, --GeoIP <MAXMIND-DB-DIR>       Add GeoIP (ASN, city, country) info to IP addresses
   -H, --HTML-report <FILE>           Save Results Summary details to an HTML report (ex: results.html)
-  -M, --multiline                    Output event field information in multiple rows
   -F, --no-field-data-mapping        Disable field data mapping
       --no-pwsh-field-extraction     Disable field extraction of PowerShell classic logs
-  -o, --output <FILE>                Save the timeline in CSV format (ex: results.csv)
+  -o, --output <FILE>                Save the timeline to a file (ex: results.csv)
+  -t, --output-type <OUTPUT_FORMAT>  Output format: csv (default), json, or jsonl (case-insensitive, e.g. -t JSONL) [default: csv] [possible values: csv, json, jsonl]
   -p, --profile <PROFILE>            Specify output profile
-  -R, --remove-duplicate-data        Duplicate field data will be replaced with "DUP"
   -X, --remove-duplicate-detections  Remove duplicate detections (default: disabled)
-  -S, --tab-separator                Separate event field information by tabs
 
 Display Settings:
   -K, --no-color            Disable color output
@@ -155,26 +160,43 @@ Time Format:
       --US-military-time  Output timestamp in US military time format (ex: 02-22-2022 22:00:00.123 -06:00)
       --US-time           Output timestamp in US time format (ex: 02-22-2022 10:00:00.123 PM -06:00)
   -U, --UTC               Output time in UTC format (default: local time)
+
+CSV Output:
+  -M, --multiline              Separate event field information by newline characters (CSV output only)
+  -R, --remove-duplicate-data  Duplicate field data will be replaced with "DUP" (CSV output only)
+  -S, --tab-separator          Separate event field information by tabs (CSV output only)
 ```
 
-### `csv-timeline` कमांड उदाहरण
+### `dfir-timeline` कमांड उदाहरण
 
 * डिफ़ॉल्ट `standard` प्रोफ़ाइल के साथ एक Windows इवेंट लॉग फ़ाइल के विरुद्ध hayabusa चलाएँ:
 
 ```
-hayabusa.exe csv-timeline -f eventlog.evtx
+hayabusa.exe dfir-timeline -f eventlog.evtx
 ```
 
 * verbose प्रोफ़ाइल के साथ कई Windows इवेंट लॉग फ़ाइलों वाली sample-evtx निर्देशिका के विरुद्ध hayabusa चलाएँ:
 
 ```
-hayabusa.exe csv-timeline -d .\hayabusa-sample-evtx -p verbose
+hayabusa.exe dfir-timeline -d .\hayabusa-sample-evtx -p verbose
 ```
 
 * LibreOffice, Timeline Explorer, Elastic Stack आदि के साथ आगे के विश्लेषण के लिए एकल CSV फ़ाइल में निर्यात करें और सभी फ़ील्ड जानकारी शामिल करें (चेतावनी: `super-verbose` प्रोफ़ाइल के साथ आपकी फ़ाइल आउटपुट का आकार बहुत बड़ा हो जाएगा!):
 
 ```
-hayabusa.exe csv-timeline -d .\hayabusa-sample-evtx -o results.csv -p super-verbose
+hayabusa.exe dfir-timeline -d .\hayabusa-sample-evtx -o results.csv -p super-verbose
+```
+
+* CSV के बजाय JSON आउटपुट करें (`jq` आदि के साथ विश्लेषण के लिए):
+
+```
+hayabusa.exe dfir-timeline -d .\hayabusa-sample-evtx -t json -o results.json
+```
+
+* JSONL आउटपुट करें (Elastic Stack आदि में आयात करने के लिए; `-t` केस-असंवेदनशील है):
+
+```
+hayabusa.exe dfir-timeline -d .\hayabusa-sample-evtx -t JSONL -o results.jsonl
 ```
 
 * EID (Event ID) फ़िल्टर सक्षम करें:
@@ -182,31 +204,31 @@ hayabusa.exe csv-timeline -d .\hayabusa-sample-evtx -o results.csv -p super-verb
 > नोट: EID फ़िल्टर सक्षम करने से हमारे परीक्षणों में विश्लेषण लगभग 10-15% तेज़ हो जाएगा लेकिन अलर्ट छूटने की संभावना रहती है।
 
 ```
-hayabusa.exe csv-timeline -E -d .\hayabusa-sample-evtx -o results.csv
+hayabusa.exe dfir-timeline -E -d .\hayabusa-sample-evtx -o results.csv
 ```
 
 * केवल hayabusa नियम चलाएँ (डिफ़ॉल्ट `-r .\rules` में सभी नियम चलाना है):
 
 ```
-hayabusa.exe csv-timeline -d .\hayabusa-sample-evtx -r .\rules\hayabusa -o results.csv -w
+hayabusa.exe dfir-timeline -d .\hayabusa-sample-evtx -r .\rules\hayabusa -o results.csv -w
 ```
 
 * केवल उन लॉग के लिए hayabusa नियम चलाएँ जो Windows पर डिफ़ॉल्ट रूप से सक्षम हैं:
 
 ```
-hayabusa.exe csv-timeline -d .\hayabusa-sample-evtx -r .\rules\hayabusa\builtin -o results.csv -w
+hayabusa.exe dfir-timeline -d .\hayabusa-sample-evtx -r .\rules\hayabusa\builtin -o results.csv -w
 ```
 
 * केवल sysmon लॉग के लिए hayabusa नियम चलाएँ:
 
 ```
-hayabusa.exe csv-timeline -d .\hayabusa-sample-evtx -r .\rules\hayabusa\sysmon -o results.csv -w
+hayabusa.exe dfir-timeline -d .\hayabusa-sample-evtx -r .\rules\hayabusa\sysmon -o results.csv -w
 ```
 
 * केवल sigma नियम चलाएँ:
 
 ```
-hayabusa.exe csv-timeline -d .\hayabusa-sample-evtx -r .\rules\sigma -o results.csv -w
+hayabusa.exe dfir-timeline -d .\hayabusa-sample-evtx -r .\rules\sigma -o results.csv -w
 ```
 
 * deprecated नियम (जिनकी `status` को `deprecated` के रूप में चिह्नित किया गया है) और noisy नियम (जिनकी रूल ID `.\rules\config\noisy_rules.txt` में सूचीबद्ध है) सक्षम करें:
@@ -215,25 +237,25 @@ hayabusa.exe csv-timeline -d .\hayabusa-sample-evtx -r .\rules\sigma -o results.
 > इसलिए, आपको शायद deprecated नियमों को सक्षम करने की कोई आवश्यकता नहीं है।
 
 ```
-hayabusa.exe csv-timeline -d .\hayabusa-sample-evtx --enable-noisy-rules --enable-deprecated-rules -o results.csv -w
+hayabusa.exe dfir-timeline -d .\hayabusa-sample-evtx --enable-noisy-rules --enable-deprecated-rules -o results.csv -w
 ```
 
 * केवल लॉगऑन का विश्लेषण करने के लिए नियम चलाएँ और UTC टाइमज़ोन में आउटपुट करें:
 
 ```
-hayabusa.exe csv-timeline -d .\hayabusa-sample-evtx -r .\rules\hayabusa\builtin\Security\LogonLogoff\Logon -U -o results.csv -w
+hayabusa.exe dfir-timeline -d .\hayabusa-sample-evtx -r .\rules\hayabusa\builtin\Security\LogonLogoff\Logon -U -o results.csv -w
 ```
 
 * एक लाइव Windows मशीन पर चलाएँ (Administrator विशेषाधिकारों की आवश्यकता होती है) और केवल अलर्ट (संभावित रूप से दुर्भावनापूर्ण व्यवहार) का पता लगाएँ:
 
 ```
-hayabusa.exe csv-timeline -l -m low
+hayabusa.exe dfir-timeline -l -m low
 ```
 
 * verbose जानकारी प्रिंट करें (यह निर्धारित करने के लिए उपयोगी कि कौन सी फ़ाइलें संसाधित होने में लंबा समय लेती हैं, पार्सिंग त्रुटियाँ आदि):
 
 ```
-hayabusa.exe csv-timeline -d .\hayabusa-sample-evtx -v
+hayabusa.exe dfir-timeline -d .\hayabusa-sample-evtx -v
 ```
 
 * verbose आउटपुट उदाहरण:
@@ -265,7 +287,7 @@ Error: An error occurred while trying to serialize binary xml to output.
 * [Timesketch](https://timesketch.org/) में आयात करने के लिए संगत CSV प्रारूप में आउटपुट करें:
 
 ```
-hayabusa.exe csv-timeline -d ../hayabusa-sample-evtx --RFC-3339 -o timesketch-import.csv -p timesketch -U
+hayabusa.exe dfir-timeline -d ../hayabusa-sample-evtx --RFC-3339 -o timesketch-import.csv -p timesketch -U
 ```
 
 * Quiet error मोड:
@@ -280,10 +302,10 @@ hayabusa.exe csv-timeline -d ../hayabusa-sample-evtx --RFC-3339 -o timesketch-im
 
 1. सबसे पहले [यहाँ](https://dev.maxmind.com/geoip/geolite2-free-geolocation-data) एक MaxMind खाते के लिए साइन अप करें।
 2. [डाउनलोड पेज](https://www.maxmind.com/en/accounts/current/geoip/downloads) से तीन `.mmdb` फ़ाइलें डाउनलोड करें और उन्हें एक निर्देशिका में सहेजें। फ़ाइल नाम `GeoLite2-ASN.mmdb`,	`GeoLite2-City.mmdb` और `GeoLite2-Country.mmdb` होने चाहिए।
-3. `csv-timeline` या `json-timeline` कमांड चलाते समय, MaxMind डेटाबेस वाली निर्देशिका के बाद `-G` विकल्प जोड़ें।
+3. `dfir-timeline` कमांड चलाते समय, MaxMind डेटाबेस वाली निर्देशिका के बाद `-G` विकल्प जोड़ें।
 
-* जब `csv-timeline` का उपयोग किया जाता है, तो निम्नलिखित 6 कॉलम अतिरिक्त रूप से आउटपुट होंगे: `SrcASN`, `SrcCity`, `SrcCountry`, `TgtASN`, `TgtCity`, `TgtCountry`।
-* जब `json-timeline` का उपयोग किया जाता है, तो वही `SrcASN`, `SrcCity`, `SrcCountry`, `TgtASN`, `TgtCity`, `TgtCountry` फ़ील्ड `Details` ऑब्जेक्ट में जोड़े जाएंगे, लेकिन केवल तभी जब उनमें जानकारी हो।
+* CSV आउटपुट के साथ, निम्नलिखित 6 कॉलम अतिरिक्त रूप से आउटपुट होंगे: `SrcASN`, `SrcCity`, `SrcCountry`, `TgtASN`, `TgtCity`, `TgtCountry`।
+* JSON/JSONL आउटपुट के साथ, वही `SrcASN`, `SrcCity`, `SrcCountry`, `TgtASN`, `TgtCity`, `TgtCountry` फ़ील्ड `Details` ऑब्जेक्ट में जोड़े जाएंगे, लेकिन केवल तभी जब उनमें जानकारी हो।
 
 * जब `SrcIP` या `TgtIP` लोकलहोस्ट (`127.0.0.1`, `::1`, आदि) हो, तो `SrcASN` या `TgtASN` को `Local` के रूप में आउटपुट किया जाएगा।
 * जब `SrcIP` या `TgtIP` एक निजी IP पता (`10.0.0.0/8`, `fe80::/10`, आदि) हो, तो `SrcASN` या `TgtASN` को `Private` के रूप में आउटपुट किया जाएगा।
@@ -319,7 +341,7 @@ Linux पर चरण:
 3. `sudo geoipupdate` से डेटाबेस फ़ाइलें अपडेट करें।
 4. जब आप GeoIP जानकारी जोड़ना चाहते हैं तो `-G /var/lib/GeoIP/` जोड़ें।
 
-### `csv-timeline` कमांड कॉन्फ़िग फ़ाइलें
+### `dfir-timeline` कमांड कॉन्फ़िग फ़ाइलें
 
 `./rules/config/channel_abbreviations.txt`: चैनल नामों और उनके संक्षिप्त रूपों की मैपिंग।
 
@@ -348,93 +370,6 @@ IpAddress,Event.EventData.IpAddress
 `./rules/config/target_event_IDs.txt`: यदि EID फ़िल्टर सक्षम है तो केवल इस फ़ाइल में निर्दिष्ट इवेंट ID स्कैन किए जाएंगे।
 डिफ़ॉल्ट रूप से, Hayabusa सभी इवेंट को स्कैन करेगा, लेकिन यदि आप प्रदर्शन में सुधार करना चाहते हैं, तो कृपया `-E, --EID-filter` विकल्प का उपयोग करें।
 इसका परिणाम आमतौर पर 10~25% गति सुधार होता है।
-
-## `json-timeline` कमांड
-
-`json-timeline` कमांड JSON या JSONL प्रारूप में इवेंट की एक फ़ोरेंसिक टाइमलाइन बनाएगा।
-JSONL में आउटपुट करना JSON की तुलना में तेज़ होगा और फ़ाइल का आकार छोटा होगा इसलिए यह अच्छा है यदि आप परिणामों को केवल Elastic Stack जैसे किसी अन्य टूल में आयात करने जा रहे हैं।
-JSON बेहतर है यदि आप टेक्स्ट एडिटर से परिणामों का मैन्युअल रूप से विश्लेषण करने जा रहे हैं।
-CSV आउटपुट छोटी टाइमलाइन (आमतौर पर 2GB से कम) को LibreOffice या Timeline Explorer जैसे टूल में आयात करने के लिए अच्छा है।
-JSON `jq` जैसे टूल के साथ डेटा (बड़ी परिणाम फ़ाइलों सहित) के अधिक विस्तृत विश्लेषण के लिए सबसे अच्छा है क्योंकि आसान विश्लेषण के लिए `Details` फ़ील्ड अलग किए गए हैं।
-(CSV आउटपुट में, सभी इवेंट लॉग फ़ील्ड एक बड़े `Details` कॉलम में होते हैं जिससे डेटा की सॉर्टिंग आदि अधिक कठिन हो जाती है।)
-
-```
-Usage: json-timeline <INPUT> [OPTIONS]
-
-Input:
-  -d, --directory <DIR>  Directory of multiple .evtx files
-  -f, --file <FILE>      File path to one .evtx file
-  -l, --live-analysis    Analyze the local C:\Windows\System32\winevt\Logs folder
-
-General Options:
-  -C, --clobber                        Overwrite files when saving
-  -h, --help                           Show the help menu
-  -J, --JSON-input                     Scan JSON formatted logs instead of .evtx (.json or .jsonl)
-  -w, --no-wizard                      Do not ask questions. Scan for all events and alerts
-  -Q, --quiet-errors                   Quiet errors mode: do not save error logs
-  -x, --recover-records                Carve evtx records from slack space (default: disabled)
-  -r, --rules <DIR/FILE>               Specify a custom rule directory or file (default: ./rules)
-  -c, --rules-config <DIR>             Specify custom rule config directory (default: ./rules/config)
-  -s, --sort                           Sort events before saving the file. (warning: this uses much more memory!)
-  -t, --threads <NUMBER>               Number of threads (default: optimal number for performance)
-      --target-file-ext <FILE-EXT...>  Specify additional evtx file extensions (ex: evtx_data)
-
-Filtering:
-  -E, --EID-filter                      Scan only common EIDs for faster speed (./rules/config/target_event_IDs.txt)
-  -A, --enable-all-rules                Enable all rules regardless of loaded evtx files (disable channel filter for rules)
-  -D, --enable-deprecated-rules         Enable rules with a status of deprecated
-  -n, --enable-noisy-rules              Enable rules set to noisy (./rules/config/noisy_rules.txt)
-  -u, --enable-unsupported-rules        Enable rules with a status of unsupported
-  -e, --exact-level <LEVEL>             Only load rules with a specific level (informational, low, medium, high, critical)
-      --exclude-category <CATEGORY...>  Do not load rules with specified logsource categories (ex: process_creation,pipe_created)
-      --exclude-computer <COMPUTER...>  Do not scan specified computer names (ex: ComputerA) (ex: ComputerA,ComputerB)
-      --exclude-eid <EID...>            Do not scan specific EIDs for faster speed (ex: 1) (ex: 1,4688)
-      --exclude-status <STATUS...>      Do not load rules according to status (ex: experimental) (ex: stable,test)
-      --exclude-tag <TAG...>            Do not load rules with specific tags (ex: sysmon)
-      --include-category <CATEGORY...>  Only load rules with specified logsource categories (ex: process_creation,pipe_created)
-      --include-computer <COMPUTER...>  Scan only specified computer names (ex: ComputerA) (ex: ComputerA,ComputerB)
-      --include-eid <EID...>            Scan only specified EIDs for faster speed (ex: 1) (ex: 1,4688)
-      --include-status <STATUS...>      Only load rules with specific status (ex: experimental) (ex: stable,test)
-      --include-tag <TAG...>            Only load rules with specific tags (ex: attack.execution,attack.discovery)
-  -m, --min-level <LEVEL>               Minimum level for rules to load (default: informational)
-  -P, --proven-rules                    Scan with only proven rules for faster speed (./rules/config/proven_rules.txt)
-  -a, --scan-all-evtx-files             Scan all evtx files regardless of loaded rules (disable channel filter for evtx files)
-      --time-offset <OFFSET>            Scan recent events based on an offset (ex: 1y, 3M, 30d, 24h, 30m)
-      --timeline-end <DATE>             End time of the event logs to load (ex: "2022-02-22 23:59:59 +09:00")
-      --timeline-start <DATE>           Start time of the event logs to load (ex: "2020-02-22 00:00:00 +09:00")
-
-Output:
-  -b, --disable-abbreviations        Disable abbreviations
-  -G, --GeoIP <MAXMIND-DB-DIR>       Add GeoIP (ASN, city, country) info to IP addresses
-  -H, --HTML-report <FILE>           Save Results Summary details to an HTML report (ex: results.html)
-  -L, --JSONL-output                 Save the timeline in JSONL format (ex: -L -o results.jsonl)
-  -F, --no-field-data-mapping        Disable field data mapping
-      --no-pwsh-field-extraction     Disable field extraction of PowerShell classic logs
-  -o, --output <FILE>                Save the timeline in JSON format (ex: results.json)
-  -p, --profile <PROFILE>            Specify output profile
-  -R, --remove-duplicate-data        Duplicate field data will be replaced with "DUP"
-  -X, --remove-duplicate-detections  Remove duplicate detections (default: disabled)
-
-Display Settings:
-  -K, --no-color            Disable color output
-  -N, --no-summary          Do not display Results Summary for faster speed
-  -q, --quiet               Quiet mode: do not display the launch banner
-  -v, --verbose             Output verbose information
-  -T, --visualize-timeline  Output event frequency timeline (terminal needs to support unicode)
-
-Time Format:
-      --European-time     Output timestamp in European time format (ex: 22-02-2022 22:00:00.123 +02:00)
-  -O, --ISO-8601          Output timestamp in original ISO-8601 format (ex: 2022-02-22T10:10:10.1234567Z) (Always UTC)
-      --RFC-2822          Output timestamp in RFC 2822 format (ex: Fri, 22 Feb 2022 22:00:00 -0600)
-      --RFC-3339          Output timestamp in RFC 3339 format (ex: 2022-02-22 22:00:00.123456-06:00)
-      --US-military-time  Output timestamp in US military time format (ex: 02-22-2022 22:00:00.123 -06:00)
-      --US-time           Output timestamp in US time format (ex: 02-22-2022 10:00:00.123 PM -06:00)
-  -U, --UTC               Output time in UTC format (default: local time)
-```
-
-### `json-timeline` कमांड उदाहरण और कॉन्फ़िग फ़ाइलें
-
-`json-timeline` के विकल्प और कॉन्फ़िग फ़ाइलें `csv-timeline` के समान हैं लेकिन JSONL प्रारूप में आउटपुट के लिए एक अतिरिक्त विकल्प `-L, --JSONL-output` है।
 
 ## `level-tuning` कमांड
 

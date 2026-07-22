@@ -14,8 +14,8 @@
 * `config-critical-systems`: Find critical systems like domain controllers and file servers.
 
 ## DFIR Timeline Commands:
-* `csv-timeline`: Save the timeline in CSV format.
-* `json-timeline`: Save the timeline in JSON/JSONL format.
+* `dfir-timeline`: Save the timeline in CSV format.
+* `dfir-timeline`: Save the timeline in JSON/JSONL format.
 * `level-tuning`: Custom tune the alerts' `level`.
 * `list-profiles`: List the available output profiles.
 * `set-default-profile`: Change the default profile.
