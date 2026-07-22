@@ -444,7 +444,9 @@ impl ConditionCompiler {
 
 #[cfg(test)]
 mod tests {
-    use crate::detections::configs::{Action, Config, CsvOutputOption, OutputOption, StoredStatic};
+    use crate::detections::configs::{
+        Action, Config, DfirTimelineOption, OutputOption, StoredStatic,
+    };
     use crate::detections::rule::condition_parser::ConditionCompiler;
     use crate::detections::rule::create_rule;
     use crate::detections::rule::tests::parse_rule_from_str;
@@ -471,7 +473,7 @@ mod tests {
 
     fn create_dummy_stored_static() -> StoredStatic {
         StoredStatic::create_static_data(Config {
-            action: Some(Action::CsvTimeline(CsvOutputOption {
+            action: Some(Action::DfirTimeline(DfirTimelineOption {
                 output_options: OutputOption {
                     min_level: "informational".to_string(),
                     no_wizard: true,

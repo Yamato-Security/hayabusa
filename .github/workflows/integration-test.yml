@@ -47,11 +47,11 @@ jobs:
       - name: computer-metrics(-o)
         run: cd main && cargo run --release -- computer-metrics -d ../hayabusa-sample-evtx -q -o out.csv -C
 
-      - name: csv-timeline
-        run: cd main && cargo run --release -- csv-timeline -d ../hayabusa-sample-evtx -o out.csv -q -w -D -n -u -C
+      - name: dfir-timeline
+        run: cd main && cargo run --release -- dfir-timeline -d ../hayabusa-sample-evtx -o out.csv -q -w -D -n -u -C
 
-      - name: csv-timeline(-p super-verbose)
-        run: cd main && cargo run --release -- csv-timeline -d ../hayabusa-sample-evtx -o out-s.csv -p super-verbose -q -w -D -n -u
+      - name: dfir-timeline(-p super-verbose)
+        run: cd main && cargo run --release -- dfir-timeline -d ../hayabusa-sample-evtx -o out-s.csv -p super-verbose -q -w -D -n -u
 
       - name: eid-metrics
         run: cd main && cargo run --release -- eid-metrics -d ../hayabusa-sample-evtx -q
@@ -68,14 +68,14 @@ jobs:
       - name: extract-base64(-o)
         run: cd main && cargo run --release -- extract-base64 -d ../hayabusa-sample-evtx -q -o out.csv -C
 
-      - name: json-timeline
-        run: cd main && cargo run --release -- json-timeline -d ../hayabusa-sample-evtx -o out.json -q -w -D -n -u
+      - name: dfir-timeline
+        run: cd main && cargo run --release -- dfir-timeline -t json -d ../hayabusa-sample-evtx -o out.json -q -w -D -n -u
 
-      - name: json-timeline(-p super-verbose)
-        run: cd main && cargo run --release -- json-timeline -d ../hayabusa-sample-evtx -o out-s.json -p super-verbose -q -w -D -n -u
+      - name: dfir-timeline(-p super-verbose)
+        run: cd main && cargo run --release -- dfir-timeline -t json -d ../hayabusa-sample-evtx -o out-s.json -p super-verbose -q -w -D -n -u
 
-      - name: json-timeline(-L)
-        run: cd main && cargo run --release -- json-timeline -d ../hayabusa-sample-evtx -o out.jsonl -q -L -w -D -n -u
+      - name: dfir-timeline(-L)
+        run: cd main && cargo run --release -- dfir-timeline -t jsonl -d ../hayabusa-sample-evtx -o out.jsonl -q -w -D -n -u
 
       - name: level-tuning
         run: cd main && cargo run --release -- level-tuning -f ./rules/config/level_tuning.txt -q
@@ -165,23 +165,23 @@ jobs:
       - name: computer-metrics
         run: cd main && ./hayabusa computer-metrics -d ../hayabusa-sample-evtx -q
 
-      - name: csv-timeline
-        run: cd main && ./hayabusa csv-timeline -d ../hayabusa-sample-evtx -o out.csv -q -w -D -n -u
+      - name: dfir-timeline
+        run: cd main && ./hayabusa dfir-timeline -d ../hayabusa-sample-evtx -o out.csv -q -w -D -n -u
 
-      - name: csv-timeline(-p super-verbose)
-        run: cd main && ./hayabusa csv-timeline -d ../hayabusa-sample-evtx -o out-s.csv -p super-verbose -q -w -D -n -u
+      - name: dfir-timeline(-p super-verbose)
+        run: cd main && ./hayabusa dfir-timeline -d ../hayabusa-sample-evtx -o out-s.csv -p super-verbose -q -w -D -n -u
 
       - name: eid-metrics
         run: cd main && ./hayabusa eid-metrics -d ../hayabusa-sample-evtx -q
 
-      - name: json-timeline
-        run: cd main && ./hayabusa json-timeline -d ../hayabusa-sample-evtx -o out.json -q -w -D -n -u
+      - name: dfir-timeline
+        run: cd main && ./hayabusa dfir-timeline -t json -d ../hayabusa-sample-evtx -o out.json -q -w -D -n -u
 
-      - name: json-timeline(-p super-verbose)
-        run: cd main && ./hayabusa json-timeline -d ../hayabusa-sample-evtx -o out-s.json -p super-verbose -q -w -D -n -u
+      - name: dfir-timeline(-p super-verbose)
+        run: cd main && ./hayabusa dfir-timeline -t json -d ../hayabusa-sample-evtx -o out-s.json -p super-verbose -q -w -D -n -u
 
-      - name: json-timeline(-L)
-        run: cd main && ./hayabusa json-timeline -d ../hayabusa-sample-evtx -o out.jsonl -q -L -w -D -n -u
+      - name: dfir-timeline(-L)
+        run: cd main && ./hayabusa dfir-timeline -t jsonl -d ../hayabusa-sample-evtx -o out.jsonl -q -w -D -n -u
 
       - name: level-tuning
         run: cd main && ./hayabusa level-tuning -f ./rules/config/level_tuning.txt -q
@@ -231,19 +231,19 @@ jobs:
       - name: build
         run: cd main && cargo build --release && cp target/release/hayabusa .
 
-      - name: csv-timeline(standard package)
-        run: cd main && ./hayabusa update-rules &&./hayabusa csv-timeline -d ../hayabusa-sample-evtx -o result.csv -p super-verbose -q -w -D -n -u
+      - name: dfir-timeline(standard package)
+        run: cd main && ./hayabusa update-rules &&./hayabusa dfir-timeline -d ../hayabusa-sample-evtx -o result.csv -p super-verbose -q -w -D -n -u
 
-      - name: csv-timeline(live-response package)
+      - name: dfir-timeline(live-response package)
         run: |
           cd main
           rm -rf ./config && rm -rf ./rules/
           curl -O https://raw.githubusercontent.com/Yamato-Security/hayabusa-encoded-rules/refs/heads/main/encoded_rules.yml
           curl -O https://raw.githubusercontent.com/Yamato-Security/hayabusa-encoded-rules/refs/heads/main/rules_config_files.txt
           ./hayabusa update-rules
-          ./hayabusa csv-timeline -d ../hayabusa-sample-evtx -o result-live-response.csv -p super-verbose -q -w -D -n -u
+          ./hayabusa dfir-timeline -d ../hayabusa-sample-evtx -o result-live-response.csv -p super-verbose -q -w -D -n -u
 
-      - name: check csv-timeline results
+      - name: check dfir-timeline results
         run: |
           standard_lines=$(cat main/result.csv | wc -l)
           live_response_lines=$(cat main/result-live-response.csv | wc -l)

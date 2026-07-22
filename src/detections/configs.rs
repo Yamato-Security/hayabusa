@@ -10,7 +10,9 @@ use crate::options::pivot::PivotKeywordMap;
 use crate::options::profile::{Profile, load_profile};
 use aho_corasick::{AhoCorasick, AhoCorasickBuilder, MatchKind};
 use chrono::{DateTime, Days, Duration, Local, Months, Utc};
-use clap::{ArgAction, ArgGroup, Args, ColorChoice, Command, CommandFactory, Parser, Subcommand};
+use clap::{
+    ArgAction, ArgGroup, Args, ColorChoice, Command, CommandFactory, Parser, Subcommand, ValueEnum,
+};
 use compact_str::CompactString;
 use dashmap::{DashMap, DashSet};
 use hashbrown::{HashMap, HashSet};
@@ -222,8 +224,7 @@ impl StoredStatic {
         let action = config.action.as_ref();
         let action_id = Action::to_usize(action);
         let quiet_errors_flag = match action {
-            Some(Action::CsvTimeline(opt)) => opt.output_options.detect_common_options.quiet_errors,
-            Some(Action::JsonTimeline(opt)) => {
+            Some(Action::DfirTimeline(opt)) => {
                 opt.output_options.detect_common_options.quiet_errors
             }
             Some(Action::LogonSummary(opt)) => opt.detect_common_options.quiet_errors,
@@ -237,8 +238,7 @@ impl StoredStatic {
             _ => false,
         };
         let common_options = match action {
-            Some(Action::CsvTimeline(opt)) => opt.output_options.common_options,
-            Some(Action::JsonTimeline(opt)) => opt.output_options.common_options,
+            Some(Action::DfirTimeline(opt)) => opt.output_options.common_options,
             Some(Action::LevelTuning(opt)) => opt.common_options,
             Some(Action::LogonSummary(opt)) => opt.common_options,
             Some(Action::EidMetrics(opt)) => opt.common_options,
@@ -260,8 +260,7 @@ impl StoredStatic {
         };
         let binding = Path::new("./rules/config").to_path_buf();
         let config_path = match action {
-            Some(Action::CsvTimeline(opt)) => &opt.output_options.detect_common_options.config,
-            Some(Action::JsonTimeline(opt)) => &opt.output_options.detect_common_options.config,
+            Some(Action::DfirTimeline(opt)) => &opt.output_options.detect_common_options.config,
             Some(Action::LogonSummary(opt)) => &opt.detect_common_options.config,
             Some(Action::EidMetrics(opt)) => &opt.detect_common_options.config,
             Some(Action::ExtractBase64(opt)) => &opt.detect_common_options.config,
@@ -272,8 +271,7 @@ impl StoredStatic {
             _ => &binding,
         };
         let verbose_flag = match action {
-            Some(Action::CsvTimeline(opt)) => opt.output_options.detect_common_options.verbose,
-            Some(Action::JsonTimeline(opt)) => opt.output_options.detect_common_options.verbose,
+            Some(Action::DfirTimeline(opt)) => opt.output_options.detect_common_options.verbose,
             Some(Action::LogonSummary(opt)) => opt.detect_common_options.verbose,
             Some(Action::EidMetrics(opt)) => opt.detect_common_options.verbose,
             Some(Action::ExtractBase64(opt)) => opt.detect_common_options.verbose,
@@ -284,8 +282,7 @@ impl StoredStatic {
             _ => false,
         };
         let json_input_flag = match action {
-            Some(Action::CsvTimeline(opt)) => opt.output_options.detect_common_options.json_input,
-            Some(Action::JsonTimeline(opt)) => opt.output_options.detect_common_options.json_input,
+            Some(Action::DfirTimeline(opt)) => opt.output_options.detect_common_options.json_input,
             Some(Action::LogonSummary(opt)) => opt.detect_common_options.json_input,
             Some(Action::EidMetrics(opt)) => opt.detect_common_options.json_input,
             Some(Action::ExtractBase64(opt)) => opt.detect_common_options.json_input,
@@ -295,18 +292,12 @@ impl StoredStatic {
             _ => false,
         };
         let is_valid_min_level = match action {
-            Some(Action::CsvTimeline(opt)) => is_valid_level(&opt.output_options.min_level),
-            Some(Action::JsonTimeline(opt)) => is_valid_level(&opt.output_options.min_level),
+            Some(Action::DfirTimeline(opt)) => is_valid_level(&opt.output_options.min_level),
             Some(Action::PivotKeywordsList(opt)) => is_valid_level(&opt.min_level),
             _ => true,
         };
         let is_valid_exact_level = match action {
-            Some(Action::CsvTimeline(opt)) => opt
-                .output_options
-                .exact_level
-                .as_ref()
-                .is_none_or(|level| is_valid_level(level)),
-            Some(Action::JsonTimeline(opt)) => opt
+            Some(Action::DfirTimeline(opt)) => opt
                 .output_options
                 .exact_level
                 .as_ref()
@@ -323,15 +314,7 @@ impl StoredStatic {
         }
 
         let geo_ip_db_result = match action {
-            Some(Action::CsvTimeline(opt)) => GeoIPSearch::check_exist_geo_ip_files(
-                &opt.geo_ip,
-                vec![
-                    "GeoLite2-ASN.mmdb",
-                    "GeoLite2-Country.mmdb",
-                    "GeoLite2-City.mmdb",
-                ],
-            ),
-            Some(Action::JsonTimeline(opt)) => GeoIPSearch::check_exist_geo_ip_files(
+            Some(Action::DfirTimeline(opt)) => GeoIPSearch::check_exist_geo_ip_files(
                 &opt.geo_ip,
                 vec![
                     "GeoLite2-ASN.mmdb",
@@ -417,8 +400,7 @@ impl StoredStatic {
             geo_ip_db_yaml = Some(static_geoip_conf);
         };
         let output_path = match action {
-            Some(Action::CsvTimeline(opt)) => opt.output.as_ref(),
-            Some(Action::JsonTimeline(opt)) => opt.output.as_ref(),
+            Some(Action::DfirTimeline(opt)) => opt.output.as_ref(),
             Some(Action::EidMetrics(opt)) => opt.output.as_ref(),
             Some(Action::ExtractBase64(opt)) => opt.output.as_ref(),
             Some(Action::PivotKeywordsList(opt)) => opt.output.as_ref(),
@@ -429,8 +411,7 @@ impl StoredStatic {
             _ => None,
         };
         let disable_abbreviation = match action {
-            Some(Action::CsvTimeline(opt)) => opt.disable_abbreviations_opt.disable_abbreviations,
-            Some(Action::JsonTimeline(opt)) => opt.disable_abbreviations_opt.disable_abbreviations,
+            Some(Action::DfirTimeline(opt)) => opt.disable_abbreviations_opt.disable_abbreviations,
             Some(Action::Search(opt)) => opt.disable_abbreviations_opt.disable_abbreviations,
             Some(Action::LogMetrics(opt)) => opt.disable_abbreviations_opt.disable_abbreviations,
             _ => false,
@@ -444,20 +425,19 @@ impl StoredStatic {
             disable_abbreviation,
         );
         let multiline_flag = match action {
-            Some(Action::CsvTimeline(opt)) => opt.multiline,
+            Some(Action::DfirTimeline(opt)) => opt.multiline,
             Some(Action::Search(opt)) => opt.multiline,
             Some(Action::LogMetrics(opt)) => opt.multiline,
             _ => false,
         };
         let tab_separator_flag = match action {
-            Some(Action::CsvTimeline(opt)) => opt.tab_separator,
+            Some(Action::DfirTimeline(opt)) => opt.tab_separator,
             Some(Action::Search(opt)) => opt.tab_separator,
             Some(Action::LogMetrics(opt)) => opt.tab_separator,
             _ => false,
         };
         let proven_rule_flag = match action {
-            Some(Action::CsvTimeline(opt)) => opt.output_options.proven_rules,
-            Some(Action::JsonTimeline(opt)) => opt.output_options.proven_rules,
+            Some(Action::DfirTimeline(opt)) => opt.output_options.proven_rules,
             _ => false,
         };
         let target_ruleids = if proven_rule_flag {
@@ -470,13 +450,7 @@ impl StoredStatic {
             TargetIds::default()
         };
         let include_computer: HashSet<CompactString> = match action {
-            Some(Action::CsvTimeline(opt)) => compact_string_set(
-                opt.output_options
-                    .detect_common_options
-                    .include_computer
-                    .as_ref(),
-            ),
-            Some(Action::JsonTimeline(opt)) => compact_string_set(
+            Some(Action::DfirTimeline(opt)) => compact_string_set(
                 opt.output_options
                     .detect_common_options
                     .include_computer
@@ -500,13 +474,7 @@ impl StoredStatic {
             _ => HashSet::default(),
         };
         let exclude_computer: HashSet<CompactString> = match action {
-            Some(Action::CsvTimeline(opt)) => compact_string_set(
-                opt.output_options
-                    .detect_common_options
-                    .exclude_computer
-                    .as_ref(),
-            ),
-            Some(Action::JsonTimeline(opt)) => compact_string_set(
+            Some(Action::DfirTimeline(opt)) => compact_string_set(
                 opt.output_options
                     .detect_common_options
                     .exclude_computer
@@ -530,28 +498,21 @@ impl StoredStatic {
             _ => HashSet::default(),
         };
         let include_eid: HashSet<CompactString> = match action {
-            Some(Action::CsvTimeline(opt)) => {
-                compact_string_set(opt.output_options.include_eid.as_ref())
-            }
-            Some(Action::JsonTimeline(opt)) => {
+            Some(Action::DfirTimeline(opt)) => {
                 compact_string_set(opt.output_options.include_eid.as_ref())
             }
             Some(Action::PivotKeywordsList(opt)) => compact_string_set(opt.include_eid.as_ref()),
             _ => HashSet::default(),
         };
         let exclude_eid: HashSet<CompactString> = match action {
-            Some(Action::CsvTimeline(opt)) => {
-                compact_string_set(opt.output_options.exclude_eid.as_ref())
-            }
-            Some(Action::JsonTimeline(opt)) => {
+            Some(Action::DfirTimeline(opt)) => {
                 compact_string_set(opt.output_options.exclude_eid.as_ref())
             }
             Some(Action::PivotKeywordsList(opt)) => compact_string_set(opt.exclude_eid.as_ref()),
             _ => HashSet::default(),
         };
         let no_field_data_mapping_flag = match action {
-            Some(Action::CsvTimeline(opt)) => opt.output_options.no_field,
-            Some(Action::JsonTimeline(opt)) => opt.output_options.no_field,
+            Some(Action::DfirTimeline(opt)) => opt.output_options.no_field,
             _ => false,
         };
         let field_data_map = if no_field_data_mapping_flag {
@@ -565,14 +526,12 @@ impl StoredStatic {
         };
 
         let no_pwsh_field_extraction_flag = match action {
-            Some(Action::CsvTimeline(opt)) => opt.output_options.no_pwsh_field_extraction,
-            Some(Action::JsonTimeline(opt)) => opt.output_options.no_pwsh_field_extraction,
+            Some(Action::DfirTimeline(opt)) => opt.output_options.no_pwsh_field_extraction,
             _ => false,
         };
 
         let enable_recover_records = match action {
-            Some(Action::CsvTimeline(opt)) => opt.output_options.input_args.recover_records,
-            Some(Action::JsonTimeline(opt)) => opt.output_options.input_args.recover_records,
+            Some(Action::DfirTimeline(opt)) => opt.output_options.input_args.recover_records,
             Some(Action::EidMetrics(opt)) => opt.input_args.recover_records,
             Some(Action::ExtractBase64(opt)) => opt.input_args.recover_records,
             Some(Action::LogonSummary(opt)) => opt.input_args.recover_records,
@@ -582,8 +541,7 @@ impl StoredStatic {
             _ => false,
         };
         let time_offset = match action {
-            Some(Action::CsvTimeline(opt)) => opt.output_options.input_args.time_offset.clone(),
-            Some(Action::JsonTimeline(opt)) => opt.output_options.input_args.time_offset.clone(),
+            Some(Action::DfirTimeline(opt)) => opt.output_options.input_args.time_offset.clone(),
             Some(Action::EidMetrics(opt)) => opt.input_args.time_offset.clone(),
             Some(Action::ExtractBase64(opt)) => opt.input_args.time_offset.clone(),
             Some(Action::LogonSummary(opt)) => opt.input_args.time_offset.clone(),
@@ -594,15 +552,7 @@ impl StoredStatic {
             _ => None,
         };
         let include_status: HashSet<CompactString> = match action {
-            Some(Action::CsvTimeline(opt)) => opt
-                .output_options
-                .include_status
-                .as_ref()
-                .unwrap_or(&vec![])
-                .iter()
-                .map(|x| x.into())
-                .collect(),
-            Some(Action::JsonTimeline(opt)) => opt
+            Some(Action::DfirTimeline(opt)) => opt
                 .output_options
                 .include_status
                 .as_ref()
@@ -620,18 +570,15 @@ impl StoredStatic {
             _ => HashSet::default(),
         };
         let is_low_memory = match action {
-            Some(Action::CsvTimeline(opt)) => !opt.output_options.sort_events,
-            Some(Action::JsonTimeline(opt)) => !opt.output_options.sort_events,
+            Some(Action::DfirTimeline(opt)) => !opt.output_options.sort_events,
             _ => false,
         };
         let enable_all_rules = match action {
-            Some(Action::CsvTimeline(opt)) => opt.output_options.enable_all_rules,
-            Some(Action::JsonTimeline(opt)) => opt.output_options.enable_all_rules,
+            Some(Action::DfirTimeline(opt)) => opt.output_options.enable_all_rules,
             _ => false,
         };
         let scan_all_evtx_files = match action {
-            Some(Action::CsvTimeline(opt)) => opt.output_options.scan_all_evtx_files,
-            Some(Action::JsonTimeline(opt)) => opt.output_options.scan_all_evtx_files,
+            Some(Action::DfirTimeline(opt)) => opt.output_options.scan_all_evtx_files,
             _ => false,
         };
         let metrics_remove_duplication = match action {
@@ -640,10 +587,7 @@ impl StoredStatic {
             _ => false,
         };
         let validate_checksum = match action {
-            Some(Action::CsvTimeline(opt)) => {
-                opt.output_options.detect_common_options.validate_checksums
-            }
-            Some(Action::JsonTimeline(opt)) => {
+            Some(Action::DfirTimeline(opt)) => {
                 opt.output_options.detect_common_options.validate_checksums
             }
             Some(Action::LogonSummary(opt)) => opt.detect_common_options.validate_checksums,
@@ -839,8 +783,7 @@ impl StoredStatic {
 /// Function to extract thread_number information from config.
 fn check_thread_number(config: &Config) -> Option<usize> {
     match config.action.as_ref()? {
-        Action::CsvTimeline(opt) => opt.output_options.detect_common_options.thread_number,
-        Action::JsonTimeline(opt) => opt.output_options.detect_common_options.thread_number,
+        Action::DfirTimeline(opt) => opt.output_options.detect_common_options.thread_number,
         Action::LogonSummary(opt) => opt.detect_common_options.thread_number,
         Action::EidMetrics(opt) => opt.detect_common_options.thread_number,
         Action::ExtractBase64(opt) => opt.detect_common_options.thread_number,
@@ -852,31 +795,39 @@ fn check_thread_number(config: &Config) -> Option<usize> {
 }
 
 // Clap definitions for command generation.
+
+/// Release name shown in the CLI help banner (e.g. "CODE BLUE Release").
+/// This is the only value to update when naming a new release; the version
+/// number is pulled automatically from Cargo.toml (`CARGO_PKG_VERSION`).
+pub const RELEASE_NAME: &str = "Black Hat USA Arsenal 2026 Release";
+
+/// Builds a clap `help_template` banner. The first line is
+/// `Hayabusa v<version> - <RELEASE_NAME>` (version from Cargo.toml) and `body`
+/// is appended verbatim, so it must start with a newline.
+fn help_banner(body: &str) -> String {
+    format!(
+        "\nHayabusa v{} - {}{}",
+        env!("CARGO_PKG_VERSION"),
+        RELEASE_NAME,
+        body
+    )
+}
+
 #[derive(Subcommand, Clone, Debug)]
 pub enum Action {
     #[clap(
         author = "Yamato Security (https://github.com/Yamato-Security/hayabusa - @SecurityYamato)",
-        help_template = "\nHayabusa v3.10.0 - Independence Day Release\n{author-with-newline}\n{usage-heading}\n  hayabusa.exe csv-timeline <INPUT> [OPTIONS]\n\n{all-args}",
+        help_template = help_banner("\n{author-with-newline}\n{usage-heading}\n  hayabusa.exe dfir-timeline <INPUT> [OPTIONS]\n\n{all-args}"),
         term_width = 400,
         display_order = 292,
         disable_help_flag = true
     )]
-    /// Create a DFIR timeline and save it in CSV format
-    CsvTimeline(CsvOutputOption),
+    /// Create a DFIR timeline
+    DfirTimeline(DfirTimelineOption),
 
     #[clap(
         author = "Yamato Security (https://github.com/Yamato-Security/hayabusa - @SecurityYamato)",
-        help_template = "\nHayabusa v3.10.0 - Independence Day Release\n{author-with-newline}\n{usage-heading}\n  hayabusa.exe json-timeline <INPUT> [OPTIONS]\n\n{all-args}",
-        term_width = 400,
-        display_order = 360,
-        disable_help_flag = true
-    )]
-    /// Create a DFIR timeline and save it in JSON/JSONL format
-    JsonTimeline(JSONOutputOption),
-
-    #[clap(
-        author = "Yamato Security (https://github.com/Yamato-Security/hayabusa - @SecurityYamato)",
-        help_template = "\nHayabusa v3.10.0 - Independence Day Release\n{author-with-newline}\n{usage-heading}\n  hayabusa.exe log-metrics <INPUT> [OPTIONS]\n\n{all-args}",
+        help_template = help_banner("\n{author-with-newline}\n{usage-heading}\n  hayabusa.exe log-metrics <INPUT> [OPTIONS]\n\n{all-args}"),
         term_width = 400,
         display_order = 382,
         disable_help_flag = true
@@ -886,7 +837,7 @@ pub enum Action {
 
     #[clap(
         author = "Yamato Security (https://github.com/Yamato-Security/hayabusa - @SecurityYamato)",
-        help_template = "\nHayabusa v3.10.0 - Independence Day Release\n{author-with-newline}\n{usage-heading}\n  hayabusa.exe logon-summary <INPUT> [OPTIONS]\n\n{all-args}",
+        help_template = help_banner("\n{author-with-newline}\n{usage-heading}\n  hayabusa.exe logon-summary <INPUT> [OPTIONS]\n\n{all-args}"),
         term_width = 400,
         display_order = 383,
         disable_help_flag = true
@@ -896,7 +847,7 @@ pub enum Action {
 
     #[clap(
         author = "Yamato Security (https://github.com/Yamato-Security/hayabusa - @SecurityYamato)",
-        help_template = "\nHayabusa v3.10.0 - Independence Day Release\n{author-with-newline}\n{usage-heading}\n  hayabusa.exe eid-metrics <INPUT> [OPTIONS]\n\n{all-args}",
+        help_template = help_banner("\n{author-with-newline}\n{usage-heading}\n  hayabusa.exe eid-metrics <INPUT> [OPTIONS]\n\n{all-args}"),
         term_width = 400,
         display_order = 310,
         disable_help_flag = true
@@ -906,7 +857,7 @@ pub enum Action {
 
     #[clap(
         author = "Yamato Security (https://github.com/Yamato-Security/hayabusa - @SecurityYamato)",
-        help_template = "\nHayabusa v3.10.0 - Independence Day Release\n{author-with-newline}\n{usage-heading}\n  hayabusa.exe expand-list <INPUT> [OPTIONS]\n\n{all-args}",
+        help_template = help_banner("\n{author-with-newline}\n{usage-heading}\n  hayabusa.exe expand-list <INPUT> [OPTIONS]\n\n{all-args}"),
         term_width = 400,
         display_order = 311,
         disable_help_flag = true
@@ -916,7 +867,7 @@ pub enum Action {
 
     #[clap(
         author = "Yamato Security (https://github.com/Yamato-Security/hayabusa - @SecurityYamato)",
-        help_template = "\nHayabusa v3.10.0 - Independence Day Release\n{author-with-newline}\n{usage-heading}\n  hayabusa.exe extract-base64 <INPUT> [OPTIONS]\n\n{all-args}",
+        help_template = help_banner("\n{author-with-newline}\n{usage-heading}\n  hayabusa.exe extract-base64 <INPUT> [OPTIONS]\n\n{all-args}"),
         term_width = 400,
         display_order = 311,
         disable_help_flag = true
@@ -926,7 +877,7 @@ pub enum Action {
 
     #[clap(
         author = "Yamato Security (https://github.com/Yamato-Security/hayabusa - @SecurityYamato)",
-        help_template = "\nHayabusa v3.10.0 - Independence Day Release\n{author-with-newline}\n{usage-heading}\n  hayabusa.exe pivot-keywords-list <INPUT> [OPTIONS]\n\n{all-args}",
+        help_template = help_banner("\n{author-with-newline}\n{usage-heading}\n  hayabusa.exe pivot-keywords-list <INPUT> [OPTIONS]\n\n{all-args}"),
         term_width = 400,
         display_order = 420,
         disable_help_flag = true
@@ -936,7 +887,7 @@ pub enum Action {
 
     #[clap(
         author = "Yamato Security (https://github.com/Yamato-Security/hayabusa - @SecurityYamato)",
-        help_template = "\nHayabusa v3.10.0 - Independence Day Release\n{author-with-newline}\n{usage-heading}\n  hayabusa.exe search <INPUT> <--keywords \"<KEYWORDS>\" OR --regex \"<REGEX>\"> [OPTIONS]\n\n{all-args}",
+        help_template = help_banner("\n{author-with-newline}\n{usage-heading}\n  hayabusa.exe search <INPUT> <--keywords \"<KEYWORDS>\" OR --regex \"<REGEX>\"> [OPTIONS]\n\n{all-args}"),
         term_width = 400,
         display_order = 450,
         disable_help_flag = true
@@ -946,7 +897,7 @@ pub enum Action {
 
     #[clap(
         author = "Yamato Security (https://github.com/Yamato-Security/hayabusa - @SecurityYamato)",
-        help_template = "\nHayabusa v3.10.0 - Independence Day Release\n{author-with-newline}\n{usage-heading}\n  {usage}\n\n{all-args}",
+        help_template = help_banner("\n{author-with-newline}\n{usage-heading}\n  {usage}\n\n{all-args}"),
         term_width = 400,
         display_order = 470,
         disable_help_flag = true
@@ -956,7 +907,7 @@ pub enum Action {
 
     #[clap(
         author = "Yamato Security (https://github.com/Yamato-Security/hayabusa - @SecurityYamato)",
-        help_template = "\nHayabusa v3.10.0 - Independence Day Release\n{author-with-newline}\n{usage-heading}\n  {usage}\n\n{all-args}",
+        help_template = help_banner("\n{author-with-newline}\n{usage-heading}\n  {usage}\n\n{all-args}"),
         term_width = 400,
         display_order = 380,
         disable_help_flag = true
@@ -966,7 +917,7 @@ pub enum Action {
 
     #[clap(
         author = "Yamato Security (https://github.com/Yamato-Security/hayabusa - @SecurityYamato)",
-        help_template = "\nHayabusa v3.10.0 - Independence Day Release\n{author-with-newline}\n{usage-heading}\n  {usage}\n\n{all-args}",
+        help_template = help_banner("\n{author-with-newline}\n{usage-heading}\n  {usage}\n\n{all-args}"),
         term_width = 400,
         display_order = 451,
         disable_help_flag = true
@@ -984,7 +935,7 @@ pub enum Action {
 
     #[clap(
         author = "Yamato Security (https://github.com/Yamato-Security/hayabusa - @SecurityYamato)",
-        help_template = "\nHayabusa v3.10.0 - Independence Day Release\n{author-with-newline}\n{usage-heading}\n  hayabusa.exe computer-metrics <INPUT> [OPTIONS]\n\n{all-args}",
+        help_template = help_banner("\n{author-with-newline}\n{usage-heading}\n  hayabusa.exe computer-metrics <INPUT> [OPTIONS]\n\n{all-args}"),
         term_width = 400,
         display_order = 290,
         disable_help_flag = true
@@ -994,7 +945,7 @@ pub enum Action {
 
     #[clap(
         author = "Yamato Security (https://github.com/Yamato-Security/hayabusa - @SecurityYamato)",
-        help_template = "\nHayabusa v3.10.0 - Independence Day Release\n{author-with-newline}\n{usage-heading}\n  hayabusa.exe config-critical-systems <INPUT> [OPTIONS]\n\n{all-args}",
+        help_template = help_banner("\n{author-with-newline}\n{usage-heading}\n  hayabusa.exe config-critical-systems <INPUT> [OPTIONS]\n\n{all-args}"),
         term_width = 400,
         display_order = 291,
         disable_help_flag = true
@@ -1009,8 +960,7 @@ impl Action {
     pub fn to_usize(action: Option<&Action>) -> usize {
         if let Some(a) = action {
             match a {
-                Action::CsvTimeline(_) => 0,
-                Action::JsonTimeline(_) => 1,
+                Action::DfirTimeline(_) => 0,
                 Action::LogonSummary(_) => 2,
                 Action::EidMetrics(_) => 3,
                 Action::PivotKeywordsList(_) => 4,
@@ -1035,8 +985,7 @@ impl Action {
     pub fn get_action_name(action: Option<&Action>) -> &str {
         if let Some(a) = action {
             match a {
-                Action::CsvTimeline(_) => "csv-timeline",
-                Action::JsonTimeline(_) => "json-timeline",
+                Action::DfirTimeline(_) => "dfir-timeline",
                 Action::LogonSummary(_) => "logon-summary",
                 Action::EidMetrics(_) => "eid-metrics",
                 Action::PivotKeywordsList(_) => "pivot-keywords-list",
@@ -1086,7 +1035,7 @@ pub struct DisableAbbreviationsOption {
 #[derive(Args, Clone, Debug, Default)]
 pub struct DetectCommonOption {
     /// Scan JSON formatted logs instead of .evtx (.json or .jsonl)
-    #[arg(help_heading = Some("General Options"), short = 'J', long = "JSON-input", conflicts_with = "live_analysis", display_order = 360)]
+    #[arg(help_heading = Some("General Options"), short = 'J', long = "json-input", conflicts_with = "live_analysis", display_order = 360)]
     pub json_input: bool,
 
     /// Enable checksum validation
@@ -1100,7 +1049,6 @@ pub struct DetectCommonOption {
     /// Number of threads (default: optimal number for performance)
     #[arg(
         help_heading = Some("General Options"),
-        short = 't',
         long = "threads",
         value_name = "NUMBER",
         display_order = 460
@@ -1148,31 +1096,31 @@ pub struct DefaultProfileOption {
 #[derive(Args, Clone, Debug, Default)]
 pub struct TimeFormatOptions {
     /// Output timestamp in European time format (ex: 22-02-2022 22:00:00.123 +02:00)
-    #[arg(help_heading = Some("Time Format"), long = "European-time", display_order = 50)]
+    #[arg(help_heading = Some("Time Format"), long = "european-time", display_order = 50)]
     pub european_time: bool,
 
     /// Output timestamp in original ISO-8601 format (ex: 2022-02-22T10:10:10.1234567Z) (Always UTC)
-    #[arg(help_heading = Some("Time Format"), short = 'O', long = "ISO-8601", display_order = 90)]
+    #[arg(help_heading = Some("Time Format"), short = 'O', long = "iso-8601", display_order = 90)]
     pub iso_8601: bool,
 
     /// Output timestamp in RFC 2822 format (ex: Fri, 22 Feb 2022 22:00:00 -0600)
-    #[arg(help_heading = Some("Time Format"), long = "RFC-2822", display_order = 180)]
+    #[arg(help_heading = Some("Time Format"), long = "rfc-2822", display_order = 180)]
     pub rfc_2822: bool,
 
     /// Output timestamp in RFC 3339 format (ex: 2022-02-22 22:00:00.123456-06:00)
-    #[arg(help_heading = Some("Time Format"), long = "RFC-3339", display_order = 180)]
+    #[arg(help_heading = Some("Time Format"), long = "rfc-3339", display_order = 180)]
     pub rfc_3339: bool,
 
     /// Output timestamp in US military time format (ex: 02-22-2022 22:00:00.123 -06:00)
-    #[arg(help_heading = Some("Time Format"), long = "US-military-time", display_order = 210)]
+    #[arg(help_heading = Some("Time Format"), long = "us-military-time", display_order = 210)]
     pub us_military_time: bool,
 
     /// Output timestamp in US time format (ex: 02-22-2022 10:00:00.123 PM -06:00)
-    #[arg(help_heading = Some("Time Format"), long = "US-time", display_order = 210)]
+    #[arg(help_heading = Some("Time Format"), long = "us-time", display_order = 210)]
     pub us_time: bool,
 
     /// Output time in UTC format (default: local time)
-    #[arg(help_heading = Some("Time Format"), short = 'U', long = "UTC", display_order = 210)]
+    #[arg(help_heading = Some("Time Format"), short = 'U', long = "utc", display_order = 210)]
     pub utc: bool,
 }
 
@@ -1258,7 +1206,6 @@ pub struct SearchOption {
     /// Number of threads (default: optimal number for performance)
     #[arg(
             help_heading = Some("General Options"),
-            short = 't',
             long = "threads",
             value_name = "NUMBER",
             display_order = 460
@@ -1297,11 +1244,11 @@ pub struct SearchOption {
     pub clobber_opt: ClobberOption,
 
     /// Save the search results in JSON format (ex: -J -o results.json)
-    #[arg(help_heading = Some("Output"), short = 'J', long = "JSON-output", conflicts_with_all = ["jsonl_output", "multiline"], requires = "output", display_order = 100)]
+    #[arg(help_heading = Some("Output"), short = 'J', long = "json-output", conflicts_with_all = ["jsonl_output", "multiline"], requires = "output", display_order = 100)]
     pub json_output: bool,
 
     /// Save the search results in JSONL format (ex: -L -o results.jsonl)
-    #[arg(help_heading = Some("Output"), short = 'L', long = "JSONL-output", conflicts_with_all = ["jsonl_output", "multiline"], requires = "output", display_order = 100)]
+    #[arg(help_heading = Some("Output"), short = 'L', long = "jsonl-output", conflicts_with_all = ["jsonl_output", "multiline"], requires = "output", display_order = 100)]
     pub jsonl_output: bool,
 
     #[clap(flatten)]
@@ -1454,7 +1401,7 @@ pub struct PivotKeywordOption {
     pub time_range: TimeRangeOption,
 
     /// Scan only common EIDs for faster speed (./rules/config/target_event_IDs.txt)
-    #[arg(help_heading = Some("Filtering"), short = 'E', long = "EID-filter", display_order = 50)]
+    #[arg(help_heading = Some("Filtering"), short = 'E', long = "eid-filter", display_order = 50)]
     pub eid_filter: bool,
 
     /// Scan only specified EIDs for faster speed (ex: 1) (ex: 1,4688)
@@ -1511,6 +1458,16 @@ pub struct LogonSummaryOption {
 pub struct OutputOption {
     #[clap(flatten)]
     pub input_args: InputOption,
+
+    /// Duplicate field data will be replaced with "DUP" (CSV output only, sort required)
+    #[arg(
+            help_heading = Some("CSV Output"),
+            short = 'R',
+            long = "remove-duplicate-data",
+            requires = "sort_events",
+            display_order = 440
+        )]
+    pub remove_duplicate_data: bool,
 
     /// Specify output profile
     #[arg(help_heading = Some("Output"), short = 'p', long = "profile", display_order = 420)]
@@ -1580,7 +1537,7 @@ pub struct OutputOption {
     pub time_range: TimeRangeOption,
 
     /// Scan only common EIDs for faster speed (./rules/config/target_event_IDs.txt)
-    #[arg(help_heading = Some("Filtering"), short = 'E', long = "EID-filter", conflicts_with_all=["include_eid","exclude_eid"], display_order = 50)]
+    #[arg(help_heading = Some("Filtering"), short = 'E', long = "eid-filter", conflicts_with_all=["include_eid","exclude_eid"], display_order = 50)]
     pub eid_filter: bool,
 
     /// Scan with only proven rules for faster speed (./rules/config/proven_rules.txt)
@@ -1605,7 +1562,7 @@ pub struct OutputOption {
     #[clap(flatten)]
     pub time_format_options: TimeFormatOptions,
 
-    /// Output event frequency timeline (terminal needs to support unicode)
+    /// Output event frequency timeline (terminal needs to support unicode, sort required)
     #[arg(help_heading = Some("Display Settings"), short = 'T', long = "visualize-timeline", display_order = 490, requires = "sort_events")]
     pub visualize_timeline: bool,
 
@@ -1623,7 +1580,7 @@ pub struct OutputOption {
     pub rules: PathBuf,
 
     /// Save Results Summary details to an HTML report (ex: results.html)
-    #[arg(help_heading = Some("Output"), short = 'H', long="HTML-report", conflicts_with = "no_summary", value_name = "FILE", display_order = 80, requires = "output")]
+    #[arg(help_heading = Some("Output"), short = 'H', long="html-report", conflicts_with = "no_summary", value_name = "FILE", display_order = 80, requires = "output")]
     pub html_report: Option<PathBuf>,
 
     /// Do not display Results Summary for faster speed
@@ -1641,17 +1598,7 @@ pub struct OutputOption {
     #[arg(help_heading = Some("Output"), long = "no-pwsh-field-extraction", display_order = 410)]
     pub no_pwsh_field_extraction: bool,
 
-    /// Duplicate field data will be replaced with "DUP"
-    #[arg(
-            help_heading = Some("Output"),
-            short = 'R',
-            long = "remove-duplicate-data",
-            requires = "sort_events",
-            display_order = 440
-        )]
-    pub remove_duplicate_data: bool,
-
-    /// Remove duplicate detections (default: disabled)
+    /// Remove duplicate detections (sort required)
     #[arg(help_heading = Some("Output"), short = 'X', long = "remove-duplicate-detections", requires = "sort_events", display_order = 441)]
     pub remove_duplicate_detections: bool,
 
@@ -1719,17 +1666,42 @@ pub struct InputOption {
     pub time_offset: Option<String>,
 }
 
+/// Output format for `dfir-timeline`, selectable with `-t, --output-type` (case-insensitive,
+/// default CSV).
+#[derive(ValueEnum, Clone, Copy, Debug, PartialEq, Eq, Default)]
+pub enum OutputType {
+    #[default]
+    Csv,
+    Json,
+    Jsonl,
+}
+
 #[derive(Args, Clone, Debug, Default)]
-pub struct CsvOutputOption {
+pub struct DfirTimelineOption {
     #[clap(flatten)]
     pub output_options: OutputOption,
 
-    /// Separate event field information by newline characters
-    #[arg(help_heading = Some("Output"), short = 'M', long="multiline", conflicts_with = "tab_separator", display_order = 390)]
+    /// Output format: csv (default), json, or jsonl
+    #[arg(
+        help_heading = Some("Output"),
+        short = 't',
+        long = "output-type",
+        value_enum,
+        value_name = "OUTPUT_FORMAT",
+        ignore_case = true,
+        default_value = "csv",
+        hide_default_value = true,
+        hide_possible_values = true,
+        display_order = 411
+    )]
+    pub output_type: OutputType,
+
+    /// Separate event field information by newline characters (CSV output only)
+    #[arg(help_heading = Some("CSV Output"), short = 'M', long="multiline", conflicts_with = "tab_separator", display_order = 390)]
     pub multiline: bool,
 
-    /// Separate event field information by tabs
-    #[arg(help_heading = Some("Output"), short = 'S', long="tab-separator", conflicts_with = "multiline", requires = "output", display_order = 490)]
+    /// Separate event field information by tabs (CSV output only)
+    #[arg(help_heading = Some("CSV Output"), short = 'S', long="tab-separator", conflicts_with = "multiline", requires = "output", display_order = 490)]
     pub tab_separator: bool,
 
     // The display_order value is derived from the first letter of the long option name
@@ -1738,42 +1710,15 @@ pub struct CsvOutputOption {
     #[arg(
         help_heading = Some("Output"),
         short = 'G',
-        long = "GeoIP",
+        long = "geo-ip",
         value_name = "MAXMIND-DB-DIR",
         display_order = 70
     )]
     pub geo_ip: Option<PathBuf>,
 
-    /// Save the timeline in CSV format (ex: results.csv)
+    /// Save the timeline to a file (ex: results.csv)
     #[arg(help_heading = Some("Output"), short = 'o', long, value_name = "FILE", display_order = 410)]
     pub output: Option<PathBuf>,
-
-    #[clap(flatten)]
-    pub disable_abbreviations_opt: DisableAbbreviationsOption,
-}
-
-#[derive(Args, Clone, Debug, Default)]
-pub struct JSONOutputOption {
-    #[clap(flatten)]
-    pub output_options: OutputOption,
-
-    /// Save the timeline in JSON format (ex: results.json)
-    #[arg(help_heading = Some("Output"), short = 'o', long, value_name = "FILE", display_order = 410)]
-    pub output: Option<PathBuf>,
-
-    /// Save the timeline in JSONL format (ex: -L -o results.jsonl)
-    #[arg(help_heading = Some("Output"), short = 'L', long = "JSONL-output", requires = "output", display_order = 100)]
-    pub jsonl_timeline: bool,
-
-    /// Add GeoIP (ASN, city, country) info to IP addresses
-    #[arg(
-        help_heading = Some("Output"),
-        short = 'G',
-        long = "GeoIP",
-        value_name = "MAXMIND-DB-DIR",
-        display_order = 70
-    )]
-    pub geo_ip: Option<PathBuf>,
 
     #[clap(flatten)]
     pub disable_abbreviations_opt: DisableAbbreviationsOption,
@@ -1792,7 +1737,7 @@ pub struct ComputerMetricsOption {
     pub common_options: CommonOptions,
 
     /// Scan JSON formatted logs instead of .evtx (.json or .jsonl)
-    #[arg(help_heading = Some("General Options"), short = 'J', long = "JSON-input", conflicts_with = "live_analysis", display_order = 390)]
+    #[arg(help_heading = Some("General Options"), short = 'J', long = "json-input", conflicts_with = "live_analysis", display_order = 390)]
     pub json_input: bool,
 
     /// Specify additional evtx file extensions (ex: evtx_data)
@@ -1935,7 +1880,7 @@ pub struct ConfigCriticalSystemsOption {
 #[derive(Parser, Clone, Debug, Default)]
 #[clap(
     author = "Yamato Security (https://github.com/Yamato-Security/hayabusa - @SecurityYamato)",
-    help_template = "\nHayabusa v3.10.0 - Independence Day Release\n{author-with-newline}\n{usage-heading}\n  hayabusa.exe <COMMAND> [OPTIONS]\n  hayabusa.exe help <COMMAND> or hayabusa.exe <COMMAND> -h\n\n{all-args}{options}",
+    help_template = help_banner("\n{author-with-newline}\n{usage-heading}\n  hayabusa.exe <COMMAND> [OPTIONS]\n  hayabusa.exe help <COMMAND> or hayabusa.exe <COMMAND> -h\n\n{all-args}{options}"),
     term_width = 400,
     disable_help_flag = true
 )]
@@ -2153,28 +2098,7 @@ impl TargetEventTime {
         let mut parse_success_flag = true;
         let time_offset = get_time_offset(&stored_static.time_offset, &mut parse_success_flag);
         match &stored_static.config.action.as_ref().unwrap() {
-            Action::CsvTimeline(option) => {
-                let start_time = if time_offset.is_some() {
-                    get_time(
-                        time_offset.as_ref(),
-                        "Invalid timeline offset. Please use one of the following formats: 1y, 3M, 30d, 24h, 30m",
-                        &mut parse_success_flag,
-                    )
-                } else {
-                    get_time(
-                        option.output_options.time_range.start_timeline.as_ref(),
-                        "start-timeline field: the timestamp format is not correct.",
-                        &mut parse_success_flag,
-                    )
-                };
-                let end_time = get_time(
-                    option.output_options.time_range.end_timeline.as_ref(),
-                    "end-timeline field: the timestamp format is not correct.",
-                    &mut parse_success_flag,
-                );
-                Self::set(parse_success_flag, start_time, end_time)
-            }
-            Action::JsonTimeline(option) => {
+            Action::DfirTimeline(option) => {
                 let start_time = if time_offset.is_some() {
                     get_time(
                         time_offset.as_ref(),
@@ -2415,7 +2339,7 @@ pub fn load_pivot_keywords(path: &str, pivot_keyword: &RwLock<PivotKeywordMap>) 
 }
 
 /// Returns the set of file extensions to scan: the extra extensions added with
-/// --target-file-ext plus the default extension (evtx, or json/jsonl when --JSON-input is set).
+/// --target-file-ext plus the default extension (evtx, or json/jsonl when --json-input is set).
 pub fn get_target_extensions(arg: Option<&Vec<String>>, json_input_flag: bool) -> HashSet<String> {
     let mut target_file_extensions: HashSet<String> = convert_option_vecs_to_hs(arg);
     if json_input_flag {
@@ -2470,8 +2394,7 @@ fn extract_search_options(config: &Config) -> Option<SearchOption> {
 /// from the action's own options so that downstream code can handle every action uniformly.
 fn extract_output_options(config: &Config) -> Option<OutputOption> {
     match &config.action.as_ref()? {
-        Action::CsvTimeline(option) => Some(option.output_options.clone()),
-        Action::JsonTimeline(option) => Some(option.output_options.clone()),
+        Action::DfirTimeline(option) => Some(option.output_options.clone()),
         Action::PivotKeywordsList(option) => Some(OutputOption {
             input_args: option.input_args.clone(),
             enable_deprecated_rules: option.enable_deprecated_rules,
@@ -2757,9 +2680,8 @@ mod tests {
     use std::default::Default;
 
     use super::{
-        Action, ClobberOption, CommonOptions, Config, CsvOutputOption, DetectCommonOption,
-        InputOption, JSONOutputOption, OutputOption, StoredStatic, TargetEventTime,
-        create_control_char_replace_map,
+        Action, ClobberOption, CommonOptions, Config, DetectCommonOption, DfirTimelineOption,
+        InputOption, OutputOption, StoredStatic, TargetEventTime, create_control_char_replace_map,
     };
     use crate::detections::configs::{
         self, EidMetricsOption, LogonSummaryOption, PivotKeywordOption, SearchOption,
@@ -2836,7 +2758,7 @@ mod tests {
     #[test]
     fn test_time_offset_csv() {
         let csv_timeline = StoredStatic::create_static_data(Config {
-            action: Some(Action::CsvTimeline(CsvOutputOption {
+            action: Some(Action::DfirTimeline(DfirTimelineOption {
                 output_options: OutputOption {
                     input_args: InputOption {
                         time_offset: Some("1d".to_string()),
@@ -2863,7 +2785,7 @@ mod tests {
     #[test]
     fn test_time_offset_json() {
         let json_timeline = StoredStatic::create_static_data(Config {
-            action: Some(Action::JsonTimeline(JSONOutputOption {
+            action: Some(Action::DfirTimeline(DfirTimelineOption {
                 output_options: OutputOption {
                     input_args: InputOption {
                         time_offset: Some("1y".to_string()),
@@ -3007,10 +2929,12 @@ mod tests {
                 .get_arguments()
                 .any(|arg| arg.get_long() == Some(long))
         };
-        let csv = sub("csv-timeline");
-        assert!(has(&csv, "clobber"));
-        assert!(has(&csv, "timeline-start"));
-        assert!(has(&csv, "timeline-end"));
+        let dfir = sub("dfir-timeline");
+        assert!(has(&dfir, "clobber"));
+        assert!(has(&dfir, "timeline-start"));
+        assert!(has(&dfir, "timeline-end"));
+        assert!(has(&dfir, "output-type"));
+        assert!(has(&dfir, "multiline"));
         assert!(has(&sub("eid-metrics"), "clobber"));
         assert!(has(&sub("search"), "disable-abbreviations"));
     }

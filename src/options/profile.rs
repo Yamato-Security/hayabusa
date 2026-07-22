@@ -416,7 +416,9 @@ pub fn get_profile_list(profile_path: &str) -> Nested<Vec<String>> {
 #[cfg(test)]
 mod tests {
 
-    use crate::detections::configs::{Action, Config, CsvOutputOption, OutputOption, StoredStatic};
+    use crate::detections::configs::{
+        Action, Config, DfirTimelineOption, OutputOption, StoredStatic,
+    };
     use crate::options::profile::{Profile, get_profile_list, load_profile};
     use compact_str::CompactString;
     use nested::Nested;
@@ -509,7 +511,7 @@ mod tests {
         ];
 
         let dummy_stored_static =
-            create_dummy_stored_static(Action::CsvTimeline(CsvOutputOption {
+            create_dummy_stored_static(Action::DfirTimeline(DfirTimelineOption {
                 output_options: OutputOption {
                     min_level: "informational".to_string(),
                     ..Default::default()
@@ -529,7 +531,7 @@ mod tests {
     /// Test for when the profile option is set and a profile matching that option exists.
     fn test_load_profile_with_profile_option() {
         let dummy_stored_static =
-            create_dummy_stored_static(Action::CsvTimeline(CsvOutputOption {
+            create_dummy_stored_static(Action::DfirTimeline(DfirTimelineOption {
                 output_options: OutputOption {
                     profile: Some("minimal".to_string()),
                     min_level: "informational".to_string(),
@@ -581,7 +583,7 @@ mod tests {
     /// Test for when the profile option is set but the target option does not exist.
     fn test_load_profile_no_exist_profile_files() {
         let dummy_stored_static =
-            create_dummy_stored_static(Action::CsvTimeline(CsvOutputOption {
+            create_dummy_stored_static(Action::DfirTimeline(DfirTimelineOption {
                 output_options: OutputOption {
                     profile: Some("not_exist".to_string()),
                     min_level: "informational".to_string(),

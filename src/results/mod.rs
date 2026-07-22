@@ -11,7 +11,7 @@ use hashbrown::{HashMap, HashSet};
 use strum::IntoEnumIterator;
 use termcolor::{Buffer, BufferWriter, ColorChoice, ColorSpec, WriteColor};
 
-use crate::detections::configs::{Action, StoredStatic, TimeFormatOptions};
+use crate::detections::configs::{Action, OutputType, StoredStatic, TimeFormatOptions};
 use crate::detections::message::{AlertMessage, DetectInfo};
 
 /// Escapes user-supplied data values before embedding them into the Markdown that
@@ -235,12 +235,15 @@ pub fn init_writer(stored_static: &StoredStatic) -> OutputWriter {
     };
 
     let writer = match &stored_static.config.action.as_ref().unwrap() {
-        // JSON/JSONL records serialize themselves; write them straight to the target.
-        Action::JsonTimeline(_) => ResultWriter::Json {
-            writer: target,
-            first: true,
-        },
-        Action::CsvTimeline(_) => ResultWriter::Csv(Box::new(
+        // JSON/JSONL records serialize themselves; write them straight to the target. CSV goes
+        // through the csv::Writer. The dfir-timeline format is chosen by -t, --output-type.
+        Action::DfirTimeline(option) if !matches!(option.output_type, OutputType::Csv) => {
+            ResultWriter::Json {
+                writer: target,
+                first: true,
+            }
+        }
+        Action::DfirTimeline(_) => ResultWriter::Csv(Box::new(
             WriterBuilder::new()
                 .quote_style(QuoteStyle::NonNumeric)
                 .from_writer(target),
@@ -457,10 +460,10 @@ mod tests {
     use crate::detections::configs::Action;
     use crate::detections::configs::CURRENT_EXE_PATH;
     use crate::detections::configs::Config;
-    use crate::detections::configs::CsvOutputOption;
+    use crate::detections::configs::DfirTimelineOption;
     use crate::detections::configs::DisableAbbreviationsOption;
-    use crate::detections::configs::JSONOutputOption;
     use crate::detections::configs::OutputOption;
+    use crate::detections::configs::OutputType;
     use crate::detections::configs::StoredStatic;
     use crate::detections::configs::{TimeFormatOptions, load_eventkey_alias};
     use crate::detections::field_data_map::FieldDataMapKey;
@@ -634,7 +637,7 @@ mod tests {
             NaiveDateTime::parse_from_str("1996-02-27T01:05:01Z", "%Y-%m-%dT%H:%M:%SZ").unwrap();
         let expect_time = Utc.from_local_datetime(&expect_naivetime).unwrap();
         let expect_tz = expect_time.with_timezone(&Utc);
-        let dummy_action = Action::CsvTimeline(CsvOutputOption {
+        let dummy_action = Action::DfirTimeline(DfirTimelineOption {
             output_options: OutputOption {
                 min_level: "informational".to_string(),
                 ..Default::default()
@@ -871,7 +874,7 @@ mod tests {
             NaiveDateTime::parse_from_str("1996-02-27T01:05:01Z", "%Y-%m-%dT%H:%M:%SZ").unwrap();
         let expect_time = Utc.from_local_datetime(&expect_naivetime).unwrap();
         let expect_tz = expect_time.with_timezone(&Utc);
-        let dummy_action = Action::CsvTimeline(CsvOutputOption {
+        let dummy_action = Action::DfirTimeline(DfirTimelineOption {
             output_options: OutputOption {
                 profile: Some("verbose-2".to_string()),
                 min_level: "informational".to_string(),
@@ -1197,7 +1200,7 @@ mod tests {
             NaiveDateTime::parse_from_str("1996-02-27T01:05:01Z", "%Y-%m-%dT%H:%M:%SZ").unwrap();
         let expect_time = Utc.from_local_datetime(&expect_naivetime).unwrap();
         let expect_tz = expect_time.with_timezone(&Utc);
-        let dummy_action = Action::CsvTimeline(CsvOutputOption {
+        let dummy_action = Action::DfirTimeline(DfirTimelineOption {
             output_options: OutputOption {
                 min_level: "informational".to_string(),
                 no_summary: true,
@@ -1433,7 +1436,7 @@ mod tests {
             NaiveDateTime::parse_from_str("1996-02-27T01:05:01Z", "%Y-%m-%dT%H:%M:%SZ").unwrap();
         let expect_time = Utc.from_local_datetime(&expect_naivetime).unwrap();
         let expect_tz = expect_time.with_timezone(&Utc);
-        let dummy_action = Action::JsonTimeline(JSONOutputOption {
+        let dummy_action = Action::DfirTimeline(DfirTimelineOption {
             output_options: OutputOption {
                 min_level: "informational".to_string(),
                 no_summary: true,
@@ -1442,6 +1445,7 @@ mod tests {
                 ..Default::default()
             },
             output: Some(out_test_emit_csv_remove_duplicate_json.clone()),
+            output_type: OutputType::Json,
             ..Default::default()
         });
         let dummy_config = Config {
@@ -1742,7 +1746,7 @@ mod tests {
             NaiveDateTime::parse_from_str("1996-02-27T01:05:01Z", "%Y-%m-%dT%H:%M:%SZ").unwrap();
         let expect_time = Utc.from_local_datetime(&expect_naivetime).unwrap();
         let expect_tz = expect_time.with_timezone(&Utc);
-        let dummy_action = Action::JsonTimeline(JSONOutputOption {
+        let dummy_action = Action::DfirTimeline(DfirTimelineOption {
             output_options: OutputOption {
                 min_level: "informational".to_string(),
                 no_summary: true,
@@ -1752,7 +1756,9 @@ mod tests {
             },
             geo_ip: None,
             output: Some(out_test_multiple_data_in_details_json.clone()),
-            jsonl_timeline: false,
+            output_type: OutputType::Json,
+            multiline: false,
+            tab_separator: false,
             disable_abbreviations_opt: DisableAbbreviationsOption {
                 disable_abbreviations: false,
             },
@@ -1983,7 +1989,7 @@ mod tests {
             NaiveDateTime::parse_from_str("1996-02-27T01:05:01Z", "%Y-%m-%dT%H:%M:%SZ").unwrap();
         let expect_time = Utc.from_local_datetime(&expect_naivetime).unwrap();
         let expect_tz = expect_time.with_timezone(&Utc);
-        let json_dummy_action = Action::JsonTimeline(JSONOutputOption {
+        let json_dummy_action = Action::DfirTimeline(DfirTimelineOption {
             output_options: OutputOption {
                 min_level: "informational".to_string(),
                 no_summary: true,
@@ -1991,6 +1997,7 @@ mod tests {
                 ..Default::default()
             },
             output: Some(out_test_emit_csv_json_json.clone()),
+            output_type: OutputType::Json,
             ..Default::default()
         });
 
@@ -2162,7 +2169,7 @@ mod tests {
             NaiveDateTime::parse_from_str("1996-02-27T01:05:01Z", "%Y-%m-%dT%H:%M:%SZ").unwrap();
         let expect_time = Utc.from_local_datetime(&expect_naivetime).unwrap();
         let expect_tz = expect_time.with_timezone(&Utc);
-        let json_dummy_action = Action::JsonTimeline(JSONOutputOption {
+        let json_dummy_action = Action::DfirTimeline(DfirTimelineOption {
             output_options: OutputOption {
                 min_level: "informational".to_string(),
                 no_summary: true,
@@ -2170,7 +2177,7 @@ mod tests {
                 ..Default::default()
             },
             output: Some(out_test_emit_csv_jsonl_jsonl.clone()),
-            jsonl_timeline: true,
+            output_type: OutputType::Jsonl,
             ..Default::default()
         });
 

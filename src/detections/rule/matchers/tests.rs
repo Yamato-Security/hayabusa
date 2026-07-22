@@ -5,14 +5,14 @@ use super::FastMatch;
 use super::{
     AllowlistFileMatcher, DefaultMatcher, MinlengthMatcher, PipeElement, RegexesFileMatcher,
 };
-use crate::detections::configs::{Action, Config, CsvOutputOption, OutputOption, StoredStatic};
+use crate::detections::configs::{Action, Config, DfirTimelineOption, OutputOption, StoredStatic};
 use crate::detections::rule::tests::parse_rule_from_str;
 use crate::detections::{self, utils};
 
 fn check_select(rule_str: &str, record_str: &str, expect_select: bool) {
     let mut rule_node = parse_rule_from_str(rule_str);
     let dummy_stored_static = StoredStatic::create_static_data(Config {
-        action: Some(Action::CsvTimeline(CsvOutputOption {
+        action: Some(Action::DfirTimeline(DfirTimelineOption {
             output_options: OutputOption {
                 min_level: "informational".to_string(),
                 no_wizard: true,

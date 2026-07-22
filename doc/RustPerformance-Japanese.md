@@ -575,7 +575,7 @@ OS側で取得できる統計情報から各種リソース使用状況を確認
      ```
 
 4. `cargo build --release` でリリースビルドをする
-5. `heaptrack hayabusa csv-timeline -d sample -o out.csv` を実行する
+5. `heaptrack hayabusa dfir-timeline -d sample -o out.csv` を実行する
 
 以上で、[Hayabusa](https://github.com/Yamato-Security/hayabusa)の実行が完了すると、自動で[heaptrack](https://github.com/KDE/heaptrack)解析結果のGUIが立ち上がります。
 

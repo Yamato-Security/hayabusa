@@ -66,7 +66,7 @@ macOSを使用していて、ターミナルで`no route to host`エラーが発
 
 Hayabusaを実行し、結果をJSONLに保存します。
 
-例：`./hayabusa json-timeline -L -d ../hayabusa-sample-evtx -w -p super-verbose -G /opt/homebrew/var/GeoIP -o results.jsonl`
+例：`./hayabusa dfir-timeline -t jsonl -d ../hayabusa-sample-evtx -w -p super-verbose -G /opt/homebrew/var/GeoIP -o results.jsonl`
 
 ## オプション：古いインポートデータの削除
 
