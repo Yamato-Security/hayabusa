@@ -73,10 +73,10 @@ Nachdem Sie auf `+ ADD TIMELINE` geklickt haben, sehen Sie ein Dialogfeld, das S
 Leider kann Timesketch derzeit das `JSONL`-Format von Hayabusa nicht importieren, erstellen und laden Sie daher mit dem folgenden Befehl eine CSV-Zeitleiste hoch:
 
 ```shell
-hayabusa-x.x.x-win-x64.exe dfir-timeline -d <DIR> -o timesketch-import.csv -p timesketch-verbose --ISO-8601
+hayabusa-x.x.x-win-x64.exe dfir-timeline -d <DIR> -o timesketch-import.csv -p timesketch-verbose --iso-8601
 ```
 
-> Hinweis: Es ist notwendig, ein `timesketch*`-Profil zu wählen und den Zeitstempel als `--ISO-8601` für UTC oder `--RFC-3339` für lokale Zeit anzugeben. Sie können weitere Hayabusa-Optionen hinzufügen, falls Sie möchten, fügen Sie jedoch nicht die Option `-M, --multiline` hinzu, da die Zeilenumbruchzeichen den Import beschädigen werden.
+> Hinweis: Es ist notwendig, ein `timesketch*`-Profil zu wählen und den Zeitstempel als `--iso-8601` für UTC oder `--rfc-3339` für lokale Zeit anzugeben. Sie können weitere Hayabusa-Optionen hinzufügen, falls Sie möchten, fügen Sie jedoch nicht die Option `-M, --multiline` hinzu, da die Zeilenumbruchzeichen den Import beschädigen werden.
 
 Benennen Sie im Dialogfeld "Select file to upload" Ihre Zeitleiste mit etwas wie `hayabusa`, wählen Sie das CSV-Trennzeichen `Comma (,)` und klicken Sie auf `SUBMIT`.
 

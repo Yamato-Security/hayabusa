@@ -73,10 +73,10 @@ cd timesketch
 Hayabusaの`JSONL`形式は現在Timesketchでサポートされていないため、以下のコマンドでCSVファイルを作成してください：
 
 ```shell
-hayabusa-x.x.x-win-x64.exe dfir-timeline -d <DIR> -o timesketch-import.csv -p timesketch-verbose --ISO-8601
+hayabusa-x.x.x-win-x64.exe dfir-timeline -d <DIR> -o timesketch-import.csv -p timesketch-verbose --iso-8601
 ```
 
-> 注意:timesketch* プロファイルを指定し、タイムスタンプをUTCなら --ISO-8601、ローカルタイムなら --RFC-3339 で指定する必要があります。
+> 注意:timesketch* プロファイルを指定し、タイムスタンプをUTCなら --iso-8601、ローカルタイムなら --rfc-3339 で指定する必要があります。
 
 `Select file to upload`ダイアログでタイムラインに hayabusa などの名前を付け、CSVの区切り文字として Comma (,) を選択し、`SUBMIT`をクリックします。
 

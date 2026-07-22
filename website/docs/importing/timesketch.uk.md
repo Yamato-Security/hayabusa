@@ -73,10 +73,10 @@ cd timesketch
 На жаль, Timesketch наразі не може імпортувати формат `JSONL` від Hayabusa, тому створіть і завантажте CSV-часову лінію за допомогою такої команди:
 
 ```shell
-hayabusa-x.x.x-win-x64.exe dfir-timeline -d <DIR> -o timesketch-import.csv -p timesketch-verbose --ISO-8601
+hayabusa-x.x.x-win-x64.exe dfir-timeline -d <DIR> -o timesketch-import.csv -p timesketch-verbose --iso-8601
 ```
 
-> Примітка: Необхідно вибрати профіль `timesketch*` і вказати позначку часу як `--ISO-8601` для UTC або `--RFC-3339` для локального часу. Ви можете додати інші параметри Hayabusa за бажанням, проте не додавайте параметр `-M, --multiline`, оскільки символи нового рядка пошкодять імпорт.
+> Примітка: Необхідно вибрати профіль `timesketch*` і вказати позначку часу як `--iso-8601` для UTC або `--rfc-3339` для локального часу. Ви можете додати інші параметри Hayabusa за бажанням, проте не додавайте параметр `-M, --multiline`, оскільки символи нового рядка пошкодять імпорт.
 
 У діалоговому вікні "Select file to upload" назвіть свою часову лінію якось на кшталт `hayabusa`, виберіть роздільник CSV `Comma (,)` і натисніть `SUBMIT`.
 

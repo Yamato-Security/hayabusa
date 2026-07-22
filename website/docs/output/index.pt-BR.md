@@ -92,7 +92,7 @@ As informações a seguir podem ser exibidas com os perfis de saída integrados:
 |%RuleModifiedDate% | O campo `modified` na regra de detecção YML. |
 |%RuleTitle% | O campo `title` na regra de detecção YML. |
 |%Status% | O campo `status` na regra de detecção YML. |
-|%Timestamp% | O padrão é o formato `YYYY-MM-DD HH:mm:ss.sss +hh:mm`. Campo `<Event><System><TimeCreated SystemTime>` no registro de eventos. O fuso horário padrão será o fuso horário local, mas você pode alterar o fuso horário para UTC com a opção `--UTC`. |
+|%Timestamp% | O padrão é o formato `YYYY-MM-DD HH:mm:ss.sss +hh:mm`. Campo `<Event><System><TimeCreated SystemTime>` no registro de eventos. O fuso horário padrão será o fuso horário local, mas você pode alterar o fuso horário para UTC com a opção `--utc`. |
 
 #### Alias de Campo de Perfil Extra
 

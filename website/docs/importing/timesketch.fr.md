@@ -73,10 +73,10 @@ Après avoir cliqué sur `+ ADD TIMELINE`, vous verrez une boîte de dialogue vo
 Malheureusement, Timesketch ne peut actuellement pas importer le format `JSONL` de Hayabusa, alors créez et téléversez une chronologie CSV avec la commande suivante :
 
 ```shell
-hayabusa-x.x.x-win-x64.exe dfir-timeline -d <DIR> -o timesketch-import.csv -p timesketch-verbose --ISO-8601
+hayabusa-x.x.x-win-x64.exe dfir-timeline -d <DIR> -o timesketch-import.csv -p timesketch-verbose --iso-8601
 ```
 
-> Remarque : Il est nécessaire de choisir un profil `timesketch*` et de spécifier l'horodatage comme `--ISO-8601` pour l'UTC ou `--RFC-3339` pour l'heure locale. Vous pouvez ajouter d'autres options Hayabusa si vous le souhaitez, cependant, n'ajoutez pas l'option `-M, --multiline` car les caractères de saut de ligne corrompront l'importation.
+> Remarque : Il est nécessaire de choisir un profil `timesketch*` et de spécifier l'horodatage comme `--iso-8601` pour l'UTC ou `--rfc-3339` pour l'heure locale. Vous pouvez ajouter d'autres options Hayabusa si vous le souhaitez, cependant, n'ajoutez pas l'option `-M, --multiline` car les caractères de saut de ligne corrompront l'importation.
 
 Dans la boîte de dialogue "Select file to upload", nommez votre chronologie quelque chose comme `hayabusa`, choisissez le délimiteur CSV `Comma (,)` et cliquez sur `SUBMIT`.
 

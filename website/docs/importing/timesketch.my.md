@@ -73,10 +73,10 @@ sketch ကို သင်၏စုံစမ်းစစ်ဆေးမှုန
 ကံမကောင်းစွာဖြင့် Timesketch သည် Hayabusa ၏ `JSONL` format ကို လက်ရှိတွင် import လုပ်၍မရသေးသဖြင့် အောက်ပါ command ဖြင့် CSV timeline တစ်ခုကို ဖန်တီး၍ upload လုပ်ပါ-
 
 ```shell
-hayabusa-x.x.x-win-x64.exe dfir-timeline -d <DIR> -o timesketch-import.csv -p timesketch-verbose --ISO-8601
+hayabusa-x.x.x-win-x64.exe dfir-timeline -d <DIR> -o timesketch-import.csv -p timesketch-verbose --iso-8601
 ```
 
-> မှတ်ချက်: `timesketch*` profile တစ်ခုကို ရွေးချယ်ပြီး timestamp ကို UTC အတွက် `--ISO-8601` သို့မဟုတ် local time အတွက် `--RFC-3339` အဖြစ် သတ်မှတ်ရန် လိုအပ်သည်။ သင်အလိုရှိပါက အခြား Hayabusa option များကို ထည့်နိုင်သော်လည်း newline character များက import ကို ပျက်စီးစေမည်ဖြစ်သဖြင့် `-M, --multiline` option ကို မထည့်ပါနှင့်။
+> မှတ်ချက်: `timesketch*` profile တစ်ခုကို ရွေးချယ်ပြီး timestamp ကို UTC အတွက် `--iso-8601` သို့မဟုတ် local time အတွက် `--rfc-3339` အဖြစ် သတ်မှတ်ရန် လိုအပ်သည်။ သင်အလိုရှိပါက အခြား Hayabusa option များကို ထည့်နိုင်သော်လည်း newline character များက import ကို ပျက်စီးစေမည်ဖြစ်သဖြင့် `-M, --multiline` option ကို မထည့်ပါနှင့်။
 
 "Select file to upload" dialog box တွင် သင်၏ timeline ကို `hayabusa` ကဲ့သို့ အမည်ပေး၍ `Comma (,)` CSV delimiter ကို ရွေးချယ်ပြီး `SUBMIT` ကို နှိပ်ပါ။
 
