@@ -1441,6 +1441,16 @@ pub struct OutputOption {
     #[clap(flatten)]
     pub input_args: InputOption,
 
+    /// Duplicate field data will be replaced with "DUP" (CSV output only)
+    #[arg(
+            help_heading = Some("CSV Output"),
+            short = 'R',
+            long = "remove-duplicate-data",
+            requires = "sort_events",
+            display_order = 440
+        )]
+    pub remove_duplicate_data: bool,
+
     /// Specify output profile
     #[arg(help_heading = Some("Output"), short = 'p', long = "profile", display_order = 420)]
     pub profile: Option<String>,
@@ -1570,16 +1580,6 @@ pub struct OutputOption {
     #[arg(help_heading = Some("Output"), long = "no-pwsh-field-extraction", display_order = 410)]
     pub no_pwsh_field_extraction: bool,
 
-    /// Duplicate field data will be replaced with "DUP" (CSV output only)
-    #[arg(
-            help_heading = Some("CSV Output"),
-            short = 'R',
-            long = "remove-duplicate-data",
-            requires = "sort_events",
-            display_order = 440
-        )]
-    pub remove_duplicate_data: bool,
-
     /// Remove duplicate detections (default: disabled)
     #[arg(help_heading = Some("Output"), short = 'X', long = "remove-duplicate-detections", requires = "sort_events", display_order = 441)]
     pub remove_duplicate_detections: bool,
@@ -1663,7 +1663,7 @@ pub struct DfirTimelineOption {
     #[clap(flatten)]
     pub output_options: OutputOption,
 
-    /// Output format: csv (default), json, or jsonl (case-insensitive, e.g. -t JSONL)
+    /// Output format: csv (default), json, or jsonl
     #[arg(
         help_heading = Some("Output"),
         short = 't',
@@ -1672,6 +1672,8 @@ pub struct DfirTimelineOption {
         value_name = "OUTPUT_FORMAT",
         ignore_case = true,
         default_value = "csv",
+        hide_default_value = true,
+        hide_possible_values = true,
         display_order = 411
     )]
     pub output_type: OutputType,
