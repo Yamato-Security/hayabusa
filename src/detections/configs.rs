@@ -1459,7 +1459,7 @@ pub struct OutputOption {
     #[clap(flatten)]
     pub input_args: InputOption,
 
-    /// Duplicate field data will be replaced with "DUP" (CSV output only. sort required.)
+    /// Duplicate field data will be replaced with "DUP" (CSV output only, sort required)
     #[arg(
             help_heading = Some("CSV Output"),
             short = 'R',
@@ -1562,7 +1562,7 @@ pub struct OutputOption {
     #[clap(flatten)]
     pub time_format_options: TimeFormatOptions,
 
-    /// Output event frequency timeline (terminal needs to support unicode. sort required.)
+    /// Output event frequency timeline (terminal needs to support unicode, sort required)
     #[arg(help_heading = Some("Display Settings"), short = 'T', long = "visualize-timeline", display_order = 490, requires = "sort_events")]
     pub visualize_timeline: bool,
 
