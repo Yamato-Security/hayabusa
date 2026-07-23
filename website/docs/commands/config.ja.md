@@ -11,16 +11,15 @@
 Usage: hayabusa.exe config-critical-systems <INPUT> [OPTIONS]
 
 Input:
-  -d, --directory <DIR>        .evtxファイルを持つディレクトリのパス
-  -f, --file <FILE>            1つの.evtxファイルに対して解析を行う
+  -d, --directory <DIR>  .evtxファイルを持つディレクトリのパス
+  -f, --file <FILE>      1つの.evtxファイルに対して解析を行う
 
 Display Settings:
   -K, --no-color  カラーで出力しない
   -q, --quiet     Quietモード: 起動バナーを表示しない
-  -v, --verbose   詳細な情報を出力する
 
 General Options:
-  -h, --help      ヘルプメニューを表示する
+  -h, --help  ヘルプメニューを表示する
 ```
 
 ### `config-critical-systems`コマンドの使用例

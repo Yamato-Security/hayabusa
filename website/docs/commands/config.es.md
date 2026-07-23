@@ -11,15 +11,15 @@ Cualquier nombre de host añadido al archivo `critical_systems.txt` tendrá toda
 Usage: hayabusa.exe config-critical-systems <INPUT> [OPTIONS]
 
 Input:
-  -d, --directory <DIR>  Directory of multiple .evtx files
-  -f, --file <FILE>      File path to one .evtx file
+  -d, --directory <DIR>  Directorio con múltiples archivos .evtx
+  -f, --file <FILE>      Ruta a un único archivo .evtx
 
 Display Settings:
-  -K, --no-color  Disable color output
-  -q, --quiet     Quiet mode: do not display the launch banner
+  -K, --no-color  Deshabilitar la salida en color
+  -q, --quiet     Modo silencioso: no mostrar el banner de inicio
 
 General Options:
-  -h, --help  Show the help menu
+  -h, --help  Mostrar el menú de ayuda
 ```
 
 ### Ejemplos del comando `config-critical-systems`

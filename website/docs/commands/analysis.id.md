@@ -26,7 +26,7 @@ General Options:
   -x, --recover-records                Carve evtx records from slack space (default: disabled)
   -c, --rules-config <DIR>             Specify custom rule config directory (default: ./rules/config)
       --target-file-ext <FILE-EXT...>  Specify additional evtx file extensions (ex: evtx_data)
-  -t, --threads <NUMBER>               Number of threads (default: optimal number for performance)
+  -V, --validate-checksums             Aktifkan validasi checksum
 
 Filtering:
       --time-offset <OFFSET>  Scan recent events based on an offset (ex: 1y, 3M, 30d, 24h, 30m)
@@ -69,8 +69,9 @@ General Options:
   -Q, --quiet-errors                   Quiet errors mode: do not save error logs
   -x, --recover-records                Carve evtx records from slack space (default: disabled)
   -c, --rules-config <DIR>             Specify custom rule config directory (default: ./rules/config)
-  -t, --threads <NUMBER>               Number of threads (default: optimal number for performance)
       --target-file-ext <FILE-EXT...>  Specify additional evtx file extensions (ex: evtx_data)
+      --threads <NUMBER>               Number of threads (default: optimal number for performance)
+  -V, --validate-checksums             Aktifkan validasi checksum
 
 Filtering:
       --exclude-computer <COMPUTER...>  Do not scan specified computer names (ex: ComputerA) (ex: ComputerA,ComputerB)
@@ -78,8 +79,8 @@ Filtering:
       --time-offset <OFFSET>            Scan recent events based on an offset (ex: 1y, 3M, 30d, 24h, 30m)
 
 Output:
-  -b, --disable-abbreviations  Disable abbreviations
-  -o, --output <FILE>          Save the Metrics in CSV format (ex: metrics.csv)
+  -X, --remove-duplicate-records  Hapus record event duplikat (default: disabled)
+  -o, --output <FILE>             Save the Metrics in CSV format (ex: metrics.csv)
 
 Display Settings:
   -K, --no-color  Disable color output
@@ -91,9 +92,9 @@ Time Format:
   -O, --iso-8601          Output timestamp in original ISO-8601 format (ex: 2022-02-22T10:10:10.1234567Z) (Always UTC)
       --rfc-2822          Output timestamp in RFC 2822 format (ex: Fri, 22 Feb 2022 22:00:00 -0600)
       --rfc-3339          Output timestamp in RFC 3339 format (ex: 2022-02-22 22:00:00.123456-06:00)
+  -U, --utc               Output time in UTC format (default: local time)
       --us-military-time  Output timestamp in US military time format (ex: 02-22-2022 22:00:00.123 -06:00)
       --us-time           Output timestamp in US time format (ex: 02-22-2022 10:00:00.123 PM -06:00)
-  -U, --utc               Output time in UTC format (default: local time)
 ```
 
 ### Contoh perintah `eid-metrics`
@@ -204,8 +205,9 @@ General Options:
   -Q, --quiet-errors                   Quiet errors mode: do not save error logs
   -x, --recover-records                Carve evtx records from slack space (default: disabled)
   -c, --rules-config <DIR>             Specify custom rule config directory (default: ./rules/config)
-  -t, --threads <NUMBER>               Number of threads (default: optimal number for performance)
       --target-file-ext <FILE-EXT...>  Specify additional evtx file extensions (ex: evtx_data)
+      --threads <NUMBER>               Number of threads (default: optimal number for performance)
+  -V, --validate-checksums             Aktifkan validasi checksum
 
 Filtering:
       --exclude-computer <COMPUTER...>  Do not scan specified computer names (ex: ComputerA) (ex: ComputerA,ComputerB)
@@ -213,7 +215,7 @@ Filtering:
       --time-offset <OFFSET>            Scan recent events based on an offset (ex: 1y, 3M, 30d, 24h, 30m)
 
 Output:
-  -o, --output <FILE>  Extract Base64 strings
+  -o, --output <FILE>  Simpan hasil ke file CSV
 
 Display Settings:
   -K, --no-color  Disable color output
@@ -225,9 +227,9 @@ Time Format:
   -O, --iso-8601          Output timestamp in original ISO-8601 format (ex: 2022-02-22T10:10:10.1234567Z) (Always UTC)
       --rfc-2822          Output timestamp in RFC 2822 format (ex: Fri, 22 Feb 2022 22:00:00 -0600)
       --rfc-3339          Output timestamp in RFC 3339 format (ex: 2022-02-22 22:00:00.123456-06:00)
+  -U, --utc               Output time in UTC format (default: local time)
       --us-military-time  Output timestamp in US military time format (ex: 02-22-2022 22:00:00.123 -06:00)
       --us-time           Output timestamp in US time format (ex: 02-22-2022 10:00:00.123 PM -06:00)
-  -U, --utc               Output time in UTC format (default: local time)
 ```
 
 ### Contoh perintah `extract-base64`
@@ -286,17 +288,22 @@ General Options:
   -Q, --quiet-errors                   Quiet errors mode: do not save error logs
   -x, --recover-records                Carve evtx records from slack space (default: disabled)
   -c, --rules-config <DIR>             Specify custom rule config directory (default: ./rules/config)
-  -t, --threads <NUMBER>               Number of threads (default: optimal number for performance)
       --target-file-ext <FILE-EXT...>  Specify additional evtx file extensions (ex: evtx_data)
+      --threads <NUMBER>               Number of threads (default: optimal number for performance)
+  -V, --validate-checksums             Aktifkan validasi checksum
 
 Filtering:
       --exclude-computer <COMPUTER...>  Do not scan specified computer names (ex: ComputerA) (ex: ComputerA,ComputerB)
+      --exclude-channel <CHANNEL...>    Jangan pindai channel yang ditentukan (ex: System,Security)
+      --exclude-filename <FILE...>      Jangan pindai file evtx yang ditentukan (ex: Security.evtx,System.evtx)
       --include-computer <COMPUTER...>  Scan only specified computer names (ex: ComputerA) (ex: ComputerA,ComputerB)
+      --include-channel <CHANNEL...>    Hanya sertakan channel yang ditentukan (ex: System,Security)
+      --include-filename <FILE...>      Hanya sertakan file evtx yang ditentukan (ex: Security.evtx,System.evtx)
       --time-offset <OFFSET>            Scan recent events based on an offset (ex: 1y, 3M, 30d, 24h, 30m)
 
 Output:
   -b, --disable-abbreviations  Disable abbreviations
-  -M, --multiline              Output event field information in multiple rows for CSV output
+  -M, --multiline              Pisahkan informasi field event dengan karakter baris baru untuk output CSV
   -o, --output <FILE>          Save the Metrics in CSV format (ex: metrics.csv)
   -S, --tab-separator          Separate event field information by tabs
 
@@ -310,9 +317,9 @@ Time Format:
   -O, --iso-8601          Output timestamp in original ISO-8601 format (ex: 2022-02-22T10:10:10.1234567Z) (Always UTC)
       --rfc-2822          Output timestamp in RFC 2822 format (ex: Fri, 22 Feb 2022 22:00:00 -0600)
       --rfc-3339          Output timestamp in RFC 3339 format (ex: 2022-02-22 22:00:00.123456-06:00)
+  -U, --utc               Output time in UTC format (default: local time)
       --us-military-time  Output timestamp in US military time format (ex: 02-22-2022 22:00:00.123 -06:00)
       --us-time           Output timestamp in US time format (ex: 02-22-2022 10:00:00.123 PM -06:00)
-  -U, --utc               Output time in UTC format (default: local time)
 ```
 
 ### Contoh perintah `log-metrics`
@@ -352,8 +359,9 @@ General Options:
   -Q, --quiet-errors                   Quiet errors mode: do not save error logs
   -x, --recover-records                Carve evtx records from slack space (default: disabled)
   -c, --rules-config <DIR>             Specify custom rule config directory (default: ./rules/config)
-  -t, --threads <NUMBER>               Number of threads (default: optimal number for performance)
       --target-file-ext <FILE-EXT...>  Specify additional evtx file extensions (ex: evtx_data)
+      --threads <NUMBER>               Number of threads (default: optimal number for performance)
+  -V, --validate-checksums             Aktifkan validasi checksum
 
 Filtering:
       --exclude-computer <COMPUTER...>  Do not scan specified computer names (ex: ComputerA) (ex: ComputerA,ComputerB)
@@ -363,6 +371,7 @@ Filtering:
       --timeline-start <DATE>           Start time of the event logs to load (ex: "2020-02-22 00:00:00 +09:00")
 
 Output:
+  -X, --remove-duplicate-records  Hapus record event duplikat (default: disabled)
   -o, --output <FILENAME-PREFIX>  Save the logon summary to two CSV files (ex: -o logon-summary)
 
 Display Settings:
@@ -375,9 +384,9 @@ Time Format:
   -O, --iso-8601          Output timestamp in original ISO-8601 format (ex: 2022-02-22T10:10:10.1234567Z) (Always UTC)
       --rfc-2822          Output timestamp in RFC 2822 format (ex: Fri, 22 Feb 2022 22:00:00 -0600)
       --rfc-3339          Output timestamp in RFC 3339 format (ex: 2022-02-22 22:00:00.123456-06:00)
+  -U, --utc               Output time in UTC format (default: local time)
       --us-military-time  Output timestamp in US military time format (ex: 02-22-2022 22:00:00.123 -06:00)
       --us-time           Output timestamp in US time format (ex: 02-22-2022 10:00:00.123 PM -06:00)
-  -U, --utc               Output time in UTC format (default: local time)
 ```
 
 ### Contoh perintah `logon-summary`
@@ -415,8 +424,9 @@ General Options:
   -Q, --quiet-errors                   Quiet errors mode: do not save error logs
   -x, --recover-records                Carve evtx records from slack space (default: disabled)
   -c, --rules-config <DIR>             Specify custom rule config directory (default: ./rules/config)
-  -t, --threads <NUMBER>               Number of threads (default: optimal number for performance)
       --target-file-ext <FILE-EXT...>  Specify additional evtx file extensions (ex: evtx_data)
+      --threads <NUMBER>               Number of threads (default: optimal number for performance)
+  -V, --validate-checksums             Aktifkan validasi checksum
 
 Filtering:
   -E, --eid-filter                      Scan only common EIDs for faster speed (./rules/config/target_event_IDs.txt)
@@ -482,9 +492,10 @@ General Options:
   -Q, --quiet-errors                   Quiet errors mode: do not save error logs
   -x, --recover-records                Carve evtx records from slack space (default: disabled)
   -c, --rules-config <DIR>             Specify custom rule config directory (default: ./rules/config)
-  -t, --threads <NUMBER>               Number of threads (default: optimal number for performance)
       --target-file-ext <FILE-EXT...>  Specify additional evtx file extensions (ex: evtx_data)
+      --threads <NUMBER>               Number of threads (default: optimal number for performance)
   -s, --sort                           Sort results before saving the file (warning: this uses much more memory!)
+  -V, --validate-checksums             Aktifkan validasi checksum
 
 Input:
   -d, --directory <DIR>  Directory of multiple .evtx files
@@ -505,7 +516,7 @@ Output:
   -b, --disable-abbreviations  Disable abbreviations
   -J, --json-output            Save the search results in JSON format (ex: -J -o results.json)
   -L, --jsonl-output           Save the search results in JSONL format (ex: -L -o results.jsonl)
-  -M, --multiline              Output event field information in multiple rows for CSV output
+  -M, --multiline              Pisahkan informasi field event dengan karakter baris baru untuk output CSV
   -o, --output <FILE>          Save the search results in CSV format (ex: search.csv)
   -S, --tab-separator          Separate event field information by tabs
 
@@ -514,9 +525,9 @@ Time Format:
   -O, --iso-8601          Output timestamp in original ISO-8601 format (ex: 2022-02-22T10:10:10.1234567Z) (Always UTC)
       --rfc-2822          Output timestamp in RFC 2822 format (ex: Fri, 22 Feb 2022 22:00:00 -0600)
       --rfc-3339          Output timestamp in RFC 3339 format (ex: 2022-02-22 22:00:00.123456-06:00)
+  -U, --utc               Output time in UTC format (default: local time)
       --us-military-time  Output timestamp in US military time format (ex: 02-22-2022 22:00:00.123 -06:00)
       --us-time           Output timestamp in US time format (ex: 02-22-2022 10:00:00.123 PM -06:00)
-  -U, --utc               Output time in UTC format (default: local time)
 ```
 
 ### Contoh perintah `search`
