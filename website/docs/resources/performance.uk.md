@@ -562,7 +562,7 @@ pub struct DetectInfo {
      ```
 
 4. Зберіть реліз-збірку: `cargo build --release`
-5. Запустіть `heaptrack hayabusa csv-timeline -d sample -o out.csv`
+5. Запустіть `heaptrack hayabusa dfir-timeline -d sample -o out.csv`
 
 Тепер, коли Hayabusa завершить роботу, результати heaptrack автоматично відкриються у GUI-застосунку.
 

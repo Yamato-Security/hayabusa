@@ -73,14 +73,14 @@ cd timesketch
 На жаль, Timesketch наразі не може імпортувати формат `JSONL` від Hayabusa, тому створіть і завантажте CSV-часову лінію за допомогою такої команди:
 
 ```shell
-hayabusa-x.x.x-win-x64.exe csv-timeline -d <DIR> -o timesketch-import.csv -p timesketch-verbose --ISO-8601
+hayabusa-x.x.x-win-x64.exe dfir-timeline -d <DIR> -o timesketch-import.csv -p timesketch-verbose --iso-8601
 ```
 
-> Примітка: Необхідно вибрати профіль `timesketch*` і вказати позначку часу як `--ISO-8601` для UTC або `--RFC-3339` для локального часу. Ви можете додати інші параметри Hayabusa за бажанням, проте не додавайте параметр `-M, --multiline`, оскільки символи нового рядка пошкодять імпорт.
+> Примітка: Необхідно вибрати профіль `timesketch*` і вказати позначку часу як `--iso-8601` для UTC або `--rfc-3339` для локального часу. Ви можете додати інші параметри Hayabusa за бажанням, проте не додавайте параметр `-M, --multiline`, оскільки символи нового рядка пошкодять імпорт.
 
 У діалоговому вікні "Select file to upload" назвіть свою часову лінію якось на кшталт `hayabusa`, виберіть роздільник CSV `Comma (,)` і натисніть `SUBMIT`.
 
-> Якщо ваш CSV-файл занадто великий для завантаження, ви можете розділити файл на декілька CSV-файлів за допомогою команди [split-csv-timeline](https://github.com/Yamato-Security/takajo?tab=readme-ov-file#split-csv-timeline-command) інструмента Takajo.
+> Якщо ваш CSV-файл занадто великий для завантаження, ви можете розділити файл на декілька CSV-файлів за допомогою команди [split-dfir-timeline](https://github.com/Yamato-Security/takajo?tab=readme-ov-file#split-dfir-timeline-command) інструмента Takajo.
 
 Поки файл імпортується, ви побачите обертове коло, тому, будь ласка, зачекайте, доки воно завершиться і ви побачите, що з'явиться `hayabusa`.
 

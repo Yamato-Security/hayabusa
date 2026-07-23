@@ -92,7 +92,7 @@
 |%RuleModifiedDate% | حقل `modified` في قاعدة الكشف بصيغة YML. |
 |%RuleTitle% | حقل `title` في قاعدة الكشف بصيغة YML. |
 |%Status% | حقل `status` في قاعدة الكشف بصيغة YML. |
-|%Timestamp% | الافتراضي هو تنسيق `YYYY-MM-DD HH:mm:ss.sss +hh:mm`. حقل `<Event><System><TimeCreated SystemTime>` في سجل الأحداث. ستكون المنطقة الزمنية الافتراضية هي المنطقة الزمنية المحلية، ولكن يمكنك تغيير المنطقة الزمنية إلى UTC باستخدام الخيار `--UTC`. |
+|%Timestamp% | الافتراضي هو تنسيق `YYYY-MM-DD HH:mm:ss.sss +hh:mm`. حقل `<Event><System><TimeCreated SystemTime>` في سجل الأحداث. ستكون المنطقة الزمنية الافتراضية هي المنطقة الزمنية المحلية، ولكن يمكنك تغيير المنطقة الزمنية إلى UTC باستخدام الخيار `--utc`. |
 
 #### اسم مستعار إضافي لحقل ملف التعريف
 

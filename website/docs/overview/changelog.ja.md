@@ -47,7 +47,7 @@ MITRE ATT&CK v19に対応した。(@fukusuket)
 
 **新機能:**
 
-- `csv-timeline`および`json-timeline`コマンドでチャンクヘッダーのチェックサムを確認する`-V, --validate-checksums`オプションを追加した。 (#1709) (@fukusuket)
+- `dfir-timeline`および`dfir-timeline`コマンドでチャンクヘッダーのチェックサムを確認する`-V, --validate-checksums`オプションを追加した。 (#1709) (@fukusuket)
 
 **改善:**
 
@@ -65,7 +65,7 @@ MITRE ATT&CK v19に対応した。(@fukusuket)
 **改善:**
 
 - 相関ルールにより複数の可能性を持つイベントIDおよびレコードIDは、パースしやすくするため、`-`ではなく空文字列として出力されるようになった。 (#1694) (@fukusuket)
-- `csv-timeline`および`json-timeline`コマンドの`Results Summary`に表示される最初のタイムスタンプと最後のタイムスタンプの後に、最初と最後の検出のタイムスタンプも出力するようにした。 (#1688) (@fukusuket)
+- `dfir-timeline`および`dfir-timeline`コマンドの`Results Summary`に表示される最初のタイムスタンプと最後のタイムスタンプの後に、最初と最後の検出のタイムスタンプも出力するようにした。 (#1688) (@fukusuket)
 - SOF-ELK（Elastic Stack）へのHayabusa JSONL結果のインポート方法に関するガイドが更新された。 (#1091) (@yamatosecurity)
 - ルールの変更日時が定義されていない場合、SIEMへのインポートを容易にするため、`-`の代わりに空文字列を出力する。 (#1702) (@yamatosecurity)
 - ルールメタデータ内の`RuleModifiedDate`等の空フィールドは、パースを容易にしファイルサイズを削減するため、JSONに出力されない。 (#1702) (@fukusuket)
@@ -74,7 +74,7 @@ MITRE ATT&CK v19に対応した。(@fukusuket)
 
 - `-T, --visualize-timeline`は、`-s, --sort`が指定されていない場合、正しくない結果を出力するため、`-T`を使用する際には`-s`の指定を必須とした。 (#1690) (@yamatosecurity)
 - レコード自体のタイムスタンプではなく、レコードヘッダー内のタイムスタンプでフィルタリングしていたため、タイムレンジオプション（--timeline-start / --timeline-end）で指定した範囲外のレコードが表示されていた。 (#1689) (@fukusuket)
-- GeoIP検索が`json-timeline`で機能していなかった。 (#1693) (@fukusuket)
+- GeoIP検索が`dfir-timeline`で機能していなかった。 (#1693) (@fukusuket)
 - `search`コマンドにおける省略形処理は一貫していなかった。(#1697) (@fukusuket)
 
 ## 3.5.0 [2025/08/16] - お盆リリース
@@ -146,7 +146,7 @@ MITRE ATT&CK v19に対応した。(@fukusuket)
 - `eid-metrics`と`logon-summary`コマンドに`-X, --remove-duplicate-detections`オプションを追加した。 (#1552) (@fukusuket)
 - 新しい「緊急アラート 」と重要なシステムに基づく重大度レベルの調整。`config/critical_systems.txt`に重要なシステム（例: ドメインコントローラ、ファイルサーバ等々）のコンピュータ名のリストを追加すると、`low`以上のすべてのアラートが1つ高く調整される。つまり、`low`は`medium`に、`medium`は`high`に、`critical`アラートは新しい`emergency`アラートになる。 (#1551) (@fukusuket)
 - `./config/critical_systems.txt`ファイルに追加するドメインコントローラーとファイルサーバーを自動的に見つける`config-critical-systems`コマンドを追加した。 (#1570) (@fukusuket)
-- `csv-timeline`、`search`、`log-metrics`コマンドに、フィールド情報をタブで区切る`-S, --tab-separator`オプションを追加した。 (#1587) (@fukusuket)
+- `dfir-timeline`、`search`、`log-metrics`コマンドに、フィールド情報をタブで区切る`-S, --tab-separator`オプションを追加した。 (#1587) (@fukusuket)
 
 **改善:**
 
@@ -193,8 +193,8 @@ MITRE ATT&CK v19に対応した。(@fukusuket)
 
 **バグ修正:**
 
-- レコードIDが出力されるとき、`csv-timeline`によるソートが完璧に行われなかった。 (#1519) (@fukusuket)
-- `J, --JSON-input`は、`.json`ファイルしか対応していなかったので、`.jsonl`ファイルにも対応した。 (#1530) (@fukusuket)
+- レコードIDが出力されるとき、`dfir-timeline`によるソートが完璧に行われなかった。 (#1519) (@fukusuket)
+- `J, --json-input`は、`.json`ファイルしか対応していなかったので、`.jsonl`ファイルにも対応した。 (#1530) (@fukusuket)
 
 ## 2.19.0 [2024/11/26] - "Every Day Is A Good Day" Release
 
@@ -203,8 +203,8 @@ MITRE ATT&CK v19に対応した。(@fukusuket)
 - `gt`、`gte`、`lt`、`lte`のフィールド修飾子に対応した。(#1433) (@fukusuket)
 - 新しい`log-metrics`コマンドで`.evtx`ファイルの情報を取得できるようになった。(コンピュータ名、イベント数、最初のタイムスタンプ、最後のタイムスタンプ、チャネル、プロバイダ) (#1474) (@fukusuket)
 - 以下のコマンドに`Channel`と`Provider`の略称を無効にする`-b, --disable-abbreviations`オプションを追加した。元の値を確認したい時に便利。 (#1485) (@fukusuket)
-  * `csv-timeline`
-  * `json-timeline`
+  * `dfir-timeline`
+  * `dfir-timeline`
   * `eid-metrics`
   * `log-metrics`
   * `search`
@@ -227,8 +227,8 @@ MITRE ATT&CK v19に対応した。(@fukusuket)
 **バグ修正:**
 
 - logon-summary`コマンドが破損したログでクラッシュすることがあった。(#1477) (@fukusuket)
-- `csv-timeline`と`json-timeline`コマンドで、結果をターミナルに出力すると、プログレスバーの後にいくつかの結果が表示されていた。(#1459) (@fukusuket)
-- 集計ルールのアラートの詳細フィールド値の結果がソートされていないため、`csv-timeline`と`json-timeline`は、毎回完全に正確な結果を出力しなかった。 (#1466) (@fukusuket)
+- `dfir-timeline`と`dfir-timeline`コマンドで、結果をターミナルに出力すると、プログレスバーの後にいくつかの結果が表示されていた。(#1459) (@fukusuket)
+- 集計ルールのアラートの詳細フィールド値の結果がソートされていないため、`dfir-timeline`と`dfir-timeline`は、毎回完全に正確な結果を出力しなかった。 (#1466) (@fukusuket)
 - `hayabusa-evtx`クレートをバージョン`0.8.12`に更新した。(@yamatosecurity)
   - JSONフィールドの出力順序が元のXMLに従って保持されるようになった。(omerbenamram/evtx #241)
   - 属性と同じ名前を持つ複数のサブノードは上書きされ、最後の1つだけが出力されていた。(omerbenamram/evtx #245)
@@ -303,11 +303,11 @@ MITRE ATT&CK v19に対応した。(@fukusuket)
 
 **新機能:**
 
-- デフォルトでは、`.evtx`ファイルに適用可能なルールのみ有効になる。これは、`.evtx`ファイルと`.yml`ルールの`Channel`フィールドに基づく。例えば、`Security.evtx`がスキャンされている場合、`Channel: Security`が定義されているルールのみがこのファイルに対して使用される。ベンチマークでは、単一の`evtx`ファイルをスキャンする場合、パフォーマンスが約20％向上される。1つの`.evtx`ファイルで複数のチャネルが使用されている場合や、チャネルが定義されていないルールを使用して、チャネルに関係なくすべての`.evtx`ファイルをスキャンしたい場合は、`csv-timeline` と `json-timeline` の `-A、--enable-all-rules` オプションでこのフィルタリングをオフにすることができる。（#1317）(@fukusuket)
+- デフォルトでは、`.evtx`ファイルに適用可能なルールのみ有効になる。これは、`.evtx`ファイルと`.yml`ルールの`Channel`フィールドに基づく。例えば、`Security.evtx`がスキャンされている場合、`Channel: Security`が定義されているルールのみがこのファイルに対して使用される。ベンチマークでは、単一の`evtx`ファイルをスキャンする場合、パフォーマンスが約20％向上される。1つの`.evtx`ファイルで複数のチャネルが使用されている場合や、チャネルが定義されていないルールを使用して、チャネルに関係なくすべての`.evtx`ファイルをスキャンしたい場合は、`dfir-timeline` と `dfir-timeline` の `-A、--enable-all-rules` オプションでこのフィルタリングをオフにすることができる。（#1317）(@fukusuket)
   - 現在のところ、`Channel`が定義されておらず、すべての`.evtx`ファイルをスキャンすることを意図している検知ルールは以下の2つだけ:
     - [Possible Hidden Shellcode](https://github.com/Yamato-Security/hayabusa-rules/blob/main/hayabusa/builtin/UnkwnChannEID_Med_PossibleHiddenShellcode.yml)
     - [Mimikatz Use](https://github.com/SigmaHQ/sigma/blob/master/rules/windows/builtin/win_alert_mimikatz_keywords.yml)
-- デフォルトでは、適用可能なルールを持つ`.evtx`ファイルのみ読み込む。たとえば、さまざまなイベントログのディレクトリをスキャンしている場合でも、 `Channel: Security` を探すルールのみを有効にした場合、Hayabusaは`Security`以外のすべてのイベントログを無視します。ベンチマークでは、通常のスキャンで約10％、単一のルールでスキャンする場合は最大60％以上のパフォーマンス向上が得られる。チャネルに関係なくすべての`.evtx`ファイルを読み込みたい場合は、`csv-timeline` と `json-timeline` の `-a、--scan-all-evtx-files` オプションでこのフィルタリングをオフにすることができる。(#1318) (@fukusuket)
+- デフォルトでは、適用可能なルールを持つ`.evtx`ファイルのみ読み込む。たとえば、さまざまなイベントログのディレクトリをスキャンしている場合でも、 `Channel: Security` を探すルールのみを有効にした場合、Hayabusaは`Security`以外のすべてのイベントログを無視します。ベンチマークでは、通常のスキャンで約10％、単一のルールでスキャンする場合は最大60％以上のパフォーマンス向上が得られる。チャネルに関係なくすべての`.evtx`ファイルを読み込みたい場合は、`dfir-timeline` と `dfir-timeline` の `-a、--scan-all-evtx-files` オプションでこのフィルタリングをオフにすることができる。(#1318) (@fukusuket)
 - 注意: チャンネルフィルタリングは .evtx ファイルにのみ適用され、`-J, --json-input`オプションを使用してイベントログをJSONファイルから読み込む際に`-A`または`-a`を指定するとエラーが発生する。(#1345) (@fukusuket)
 - Sigma相関ルールのEvent Countに対応した。 (#1337) (@fukusuket)
 - Sigma相関ルールのValue Countに対応した。 (#1338) (@fukusuket)
@@ -347,7 +347,7 @@ MITRE ATT&CK v19に対応した。(@fukusuket)
 - 未使用のクレートを削除した。(@YamatoSecurity)
 - SplunkからエクスポートしたJSONファイルの入力に対応した。 (#1083) (@hitenkoku)
 - パフォーマンスの改善 (#1277, #1278) (@fukusuket)
-- `csv-timeline`コマンドの結果と同様になるようにするために、`search`コマンドの結果の表示順番を変更した。 (#1297) (@hitenkoku)
+- `dfir-timeline`コマンドの結果と同様になるようにするために、`search`コマンドの結果の表示順番を変更した。 (#1297) (@hitenkoku)
 - イースターエッグに最強のキャラクターを追加した。 (#1304) (@hitenkoku)
 - `computer-metrics`コマンドのhelpオプションの表示をほかのコマンドの形式に合わせた。 (#1314) (@hitenkoku)
 
@@ -363,13 +363,13 @@ MITRE ATT&CK v19に対応した。(@fukusuket)
 
 - `search` コマンドのフィルタオプションを完全一致にするようにした。加えてフィルタオプションはワイルドカード対応をするようにした。 (#1240) (@hitenkoku)
 - `update-rules`コマンドを実行したときに、検知ルールが変更された場合にルール名を出力するようにした。以前は`modified`フィールドを更新したルールだけが表示されていた。(#1243) (@hitenkoku)
-- `json-timeline`コマンドの標準出力でJSONフォーマットを出力するように修正した。 (#1197) (@hitenkoku)
+- `dfir-timeline`コマンドの標準出力でJSONフォーマットを出力するように修正した。 (#1197) (@hitenkoku)
 - JSON入力でデータが配列内にある場合に解析できるようにした。 (#1248) (@hitenkoku)
 - 古いターミナルでも正しく表示されるように、また読みやすくするために、`‖`区切り文字を`·`区切り文字に変更した。(#1258) (@YamatoSecurity)
 - General Optionsに`-h, --help`オプションを追加した。 (#1255) (@hitenkoku)
-- `json-timeline`コマンドの`Details`の出力で、要素がアルファベット順に並んでいたのをルールに記載されているオリジナルの順番に変更した。 (#1264) (@hitenkoku)
+- `dfir-timeline`コマンドの`Details`の出力で、要素がアルファベット順に並んでいたのをルールに記載されているオリジナルの順番に変更した。 (#1264) (@hitenkoku)
 - ルールをロードする必要のないコマンドを実行した場合、検出ルールのロードをスキップするようにした。 (#1263) (@hitenkoku)
-- `csv-timeline`コマンドの標準出力のカラー出力ルールを変更した。 (#1271) (@hitenkoku)
+- `dfir-timeline`コマンドの標準出力のカラー出力ルールを変更した。 (#1271) (@hitenkoku)
 - リファクタリングとパフォーマンスの改善。(#1268, #1260) (@hach1yon)
 
 **バグ修正:**
@@ -384,12 +384,12 @@ MITRE ATT&CK v19に対応した。(@fukusuket)
 
 - JSON出力において、MitreTactics、MitreTags, OtherTagsの出力を要素ごとに文字列で出力させるように修正した。 (#1230) (@hitenkoku)
 - 検知した端末に対してMITRE ATT&CKの戦術をHTMLレポートに出力できるようにした。この機能を利用するためには利用したプロファイルに`%MitreTactics%`が存在する必要がある。 (#1226) (@hitenkoku)
-- `csv-timeline`または`json-timeline`コマンドが利用されたときにissueやpull-requestの連絡先についてのメッセージを追加した。 (#1236) (@hitenkoku)
+- `dfir-timeline`または`dfir-timeline`コマンドが利用されたときにissueやpull-requestの連絡先についてのメッセージを追加した。 (#1236) (@hitenkoku)
 
 **バグ修正:**
 
 - JSON出力において、同じ名前の複数のフィールド名が配列として出力されないため、`jq`でパースすると1つの結果しか返されなかった。同じフィールド名を持つ複数のフィールドデータを配列内に出力することで修正した。 (#1202) (@hitenkoku)
-- `csv-timeline`、`json-timeline`、`eid-metrics`、`logon-summary`、`pivot-keywords-list`、`search`コマンドで調査対象ファイルの指定オプション(`-l`、 `-f`、 `-d`)が存在しないときに処理が実行されないように修正した。 (#1235) (@hitenkoku)
+- `dfir-timeline`、`dfir-timeline`、`eid-metrics`、`logon-summary`、`pivot-keywords-list`、`search`コマンドで調査対象ファイルの指定オプション(`-l`、 `-f`、 `-d`)が存在しないときに処理が実行されないように修正した。 (#1235) (@hitenkoku)
 
 ## 2.11.0 [2023/12/03] "Nasi Lemak Release"
 
@@ -450,9 +450,9 @@ MITRE ATT&CK v19に対応した。(@fukusuket)
 **新機能:**
 
 - フィールドマッピング設定に16進数値を10進数に変換する`HexToDecimal`機能に対応した。 (元の16進数のプロセスIDを変換するのに便利。) (#1133) (@fukusuket)
-- `csv-timeline`と`json-timeline`に`-x, --recover-records`オプションを追加し、evtxのスラックスペースのファイルカービングによってevtxレコードを復元できるようにした。(#952) (@hitenkoku) (Evtxカービング機能は@forensicmattに実装された。)
-- `csv-timeline`と`json-timeline`に`-X, --remove-duplicate-detections`オプションを追加した。(`-x`を使用する場合、重複データのあるバックアップログを含める場合などに便利。) (#1157) (@fukusuket)
-- `csv-timeline`、`json-timeline`、`logon-summary`、`eid-metrics`、`pivot-keywords-list`、`search`コマンドに、直近のイベントだけをスキャンするための`--timeline-offset`オプションを追加した。 (#1159) (@hitenkoku)
+- `dfir-timeline`と`dfir-timeline`に`-x, --recover-records`オプションを追加し、evtxのスラックスペースのファイルカービングによってevtxレコードを復元できるようにした。(#952) (@hitenkoku) (Evtxカービング機能は@forensicmattに実装された。)
+- `dfir-timeline`と`dfir-timeline`に`-X, --remove-duplicate-detections`オプションを追加した。(`-x`を使用する場合、重複データのあるバックアップログを含める場合などに便利。) (#1157) (@fukusuket)
+- `dfir-timeline`、`dfir-timeline`、`logon-summary`、`eid-metrics`、`pivot-keywords-list`、`search`コマンドに、直近のイベントだけをスキャンするための`--timeline-offset`オプションを追加した。 (#1159) (@hitenkoku)
 - `search`コマンドに`-a, --and-logic`オプションを追加し、複数のキーワードをAND条件で検索できるようにした。 (#1162) (@hitenkoku)
 
 **その他:**
@@ -464,34 +464,34 @@ MITRE ATT&CK v19に対応した。(@fukusuket)
 **新機能:**
 
 - `./rules/config/data_mapping`にある`.yaml`設定ファイルに基づいて、特定のコード番号が人間が読めるメッセージにマッピングされるようになった。(例:`%%2307`は、`ACCOUNT LOCKOUT`に変換される)。この動作は`-F, --no-field-data-mapping`オプションで無効にできる。(#177) (@fukusuket)
-- `csv-timeline`コマンドに`-R, --remove-duplicate-data`オプションを追加し、`%Details%`、`%AllFieldInfo%`、`%ExtraFieldInfo%`列の重複フィールドデータを`DUP`という文字列に変換し、ファイルサイズの削減を行う。(#1056) (@hitenkoku)
-- `csv-timeline`と`json-timeline`コマンドに`-P, --proven-rules`オプションを追加した。有効にすると、検知が証明されたルールしかロードされない。ロードされるルールは、`./rules/config/proven_rules.txt`の設定ファイルにルールIDで定義されている。 (#1115) (@hitenkoku)
-- `csv-timeline`と`json-timeline`コマンドに`--include-tag`オプションを追加し、指定した`tags`フィールドを持つルールのみをロードするようにした。(#1108) (@hitenkoku)
-- `csv-timeline`と`json-timeline`コマンドに`--exclude-tag`オプションを追加し、指定した`tags`フィールドを持つルールをロードしないようにした。(#1118) (@hitenkoku)
-- `csv-timeline`と`json-timeline`コマンドに`--include-category`と`--exclude-category`オプションを追加した。`include-category`は、指定された`category`フィールドのルールのみをロードする。`--exclude-category`は、指定された`category`フィールドを持つルールをロードしない。 (#1119) (@hitenkoku)
+- `dfir-timeline`コマンドに`-R, --remove-duplicate-data`オプションを追加し、`%Details%`、`%AllFieldInfo%`、`%ExtraFieldInfo%`列の重複フィールドデータを`DUP`という文字列に変換し、ファイルサイズの削減を行う。(#1056) (@hitenkoku)
+- `dfir-timeline`と`dfir-timeline`コマンドに`-P, --proven-rules`オプションを追加した。有効にすると、検知が証明されたルールしかロードされない。ロードされるルールは、`./rules/config/proven_rules.txt`の設定ファイルにルールIDで定義されている。 (#1115) (@hitenkoku)
+- `dfir-timeline`と`dfir-timeline`コマンドに`--include-tag`オプションを追加し、指定した`tags`フィールドを持つルールのみをロードするようにした。(#1108) (@hitenkoku)
+- `dfir-timeline`と`dfir-timeline`コマンドに`--exclude-tag`オプションを追加し、指定した`tags`フィールドを持つルールをロードしないようにした。(#1118) (@hitenkoku)
+- `dfir-timeline`と`dfir-timeline`コマンドに`--include-category`と`--exclude-category`オプションを追加した。`include-category`は、指定された`category`フィールドのルールのみをロードする。`--exclude-category`は、指定された`category`フィールドを持つルールをロードしない。 (#1119) (@hitenkoku)
 - コンピュータ名に基づくイベント数をリストアップする`computer-metrics`コマンドを追加した。(#1116) (@hitenkoku)
-- `csv-timeline`、`json-timeline`、`metrics`、`logon-summary`、`pivot-keywords-list`コマンドに`--include-computer`と`--exclude-computer`オプションを追加した。`include-computer`は、指定された`computer`の検知のみを出力する。`--exclude-computer`は、指定された`computer`の検知を除外する。 (#1117) (@hitenkoku)
-- `csv-timeline`、`json-timeline`、`pivot-keywords-list`コマンドに`--include-eid`と`--exclude-eid`オプションを追加した。`include-eid`は、指定された`EventID`のみを検知対象とする。`--exclude-eid`は、指定された`EventID`を検知対象から除外する。 (#1130) (@hitenkoku)
-- `json-timeline`コマンドに`-R, --remove-duplicate-data`オプションを追加し、`%Details%`、`%AllFieldInfo%`、`%ExtraFieldInfo%`フィールドの重複フィールドデータを`DUP`という文字列に変換し、ファイルサイズの削減を行う。(#1134) (@hitenkoku)
+- `dfir-timeline`、`dfir-timeline`、`metrics`、`logon-summary`、`pivot-keywords-list`コマンドに`--include-computer`と`--exclude-computer`オプションを追加した。`include-computer`は、指定された`computer`の検知のみを出力する。`--exclude-computer`は、指定された`computer`の検知を除外する。 (#1117) (@hitenkoku)
+- `dfir-timeline`、`dfir-timeline`、`pivot-keywords-list`コマンドに`--include-eid`と`--exclude-eid`オプションを追加した。`include-eid`は、指定された`EventID`のみを検知対象とする。`--exclude-eid`は、指定された`EventID`を検知対象から除外する。 (#1130) (@hitenkoku)
+- `dfir-timeline`コマンドに`-R, --remove-duplicate-data`オプションを追加し、`%Details%`、`%AllFieldInfo%`、`%ExtraFieldInfo%`フィールドの重複フィールドデータを`DUP`という文字列に変換し、ファイルサイズの削減を行う。(#1134) (@hitenkoku)
 
 **改善:**
 
 - 新しいログ形式の`.evtx`を使用するWindows Vistaがリリースされた2007年1月31日以前のタイムスタンプを持つ破損されたイベントレコードを無視するようにした。(#1102) (@fukusuket)
 - `metrics`コマンドで`--output`オプションを指定した時に標準出力に結果を表示しないように変更した。 (#1099) (@hitenkoku)
-- `csv-timeline` コマンドと `json-timeline` コマンドに `--tags` オプションを追加し、指定した `tags` フィールドを持つルールのみでスキャンできるようにした。(#1108) (@hitenkoku)
+- `dfir-timeline` コマンドと `dfir-timeline` コマンドに `--tags` オプションを追加し、指定した `tags` フィールドを持つルールのみでスキャンできるようにした。(#1108) (@hitenkoku)
 - `pivot-keywords-list`コマンドに対して、出力ファイルを上書きするための`-C, --clobber`オプションを追加した。 (#1125) (@hitenkoku)
 - `metrics`コマンドを`eid-metrics`に変更した。 (#1128) (@hitenkoku)
 - 端末の調整に余裕を持たせるため、プログレスバーの幅を減らした。 (#1135) (@hitenkoku)
-- `search`コマンドで出力時間フォーマットのオプションをサポートした。(`--European-time`, `--ISO-8601`, `--RFC-2822`, `--RFC-3339`, `--US-time`, `--US-military-time`, `-U, --UTC`) (#1040) (@hitenkoku)
+- `search`コマンドで出力時間フォーマットのオプションをサポートした。(`--european-time`, `--iso-8601`, `--rfc-2822`, `--rfc-3339`, `--us-time`, `--us-military-time`, `-U, --utc`) (#1040) (@hitenkoku)
 - プログレスバーのETA時間が正確でなかったため、経過時間に置き換えた。 (#1143) (@YamatoSecurity)
 - `logon-summary`コマンドで`--timeline-start`と`--timeline-end`オプションを追加した。 (#1152) (@hitenkoku)
 
 **バグ修正:**
 
-- `metrics`と`logon-summary`コマンドのレコード数の表示が`csv-timeline`のコマンドでのレコード数の表示と異なっている状態を修正した。 (#1105) (@hitenkoku)
+- `metrics`と`logon-summary`コマンドのレコード数の表示が`dfir-timeline`のコマンドでのレコード数の表示と異なっている状態を修正した。 (#1105) (@hitenkoku)
 - パスの代わりにルールIDでルール数を数えるように変更した。 (#1113) (@hitenkoku)
 - JSON出力で`CommandLine`フィールド内で誤ったフィールドの分割が行われてしまう問題を修正した。 (#1145) (@hitenkoku)
-- `json-timeline`コマンドで`--timeline-start`と`--timeline-end`オプションが動作しなかったのを修正した。 (#1148) (@hitenkoku)
+- `dfir-timeline`コマンドで`--timeline-start`と`--timeline-end`オプションが動作しなかったのを修正した。 (#1148) (@hitenkoku)
 - `pivot-keywords-list`コマンドで`--timeline-start`と`--timeline-end`オプションが動作しなかったのを修正した。 (#1150) (@hitenkoku)
 
 **その他:**
@@ -513,7 +513,7 @@ MITRE ATT&CK v19に対応した。(@fukusuket)
 - 標準出力とHTML出力にプロファイル名を出力する機能を追加した。 (#1055) (@hitenkoku)
 - HTML出力のルールアラートにルール作者名を表示するように修正した。 (#1065) (@hitenkoku)
 - 端末サイズが小さくてもテーブルが壊れないように、テーブル幅を短くした。 (#1071) (@hitenkoku)
-- `csv-timeline`、`json-timeline`、`metrics`、`logon-summary`、`search`コマンドに対して、出力ファイルを上書きするための`-C, --clobber`オプションを追加した。 (#1063) (@YamatoSecurity, @hitenkoku)
+- `dfir-timeline`、`dfir-timeline`、`metrics`、`logon-summary`、`search`コマンドに対して、出力ファイルを上書きするための`-C, --clobber`オプションを追加した。 (#1063) (@YamatoSecurity, @hitenkoku)
 - HTML内にCSSと画像を組み込んだ。 (#1078) (@hitenkoku, 提案者: @joswr1ght)
 - 出力時の速度向上。 (#1088) (@hitenkoku, @fukusuket)
 - `metrics`コマンドは、テーブルが正しくレンダリングされるように、ワードラップを行うようになった。 (#1067) (@garigariganzy)
@@ -521,7 +521,7 @@ MITRE ATT&CK v19に対応した。(@fukusuket)
 
 **バグ修正:**
 
-- `json-timeline`コマンドを利用した出力で、`MitreTactics`、`MitreTags`、`OtherTags`フィールドが出力されていない問題を修正した。 (#1062) (@hitenkoku)
+- `dfir-timeline`コマンドを利用した出力で、`MitreTactics`、`MitreTags`、`OtherTags`フィールドが出力されていない問題を修正した。 (#1062) (@hitenkoku)
 - `no-summary`オプションを使用した時にイベント頻度のタイムラインが出力されない問題を修正した。 (#1072) (@hitenkoku)
 - `json-timline`コマンドの出力に制御文字が含まれる問題を修正した。 (#1068) (@hitenkoku)
 - `metrics`コマンドでは、チャンネル名が小文字の場合、省略されなかった。 (#1066) (@garigariganzy)
@@ -546,7 +546,7 @@ MITRE ATT&CK v19に対応した。(@fukusuket)
 - `search`コマンドに`-M, --multiline`オプションを追加した。 (#1017) (@hitenkoku)
 - `search`コマンドの出力での不要な改行やタブを削除した。 (#1003) (@hitenkoku)
 - 正規表現の不要なエスケープを許容し、パースエラーを減らす`regex`クレートを1.8に更新した。(#1018) (@YamatoSecurity)
-- `csv-timeline`コマンドの出力で不要な空白文字の削除を行った。 (#1019) (@hitenkoku)
+- `dfir-timeline`コマンドの出力で不要な空白文字の削除を行った。 (#1019) (@hitenkoku)
 - `update-rules`コマンド使用時にハヤブサのバージョン番号の詳細を確認するようにした (#1028) (@hitenkoku)
 - `search`コマンドの結果を時刻順にソートした。 (#1033) (@hitenkoku)
 - `pivot-keywords-list`のターミナル出力の改善。 (#1022) (@kazuminn)
@@ -567,7 +567,7 @@ MITRE ATT&CK v19に対応した。(@fukusuket)
 **改善:**
 
 - コマンドの表示順を辞書順に並べ替えた。 (#991) (@hitenkoku)
-- `csv-timeline`, `json-timeline`, `search`コマンドの `AllFieldInfo`の出力に`Event.UserData`の属性情報を追加した。 (#1006) (@hitenkoku)
+- `dfir-timeline`, `dfir-timeline`, `search`コマンドの `AllFieldInfo`の出力に`Event.UserData`の属性情報を追加した。 (#1006) (@hitenkoku)
 
 **バグ修正:**
 
@@ -590,13 +590,13 @@ MITRE ATT&CK v19に対応した。(@fukusuket)
 
 **改善:**
 
-- `csv-timeline`コマンドに`-M, --multiline`オプションを追加した。 (#972) (@hitenkoku)
+- `dfir-timeline`コマンドに`-M, --multiline`オプションを追加した。 (#972) (@hitenkoku)
 
 ## 2.3.1 [2023/03/18] "TMCIT Release-2"
 
 **改善:**
 
-- `csv-timeline`の出力のフィールドでダブルクォートを追加した。 (#965) (@hitenkoku)
+- `dfir-timeline`の出力のフィールドでダブルクォートを追加した。 (#965) (@hitenkoku)
 - `logon-summary`の見出しを更新した。 (#964) (@yamatosecurity)
 - `--enable-deprecated-rules`の`-D`ショートオプションと`--enable-unsupported-rules`の`-u`ショートオプションを追加した。(@yamatosecurity)
 - Filteringセクションのオプションの表示順とヘルプの表示内容を修正した。 (#969) (@hitenkoku)
@@ -633,7 +633,7 @@ MITRE ATT&CK v19に対応した。(@fukusuket)
 
 - オプションのグループ分けを再修正した。(#918)(@hitenkoku)
 - JSONL形式のログを読み込む際のメモリ使用量を約75%削減した。 (#921) (@fukusuket)
-- `rules/config/generic_abbreviations.txt`によってチャンネル名の一般的な単語名を省略する機能をmetrics、json-timeline、csv-timelineに追加した。 (#923) (@hitenkoku)
+- `rules/config/generic_abbreviations.txt`によってチャンネル名の一般的な単語名を省略する機能をmetrics、dfir-timeline、dfir-timelineに追加した。 (#923) (@hitenkoku)
 - evtxクレートを更新することにより、パースエラーを減少させた。 (@YamatoSecurity)
 - Provider名(`%Provider%`)のフィールドに対する出力文字の省略機能を追加した。 (#932) (@hitenkoku)
 - `metrics`コマンドで`-d`オプションが指定されたときに最初と最後のイベントのタイムスタンプを表示する機能を追加した。 (#935) (@hitenkoku)
@@ -650,8 +650,8 @@ MITRE ATT&CK v19に対応した。(@fukusuket)
 
 **新機能:**
 
-- JSON形式のイベントログファイルの入力(`-J, --JSON-input`)に対応した。 (#386) (@hitenkoku)
-- MaxMindのGeoIPデータベースに基づき、送信元および送信先IPアドレスのASN組織、都市、国を出力することによるログエンリッチメント(`-G, --GeoIP`)を実現した。 (#879) (@hitenkoku)
+- JSON形式のイベントログファイルの入力(`-J, --json-input`)に対応した。 (#386) (@hitenkoku)
+- MaxMindのGeoIPデータベースに基づき、送信元および送信先IPアドレスのASN組織、都市、国を出力することによるログエンリッチメント(`-G, --geo-ip`)を実現した。 (#879) (@hitenkoku)
 - `-e, --exact-level`オプションで指定したレベルに対する結果のみを取得する機能を追加した。 (#899) (@hitenkoku)
 
 **改善:**
@@ -666,7 +666,7 @@ MITRE ATT&CK v19に対応した。(@fukusuket)
 - ライブラリの更新によって`-T, --visualize-timeline`の出力を複数行にするように変更した。 (#902) (@hitenkoku)
 - JSON/L形式のログを読み込む際のメモリ使用量を約50%削減した。 (#906) (@fukusuket)
 - Longオプションを基にしたオプションの並べ替えを行った。 (#904) (@hitenkoku)
-- `-J, --JSON-input`オプションを`logon-summary`, `metrics`, `pivot-keywords-list`コマンドに対応させた。 (#908) (@hitenkoku)
+- `-J, --json-input`オプションを`logon-summary`, `metrics`, `pivot-keywords-list`コマンドに対応させた。 (#908) (@hitenkoku)
 
 **バグ修正:**
 
@@ -734,7 +734,7 @@ MITRE ATT&CK v19に対応した。(@fukusuket)
 
 **新機能:**
 
-- 新たな時刻表示のオプションとして`--ISO-8601`を追加した。 (#574) (@hitenkoku)
+- 新たな時刻表示のオプションとして`--iso-8601`を追加した。 (#574) (@hitenkoku)
 
 **改善:**
 
@@ -807,7 +807,7 @@ MITRE ATT&CK v19に対応した。(@fukusuket)
 
 **新機能:**
 
-- 解析結果をJSONに出力する機能(`-j, --json-timeline`)を追加した。 (#654) (@hitenkoku)
+- 解析結果をJSONに出力する機能(`-j, --dfir-timeline`)を追加した。 (#654) (@hitenkoku)
 - 解析結果をJSONL形式で出力する機能 (`-J, --jsonl` )を追加した。 (#694) (@hitenkoku)
 
 **改善:**
@@ -921,7 +921,7 @@ MITRE ATT&CK v19に対応した。(@fukusuket)
 
 - LinuxとmacOSのバイナリサイズをより小さくするために、デバッグシンボルをストリップします。(#568) (@YamatoSecurity)
 - Crateパッケージの更新 (@YamatoSecurity)
-- 新たな時刻表示のオプションとして`--US-time`、`--US-military-time`、`--European-time`の3つを追加した (#574) (@hitenkoku)
+- 新たな時刻表示のオプションとして`--us-time`、`--us-military-time`、`--european-time`の3つを追加した (#574) (@hitenkoku)
 - `--rfc-3339` オプションの時刻表示形式を変更した。 (#574) (@hitenkoku)
 - `-R/ --display-record-id`オプションを`-R/ --hide-record-id`に変更。レコードIDはデフォルトで出力するようにして`-R`オプションを付けた際に表示しないように変更した。(#579) (@hitenkoku)
 - ルール読み込み時のメッセージを追加した。 (#583) (@hitenkoku)

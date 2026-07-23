@@ -562,7 +562,7 @@ pub struct DetectInfo {
      ```
 
 4. 建置 release 版本：`cargo build --release`
-5. 執行 `heaptrack hayabusa csv-timeline -d sample -o out.csv`
+5. 執行 `heaptrack hayabusa dfir-timeline -d sample -o out.csv`
 
 現在當 Hayabusa 執行結束時，heaptrack 的結果將自動在 GUI 應用程式中開啟。
 

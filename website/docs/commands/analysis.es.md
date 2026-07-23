@@ -14,30 +14,30 @@ Con esta información, puede usar las opciones `--include-computer` o `--exclude
 Usage: computer-metrics <INPUT> [OPTIONS]
 
 Input:
-  -d, --directory <DIR>  Directory of multiple .evtx files
-  -f, --file <FILE>      File path to one .evtx file
-  -l, --live-analysis    Analyze the local C:\Windows\System32\winevt\Logs folder
+  -d, --directory <DIR>  Directorio con múltiples archivos .evtx
+  -f, --file <FILE>      Ruta a un único archivo .evtx
+  -l, --live-analysis    Analizar la carpeta local C:\Windows\System32\winevt\Logs
 
 General Options:
-  -C, --clobber                        Overwrite files when saving
-  -h, --help                           Show the help menu
-  -J, --JSON-input                     Scan JSON formatted logs instead of .evtx (.json or .jsonl)
-  -Q, --quiet-errors                   Quiet errors mode: do not save error logs
-  -x, --recover-records                Carve evtx records from slack space (default: disabled)
-  -c, --rules-config <DIR>             Specify custom rule config directory (default: ./rules/config)
-      --target-file-ext <FILE-EXT...>  Specify additional evtx file extensions (ex: evtx_data)
-  -t, --threads <NUMBER>               Number of threads (default: optimal number for performance)
+  -C, --clobber                        Sobrescribir los archivos al guardar
+  -h, --help                           Mostrar el menú de ayuda
+  -J, --json-input                     Escanear registros en formato JSON en lugar de .evtx (.json o .jsonl)
+  -Q, --quiet-errors                   Modo de errores silencioso: no guardar los registros de errores
+  -x, --recover-records                Extraer registros evtx del slack space (default: disabled)
+  -c, --rules-config <DIR>             Especificar un directorio de configuración de reglas personalizado (default: ./rules/config)
+      --target-file-ext <FILE-EXT...>  Especificar extensiones de archivo evtx adicionales (ex: evtx_data)
+  -V, --validate-checksums             Habilitar la validación de sumas de verificación (checksums)
 
 Filtering:
-      --time-offset <OFFSET>  Scan recent events based on an offset (ex: 1y, 3M, 30d, 24h, 30m)
+      --time-offset <OFFSET>  Escanear eventos recientes según un desplazamiento (offset) (ex: 1y, 3M, 30d, 24h, 30m)
 
 Output:
-  -o, --output <FILE>  Save the results in CSV format (ex: computer-metrics.csv)
+  -o, --output <FILE>  Guardar los resultados en formato CSV (ex: computer-metrics.csv)
 
 Display Settings:
-  -K, --no-color  Disable color output
-  -q, --quiet     Quiet mode: do not display the launch banner
-  -v, --verbose   Output verbose information
+  -K, --no-color  Deshabilitar la salida en color
+  -q, --quiet     Modo silencioso: no mostrar el banner de inicio
+  -v, --verbose   Mostrar información detallada
 ```
 
 ### Ejemplos del comando `computer-metrics`
@@ -58,42 +58,43 @@ Este comando no usa ninguna regla de detección, por lo que escaneará todos los
 Usage: eid-metrics <INPUT> [OPTIONS]
 
 Input:
-  -d, --directory <DIR>  Directory of multiple .evtx files
-  -f, --file <FILE>      File path to one .evtx file
-  -l, --live-analysis    Analyze the local C:\Windows\System32\winevt\Logs folder
+  -d, --directory <DIR>  Directorio con múltiples archivos .evtx
+  -f, --file <FILE>      Ruta a un único archivo .evtx
+  -l, --live-analysis    Analizar la carpeta local C:\Windows\System32\winevt\Logs
 
 General Options:
-  -C, --clobber                        Overwrite files when saving
-  -h, --help                           Show the help menu
-  -J, --JSON-input                     Scan JSON formatted logs instead of .evtx (.json or .jsonl)
-  -Q, --quiet-errors                   Quiet errors mode: do not save error logs
-  -x, --recover-records                Carve evtx records from slack space (default: disabled)
-  -c, --rules-config <DIR>             Specify custom rule config directory (default: ./rules/config)
-  -t, --threads <NUMBER>               Number of threads (default: optimal number for performance)
-      --target-file-ext <FILE-EXT...>  Specify additional evtx file extensions (ex: evtx_data)
+  -C, --clobber                        Sobrescribir los archivos al guardar
+  -h, --help                           Mostrar el menú de ayuda
+  -J, --json-input                     Escanear registros en formato JSON en lugar de .evtx (.json o .jsonl)
+  -Q, --quiet-errors                   Modo de errores silencioso: no guardar los registros de errores
+  -x, --recover-records                Extraer registros evtx del slack space (default: disabled)
+  -c, --rules-config <DIR>             Especificar un directorio de configuración de reglas personalizado (default: ./rules/config)
+      --target-file-ext <FILE-EXT...>  Especificar extensiones de archivo evtx adicionales (ex: evtx_data)
+      --threads <NUMBER>               Número de hilos (default: optimal number for performance)
+  -V, --validate-checksums             Habilitar la validación de sumas de verificación (checksums)
 
 Filtering:
-      --exclude-computer <COMPUTER...>  Do not scan specified computer names (ex: ComputerA) (ex: ComputerA,ComputerB)
-      --include-computer <COMPUTER...>  Scan only specified computer names (ex: ComputerA) (ex: ComputerA,ComputerB)
-      --time-offset <OFFSET>            Scan recent events based on an offset (ex: 1y, 3M, 30d, 24h, 30m)
+      --exclude-computer <COMPUTER...>  No escanear los nombres de equipo especificados (ex: ComputerA) (ex: ComputerA,ComputerB)
+      --include-computer <COMPUTER...>  Escanear solo los nombres de equipo especificados (ex: ComputerA) (ex: ComputerA,ComputerB)
+      --time-offset <OFFSET>            Escanear eventos recientes según un desplazamiento (offset) (ex: 1y, 3M, 30d, 24h, 30m)
 
 Output:
-  -b, --disable-abbreviations  Disable abbreviations
-  -o, --output <FILE>          Save the Metrics in CSV format (ex: metrics.csv)
+  -X, --remove-duplicate-records  Eliminar registros de eventos duplicados (default: disabled)
+  -o, --output <FILE>             Guardar las métricas en formato CSV (ex: metrics.csv)
 
 Display Settings:
-  -K, --no-color  Disable color output
-  -q, --quiet     Quiet mode: do not display the launch banner
-  -v, --verbose   Output verbose information
+  -K, --no-color  Deshabilitar la salida en color
+  -q, --quiet     Modo silencioso: no mostrar el banner de inicio
+  -v, --verbose   Mostrar información detallada
 
 Time Format:
-      --European-time     Output timestamp in European time format (ex: 22-02-2022 22:00:00.123 +02:00)
-  -O, --ISO-8601          Output timestamp in original ISO-8601 format (ex: 2022-02-22T10:10:10.1234567Z) (Always UTC)
-      --RFC-2822          Output timestamp in RFC 2822 format (ex: Fri, 22 Feb 2022 22:00:00 -0600)
-      --RFC-3339          Output timestamp in RFC 3339 format (ex: 2022-02-22 22:00:00.123456-06:00)
-      --US-military-time  Output timestamp in US military time format (ex: 02-22-2022 22:00:00.123 -06:00)
-      --US-time           Output timestamp in US time format (ex: 02-22-2022 10:00:00.123 PM -06:00)
-  -U, --UTC               Output time in UTC format (default: local time)
+      --european-time     Mostrar la marca de tiempo en formato de hora europeo (ex: 22-02-2022 22:00:00.123 +02:00)
+  -O, --iso-8601          Mostrar la marca de tiempo en el formato ISO-8601 original (ex: 2022-02-22T10:10:10.1234567Z) (siempre en UTC)
+      --rfc-2822          Mostrar la marca de tiempo en formato RFC 2822 (ex: Fri, 22 Feb 2022 22:00:00 -0600)
+      --rfc-3339          Mostrar la marca de tiempo en formato RFC 3339 (ex: 2022-02-22 22:00:00.123456-06:00)
+  -U, --utc               Mostrar la hora en formato UTC (default: local time)
+      --us-military-time  Mostrar la marca de tiempo en formato de hora militar de EE. UU. (ex: 02-22-2022 22:00:00.123 -06:00)
+      --us-time           Mostrar la marca de tiempo en formato de hora de EE. UU. (ex: 02-22-2022 10:00:00.123 PM -06:00)
 ```
 
 ### Ejemplos del comando `eid-metrics`
@@ -156,12 +157,12 @@ Si el archivo de configuración no existe, Hayabusa aún cargará la regla `expa
 Usage:  expand-list <INPUT> [OPTIONS]
 
 General Options:
-  -h, --help              Show the help menu
-  -r, --rules <DIR/FILE>  Specify rule directory (default: ./rules)
+  -h, --help              Mostrar el menú de ayuda
+  -r, --rules <DIR/FILE>  Especificar el directorio de reglas (default: ./rules)
 
 Display Settings:
-  -K, --no-color  Disable color output
-  -q, --quiet     Quiet mode: do not display the launch banner
+  -K, --no-color  Deshabilitar la salida en color
+  -q, --quiet     Modo silencioso: no mostrar el banner de inicio
 ```
 
 ### Ejemplos del comando `expand-list`
@@ -193,41 +194,42 @@ Este comando extraerá cadenas base64 de los siguientes eventos, las decodificar
 Usage:  extract-base64 <INPUT> [OPTIONS]
 
 Input:
-  -d, --directory <DIR>  Directory of multiple .evtx files
-  -f, --file <FILE>      File path to one .evtx file
-  -l, --live-analysis    Analyze the local C:\Windows\System32\winevt\Logs folder
+  -d, --directory <DIR>  Directorio con múltiples archivos .evtx
+  -f, --file <FILE>      Ruta a un único archivo .evtx
+  -l, --live-analysis    Analizar la carpeta local C:\Windows\System32\winevt\Logs
 
 General Options:
-  -C, --clobber                        Overwrite files when saving
-  -h, --help                           Show the help menu
-  -J, --JSON-input                     Scan JSON formatted logs instead of .evtx (.json or .jsonl)
-  -Q, --quiet-errors                   Quiet errors mode: do not save error logs
-  -x, --recover-records                Carve evtx records from slack space (default: disabled)
-  -c, --rules-config <DIR>             Specify custom rule config directory (default: ./rules/config)
-  -t, --threads <NUMBER>               Number of threads (default: optimal number for performance)
-      --target-file-ext <FILE-EXT...>  Specify additional evtx file extensions (ex: evtx_data)
+  -C, --clobber                        Sobrescribir los archivos al guardar
+  -h, --help                           Mostrar el menú de ayuda
+  -J, --json-input                     Escanear registros en formato JSON en lugar de .evtx (.json o .jsonl)
+  -Q, --quiet-errors                   Modo de errores silencioso: no guardar los registros de errores
+  -x, --recover-records                Extraer registros evtx del slack space (default: disabled)
+  -c, --rules-config <DIR>             Especificar un directorio de configuración de reglas personalizado (default: ./rules/config)
+      --target-file-ext <FILE-EXT...>  Especificar extensiones de archivo evtx adicionales (ex: evtx_data)
+      --threads <NUMBER>               Número de hilos (default: optimal number for performance)
+  -V, --validate-checksums             Habilitar la validación de sumas de verificación (checksums)
 
 Filtering:
-      --exclude-computer <COMPUTER...>  Do not scan specified computer names (ex: ComputerA) (ex: ComputerA,ComputerB)
-      --include-computer <COMPUTER...>  Scan only specified computer names (ex: ComputerA) (ex: ComputerA,ComputerB)
-      --time-offset <OFFSET>            Scan recent events based on an offset (ex: 1y, 3M, 30d, 24h, 30m)
+      --exclude-computer <COMPUTER...>  No escanear los nombres de equipo especificados (ex: ComputerA) (ex: ComputerA,ComputerB)
+      --include-computer <COMPUTER...>  Escanear solo los nombres de equipo especificados (ex: ComputerA) (ex: ComputerA,ComputerB)
+      --time-offset <OFFSET>            Escanear eventos recientes según un desplazamiento (offset) (ex: 1y, 3M, 30d, 24h, 30m)
 
 Output:
-  -o, --output <FILE>  Extract Base64 strings
+  -o, --output <FILE>  Guardar los resultados en un archivo CSV
 
 Display Settings:
-  -K, --no-color  Disable color output
-  -q, --quiet     Quiet mode: do not display the launch banner
-  -v, --verbose   Output verbose information
+  -K, --no-color  Deshabilitar la salida en color
+  -q, --quiet     Modo silencioso: no mostrar el banner de inicio
+  -v, --verbose   Mostrar información detallada
 
 Time Format:
-      --European-time     Output timestamp in European time format (ex: 22-02-2022 22:00:00.123 +02:00)
-  -O, --ISO-8601          Output timestamp in original ISO-8601 format (ex: 2022-02-22T10:10:10.1234567Z) (Always UTC)
-      --RFC-2822          Output timestamp in RFC 2822 format (ex: Fri, 22 Feb 2022 22:00:00 -0600)
-      --RFC-3339          Output timestamp in RFC 3339 format (ex: 2022-02-22 22:00:00.123456-06:00)
-      --US-military-time  Output timestamp in US military time format (ex: 02-22-2022 22:00:00.123 -06:00)
-      --US-time           Output timestamp in US time format (ex: 02-22-2022 10:00:00.123 PM -06:00)
-  -U, --UTC               Output time in UTC format (default: local time)
+      --european-time     Mostrar la marca de tiempo en formato de hora europeo (ex: 22-02-2022 22:00:00.123 +02:00)
+  -O, --iso-8601          Mostrar la marca de tiempo en el formato ISO-8601 original (ex: 2022-02-22T10:10:10.1234567Z) (siempre en UTC)
+      --rfc-2822          Mostrar la marca de tiempo en formato RFC 2822 (ex: Fri, 22 Feb 2022 22:00:00 -0600)
+      --rfc-3339          Mostrar la marca de tiempo en formato RFC 3339 (ex: 2022-02-22 22:00:00.123456-06:00)
+  -U, --utc               Mostrar la hora en formato UTC (default: local time)
+      --us-military-time  Mostrar la marca de tiempo en formato de hora militar de EE. UU. (ex: 02-22-2022 22:00:00.123 -06:00)
+      --us-time           Mostrar la marca de tiempo en formato de hora de EE. UU. (ex: 02-22-2022 10:00:00.123 PM -06:00)
 ```
 
 ### Ejemplos del comando `extract-base64`
@@ -275,44 +277,49 @@ Este comando no usa ninguna regla de detección, por lo que escaneará todos los
 Usage: log-metrics <INPUT> [OPTIONS]
 
 Input:
-  -d, --directory <DIR>  Directory of multiple .evtx files
-  -f, --file <FILE>      File path to one .evtx file
-  -l, --live-analysis    Analyze the local C:\Windows\System32\winevt\Logs folder
+  -d, --directory <DIR>  Directorio con múltiples archivos .evtx
+  -f, --file <FILE>      Ruta a un único archivo .evtx
+  -l, --live-analysis    Analizar la carpeta local C:\Windows\System32\winevt\Logs
 
 General Options:
-  -C, --clobber                        Overwrite files when saving
-  -h, --help                           Show the help menu
-  -J, --JSON-input                     Scan JSON formatted logs instead of .evtx (.json or .jsonl)
-  -Q, --quiet-errors                   Quiet errors mode: do not save error logs
-  -x, --recover-records                Carve evtx records from slack space (default: disabled)
-  -c, --rules-config <DIR>             Specify custom rule config directory (default: ./rules/config)
-  -t, --threads <NUMBER>               Number of threads (default: optimal number for performance)
-      --target-file-ext <FILE-EXT...>  Specify additional evtx file extensions (ex: evtx_data)
+  -C, --clobber                        Sobrescribir los archivos al guardar
+  -h, --help                           Mostrar el menú de ayuda
+  -J, --json-input                     Escanear registros en formato JSON en lugar de .evtx (.json o .jsonl)
+  -Q, --quiet-errors                   Modo de errores silencioso: no guardar los registros de errores
+  -x, --recover-records                Extraer registros evtx del slack space (default: disabled)
+  -c, --rules-config <DIR>             Especificar un directorio de configuración de reglas personalizado (default: ./rules/config)
+      --target-file-ext <FILE-EXT...>  Especificar extensiones de archivo evtx adicionales (ex: evtx_data)
+      --threads <NUMBER>               Número de hilos (default: optimal number for performance)
+  -V, --validate-checksums             Habilitar la validación de sumas de verificación (checksums)
 
 Filtering:
-      --exclude-computer <COMPUTER...>  Do not scan specified computer names (ex: ComputerA) (ex: ComputerA,ComputerB)
-      --include-computer <COMPUTER...>  Scan only specified computer names (ex: ComputerA) (ex: ComputerA,ComputerB)
-      --time-offset <OFFSET>            Scan recent events based on an offset (ex: 1y, 3M, 30d, 24h, 30m)
+      --exclude-computer <COMPUTER...>  No escanear los nombres de equipo especificados (ex: ComputerA) (ex: ComputerA,ComputerB)
+      --exclude-channel <CHANNEL...>    No escanear los canales especificados (ex: System,Security)
+      --exclude-filename <FILE...>      No escanear los archivos evtx especificados (ex: Security.evtx,System.evtx)
+      --include-computer <COMPUTER...>  Escanear solo los nombres de equipo especificados (ex: ComputerA) (ex: ComputerA,ComputerB)
+      --include-channel <CHANNEL...>    Incluir solo los canales especificados (ex: System,Security)
+      --include-filename <FILE...>      Incluir solo los archivos evtx especificados (ex: Security.evtx,System.evtx)
+      --time-offset <OFFSET>            Escanear eventos recientes según un desplazamiento (offset) (ex: 1y, 3M, 30d, 24h, 30m)
 
 Output:
-  -b, --disable-abbreviations  Disable abbreviations
-  -M, --multiline              Output event field information in multiple rows for CSV output
-  -o, --output <FILE>          Save the Metrics in CSV format (ex: metrics.csv)
-  -S, --tab-separator          Separate event field information by tabs
+  -b, --disable-abbreviations  Deshabilitar las abreviaturas
+  -M, --multiline              Separar la información de los campos de eventos con saltos de línea para la salida CSV
+  -o, --output <FILE>          Guardar las métricas en formato CSV (ex: metrics.csv)
+  -S, --tab-separator          Separar la información de los campos de eventos con tabulaciones
 
 Display Settings:
-  -K, --no-color  Disable color output
-  -q, --quiet     Quiet mode: do not display the launch banner
-  -v, --verbose   Output verbose information
+  -K, --no-color  Deshabilitar la salida en color
+  -q, --quiet     Modo silencioso: no mostrar el banner de inicio
+  -v, --verbose   Mostrar información detallada
 
 Time Format:
-      --European-time     Output timestamp in European time format (ex: 22-02-2022 22:00:00.123 +02:00)
-  -O, --ISO-8601          Output timestamp in original ISO-8601 format (ex: 2022-02-22T10:10:10.1234567Z) (Always UTC)
-      --RFC-2822          Output timestamp in RFC 2822 format (ex: Fri, 22 Feb 2022 22:00:00 -0600)
-      --RFC-3339          Output timestamp in RFC 3339 format (ex: 2022-02-22 22:00:00.123456-06:00)
-      --US-military-time  Output timestamp in US military time format (ex: 02-22-2022 22:00:00.123 -06:00)
-      --US-time           Output timestamp in US time format (ex: 02-22-2022 10:00:00.123 PM -06:00)
-  -U, --UTC               Output time in UTC format (default: local time)
+      --european-time     Mostrar la marca de tiempo en formato de hora europeo (ex: 22-02-2022 22:00:00.123 +02:00)
+  -O, --iso-8601          Mostrar la marca de tiempo en el formato ISO-8601 original (ex: 2022-02-22T10:10:10.1234567Z) (siempre en UTC)
+      --rfc-2822          Mostrar la marca de tiempo en formato RFC 2822 (ex: Fri, 22 Feb 2022 22:00:00 -0600)
+      --rfc-3339          Mostrar la marca de tiempo en formato RFC 3339 (ex: 2022-02-22 22:00:00.123456-06:00)
+  -U, --utc               Mostrar la hora en formato UTC (default: local time)
+      --us-military-time  Mostrar la marca de tiempo en formato de hora militar de EE. UU. (ex: 02-22-2022 22:00:00.123 -06:00)
+      --us-time           Mostrar la marca de tiempo en formato de hora de EE. UU. (ex: 02-22-2022 10:00:00.123 PM -06:00)
 ```
 
 ### Ejemplos del comando `log-metrics`
@@ -341,43 +348,45 @@ Los inicios de sesión fallidos se toman de los eventos `Security 4625`.
 Usage: logon-summary <INPUT> [OPTIONS]
 
 Input:
-  -d, --directory <DIR>  Directory of multiple .evtx files
-  -f, --file <FILE>      File path to one .evtx file
-  -l, --live-analysis    Analyze the local C:\Windows\System32\winevt\Logs folder
+  -d, --directory <DIR>  Directorio con múltiples archivos .evtx
+  -f, --file <FILE>      Ruta a un único archivo .evtx
+  -l, --live-analysis    Analizar la carpeta local C:\Windows\System32\winevt\Logs
 
 General Options:
-  -C, --clobber                        Overwrite files when saving
-  -h, --help                           Show the help menu
-  -J, --JSON-input                     Scan JSON formatted logs instead of .evtx (.json or .jsonl)
-  -Q, --quiet-errors                   Quiet errors mode: do not save error logs
-  -x, --recover-records                Carve evtx records from slack space (default: disabled)
-  -c, --rules-config <DIR>             Specify custom rule config directory (default: ./rules/config)
-  -t, --threads <NUMBER>               Number of threads (default: optimal number for performance)
-      --target-file-ext <FILE-EXT...>  Specify additional evtx file extensions (ex: evtx_data)
+  -C, --clobber                        Sobrescribir los archivos al guardar
+  -h, --help                           Mostrar el menú de ayuda
+  -J, --json-input                     Escanear registros en formato JSON en lugar de .evtx (.json o .jsonl)
+  -Q, --quiet-errors                   Modo de errores silencioso: no guardar los registros de errores
+  -x, --recover-records                Extraer registros evtx del slack space (default: disabled)
+  -c, --rules-config <DIR>             Especificar un directorio de configuración de reglas personalizado (default: ./rules/config)
+      --target-file-ext <FILE-EXT...>  Especificar extensiones de archivo evtx adicionales (ex: evtx_data)
+      --threads <NUMBER>               Número de hilos (default: optimal number for performance)
+  -V, --validate-checksums             Habilitar la validación de sumas de verificación (checksums)
 
 Filtering:
-      --exclude-computer <COMPUTER...>  Do not scan specified computer names (ex: ComputerA) (ex: ComputerA,ComputerB)
-      --include-computer <COMPUTER...>  Scan only specified computer names (ex: ComputerA) (ex: ComputerA,ComputerB)
-      --time-offset <OFFSET>            Scan recent events based on an offset (ex: 1y, 3M, 30d, 24h, 30m)
-      --timeline-end <DATE>             End time of the event logs to load (ex: "2022-02-22 23:59:59 +09:00")
-      --timeline-start <DATE>           Start time of the event logs to load (ex: "2020-02-22 00:00:00 +09:00")
+      --exclude-computer <COMPUTER...>  No escanear los nombres de equipo especificados (ex: ComputerA) (ex: ComputerA,ComputerB)
+      --include-computer <COMPUTER...>  Escanear solo los nombres de equipo especificados (ex: ComputerA) (ex: ComputerA,ComputerB)
+      --time-offset <OFFSET>            Escanear eventos recientes según un desplazamiento (offset) (ex: 1y, 3M, 30d, 24h, 30m)
+      --timeline-end <DATE>             Hora de fin de los registros de eventos a cargar (ex: "2022-02-22 23:59:59 +09:00")
+      --timeline-start <DATE>           Hora de inicio de los registros de eventos a cargar (ex: "2020-02-22 00:00:00 +09:00")
 
 Output:
-  -o, --output <FILENAME-PREFIX>  Save the logon summary to two CSV files (ex: -o logon-summary)
+  -X, --remove-duplicate-records  Eliminar registros de eventos duplicados (default: disabled)
+  -o, --output <FILENAME-PREFIX>  Guardar el resumen de inicios de sesión en dos archivos CSV (ex: -o logon-summary)
 
 Display Settings:
-  -K, --no-color  Disable color output
-  -q, --quiet     Quiet mode: do not display the launch banner
-  -v, --verbose   Output verbose information
+  -K, --no-color  Deshabilitar la salida en color
+  -q, --quiet     Modo silencioso: no mostrar el banner de inicio
+  -v, --verbose   Mostrar información detallada
 
 Time Format:
-      --European-time     Output timestamp in European time format (ex: 22-02-2022 22:00:00.123 +02:00)
-  -O, --ISO-8601          Output timestamp in original ISO-8601 format (ex: 2022-02-22T10:10:10.1234567Z) (Always UTC)
-      --RFC-2822          Output timestamp in RFC 2822 format (ex: Fri, 22 Feb 2022 22:00:00 -0600)
-      --RFC-3339          Output timestamp in RFC 3339 format (ex: 2022-02-22 22:00:00.123456-06:00)
-      --US-military-time  Output timestamp in US military time format (ex: 02-22-2022 22:00:00.123 -06:00)
-      --US-time           Output timestamp in US time format (ex: 02-22-2022 10:00:00.123 PM -06:00)
-  -U, --UTC               Output time in UTC format (default: local time)
+      --european-time     Mostrar la marca de tiempo en formato de hora europeo (ex: 22-02-2022 22:00:00.123 +02:00)
+  -O, --iso-8601          Mostrar la marca de tiempo en el formato ISO-8601 original (ex: 2022-02-22T10:10:10.1234567Z) (siempre en UTC)
+      --rfc-2822          Mostrar la marca de tiempo en formato RFC 2822 (ex: Fri, 22 Feb 2022 22:00:00 -0600)
+      --rfc-3339          Mostrar la marca de tiempo en formato RFC 3339 (ex: 2022-02-22 22:00:00.123456-06:00)
+  -U, --utc               Mostrar la hora en formato UTC (default: local time)
+      --us-military-time  Mostrar la marca de tiempo en formato de hora militar de EE. UU. (ex: 02-22-2022 22:00:00.123 -06:00)
+      --us-time           Mostrar la marca de tiempo en formato de hora de EE. UU. (ex: 02-22-2022 10:00:00.123 PM -06:00)
 ```
 
 ### Ejemplos del comando `logon-summary`
@@ -403,47 +412,48 @@ Lo más probable es que haya palabras clave comunes en sus resultados que coinci
 Usage: pivot-keywords-list <INPUT> [OPTIONS]
 
 Input:
-  -d, --directory <DIR>  Directory of multiple .evtx files
-  -f, --file <FILE>      File path to one .evtx file
-  -l, --live-analysis    Analyze the local C:\Windows\System32\winevt\Logs folder
+  -d, --directory <DIR>  Directorio con múltiples archivos .evtx
+  -f, --file <FILE>      Ruta a un único archivo .evtx
+  -l, --live-analysis    Analizar la carpeta local C:\Windows\System32\winevt\Logs
 
 General Options:
-  -C, --clobber                        Overwrite files when saving
-  -h, --help                           Show the help menu
-  -J, --JSON-input                     Scan JSON formatted logs instead of .evtx (.json or .jsonl)
-  -w, --no-wizard                      Do not ask questions. Scan for all events and alerts
-  -Q, --quiet-errors                   Quiet errors mode: do not save error logs
-  -x, --recover-records                Carve evtx records from slack space (default: disabled)
-  -c, --rules-config <DIR>             Specify custom rule config directory (default: ./rules/config)
-  -t, --threads <NUMBER>               Number of threads (default: optimal number for performance)
-      --target-file-ext <FILE-EXT...>  Specify additional evtx file extensions (ex: evtx_data)
+  -C, --clobber                        Sobrescribir los archivos al guardar
+  -h, --help                           Mostrar el menú de ayuda
+  -J, --json-input                     Escanear registros en formato JSON en lugar de .evtx (.json o .jsonl)
+  -w, --no-wizard                      No hacer preguntas. Escanear todos los eventos y alertas
+  -Q, --quiet-errors                   Modo de errores silencioso: no guardar los registros de errores
+  -x, --recover-records                Extraer registros evtx del slack space (default: disabled)
+  -c, --rules-config <DIR>             Especificar un directorio de configuración de reglas personalizado (default: ./rules/config)
+      --target-file-ext <FILE-EXT...>  Especificar extensiones de archivo evtx adicionales (ex: evtx_data)
+      --threads <NUMBER>               Número de hilos (default: optimal number for performance)
+  -V, --validate-checksums             Habilitar la validación de sumas de verificación (checksums)
 
 Filtering:
-  -E, --EID-filter                      Scan only common EIDs for faster speed (./rules/config/target_event_IDs.txt)
-  -D, --enable-deprecated-rules         Enable rules with a status of deprecated
-  -n, --enable-noisy-rules              Enable rules set to noisy (./rules/config/noisy_rules.txt)
-  -u, --enable-unsupported-rules        Enable rules with a status of unsupported
-  -e, --exact-level <LEVEL>             Only load rules with a specific level (informational, low, medium, high, critical)
-      --exclude-computer <COMPUTER...>  Do not scan specified computer names (ex: ComputerA) (ex: ComputerA,ComputerB)
-      --exclude-eid <EID...>            Do not scan specific EIDs for faster speed (ex: 1) (ex: 1,4688)
-      --exclude-status <STATUS...>      Do not load rules according to status (ex: experimental) (ex: stable,test)
-      --exclude-tag <TAG...>            Do not load rules with specific tags (ex: sysmon)
-      --include-computer <COMPUTER...>  Scan only specified computer names (ex: ComputerA) (ex: ComputerA,ComputerB)
-      --include-eid <EID...>            Scan only specified EIDs for faster speed (ex: 1) (ex: 1,4688)
-      --include-status <STATUS...>      Only load rules with specific status (ex: experimental) (ex: stable,test)
-      --include-tag <TAG...>            Only load rules with specific tags (ex: attack.execution,attack.discovery)
-  -m, --min-level <LEVEL>               Minimum level for rules to load (default: informational)
-      --time-offset <OFFSET>            Scan recent events based on an offset (ex: 1y, 3M, 30d, 24h, 30m)
-      --timeline-end <DATE>             End time of the event logs to load (ex: "2022-02-22 23:59:59 +09:00")
-      --timeline-start <DATE>           Start time of the event logs to load (ex: "2020-02-22 00:00:00 +09:00")
+  -E, --eid-filter                      Escanear solo los EID comunes para mayor velocidad (./rules/config/target_event_IDs.txt)
+  -D, --enable-deprecated-rules         Habilitar reglas con estado deprecated
+  -n, --enable-noisy-rules              Habilitar reglas marcadas como noisy (./rules/config/noisy_rules.txt)
+  -u, --enable-unsupported-rules        Habilitar reglas con estado unsupported
+  -e, --exact-level <LEVEL>             Cargar solo reglas con un nivel específico (informational, low, medium, high, critical)
+      --exclude-computer <COMPUTER...>  No escanear los nombres de equipo especificados (ex: ComputerA) (ex: ComputerA,ComputerB)
+      --exclude-eid <EID...>            No escanear EID específicos para mayor velocidad (ex: 1) (ex: 1,4688)
+      --exclude-status <STATUS...>      No cargar reglas según su estado (ex: experimental) (ex: stable,test)
+      --exclude-tag <TAG...>            No cargar reglas con etiquetas específicas (ex: sysmon)
+      --include-computer <COMPUTER...>  Escanear solo los nombres de equipo especificados (ex: ComputerA) (ex: ComputerA,ComputerB)
+      --include-eid <EID...>            Escanear solo los EID especificados para mayor velocidad (ex: 1) (ex: 1,4688)
+      --include-status <STATUS...>      Cargar solo reglas con un estado específico (ex: experimental) (ex: stable,test)
+      --include-tag <TAG...>            Cargar solo reglas con etiquetas específicas (ex: attack.execution,attack.discovery)
+  -m, --min-level <LEVEL>               Nivel mínimo de las reglas a cargar (default: informational)
+      --time-offset <OFFSET>            Escanear eventos recientes según un desplazamiento (offset) (ex: 1y, 3M, 30d, 24h, 30m)
+      --timeline-end <DATE>             Hora de fin de los registros de eventos a cargar (ex: "2022-02-22 23:59:59 +09:00")
+      --timeline-start <DATE>           Hora de inicio de los registros de eventos a cargar (ex: "2020-02-22 00:00:00 +09:00")
 
 Output:
-  -o, --output <FILENAME-PREFIX>  Save pivot words to separate files (ex: PivotKeywords)
+  -o, --output <FILENAME-PREFIX>  Guardar las palabras clave de pivote en archivos separados (ex: PivotKeywords)
 
 Display Settings:
-  -K, --no-color  Disable color output
-  -q, --quiet     Quiet mode: do not display the launch banner
-  -v, --verbose   Output verbose information
+  -K, --no-color  Deshabilitar la salida en color
+  -q, --quiet     Modo silencioso: no mostrar el banner de inicio
+  -v, --verbose   Mostrar información detallada
 ```
 
 ### Ejemplos del comando `pivot-keywords-list`
@@ -472,51 +482,52 @@ Esto es útil para determinar si hay alguna evidencia en eventos que no son dete
 Usage: hayabusa.exe search <INPUT> <--keywords "<KEYWORDS>" OR --regex "<REGEX>"> [OPTIONS]
 
 Display Settings:
-  -K, --no-color  Disable color output
-  -q, --quiet     Quiet mode: do not display the launch banner
-  -v, --verbose   Output verbose information
+  -K, --no-color  Deshabilitar la salida en color
+  -q, --quiet     Modo silencioso: no mostrar el banner de inicio
+  -v, --verbose   Mostrar información detallada
 
 General Options:
-  -C, --clobber                        Overwrite files when saving
-  -h, --help                           Show the help menu
-  -Q, --quiet-errors                   Quiet errors mode: do not save error logs
-  -x, --recover-records                Carve evtx records from slack space (default: disabled)
-  -c, --rules-config <DIR>             Specify custom rule config directory (default: ./rules/config)
-  -t, --threads <NUMBER>               Number of threads (default: optimal number for performance)
-      --target-file-ext <FILE-EXT...>  Specify additional evtx file extensions (ex: evtx_data)
-  -s, --sort                           Sort results before saving the file (warning: this uses much more memory!)
+  -C, --clobber                        Sobrescribir los archivos al guardar
+  -h, --help                           Mostrar el menú de ayuda
+  -Q, --quiet-errors                   Modo de errores silencioso: no guardar los registros de errores
+  -x, --recover-records                Extraer registros evtx del slack space (default: disabled)
+  -c, --rules-config <DIR>             Especificar un directorio de configuración de reglas personalizado (default: ./rules/config)
+      --target-file-ext <FILE-EXT...>  Especificar extensiones de archivo evtx adicionales (ex: evtx_data)
+      --threads <NUMBER>               Número de hilos (default: optimal number for performance)
+  -s, --sort                           Ordenar los resultados antes de guardar el archivo (advertencia: ¡esto usa mucha más memoria!)
+  -V, --validate-checksums             Habilitar la validación de sumas de verificación (checksums)
 
 Input:
-  -d, --directory <DIR>  Directory of multiple .evtx files
-  -f, --file <FILE>      File path to one .evtx file
-  -l, --live-analysis    Analyze the local C:\Windows\System32\winevt\Logs folder
+  -d, --directory <DIR>  Directorio con múltiples archivos .evtx
+  -f, --file <FILE>      Ruta a un único archivo .evtx
+  -l, --live-analysis    Analizar la carpeta local C:\Windows\System32\winevt\Logs
 
 Filtering:
-  -a, --and-logic              Search keywords with AND logic (default: OR)
-  -F, --filter <FILTER...>     Filter by specific field(s)
-  -i, --ignore-case            Case-insensitive keyword search
-  -k, --keyword <KEYWORD...>   Search by keyword(s)
-  -r, --regex <REGEX>          Search by regular expression
-      --time-offset <OFFSET>   Scan recent events based on an offset (ex: 1y, 3M, 30d, 24h, 30m)
-      --timeline-end <DATE>    End time of the event logs to load (ex: "2022-02-22 23:59:59 +09:00")
-      --timeline-start <DATE>  Start time of the event logs to load (ex: "2020-02-22 00:00:00 +09:00")
+  -a, --and-logic              Buscar palabras clave con lógica AND (default: OR)
+  -F, --filter <FILTER...>     Filtrar por campo(s) específico(s)
+  -i, --ignore-case            Búsqueda de palabras clave sin distinción entre mayúsculas y minúsculas
+  -k, --keyword <KEYWORD...>   Buscar por palabra(s) clave
+  -r, --regex <REGEX>          Buscar mediante una expresión regular
+      --time-offset <OFFSET>   Escanear eventos recientes según un desplazamiento (offset) (ex: 1y, 3M, 30d, 24h, 30m)
+      --timeline-end <DATE>    Hora de fin de los registros de eventos a cargar (ex: "2022-02-22 23:59:59 +09:00")
+      --timeline-start <DATE>  Hora de inicio de los registros de eventos a cargar (ex: "2020-02-22 00:00:00 +09:00")
 
 Output:
-  -b, --disable-abbreviations  Disable abbreviations
-  -J, --JSON-output            Save the search results in JSON format (ex: -J -o results.json)
-  -L, --JSONL-output           Save the search results in JSONL format (ex: -L -o results.jsonl)
-  -M, --multiline              Output event field information in multiple rows for CSV output
-  -o, --output <FILE>          Save the search results in CSV format (ex: search.csv)
-  -S, --tab-separator          Separate event field information by tabs
+  -b, --disable-abbreviations  Deshabilitar las abreviaturas
+  -J, --json-output            Guardar los resultados de la búsqueda en formato JSON (ex: -J -o results.json)
+  -L, --jsonl-output           Guardar los resultados de la búsqueda en formato JSONL (ex: -L -o results.jsonl)
+  -M, --multiline              Separar la información de los campos de eventos con saltos de línea para la salida CSV
+  -o, --output <FILE>          Guardar los resultados de la búsqueda en formato CSV (ex: search.csv)
+  -S, --tab-separator          Separar la información de los campos de eventos con tabulaciones
 
 Time Format:
-      --European-time     Output timestamp in European time format (ex: 22-02-2022 22:00:00.123 +02:00)
-  -O, --ISO-8601          Output timestamp in original ISO-8601 format (ex: 2022-02-22T10:10:10.1234567Z) (Always UTC)
-      --RFC-2822          Output timestamp in RFC 2822 format (ex: Fri, 22 Feb 2022 22:00:00 -0600)
-      --RFC-3339          Output timestamp in RFC 3339 format (ex: 2022-02-22 22:00:00.123456-06:00)
-      --US-military-time  Output timestamp in US military time format (ex: 02-22-2022 22:00:00.123 -06:00)
-      --US-time           Output timestamp in US time format (ex: 02-22-2022 10:00:00.123 PM -06:00)
-  -U, --UTC               Output time in UTC format (default: local time)
+      --european-time     Mostrar la marca de tiempo en formato de hora europeo (ex: 22-02-2022 22:00:00.123 +02:00)
+  -O, --iso-8601          Mostrar la marca de tiempo en el formato ISO-8601 original (ex: 2022-02-22T10:10:10.1234567Z) (siempre en UTC)
+      --rfc-2822          Mostrar la marca de tiempo en formato RFC 2822 (ex: Fri, 22 Feb 2022 22:00:00 -0600)
+      --rfc-3339          Mostrar la marca de tiempo en formato RFC 3339 (ex: 2022-02-22 22:00:00.123456-06:00)
+  -U, --utc               Mostrar la hora en formato UTC (default: local time)
+      --us-military-time  Mostrar la marca de tiempo en formato de hora militar de EE. UU. (ex: 02-22-2022 22:00:00.123 -06:00)
+      --us-time           Mostrar la marca de tiempo en formato de hora de EE. UU. (ex: 02-22-2022 10:00:00.123 PM -06:00)
 ```
 
 ### Ejemplos del comando `search`

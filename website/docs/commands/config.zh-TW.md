@@ -11,15 +11,15 @@
 Usage: hayabusa.exe config-critical-systems <INPUT> [OPTIONS]
 
 Input:
-  -d, --directory <DIR>  Directory of multiple .evtx files
-  -f, --file <FILE>      File path to one .evtx file
+  -d, --directory <DIR>  包含多個 .evtx 檔案的目錄
+  -f, --file <FILE>      單一 .evtx 檔案的檔案路徑
 
 Display Settings:
-  -K, --no-color  Disable color output
-  -q, --quiet     Quiet mode: do not display the launch banner
+  -K, --no-color  停用彩色輸出
+  -q, --quiet     安靜模式：不顯示啟動橫幅
 
 General Options:
-  -h, --help  Show the help menu
+  -h, --help  顯示說明選單
 ```
 
 ### `config-critical-systems` 指令範例

@@ -14,30 +14,30 @@
 Usage: computer-metrics <INPUT> [OPTIONS]
 
 Input:
-  -d, --directory <DIR>  Directory of multiple .evtx files
-  -f, --file <FILE>      File path to one .evtx file
-  -l, --live-analysis    Analyze the local C:\Windows\System32\winevt\Logs folder
+  -d, --directory <DIR>  دليل يحتوي على ملفات .evtx متعددة
+  -f, --file <FILE>      مسار ملف .evtx واحد
+  -l, --live-analysis    تحليل مجلد C:\Windows\System32\winevt\Logs المحلي
 
 General Options:
-  -C, --clobber                        Overwrite files when saving
-  -h, --help                           Show the help menu
-  -J, --JSON-input                     Scan JSON formatted logs instead of .evtx (.json or .jsonl)
-  -Q, --quiet-errors                   Quiet errors mode: do not save error logs
-  -x, --recover-records                Carve evtx records from slack space (default: disabled)
-  -c, --rules-config <DIR>             Specify custom rule config directory (default: ./rules/config)
-      --target-file-ext <FILE-EXT...>  Specify additional evtx file extensions (ex: evtx_data)
-  -t, --threads <NUMBER>               Number of threads (default: optimal number for performance)
+  -C, --clobber                        الكتابة فوق الملفات عند الحفظ
+  -h, --help                           عرض قائمة المساعدة
+  -J, --json-input                     فحص السجلات بتنسيق JSON بدلاً من ملفات .evtx (.json أو .jsonl)
+  -Q, --quiet-errors                   وضع كتم الأخطاء: عدم حفظ سجلات الأخطاء
+  -x, --recover-records                استخراج سجلات evtx من المساحة المتبقية (default: disabled)
+  -c, --rules-config <DIR>             تحديد دليل تهيئة قواعد مخصص (default: ./rules/config)
+      --target-file-ext <FILE-EXT...>  تحديد امتدادات ملفات evtx إضافية (ex: evtx_data)
+  -V, --validate-checksums             تفعيل التحقق من المجاميع الاختبارية
 
 Filtering:
-      --time-offset <OFFSET>  Scan recent events based on an offset (ex: 1y, 3M, 30d, 24h, 30m)
+      --time-offset <OFFSET>  فحص الأحداث الحديثة استنادًا إلى إزاحة زمنية (ex: 1y, 3M, 30d, 24h, 30m)
 
 Output:
-  -o, --output <FILE>  Save the results in CSV format (ex: computer-metrics.csv)
+  -o, --output <FILE>  حفظ النتائج بتنسيق CSV (ex: computer-metrics.csv)
 
 Display Settings:
-  -K, --no-color  Disable color output
-  -q, --quiet     Quiet mode: do not display the launch banner
-  -v, --verbose   Output verbose information
+  -K, --no-color  تعطيل إخراج الألوان
+  -q, --quiet     الوضع الصامت: عدم عرض شعار البدء
+  -v, --verbose   إخراج معلومات مفصّلة
 ```
 
 ### أمثلة على أمر `computer-metrics`
@@ -58,42 +58,43 @@ Display Settings:
 Usage: eid-metrics <INPUT> [OPTIONS]
 
 Input:
-  -d, --directory <DIR>  Directory of multiple .evtx files
-  -f, --file <FILE>      File path to one .evtx file
-  -l, --live-analysis    Analyze the local C:\Windows\System32\winevt\Logs folder
+  -d, --directory <DIR>  دليل يحتوي على ملفات .evtx متعددة
+  -f, --file <FILE>      مسار ملف .evtx واحد
+  -l, --live-analysis    تحليل مجلد C:\Windows\System32\winevt\Logs المحلي
 
 General Options:
-  -C, --clobber                        Overwrite files when saving
-  -h, --help                           Show the help menu
-  -J, --JSON-input                     Scan JSON formatted logs instead of .evtx (.json or .jsonl)
-  -Q, --quiet-errors                   Quiet errors mode: do not save error logs
-  -x, --recover-records                Carve evtx records from slack space (default: disabled)
-  -c, --rules-config <DIR>             Specify custom rule config directory (default: ./rules/config)
-  -t, --threads <NUMBER>               Number of threads (default: optimal number for performance)
-      --target-file-ext <FILE-EXT...>  Specify additional evtx file extensions (ex: evtx_data)
+  -C, --clobber                        الكتابة فوق الملفات عند الحفظ
+  -h, --help                           عرض قائمة المساعدة
+  -J, --json-input                     فحص السجلات بتنسيق JSON بدلاً من ملفات .evtx (.json أو .jsonl)
+  -Q, --quiet-errors                   وضع كتم الأخطاء: عدم حفظ سجلات الأخطاء
+  -x, --recover-records                استخراج سجلات evtx من المساحة المتبقية (default: disabled)
+  -c, --rules-config <DIR>             تحديد دليل تهيئة قواعد مخصص (default: ./rules/config)
+      --target-file-ext <FILE-EXT...>  تحديد امتدادات ملفات evtx إضافية (ex: evtx_data)
+      --threads <NUMBER>               عدد الخيوط (default: optimal number for performance)
+  -V, --validate-checksums             تفعيل التحقق من المجاميع الاختبارية
 
 Filtering:
-      --exclude-computer <COMPUTER...>  Do not scan specified computer names (ex: ComputerA) (ex: ComputerA,ComputerB)
-      --include-computer <COMPUTER...>  Scan only specified computer names (ex: ComputerA) (ex: ComputerA,ComputerB)
-      --time-offset <OFFSET>            Scan recent events based on an offset (ex: 1y, 3M, 30d, 24h, 30m)
+      --exclude-computer <COMPUTER...>  عدم فحص أسماء أجهزة الكمبيوتر المحددة (ex: ComputerA) (ex: ComputerA,ComputerB)
+      --include-computer <COMPUTER...>  فحص أسماء أجهزة الكمبيوتر المحددة فقط (ex: ComputerA) (ex: ComputerA,ComputerB)
+      --time-offset <OFFSET>            فحص الأحداث الحديثة استنادًا إلى إزاحة زمنية (ex: 1y, 3M, 30d, 24h, 30m)
 
 Output:
-  -b, --disable-abbreviations  Disable abbreviations
-  -o, --output <FILE>          Save the Metrics in CSV format (ex: metrics.csv)
+  -X, --remove-duplicate-records  إزالة سجلات الأحداث المكررة (default: disabled)
+  -o, --output <FILE>             حفظ المقاييس بتنسيق CSV (ex: metrics.csv)
 
 Display Settings:
-  -K, --no-color  Disable color output
-  -q, --quiet     Quiet mode: do not display the launch banner
-  -v, --verbose   Output verbose information
+  -K, --no-color  تعطيل إخراج الألوان
+  -q, --quiet     الوضع الصامت: عدم عرض شعار البدء
+  -v, --verbose   إخراج معلومات مفصّلة
 
 Time Format:
-      --European-time     Output timestamp in European time format (ex: 22-02-2022 22:00:00.123 +02:00)
-  -O, --ISO-8601          Output timestamp in original ISO-8601 format (ex: 2022-02-22T10:10:10.1234567Z) (Always UTC)
-      --RFC-2822          Output timestamp in RFC 2822 format (ex: Fri, 22 Feb 2022 22:00:00 -0600)
-      --RFC-3339          Output timestamp in RFC 3339 format (ex: 2022-02-22 22:00:00.123456-06:00)
-      --US-military-time  Output timestamp in US military time format (ex: 02-22-2022 22:00:00.123 -06:00)
-      --US-time           Output timestamp in US time format (ex: 02-22-2022 10:00:00.123 PM -06:00)
-  -U, --UTC               Output time in UTC format (default: local time)
+      --european-time     إخراج الطابع الزمني بتنسيق الوقت الأوروبي (ex: 22-02-2022 22:00:00.123 +02:00)
+  -O, --iso-8601          إخراج الطابع الزمني بتنسيق ISO-8601 الأصلي (ex: 2022-02-22T10:10:10.1234567Z) (Always UTC)
+      --rfc-2822          إخراج الطابع الزمني بتنسيق RFC 2822 (ex: Fri, 22 Feb 2022 22:00:00 -0600)
+      --rfc-3339          إخراج الطابع الزمني بتنسيق RFC 3339 (ex: 2022-02-22 22:00:00.123456-06:00)
+  -U, --utc               إخراج الوقت بتنسيق UTC (default: local time)
+      --us-military-time  إخراج الطابع الزمني بتنسيق الوقت العسكري الأمريكي (ex: 02-22-2022 22:00:00.123 -06:00)
+      --us-time           إخراج الطابع الزمني بتنسيق الوقت الأمريكي (ex: 02-22-2022 10:00:00.123 PM -06:00)
 ```
 
 ### أمثلة على أمر `eid-metrics`
@@ -156,12 +157,12 @@ AdminWorkstation3
 Usage:  expand-list <INPUT> [OPTIONS]
 
 General Options:
-  -h, --help              Show the help menu
-  -r, --rules <DIR/FILE>  Specify rule directory (default: ./rules)
+  -h, --help              عرض قائمة المساعدة
+  -r, --rules <DIR/FILE>  تحديد دليل القواعد (default: ./rules)
 
 Display Settings:
-  -K, --no-color  Disable color output
-  -q, --quiet     Quiet mode: do not display the launch banner
+  -K, --no-color  تعطيل إخراج الألوان
+  -q, --quiet     الوضع الصامت: عدم عرض شعار البدء
 ```
 
 ### أمثلة على أمر `expand-list`
@@ -193,41 +194,42 @@ domain_controller_hostnames
 Usage:  extract-base64 <INPUT> [OPTIONS]
 
 Input:
-  -d, --directory <DIR>  Directory of multiple .evtx files
-  -f, --file <FILE>      File path to one .evtx file
-  -l, --live-analysis    Analyze the local C:\Windows\System32\winevt\Logs folder
+  -d, --directory <DIR>  دليل يحتوي على ملفات .evtx متعددة
+  -f, --file <FILE>      مسار ملف .evtx واحد
+  -l, --live-analysis    تحليل مجلد C:\Windows\System32\winevt\Logs المحلي
 
 General Options:
-  -C, --clobber                        Overwrite files when saving
-  -h, --help                           Show the help menu
-  -J, --JSON-input                     Scan JSON formatted logs instead of .evtx (.json or .jsonl)
-  -Q, --quiet-errors                   Quiet errors mode: do not save error logs
-  -x, --recover-records                Carve evtx records from slack space (default: disabled)
-  -c, --rules-config <DIR>             Specify custom rule config directory (default: ./rules/config)
-  -t, --threads <NUMBER>               Number of threads (default: optimal number for performance)
-      --target-file-ext <FILE-EXT...>  Specify additional evtx file extensions (ex: evtx_data)
+  -C, --clobber                        الكتابة فوق الملفات عند الحفظ
+  -h, --help                           عرض قائمة المساعدة
+  -J, --json-input                     فحص السجلات بتنسيق JSON بدلاً من ملفات .evtx (.json أو .jsonl)
+  -Q, --quiet-errors                   وضع كتم الأخطاء: عدم حفظ سجلات الأخطاء
+  -x, --recover-records                استخراج سجلات evtx من المساحة المتبقية (default: disabled)
+  -c, --rules-config <DIR>             تحديد دليل تهيئة قواعد مخصص (default: ./rules/config)
+      --target-file-ext <FILE-EXT...>  تحديد امتدادات ملفات evtx إضافية (ex: evtx_data)
+      --threads <NUMBER>               عدد الخيوط (default: optimal number for performance)
+  -V, --validate-checksums             تفعيل التحقق من المجاميع الاختبارية
 
 Filtering:
-      --exclude-computer <COMPUTER...>  Do not scan specified computer names (ex: ComputerA) (ex: ComputerA,ComputerB)
-      --include-computer <COMPUTER...>  Scan only specified computer names (ex: ComputerA) (ex: ComputerA,ComputerB)
-      --time-offset <OFFSET>            Scan recent events based on an offset (ex: 1y, 3M, 30d, 24h, 30m)
+      --exclude-computer <COMPUTER...>  عدم فحص أسماء أجهزة الكمبيوتر المحددة (ex: ComputerA) (ex: ComputerA,ComputerB)
+      --include-computer <COMPUTER...>  فحص أسماء أجهزة الكمبيوتر المحددة فقط (ex: ComputerA) (ex: ComputerA,ComputerB)
+      --time-offset <OFFSET>            فحص الأحداث الحديثة استنادًا إلى إزاحة زمنية (ex: 1y, 3M, 30d, 24h, 30m)
 
 Output:
-  -o, --output <FILE>  Extract Base64 strings
+  -o, --output <FILE>  حفظ النتائج في ملف CSV
 
 Display Settings:
-  -K, --no-color  Disable color output
-  -q, --quiet     Quiet mode: do not display the launch banner
-  -v, --verbose   Output verbose information
+  -K, --no-color  تعطيل إخراج الألوان
+  -q, --quiet     الوضع الصامت: عدم عرض شعار البدء
+  -v, --verbose   إخراج معلومات مفصّلة
 
 Time Format:
-      --European-time     Output timestamp in European time format (ex: 22-02-2022 22:00:00.123 +02:00)
-  -O, --ISO-8601          Output timestamp in original ISO-8601 format (ex: 2022-02-22T10:10:10.1234567Z) (Always UTC)
-      --RFC-2822          Output timestamp in RFC 2822 format (ex: Fri, 22 Feb 2022 22:00:00 -0600)
-      --RFC-3339          Output timestamp in RFC 3339 format (ex: 2022-02-22 22:00:00.123456-06:00)
-      --US-military-time  Output timestamp in US military time format (ex: 02-22-2022 22:00:00.123 -06:00)
-      --US-time           Output timestamp in US time format (ex: 02-22-2022 10:00:00.123 PM -06:00)
-  -U, --UTC               Output time in UTC format (default: local time)
+      --european-time     إخراج الطابع الزمني بتنسيق الوقت الأوروبي (ex: 22-02-2022 22:00:00.123 +02:00)
+  -O, --iso-8601          إخراج الطابع الزمني بتنسيق ISO-8601 الأصلي (ex: 2022-02-22T10:10:10.1234567Z) (Always UTC)
+      --rfc-2822          إخراج الطابع الزمني بتنسيق RFC 2822 (ex: Fri, 22 Feb 2022 22:00:00 -0600)
+      --rfc-3339          إخراج الطابع الزمني بتنسيق RFC 3339 (ex: 2022-02-22 22:00:00.123456-06:00)
+  -U, --utc               إخراج الوقت بتنسيق UTC (default: local time)
+      --us-military-time  إخراج الطابع الزمني بتنسيق الوقت العسكري الأمريكي (ex: 02-22-2022 22:00:00.123 -06:00)
+      --us-time           إخراج الطابع الزمني بتنسيق الوقت الأمريكي (ex: 02-22-2022 10:00:00.123 PM -06:00)
 ```
 
 ### أمثلة على أمر `extract-base64`
@@ -275,44 +277,49 @@ Time Format:
 Usage: log-metrics <INPUT> [OPTIONS]
 
 Input:
-  -d, --directory <DIR>  Directory of multiple .evtx files
-  -f, --file <FILE>      File path to one .evtx file
-  -l, --live-analysis    Analyze the local C:\Windows\System32\winevt\Logs folder
+  -d, --directory <DIR>  دليل يحتوي على ملفات .evtx متعددة
+  -f, --file <FILE>      مسار ملف .evtx واحد
+  -l, --live-analysis    تحليل مجلد C:\Windows\System32\winevt\Logs المحلي
 
 General Options:
-  -C, --clobber                        Overwrite files when saving
-  -h, --help                           Show the help menu
-  -J, --JSON-input                     Scan JSON formatted logs instead of .evtx (.json or .jsonl)
-  -Q, --quiet-errors                   Quiet errors mode: do not save error logs
-  -x, --recover-records                Carve evtx records from slack space (default: disabled)
-  -c, --rules-config <DIR>             Specify custom rule config directory (default: ./rules/config)
-  -t, --threads <NUMBER>               Number of threads (default: optimal number for performance)
-      --target-file-ext <FILE-EXT...>  Specify additional evtx file extensions (ex: evtx_data)
+  -C, --clobber                        الكتابة فوق الملفات عند الحفظ
+  -h, --help                           عرض قائمة المساعدة
+  -J, --json-input                     فحص السجلات بتنسيق JSON بدلاً من ملفات .evtx (.json أو .jsonl)
+  -Q, --quiet-errors                   وضع كتم الأخطاء: عدم حفظ سجلات الأخطاء
+  -x, --recover-records                استخراج سجلات evtx من المساحة المتبقية (default: disabled)
+  -c, --rules-config <DIR>             تحديد دليل تهيئة قواعد مخصص (default: ./rules/config)
+      --target-file-ext <FILE-EXT...>  تحديد امتدادات ملفات evtx إضافية (ex: evtx_data)
+      --threads <NUMBER>               عدد الخيوط (default: optimal number for performance)
+  -V, --validate-checksums             تفعيل التحقق من المجاميع الاختبارية
 
 Filtering:
-      --exclude-computer <COMPUTER...>  Do not scan specified computer names (ex: ComputerA) (ex: ComputerA,ComputerB)
-      --include-computer <COMPUTER...>  Scan only specified computer names (ex: ComputerA) (ex: ComputerA,ComputerB)
-      --time-offset <OFFSET>            Scan recent events based on an offset (ex: 1y, 3M, 30d, 24h, 30m)
+      --exclude-computer <COMPUTER...>  عدم فحص أسماء أجهزة الكمبيوتر المحددة (ex: ComputerA) (ex: ComputerA,ComputerB)
+      --exclude-channel <CHANNEL...>    عدم فحص القنوات المحددة (ex: System,Security)
+      --exclude-filename <FILE...>      عدم فحص ملفات evtx المحددة (ex: Security.evtx,System.evtx)
+      --include-computer <COMPUTER...>  فحص أسماء أجهزة الكمبيوتر المحددة فقط (ex: ComputerA) (ex: ComputerA,ComputerB)
+      --include-channel <CHANNEL...>    تضمين القنوات المحددة فقط (ex: System,Security)
+      --include-filename <FILE...>      تضمين ملفات evtx المحددة فقط (ex: Security.evtx,System.evtx)
+      --time-offset <OFFSET>            فحص الأحداث الحديثة استنادًا إلى إزاحة زمنية (ex: 1y, 3M, 30d, 24h, 30m)
 
 Output:
-  -b, --disable-abbreviations  Disable abbreviations
-  -M, --multiline              Output event field information in multiple rows for CSV output
-  -o, --output <FILE>          Save the Metrics in CSV format (ex: metrics.csv)
-  -S, --tab-separator          Separate event field information by tabs
+  -b, --disable-abbreviations  تعطيل الاختصارات
+  -M, --multiline              فصل معلومات حقول الأحداث بأحرف سطر جديد لإخراج CSV
+  -o, --output <FILE>          حفظ المقاييس بتنسيق CSV (ex: metrics.csv)
+  -S, --tab-separator          فصل معلومات حقول الأحداث بعلامات جدولة (tabs)
 
 Display Settings:
-  -K, --no-color  Disable color output
-  -q, --quiet     Quiet mode: do not display the launch banner
-  -v, --verbose   Output verbose information
+  -K, --no-color  تعطيل إخراج الألوان
+  -q, --quiet     الوضع الصامت: عدم عرض شعار البدء
+  -v, --verbose   إخراج معلومات مفصّلة
 
 Time Format:
-      --European-time     Output timestamp in European time format (ex: 22-02-2022 22:00:00.123 +02:00)
-  -O, --ISO-8601          Output timestamp in original ISO-8601 format (ex: 2022-02-22T10:10:10.1234567Z) (Always UTC)
-      --RFC-2822          Output timestamp in RFC 2822 format (ex: Fri, 22 Feb 2022 22:00:00 -0600)
-      --RFC-3339          Output timestamp in RFC 3339 format (ex: 2022-02-22 22:00:00.123456-06:00)
-      --US-military-time  Output timestamp in US military time format (ex: 02-22-2022 22:00:00.123 -06:00)
-      --US-time           Output timestamp in US time format (ex: 02-22-2022 10:00:00.123 PM -06:00)
-  -U, --UTC               Output time in UTC format (default: local time)
+      --european-time     إخراج الطابع الزمني بتنسيق الوقت الأوروبي (ex: 22-02-2022 22:00:00.123 +02:00)
+  -O, --iso-8601          إخراج الطابع الزمني بتنسيق ISO-8601 الأصلي (ex: 2022-02-22T10:10:10.1234567Z) (Always UTC)
+      --rfc-2822          إخراج الطابع الزمني بتنسيق RFC 2822 (ex: Fri, 22 Feb 2022 22:00:00 -0600)
+      --rfc-3339          إخراج الطابع الزمني بتنسيق RFC 3339 (ex: 2022-02-22 22:00:00.123456-06:00)
+  -U, --utc               إخراج الوقت بتنسيق UTC (default: local time)
+      --us-military-time  إخراج الطابع الزمني بتنسيق الوقت العسكري الأمريكي (ex: 02-22-2022 22:00:00.123 -06:00)
+      --us-time           إخراج الطابع الزمني بتنسيق الوقت الأمريكي (ex: 02-22-2022 10:00:00.123 PM -06:00)
 ```
 
 ### أمثلة على أمر `log-metrics`
@@ -341,43 +348,45 @@ Time Format:
 Usage: logon-summary <INPUT> [OPTIONS]
 
 Input:
-  -d, --directory <DIR>  Directory of multiple .evtx files
-  -f, --file <FILE>      File path to one .evtx file
-  -l, --live-analysis    Analyze the local C:\Windows\System32\winevt\Logs folder
+  -d, --directory <DIR>  دليل يحتوي على ملفات .evtx متعددة
+  -f, --file <FILE>      مسار ملف .evtx واحد
+  -l, --live-analysis    تحليل مجلد C:\Windows\System32\winevt\Logs المحلي
 
 General Options:
-  -C, --clobber                        Overwrite files when saving
-  -h, --help                           Show the help menu
-  -J, --JSON-input                     Scan JSON formatted logs instead of .evtx (.json or .jsonl)
-  -Q, --quiet-errors                   Quiet errors mode: do not save error logs
-  -x, --recover-records                Carve evtx records from slack space (default: disabled)
-  -c, --rules-config <DIR>             Specify custom rule config directory (default: ./rules/config)
-  -t, --threads <NUMBER>               Number of threads (default: optimal number for performance)
-      --target-file-ext <FILE-EXT...>  Specify additional evtx file extensions (ex: evtx_data)
+  -C, --clobber                        الكتابة فوق الملفات عند الحفظ
+  -h, --help                           عرض قائمة المساعدة
+  -J, --json-input                     فحص السجلات بتنسيق JSON بدلاً من ملفات .evtx (.json أو .jsonl)
+  -Q, --quiet-errors                   وضع كتم الأخطاء: عدم حفظ سجلات الأخطاء
+  -x, --recover-records                استخراج سجلات evtx من المساحة المتبقية (default: disabled)
+  -c, --rules-config <DIR>             تحديد دليل تهيئة قواعد مخصص (default: ./rules/config)
+      --target-file-ext <FILE-EXT...>  تحديد امتدادات ملفات evtx إضافية (ex: evtx_data)
+      --threads <NUMBER>               عدد الخيوط (default: optimal number for performance)
+  -V, --validate-checksums             تفعيل التحقق من المجاميع الاختبارية
 
 Filtering:
-      --exclude-computer <COMPUTER...>  Do not scan specified computer names (ex: ComputerA) (ex: ComputerA,ComputerB)
-      --include-computer <COMPUTER...>  Scan only specified computer names (ex: ComputerA) (ex: ComputerA,ComputerB)
-      --time-offset <OFFSET>            Scan recent events based on an offset (ex: 1y, 3M, 30d, 24h, 30m)
-      --timeline-end <DATE>             End time of the event logs to load (ex: "2022-02-22 23:59:59 +09:00")
-      --timeline-start <DATE>           Start time of the event logs to load (ex: "2020-02-22 00:00:00 +09:00")
+      --exclude-computer <COMPUTER...>  عدم فحص أسماء أجهزة الكمبيوتر المحددة (ex: ComputerA) (ex: ComputerA,ComputerB)
+      --include-computer <COMPUTER...>  فحص أسماء أجهزة الكمبيوتر المحددة فقط (ex: ComputerA) (ex: ComputerA,ComputerB)
+      --time-offset <OFFSET>            فحص الأحداث الحديثة استنادًا إلى إزاحة زمنية (ex: 1y, 3M, 30d, 24h, 30m)
+      --timeline-end <DATE>             وقت انتهاء سجلات الأحداث المراد تحميلها (ex: "2022-02-22 23:59:59 +09:00")
+      --timeline-start <DATE>           وقت بدء سجلات الأحداث المراد تحميلها (ex: "2020-02-22 00:00:00 +09:00")
 
 Output:
-  -o, --output <FILENAME-PREFIX>  Save the logon summary to two CSV files (ex: -o logon-summary)
+  -X, --remove-duplicate-records  إزالة سجلات الأحداث المكررة (default: disabled)
+  -o, --output <FILENAME-PREFIX>  حفظ ملخص تسجيل الدخول في ملفي CSV (ex: -o logon-summary)
 
 Display Settings:
-  -K, --no-color  Disable color output
-  -q, --quiet     Quiet mode: do not display the launch banner
-  -v, --verbose   Output verbose information
+  -K, --no-color  تعطيل إخراج الألوان
+  -q, --quiet     الوضع الصامت: عدم عرض شعار البدء
+  -v, --verbose   إخراج معلومات مفصّلة
 
 Time Format:
-      --European-time     Output timestamp in European time format (ex: 22-02-2022 22:00:00.123 +02:00)
-  -O, --ISO-8601          Output timestamp in original ISO-8601 format (ex: 2022-02-22T10:10:10.1234567Z) (Always UTC)
-      --RFC-2822          Output timestamp in RFC 2822 format (ex: Fri, 22 Feb 2022 22:00:00 -0600)
-      --RFC-3339          Output timestamp in RFC 3339 format (ex: 2022-02-22 22:00:00.123456-06:00)
-      --US-military-time  Output timestamp in US military time format (ex: 02-22-2022 22:00:00.123 -06:00)
-      --US-time           Output timestamp in US time format (ex: 02-22-2022 10:00:00.123 PM -06:00)
-  -U, --UTC               Output time in UTC format (default: local time)
+      --european-time     إخراج الطابع الزمني بتنسيق الوقت الأوروبي (ex: 22-02-2022 22:00:00.123 +02:00)
+  -O, --iso-8601          إخراج الطابع الزمني بتنسيق ISO-8601 الأصلي (ex: 2022-02-22T10:10:10.1234567Z) (Always UTC)
+      --rfc-2822          إخراج الطابع الزمني بتنسيق RFC 2822 (ex: Fri, 22 Feb 2022 22:00:00 -0600)
+      --rfc-3339          إخراج الطابع الزمني بتنسيق RFC 3339 (ex: 2022-02-22 22:00:00.123456-06:00)
+  -U, --utc               إخراج الوقت بتنسيق UTC (default: local time)
+      --us-military-time  إخراج الطابع الزمني بتنسيق الوقت العسكري الأمريكي (ex: 02-22-2022 22:00:00.123 -06:00)
+      --us-time           إخراج الطابع الزمني بتنسيق الوقت الأمريكي (ex: 02-22-2022 10:00:00.123 PM -06:00)
 ```
 
 ### أمثلة على أمر `logon-summary`
@@ -403,47 +412,48 @@ Time Format:
 Usage: pivot-keywords-list <INPUT> [OPTIONS]
 
 Input:
-  -d, --directory <DIR>  Directory of multiple .evtx files
-  -f, --file <FILE>      File path to one .evtx file
-  -l, --live-analysis    Analyze the local C:\Windows\System32\winevt\Logs folder
+  -d, --directory <DIR>  دليل يحتوي على ملفات .evtx متعددة
+  -f, --file <FILE>      مسار ملف .evtx واحد
+  -l, --live-analysis    تحليل مجلد C:\Windows\System32\winevt\Logs المحلي
 
 General Options:
-  -C, --clobber                        Overwrite files when saving
-  -h, --help                           Show the help menu
-  -J, --JSON-input                     Scan JSON formatted logs instead of .evtx (.json or .jsonl)
-  -w, --no-wizard                      Do not ask questions. Scan for all events and alerts
-  -Q, --quiet-errors                   Quiet errors mode: do not save error logs
-  -x, --recover-records                Carve evtx records from slack space (default: disabled)
-  -c, --rules-config <DIR>             Specify custom rule config directory (default: ./rules/config)
-  -t, --threads <NUMBER>               Number of threads (default: optimal number for performance)
-      --target-file-ext <FILE-EXT...>  Specify additional evtx file extensions (ex: evtx_data)
+  -C, --clobber                        الكتابة فوق الملفات عند الحفظ
+  -h, --help                           عرض قائمة المساعدة
+  -J, --json-input                     فحص السجلات بتنسيق JSON بدلاً من ملفات .evtx (.json أو .jsonl)
+  -w, --no-wizard                      عدم طرح الأسئلة. فحص جميع الأحداث والتنبيهات
+  -Q, --quiet-errors                   وضع كتم الأخطاء: عدم حفظ سجلات الأخطاء
+  -x, --recover-records                استخراج سجلات evtx من المساحة المتبقية (default: disabled)
+  -c, --rules-config <DIR>             تحديد دليل تهيئة قواعد مخصص (default: ./rules/config)
+      --target-file-ext <FILE-EXT...>  تحديد امتدادات ملفات evtx إضافية (ex: evtx_data)
+      --threads <NUMBER>               عدد الخيوط (default: optimal number for performance)
+  -V, --validate-checksums             تفعيل التحقق من المجاميع الاختبارية
 
 Filtering:
-  -E, --EID-filter                      Scan only common EIDs for faster speed (./rules/config/target_event_IDs.txt)
-  -D, --enable-deprecated-rules         Enable rules with a status of deprecated
-  -n, --enable-noisy-rules              Enable rules set to noisy (./rules/config/noisy_rules.txt)
-  -u, --enable-unsupported-rules        Enable rules with a status of unsupported
-  -e, --exact-level <LEVEL>             Only load rules with a specific level (informational, low, medium, high, critical)
-      --exclude-computer <COMPUTER...>  Do not scan specified computer names (ex: ComputerA) (ex: ComputerA,ComputerB)
-      --exclude-eid <EID...>            Do not scan specific EIDs for faster speed (ex: 1) (ex: 1,4688)
-      --exclude-status <STATUS...>      Do not load rules according to status (ex: experimental) (ex: stable,test)
-      --exclude-tag <TAG...>            Do not load rules with specific tags (ex: sysmon)
-      --include-computer <COMPUTER...>  Scan only specified computer names (ex: ComputerA) (ex: ComputerA,ComputerB)
-      --include-eid <EID...>            Scan only specified EIDs for faster speed (ex: 1) (ex: 1,4688)
-      --include-status <STATUS...>      Only load rules with specific status (ex: experimental) (ex: stable,test)
-      --include-tag <TAG...>            Only load rules with specific tags (ex: attack.execution,attack.discovery)
-  -m, --min-level <LEVEL>               Minimum level for rules to load (default: informational)
-      --time-offset <OFFSET>            Scan recent events based on an offset (ex: 1y, 3M, 30d, 24h, 30m)
-      --timeline-end <DATE>             End time of the event logs to load (ex: "2022-02-22 23:59:59 +09:00")
-      --timeline-start <DATE>           Start time of the event logs to load (ex: "2020-02-22 00:00:00 +09:00")
+  -E, --eid-filter                      فحص معرّفات الأحداث الشائعة فقط لسرعة أكبر (./rules/config/target_event_IDs.txt)
+  -D, --enable-deprecated-rules         تفعيل القواعد ذات الحالة المهملة (deprecated)
+  -n, --enable-noisy-rules              تفعيل القواعد المصنّفة كمزعجة (noisy) (./rules/config/noisy_rules.txt)
+  -u, --enable-unsupported-rules        تفعيل القواعد ذات الحالة غير المدعومة (unsupported)
+  -e, --exact-level <LEVEL>             تحميل القواعد ذات مستوى محدد فقط (informational, low, medium, high, critical)
+      --exclude-computer <COMPUTER...>  عدم فحص أسماء أجهزة الكمبيوتر المحددة (ex: ComputerA) (ex: ComputerA,ComputerB)
+      --exclude-eid <EID...>            عدم فحص معرّفات أحداث محددة لسرعة أكبر (ex: 1) (ex: 1,4688)
+      --exclude-status <STATUS...>      عدم تحميل القواعد وفقًا للحالة (ex: experimental) (ex: stable,test)
+      --exclude-tag <TAG...>            عدم تحميل القواعد ذات وسوم محددة (ex: sysmon)
+      --include-computer <COMPUTER...>  فحص أسماء أجهزة الكمبيوتر المحددة فقط (ex: ComputerA) (ex: ComputerA,ComputerB)
+      --include-eid <EID...>            فحص معرّفات الأحداث المحددة فقط لسرعة أكبر (ex: 1) (ex: 1,4688)
+      --include-status <STATUS...>      تحميل القواعد ذات حالة محددة فقط (ex: experimental) (ex: stable,test)
+      --include-tag <TAG...>            تحميل القواعد ذات وسوم محددة فقط (ex: attack.execution,attack.discovery)
+  -m, --min-level <LEVEL>               الحد الأدنى لمستوى القواعد المراد تحميلها (default: informational)
+      --time-offset <OFFSET>            فحص الأحداث الحديثة استنادًا إلى إزاحة زمنية (ex: 1y, 3M, 30d, 24h, 30m)
+      --timeline-end <DATE>             وقت انتهاء سجلات الأحداث المراد تحميلها (ex: "2022-02-22 23:59:59 +09:00")
+      --timeline-start <DATE>           وقت بدء سجلات الأحداث المراد تحميلها (ex: "2020-02-22 00:00:00 +09:00")
 
 Output:
-  -o, --output <FILENAME-PREFIX>  Save pivot words to separate files (ex: PivotKeywords)
+  -o, --output <FILENAME-PREFIX>  حفظ الكلمات المحورية في ملفات منفصلة (ex: PivotKeywords)
 
 Display Settings:
-  -K, --no-color  Disable color output
-  -q, --quiet     Quiet mode: do not display the launch banner
-  -v, --verbose   Output verbose information
+  -K, --no-color  تعطيل إخراج الألوان
+  -q, --quiet     الوضع الصامت: عدم عرض شعار البدء
+  -v, --verbose   إخراج معلومات مفصّلة
 ```
 
 ### أمثلة على أمر `pivot-keywords-list`
@@ -472,51 +482,52 @@ hayabusa.exe pivot-keywords-list -d ../logs -m critical -o keywords`
 Usage: hayabusa.exe search <INPUT> <--keywords "<KEYWORDS>" OR --regex "<REGEX>"> [OPTIONS]
 
 Display Settings:
-  -K, --no-color  Disable color output
-  -q, --quiet     Quiet mode: do not display the launch banner
-  -v, --verbose   Output verbose information
+  -K, --no-color  تعطيل إخراج الألوان
+  -q, --quiet     الوضع الصامت: عدم عرض شعار البدء
+  -v, --verbose   إخراج معلومات مفصّلة
 
 General Options:
-  -C, --clobber                        Overwrite files when saving
-  -h, --help                           Show the help menu
-  -Q, --quiet-errors                   Quiet errors mode: do not save error logs
-  -x, --recover-records                Carve evtx records from slack space (default: disabled)
-  -c, --rules-config <DIR>             Specify custom rule config directory (default: ./rules/config)
-  -t, --threads <NUMBER>               Number of threads (default: optimal number for performance)
-      --target-file-ext <FILE-EXT...>  Specify additional evtx file extensions (ex: evtx_data)
-  -s, --sort                           Sort results before saving the file (warning: this uses much more memory!)
+  -C, --clobber                        الكتابة فوق الملفات عند الحفظ
+  -h, --help                           عرض قائمة المساعدة
+  -Q, --quiet-errors                   وضع كتم الأخطاء: عدم حفظ سجلات الأخطاء
+  -x, --recover-records                استخراج سجلات evtx من المساحة المتبقية (default: disabled)
+  -c, --rules-config <DIR>             تحديد دليل تهيئة قواعد مخصص (default: ./rules/config)
+      --target-file-ext <FILE-EXT...>  تحديد امتدادات ملفات evtx إضافية (ex: evtx_data)
+      --threads <NUMBER>               عدد الخيوط (default: optimal number for performance)
+  -s, --sort                           فرز النتائج قبل حفظ الملف (تحذير: يستهلك هذا ذاكرة أكبر بكثير!)
+  -V, --validate-checksums             تفعيل التحقق من المجاميع الاختبارية
 
 Input:
-  -d, --directory <DIR>  Directory of multiple .evtx files
-  -f, --file <FILE>      File path to one .evtx file
-  -l, --live-analysis    Analyze the local C:\Windows\System32\winevt\Logs folder
+  -d, --directory <DIR>  دليل يحتوي على ملفات .evtx متعددة
+  -f, --file <FILE>      مسار ملف .evtx واحد
+  -l, --live-analysis    تحليل مجلد C:\Windows\System32\winevt\Logs المحلي
 
 Filtering:
-  -a, --and-logic              Search keywords with AND logic (default: OR)
-  -F, --filter <FILTER...>     Filter by specific field(s)
-  -i, --ignore-case            Case-insensitive keyword search
-  -k, --keyword <KEYWORD...>   Search by keyword(s)
-  -r, --regex <REGEX>          Search by regular expression
-      --time-offset <OFFSET>   Scan recent events based on an offset (ex: 1y, 3M, 30d, 24h, 30m)
-      --timeline-end <DATE>    End time of the event logs to load (ex: "2022-02-22 23:59:59 +09:00")
-      --timeline-start <DATE>  Start time of the event logs to load (ex: "2020-02-22 00:00:00 +09:00")
+  -a, --and-logic              البحث عن الكلمات المفتاحية بمنطق AND (default: OR)
+  -F, --filter <FILTER...>     التصفية حسب حقل (حقول) محددة
+  -i, --ignore-case            بحث عن الكلمات المفتاحية غير حساس لحالة الأحرف
+  -k, --keyword <KEYWORD...>   البحث بواسطة كلمة (كلمات) مفتاحية
+  -r, --regex <REGEX>          البحث بواسطة تعبير نمطي
+      --time-offset <OFFSET>   فحص الأحداث الحديثة استنادًا إلى إزاحة زمنية (ex: 1y, 3M, 30d, 24h, 30m)
+      --timeline-end <DATE>    وقت انتهاء سجلات الأحداث المراد تحميلها (ex: "2022-02-22 23:59:59 +09:00")
+      --timeline-start <DATE>  وقت بدء سجلات الأحداث المراد تحميلها (ex: "2020-02-22 00:00:00 +09:00")
 
 Output:
-  -b, --disable-abbreviations  Disable abbreviations
-  -J, --JSON-output            Save the search results in JSON format (ex: -J -o results.json)
-  -L, --JSONL-output           Save the search results in JSONL format (ex: -L -o results.jsonl)
-  -M, --multiline              Output event field information in multiple rows for CSV output
-  -o, --output <FILE>          Save the search results in CSV format (ex: search.csv)
-  -S, --tab-separator          Separate event field information by tabs
+  -b, --disable-abbreviations  تعطيل الاختصارات
+  -J, --json-output            حفظ نتائج البحث بتنسيق JSON (ex: -J -o results.json)
+  -L, --jsonl-output           حفظ نتائج البحث بتنسيق JSONL (ex: -L -o results.jsonl)
+  -M, --multiline              فصل معلومات حقول الأحداث بأحرف سطر جديد لإخراج CSV
+  -o, --output <FILE>          حفظ نتائج البحث بتنسيق CSV (ex: search.csv)
+  -S, --tab-separator          فصل معلومات حقول الأحداث بعلامات جدولة (tabs)
 
 Time Format:
-      --European-time     Output timestamp in European time format (ex: 22-02-2022 22:00:00.123 +02:00)
-  -O, --ISO-8601          Output timestamp in original ISO-8601 format (ex: 2022-02-22T10:10:10.1234567Z) (Always UTC)
-      --RFC-2822          Output timestamp in RFC 2822 format (ex: Fri, 22 Feb 2022 22:00:00 -0600)
-      --RFC-3339          Output timestamp in RFC 3339 format (ex: 2022-02-22 22:00:00.123456-06:00)
-      --US-military-time  Output timestamp in US military time format (ex: 02-22-2022 22:00:00.123 -06:00)
-      --US-time           Output timestamp in US time format (ex: 02-22-2022 10:00:00.123 PM -06:00)
-  -U, --UTC               Output time in UTC format (default: local time)
+      --european-time     إخراج الطابع الزمني بتنسيق الوقت الأوروبي (ex: 22-02-2022 22:00:00.123 +02:00)
+  -O, --iso-8601          إخراج الطابع الزمني بتنسيق ISO-8601 الأصلي (ex: 2022-02-22T10:10:10.1234567Z) (Always UTC)
+      --rfc-2822          إخراج الطابع الزمني بتنسيق RFC 2822 (ex: Fri, 22 Feb 2022 22:00:00 -0600)
+      --rfc-3339          إخراج الطابع الزمني بتنسيق RFC 3339 (ex: 2022-02-22 22:00:00.123456-06:00)
+  -U, --utc               إخراج الوقت بتنسيق UTC (default: local time)
+      --us-military-time  إخراج الطابع الزمني بتنسيق الوقت العسكري الأمريكي (ex: 02-22-2022 22:00:00.123 -06:00)
+      --us-time           إخراج الطابع الزمني بتنسيق الوقت الأمريكي (ex: 02-22-2022 10:00:00.123 PM -06:00)
 ```
 
 ### أمثلة على أمر `search`

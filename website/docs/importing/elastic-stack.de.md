@@ -65,7 +65,7 @@ Bevor Sie Daten importieren, stellen Sie sicher, dass Sie SOF-ELK mit dem Befehl
 
 Führen Sie Hayabusa aus und speichern Sie die Ergebnisse im JSONL-Format.
 
-Bsp.: `./hayabusa json-timeline -L -d ../hayabusa-sample-evtx -w -p super-verbose -G /opt/homebrew/var/GeoIP -o results.jsonl`
+Bsp.: `./hayabusa dfir-timeline -t jsonl -d ../hayabusa-sample-evtx -w -p super-verbose -G /opt/homebrew/var/GeoIP -o results.jsonl`
 
 ## Optional: Löschen alter importierter Daten
 

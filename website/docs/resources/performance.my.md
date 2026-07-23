@@ -562,7 +562,7 @@ OS ဘက်တွင် ရယူနိုင်သော statistics မှ res
      ```
 
 4. release build တစ်ခု build လုပ်ပါ: `cargo build --release`
-5. `heaptrack hayabusa csv-timeline -d sample -o out.csv` ကို run ပါ
+5. `heaptrack hayabusa dfir-timeline -d sample -o out.csv` ကို run ပါ
 
 ယခု Hayabusa run ပြီးသွားသောအခါ heaptrack ၏ ရလဒ်များသည် GUI application တစ်ခုတွင် အလိုအလျောက် ပွင့်လာပါမည်။
 

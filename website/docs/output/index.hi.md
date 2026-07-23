@@ -92,7 +92,7 @@ Hayabusa में `config/profiles.yaml` में उपयोग करने
 |%RuleModifiedDate% | YML डिटेक्शन नियम में `modified` फ़ील्ड। |
 |%RuleTitle% | YML डिटेक्शन नियम में `title` फ़ील्ड। |
 |%Status% | YML डिटेक्शन नियम में `status` फ़ील्ड। |
-|%Timestamp% | डिफ़ॉल्ट `YYYY-MM-DD HH:mm:ss.sss +hh:mm` प्रारूप है। इवेंट लॉग में `<Event><System><TimeCreated SystemTime>` फ़ील्ड। डिफ़ॉल्ट टाइमज़ोन स्थानीय टाइमज़ोन होगा लेकिन आप `--UTC` विकल्प के साथ टाइमज़ोन को UTC में बदल सकते हैं। |
+|%Timestamp% | डिफ़ॉल्ट `YYYY-MM-DD HH:mm:ss.sss +hh:mm` प्रारूप है। इवेंट लॉग में `<Event><System><TimeCreated SystemTime>` फ़ील्ड। डिफ़ॉल्ट टाइमज़ोन स्थानीय टाइमज़ोन होगा लेकिन आप `--utc` विकल्प के साथ टाइमज़ोन को UTC में बदल सकते हैं। |
 
 #### अतिरिक्त प्रोफाइल फ़ील्ड उपनाम
 

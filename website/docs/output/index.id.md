@@ -92,7 +92,7 @@ Informasi berikut dapat ditampilkan dengan profil output bawaan:
 |%RuleModifiedDate% | Field `modified` dalam rule deteksi YML. |
 |%RuleTitle% | Field `title` dalam rule deteksi YML. |
 |%Status% | Field `status` dalam rule deteksi YML. |
-|%Timestamp% | Default adalah format `YYYY-MM-DD HH:mm:ss.sss +hh:mm`. Field `<Event><System><TimeCreated SystemTime>` dalam event log. Zona waktu default adalah zona waktu lokal tetapi Anda dapat mengubah zona waktu menjadi UTC dengan opsi `--UTC`. |
+|%Timestamp% | Default adalah format `YYYY-MM-DD HH:mm:ss.sss +hh:mm`. Field `<Event><System><TimeCreated SystemTime>` dalam event log. Zona waktu default adalah zona waktu lokal tetapi Anda dapat mengubah zona waktu menjadi UTC dengan opsi `--utc`. |
 
 #### Alias Field Profil Tambahan
 

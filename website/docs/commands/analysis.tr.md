@@ -14,30 +14,30 @@ Bu bilgilerle, zaman çizelgelerinizi oluştururken `--include-computer` veya `-
 Usage: computer-metrics <INPUT> [OPTIONS]
 
 Input:
-  -d, --directory <DIR>  Directory of multiple .evtx files
-  -f, --file <FILE>      File path to one .evtx file
-  -l, --live-analysis    Analyze the local C:\Windows\System32\winevt\Logs folder
+  -d, --directory <DIR>  Birden fazla .evtx dosyasının bulunduğu dizin
+  -f, --file <FILE>      Tek bir .evtx dosyasının dosya yolu
+  -l, --live-analysis    Yerel C:\Windows\System32\winevt\Logs klasörünü analiz et
 
 General Options:
-  -C, --clobber                        Overwrite files when saving
-  -h, --help                           Show the help menu
-  -J, --JSON-input                     Scan JSON formatted logs instead of .evtx (.json or .jsonl)
-  -Q, --quiet-errors                   Quiet errors mode: do not save error logs
-  -x, --recover-records                Carve evtx records from slack space (default: disabled)
-  -c, --rules-config <DIR>             Specify custom rule config directory (default: ./rules/config)
-      --target-file-ext <FILE-EXT...>  Specify additional evtx file extensions (ex: evtx_data)
-  -t, --threads <NUMBER>               Number of threads (default: optimal number for performance)
+  -C, --clobber                        Kaydederken dosyaların üzerine yaz
+  -h, --help                           Yardım menüsünü göster
+  -J, --json-input                     .evtx yerine JSON biçimli günlükleri tara (.json veya .jsonl)
+  -Q, --quiet-errors                   Sessiz hata modu: hata günlüklerini kaydetme
+  -x, --recover-records                Slack alanından evtx kayıtlarını kurtar (default: disabled)
+  -c, --rules-config <DIR>             Özel kural yapılandırma dizinini belirt (default: ./rules/config)
+      --target-file-ext <FILE-EXT...>  Ek evtx dosya uzantılarını belirt (ex: evtx_data)
+  -V, --validate-checksums             Sağlama toplamı doğrulamasını etkinleştir
 
 Filtering:
-      --time-offset <OFFSET>  Scan recent events based on an offset (ex: 1y, 3M, 30d, 24h, 30m)
+      --time-offset <OFFSET>  Son olayları bir ofsete göre tara (ex: 1y, 3M, 30d, 24h, 30m)
 
 Output:
-  -o, --output <FILE>  Save the results in CSV format (ex: computer-metrics.csv)
+  -o, --output <FILE>  Sonuçları CSV biçiminde kaydet (ex: computer-metrics.csv)
 
 Display Settings:
-  -K, --no-color  Disable color output
-  -q, --quiet     Quiet mode: do not display the launch banner
-  -v, --verbose   Output verbose information
+  -K, --no-color  Renkli çıktıyı devre dışı bırak
+  -q, --quiet     Sessiz mod: başlangıç afişini gösterme
+  -v, --verbose   Ayrıntılı bilgi çıktısı ver
 ```
 
 ### `computer-metrics` komut örnekleri
@@ -58,42 +58,43 @@ Bu komut herhangi bir tespit kuralı kullanmaz, bu nedenle tüm olayları tarar.
 Usage: eid-metrics <INPUT> [OPTIONS]
 
 Input:
-  -d, --directory <DIR>  Directory of multiple .evtx files
-  -f, --file <FILE>      File path to one .evtx file
-  -l, --live-analysis    Analyze the local C:\Windows\System32\winevt\Logs folder
+  -d, --directory <DIR>  Birden fazla .evtx dosyasının bulunduğu dizin
+  -f, --file <FILE>      Tek bir .evtx dosyasının dosya yolu
+  -l, --live-analysis    Yerel C:\Windows\System32\winevt\Logs klasörünü analiz et
 
 General Options:
-  -C, --clobber                        Overwrite files when saving
-  -h, --help                           Show the help menu
-  -J, --JSON-input                     Scan JSON formatted logs instead of .evtx (.json or .jsonl)
-  -Q, --quiet-errors                   Quiet errors mode: do not save error logs
-  -x, --recover-records                Carve evtx records from slack space (default: disabled)
-  -c, --rules-config <DIR>             Specify custom rule config directory (default: ./rules/config)
-  -t, --threads <NUMBER>               Number of threads (default: optimal number for performance)
-      --target-file-ext <FILE-EXT...>  Specify additional evtx file extensions (ex: evtx_data)
+  -C, --clobber                        Kaydederken dosyaların üzerine yaz
+  -h, --help                           Yardım menüsünü göster
+  -J, --json-input                     .evtx yerine JSON biçimli günlükleri tara (.json veya .jsonl)
+  -Q, --quiet-errors                   Sessiz hata modu: hata günlüklerini kaydetme
+  -x, --recover-records                Slack alanından evtx kayıtlarını kurtar (default: disabled)
+  -c, --rules-config <DIR>             Özel kural yapılandırma dizinini belirt (default: ./rules/config)
+      --target-file-ext <FILE-EXT...>  Ek evtx dosya uzantılarını belirt (ex: evtx_data)
+      --threads <NUMBER>               İş parçacığı sayısı (default: optimal number for performance)
+  -V, --validate-checksums             Sağlama toplamı doğrulamasını etkinleştir
 
 Filtering:
-      --exclude-computer <COMPUTER...>  Do not scan specified computer names (ex: ComputerA) (ex: ComputerA,ComputerB)
-      --include-computer <COMPUTER...>  Scan only specified computer names (ex: ComputerA) (ex: ComputerA,ComputerB)
-      --time-offset <OFFSET>            Scan recent events based on an offset (ex: 1y, 3M, 30d, 24h, 30m)
+      --exclude-computer <COMPUTER...>  Belirtilen bilgisayar adlarını tarama (ex: ComputerA) (ex: ComputerA,ComputerB)
+      --include-computer <COMPUTER...>  Yalnızca belirtilen bilgisayar adlarını tara (ex: ComputerA) (ex: ComputerA,ComputerB)
+      --time-offset <OFFSET>            Son olayları bir ofsete göre tara (ex: 1y, 3M, 30d, 24h, 30m)
 
 Output:
-  -b, --disable-abbreviations  Disable abbreviations
-  -o, --output <FILE>          Save the Metrics in CSV format (ex: metrics.csv)
+  -X, --remove-duplicate-records  Yinelenen olay kayıtlarını kaldır (default: disabled)
+  -o, --output <FILE>             Ölçümleri CSV biçiminde kaydet (ex: metrics.csv)
 
 Display Settings:
-  -K, --no-color  Disable color output
-  -q, --quiet     Quiet mode: do not display the launch banner
-  -v, --verbose   Output verbose information
+  -K, --no-color  Renkli çıktıyı devre dışı bırak
+  -q, --quiet     Sessiz mod: başlangıç afişini gösterme
+  -v, --verbose   Ayrıntılı bilgi çıktısı ver
 
 Time Format:
-      --European-time     Output timestamp in European time format (ex: 22-02-2022 22:00:00.123 +02:00)
-  -O, --ISO-8601          Output timestamp in original ISO-8601 format (ex: 2022-02-22T10:10:10.1234567Z) (Always UTC)
-      --RFC-2822          Output timestamp in RFC 2822 format (ex: Fri, 22 Feb 2022 22:00:00 -0600)
-      --RFC-3339          Output timestamp in RFC 3339 format (ex: 2022-02-22 22:00:00.123456-06:00)
-      --US-military-time  Output timestamp in US military time format (ex: 02-22-2022 22:00:00.123 -06:00)
-      --US-time           Output timestamp in US time format (ex: 02-22-2022 10:00:00.123 PM -06:00)
-  -U, --UTC               Output time in UTC format (default: local time)
+      --european-time     Zaman damgasını Avrupa saat biçiminde çıktı ver (ex: 22-02-2022 22:00:00.123 +02:00)
+  -O, --iso-8601          Zaman damgasını orijinal ISO-8601 biçiminde çıktı ver (ex: 2022-02-22T10:10:10.1234567Z) (Her zaman UTC)
+      --rfc-2822          Zaman damgasını RFC 2822 biçiminde çıktı ver (ex: Fri, 22 Feb 2022 22:00:00 -0600)
+      --rfc-3339          Zaman damgasını RFC 3339 biçiminde çıktı ver (ex: 2022-02-22 22:00:00.123456-06:00)
+  -U, --utc               Zamanı UTC biçiminde çıktı ver (default: local time)
+      --us-military-time  Zaman damgasını ABD askeri saat biçiminde çıktı ver (ex: 02-22-2022 22:00:00.123 -06:00)
+      --us-time           Zaman damgasını ABD saat biçiminde çıktı ver (ex: 02-22-2022 10:00:00.123 PM -06:00)
 ```
 
 ### `eid-metrics` komut örnekleri
@@ -156,12 +157,12 @@ Yapılandırma dosyası mevcut değilse, Hayabusa yine de `expand` kuralını y�
 Usage:  expand-list <INPUT> [OPTIONS]
 
 General Options:
-  -h, --help              Show the help menu
-  -r, --rules <DIR/FILE>  Specify rule directory (default: ./rules)
+  -h, --help              Yardım menüsünü göster
+  -r, --rules <DIR/FILE>  Kural dizinini belirt (default: ./rules)
 
 Display Settings:
-  -K, --no-color  Disable color output
-  -q, --quiet     Quiet mode: do not display the launch banner
+  -K, --no-color  Renkli çıktıyı devre dışı bırak
+  -q, --quiet     Sessiz mod: başlangıç afişini gösterme
 ```
 
 ### `expand-list` komut örnekleri
@@ -193,41 +194,42 @@ Bu komut, aşağıdaki olaylardan base64 dizelerini çıkaracak, bunların kodun
 Usage:  extract-base64 <INPUT> [OPTIONS]
 
 Input:
-  -d, --directory <DIR>  Directory of multiple .evtx files
-  -f, --file <FILE>      File path to one .evtx file
-  -l, --live-analysis    Analyze the local C:\Windows\System32\winevt\Logs folder
+  -d, --directory <DIR>  Birden fazla .evtx dosyasının bulunduğu dizin
+  -f, --file <FILE>      Tek bir .evtx dosyasının dosya yolu
+  -l, --live-analysis    Yerel C:\Windows\System32\winevt\Logs klasörünü analiz et
 
 General Options:
-  -C, --clobber                        Overwrite files when saving
-  -h, --help                           Show the help menu
-  -J, --JSON-input                     Scan JSON formatted logs instead of .evtx (.json or .jsonl)
-  -Q, --quiet-errors                   Quiet errors mode: do not save error logs
-  -x, --recover-records                Carve evtx records from slack space (default: disabled)
-  -c, --rules-config <DIR>             Specify custom rule config directory (default: ./rules/config)
-  -t, --threads <NUMBER>               Number of threads (default: optimal number for performance)
-      --target-file-ext <FILE-EXT...>  Specify additional evtx file extensions (ex: evtx_data)
+  -C, --clobber                        Kaydederken dosyaların üzerine yaz
+  -h, --help                           Yardım menüsünü göster
+  -J, --json-input                     .evtx yerine JSON biçimli günlükleri tara (.json veya .jsonl)
+  -Q, --quiet-errors                   Sessiz hata modu: hata günlüklerini kaydetme
+  -x, --recover-records                Slack alanından evtx kayıtlarını kurtar (default: disabled)
+  -c, --rules-config <DIR>             Özel kural yapılandırma dizinini belirt (default: ./rules/config)
+      --target-file-ext <FILE-EXT...>  Ek evtx dosya uzantılarını belirt (ex: evtx_data)
+      --threads <NUMBER>               İş parçacığı sayısı (default: optimal number for performance)
+  -V, --validate-checksums             Sağlama toplamı doğrulamasını etkinleştir
 
 Filtering:
-      --exclude-computer <COMPUTER...>  Do not scan specified computer names (ex: ComputerA) (ex: ComputerA,ComputerB)
-      --include-computer <COMPUTER...>  Scan only specified computer names (ex: ComputerA) (ex: ComputerA,ComputerB)
-      --time-offset <OFFSET>            Scan recent events based on an offset (ex: 1y, 3M, 30d, 24h, 30m)
+      --exclude-computer <COMPUTER...>  Belirtilen bilgisayar adlarını tarama (ex: ComputerA) (ex: ComputerA,ComputerB)
+      --include-computer <COMPUTER...>  Yalnızca belirtilen bilgisayar adlarını tara (ex: ComputerA) (ex: ComputerA,ComputerB)
+      --time-offset <OFFSET>            Son olayları bir ofsete göre tara (ex: 1y, 3M, 30d, 24h, 30m)
 
 Output:
-  -o, --output <FILE>  Extract Base64 strings
+  -o, --output <FILE>  Sonuçları bir CSV dosyasına kaydet
 
 Display Settings:
-  -K, --no-color  Disable color output
-  -q, --quiet     Quiet mode: do not display the launch banner
-  -v, --verbose   Output verbose information
+  -K, --no-color  Renkli çıktıyı devre dışı bırak
+  -q, --quiet     Sessiz mod: başlangıç afişini gösterme
+  -v, --verbose   Ayrıntılı bilgi çıktısı ver
 
 Time Format:
-      --European-time     Output timestamp in European time format (ex: 22-02-2022 22:00:00.123 +02:00)
-  -O, --ISO-8601          Output timestamp in original ISO-8601 format (ex: 2022-02-22T10:10:10.1234567Z) (Always UTC)
-      --RFC-2822          Output timestamp in RFC 2822 format (ex: Fri, 22 Feb 2022 22:00:00 -0600)
-      --RFC-3339          Output timestamp in RFC 3339 format (ex: 2022-02-22 22:00:00.123456-06:00)
-      --US-military-time  Output timestamp in US military time format (ex: 02-22-2022 22:00:00.123 -06:00)
-      --US-time           Output timestamp in US time format (ex: 02-22-2022 10:00:00.123 PM -06:00)
-  -U, --UTC               Output time in UTC format (default: local time)
+      --european-time     Zaman damgasını Avrupa saat biçiminde çıktı ver (ex: 22-02-2022 22:00:00.123 +02:00)
+  -O, --iso-8601          Zaman damgasını orijinal ISO-8601 biçiminde çıktı ver (ex: 2022-02-22T10:10:10.1234567Z) (Her zaman UTC)
+      --rfc-2822          Zaman damgasını RFC 2822 biçiminde çıktı ver (ex: Fri, 22 Feb 2022 22:00:00 -0600)
+      --rfc-3339          Zaman damgasını RFC 3339 biçiminde çıktı ver (ex: 2022-02-22 22:00:00.123456-06:00)
+  -U, --utc               Zamanı UTC biçiminde çıktı ver (default: local time)
+      --us-military-time  Zaman damgasını ABD askeri saat biçiminde çıktı ver (ex: 02-22-2022 22:00:00.123 -06:00)
+      --us-time           Zaman damgasını ABD saat biçiminde çıktı ver (ex: 02-22-2022 10:00:00.123 PM -06:00)
 ```
 
 ### `extract-base64` komut örnekleri
@@ -275,44 +277,49 @@ Bu komut herhangi bir tespit kuralı kullanmaz, bu nedenle tüm olayları tarar.
 Usage: log-metrics <INPUT> [OPTIONS]
 
 Input:
-  -d, --directory <DIR>  Directory of multiple .evtx files
-  -f, --file <FILE>      File path to one .evtx file
-  -l, --live-analysis    Analyze the local C:\Windows\System32\winevt\Logs folder
+  -d, --directory <DIR>  Birden fazla .evtx dosyasının bulunduğu dizin
+  -f, --file <FILE>      Tek bir .evtx dosyasının dosya yolu
+  -l, --live-analysis    Yerel C:\Windows\System32\winevt\Logs klasörünü analiz et
 
 General Options:
-  -C, --clobber                        Overwrite files when saving
-  -h, --help                           Show the help menu
-  -J, --JSON-input                     Scan JSON formatted logs instead of .evtx (.json or .jsonl)
-  -Q, --quiet-errors                   Quiet errors mode: do not save error logs
-  -x, --recover-records                Carve evtx records from slack space (default: disabled)
-  -c, --rules-config <DIR>             Specify custom rule config directory (default: ./rules/config)
-  -t, --threads <NUMBER>               Number of threads (default: optimal number for performance)
-      --target-file-ext <FILE-EXT...>  Specify additional evtx file extensions (ex: evtx_data)
+  -C, --clobber                        Kaydederken dosyaların üzerine yaz
+  -h, --help                           Yardım menüsünü göster
+  -J, --json-input                     .evtx yerine JSON biçimli günlükleri tara (.json veya .jsonl)
+  -Q, --quiet-errors                   Sessiz hata modu: hata günlüklerini kaydetme
+  -x, --recover-records                Slack alanından evtx kayıtlarını kurtar (default: disabled)
+  -c, --rules-config <DIR>             Özel kural yapılandırma dizinini belirt (default: ./rules/config)
+      --target-file-ext <FILE-EXT...>  Ek evtx dosya uzantılarını belirt (ex: evtx_data)
+      --threads <NUMBER>               İş parçacığı sayısı (default: optimal number for performance)
+  -V, --validate-checksums             Sağlama toplamı doğrulamasını etkinleştir
 
 Filtering:
-      --exclude-computer <COMPUTER...>  Do not scan specified computer names (ex: ComputerA) (ex: ComputerA,ComputerB)
-      --include-computer <COMPUTER...>  Scan only specified computer names (ex: ComputerA) (ex: ComputerA,ComputerB)
-      --time-offset <OFFSET>            Scan recent events based on an offset (ex: 1y, 3M, 30d, 24h, 30m)
+      --exclude-computer <COMPUTER...>  Belirtilen bilgisayar adlarını tarama (ex: ComputerA) (ex: ComputerA,ComputerB)
+      --exclude-channel <CHANNEL...>    Belirtilen kanalları tarama (ex: System,Security)
+      --exclude-filename <FILE...>      Belirtilen evtx dosyalarını tarama (ex: Security.evtx,System.evtx)
+      --include-computer <COMPUTER...>  Yalnızca belirtilen bilgisayar adlarını tara (ex: ComputerA) (ex: ComputerA,ComputerB)
+      --include-channel <CHANNEL...>    Yalnızca belirtilen kanalları dahil et (ex: System,Security)
+      --include-filename <FILE...>      Yalnızca belirtilen evtx dosyalarını dahil et (ex: Security.evtx,System.evtx)
+      --time-offset <OFFSET>            Son olayları bir ofsete göre tara (ex: 1y, 3M, 30d, 24h, 30m)
 
 Output:
-  -b, --disable-abbreviations  Disable abbreviations
-  -M, --multiline              Output event field information in multiple rows for CSV output
-  -o, --output <FILE>          Save the Metrics in CSV format (ex: metrics.csv)
-  -S, --tab-separator          Separate event field information by tabs
+  -b, --disable-abbreviations  Kısaltmaları devre dışı bırak
+  -M, --multiline              CSV çıktısı için olay alanı bilgilerini yeni satır karakterleriyle ayır
+  -o, --output <FILE>          Ölçümleri CSV biçiminde kaydet (ex: metrics.csv)
+  -S, --tab-separator          Olay alanı bilgilerini sekmelerle ayır
 
 Display Settings:
-  -K, --no-color  Disable color output
-  -q, --quiet     Quiet mode: do not display the launch banner
-  -v, --verbose   Output verbose information
+  -K, --no-color  Renkli çıktıyı devre dışı bırak
+  -q, --quiet     Sessiz mod: başlangıç afişini gösterme
+  -v, --verbose   Ayrıntılı bilgi çıktısı ver
 
 Time Format:
-      --European-time     Output timestamp in European time format (ex: 22-02-2022 22:00:00.123 +02:00)
-  -O, --ISO-8601          Output timestamp in original ISO-8601 format (ex: 2022-02-22T10:10:10.1234567Z) (Always UTC)
-      --RFC-2822          Output timestamp in RFC 2822 format (ex: Fri, 22 Feb 2022 22:00:00 -0600)
-      --RFC-3339          Output timestamp in RFC 3339 format (ex: 2022-02-22 22:00:00.123456-06:00)
-      --US-military-time  Output timestamp in US military time format (ex: 02-22-2022 22:00:00.123 -06:00)
-      --US-time           Output timestamp in US time format (ex: 02-22-2022 10:00:00.123 PM -06:00)
-  -U, --UTC               Output time in UTC format (default: local time)
+      --european-time     Zaman damgasını Avrupa saat biçiminde çıktı ver (ex: 22-02-2022 22:00:00.123 +02:00)
+  -O, --iso-8601          Zaman damgasını orijinal ISO-8601 biçiminde çıktı ver (ex: 2022-02-22T10:10:10.1234567Z) (Her zaman UTC)
+      --rfc-2822          Zaman damgasını RFC 2822 biçiminde çıktı ver (ex: Fri, 22 Feb 2022 22:00:00 -0600)
+      --rfc-3339          Zaman damgasını RFC 3339 biçiminde çıktı ver (ex: 2022-02-22 22:00:00.123456-06:00)
+  -U, --utc               Zamanı UTC biçiminde çıktı ver (default: local time)
+      --us-military-time  Zaman damgasını ABD askeri saat biçiminde çıktı ver (ex: 02-22-2022 22:00:00.123 -06:00)
+      --us-time           Zaman damgasını ABD saat biçiminde çıktı ver (ex: 02-22-2022 10:00:00.123 PM -06:00)
 ```
 
 ### `log-metrics` komut örnekleri
@@ -341,43 +348,45 @@ Başarısız oturum açmalar `Security 4625` olaylarından alınır.
 Usage: logon-summary <INPUT> [OPTIONS]
 
 Input:
-  -d, --directory <DIR>  Directory of multiple .evtx files
-  -f, --file <FILE>      File path to one .evtx file
-  -l, --live-analysis    Analyze the local C:\Windows\System32\winevt\Logs folder
+  -d, --directory <DIR>  Birden fazla .evtx dosyasının bulunduğu dizin
+  -f, --file <FILE>      Tek bir .evtx dosyasının dosya yolu
+  -l, --live-analysis    Yerel C:\Windows\System32\winevt\Logs klasörünü analiz et
 
 General Options:
-  -C, --clobber                        Overwrite files when saving
-  -h, --help                           Show the help menu
-  -J, --JSON-input                     Scan JSON formatted logs instead of .evtx (.json or .jsonl)
-  -Q, --quiet-errors                   Quiet errors mode: do not save error logs
-  -x, --recover-records                Carve evtx records from slack space (default: disabled)
-  -c, --rules-config <DIR>             Specify custom rule config directory (default: ./rules/config)
-  -t, --threads <NUMBER>               Number of threads (default: optimal number for performance)
-      --target-file-ext <FILE-EXT...>  Specify additional evtx file extensions (ex: evtx_data)
+  -C, --clobber                        Kaydederken dosyaların üzerine yaz
+  -h, --help                           Yardım menüsünü göster
+  -J, --json-input                     .evtx yerine JSON biçimli günlükleri tara (.json veya .jsonl)
+  -Q, --quiet-errors                   Sessiz hata modu: hata günlüklerini kaydetme
+  -x, --recover-records                Slack alanından evtx kayıtlarını kurtar (default: disabled)
+  -c, --rules-config <DIR>             Özel kural yapılandırma dizinini belirt (default: ./rules/config)
+      --target-file-ext <FILE-EXT...>  Ek evtx dosya uzantılarını belirt (ex: evtx_data)
+      --threads <NUMBER>               İş parçacığı sayısı (default: optimal number for performance)
+  -V, --validate-checksums             Sağlama toplamı doğrulamasını etkinleştir
 
 Filtering:
-      --exclude-computer <COMPUTER...>  Do not scan specified computer names (ex: ComputerA) (ex: ComputerA,ComputerB)
-      --include-computer <COMPUTER...>  Scan only specified computer names (ex: ComputerA) (ex: ComputerA,ComputerB)
-      --time-offset <OFFSET>            Scan recent events based on an offset (ex: 1y, 3M, 30d, 24h, 30m)
-      --timeline-end <DATE>             End time of the event logs to load (ex: "2022-02-22 23:59:59 +09:00")
-      --timeline-start <DATE>           Start time of the event logs to load (ex: "2020-02-22 00:00:00 +09:00")
+      --exclude-computer <COMPUTER...>  Belirtilen bilgisayar adlarını tarama (ex: ComputerA) (ex: ComputerA,ComputerB)
+      --include-computer <COMPUTER...>  Yalnızca belirtilen bilgisayar adlarını tara (ex: ComputerA) (ex: ComputerA,ComputerB)
+      --time-offset <OFFSET>            Son olayları bir ofsete göre tara (ex: 1y, 3M, 30d, 24h, 30m)
+      --timeline-end <DATE>             Yüklenecek olay günlüklerinin bitiş zamanı (ex: "2022-02-22 23:59:59 +09:00")
+      --timeline-start <DATE>           Yüklenecek olay günlüklerinin başlangıç zamanı (ex: "2020-02-22 00:00:00 +09:00")
 
 Output:
-  -o, --output <FILENAME-PREFIX>  Save the logon summary to two CSV files (ex: -o logon-summary)
+  -X, --remove-duplicate-records  Yinelenen olay kayıtlarını kaldır (default: disabled)
+  -o, --output <FILENAME-PREFIX>  Oturum açma özetini iki CSV dosyasına kaydet (ex: -o logon-summary)
 
 Display Settings:
-  -K, --no-color  Disable color output
-  -q, --quiet     Quiet mode: do not display the launch banner
-  -v, --verbose   Output verbose information
+  -K, --no-color  Renkli çıktıyı devre dışı bırak
+  -q, --quiet     Sessiz mod: başlangıç afişini gösterme
+  -v, --verbose   Ayrıntılı bilgi çıktısı ver
 
 Time Format:
-      --European-time     Output timestamp in European time format (ex: 22-02-2022 22:00:00.123 +02:00)
-  -O, --ISO-8601          Output timestamp in original ISO-8601 format (ex: 2022-02-22T10:10:10.1234567Z) (Always UTC)
-      --RFC-2822          Output timestamp in RFC 2822 format (ex: Fri, 22 Feb 2022 22:00:00 -0600)
-      --RFC-3339          Output timestamp in RFC 3339 format (ex: 2022-02-22 22:00:00.123456-06:00)
-      --US-military-time  Output timestamp in US military time format (ex: 02-22-2022 22:00:00.123 -06:00)
-      --US-time           Output timestamp in US time format (ex: 02-22-2022 10:00:00.123 PM -06:00)
-  -U, --UTC               Output time in UTC format (default: local time)
+      --european-time     Zaman damgasını Avrupa saat biçiminde çıktı ver (ex: 22-02-2022 22:00:00.123 +02:00)
+  -O, --iso-8601          Zaman damgasını orijinal ISO-8601 biçiminde çıktı ver (ex: 2022-02-22T10:10:10.1234567Z) (Her zaman UTC)
+      --rfc-2822          Zaman damgasını RFC 2822 biçiminde çıktı ver (ex: Fri, 22 Feb 2022 22:00:00 -0600)
+      --rfc-3339          Zaman damgasını RFC 3339 biçiminde çıktı ver (ex: 2022-02-22 22:00:00.123456-06:00)
+  -U, --utc               Zamanı UTC biçiminde çıktı ver (default: local time)
+      --us-military-time  Zaman damgasını ABD askeri saat biçiminde çıktı ver (ex: 02-22-2022 22:00:00.123 -06:00)
+      --us-time           Zaman damgasını ABD saat biçiminde çıktı ver (ex: 02-22-2022 10:00:00.123 PM -06:00)
 ```
 
 ### `logon-summary` komut örnekleri
@@ -403,47 +412,48 @@ Sonuçlarınızda büyük olasılıkla birçok normal olayla eşleşecek ortak a
 Usage: pivot-keywords-list <INPUT> [OPTIONS]
 
 Input:
-  -d, --directory <DIR>  Directory of multiple .evtx files
-  -f, --file <FILE>      File path to one .evtx file
-  -l, --live-analysis    Analyze the local C:\Windows\System32\winevt\Logs folder
+  -d, --directory <DIR>  Birden fazla .evtx dosyasının bulunduğu dizin
+  -f, --file <FILE>      Tek bir .evtx dosyasının dosya yolu
+  -l, --live-analysis    Yerel C:\Windows\System32\winevt\Logs klasörünü analiz et
 
 General Options:
-  -C, --clobber                        Overwrite files when saving
-  -h, --help                           Show the help menu
-  -J, --JSON-input                     Scan JSON formatted logs instead of .evtx (.json or .jsonl)
-  -w, --no-wizard                      Do not ask questions. Scan for all events and alerts
-  -Q, --quiet-errors                   Quiet errors mode: do not save error logs
-  -x, --recover-records                Carve evtx records from slack space (default: disabled)
-  -c, --rules-config <DIR>             Specify custom rule config directory (default: ./rules/config)
-  -t, --threads <NUMBER>               Number of threads (default: optimal number for performance)
-      --target-file-ext <FILE-EXT...>  Specify additional evtx file extensions (ex: evtx_data)
+  -C, --clobber                        Kaydederken dosyaların üzerine yaz
+  -h, --help                           Yardım menüsünü göster
+  -J, --json-input                     .evtx yerine JSON biçimli günlükleri tara (.json veya .jsonl)
+  -w, --no-wizard                      Soru sorma. Tüm olayları ve uyarıları tara
+  -Q, --quiet-errors                   Sessiz hata modu: hata günlüklerini kaydetme
+  -x, --recover-records                Slack alanından evtx kayıtlarını kurtar (default: disabled)
+  -c, --rules-config <DIR>             Özel kural yapılandırma dizinini belirt (default: ./rules/config)
+      --target-file-ext <FILE-EXT...>  Ek evtx dosya uzantılarını belirt (ex: evtx_data)
+      --threads <NUMBER>               İş parçacığı sayısı (default: optimal number for performance)
+  -V, --validate-checksums             Sağlama toplamı doğrulamasını etkinleştir
 
 Filtering:
-  -E, --EID-filter                      Scan only common EIDs for faster speed (./rules/config/target_event_IDs.txt)
-  -D, --enable-deprecated-rules         Enable rules with a status of deprecated
-  -n, --enable-noisy-rules              Enable rules set to noisy (./rules/config/noisy_rules.txt)
-  -u, --enable-unsupported-rules        Enable rules with a status of unsupported
-  -e, --exact-level <LEVEL>             Only load rules with a specific level (informational, low, medium, high, critical)
-      --exclude-computer <COMPUTER...>  Do not scan specified computer names (ex: ComputerA) (ex: ComputerA,ComputerB)
-      --exclude-eid <EID...>            Do not scan specific EIDs for faster speed (ex: 1) (ex: 1,4688)
-      --exclude-status <STATUS...>      Do not load rules according to status (ex: experimental) (ex: stable,test)
-      --exclude-tag <TAG...>            Do not load rules with specific tags (ex: sysmon)
-      --include-computer <COMPUTER...>  Scan only specified computer names (ex: ComputerA) (ex: ComputerA,ComputerB)
-      --include-eid <EID...>            Scan only specified EIDs for faster speed (ex: 1) (ex: 1,4688)
-      --include-status <STATUS...>      Only load rules with specific status (ex: experimental) (ex: stable,test)
-      --include-tag <TAG...>            Only load rules with specific tags (ex: attack.execution,attack.discovery)
-  -m, --min-level <LEVEL>               Minimum level for rules to load (default: informational)
-      --time-offset <OFFSET>            Scan recent events based on an offset (ex: 1y, 3M, 30d, 24h, 30m)
-      --timeline-end <DATE>             End time of the event logs to load (ex: "2022-02-22 23:59:59 +09:00")
-      --timeline-start <DATE>           Start time of the event logs to load (ex: "2020-02-22 00:00:00 +09:00")
+  -E, --eid-filter                      Daha yüksek hız için yalnızca yaygın EID'leri tara (./rules/config/target_event_IDs.txt)
+  -D, --enable-deprecated-rules         Durumu deprecated olan kuralları etkinleştir
+  -n, --enable-noisy-rules              noisy olarak ayarlanmış kuralları etkinleştir (./rules/config/noisy_rules.txt)
+  -u, --enable-unsupported-rules        Durumu unsupported olan kuralları etkinleştir
+  -e, --exact-level <LEVEL>             Yalnızca belirli bir seviyedeki kuralları yükle (informational, low, medium, high, critical)
+      --exclude-computer <COMPUTER...>  Belirtilen bilgisayar adlarını tarama (ex: ComputerA) (ex: ComputerA,ComputerB)
+      --exclude-eid <EID...>            Daha yüksek hız için belirli EID'leri tarama (ex: 1) (ex: 1,4688)
+      --exclude-status <STATUS...>      Duruma göre kuralları yükleme (ex: experimental) (ex: stable,test)
+      --exclude-tag <TAG...>            Belirli etiketlere sahip kuralları yükleme (ex: sysmon)
+      --include-computer <COMPUTER...>  Yalnızca belirtilen bilgisayar adlarını tara (ex: ComputerA) (ex: ComputerA,ComputerB)
+      --include-eid <EID...>            Daha yüksek hız için yalnızca belirtilen EID'leri tara (ex: 1) (ex: 1,4688)
+      --include-status <STATUS...>      Yalnızca belirli duruma sahip kuralları yükle (ex: experimental) (ex: stable,test)
+      --include-tag <TAG...>            Yalnızca belirli etiketlere sahip kuralları yükle (ex: attack.execution,attack.discovery)
+  -m, --min-level <LEVEL>               Yüklenecek kurallar için minimum seviye (default: informational)
+      --time-offset <OFFSET>            Son olayları bir ofsete göre tara (ex: 1y, 3M, 30d, 24h, 30m)
+      --timeline-end <DATE>             Yüklenecek olay günlüklerinin bitiş zamanı (ex: "2022-02-22 23:59:59 +09:00")
+      --timeline-start <DATE>           Yüklenecek olay günlüklerinin başlangıç zamanı (ex: "2020-02-22 00:00:00 +09:00")
 
 Output:
-  -o, --output <FILENAME-PREFIX>  Save pivot words to separate files (ex: PivotKeywords)
+  -o, --output <FILENAME-PREFIX>  Pivot kelimelerini ayrı dosyalara kaydet (ex: PivotKeywords)
 
 Display Settings:
-  -K, --no-color  Disable color output
-  -q, --quiet     Quiet mode: do not display the launch banner
-  -v, --verbose   Output verbose information
+  -K, --no-color  Renkli çıktıyı devre dışı bırak
+  -q, --quiet     Sessiz mod: başlangıç afişini gösterme
+  -v, --verbose   Ayrıntılı bilgi çıktısı ver
 ```
 
 ### `pivot-keywords-list` komut örnekleri
@@ -472,51 +482,52 @@ Bu, Hayabusa tarafından tespit edilmeyen olaylarda herhangi bir kanıt olup olm
 Usage: hayabusa.exe search <INPUT> <--keywords "<KEYWORDS>" OR --regex "<REGEX>"> [OPTIONS]
 
 Display Settings:
-  -K, --no-color  Disable color output
-  -q, --quiet     Quiet mode: do not display the launch banner
-  -v, --verbose   Output verbose information
+  -K, --no-color  Renkli çıktıyı devre dışı bırak
+  -q, --quiet     Sessiz mod: başlangıç afişini gösterme
+  -v, --verbose   Ayrıntılı bilgi çıktısı ver
 
 General Options:
-  -C, --clobber                        Overwrite files when saving
-  -h, --help                           Show the help menu
-  -Q, --quiet-errors                   Quiet errors mode: do not save error logs
-  -x, --recover-records                Carve evtx records from slack space (default: disabled)
-  -c, --rules-config <DIR>             Specify custom rule config directory (default: ./rules/config)
-  -t, --threads <NUMBER>               Number of threads (default: optimal number for performance)
-      --target-file-ext <FILE-EXT...>  Specify additional evtx file extensions (ex: evtx_data)
-  -s, --sort                           Sort results before saving the file (warning: this uses much more memory!)
+  -C, --clobber                        Kaydederken dosyaların üzerine yaz
+  -h, --help                           Yardım menüsünü göster
+  -Q, --quiet-errors                   Sessiz hata modu: hata günlüklerini kaydetme
+  -x, --recover-records                Slack alanından evtx kayıtlarını kurtar (default: disabled)
+  -c, --rules-config <DIR>             Özel kural yapılandırma dizinini belirt (default: ./rules/config)
+      --target-file-ext <FILE-EXT...>  Ek evtx dosya uzantılarını belirt (ex: evtx_data)
+      --threads <NUMBER>               İş parçacığı sayısı (default: optimal number for performance)
+  -s, --sort                           Dosyayı kaydetmeden önce sonuçları sırala (uyarı: bu çok daha fazla bellek kullanır!)
+  -V, --validate-checksums             Sağlama toplamı doğrulamasını etkinleştir
 
 Input:
-  -d, --directory <DIR>  Directory of multiple .evtx files
-  -f, --file <FILE>      File path to one .evtx file
-  -l, --live-analysis    Analyze the local C:\Windows\System32\winevt\Logs folder
+  -d, --directory <DIR>  Birden fazla .evtx dosyasının bulunduğu dizin
+  -f, --file <FILE>      Tek bir .evtx dosyasının dosya yolu
+  -l, --live-analysis    Yerel C:\Windows\System32\winevt\Logs klasörünü analiz et
 
 Filtering:
-  -a, --and-logic              Search keywords with AND logic (default: OR)
-  -F, --filter <FILTER...>     Filter by specific field(s)
-  -i, --ignore-case            Case-insensitive keyword search
-  -k, --keyword <KEYWORD...>   Search by keyword(s)
-  -r, --regex <REGEX>          Search by regular expression
-      --time-offset <OFFSET>   Scan recent events based on an offset (ex: 1y, 3M, 30d, 24h, 30m)
-      --timeline-end <DATE>    End time of the event logs to load (ex: "2022-02-22 23:59:59 +09:00")
-      --timeline-start <DATE>  Start time of the event logs to load (ex: "2020-02-22 00:00:00 +09:00")
+  -a, --and-logic              Anahtar kelimeleri AND mantığıyla ara (default: OR)
+  -F, --filter <FILTER...>     Belirli alan(lar)a göre filtrele
+  -i, --ignore-case            Büyük/küçük harfe duyarsız anahtar kelime araması
+  -k, --keyword <KEYWORD...>   Anahtar kelime(ler)e göre ara
+  -r, --regex <REGEX>          Düzenli ifadeyle ara
+      --time-offset <OFFSET>   Son olayları bir ofsete göre tara (ex: 1y, 3M, 30d, 24h, 30m)
+      --timeline-end <DATE>    Yüklenecek olay günlüklerinin bitiş zamanı (ex: "2022-02-22 23:59:59 +09:00")
+      --timeline-start <DATE>  Yüklenecek olay günlüklerinin başlangıç zamanı (ex: "2020-02-22 00:00:00 +09:00")
 
 Output:
-  -b, --disable-abbreviations  Disable abbreviations
-  -J, --JSON-output            Save the search results in JSON format (ex: -J -o results.json)
-  -L, --JSONL-output           Save the search results in JSONL format (ex: -L -o results.jsonl)
-  -M, --multiline              Output event field information in multiple rows for CSV output
-  -o, --output <FILE>          Save the search results in CSV format (ex: search.csv)
-  -S, --tab-separator          Separate event field information by tabs
+  -b, --disable-abbreviations  Kısaltmaları devre dışı bırak
+  -J, --json-output            Arama sonuçlarını JSON biçiminde kaydet (ex: -J -o results.json)
+  -L, --jsonl-output           Arama sonuçlarını JSONL biçiminde kaydet (ex: -L -o results.jsonl)
+  -M, --multiline              CSV çıktısı için olay alanı bilgilerini yeni satır karakterleriyle ayır
+  -o, --output <FILE>          Arama sonuçlarını CSV biçiminde kaydet (ex: search.csv)
+  -S, --tab-separator          Olay alanı bilgilerini sekmelerle ayır
 
 Time Format:
-      --European-time     Output timestamp in European time format (ex: 22-02-2022 22:00:00.123 +02:00)
-  -O, --ISO-8601          Output timestamp in original ISO-8601 format (ex: 2022-02-22T10:10:10.1234567Z) (Always UTC)
-      --RFC-2822          Output timestamp in RFC 2822 format (ex: Fri, 22 Feb 2022 22:00:00 -0600)
-      --RFC-3339          Output timestamp in RFC 3339 format (ex: 2022-02-22 22:00:00.123456-06:00)
-      --US-military-time  Output timestamp in US military time format (ex: 02-22-2022 22:00:00.123 -06:00)
-      --US-time           Output timestamp in US time format (ex: 02-22-2022 10:00:00.123 PM -06:00)
-  -U, --UTC               Output time in UTC format (default: local time)
+      --european-time     Zaman damgasını Avrupa saat biçiminde çıktı ver (ex: 22-02-2022 22:00:00.123 +02:00)
+  -O, --iso-8601          Zaman damgasını orijinal ISO-8601 biçiminde çıktı ver (ex: 2022-02-22T10:10:10.1234567Z) (Her zaman UTC)
+      --rfc-2822          Zaman damgasını RFC 2822 biçiminde çıktı ver (ex: Fri, 22 Feb 2022 22:00:00 -0600)
+      --rfc-3339          Zaman damgasını RFC 3339 biçiminde çıktı ver (ex: 2022-02-22 22:00:00.123456-06:00)
+  -U, --utc               Zamanı UTC biçiminde çıktı ver (default: local time)
+      --us-military-time  Zaman damgasını ABD askeri saat biçiminde çıktı ver (ex: 02-22-2022 22:00:00.123 -06:00)
+      --us-time           Zaman damgasını ABD saat biçiminde çıktı ver (ex: 02-22-2022 10:00:00.123 PM -06:00)
 ```
 
 ### `search` komut örnekleri

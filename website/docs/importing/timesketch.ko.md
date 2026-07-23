@@ -73,14 +73,14 @@ cd timesketch
 안타깝게도 Timesketch는 현재 Hayabusa의 `JSONL` 형식을 가져올 수 없으므로 다음 명령으로 CSV 타임라인을 생성하여 업로드하세요:
 
 ```shell
-hayabusa-x.x.x-win-x64.exe csv-timeline -d <DIR> -o timesketch-import.csv -p timesketch-verbose --ISO-8601
+hayabusa-x.x.x-win-x64.exe dfir-timeline -d <DIR> -o timesketch-import.csv -p timesketch-verbose --iso-8601
 ```
 
-> 참고: `timesketch*` 프로필을 선택하고 타임스탬프를 UTC의 경우 `--ISO-8601`로, 현지 시간의 경우 `--RFC-3339`로 지정해야 합니다. 원한다면 다른 Hayabusa 옵션을 추가할 수 있지만, 줄바꿈 문자가 가져오기를 손상시키므로 `-M, --multiline` 옵션은 추가하지 마세요.
+> 참고: `timesketch*` 프로필을 선택하고 타임스탬프를 UTC의 경우 `--iso-8601`로, 현지 시간의 경우 `--rfc-3339`로 지정해야 합니다. 원한다면 다른 Hayabusa 옵션을 추가할 수 있지만, 줄바꿈 문자가 가져오기를 손상시키므로 `-M, --multiline` 옵션은 추가하지 마세요.
 
 "Select file to upload" 대화 상자에서 타임라인 이름을 `hayabusa`와 같이 지정하고 `Comma (,)` CSV 구분자를 선택한 다음 `SUBMIT`을 클릭합니다.
 
-> CSV 파일이 너무 커서 업로드할 수 없는 경우 Takajo의 [split-csv-timeline](https://github.com/Yamato-Security/takajo?tab=readme-ov-file#split-csv-timeline-command) 명령으로 파일을 여러 CSV 파일로 분할할 수 있습니다.
+> CSV 파일이 너무 커서 업로드할 수 없는 경우 Takajo의 [split-dfir-timeline](https://github.com/Yamato-Security/takajo?tab=readme-ov-file#split-dfir-timeline-command) 명령으로 파일을 여러 CSV 파일로 분할할 수 있습니다.
 
 파일을 가져오는 동안 회전하는 원이 표시되므로 완료되어 `hayabusa`가 나타날 때까지 기다려 주세요.
 

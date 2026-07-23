@@ -562,7 +562,7 @@ OS 측에서 얻을 수 있는 통계로부터 다양한 리소스 사용량을 
      ```
 
 4. 릴리스 빌드를 빌드합니다: `cargo build --release`
-5. `heaptrack hayabusa csv-timeline -d sample -o out.csv`를 실행합니다
+5. `heaptrack hayabusa dfir-timeline -d sample -o out.csv`를 실행합니다
 
 이제 Hayabusa 실행이 끝나면 heaptrack의 결과가 자동으로 GUI 애플리케이션에서 열립니다.
 
