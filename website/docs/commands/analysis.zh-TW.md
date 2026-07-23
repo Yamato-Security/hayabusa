@@ -14,30 +14,30 @@ Windows 11 在儲存到事件記錄時，有時會使用完全不同的 `Compute
 Usage: computer-metrics <INPUT> [OPTIONS]
 
 Input:
-  -d, --directory <DIR>  Directory of multiple .evtx files
-  -f, --file <FILE>      File path to one .evtx file
-  -l, --live-analysis    Analyze the local C:\Windows\System32\winevt\Logs folder
+  -d, --directory <DIR>  包含多個 .evtx 檔案的目錄
+  -f, --file <FILE>      單一 .evtx 檔案的檔案路徑
+  -l, --live-analysis    分析本機 C:\Windows\System32\winevt\Logs 資料夾
 
 General Options:
-  -C, --clobber                        Overwrite files when saving
-  -h, --help                           Show the help menu
-  -J, --json-input                     Scan JSON formatted logs instead of .evtx (.json or .jsonl)
-  -Q, --quiet-errors                   Quiet errors mode: do not save error logs
-  -x, --recover-records                Carve evtx records from slack space (default: disabled)
-  -c, --rules-config <DIR>             Specify custom rule config directory (default: ./rules/config)
-      --target-file-ext <FILE-EXT...>  Specify additional evtx file extensions (ex: evtx_data)
-  -t, --threads <NUMBER>               Number of threads (default: optimal number for performance)
+  -C, --clobber                        儲存時覆寫檔案
+  -h, --help                           顯示說明選單
+  -J, --json-input                     掃描 JSON 格式的記錄而非 .evtx（.json 或 .jsonl）
+  -Q, --quiet-errors                   安靜錯誤模式：不儲存錯誤記錄
+  -x, --recover-records                從閒置空間（slack space）雕取 evtx 記錄 (default: disabled)
+  -c, --rules-config <DIR>             指定自訂規則設定目錄 (default: ./rules/config)
+      --target-file-ext <FILE-EXT...>  指定額外的 evtx 檔案副檔名 (ex: evtx_data)
+  -V, --validate-checksums             啟用總和檢查碼驗證
 
 Filtering:
-      --time-offset <OFFSET>  Scan recent events based on an offset (ex: 1y, 3M, 30d, 24h, 30m)
+      --time-offset <OFFSET>  根據偏移量掃描最近的事件 (ex: 1y, 3M, 30d, 24h, 30m)
 
 Output:
-  -o, --output <FILE>  Save the results in CSV format (ex: computer-metrics.csv)
+  -o, --output <FILE>  以 CSV 格式儲存結果 (ex: computer-metrics.csv)
 
 Display Settings:
-  -K, --no-color  Disable color output
-  -q, --quiet     Quiet mode: do not display the launch banner
-  -v, --verbose   Output verbose information
+  -K, --no-color  停用彩色輸出
+  -q, --quiet     安靜模式：不顯示啟動橫幅
+  -v, --verbose   輸出詳細資訊
 ```
 
 ### `computer-metrics` 命令範例
@@ -58,42 +58,43 @@ Display Settings:
 Usage: eid-metrics <INPUT> [OPTIONS]
 
 Input:
-  -d, --directory <DIR>  Directory of multiple .evtx files
-  -f, --file <FILE>      File path to one .evtx file
-  -l, --live-analysis    Analyze the local C:\Windows\System32\winevt\Logs folder
+  -d, --directory <DIR>  包含多個 .evtx 檔案的目錄
+  -f, --file <FILE>      單一 .evtx 檔案的檔案路徑
+  -l, --live-analysis    分析本機 C:\Windows\System32\winevt\Logs 資料夾
 
 General Options:
-  -C, --clobber                        Overwrite files when saving
-  -h, --help                           Show the help menu
-  -J, --json-input                     Scan JSON formatted logs instead of .evtx (.json or .jsonl)
-  -Q, --quiet-errors                   Quiet errors mode: do not save error logs
-  -x, --recover-records                Carve evtx records from slack space (default: disabled)
-  -c, --rules-config <DIR>             Specify custom rule config directory (default: ./rules/config)
-  -t, --threads <NUMBER>               Number of threads (default: optimal number for performance)
-      --target-file-ext <FILE-EXT...>  Specify additional evtx file extensions (ex: evtx_data)
+  -C, --clobber                        儲存時覆寫檔案
+  -h, --help                           顯示說明選單
+  -J, --json-input                     掃描 JSON 格式的記錄而非 .evtx（.json 或 .jsonl）
+  -Q, --quiet-errors                   安靜錯誤模式：不儲存錯誤記錄
+  -x, --recover-records                從閒置空間（slack space）雕取 evtx 記錄 (default: disabled)
+  -c, --rules-config <DIR>             指定自訂規則設定目錄 (default: ./rules/config)
+      --target-file-ext <FILE-EXT...>  指定額外的 evtx 檔案副檔名 (ex: evtx_data)
+      --threads <NUMBER>               執行緒數量 (default: optimal number for performance)
+  -V, --validate-checksums             啟用總和檢查碼驗證
 
 Filtering:
-      --exclude-computer <COMPUTER...>  Do not scan specified computer names (ex: ComputerA) (ex: ComputerA,ComputerB)
-      --include-computer <COMPUTER...>  Scan only specified computer names (ex: ComputerA) (ex: ComputerA,ComputerB)
-      --time-offset <OFFSET>            Scan recent events based on an offset (ex: 1y, 3M, 30d, 24h, 30m)
+      --exclude-computer <COMPUTER...>  不掃描指定的電腦名稱 (ex: ComputerA) (ex: ComputerA,ComputerB)
+      --include-computer <COMPUTER...>  僅掃描指定的電腦名稱 (ex: ComputerA) (ex: ComputerA,ComputerB)
+      --time-offset <OFFSET>            根據偏移量掃描最近的事件 (ex: 1y, 3M, 30d, 24h, 30m)
 
 Output:
-  -b, --disable-abbreviations  Disable abbreviations
-  -o, --output <FILE>          Save the Metrics in CSV format (ex: metrics.csv)
+  -X, --remove-duplicate-records  移除重複的事件記錄 (default: disabled)
+  -o, --output <FILE>             以 CSV 格式儲存統計資料 (ex: metrics.csv)
 
 Display Settings:
-  -K, --no-color  Disable color output
-  -q, --quiet     Quiet mode: do not display the launch banner
-  -v, --verbose   Output verbose information
+  -K, --no-color  停用彩色輸出
+  -q, --quiet     安靜模式：不顯示啟動橫幅
+  -v, --verbose   輸出詳細資訊
 
 Time Format:
-      --european-time     Output timestamp in European time format (ex: 22-02-2022 22:00:00.123 +02:00)
-  -O, --iso-8601          Output timestamp in original ISO-8601 format (ex: 2022-02-22T10:10:10.1234567Z) (Always UTC)
-      --rfc-2822          Output timestamp in RFC 2822 format (ex: Fri, 22 Feb 2022 22:00:00 -0600)
-      --rfc-3339          Output timestamp in RFC 3339 format (ex: 2022-02-22 22:00:00.123456-06:00)
-      --us-military-time  Output timestamp in US military time format (ex: 02-22-2022 22:00:00.123 -06:00)
-      --us-time           Output timestamp in US time format (ex: 02-22-2022 10:00:00.123 PM -06:00)
-  -U, --utc               Output time in UTC format (default: local time)
+      --european-time     以歐洲時間格式輸出時間戳記 (ex: 22-02-2022 22:00:00.123 +02:00)
+  -O, --iso-8601          以原始 ISO-8601 格式輸出時間戳記 (ex: 2022-02-22T10:10:10.1234567Z) (Always UTC)
+      --rfc-2822          以 RFC 2822 格式輸出時間戳記 (ex: Fri, 22 Feb 2022 22:00:00 -0600)
+      --rfc-3339          以 RFC 3339 格式輸出時間戳記 (ex: 2022-02-22 22:00:00.123456-06:00)
+  -U, --utc               以 UTC 格式輸出時間 (default: local time)
+      --us-military-time  以美國軍用時間格式輸出時間戳記 (ex: 02-22-2022 22:00:00.123 -06:00)
+      --us-time           以美國時間格式輸出時間戳記 (ex: 02-22-2022 10:00:00.123 PM -06:00)
 ```
 
 ### `eid-metrics` 命令範例
@@ -156,12 +157,12 @@ AdminWorkstation3
 Usage:  expand-list <INPUT> [OPTIONS]
 
 General Options:
-  -h, --help              Show the help menu
-  -r, --rules <DIR/FILE>  Specify rule directory (default: ./rules)
+  -h, --help              顯示說明選單
+  -r, --rules <DIR/FILE>  指定規則目錄 (default: ./rules)
 
 Display Settings:
-  -K, --no-color  Disable color output
-  -q, --quiet     Quiet mode: do not display the launch banner
+  -K, --no-color  停用彩色輸出
+  -q, --quiet     安靜模式：不顯示啟動橫幅
 ```
 
 ### `expand-list` 命令範例
@@ -193,41 +194,42 @@ domain_controller_hostnames
 Usage:  extract-base64 <INPUT> [OPTIONS]
 
 Input:
-  -d, --directory <DIR>  Directory of multiple .evtx files
-  -f, --file <FILE>      File path to one .evtx file
-  -l, --live-analysis    Analyze the local C:\Windows\System32\winevt\Logs folder
+  -d, --directory <DIR>  包含多個 .evtx 檔案的目錄
+  -f, --file <FILE>      單一 .evtx 檔案的檔案路徑
+  -l, --live-analysis    分析本機 C:\Windows\System32\winevt\Logs 資料夾
 
 General Options:
-  -C, --clobber                        Overwrite files when saving
-  -h, --help                           Show the help menu
-  -J, --json-input                     Scan JSON formatted logs instead of .evtx (.json or .jsonl)
-  -Q, --quiet-errors                   Quiet errors mode: do not save error logs
-  -x, --recover-records                Carve evtx records from slack space (default: disabled)
-  -c, --rules-config <DIR>             Specify custom rule config directory (default: ./rules/config)
-  -t, --threads <NUMBER>               Number of threads (default: optimal number for performance)
-      --target-file-ext <FILE-EXT...>  Specify additional evtx file extensions (ex: evtx_data)
+  -C, --clobber                        儲存時覆寫檔案
+  -h, --help                           顯示說明選單
+  -J, --json-input                     掃描 JSON 格式的記錄而非 .evtx（.json 或 .jsonl）
+  -Q, --quiet-errors                   安靜錯誤模式：不儲存錯誤記錄
+  -x, --recover-records                從閒置空間（slack space）雕取 evtx 記錄 (default: disabled)
+  -c, --rules-config <DIR>             指定自訂規則設定目錄 (default: ./rules/config)
+      --target-file-ext <FILE-EXT...>  指定額外的 evtx 檔案副檔名 (ex: evtx_data)
+      --threads <NUMBER>               執行緒數量 (default: optimal number for performance)
+  -V, --validate-checksums             啟用總和檢查碼驗證
 
 Filtering:
-      --exclude-computer <COMPUTER...>  Do not scan specified computer names (ex: ComputerA) (ex: ComputerA,ComputerB)
-      --include-computer <COMPUTER...>  Scan only specified computer names (ex: ComputerA) (ex: ComputerA,ComputerB)
-      --time-offset <OFFSET>            Scan recent events based on an offset (ex: 1y, 3M, 30d, 24h, 30m)
+      --exclude-computer <COMPUTER...>  不掃描指定的電腦名稱 (ex: ComputerA) (ex: ComputerA,ComputerB)
+      --include-computer <COMPUTER...>  僅掃描指定的電腦名稱 (ex: ComputerA) (ex: ComputerA,ComputerB)
+      --time-offset <OFFSET>            根據偏移量掃描最近的事件 (ex: 1y, 3M, 30d, 24h, 30m)
 
 Output:
-  -o, --output <FILE>  Extract Base64 strings
+  -o, --output <FILE>  將結果儲存至 CSV 檔案
 
 Display Settings:
-  -K, --no-color  Disable color output
-  -q, --quiet     Quiet mode: do not display the launch banner
-  -v, --verbose   Output verbose information
+  -K, --no-color  停用彩色輸出
+  -q, --quiet     安靜模式：不顯示啟動橫幅
+  -v, --verbose   輸出詳細資訊
 
 Time Format:
-      --european-time     Output timestamp in European time format (ex: 22-02-2022 22:00:00.123 +02:00)
-  -O, --iso-8601          Output timestamp in original ISO-8601 format (ex: 2022-02-22T10:10:10.1234567Z) (Always UTC)
-      --rfc-2822          Output timestamp in RFC 2822 format (ex: Fri, 22 Feb 2022 22:00:00 -0600)
-      --rfc-3339          Output timestamp in RFC 3339 format (ex: 2022-02-22 22:00:00.123456-06:00)
-      --us-military-time  Output timestamp in US military time format (ex: 02-22-2022 22:00:00.123 -06:00)
-      --us-time           Output timestamp in US time format (ex: 02-22-2022 10:00:00.123 PM -06:00)
-  -U, --utc               Output time in UTC format (default: local time)
+      --european-time     以歐洲時間格式輸出時間戳記 (ex: 22-02-2022 22:00:00.123 +02:00)
+  -O, --iso-8601          以原始 ISO-8601 格式輸出時間戳記 (ex: 2022-02-22T10:10:10.1234567Z) (Always UTC)
+      --rfc-2822          以 RFC 2822 格式輸出時間戳記 (ex: Fri, 22 Feb 2022 22:00:00 -0600)
+      --rfc-3339          以 RFC 3339 格式輸出時間戳記 (ex: 2022-02-22 22:00:00.123456-06:00)
+  -U, --utc               以 UTC 格式輸出時間 (default: local time)
+      --us-military-time  以美國軍用時間格式輸出時間戳記 (ex: 02-22-2022 22:00:00.123 -06:00)
+      --us-time           以美國時間格式輸出時間戳記 (ex: 02-22-2022 10:00:00.123 PM -06:00)
 ```
 
 ### `extract-base64` 命令範例
@@ -275,44 +277,49 @@ Time Format:
 Usage: log-metrics <INPUT> [OPTIONS]
 
 Input:
-  -d, --directory <DIR>  Directory of multiple .evtx files
-  -f, --file <FILE>      File path to one .evtx file
-  -l, --live-analysis    Analyze the local C:\Windows\System32\winevt\Logs folder
+  -d, --directory <DIR>  包含多個 .evtx 檔案的目錄
+  -f, --file <FILE>      單一 .evtx 檔案的檔案路徑
+  -l, --live-analysis    分析本機 C:\Windows\System32\winevt\Logs 資料夾
 
 General Options:
-  -C, --clobber                        Overwrite files when saving
-  -h, --help                           Show the help menu
-  -J, --json-input                     Scan JSON formatted logs instead of .evtx (.json or .jsonl)
-  -Q, --quiet-errors                   Quiet errors mode: do not save error logs
-  -x, --recover-records                Carve evtx records from slack space (default: disabled)
-  -c, --rules-config <DIR>             Specify custom rule config directory (default: ./rules/config)
-  -t, --threads <NUMBER>               Number of threads (default: optimal number for performance)
-      --target-file-ext <FILE-EXT...>  Specify additional evtx file extensions (ex: evtx_data)
+  -C, --clobber                        儲存時覆寫檔案
+  -h, --help                           顯示說明選單
+  -J, --json-input                     掃描 JSON 格式的記錄而非 .evtx（.json 或 .jsonl）
+  -Q, --quiet-errors                   安靜錯誤模式：不儲存錯誤記錄
+  -x, --recover-records                從閒置空間（slack space）雕取 evtx 記錄 (default: disabled)
+  -c, --rules-config <DIR>             指定自訂規則設定目錄 (default: ./rules/config)
+      --target-file-ext <FILE-EXT...>  指定額外的 evtx 檔案副檔名 (ex: evtx_data)
+      --threads <NUMBER>               執行緒數量 (default: optimal number for performance)
+  -V, --validate-checksums             啟用總和檢查碼驗證
 
 Filtering:
-      --exclude-computer <COMPUTER...>  Do not scan specified computer names (ex: ComputerA) (ex: ComputerA,ComputerB)
-      --include-computer <COMPUTER...>  Scan only specified computer names (ex: ComputerA) (ex: ComputerA,ComputerB)
-      --time-offset <OFFSET>            Scan recent events based on an offset (ex: 1y, 3M, 30d, 24h, 30m)
+      --exclude-computer <COMPUTER...>  不掃描指定的電腦名稱 (ex: ComputerA) (ex: ComputerA,ComputerB)
+      --exclude-channel <CHANNEL...>    不掃描指定的頻道 (ex: System,Security)
+      --exclude-filename <FILE...>      不掃描指定的 evtx 檔案 (ex: Security.evtx,System.evtx)
+      --include-computer <COMPUTER...>  僅掃描指定的電腦名稱 (ex: ComputerA) (ex: ComputerA,ComputerB)
+      --include-channel <CHANNEL...>    僅納入指定的頻道 (ex: System,Security)
+      --include-filename <FILE...>      僅納入指定的 evtx 檔案 (ex: Security.evtx,System.evtx)
+      --time-offset <OFFSET>            根據偏移量掃描最近的事件 (ex: 1y, 3M, 30d, 24h, 30m)
 
 Output:
-  -b, --disable-abbreviations  Disable abbreviations
-  -M, --multiline              Output event field information in multiple rows for CSV output
-  -o, --output <FILE>          Save the Metrics in CSV format (ex: metrics.csv)
-  -S, --tab-separator          Separate event field information by tabs
+  -b, --disable-abbreviations  停用縮寫
+  -M, --multiline              在 CSV 輸出中以換行字元分隔事件欄位資訊
+  -o, --output <FILE>          以 CSV 格式儲存統計資料 (ex: metrics.csv)
+  -S, --tab-separator          以定位字元分隔事件欄位資訊
 
 Display Settings:
-  -K, --no-color  Disable color output
-  -q, --quiet     Quiet mode: do not display the launch banner
-  -v, --verbose   Output verbose information
+  -K, --no-color  停用彩色輸出
+  -q, --quiet     安靜模式：不顯示啟動橫幅
+  -v, --verbose   輸出詳細資訊
 
 Time Format:
-      --european-time     Output timestamp in European time format (ex: 22-02-2022 22:00:00.123 +02:00)
-  -O, --iso-8601          Output timestamp in original ISO-8601 format (ex: 2022-02-22T10:10:10.1234567Z) (Always UTC)
-      --rfc-2822          Output timestamp in RFC 2822 format (ex: Fri, 22 Feb 2022 22:00:00 -0600)
-      --rfc-3339          Output timestamp in RFC 3339 format (ex: 2022-02-22 22:00:00.123456-06:00)
-      --us-military-time  Output timestamp in US military time format (ex: 02-22-2022 22:00:00.123 -06:00)
-      --us-time           Output timestamp in US time format (ex: 02-22-2022 10:00:00.123 PM -06:00)
-  -U, --utc               Output time in UTC format (default: local time)
+      --european-time     以歐洲時間格式輸出時間戳記 (ex: 22-02-2022 22:00:00.123 +02:00)
+  -O, --iso-8601          以原始 ISO-8601 格式輸出時間戳記 (ex: 2022-02-22T10:10:10.1234567Z) (Always UTC)
+      --rfc-2822          以 RFC 2822 格式輸出時間戳記 (ex: Fri, 22 Feb 2022 22:00:00 -0600)
+      --rfc-3339          以 RFC 3339 格式輸出時間戳記 (ex: 2022-02-22 22:00:00.123456-06:00)
+  -U, --utc               以 UTC 格式輸出時間 (default: local time)
+      --us-military-time  以美國軍用時間格式輸出時間戳記 (ex: 02-22-2022 22:00:00.123 -06:00)
+      --us-time           以美國時間格式輸出時間戳記 (ex: 02-22-2022 10:00:00.123 PM -06:00)
 ```
 
 ### `log-metrics` 命令範例
@@ -341,43 +348,45 @@ Time Format:
 Usage: logon-summary <INPUT> [OPTIONS]
 
 Input:
-  -d, --directory <DIR>  Directory of multiple .evtx files
-  -f, --file <FILE>      File path to one .evtx file
-  -l, --live-analysis    Analyze the local C:\Windows\System32\winevt\Logs folder
+  -d, --directory <DIR>  包含多個 .evtx 檔案的目錄
+  -f, --file <FILE>      單一 .evtx 檔案的檔案路徑
+  -l, --live-analysis    分析本機 C:\Windows\System32\winevt\Logs 資料夾
 
 General Options:
-  -C, --clobber                        Overwrite files when saving
-  -h, --help                           Show the help menu
-  -J, --json-input                     Scan JSON formatted logs instead of .evtx (.json or .jsonl)
-  -Q, --quiet-errors                   Quiet errors mode: do not save error logs
-  -x, --recover-records                Carve evtx records from slack space (default: disabled)
-  -c, --rules-config <DIR>             Specify custom rule config directory (default: ./rules/config)
-  -t, --threads <NUMBER>               Number of threads (default: optimal number for performance)
-      --target-file-ext <FILE-EXT...>  Specify additional evtx file extensions (ex: evtx_data)
+  -C, --clobber                        儲存時覆寫檔案
+  -h, --help                           顯示說明選單
+  -J, --json-input                     掃描 JSON 格式的記錄而非 .evtx（.json 或 .jsonl）
+  -Q, --quiet-errors                   安靜錯誤模式：不儲存錯誤記錄
+  -x, --recover-records                從閒置空間（slack space）雕取 evtx 記錄 (default: disabled)
+  -c, --rules-config <DIR>             指定自訂規則設定目錄 (default: ./rules/config)
+      --target-file-ext <FILE-EXT...>  指定額外的 evtx 檔案副檔名 (ex: evtx_data)
+      --threads <NUMBER>               執行緒數量 (default: optimal number for performance)
+  -V, --validate-checksums             啟用總和檢查碼驗證
 
 Filtering:
-      --exclude-computer <COMPUTER...>  Do not scan specified computer names (ex: ComputerA) (ex: ComputerA,ComputerB)
-      --include-computer <COMPUTER...>  Scan only specified computer names (ex: ComputerA) (ex: ComputerA,ComputerB)
-      --time-offset <OFFSET>            Scan recent events based on an offset (ex: 1y, 3M, 30d, 24h, 30m)
-      --timeline-end <DATE>             End time of the event logs to load (ex: "2022-02-22 23:59:59 +09:00")
-      --timeline-start <DATE>           Start time of the event logs to load (ex: "2020-02-22 00:00:00 +09:00")
+      --exclude-computer <COMPUTER...>  不掃描指定的電腦名稱 (ex: ComputerA) (ex: ComputerA,ComputerB)
+      --include-computer <COMPUTER...>  僅掃描指定的電腦名稱 (ex: ComputerA) (ex: ComputerA,ComputerB)
+      --time-offset <OFFSET>            根據偏移量掃描最近的事件 (ex: 1y, 3M, 30d, 24h, 30m)
+      --timeline-end <DATE>             要載入的事件記錄結束時間 (ex: "2022-02-22 23:59:59 +09:00")
+      --timeline-start <DATE>           要載入的事件記錄開始時間 (ex: "2020-02-22 00:00:00 +09:00")
 
 Output:
-  -o, --output <FILENAME-PREFIX>  Save the logon summary to two CSV files (ex: -o logon-summary)
+  -X, --remove-duplicate-records  移除重複的事件記錄 (default: disabled)
+  -o, --output <FILENAME-PREFIX>  將登入摘要儲存至兩個 CSV 檔案 (ex: -o logon-summary)
 
 Display Settings:
-  -K, --no-color  Disable color output
-  -q, --quiet     Quiet mode: do not display the launch banner
-  -v, --verbose   Output verbose information
+  -K, --no-color  停用彩色輸出
+  -q, --quiet     安靜模式：不顯示啟動橫幅
+  -v, --verbose   輸出詳細資訊
 
 Time Format:
-      --european-time     Output timestamp in European time format (ex: 22-02-2022 22:00:00.123 +02:00)
-  -O, --iso-8601          Output timestamp in original ISO-8601 format (ex: 2022-02-22T10:10:10.1234567Z) (Always UTC)
-      --rfc-2822          Output timestamp in RFC 2822 format (ex: Fri, 22 Feb 2022 22:00:00 -0600)
-      --rfc-3339          Output timestamp in RFC 3339 format (ex: 2022-02-22 22:00:00.123456-06:00)
-      --us-military-time  Output timestamp in US military time format (ex: 02-22-2022 22:00:00.123 -06:00)
-      --us-time           Output timestamp in US time format (ex: 02-22-2022 10:00:00.123 PM -06:00)
-  -U, --utc               Output time in UTC format (default: local time)
+      --european-time     以歐洲時間格式輸出時間戳記 (ex: 22-02-2022 22:00:00.123 +02:00)
+  -O, --iso-8601          以原始 ISO-8601 格式輸出時間戳記 (ex: 2022-02-22T10:10:10.1234567Z) (Always UTC)
+      --rfc-2822          以 RFC 2822 格式輸出時間戳記 (ex: Fri, 22 Feb 2022 22:00:00 -0600)
+      --rfc-3339          以 RFC 3339 格式輸出時間戳記 (ex: 2022-02-22 22:00:00.123456-06:00)
+  -U, --utc               以 UTC 格式輸出時間 (default: local time)
+      --us-military-time  以美國軍用時間格式輸出時間戳記 (ex: 02-22-2022 22:00:00.123 -06:00)
+      --us-time           以美國時間格式輸出時間戳記 (ex: 02-22-2022 10:00:00.123 PM -06:00)
 ```
 
 ### `logon-summary` 命令範例
@@ -403,47 +412,48 @@ Time Format:
 Usage: pivot-keywords-list <INPUT> [OPTIONS]
 
 Input:
-  -d, --directory <DIR>  Directory of multiple .evtx files
-  -f, --file <FILE>      File path to one .evtx file
-  -l, --live-analysis    Analyze the local C:\Windows\System32\winevt\Logs folder
+  -d, --directory <DIR>  包含多個 .evtx 檔案的目錄
+  -f, --file <FILE>      單一 .evtx 檔案的檔案路徑
+  -l, --live-analysis    分析本機 C:\Windows\System32\winevt\Logs 資料夾
 
 General Options:
-  -C, --clobber                        Overwrite files when saving
-  -h, --help                           Show the help menu
-  -J, --json-input                     Scan JSON formatted logs instead of .evtx (.json or .jsonl)
-  -w, --no-wizard                      Do not ask questions. Scan for all events and alerts
-  -Q, --quiet-errors                   Quiet errors mode: do not save error logs
-  -x, --recover-records                Carve evtx records from slack space (default: disabled)
-  -c, --rules-config <DIR>             Specify custom rule config directory (default: ./rules/config)
-  -t, --threads <NUMBER>               Number of threads (default: optimal number for performance)
-      --target-file-ext <FILE-EXT...>  Specify additional evtx file extensions (ex: evtx_data)
+  -C, --clobber                        儲存時覆寫檔案
+  -h, --help                           顯示說明選單
+  -J, --json-input                     掃描 JSON 格式的記錄而非 .evtx（.json 或 .jsonl）
+  -w, --no-wizard                      不詢問問題。掃描所有事件與警示
+  -Q, --quiet-errors                   安靜錯誤模式：不儲存錯誤記錄
+  -x, --recover-records                從閒置空間（slack space）雕取 evtx 記錄 (default: disabled)
+  -c, --rules-config <DIR>             指定自訂規則設定目錄 (default: ./rules/config)
+      --target-file-ext <FILE-EXT...>  指定額外的 evtx 檔案副檔名 (ex: evtx_data)
+      --threads <NUMBER>               執行緒數量 (default: optimal number for performance)
+  -V, --validate-checksums             啟用總和檢查碼驗證
 
 Filtering:
-  -E, --eid-filter                      Scan only common EIDs for faster speed (./rules/config/target_event_IDs.txt)
-  -D, --enable-deprecated-rules         Enable rules with a status of deprecated
-  -n, --enable-noisy-rules              Enable rules set to noisy (./rules/config/noisy_rules.txt)
-  -u, --enable-unsupported-rules        Enable rules with a status of unsupported
-  -e, --exact-level <LEVEL>             Only load rules with a specific level (informational, low, medium, high, critical)
-      --exclude-computer <COMPUTER...>  Do not scan specified computer names (ex: ComputerA) (ex: ComputerA,ComputerB)
-      --exclude-eid <EID...>            Do not scan specific EIDs for faster speed (ex: 1) (ex: 1,4688)
-      --exclude-status <STATUS...>      Do not load rules according to status (ex: experimental) (ex: stable,test)
-      --exclude-tag <TAG...>            Do not load rules with specific tags (ex: sysmon)
-      --include-computer <COMPUTER...>  Scan only specified computer names (ex: ComputerA) (ex: ComputerA,ComputerB)
-      --include-eid <EID...>            Scan only specified EIDs for faster speed (ex: 1) (ex: 1,4688)
-      --include-status <STATUS...>      Only load rules with specific status (ex: experimental) (ex: stable,test)
-      --include-tag <TAG...>            Only load rules with specific tags (ex: attack.execution,attack.discovery)
-  -m, --min-level <LEVEL>               Minimum level for rules to load (default: informational)
-      --time-offset <OFFSET>            Scan recent events based on an offset (ex: 1y, 3M, 30d, 24h, 30m)
-      --timeline-end <DATE>             End time of the event logs to load (ex: "2022-02-22 23:59:59 +09:00")
-      --timeline-start <DATE>           Start time of the event logs to load (ex: "2020-02-22 00:00:00 +09:00")
+  -E, --eid-filter                      僅掃描常見的 EID 以加快速度 (./rules/config/target_event_IDs.txt)
+  -D, --enable-deprecated-rules         啟用狀態為 deprecated 的規則
+  -n, --enable-noisy-rules              啟用設定為 noisy 的規則 (./rules/config/noisy_rules.txt)
+  -u, --enable-unsupported-rules        啟用狀態為 unsupported 的規則
+  -e, --exact-level <LEVEL>             僅載入具有特定等級的規則 (informational, low, medium, high, critical)
+      --exclude-computer <COMPUTER...>  不掃描指定的電腦名稱 (ex: ComputerA) (ex: ComputerA,ComputerB)
+      --exclude-eid <EID...>            不掃描特定的 EID 以加快速度 (ex: 1) (ex: 1,4688)
+      --exclude-status <STATUS...>      不載入符合指定狀態的規則 (ex: experimental) (ex: stable,test)
+      --exclude-tag <TAG...>            不載入具有特定標籤的規則 (ex: sysmon)
+      --include-computer <COMPUTER...>  僅掃描指定的電腦名稱 (ex: ComputerA) (ex: ComputerA,ComputerB)
+      --include-eid <EID...>            僅掃描指定的 EID 以加快速度 (ex: 1) (ex: 1,4688)
+      --include-status <STATUS...>      僅載入具有指定狀態的規則 (ex: experimental) (ex: stable,test)
+      --include-tag <TAG...>            僅載入具有指定標籤的規則 (ex: attack.execution,attack.discovery)
+  -m, --min-level <LEVEL>               要載入規則的最低等級 (default: informational)
+      --time-offset <OFFSET>            根據偏移量掃描最近的事件 (ex: 1y, 3M, 30d, 24h, 30m)
+      --timeline-end <DATE>             要載入的事件記錄結束時間 (ex: "2022-02-22 23:59:59 +09:00")
+      --timeline-start <DATE>           要載入的事件記錄開始時間 (ex: "2020-02-22 00:00:00 +09:00")
 
 Output:
-  -o, --output <FILENAME-PREFIX>  Save pivot words to separate files (ex: PivotKeywords)
+  -o, --output <FILENAME-PREFIX>  將樞紐關鍵字儲存至個別檔案 (ex: PivotKeywords)
 
 Display Settings:
-  -K, --no-color  Disable color output
-  -q, --quiet     Quiet mode: do not display the launch banner
-  -v, --verbose   Output verbose information
+  -K, --no-color  停用彩色輸出
+  -q, --quiet     安靜模式：不顯示啟動橫幅
+  -v, --verbose   輸出詳細資訊
 ```
 
 ### `pivot-keywords-list` 命令範例
@@ -472,51 +482,52 @@ hayabusa.exe pivot-keywords-list -d ../logs -m critical -o keywords`
 Usage: hayabusa.exe search <INPUT> <--keywords "<KEYWORDS>" OR --regex "<REGEX>"> [OPTIONS]
 
 Display Settings:
-  -K, --no-color  Disable color output
-  -q, --quiet     Quiet mode: do not display the launch banner
-  -v, --verbose   Output verbose information
+  -K, --no-color  停用彩色輸出
+  -q, --quiet     安靜模式：不顯示啟動橫幅
+  -v, --verbose   輸出詳細資訊
 
 General Options:
-  -C, --clobber                        Overwrite files when saving
-  -h, --help                           Show the help menu
-  -Q, --quiet-errors                   Quiet errors mode: do not save error logs
-  -x, --recover-records                Carve evtx records from slack space (default: disabled)
-  -c, --rules-config <DIR>             Specify custom rule config directory (default: ./rules/config)
-  -t, --threads <NUMBER>               Number of threads (default: optimal number for performance)
-      --target-file-ext <FILE-EXT...>  Specify additional evtx file extensions (ex: evtx_data)
-  -s, --sort                           Sort results before saving the file (warning: this uses much more memory!)
+  -C, --clobber                        儲存時覆寫檔案
+  -h, --help                           顯示說明選單
+  -Q, --quiet-errors                   安靜錯誤模式：不儲存錯誤記錄
+  -x, --recover-records                從閒置空間（slack space）雕取 evtx 記錄 (default: disabled)
+  -c, --rules-config <DIR>             指定自訂規則設定目錄 (default: ./rules/config)
+      --target-file-ext <FILE-EXT...>  指定額外的 evtx 檔案副檔名 (ex: evtx_data)
+      --threads <NUMBER>               執行緒數量 (default: optimal number for performance)
+  -s, --sort                           在儲存檔案前排序結果（警告：這會使用更多記憶體！）
+  -V, --validate-checksums             啟用總和檢查碼驗證
 
 Input:
-  -d, --directory <DIR>  Directory of multiple .evtx files
-  -f, --file <FILE>      File path to one .evtx file
-  -l, --live-analysis    Analyze the local C:\Windows\System32\winevt\Logs folder
+  -d, --directory <DIR>  包含多個 .evtx 檔案的目錄
+  -f, --file <FILE>      單一 .evtx 檔案的檔案路徑
+  -l, --live-analysis    分析本機 C:\Windows\System32\winevt\Logs 資料夾
 
 Filtering:
-  -a, --and-logic              Search keywords with AND logic (default: OR)
-  -F, --filter <FILTER...>     Filter by specific field(s)
-  -i, --ignore-case            Case-insensitive keyword search
-  -k, --keyword <KEYWORD...>   Search by keyword(s)
-  -r, --regex <REGEX>          Search by regular expression
-      --time-offset <OFFSET>   Scan recent events based on an offset (ex: 1y, 3M, 30d, 24h, 30m)
-      --timeline-end <DATE>    End time of the event logs to load (ex: "2022-02-22 23:59:59 +09:00")
-      --timeline-start <DATE>  Start time of the event logs to load (ex: "2020-02-22 00:00:00 +09:00")
+  -a, --and-logic              以 AND 邏輯搜尋關鍵字 (default: OR)
+  -F, --filter <FILTER...>     依特定欄位篩選
+  -i, --ignore-case            不區分大小寫的關鍵字搜尋
+  -k, --keyword <KEYWORD...>   依關鍵字搜尋
+  -r, --regex <REGEX>          依正規表示式搜尋
+      --time-offset <OFFSET>   根據偏移量掃描最近的事件 (ex: 1y, 3M, 30d, 24h, 30m)
+      --timeline-end <DATE>    要載入的事件記錄結束時間 (ex: "2022-02-22 23:59:59 +09:00")
+      --timeline-start <DATE>  要載入的事件記錄開始時間 (ex: "2020-02-22 00:00:00 +09:00")
 
 Output:
-  -b, --disable-abbreviations  Disable abbreviations
-  -J, --json-output            Save the search results in JSON format (ex: -J -o results.json)
-  -L, --jsonl-output           Save the search results in JSONL format (ex: -L -o results.jsonl)
-  -M, --multiline              Output event field information in multiple rows for CSV output
-  -o, --output <FILE>          Save the search results in CSV format (ex: search.csv)
-  -S, --tab-separator          Separate event field information by tabs
+  -b, --disable-abbreviations  停用縮寫
+  -J, --json-output            以 JSON 格式儲存搜尋結果 (ex: -J -o results.json)
+  -L, --jsonl-output           以 JSONL 格式儲存搜尋結果 (ex: -L -o results.jsonl)
+  -M, --multiline              在 CSV 輸出中以換行字元分隔事件欄位資訊
+  -o, --output <FILE>          以 CSV 格式儲存搜尋結果 (ex: search.csv)
+  -S, --tab-separator          以定位字元分隔事件欄位資訊
 
 Time Format:
-      --european-time     Output timestamp in European time format (ex: 22-02-2022 22:00:00.123 +02:00)
-  -O, --iso-8601          Output timestamp in original ISO-8601 format (ex: 2022-02-22T10:10:10.1234567Z) (Always UTC)
-      --rfc-2822          Output timestamp in RFC 2822 format (ex: Fri, 22 Feb 2022 22:00:00 -0600)
-      --rfc-3339          Output timestamp in RFC 3339 format (ex: 2022-02-22 22:00:00.123456-06:00)
-      --us-military-time  Output timestamp in US military time format (ex: 02-22-2022 22:00:00.123 -06:00)
-      --us-time           Output timestamp in US time format (ex: 02-22-2022 10:00:00.123 PM -06:00)
-  -U, --utc               Output time in UTC format (default: local time)
+      --european-time     以歐洲時間格式輸出時間戳記 (ex: 22-02-2022 22:00:00.123 +02:00)
+  -O, --iso-8601          以原始 ISO-8601 格式輸出時間戳記 (ex: 2022-02-22T10:10:10.1234567Z) (Always UTC)
+      --rfc-2822          以 RFC 2822 格式輸出時間戳記 (ex: Fri, 22 Feb 2022 22:00:00 -0600)
+      --rfc-3339          以 RFC 3339 格式輸出時間戳記 (ex: 2022-02-22 22:00:00.123456-06:00)
+  -U, --utc               以 UTC 格式輸出時間 (default: local time)
+      --us-military-time  以美國軍用時間格式輸出時間戳記 (ex: 02-22-2022 22:00:00.123 -06:00)
+      --us-time           以美國時間格式輸出時間戳記 (ex: 02-22-2022 10:00:00.123 PM -06:00)
 ```
 
 ### `search` 命令範例

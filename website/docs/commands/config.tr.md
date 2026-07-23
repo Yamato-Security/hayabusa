@@ -11,15 +11,15 @@ Bir dosya sunucusu olup olmadığını belirlemek için Security 5145 (Ağ Payla
 Usage: hayabusa.exe config-critical-systems <INPUT> [OPTIONS]
 
 Input:
-  -d, --directory <DIR>  Directory of multiple .evtx files
-  -f, --file <FILE>      File path to one .evtx file
+  -d, --directory <DIR>  Birden fazla .evtx dosyasının bulunduğu dizin
+  -f, --file <FILE>      Tek bir .evtx dosyasının dosya yolu
 
 Display Settings:
-  -K, --no-color  Disable color output
-  -q, --quiet     Quiet mode: do not display the launch banner
+  -K, --no-color  Renkli çıktıyı devre dışı bırak
+  -q, --quiet     Sessiz mod: başlangıç afişini gösterme
 
 General Options:
-  -h, --help  Show the help menu
+  -h, --help  Yardım menüsünü göster
 ```
 
 ### `config-critical-systems` komut örnekleri
