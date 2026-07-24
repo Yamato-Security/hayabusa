@@ -9,7 +9,7 @@
 | cased                         |             0 |                0 |
 | cidr                          |            35 |                0 |
 | contains                      |          3070 |               21 |
-| containsǀall                  |          1081 |                0 |
+| containsǀall                  |          1082 |                0 |
 | containsǀcased                |             0 |                0 |
 | containsǀexpand               |             1 |                0 |
 | containsǀwindash              |           108 |                0 |
