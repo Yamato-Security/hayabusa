@@ -168,7 +168,7 @@ Display Settings:
 ### `expand-list` 명령어 예시
 
 * 기본 `rules` 디렉터리에서 `expand` 필드 수정자 추출: `hayabusa.exe expand-list`
-* `sigma` 디렉터리에서 `expand` 필드 수정자 추출: `hayabusa.exe eid-metrics -r ../sigma`
+* `sigma` 디렉터리에서 `expand` 필드 수정자 추출: `hayabusa.exe expand-list -r ../sigma`
 
 ### `expand-list` 결과
 
@@ -234,8 +234,8 @@ Time Format:
 
 ### `extract-base64` 명령어 예시
 
-* 디렉터리를 스캔하여 터미널로 출력: `hayabusa.exe  extract-base64 -d ../hayabusa-sample-evtx`
-* 디렉터리를 스캔하여 CSV 파일로 출력: `hayabusa.exe eid-metrics -r ../sigma -o base64-extracted.csv`
+* 디렉터리를 스캔하여 터미널로 출력: `hayabusa.exe extract-base64 -d ../hayabusa-sample-evtx`
+* 디렉터리를 스캔하여 CSV 파일로 출력: `hayabusa.exe extract-base64 -d ../hayabusa-sample-evtx -o base64-extracted.csv`
 
 ### `extract-base64` 결과
 
@@ -324,9 +324,9 @@ Time Format:
 
 ### `log-metrics` 명령어 예시
 
-* 단일 파일에서 이벤트 ID 메트릭 출력: `hayabusa.exe log-metrics -f Security.evtx`
-* 디렉터리에서 이벤트 ID 메트릭 출력: `hayabusa.exe log-metrics -d ../logs`
-* 결과를 CSV 파일로 저장: `hayabusa.exe log-metrics -d ../logs -o eid-metrics.csv`
+* 단일 파일에서 로그 파일 메타데이터 출력: `hayabusa.exe log-metrics -f Security.evtx`
+* 디렉터리에서 로그 파일 메타데이터 출력: `hayabusa.exe log-metrics -d ../logs`
+* 결과를 CSV 파일로 저장: `hayabusa.exe log-metrics -d ../logs -o log-metrics.csv`
 
 ### `log-metrics` 스크린샷
 

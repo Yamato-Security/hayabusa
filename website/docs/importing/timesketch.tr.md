@@ -80,7 +80,7 @@ hayabusa-x.x.x-win-x64.exe dfir-timeline -d <DIR> -o timesketch-import.csv -p ti
 
 "Select file to upload" iletisim kutusunda, zaman cizelgenizi `hayabusa` gibi bir seyle adlandirin, `Comma (,)` CSV ayiricisini secin ve `SUBMIT`'e tiklayin.
 
-> CSV dosyaniz yuklenemeyecek kadar buyukse, dosyayi Takajo'nun [split-dfir-timeline](https://github.com/Yamato-Security/takajo?tab=readme-ov-file#split-dfir-timeline-command) komutuyla birden fazla CSV dosyasina bolebilirsiniz.
+> CSV dosyaniz yuklenemeyecek kadar buyukse, dosyayi Takajo'nun [split-csv-timeline](https://github.com/Yamato-Security/takajo?tab=readme-ov-file#split-csv-timeline-command) komutuyla birden fazla CSV dosyasina bolebilirsiniz.
 
 Dosya iceri aktarilirken donen bir daire goreceksiniz, bu yuzden lutfen islem bitene ve `hayabusa` gorunene kadar bekleyin.
 

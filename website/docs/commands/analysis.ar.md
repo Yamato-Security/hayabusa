@@ -168,7 +168,7 @@ Display Settings:
 ### أمثلة على أمر `expand-list`
 
 * استخراج معدّلات الحقل `expand` من دليل `rules` الافتراضي: `hayabusa.exe expand-list`
-* استخراج معدّلات الحقل `expand` من دليل `sigma`: `hayabusa.exe eid-metrics -r ../sigma`
+* استخراج معدّلات الحقل `expand` من دليل `sigma`: `hayabusa.exe expand-list -r ../sigma`
 
 ### نتائج `expand-list`
 
@@ -234,8 +234,8 @@ Time Format:
 
 ### أمثلة على أمر `extract-base64`
 
-* فحص دليل وإخراج النتائج إلى الطرفية: `hayabusa.exe  extract-base64 -d ../hayabusa-sample-evtx`
-* فحص دليل وإخراج النتائج إلى ملف CSV: `hayabusa.exe eid-metrics -r ../sigma -o base64-extracted.csv`
+* فحص دليل وإخراج النتائج إلى الطرفية: `hayabusa.exe extract-base64 -d ../hayabusa-sample-evtx`
+* فحص دليل وإخراج النتائج إلى ملف CSV: `hayabusa.exe extract-base64 -d ../hayabusa-sample-evtx -o base64-extracted.csv`
 
 ### نتائج `extract-base64`
 
@@ -324,9 +324,9 @@ Time Format:
 
 ### أمثلة على أمر `log-metrics`
 
-* طباعة مقاييس معرّف الحدث من ملف واحد: `hayabusa.exe log-metrics -f Security.evtx`
-* طباعة مقاييس معرّف الحدث من دليل: `hayabusa.exe log-metrics -d ../logs`
-* حفظ النتائج في ملف CSV: `hayabusa.exe log-metrics -d ../logs -o eid-metrics.csv`
+* طباعة مقاييس ملف السجل من ملف واحد: `hayabusa.exe log-metrics -f Security.evtx`
+* طباعة مقاييس ملف السجل من دليل: `hayabusa.exe log-metrics -d ../logs`
+* حفظ النتائج في ملف CSV: `hayabusa.exe log-metrics -d ../logs -o log-metrics.csv`
 
 ### لقطة شاشة لـ `log-metrics`
 

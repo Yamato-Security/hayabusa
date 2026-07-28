@@ -86,7 +86,7 @@ The `dfir-timeline` command creates a forensics timeline of events. Choose the o
 - **JSON** is best for more detailed analysis of large results with tools like `jq`, as the `Details` fields are separated.
 - **JSONL** is faster and produces a smaller file than JSON, which is ideal for importing into tools like the Elastic Stack.
 
-The **CSV Output** options `-M, --multiline`, `-S, --tab-separator`, and `-R, --remove-duplicate-data` only apply to CSV output and will produce an error if combined with a non-CSV `-t`.
+The **CSV Output** options `-M, --multiline` and `-S, --tab-separator` only apply to CSV output and will produce an error if combined with a non-CSV `-t`.
 
 ```
   hayabusa.exe dfir-timeline <INPUT> [OPTIONS]
@@ -134,11 +134,6 @@ Filtering:
       --timeline-end <DATE>             End time of the event logs to load (ex: "2022-02-22 23:59:59 +09:00")
       --timeline-start <DATE>           Start time of the event logs to load (ex: "2020-02-22 00:00:00 +09:00")
 
-CSV Output:
-  -M, --multiline              Separate event field information by newline characters (CSV output only)
-  -R, --remove-duplicate-data  Duplicate field data will be replaced with "DUP" (CSV output only, sort required)
-  -S, --tab-separator          Separate event field information by tabs (CSV output only)
-
 Output:
   -b, --disable-abbreviations        Disable abbreviations
   -G, --geo-ip <MAXMIND-DB-DIR>      Add GeoIP (ASN, city, country) info to IP addresses
@@ -148,6 +143,7 @@ Output:
   -o, --output <FILE>                Save the timeline to a file (ex: results.csv)
   -t, --output-type <OUTPUT_FORMAT>  Output format: csv (default), json, or jsonl
   -p, --profile <PROFILE>            Specify output profile
+  -R, --remove-duplicate-data        Duplicate field data will be replaced with "DUP" (sort required)
   -X, --remove-duplicate-detections  Remove duplicate detections (sort required)
 
 Display Settings:
@@ -165,6 +161,10 @@ Time Format:
   -U, --utc               Output time in UTC format (default: local time)
       --us-military-time  Output timestamp in US military time format (ex: 02-22-2022 22:00:00.123 -06:00)
       --us-time           Output timestamp in US time format (ex: 02-22-2022 10:00:00.123 PM -06:00)
+
+CSV Output:
+  -M, --multiline      Separate event field information by newline characters (CSV output only)
+  -S, --tab-separator  Separate event field information by tabs (CSV output only)
 ```
 
 ### `dfir-timeline` command examples

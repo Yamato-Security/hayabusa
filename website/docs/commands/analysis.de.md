@@ -168,7 +168,7 @@ Display Settings:
 ### Beispiele für den Befehl `expand-list`
 
 * `expand`-Feldmodifikatoren aus dem Standardverzeichnis `rules` extrahieren: `hayabusa.exe expand-list`
-* `expand`-Feldmodifikatoren aus dem Verzeichnis `sigma` extrahieren: `hayabusa.exe eid-metrics -r ../sigma`
+* `expand`-Feldmodifikatoren aus dem Verzeichnis `sigma` extrahieren: `hayabusa.exe expand-list -r ../sigma`
 
 ### Ergebnisse von `expand-list`
 
@@ -234,8 +234,8 @@ Time Format:
 
 ### Beispiele für den Befehl `extract-base64`
 
-* Ein Verzeichnis durchsuchen und im Terminal ausgeben: `hayabusa.exe  extract-base64 -d ../hayabusa-sample-evtx`
-* Ein Verzeichnis durchsuchen und in eine CSV-Datei ausgeben: `hayabusa.exe eid-metrics -r ../sigma -o base64-extracted.csv`
+* Ein Verzeichnis durchsuchen und im Terminal ausgeben: `hayabusa.exe extract-base64 -d ../hayabusa-sample-evtx`
+* Ein Verzeichnis durchsuchen und in eine CSV-Datei ausgeben: `hayabusa.exe extract-base64 -d ../hayabusa-sample-evtx -o base64-extracted.csv`
 
 ### Ergebnisse von `extract-base64`
 
@@ -324,9 +324,9 @@ Time Format:
 
 ### Beispiele für den Befehl `log-metrics`
 
-* Ereignis-ID-Metriken aus einer einzelnen Datei ausgeben: `hayabusa.exe log-metrics -f Security.evtx`
-* Ereignis-ID-Metriken aus einem Verzeichnis ausgeben: `hayabusa.exe log-metrics -d ../logs`
-* Ergebnisse in einer CSV-Datei speichern: `hayabusa.exe log-metrics -d ../logs -o eid-metrics.csv`
+* Protokolldatei-Metadaten aus einer einzelnen Datei ausgeben: `hayabusa.exe log-metrics -f Security.evtx`
+* Protokolldatei-Metadaten aus einem Verzeichnis ausgeben: `hayabusa.exe log-metrics -d ../logs`
+* Ergebnisse in einer CSV-Datei speichern: `hayabusa.exe log-metrics -d ../logs -o log-metrics.csv`
 
 ### Screenshot von `log-metrics`
 

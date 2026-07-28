@@ -86,7 +86,7 @@ Channel 過濾在載入 `.evtx` 檔案時也會使用。
 - **JSON** 最適合搭配像 `jq` 這類工具對大型結果進行更詳細的分析，因為 `Details` 欄位是分開的。
 - **JSONL** 比 JSON 更快且產生的檔案更小，非常適合匯入像 Elastic Stack 這類工具。
 
-**CSV 輸出**選項 `-M, --multiline`、`-S, --tab-separator` 與 `-R, --remove-duplicate-data` 僅適用於 CSV 輸出，若與非 CSV 的 `-t` 併用將會產生錯誤。
+**CSV 輸出**選項 `-M, --multiline` 與 `-S, --tab-separator` 僅適用於 CSV 輸出，若與非 CSV 的 `-t` 併用將會產生錯誤。
 
 ```
   hayabusa.exe dfir-timeline <INPUT> [OPTIONS]
@@ -134,11 +134,6 @@ Filtering:
       --timeline-end <DATE>             End time of the event logs to load (ex: "2022-02-22 23:59:59 +09:00")
       --timeline-start <DATE>           Start time of the event logs to load (ex: "2020-02-22 00:00:00 +09:00")
 
-CSV Output:
-  -M, --multiline              Separate event field information by newline characters (CSV output only)
-  -R, --remove-duplicate-data  Duplicate field data will be replaced with "DUP" (CSV output only, sort required)
-  -S, --tab-separator          Separate event field information by tabs (CSV output only)
-
 Output:
   -b, --disable-abbreviations        Disable abbreviations
   -G, --geo-ip <MAXMIND-DB-DIR>      Add GeoIP (ASN, city, country) info to IP addresses
@@ -148,6 +143,7 @@ Output:
   -o, --output <FILE>                Save the timeline to a file (ex: results.csv)
   -t, --output-type <OUTPUT_FORMAT>  Output format: csv (default), json, or jsonl
   -p, --profile <PROFILE>            Specify output profile
+  -R, --remove-duplicate-data        Duplicate field data will be replaced with "DUP" (sort required)
   -X, --remove-duplicate-detections  Remove duplicate detections (sort required)
 
 Display Settings:
@@ -165,6 +161,10 @@ Time Format:
   -U, --utc               Output time in UTC format (default: local time)
       --us-military-time  Output timestamp in US military time format (ex: 02-22-2022 22:00:00.123 -06:00)
       --us-time           Output timestamp in US time format (ex: 02-22-2022 10:00:00.123 PM -06:00)
+
+CSV Output:
+  -M, --multiline      Separate event field information by newline characters (CSV output only)
+  -S, --tab-separator  Separate event field information by tabs (CSV output only)
 ```
 
 ### `dfir-timeline` 指令範例

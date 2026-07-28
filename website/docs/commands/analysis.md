@@ -168,7 +168,7 @@ Display Settings:
 ### `expand-list` command examples
 
 * Extract out `expand` field modifiers from the default `rules` directory: `hayabusa.exe expand-list`
-* Extract out `expand` field modifiers from the `sigma` directory: `hayabusa.exe eid-metrics -r ../sigma`
+* Extract out `expand` field modifiers from the `sigma` directory: `hayabusa.exe expand-list -r ../sigma`
 
 ### `expand-list` results
 
@@ -234,8 +234,8 @@ Time Format:
 
 ### `extract-base64` command examples
 
-* Scan a directory and output to the terminal: `hayabusa.exe  extract-base64 -d ../hayabusa-sample-evtx`
-* Scan a directory and output to a CSV file: `hayabusa.exe eid-metrics -r ../sigma -o base64-extracted.csv`
+* Scan a directory and output to the terminal: `hayabusa.exe extract-base64 -d ../hayabusa-sample-evtx`
+* Scan a directory and output to a CSV file: `hayabusa.exe extract-base64 -d ../hayabusa-sample-evtx -o base64-extracted.csv`
 
 ### `extract-base64` results
 
@@ -324,9 +324,9 @@ Time Format:
 
 ### `log-metrics` command examples
 
-* Print Event ID metrics from a single file: `hayabusa.exe log-metrics -f Security.evtx`
-* Print Event ID metrics from a directory: `hayabusa.exe log-metrics -d ../logs`
-* Save results to a CSV file: `hayabusa.exe log-metrics -d ../logs -o eid-metrics.csv`
+* Print log file metadata from a single file: `hayabusa.exe log-metrics -f Security.evtx`
+* Print log file metadata from a directory: `hayabusa.exe log-metrics -d ../logs`
+* Save results to a CSV file: `hayabusa.exe log-metrics -d ../logs -o log-metrics.csv`
 
 ### `log-metrics` screenshot
 

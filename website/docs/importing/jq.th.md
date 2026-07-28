@@ -120,7 +120,7 @@ Hayabusa ส่งออกในรูปแบบ JSON และ JSONL อย�
 
 # การสร้างไฟล์ผลลัพธ์ JSON
 
-ใน Hayabusa เวอร์ชัน 2.x ปัจจุบัน คุณสามารถบันทึกผลลัพธ์เป็น JSON ด้วย `hayabusa dfir-timeline -t json -d <directory> -o results.json` หรือ `hayabusa dfir-timeline -t json -d <directory> -J -o results.jsonl` สำหรับรูปแบบ JSONL
+ใน Hayabusa เวอร์ชันปัจจุบัน คุณสามารถบันทึกผลลัพธ์เป็น JSON ด้วย `hayabusa dfir-timeline -t json -d <directory> -o results.json` หรือ `hayabusa dfir-timeline -t jsonl -d <directory> -o results.jsonl` สำหรับรูปแบบ JSONL
 
 Hayabusa จะใช้โปรไฟล์ `standard` เป็นค่าเริ่มต้น และบันทึกเฉพาะข้อมูลขั้นต่ำสำหรับการวิเคราะห์ในอ็อบเจกต์ `Details`
 หากคุณต้องการบันทึกข้อมูลฟิลด์ดั้งเดิมทั้งหมดในล็อก .evtx คุณสามารถใช้โปรไฟล์ `all-field-info` ด้วยตัวเลือก `--profile all-field-info`

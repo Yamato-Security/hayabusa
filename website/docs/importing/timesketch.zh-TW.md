@@ -80,7 +80,7 @@ hayabusa-x.x.x-win-x64.exe dfir-timeline -d <DIR> -o timesketch-import.csv -p ti
 
 在「Select file to upload」對話框中，將您的時間軸命名為類似 `hayabusa` 的名稱，選擇 `Comma (,)` CSV 分隔符號，然後點擊 `SUBMIT`。
 
-> 如果您的 CSV 檔案過大而無法上傳，您可以使用 Takajo 的 [split-dfir-timeline](https://github.com/Yamato-Security/takajo?tab=readme-ov-file#split-dfir-timeline-command) 指令將檔案分割成多個 CSV 檔案。
+> 如果您的 CSV 檔案過大而無法上傳，您可以使用 Takajo 的 [split-csv-timeline](https://github.com/Yamato-Security/takajo?tab=readme-ov-file#split-csv-timeline-command) 指令將檔案分割成多個 CSV 檔案。
 
 在檔案匯入期間，您會看到一個旋轉的圓圈，因此請等待直到完成並看到 `hayabusa` 出現。
 

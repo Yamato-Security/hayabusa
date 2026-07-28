@@ -168,7 +168,7 @@ Display Settings:
 ### `expand-list` कमांड उदाहरण
 
 * डिफ़ॉल्ट `rules` डायरेक्टरी से `expand` फ़ील्ड मॉडिफायर निकालें: `hayabusa.exe expand-list`
-* `sigma` डायरेक्टरी से `expand` फ़ील्ड मॉडिफायर निकालें: `hayabusa.exe eid-metrics -r ../sigma`
+* `sigma` डायरेक्टरी से `expand` फ़ील्ड मॉडिफायर निकालें: `hayabusa.exe expand-list -r ../sigma`
 
 ### `expand-list` परिणाम
 
@@ -234,8 +234,8 @@ Time Format:
 
 ### `extract-base64` कमांड उदाहरण
 
-* किसी डायरेक्टरी को स्कैन करें और टर्मिनल पर आउटपुट करें: `hayabusa.exe  extract-base64 -d ../hayabusa-sample-evtx`
-* किसी डायरेक्टरी को स्कैन करें और CSV फ़ाइल में आउटपुट करें: `hayabusa.exe eid-metrics -r ../sigma -o base64-extracted.csv`
+* किसी डायरेक्टरी को स्कैन करें और टर्मिनल पर आउटपुट करें: `hayabusa.exe extract-base64 -d ../hayabusa-sample-evtx`
+* किसी डायरेक्टरी को स्कैन करें और CSV फ़ाइल में आउटपुट करें: `hayabusa.exe extract-base64 -d ../hayabusa-sample-evtx -o base64-extracted.csv`
 
 ### `extract-base64` परिणाम
 
@@ -324,9 +324,9 @@ Time Format:
 
 ### `log-metrics` कमांड उदाहरण
 
-* किसी एकल फ़ाइल से इवेंट ID मेट्रिक्स प्रिंट करें: `hayabusa.exe log-metrics -f Security.evtx`
-* किसी डायरेक्टरी से इवेंट ID मेट्रिक्स प्रिंट करें: `hayabusa.exe log-metrics -d ../logs`
-* परिणामों को CSV फ़ाइल में सहेजें: `hayabusa.exe log-metrics -d ../logs -o eid-metrics.csv`
+* किसी एकल फ़ाइल से लॉग फ़ाइल मेट्रिक्स प्रिंट करें: `hayabusa.exe log-metrics -f Security.evtx`
+* किसी डायरेक्टरी से लॉग फ़ाइल मेट्रिक्स प्रिंट करें: `hayabusa.exe log-metrics -d ../logs`
+* परिणामों को CSV फ़ाइल में सहेजें: `hayabusa.exe log-metrics -d ../logs -o log-metrics.csv`
 
 ### `log-metrics` स्क्रीनशॉट
 

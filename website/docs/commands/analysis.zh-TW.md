@@ -168,7 +168,7 @@ Display Settings:
 ### `expand-list` 命令範例
 
 * 從預設的 `rules` 目錄擷取 `expand` 欄位修飾符：`hayabusa.exe expand-list`
-* 從 `sigma` 目錄擷取 `expand` 欄位修飾符：`hayabusa.exe eid-metrics -r ../sigma`
+* 從 `sigma` 目錄擷取 `expand` 欄位修飾符：`hayabusa.exe expand-list -r ../sigma`
 
 ### `expand-list` 結果
 
@@ -234,8 +234,8 @@ Time Format:
 
 ### `extract-base64` 命令範例
 
-* 掃描目錄並輸出至終端機：`hayabusa.exe  extract-base64 -d ../hayabusa-sample-evtx`
-* 掃描目錄並輸出至 CSV 檔案：`hayabusa.exe eid-metrics -r ../sigma -o base64-extracted.csv`
+* 掃描目錄並輸出至終端機：`hayabusa.exe extract-base64 -d ../hayabusa-sample-evtx`
+* 掃描目錄並輸出至 CSV 檔案：`hayabusa.exe extract-base64 -d ../hayabusa-sample-evtx -o base64-extracted.csv`
 
 ### `extract-base64` 結果
 
@@ -324,9 +324,9 @@ Time Format:
 
 ### `log-metrics` 命令範例
 
-* 從單一檔案印出事件 ID 統計資料：`hayabusa.exe log-metrics -f Security.evtx`
-* 從目錄印出事件 ID 統計資料：`hayabusa.exe log-metrics -d ../logs`
-* 將結果儲存為 CSV 檔案：`hayabusa.exe log-metrics -d ../logs -o eid-metrics.csv`
+* 從單一檔案印出記錄檔中繼資料：`hayabusa.exe log-metrics -f Security.evtx`
+* 從目錄印出記錄檔中繼資料：`hayabusa.exe log-metrics -d ../logs`
+* 將結果儲存為 CSV 檔案：`hayabusa.exe log-metrics -d ../logs -o log-metrics.csv`
 
 ### `log-metrics` 螢幕截圖
 

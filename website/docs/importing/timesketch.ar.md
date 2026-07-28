@@ -80,7 +80,7 @@ hayabusa-x.x.x-win-x64.exe dfir-timeline -d <DIR> -o timesketch-import.csv -p ti
 
 في مربع حوار "Select file to upload"، سمِّ جدولك الزمني باسم مثل `hayabusa`، واختر فاصل CSV `Comma (,)` وانقر على `SUBMIT`.
 
-> إذا كان ملف CSV الخاص بك كبيرًا جدًا بحيث لا يمكن رفعه، يمكنك تقسيم الملف إلى عدة ملفات CSV باستخدام أمر [split-dfir-timeline](https://github.com/Yamato-Security/takajo?tab=readme-ov-file#split-dfir-timeline-command) الخاص بـ Takajo.
+> إذا كان ملف CSV الخاص بك كبيرًا جدًا بحيث لا يمكن رفعه، يمكنك تقسيم الملف إلى عدة ملفات CSV باستخدام أمر [split-csv-timeline](https://github.com/Yamato-Security/takajo?tab=readme-ov-file#split-csv-timeline-command) الخاص بـ Takajo.
 
 أثناء استيراد الملف سترى دائرة دوّارة لذا يرجى الانتظار حتى ينتهي وترى ظهور `hayabusa`.
 

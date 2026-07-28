@@ -14,8 +14,7 @@
 * `config-critical-systems`: العثور على الأنظمة الحرجة مثل وحدات التحكم بالنطاق وخوادم الملفات.
 
 ## أوامر الجدول الزمني لـ DFIR:
-* `dfir-timeline`: حفظ الجدول الزمني بتنسيق CSV.
-* `dfir-timeline`: حفظ الجدول الزمني بتنسيق JSON/JSONL.
+* `dfir-timeline`: حفظ الجدول الزمني بتنسيق CSV/JSON/JSONL.
 * `level-tuning`: ضبط مخصص لمستوى `level` التنبيهات.
 * `list-profiles`: سرد ملفات تعريف الإخراج المتاحة.
 * `set-default-profile`: تغيير ملف التعريف الافتراضي.

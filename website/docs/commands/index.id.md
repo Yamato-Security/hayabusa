@@ -14,8 +14,7 @@
 * `config-critical-systems`: Menemukan sistem kritis seperti domain controller dan file server.
 
 ## Perintah Timeline DFIR:
-* `dfir-timeline`: Menyimpan timeline dalam format CSV.
-* `dfir-timeline`: Menyimpan timeline dalam format JSON/JSONL.
+* `dfir-timeline`: Menyimpan timeline dalam format CSV/JSON/JSONL.
 * `level-tuning`: Menyetel `level` alert secara kustom.
 * `list-profiles`: Menampilkan daftar profil output yang tersedia.
 * `set-default-profile`: Mengubah profil default.

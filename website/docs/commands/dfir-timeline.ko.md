@@ -86,7 +86,7 @@ Sigma 룰에서 채널 및 이벤트 ID 필드는 `logsource` 아래의 `service
 - **JSON**은 `Details` 필드가 분리되어 있으므로 `jq`와 같은 도구로 대용량 결과를 더 자세히 분석하는 데 가장 좋습니다.
 - **JSONL**은 JSON보다 더 빠르고 파일 크기가 작으므로 Elastic Stack과 같은 도구로 가져오기에 이상적입니다.
 
-**CSV Output** 옵션인 `-M, --multiline`, `-S, --tab-separator`, `-R, --remove-duplicate-data`는 CSV 출력에만 적용되며, CSV가 아닌 `-t`와 함께 사용하면 오류가 발생합니다.
+**CSV Output** 옵션인 `-M, --multiline`과 `-S, --tab-separator`는 CSV 출력에만 적용되며, CSV가 아닌 `-t`와 함께 사용하면 오류가 발생합니다.
 
 ```
   hayabusa.exe dfir-timeline <INPUT> [OPTIONS]
@@ -134,11 +134,6 @@ Filtering:
       --timeline-end <DATE>             End time of the event logs to load (ex: "2022-02-22 23:59:59 +09:00")
       --timeline-start <DATE>           Start time of the event logs to load (ex: "2020-02-22 00:00:00 +09:00")
 
-CSV Output:
-  -M, --multiline              Separate event field information by newline characters (CSV output only)
-  -R, --remove-duplicate-data  Duplicate field data will be replaced with "DUP" (CSV output only, sort required)
-  -S, --tab-separator          Separate event field information by tabs (CSV output only)
-
 Output:
   -b, --disable-abbreviations        Disable abbreviations
   -G, --geo-ip <MAXMIND-DB-DIR>      Add GeoIP (ASN, city, country) info to IP addresses
@@ -148,6 +143,7 @@ Output:
   -o, --output <FILE>                Save the timeline to a file (ex: results.csv)
   -t, --output-type <OUTPUT_FORMAT>  Output format: csv (default), json, or jsonl
   -p, --profile <PROFILE>            Specify output profile
+  -R, --remove-duplicate-data        Duplicate field data will be replaced with "DUP" (sort required)
   -X, --remove-duplicate-detections  Remove duplicate detections (sort required)
 
 Display Settings:
@@ -165,6 +161,10 @@ Time Format:
   -U, --utc               Output time in UTC format (default: local time)
       --us-military-time  Output timestamp in US military time format (ex: 02-22-2022 22:00:00.123 -06:00)
       --us-time           Output timestamp in US time format (ex: 02-22-2022 10:00:00.123 PM -06:00)
+
+CSV Output:
+  -M, --multiline      Separate event field information by newline characters (CSV output only)
+  -S, --tab-separator  Separate event field information by tabs (CSV output only)
 ```
 
 ### `dfir-timeline` 명령어 예시

@@ -168,7 +168,7 @@ Display Settings:
 ### ตัวอย่างคำสั่ง `expand-list`
 
 * แยกตัวปรับแต่งฟิลด์ `expand` ออกจากไดเรกทอรี `rules` เริ่มต้น: `hayabusa.exe expand-list`
-* แยกตัวปรับแต่งฟิลด์ `expand` ออกจากไดเรกทอรี `sigma`: `hayabusa.exe eid-metrics -r ../sigma`
+* แยกตัวปรับแต่งฟิลด์ `expand` ออกจากไดเรกทอรี `sigma`: `hayabusa.exe expand-list -r ../sigma`
 
 ### ผลลัพธ์ `expand-list`
 
@@ -234,8 +234,8 @@ Time Format:
 
 ### ตัวอย่างคำสั่ง `extract-base64`
 
-* สแกนไดเรกทอรีและแสดงผลไปยังเทอร์มินัล: `hayabusa.exe  extract-base64 -d ../hayabusa-sample-evtx`
-* สแกนไดเรกทอรีและแสดงผลไปยังไฟล์ CSV: `hayabusa.exe eid-metrics -r ../sigma -o base64-extracted.csv`
+* สแกนไดเรกทอรีและแสดงผลไปยังเทอร์มินัล: `hayabusa.exe extract-base64 -d ../hayabusa-sample-evtx`
+* สแกนไดเรกทอรีและแสดงผลไปยังไฟล์ CSV: `hayabusa.exe extract-base64 -d ../hayabusa-sample-evtx -o base64-extracted.csv`
 
 ### ผลลัพธ์ `extract-base64`
 
@@ -324,9 +324,9 @@ Time Format:
 
 ### ตัวอย่างคำสั่ง `log-metrics`
 
-* พิมพ์เมตริก Event ID จากไฟล์เดียว: `hayabusa.exe log-metrics -f Security.evtx`
-* พิมพ์เมตริก Event ID จากไดเรกทอรี: `hayabusa.exe log-metrics -d ../logs`
-* บันทึกผลลัพธ์ลงในไฟล์ CSV: `hayabusa.exe log-metrics -d ../logs -o eid-metrics.csv`
+* พิมพ์เมตริกของไฟล์ล็อกจากไฟล์เดียว: `hayabusa.exe log-metrics -f Security.evtx`
+* พิมพ์เมตริกของไฟล์ล็อกจากไดเรกทอรี: `hayabusa.exe log-metrics -d ../logs`
+* บันทึกผลลัพธ์ลงในไฟล์ CSV: `hayabusa.exe log-metrics -d ../logs -o log-metrics.csv`
 
 ### ภาพหน้าจอ `log-metrics`
 

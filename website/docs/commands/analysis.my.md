@@ -168,7 +168,7 @@ Display Settings:
 ### `expand-list` command ဥပမာများ
 
 * default `rules` directory မှ `expand` field modifier များကို ထုတ်ယူရန်: `hayabusa.exe expand-list`
-* `sigma` directory မှ `expand` field modifier များကို ထုတ်ယူရန်: `hayabusa.exe eid-metrics -r ../sigma`
+* `sigma` directory မှ `expand` field modifier များကို ထုတ်ယူရန်: `hayabusa.exe expand-list -r ../sigma`
 
 ### `expand-list` ရလဒ်များ
 
@@ -234,8 +234,8 @@ Time Format:
 
 ### `extract-base64` command ဥပမာများ
 
-* directory တစ်ခုကို scan ဖတ်၍ terminal သို့ output ထုတ်ရန်: `hayabusa.exe  extract-base64 -d ../hayabusa-sample-evtx`
-* directory တစ်ခုကို scan ဖတ်၍ CSV file တစ်ခုသို့ output ထုတ်ရန်: `hayabusa.exe eid-metrics -r ../sigma -o base64-extracted.csv`
+* directory တစ်ခုကို scan ဖတ်၍ terminal သို့ output ထုတ်ရန်: `hayabusa.exe extract-base64 -d ../hayabusa-sample-evtx`
+* directory တစ်ခုကို scan ဖတ်၍ CSV file တစ်ခုသို့ output ထုတ်ရန်: `hayabusa.exe extract-base64 -d ../hayabusa-sample-evtx -o base64-extracted.csv`
 
 ### `extract-base64` ရလဒ်များ
 
@@ -324,9 +324,9 @@ Time Format:
 
 ### `log-metrics` command ဥပမာများ
 
-* file တစ်ခုတည်းမှ Event ID metrics များကို print ထုတ်ရန်: `hayabusa.exe log-metrics -f Security.evtx`
-* directory တစ်ခုမှ Event ID metrics များကို print ထုတ်ရန်: `hayabusa.exe log-metrics -d ../logs`
-* ရလဒ်များကို CSV file တစ်ခုသို့ သိမ်းဆည်းရန်: `hayabusa.exe log-metrics -d ../logs -o eid-metrics.csv`
+* file တစ်ခုတည်းမှ log file metrics များကို print ထုတ်ရန်: `hayabusa.exe log-metrics -f Security.evtx`
+* directory တစ်ခုမှ log file metrics များကို print ထုတ်ရန်: `hayabusa.exe log-metrics -d ../logs`
+* ရလဒ်များကို CSV file တစ်ခုသို့ သိမ်းဆည်းရန်: `hayabusa.exe log-metrics -d ../logs -o log-metrics.csv`
 
 ### `log-metrics` screenshot
 

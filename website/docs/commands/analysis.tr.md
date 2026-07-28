@@ -168,7 +168,7 @@ Display Settings:
 ### `expand-list` komut örnekleri
 
 * Varsayılan `rules` dizininden `expand` alan değiştiricilerini çıkarın: `hayabusa.exe expand-list`
-* `sigma` dizininden `expand` alan değiştiricilerini çıkarın: `hayabusa.exe eid-metrics -r ../sigma`
+* `sigma` dizininden `expand` alan değiştiricilerini çıkarın: `hayabusa.exe expand-list -r ../sigma`
 
 ### `expand-list` sonuçları
 
@@ -234,8 +234,8 @@ Time Format:
 
 ### `extract-base64` komut örnekleri
 
-* Bir dizini tarayın ve terminale çıktı verin: `hayabusa.exe  extract-base64 -d ../hayabusa-sample-evtx`
-* Bir dizini tarayın ve bir CSV dosyasına çıktı verin: `hayabusa.exe eid-metrics -r ../sigma -o base64-extracted.csv`
+* Bir dizini tarayın ve terminale çıktı verin: `hayabusa.exe extract-base64 -d ../hayabusa-sample-evtx`
+* Bir dizini tarayın ve bir CSV dosyasına çıktı verin: `hayabusa.exe extract-base64 -d ../hayabusa-sample-evtx -o base64-extracted.csv`
 
 ### `extract-base64` sonuçları
 
@@ -324,9 +324,9 @@ Time Format:
 
 ### `log-metrics` komut örnekleri
 
-* Tek bir dosyadan Olay Kimliği ölçümlerini yazdırın: `hayabusa.exe log-metrics -f Security.evtx`
-* Bir dizinden Olay Kimliği ölçümlerini yazdırın: `hayabusa.exe log-metrics -d ../logs`
-* Sonuçları bir CSV dosyasına kaydedin: `hayabusa.exe log-metrics -d ../logs -o eid-metrics.csv`
+* Tek bir dosyadan günlük dosyası meta verilerini yazdırın: `hayabusa.exe log-metrics -f Security.evtx`
+* Bir dizinden günlük dosyası meta verilerini yazdırın: `hayabusa.exe log-metrics -d ../logs`
+* Sonuçları bir CSV dosyasına kaydedin: `hayabusa.exe log-metrics -d ../logs -o log-metrics.csv`
 
 ### `log-metrics` ekran görüntüsü
 

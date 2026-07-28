@@ -120,7 +120,7 @@ JSONL 格式速度會稍快一些、檔案大小也較小，因此如果你只�
 
 # 建立 JSON 結果檔案
 
-在目前的 Hayabusa 2.x 版本中，你可以用 `hayabusa dfir-timeline -t json -d <directory> -o results.json` 將結果儲存為 JSON，或用 `hayabusa dfir-timeline -t json -d <directory> -J -o results.jsonl` 儲存為 JSONL 格式。
+在目前的 Hayabusa 版本中，你可以用 `hayabusa dfir-timeline -t json -d <directory> -o results.json` 將結果儲存為 JSON，或用 `hayabusa dfir-timeline -t jsonl -d <directory> -o results.jsonl` 儲存為 JSONL 格式。
 
 Hayabusa 會使用預設的 `standard` 設定檔，並只在 `Details` 物件中儲存最少量的分析資料。
 如果你想儲存 .evtx 日誌中所有原始欄位資訊，你可以使用 `all-field-info` 設定檔搭配 `--profile all-field-info` 選項。

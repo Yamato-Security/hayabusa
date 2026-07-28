@@ -14,8 +14,7 @@
 * `config-critical-systems`: Etki alanı denetleyicileri ve dosya sunucuları gibi kritik sistemleri bulur.
 
 ## DFIR Zaman Çizelgesi Komutları:
-* `dfir-timeline`: Zaman çizelgesini CSV formatında kaydeder.
-* `dfir-timeline`: Zaman çizelgesini JSON/JSONL formatında kaydeder.
+* `dfir-timeline`: Zaman çizelgesini CSV/JSON/JSONL formatında kaydeder.
 * `level-tuning`: Uyarıların `level` değerini özel olarak ayarlar.
 * `list-profiles`: Kullanılabilir çıktı profillerini listeler.
 * `set-default-profile`: Varsayılan profili değiştirir.

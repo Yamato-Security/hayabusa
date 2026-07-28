@@ -168,7 +168,7 @@ Display Settings:
 ### Contoh perintah `expand-list`
 
 * Ekstrak field modifier `expand` dari direktori `rules` default: `hayabusa.exe expand-list`
-* Ekstrak field modifier `expand` dari direktori `sigma`: `hayabusa.exe eid-metrics -r ../sigma`
+* Ekstrak field modifier `expand` dari direktori `sigma`: `hayabusa.exe expand-list -r ../sigma`
 
 ### Hasil `expand-list`
 
@@ -234,8 +234,8 @@ Time Format:
 
 ### Contoh perintah `extract-base64`
 
-* Pindai direktori dan keluarkan ke terminal: `hayabusa.exe  extract-base64 -d ../hayabusa-sample-evtx`
-* Pindai direktori dan keluarkan ke file CSV: `hayabusa.exe eid-metrics -r ../sigma -o base64-extracted.csv`
+* Pindai direktori dan keluarkan ke terminal: `hayabusa.exe extract-base64 -d ../hayabusa-sample-evtx`
+* Pindai direktori dan keluarkan ke file CSV: `hayabusa.exe extract-base64 -d ../hayabusa-sample-evtx -o base64-extracted.csv`
 
 ### Hasil `extract-base64`
 
@@ -324,9 +324,9 @@ Time Format:
 
 ### Contoh perintah `log-metrics`
 
-* Cetak metrik Event ID dari satu file: `hayabusa.exe log-metrics -f Security.evtx`
-* Cetak metrik Event ID dari sebuah direktori: `hayabusa.exe log-metrics -d ../logs`
-* Simpan hasil ke file CSV: `hayabusa.exe log-metrics -d ../logs -o eid-metrics.csv`
+* Cetak metrik file log dari satu file: `hayabusa.exe log-metrics -f Security.evtx`
+* Cetak metrik file log dari sebuah direktori: `hayabusa.exe log-metrics -d ../logs`
+* Simpan hasil ke file CSV: `hayabusa.exe log-metrics -d ../logs -o log-metrics.csv`
 
 ### Tangkapan layar `log-metrics`
 

@@ -168,7 +168,7 @@ Display Settings:
 ### `expand-list`コマンドの使用例
 
 * デフォルトの`rules`ディレクトリから`expand`フィールド修飾子を抽出する：`hayabusa.exe expand-list`
-* `sigma`ディレクトリから`expand`フィールド修飾子を抽出する：`hayabusa.exe eid-metrics -r ../sigma`
+* `sigma`ディレクトリから`expand`フィールド修飾子を抽出する：`hayabusa.exe expand-list -r ../sigma`
 
 ### `expand-list`結果
 
@@ -235,8 +235,8 @@ Time Format:
 
 ### `extract-base64`コマンドの使用例
 
-* ディレクトリをスキャンし、結果をターミナルに出力します: `hayabusa.exe  extract-base64 -d ../hayabusa-sample-evtx`
-* ディレクトリをスキャンし、結果をCSVファイルに出力します: `hayabusa.exe eid-metrics -r ../sigma -o base64-extracted.csv`
+* ディレクトリをスキャンし、結果をターミナルに出力します: `hayabusa.exe extract-base64 -d ../hayabusa-sample-evtx`
+* ディレクトリをスキャンし、結果をCSVファイルに出力します: `hayabusa.exe extract-base64 -d ../hayabusa-sample-evtx -o base64-extracted.csv`
 
 ### `extract-base64`の結果
 
@@ -328,7 +328,7 @@ Time Format:
 
 * ファイルからログファイルのメトリクスを出力する: `hayabusa.exe log-metrics -f Security.evtx`
 * ディレクトリからログファイルのメトリクスを出力する: `hayabusa.exe log-metrics -d ../logs`
-* 結果をCSVファイルに保存: `hayabusa.exe log-metrics -d ../logs -o eid-metrics.csv`
+* 結果をCSVファイルに保存: `hayabusa.exe log-metrics -d ../logs -o log-metrics.csv`
 
 ### `log-metrics`のスクリーンショット
 

@@ -168,7 +168,7 @@ Display Settings:
 ### Exemples de la commande `expand-list`
 
 * Extraire les modificateurs de champ `expand` du répertoire `rules` par défaut : `hayabusa.exe expand-list`
-* Extraire les modificateurs de champ `expand` du répertoire `sigma` : `hayabusa.exe eid-metrics -r ../sigma`
+* Extraire les modificateurs de champ `expand` du répertoire `sigma` : `hayabusa.exe expand-list -r ../sigma`
 
 ### Résultats de `expand-list`
 
@@ -234,8 +234,8 @@ Time Format:
 
 ### Exemples de la commande `extract-base64`
 
-* Analyser un répertoire et afficher dans le terminal : `hayabusa.exe  extract-base64 -d ../hayabusa-sample-evtx`
-* Analyser un répertoire et écrire dans un fichier CSV : `hayabusa.exe eid-metrics -r ../sigma -o base64-extracted.csv`
+* Analyser un répertoire et afficher dans le terminal : `hayabusa.exe extract-base64 -d ../hayabusa-sample-evtx`
+* Analyser un répertoire et écrire dans un fichier CSV : `hayabusa.exe extract-base64 -d ../hayabusa-sample-evtx -o base64-extracted.csv`
 
 ### Résultats de `extract-base64`
 
@@ -324,9 +324,9 @@ Time Format:
 
 ### Exemples de la commande `log-metrics`
 
-* Afficher les métriques d'identifiants d'événements depuis un seul fichier : `hayabusa.exe log-metrics -f Security.evtx`
-* Afficher les métriques d'identifiants d'événements depuis un répertoire : `hayabusa.exe log-metrics -d ../logs`
-* Enregistrer les résultats dans un fichier CSV : `hayabusa.exe log-metrics -d ../logs -o eid-metrics.csv`
+* Afficher les métriques du fichier journal depuis un seul fichier : `hayabusa.exe log-metrics -f Security.evtx`
+* Afficher les métriques des fichiers journaux depuis un répertoire : `hayabusa.exe log-metrics -d ../logs`
+* Enregistrer les résultats dans un fichier CSV : `hayabusa.exe log-metrics -d ../logs -o log-metrics.csv`
 
 ### Capture d'écran de `log-metrics`
 

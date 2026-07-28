@@ -168,7 +168,7 @@ Display Settings:
 ### Приклади команди `expand-list`
 
 * Витягти модифікатори поля `expand` зі стандартного каталогу `rules`: `hayabusa.exe expand-list`
-* Витягти модифікатори поля `expand` з каталогу `sigma`: `hayabusa.exe eid-metrics -r ../sigma`
+* Витягти модифікатори поля `expand` з каталогу `sigma`: `hayabusa.exe expand-list -r ../sigma`
 
 ### Результати `expand-list`
 
@@ -234,8 +234,8 @@ Time Format:
 
 ### Приклади команди `extract-base64`
 
-* Сканувати каталог і вивести в термінал: `hayabusa.exe  extract-base64 -d ../hayabusa-sample-evtx`
-* Сканувати каталог і вивести у файл CSV: `hayabusa.exe eid-metrics -r ../sigma -o base64-extracted.csv`
+* Сканувати каталог і вивести в термінал: `hayabusa.exe extract-base64 -d ../hayabusa-sample-evtx`
+* Сканувати каталог і вивести у файл CSV: `hayabusa.exe extract-base64 -d ../hayabusa-sample-evtx -o base64-extracted.csv`
 
 ### Результати `extract-base64`
 
@@ -324,9 +324,9 @@ Time Format:
 
 ### Приклади команди `log-metrics`
 
-* Вивести метрики Event ID з одного файлу: `hayabusa.exe log-metrics -f Security.evtx`
-* Вивести метрики Event ID з каталогу: `hayabusa.exe log-metrics -d ../logs`
-* Зберегти результати у файл CSV: `hayabusa.exe log-metrics -d ../logs -o eid-metrics.csv`
+* Вивести метадані файлу журналу з одного файлу: `hayabusa.exe log-metrics -f Security.evtx`
+* Вивести метадані файлів журналів з каталогу: `hayabusa.exe log-metrics -d ../logs`
+* Зберегти результати у файл CSV: `hayabusa.exe log-metrics -d ../logs -o log-metrics.csv`
 
 ### Знімок екрана `log-metrics`
 

@@ -168,7 +168,7 @@ Display Settings:
 ### Exemplos do comando `expand-list`
 
 * Extrair os modificadores de campo `expand` do diretório padrão `rules`: `hayabusa.exe expand-list`
-* Extrair os modificadores de campo `expand` do diretório `sigma`: `hayabusa.exe eid-metrics -r ../sigma`
+* Extrair os modificadores de campo `expand` do diretório `sigma`: `hayabusa.exe expand-list -r ../sigma`
 
 ### Resultados do `expand-list`
 
@@ -234,8 +234,8 @@ Time Format:
 
 ### Exemplos do comando `extract-base64`
 
-* Escanear um diretório e exibir a saída no terminal: `hayabusa.exe  extract-base64 -d ../hayabusa-sample-evtx`
-* Escanear um diretório e gerar a saída em um arquivo CSV: `hayabusa.exe eid-metrics -r ../sigma -o base64-extracted.csv`
+* Escanear um diretório e exibir a saída no terminal: `hayabusa.exe extract-base64 -d ../hayabusa-sample-evtx`
+* Escanear um diretório e gerar a saída em um arquivo CSV: `hayabusa.exe extract-base64 -d ../hayabusa-sample-evtx -o base64-extracted.csv`
 
 ### Resultados do `extract-base64`
 
@@ -324,9 +324,9 @@ Time Format:
 
 ### Exemplos do comando `log-metrics`
 
-* Exibir métricas de Event ID a partir de um único arquivo: `hayabusa.exe log-metrics -f Security.evtx`
-* Exibir métricas de Event ID a partir de um diretório: `hayabusa.exe log-metrics -d ../logs`
-* Salvar os resultados em um arquivo CSV: `hayabusa.exe log-metrics -d ../logs -o eid-metrics.csv`
+* Exibir métricas do arquivo de log a partir de um único arquivo: `hayabusa.exe log-metrics -f Security.evtx`
+* Exibir métricas dos arquivos de log a partir de um diretório: `hayabusa.exe log-metrics -d ../logs`
+* Salvar os resultados em um arquivo CSV: `hayabusa.exe log-metrics -d ../logs -o log-metrics.csv`
 
 ### Captura de tela do `log-metrics`
 
