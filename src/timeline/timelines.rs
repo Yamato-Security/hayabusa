@@ -544,44 +544,48 @@ impl Timeline {
             .as_ref()
             .unwrap()
             .time_format_options;
-        let mut sorted_entries: Vec<_> = self.stats.stats_login_list.iter().collect();
+        // Collect only the rows this table will actually emit. `stats_login_list` holds the union
+        // of the successful and failed logon groups, and a group with no logons of the kind being
+        // rendered is not displayed, so filtering first keeps those rows out of the sort — whose
+        // tie-break compares all nine `LoginEvent` strings.
+        let mut sorted_entries: Vec<_> = self
+            .stats
+            .stats_login_list
+            .iter()
+            .filter(|(_, logon_stats)| logon_stats.counts[result_index] != 0)
+            .collect();
         sorted_entries.sort_by(|x, y| logon_summary_row_order(*x, *y, result_index));
         for (login_event, values) in &sorted_entries {
-            // Do not display entries with a count of zero.
-            if values.counts[result_index] == 0 {
-                continue;
-            } else {
-                let vnum_str = values.counts[result_index].to_string();
-                let first_str = match values.first[result_index] {
-                    Some(timestamp) => utils::format_time(&timestamp, false, tfo).to_string(),
-                    None => "-".to_string(),
-                };
-                let last_str = match values.last[result_index] {
-                    Some(timestamp) => utils::format_time(&timestamp, false, tfo).to_string(),
-                    None => "-".to_string(),
-                };
-                let record_data = vec![
-                    vnum_str.as_str(),
-                    first_str.as_str(),
-                    last_str.as_str(),
-                    login_event.channel.as_str(),
-                    login_event.dst_user.as_str(),
-                    login_event.dst_domain.as_str(),
-                    login_event.hostname.as_str(),
-                    login_event.logontype.as_str(),
-                    login_event.src_user.as_str(),
-                    login_event.src_domain.as_str(),
-                    login_event.source_computer.as_str(),
-                    login_event.source_ip.as_str(),
-                ];
-                if let Some(ref mut writer) = wtr {
-                    writer.write_record(&record_data).ok();
-                }
-                let row = record_data;
-                logins_stats_tb.add_row([
-                    row[0], row[1], row[2], row[3], row[4], row[6], row[10], row[11],
-                ]);
+            let vnum_str = values.counts[result_index].to_string();
+            let first_str = match values.first[result_index] {
+                Some(timestamp) => utils::format_time(&timestamp, false, tfo).to_string(),
+                None => "-".to_string(),
+            };
+            let last_str = match values.last[result_index] {
+                Some(timestamp) => utils::format_time(&timestamp, false, tfo).to_string(),
+                None => "-".to_string(),
+            };
+            let record_data = vec![
+                vnum_str.as_str(),
+                first_str.as_str(),
+                last_str.as_str(),
+                login_event.channel.as_str(),
+                login_event.dst_user.as_str(),
+                login_event.dst_domain.as_str(),
+                login_event.hostname.as_str(),
+                login_event.logontype.as_str(),
+                login_event.src_user.as_str(),
+                login_event.src_domain.as_str(),
+                login_event.source_computer.as_str(),
+                login_event.source_ip.as_str(),
+            ];
+            if let Some(ref mut writer) = wtr {
+                writer.write_record(&record_data).ok();
             }
+            let row = record_data;
+            logins_stats_tb.add_row([
+                row[0], row[1], row[2], row[3], row[4], row[6], row[10], row[11],
+            ]);
         }
         // If there is no row data, display a message indicating no detections.
         if logins_stats_tb.row_iter().len() == 0 {
