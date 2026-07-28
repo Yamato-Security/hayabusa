@@ -1,6 +1,6 @@
 # 変更点
 
-## x.x.x [xxxx/xx/xx]
+## 4.0.0 [2026/07/29] - Black Hat Arsenal USA Release
 
 **改善:**
 
@@ -11,6 +11,7 @@
 
 **バグ修正:**
 
+- `eid-metrics`・`logon-summary`・`pivot-keywords-list` の出力順が実行のたびに変わり、同じログをスキャンした結果同士を差分比較できない問題を修正した。`eid-metrics` と `logon-summary` は件数のみでソートしていたため、件数が同じ行はプロセスごとに再シードされる `HashMap` の反復順のままになっていた。同数の場合はチャンネルとイベントID、およびログオンのグルーピングキーで順序を決めるようにした。`pivot-keywords-list` は各カテゴリのキーワードを `IndexSet` の挿入順で書き出していたが、値はレコードごとの並列タスクから挿入されるため順序が変動していた。ソートしてから出力するようにした。変わるのは順序だけで、行やキーワードの内容は同じである。 (#1912) (@YamatoSecurity)
 - 結果サマリのテーブルで、上位5件のルールタイトルや作成者名にマルチバイト UTF-8（例: 日本語のルールタイトル）が含まれる場合にパニックする問題を修正した。タイトル/作成者をバイト単位のスライス（`&title[..32]`・`&author[0..24]`）で切り詰めていたため、バイト位置がマルチバイト文字の途中に来るとパニックしていた。出力をパイプ/リダイレクトした場合（幅の既定値により32バイトを超えるタイトルが切り詰められる）、スキャン完了後に実行全体がクラッシュし、サマリが失われていた。切り詰めを文字境界で行うようにし、幅の上限計算にも飽和減算を用いて、極端に狭いターミナルでもアンダーフローしないようにした。 (#1904) (@YamatoSecurity)
 - `ComplexData` のイベントフィールド（例: Kernel-Processor-Power EID `26` の `IdleState`/`PerfState` の値）が正しく抽出されない問題を修正した。2つの `Name` 属性が `Name` の配列にまとめられ、フィールドの値が失われていた。通常の `<Data>` フィールドと同様に、`Name` 属性をキーとして展開するようにした（同梱の `hayabusa-evtx` を `0.9.10` に更新して修正）。 (#1520) (@YamatoSecurity)
 - `pivot-keywords-list` で `-c`（カスタムのルール設定ディレクトリ）が無視され、常に実行ファイル同梱の `pivot_keywords.txt` を読み込んでいた問題を修正した。他の設定ファイルと同様に、`pivot_keywords.txt` を `-c` ディレクトリ経由で解決するようにした（存在しない場合は同梱コピーにフォールバック）。 (#1902) (@YamatoSecurity)
@@ -26,6 +27,7 @@
 
 **その他:**
 
+- Rustのクレート依存関係をすべて最新版に更新した。同梱の `hayabusa-evtx` クレートも `0.9.11` に更新している（hayabusa-evtx#93）。このリリースは依存関係の更新のみで `.rs` の変更を含まないため、evtxの解析挙動は変わらない。60個のevtxファイルからなるコーパスで、`dfir-timeline` の CSV/JSON/JSONL 出力（`-x, --recover-records` 併用時を含む）と `log-metrics` の出力がバイト単位で同一であることを確認した。 (#1912) (@YamatoSecurity)
 - `DefaultMatcher` のパイプ修飾子の処理を、`src/detections/rule/matchers/modifiers/` 配下のカテゴリ別モジュール（`string`・`regex`・`numeric`・`cidr`・`fieldref`・`encoding`）に再編した。各修飾子のロジック（パターンのラップ/ワイルドカード変換、正規表現フラグ、数値比較、cidr、フィールド参照、base64/utf16 エンコード）は、これまで `pipe_element.rs` と `default_matcher.rs` に散らばった手書きの `match` 分岐にあったが、グループごとに1つのカテゴリモジュールにまとめ、値を直接マッチする修飾子（cidr/numeric/fieldref）は小さな `ValueMatcher` トレイトの背後に置いたため、`DefaultMatcher::is_match_inner` は `value_match` の1回の呼び出しになった。`PipeElement` 列挙型と #1862 の `MatchPlan` による正規化は変更していないため、Sigma 修飾子の追加は複数のディスパッチ箇所ではなく1つのカテゴリモジュールの編集で済む。純粋な再編で、157個のマッチャーテストがパスし、検知結果の出力はバイト単位で同一（サンプルevtxの CSV/JSON/search と、2,838個のevtxに対する `csv-timeline` コーパス）。 (#1895) (@YamatoSecurity)
 - `src/detections/rule/mod.rs`（モジュール宣言と、コアとなるルール型や大きなテストモジュールが混在した約1,200行）を、`RuleNode`・`DetectionNode`・`CorrelationType`・`create_rule`/`get_detection_keys`・テストを収めた新しい `rulenode.rs` に分離し、`AggResult` は（それを生成する集計ロジックと、依存先の `AggRecordTimeInfo` の隣である）`count.rs` に移動した。`mod.rs` はモジュールの取りまとめと再エクスポートのみになり、既存のインポートパスはすべて変更なしで動作する。純粋なコード移動で、検知結果の出力はバイト単位で同一。 (#1890) (@YamatoSecurity)
 - `src/main.rs` の約860行に及ぶ `App::analysis_files` 関数をリファクタリングした。この関数は対話式のルールセットウィザード全体、可読性の低い5つの位置引数を取るカウント用クロージャ、アドホックなチャンネルフィルタ、プログレスバーの構築をインラインで抱え込んでいた。4つの名前付きユニットを抽出した: `run_scan_wizard()`（対話式ウィザード全体。選択されたルールセットのラベルを返す）、`calculate_wizard_rule_count()`（先頭の `bool` と3つの `Vec<&str>` という位置引数の代わりに `WizardCountFilter` 構造体を取る自由関数に昇格したクロージャ。ユニットテスト付き）、`apply_channel_filters()`（`logon-summary`/`config-critical-systems`/`log-metrics` のアドホックなチャンネルフィルタ）、`build_progress_bar()`。`analysis_files` は、合計の表示・ウィザード・ルール読み込み・フィルタ・スキャンループ・出力、という流れで読めるようになった。挙動に変更はない — 影響を受けるすべてのサブコマンドで出力はバイト単位で同一であり、対話式ウィザードの経路（`--no-wizard` のスキャンでは通らない）は敵対的レビューによって忠実な行単位の移動であることを確認した。 (#1885) (@YamatoSecurity)

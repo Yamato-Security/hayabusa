@@ -1,6 +1,6 @@
 # Changes
 
-## x.x.x [xxxx/xx/xx]
+## 4.0.0 [2026/07/29] - Black Hat Arsenal USA Release
 
 **Enhancements:**
 
@@ -13,6 +13,7 @@
 
 **Bug Fixes:**
 
+- Fixed `eid-metrics`, `logon-summary` and `pivot-keywords-list` producing differently ordered output on every run, so two scans of the same logs could not be diffed. `eid-metrics` and `logon-summary` sorted only by count, leaving equal-count rows in `HashMap` iteration order, which is reseeded per process; ties are now broken by channel and event ID, and by the logon grouping key. `pivot-keywords-list` wrote each category's keywords in `IndexSet` insertion order, which varies because the values are inserted from the per-record parallel tasks; they are now sorted. Only the ordering changes -- the rows and keywords themselves are the same. (#1912) (@YamatoSecurity)
 - Fixed a panic in the results-summary tables when a top-5 rule title or author name contained multi-byte UTF-8 (e.g. a Japanese rule title). The titles/authors were truncated with a raw byte slice (`&title[..32]`, `&author[0..24]`), which panics when the byte index falls inside a multi-byte character — so with piped/redirected output (where the width defaults such that titles over 32 bytes are truncated) the whole run crashed *after* the scan finished, losing the summary. Truncation is now done at character boundaries, and the width limits use saturating subtraction so very narrow terminals no longer underflow. (#1904) (@YamatoSecurity)
 - Fixed `ComplexData` event fields (e.g. the `IdleState`/`PerfState` values in Kernel-Processor-Power EID `26`) not being extracted correctly: the two `Name` attributes collapsed into a `Name` array and the field values were dropped entirely. They are now keyed by their `Name` attribute like normal `<Data>` fields (fixed in the bundled `hayabusa-evtx`, bumped to `0.9.10`). (#1520) (@YamatoSecurity)
 - Fixed `-c` (custom rules config directory) being ignored by `pivot-keywords-list`, which always loaded `pivot_keywords.txt` from the bundled config next to the executable. It now resolves `pivot_keywords.txt` through the `-c` directory (falling back to the bundled copy), the same way every other config file is loaded. (#1902) (@YamatoSecurity)
@@ -28,6 +29,7 @@
 
 **Other:**
 
+- Updated all Rust crate dependencies to their latest versions, including the bundled `hayabusa-evtx` crate to `0.9.11` (hayabusa-evtx#93). That release is a dependency refresh with no `.rs` changes, so evtx parsing behavior is unchanged: `dfir-timeline` CSV/JSON/JSONL output (including with `-x, --recover-records`) and `log-metrics` output are byte-identical over a 60-file evtx corpus. (#1912) (@YamatoSecurity)
 - The version number in every command's CLI help banner (`Hayabusa vX.Y.Z - <Release Name>`) is now filled in automatically from `Cargo.toml` at compile time via `env!("CARGO_PKG_VERSION")`, instead of being hard-coded in each `help_template`. The release name lives in a single `RELEASE_NAME` constant in `src/detections/configs.rs`. Cutting a release now means bumping the version in `Cargo.toml` and editing that one constant, rather than hand-updating the banner in every subcommand. Help output is byte-identical. (#1909) (@YamatoSecurity)
 - Bumped the `compact_str` dependency from 0.9 to 0.10. (#1909) (@YamatoSecurity)
 - Renamed 292 one-character local variables — `let`/`for`/`if let` bindings, closure parameters, and a few function parameters — to descriptive names based on what each value holds (e.g. a value read from `["System"]["Computer"]` is now `computer`, a `File::open` result is `file`, a record row in a `.map` is `row`, a Sigma tag closure `|x|` is `|tag|`). Idiomatic names were kept (`Err(e)` error bindings, loop indices, trivial throwaway closures), and no struct fields, serde identifiers, function/type/macro names, or public API were touched. Pure rename with no functional change: the release binary's `.text` (machine code) section is byte-identical to before, and the `csv-timeline`/`json-timeline` output over the 599-file sample-evtx corpus is byte-for-byte unchanged. (#1905) (@YamatoSecurity)

@@ -156,7 +156,12 @@ pub fn fmt_headers(mut output: String, key: &String, pivot_keyword: &PivotKeywor
 
 /// Appends each collected keyword value on its own line to `output`.
 pub fn fmt_keywords_results(mut output: String, pivot_keyword: &PivotKeyword) -> String {
-    for keyword in pivot_keyword.keywords.iter() {
+    // `keywords` is an `IndexSet`, so it iterates in insertion order — and the values are inserted
+    // from the per-record parallel tasks, which means that order differs on every run. Sort so the
+    // emitted list is reproducible; both the file and the standard-output paths come through here.
+    let mut keywords: Vec<&String> = pivot_keyword.keywords.iter().collect();
+    keywords.sort_unstable();
+    for keyword in keywords {
         writeln!(output, "{keyword}").ok();
     }
     output
@@ -168,9 +173,39 @@ mod tests {
     use crate::detections::configs::load_eventkey_alias;
     use crate::detections::configs::load_pivot_keywords;
     use crate::detections::utils;
-    use crate::options::pivot::{PivotKeywordMap, insert_pivot_keyword};
+    use crate::options::pivot::{
+        PivotKeyword, PivotKeywordMap, fmt_keywords_results, insert_pivot_keyword,
+    };
     use serde_json;
     use std::sync::RwLock;
+
+    /// The keyword list must be emitted in sorted order, not `IndexSet` insertion order: the
+    /// values are inserted from the per-record parallel tasks, so insertion order differs on every
+    /// run and made `pivot-keywords-list` output impossible to diff between runs. Both the file
+    /// and the standard-output paths render through this helper.
+    #[test]
+    fn fmt_keywords_results_sorts_keywords() {
+        let mut pivot_keyword = PivotKeyword::default();
+        // Deliberately inserted out of order, as the parallel scan tasks would.
+        for keyword in ["z-host", "a-host", "m-host"] {
+            pivot_keyword.keywords.insert(keyword.to_string());
+        }
+
+        assert_eq!(
+            fmt_keywords_results(String::new(), &pivot_keyword),
+            "a-host\nm-host\nz-host\n"
+        );
+
+        // The emitted order must not depend on the order the values happened to arrive in.
+        let mut reversed = PivotKeyword::default();
+        for keyword in ["m-host", "a-host", "z-host"] {
+            reversed.keywords.insert(keyword.to_string());
+        }
+        assert_eq!(
+            fmt_keywords_results(String::new(), &reversed),
+            fmt_keywords_results(String::new(), &pivot_keyword)
+        );
+    }
 
     #[test]
     fn insert_pivot_keyword_local_ip4() {

@@ -25,7 +25,7 @@ use terminal_size::Width;
 use terminal_size::terminal_size;
 
 use super::computer_metrics;
-use super::metrics::EventMetrics;
+use super::metrics::{EventMetrics, LoginEvent, LogonStats};
 use super::search::EventSearch;
 use crate::timeline::config_critical_systems::ConfigCriticalSystems;
 use crate::timeline::extract_base64::{output_all, process_evtx_record_infos};
@@ -40,6 +40,40 @@ use itertools::Itertools;
 /// the table overflow the very narrow terminals the floor was meant to handle. (#1817)
 fn eid_metrics_event_col_width(terminal_width: u16) -> u16 {
     cmp::max(terminal_width.saturating_sub(55), 45)
+}
+
+/// Row ordering for the `eid-metrics` table: aggregated count descending, then channel and event ID
+/// ascending.
+///
+/// The tie-break is what makes the output reproducible. The counts live in a `HashMap`, whose
+/// iteration order depends on the per-process `RandomState` seed, so ordering by count alone left
+/// equal-count rows in a different arrangement on every run — the same scan of the same logs
+/// produced a differently ordered table each time, making any two runs pointlessly diff-noisy.
+fn eid_metrics_row_order(
+    (x_key, x_count): (&(CompactString, CompactString), &usize),
+    (y_key, y_count): (&(CompactString, CompactString), &usize),
+) -> cmp::Ordering {
+    let (x_event_id, x_channel) = x_key;
+    let (y_event_id, y_channel) = y_key;
+    y_count
+        .cmp(x_count)
+        .then_with(|| x_channel.cmp(y_channel))
+        .then_with(|| x_event_id.cmp(y_event_id))
+}
+
+/// Row ordering for one of the `logon-summary` tables: logon count for the table being rendered
+/// (`result_index` 0 = successful, 1 = failed) descending, then the grouping key ascending.
+///
+/// Same reasoning as [`eid_metrics_row_order`] — `stats_login_list` is a `HashMap`, so without the
+/// tie-break equal-count rows come out in the per-process hash order.
+fn logon_summary_row_order(
+    (x_key, x_stats): (&LoginEvent, &LogonStats),
+    (y_key, y_stats): (&LoginEvent, &LogonStats),
+    result_index: usize,
+) -> cmp::Ordering {
+    y_stats.counts[result_index]
+        .cmp(&x_stats.counts[result_index])
+        .then_with(|| x_key.cmp(y_key))
 }
 
 /// Aggregated state for the non-detection commands (eid-metrics, logon-summary, log-metrics,
@@ -204,9 +238,8 @@ impl Timeline {
 
         stats_tb.set_header(header_cells);
 
-        // Sort by aggregated count in descending order.
         let mut sorted_entries: Vec<_> = self.stats.stats_list.iter().collect();
-        sorted_entries.sort_by(|x, y| y.1.cmp(x.1));
+        sorted_entries.sort_by(|x, y| eid_metrics_row_order(*x, *y));
 
         // Generate an output message for each Event ID.
         let stats_msgs: Nested<Vec<CompactString>> =
@@ -511,45 +544,48 @@ impl Timeline {
             .as_ref()
             .unwrap()
             .time_format_options;
-        // Sort by aggregated count in descending order.
-        let mut sorted_entries: Vec<_> = self.stats.stats_login_list.iter().collect();
-        sorted_entries.sort_by(|x, y| y.1.counts[result_index].cmp(&x.1.counts[result_index]));
+        // Collect only the rows this table will actually emit. `stats_login_list` holds the union
+        // of the successful and failed logon groups, and a group with no logons of the kind being
+        // rendered is not displayed, so filtering first keeps those rows out of the sort — whose
+        // tie-break compares all nine `LoginEvent` strings.
+        let mut sorted_entries: Vec<_> = self
+            .stats
+            .stats_login_list
+            .iter()
+            .filter(|(_, logon_stats)| logon_stats.counts[result_index] != 0)
+            .collect();
+        sorted_entries.sort_by(|x, y| logon_summary_row_order(*x, *y, result_index));
         for (login_event, values) in &sorted_entries {
-            // Do not display entries with a count of zero.
-            if values.counts[result_index] == 0 {
-                continue;
-            } else {
-                let vnum_str = values.counts[result_index].to_string();
-                let first_str = match values.first[result_index] {
-                    Some(timestamp) => utils::format_time(&timestamp, false, tfo).to_string(),
-                    None => "-".to_string(),
-                };
-                let last_str = match values.last[result_index] {
-                    Some(timestamp) => utils::format_time(&timestamp, false, tfo).to_string(),
-                    None => "-".to_string(),
-                };
-                let record_data = vec![
-                    vnum_str.as_str(),
-                    first_str.as_str(),
-                    last_str.as_str(),
-                    login_event.channel.as_str(),
-                    login_event.dst_user.as_str(),
-                    login_event.dst_domain.as_str(),
-                    login_event.hostname.as_str(),
-                    login_event.logontype.as_str(),
-                    login_event.src_user.as_str(),
-                    login_event.src_domain.as_str(),
-                    login_event.source_computer.as_str(),
-                    login_event.source_ip.as_str(),
-                ];
-                if let Some(ref mut writer) = wtr {
-                    writer.write_record(&record_data).ok();
-                }
-                let row = record_data;
-                logins_stats_tb.add_row([
-                    row[0], row[1], row[2], row[3], row[4], row[6], row[10], row[11],
-                ]);
+            let vnum_str = values.counts[result_index].to_string();
+            let first_str = match values.first[result_index] {
+                Some(timestamp) => utils::format_time(&timestamp, false, tfo).to_string(),
+                None => "-".to_string(),
+            };
+            let last_str = match values.last[result_index] {
+                Some(timestamp) => utils::format_time(&timestamp, false, tfo).to_string(),
+                None => "-".to_string(),
+            };
+            let record_data = vec![
+                vnum_str.as_str(),
+                first_str.as_str(),
+                last_str.as_str(),
+                login_event.channel.as_str(),
+                login_event.dst_user.as_str(),
+                login_event.dst_domain.as_str(),
+                login_event.hostname.as_str(),
+                login_event.logontype.as_str(),
+                login_event.src_user.as_str(),
+                login_event.src_domain.as_str(),
+                login_event.source_computer.as_str(),
+                login_event.source_ip.as_str(),
+            ];
+            if let Some(ref mut writer) = wtr {
+                writer.write_record(&record_data).ok();
             }
+            let row = record_data;
+            logins_stats_tb.add_row([
+                row[0], row[1], row[2], row[3], row[4], row[6], row[10], row[11],
+            ]);
         }
         // If there is no row data, display a message indicating no detections.
         if logins_stats_tb.row_iter().len() == 0 {
@@ -812,13 +848,114 @@ mod tests {
         assert_eq!(super::eid_metrics_event_col_width(200), 145);
     }
 
+    /// The `eid-metrics` row order must be a *total* order, so that the same aggregated counts
+    /// always render in the same sequence. Ordering by count alone left equal-count rows in
+    /// `HashMap` iteration order, which is reseeded per process, so consecutive runs over the same
+    /// logs produced differently ordered tables.
+    #[test]
+    fn test_eid_metrics_row_order_is_total() {
+        let key = |event_id: &str, channel: &str| {
+            (CompactString::from(event_id), CompactString::from(channel))
+        };
+        // Deliberately not in the expected output order, and with three rows tied on 7.
+        let rows = vec![
+            (key("4625", "sec"), 7usize),
+            (key("1", "sysmon"), 9),
+            (key("4624", "sec"), 7),
+            (key("4104", "pwsh"), 7),
+            (key("4688", "sec"), 12),
+        ];
+
+        let sorted = |mut input: Vec<((CompactString, CompactString), usize)>| {
+            input.sort_by(|x, y| super::eid_metrics_row_order((&x.0, &x.1), (&y.0, &y.1)));
+            input
+                .into_iter()
+                .map(|((event_id, channel), count)| format!("{count} {channel} {event_id}"))
+                .collect::<Vec<_>>()
+        };
+
+        // Higher counts first; within the tie on 7, channel ascending then event ID ascending.
+        assert_eq!(
+            sorted(rows.clone()),
+            vec![
+                "12 sec 4688",
+                "9 sysmon 1",
+                "7 pwsh 4104",
+                "7 sec 4624",
+                "7 sec 4625",
+            ]
+        );
+
+        // Any starting arrangement must land on that same order — that is what "total" buys us.
+        let mut rotated = rows.clone();
+        rotated.reverse();
+        assert_eq!(sorted(rotated), sorted(rows.clone()));
+        let mut swapped = rows.clone();
+        swapped.swap(0, 2);
+        assert_eq!(sorted(swapped), sorted(rows));
+    }
+
+    /// Same guarantee for the `logon-summary` tables: ties on the count being rendered are broken
+    /// by the grouping key, so the rows do not shuffle between runs.
+    #[test]
+    fn test_logon_summary_row_order_is_total() {
+        let event = |dst_user: &str, source_ip: &str| LoginEvent {
+            channel: CompactString::from("sec"),
+            dst_user: CompactString::from(dst_user),
+            dst_domain: CompactString::default(),
+            hostname: CompactString::default(),
+            logontype: CompactString::from("3"),
+            src_user: CompactString::default(),
+            src_domain: CompactString::default(),
+            source_computer: CompactString::default(),
+            source_ip: CompactString::from(source_ip),
+        };
+        let stats = |successful: usize, failed: usize| LogonStats {
+            counts: [successful, failed],
+            first: [None, None],
+            last: [None, None],
+        };
+        // `bob` and `alice` tie on successful logons; `carol` ties with `alice` on failed ones.
+        let rows = vec![
+            (event("bob", "10.0.0.2"), stats(4, 1)),
+            (event("carol", "10.0.0.3"), stats(9, 2)),
+            (event("alice", "10.0.0.1"), stats(4, 2)),
+        ];
+
+        let sorted = |input: &Vec<(LoginEvent, LogonStats)>, result_index: usize| {
+            let mut input = input.clone();
+            input.sort_by(|x, y| {
+                super::logon_summary_row_order((&x.0, &x.1), (&y.0, &y.1), result_index)
+            });
+            input
+                .into_iter()
+                .map(|(login_event, logon_stats)| {
+                    format!(
+                        "{} {}",
+                        logon_stats.counts[result_index], login_event.dst_user
+                    )
+                })
+                .collect::<Vec<_>>()
+        };
+
+        // Successful table: carol (9) first, then the 4-tie broken by dst_user ascending.
+        assert_eq!(sorted(&rows, 0), vec!["9 carol", "4 alice", "4 bob"]);
+        // Failed table ranks the same rows differently, and breaks its own tie the same way.
+        assert_eq!(sorted(&rows, 1), vec!["2 alice", "2 carol", "1 bob"]);
+
+        let mut reversed = rows.clone();
+        reversed.reverse();
+        assert_eq!(sorted(&reversed, 0), sorted(&rows, 0));
+        assert_eq!(sorted(&reversed, 1), sorted(&rows, 1));
+    }
+
     use chrono::{DateTime, NaiveDateTime, Utc};
     use compact_str::CompactString;
     use hashbrown::{HashMap, HashSet};
     use nested::Nested;
 
     use crate::detections::configs::TimeFormatOptions;
-    use crate::timeline::metrics::LoginEvent;
+    use crate::timeline::metrics::{LoginEvent, LogonStats};
     use crate::{
         detections::{
             configs::{
