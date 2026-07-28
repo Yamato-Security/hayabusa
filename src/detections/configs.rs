@@ -1459,9 +1459,9 @@ pub struct OutputOption {
     #[clap(flatten)]
     pub input_args: InputOption,
 
-    /// Duplicate field data will be replaced with "DUP" (CSV output only, sort required)
+    /// Duplicate field data will be replaced with "DUP" (sort required)
     #[arg(
-            help_heading = Some("CSV Output"),
+            help_heading = Some("Output"),
             short = 'R',
             long = "remove-duplicate-data",
             requires = "sort_events",

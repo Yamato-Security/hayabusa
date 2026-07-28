@@ -106,7 +106,7 @@ hayabusa-x.x.x-win-x64.exe dfir-timeline -d <DIR> -o timesketch-import.csv -p ti
 
 `Select file to upload`ダイアログでタイムラインに hayabusa などの名前を付け、CSVの区切り文字として Comma (,) を選択し、`SUBMIT`をクリックします。
 
-> CSVファイルが大きすぎる場合、Takajoの split-dfir-timeline コマンドを使用して分割できます。
+> CSVファイルが大きすぎる場合、Takajoの split-csv-timeline コマンドを使用して分割できます。
 
 ファイルのインポート中は、回転する円が表示されます。処理が完了し、`hayabusa`が表示されるまでお待ちください。
 

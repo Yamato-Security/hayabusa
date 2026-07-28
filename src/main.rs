@@ -51,6 +51,7 @@ use rand::prelude::*;
 use rust_embed::Embed;
 use serde_json::{Map, Value};
 use std::borrow::BorrowMut;
+use std::cell::Cell;
 use std::ffi::{OsStr, OsString};
 use std::fmt::Display;
 use std::fmt::Write as _;
@@ -103,6 +104,10 @@ fn main() {
     let mut app = App::new(stored_static.thread_number);
     app.exec(&mut config_reader.app, &mut stored_static);
     app.runtime.shutdown_background();
+    if app.failed.get() {
+        // The run was rejected or aborted before producing output; do not report success.
+        std::process::exit(1);
+    }
 }
 
 /// RAII guard that disables WOW64 filesystem redirection while it is alive and restores the
@@ -149,6 +154,14 @@ impl Drop for Wow64RedirectionGuard {
 /// field keys referenced by the loaded detection rules.
 pub struct App {
     runtime: Runtime,
+    /// Set when a run is aborted by a usage or environment error, so `main` can exit non-zero.
+    ///
+    /// The abort paths below report the problem and `return`, which — because `exec` returns `()`
+    /// and `main` then ends normally — used to leave the exit status at 0. A script or CI job
+    /// checking `$?` could not tell a rejected command from a completed scan. A flag rather than
+    /// `process::exit` because the unit tests drive `exec` into several of these paths and would
+    /// otherwise take the test process down with them.
+    failed: Cell<bool>,
     rule_keys: Nested<String>,
     /// Records how long each processing phase takes; printed per-phase only with `--debug`,
     /// with the accumulated total shown as "Elapsed time" in the results summary.
@@ -403,6 +416,7 @@ impl App {
     pub fn new(thread_number: Option<usize>) -> App {
         App {
             runtime: utils::create_tokio_runtime(thread_number),
+            failed: Cell::new(false),
             rule_keys: Nested::<String>::new(),
             checkpoint: CheckPointProcessTimer::create_checkpoint_timer(),
         }
@@ -454,6 +468,11 @@ impl App {
         if let Some(Action::DfirTimeline(opt)) = &stored_static.config.action
             && !matches!(opt.output_type, OutputType::Csv)
         {
+            // `-R, --remove-duplicate-data` is deliberately not in this list: it applies to every
+            // output format. It only replaces a repeated field value with "DUP", which the JSON
+            // writer implements too (`output_json_str`), and it is a field of the shared
+            // `OutputOption` rather than of `DfirTimelineOption`. Grouping it with these two by
+            // proximity would regress `json-timeline -R`, a supported v3 invocation.
             let mut csv_only = vec![];
             if opt.multiline {
                 csv_only.push("-M, --multiline");
@@ -461,15 +480,13 @@ impl App {
             if opt.tab_separator {
                 csv_only.push("-S, --tab-separator");
             }
-            if opt.output_options.remove_duplicate_data {
-                csv_only.push("-R, --remove-duplicate-data");
-            }
             if !csv_only.is_empty() {
                 AlertMessage::alert(&format!(
                     "The following option(s) only apply to CSV output and cannot be used with the selected -t, --output-type: {}",
                     csv_only.join(", ")
                 ))
                 .ok();
+                self.failed.set(true);
                 return;
             }
         }
@@ -649,6 +666,7 @@ impl App {
                 // Check the rule config folder and files, and terminate if there are errors.
                 if let Err(e) = utils::check_rule_config(&stored_static.config_path) {
                     AlertMessage::alert(&e).ok();
+                    self.failed.set(true);
                     return;
                 }
                 if stored_static.profiles.is_none() {
@@ -694,6 +712,7 @@ impl App {
                 {
                     AlertMessage::alert("It is not necessary to specify -A (--enable-all-rules) or -a (--scan-all-evtx-files) with -J (--json-input) because the default channel filter only works with EVTX files.").ok();
                     println!();
+                    self.failed.set(true);
                     return;
                 }
                 self.analysis_start(
@@ -1315,6 +1334,7 @@ Any hostnames added to the critical_systems.txt file will have all alerts above 
         // Terminate with an alert if the rules directory does not exist.
         if !rule_dir.exists() {
             AlertMessage::alert("The rules directory does not exist. Please check the path.").ok();
+            self.failed.set(true);
             return;
         }
         println!();
@@ -1516,6 +1536,7 @@ Any hostnames added to the critical_systems.txt file will have all alerts above 
             }
             if evtx_files.is_empty() {
                 AlertMessage::alert("No .evtx files were found.").ok();
+                self.failed.set(true);
                 return;
             }
             self.analysis_files(
@@ -1543,6 +1564,7 @@ Any hostnames added to the critical_systems.txt file will have all alerts above 
                         filepath.as_os_str().to_str().unwrap()
                     ))
                     .ok();
+                    self.failed.set(true);
                     return;
                 }
                 if !target_extensions.contains(
@@ -1563,6 +1585,7 @@ Any hostnames added to the critical_systems.txt file will have all alerts above 
                         "-f (--filepath) only accepts .evtx files. Hidden files are ignored. If you want to input event logs in JSON format, please specify -J (--json-input).",
                     )
                     .ok();
+                    self.failed.set(true);
                     return;
                 }
                 self.analysis_files(
@@ -2182,6 +2205,7 @@ Any hostnames added to the critical_systems.txt file will have all alerts above 
                         "No rules were loaded. Please download the latest rules with the update-rules command.\r\n",
                     )
                     .ok();
+                self.failed.set(true);
                 return;
             }
             if !stored_static.json_input_flag
@@ -3410,7 +3434,8 @@ mod tests {
             configs::{
                 Action, ClobberOption, ComputerMetricsOption, Config, ConfigReader,
                 DetectCommonOption, DfirTimelineOption, EidMetricsOption, InputOption,
-                LogonSummaryOption, OutputOption, StoredStatic, TargetEventTime, TargetIds,
+                LogonSummaryOption, OutputOption, OutputType, StoredStatic, TargetEventTime,
+                TargetIds,
             },
             detection,
             rule::create_rule,
@@ -3700,6 +3725,9 @@ mod tests {
                 ..Default::default()
             },
             output: Some(out_overwrite_json_exit_json.clone()),
+            // Without this the fixture falls back to `OutputType::default()` (CSV), so a
+            // test named `..._json` writing a `.json` path exercises the CSV writer.
+            output_type: OutputType::Json,
             ..Default::default()
         });
         let config = Config {
@@ -3742,6 +3770,9 @@ mod tests {
                 ..Default::default()
             },
             output: Some(out_overwrite_json_clobber_json.clone()),
+            // Without this the fixture falls back to `OutputType::default()` (CSV), so a
+            // test named `..._json` writing a `.json` path exercises the CSV writer.
+            output_type: OutputType::Json,
             ..Default::default()
         });
         let config = Config {

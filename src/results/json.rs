@@ -161,14 +161,21 @@ pub fn output_json_str(
                         .prev_details_convert_map
                         .get(format!("#{details_key}").as_str())
                         .unwrap_or(&empty);
-                    let dup_flag = (!profile.to_value().is_empty()
-                        && result_state
-                            .prev_message
-                            .get(field_name)
-                            .unwrap_or(&Profile::Literal("".into()))
-                            .to_value()
-                            == profile.to_value())
-                        || (!&now.is_empty() && !&prev.is_empty() && now == prev);
+                    // Compare the RESOLVED per-field values only, never the profile string.
+                    //
+                    // Under JSON output `parse_message` does not substitute `%alias%`, so a
+                    // `Details` profile still holds the rule's template — identical for every event
+                    // matching that rule whatever the record says — and `ExtraFieldInfo` is the
+                    // constant "-". Comparing those strings marked unrelated detections as
+                    // duplicates and replaced genuinely distinct values with "DUP", which is data
+                    // loss rather than de-duplication: two events of one rule running `whoami.exe`
+                    // and `netcat-backdoor.exe` had the second rendered as `"Details":"DUP"`.
+                    //
+                    // `details_convert_map` holds the substituted values, so comparing it means an
+                    // equal compare really is equal data. A field with no entry there is simply
+                    // never suppressed, which is the safe direction. (The CSV path never had this
+                    // problem: it compares the already-substituted value.)
+                    let dup_flag = !now.is_empty() && !prev.is_empty() && now == prev;
                     if dup_flag {
                         // Duplicate of the previous record: output the plain string "DUP"
                         // instead of the value (Profile::Literal emits it as-is). The previous
