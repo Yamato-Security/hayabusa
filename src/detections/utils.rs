@@ -947,7 +947,7 @@ mod tests {
     use crate::detections::field_data_map::FieldDataMapKey;
     use crate::{
         detections::{
-            configs::{Action, Config, CsvOutputOption, OutputOption, StoredStatic},
+            configs::{Action, Config, DfirTimelineOption, OutputOption, StoredStatic},
             utils::{self, check_setting_path, make_ascii_titlecase},
         },
         options::htmlreport::{GENERAL_OVERVIEW_SECTION, HtmlReporter, RESULTS_SUMMARY_SECTION},
@@ -1293,7 +1293,7 @@ mod tests {
     fn test_output_profile() {
         let mut html_reporter = HtmlReporter::default();
         let stored_static = StoredStatic::create_static_data(Config {
-            action: Some(Action::CsvTimeline(CsvOutputOption {
+            action: Some(Action::DfirTimeline(DfirTimelineOption {
                 output_options: OutputOption {
                     profile: Some("super-verbose".to_string()),
                     min_level: "informational".to_string(),

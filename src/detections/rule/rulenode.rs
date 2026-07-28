@@ -480,14 +480,14 @@ pub(crate) mod tests {
     use super::RuleNode;
     use crate::detections::{
         self,
-        configs::{Action, Config, CsvOutputOption, OutputOption, StoredStatic},
+        configs::{Action, Config, DfirTimelineOption, OutputOption, StoredStatic},
         rule::create_rule,
         utils,
     };
 
     fn create_dummy_stored_static() -> StoredStatic {
         StoredStatic::create_static_data(Config {
-            action: Some(Action::CsvTimeline(CsvOutputOption {
+            action: Some(Action::DfirTimeline(DfirTimelineOption {
                 output_options: OutputOption {
                     min_level: "informational".to_string(),
                     no_wizard: true,

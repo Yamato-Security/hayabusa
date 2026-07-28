@@ -92,14 +92,13 @@ impl Default for HtmlReporter {
 }
 
 /// Returns true when the csv-timeline or json-timeline action was invoked with the
-/// -H/--HTML-report option.
+/// -H/--html-report option.
 pub fn check_html_flag(config: &Config) -> bool {
     if config.action.as_ref().is_none() {
         return false;
     }
     match &config.action.as_ref().unwrap() {
-        Action::CsvTimeline(option) => option.output_options.html_report.is_some(),
-        Action::JsonTimeline(option) => option.output_options.html_report.is_some(),
+        Action::DfirTimeline(option) => option.output_options.html_report.is_some(),
         _ => false,
     }
 }
@@ -215,9 +214,7 @@ mod tests {
 
     use super::{GENERAL_OVERVIEW_SECTION, img_to_base64};
     use crate::{
-        detections::configs::{
-            Action, Config, CsvOutputOption, JSONOutputOption, OutputOption, StoredStatic,
-        },
+        detections::configs::{Action, Config, DfirTimelineOption, OutputOption, StoredStatic},
         options::htmlreport::{self, HtmlReporter},
     };
 
@@ -307,7 +304,7 @@ mod tests {
 
     #[test]
     fn test_with_config_check_html_flag_csvtimeline() {
-        let enable_csv_action = Action::CsvTimeline(CsvOutputOption {
+        let enable_csv_action = Action::DfirTimeline(DfirTimelineOption {
             output_options: OutputOption {
                 min_level: "informational".to_string(),
                 no_wizard: true,
@@ -319,7 +316,7 @@ mod tests {
         let csv_html_flag_enable = create_dummy_stored_static(Some(enable_csv_action));
         assert!(htmlreport::check_html_flag(&csv_html_flag_enable.config));
 
-        let disable_csv_action = Action::CsvTimeline(CsvOutputOption {
+        let disable_csv_action = Action::DfirTimeline(DfirTimelineOption {
             output_options: OutputOption {
                 min_level: "informational".to_string(),
                 no_wizard: true,
@@ -333,7 +330,7 @@ mod tests {
 
     #[test]
     fn test_with_config_check_html_flag_jsontimeline() {
-        let enable_json_action = Action::JsonTimeline(JSONOutputOption {
+        let enable_json_action = Action::DfirTimeline(DfirTimelineOption {
             output_options: OutputOption {
                 min_level: "informational".to_string(),
                 html_report: Some(Path::new("./dummy").to_path_buf()),
@@ -345,7 +342,7 @@ mod tests {
         let json_html_flag_enable = create_dummy_stored_static(Some(enable_json_action));
         assert!(htmlreport::check_html_flag(&json_html_flag_enable.config));
 
-        let disable_json_action = Action::JsonTimeline(JSONOutputOption {
+        let disable_json_action = Action::DfirTimeline(DfirTimelineOption {
             output_options: OutputOption {
                 min_level: "informational".to_string(),
                 no_wizard: true,

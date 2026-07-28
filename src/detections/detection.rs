@@ -445,7 +445,10 @@ impl Detection {
         let mut profile_converter: HashMap<&str, Profile> = HashMap::new();
         let tags_config_values: Vec<&CompactString> = TAGS_CONFIG.values().collect();
         let eventkey_alias = &stored_static.eventkey_alias;
-        let is_json_timeline = matches!(stored_static.config.action, Some(Action::JsonTimeline(_)));
+        let is_json_timeline = matches!(
+            &stored_static.config.action,
+            Some(Action::DfirTimeline(opt)) if !matches!(opt.output_type, crate::detections::configs::OutputType::Csv)
+        );
         let computer_name = CompactString::from(
             record_info.record["Event"]["System"]["Computer"]
                 .as_str()
@@ -928,7 +931,10 @@ impl Detection {
         let computers =
             Detection::join_agg_values(&agg_result.agg_record_time_info, |x| x.computer.clone());
         let tags_config_values: Vec<&CompactString> = TAGS_CONFIG.values().collect();
-        let is_json_timeline = matches!(stored_static.config.action, Some(Action::JsonTimeline(_)));
+        let is_json_timeline = matches!(
+            &stored_static.config.action,
+            Some(Action::DfirTimeline(opt)) if !matches!(opt.output_type, crate::detections::configs::OutputType::Csv)
+        );
         for (key, profile) in stored_static.profiles.as_ref().unwrap().iter() {
             match profile {
                 Timestamp(_) => {
@@ -1592,7 +1598,7 @@ mod tests {
     use crate::detections::configs::Action;
     use crate::detections::configs::CURRENT_EXE_PATH;
     use crate::detections::configs::Config;
-    use crate::detections::configs::CsvOutputOption;
+    use crate::detections::configs::DfirTimelineOption;
     use crate::detections::configs::OutputOption;
     use crate::detections::configs::StoredStatic;
     use crate::detections::configs::load_eventkey_alias;
@@ -1606,7 +1612,7 @@ mod tests {
 
     fn create_dummy_stored_static() -> StoredStatic {
         StoredStatic::create_static_data(Config {
-            action: Some(Action::CsvTimeline(CsvOutputOption {
+            action: Some(Action::DfirTimeline(DfirTimelineOption {
                 output_options: OutputOption {
                     min_level: "informational".to_string(),
                     include_status: Some(vec!["*".to_string()]),
@@ -1901,7 +1907,7 @@ mod tests {
     fn test_insert_message_with_geoip() {
         let test_filepath: &str = "test.evtx";
         let test_rule_path: &str = "test-rule.yml";
-        let dummy_action = Action::CsvTimeline(CsvOutputOption {
+        let dummy_action = Action::DfirTimeline(DfirTimelineOption {
             output_options: OutputOption {
                 min_level: "informational".to_string(),
                 no_summary: true,
@@ -1989,7 +1995,7 @@ mod tests {
     fn test_filtered_insert_message_with_geoip() {
         let test_filepath: &str = "test.evtx";
         let test_rule_path: &str = "test-rule.yml";
-        let dummy_action = Action::CsvTimeline(CsvOutputOption {
+        let dummy_action = Action::DfirTimeline(DfirTimelineOption {
             output_options: OutputOption {
                 min_level: "informational".to_string(),
                 no_summary: true,
@@ -2072,7 +2078,7 @@ mod tests {
     #[test]
     fn test_insert_message_extra_field_info() {
         let test_filepath: &str = "test.evtx";
-        let dummy_action = Action::CsvTimeline(CsvOutputOption {
+        let dummy_action = Action::DfirTimeline(DfirTimelineOption {
             output_options: OutputOption {
                 min_level: "informational".to_string(),
                 no_summary: true,
@@ -2172,7 +2178,7 @@ mod tests {
     #[test]
     fn test_insert_message_multiline_ruleauthor() {
         let test_filepath: &str = "test.evtx";
-        let dummy_action = Action::CsvTimeline(CsvOutputOption {
+        let dummy_action = Action::DfirTimeline(DfirTimelineOption {
             output_options: OutputOption {
                 min_level: "informational".to_string(),
                 no_wizard: true,

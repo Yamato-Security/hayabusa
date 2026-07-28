@@ -65,7 +65,7 @@ Before importing data, be sure to update SOF-ELK with the `sudo sof-elk_update.s
 
 Run Hayabusa and save results to JSONL.
 
-Ex: `./hayabusa json-timeline -L -d ../hayabusa-sample-evtx -w -p super-verbose -G /opt/homebrew/var/GeoIP -o results.jsonl`
+Ex: `./hayabusa dfir-timeline -t jsonl -d ../hayabusa-sample-evtx -w -p super-verbose -G /opt/homebrew/var/GeoIP -o results.jsonl`
 
 ## Optional: Deleting old imported data
 

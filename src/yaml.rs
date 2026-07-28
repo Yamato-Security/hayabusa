@@ -511,7 +511,7 @@ impl ParseYaml {
                 // are allowed with the wildcard "*".
                 let need_rules = matches!(
                     stored_static.config.action.as_ref().unwrap(),
-                    Action::CsvTimeline(_) | Action::JsonTimeline(_) | Action::PivotKeywordsList(_)
+                    Action::DfirTimeline(_) | Action::PivotKeywordsList(_)
                 );
                 if need_rules {
                     bump_rule_load_cnt("excluded");
@@ -949,8 +949,8 @@ pub fn check_hayabusa_rule_fmt(yaml: &Yaml) -> Result<(), String> {
 mod tests {
     use crate::detections::configs::Action;
     use crate::detections::configs::Config;
-    use crate::detections::configs::CsvOutputOption;
     use crate::detections::configs::DetectCommonOption;
+    use crate::detections::configs::DfirTimelineOption;
     use crate::detections::configs::OutputOption;
     use crate::detections::configs::StoredStatic;
     use crate::filter;
@@ -967,7 +967,7 @@ mod tests {
 
     fn create_dummy_stored_static() -> StoredStatic {
         StoredStatic::create_static_data(Config {
-            action: Some(Action::CsvTimeline(CsvOutputOption {
+            action: Some(Action::DfirTimeline(DfirTimelineOption {
                 output_options: OutputOption {
                     min_level: "informational".to_string(),
                     include_status: Some(vec!["*".to_string()]),

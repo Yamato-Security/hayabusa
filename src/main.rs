@@ -16,8 +16,8 @@ use evtx::{EvtxParser, ParserSettings, RecordAllocation};
 use hashbrown::{HashMap, HashSet};
 use hayabusa::debug::checkpoint_process_timer::CheckPointProcessTimer;
 use hayabusa::detections::configs::{
-    Action, CURRENT_EXE_PATH, ConfigReader, EventKeyAliasConfig, ONE_CONFIG_MAP, StoredStatic,
-    TargetEventTime, TargetIds, load_pivot_keywords, resolve_config_file,
+    Action, CURRENT_EXE_PATH, ConfigReader, EventKeyAliasConfig, ONE_CONFIG_MAP, OutputType,
+    StoredStatic, TargetEventTime, TargetIds, load_pivot_keywords, resolve_config_file,
 };
 use hayabusa::detections::detection::{self, EvtxRecordInfo};
 use hayabusa::detections::message::{AlertMessage, DetectInfo, get_event_time};
@@ -51,6 +51,7 @@ use rand::prelude::*;
 use rust_embed::Embed;
 use serde_json::{Map, Value};
 use std::borrow::BorrowMut;
+use std::cell::Cell;
 use std::ffi::{OsStr, OsString};
 use std::fmt::Display;
 use std::fmt::Write as _;
@@ -103,6 +104,10 @@ fn main() {
     let mut app = App::new(stored_static.thread_number);
     app.exec(&mut config_reader.app, &mut stored_static);
     app.runtime.shutdown_background();
+    if app.failed.get() {
+        // The run was rejected or aborted before producing output; do not report success.
+        std::process::exit(1);
+    }
 }
 
 /// RAII guard that disables WOW64 filesystem redirection while it is alive and restores the
@@ -149,6 +154,14 @@ impl Drop for Wow64RedirectionGuard {
 /// field keys referenced by the loaded detection rules.
 pub struct App {
     runtime: Runtime,
+    /// Set when a run is aborted by a usage or environment error, so `main` can exit non-zero.
+    ///
+    /// The abort paths below report the problem and `return`, which — because `exec` returns `()`
+    /// and `main` then ends normally — used to leave the exit status at 0. A script or CI job
+    /// checking `$?` could not tell a rejected command from a completed scan. A flag rather than
+    /// `process::exit` because the unit tests drive `exec` into several of these paths and would
+    /// otherwise take the test process down with them.
+    failed: Cell<bool>,
     rule_keys: Nested<String>,
     /// Records how long each processing phase takes; printed per-phase only with `--debug`,
     /// with the accumulated total shown as "Elapsed time" in the results summary.
@@ -403,6 +416,7 @@ impl App {
     pub fn new(thread_number: Option<usize>) -> App {
         App {
             runtime: utils::create_tokio_runtime(thread_number),
+            failed: Cell::new(false),
             rule_keys: Nested::<String>::new(),
             checkpoint: CheckPointProcessTimer::create_checkpoint_timer(),
         }
@@ -448,6 +462,33 @@ impl App {
             app.print_help().ok();
             println!();
             return;
+        }
+
+        // The CSV Output options only make sense for CSV output; reject them with a non-CSV -t.
+        if let Some(Action::DfirTimeline(opt)) = &stored_static.config.action
+            && !matches!(opt.output_type, OutputType::Csv)
+        {
+            // `-R, --remove-duplicate-data` is deliberately not in this list: it applies to every
+            // output format. It only replaces a repeated field value with "DUP", which the JSON
+            // writer implements too (`output_json_str`), and it is a field of the shared
+            // `OutputOption` rather than of `DfirTimelineOption`. Grouping it with these two by
+            // proximity would regress `json-timeline -R`, a supported v3 invocation.
+            let mut csv_only = vec![];
+            if opt.multiline {
+                csv_only.push("-M, --multiline");
+            }
+            if opt.tab_separator {
+                csv_only.push("-S, --tab-separator");
+            }
+            if !csv_only.is_empty() {
+                AlertMessage::alert(&format!(
+                    "The following option(s) only apply to CSV output and cannot be used with the selected -t, --output-type: {}",
+                    csv_only.join(", ")
+                ))
+                .ok();
+                self.failed.set(true);
+                return;
+            }
         }
         if !stored_static.common_options.quiet {
             self.output_logo(stored_static);
@@ -604,7 +645,7 @@ impl App {
 
         let action = stored_static.config.action.clone().unwrap();
         match &action {
-            Action::CsvTimeline(_) | Action::JsonTimeline(_) => {
+            Action::DfirTimeline(_) => {
                 // If the rules option was not specified (the path is still the default ./rules),
                 // resolve it relative to the executable's directory so that running Hayabusa from
                 // a different current directory does not cause errors.
@@ -625,6 +666,7 @@ impl App {
                 // Check the rule config folder and files, and terminate if there are errors.
                 if let Err(e) = utils::check_rule_config(&stored_static.config_path) {
                     AlertMessage::alert(&e).ok();
+                    self.failed.set(true);
                     return;
                 }
                 if stored_static.profiles.is_none() {
@@ -668,8 +710,9 @@ impl App {
                 if stored_static.json_input_flag
                     && (stored_static.scan_all_evtx_files || stored_static.enable_all_rules)
                 {
-                    AlertMessage::alert("It is not necessary to specify -A (--enable-all-rules) or -a (--scan-all-evtx-files) with -J (--JSON-input) because the default channel filter only works with EVTX files.").ok();
+                    AlertMessage::alert("It is not necessary to specify -A (--enable-all-rules) or -a (--scan-all-evtx-files) with -J (--json-input) because the default channel filter only works with EVTX files.").ok();
                     println!();
+                    self.failed.set(true);
                     return;
                 }
                 self.analysis_start(
@@ -1291,6 +1334,7 @@ Any hostnames added to the critical_systems.txt file will have all alerts above 
         // Terminate with an alert if the rules directory does not exist.
         if !rule_dir.exists() {
             AlertMessage::alert("The rules directory does not exist. Please check the path.").ok();
+            self.failed.set(true);
             return;
         }
         println!();
@@ -1362,78 +1406,75 @@ Any hostnames added to the critical_systems.txt file will have all alerts above 
             true,
         )
         .ok();
-        match stored_static.config.action {
-            Some(Action::CsvTimeline(_)) | Some(Action::JsonTimeline(_)) => {
-                println!();
-                write_color_buffer(
-                    &BufferWriter::stdout(ColorChoice::Always),
-                    get_writable_color(
-                        Some(Color::Rgb(0, 255, 0)),
-                        stored_static.common_options.no_color,
-                    ),
-                    "Please report any issues with Hayabusa rules to: ",
-                    false,
+        if let Some(Action::DfirTimeline(_)) = stored_static.config.action {
+            println!();
+            write_color_buffer(
+                &BufferWriter::stdout(ColorChoice::Always),
+                get_writable_color(
+                    Some(Color::Rgb(0, 255, 0)),
+                    stored_static.common_options.no_color,
+                ),
+                "Please report any issues with Hayabusa rules to: ",
+                false,
+            )
+            .ok();
+            write_color_buffer(
+                &BufferWriter::stdout(ColorChoice::Always),
+                get_writable_color(None, stored_static.common_options.no_color),
+                "https://github.com/Yamato-Security/hayabusa-rules/issues",
+                true,
+            )
+            .ok();
+            write_color_buffer(
+                &BufferWriter::stdout(ColorChoice::Always),
+                get_writable_color(
+                    Some(Color::Rgb(0, 255, 0)),
+                    stored_static.common_options.no_color,
+                ),
+                "Please report any false positives with Sigma rules to: ",
+                false,
+            )
+            .ok();
+            write_color_buffer(
+                &BufferWriter::stdout(ColorChoice::Always),
+                get_writable_color(None, stored_static.common_options.no_color),
+                "https://github.com/SigmaHQ/sigma/issues",
+                true,
+            )
+            .ok();
+            write_color_buffer(
+                &BufferWriter::stdout(ColorChoice::Always),
+                get_writable_color(
+                    Some(Color::Rgb(0, 255, 0)),
+                    stored_static.common_options.no_color,
+                ),
+                "Please submit new Sigma rules with pull requests to: ",
+                false,
+            )
+            .ok();
+            write_color_buffer(
+                &BufferWriter::stdout(ColorChoice::Always),
+                None,
+                "https://github.com/SigmaHQ/sigma/pulls",
+                true,
+            )
+            .ok();
+            if stored_static.html_report_flag {
+                let html_str = html_reporter.create_html();
+                htmlreport::create_html_file(
+                    html_str,
+                    stored_static
+                        .output_option
+                        .as_ref()
+                        .unwrap()
+                        .html_report
+                        .as_ref()
+                        .unwrap()
+                        .to_str()
+                        .unwrap_or(""),
+                    stored_static.common_options.no_color,
                 )
-                .ok();
-                write_color_buffer(
-                    &BufferWriter::stdout(ColorChoice::Always),
-                    get_writable_color(None, stored_static.common_options.no_color),
-                    "https://github.com/Yamato-Security/hayabusa-rules/issues",
-                    true,
-                )
-                .ok();
-                write_color_buffer(
-                    &BufferWriter::stdout(ColorChoice::Always),
-                    get_writable_color(
-                        Some(Color::Rgb(0, 255, 0)),
-                        stored_static.common_options.no_color,
-                    ),
-                    "Please report any false positives with Sigma rules to: ",
-                    false,
-                )
-                .ok();
-                write_color_buffer(
-                    &BufferWriter::stdout(ColorChoice::Always),
-                    get_writable_color(None, stored_static.common_options.no_color),
-                    "https://github.com/SigmaHQ/sigma/issues",
-                    true,
-                )
-                .ok();
-                write_color_buffer(
-                    &BufferWriter::stdout(ColorChoice::Always),
-                    get_writable_color(
-                        Some(Color::Rgb(0, 255, 0)),
-                        stored_static.common_options.no_color,
-                    ),
-                    "Please submit new Sigma rules with pull requests to: ",
-                    false,
-                )
-                .ok();
-                write_color_buffer(
-                    &BufferWriter::stdout(ColorChoice::Always),
-                    None,
-                    "https://github.com/SigmaHQ/sigma/pulls",
-                    true,
-                )
-                .ok();
-                if stored_static.html_report_flag {
-                    let html_str = html_reporter.create_html();
-                    htmlreport::create_html_file(
-                        html_str,
-                        stored_static
-                            .output_option
-                            .as_ref()
-                            .unwrap()
-                            .html_report
-                            .as_ref()
-                            .unwrap()
-                            .to_str()
-                            .unwrap_or(""),
-                        stored_static.common_options.no_color,
-                    )
-                }
             }
-            _ => {}
         }
 
         // If the -Q option is specified or there are no parse errors, the error stack is 0 and no error log file is generated.
@@ -1495,6 +1536,7 @@ Any hostnames added to the critical_systems.txt file will have all alerts above 
             }
             if evtx_files.is_empty() {
                 AlertMessage::alert("No .evtx files were found.").ok();
+                self.failed.set(true);
                 return;
             }
             self.analysis_files(
@@ -1522,6 +1564,7 @@ Any hostnames added to the critical_systems.txt file will have all alerts above 
                         filepath.as_os_str().to_str().unwrap()
                     ))
                     .ok();
+                    self.failed.set(true);
                     return;
                 }
                 if !target_extensions.contains(
@@ -1539,9 +1582,10 @@ Any hostnames added to the critical_systems.txt file will have all alerts above 
                     .starts_with('.')
                 {
                     AlertMessage::alert(
-                        "-f (--filepath) only accepts .evtx files. Hidden files are ignored. If you want to input event logs in JSON format, please specify -J (--JSON-input).",
+                        "-f (--filepath) only accepts .evtx files. Hidden files are ignored. If you want to input event logs in JSON format, please specify -J (--json-input).",
                     )
                     .ok();
+                    self.failed.set(true);
                     return;
                 }
                 self.analysis_files(
@@ -1681,7 +1725,7 @@ Any hostnames added to the critical_systems.txt file will have all alerts above 
         let mut status_append_output = None;
         let need_wizard = matches!(
             stored_static.config.action.as_ref().unwrap(),
-            Action::CsvTimeline(_) | Action::JsonTimeline(_) | Action::PivotKeywordsList(_)
+            Action::DfirTimeline(_) | Action::PivotKeywordsList(_)
         ) && !stored_static.output_option.as_ref().unwrap().no_wizard;
         if need_wizard {
             self.checkpoint.lap_checkpoint("Rule Parse Processing Time");
@@ -2111,7 +2155,7 @@ Any hostnames added to the critical_systems.txt file will have all alerts above 
         let mut wait_message = "";
         if matches!(
             stored_static.config.action.as_ref().unwrap(),
-            Action::CsvTimeline(_) | Action::JsonTimeline(_) | Action::PivotKeywordsList(_)
+            Action::DfirTimeline(_) | Action::PivotKeywordsList(_)
         ) {
             wait_message = "Loading detection rules. Please wait.";
         } else if stored_static.logon_summary_flag {
@@ -2143,7 +2187,7 @@ Any hostnames added to the critical_systems.txt file will have all alerts above 
         let mut rule_files = vec![];
         let need_rules = matches!(
             stored_static.config.action.as_ref().unwrap(),
-            Action::CsvTimeline(_) | Action::JsonTimeline(_) | Action::PivotKeywordsList(_)
+            Action::DfirTimeline(_) | Action::PivotKeywordsList(_)
         );
         if need_rules {
             rule_files = detection::Detection::parse_rule_files(
@@ -2161,6 +2205,7 @@ Any hostnames added to the critical_systems.txt file will have all alerts above 
                         "No rules were loaded. Please download the latest rules with the update-rules command.\r\n",
                     )
                     .ok();
+                self.failed.set(true);
                 return;
             }
             if !stored_static.json_input_flag
@@ -2332,7 +2377,7 @@ Any hostnames added to the critical_systems.txt file will have all alerts above 
         }
         let is_timeline_cmd = matches!(
             stored_static.config.action.as_ref().unwrap(),
-            Action::CsvTimeline(_) | Action::JsonTimeline(_)
+            Action::DfirTimeline(_)
         );
         if !is_timeline_cmd {
             let msg = if stored_static.common_options.no_color {
@@ -2424,8 +2469,8 @@ Any hostnames added to the critical_systems.txt file will have all alerts above 
                 );
             }
 
-            if let Some(Action::JsonTimeline(json_options)) = &stored_static.config.action
-                && json_options.jsonl_timeline
+            if let Some(Action::DfirTimeline(json_options)) = &stored_static.config.action
+                && matches!(json_options.output_type, OutputType::Jsonl)
                 && let Some(path) = &stored_static.output_path
                 && let Ok(mut file) = fs::OpenOptions::new().append(true).open(path)
             {
@@ -2475,7 +2520,7 @@ Any hostnames added to the critical_systems.txt file will have all alerts above 
         let quiet_errors_flag = stored_static.quiet_errors_flag;
         let need_rule = matches!(
             stored_static.config.action.as_ref().unwrap(),
-            Action::CsvTimeline(_) | Action::JsonTimeline(_) | Action::PivotKeywordsList(_)
+            Action::DfirTimeline(_) | Action::PivotKeywordsList(_)
         );
         let rec_ctx = RecordBuildContext {
             rule_keys: Arc::new(self.rule_keys.to_owned()),
@@ -3359,8 +3404,7 @@ Any hostnames added to the critical_systems.txt file will have all alerts above 
             return true;
         }
         match action.as_ref().unwrap() {
-            Action::CsvTimeline(_)
-            | Action::JsonTimeline(_)
+            Action::DfirTimeline(_)
             | Action::LogonSummary(_)
             | Action::EidMetrics(_)
             | Action::PivotKeywordsList(_)
@@ -3389,8 +3433,8 @@ mod tests {
         detections::{
             configs::{
                 Action, ClobberOption, ComputerMetricsOption, Config, ConfigReader,
-                CsvOutputOption, DetectCommonOption, EidMetricsOption, InputOption,
-                JSONOutputOption, LogonSummaryOption, OutputOption, StoredStatic, TargetEventTime,
+                DetectCommonOption, DfirTimelineOption, EidMetricsOption, InputOption,
+                LogonSummaryOption, OutputOption, OutputType, StoredStatic, TargetEventTime,
                 TargetIds,
             },
             detection,
@@ -3403,7 +3447,7 @@ mod tests {
 
     fn create_dummy_stored_static() -> StoredStatic {
         StoredStatic::create_static_data(Config {
-            action: Some(Action::CsvTimeline(CsvOutputOption {
+            action: Some(Action::DfirTimeline(DfirTimelineOption {
                 output_options: OutputOption {
                     min_level: "informational".to_string(),
                     detect_common_options: DetectCommonOption {
@@ -3480,7 +3524,7 @@ mod tests {
         let report_path = output_tmp_dir.path().join("test_exec_html_report_e2e.html");
         let csv_path = output_tmp_dir.path().join("test_exec_html_report_e2e.csv");
         let mut app = App::new(None);
-        let action = Action::CsvTimeline(CsvOutputOption {
+        let action = Action::DfirTimeline(DfirTimelineOption {
             output_options: OutputOption {
                 input_args: InputOption {
                     filepath: Some(Path::new("test_files/evtx/test.json").to_path_buf()),
@@ -3583,7 +3627,7 @@ mod tests {
         // Create an empty file first.
         let mut app = App::new(None);
         File::create(&out_overwrite_csv_exit_csv).ok();
-        let action = Action::CsvTimeline(CsvOutputOption {
+        let action = Action::DfirTimeline(DfirTimelineOption {
             output_options: OutputOption {
                 input_args: InputOption {
                     filepath: Some(Path::new("test_files/evtx/test.json").to_path_buf()),
@@ -3623,7 +3667,7 @@ mod tests {
         // Create an empty file first.
         let mut app = App::new(None);
         File::create(&out_overwrite_csv_clobber_csv).ok();
-        let action = Action::CsvTimeline(CsvOutputOption {
+        let action = Action::DfirTimeline(DfirTimelineOption {
             output_options: OutputOption {
                 input_args: InputOption {
                     filepath: Some(Path::new("test_files/evtx/test.json").to_path_buf()),
@@ -3663,7 +3707,7 @@ mod tests {
         // Create an empty file first.
         let mut app = App::new(None);
         File::create(&out_overwrite_json_exit_json).ok();
-        let action = Action::JsonTimeline(JSONOutputOption {
+        let action = Action::DfirTimeline(DfirTimelineOption {
             output_options: OutputOption {
                 input_args: InputOption {
                     filepath: Some(Path::new("test_files/evtx/test.json").to_path_buf()),
@@ -3681,6 +3725,9 @@ mod tests {
                 ..Default::default()
             },
             output: Some(out_overwrite_json_exit_json.clone()),
+            // Without this the fixture falls back to `OutputType::default()` (CSV), so a
+            // test named `..._json` writing a `.json` path exercises the CSV writer.
+            output_type: OutputType::Json,
             ..Default::default()
         });
         let config = Config {
@@ -3705,7 +3752,7 @@ mod tests {
         // Create an empty file first.
         let mut app = App::new(None);
         File::create(&out_overwrite_json_clobber_json).ok();
-        let action = Action::JsonTimeline(JSONOutputOption {
+        let action = Action::DfirTimeline(DfirTimelineOption {
             output_options: OutputOption {
                 input_args: InputOption {
                     filepath: Some(Path::new("test_files/evtx/test.json").to_path_buf()),
@@ -3723,6 +3770,9 @@ mod tests {
                 ..Default::default()
             },
             output: Some(out_overwrite_json_clobber_json.clone()),
+            // Without this the fixture falls back to `OutputType::default()` (CSV), so a
+            // test named `..._json` writing a `.json` path exercises the CSV writer.
+            output_type: OutputType::Json,
             ..Default::default()
         });
         let config = Config {
