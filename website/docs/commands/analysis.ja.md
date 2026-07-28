@@ -11,7 +11,8 @@ Windows 11ではイベントログに保存するときにまったく異なる`
 この情報があれば、タイムラインを生成する際に`--include-computer`または`--exclude-computer`オプションを使い、コンピュータ別に複数のタイムラインを生成したり、特定のコンピュータからのイベントを除外したりすることで、タイムライン生成をより効率的にすることができます。
 
 ```
-Usage: computer-metrics <INPUT> [OPTIONS]
+Usage:
+  hayabusa.exe computer-metrics <INPUT> [OPTIONS]
 
 Input:
   -d, --directory <DIR>  .evtxファイルを持つディレクトリのパス
@@ -21,23 +22,23 @@ Input:
 General Options:
   -C, --clobber                        結果ファイルを上書きする
   -h, --help                           ヘルプメニューを表示する
-  -J, --JSON-input                     .evtxファイルの代わりにJSON形式のログファイル(.jsonまたは.jsonl)をスキャンする
+  -J, --json-input                     .evtxファイルの代わりにJSON形式のログファイル(.jsonまたは.jsonl)をスキャンする
   -Q, --quiet-errors                   Quiet errorsモード: エラーログを保存しない
   -x, --recover-records                空ページからevtxレコードをカービングする (デフォルト: 無効)
   -c, --rules-config <DIR>             ルールフォルダのコンフィグディレクトリ (デフォルト: ./rules/config)
-  -t, --threads <NUMBER>               スレッド数 (デフォルト: パフォーマンスに最適な数値)
       --target-file-ext <FILE-EXT...>  evtx以外の拡張子を解析対象に追加する。 (例１: evtx_data 例２: evtx1,evtx2)
+  -V, --validate-checksums             チェックサム検証を有効にする
 
 Filtering:
-      --time-offset <OFFSET>      オフセットに基づく最近のイベントのスキャン (例: 1y, 3M, 30d, 24h, 30m)
+      --time-offset <OFFSET>  オフセットに基づく最近のイベントのスキャン (例: 1y, 3M, 30d, 24h, 30m)
 
 Output:
-  -o, --output <FILE>  イベントIDに基づくイベントの合計と割合の集計を出力する (例: computer-metrics.csv)
+  -o, --output <FILE>  結果をCSV形式で保存する (例: computer-metrics.csv)
 
 Display Settings:
   -K, --no-color  カラーで出力しない
   -q, --quiet     Quietモード: 起動バナーを表示しない
-  -v, --verbose   詳細な情報を出力する               
+  -v, --verbose   詳細な情報を出力する
 ```
 
 ### `computer-metrics`コマンドの使用例
@@ -55,22 +56,24 @@ Display Settings:
 このコマンドは検知ルールを使用しないので、すべてのイベントをスキャンします。
 
 ```
-Usage: eid-metrics <INPUT> [OPTIONS]
+Usage:
+  hayabusa.exe eid-metrics <INPUT> [OPTIONS]
 
 Input:
-  -d, --directory <DIR>        .evtxファイルを持つディレクトリのパス
-  -f, --file <FILE>            1つの.evtxファイルに対して解析を行う
-  -l, --live-analysis          ローカル端末のC:\Windows\System32\winevt\Logsフォルダを解析する
+  -d, --directory <DIR>  .evtxファイルを持つディレクトリのパス
+  -f, --file <FILE>      1つの.evtxファイルに対して解析を行う
+  -l, --live-analysis    ローカル端末のC:\Windows\System32\winevt\Logsフォルダを解析する
 
 General Options:
   -C, --clobber                        結果ファイルを上書きする
   -h, --help                           ヘルプメニューを表示する
-  -J, --JSON-input                     .evtxファイルの代わりにJSON形式のログファイル(.jsonまたは.jsonl)をスキャンする
+  -J, --json-input                     .evtxファイルの代わりにJSON形式のログファイル(.jsonまたは.jsonl)をスキャンする
   -Q, --quiet-errors                   Quiet errorsモード: エラーログを保存しない
   -x, --recover-records                空ページからevtxレコードをカービングする (デフォルト: 無効)
   -c, --rules-config <DIR>             ルールフォルダのコンフィグディレクトリ (デフォルト: ./rules/config)
-  -t, --threads <NUMBER>               スレッド数 (デフォルト: パフォーマンスに最適な数値)
       --target-file-ext <FILE-EXT...>  evtx以外の拡張子を解析対象に追加する。 (例１: evtx_data 例２: evtx1,evtx2)
+      --threads <NUMBER>               スレッド数 (デフォルト: パフォーマンスに最適な数値)
+  -V, --validate-checksums             チェックサム検証を有効にする
 
 Filtering:
       --exclude-computer <COMPUTER...>  特定のコンピュータ名をスキャンしない (例: ComputerA) (例: ComputerA,ComputerB)
@@ -78,8 +81,8 @@ Filtering:
       --time-offset <OFFSET>            オフセットに基づく最近のイベントのスキャン (例: 1y, 3M, 30d, 24h, 30m)
 
 Output:
-  -b, --disable-abbreviations 省略機能を無効にする
-  -o, --output <FILE>  イベントIDに基づくイベントの合計と割合の集計を出力する (例: eid-metrics.csv)
+  -X, --remove-duplicate-records  重複したイベントレコードを削除する (デフォルト: 無効)
+  -o, --output <FILE>             メトリクスをCSV形式で保存する (例: metrics.csv)
 
 Display Settings:
   -K, --no-color  カラーで出力しない
@@ -87,13 +90,13 @@ Display Settings:
   -v, --verbose   詳細な情報を出力する
 
 Time Format:
-      --European-time     ヨーロッパ形式で日付と時刻を出力する (例: 22-02-2022 22:00:00.123 +02:00)
-  -O, --ISO-8601          ISO-8601形式で日付と時刻を出力する (例: 2022-02-22T10:10:10.1234567Z) (UTC時刻)
-      --RFC-2822          RFC 2822形式で日付と時刻を出力する (例: Fri, 22 Feb 2022 22:00:00 -0600)
-      --RFC-3339          RFC 3339形式で日付と時刻を出力する (例: 2022-02-22 22:00:00.123456-06:00)
-      --US-military-time  24時間制(ミリタリータイム)のアメリカ形式で日付と時刻を出力する (例: 02-22-2022 22:00:00.123 -06:00)
-      --US-time           アメリカ形式で日付と時刻を出力する (例: 02-22-2022 10:00:00.123 PM -06:00)
-  -U, --UTC               UTC形式で日付と時刻を出力する (デフォルト: 現地時間)
+      --european-time     ヨーロッパ形式で日付と時刻を出力する (例: 22-02-2022 22:00:00.123 +02:00)
+  -O, --iso-8601          ISO-8601形式で日付と時刻を出力する (例: 2022-02-22T10:10:10.1234567Z) (UTC時刻)
+      --rfc-2822          RFC 2822形式で日付と時刻を出力する (例: Fri, 22 Feb 2022 22:00:00 -0600)
+      --rfc-3339          RFC 3339形式で日付と時刻を出力する (例: 2022-02-22 22:00:00.123456-06:00)
+  -U, --utc               UTC形式で日付と時刻を出力する (デフォルト: 現地時間)
+      --us-military-time  24時間制(ミリタリータイム)のアメリカ形式で日付と時刻を出力する (例: 02-22-2022 22:00:00.123 -06:00)
+      --us-time           アメリカ形式で日付と時刻を出力する (例: 02-22-2022 10:00:00.123 PM -06:00)
 ```
 
 ### `eid-metrics`コマンドの使用例
@@ -153,7 +156,8 @@ AdminWorkstation3
 設定ファイルが存在しない場合でも、Hayabusaは`expand`ルールを読み込みますが、それを無視します。
 
 ```
-Usage:  expand-list <INPUT> [OPTIONS]
+Usage:
+  hayabusa.exe expand-list [OPTIONS]
 
 General Options:
   -h, --help              ヘルプメニューを表示する
@@ -167,7 +171,7 @@ Display Settings:
 ### `expand-list`コマンドの使用例
 
 * デフォルトの`rules`ディレクトリから`expand`フィールド修飾子を抽出する：`hayabusa.exe expand-list`
-* `sigma`ディレクトリから`expand`フィールド修飾子を抽出する：`hayabusa.exe eid-metrics -r ../sigma`
+* `sigma`ディレクトリから`expand`フィールド修飾子を抽出する：`hayabusa.exe expand-list -r ../sigma`
 
 ### `expand-list`結果
 
@@ -191,7 +195,8 @@ domain_controller_hostnames
 * PowerShell Operational 4103
 
 ```
-Usage:  extract-base64 <INPUT> [OPTIONS]
+Usage:
+  hayabusa.exe extract-base64 <INPUT> [OPTIONS]
 
 Input:
   -d, --directory <DIR>  .evtxファイルを持つディレクトリのパス
@@ -201,12 +206,13 @@ Input:
 General Options:
   -C, --clobber                        結果ファイルを上書きする
   -h, --help                           ヘルプメニューを表示する
-  -J, --JSON-input                     .evtxファイルの代わりにJSON形式のログファイル(.jsonまたは.jsonl)をスキャンする
+  -J, --json-input                     .evtxファイルの代わりにJSON形式のログファイル(.jsonまたは.jsonl)をスキャンする
   -Q, --quiet-errors                   Quiet errorsモード: エラーログを保存しない
   -x, --recover-records                空ページからevtxレコードをカービングする (デフォルト: 無効)
   -c, --rules-config <DIR>             ルールフォルダのコンフィグディレクトリ (デフォルト: ./rules/config)
-  -t, --threads <NUMBER>               スレッド数 (デフォルト: パフォーマンスに最適な数値)
       --target-file-ext <FILE-EXT...>  evtx以外の拡張子を解析対象に追加する。 (例１: evtx_data 例２: evtx1,evtx2)
+      --threads <NUMBER>               スレッド数 (デフォルト: パフォーマンスに最適な数値)
+  -V, --validate-checksums             チェックサム検証を有効にする
 
 Filtering:
       --exclude-computer <COMPUTER...>  特定のコンピュータ名をスキャンしない (例: ComputerA) (例: ComputerA,ComputerB)
@@ -214,7 +220,7 @@ Filtering:
       --time-offset <OFFSET>            オフセットに基づく最近のイベントのスキャン (例: 1y, 3M, 30d, 24h, 30m)
 
 Output:
-  -o, --output <FILE>  Base64文字列を抽出する
+  -o, --output <FILE>  結果をCSVファイルに保存する
 
 Display Settings:
   -K, --no-color  カラーで出力しない
@@ -222,19 +228,19 @@ Display Settings:
   -v, --verbose   詳細な情報を出力する
 
 Time Format:
-      --European-time     ヨーロッパ形式で日付と時刻を出力する (例: 22-02-2022 22:00:00.123 +02:00)
-  -O, --ISO-8601          ISO-8601形式で日付と時刻を出力する (例: 2022-02-22T10:10:10.1234567Z) (UTC時刻)
-      --RFC-2822          RFC 2822形式で日付と時刻を出力する (例: Fri, 22 Feb 2022 22:00:00 -0600)
-      --RFC-3339          RFC 3339形式で日付と時刻を出力する (例: 2022-02-22 22:00:00.123456-06:00)
-      --US-military-time  24時間制(ミリタリータイム)のアメリカ形式で日付と時刻を出力する (例: 02-22-2022 22:00:00.123 -06:00)
-      --US-time           アメリカ形式で日付と時刻を出力する (例: 02-22-2022 10:00:00.123 PM -06:00)
-  -U, --UTC               UTC形式で日付と時刻を出力する (デフォルト: 現地時間)
+      --european-time     ヨーロッパ形式で日付と時刻を出力する (例: 22-02-2022 22:00:00.123 +02:00)
+  -O, --iso-8601          ISO-8601形式で日付と時刻を出力する (例: 2022-02-22T10:10:10.1234567Z) (UTC時刻)
+      --rfc-2822          RFC 2822形式で日付と時刻を出力する (例: Fri, 22 Feb 2022 22:00:00 -0600)
+      --rfc-3339          RFC 3339形式で日付と時刻を出力する (例: 2022-02-22 22:00:00.123456-06:00)
+  -U, --utc               UTC形式で日付と時刻を出力する (デフォルト: 現地時間)
+      --us-military-time  24時間制(ミリタリータイム)のアメリカ形式で日付と時刻を出力する (例: 02-22-2022 22:00:00.123 -06:00)
+      --us-time           アメリカ形式で日付と時刻を出力する (例: 02-22-2022 10:00:00.123 PM -06:00)
 ```
 
 ### `extract-base64`コマンドの使用例
 
-* ディレクトリをスキャンし、結果をターミナルに出力します: `hayabusa.exe  extract-base64 -d ../hayabusa-sample-evtx`
-* ディレクトリをスキャンし、結果をCSVファイルに出力します: `hayabusa.exe eid-metrics -r ../sigma -o base64-extracted.csv`
+* ディレクトリをスキャンし、結果をターミナルに出力します: `hayabusa.exe extract-base64 -d ../hayabusa-sample-evtx`
+* ディレクトリをスキャンし、結果をCSVファイルに出力します: `hayabusa.exe extract-base64 -d ../hayabusa-sample-evtx -o base64-extracted.csv`
 
 ### `extract-base64`の結果
 
@@ -274,31 +280,37 @@ CSVファイルに保存する際、次のフィールドが保存されます�
 このコマンドは検知ルールを使用しないので、すべてのイベントをスキャンする。
 
 ```
-Usage: log-metrics <INPUT> [OPTIONS]
+Usage:
+  hayabusa.exe log-metrics <INPUT> [OPTIONS]
 
 Input:
-  -d, --directory <DIR>        .evtxファイルを持つディレクトリのパス
-  -f, --file <FILE>            1つの.evtxファイルに対して解析を行う
-  -l, --live-analysis          ローカル端末のC:\Windows\System32\winevt\Logsフォルダを解析する
+  -d, --directory <DIR>  .evtxファイルを持つディレクトリのパス
+  -f, --file <FILE>      1つの.evtxファイルに対して解析を行う
+  -l, --live-analysis    ローカル端末のC:\Windows\System32\winevt\Logsフォルダを解析する
 
 General Options:
   -C, --clobber                        結果ファイルを上書きする
   -h, --help                           ヘルプメニューを表示する
-  -J, --JSON-input                     .evtxファイルの代わりにJSON形式のログファイル(.jsonまたは.jsonl)をスキャンする
+  -J, --json-input                     .evtxファイルの代わりにJSON形式のログファイル(.jsonまたは.jsonl)をスキャンする
   -Q, --quiet-errors                   Quiet errorsモード: エラーログを保存しない
   -x, --recover-records                空ページからevtxレコードをカービングする (デフォルト: 無効)
   -c, --rules-config <DIR>             ルールフォルダのコンフィグディレクトリ (デフォルト: ./rules/config)
-  -t, --threads <NUMBER>               スレッド数 (デフォルト: パフォーマンスに最適な数値)
       --target-file-ext <FILE-EXT...>  evtx以外の拡張子を解析対象に追加する。 (例１: evtx_data 例２: evtx1,evtx2)
+      --threads <NUMBER>               スレッド数 (デフォルト: パフォーマンスに最適な数値)
+  -V, --validate-checksums             チェックサム検証を有効にする
 
 Filtering:
       --exclude-computer <COMPUTER...>  特定のコンピュータ名をスキャンしない (例: ComputerA) (例: ComputerA,ComputerB)
+      --exclude-channel <CHANNEL...>    特定のチャンネルをスキャンしない (例: System,Security)
+      --exclude-filename <FILE...>      特定のevtxファイルをスキャンしない (例: Security.evtx,System.evtx)
       --include-computer <COMPUTER...>  特定のコンピュータ名のみをスキャンする (例: ComputerA) (例: ComputerA,ComputerB)
+      --include-channel <CHANNEL...>    特定のチャンネルのみを対象にする (例: System,Security)
+      --include-filename <FILE...>      特定のevtxファイルのみを対象にする (例: Security.evtx,System.evtx)
       --time-offset <OFFSET>            オフセットに基づく最近のイベントのスキャン (例: 1y, 3M, 30d, 24h, 30m)
 
 Output:
   -b, --disable-abbreviations  省略機能を無効にする
-  -M, --multiline              イベントフィールド情報を複数の行に出力する
+  -M, --multiline              CSV出力時にイベントフィールド情報を改行文字で区切る
   -o, --output <FILE>          メトリクスをCSV形式で保存する (例: metrics.csv)
   -S, --tab-separator          フィールドをタブ区切りにする
 
@@ -308,20 +320,20 @@ Display Settings:
   -v, --verbose   詳細な情報を出力する
 
 Time Format:
-      --European-time     ヨーロッパ形式で日付と時刻を出力する (例: 22-02-2022 22:00:00.123 +02:00)
-  -O, --ISO-8601          ISO-8601形式で日付と時刻を出力する (例: 2022-02-22T10:10:10.1234567Z) (UTC時刻)
-      --RFC-2822          RFC 2822形式で日付と時刻を出力する (例: Fri, 22 Feb 2022 22:00:00 -0600)
-      --RFC-3339          RFC 3339形式で日付と時刻を出力する (例: 2022-02-22 22:00:00.123456-06:00)
-      --US-military-time  24時間制(ミリタリータイム)のアメリカ形式で日付と時刻を出力する (例: 02-22-2022 22:00:00.123 -06:00)
-      --US-time           アメリカ形式で日付と時刻を出力する (例: 02-22-2022 10:00:00.123 PM -06:00)
-  -U, --UTC               UTC形式で日付と時刻を出力する (デフォルト: 現地時間)
+      --european-time     ヨーロッパ形式で日付と時刻を出力する (例: 22-02-2022 22:00:00.123 +02:00)
+  -O, --iso-8601          ISO-8601形式で日付と時刻を出力する (例: 2022-02-22T10:10:10.1234567Z) (UTC時刻)
+      --rfc-2822          RFC 2822形式で日付と時刻を出力する (例: Fri, 22 Feb 2022 22:00:00 -0600)
+      --rfc-3339          RFC 3339形式で日付と時刻を出力する (例: 2022-02-22 22:00:00.123456-06:00)
+  -U, --utc               UTC形式で日付と時刻を出力する (デフォルト: 現地時間)
+      --us-military-time  24時間制(ミリタリータイム)のアメリカ形式で日付と時刻を出力する (例: 02-22-2022 22:00:00.123 -06:00)
+      --us-time           アメリカ形式で日付と時刻を出力する (例: 02-22-2022 10:00:00.123 PM -06:00)
 ```
 
 ### `log-metrics`コマンドの使用例
 
 * ファイルからログファイルのメトリクスを出力する: `hayabusa.exe log-metrics -f Security.evtx`
 * ディレクトリからログファイルのメトリクスを出力する: `hayabusa.exe log-metrics -d ../logs`
-* 結果をCSVファイルに保存: `hayabusa.exe log-metrics -d ../logs -o eid-metrics.csv`
+* 結果をCSVファイルに保存: `hayabusa.exe log-metrics -d ../logs -o log-metrics.csv`
 
 ### `log-metrics`のスクリーンショット
 
@@ -341,32 +353,35 @@ Time Format:
 ログオン失敗は、`Security 4625`イベントから取得される
 
 ```
-Usage: logon-summary <INPUT> [OPTIONS]
+Usage:
+  hayabusa.exe logon-summary <INPUT> [OPTIONS]
 
 Input:
-  -d, --directory <DIR>        .evtxファイルを持つディレクトリのパス
-  -f, --file <FILE>            1つの.evtxファイルに対して解析を行う
-  -l, --live-analysis          ローカル端末のC:\Windows\System32\winevt\Logsフォルダを解析する
+  -d, --directory <DIR>  .evtxファイルを持つディレクトリのパス
+  -f, --file <FILE>      1つの.evtxファイルに対して解析を行う
+  -l, --live-analysis    ローカル端末のC:\Windows\System32\winevt\Logsフォルダを解析する
 
 General Options:
   -C, --clobber                        結果ファイルを上書きする
   -h, --help                           ヘルプメニューを表示する
-  -J, --JSON-input                     .evtxファイルの代わりにJSON形式のログファイル(.jsonまたは.jsonl)をスキャンする
+  -J, --json-input                     .evtxファイルの代わりにJSON形式のログファイル(.jsonまたは.jsonl)をスキャンする
   -Q, --quiet-errors                   Quiet errorsモード: エラーログを保存しない
   -x, --recover-records                空ページからevtxレコードをカービングする (デフォルト: 無効)
   -c, --rules-config <DIR>             ルールフォルダのコンフィグディレクトリ (デフォルト: ./rules/config)
-  -t, --threads <NUMBER>               スレッド数 (デフォルト: パフォーマンスに最適な数値)
       --target-file-ext <FILE-EXT...>  evtx以外の拡張子を解析対象に追加する (例１: evtx_data 例２:evtx1,evtx2)
+      --threads <NUMBER>               スレッド数 (デフォルト: パフォーマンスに最適な数値)
+  -V, --validate-checksums             チェックサム検証を有効にする
 
 Filtering:
       --exclude-computer <COMPUTER...>  特定のコンピュータ名をスキャンしない (例: ComputerA) (例: ComputerA,ComputerB)
       --include-computer <COMPUTER...>  特定のコンピュータ名のみをスキャンする (例: ComputerA) (例: ComputerA,ComputerB)
-      --timeline-end <DATE>             解析対象とするイベントログの終了時刻 (例: "2022-02-22 23:59:59 +09:00")
       --time-offset <OFFSET>            オフセットに基づく最近のイベントのスキャン (例: 1y, 3M, 30d, 24h, 30m)
+      --timeline-end <DATE>             解析対象とするイベントログの終了時刻 (例: "2022-02-22 23:59:59 +09:00")
       --timeline-start <DATE>           解析対象とするイベントログの開始時刻 (例: "2020-02-22 00:00:00 +09:00")
 
 Output:
-  -o, --output <FILENAME-PREFIX>  ログオンサマリをCSV形式で２つのファイルに保存する (例: -o logon-summary.csv)
+  -X, --remove-duplicate-records  重複したイベントレコードを削除する (デフォルト: 無効)
+  -o, --output <FILENAME-PREFIX>  ログオンサマリをCSV形式で２つのファイルに保存する (例: -o logon-summary)
 
 Display Settings:
   -K, --no-color  カラーで出力しない
@@ -374,13 +389,13 @@ Display Settings:
   -v, --verbose   詳細な情報を出力する
 
 Time Format:
-      --European-time     ヨーロッパ形式で日付と時刻を出力する (例: 22-02-2022 22:00:00.123 +02:00)
-  -O, --ISO-8601          ISO-8601形式で日付と時刻を出力する (例: 2022-02-22T10:10:10.1234567Z) (UTC時刻)
-      --RFC-2822          RFC 2822形式で日付と時刻を出力する (例: Fri, 22 Feb 2022 22:00:00 -0600)
-      --RFC-3339          RFC 3339形式で日付と時刻を出力する (例: 2022-02-22 22:00:00.123456-06:00)
-      --US-military-time  24時間制(ミリタリータイム)のアメリカ形式で日付と時刻を出力する (例: 02-22-2022 22:00:00.123 -06:00)
-      --US-time           アメリカ形式で日付と時刻を出力する (例: 02-22-2022 10:00:00.123 PM -06:00)
-  -U, --UTC               UTC形式で日付と時刻を出力する (デフォルト: 現地時間)
+      --european-time     ヨーロッパ形式で日付と時刻を出力する (例: 22-02-2022 22:00:00.123 +02:00)
+  -O, --iso-8601          ISO-8601形式で日付と時刻を出力する (例: 2022-02-22T10:10:10.1234567Z) (UTC時刻)
+      --rfc-2822          RFC 2822形式で日付と時刻を出力する (例: Fri, 22 Feb 2022 22:00:00 -0600)
+      --rfc-3339          RFC 3339形式で日付と時刻を出力する (例: 2022-02-22 22:00:00.123456-06:00)
+  -U, --utc               UTC形式で日付と時刻を出力する (デフォルト: 現地時間)
+      --us-military-time  24時間制(ミリタリータイム)のアメリカ形式で日付と時刻を出力する (例: 02-22-2022 22:00:00.123 -06:00)
+      --us-time           アメリカ形式で日付と時刻を出力する (例: 02-22-2022 10:00:00.123 PM -06:00)
 ```
 
 ### `logon-summary`コマンドの使用例
@@ -403,26 +418,28 @@ Time Format:
 検索結果には、多くの通常のイベントと一致する共通のキーワードが含まれている可能性が高いので、検索結果を手動でチェックし、固有のキーワードのリストを1つのファイルに作成した後、`grep -f keywords.txt timeline.csv`といったコマンドで疑わしい活動のタイムラインを絞り込み作成することが可能です。
 
 ```
-Usage: pivot-keywords-list <INPUT> [OPTIONS]
+Usage:
+  hayabusa.exe pivot-keywords-list <INPUT> [OPTIONS]
 
 Input:
-  -d, --directory <DIR>        .evtxファイルを持つディレクトリのパス
-  -f, --file <FILE>            1つの.evtxファイルに対して解析を行う
-  -l, --live-analysis          ローカル端末のC:\Windows\System32\winevt\Logsフォルダを解析する
+  -d, --directory <DIR>  .evtxファイルを持つディレクトリのパス
+  -f, --file <FILE>      1つの.evtxファイルに対して解析を行う
+  -l, --live-analysis    ローカル端末のC:\Windows\System32\winevt\Logsフォルダを解析する
 
 General Options:
   -C, --clobber                        結果ファイルを上書きする
   -h, --help                           ヘルプメニューを表示する
-  -J, --JSON-input                     .evtxファイルの代わりにJSON形式のログファイル(.jsonまたは.jsonl)をスキャンする
+  -J, --json-input                     .evtxファイルの代わりにJSON形式のログファイル(.jsonまたは.jsonl)をスキャンする
   -w, --no-wizard                      質問はしない。すべてのイベントとアラートをスキャンする
   -Q, --quiet-errors                   Quiet errorsモード: エラーログを保存しない
   -x, --recover-records                空ページからevtxレコードをカービングする (デフォルト: 無効)
   -c, --rules-config <DIR>             ルールフォルダのコンフィグディレクトリ (デフォルト: ./rules/config)
-  -t, --threads <NUMBER>               スレッド数 (デフォルト: パフォーマンスに最適な数値)
       --target-file-ext <FILE-EXT...>  evtx以外の拡張子を解析対象に追加する。 (例１: evtx_data 例２: evtx1,evtx2)
+      --threads <NUMBER>               スレッド数 (デフォルト: パフォーマンスに最適な数値)
+  -V, --validate-checksums             チェックサム検証を有効にする
 
 Filtering:
-  -E, --EID-filter                      速度を上げるため主なEIDだけスキャンする (コンフィグファイル: ./rules/config/target_event_IDs.txt)
+  -E, --eid-filter                      速度を上げるため主なEIDだけスキャンする (コンフィグファイル: ./rules/config/target_event_IDs.txt)
   -D, --enable-deprecated-rules         ステータスがdeprecatedのルールを有効にする
   -n, --enable-noisy-rules              Noisyルールを有効にする
   -u, --enable-unsupported-rules        ステータスがunsupportedのルールを有効にする
@@ -430,14 +447,14 @@ Filtering:
       --exclude-computer <COMPUTER...>  特定のコンピュータ名をスキャンしない (例: ComputerA) (例: ComputerA,ComputerB)
       --exclude-eid <EID...>            高速化のために特定のEIDをスキャンしない (例: 1) (例: 1,4688)
       --exclude-status <STATUS...>      読み込み対象外とするルール内でのステータス (例１: experimental) (例２: stable,test)
-      --include-computer <COMPUTER...>  特定のコンピュータ名のみをスキャンする (例: ComputerA) (例: ComputerA,ComputerB)
       --exclude-tag <TAG...>            特定のタグを持つルールをロードしない (例: sysmon)
+      --include-computer <COMPUTER...>  特定のコンピュータ名のみをスキャンする (例: ComputerA) (例: ComputerA,ComputerB)
       --include-eid <EID...>            指定したEIDのみをスキャンして高速化する (例 1) (例: 1,4688)
       --include-status <STATUS...>      特定のステータスを持つルールのみをロードする (例: expermimental) (例: stable,test)
       --include-tag <TAG...>            特定のタグを持つルールのみをロードする (例１: attack.execution,attack.discovery) (例２: wmi)
   -m, --min-level <LEVEL>               結果出力をするルールの最低レベル (デフォルト: informational)
-      --timeline-end <DATE>             解析対象とするイベントログの終了時刻 (例: "2022-02-22 23:59:59 +09:00")
       --time-offset <OFFSET>            オフセットに基づく最近のイベントのスキャン (例: 1y, 3M, 30d, 24h, 30m)
+      --timeline-end <DATE>             解析対象とするイベントログの終了時刻 (例: "2022-02-22 23:59:59 +09:00")
       --timeline-start <DATE>           解析対象とするイベントログの開始時刻 (例: "2020-02-22 00:00:00 +09:00")
 
 Output:
@@ -446,7 +463,7 @@ Output:
 Display Settings:
   -K, --no-color  カラーで出力しない
   -q, --quiet     Quietモード: 起動バナーを表示しない
-  -v, --verbose   詳細な情報を出力する               
+  -v, --verbose   詳細な情報を出力する
 ```
 
 ### `pivot-keywords-list`コマンドの使用例
@@ -472,7 +489,8 @@ hayabusa.exe pivot-keywords-list -d ../logs -m critical -o keywords
 Hayabusaの検知ルールでなにかの痕跡を検知できなくても、検索機能で検知できる可能性があるので、便利です。
 
 ```
-Usage: hayabusa.exe search <INPUT> <--keywords "<KEYWORDS>" OR --regex "<REGEX>"> [OPTIONS]
+Usage:
+  hayabusa.exe search <INPUT> <--keywords "<KEYWORDS>" OR --regex "<REGEX>"> [OPTIONS]
 
 Display Settings:
   -K, --no-color  カラーで出力しない
@@ -480,46 +498,47 @@ Display Settings:
   -v, --verbose   詳細な情報を出力する
 
 General Options:
-  -C, --clobber                          結果ファイルを上書きする
-  -h, --help                             ヘルプメニューを表示する
-  -Q, --quiet-errors                     Quiet errorsモード: エラーログを保存しない
-  -x, --recover-records                  空ページからevtxレコードをカービングする (デフォルト: 無効)
-  -c, --rules-config <DIR>               ルールフォルダのコンフィグディレクトリ (デフォルト: ./rules/config)
-  -t, --threads <NUMBER>                 スレッド数 (デフォルト: パフォーマンスに最適な数値)
-      --target-file-ext <FILE-EXT...>    evtx以外の拡張子を解析対象に追加する (例１: evtx_data 例２:evtx1,evtx2)
-  -s, --sort                             ファイル保存前にイベントをソートする (警告: これは多くのメモリを使用する!)
+  -C, --clobber                        結果ファイルを上書きする
+  -h, --help                           ヘルプメニューを表示する
+  -Q, --quiet-errors                   Quiet errorsモード: エラーログを保存しない
+  -x, --recover-records                空ページからevtxレコードをカービングする (デフォルト: 無効)
+  -c, --rules-config <DIR>             ルールフォルダのコンフィグディレクトリ (デフォルト: ./rules/config)
+      --target-file-ext <FILE-EXT...>  evtx以外の拡張子を解析対象に追加する (例１: evtx_data 例２:evtx1,evtx2)
+      --threads <NUMBER>               スレッド数 (デフォルト: パフォーマンスに最適な数値)
+  -s, --sort                           ファイル保存前にイベントをソートする (警告: これは多くのメモリを使用する!)
+  -V, --validate-checksums             チェックサム検証を有効にする
 
 Input:
-  -d, --directory <DIR>        .evtxファイルを持つディレクトリのパス
-  -f, --file <FILE>            1つの.evtxファイルに対して解析を行う
-  -l, --live-analysis          ローカル端末のC:\Windows\System32\winevt\Logsフォルダを解析する
-  
+  -d, --directory <DIR>  .evtxファイルを持つディレクトリのパス
+  -f, --file <FILE>      1つの.evtxファイルに対して解析を行う
+  -l, --live-analysis    ローカル端末のC:\Windows\System32\winevt\Logsフォルダを解析する
+
 Filtering:
-  -a, --and-logic                    ANDロジックでキーワード検索を行う (デフォルト: OR)
-  -F, --filter <FILTER...>           特定のフィールドでフィルタする
-  -i, --ignore-case                  大文字と小文字を区別しない
-  -k, --keywords <KEYWORD...>        キーワードでの検索
-  -r, --regex <REGEX>                正規表現での検索
-      --time-offset <OFFSET>         オフセットに基づく最近のイベントのスキャン (例: 1y, 3M, 30d, 24h, 30m)
-      --timeline-end <DATE>             解析対象とするイベントログの終了時刻 (例: "2022-02-22 23:59:59 +09:00")
-      --timeline-start <DATE>           解析対象とするイベントログの開始時刻 (例: "2020-02-22 00:00:00 +09:00")
+  -a, --and-logic              ANDロジックでキーワード検索を行う (デフォルト: OR)
+  -F, --filter <FILTER...>     特定のフィールドでフィルタする
+  -i, --ignore-case            大文字と小文字を区別しない
+  -k, --keyword <KEYWORD...>   キーワードでの検索
+  -r, --regex <REGEX>          正規表現での検索
+      --time-offset <OFFSET>   オフセットに基づく最近のイベントのスキャン (例: 1y, 3M, 30d, 24h, 30m)
+      --timeline-end <DATE>    解析対象とするイベントログの終了時刻 (例: "2022-02-22 23:59:59 +09:00")
+      --timeline-start <DATE>  解析対象とするイベントログの開始時刻 (例: "2020-02-22 00:00:00 +09:00")
 
 Output:
-  -b, --disable-abbreviations        省略機能を無効にする
-  -J, --JSON-output                  JSON形式で検索結果を保存する (例: -J -o results.json)
-  -L, --JSONL-output                 JSONL形式で検索結果を保存 (例: -L -o results.jsonl)
-  -M, --multiline                    イベントフィールド情報を複数の行に出力する
-  -o, --output <FILE>                ログオンサマリをCSV形式で保存する (例: search.csv)
-  -S, --tab-separator                フィールドをタブ区切りにする
+  -b, --disable-abbreviations  省略機能を無効にする
+  -J, --json-output            JSON形式で検索結果を保存する (例: -J -o results.json)
+  -L, --jsonl-output           JSONL形式で検索結果を保存 (例: -L -o results.jsonl)
+  -M, --multiline              CSV出力時にイベントフィールド情報を改行文字で区切る
+  -o, --output <FILE>          検索結果をCSV形式で保存する (例: search.csv)
+  -S, --tab-separator          フィールドをタブ区切りにする
 
 Time Format:
-      --European-time     ヨーロッパ形式で日付と時刻を出力する (例: 22-02-2022 22:00:00.123 +02:00)
-  -O, --ISO-8601          ISO-8601形式で日付と時刻を出力する (例: 2022-02-22T10:10:10.1234567Z) (UTC時刻)
-      --RFC-2822          RFC 2822形式で日付と時刻を出力する (例: Fri, 22 Feb 2022 22:00:00 -0600)
-      --RFC-3339          RFC 3339形式で日付と時刻を出力する (例: 2022-02-22 22:00:00.123456-06:00)
-      --US-military-time  24時間制(ミリタリータイム)のアメリカ形式で日付と時刻を出力する (例: 02-22-2022 22:00:00.123 -06:00)
-      --US-time           アメリカ形式で日付と時刻を出力する (例: 02-22-2022 10:00:00.123 PM -06:00)
-  -U, --UTC               UTC形式で日付と時刻を出力する (デフォルト: 現地時間)
+      --european-time     ヨーロッパ形式で日付と時刻を出力する (例: 22-02-2022 22:00:00.123 +02:00)
+  -O, --iso-8601          ISO-8601形式で日付と時刻を出力する (例: 2022-02-22T10:10:10.1234567Z) (UTC時刻)
+      --rfc-2822          RFC 2822形式で日付と時刻を出力する (例: Fri, 22 Feb 2022 22:00:00 -0600)
+      --rfc-3339          RFC 3339形式で日付と時刻を出力する (例: 2022-02-22 22:00:00.123456-06:00)
+  -U, --utc               UTC形式で日付と時刻を出力する (デフォルト: 現地時間)
+      --us-military-time  24時間制(ミリタリータイム)のアメリカ形式で日付と時刻を出力する (例: 02-22-2022 22:00:00.123 -06:00)
+      --us-time           アメリカ形式で日付と時刻を出力する (例: 02-22-2022 10:00:00.123 PM -06:00)
 ```
 
 ### `search`コマンドの使用例

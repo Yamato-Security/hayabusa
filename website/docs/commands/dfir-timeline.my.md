@@ -2,7 +2,7 @@
 
 ## Scan Wizard
 
-`csv-timeline` နှင့် `json-timeline` command များတွင် ယခုအခါ scan wizard ကို default အနေဖြင့် enable လုပ်ထားပါသည်။
+`dfir-timeline` command တွင် ယခုအခါ scan wizard ကို default အနေဖြင့် enable လုပ်ထားပါသည်။
 ဤသည်မှာ အသုံးပြုသူများအနေဖြင့် ၎င်းတို့၏ လိုအပ်ချက်နှင့် နှစ်သက်မှုအလိုက် မည်သည့် detection rule များကို enable လုပ်လိုသည်ကို လွယ်ကူစွာရွေးချယ်နိုင်ရန် ရည်ရွယ်ထားပါသည်။
 load လုပ်ရန် detection rule အစုအဝေးများသည် Sigma project ၏ တရားဝင်စာရင်းများအပေါ် အခြေခံထားပါသည်။
 အသေးစိတ်ကို [ဤ blog post](https://blog.sigmahq.io/introducing-sigma-rule-packages-releases-76043ce42e81) တွင် ရှင်းပြထားပါသည်။
@@ -68,22 +68,29 @@ Sigma rule များအတွက် channel နှင့် event ID field �
 - [Possible Hidden Shellcode](https://github.com/Yamato-Security/hayabusa-rules/blob/main/hayabusa/builtin/UnkwnChannEID_Med_PossibleHiddenShellcode.yml)
 - [Mimikatz Use](https://github.com/SigmaHQ/sigma/blob/master/rules/windows/builtin/win_alert_mimikatz_keywords.yml)
 
-ဤ rule နှစ်ခုကို အသုံးပြုပြီး load လုပ်ထားသော `.evtx` ဖိုင်များနှင့် rule အားလုံးကို scan လုပ်လိုပါက `csv-timeline` နှင့် `json-timeline` command များတွင် `-A, --enable-all-rules` option ကို ထည့်ရန် လိုအပ်ပါမည်။
+ဤ rule နှစ်ခုကို အသုံးပြုပြီး load လုပ်ထားသော `.evtx` ဖိုင်များနှင့် rule အားလုံးကို scan လုပ်လိုပါက `dfir-timeline` command တွင် `-A, --enable-all-rules` option ကို ထည့်ရန် လိုအပ်ပါမည်။
 ကျွန်ုပ်တို့၏ benchmark များတွင် rule filtering သည် scan လုပ်နေသော ဖိုင်များပေါ်မူတည်၍ ပုံမှန်အားဖြင့် 20% မှ 10x အထိ မြန်နှုန်းတိုးတက်စေပြီး မေမိုရီကိုလည်း ပိုနည်းနည်းသုံးပါသည်။
 
 Channel filtering ကို `.evtx` ဖိုင်များ load လုပ်သည့်အခါတွင်လည်း အသုံးပြုပါသည်။
 ဥပမာအားဖြင့် `Security` channel ရှိ event များကို ရှာဖွေသော rule တစ်ခုကို သတ်မှတ်ထားပါက `Security` log မှ မဟုတ်သော `.evtx` ဖိုင်များကို load လုပ်ခြင်းသည် အကျိုးမရှိပါ။
 ကျွန်ုပ်တို့၏ benchmark များတွင် ဤသည်က ပုံမှန် scan များဖြင့် 10% ခန့်နှင့် rule တစ်ခုတည်းဖြင့် scan လုပ်သည့်အခါ 60%+ အထိ စွမ်းဆောင်ရည် မြန်နှုန်းတိုးတက်မှု အကျိုးကျေးဇူး ပေးပါသည်။
-`.evtx` ဖိုင်တစ်ခုတည်းအတွင်း channel အများအပြား အသုံးပြုထားသည်ကို သေချာပါက၊ ဥပမာ တစ်စုံတစ်ဦးက `.evtx` ဖိုင်အများအပြားကို tool တစ်ခုဖြင့် ပေါင်းစပ်ထားပါက `csv-timeline` နှင့် `json-timeline` command များရှိ `-a, --scan-all-evtx-files` option ဖြင့် ဤ filtering ကို ပိတ်နိုင်ပါသည်။
+`.evtx` ဖိုင်တစ်ခုတည်းအတွင်း channel အများအပြား အသုံးပြုထားသည်ကို သေချာပါက၊ ဥပမာ တစ်စုံတစ်ဦးက `.evtx` ဖိုင်အများအပြားကို tool တစ်ခုဖြင့် ပေါင်းစပ်ထားပါက `dfir-timeline` command ရှိ `-a, --scan-all-evtx-files` option ဖြင့် ဤ filtering ကို ပိတ်နိုင်ပါသည်။
 
 > မှတ်ချက် - Channel filtering သည် `.evtx` ဖိုင်များနှင့်သာ အလုပ်လုပ်ပြီး `-J, --json-input` ဖြင့် JSON ဖိုင်မှ event log များ load လုပ်ရန် ကြိုးစားကာ `-A` သို့မဟုတ် `-a` ကိုလည်း သတ်မှတ်ပါက error တစ်ခု ရရှိပါမည်။
 
-## `csv-timeline` command
+## `dfir-timeline` command
 
-`csv-timeline` command သည် event များ၏ forensics timeline ကို CSV format ဖြင့် ဖန်တီးပါမည်။
+`dfir-timeline` command သည် event များ၏ forensics timeline ကို ဖန်တီးပါသည်။ output format ကို `-t, --output-type` ဖြင့် ရွေးချယ်ပါ - `csv` (default)၊ `json` သို့မဟုတ် `jsonl`။ တန်ဖိုးသည် စာလုံးအကြီးအသေး ခွဲခြားမှုမရှိပါ (ဥပမာ - `-t JSONL`)။
+
+- **CSV** သည် ပိုသေးငယ်သော timeline များ (များသောအားဖြင့် 2GB ထက်နည်းသော) ကို LibreOffice သို့မဟုတ် Timeline Explorer ကဲ့သို့ tool များသို့ import လုပ်ရန် ကောင်းပါသည် (event field အားလုံးကို `Details` column ကြီးတစ်ခုတည်းအတွင်း ထားရှိပါသည်)။
+- **JSON** သည် `Details` field များကို ခွဲခြားထားသောကြောင့် `jq` ကဲ့သို့ tool များဖြင့် ကြီးမားသော ရလဒ်များကို ပိုမိုအသေးစိတ် ခွဲခြမ်းစိတ်ဖြာရန် အကောင်းဆုံးဖြစ်ပါသည်။
+- **JSONL** သည် JSON ထက် ပိုမြန်ပြီး ဖိုင်အရွယ်အစား ပိုသေးငယ်သောကြောင့် Elastic Stack ကဲ့သို့ tool များသို့ import လုပ်ရန် အထူးသင့်တော်ပါသည်။
+
+**CSV Output** option များဖြစ်သော `-M, --multiline` နှင့် `-S, --tab-separator` တို့သည် CSV output အတွက်သာ သက်ရောက်ပြီး CSV မဟုတ်သော `-t` နှင့် တွဲဖက်အသုံးပြုပါက error ဖြစ်ပေါ်ပါမည်။
 
 ```
-Usage: csv-timeline <INPUT> [OPTIONS]
+Usage:
+  hayabusa.exe dfir-timeline <INPUT> [OPTIONS]
 
 Input:
   -d, --directory <DIR>  Directory of multiple .evtx files
@@ -93,18 +100,19 @@ Input:
 General Options:
   -C, --clobber                        Overwrite files when saving
   -h, --help                           Show the help menu
-  -J, --JSON-input                     Scan JSON formatted logs instead of .evtx (.json or .jsonl)
+  -J, --json-input                     Scan JSON formatted logs instead of .evtx (.json or .jsonl)
   -w, --no-wizard                      Do not ask questions. Scan for all events and alerts
   -Q, --quiet-errors                   Quiet errors mode: do not save error logs
   -x, --recover-records                Carve evtx records from slack space (default: disabled)
   -r, --rules <DIR/FILE>               Specify a custom rule directory or file (default: ./rules)
   -c, --rules-config <DIR>             Specify custom rule config directory (default: ./rules/config)
-  -s, --sort                           Sort events before saving the file. (warning: this uses much more memory!)
-  -t, --threads <NUMBER>               Number of threads (default: optimal number for performance)
+  -s, --sort                           Sort results before saving the file (warning: this uses much more memory!)
       --target-file-ext <FILE-EXT...>  Specify additional evtx file extensions (ex: evtx_data)
+      --threads <NUMBER>               Number of threads (default: optimal number for performance)
+  -V, --validate-checksums             Enable checksum validation
 
 Filtering:
-  -E, --EID-filter                      Scan only common EIDs for faster speed (./rules/config/target_event_IDs.txt)
+  -E, --eid-filter                      Scan only common EIDs for faster speed (./rules/config/target_event_IDs.txt)
   -A, --enable-all-rules                Enable all rules regardless of loaded evtx files (disable channel filter for rules)
   -D, --enable-deprecated-rules         Enable rules with a status of deprecated
   -n, --enable-noisy-rules              Enable rules set to noisy (./rules/config/noisy_rules.txt)
@@ -129,52 +137,67 @@ Filtering:
 
 Output:
   -b, --disable-abbreviations        Disable abbreviations
-  -G, --GeoIP <MAXMIND-DB-DIR>       Add GeoIP (ASN, city, country) info to IP addresses
-  -H, --HTML-report <FILE>           Save Results Summary details to an HTML report (ex: results.html)
-  -M, --multiline                    Output event field information in multiple rows
+  -G, --geo-ip <MAXMIND-DB-DIR>      Add GeoIP (ASN, city, country) info to IP addresses
+  -H, --html-report <FILE>           Save Results Summary details to an HTML report (ex: results.html)
   -F, --no-field-data-mapping        Disable field data mapping
       --no-pwsh-field-extraction     Disable field extraction of PowerShell classic logs
-  -o, --output <FILE>                Save the timeline in CSV format (ex: results.csv)
+  -o, --output <FILE>                Save the timeline to a file (ex: results.csv)
+  -t, --output-type <OUTPUT_FORMAT>  Output format: csv (default), json, or jsonl
   -p, --profile <PROFILE>            Specify output profile
-  -R, --remove-duplicate-data        Duplicate field data will be replaced with "DUP"
-  -X, --remove-duplicate-detections  Remove duplicate detections (default: disabled)
-  -S, --tab-separator                Separate event field information by tabs
+  -R, --remove-duplicate-data        Duplicate field data will be replaced with "DUP" (sort required)
+  -X, --remove-duplicate-detections  Remove duplicate detections (sort required)
 
 Display Settings:
   -K, --no-color            Disable color output
   -N, --no-summary          Do not display Results Summary for faster speed
   -q, --quiet               Quiet mode: do not display the launch banner
   -v, --verbose             Output verbose information
-  -T, --visualize-timeline  Output event frequency timeline (terminal needs to support unicode)
+  -T, --visualize-timeline  Output event frequency timeline (terminal needs to support unicode, sort required)
 
 Time Format:
-      --European-time     Output timestamp in European time format (ex: 22-02-2022 22:00:00.123 +02:00)
-  -O, --ISO-8601          Output timestamp in original ISO-8601 format (ex: 2022-02-22T10:10:10.1234567Z) (Always UTC)
-      --RFC-2822          Output timestamp in RFC 2822 format (ex: Fri, 22 Feb 2022 22:00:00 -0600)
-      --RFC-3339          Output timestamp in RFC 3339 format (ex: 2022-02-22 22:00:00.123456-06:00)
-      --US-military-time  Output timestamp in US military time format (ex: 02-22-2022 22:00:00.123 -06:00)
-      --US-time           Output timestamp in US time format (ex: 02-22-2022 10:00:00.123 PM -06:00)
-  -U, --UTC               Output time in UTC format (default: local time)
+      --european-time     Output timestamp in European time format (ex: 22-02-2022 22:00:00.123 +02:00)
+  -O, --iso-8601          Output timestamp in original ISO-8601 format (ex: 2022-02-22T10:10:10.1234567Z) (Always UTC)
+      --rfc-2822          Output timestamp in RFC 2822 format (ex: Fri, 22 Feb 2022 22:00:00 -0600)
+      --rfc-3339          Output timestamp in RFC 3339 format (ex: 2022-02-22 22:00:00.123456-06:00)
+  -U, --utc               Output time in UTC format (default: local time)
+      --us-military-time  Output timestamp in US military time format (ex: 02-22-2022 22:00:00.123 -06:00)
+      --us-time           Output timestamp in US time format (ex: 02-22-2022 10:00:00.123 PM -06:00)
+
+CSV Output:
+  -M, --multiline      Separate event field information by newline characters (CSV output only)
+  -S, --tab-separator  Separate event field information by tabs (CSV output only)
 ```
 
-### `csv-timeline` command examples
+### `dfir-timeline` command examples
 
 * default `standard` profile ဖြင့် Windows event log ဖိုင်တစ်ခုကို hayabusa ဖြင့် run ပါ -
 
 ```
-hayabusa.exe csv-timeline -f eventlog.evtx
+hayabusa.exe dfir-timeline -f eventlog.evtx
 ```
 
 * Windows event log ဖိုင်အများအပြားပါသော sample-evtx directory ကို verbose profile ဖြင့် hayabusa ဖြင့် run ပါ -
 
 ```
-hayabusa.exe csv-timeline -d .\hayabusa-sample-evtx -p verbose
+hayabusa.exe dfir-timeline -d .\hayabusa-sample-evtx -p verbose
 ```
 
 * LibreOffice၊ Timeline Explorer၊ Elastic Stack စသည်တို့ဖြင့် ပိုမိုခွဲခြမ်းစိတ်ဖြာရန် CSV ဖိုင်တစ်ခုတည်းသို့ export လုပ်ပြီး field အချက်အလက်အားလုံးကို ထည့်သွင်းပါ (သတိ - `super-verbose` profile ဖြင့် သင့်ဖိုင် output အရွယ်အစား များစွာ ကြီးလာပါမည်!) -
 
 ```
-hayabusa.exe csv-timeline -d .\hayabusa-sample-evtx -o results.csv -p super-verbose
+hayabusa.exe dfir-timeline -d .\hayabusa-sample-evtx -o results.csv -p super-verbose
+```
+
+* CSV အစား JSON output ထုတ်ပါ (`jq` စသည်တို့ဖြင့် ခွဲခြမ်းစိတ်ဖြာရန်) -
+
+```
+hayabusa.exe dfir-timeline -d .\hayabusa-sample-evtx -t json -o results.json
+```
+
+* JSONL output ထုတ်ပါ (Elastic Stack စသည်တို့သို့ import လုပ်ရန်၊ `-t` သည် စာလုံးအကြီးအသေး ခွဲခြားမှုမရှိပါ) -
+
+```
+hayabusa.exe dfir-timeline -d .\hayabusa-sample-evtx -t JSONL -o results.jsonl
 ```
 
 * EID (Event ID) filter ကို enable လုပ်ပါ -
@@ -182,31 +205,31 @@ hayabusa.exe csv-timeline -d .\hayabusa-sample-evtx -o results.csv -p super-verb
 > မှတ်ချက် - EID filter ကို enable လုပ်ခြင်းသည် ကျွန်ုပ်တို့၏ စမ်းသပ်မှုများတွင် ခွဲခြမ်းစိတ်ဖြာမှုကို 10-15% ခန့် မြန်စေသော်လည်း alert များ လွတ်သွားနိုင်ခြေ ရှိပါသည်။
 
 ```
-hayabusa.exe csv-timeline -E -d .\hayabusa-sample-evtx -o results.csv
+hayabusa.exe dfir-timeline -E -d .\hayabusa-sample-evtx -o results.csv
 ```
 
 * hayabusa rule များကိုသာ run ပါ (default မှာ `-r .\rules` ရှိ rule အားလုံးကို run ခြင်းဖြစ်သည်) -
 
 ```
-hayabusa.exe csv-timeline -d .\hayabusa-sample-evtx -r .\rules\hayabusa -o results.csv -w
+hayabusa.exe dfir-timeline -d .\hayabusa-sample-evtx -r .\rules\hayabusa -o results.csv -w
 ```
 
 * Windows တွင် default အနေဖြင့် enable လုပ်ထားသော log များအတွက် hayabusa rule များကိုသာ run ပါ -
 
 ```
-hayabusa.exe csv-timeline -d .\hayabusa-sample-evtx -r .\rules\hayabusa\builtin -o results.csv -w
+hayabusa.exe dfir-timeline -d .\hayabusa-sample-evtx -r .\rules\hayabusa\builtin -o results.csv -w
 ```
 
 * sysmon log များအတွက် hayabusa rule များကိုသာ run ပါ -
 
 ```
-hayabusa.exe csv-timeline -d .\hayabusa-sample-evtx -r .\rules\hayabusa\sysmon -o results.csv -w
+hayabusa.exe dfir-timeline -d .\hayabusa-sample-evtx -r .\rules\hayabusa\sysmon -o results.csv -w
 ```
 
 * sigma rule များကိုသာ run ပါ -
 
 ```
-hayabusa.exe csv-timeline -d .\hayabusa-sample-evtx -r .\rules\sigma -o results.csv -w
+hayabusa.exe dfir-timeline -d .\hayabusa-sample-evtx -r .\rules\sigma -o results.csv -w
 ```
 
 * deprecated rule များ (`status` ကို `deprecated` ဟု မှတ်ထားသူများ) နှင့် noisy rule များ (rule ID ကို `.\rules\config\noisy_rules.txt` တွင် စာရင်းပြုထားသူများ) ကို enable လုပ်ပါ -
@@ -215,25 +238,25 @@ hayabusa.exe csv-timeline -d .\hayabusa-sample-evtx -r .\rules\sigma -o results.
 > ထို့ကြောင့် သင်သည် deprecated rule များကို enable လုပ်ရန် မလိုအပ်ဖွယ်ရှိပါသည်။
 
 ```
-hayabusa.exe csv-timeline -d .\hayabusa-sample-evtx --enable-noisy-rules --enable-deprecated-rules -o results.csv -w
+hayabusa.exe dfir-timeline -d .\hayabusa-sample-evtx --enable-noisy-rules --enable-deprecated-rules -o results.csv -w
 ```
 
 * logon များကို ခွဲခြမ်းစိတ်ဖြာရန် rule များကိုသာ run ပြီး UTC timezone ဖြင့် output ထုတ်ပါ -
 
 ```
-hayabusa.exe csv-timeline -d .\hayabusa-sample-evtx -r .\rules\hayabusa\builtin\Security\LogonLogoff\Logon -U -o results.csv -w
+hayabusa.exe dfir-timeline -d .\hayabusa-sample-evtx -r .\rules\hayabusa\builtin\Security\LogonLogoff\Logon -U -o results.csv -w
 ```
 
 * live Windows စက်တစ်ခုပေါ်တွင် run ပါ (Administrator အခွင့်အရေး လိုအပ်သည်) ပြီး alert များ (အန္တရာယ်ရှိနိုင်သော အပြုအမူများ) ကိုသာ ရှာဖွေတွေ့ရှိပါ -
 
 ```
-hayabusa.exe csv-timeline -l -m low
+hayabusa.exe dfir-timeline -l -m low
 ```
 
 * verbose အချက်အလက် print ထုတ်ပါ (မည်သည့်ဖိုင်များ ပြုပြင်ရန် အချိန်ကြာသည်၊ parsing error များ စသည်တို့ကို ဆုံးဖြတ်ရန် အသုံးဝင်သည်) -
 
 ```
-hayabusa.exe csv-timeline -d .\hayabusa-sample-evtx -v
+hayabusa.exe dfir-timeline -d .\hayabusa-sample-evtx -v
 ```
 
 * Verbose output ဥပမာ -
@@ -265,7 +288,7 @@ Error: An error occurred while trying to serialize binary xml to output.
 * [Timesketch](https://timesketch.org/) သို့ import လုပ်ရန် သင့်တော်သော CSV format ဖြင့် output ထုတ်ပါ -
 
 ```
-hayabusa.exe csv-timeline -d ../hayabusa-sample-evtx --RFC-3339 -o timesketch-import.csv -p timesketch -U
+hayabusa.exe dfir-timeline -d ../hayabusa-sample-evtx --rfc-3339 -o timesketch-import.csv -p timesketch -U
 ```
 
 * Quiet error mode -
@@ -280,10 +303,10 @@ error message များကို မသိမ်းဆည်းလိုပ�
 
 1. ဦးစွာ MaxMind account တစ်ခုကို [ဤနေရာတွင်](https://dev.maxmind.com/geoip/geolite2-free-geolocation-data) sign up လုပ်ပါ။
 2. [download page](https://www.maxmind.com/en/accounts/current/geoip/downloads) မှ `.mmdb` ဖိုင်သုံးခုကို download လုပ်ပြီး directory တစ်ခုသို့ သိမ်းဆည်းပါ။ ဖိုင်အမည်များမှာ `GeoLite2-ASN.mmdb`၊	`GeoLite2-City.mmdb` နှင့် `GeoLite2-Country.mmdb` ဟု ဖြစ်သင့်ပါသည်။
-3. `csv-timeline` သို့မဟုတ် `json-timeline` command များကို run သည့်အခါ `-G` option ၏နောက်တွင် MaxMind database များပါသော directory ကို ထည့်ပါ။
+3. `dfir-timeline` command ကို run သည့်အခါ `-G` option ၏နောက်တွင် MaxMind database များပါသော directory ကို ထည့်ပါ။
 
-* `csv-timeline` ကို အသုံးပြုသည့်အခါ အောက်ပါ column ၆ ခုကို ထပ်ဆောင်း output ထုတ်ပါမည် - `SrcASN`၊ `SrcCity`၊ `SrcCountry`၊ `TgtASN`၊ `TgtCity`၊ `TgtCountry`။
-* `json-timeline` ကို အသုံးပြုသည့်အခါ တူညီသော `SrcASN`၊ `SrcCity`၊ `SrcCountry`၊ `TgtASN`၊ `TgtCity`၊ `TgtCountry` field များကို `Details` object သို့ ထည့်ပါမည်၊ သို့သော် ၎င်းတို့တွင် အချက်အလက်ပါဝင်မှသာ ဖြစ်သည်။
+* CSV output ဖြင့် အောက်ပါ column ၆ ခုကို ထပ်ဆောင်း output ထုတ်ပါမည် - `SrcASN`၊ `SrcCity`၊ `SrcCountry`၊ `TgtASN`၊ `TgtCity`၊ `TgtCountry`။
+* JSON/JSONL output ဖြင့် တူညီသော `SrcASN`၊ `SrcCity`၊ `SrcCountry`၊ `TgtASN`၊ `TgtCity`၊ `TgtCountry` field များကို `Details` object သို့ ထည့်ပါမည်၊ သို့သော် ၎င်းတို့တွင် အချက်အလက်ပါဝင်မှသာ ဖြစ်သည်။
 
 * `SrcIP` သို့မဟုတ် `TgtIP` သည် localhost (`127.0.0.1`၊ `::1` စသည်) ဖြစ်သည့်အခါ `SrcASN` သို့မဟုတ် `TgtASN` ကို `Local` အဖြစ် output ထုတ်ပါမည်။
 * `SrcIP` သို့မဟုတ် `TgtIP` သည် private IP address (`10.0.0.0/8`၊ `fe80::/10` စသည်) ဖြစ်သည့်အခါ `SrcASN` သို့မဟုတ် `TgtASN` ကို `Private` အဖြစ် output ထုတ်ပါမည်။
@@ -319,7 +342,7 @@ Linux တွင် အဆင့်များ -
 3. `sudo geoipupdate` ဖြင့် database file များကို update လုပ်ပါ။
 4. GeoIP အချက်အလက် ထည့်လိုသည့်အခါ `-G /var/lib/GeoIP/` ကို ထည့်ပါ။
 
-### `csv-timeline` command config files
+### `dfir-timeline` command config files
 
 `./rules/config/channel_abbreviations.txt`: channel အမည်များနှင့် ၎င်းတို့၏ အတိုကောက်များ၏ mapping များ။
 
@@ -346,95 +369,8 @@ firewall များနှင့် IDS များကဲ့သို့ မ�
 ဤ rule များသည် များသောအားဖြင့် သဘာဝအားဖြင့်ဖြစ်စေ false positive များကြောင့်ဖြစ်စေ noisy ဖြစ်ပါသည်။
 
 `./rules/config/target_event_IDs.txt`: EID filter ကို enable လုပ်ထားပါက ဤဖိုင်တွင် သတ်မှတ်ထားသော event ID များကိုသာ scan လုပ်ပါမည်။
-default အနေဖြင့် Hayabusa သည် event အားလုံးကို scan လုပ်ပါမည်၊ သို့သော် စွမ်းဆောင်ရည်ကို တိုးတက်စေလိုပါက `-E, --EID-filter` option ကို အသုံးပြုပါ။
+default အနေဖြင့် Hayabusa သည် event အားလုံးကို scan လုပ်ပါမည်၊ သို့သော် စွမ်းဆောင်ရည်ကို တိုးတက်စေလိုပါက `-E, --eid-filter` option ကို အသုံးပြုပါ။
 ဤသည်က များသောအားဖြင့် 10~25% မြန်နှုန်းတိုးတက်မှု ဖြစ်စေပါသည်။
-
-## `json-timeline` command
-
-`json-timeline` command သည် event များ၏ forensics timeline ကို JSON သို့မဟုတ် JSONL format ဖြင့် ဖန်တီးပါမည်။
-JSONL သို့ output ထုတ်ခြင်းသည် JSON ထက် ပိုမြန်ပြီး ဖိုင်အရွယ်အစား ပိုသေးငယ်သောကြောင့် ရလဒ်များကို Elastic Stack ကဲ့သို့ အခြား tool တစ်ခုသို့ import လုပ်မည်ဆိုပါက ကောင်းပါသည်။
-ရလဒ်များကို text editor ဖြင့် ကိုယ်တိုင် ခွဲခြမ်းစိတ်ဖြာမည်ဆိုပါက JSON က ပိုကောင်းပါသည်။
-CSV output သည် ပိုသေးငယ်သော timeline များ (များသောအားဖြင့် 2GB ထက်နည်းသော) ကို LibreOffice သို့မဟုတ် Timeline Explorer ကဲ့သို့ tool များသို့ import လုပ်ရန် ကောင်းပါသည်။
-`Details` field များကို ခွဲခြားထားသောကြောင့် ပိုမိုလွယ်ကူသော ခွဲခြမ်းစိတ်ဖြာမှုအတွက် `jq` ကဲ့သို့ tool များဖြင့် data (ကြီးမားသော ရလဒ်ဖိုင်များအပါအဝင်) ၏ ပိုမိုအသေးစိတ် ခွဲခြမ်းစိတ်ဖြာမှုအတွက် JSON က အကောင်းဆုံးဖြစ်ပါသည်။
-(CSV output တွင် event log field အားလုံးသည် `Details` column ကြီးတစ်ခုတည်းအတွင်း ရှိနေသောကြောင့် data များ sorting လုပ်ခြင်း စသည်တို့ ပိုခက်ခဲစေပါသည်။)
-
-```
-Usage: json-timeline <INPUT> [OPTIONS]
-
-Input:
-  -d, --directory <DIR>  Directory of multiple .evtx files
-  -f, --file <FILE>      File path to one .evtx file
-  -l, --live-analysis    Analyze the local C:\Windows\System32\winevt\Logs folder
-
-General Options:
-  -C, --clobber                        Overwrite files when saving
-  -h, --help                           Show the help menu
-  -J, --JSON-input                     Scan JSON formatted logs instead of .evtx (.json or .jsonl)
-  -w, --no-wizard                      Do not ask questions. Scan for all events and alerts
-  -Q, --quiet-errors                   Quiet errors mode: do not save error logs
-  -x, --recover-records                Carve evtx records from slack space (default: disabled)
-  -r, --rules <DIR/FILE>               Specify a custom rule directory or file (default: ./rules)
-  -c, --rules-config <DIR>             Specify custom rule config directory (default: ./rules/config)
-  -s, --sort                           Sort events before saving the file. (warning: this uses much more memory!)
-  -t, --threads <NUMBER>               Number of threads (default: optimal number for performance)
-      --target-file-ext <FILE-EXT...>  Specify additional evtx file extensions (ex: evtx_data)
-
-Filtering:
-  -E, --EID-filter                      Scan only common EIDs for faster speed (./rules/config/target_event_IDs.txt)
-  -A, --enable-all-rules                Enable all rules regardless of loaded evtx files (disable channel filter for rules)
-  -D, --enable-deprecated-rules         Enable rules with a status of deprecated
-  -n, --enable-noisy-rules              Enable rules set to noisy (./rules/config/noisy_rules.txt)
-  -u, --enable-unsupported-rules        Enable rules with a status of unsupported
-  -e, --exact-level <LEVEL>             Only load rules with a specific level (informational, low, medium, high, critical)
-      --exclude-category <CATEGORY...>  Do not load rules with specified logsource categories (ex: process_creation,pipe_created)
-      --exclude-computer <COMPUTER...>  Do not scan specified computer names (ex: ComputerA) (ex: ComputerA,ComputerB)
-      --exclude-eid <EID...>            Do not scan specific EIDs for faster speed (ex: 1) (ex: 1,4688)
-      --exclude-status <STATUS...>      Do not load rules according to status (ex: experimental) (ex: stable,test)
-      --exclude-tag <TAG...>            Do not load rules with specific tags (ex: sysmon)
-      --include-category <CATEGORY...>  Only load rules with specified logsource categories (ex: process_creation,pipe_created)
-      --include-computer <COMPUTER...>  Scan only specified computer names (ex: ComputerA) (ex: ComputerA,ComputerB)
-      --include-eid <EID...>            Scan only specified EIDs for faster speed (ex: 1) (ex: 1,4688)
-      --include-status <STATUS...>      Only load rules with specific status (ex: experimental) (ex: stable,test)
-      --include-tag <TAG...>            Only load rules with specific tags (ex: attack.execution,attack.discovery)
-  -m, --min-level <LEVEL>               Minimum level for rules to load (default: informational)
-  -P, --proven-rules                    Scan with only proven rules for faster speed (./rules/config/proven_rules.txt)
-  -a, --scan-all-evtx-files             Scan all evtx files regardless of loaded rules (disable channel filter for evtx files)
-      --time-offset <OFFSET>            Scan recent events based on an offset (ex: 1y, 3M, 30d, 24h, 30m)
-      --timeline-end <DATE>             End time of the event logs to load (ex: "2022-02-22 23:59:59 +09:00")
-      --timeline-start <DATE>           Start time of the event logs to load (ex: "2020-02-22 00:00:00 +09:00")
-
-Output:
-  -b, --disable-abbreviations        Disable abbreviations
-  -G, --GeoIP <MAXMIND-DB-DIR>       Add GeoIP (ASN, city, country) info to IP addresses
-  -H, --HTML-report <FILE>           Save Results Summary details to an HTML report (ex: results.html)
-  -L, --JSONL-output                 Save the timeline in JSONL format (ex: -L -o results.jsonl)
-  -F, --no-field-data-mapping        Disable field data mapping
-      --no-pwsh-field-extraction     Disable field extraction of PowerShell classic logs
-  -o, --output <FILE>                Save the timeline in JSON format (ex: results.json)
-  -p, --profile <PROFILE>            Specify output profile
-  -R, --remove-duplicate-data        Duplicate field data will be replaced with "DUP"
-  -X, --remove-duplicate-detections  Remove duplicate detections (default: disabled)
-
-Display Settings:
-  -K, --no-color            Disable color output
-  -N, --no-summary          Do not display Results Summary for faster speed
-  -q, --quiet               Quiet mode: do not display the launch banner
-  -v, --verbose             Output verbose information
-  -T, --visualize-timeline  Output event frequency timeline (terminal needs to support unicode)
-
-Time Format:
-      --European-time     Output timestamp in European time format (ex: 22-02-2022 22:00:00.123 +02:00)
-  -O, --ISO-8601          Output timestamp in original ISO-8601 format (ex: 2022-02-22T10:10:10.1234567Z) (Always UTC)
-      --RFC-2822          Output timestamp in RFC 2822 format (ex: Fri, 22 Feb 2022 22:00:00 -0600)
-      --RFC-3339          Output timestamp in RFC 3339 format (ex: 2022-02-22 22:00:00.123456-06:00)
-      --US-military-time  Output timestamp in US military time format (ex: 02-22-2022 22:00:00.123 -06:00)
-      --US-time           Output timestamp in US time format (ex: 02-22-2022 10:00:00.123 PM -06:00)
-  -U, --UTC               Output time in UTC format (default: local time)
-```
-
-### `json-timeline` command examples and config files
-
-`json-timeline` အတွက် option များနှင့် config ဖိုင်များသည် `csv-timeline` နှင့် တူညီသော်လည်း JSONL format သို့ output ထုတ်ရန် `-L, --JSONL-output` option တစ်ခု ပိုပါသည်။
 
 ## `level-tuning` command
 
@@ -444,7 +380,8 @@ Time Format:
 > သတိ - `update-rules` command ကို run တိုင်း risk level သည် မူရင်းတန်ဖိုးသို့ ပြန်ရောက်သွားမည်ဖြစ်၍ ထို့နောက် `level-tuning` command ကို ထပ်မံ run ရန် လိုအပ်ပါမည်။
 
 ```
-Usage: level-tuning [OPTIONS]
+Usage:
+  hayabusa.exe level-tuning [OPTIONS]
 
 Display Settings:
   -K, --no-color  Disable color output
@@ -490,7 +427,8 @@ be670d5c-31eb-7391-4d2e-d122c89cd5bb,high # 'HackTool - Rubeus Execution' - Secu
 ## `list-profiles` command
 
 ```
-Usage: list-profiles [OPTIONS]
+Usage:
+  hayabusa.exe list-profiles [OPTIONS]
 
 Display Settings:
   -K, --no-color  Disable color output
@@ -503,7 +441,8 @@ General Options:
 ## `set-default-profile` command
 
 ```
-Usage: set-default-profile [OPTIONS]
+Usage:
+  hayabusa.exe set-default-profile [OPTIONS]
 
 Display Settings:
   -K, --no-color  Disable color output
@@ -524,7 +463,8 @@ General Options:
 `update-rules` command သည် `rules` folder ကို [Hayabusa rules github repository](https://github.com/Yamato-Security/hayabusa-rules) နှင့် sync လုပ်ပြီး rule များနှင့် config ဖိုင်များကို update လုပ်ပါမည်။
 
 ```
-Usage: update-rules [OPTIONS]
+Usage:
+  hayabusa.exe update-rules [OPTIONS]
 
 Display Settings:
   -K, --no-color  Disable color output

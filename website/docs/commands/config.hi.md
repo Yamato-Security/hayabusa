@@ -8,18 +8,19 @@
 `critical_systems.txt` फ़ाइल में जोड़े गए किसी भी होस्टनाम के लिए low से ऊपर के सभी अलर्ट एक स्तर बढ़ा दिए जाएंगे, अधिकतम `emergency` स्तर तक।
 
 ```
-Usage: hayabusa.exe config-critical-systems <INPUT> [OPTIONS]
+Usage:
+  hayabusa.exe config-critical-systems <INPUT> [OPTIONS]
 
 Input:
-  -d, --directory <DIR>  Directory of multiple .evtx files
-  -f, --file <FILE>      File path to one .evtx file
+  -d, --directory <DIR>  एकाधिक .evtx फ़ाइलों की डायरेक्टरी
+  -f, --file <FILE>      एक .evtx फ़ाइल का फ़ाइल पथ
 
 Display Settings:
-  -K, --no-color  Disable color output
-  -q, --quiet     Quiet mode: do not display the launch banner
+  -K, --no-color  रंगीन आउटपुट अक्षम करें
+  -q, --quiet     शांत मोड: लॉन्च बैनर प्रदर्शित न करें
 
 General Options:
-  -h, --help  Show the help menu
+  -h, --help  सहायता मेनू दिखाएं
 ```
 
 ### `config-critical-systems` कमांड के उदाहरण

@@ -8,7 +8,8 @@ Ele buscará eventos Security 5145 (Network Share File Access) para determinar s
 Quaisquer nomes de host adicionados ao arquivo `critical_systems.txt` terão todos os alertas acima de low aumentados em um nível, com um nível máximo de `emergency`.
 
 ```
-Usage: hayabusa.exe config-critical-systems <INPUT> [OPTIONS]
+Usage:
+  hayabusa.exe config-critical-systems <INPUT> [OPTIONS]
 
 Input:
   -d, --directory <DIR>  Directory of multiple .evtx files

@@ -14,8 +14,7 @@
 * `config-critical-systems`: ドメインコントローラーやファイルサーバーなどの重要なシステムを見つける。
 
 ## DFIRタイムライン作成のコマンド:
-* `csv-timeline`: CSV形式のタイムラインを出力する。
-* `json-timeline`: JSON/JSONL形式のタイムラインを出力する。
+* `dfir-timeline`: CSV/JSON/JSONL形式のタイムラインを出力する。
 * `level-tuning`: アラート`level`のカスタムチューニング。
 * `list-profiles`: 出力プロファイルの一覧表示。
 * `set-default-profile`: デフォルトプロファイルを変更する。

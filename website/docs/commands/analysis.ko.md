@@ -11,7 +11,8 @@ Windows 11은 이벤트 로그에 저장할 때 가끔 완전히 다른 `Compute
 이 정보를 활용하면 타임라인을 생성할 때 `--include-computer` 또는 `--exclude-computer` 옵션을 사용하여 컴퓨터별로 여러 개의 타임라인을 생성하거나 특정 컴퓨터의 이벤트를 제외함으로써 타임라인 생성을 더 효율적으로 할 수 있습니다.
 
 ```
-Usage: computer-metrics <INPUT> [OPTIONS]
+Usage:
+  hayabusa.exe computer-metrics <INPUT> [OPTIONS]
 
 Input:
   -d, --directory <DIR>  Directory of multiple .evtx files
@@ -21,12 +22,12 @@ Input:
 General Options:
   -C, --clobber                        Overwrite files when saving
   -h, --help                           Show the help menu
-  -J, --JSON-input                     Scan JSON formatted logs instead of .evtx (.json or .jsonl)
+  -J, --json-input                     Scan JSON formatted logs instead of .evtx (.json or .jsonl)
   -Q, --quiet-errors                   Quiet errors mode: do not save error logs
   -x, --recover-records                Carve evtx records from slack space (default: disabled)
   -c, --rules-config <DIR>             Specify custom rule config directory (default: ./rules/config)
       --target-file-ext <FILE-EXT...>  Specify additional evtx file extensions (ex: evtx_data)
-  -t, --threads <NUMBER>               Number of threads (default: optimal number for performance)
+  -V, --validate-checksums             체크섬 검증 활성화
 
 Filtering:
       --time-offset <OFFSET>  Scan recent events based on an offset (ex: 1y, 3M, 30d, 24h, 30m)
@@ -55,7 +56,8 @@ Display Settings:
 이 명령어는 어떠한 탐지 규칙도 사용하지 않으므로 모든 이벤트를 스캔합니다.
 
 ```
-Usage: eid-metrics <INPUT> [OPTIONS]
+Usage:
+  hayabusa.exe eid-metrics <INPUT> [OPTIONS]
 
 Input:
   -d, --directory <DIR>  Directory of multiple .evtx files
@@ -65,12 +67,13 @@ Input:
 General Options:
   -C, --clobber                        Overwrite files when saving
   -h, --help                           Show the help menu
-  -J, --JSON-input                     Scan JSON formatted logs instead of .evtx (.json or .jsonl)
+  -J, --json-input                     Scan JSON formatted logs instead of .evtx (.json or .jsonl)
   -Q, --quiet-errors                   Quiet errors mode: do not save error logs
   -x, --recover-records                Carve evtx records from slack space (default: disabled)
   -c, --rules-config <DIR>             Specify custom rule config directory (default: ./rules/config)
-  -t, --threads <NUMBER>               Number of threads (default: optimal number for performance)
       --target-file-ext <FILE-EXT...>  Specify additional evtx file extensions (ex: evtx_data)
+      --threads <NUMBER>               Number of threads (default: optimal number for performance)
+  -V, --validate-checksums             체크섬 검증 활성화
 
 Filtering:
       --exclude-computer <COMPUTER...>  Do not scan specified computer names (ex: ComputerA) (ex: ComputerA,ComputerB)
@@ -78,8 +81,8 @@ Filtering:
       --time-offset <OFFSET>            Scan recent events based on an offset (ex: 1y, 3M, 30d, 24h, 30m)
 
 Output:
-  -b, --disable-abbreviations  Disable abbreviations
-  -o, --output <FILE>          Save the Metrics in CSV format (ex: metrics.csv)
+  -X, --remove-duplicate-records  중복 이벤트 레코드 제거 (default: disabled)
+  -o, --output <FILE>             Save the Metrics in CSV format (ex: metrics.csv)
 
 Display Settings:
   -K, --no-color  Disable color output
@@ -87,13 +90,13 @@ Display Settings:
   -v, --verbose   Output verbose information
 
 Time Format:
-      --European-time     Output timestamp in European time format (ex: 22-02-2022 22:00:00.123 +02:00)
-  -O, --ISO-8601          Output timestamp in original ISO-8601 format (ex: 2022-02-22T10:10:10.1234567Z) (Always UTC)
-      --RFC-2822          Output timestamp in RFC 2822 format (ex: Fri, 22 Feb 2022 22:00:00 -0600)
-      --RFC-3339          Output timestamp in RFC 3339 format (ex: 2022-02-22 22:00:00.123456-06:00)
-      --US-military-time  Output timestamp in US military time format (ex: 02-22-2022 22:00:00.123 -06:00)
-      --US-time           Output timestamp in US time format (ex: 02-22-2022 10:00:00.123 PM -06:00)
-  -U, --UTC               Output time in UTC format (default: local time)
+      --european-time     Output timestamp in European time format (ex: 22-02-2022 22:00:00.123 +02:00)
+  -O, --iso-8601          Output timestamp in original ISO-8601 format (ex: 2022-02-22T10:10:10.1234567Z) (Always UTC)
+      --rfc-2822          Output timestamp in RFC 2822 format (ex: Fri, 22 Feb 2022 22:00:00 -0600)
+      --rfc-3339          Output timestamp in RFC 3339 format (ex: 2022-02-22 22:00:00.123456-06:00)
+  -U, --utc               Output time in UTC format (default: local time)
+      --us-military-time  Output timestamp in US military time format (ex: 02-22-2022 22:00:00.123 -06:00)
+      --us-time           Output timestamp in US time format (ex: 02-22-2022 10:00:00.123 PM -06:00)
 ```
 
 ### `eid-metrics` 명령어 예시
@@ -153,7 +156,8 @@ AdminWorkstation3
 설정 파일이 존재하지 않으면 Hayabusa는 여전히 `expand` 규칙을 로드하지만 무시합니다.
 
 ```
-Usage:  expand-list <INPUT> [OPTIONS]
+Usage:
+  hayabusa.exe expand-list [OPTIONS]
 
 General Options:
   -h, --help              Show the help menu
@@ -167,7 +171,7 @@ Display Settings:
 ### `expand-list` 명령어 예시
 
 * 기본 `rules` 디렉터리에서 `expand` 필드 수정자 추출: `hayabusa.exe expand-list`
-* `sigma` 디렉터리에서 `expand` 필드 수정자 추출: `hayabusa.exe eid-metrics -r ../sigma`
+* `sigma` 디렉터리에서 `expand` 필드 수정자 추출: `hayabusa.exe expand-list -r ../sigma`
 
 ### `expand-list` 결과
 
@@ -190,7 +194,8 @@ domain_controller_hostnames
   * PowerShell Operational 4103
 
 ```
-Usage:  extract-base64 <INPUT> [OPTIONS]
+Usage:
+  hayabusa.exe extract-base64 <INPUT> [OPTIONS]
 
 Input:
   -d, --directory <DIR>  Directory of multiple .evtx files
@@ -200,12 +205,13 @@ Input:
 General Options:
   -C, --clobber                        Overwrite files when saving
   -h, --help                           Show the help menu
-  -J, --JSON-input                     Scan JSON formatted logs instead of .evtx (.json or .jsonl)
+  -J, --json-input                     Scan JSON formatted logs instead of .evtx (.json or .jsonl)
   -Q, --quiet-errors                   Quiet errors mode: do not save error logs
   -x, --recover-records                Carve evtx records from slack space (default: disabled)
   -c, --rules-config <DIR>             Specify custom rule config directory (default: ./rules/config)
-  -t, --threads <NUMBER>               Number of threads (default: optimal number for performance)
       --target-file-ext <FILE-EXT...>  Specify additional evtx file extensions (ex: evtx_data)
+      --threads <NUMBER>               Number of threads (default: optimal number for performance)
+  -V, --validate-checksums             체크섬 검증 활성화
 
 Filtering:
       --exclude-computer <COMPUTER...>  Do not scan specified computer names (ex: ComputerA) (ex: ComputerA,ComputerB)
@@ -213,7 +219,7 @@ Filtering:
       --time-offset <OFFSET>            Scan recent events based on an offset (ex: 1y, 3M, 30d, 24h, 30m)
 
 Output:
-  -o, --output <FILE>  Extract Base64 strings
+  -o, --output <FILE>  결과를 CSV 파일로 저장
 
 Display Settings:
   -K, --no-color  Disable color output
@@ -221,19 +227,19 @@ Display Settings:
   -v, --verbose   Output verbose information
 
 Time Format:
-      --European-time     Output timestamp in European time format (ex: 22-02-2022 22:00:00.123 +02:00)
-  -O, --ISO-8601          Output timestamp in original ISO-8601 format (ex: 2022-02-22T10:10:10.1234567Z) (Always UTC)
-      --RFC-2822          Output timestamp in RFC 2822 format (ex: Fri, 22 Feb 2022 22:00:00 -0600)
-      --RFC-3339          Output timestamp in RFC 3339 format (ex: 2022-02-22 22:00:00.123456-06:00)
-      --US-military-time  Output timestamp in US military time format (ex: 02-22-2022 22:00:00.123 -06:00)
-      --US-time           Output timestamp in US time format (ex: 02-22-2022 10:00:00.123 PM -06:00)
-  -U, --UTC               Output time in UTC format (default: local time)
+      --european-time     Output timestamp in European time format (ex: 22-02-2022 22:00:00.123 +02:00)
+  -O, --iso-8601          Output timestamp in original ISO-8601 format (ex: 2022-02-22T10:10:10.1234567Z) (Always UTC)
+      --rfc-2822          Output timestamp in RFC 2822 format (ex: Fri, 22 Feb 2022 22:00:00 -0600)
+      --rfc-3339          Output timestamp in RFC 3339 format (ex: 2022-02-22 22:00:00.123456-06:00)
+  -U, --utc               Output time in UTC format (default: local time)
+      --us-military-time  Output timestamp in US military time format (ex: 02-22-2022 22:00:00.123 -06:00)
+      --us-time           Output timestamp in US time format (ex: 02-22-2022 10:00:00.123 PM -06:00)
 ```
 
 ### `extract-base64` 명령어 예시
 
-* 디렉터리를 스캔하여 터미널로 출력: `hayabusa.exe  extract-base64 -d ../hayabusa-sample-evtx`
-* 디렉터리를 스캔하여 CSV 파일로 출력: `hayabusa.exe eid-metrics -r ../sigma -o base64-extracted.csv`
+* 디렉터리를 스캔하여 터미널로 출력: `hayabusa.exe extract-base64 -d ../hayabusa-sample-evtx`
+* 디렉터리를 스캔하여 CSV 파일로 출력: `hayabusa.exe extract-base64 -d ../hayabusa-sample-evtx -o base64-extracted.csv`
 
 ### `extract-base64` 결과
 
@@ -272,7 +278,8 @@ CSV 파일로 저장할 때는 다음 필드가 저장됩니다:
 이 명령어는 어떠한 탐지 규칙도 사용하지 않으므로 모든 이벤트를 스캔합니다.
 
 ```
-Usage: log-metrics <INPUT> [OPTIONS]
+Usage:
+  hayabusa.exe log-metrics <INPUT> [OPTIONS]
 
 Input:
   -d, --directory <DIR>  Directory of multiple .evtx files
@@ -282,21 +289,26 @@ Input:
 General Options:
   -C, --clobber                        Overwrite files when saving
   -h, --help                           Show the help menu
-  -J, --JSON-input                     Scan JSON formatted logs instead of .evtx (.json or .jsonl)
+  -J, --json-input                     Scan JSON formatted logs instead of .evtx (.json or .jsonl)
   -Q, --quiet-errors                   Quiet errors mode: do not save error logs
   -x, --recover-records                Carve evtx records from slack space (default: disabled)
   -c, --rules-config <DIR>             Specify custom rule config directory (default: ./rules/config)
-  -t, --threads <NUMBER>               Number of threads (default: optimal number for performance)
       --target-file-ext <FILE-EXT...>  Specify additional evtx file extensions (ex: evtx_data)
+      --threads <NUMBER>               Number of threads (default: optimal number for performance)
+  -V, --validate-checksums             체크섬 검증 활성화
 
 Filtering:
       --exclude-computer <COMPUTER...>  Do not scan specified computer names (ex: ComputerA) (ex: ComputerA,ComputerB)
+      --exclude-channel <CHANNEL...>    지정된 채널을 스캔하지 않음 (ex: System,Security)
+      --exclude-filename <FILE...>      지정된 evtx 파일을 스캔하지 않음 (ex: Security.evtx,System.evtx)
       --include-computer <COMPUTER...>  Scan only specified computer names (ex: ComputerA) (ex: ComputerA,ComputerB)
+      --include-channel <CHANNEL...>    지정된 채널만 포함 (ex: System,Security)
+      --include-filename <FILE...>      지정된 evtx 파일만 포함 (ex: Security.evtx,System.evtx)
       --time-offset <OFFSET>            Scan recent events based on an offset (ex: 1y, 3M, 30d, 24h, 30m)
 
 Output:
   -b, --disable-abbreviations  Disable abbreviations
-  -M, --multiline              Output event field information in multiple rows for CSV output
+  -M, --multiline              CSV 출력 시 이벤트 필드 정보를 개행 문자로 구분
   -o, --output <FILE>          Save the Metrics in CSV format (ex: metrics.csv)
   -S, --tab-separator          Separate event field information by tabs
 
@@ -306,20 +318,20 @@ Display Settings:
   -v, --verbose   Output verbose information
 
 Time Format:
-      --European-time     Output timestamp in European time format (ex: 22-02-2022 22:00:00.123 +02:00)
-  -O, --ISO-8601          Output timestamp in original ISO-8601 format (ex: 2022-02-22T10:10:10.1234567Z) (Always UTC)
-      --RFC-2822          Output timestamp in RFC 2822 format (ex: Fri, 22 Feb 2022 22:00:00 -0600)
-      --RFC-3339          Output timestamp in RFC 3339 format (ex: 2022-02-22 22:00:00.123456-06:00)
-      --US-military-time  Output timestamp in US military time format (ex: 02-22-2022 22:00:00.123 -06:00)
-      --US-time           Output timestamp in US time format (ex: 02-22-2022 10:00:00.123 PM -06:00)
-  -U, --UTC               Output time in UTC format (default: local time)
+      --european-time     Output timestamp in European time format (ex: 22-02-2022 22:00:00.123 +02:00)
+  -O, --iso-8601          Output timestamp in original ISO-8601 format (ex: 2022-02-22T10:10:10.1234567Z) (Always UTC)
+      --rfc-2822          Output timestamp in RFC 2822 format (ex: Fri, 22 Feb 2022 22:00:00 -0600)
+      --rfc-3339          Output timestamp in RFC 3339 format (ex: 2022-02-22 22:00:00.123456-06:00)
+  -U, --utc               Output time in UTC format (default: local time)
+      --us-military-time  Output timestamp in US military time format (ex: 02-22-2022 22:00:00.123 -06:00)
+      --us-time           Output timestamp in US time format (ex: 02-22-2022 10:00:00.123 PM -06:00)
 ```
 
 ### `log-metrics` 명령어 예시
 
-* 단일 파일에서 이벤트 ID 메트릭 출력: `hayabusa.exe log-metrics -f Security.evtx`
-* 디렉터리에서 이벤트 ID 메트릭 출력: `hayabusa.exe log-metrics -d ../logs`
-* 결과를 CSV 파일로 저장: `hayabusa.exe log-metrics -d ../logs -o eid-metrics.csv`
+* 단일 파일에서 로그 파일 메타데이터 출력: `hayabusa.exe log-metrics -f Security.evtx`
+* 디렉터리에서 로그 파일 메타데이터 출력: `hayabusa.exe log-metrics -d ../logs`
+* 결과를 CSV 파일로 저장: `hayabusa.exe log-metrics -d ../logs -o log-metrics.csv`
 
 ### `log-metrics` 스크린샷
 
@@ -338,7 +350,8 @@ Time Format:
 실패한 로그온은 `Security 4625` 이벤트에서 가져옵니다.
 
 ```
-Usage: logon-summary <INPUT> [OPTIONS]
+Usage:
+  hayabusa.exe logon-summary <INPUT> [OPTIONS]
 
 Input:
   -d, --directory <DIR>  Directory of multiple .evtx files
@@ -348,12 +361,13 @@ Input:
 General Options:
   -C, --clobber                        Overwrite files when saving
   -h, --help                           Show the help menu
-  -J, --JSON-input                     Scan JSON formatted logs instead of .evtx (.json or .jsonl)
+  -J, --json-input                     Scan JSON formatted logs instead of .evtx (.json or .jsonl)
   -Q, --quiet-errors                   Quiet errors mode: do not save error logs
   -x, --recover-records                Carve evtx records from slack space (default: disabled)
   -c, --rules-config <DIR>             Specify custom rule config directory (default: ./rules/config)
-  -t, --threads <NUMBER>               Number of threads (default: optimal number for performance)
       --target-file-ext <FILE-EXT...>  Specify additional evtx file extensions (ex: evtx_data)
+      --threads <NUMBER>               Number of threads (default: optimal number for performance)
+  -V, --validate-checksums             체크섬 검증 활성화
 
 Filtering:
       --exclude-computer <COMPUTER...>  Do not scan specified computer names (ex: ComputerA) (ex: ComputerA,ComputerB)
@@ -363,6 +377,7 @@ Filtering:
       --timeline-start <DATE>           Start time of the event logs to load (ex: "2020-02-22 00:00:00 +09:00")
 
 Output:
+  -X, --remove-duplicate-records  중복 이벤트 레코드 제거 (default: disabled)
   -o, --output <FILENAME-PREFIX>  Save the logon summary to two CSV files (ex: -o logon-summary)
 
 Display Settings:
@@ -371,13 +386,13 @@ Display Settings:
   -v, --verbose   Output verbose information
 
 Time Format:
-      --European-time     Output timestamp in European time format (ex: 22-02-2022 22:00:00.123 +02:00)
-  -O, --ISO-8601          Output timestamp in original ISO-8601 format (ex: 2022-02-22T10:10:10.1234567Z) (Always UTC)
-      --RFC-2822          Output timestamp in RFC 2822 format (ex: Fri, 22 Feb 2022 22:00:00 -0600)
-      --RFC-3339          Output timestamp in RFC 3339 format (ex: 2022-02-22 22:00:00.123456-06:00)
-      --US-military-time  Output timestamp in US military time format (ex: 02-22-2022 22:00:00.123 -06:00)
-      --US-time           Output timestamp in US time format (ex: 02-22-2022 10:00:00.123 PM -06:00)
-  -U, --UTC               Output time in UTC format (default: local time)
+      --european-time     Output timestamp in European time format (ex: 22-02-2022 22:00:00.123 +02:00)
+  -O, --iso-8601          Output timestamp in original ISO-8601 format (ex: 2022-02-22T10:10:10.1234567Z) (Always UTC)
+      --rfc-2822          Output timestamp in RFC 2822 format (ex: Fri, 22 Feb 2022 22:00:00 -0600)
+      --rfc-3339          Output timestamp in RFC 3339 format (ex: 2022-02-22 22:00:00.123456-06:00)
+  -U, --utc               Output time in UTC format (default: local time)
+      --us-military-time  Output timestamp in US military time format (ex: 02-22-2022 22:00:00.123 -06:00)
+      --us-time           Output timestamp in US time format (ex: 02-22-2022 10:00:00.123 PM -06:00)
 ```
 
 ### `logon-summary` 명령어 예시
@@ -400,7 +415,8 @@ Time Format:
 결과에는 많은 정상 이벤트와 일치하는 공통 키워드가 있을 가능성이 높으므로, 결과를 수동으로 확인하고 고유한 키워드 목록을 하나의 파일에 만든 후, `grep -f keywords.txt timeline.csv`와 같은 명령어로 의심스러운 활동의 좁혀진 타임라인을 생성할 수 있습니다.
 
 ```
-Usage: pivot-keywords-list <INPUT> [OPTIONS]
+Usage:
+  hayabusa.exe pivot-keywords-list <INPUT> [OPTIONS]
 
 Input:
   -d, --directory <DIR>  Directory of multiple .evtx files
@@ -410,16 +426,17 @@ Input:
 General Options:
   -C, --clobber                        Overwrite files when saving
   -h, --help                           Show the help menu
-  -J, --JSON-input                     Scan JSON formatted logs instead of .evtx (.json or .jsonl)
+  -J, --json-input                     Scan JSON formatted logs instead of .evtx (.json or .jsonl)
   -w, --no-wizard                      Do not ask questions. Scan for all events and alerts
   -Q, --quiet-errors                   Quiet errors mode: do not save error logs
   -x, --recover-records                Carve evtx records from slack space (default: disabled)
   -c, --rules-config <DIR>             Specify custom rule config directory (default: ./rules/config)
-  -t, --threads <NUMBER>               Number of threads (default: optimal number for performance)
       --target-file-ext <FILE-EXT...>  Specify additional evtx file extensions (ex: evtx_data)
+      --threads <NUMBER>               Number of threads (default: optimal number for performance)
+  -V, --validate-checksums             체크섬 검증 활성화
 
 Filtering:
-  -E, --EID-filter                      Scan only common EIDs for faster speed (./rules/config/target_event_IDs.txt)
+  -E, --eid-filter                      Scan only common EIDs for faster speed (./rules/config/target_event_IDs.txt)
   -D, --enable-deprecated-rules         Enable rules with a status of deprecated
   -n, --enable-noisy-rules              Enable rules set to noisy (./rules/config/noisy_rules.txt)
   -u, --enable-unsupported-rules        Enable rules with a status of unsupported
@@ -469,7 +486,8 @@ hayabusa.exe pivot-keywords-list -d ../logs -m critical -o keywords`
 이는 Hayabusa가 탐지하지 못한 이벤트에 증거가 있는지 판단하는 데 유용합니다.
 
 ```
-Usage: hayabusa.exe search <INPUT> <--keywords "<KEYWORDS>" OR --regex "<REGEX>"> [OPTIONS]
+Usage:
+  hayabusa.exe search <INPUT> <--keywords "<KEYWORDS>" OR --regex "<REGEX>"> [OPTIONS]
 
 Display Settings:
   -K, --no-color  Disable color output
@@ -482,9 +500,10 @@ General Options:
   -Q, --quiet-errors                   Quiet errors mode: do not save error logs
   -x, --recover-records                Carve evtx records from slack space (default: disabled)
   -c, --rules-config <DIR>             Specify custom rule config directory (default: ./rules/config)
-  -t, --threads <NUMBER>               Number of threads (default: optimal number for performance)
       --target-file-ext <FILE-EXT...>  Specify additional evtx file extensions (ex: evtx_data)
+      --threads <NUMBER>               Number of threads (default: optimal number for performance)
   -s, --sort                           Sort results before saving the file (warning: this uses much more memory!)
+  -V, --validate-checksums             체크섬 검증 활성화
 
 Input:
   -d, --directory <DIR>  Directory of multiple .evtx files
@@ -503,20 +522,20 @@ Filtering:
 
 Output:
   -b, --disable-abbreviations  Disable abbreviations
-  -J, --JSON-output            Save the search results in JSON format (ex: -J -o results.json)
-  -L, --JSONL-output           Save the search results in JSONL format (ex: -L -o results.jsonl)
-  -M, --multiline              Output event field information in multiple rows for CSV output
+  -J, --json-output            Save the search results in JSON format (ex: -J -o results.json)
+  -L, --jsonl-output           Save the search results in JSONL format (ex: -L -o results.jsonl)
+  -M, --multiline              CSV 출력 시 이벤트 필드 정보를 개행 문자로 구분
   -o, --output <FILE>          Save the search results in CSV format (ex: search.csv)
   -S, --tab-separator          Separate event field information by tabs
 
 Time Format:
-      --European-time     Output timestamp in European time format (ex: 22-02-2022 22:00:00.123 +02:00)
-  -O, --ISO-8601          Output timestamp in original ISO-8601 format (ex: 2022-02-22T10:10:10.1234567Z) (Always UTC)
-      --RFC-2822          Output timestamp in RFC 2822 format (ex: Fri, 22 Feb 2022 22:00:00 -0600)
-      --RFC-3339          Output timestamp in RFC 3339 format (ex: 2022-02-22 22:00:00.123456-06:00)
-      --US-military-time  Output timestamp in US military time format (ex: 02-22-2022 22:00:00.123 -06:00)
-      --US-time           Output timestamp in US time format (ex: 02-22-2022 10:00:00.123 PM -06:00)
-  -U, --UTC               Output time in UTC format (default: local time)
+      --european-time     Output timestamp in European time format (ex: 22-02-2022 22:00:00.123 +02:00)
+  -O, --iso-8601          Output timestamp in original ISO-8601 format (ex: 2022-02-22T10:10:10.1234567Z) (Always UTC)
+      --rfc-2822          Output timestamp in RFC 2822 format (ex: Fri, 22 Feb 2022 22:00:00 -0600)
+      --rfc-3339          Output timestamp in RFC 3339 format (ex: 2022-02-22 22:00:00.123456-06:00)
+  -U, --utc               Output time in UTC format (default: local time)
+      --us-military-time  Output timestamp in US military time format (ex: 02-22-2022 22:00:00.123 -06:00)
+      --us-time           Output timestamp in US time format (ex: 02-22-2022 10:00:00.123 PM -06:00)
 ```
 
 ### `search` 명령어 예시

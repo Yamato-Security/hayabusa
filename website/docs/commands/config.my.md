@@ -8,7 +8,8 @@
 `critical_systems.txt` ဖိုင်ထဲသို့ ထည့်သွင်းထားသော hostname များအတွက် low ထက်မြင့်သော alert အားလုံးကို level တစ်ဆင့်တိုးမြှင့်ပေးမည်ဖြစ်ပြီး အမြင့်ဆုံး `emergency` level အထိဖြစ်သည်။
 
 ```
-Usage: hayabusa.exe config-critical-systems <INPUT> [OPTIONS]
+Usage:
+  hayabusa.exe config-critical-systems <INPUT> [OPTIONS]
 
 Input:
   -d, --directory <DIR>  Directory of multiple .evtx files

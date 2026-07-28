@@ -8,7 +8,8 @@ Perintah ini akan mencari event Security 5145 (Network Share File Access) untuk 
 Setiap hostname yang ditambahkan ke file `critical_systems.txt` akan memiliki semua alert di atas low dinaikkan satu tingkat dengan tingkat maksimum `emergency`.
 
 ```
-Usage: hayabusa.exe config-critical-systems <INPUT> [OPTIONS]
+Usage:
+  hayabusa.exe config-critical-systems <INPUT> [OPTIONS]
 
 Input:
   -d, --directory <DIR>  Directory of multiple .evtx files
