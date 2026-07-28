@@ -25,3 +25,8 @@ config/critical_systems.txt
 !/website/requirements.txt
 !/website/docs/stylesheets/
 !/website/docs/stylesheets/extra.css
+
+# Claude Code local state (worktrees, session data). Ephemeral and per-developer;
+# committing it is never intended. If shared Claude config is ever added to the repo,
+# re-include the specific path with a `!` rule below.
+/.claude/
