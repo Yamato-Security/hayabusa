@@ -89,6 +89,7 @@ O comando `dfir-timeline` cria uma linha do tempo forense de eventos. Escolha o 
 As opções de **Saída CSV** `-M, --multiline` e `-S, --tab-separator` aplicam-se apenas à saída CSV e produzirão um erro se combinadas com um `-t` não-CSV.
 
 ```
+Usage:
   hayabusa.exe dfir-timeline <INPUT> [OPTIONS]
 
 Input:
@@ -379,7 +380,8 @@ Este comando usa um arquivo de configuração para sobrescrever os níveis de ri
 > Atenção: toda vez que você executar o comando `update-rules`, o nível de risco será retornado ao valor original, então você precisará executar o comando `level-tuning` novamente em seguida.
 
 ```
-Usage: level-tuning [OPTIONS]
+Usage:
+  hayabusa.exe level-tuning [OPTIONS]
 
 Display Settings:
   -K, --no-color  Disable color output
@@ -425,7 +427,8 @@ Os níveis possíveis de definir são `critical`, `high`, `medium`, `low` e `inf
 ## Comando `list-profiles`
 
 ```
-Usage: list-profiles [OPTIONS]
+Usage:
+  hayabusa.exe list-profiles [OPTIONS]
 
 Display Settings:
   -K, --no-color  Disable color output
@@ -438,7 +441,8 @@ General Options:
 ## Comando `set-default-profile`
 
 ```
-Usage: set-default-profile [OPTIONS]
+Usage:
+  hayabusa.exe set-default-profile [OPTIONS]
 
 Display Settings:
   -K, --no-color  Disable color output
@@ -459,7 +463,8 @@ General Options:
 O comando `update-rules` sincronizará a pasta `rules` com o [repositório github de regras do Hayabusa](https://github.com/Yamato-Security/hayabusa-rules), atualizando as regras e os arquivos de configuração.
 
 ```
-Usage: update-rules [OPTIONS]
+Usage:
+  hayabusa.exe update-rules [OPTIONS]
 
 Display Settings:
   -K, --no-color  Disable color output

@@ -11,7 +11,8 @@ Windows 11은 이벤트 로그에 저장할 때 가끔 완전히 다른 `Compute
 이 정보를 활용하면 타임라인을 생성할 때 `--include-computer` 또는 `--exclude-computer` 옵션을 사용하여 컴퓨터별로 여러 개의 타임라인을 생성하거나 특정 컴퓨터의 이벤트를 제외함으로써 타임라인 생성을 더 효율적으로 할 수 있습니다.
 
 ```
-Usage: computer-metrics <INPUT> [OPTIONS]
+Usage:
+  hayabusa.exe computer-metrics <INPUT> [OPTIONS]
 
 Input:
   -d, --directory <DIR>  Directory of multiple .evtx files
@@ -55,7 +56,8 @@ Display Settings:
 이 명령어는 어떠한 탐지 규칙도 사용하지 않으므로 모든 이벤트를 스캔합니다.
 
 ```
-Usage: eid-metrics <INPUT> [OPTIONS]
+Usage:
+  hayabusa.exe eid-metrics <INPUT> [OPTIONS]
 
 Input:
   -d, --directory <DIR>  Directory of multiple .evtx files
@@ -154,7 +156,8 @@ AdminWorkstation3
 설정 파일이 존재하지 않으면 Hayabusa는 여전히 `expand` 규칙을 로드하지만 무시합니다.
 
 ```
-Usage:  expand-list <INPUT> [OPTIONS]
+Usage:
+  hayabusa.exe expand-list [OPTIONS]
 
 General Options:
   -h, --help              Show the help menu
@@ -191,7 +194,8 @@ domain_controller_hostnames
   * PowerShell Operational 4103
 
 ```
-Usage:  extract-base64 <INPUT> [OPTIONS]
+Usage:
+  hayabusa.exe extract-base64 <INPUT> [OPTIONS]
 
 Input:
   -d, --directory <DIR>  Directory of multiple .evtx files
@@ -274,7 +278,8 @@ CSV 파일로 저장할 때는 다음 필드가 저장됩니다:
 이 명령어는 어떠한 탐지 규칙도 사용하지 않으므로 모든 이벤트를 스캔합니다.
 
 ```
-Usage: log-metrics <INPUT> [OPTIONS]
+Usage:
+  hayabusa.exe log-metrics <INPUT> [OPTIONS]
 
 Input:
   -d, --directory <DIR>  Directory of multiple .evtx files
@@ -345,7 +350,8 @@ Time Format:
 실패한 로그온은 `Security 4625` 이벤트에서 가져옵니다.
 
 ```
-Usage: logon-summary <INPUT> [OPTIONS]
+Usage:
+  hayabusa.exe logon-summary <INPUT> [OPTIONS]
 
 Input:
   -d, --directory <DIR>  Directory of multiple .evtx files
@@ -409,7 +415,8 @@ Time Format:
 결과에는 많은 정상 이벤트와 일치하는 공통 키워드가 있을 가능성이 높으므로, 결과를 수동으로 확인하고 고유한 키워드 목록을 하나의 파일에 만든 후, `grep -f keywords.txt timeline.csv`와 같은 명령어로 의심스러운 활동의 좁혀진 타임라인을 생성할 수 있습니다.
 
 ```
-Usage: pivot-keywords-list <INPUT> [OPTIONS]
+Usage:
+  hayabusa.exe pivot-keywords-list <INPUT> [OPTIONS]
 
 Input:
   -d, --directory <DIR>  Directory of multiple .evtx files
@@ -479,7 +486,8 @@ hayabusa.exe pivot-keywords-list -d ../logs -m critical -o keywords`
 이는 Hayabusa가 탐지하지 못한 이벤트에 증거가 있는지 판단하는 데 유용합니다.
 
 ```
-Usage: hayabusa.exe search <INPUT> <--keywords "<KEYWORDS>" OR --regex "<REGEX>"> [OPTIONS]
+Usage:
+  hayabusa.exe search <INPUT> <--keywords "<KEYWORDS>" OR --regex "<REGEX>"> [OPTIONS]
 
 Display Settings:
   -K, --no-color  Disable color output

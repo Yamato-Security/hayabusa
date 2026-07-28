@@ -8,7 +8,8 @@
 `critical_systems.txt` फ़ाइल में जोड़े गए किसी भी होस्टनाम के लिए low से ऊपर के सभी अलर्ट एक स्तर बढ़ा दिए जाएंगे, अधिकतम `emergency` स्तर तक।
 
 ```
-Usage: hayabusa.exe config-critical-systems <INPUT> [OPTIONS]
+Usage:
+  hayabusa.exe config-critical-systems <INPUT> [OPTIONS]
 
 Input:
   -d, --directory <DIR>  एकाधिक .evtx फ़ाइलों की डायरेक्टरी

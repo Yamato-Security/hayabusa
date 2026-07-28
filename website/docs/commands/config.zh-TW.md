@@ -8,7 +8,8 @@
 任何加入 `critical_systems.txt` 檔案的主機名稱，其所有高於 low 的警示都會提升一個等級，最高為 `emergency` 等級。
 
 ```
-Usage: hayabusa.exe config-critical-systems <INPUT> [OPTIONS]
+Usage:
+  hayabusa.exe config-critical-systems <INPUT> [OPTIONS]
 
 Input:
   -d, --directory <DIR>  包含多個 .evtx 檔案的目錄

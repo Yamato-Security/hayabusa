@@ -89,6 +89,7 @@ Sigma नियमों के लिए, चैनल और इवेंट I
 **CSV आउटपुट** विकल्प `-M, --multiline` और `-S, --tab-separator` केवल CSV आउटपुट पर लागू होते हैं और यदि इन्हें गैर-CSV `-t` के साथ जोड़ा जाए तो एक त्रुटि उत्पन्न करेंगे।
 
 ```
+Usage:
   hayabusa.exe dfir-timeline <INPUT> [OPTIONS]
 
 Input:
@@ -379,7 +380,8 @@ IpAddress,Event.EventData.IpAddress
 > चेतावनी: हर बार जब आप `update-rules` कमांड चलाते हैं, तो जोखिम स्तर मूल मान पर वापस आ जाएगा इसलिए आपको बाद में फिर से `level-tuning` कमांड चलाने की आवश्यकता होगी।
 
 ```
-Usage: level-tuning [OPTIONS]
+Usage:
+  hayabusa.exe level-tuning [OPTIONS]
 
 Display Settings:
   -K, --no-color  Disable color output
@@ -425,7 +427,8 @@ be670d5c-31eb-7391-4d2e-d122c89cd5bb,high # 'HackTool - Rubeus Execution' - Secu
 ## `list-profiles` कमांड
 
 ```
-Usage: list-profiles [OPTIONS]
+Usage:
+  hayabusa.exe list-profiles [OPTIONS]
 
 Display Settings:
   -K, --no-color  Disable color output
@@ -438,7 +441,8 @@ General Options:
 ## `set-default-profile` कमांड
 
 ```
-Usage: set-default-profile [OPTIONS]
+Usage:
+  hayabusa.exe set-default-profile [OPTIONS]
 
 Display Settings:
   -K, --no-color  Disable color output
@@ -459,7 +463,8 @@ General Options:
 `update-rules` कमांड `rules` फ़ोल्डर को [Hayabusa rules github रिपॉज़िटरी](https://github.com/Yamato-Security/hayabusa-rules) के साथ सिंक करेगा, नियमों और कॉन्फ़िग फ़ाइलों को अपडेट करेगा।
 
 ```
-Usage: update-rules [OPTIONS]
+Usage:
+  hayabusa.exe update-rules [OPTIONS]
 
 Display Settings:
   -K, --no-color  Disable color output

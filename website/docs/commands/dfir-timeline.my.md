@@ -89,6 +89,7 @@ Channel filtering ကို `.evtx` ဖိုင်များ load လုပ�
 **CSV Output** option များဖြစ်သော `-M, --multiline` နှင့် `-S, --tab-separator` တို့သည် CSV output အတွက်သာ သက်ရောက်ပြီး CSV မဟုတ်သော `-t` နှင့် တွဲဖက်အသုံးပြုပါက error ဖြစ်ပေါ်ပါမည်။
 
 ```
+Usage:
   hayabusa.exe dfir-timeline <INPUT> [OPTIONS]
 
 Input:
@@ -379,7 +380,8 @@ default အနေဖြင့် Hayabusa သည် event အားလုံး�
 > သတိ - `update-rules` command ကို run တိုင်း risk level သည် မူရင်းတန်ဖိုးသို့ ပြန်ရောက်သွားမည်ဖြစ်၍ ထို့နောက် `level-tuning` command ကို ထပ်မံ run ရန် လိုအပ်ပါမည်။
 
 ```
-Usage: level-tuning [OPTIONS]
+Usage:
+  hayabusa.exe level-tuning [OPTIONS]
 
 Display Settings:
   -K, --no-color  Disable color output
@@ -425,7 +427,8 @@ be670d5c-31eb-7391-4d2e-d122c89cd5bb,high # 'HackTool - Rubeus Execution' - Secu
 ## `list-profiles` command
 
 ```
-Usage: list-profiles [OPTIONS]
+Usage:
+  hayabusa.exe list-profiles [OPTIONS]
 
 Display Settings:
   -K, --no-color  Disable color output
@@ -438,7 +441,8 @@ General Options:
 ## `set-default-profile` command
 
 ```
-Usage: set-default-profile [OPTIONS]
+Usage:
+  hayabusa.exe set-default-profile [OPTIONS]
 
 Display Settings:
   -K, --no-color  Disable color output
@@ -459,7 +463,8 @@ General Options:
 `update-rules` command သည် `rules` folder ကို [Hayabusa rules github repository](https://github.com/Yamato-Security/hayabusa-rules) နှင့် sync လုပ်ပြီး rule များနှင့် config ဖိုင်များကို update လုပ်ပါမည်။
 
 ```
-Usage: update-rules [OPTIONS]
+Usage:
+  hayabusa.exe update-rules [OPTIONS]
 
 Display Settings:
   -K, --no-color  Disable color output

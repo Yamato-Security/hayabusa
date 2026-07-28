@@ -11,7 +11,8 @@
 بهذه المعلومات، يمكنك بعد ذلك استخدام خياري `--include-computer` أو `--exclude-computer` عند إنشاء جداولك الزمنية لجعل إنشاء الجدول الزمني أكثر كفاءة من خلال إنشاء جداول زمنية متعددة وفقًا لجهاز الكمبيوتر أو استبعاد الأحداث من أجهزة كمبيوتر معينة.
 
 ```
-Usage: computer-metrics <INPUT> [OPTIONS]
+Usage:
+  hayabusa.exe computer-metrics <INPUT> [OPTIONS]
 
 Input:
   -d, --directory <DIR>  دليل يحتوي على ملفات .evtx متعددة
@@ -55,7 +56,8 @@ Display Settings:
 لا يستخدم هذا الأمر أي قواعد كشف لذا سيفحص جميع الأحداث.
 
 ```
-Usage: eid-metrics <INPUT> [OPTIONS]
+Usage:
+  hayabusa.exe eid-metrics <INPUT> [OPTIONS]
 
 Input:
   -d, --directory <DIR>  دليل يحتوي على ملفات .evtx متعددة
@@ -154,7 +156,8 @@ AdminWorkstation3
 إذا لم يكن ملف الإعداد موجودًا، فسيظل Hayabusa يحمّل قاعدة `expand` لكن سيتجاهلها.
 
 ```
-Usage:  expand-list <INPUT> [OPTIONS]
+Usage:
+  hayabusa.exe expand-list [OPTIONS]
 
 General Options:
   -h, --help              عرض قائمة المساعدة
@@ -191,7 +194,8 @@ domain_controller_hostnames
   * PowerShell Operational 4103
 
 ```
-Usage:  extract-base64 <INPUT> [OPTIONS]
+Usage:
+  hayabusa.exe extract-base64 <INPUT> [OPTIONS]
 
 Input:
   -d, --directory <DIR>  دليل يحتوي على ملفات .evtx متعددة
@@ -274,7 +278,8 @@ Time Format:
 لا يستخدم هذا الأمر أي قواعد كشف لذا سيفحص جميع الأحداث.
 
 ```
-Usage: log-metrics <INPUT> [OPTIONS]
+Usage:
+  hayabusa.exe log-metrics <INPUT> [OPTIONS]
 
 Input:
   -d, --directory <DIR>  دليل يحتوي على ملفات .evtx متعددة
@@ -345,7 +350,8 @@ Time Format:
 تؤخذ عمليات تسجيل الدخول الفاشلة من أحداث `Security 4625`.
 
 ```
-Usage: logon-summary <INPUT> [OPTIONS]
+Usage:
+  hayabusa.exe logon-summary <INPUT> [OPTIONS]
 
 Input:
   -d, --directory <DIR>  دليل يحتوي على ملفات .evtx متعددة
@@ -409,7 +415,8 @@ Time Format:
 على الأرجح ستكون هناك كلمات مفتاحية شائعة في نتائجك تطابق العديد من الأحداث الطبيعية، لذا بعد التحقق يدويًا من النتائج وإنشاء قائمة بالكلمات المفتاحية الفريدة في ملف واحد، يمكنك بعد ذلك إنشاء جدول زمني مُضيّق للنشاط المشبوه باستخدام أمر مثل `grep -f keywords.txt timeline.csv`.
 
 ```
-Usage: pivot-keywords-list <INPUT> [OPTIONS]
+Usage:
+  hayabusa.exe pivot-keywords-list <INPUT> [OPTIONS]
 
 Input:
   -d, --directory <DIR>  دليل يحتوي على ملفات .evtx متعددة
@@ -479,7 +486,8 @@ hayabusa.exe pivot-keywords-list -d ../logs -m critical -o keywords`
 هذا مفيد لتحديد ما إذا كان هناك أي دليل في الأحداث التي لا يكتشفها Hayabusa.
 
 ```
-Usage: hayabusa.exe search <INPUT> <--keywords "<KEYWORDS>" OR --regex "<REGEX>"> [OPTIONS]
+Usage:
+  hayabusa.exe search <INPUT> <--keywords "<KEYWORDS>" OR --regex "<REGEX>"> [OPTIONS]
 
 Display Settings:
   -K, --no-color  تعطيل إخراج الألوان

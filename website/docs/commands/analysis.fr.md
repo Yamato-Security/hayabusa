@@ -11,7 +11,8 @@ C'est une bonne commande à exécuter pour voir rapidement quels ordinateurs ont
 Avec ces informations, vous pouvez ensuite utiliser les options `--include-computer` ou `--exclude-computer` lors de la création de vos chronologies afin de rendre la génération de votre chronologie plus efficace en créant plusieurs chronologies par ordinateur ou en excluant les événements de certains ordinateurs.
 
 ```
-Usage: computer-metrics <INPUT> [OPTIONS]
+Usage:
+  hayabusa.exe computer-metrics <INPUT> [OPTIONS]
 
 Input:
   -d, --directory <DIR>  Directory of multiple .evtx files
@@ -55,7 +56,8 @@ Vous pouvez utiliser la commande `eid-metrics` pour afficher le nombre total et 
 Cette commande n'utilise aucune règle de détection et analysera donc tous les événements.
 
 ```
-Usage: eid-metrics <INPUT> [OPTIONS]
+Usage:
+  hayabusa.exe eid-metrics <INPUT> [OPTIONS]
 
 Input:
   -d, --directory <DIR>  Directory of multiple .evtx files
@@ -154,7 +156,8 @@ Cela vérifierait essentiellement la même logique que :
 Si le fichier de configuration n'existe pas, Hayabusa chargera quand même la règle `expand` mais l'ignorera.
 
 ```
-Usage:  expand-list <INPUT> [OPTIONS]
+Usage:
+  hayabusa.exe expand-list [OPTIONS]
 
 General Options:
   -h, --help              Show the help menu
@@ -191,7 +194,8 @@ Cette commande extraira les chaînes base64 des événements suivants, les déco
   * PowerShell Operational 4103
 
 ```
-Usage:  extract-base64 <INPUT> [OPTIONS]
+Usage:
+  hayabusa.exe extract-base64 <INPUT> [OPTIONS]
 
 Input:
   -d, --directory <DIR>  Directory of multiple .evtx files
@@ -274,7 +278,8 @@ Vous pouvez utiliser la commande `log-metrics` pour afficher les métadonnées s
 Cette commande n'utilise aucune règle de détection et analysera donc tous les événements.
 
 ```
-Usage: log-metrics <INPUT> [OPTIONS]
+Usage:
+  hayabusa.exe log-metrics <INPUT> [OPTIONS]
 
 Input:
   -d, --directory <DIR>  Directory of multiple .evtx files
@@ -345,7 +350,8 @@ Les connexions réussies sont issues des événements suivants :
 Les connexions échouées sont issues des événements `Security 4625`.
 
 ```
-Usage: logon-summary <INPUT> [OPTIONS]
+Usage:
+  hayabusa.exe logon-summary <INPUT> [OPTIONS]
 
 Input:
   -d, --directory <DIR>  Directory of multiple .evtx files
@@ -409,7 +415,8 @@ Par exemple, commencez par créer des mots-clés uniquement à partir des alerte
 Il y aura très probablement des mots-clés communs dans vos résultats qui correspondront à de nombreux événements normaux, donc après avoir vérifié manuellement les résultats et créé une liste de mots-clés uniques dans un seul fichier, vous pourrez ensuite créer une chronologie restreinte de l'activité suspecte avec une commande comme `grep -f keywords.txt timeline.csv`.
 
 ```
-Usage: pivot-keywords-list <INPUT> [OPTIONS]
+Usage:
+  hayabusa.exe pivot-keywords-list <INPUT> [OPTIONS]
 
 Input:
   -d, --directory <DIR>  Directory of multiple .evtx files
@@ -479,7 +486,8 @@ La commande `search` vous permet d'effectuer une recherche par mot-clé sur tous
 Ceci est utile pour déterminer s'il existe des preuves dans des événements qui ne sont pas détectés par Hayabusa.
 
 ```
-Usage: hayabusa.exe search <INPUT> <--keywords "<KEYWORDS>" OR --regex "<REGEX>"> [OPTIONS]
+Usage:
+  hayabusa.exe search <INPUT> <--keywords "<KEYWORDS>" OR --regex "<REGEX>"> [OPTIONS]
 
 Display Settings:
   -K, --no-color  Disable color output

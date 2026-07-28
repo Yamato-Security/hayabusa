@@ -11,7 +11,8 @@ Ini adalah perintah yang baik untuk dijalankan untuk dengan cepat melihat komput
 Dengan informasi ini, Anda kemudian dapat menggunakan opsi `--include-computer` atau `--exclude-computer` saat membuat timeline Anda untuk membuat pembuatan timeline Anda lebih efisien dengan membuat beberapa timeline menurut komputer atau mengecualikan event dari komputer tertentu.
 
 ```
-Usage: computer-metrics <INPUT> [OPTIONS]
+Usage:
+  hayabusa.exe computer-metrics <INPUT> [OPTIONS]
 
 Input:
   -d, --directory <DIR>  Directory of multiple .evtx files
@@ -55,7 +56,8 @@ Anda dapat menggunakan perintah `eid-metrics` untuk mencetak jumlah total dan pe
 Perintah ini tidak menggunakan aturan deteksi apa pun sehingga akan memindai semua event.
 
 ```
-Usage: eid-metrics <INPUT> [OPTIONS]
+Usage:
+  hayabusa.exe eid-metrics <INPUT> [OPTIONS]
 
 Input:
   -d, --directory <DIR>  Directory of multiple .evtx files
@@ -154,7 +156,8 @@ Ini pada dasarnya akan memeriksa logika yang sama seperti:
 Jika file konfigurasi tidak ada, Hayabusa akan tetap memuat aturan `expand` tetapi mengabaikannya.
 
 ```
-Usage:  expand-list <INPUT> [OPTIONS]
+Usage:
+  hayabusa.exe expand-list [OPTIONS]
 
 General Options:
   -h, --help              Show the help menu
@@ -191,7 +194,8 @@ Perintah ini akan mengekstrak string base64 dari event berikut, mendekodekannya,
   * PowerShell Operational 4103
 
 ```
-Usage:  extract-base64 <INPUT> [OPTIONS]
+Usage:
+  hayabusa.exe extract-base64 <INPUT> [OPTIONS]
 
 Input:
   -d, --directory <DIR>  Directory of multiple .evtx files
@@ -274,7 +278,8 @@ Anda dapat menggunakan perintah `log-metrics` untuk mencetak metadata berikut di
 Perintah ini tidak menggunakan aturan deteksi apa pun sehingga akan memindai semua event.
 
 ```
-Usage: log-metrics <INPUT> [OPTIONS]
+Usage:
+  hayabusa.exe log-metrics <INPUT> [OPTIONS]
 
 Input:
   -d, --directory <DIR>  Directory of multiple .evtx files
@@ -345,7 +350,8 @@ Logon yang berhasil diambil dari event berikut:
 Logon yang gagal diambil dari event `Security 4625`.
 
 ```
-Usage: logon-summary <INPUT> [OPTIONS]
+Usage:
+  hayabusa.exe logon-summary <INPUT> [OPTIONS]
 
 Input:
   -d, --directory <DIR>  Directory of multiple .evtx files
@@ -409,7 +415,8 @@ Misalnya, mulai dengan hanya membuat kata kunci dari alert `critical` dengan `-m
 Kemungkinan besar akan ada kata kunci umum dalam hasil Anda yang akan cocok pada banyak event normal, jadi setelah memeriksa hasil secara manual dan membuat daftar kata kunci unik dalam satu file, Anda kemudian dapat membuat timeline aktivitas mencurigakan yang dipersempit dengan perintah seperti `grep -f keywords.txt timeline.csv`.
 
 ```
-Usage: pivot-keywords-list <INPUT> [OPTIONS]
+Usage:
+  hayabusa.exe pivot-keywords-list <INPUT> [OPTIONS]
 
 Input:
   -d, --directory <DIR>  Directory of multiple .evtx files
@@ -479,7 +486,8 @@ Perintah `search` memungkinkan Anda melakukan pencarian kata kunci pada semua ev
 Ini berguna untuk menentukan apakah ada bukti dalam event yang tidak terdeteksi oleh Hayabusa.
 
 ```
-Usage: hayabusa.exe search <INPUT> <--keywords "<KEYWORDS>" OR --regex "<REGEX>"> [OPTIONS]
+Usage:
+  hayabusa.exe search <INPUT> <--keywords "<KEYWORDS>" OR --regex "<REGEX>"> [OPTIONS]
 
 Display Settings:
   -K, --no-color  Disable color output

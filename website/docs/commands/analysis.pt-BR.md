@@ -11,7 +11,8 @@ Este é um bom comando para executar e ver rapidamente quais computadores possue
 Com essa informação, você pode então usar as opções `--include-computer` ou `--exclude-computer` ao criar suas linhas do tempo para tornar a geração da sua linha do tempo mais eficiente, criando múltiplas linhas do tempo de acordo com o computador ou excluindo eventos de determinados computadores.
 
 ```
-Usage: computer-metrics <INPUT> [OPTIONS]
+Usage:
+  hayabusa.exe computer-metrics <INPUT> [OPTIONS]
 
 Input:
   -d, --directory <DIR>  Directory of multiple .evtx files
@@ -55,7 +56,8 @@ Você pode usar o comando `eid-metrics` para exibir o número total e a porcenta
 Este comando não usa nenhuma regra de detecção, portanto escaneará todos os eventos.
 
 ```
-Usage: eid-metrics <INPUT> [OPTIONS]
+Usage:
+  hayabusa.exe eid-metrics <INPUT> [OPTIONS]
 
 Input:
   -d, --directory <DIR>  Directory of multiple .evtx files
@@ -154,7 +156,8 @@ Isso essencialmente verificaria a mesma lógica que:
 Se o arquivo de configuração não existir, o Hayabusa ainda carregará a regra `expand`, mas a ignorará.
 
 ```
-Usage:  expand-list <INPUT> [OPTIONS]
+Usage:
+  hayabusa.exe expand-list [OPTIONS]
 
 General Options:
   -h, --help              Show the help menu
@@ -191,7 +194,8 @@ Este comando extrai strings base64 dos seguintes eventos, as decodifica e inform
   * PowerShell Operational 4103
 
 ```
-Usage:  extract-base64 <INPUT> [OPTIONS]
+Usage:
+  hayabusa.exe extract-base64 <INPUT> [OPTIONS]
 
 Input:
   -d, --directory <DIR>  Directory of multiple .evtx files
@@ -274,7 +278,8 @@ Você pode usar o comando `log-metrics` para exibir os seguintes metadados conti
 Este comando não usa nenhuma regra de detecção, portanto escaneará todos os eventos.
 
 ```
-Usage: log-metrics <INPUT> [OPTIONS]
+Usage:
+  hayabusa.exe log-metrics <INPUT> [OPTIONS]
 
 Input:
   -d, --directory <DIR>  Directory of multiple .evtx files
@@ -345,7 +350,8 @@ Logons bem-sucedidos são obtidos dos seguintes eventos:
 Logons malsucedidos são obtidos dos eventos `Security 4625`.
 
 ```
-Usage: logon-summary <INPUT> [OPTIONS]
+Usage:
+  hayabusa.exe logon-summary <INPUT> [OPTIONS]
 
 Input:
   -d, --directory <DIR>  Directory of multiple .evtx files
@@ -409,7 +415,8 @@ Por exemplo, comece criando palavras-chave apenas a partir de alertas `critical`
 Provavelmente haverá palavras-chave comuns em seus resultados que corresponderão a muitos eventos normais, portanto, após verificar manualmente os resultados e criar uma lista de palavras-chave exclusivas em um único arquivo, você pode então criar uma linha do tempo restrita de atividades suspeitas com um comando como `grep -f keywords.txt timeline.csv`.
 
 ```
-Usage: pivot-keywords-list <INPUT> [OPTIONS]
+Usage:
+  hayabusa.exe pivot-keywords-list <INPUT> [OPTIONS]
 
 Input:
   -d, --directory <DIR>  Directory of multiple .evtx files
@@ -479,7 +486,8 @@ O comando `search` permite que você faça pesquisas por palavra-chave em todos 
 Isso é útil para determinar se há alguma evidência em eventos que não são detectados pelo Hayabusa.
 
 ```
-Usage: hayabusa.exe search <INPUT> <--keywords "<KEYWORDS>" OR --regex "<REGEX>"> [OPTIONS]
+Usage:
+  hayabusa.exe search <INPUT> <--keywords "<KEYWORDS>" OR --regex "<REGEX>"> [OPTIONS]
 
 Display Settings:
   -K, --no-color  Disable color output

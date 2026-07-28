@@ -8,7 +8,8 @@
 `critical_systems.txt` 파일에 추가된 모든 호스트명은 low 이상의 모든 경고가 한 단계씩 높아지며 최대 `emergency` 수준까지 올라갑니다.
 
 ```
-Usage: hayabusa.exe config-critical-systems <INPUT> [OPTIONS]
+Usage:
+  hayabusa.exe config-critical-systems <INPUT> [OPTIONS]
 
 Input:
   -d, --directory <DIR>  Directory of multiple .evtx files

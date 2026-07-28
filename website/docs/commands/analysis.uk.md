@@ -11,7 +11,8 @@ Windows 11 іноді використовує зовсім інші імена 
 З цією інформацією ви потім можете використовувати опції `--include-computer` або `--exclude-computer` під час створення своїх часових шкал, щоб зробити генерацію часових шкал ефективнішою, створюючи декілька часових шкал відповідно до комп'ютера або виключаючи події з певних комп'ютерів.
 
 ```
-Usage: computer-metrics <INPUT> [OPTIONS]
+Usage:
+  hayabusa.exe computer-metrics <INPUT> [OPTIONS]
 
 Input:
   -d, --directory <DIR>  Каталог з кількома файлами .evtx
@@ -55,7 +56,8 @@ Display Settings:
 Ця команда не використовує жодних правил виявлення, тому скануватиме всі події.
 
 ```
-Usage: eid-metrics <INPUT> [OPTIONS]
+Usage:
+  hayabusa.exe eid-metrics <INPUT> [OPTIONS]
 
 Input:
   -d, --directory <DIR>  Каталог з кількома файлами .evtx
@@ -154,7 +156,8 @@ AdminWorkstation3
 Якщо конфігураційний файл не існує, Hayabusa все одно завантажить правило `expand`, але проігнорує його.
 
 ```
-Usage:  expand-list <INPUT> [OPTIONS]
+Usage:
+  hayabusa.exe expand-list [OPTIONS]
 
 General Options:
   -h, --help              Показати меню довідки
@@ -191,7 +194,8 @@ domain_controller_hostnames
   * PowerShell Operational 4103
 
 ```
-Usage:  extract-base64 <INPUT> [OPTIONS]
+Usage:
+  hayabusa.exe extract-base64 <INPUT> [OPTIONS]
 
 Input:
   -d, --directory <DIR>  Каталог з кількома файлами .evtx
@@ -274,7 +278,8 @@ Time Format:
 Ця команда не використовує жодних правил виявлення, тому скануватиме всі події.
 
 ```
-Usage: log-metrics <INPUT> [OPTIONS]
+Usage:
+  hayabusa.exe log-metrics <INPUT> [OPTIONS]
 
 Input:
   -d, --directory <DIR>  Каталог з кількома файлами .evtx
@@ -345,7 +350,8 @@ Time Format:
 Невдалі входи беруться з подій `Security 4625`.
 
 ```
-Usage: logon-summary <INPUT> [OPTIONS]
+Usage:
+  hayabusa.exe logon-summary <INPUT> [OPTIONS]
 
 Input:
   -d, --directory <DIR>  Каталог з кількома файлами .evtx
@@ -409,7 +415,8 @@ Time Format:
 У ваших результатах, найімовірніше, будуть поширені ключові слова, що збігатимуться з багатьма звичайними подіями, тому після ручної перевірки результатів і створення списку унікальних ключових слів в одному файлі, ви потім можете створити звужену часову шкалу підозрілої активності за допомогою команди на кшталт `grep -f keywords.txt timeline.csv`.
 
 ```
-Usage: pivot-keywords-list <INPUT> [OPTIONS]
+Usage:
+  hayabusa.exe pivot-keywords-list <INPUT> [OPTIONS]
 
 Input:
   -d, --directory <DIR>  Каталог з кількома файлами .evtx
@@ -479,7 +486,8 @@ hayabusa.exe pivot-keywords-list -d ../logs -m critical -o keywords`
 Це корисно для визначення того, чи є якісь докази в подіях, які не виявляються Hayabusa.
 
 ```
-Usage: hayabusa.exe search <INPUT> <--keywords "<KEYWORDS>" OR --regex "<REGEX>"> [OPTIONS]
+Usage:
+  hayabusa.exe search <INPUT> <--keywords "<KEYWORDS>" OR --regex "<REGEX>"> [OPTIONS]
 
 Display Settings:
   -K, --no-color  Вимкнути кольоровий вивід

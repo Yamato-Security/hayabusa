@@ -89,6 +89,7 @@
 ينطبق خيارا **CSV Output** وهما `-M, --multiline` و `-S, --tab-separator` على إخراج CSV فقط وسينتجان خطأ إذا تم دمجهما مع `-t` غير CSV.
 
 ```
+Usage:
   hayabusa.exe dfir-timeline <INPUT> [OPTIONS]
 
 Input:
@@ -379,7 +380,8 @@ IpAddress,Event.EventData.IpAddress
 > تحذير: في كل مرة تشغِّل فيها الأمر `update-rules`، سيعود مستوى المخاطر إلى القيمة الأصلية لذا ستحتاج إلى تشغيل الأمر `level-tuning` مرة أخرى بعد ذلك.
 
 ```
-Usage: level-tuning [OPTIONS]
+Usage:
+  hayabusa.exe level-tuning [OPTIONS]
 
 Display Settings:
   -K, --no-color  Disable color output
@@ -425,7 +427,8 @@ be670d5c-31eb-7391-4d2e-d122c89cd5bb,high # 'HackTool - Rubeus Execution' - Secu
 ## الأمر `list-profiles`
 
 ```
-Usage: list-profiles [OPTIONS]
+Usage:
+  hayabusa.exe list-profiles [OPTIONS]
 
 Display Settings:
   -K, --no-color  Disable color output
@@ -438,7 +441,8 @@ General Options:
 ## الأمر `set-default-profile`
 
 ```
-Usage: set-default-profile [OPTIONS]
+Usage:
+  hayabusa.exe set-default-profile [OPTIONS]
 
 Display Settings:
   -K, --no-color  Disable color output
@@ -459,7 +463,8 @@ General Options:
 سيقوم الأمر `update-rules` بمزامنة مجلد `rules` مع [مستودع github لقواعد Hayabusa](https://github.com/Yamato-Security/hayabusa-rules)، وتحديث القواعد وملفات التكوين.
 
 ```
-Usage: update-rules [OPTIONS]
+Usage:
+  hayabusa.exe update-rules [OPTIONS]
 
 Display Settings:
   -K, --no-color  Disable color output

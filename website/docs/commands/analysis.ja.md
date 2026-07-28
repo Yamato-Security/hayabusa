@@ -11,7 +11,8 @@ Windows 11ではイベントログに保存するときにまったく異なる`
 この情報があれば、タイムラインを生成する際に`--include-computer`または`--exclude-computer`オプションを使い、コンピュータ別に複数のタイムラインを生成したり、特定のコンピュータからのイベントを除外したりすることで、タイムライン生成をより効率的にすることができます。
 
 ```
-Usage: computer-metrics <INPUT> [OPTIONS]
+Usage:
+  hayabusa.exe computer-metrics <INPUT> [OPTIONS]
 
 Input:
   -d, --directory <DIR>  .evtxファイルを持つディレクトリのパス
@@ -55,7 +56,8 @@ Display Settings:
 このコマンドは検知ルールを使用しないので、すべてのイベントをスキャンします。
 
 ```
-Usage: eid-metrics <INPUT> [OPTIONS]
+Usage:
+  hayabusa.exe eid-metrics <INPUT> [OPTIONS]
 
 Input:
   -d, --directory <DIR>  .evtxファイルを持つディレクトリのパス
@@ -154,7 +156,8 @@ AdminWorkstation3
 設定ファイルが存在しない場合でも、Hayabusaは`expand`ルールを読み込みますが、それを無視します。
 
 ```
-Usage:  expand-list <INPUT> [OPTIONS]
+Usage:
+  hayabusa.exe expand-list [OPTIONS]
 
 General Options:
   -h, --help              ヘルプメニューを表示する
@@ -192,7 +195,8 @@ domain_controller_hostnames
 * PowerShell Operational 4103
 
 ```
-Usage:  extract-base64 <INPUT> [OPTIONS]
+Usage:
+  hayabusa.exe extract-base64 <INPUT> [OPTIONS]
 
 Input:
   -d, --directory <DIR>  .evtxファイルを持つディレクトリのパス
@@ -276,7 +280,8 @@ CSVファイルに保存する際、次のフィールドが保存されます�
 このコマンドは検知ルールを使用しないので、すべてのイベントをスキャンする。
 
 ```
-Usage: log-metrics <INPUT> [OPTIONS]
+Usage:
+  hayabusa.exe log-metrics <INPUT> [OPTIONS]
 
 Input:
   -d, --directory <DIR>  .evtxファイルを持つディレクトリのパス
@@ -348,7 +353,8 @@ Time Format:
 ログオン失敗は、`Security 4625`イベントから取得される
 
 ```
-Usage: logon-summary <INPUT> [OPTIONS]
+Usage:
+  hayabusa.exe logon-summary <INPUT> [OPTIONS]
 
 Input:
   -d, --directory <DIR>  .evtxファイルを持つディレクトリのパス
@@ -412,7 +418,8 @@ Time Format:
 検索結果には、多くの通常のイベントと一致する共通のキーワードが含まれている可能性が高いので、検索結果を手動でチェックし、固有のキーワードのリストを1つのファイルに作成した後、`grep -f keywords.txt timeline.csv`といったコマンドで疑わしい活動のタイムラインを絞り込み作成することが可能です。
 
 ```
-Usage: pivot-keywords-list <INPUT> [OPTIONS]
+Usage:
+  hayabusa.exe pivot-keywords-list <INPUT> [OPTIONS]
 
 Input:
   -d, --directory <DIR>  .evtxファイルを持つディレクトリのパス
@@ -482,7 +489,8 @@ hayabusa.exe pivot-keywords-list -d ../logs -m critical -o keywords
 Hayabusaの検知ルールでなにかの痕跡を検知できなくても、検索機能で検知できる可能性があるので、便利です。
 
 ```
-Usage: hayabusa.exe search <INPUT> <--keywords "<KEYWORDS>" OR --regex "<REGEX>"> [OPTIONS]
+Usage:
+  hayabusa.exe search <INPUT> <--keywords "<KEYWORDS>" OR --regex "<REGEX>"> [OPTIONS]
 
 Display Settings:
   -K, --no-color  カラーで出力しない

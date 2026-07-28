@@ -11,7 +11,8 @@ Windows 11 သည် event log များသို့ သိမ်းဆည်
 ဤအချက်အလက်များဖြင့် သင်၏ timeline များ ဖန်တီးသည့်အခါ `--include-computer` သို့မဟုတ် `--exclude-computer` option များကို အသုံးပြုနိုင်ပြီး ကွန်ပျူတာအလိုက် timeline အများအပြားကို ဖန်တီးခြင်း သို့မဟုတ် အချို့ကွန်ပျူတာများမှ event များကို ဖယ်ထုတ်ခြင်းဖြင့် သင်၏ timeline ဖန်တီးမှုကို ပိုမိုထိရောက်စေနိုင်ပါသည်။
 
 ```
-Usage: computer-metrics <INPUT> [OPTIONS]
+Usage:
+  hayabusa.exe computer-metrics <INPUT> [OPTIONS]
 
 Input:
   -d, --directory <DIR>  Directory of multiple .evtx files
@@ -55,7 +56,8 @@ channel အလိုက် ခွဲခြားထားသော event ID (`<S
 ဤ command သည် detection rule မည်သည့်တစ်ခုကိုမျှ အသုံးမပြုသဖြင့် event အားလုံးကို scan ဖတ်ပါမည်။
 
 ```
-Usage: eid-metrics <INPUT> [OPTIONS]
+Usage:
+  hayabusa.exe eid-metrics <INPUT> [OPTIONS]
 
 Input:
   -d, --directory <DIR>  Directory of multiple .evtx files
@@ -154,7 +156,8 @@ AdminWorkstation3
 config file မရှိပါက Hayabusa သည် `expand` rule ကို ဆက်လက် load လုပ်မည်ဖြစ်သော်လည်း ၎င်းကို လျစ်လျူရှုပါမည်။
 
 ```
-Usage:  expand-list <INPUT> [OPTIONS]
+Usage:
+  hayabusa.exe expand-list [OPTIONS]
 
 General Options:
   -h, --help              Show the help menu
@@ -191,7 +194,8 @@ domain_controller_hostnames
   * PowerShell Operational 4103
 
 ```
-Usage:  extract-base64 <INPUT> [OPTIONS]
+Usage:
+  hayabusa.exe extract-base64 <INPUT> [OPTIONS]
 
 Input:
   -d, --directory <DIR>  Directory of multiple .evtx files
@@ -274,7 +278,8 @@ event log များအတွင်းရှိ အောက်ပါ metadata
 ဤ command သည် detection rule မည်သည့်တစ်ခုကိုမျှ အသုံးမပြုသဖြင့် event အားလုံးကို scan ဖတ်ပါမည်။
 
 ```
-Usage: log-metrics <INPUT> [OPTIONS]
+Usage:
+  hayabusa.exe log-metrics <INPUT> [OPTIONS]
 
 Input:
   -d, --directory <DIR>  Directory of multiple .evtx files
@@ -345,7 +350,8 @@ logon အချက်အလက် အကျဉ်းချုပ် (logon usern
 မအောင်မြင်သော logon များကို `Security 4625` event များမှ ယူပါသည်။
 
 ```
-Usage: logon-summary <INPUT> [OPTIONS]
+Usage:
+  hayabusa.exe logon-summary <INPUT> [OPTIONS]
 
 Input:
   -d, --directory <DIR>  Directory of multiple .evtx files
@@ -409,7 +415,8 @@ Time Format:
 သင်၏ရလဒ်များတွင် ပုံမှန် event များစွာနှင့် ကိုက်ညီမည့် common keyword များ ရှိနိုင်သောကြောင့်၊ ရလဒ်များကို manually စစ်ဆေးပြီး ထူးခြားသော keyword များစာရင်းကို file တစ်ခုတည်းတွင် ဖန်တီးပြီးနောက်၊ `grep -f keywords.txt timeline.csv` ကဲ့သို့ command တစ်ခုဖြင့် သံသယဖြစ်ဖွယ် လှုပ်ရှားမှုများ၏ ကျဉ်းမြောင်းသွားသော timeline ကို ဖန်တီးနိုင်ပါသည်။
 
 ```
-Usage: pivot-keywords-list <INPUT> [OPTIONS]
+Usage:
+  hayabusa.exe pivot-keywords-list <INPUT> [OPTIONS]
 
 Input:
   -d, --directory <DIR>  Directory of multiple .evtx files
@@ -479,7 +486,8 @@ format မှာ `KeywordName.FieldName` ဖြစ်ပါသည်။ ဥပ�
 ဤအချက်သည် Hayabusa မှ ဖော်ထုတ်မထားသော event များတွင် သက်သေအထောက်အထား တစ်စုံတစ်ရာ ရှိမရှိ ဆုံးဖြတ်ရာတွင် အသုံးဝင်ပါသည်။
 
 ```
-Usage: hayabusa.exe search <INPUT> <--keywords "<KEYWORDS>" OR --regex "<REGEX>"> [OPTIONS]
+Usage:
+  hayabusa.exe search <INPUT> <--keywords "<KEYWORDS>" OR --regex "<REGEX>"> [OPTIONS]
 
 Display Settings:
   -K, --no-color  Disable color output

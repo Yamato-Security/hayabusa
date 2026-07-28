@@ -8,7 +8,8 @@
 ชื่อโฮสต์ใดก็ตามที่ถูกเพิ่มเข้าไปในไฟล์ `critical_systems.txt` จะมีการแจ้งเตือนทั้งหมดที่อยู่เหนือระดับ low ถูกเพิ่มขึ้นหนึ่งระดับ โดยมีระดับสูงสุดคือระดับ `emergency`
 
 ```
-Usage: hayabusa.exe config-critical-systems <INPUT> [OPTIONS]
+Usage:
+  hayabusa.exe config-critical-systems <INPUT> [OPTIONS]
 
 Input:
   -d, --directory <DIR>  ไดเรกทอรีของไฟล์ .evtx หลายไฟล์

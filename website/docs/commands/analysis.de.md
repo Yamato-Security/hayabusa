@@ -11,7 +11,8 @@ Dies ist ein guter Befehl, um schnell zu sehen, welche Computer die meisten Prot
 Mit diesen Informationen können Sie dann beim Erstellen Ihrer Zeitleisten die Optionen `--include-computer` oder `--exclude-computer` verwenden, um Ihre Zeitleistenerstellung effizienter zu gestalten, indem Sie mehrere Zeitleisten nach Computer erstellen oder Ereignisse von bestimmten Computern ausschließen.
 
 ```
-Usage: computer-metrics <INPUT> [OPTIONS]
+Usage:
+  hayabusa.exe computer-metrics <INPUT> [OPTIONS]
 
 Input:
   -d, --directory <DIR>  Verzeichnis mit mehreren .evtx-Dateien
@@ -55,7 +56,8 @@ Sie können den Befehl `eid-metrics` verwenden, um die Gesamtzahl und den Prozen
 Dieser Befehl verwendet keine Erkennungsregeln und durchsucht daher alle Ereignisse.
 
 ```
-Usage: eid-metrics <INPUT> [OPTIONS]
+Usage:
+  hayabusa.exe eid-metrics <INPUT> [OPTIONS]
 
 Input:
   -d, --directory <DIR>  Verzeichnis mit mehreren .evtx-Dateien
@@ -154,7 +156,8 @@ Dies würde im Wesentlichen dieselbe Logik überprüfen wie:
 Wenn die Konfigurationsdatei nicht existiert, lädt Hayabusa die `expand`-Regel zwar weiterhin, ignoriert sie aber.
 
 ```
-Usage:  expand-list <INPUT> [OPTIONS]
+Usage:
+  hayabusa.exe expand-list [OPTIONS]
 
 General Options:
   -h, --help              Das Hilfemenü anzeigen
@@ -191,7 +194,8 @@ Dieser Befehl extrahiert Base64-Zeichenfolgen aus den folgenden Ereignissen, dek
   * PowerShell Operational 4103
 
 ```
-Usage:  extract-base64 <INPUT> [OPTIONS]
+Usage:
+  hayabusa.exe extract-base64 <INPUT> [OPTIONS]
 
 Input:
   -d, --directory <DIR>  Verzeichnis mit mehreren .evtx-Dateien
@@ -274,7 +278,8 @@ Sie können den Befehl `log-metrics` verwenden, um die folgenden Metadaten inner
 Dieser Befehl verwendet keine Erkennungsregeln und durchsucht daher alle Ereignisse.
 
 ```
-Usage: log-metrics <INPUT> [OPTIONS]
+Usage:
+  hayabusa.exe log-metrics <INPUT> [OPTIONS]
 
 Input:
   -d, --directory <DIR>  Verzeichnis mit mehreren .evtx-Dateien
@@ -345,7 +350,8 @@ Erfolgreiche Anmeldungen werden aus den folgenden Ereignissen entnommen:
 Fehlgeschlagene Anmeldungen werden aus `Security 4625`-Ereignissen entnommen.
 
 ```
-Usage: logon-summary <INPUT> [OPTIONS]
+Usage:
+  hayabusa.exe logon-summary <INPUT> [OPTIONS]
 
 Input:
   -d, --directory <DIR>  Verzeichnis mit mehreren .evtx-Dateien
@@ -409,7 +415,8 @@ Beginnen Sie beispielsweise damit, nur Schlüsselwörter aus `critical`-Alarmen 
 In Ihren Ergebnissen werden höchstwahrscheinlich gängige Schlüsselwörter enthalten sein, die auf viele normale Ereignisse zutreffen. Nachdem Sie die Ergebnisse manuell überprüft und eine Liste eindeutiger Schlüsselwörter in einer einzelnen Datei erstellt haben, können Sie dann mit einem Befehl wie `grep -f keywords.txt timeline.csv` eine eingegrenzte Zeitleiste verdächtiger Aktivitäten erstellen.
 
 ```
-Usage: pivot-keywords-list <INPUT> [OPTIONS]
+Usage:
+  hayabusa.exe pivot-keywords-list <INPUT> [OPTIONS]
 
 Input:
   -d, --directory <DIR>  Verzeichnis mit mehreren .evtx-Dateien
@@ -479,7 +486,8 @@ Mit dem Befehl `search` können Sie eine Schlüsselwortsuche über alle Ereignis
 Dies ist nützlich, um festzustellen, ob es in Ereignissen, die von Hayabusa nicht erkannt werden, Beweise gibt.
 
 ```
-Usage: hayabusa.exe search <INPUT> <--keywords "<KEYWORDS>" OR --regex "<REGEX>"> [OPTIONS]
+Usage:
+  hayabusa.exe search <INPUT> <--keywords "<KEYWORDS>" OR --regex "<REGEX>"> [OPTIONS]
 
 Display Settings:
   -K, --no-color  Farbausgabe deaktivieren

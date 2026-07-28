@@ -89,6 +89,7 @@
 Опції **виводу CSV** `-M, --multiline` та `-S, --tab-separator` застосовуються лише до виводу CSV і спричинять помилку, якщо їх поєднати з не-CSV значенням `-t`.
 
 ```
+Usage:
   hayabusa.exe dfir-timeline <INPUT> [OPTIONS]
 
 Input:
@@ -379,7 +380,8 @@ IpAddress,Event.EventData.IpAddress
 > Попередження: щоразу, коли ви запускаєте команду `update-rules`, рівень ризику повертатиметься до оригінального значення, тому вам потрібно буде знову запустити команду `level-tuning` після цього.
 
 ```
-Usage: level-tuning [OPTIONS]
+Usage:
+  hayabusa.exe level-tuning [OPTIONS]
 
 Display Settings:
   -K, --no-color  Disable color output
@@ -425,7 +427,8 @@ be670d5c-31eb-7391-4d2e-d122c89cd5bb,high # 'HackTool - Rubeus Execution' - Secu
 ## Команда `list-profiles`
 
 ```
-Usage: list-profiles [OPTIONS]
+Usage:
+  hayabusa.exe list-profiles [OPTIONS]
 
 Display Settings:
   -K, --no-color  Disable color output
@@ -438,7 +441,8 @@ General Options:
 ## Команда `set-default-profile`
 
 ```
-Usage: set-default-profile [OPTIONS]
+Usage:
+  hayabusa.exe set-default-profile [OPTIONS]
 
 Display Settings:
   -K, --no-color  Disable color output
@@ -459,7 +463,8 @@ General Options:
 Команда `update-rules` синхронізує папку `rules` із [репозиторієм правил Hayabusa на github](https://github.com/Yamato-Security/hayabusa-rules), оновлюючи правила та конфігураційні файли.
 
 ```
-Usage: update-rules [OPTIONS]
+Usage:
+  hayabusa.exe update-rules [OPTIONS]
 
 Display Settings:
   -K, --no-color  Disable color output

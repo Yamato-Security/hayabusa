@@ -8,7 +8,8 @@
 أي أسماء مضيفين تُضاف إلى ملف `critical_systems.txt` سيتم زيادة جميع تنبيهاتها التي تتجاوز المستوى المنخفض بمستوى واحد بحد أقصى مستوى `emergency`.
 
 ```
-Usage: hayabusa.exe config-critical-systems <INPUT> [OPTIONS]
+Usage:
+  hayabusa.exe config-critical-systems <INPUT> [OPTIONS]
 
 Input:
   -d, --directory <DIR>  دليل يحتوي على ملفات .evtx متعددة

@@ -8,7 +8,8 @@ Buscará eventos Security 5145 (acceso a archivos de recurso compartido de red) 
 Cualquier nombre de host añadido al archivo `critical_systems.txt` tendrá todas las alertas por encima de low incrementadas un nivel con un máximo de nivel `emergency`.
 
 ```
-Usage: hayabusa.exe config-critical-systems <INPUT> [OPTIONS]
+Usage:
+  hayabusa.exe config-critical-systems <INPUT> [OPTIONS]
 
 Input:
   -d, --directory <DIR>  Directorio con múltiples archivos .evtx

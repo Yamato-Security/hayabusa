@@ -857,7 +857,7 @@ pub enum Action {
 
     #[clap(
         author = "Yamato Security (https://github.com/Yamato-Security/hayabusa - @SecurityYamato)",
-        help_template = help_banner("\n{author-with-newline}\n{usage-heading}\n  hayabusa.exe expand-list <INPUT> [OPTIONS]\n\n{all-args}"),
+        help_template = help_banner("\n{author-with-newline}\n{usage-heading}\n  hayabusa.exe expand-list [OPTIONS]\n\n{all-args}"),
         term_width = 400,
         display_order = 311,
         disable_help_flag = true
@@ -897,7 +897,7 @@ pub enum Action {
 
     #[clap(
         author = "Yamato Security (https://github.com/Yamato-Security/hayabusa - @SecurityYamato)",
-        help_template = help_banner("\n{author-with-newline}\n{usage-heading}\n  {usage}\n\n{all-args}"),
+        help_template = help_banner("\n{author-with-newline}\n{usage-heading}\n  hayabusa.exe update-rules [OPTIONS]\n\n{all-args}"),
         term_width = 400,
         display_order = 470,
         disable_help_flag = true
@@ -907,7 +907,7 @@ pub enum Action {
 
     #[clap(
         author = "Yamato Security (https://github.com/Yamato-Security/hayabusa - @SecurityYamato)",
-        help_template = help_banner("\n{author-with-newline}\n{usage-heading}\n  {usage}\n\n{all-args}"),
+        help_template = help_banner("\n{author-with-newline}\n{usage-heading}\n  hayabusa.exe level-tuning [OPTIONS]\n\n{all-args}"),
         term_width = 400,
         display_order = 380,
         disable_help_flag = true
@@ -917,7 +917,7 @@ pub enum Action {
 
     #[clap(
         author = "Yamato Security (https://github.com/Yamato-Security/hayabusa - @SecurityYamato)",
-        help_template = help_banner("\n{author-with-newline}\n{usage-heading}\n  {usage}\n\n{all-args}"),
+        help_template = help_banner("\n{author-with-newline}\n{usage-heading}\n  hayabusa.exe set-default-profile [OPTIONS]\n\n{all-args}"),
         term_width = 400,
         display_order = 451,
         disable_help_flag = true
@@ -925,11 +925,23 @@ pub enum Action {
     /// Set default output profile for the DFIR timeline
     SetDefaultProfile(DefaultProfileOption),
 
-    #[clap(display_order = 381)]
+    #[clap(
+        author = "Yamato Security (https://github.com/Yamato-Security/hayabusa - @SecurityYamato)",
+        help_template = help_banner("\n{author-with-newline}\n{usage-heading}\n  hayabusa.exe list-contributors [OPTIONS]\n\n{all-args}"),
+        term_width = 400,
+        display_order = 381,
+        disable_help_flag = true
+    )]
     /// Print the list of contributors
     ListContributors(CommonOptions),
 
-    #[clap(display_order = 382)]
+    #[clap(
+        author = "Yamato Security (https://github.com/Yamato-Security/hayabusa - @SecurityYamato)",
+        help_template = help_banner("\n{author-with-newline}\n{usage-heading}\n  hayabusa.exe list-profiles [OPTIONS]\n\n{all-args}"),
+        term_width = 400,
+        display_order = 382,
+        disable_help_flag = true
+    )]
     /// List the output profiles for the DFIR timeline
     ListProfiles(CommonOptions),
 

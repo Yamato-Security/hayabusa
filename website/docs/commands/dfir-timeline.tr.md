@@ -89,6 +89,7 @@ Tek bir `.evtx` dosyasının içinde birden fazla kanalın kullanıldığından 
 **CSV Çıktısı** (`CSV Output`) seçenekleri `-M, --multiline` ve `-S, --tab-separator` yalnızca CSV çıktısı için geçerlidir ve CSV olmayan bir `-t` ile birlikte kullanılırsa hata verir.
 
 ```
+Usage:
   hayabusa.exe dfir-timeline <INPUT> [OPTIONS]
 
 Input:
@@ -379,7 +380,8 @@ Bu komut, `rules` klasöründeki kuralların risk seviyelerini (`level` alanı) 
 > Uyarı: `update-rules` komutunu her çalıştırdığınızda, risk seviyesi orijinal değerine geri döndürülecektir, bu nedenle daha sonra `level-tuning` komutunu tekrar çalıştırmanız gerekecektir.
 
 ```
-Usage: level-tuning [OPTIONS]
+Usage:
+  hayabusa.exe level-tuning [OPTIONS]
 
 Display Settings:
   -K, --no-color  Disable color output
@@ -425,7 +427,8 @@ Ayarlanabilecek olası seviyeler `critical`, `high`, `medium`, `low` ve `informa
 ## `list-profiles` komutu
 
 ```
-Usage: list-profiles [OPTIONS]
+Usage:
+  hayabusa.exe list-profiles [OPTIONS]
 
 Display Settings:
   -K, --no-color  Disable color output
@@ -438,7 +441,8 @@ General Options:
 ## `set-default-profile` komutu
 
 ```
-Usage: set-default-profile [OPTIONS]
+Usage:
+  hayabusa.exe set-default-profile [OPTIONS]
 
 Display Settings:
   -K, --no-color  Disable color output
@@ -459,7 +463,8 @@ General Options:
 `update-rules` komutu, `rules` klasörünü [Hayabusa rules github deposu](https://github.com/Yamato-Security/hayabusa-rules) ile senkronize ederek kuralları ve yapılandırma dosyalarını güncelleyecektir.
 
 ```
-Usage: update-rules [OPTIONS]
+Usage:
+  hayabusa.exe update-rules [OPTIONS]
 
 Display Settings:
   -K, --no-color  Disable color output

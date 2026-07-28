@@ -11,7 +11,8 @@ Windows 11 บางครั้งจะใช้ชื่อ `Computer` ที
 ด้วยข้อมูลนี้ คุณจึงสามารถใช้ตัวเลือก `--include-computer` หรือ `--exclude-computer` เมื่อสร้างไทม์ไลน์ของคุณ เพื่อทำให้การสร้างไทม์ไลน์มีประสิทธิภาพมากขึ้นโดยการสร้างไทม์ไลน์หลายรายการตามคอมพิวเตอร์ หรือยกเว้นเหตุการณ์จากคอมพิวเตอร์บางเครื่อง
 
 ```
-Usage: computer-metrics <INPUT> [OPTIONS]
+Usage:
+  hayabusa.exe computer-metrics <INPUT> [OPTIONS]
 
 Input:
   -d, --directory <DIR>  ไดเรกทอรีของไฟล์ .evtx หลายไฟล์
@@ -55,7 +56,8 @@ Display Settings:
 คำสั่งนี้ไม่ใช้กฎการตรวจจับใด ๆ จึงจะสแกนเหตุการณ์ทั้งหมด
 
 ```
-Usage: eid-metrics <INPUT> [OPTIONS]
+Usage:
+  hayabusa.exe eid-metrics <INPUT> [OPTIONS]
 
 Input:
   -d, --directory <DIR>  ไดเรกทอรีของไฟล์ .evtx หลายไฟล์
@@ -154,7 +156,8 @@ AdminWorkstation3
 หากไฟล์การกำหนดค่าไม่มีอยู่ Hayabusa จะยังคงโหลดกฎ `expand` แต่จะเพิกเฉยต่อมัน
 
 ```
-Usage:  expand-list <INPUT> [OPTIONS]
+Usage:
+  hayabusa.exe expand-list [OPTIONS]
 
 General Options:
   -h, --help              แสดงเมนูช่วยเหลือ
@@ -191,7 +194,8 @@ domain_controller_hostnames
   * PowerShell Operational 4103
 
 ```
-Usage:  extract-base64 <INPUT> [OPTIONS]
+Usage:
+  hayabusa.exe extract-base64 <INPUT> [OPTIONS]
 
 Input:
   -d, --directory <DIR>  ไดเรกทอรีของไฟล์ .evtx หลายไฟล์
@@ -274,7 +278,8 @@ Time Format:
 คำสั่งนี้ไม่ใช้กฎการตรวจจับใด ๆ จึงจะสแกนเหตุการณ์ทั้งหมด
 
 ```
-Usage: log-metrics <INPUT> [OPTIONS]
+Usage:
+  hayabusa.exe log-metrics <INPUT> [OPTIONS]
 
 Input:
   -d, --directory <DIR>  ไดเรกทอรีของไฟล์ .evtx หลายไฟล์
@@ -345,7 +350,8 @@ Time Format:
 การล็อกออนที่ล้มเหลวมาจากเหตุการณ์ `Security 4625`
 
 ```
-Usage: logon-summary <INPUT> [OPTIONS]
+Usage:
+  hayabusa.exe logon-summary <INPUT> [OPTIONS]
 
 Input:
   -d, --directory <DIR>  ไดเรกทอรีของไฟล์ .evtx หลายไฟล์
@@ -409,7 +415,8 @@ Time Format:
 ในผลลัพธ์ของคุณมักจะมีคีย์เวิร์ดทั่วไปที่จะตรงกับเหตุการณ์ปกติจำนวนมาก ดังนั้นหลังจากตรวจสอบผลลัพธ์ด้วยตนเองและสร้างรายการคีย์เวิร์ดที่ไม่ซ้ำกันในไฟล์เดียว คุณจึงสามารถสร้างไทม์ไลน์ที่จำกัดเฉพาะกิจกรรมที่น่าสงสัยได้ด้วยคำสั่งเช่น `grep -f keywords.txt timeline.csv`
 
 ```
-Usage: pivot-keywords-list <INPUT> [OPTIONS]
+Usage:
+  hayabusa.exe pivot-keywords-list <INPUT> [OPTIONS]
 
 Input:
   -d, --directory <DIR>  ไดเรกทอรีของไฟล์ .evtx หลายไฟล์
@@ -479,7 +486,8 @@ hayabusa.exe pivot-keywords-list -d ../logs -m critical -o keywords`
 สิ่งนี้มีประโยชน์ในการพิจารณาว่ามีหลักฐานใด ๆ ในเหตุการณ์ที่ไม่ถูกตรวจจับโดย Hayabusa หรือไม่
 
 ```
-Usage: hayabusa.exe search <INPUT> <--keywords "<KEYWORDS>" OR --regex "<REGEX>"> [OPTIONS]
+Usage:
+  hayabusa.exe search <INPUT> <--keywords "<KEYWORDS>" OR --regex "<REGEX>"> [OPTIONS]
 
 Display Settings:
   -K, --no-color  ปิดใช้งานการแสดงผลแบบสี

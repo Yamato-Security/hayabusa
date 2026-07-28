@@ -8,7 +8,8 @@ Er sucht nach Security-5145-Ereignissen (Network Share File Access), um festzust
 Bei allen Hostnamen, die der Datei `critical_systems.txt` hinzugefügt werden, werden alle Alarme oberhalb von low um eine Stufe erhöht, maximal bis zur Stufe `emergency`.
 
 ```
-Usage: hayabusa.exe config-critical-systems <INPUT> [OPTIONS]
+Usage:
+  hayabusa.exe config-critical-systems <INPUT> [OPTIONS]
 
 Input:
   -d, --directory <DIR>  Verzeichnis mit mehreren .evtx-Dateien

@@ -89,6 +89,7 @@
 ตัวเลือก **CSV Output** ได้แก่ `-M, --multiline` และ `-S, --tab-separator` จะใช้ได้กับเอาต์พุต CSV เท่านั้น และจะเกิดข้อผิดพลาดหากใช้ร่วมกับ `-t` ที่ไม่ใช่ CSV
 
 ```
+Usage:
   hayabusa.exe dfir-timeline <INPUT> [OPTIONS]
 
 Input:
@@ -379,7 +380,8 @@ IpAddress,Event.EventData.IpAddress
 > คำเตือน: ทุกครั้งที่คุณรันคำสั่ง `update-rules` ระดับความเสี่ยงจะถูกคืนค่ากลับไปเป็นค่าดั้งเดิม ดังนั้นคุณจะต้องรันคำสั่ง `level-tuning` อีกครั้งหลังจากนั้น
 
 ```
-Usage: level-tuning [OPTIONS]
+Usage:
+  hayabusa.exe level-tuning [OPTIONS]
 
 Display Settings:
   -K, --no-color  Disable color output
@@ -425,7 +427,8 @@ be670d5c-31eb-7391-4d2e-d122c89cd5bb,high # 'HackTool - Rubeus Execution' - Secu
 ## คำสั่ง `list-profiles`
 
 ```
-Usage: list-profiles [OPTIONS]
+Usage:
+  hayabusa.exe list-profiles [OPTIONS]
 
 Display Settings:
   -K, --no-color  Disable color output
@@ -438,7 +441,8 @@ General Options:
 ## คำสั่ง `set-default-profile`
 
 ```
-Usage: set-default-profile [OPTIONS]
+Usage:
+  hayabusa.exe set-default-profile [OPTIONS]
 
 Display Settings:
   -K, --no-color  Disable color output
@@ -459,7 +463,8 @@ General Options:
 คำสั่ง `update-rules` จะซิงค์โฟลเดอร์ `rules` กับ [ที่เก็บ Hayabusa rules บน github](https://github.com/Yamato-Security/hayabusa-rules) เพื่ออัปเดตกฎและไฟล์กำหนดค่า
 
 ```
-Usage: update-rules [OPTIONS]
+Usage:
+  hayabusa.exe update-rules [OPTIONS]
 
 Display Settings:
   -K, --no-color  Disable color output

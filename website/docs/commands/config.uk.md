@@ -8,7 +8,8 @@
 Для всіх імен хостів, доданих до файлу `critical_systems.txt`, усі сповіщення вище low буде підвищено на один рівень з максимальним рівнем `emergency`.
 
 ```
-Usage: hayabusa.exe config-critical-systems <INPUT> [OPTIONS]
+Usage:
+  hayabusa.exe config-critical-systems <INPUT> [OPTIONS]
 
 Input:
   -d, --directory <DIR>  Каталог з кількома файлами .evtx

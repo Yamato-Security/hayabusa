@@ -11,7 +11,8 @@ Windows 11 在儲存到事件記錄時，有時會使用完全不同的 `Compute
 有了這些資訊後，您便可在建立時間軸時使用 `--include-computer` 或 `--exclude-computer` 選項，依照電腦建立多個時間軸或排除特定電腦的事件，使您的時間軸產生更有效率。
 
 ```
-Usage: computer-metrics <INPUT> [OPTIONS]
+Usage:
+  hayabusa.exe computer-metrics <INPUT> [OPTIONS]
 
 Input:
   -d, --directory <DIR>  包含多個 .evtx 檔案的目錄
@@ -55,7 +56,8 @@ Display Settings:
 此命令不使用任何偵測規則，因此會掃描所有事件。
 
 ```
-Usage: eid-metrics <INPUT> [OPTIONS]
+Usage:
+  hayabusa.exe eid-metrics <INPUT> [OPTIONS]
 
 Input:
   -d, --directory <DIR>  包含多個 .evtx 檔案的目錄
@@ -154,7 +156,8 @@ AdminWorkstation3
 若設定檔不存在，Hayabusa 仍會載入 `expand` 規則但忽略它。
 
 ```
-Usage:  expand-list <INPUT> [OPTIONS]
+Usage:
+  hayabusa.exe expand-list [OPTIONS]
 
 General Options:
   -h, --help              顯示說明選單
@@ -191,7 +194,8 @@ domain_controller_hostnames
   * PowerShell Operational 4103
 
 ```
-Usage:  extract-base64 <INPUT> [OPTIONS]
+Usage:
+  hayabusa.exe extract-base64 <INPUT> [OPTIONS]
 
 Input:
   -d, --directory <DIR>  包含多個 .evtx 檔案的目錄
@@ -274,7 +278,8 @@ Time Format:
 此命令不使用任何偵測規則，因此會掃描所有事件。
 
 ```
-Usage: log-metrics <INPUT> [OPTIONS]
+Usage:
+  hayabusa.exe log-metrics <INPUT> [OPTIONS]
 
 Input:
   -d, --directory <DIR>  包含多個 .evtx 檔案的目錄
@@ -345,7 +350,8 @@ Time Format:
 失敗的登入取自 `Security 4625` 事件。
 
 ```
-Usage: logon-summary <INPUT> [OPTIONS]
+Usage:
+  hayabusa.exe logon-summary <INPUT> [OPTIONS]
 
 Input:
   -d, --directory <DIR>  包含多個 .evtx 檔案的目錄
@@ -409,7 +415,8 @@ Time Format:
 您的結果中很可能會有符合許多正常事件的常見關鍵字，因此在手動檢查結果並將唯一關鍵字整理至單一檔案後，您便可使用如 `grep -f keywords.txt timeline.csv` 之類的命令建立一份縮小範圍的可疑活動時間軸。
 
 ```
-Usage: pivot-keywords-list <INPUT> [OPTIONS]
+Usage:
+  hayabusa.exe pivot-keywords-list <INPUT> [OPTIONS]
 
 Input:
   -d, --directory <DIR>  包含多個 .evtx 檔案的目錄
@@ -479,7 +486,8 @@ hayabusa.exe pivot-keywords-list -d ../logs -m critical -o keywords`
 這有助於判斷在 Hayabusa 未偵測到的事件中是否存在任何證據。
 
 ```
-Usage: hayabusa.exe search <INPUT> <--keywords "<KEYWORDS>" OR --regex "<REGEX>"> [OPTIONS]
+Usage:
+  hayabusa.exe search <INPUT> <--keywords "<KEYWORDS>" OR --regex "<REGEX>"> [OPTIONS]
 
 Display Settings:
   -K, --no-color  停用彩色輸出

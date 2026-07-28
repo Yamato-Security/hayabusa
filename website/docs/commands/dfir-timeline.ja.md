@@ -89,6 +89,7 @@ Sigmaルールでは、`logsource`の`service`や`category`フィールドでチ
 **CSV Output**（CSV出力）のオプション`-M, --multiline`と`-S, --tab-separator`はCSV出力にのみ適用され、CSV以外の`-t`と組み合わせるとエラーになります。
 
 ```
+Usage:
   hayabusa.exe dfir-timeline <INPUT> [OPTIONS]
 
 Input:
@@ -379,7 +380,8 @@ IpAddress,Event.EventData.IpAddress
 > 注意: `update-rules`を実行するたびに、アラートレベルが元の設定に上書きされるので、レベルを変更したい場合は、`level-tuning`コマンドも実行する必要があります。
 
 ```
-Usage: level-tuning [OPTIONS]
+Usage:
+  hayabusa.exe level-tuning [OPTIONS]
 
 Display Settings:
   -K, --no-color      カラーで出力しない
@@ -425,7 +427,8 @@ be670d5c-31eb-7391-4d2e-d122c89cd5bb,high # 'HackTool - Rubeus Execution' - Secu
 ## `list-profiles`コマンド
 
 ```
-Usage: list-profiles [OPTIONS]
+Usage:
+  hayabusa.exe list-profiles [OPTIONS]
 
 Display Settings:
   -K, --no-color   カラーで出力しない
@@ -438,7 +441,8 @@ General Options:
 ## `set-default-profile`コマンド
 
 ```
-Usage: set-default-profile [OPTIONS]
+Usage:
+  hayabusa.exe set-default-profile [OPTIONS]
 
 Display Settings:
   -K, --no-color           カラーで出力しない
@@ -459,7 +463,8 @@ General Options:
 `update-rules`コマンドは、`rules`フォルダを[HayabusaルールのGitHubリポジトリ](https://github.com/Yamato-Security/hayabusa-rules)と同期し、ルールと設定ファイルを更新します。
 
 ```
-Usage: update-rules [OPTIONS]
+Usage:
+  hayabusa.exe update-rules [OPTIONS]
 
 Display Settings:
   -K, --no-color  カラーで出力しない

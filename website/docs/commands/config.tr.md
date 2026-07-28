@@ -8,7 +8,8 @@ Bir dosya sunucusu olup olmadığını belirlemek için Security 5145 (Ağ Payla
 `critical_systems.txt` dosyasına eklenen tüm ana bilgisayar adlarında, düşük seviyenin üzerindeki tüm uyarılar bir seviye artırılır ve en fazla `emergency` seviyesine çıkar.
 
 ```
-Usage: hayabusa.exe config-critical-systems <INPUT> [OPTIONS]
+Usage:
+  hayabusa.exe config-critical-systems <INPUT> [OPTIONS]
 
 Input:
   -d, --directory <DIR>  Birden fazla .evtx dosyasının bulunduğu dizin

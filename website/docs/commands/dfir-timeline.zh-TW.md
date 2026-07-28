@@ -89,6 +89,7 @@ Channel 過濾在載入 `.evtx` 檔案時也會使用。
 **CSV 輸出**選項 `-M, --multiline` 與 `-S, --tab-separator` 僅適用於 CSV 輸出，若與非 CSV 的 `-t` 併用將會產生錯誤。
 
 ```
+Usage:
   hayabusa.exe dfir-timeline <INPUT> [OPTIONS]
 
 Input:
@@ -379,7 +380,8 @@ IpAddress,Event.EventData.IpAddress
 > 警告：每次您執行 `update-rules` 指令時，風險等級都會回復為原始值，因此之後您需要再次執行 `level-tuning` 指令。
 
 ```
-Usage: level-tuning [OPTIONS]
+Usage:
+  hayabusa.exe level-tuning [OPTIONS]
 
 Display Settings:
   -K, --no-color  Disable color output
@@ -425,7 +427,8 @@ be670d5c-31eb-7391-4d2e-d122c89cd5bb,high # 'HackTool - Rubeus Execution' - Secu
 ## `list-profiles` 指令
 
 ```
-Usage: list-profiles [OPTIONS]
+Usage:
+  hayabusa.exe list-profiles [OPTIONS]
 
 Display Settings:
   -K, --no-color  Disable color output
@@ -438,7 +441,8 @@ General Options:
 ## `set-default-profile` 指令
 
 ```
-Usage: set-default-profile [OPTIONS]
+Usage:
+  hayabusa.exe set-default-profile [OPTIONS]
 
 Display Settings:
   -K, --no-color  Disable color output
@@ -459,7 +463,8 @@ General Options:
 `update-rules` 指令會將 `rules` 資料夾與 [Hayabusa rules github 儲存庫](https://github.com/Yamato-Security/hayabusa-rules)同步，更新規則與設定檔。
 
 ```
-Usage: update-rules [OPTIONS]
+Usage:
+  hayabusa.exe update-rules [OPTIONS]
 
 Display Settings:
   -K, --no-color  Disable color output

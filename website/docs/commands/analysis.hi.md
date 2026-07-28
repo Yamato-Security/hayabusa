@@ -11,7 +11,8 @@ Windows 11 कभी-कभी इवेंट लॉग में सहेज�
 इस जानकारी के साथ, आप फिर अपनी टाइमलाइन बनाते समय `--include-computer` या `--exclude-computer` विकल्पों का उपयोग कर सकते हैं ताकि कंप्यूटर के अनुसार कई टाइमलाइन बनाकर या कुछ कंप्यूटरों के इवेंट्स को बाहर करके अपनी टाइमलाइन निर्माण को अधिक कुशल बना सकें।
 
 ```
-Usage: computer-metrics <INPUT> [OPTIONS]
+Usage:
+  hayabusa.exe computer-metrics <INPUT> [OPTIONS]
 
 Input:
   -d, --directory <DIR>  एकाधिक .evtx फ़ाइलों की डायरेक्टरी
@@ -55,7 +56,8 @@ Display Settings:
 यह कमांड किसी भी डिटेक्शन नियम का उपयोग नहीं करता है इसलिए सभी इवेंट्स को स्कैन करेगा।
 
 ```
-Usage: eid-metrics <INPUT> [OPTIONS]
+Usage:
+  hayabusa.exe eid-metrics <INPUT> [OPTIONS]
 
 Input:
   -d, --directory <DIR>  एकाधिक .evtx फ़ाइलों की डायरेक्टरी
@@ -154,7 +156,8 @@ AdminWorkstation3
 यदि कॉन्फ़िग फ़ाइल मौजूद नहीं है, तो Hayabusa फिर भी `expand` नियम को लोड करेगा लेकिन उसे अनदेखा करेगा।
 
 ```
-Usage:  expand-list <INPUT> [OPTIONS]
+Usage:
+  hayabusa.exe expand-list [OPTIONS]
 
 General Options:
   -h, --help              सहायता मेनू दिखाएं
@@ -191,7 +194,8 @@ domain_controller_hostnames
   * PowerShell Operational 4103
 
 ```
-Usage:  extract-base64 <INPUT> [OPTIONS]
+Usage:
+  hayabusa.exe extract-base64 <INPUT> [OPTIONS]
 
 Input:
   -d, --directory <DIR>  एकाधिक .evtx फ़ाइलों की डायरेक्टरी
@@ -274,7 +278,8 @@ CSV फ़ाइल में सहेजते समय, निम्नल�
 यह कमांड किसी भी डिटेक्शन नियम का उपयोग नहीं करता है इसलिए सभी इवेंट्स को स्कैन करेगा।
 
 ```
-Usage: log-metrics <INPUT> [OPTIONS]
+Usage:
+  hayabusa.exe log-metrics <INPUT> [OPTIONS]
 
 Input:
   -d, --directory <DIR>  एकाधिक .evtx फ़ाइलों की डायरेक्टरी
@@ -345,7 +350,8 @@ Time Format:
 असफल लॉगऑन `Security 4625` इवेंट्स से लिए जाते हैं।
 
 ```
-Usage: logon-summary <INPUT> [OPTIONS]
+Usage:
+  hayabusa.exe logon-summary <INPUT> [OPTIONS]
 
 Input:
   -d, --directory <DIR>  एकाधिक .evtx फ़ाइलों की डायरेक्टरी
@@ -409,7 +415,8 @@ Time Format:
 आपके परिणामों में संभवतः सामान्य कीवर्ड होंगे जो कई सामान्य इवेंट्स पर मेल खाएंगे, इसलिए परिणामों की मैन्युअल रूप से जांच करने और एक एकल फ़ाइल में अद्वितीय कीवर्ड्स की सूची बनाने के बाद, आप फिर `grep -f keywords.txt timeline.csv` जैसे कमांड के साथ संदिग्ध गतिविधि की एक संकीर्ण टाइमलाइन बना सकते हैं।
 
 ```
-Usage: pivot-keywords-list <INPUT> [OPTIONS]
+Usage:
+  hayabusa.exe pivot-keywords-list <INPUT> [OPTIONS]
 
 Input:
   -d, --directory <DIR>  एकाधिक .evtx फ़ाइलों की डायरेक्टरी
@@ -479,7 +486,8 @@ hayabusa.exe pivot-keywords-list -d ../logs -m critical -o keywords`
 यह यह निर्धारित करने के लिए उपयोगी है कि क्या ऐसे इवेंट्स में कोई साक्ष्य है जो Hayabusa द्वारा पता नहीं लगाए जाते हैं।
 
 ```
-Usage: hayabusa.exe search <INPUT> <--keywords "<KEYWORDS>" OR --regex "<REGEX>"> [OPTIONS]
+Usage:
+  hayabusa.exe search <INPUT> <--keywords "<KEYWORDS>" OR --regex "<REGEX>"> [OPTIONS]
 
 Display Settings:
   -K, --no-color  रंगीन आउटपुट अक्षम करें

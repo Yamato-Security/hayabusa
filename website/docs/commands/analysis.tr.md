@@ -11,7 +11,8 @@ Hangi bilgisayarların en fazla günlüğe sahip olduğunu hızlıca görmek iç
 Bu bilgilerle, zaman çizelgelerinizi oluştururken `--include-computer` veya `--exclude-computer` seçeneklerini kullanarak, bilgisayara göre birden fazla zaman çizelgesi oluşturarak veya belirli bilgisayarlardan gelen olayları hariç tutarak zaman çizelgesi oluşturmanızı daha verimli hale getirebilirsiniz.
 
 ```
-Usage: computer-metrics <INPUT> [OPTIONS]
+Usage:
+  hayabusa.exe computer-metrics <INPUT> [OPTIONS]
 
 Input:
   -d, --directory <DIR>  Birden fazla .evtx dosyasının bulunduğu dizin
@@ -55,7 +56,8 @@ Display Settings:
 Bu komut herhangi bir tespit kuralı kullanmaz, bu nedenle tüm olayları tarar.
 
 ```
-Usage: eid-metrics <INPUT> [OPTIONS]
+Usage:
+  hayabusa.exe eid-metrics <INPUT> [OPTIONS]
 
 Input:
   -d, --directory <DIR>  Birden fazla .evtx dosyasının bulunduğu dizin
@@ -154,7 +156,8 @@ Bu, esasen aşağıdaki ile aynı mantığı kontrol eder:
 Yapılandırma dosyası mevcut değilse, Hayabusa yine de `expand` kuralını yükler ancak yok sayar.
 
 ```
-Usage:  expand-list <INPUT> [OPTIONS]
+Usage:
+  hayabusa.exe expand-list [OPTIONS]
 
 General Options:
   -h, --help              Yardım menüsünü göster
@@ -191,7 +194,8 @@ Bu komut, aşağıdaki olaylardan base64 dizelerini çıkaracak, bunların kodun
   * PowerShell Operational 4103
 
 ```
-Usage:  extract-base64 <INPUT> [OPTIONS]
+Usage:
+  hayabusa.exe extract-base64 <INPUT> [OPTIONS]
 
 Input:
   -d, --directory <DIR>  Birden fazla .evtx dosyasının bulunduğu dizin
@@ -274,7 +278,8 @@ Bir CSV dosyasına kaydederken, aşağıdaki alanlar kaydedilir:
 Bu komut herhangi bir tespit kuralı kullanmaz, bu nedenle tüm olayları tarar.
 
 ```
-Usage: log-metrics <INPUT> [OPTIONS]
+Usage:
+  hayabusa.exe log-metrics <INPUT> [OPTIONS]
 
 Input:
   -d, --directory <DIR>  Birden fazla .evtx dosyasının bulunduğu dizin
@@ -345,7 +350,8 @@ Başarılı oturum açmalar aşağıdaki olaylardan alınır:
 Başarısız oturum açmalar `Security 4625` olaylarından alınır.
 
 ```
-Usage: logon-summary <INPUT> [OPTIONS]
+Usage:
+  hayabusa.exe logon-summary <INPUT> [OPTIONS]
 
 Input:
   -d, --directory <DIR>  Birden fazla .evtx dosyasının bulunduğu dizin
@@ -409,7 +415,8 @@ Time Format:
 Sonuçlarınızda büyük olasılıkla birçok normal olayla eşleşecek ortak anahtar kelimeler olacaktır, bu nedenle sonuçları manuel olarak kontrol edip benzersiz anahtar kelimelerden oluşan bir listeyi tek bir dosyada oluşturduktan sonra, `grep -f keywords.txt timeline.csv` gibi bir komutla şüpheli etkinliğin daraltılmış bir zaman çizelgesini oluşturabilirsiniz.
 
 ```
-Usage: pivot-keywords-list <INPUT> [OPTIONS]
+Usage:
+  hayabusa.exe pivot-keywords-list <INPUT> [OPTIONS]
 
 Input:
   -d, --directory <DIR>  Birden fazla .evtx dosyasının bulunduğu dizin
@@ -479,7 +486,8 @@ Biçim `KeywordName.FieldName` şeklindedir. Örneğin, `Users` listesi oluştur
 Bu, Hayabusa tarafından tespit edilmeyen olaylarda herhangi bir kanıt olup olmadığını belirlemek için kullanışlıdır.
 
 ```
-Usage: hayabusa.exe search <INPUT> <--keywords "<KEYWORDS>" OR --regex "<REGEX>"> [OPTIONS]
+Usage:
+  hayabusa.exe search <INPUT> <--keywords "<KEYWORDS>" OR --regex "<REGEX>"> [OPTIONS]
 
 Display Settings:
   -K, --no-color  Renkli çıktıyı devre dışı bırak

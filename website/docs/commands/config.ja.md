@@ -8,7 +8,8 @@
 `critical_systems.txt`ファイルに追加されたホスト名は、すべてのアラートが1つ上のレベルになり、最大で`emergency`レベルになります。
 
 ```
-Usage: hayabusa.exe config-critical-systems <INPUT> [OPTIONS]
+Usage:
+  hayabusa.exe config-critical-systems <INPUT> [OPTIONS]
 
 Input:
   -d, --directory <DIR>  .evtxファイルを持つディレクトリのパス

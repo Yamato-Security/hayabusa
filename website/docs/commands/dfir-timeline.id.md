@@ -89,6 +89,7 @@ Perintah `dfir-timeline` membuat timeline forensik dari event. Pilih format outp
 Opsi **CSV Output** `-M, --multiline` dan `-S, --tab-separator` hanya berlaku untuk output CSV dan akan menghasilkan error jika digabungkan dengan `-t` non-CSV.
 
 ```
+Usage:
   hayabusa.exe dfir-timeline <INPUT> [OPTIONS]
 
 Input:
@@ -379,7 +380,8 @@ Perintah ini menggunakan file konfigurasi untuk menimpa tingkat risiko (field `l
 > Peringatan: setiap kali Anda menjalankan perintah `update-rules`, tingkat risiko akan dikembalikan ke nilai aslinya sehingga Anda perlu menjalankan perintah `level-tuning` lagi setelahnya.
 
 ```
-Usage: level-tuning [OPTIONS]
+Usage:
+  hayabusa.exe level-tuning [OPTIONS]
 
 Display Settings:
   -K, --no-color  Disable color output
@@ -425,7 +427,8 @@ Level yang mungkin untuk disetel adalah `critical`, `high`, `medium`, `low` dan 
 ## Perintah `list-profiles`
 
 ```
-Usage: list-profiles [OPTIONS]
+Usage:
+  hayabusa.exe list-profiles [OPTIONS]
 
 Display Settings:
   -K, --no-color  Disable color output
@@ -438,7 +441,8 @@ General Options:
 ## Perintah `set-default-profile`
 
 ```
-Usage: set-default-profile [OPTIONS]
+Usage:
+  hayabusa.exe set-default-profile [OPTIONS]
 
 Display Settings:
   -K, --no-color  Disable color output
@@ -459,7 +463,8 @@ General Options:
 Perintah `update-rules` akan menyinkronkan folder `rules` dengan [repositori github Hayabusa rules](https://github.com/Yamato-Security/hayabusa-rules), memperbarui aturan dan file konfigurasi.
 
 ```
-Usage: update-rules [OPTIONS]
+Usage:
+  hayabusa.exe update-rules [OPTIONS]
 
 Display Settings:
   -K, --no-color  Disable color output
