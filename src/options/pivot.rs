@@ -156,7 +156,12 @@ pub fn fmt_headers(mut output: String, key: &String, pivot_keyword: &PivotKeywor
 
 /// Appends each collected keyword value on its own line to `output`.
 pub fn fmt_keywords_results(mut output: String, pivot_keyword: &PivotKeyword) -> String {
-    for keyword in pivot_keyword.keywords.iter() {
+    // `keywords` is an `IndexSet`, so it iterates in insertion order — and the values are inserted
+    // from the per-record parallel tasks, which means that order differs on every run. Sort so the
+    // emitted list is reproducible; both the file and the standard-output paths come through here.
+    let mut keywords: Vec<&String> = pivot_keyword.keywords.iter().collect();
+    keywords.sort_unstable();
+    for keyword in keywords {
         writeln!(output, "{keyword}").ok();
     }
     output

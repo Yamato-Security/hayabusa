@@ -16,7 +16,7 @@ use std::path::Path;
 /// Grouping key for the logon-summary command. Logon events whose fields below all match are
 /// aggregated into a single row. The `dst_*` fields identify the account/computer that was logged
 /// on to, and the `src_*`/`source_*` fields identify where the logon came from.
-#[derive(Debug, Clone, Eq, Hash, PartialEq)]
+#[derive(Debug, Clone, Eq, Hash, PartialEq, Ord, PartialOrd)]
 pub struct LoginEvent {
     pub channel: CompactString,
     pub dst_user: CompactString,
