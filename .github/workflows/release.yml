@@ -18,6 +18,10 @@ jobs:
   upload:
     runs-on: ${{ matrix.info.os }}
     strategy:
+      # One target failing should not cancel the other eight: `upload-all-platforms` needs them
+      # all, so a cancelled matrix means re-running every build to find out whether the rest were
+      # fine. Let each target report its own result.
+      fail-fast: false
       matrix:
         info:
           - {
@@ -102,15 +106,31 @@ jobs:
           # ships an x86_64 musl-gcc, and linking with the glibc gcc-aarch64-linux-gnu produces a
           # binary that is killed at startup (issue #1332). This static toolchain builds the C
           # dependencies (vendored OpenSSL, mimalloc) and links against musl correctly.
-          curl -sSL https://musl.cc/aarch64-linux-musl-cross.tgz | tar -xz -C "$HOME"
-          echo "$HOME/aarch64-linux-musl-cross/bin" >> "$GITHUB_PATH"
-          echo "CC_aarch64_unknown_linux_musl=aarch64-linux-musl-gcc" >> "$GITHUB_ENV"
-          echo "CXX_aarch64_unknown_linux_musl=aarch64-linux-musl-g++" >> "$GITHUB_ENV"
-          echo "AR_aarch64_unknown_linux_musl=aarch64-linux-musl-ar" >> "$GITHUB_ENV"
+          #
+          # Fetched from the cross-tools/musl-cross GitHub release rather than musl.cc. musl.cc is
+          # a single volunteer-run host with no CDN, and it stopped answering entirely, failing
+          # every release run at this step with `curl: (28) Failed to connect to musl.cc port 443`.
+          # GitHub Releases are already a hard dependency of this workflow, so this adds no new
+          # point of failure. Both toolchains are musl-cross-make builds of the same components.
+          TOOLCHAIN_VERSION="20260515"
+          TOOLCHAIN_SHA256="90282c463498dcdab9b96a464a0925d53f30c884b2d7b25e3998999416ae34b8"
+          # Download to a file rather than piping into tar: a failed fetch then reports as a curl
+          # error instead of a confusing `gzip: stdin: unexpected end of file`. -f so an HTTP error
+          # page is never mistaken for the archive, and --retry to ride out a transient blip.
+          curl -fsSL --retry 5 --retry-all-errors --retry-delay 5 --connect-timeout 30 \
+            -o /tmp/aarch64-musl-cross.tar.xz \
+            "https://github.com/cross-tools/musl-cross/releases/download/${TOOLCHAIN_VERSION}/aarch64-unknown-linux-musl.tar.xz"
+          # This toolchain compiles and links a published release binary, so pin its hash.
+          echo "${TOOLCHAIN_SHA256}  /tmp/aarch64-musl-cross.tar.xz" | sha256sum -c -
+          tar -xJf /tmp/aarch64-musl-cross.tar.xz -C "$HOME"
+          echo "$HOME/aarch64-unknown-linux-musl/bin" >> "$GITHUB_PATH"
+          echo "CC_aarch64_unknown_linux_musl=aarch64-unknown-linux-musl-gcc" >> "$GITHUB_ENV"
+          echo "CXX_aarch64_unknown_linux_musl=aarch64-unknown-linux-musl-g++" >> "$GITHUB_ENV"
+          echo "AR_aarch64_unknown_linux_musl=aarch64-unknown-linux-musl-ar" >> "$GITHUB_ENV"
           cat << EOF >> ./.cargo/config.toml
 
           [target.aarch64-unknown-linux-musl]
-          linker = "aarch64-linux-musl-gcc"
+          linker = "aarch64-unknown-linux-musl-gcc"
           EOF
 
       - name: Build Hayabusa binary
