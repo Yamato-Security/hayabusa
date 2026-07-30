@@ -1136,6 +1136,15 @@ pub struct TimeFormatOptions {
     pub utc: bool,
 }
 
+impl TimeFormatOptions {
+    /// Whether the selected format renders timestamps in UTC instead of local time; the remaining
+    /// formats (RFC 2822/3339, US, US military, European) are all local. Every output path asks
+    /// this one question so that adding another always-UTC format cannot leave them disagreeing.
+    pub fn is_utc_output(&self) -> bool {
+        self.utc || self.iso_8601
+    }
+}
+
 #[derive(Args, Clone, Debug, Default)]
 #[clap(group(ArgGroup::new("search_input_filtering").args(["keywords", "regex"]).required(true)))]
 pub struct SearchOption {

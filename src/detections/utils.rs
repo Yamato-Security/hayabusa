@@ -678,7 +678,7 @@ pub fn format_time(
     date_only: bool,
     output_option: &TimeFormatOptions,
 ) -> CompactString {
-    if !(output_option.utc || output_option.iso_8601) {
+    if !output_option.is_utc_output() {
         format_rfc(&time.with_timezone(&Local), date_only, output_option)
     } else {
         format_rfc(time, date_only, output_option)
