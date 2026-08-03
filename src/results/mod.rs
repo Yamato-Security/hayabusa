@@ -5,7 +5,7 @@ use std::io::{self, BufWriter};
 use std::process;
 
 use ::csv::{QuoteStyle, Writer, WriterBuilder};
-use chrono::{DateTime, Offset, TimeZone, Utc};
+use chrono::{DateTime, Local, Offset, TimeZone, Utc};
 use compact_str::CompactString;
 use hashbrown::{HashMap, HashSet};
 use strum::IntoEnumIterator;
@@ -326,6 +326,7 @@ fn output_results_inner(
         &duplicate_indices,
         result_state,
         stored_static,
+        &Local,
     );
     output_writer.disp_wtr_buf.clear();
 
@@ -438,6 +439,10 @@ pub fn get_duplicate_indices(detect_infos: &mut [DetectInfo]) -> HashSet<usize> 
 /// the output. Taking it at the instant being converted rather than at a fixed reference point
 /// keeps events on either side of a DST transition correct. Callers pass `&Local`; the timezone
 /// is a parameter so the conversion can be tested against a known offset.
+///
+/// Shifting each value by its own offset means the series is no longer monotonic across a DST
+/// fall-back — two markers inside the ambiguous hour can appear out of order. That is inherent
+/// to displaying local time on a series sorted by UTC instant, and is cosmetic.
 fn get_histogram_timestamp<Tz: TimeZone>(
     time_format: &TimeFormatOptions,
     time: &DateTime<Utc>,

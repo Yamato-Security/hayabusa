@@ -1,6 +1,7 @@
 use std::io::{self, Write};
 
 use aho_corasick::{AhoCorasickBuilder, MatchKind};
+use chrono::Local;
 use hashbrown::HashSet;
 use itertools::Itertools;
 
@@ -41,7 +42,13 @@ pub fn emit_csv(
         handle_output_error(Box::new(result.err().unwrap()));
     }
 
-    calc_statistic_info(detect_infos, duplicate_indices, result_state, stored_static);
+    calc_statistic_info(
+        detect_infos,
+        duplicate_indices,
+        result_state,
+        stored_static,
+        &Local,
+    );
 }
 /// Formats a raw multi-author `RuleAuthor` string for multiline/tab CSV output: split on the
 /// `,` / `/` / `;` separators used in rule YAML, normalize each author's internal whitespace, and

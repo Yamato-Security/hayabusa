@@ -2,7 +2,7 @@ use std::cmp::{self, min};
 use std::io::Write;
 use std::str::FromStr;
 
-use chrono::Local;
+use chrono::TimeZone;
 use comfy_table::modifiers::UTF8_ROUND_CORNERS;
 use comfy_table::presets::UTF8_FULL;
 use comfy_table::*;
@@ -32,11 +32,17 @@ use super::{Colors, OutputWriter, ResultOutputState, get_histogram_timestamp, ht
 /// Folds a batch of detections into `result_state`: records the detection timestamps and the
 /// IDs of detected records, and (unless no-summary is set) updates the per-level counts by
 /// date, computer, and rule, plus the rule author statistics used by the results summary.
-pub(crate) fn calc_statistic_info(
+///
+/// `display_tz` is the timezone the detection frequency timeline is drawn in; callers pass
+/// `&Local`. As on [`get_histogram_timestamp`] it is a parameter rather than `Local` so the
+/// collected timestamps can be asserted against a known offset regardless of the timezone the
+/// test runner happens to sit in.
+pub(crate) fn calc_statistic_info<Tz: TimeZone>(
     detect_infos: &[DetectInfo],
     duplicate_indices: &HashSet<usize>,
     result_state: &mut ResultOutputState,
     stored_static: &StoredStatic,
+    display_tz: &Tz,
 ) {
     let output_option = stored_static.output_option.as_ref().unwrap();
     for (i, detect_info) in detect_infos.iter().enumerate() {
@@ -46,7 +52,7 @@ pub(crate) fn calc_statistic_info(
         result_state.timestamps.push(get_histogram_timestamp(
             &output_option.time_format_options,
             &detect_info.detected_time,
-            &Local,
+            display_tz,
         ));
         match &detect_info.agg_result {
             None => {
@@ -1181,7 +1187,7 @@ fn extract_author_name(author: &str) -> Nested<String> {
 
 #[cfg(test)]
 mod tests {
-    use chrono::{DateTime, Local, Utc};
+    use chrono::{DateTime, FixedOffset, Utc};
     use hashbrown::HashSet;
 
     use super::{calc_statistic_info, truncate_chars};
@@ -1210,7 +1216,13 @@ mod tests {
     #[test]
     fn calc_statistic_info_shifts_histogram_timestamps_into_the_output_timezone() {
         // Collecting the raw UTC epoch here left the -T axis reading UTC while every other
-        // timestamp in the same output read local time.
+        // timestamp in the same output read local time. What is pinned is the wiring -- that the
+        // shift is applied at all, with the display timezone and the caller's time format. An
+        // explicit offset rather than `Local`: handing in `Local` would make both assertions
+        // below collapse into the unshifted UTC epoch on a UTC CI runner, so the bug this test
+        // covers could be reintroduced with CI still green. The arithmetic itself is covered by
+        // the `get_histogram_timestamp` tests in `results::tests`.
+        let display_tz = FixedOffset::east_opt(9 * 3600).unwrap();
         let detected_time = DateTime::parse_from_rfc3339("2021-12-23T00:00:00Z")
             .unwrap()
             .with_timezone(&Utc);
@@ -1225,16 +1237,18 @@ mod tests {
             &HashSet::new(),
             &mut local_state,
             &stored_static_with(TimeFormatOptions::default()),
+            &display_tz,
         );
         let marker = DateTime::from_timestamp(local_state.timestamps[0], 0)
             .expect("collected timestamp is out of range");
         assert_eq!(
             marker.naive_utc(),
-            detected_time.with_timezone(&Local).naive_local(),
-            "histogram marker does not read as local time"
+            detected_time.with_timezone(&display_tz).naive_local(),
+            "histogram marker does not read as wall-clock time in the display timezone"
         );
 
-        // -U prints the rest of the output in UTC, so the axis must stay UTC as well.
+        // -U prints the rest of the output in UTC, so the axis must stay UTC as well -- even
+        // though a non-UTC display timezone is handed in.
         let mut utc_state = ResultOutputState::default();
         calc_statistic_info(
             &detect_infos,
@@ -1244,6 +1258,7 @@ mod tests {
                 utc: true,
                 ..Default::default()
             }),
+            &display_tz,
         );
         assert_eq!(utc_state.timestamps, vec![detected_time.timestamp()]);
     }
