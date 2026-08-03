@@ -10,12 +10,12 @@ Diese Seite enthält eine dynamisch generierte Liste aller Sigma-Feld-Modifikato
 | base64ǀcontains               |             1 |                0 |
 | cased                         |             0 |                0 |
 | cidr                          |            35 |                0 |
-| contains                      |          3070 |               21 |
-| containsǀall                  |          1081 |                0 |
+| contains                      |          3072 |               21 |
+| containsǀall                  |          1084 |                0 |
 | containsǀcased                |             0 |                0 |
 | containsǀexpand               |             1 |                0 |
 | containsǀwindash              |           108 |                0 |
-| endswith                      |          3253 |              273 |
+| endswith                      |          3259 |              273 |
 | endswithfield                 |             0 |                0 |
 | endswithǀcased                |             0 |                0 |
 | endswithǀwindash              |             2 |                0 |
@@ -34,7 +34,7 @@ Diese Seite enthält eine dynamisch generierte Liste aller Sigma-Feld-Modifikato
 | reǀi                          |             1 |                0 |
 | reǀm                          |             0 |                0 |
 | reǀs                          |             0 |                0 |
-| startswith                    |           535 |                6 |
+| startswith                    |           539 |                6 |
 | startswithǀcased              |             0 |                0 |
 | utf16beǀbase64offsetǀcontains |             0 |                0 |
 | utf16leǀbase64offsetǀcontains |             0 |                0 |
@@ -60,4 +60,4 @@ Derzeit wird alles unterstützt.
 Derzeit wird alles unterstützt.
 
 Dieses Dokument wird monatlich dynamisch auf Basis der neuesten Regeln aktualisiert.  
-Letzte Aktualisierung: 2026/07/15
+Letzte Aktualisierung: 2026/08/01
