@@ -22,7 +22,7 @@ Esta página contém uma lista gerada dinamicamente de todos os modificadores de
 | equalsfield                   |             0 |                0 |
 | exists                        |             0 |                0 |
 | expand                        |            11 |                0 |
-| fieldref                      |             2 |                1 |
+| fieldref                      |             4 |                1 |
 | fieldrefǀcontains             |             0 |                0 |
 | fieldrefǀendswith             |             0 |                2 |
 | fieldrefǀstartswith           |             0 |                0 |
@@ -31,7 +31,7 @@ Esta página contém uma lista gerada dinamicamente de todos os modificadores de
 | lt                            |             0 |                0 |
 | lte                           |             0 |                0 |
 | re                            |           188 |               11 |
-| reǀi                          |             1 |                0 |
+| reǀi                          |             2 |                0 |
 | reǀm                          |             0 |                0 |
 | reǀs                          |             0 |                0 |
 | startswith                    |           539 |                6 |
