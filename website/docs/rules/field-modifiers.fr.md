@@ -1,5 +1,7 @@
 # Modificateurs de champ pris en charge
 
+Cette page contient une liste générée dynamiquement de tous les modificateurs de champ Sigma ainsi que la fréquence de leur utilisation dans les règles Sigma et Hayabusa.
+
 ## Modificateurs de champ pris en charge par Hayabusa
 | Field Modifier                |   Sigma Count |   Hayabusa Count |
 |:------------------------------|--------------:|-----------------:|
@@ -8,12 +10,12 @@
 | base64ǀcontains               |             1 |                0 |
 | cased                         |             0 |                0 |
 | cidr                          |            35 |                0 |
-| contains                      |          3073 |               21 |
+| contains                      |          3072 |               21 |
 | containsǀall                  |          1084 |                0 |
 | containsǀcased                |             0 |                0 |
 | containsǀexpand               |             1 |                0 |
 | containsǀwindash              |           108 |                0 |
-| endswith                      |          3265 |              273 |
+| endswith                      |          3259 |              273 |
 | endswithfield                 |             0 |                0 |
 | endswithǀcased                |             0 |                0 |
 | endswithǀwindash              |             2 |                0 |
@@ -32,7 +34,7 @@
 | reǀi                          |             2 |                0 |
 | reǀm                          |             0 |                0 |
 | reǀs                          |             0 |                0 |
-| startswith                    |           546 |                6 |
+| startswith                    |           539 |                6 |
 | startswithǀcased              |             0 |                0 |
 | utf16beǀbase64offsetǀcontains |             0 |                0 |
 | utf16leǀbase64offsetǀcontains |             0 |                0 |
@@ -57,6 +59,5 @@ Actuellement, tout est pris en charge.
 ## Règles de corrélation non prises en charge par Hayabusa
 Actuellement, tout est pris en charge.
 
-Ce document est mis à jour dynamiquement en fonction des dernières règles.  
-Dernière mise à jour : 2026/04/28  
-Auteur : Fukusuke Takahashi
+Ce document est mis à jour dynamiquement chaque mois en fonction des dernières règles.  
+Dernière mise à jour : 2026/08/01

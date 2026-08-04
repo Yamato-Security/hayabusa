@@ -16,12 +16,12 @@ pub fn convert_to_base64_str(
     err_msgs: &mut Vec<String>,
 ) -> Option<Vec<FastMatch>> {
     let mut fastmatches = vec![];
-    for i in 0..3 {
-        let encoded_result = make_base64_str(encode, original_str, i);
+    for offset in 0..3 {
+        let encoded_result = make_base64_str(encode, original_str, offset);
         match encoded_result {
             Ok(b64_str) => {
                 let b64_s_null_filtered = b64_str.replace('\0', "");
-                let b64_offset_contents = base64_offset(i, b64_str, b64_s_null_filtered);
+                let b64_offset_contents = base64_offset(offset, b64_str, b64_s_null_filtered);
                 if let Some(fm) = convert_to_fast_match(&format!("*{b64_offset_contents}*"), false)
                 {
                     fastmatches.extend(fm);
@@ -178,27 +178,36 @@ mod tests {
     fn test_convert_to_base64_str_utf8() {
         let mut err_msgs = vec![];
         let val = "Hello, world!";
-        let m = convert_to_base64_str(None, val, &mut err_msgs).unwrap();
-        assert_eq!(m[0], FastMatch::Contains("SGVsbG8sIHdvcmxkI".to_string()));
-        assert_eq!(m[1], FastMatch::Contains("hlbGxvLCB3b3JsZC".to_string()));
-        assert_eq!(m[2], FastMatch::Contains("IZWxsbywgd29ybGQh".to_string()));
+        let matches = convert_to_base64_str(None, val, &mut err_msgs).unwrap();
+        assert_eq!(
+            matches[0],
+            FastMatch::Contains("SGVsbG8sIHdvcmxkI".to_string())
+        );
+        assert_eq!(
+            matches[1],
+            FastMatch::Contains("hlbGxvLCB3b3JsZC".to_string())
+        );
+        assert_eq!(
+            matches[2],
+            FastMatch::Contains("IZWxsbywgd29ybGQh".to_string())
+        );
     }
 
     #[test]
     fn test_convert_to_base64_str_wide() {
         let mut err_msgs = vec![];
         let val = "Hello, world!";
-        let m = convert_to_base64_str(Some(&PipeElement::Wide), val, &mut err_msgs).unwrap();
+        let matches = convert_to_base64_str(Some(&PipeElement::Wide), val, &mut err_msgs).unwrap();
         assert_eq!(
-            m[0],
+            matches[0],
             FastMatch::Contains("SABlAGwAbABvACwAIAB3AG8AcgBsAGQAIQ".to_string())
         );
         assert_eq!(
-            m[1],
+            matches[1],
             FastMatch::Contains("gAZQBsAGwAbwAsACAAdwBvAHIAbABkACEA".to_string())
         );
         assert_eq!(
-            m[2],
+            matches[2],
             FastMatch::Contains("IAGUAbABsAG8ALAAgAHcAbwByAGwAZAAhA".to_string())
         );
     }
@@ -206,17 +215,18 @@ mod tests {
     fn test_convert_to_base64_str_utf16le() {
         let mut err_msgs = vec![];
         let val = "Hello, world!";
-        let m = convert_to_base64_str(Some(&PipeElement::Utf16Le), val, &mut err_msgs).unwrap();
+        let matches =
+            convert_to_base64_str(Some(&PipeElement::Utf16Le), val, &mut err_msgs).unwrap();
         assert_eq!(
-            m[0],
+            matches[0],
             FastMatch::Contains("SABlAGwAbABvACwAIAB3AG8AcgBsAGQAIQ".to_string())
         );
         assert_eq!(
-            m[1],
+            matches[1],
             FastMatch::Contains("gAZQBsAGwAbwAsACAAdwBvAHIAbABkACEA".to_string())
         );
         assert_eq!(
-            m[2],
+            matches[2],
             FastMatch::Contains("IAGUAbABsAG8ALAAgAHcAbwByAGwAZAAhA".to_string())
         );
     }
@@ -225,17 +235,18 @@ mod tests {
     fn test_convert_to_base64_str_utf16be() {
         let mut err_msgs = vec![];
         let val = "Hello, world!";
-        let m = convert_to_base64_str(Some(&PipeElement::Utf16Be), val, &mut err_msgs).unwrap();
+        let matches =
+            convert_to_base64_str(Some(&PipeElement::Utf16Be), val, &mut err_msgs).unwrap();
         assert_eq!(
-            m[0],
+            matches[0],
             FastMatch::Contains("AEgAZQBsAGwAbwAsACAAdwBvAHIAbABkAC".to_string())
         );
         assert_eq!(
-            m[1],
+            matches[1],
             FastMatch::Contains("BIAGUAbABsAG8ALAAgAHcAbwByAGwAZAAh".to_string())
         );
         assert_eq!(
-            m[2],
+            matches[2],
             FastMatch::Contains("ASABlAGwAbABvACwAIAB3AG8AcgBsAGQAI".to_string())
         );
     }

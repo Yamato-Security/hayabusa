@@ -8,18 +8,19 @@
 أي أسماء مضيفين تُضاف إلى ملف `critical_systems.txt` سيتم زيادة جميع تنبيهاتها التي تتجاوز المستوى المنخفض بمستوى واحد بحد أقصى مستوى `emergency`.
 
 ```
-Usage: hayabusa.exe config-critical-systems <INPUT> [OPTIONS]
+Usage:
+  hayabusa.exe config-critical-systems <INPUT> [OPTIONS]
 
 Input:
-  -d, --directory <DIR>  Directory of multiple .evtx files
-  -f, --file <FILE>      File path to one .evtx file
+  -d, --directory <DIR>  دليل يحتوي على ملفات .evtx متعددة
+  -f, --file <FILE>      مسار ملف .evtx واحد
 
 Display Settings:
-  -K, --no-color  Disable color output
-  -q, --quiet     Quiet mode: do not display the launch banner
+  -K, --no-color  تعطيل إخراج الألوان
+  -q, --quiet     الوضع الصامت: عدم عرض شعار البدء
 
 General Options:
-  -h, --help  Show the help menu
+  -h, --help  عرض قائمة المساعدة
 ```
 
 ### أمثلة على أمر `config-critical-systems`

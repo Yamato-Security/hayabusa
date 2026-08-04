@@ -562,7 +562,7 @@ Prérequis : Ci-dessous se trouve la procédure pour Ubuntu 22.04. Vous ne pouve
      ```
 
 4. Construisez une version release : `cargo build --release`
-5. Exécutez `heaptrack hayabusa csv-timeline -d sample -o out.csv`
+5. Exécutez `heaptrack hayabusa dfir-timeline -d sample -o out.csv`
 
 Maintenant, lorsque Hayabusa termine son exécution, les résultats de heaptrack s'ouvriront automatiquement dans une application GUI.
 

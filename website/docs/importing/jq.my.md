@@ -120,7 +120,7 @@ JSON ဖော်မတ်သည် ကိုယ်တိုင် စစ်ဆ�
 
 # JSON ရလဒ်ဖိုင်များ ဖန်တီးခြင်း
 
-လက်ရှိ Hayabusa 2.x version တွင် ရလဒ်များကို `hayabusa json-timeline -d <directory> -o results.json` ဖြင့် JSON အဖြစ်လည်းကောင်း၊ JSONL ဖော်မတ်အတွက် `hayabusa json-timeline -d <directory> -J -o results.jsonl` ဖြင့်လည်းကောင်း သိမ်းဆည်းနိုင်သည်။
+လက်ရှိ Hayabusa version တွင် ရလဒ်များကို `hayabusa dfir-timeline -t json -d <directory> -o results.json` ဖြင့် JSON အဖြစ်လည်းကောင်း၊ JSONL ဖော်မတ်အတွက် `hayabusa dfir-timeline -t jsonl -d <directory> -o results.jsonl` ဖြင့်လည်းကောင်း သိမ်းဆည်းနိုင်သည်။
 
 Hayabusa သည် default `standard` profile ကို အသုံးပြုပြီး `Details` object အတွင်း ခွဲခြမ်းစိတ်ဖြာရန်အတွက် အနည်းဆုံး data ပမာဏကိုသာ သိမ်းဆည်းမည်ဖြစ်သည်။
 .evtx log များရှိ မူရင်း field အချက်အလက်အားလုံးကို သိမ်းဆည်းလိုပါက `--profile all-field-info` option ဖြင့် `all-field-info` profile ကို အသုံးပြုနိုင်သည်။

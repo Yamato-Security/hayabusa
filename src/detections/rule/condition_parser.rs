@@ -170,7 +170,7 @@ impl ConditionCompiler {
                 .replace("1 of ", "");
             let replaced_condition = node_keys
                 .iter()
-                .filter(|x| x.starts_with(target_node_key_prefix.as_str()))
+                .filter(|node_key| node_key.starts_with(target_node_key_prefix.as_str()))
                 .join(sep);
             converted_str =
                 converted_str.replace(match_str, format!("({replaced_condition})").as_str())
@@ -445,7 +445,7 @@ impl ConditionCompiler {
 #[cfg(test)]
 mod tests {
     use crate::detections::configs::{
-        Action, Config, CsvOutputOption, OutputOption, STORED_EKEY_ALIAS, StoredStatic,
+        Action, Config, DfirTimelineOption, OutputOption, StoredStatic,
     };
     use crate::detections::rule::condition_parser::ConditionCompiler;
     use crate::detections::rule::create_rule;
@@ -472,8 +472,8 @@ mod tests {
     }"#;
 
     fn create_dummy_stored_static() -> StoredStatic {
-        StoredStatic::create_static_data(Some(Config {
-            action: Some(Action::CsvTimeline(CsvOutputOption {
+        StoredStatic::create_static_data(Config {
+            action: Some(Action::DfirTimeline(DfirTimelineOption {
                 output_options: OutputOption {
                     min_level: "informational".to_string(),
                     no_wizard: true,
@@ -482,7 +482,7 @@ mod tests {
                 ..Default::default()
             })),
             ..Default::default()
-        }))
+        })
     }
 
     fn check_rule_parse_error(rule_str: &str, errmsgs: Vec<String>) {
@@ -495,19 +495,25 @@ mod tests {
     fn check_select(rule_str: &str, record_str: &str, expect_select: bool) {
         let mut rule_node = parse_rule_from_str(rule_str);
         let dummy_stored_static = create_dummy_stored_static();
-        *STORED_EKEY_ALIAS.write().unwrap() = Some(dummy_stored_static.eventkey_alias.clone());
         match serde_json::from_str(record_str) {
             Ok(record) => {
                 let keys = detections::rule::get_detection_keys(&rule_node);
-                let recinfo =
-                    utils::create_rec_info(record, "testpath".to_owned(), &keys, &false, &false);
+                let recinfo = utils::create_rec_info(
+                    record,
+                    "testpath".to_owned(),
+                    &keys,
+                    &false,
+                    &false,
+                    &dummy_stored_static.eventkey_alias,
+                );
                 assert_eq!(
                     rule_node.select(
                         &recinfo,
                         dummy_stored_static.verbose_flag,
                         dummy_stored_static.quiet_errors_flag,
                         dummy_stored_static.json_input_flag,
-                        &dummy_stored_static.eventkey_alias
+                        &dummy_stored_static.eventkey_alias,
+                        &dummy_stored_static.error_log_stack
                     ),
                     expect_select
                 );

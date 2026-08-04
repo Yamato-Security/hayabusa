@@ -12,7 +12,6 @@ use crate::options::profile::Profile::{
 };
 use chrono::{DateTime, Local, Utc};
 use compact_str::CompactString;
-use dashmap::{DashMap, DashSet};
 use hashbrown::HashMap;
 use hashbrown::HashSet;
 use itertools::Itertools;
@@ -67,9 +66,6 @@ lazy_static! {
     pub static ref ALIASREGEX: Regex = Regex::new(r"%[a-zA-Z0-9-_\[\]]+%").unwrap();
     // Matches the 1-based array index suffix in aliases such as %Data[1]%.
     pub static ref SUFFIXREGEX: Regex = Regex::new(r"\[([0-9]+)\]").unwrap();
-    // Errors collected while a run is in progress; flushed to ./logs/errorlog-<timestamp>.log by
-    // AlertMessage::create_error_log().
-    pub static ref ERROR_LOG_STACK: Mutex<Nested<String>> = Mutex::new(Nested::<String>::new());
     // Maps a MITRE tag (e.g. "attack.impact") to its display name (e.g. "Impact"), loaded from
     // config/mitre_tactics.txt.
     pub static ref TAGS_CONFIG: HashMap<CompactString, CompactString> = create_output_filter_config(
@@ -79,12 +75,6 @@ lazy_static! {
         true,
         false
     );
-    // Per-computer MITRE ATT&CK tactic counts as (tactic, unique detection count, total detection
-    // count) tuples, collected for the HTML report.
-    pub static ref COMPUTER_MITRE_ATTCK_MAP : DashMap<CompactString, Vec<(CompactString, i64, i64)>> = DashMap::new();
-    // "computer|tactic|rule_path" keys that have already been seen, so each rule increments the
-    // unique count in COMPUTER_MITRE_ATTCK_MAP only once per computer and tactic.
-    pub static ref COMPUTER_MITRE_ATTCK_UNIQUE_KEYS : DashSet<CompactString> = DashSet::new();
 }
 
 /// Creates a HashMap from a CSV config file (e.g. mitre_tactics.txt or channel_abbreviations.txt)
@@ -101,7 +91,7 @@ pub fn create_output_filter_config(
         return ret;
     }
     let read_result = match utils::read_csv(path) {
-        Ok(c) => c,
+        Ok(csv_rows) => csv_rows,
         Err(e) => {
             // Fall back to the embedded copy of mitre_tactics.txt when the file on disk cannot be
             // read.
@@ -162,15 +152,15 @@ pub fn create_message(
             field_data_map_key,
             field_data_map,
         );
-        details_in_record.drain(..).for_each(|v| {
-            special_char_removed_details.push(remove_sp_char(v));
+        details_in_record.drain(..).for_each(|detail| {
+            special_char_removed_details.push(remove_sp_char(detail));
         });
         if is_json_timeline {
             record_details_info_map.insert("#Details".into(), special_char_removed_details.clone());
         }
-        // remove_sp_char() strips special (control) characters via retain(). So that the newline
-        // characters inside Details survive this, they are first converted to special placeholder
-        // sequences that include an emoji (e.g. "🛂n").
+        // remove_sp_char() strips control characters via retain() but keeps \n/\r/\t so the
+        // newlines inside Details survive to the output stage, which escapes them (JSON) or
+        // flattens them to spaces (CSV/search) per output format.
         let parsed_detail = remove_sp_char(removed_sp_parsed_detail);
         detect_info.detail = if parsed_detail.is_empty() {
             CompactString::from("-")
@@ -215,10 +205,10 @@ pub fn create_message(
                         );
                     }
                 } else {
-                    let all_field_infos = if let Some(c) =
+                    let all_field_infos = if let Some(all_field_info_val) =
                         record_details_info_map.get("#AllFieldInfo")
                     {
-                        c.to_owned()
+                        all_field_info_val.to_owned()
                     } else {
                         utils::create_recordinfos(event_record, field_data_map_key, field_data_map)
                     };
@@ -253,12 +243,12 @@ pub fn create_message(
                 // Collect the values already shown in Details so that ExtraFieldInfo only reports
                 // the record fields whose values are not part of Details.
                 let details_splits: HashSet<&str> = {
-                    let details = special_char_removed_details.iter().map(|x| {
-                        let v = x.split_once(": ").unwrap_or_default().1;
+                    let details = special_char_removed_details.iter().map(|detail| {
+                        let value = detail.split_once(": ").unwrap_or_default().1;
                         // Strip any trailing comma from the values put into the matching hash set;
                         // otherwise the ExtraFieldInfo match result would differ depending on
                         // whether or not a value carries a trailing comma.
-                        v.strip_suffix(',').unwrap_or(v)
+                        value.strip_suffix(',').unwrap_or(value)
                     });
                     HashSet::from_iter(details)
                 };
@@ -274,8 +264,8 @@ pub fn create_message(
                 };
                 let extra_field_vec = profile_all_field_info
                     .iter()
-                    .filter(|x| {
-                        let value = x.split_once(": ").unwrap_or_default().1;
+                    .filter(|field_info| {
+                        let value = field_info.split_once(": ").unwrap_or_default().1;
                         !details_splits.contains(value)
                     })
                     .map(|y| y.to_owned())
@@ -300,10 +290,10 @@ pub fn create_message(
                 ))
             }
             _ => {
-                if let Some(p) = profile_converter.get(key.as_str()) {
+                if let Some(converter_profile) = profile_converter.get(key.as_str()) {
                     let (parsed_message, _) = &parse_message(
                         event_record,
-                        &CompactString::new(p.to_value()),
+                        &CompactString::new(converter_profile.to_value()),
                         eventkey_alias,
                         is_json_timeline,
                         field_data_map_key,
@@ -327,7 +317,7 @@ pub fn create_message(
 /// looked up in the event record (via eventkey_alias.txt, falling back to Event.EventData.<name>).
 /// Returns the replaced message together with the "key: value" pairs that make up the details.
 /// For the JSON timeline the message itself is returned with its placeholders intact, because the
-/// afterfact output functions perform the replacement in that case.
+/// results output functions perform the replacement in that case.
 pub fn parse_message(
     event_record: &Value,
     output: &CompactString,
@@ -356,10 +346,10 @@ pub fn parse_message(
 
         let mut tmp_event_record: &Value = event_record;
         let mut field = "";
-        for s in event_key_path.split('.') {
-            if let Some(record) = tmp_event_record.get(s) {
+        for path_segment in event_key_path.split('.') {
+            if let Some(record) = tmp_event_record.get(path_segment) {
                 tmp_event_record = record;
-                field = s;
+                field = path_segment;
             }
         }
         // An alias like %Data[2]% selects a single element of the EventData "Data" array; the
@@ -367,7 +357,9 @@ pub fn parse_message(
         // bracketed name itself does not resolve to a record field, such an alias yields "n/a".
         let suffix_match = SUFFIXREGEX.captures(target_str);
         let suffix: i64 = match suffix_match {
-            Some(cap) => cap.get(1).map_or(-1, |a| a.as_str().parse().unwrap_or(-1)),
+            Some(cap) => cap
+                .get(1)
+                .map_or(-1, |index_match| index_match.as_str().parse().unwrap_or(-1)),
             None => -1,
         };
         if suffix >= 1 {
@@ -411,16 +403,18 @@ pub fn parse_message(
         }
     }
     let mut details_key_and_value: Vec<CompactString> = vec![];
-    for (k, v) in hash_map.iter() {
-        // For JSON output, the alias replacement processing is handled by the afterfact output
+    for (placeholder, field_values) in hash_map.iter() {
+        // For JSON output, the alias replacement processing is handled by the results output
         // functions, so it is not done here.
         if !json_timeline_flag {
-            return_message = CompactString::new(return_message.replace(k.as_str(), v[0].as_str()));
+            return_message = CompactString::new(
+                return_message.replace(placeholder.as_str(), field_values[0].as_str()),
+            );
         }
         for detail_contents in details_key.iter() {
-            if detail_contents.contains(k.as_str()) {
+            if detail_contents.contains(placeholder.as_str()) {
                 let key = detail_contents.split_once(": ").unwrap_or_default().0;
-                details_key_and_value.push(format!("{}: {}", key, v[0]).into());
+                details_key_and_value.push(format!("{}: {}", key, field_values[0]).into());
                 break;
             }
         }
@@ -447,10 +441,14 @@ pub fn get_event_time(event_record: &Value, json_input_flag: bool) -> Option<Dat
 }
 
 impl AlertMessage {
-    /// Writes all errors accumulated in ERROR_LOG_STACK to ./logs/errorlog-<timestamp>.log
+    /// Writes all errors accumulated in the error log stack to ./logs/errorlog-<timestamp>.log
     /// (creating the logs directory if needed and recording the command line that was run first),
     /// then prints a red notice pointing to that file. Does nothing when --quiet-errors is set.
-    pub fn create_error_log(quiet_errors_flag: bool, no_color: bool) {
+    pub fn create_error_log(
+        quiet_errors_flag: bool,
+        no_color: bool,
+        error_log_stack: &Mutex<Nested<String>>,
+    ) {
         if quiet_errors_flag {
             return;
         }
@@ -475,7 +473,7 @@ impl AlertMessage {
                 .as_bytes(),
             )
             .ok();
-        let error_logs = ERROR_LOG_STACK.lock().unwrap();
+        let error_logs = error_log_stack.lock().unwrap();
         error_logs.iter().for_each(|error_log| {
             writeln!(error_log_writer, "{error_log}").ok();
         });
@@ -898,8 +896,8 @@ mod tests {
         actual: HashMap<CompactString, CompactString>,
     ) {
         assert_eq!(expected.len(), actual.len());
-        for (k, v) in expected.iter() {
-            assert!(actual.get(k).unwrap_or(&CompactString::default()) == v);
+        for (key, value) in expected.iter() {
+            assert!(actual.get(key).unwrap_or(&CompactString::default()) == value);
         }
     }
 }

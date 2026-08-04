@@ -5,14 +5,12 @@ use base64::engine::general_purpose;
 use hashbrown::HashMap;
 use horrorshow::helper::doctype;
 use horrorshow::prelude::*;
-use lazy_static::lazy_static;
 use nested::Nested;
 use pulldown_cmark::{Options, Parser, html};
 use rust_embed::Embed;
 use std::fs::{File, create_dir};
 use std::io::{BufWriter, Write};
 use std::path::Path;
-use std::sync::RwLock;
 use termcolor::{BufferWriter, Color, ColorChoice};
 
 /// Section keys for the HTML report. The `{#id}` suffix becomes the HTML heading's `id` attribute
@@ -29,18 +27,6 @@ pub const RESULTS_SUMMARY_SECTION: &str = "Results Summary {#results_summary}";
 #[derive(Embed)]
 #[folder = "config/html_report/"]
 struct HtmlReportsConfig;
-
-lazy_static! {
-    /// Global accumulator for the HTML report contents. Sections are filled in while the analysis
-    /// runs and rendered to HTML at the end.
-    pub static ref HTML_REPORTER: RwLock<HtmlReporter> = RwLock::new(HtmlReporter::new());
-}
-
-/// Serializes the tests that mutate the process-global `HTML_REPORTER`
-/// (clear/populate/read) so they don't race under the parallel test harness.
-/// Each such test must hold this lock for its whole body.
-#[cfg(test)]
-pub(crate) static HTML_REPORTER_TEST_LOCK: std::sync::Mutex<()> = std::sync::Mutex::new(());
 
 /// Accumulates the markdown fragments that make up the HTML report.
 #[derive(Clone)]
@@ -60,9 +46,20 @@ impl HtmlReporter {
         }
     }
 
+    /// Appends markdown lines to the given section of the report.
+    pub fn add_md_data(&mut self, section_name: &str, data: Nested<String>) {
+        for line in data.iter() {
+            let entry = self
+                .section_markdown
+                .entry(section_name.to_owned())
+                .or_insert(Nested::<String>::new());
+            entry.push(line);
+        }
+    }
+
     /// Renders the accumulated markdown data of every section (in section_order) into a single
     /// HTML string.
-    pub fn create_html(self) -> String {
+    pub fn create_html(&self) -> String {
         let mut options = Options::empty();
         options.insert(Options::ENABLE_TABLES);
         options.insert(Options::ENABLE_HEADING_ATTRIBUTES);
@@ -70,12 +67,12 @@ impl HtmlReporter {
 
         let mut md_data = Nested::<String>::new();
         for section_name in self.section_order.iter() {
-            if let Some(v) = self.section_markdown.get(section_name) {
-                md_data.push(format!("## {}\n", &section_name));
-                if v.is_empty() {
+            if let Some(section_data) = self.section_markdown.get(section_name) {
+                md_data.push(format!("## {}\n", section_name));
+                if section_data.is_empty() {
                     md_data.push("not found data.\n");
                 } else {
-                    md_data.push(v.iter().collect::<Vec<&str>>().join("\n"));
+                    md_data.push(section_data.iter().collect::<Vec<&str>>().join("\n"));
                 }
             }
         }
@@ -95,14 +92,13 @@ impl Default for HtmlReporter {
 }
 
 /// Returns true when the csv-timeline or json-timeline action was invoked with the
-/// -H/--HTML-report option.
+/// -H/--html-report option.
 pub fn check_html_flag(config: &Config) -> bool {
     if config.action.as_ref().is_none() {
         return false;
     }
     match &config.action.as_ref().unwrap() {
-        Action::CsvTimeline(option) => option.output_options.html_report.is_some(),
-        Action::JsonTimeline(option) => option.output_options.html_report.is_some(),
+        Action::DfirTimeline(option) => option.output_options.html_report.is_some(),
         _ => false,
     }
 }
@@ -118,18 +114,6 @@ fn get_init_md_data_map() -> (Nested<String>, HashMap<String, Nested<String>>) {
     }
 
     (section_order, ret)
-}
-
-/// Appends markdown lines to the given section of the global HTML_REPORTER.
-pub fn add_md_data(section_name: &str, data: Nested<String>) {
-    let mut md_with_section_data = HTML_REPORTER.write().unwrap().section_markdown.to_owned();
-    for c in data.iter() {
-        let entry = md_with_section_data
-            .entry(section_name.to_owned())
-            .or_insert(Nested::<String>::new());
-        entry.push(c);
-    }
-    HTML_REPORTER.write().unwrap().section_markdown = md_with_section_data;
 }
 
 /// Writes the HTML report to `path_str`, inlining the embedded CSS and embedding the logo and
@@ -224,26 +208,21 @@ fn img_to_base64(path: &str) -> String {
 #[cfg(test)]
 mod tests {
 
-    use std::{
-        fs::{read_to_string, remove_dir_all},
-        path::Path,
-    };
+    use std::{fs::read_to_string, path::Path};
 
     use nested::Nested;
 
-    use super::{GENERAL_OVERVIEW_SECTION, HTML_REPORTER, HTML_REPORTER_TEST_LOCK, img_to_base64};
+    use super::{GENERAL_OVERVIEW_SECTION, img_to_base64};
     use crate::{
-        detections::configs::{
-            Action, Config, CsvOutputOption, JSONOutputOption, OutputOption, StoredStatic,
-        },
+        detections::configs::{Action, Config, DfirTimelineOption, OutputOption, StoredStatic},
         options::htmlreport::{self, HtmlReporter},
     };
 
     fn create_dummy_stored_static(action: Option<Action>) -> StoredStatic {
-        StoredStatic::create_static_data(Some(Config {
+        StoredStatic::create_static_data(Config {
             action,
             debug: false,
-        }))
+        })
     }
 
     #[test]
@@ -266,7 +245,7 @@ mod tests {
         ]);
         html_reporter.section_order.push("No Exist Section");
         html_reporter.section_markdown.insert(
-            "General Overview {#general_overview}".to_string(),
+            GENERAL_OVERVIEW_SECTION.to_string(),
             general_data.to_owned(),
         );
         let gen_data = general_data.iter().collect::<Vec<&str>>();
@@ -325,7 +304,7 @@ mod tests {
 
     #[test]
     fn test_with_config_check_html_flag_csvtimeline() {
-        let enable_csv_action = Action::CsvTimeline(CsvOutputOption {
+        let enable_csv_action = Action::DfirTimeline(DfirTimelineOption {
             output_options: OutputOption {
                 min_level: "informational".to_string(),
                 no_wizard: true,
@@ -337,7 +316,7 @@ mod tests {
         let csv_html_flag_enable = create_dummy_stored_static(Some(enable_csv_action));
         assert!(htmlreport::check_html_flag(&csv_html_flag_enable.config));
 
-        let disable_csv_action = Action::CsvTimeline(CsvOutputOption {
+        let disable_csv_action = Action::DfirTimeline(DfirTimelineOption {
             output_options: OutputOption {
                 min_level: "informational".to_string(),
                 no_wizard: true,
@@ -351,7 +330,7 @@ mod tests {
 
     #[test]
     fn test_with_config_check_html_flag_jsontimeline() {
-        let enable_json_action = Action::JsonTimeline(JSONOutputOption {
+        let enable_json_action = Action::DfirTimeline(DfirTimelineOption {
             output_options: OutputOption {
                 min_level: "informational".to_string(),
                 html_report: Some(Path::new("./dummy").to_path_buf()),
@@ -363,7 +342,7 @@ mod tests {
         let json_html_flag_enable = create_dummy_stored_static(Some(enable_json_action));
         assert!(htmlreport::check_html_flag(&json_html_flag_enable.config));
 
-        let disable_json_action = Action::JsonTimeline(JSONOutputOption {
+        let disable_json_action = Action::DfirTimeline(DfirTimelineOption {
             output_options: OutputOption {
                 min_level: "informational".to_string(),
                 no_wizard: true,
@@ -377,6 +356,8 @@ mod tests {
 
     #[test]
     fn test_create_html_file() {
+        let output_tmp_dir = tempfile::tempdir().unwrap();
+        let html_path = output_tmp_dir.path().join("test_create_html_file.html");
         let mut html_reporter = HtmlReporter::default();
         let mut general_data = Nested::<String>::new();
         general_data.extend(vec![
@@ -395,7 +376,7 @@ mod tests {
         ]);
         html_reporter.section_order.push("No Exist Section");
         html_reporter.section_markdown.insert(
-            "General Overview {#general_overview}".to_string(),
+            GENERAL_OVERVIEW_SECTION.to_string(),
             general_data.to_owned(),
         );
         let gen_data = general_data.iter().collect::<Vec<&str>>();
@@ -410,7 +391,7 @@ mod tests {
         );
         htmlreport::create_html_file(
             html_reporter.create_html(),
-            "./test-html/test_create_html_file.html",
+            html_path.to_str().unwrap(),
             false,
         );
 
@@ -422,20 +403,11 @@ mod tests {
         );
         let footer = "</section></body></html>\n";
         let expect = format!("{header}{expect_str}{footer}");
-        assert_eq!(
-            read_to_string("./test-html/test_create_html_file.html").unwrap(),
-            expect
-        );
-        assert!(remove_dir_all("./test-html").is_ok());
+        assert_eq!(read_to_string(&html_path).unwrap(), expect);
     }
 
     #[test]
     fn test_add_md_data() {
-        // Serialize against other tests that mutate the global HTML_REPORTER.
-        let _html_reporter_lock = HTML_REPORTER_TEST_LOCK
-            .lock()
-            .unwrap_or_else(|e| e.into_inner());
-        HTML_REPORTER.write().unwrap().section_markdown.clear();
         let mut html_reporter = HtmlReporter::default();
         let mut general_data = Nested::<String>::new();
         general_data.extend(vec![
@@ -454,14 +426,16 @@ mod tests {
         ]);
         html_reporter.section_order.push("No Exist Section");
         let expect_key = "AddTest {#add_test}";
-        htmlreport::add_md_data(expect_key, general_data.clone());
-        let actual_html_reporter = HTML_REPORTER.read().unwrap().clone();
+        html_reporter.add_md_data(expect_key, general_data.clone());
         let expect_general_data: Vec<&str> = general_data.iter().collect();
-        for (k, v) in actual_html_reporter.section_markdown.iter() {
-            if k == expect_key {
-                assert_eq!(v.iter().collect::<Vec<&str>>(), expect_general_data);
+        for (section_name, section_data) in html_reporter.section_markdown.iter() {
+            if section_name == expect_key {
+                assert_eq!(
+                    section_data.iter().collect::<Vec<&str>>(),
+                    expect_general_data
+                );
             } else {
-                assert_eq!(v.len(), 0);
+                assert_eq!(section_data.len(), 0);
             }
         }
     }

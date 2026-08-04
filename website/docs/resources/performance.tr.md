@@ -562,7 +562,7 @@ Aşağıda, Hayabusa ile performans ölçümü yapmak için örnek bir prosedür
      ```
 
 4. Bir release derlemesi oluşturun: `cargo build --release`
-5. `heaptrack hayabusa csv-timeline -d sample -o out.csv` çalıştırın
+5. `heaptrack hayabusa dfir-timeline -d sample -o out.csv` çalıştırın
 
 Artık Hayabusa çalışmayı bitirdiğinde, heaptrack'in sonuçları otomatik olarak bir GUI uygulamasında açılacaktır.
 

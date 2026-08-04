@@ -19,7 +19,7 @@ impl LevelTuning {
         stored_static: &StoredStatic,
     ) -> Result<(), String> {
         let read_result = match utils::read_csv(level_tuning_config_path) {
-            Ok(c) => c,
+            Ok(csv_data) => csv_data,
             Err(e) => return Result::Err(e.to_string()),
         };
 
@@ -142,7 +142,7 @@ mod tests {
     use crate::detections::configs::{Action, CommonOptions, Config, LevelTuningOption};
 
     fn create_dummy_stored_static(level_tuning_path: &str) -> StoredStatic {
-        StoredStatic::create_static_data(Some(Config {
+        StoredStatic::create_static_data(Config {
             action: Some(Action::LevelTuning(LevelTuningOption {
                 level_tuning: Path::new(level_tuning_path).to_path_buf(),
                 common_options: CommonOptions {
@@ -152,7 +152,7 @@ mod tests {
                 },
             })),
             debug: false,
-        }))
+        })
     }
 
     #[test]

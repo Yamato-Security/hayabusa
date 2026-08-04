@@ -92,7 +92,7 @@ The following information can be outputted with built-in output profiles:
 |%RuleModifiedDate% | The `modified` field in the YML detection rule. |
 |%RuleTitle% | The `title` field in the YML detection rule. |
 |%Status% | The `status` field in the YML detection rule. |
-|%Timestamp% | Default is `YYYY-MM-DD HH:mm:ss.sss +hh:mm` format. `<Event><System><TimeCreated SystemTime>` field in the event log. The default timezone will be the local timezone but you can change the timezone to UTC with the `--UTC` option. |
+|%Timestamp% | Default is `YYYY-MM-DD HH:mm:ss.sss +hh:mm` format. `<Event><System><TimeCreated SystemTime>` field in the event log. The default timezone will be the local timezone but you can change the timezone to UTC with the `--utc` option. |
 
 #### Extra Profile Field Alias
 

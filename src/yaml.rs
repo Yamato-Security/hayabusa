@@ -3,7 +3,6 @@ extern crate yaml_rust2;
 
 use crate::detections::configs::{self, Action, CURRENT_EXE_PATH, StoredStatic};
 use crate::detections::message::AlertMessage;
-use crate::detections::message::ERROR_LOG_STACK;
 use crate::detections::utils;
 use crate::filter::RuleExclude;
 use crate::level::LEVEL;
@@ -107,7 +106,7 @@ impl ParseYaml {
         file_reader
             .read_to_end(&mut encrypted_content)
             .map_err(|e| e.to_string())?;
-        let decode_content: Vec<u8> = encrypted_content.iter().map(|&b| b ^ 0xAA).collect(); // key: 0xAA
+        let decode_content: Vec<u8> = encrypted_content.iter().map(|&byte| byte ^ 0xAA).collect(); // key: 0xAA
         let decode_string = String::from_utf8(decode_content).map_err(|e| e.to_string())?;
         Ok(decode_string)
     }
@@ -177,7 +176,8 @@ impl ParseYaml {
                 AlertMessage::alert(&errmsg)?;
             }
             if !stored_static.quiet_errors_flag {
-                ERROR_LOG_STACK
+                stored_static
+                    .error_log_stack
                     .lock()
                     .unwrap()
                     .push(format!("[ERROR] {errmsg}"));
@@ -224,7 +224,8 @@ impl ParseYaml {
                         AlertMessage::warn(&errmsg)?;
                     }
                     if !stored_static.quiet_errors_flag {
-                        ERROR_LOG_STACK
+                        stored_static
+                            .error_log_stack
                             .lock()
                             .unwrap()
                             .push(format!("[WARN] {errmsg}"));
@@ -262,7 +263,8 @@ impl ParseYaml {
                         AlertMessage::warn(&errmsg)?;
                     }
                     if !stored_static.quiet_errors_flag {
-                        ERROR_LOG_STACK
+                        stored_static
+                            .error_log_stack
                             .lock()
                             .unwrap()
                             .push(format!("[WARN] {errmsg}"));
@@ -322,7 +324,8 @@ impl ParseYaml {
                             AlertMessage::warn(&errmsg)?;
                         }
                         if !stored_static.quiet_errors_flag {
-                            ERROR_LOG_STACK
+                            stored_static
+                                .error_log_stack
                                 .lock()
                                 .unwrap()
                                 .push(format!("[WARN] {errmsg}"));
@@ -353,7 +356,8 @@ impl ParseYaml {
                             AlertMessage::warn(&errmsg)?;
                         }
                         if !stored_static.quiet_errors_flag {
-                            ERROR_LOG_STACK
+                            stored_static
+                                .error_log_stack
                                 .lock()
                                 .unwrap()
                                 .push(format!("[WARN] {errmsg}"));
@@ -390,13 +394,13 @@ impl ParseYaml {
             // Skip rules whose ID is listed in exclude_rules.txt or noisy_rules.txt.
             let rule_id = &yaml_doc["id"].as_str();
             if rule_id.is_some() {
-                if let Some(v) = exclude_ids
+                if let Some(source_path) = exclude_ids
                     .excluded_rule_sources
                     .get(&rule_id.unwrap_or(&String::default()).to_string())
                 {
-                    // `v` is the path of the list file that the rule ID came from
+                    // `source_path` is the path of the list file that the rule ID came from
                     // (exclude_rules.txt or noisy_rules.txt).
-                    let entry_key = if utils::contains_str(v, "exclude_rule") {
+                    let entry_key = if utils::contains_str(source_path, "exclude_rule") {
                         "excluded"
                     } else {
                         "noisy"
@@ -406,11 +410,12 @@ impl ParseYaml {
                         let entry = self.rule_load_cnt.entry(entry_key.into()).or_insert(0);
                         *entry += 1;
                     }
-                    let enable_noisy_rules = if let Some(o) = stored_static.output_option.as_ref() {
-                        o.enable_noisy_rules
-                    } else {
-                        false
-                    };
+                    let enable_noisy_rules =
+                        if let Some(output_option) = stored_static.output_option.as_ref() {
+                            output_option.enable_noisy_rules
+                        } else {
+                            false
+                        };
 
                     if entry_key == "excluded" || (entry_key == "noisy" && !enable_noisy_rules) {
                         return Option::None;
@@ -443,7 +448,8 @@ impl ParseYaml {
                         AlertMessage::warn(&errmsg).ok();
                     }
                     if !stored_static.quiet_errors_flag {
-                        ERROR_LOG_STACK
+                        stored_static
+                            .error_log_stack
                             .lock()
                             .unwrap()
                             .push(format!("[WARN] Invalid rule. {errmsg} ({filepath})"));
@@ -469,25 +475,25 @@ impl ParseYaml {
                 return Option::None;
             }
             let status = yaml_doc["status"].as_str();
-            if let Some(s) = yaml_doc["status"].as_str() {
+            if let Some(status_str) = yaml_doc["status"].as_str() {
                 // Exclude rules whose status matches the --exclude-status option or does not
                 // match the --include-status option.
-                if self.exclude_status.contains(&s.to_string())
+                if self.exclude_status.contains(&status_str.to_string())
                     || !(is_contained_include_status_all_allowed
-                        || stored_static.include_status.contains(s))
+                        || stored_static.include_status.contains(status_str))
                 {
                     bump_rule_load_cnt("excluded");
                     return Option::None;
                 }
 
                 if exist_output_opt
-                    && ((s == "deprecated"
+                    && ((status_str == "deprecated"
                         && !stored_static
                             .output_option
                             .as_ref()
                             .unwrap()
                             .enable_deprecated_rules)
-                        || (s == "unsupported"
+                        || (status_str == "unsupported"
                             && !stored_static
                                 .output_option
                                 .as_ref()
@@ -497,7 +503,7 @@ impl ParseYaml {
                     // Deprecated/unsupported rules are only counted, not loaded, unless the
                     // corresponding --enable-deprecated-rules / --enable-unsupported-rules
                     // option is given.
-                    bump_rule_status_cnt(s);
+                    bump_rule_status_cnt(status_str);
                     return Option::None;
                 }
             } else if !is_contained_include_status_all_allowed {
@@ -505,7 +511,7 @@ impl ParseYaml {
                 // are allowed with the wildcard "*".
                 let need_rules = matches!(
                     stored_static.config.action.as_ref().unwrap(),
-                    Action::CsvTimeline(_) | Action::JsonTimeline(_) | Action::PivotKeywordsList(_)
+                    Action::DfirTimeline(_) | Action::PivotKeywordsList(_)
                 );
                 if need_rules {
                     bump_rule_load_cnt("excluded");
@@ -748,7 +754,8 @@ pub fn count_rules<P: AsRef<Path>>(
                             AlertMessage::warn(&errmsg)?;
                         }
                         if !stored_static.quiet_errors_flag {
-                            ERROR_LOG_STACK
+                            stored_static
+                                .error_log_stack
                                 .lock()
                                 .unwrap()
                                 .push(format!("[WARN] {errmsg}"));
@@ -779,20 +786,20 @@ pub fn count_rules<P: AsRef<Path>>(
             ];
             rule_tags_vec
                 .iter()
-                .filter(|x| target_wizard_tags.contains(&x.as_str().unwrap_or_default()))
-                .filter_map(|s| s.as_str())
+                .filter(|tag| target_wizard_tags.contains(&tag.as_str().unwrap_or_default()))
+                .filter_map(|tag| tag.as_str())
                 .collect_vec()
         };
         // Rules whose ID is listed in exclude_rules.txt / noisy_rules.txt are counted under
         // "excluded"/"noisy" instead of their own status.
         if rule_id.is_some()
-            && let Some(v) = exclude_ids
+            && let Some(source_path) = exclude_ids
                 .excluded_rule_sources
                 .get(&rule_id.unwrap_or(&String::default()).to_string())
         {
-            // `v` is the path of the list file that the rule ID came from
+            // `source_path` is the path of the list file that the rule ID came from
             // (exclude_rules.txt or noisy_rules.txt).
-            let entry_key = if utils::contains_str(v, "exclude_rule") {
+            let entry_key = if utils::contains_str(source_path, "exclude_rule") {
                 "excluded"
             } else {
                 "noisy"
@@ -823,10 +830,12 @@ pub fn count_rules<P: AsRef<Path>>(
             return;
         }
 
-        if let Some(s) = yaml_doc["status"].as_str() {
+        if let Some(status) = yaml_doc["status"].as_str() {
             // The wizard's initial count only categorizes rules by status, level and wizard
             // tags; none of the other load-time filters are applied here.
-            let counter = result_container.entry(s.into()).or_insert(HashMap::new());
+            let counter = result_container
+                .entry(status.into())
+                .or_insert(HashMap::new());
             if included_target_tag_vec.is_empty() {
                 *counter
                     .entry(
@@ -940,8 +949,8 @@ pub fn check_hayabusa_rule_fmt(yaml: &Yaml) -> Result<(), String> {
 mod tests {
     use crate::detections::configs::Action;
     use crate::detections::configs::Config;
-    use crate::detections::configs::CsvOutputOption;
     use crate::detections::configs::DetectCommonOption;
+    use crate::detections::configs::DfirTimelineOption;
     use crate::detections::configs::OutputOption;
     use crate::detections::configs::StoredStatic;
     use crate::filter;
@@ -957,8 +966,8 @@ mod tests {
     use yaml_rust2::YamlLoader;
 
     fn create_dummy_stored_static() -> StoredStatic {
-        StoredStatic::create_static_data(Some(Config {
-            action: Some(Action::CsvTimeline(CsvOutputOption {
+        StoredStatic::create_static_data(Config {
+            action: Some(Action::DfirTimeline(DfirTimelineOption {
                 output_options: OutputOption {
                     min_level: "informational".to_string(),
                     include_status: Some(vec!["*".to_string()]),
@@ -971,7 +980,7 @@ mod tests {
                 ..Default::default()
             })),
             debug: false,
-        }))
+        })
     }
 
     #[test]
@@ -1011,13 +1020,18 @@ mod tests {
         let path = Path::new("test_files/rules/yaml/1.yml");
         let ret = ParseYaml::read_file(&path.to_path_buf()).unwrap();
         let rule = YamlLoader::load_from_str(&ret).unwrap();
-        for i in rule {
-            if i["title"].as_str().unwrap() == "Sysmon Check command lines" {
+        for doc in rule {
+            if doc["title"].as_str().unwrap() == "Sysmon Check command lines" {
                 assert_eq!(
                     "*",
-                    i["detection"]["selection"]["CommandLine"].as_str().unwrap()
+                    doc["detection"]["selection"]["CommandLine"]
+                        .as_str()
+                        .unwrap()
                 );
-                assert_eq!(1, i["detection"]["selection"]["EventID"].as_i64().unwrap());
+                assert_eq!(
+                    1,
+                    doc["detection"]["selection"]["EventID"].as_i64().unwrap()
+                );
             }
         }
     }

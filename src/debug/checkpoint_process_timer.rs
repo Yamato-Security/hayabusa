@@ -1,17 +1,5 @@
-use std::sync::Mutex;
-
 use crate::detections::utils::output_duration;
 use chrono::{DateTime, Local};
-use lazy_static::lazy_static;
-
-lazy_static! {
-    /// Global timer used to record how long each processing phase (rule parsing, analysis,
-    /// output) takes. Lap times are always collected; the per-phase breakdown is only printed
-    /// when the --debug option is set, while the accumulated total is always shown as the
-    /// "Elapsed time" in the results summary.
-    pub static ref CHECKPOINT: Mutex<CheckPointProcessTimer> =
-        Mutex::new(CheckPointProcessTimer::create_checkpoint_timer());
-}
 
 /// Stopwatch-style timer: `set_checkpoint` starts measuring and `lap_checkpoint` records the
 /// elapsed time since the last checkpoint as a labeled lap.
@@ -28,7 +16,7 @@ pub struct CheckPointTimeStore {
 }
 
 impl CheckPointProcessTimer {
-    /// Creates the struct data to be initially inserted into the static variable.
+    /// Creates a fresh, empty checkpoint timer (no start point set, no laps recorded yet).
     pub fn create_checkpoint_timer() -> Self {
         CheckPointProcessTimer {
             prev_checkpoint: None,
@@ -53,18 +41,18 @@ impl CheckPointProcessTimer {
         let new_checkpoint = Local::now();
 
         let duration = new_checkpoint - self.prev_checkpoint.unwrap();
-        let s = duration.num_seconds();
-        let ms = duration.num_milliseconds() - 1000 * s;
+        let seconds = duration.num_seconds();
+        let ms = duration.num_milliseconds() - 1000 * seconds;
         if !self.recorded_laps.is_empty()
             && self.recorded_laps[self.recorded_laps.len() - 1].output_str == output_str
         {
             let last_lap_idx = self.recorded_laps.len() - 1;
-            self.recorded_laps[last_lap_idx].sec += s;
+            self.recorded_laps[last_lap_idx].sec += seconds;
             self.recorded_laps[last_lap_idx].msec += ms;
         } else {
             self.recorded_laps.push(CheckPointTimeStore {
                 output_str: output_str.into(),
-                sec: s,
+                sec: seconds,
                 msec: ms,
             });
         }
@@ -86,18 +74,18 @@ impl CheckPointProcessTimer {
     /// the time elapsed since it was set — formatted as a duration string. Used for the total
     /// "Elapsed time" line in the results summary.
     pub fn calculate_all_stocked_results(&self) -> String {
-        let mut s = 0;
+        let mut seconds = 0;
         let mut ms = 0;
         for output in self.recorded_laps.iter() {
-            s += output.sec;
+            seconds += output.sec;
             ms += output.msec;
         }
         if let Some(prev_check) = self.prev_checkpoint {
             let duration = Local::now() - prev_check;
-            s += duration.num_seconds();
+            seconds += duration.num_seconds();
             ms += duration.num_milliseconds() - 1000 * duration.num_seconds();
         }
-        output_duration((s, ms))
+        output_duration((seconds, ms))
     }
 }
 

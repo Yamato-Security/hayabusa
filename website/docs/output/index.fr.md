@@ -92,7 +92,7 @@ Les informations suivantes peuvent être produites avec les profils de sortie in
 |%RuleModifiedDate% | Le champ `modified` dans la règle de détection YML. |
 |%RuleTitle% | Le champ `title` dans la règle de détection YML. |
 |%Status% | Le champ `status` dans la règle de détection YML. |
-|%Timestamp% | Le format par défaut est `YYYY-MM-DD HH:mm:ss.sss +hh:mm`. Champ `<Event><System><TimeCreated SystemTime>` dans le journal d'événements. Le fuseau horaire par défaut sera le fuseau horaire local, mais vous pouvez le changer en UTC avec l'option `--UTC`. |
+|%Timestamp% | Le format par défaut est `YYYY-MM-DD HH:mm:ss.sss +hh:mm`. Champ `<Event><System><TimeCreated SystemTime>` dans le journal d'événements. Le fuseau horaire par défaut sera le fuseau horaire local, mais vous pouvez le changer en UTC avec l'option `--utc`. |
 
 #### Alias de champ de profil supplémentaire
 

@@ -1,10 +1,10 @@
 [package]
 name = "hayabusa"
-version = "3.10.0"
+version = "4.0.0"
 repository = "https://github.com/Yamato-Security/hayabusa"
 authors = ["Yamato Security @SecurityYamato"]
 edition = "2024"
-rust-version = "1.95.0"
+rust-version = "1.97.1"
 include = ["src/**/*", "LICENSE.txt", "README.md", "CHANGELOG.md"]
 
 [dependencies]
@@ -16,13 +16,13 @@ cidr-utils = "0.7.*"
 clap = { version = "4.*", features = ["derive", "cargo", "color"]}
 colored = "3"
 comfy-table = "7.*"
-compact_str = "0.9.*"
+compact_str = "0.10.*"
 console = "0.16.*"
 csv = "1.4.*"
 dashmap = "*"
 dialoguer = "*"
 downcast-rs = "2.*"
-evtx = { git = "https://github.com/Yamato-Security/hayabusa-evtx.git" , features = ["fast-alloc"] , rev = "730edad702b43c5e5c8c5680afdbc5ffd2691353" } # 0.9.9 2026/07/04 update
+evtx = { git = "https://github.com/Yamato-Security/hayabusa-evtx.git" , features = ["fast-alloc"] , rev = "31be1c39b7add607eca7b789302423b38a8646da" } # 0.9.11 2026/07/29 update
 # Enable the vendored-OpenSSL HTTPS/TLS backend for libgit2. The wildcard
 # `0.*` resolved to a build of libgit2 with no TLS transport, so `update-rules`
 # failed with `class=Ssl (16) - there is no TLS stream available`. The project
@@ -62,6 +62,11 @@ rust-embed={version = "8.11.0", features = ["include-exclude", "debug-embed"]}
 encoding_rs = "0.8.35"
 uuid = { version = "1", features = ["v4"] }
 winapi = { version = "0.3.9", features = ["wow64apiset"] }
+
+[dev-dependencies]
+# Used by the file-output unit tests to write into a unique per-test temporary
+# directory instead of the repository root, so the tests are safe to run in parallel.
+tempfile = "3"
 
 [profile.dev]
 debug-assertions = false

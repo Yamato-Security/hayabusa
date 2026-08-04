@@ -92,7 +92,7 @@ Die folgenden Informationen können mit den integrierten Ausgabeprofilen ausgege
 |%RuleModifiedDate% | Das Feld `modified` in der YML-Erkennungsregel. |
 |%RuleTitle% | Das Feld `title` in der YML-Erkennungsregel. |
 |%Status% | Das Feld `status` in der YML-Erkennungsregel. |
-|%Timestamp% | Standard ist das Format `YYYY-MM-DD HH:mm:ss.sss +hh:mm`. Feld `<Event><System><TimeCreated SystemTime>` im Ereignisprotokoll. Die Standardzeitzone ist die lokale Zeitzone, aber Sie können die Zeitzone mit der Option `--UTC` auf UTC ändern. |
+|%Timestamp% | Standard ist das Format `YYYY-MM-DD HH:mm:ss.sss +hh:mm`. Feld `<Event><System><TimeCreated SystemTime>` im Ereignisprotokoll. Die Standardzeitzone ist die lokale Zeitzone, aber Sie können die Zeitzone mit der Option `--utc` auf UTC ändern. |
 
 #### Zusätzlicher Profil-Feld-Alias
 

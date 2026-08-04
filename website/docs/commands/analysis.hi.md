@@ -11,33 +11,34 @@ Windows 11 कभी-कभी इवेंट लॉग में सहेज�
 इस जानकारी के साथ, आप फिर अपनी टाइमलाइन बनाते समय `--include-computer` या `--exclude-computer` विकल्पों का उपयोग कर सकते हैं ताकि कंप्यूटर के अनुसार कई टाइमलाइन बनाकर या कुछ कंप्यूटरों के इवेंट्स को बाहर करके अपनी टाइमलाइन निर्माण को अधिक कुशल बना सकें।
 
 ```
-Usage: computer-metrics <INPUT> [OPTIONS]
+Usage:
+  hayabusa.exe computer-metrics <INPUT> [OPTIONS]
 
 Input:
-  -d, --directory <DIR>  Directory of multiple .evtx files
-  -f, --file <FILE>      File path to one .evtx file
-  -l, --live-analysis    Analyze the local C:\Windows\System32\winevt\Logs folder
+  -d, --directory <DIR>  एकाधिक .evtx फ़ाइलों की डायरेक्टरी
+  -f, --file <FILE>      एक .evtx फ़ाइल का फ़ाइल पथ
+  -l, --live-analysis    स्थानीय C:\Windows\System32\winevt\Logs फ़ोल्डर का विश्लेषण करें
 
 General Options:
-  -C, --clobber                        Overwrite files when saving
-  -h, --help                           Show the help menu
-  -J, --JSON-input                     Scan JSON formatted logs instead of .evtx (.json or .jsonl)
-  -Q, --quiet-errors                   Quiet errors mode: do not save error logs
-  -x, --recover-records                Carve evtx records from slack space (default: disabled)
-  -c, --rules-config <DIR>             Specify custom rule config directory (default: ./rules/config)
-      --target-file-ext <FILE-EXT...>  Specify additional evtx file extensions (ex: evtx_data)
-  -t, --threads <NUMBER>               Number of threads (default: optimal number for performance)
+  -C, --clobber                        सहेजते समय फ़ाइलों को अधिलेखित करें
+  -h, --help                           सहायता मेनू दिखाएं
+  -J, --json-input                     .evtx के बजाय JSON प्रारूपित लॉग स्कैन करें (.json या .jsonl)
+  -Q, --quiet-errors                   शांत त्रुटि मोड: त्रुटि लॉग न सहेजें
+  -x, --recover-records                स्लैक स्पेस से evtx रिकॉर्ड कार्व करें (default: disabled)
+  -c, --rules-config <DIR>             कस्टम नियम कॉन्फ़िग डायरेक्टरी निर्दिष्ट करें (default: ./rules/config)
+      --target-file-ext <FILE-EXT...>  अतिरिक्त evtx फ़ाइल एक्सटेंशन निर्दिष्ट करें (ex: evtx_data)
+  -V, --validate-checksums             चेकसम सत्यापन सक्षम करें
 
 Filtering:
-      --time-offset <OFFSET>  Scan recent events based on an offset (ex: 1y, 3M, 30d, 24h, 30m)
+      --time-offset <OFFSET>  एक ऑफसेट के आधार पर हाल के इवेंट्स स्कैन करें (ex: 1y, 3M, 30d, 24h, 30m)
 
 Output:
-  -o, --output <FILE>  Save the results in CSV format (ex: computer-metrics.csv)
+  -o, --output <FILE>  परिणामों को CSV प्रारूप में सहेजें (ex: computer-metrics.csv)
 
 Display Settings:
-  -K, --no-color  Disable color output
-  -q, --quiet     Quiet mode: do not display the launch banner
-  -v, --verbose   Output verbose information
+  -K, --no-color  रंगीन आउटपुट अक्षम करें
+  -q, --quiet     शांत मोड: लॉन्च बैनर प्रदर्शित न करें
+  -v, --verbose   विस्तृत जानकारी आउटपुट करें
 ```
 
 ### `computer-metrics` कमांड उदाहरण
@@ -55,45 +56,47 @@ Display Settings:
 यह कमांड किसी भी डिटेक्शन नियम का उपयोग नहीं करता है इसलिए सभी इवेंट्स को स्कैन करेगा।
 
 ```
-Usage: eid-metrics <INPUT> [OPTIONS]
+Usage:
+  hayabusa.exe eid-metrics <INPUT> [OPTIONS]
 
 Input:
-  -d, --directory <DIR>  Directory of multiple .evtx files
-  -f, --file <FILE>      File path to one .evtx file
-  -l, --live-analysis    Analyze the local C:\Windows\System32\winevt\Logs folder
+  -d, --directory <DIR>  एकाधिक .evtx फ़ाइलों की डायरेक्टरी
+  -f, --file <FILE>      एक .evtx फ़ाइल का फ़ाइल पथ
+  -l, --live-analysis    स्थानीय C:\Windows\System32\winevt\Logs फ़ोल्डर का विश्लेषण करें
 
 General Options:
-  -C, --clobber                        Overwrite files when saving
-  -h, --help                           Show the help menu
-  -J, --JSON-input                     Scan JSON formatted logs instead of .evtx (.json or .jsonl)
-  -Q, --quiet-errors                   Quiet errors mode: do not save error logs
-  -x, --recover-records                Carve evtx records from slack space (default: disabled)
-  -c, --rules-config <DIR>             Specify custom rule config directory (default: ./rules/config)
-  -t, --threads <NUMBER>               Number of threads (default: optimal number for performance)
-      --target-file-ext <FILE-EXT...>  Specify additional evtx file extensions (ex: evtx_data)
+  -C, --clobber                        सहेजते समय फ़ाइलों को अधिलेखित करें
+  -h, --help                           सहायता मेनू दिखाएं
+  -J, --json-input                     .evtx के बजाय JSON प्रारूपित लॉग स्कैन करें (.json या .jsonl)
+  -Q, --quiet-errors                   शांत त्रुटि मोड: त्रुटि लॉग न सहेजें
+  -x, --recover-records                स्लैक स्पेस से evtx रिकॉर्ड कार्व करें (default: disabled)
+  -c, --rules-config <DIR>             कस्टम नियम कॉन्फ़िग डायरेक्टरी निर्दिष्ट करें (default: ./rules/config)
+      --target-file-ext <FILE-EXT...>  अतिरिक्त evtx फ़ाइल एक्सटेंशन निर्दिष्ट करें (ex: evtx_data)
+      --threads <NUMBER>               थ्रेड्स की संख्या (default: optimal number for performance)
+  -V, --validate-checksums             चेकसम सत्यापन सक्षम करें
 
 Filtering:
-      --exclude-computer <COMPUTER...>  Do not scan specified computer names (ex: ComputerA) (ex: ComputerA,ComputerB)
-      --include-computer <COMPUTER...>  Scan only specified computer names (ex: ComputerA) (ex: ComputerA,ComputerB)
-      --time-offset <OFFSET>            Scan recent events based on an offset (ex: 1y, 3M, 30d, 24h, 30m)
+      --exclude-computer <COMPUTER...>  निर्दिष्ट कंप्यूटर नामों को स्कैन न करें (ex: ComputerA) (ex: ComputerA,ComputerB)
+      --include-computer <COMPUTER...>  केवल निर्दिष्ट कंप्यूटर नामों को स्कैन करें (ex: ComputerA) (ex: ComputerA,ComputerB)
+      --time-offset <OFFSET>            एक ऑफसेट के आधार पर हाल के इवेंट्स स्कैन करें (ex: 1y, 3M, 30d, 24h, 30m)
 
 Output:
-  -b, --disable-abbreviations  Disable abbreviations
-  -o, --output <FILE>          Save the Metrics in CSV format (ex: metrics.csv)
+  -X, --remove-duplicate-records  डुप्लिकेट इवेंट रिकॉर्ड हटाएं (default: disabled)
+  -o, --output <FILE>             मेट्रिक्स को CSV प्रारूप में सहेजें (ex: metrics.csv)
 
 Display Settings:
-  -K, --no-color  Disable color output
-  -q, --quiet     Quiet mode: do not display the launch banner
-  -v, --verbose   Output verbose information
+  -K, --no-color  रंगीन आउटपुट अक्षम करें
+  -q, --quiet     शांत मोड: लॉन्च बैनर प्रदर्शित न करें
+  -v, --verbose   विस्तृत जानकारी आउटपुट करें
 
 Time Format:
-      --European-time     Output timestamp in European time format (ex: 22-02-2022 22:00:00.123 +02:00)
-  -O, --ISO-8601          Output timestamp in original ISO-8601 format (ex: 2022-02-22T10:10:10.1234567Z) (Always UTC)
-      --RFC-2822          Output timestamp in RFC 2822 format (ex: Fri, 22 Feb 2022 22:00:00 -0600)
-      --RFC-3339          Output timestamp in RFC 3339 format (ex: 2022-02-22 22:00:00.123456-06:00)
-      --US-military-time  Output timestamp in US military time format (ex: 02-22-2022 22:00:00.123 -06:00)
-      --US-time           Output timestamp in US time format (ex: 02-22-2022 10:00:00.123 PM -06:00)
-  -U, --UTC               Output time in UTC format (default: local time)
+      --european-time     यूरोपीय समय प्रारूप में टाइमस्टैम्प आउटपुट करें (ex: 22-02-2022 22:00:00.123 +02:00)
+  -O, --iso-8601          मूल ISO-8601 प्रारूप में टाइमस्टैम्प आउटपुट करें (ex: 2022-02-22T10:10:10.1234567Z) (हमेशा UTC)
+      --rfc-2822          RFC 2822 प्रारूप में टाइमस्टैम्प आउटपुट करें (ex: Fri, 22 Feb 2022 22:00:00 -0600)
+      --rfc-3339          RFC 3339 प्रारूप में टाइमस्टैम्प आउटपुट करें (ex: 2022-02-22 22:00:00.123456-06:00)
+  -U, --utc               UTC प्रारूप में समय आउटपुट करें (default: local time)
+      --us-military-time  अमेरिकी सैन्य समय प्रारूप में टाइमस्टैम्प आउटपुट करें (ex: 02-22-2022 22:00:00.123 -06:00)
+      --us-time           अमेरिकी समय प्रारूप में टाइमस्टैम्प आउटपुट करें (ex: 02-22-2022 10:00:00.123 PM -06:00)
 ```
 
 ### `eid-metrics` कमांड उदाहरण
@@ -153,21 +156,22 @@ AdminWorkstation3
 यदि कॉन्फ़िग फ़ाइल मौजूद नहीं है, तो Hayabusa फिर भी `expand` नियम को लोड करेगा लेकिन उसे अनदेखा करेगा।
 
 ```
-Usage:  expand-list <INPUT> [OPTIONS]
+Usage:
+  hayabusa.exe expand-list [OPTIONS]
 
 General Options:
-  -h, --help              Show the help menu
-  -r, --rules <DIR/FILE>  Specify rule directory (default: ./rules)
+  -h, --help              सहायता मेनू दिखाएं
+  -r, --rules <DIR/FILE>  नियम डायरेक्टरी निर्दिष्ट करें (default: ./rules)
 
 Display Settings:
-  -K, --no-color  Disable color output
-  -q, --quiet     Quiet mode: do not display the launch banner
+  -K, --no-color  रंगीन आउटपुट अक्षम करें
+  -q, --quiet     शांत मोड: लॉन्च बैनर प्रदर्शित न करें
 ```
 
 ### `expand-list` कमांड उदाहरण
 
 * डिफ़ॉल्ट `rules` डायरेक्टरी से `expand` फ़ील्ड मॉडिफायर निकालें: `hayabusa.exe expand-list`
-* `sigma` डायरेक्टरी से `expand` फ़ील्ड मॉडिफायर निकालें: `hayabusa.exe eid-metrics -r ../sigma`
+* `sigma` डायरेक्टरी से `expand` फ़ील्ड मॉडिफायर निकालें: `hayabusa.exe expand-list -r ../sigma`
 
 ### `expand-list` परिणाम
 
@@ -190,50 +194,52 @@ domain_controller_hostnames
   * PowerShell Operational 4103
 
 ```
-Usage:  extract-base64 <INPUT> [OPTIONS]
+Usage:
+  hayabusa.exe extract-base64 <INPUT> [OPTIONS]
 
 Input:
-  -d, --directory <DIR>  Directory of multiple .evtx files
-  -f, --file <FILE>      File path to one .evtx file
-  -l, --live-analysis    Analyze the local C:\Windows\System32\winevt\Logs folder
+  -d, --directory <DIR>  एकाधिक .evtx फ़ाइलों की डायरेक्टरी
+  -f, --file <FILE>      एक .evtx फ़ाइल का फ़ाइल पथ
+  -l, --live-analysis    स्थानीय C:\Windows\System32\winevt\Logs फ़ोल्डर का विश्लेषण करें
 
 General Options:
-  -C, --clobber                        Overwrite files when saving
-  -h, --help                           Show the help menu
-  -J, --JSON-input                     Scan JSON formatted logs instead of .evtx (.json or .jsonl)
-  -Q, --quiet-errors                   Quiet errors mode: do not save error logs
-  -x, --recover-records                Carve evtx records from slack space (default: disabled)
-  -c, --rules-config <DIR>             Specify custom rule config directory (default: ./rules/config)
-  -t, --threads <NUMBER>               Number of threads (default: optimal number for performance)
-      --target-file-ext <FILE-EXT...>  Specify additional evtx file extensions (ex: evtx_data)
+  -C, --clobber                        सहेजते समय फ़ाइलों को अधिलेखित करें
+  -h, --help                           सहायता मेनू दिखाएं
+  -J, --json-input                     .evtx के बजाय JSON प्रारूपित लॉग स्कैन करें (.json या .jsonl)
+  -Q, --quiet-errors                   शांत त्रुटि मोड: त्रुटि लॉग न सहेजें
+  -x, --recover-records                स्लैक स्पेस से evtx रिकॉर्ड कार्व करें (default: disabled)
+  -c, --rules-config <DIR>             कस्टम नियम कॉन्फ़िग डायरेक्टरी निर्दिष्ट करें (default: ./rules/config)
+      --target-file-ext <FILE-EXT...>  अतिरिक्त evtx फ़ाइल एक्सटेंशन निर्दिष्ट करें (ex: evtx_data)
+      --threads <NUMBER>               थ्रेड्स की संख्या (default: optimal number for performance)
+  -V, --validate-checksums             चेकसम सत्यापन सक्षम करें
 
 Filtering:
-      --exclude-computer <COMPUTER...>  Do not scan specified computer names (ex: ComputerA) (ex: ComputerA,ComputerB)
-      --include-computer <COMPUTER...>  Scan only specified computer names (ex: ComputerA) (ex: ComputerA,ComputerB)
-      --time-offset <OFFSET>            Scan recent events based on an offset (ex: 1y, 3M, 30d, 24h, 30m)
+      --exclude-computer <COMPUTER...>  निर्दिष्ट कंप्यूटर नामों को स्कैन न करें (ex: ComputerA) (ex: ComputerA,ComputerB)
+      --include-computer <COMPUTER...>  केवल निर्दिष्ट कंप्यूटर नामों को स्कैन करें (ex: ComputerA) (ex: ComputerA,ComputerB)
+      --time-offset <OFFSET>            एक ऑफसेट के आधार पर हाल के इवेंट्स स्कैन करें (ex: 1y, 3M, 30d, 24h, 30m)
 
 Output:
-  -o, --output <FILE>  Extract Base64 strings
+  -o, --output <FILE>  परिणामों को CSV फ़ाइल में सहेजें
 
 Display Settings:
-  -K, --no-color  Disable color output
-  -q, --quiet     Quiet mode: do not display the launch banner
-  -v, --verbose   Output verbose information
+  -K, --no-color  रंगीन आउटपुट अक्षम करें
+  -q, --quiet     शांत मोड: लॉन्च बैनर प्रदर्शित न करें
+  -v, --verbose   विस्तृत जानकारी आउटपुट करें
 
 Time Format:
-      --European-time     Output timestamp in European time format (ex: 22-02-2022 22:00:00.123 +02:00)
-  -O, --ISO-8601          Output timestamp in original ISO-8601 format (ex: 2022-02-22T10:10:10.1234567Z) (Always UTC)
-      --RFC-2822          Output timestamp in RFC 2822 format (ex: Fri, 22 Feb 2022 22:00:00 -0600)
-      --RFC-3339          Output timestamp in RFC 3339 format (ex: 2022-02-22 22:00:00.123456-06:00)
-      --US-military-time  Output timestamp in US military time format (ex: 02-22-2022 22:00:00.123 -06:00)
-      --US-time           Output timestamp in US time format (ex: 02-22-2022 10:00:00.123 PM -06:00)
-  -U, --UTC               Output time in UTC format (default: local time)
+      --european-time     यूरोपीय समय प्रारूप में टाइमस्टैम्प आउटपुट करें (ex: 22-02-2022 22:00:00.123 +02:00)
+  -O, --iso-8601          मूल ISO-8601 प्रारूप में टाइमस्टैम्प आउटपुट करें (ex: 2022-02-22T10:10:10.1234567Z) (हमेशा UTC)
+      --rfc-2822          RFC 2822 प्रारूप में टाइमस्टैम्प आउटपुट करें (ex: Fri, 22 Feb 2022 22:00:00 -0600)
+      --rfc-3339          RFC 3339 प्रारूप में टाइमस्टैम्प आउटपुट करें (ex: 2022-02-22 22:00:00.123456-06:00)
+  -U, --utc               UTC प्रारूप में समय आउटपुट करें (default: local time)
+      --us-military-time  अमेरिकी सैन्य समय प्रारूप में टाइमस्टैम्प आउटपुट करें (ex: 02-22-2022 22:00:00.123 -06:00)
+      --us-time           अमेरिकी समय प्रारूप में टाइमस्टैम्प आउटपुट करें (ex: 02-22-2022 10:00:00.123 PM -06:00)
 ```
 
 ### `extract-base64` कमांड उदाहरण
 
-* किसी डायरेक्टरी को स्कैन करें और टर्मिनल पर आउटपुट करें: `hayabusa.exe  extract-base64 -d ../hayabusa-sample-evtx`
-* किसी डायरेक्टरी को स्कैन करें और CSV फ़ाइल में आउटपुट करें: `hayabusa.exe eid-metrics -r ../sigma -o base64-extracted.csv`
+* किसी डायरेक्टरी को स्कैन करें और टर्मिनल पर आउटपुट करें: `hayabusa.exe extract-base64 -d ../hayabusa-sample-evtx`
+* किसी डायरेक्टरी को स्कैन करें और CSV फ़ाइल में आउटपुट करें: `hayabusa.exe extract-base64 -d ../hayabusa-sample-evtx -o base64-extracted.csv`
 
 ### `extract-base64` परिणाम
 
@@ -272,54 +278,60 @@ CSV फ़ाइल में सहेजते समय, निम्नल�
 यह कमांड किसी भी डिटेक्शन नियम का उपयोग नहीं करता है इसलिए सभी इवेंट्स को स्कैन करेगा।
 
 ```
-Usage: log-metrics <INPUT> [OPTIONS]
+Usage:
+  hayabusa.exe log-metrics <INPUT> [OPTIONS]
 
 Input:
-  -d, --directory <DIR>  Directory of multiple .evtx files
-  -f, --file <FILE>      File path to one .evtx file
-  -l, --live-analysis    Analyze the local C:\Windows\System32\winevt\Logs folder
+  -d, --directory <DIR>  एकाधिक .evtx फ़ाइलों की डायरेक्टरी
+  -f, --file <FILE>      एक .evtx फ़ाइल का फ़ाइल पथ
+  -l, --live-analysis    स्थानीय C:\Windows\System32\winevt\Logs फ़ोल्डर का विश्लेषण करें
 
 General Options:
-  -C, --clobber                        Overwrite files when saving
-  -h, --help                           Show the help menu
-  -J, --JSON-input                     Scan JSON formatted logs instead of .evtx (.json or .jsonl)
-  -Q, --quiet-errors                   Quiet errors mode: do not save error logs
-  -x, --recover-records                Carve evtx records from slack space (default: disabled)
-  -c, --rules-config <DIR>             Specify custom rule config directory (default: ./rules/config)
-  -t, --threads <NUMBER>               Number of threads (default: optimal number for performance)
-      --target-file-ext <FILE-EXT...>  Specify additional evtx file extensions (ex: evtx_data)
+  -C, --clobber                        सहेजते समय फ़ाइलों को अधिलेखित करें
+  -h, --help                           सहायता मेनू दिखाएं
+  -J, --json-input                     .evtx के बजाय JSON प्रारूपित लॉग स्कैन करें (.json या .jsonl)
+  -Q, --quiet-errors                   शांत त्रुटि मोड: त्रुटि लॉग न सहेजें
+  -x, --recover-records                स्लैक स्पेस से evtx रिकॉर्ड कार्व करें (default: disabled)
+  -c, --rules-config <DIR>             कस्टम नियम कॉन्फ़िग डायरेक्टरी निर्दिष्ट करें (default: ./rules/config)
+      --target-file-ext <FILE-EXT...>  अतिरिक्त evtx फ़ाइल एक्सटेंशन निर्दिष्ट करें (ex: evtx_data)
+      --threads <NUMBER>               थ्रेड्स की संख्या (default: optimal number for performance)
+  -V, --validate-checksums             चेकसम सत्यापन सक्षम करें
 
 Filtering:
-      --exclude-computer <COMPUTER...>  Do not scan specified computer names (ex: ComputerA) (ex: ComputerA,ComputerB)
-      --include-computer <COMPUTER...>  Scan only specified computer names (ex: ComputerA) (ex: ComputerA,ComputerB)
-      --time-offset <OFFSET>            Scan recent events based on an offset (ex: 1y, 3M, 30d, 24h, 30m)
+      --exclude-computer <COMPUTER...>  निर्दिष्ट कंप्यूटर नामों को स्कैन न करें (ex: ComputerA) (ex: ComputerA,ComputerB)
+      --exclude-channel <CHANNEL...>    निर्दिष्ट चैनलों को स्कैन न करें (ex: System,Security)
+      --exclude-filename <FILE...>      निर्दिष्ट evtx फ़ाइलों को स्कैन न करें (ex: Security.evtx,System.evtx)
+      --include-computer <COMPUTER...>  केवल निर्दिष्ट कंप्यूटर नामों को स्कैन करें (ex: ComputerA) (ex: ComputerA,ComputerB)
+      --include-channel <CHANNEL...>    केवल निर्दिष्ट चैनलों को शामिल करें (ex: System,Security)
+      --include-filename <FILE...>      केवल निर्दिष्ट evtx फ़ाइलों को शामिल करें (ex: Security.evtx,System.evtx)
+      --time-offset <OFFSET>            एक ऑफसेट के आधार पर हाल के इवेंट्स स्कैन करें (ex: 1y, 3M, 30d, 24h, 30m)
 
 Output:
-  -b, --disable-abbreviations  Disable abbreviations
-  -M, --multiline              Output event field information in multiple rows for CSV output
-  -o, --output <FILE>          Save the Metrics in CSV format (ex: metrics.csv)
-  -S, --tab-separator          Separate event field information by tabs
+  -b, --disable-abbreviations  संक्षिप्ताक्षर अक्षम करें
+  -M, --multiline              CSV आउटपुट के लिए इवेंट फ़ील्ड जानकारी को न्यूलाइन वर्णों द्वारा अलग करें
+  -o, --output <FILE>          मेट्रिक्स को CSV प्रारूप में सहेजें (ex: metrics.csv)
+  -S, --tab-separator          इवेंट फ़ील्ड जानकारी को टैब द्वारा अलग करें
 
 Display Settings:
-  -K, --no-color  Disable color output
-  -q, --quiet     Quiet mode: do not display the launch banner
-  -v, --verbose   Output verbose information
+  -K, --no-color  रंगीन आउटपुट अक्षम करें
+  -q, --quiet     शांत मोड: लॉन्च बैनर प्रदर्शित न करें
+  -v, --verbose   विस्तृत जानकारी आउटपुट करें
 
 Time Format:
-      --European-time     Output timestamp in European time format (ex: 22-02-2022 22:00:00.123 +02:00)
-  -O, --ISO-8601          Output timestamp in original ISO-8601 format (ex: 2022-02-22T10:10:10.1234567Z) (Always UTC)
-      --RFC-2822          Output timestamp in RFC 2822 format (ex: Fri, 22 Feb 2022 22:00:00 -0600)
-      --RFC-3339          Output timestamp in RFC 3339 format (ex: 2022-02-22 22:00:00.123456-06:00)
-      --US-military-time  Output timestamp in US military time format (ex: 02-22-2022 22:00:00.123 -06:00)
-      --US-time           Output timestamp in US time format (ex: 02-22-2022 10:00:00.123 PM -06:00)
-  -U, --UTC               Output time in UTC format (default: local time)
+      --european-time     यूरोपीय समय प्रारूप में टाइमस्टैम्प आउटपुट करें (ex: 22-02-2022 22:00:00.123 +02:00)
+  -O, --iso-8601          मूल ISO-8601 प्रारूप में टाइमस्टैम्प आउटपुट करें (ex: 2022-02-22T10:10:10.1234567Z) (हमेशा UTC)
+      --rfc-2822          RFC 2822 प्रारूप में टाइमस्टैम्प आउटपुट करें (ex: Fri, 22 Feb 2022 22:00:00 -0600)
+      --rfc-3339          RFC 3339 प्रारूप में टाइमस्टैम्प आउटपुट करें (ex: 2022-02-22 22:00:00.123456-06:00)
+  -U, --utc               UTC प्रारूप में समय आउटपुट करें (default: local time)
+      --us-military-time  अमेरिकी सैन्य समय प्रारूप में टाइमस्टैम्प आउटपुट करें (ex: 02-22-2022 22:00:00.123 -06:00)
+      --us-time           अमेरिकी समय प्रारूप में टाइमस्टैम्प आउटपुट करें (ex: 02-22-2022 10:00:00.123 PM -06:00)
 ```
 
 ### `log-metrics` कमांड उदाहरण
 
-* किसी एकल फ़ाइल से इवेंट ID मेट्रिक्स प्रिंट करें: `hayabusa.exe log-metrics -f Security.evtx`
-* किसी डायरेक्टरी से इवेंट ID मेट्रिक्स प्रिंट करें: `hayabusa.exe log-metrics -d ../logs`
-* परिणामों को CSV फ़ाइल में सहेजें: `hayabusa.exe log-metrics -d ../logs -o eid-metrics.csv`
+* किसी एकल फ़ाइल से लॉग फ़ाइल मेट्रिक्स प्रिंट करें: `hayabusa.exe log-metrics -f Security.evtx`
+* किसी डायरेक्टरी से लॉग फ़ाइल मेट्रिक्स प्रिंट करें: `hayabusa.exe log-metrics -d ../logs`
+* परिणामों को CSV फ़ाइल में सहेजें: `hayabusa.exe log-metrics -d ../logs -o log-metrics.csv`
 
 ### `log-metrics` स्क्रीनशॉट
 
@@ -338,46 +350,49 @@ Time Format:
 असफल लॉगऑन `Security 4625` इवेंट्स से लिए जाते हैं।
 
 ```
-Usage: logon-summary <INPUT> [OPTIONS]
+Usage:
+  hayabusa.exe logon-summary <INPUT> [OPTIONS]
 
 Input:
-  -d, --directory <DIR>  Directory of multiple .evtx files
-  -f, --file <FILE>      File path to one .evtx file
-  -l, --live-analysis    Analyze the local C:\Windows\System32\winevt\Logs folder
+  -d, --directory <DIR>  एकाधिक .evtx फ़ाइलों की डायरेक्टरी
+  -f, --file <FILE>      एक .evtx फ़ाइल का फ़ाइल पथ
+  -l, --live-analysis    स्थानीय C:\Windows\System32\winevt\Logs फ़ोल्डर का विश्लेषण करें
 
 General Options:
-  -C, --clobber                        Overwrite files when saving
-  -h, --help                           Show the help menu
-  -J, --JSON-input                     Scan JSON formatted logs instead of .evtx (.json or .jsonl)
-  -Q, --quiet-errors                   Quiet errors mode: do not save error logs
-  -x, --recover-records                Carve evtx records from slack space (default: disabled)
-  -c, --rules-config <DIR>             Specify custom rule config directory (default: ./rules/config)
-  -t, --threads <NUMBER>               Number of threads (default: optimal number for performance)
-      --target-file-ext <FILE-EXT...>  Specify additional evtx file extensions (ex: evtx_data)
+  -C, --clobber                        सहेजते समय फ़ाइलों को अधिलेखित करें
+  -h, --help                           सहायता मेनू दिखाएं
+  -J, --json-input                     .evtx के बजाय JSON प्रारूपित लॉग स्कैन करें (.json या .jsonl)
+  -Q, --quiet-errors                   शांत त्रुटि मोड: त्रुटि लॉग न सहेजें
+  -x, --recover-records                स्लैक स्पेस से evtx रिकॉर्ड कार्व करें (default: disabled)
+  -c, --rules-config <DIR>             कस्टम नियम कॉन्फ़िग डायरेक्टरी निर्दिष्ट करें (default: ./rules/config)
+      --target-file-ext <FILE-EXT...>  अतिरिक्त evtx फ़ाइल एक्सटेंशन निर्दिष्ट करें (ex: evtx_data)
+      --threads <NUMBER>               थ्रेड्स की संख्या (default: optimal number for performance)
+  -V, --validate-checksums             चेकसम सत्यापन सक्षम करें
 
 Filtering:
-      --exclude-computer <COMPUTER...>  Do not scan specified computer names (ex: ComputerA) (ex: ComputerA,ComputerB)
-      --include-computer <COMPUTER...>  Scan only specified computer names (ex: ComputerA) (ex: ComputerA,ComputerB)
-      --time-offset <OFFSET>            Scan recent events based on an offset (ex: 1y, 3M, 30d, 24h, 30m)
-      --timeline-end <DATE>             End time of the event logs to load (ex: "2022-02-22 23:59:59 +09:00")
-      --timeline-start <DATE>           Start time of the event logs to load (ex: "2020-02-22 00:00:00 +09:00")
+      --exclude-computer <COMPUTER...>  निर्दिष्ट कंप्यूटर नामों को स्कैन न करें (ex: ComputerA) (ex: ComputerA,ComputerB)
+      --include-computer <COMPUTER...>  केवल निर्दिष्ट कंप्यूटर नामों को स्कैन करें (ex: ComputerA) (ex: ComputerA,ComputerB)
+      --time-offset <OFFSET>            एक ऑफसेट के आधार पर हाल के इवेंट्स स्कैन करें (ex: 1y, 3M, 30d, 24h, 30m)
+      --timeline-end <DATE>             लोड करने के लिए इवेंट लॉग का अंतिम समय (ex: "2022-02-22 23:59:59 +09:00")
+      --timeline-start <DATE>           लोड करने के लिए इवेंट लॉग का प्रारंभ समय (ex: "2020-02-22 00:00:00 +09:00")
 
 Output:
-  -o, --output <FILENAME-PREFIX>  Save the logon summary to two CSV files (ex: -o logon-summary)
+  -X, --remove-duplicate-records  डुप्लिकेट इवेंट रिकॉर्ड हटाएं (default: disabled)
+  -o, --output <FILENAME-PREFIX>  लॉगऑन सारांश को दो CSV फ़ाइलों में सहेजें (ex: -o logon-summary)
 
 Display Settings:
-  -K, --no-color  Disable color output
-  -q, --quiet     Quiet mode: do not display the launch banner
-  -v, --verbose   Output verbose information
+  -K, --no-color  रंगीन आउटपुट अक्षम करें
+  -q, --quiet     शांत मोड: लॉन्च बैनर प्रदर्शित न करें
+  -v, --verbose   विस्तृत जानकारी आउटपुट करें
 
 Time Format:
-      --European-time     Output timestamp in European time format (ex: 22-02-2022 22:00:00.123 +02:00)
-  -O, --ISO-8601          Output timestamp in original ISO-8601 format (ex: 2022-02-22T10:10:10.1234567Z) (Always UTC)
-      --RFC-2822          Output timestamp in RFC 2822 format (ex: Fri, 22 Feb 2022 22:00:00 -0600)
-      --RFC-3339          Output timestamp in RFC 3339 format (ex: 2022-02-22 22:00:00.123456-06:00)
-      --US-military-time  Output timestamp in US military time format (ex: 02-22-2022 22:00:00.123 -06:00)
-      --US-time           Output timestamp in US time format (ex: 02-22-2022 10:00:00.123 PM -06:00)
-  -U, --UTC               Output time in UTC format (default: local time)
+      --european-time     यूरोपीय समय प्रारूप में टाइमस्टैम्प आउटपुट करें (ex: 22-02-2022 22:00:00.123 +02:00)
+  -O, --iso-8601          मूल ISO-8601 प्रारूप में टाइमस्टैम्प आउटपुट करें (ex: 2022-02-22T10:10:10.1234567Z) (हमेशा UTC)
+      --rfc-2822          RFC 2822 प्रारूप में टाइमस्टैम्प आउटपुट करें (ex: Fri, 22 Feb 2022 22:00:00 -0600)
+      --rfc-3339          RFC 3339 प्रारूप में टाइमस्टैम्प आउटपुट करें (ex: 2022-02-22 22:00:00.123456-06:00)
+  -U, --utc               UTC प्रारूप में समय आउटपुट करें (default: local time)
+      --us-military-time  अमेरिकी सैन्य समय प्रारूप में टाइमस्टैम्प आउटपुट करें (ex: 02-22-2022 22:00:00.123 -06:00)
+      --us-time           अमेरिकी समय प्रारूप में टाइमस्टैम्प आउटपुट करें (ex: 02-22-2022 10:00:00.123 PM -06:00)
 ```
 
 ### `logon-summary` कमांड उदाहरण
@@ -400,50 +415,52 @@ Time Format:
 आपके परिणामों में संभवतः सामान्य कीवर्ड होंगे जो कई सामान्य इवेंट्स पर मेल खाएंगे, इसलिए परिणामों की मैन्युअल रूप से जांच करने और एक एकल फ़ाइल में अद्वितीय कीवर्ड्स की सूची बनाने के बाद, आप फिर `grep -f keywords.txt timeline.csv` जैसे कमांड के साथ संदिग्ध गतिविधि की एक संकीर्ण टाइमलाइन बना सकते हैं।
 
 ```
-Usage: pivot-keywords-list <INPUT> [OPTIONS]
+Usage:
+  hayabusa.exe pivot-keywords-list <INPUT> [OPTIONS]
 
 Input:
-  -d, --directory <DIR>  Directory of multiple .evtx files
-  -f, --file <FILE>      File path to one .evtx file
-  -l, --live-analysis    Analyze the local C:\Windows\System32\winevt\Logs folder
+  -d, --directory <DIR>  एकाधिक .evtx फ़ाइलों की डायरेक्टरी
+  -f, --file <FILE>      एक .evtx फ़ाइल का फ़ाइल पथ
+  -l, --live-analysis    स्थानीय C:\Windows\System32\winevt\Logs फ़ोल्डर का विश्लेषण करें
 
 General Options:
-  -C, --clobber                        Overwrite files when saving
-  -h, --help                           Show the help menu
-  -J, --JSON-input                     Scan JSON formatted logs instead of .evtx (.json or .jsonl)
-  -w, --no-wizard                      Do not ask questions. Scan for all events and alerts
-  -Q, --quiet-errors                   Quiet errors mode: do not save error logs
-  -x, --recover-records                Carve evtx records from slack space (default: disabled)
-  -c, --rules-config <DIR>             Specify custom rule config directory (default: ./rules/config)
-  -t, --threads <NUMBER>               Number of threads (default: optimal number for performance)
-      --target-file-ext <FILE-EXT...>  Specify additional evtx file extensions (ex: evtx_data)
+  -C, --clobber                        सहेजते समय फ़ाइलों को अधिलेखित करें
+  -h, --help                           सहायता मेनू दिखाएं
+  -J, --json-input                     .evtx के बजाय JSON प्रारूपित लॉग स्कैन करें (.json या .jsonl)
+  -w, --no-wizard                      प्रश्न न पूछें। सभी इवेंट्स और अलर्ट के लिए स्कैन करें
+  -Q, --quiet-errors                   शांत त्रुटि मोड: त्रुटि लॉग न सहेजें
+  -x, --recover-records                स्लैक स्पेस से evtx रिकॉर्ड कार्व करें (default: disabled)
+  -c, --rules-config <DIR>             कस्टम नियम कॉन्फ़िग डायरेक्टरी निर्दिष्ट करें (default: ./rules/config)
+      --target-file-ext <FILE-EXT...>  अतिरिक्त evtx फ़ाइल एक्सटेंशन निर्दिष्ट करें (ex: evtx_data)
+      --threads <NUMBER>               थ्रेड्स की संख्या (default: optimal number for performance)
+  -V, --validate-checksums             चेकसम सत्यापन सक्षम करें
 
 Filtering:
-  -E, --EID-filter                      Scan only common EIDs for faster speed (./rules/config/target_event_IDs.txt)
-  -D, --enable-deprecated-rules         Enable rules with a status of deprecated
-  -n, --enable-noisy-rules              Enable rules set to noisy (./rules/config/noisy_rules.txt)
-  -u, --enable-unsupported-rules        Enable rules with a status of unsupported
-  -e, --exact-level <LEVEL>             Only load rules with a specific level (informational, low, medium, high, critical)
-      --exclude-computer <COMPUTER...>  Do not scan specified computer names (ex: ComputerA) (ex: ComputerA,ComputerB)
-      --exclude-eid <EID...>            Do not scan specific EIDs for faster speed (ex: 1) (ex: 1,4688)
-      --exclude-status <STATUS...>      Do not load rules according to status (ex: experimental) (ex: stable,test)
-      --exclude-tag <TAG...>            Do not load rules with specific tags (ex: sysmon)
-      --include-computer <COMPUTER...>  Scan only specified computer names (ex: ComputerA) (ex: ComputerA,ComputerB)
-      --include-eid <EID...>            Scan only specified EIDs for faster speed (ex: 1) (ex: 1,4688)
-      --include-status <STATUS...>      Only load rules with specific status (ex: experimental) (ex: stable,test)
-      --include-tag <TAG...>            Only load rules with specific tags (ex: attack.execution,attack.discovery)
-  -m, --min-level <LEVEL>               Minimum level for rules to load (default: informational)
-      --time-offset <OFFSET>            Scan recent events based on an offset (ex: 1y, 3M, 30d, 24h, 30m)
-      --timeline-end <DATE>             End time of the event logs to load (ex: "2022-02-22 23:59:59 +09:00")
-      --timeline-start <DATE>           Start time of the event logs to load (ex: "2020-02-22 00:00:00 +09:00")
+  -E, --eid-filter                      तेज़ गति के लिए केवल सामान्य EID स्कैन करें (./rules/config/target_event_IDs.txt)
+  -D, --enable-deprecated-rules         deprecated स्थिति वाले नियम सक्षम करें
+  -n, --enable-noisy-rules              noisy पर सेट किए गए नियम सक्षम करें (./rules/config/noisy_rules.txt)
+  -u, --enable-unsupported-rules        unsupported स्थिति वाले नियम सक्षम करें
+  -e, --exact-level <LEVEL>             केवल एक विशिष्ट स्तर वाले नियम लोड करें (informational, low, medium, high, critical)
+      --exclude-computer <COMPUTER...>  निर्दिष्ट कंप्यूटर नामों को स्कैन न करें (ex: ComputerA) (ex: ComputerA,ComputerB)
+      --exclude-eid <EID...>            तेज़ गति के लिए विशिष्ट EID स्कैन न करें (ex: 1) (ex: 1,4688)
+      --exclude-status <STATUS...>      स्थिति के अनुसार नियम लोड न करें (ex: experimental) (ex: stable,test)
+      --exclude-tag <TAG...>            विशिष्ट टैग वाले नियम लोड न करें (ex: sysmon)
+      --include-computer <COMPUTER...>  केवल निर्दिष्ट कंप्यूटर नामों को स्कैन करें (ex: ComputerA) (ex: ComputerA,ComputerB)
+      --include-eid <EID...>            तेज़ गति के लिए केवल निर्दिष्ट EID स्कैन करें (ex: 1) (ex: 1,4688)
+      --include-status <STATUS...>      केवल विशिष्ट स्थिति वाले नियम लोड करें (ex: experimental) (ex: stable,test)
+      --include-tag <TAG...>            केवल विशिष्ट टैग वाले नियम लोड करें (ex: attack.execution,attack.discovery)
+  -m, --min-level <LEVEL>               लोड करने के लिए नियमों का न्यूनतम स्तर (default: informational)
+      --time-offset <OFFSET>            एक ऑफसेट के आधार पर हाल के इवेंट्स स्कैन करें (ex: 1y, 3M, 30d, 24h, 30m)
+      --timeline-end <DATE>             लोड करने के लिए इवेंट लॉग का अंतिम समय (ex: "2022-02-22 23:59:59 +09:00")
+      --timeline-start <DATE>           लोड करने के लिए इवेंट लॉग का प्रारंभ समय (ex: "2020-02-22 00:00:00 +09:00")
 
 Output:
-  -o, --output <FILENAME-PREFIX>  Save pivot words to separate files (ex: PivotKeywords)
+  -o, --output <FILENAME-PREFIX>  पिवट शब्दों को अलग फ़ाइलों में सहेजें (ex: PivotKeywords)
 
 Display Settings:
-  -K, --no-color  Disable color output
-  -q, --quiet     Quiet mode: do not display the launch banner
-  -v, --verbose   Output verbose information
+  -K, --no-color  रंगीन आउटपुट अक्षम करें
+  -q, --quiet     शांत मोड: लॉन्च बैनर प्रदर्शित न करें
+  -v, --verbose   विस्तृत जानकारी आउटपुट करें
 ```
 
 ### `pivot-keywords-list` कमांड उदाहरण
@@ -469,54 +486,56 @@ hayabusa.exe pivot-keywords-list -d ../logs -m critical -o keywords`
 यह यह निर्धारित करने के लिए उपयोगी है कि क्या ऐसे इवेंट्स में कोई साक्ष्य है जो Hayabusa द्वारा पता नहीं लगाए जाते हैं।
 
 ```
-Usage: hayabusa.exe search <INPUT> <--keywords "<KEYWORDS>" OR --regex "<REGEX>"> [OPTIONS]
+Usage:
+  hayabusa.exe search <INPUT> <--keywords "<KEYWORDS>" OR --regex "<REGEX>"> [OPTIONS]
 
 Display Settings:
-  -K, --no-color  Disable color output
-  -q, --quiet     Quiet mode: do not display the launch banner
-  -v, --verbose   Output verbose information
+  -K, --no-color  रंगीन आउटपुट अक्षम करें
+  -q, --quiet     शांत मोड: लॉन्च बैनर प्रदर्शित न करें
+  -v, --verbose   विस्तृत जानकारी आउटपुट करें
 
 General Options:
-  -C, --clobber                        Overwrite files when saving
-  -h, --help                           Show the help menu
-  -Q, --quiet-errors                   Quiet errors mode: do not save error logs
-  -x, --recover-records                Carve evtx records from slack space (default: disabled)
-  -c, --rules-config <DIR>             Specify custom rule config directory (default: ./rules/config)
-  -t, --threads <NUMBER>               Number of threads (default: optimal number for performance)
-      --target-file-ext <FILE-EXT...>  Specify additional evtx file extensions (ex: evtx_data)
-  -s, --sort                           Sort results before saving the file (warning: this uses much more memory!)
+  -C, --clobber                        सहेजते समय फ़ाइलों को अधिलेखित करें
+  -h, --help                           सहायता मेनू दिखाएं
+  -Q, --quiet-errors                   शांत त्रुटि मोड: त्रुटि लॉग न सहेजें
+  -x, --recover-records                स्लैक स्पेस से evtx रिकॉर्ड कार्व करें (default: disabled)
+  -c, --rules-config <DIR>             कस्टम नियम कॉन्फ़िग डायरेक्टरी निर्दिष्ट करें (default: ./rules/config)
+      --target-file-ext <FILE-EXT...>  अतिरिक्त evtx फ़ाइल एक्सटेंशन निर्दिष्ट करें (ex: evtx_data)
+      --threads <NUMBER>               थ्रेड्स की संख्या (default: optimal number for performance)
+  -s, --sort                           फ़ाइल सहेजने से पहले परिणामों को क्रमबद्ध करें (चेतावनी: यह बहुत अधिक मेमोरी का उपयोग करती है!)
+  -V, --validate-checksums             चेकसम सत्यापन सक्षम करें
 
 Input:
-  -d, --directory <DIR>  Directory of multiple .evtx files
-  -f, --file <FILE>      File path to one .evtx file
-  -l, --live-analysis    Analyze the local C:\Windows\System32\winevt\Logs folder
+  -d, --directory <DIR>  एकाधिक .evtx फ़ाइलों की डायरेक्टरी
+  -f, --file <FILE>      एक .evtx फ़ाइल का फ़ाइल पथ
+  -l, --live-analysis    स्थानीय C:\Windows\System32\winevt\Logs फ़ोल्डर का विश्लेषण करें
 
 Filtering:
-  -a, --and-logic              Search keywords with AND logic (default: OR)
-  -F, --filter <FILTER...>     Filter by specific field(s)
-  -i, --ignore-case            Case-insensitive keyword search
-  -k, --keyword <KEYWORD...>   Search by keyword(s)
-  -r, --regex <REGEX>          Search by regular expression
-      --time-offset <OFFSET>   Scan recent events based on an offset (ex: 1y, 3M, 30d, 24h, 30m)
-      --timeline-end <DATE>    End time of the event logs to load (ex: "2022-02-22 23:59:59 +09:00")
-      --timeline-start <DATE>  Start time of the event logs to load (ex: "2020-02-22 00:00:00 +09:00")
+  -a, --and-logic              AND लॉजिक के साथ कीवर्ड खोजें (default: OR)
+  -F, --filter <FILTER...>     विशिष्ट फ़ील्ड द्वारा फ़िल्टर करें
+  -i, --ignore-case            केस-असंवेदनशील कीवर्ड खोज
+  -k, --keyword <KEYWORD...>   कीवर्ड द्वारा खोजें
+  -r, --regex <REGEX>          नियमित अभिव्यक्ति द्वारा खोजें
+      --time-offset <OFFSET>   एक ऑफसेट के आधार पर हाल के इवेंट्स स्कैन करें (ex: 1y, 3M, 30d, 24h, 30m)
+      --timeline-end <DATE>    लोड करने के लिए इवेंट लॉग का अंतिम समय (ex: "2022-02-22 23:59:59 +09:00")
+      --timeline-start <DATE>  लोड करने के लिए इवेंट लॉग का प्रारंभ समय (ex: "2020-02-22 00:00:00 +09:00")
 
 Output:
-  -b, --disable-abbreviations  Disable abbreviations
-  -J, --JSON-output            Save the search results in JSON format (ex: -J -o results.json)
-  -L, --JSONL-output           Save the search results in JSONL format (ex: -L -o results.jsonl)
-  -M, --multiline              Output event field information in multiple rows for CSV output
-  -o, --output <FILE>          Save the search results in CSV format (ex: search.csv)
-  -S, --tab-separator          Separate event field information by tabs
+  -b, --disable-abbreviations  संक्षिप्ताक्षर अक्षम करें
+  -J, --json-output            खोज परिणामों को JSON प्रारूप में सहेजें (ex: -J -o results.json)
+  -L, --jsonl-output           खोज परिणामों को JSONL प्रारूप में सहेजें (ex: -L -o results.jsonl)
+  -M, --multiline              CSV आउटपुट के लिए इवेंट फ़ील्ड जानकारी को न्यूलाइन वर्णों द्वारा अलग करें
+  -o, --output <FILE>          खोज परिणामों को CSV प्रारूप में सहेजें (ex: search.csv)
+  -S, --tab-separator          इवेंट फ़ील्ड जानकारी को टैब द्वारा अलग करें
 
 Time Format:
-      --European-time     Output timestamp in European time format (ex: 22-02-2022 22:00:00.123 +02:00)
-  -O, --ISO-8601          Output timestamp in original ISO-8601 format (ex: 2022-02-22T10:10:10.1234567Z) (Always UTC)
-      --RFC-2822          Output timestamp in RFC 2822 format (ex: Fri, 22 Feb 2022 22:00:00 -0600)
-      --RFC-3339          Output timestamp in RFC 3339 format (ex: 2022-02-22 22:00:00.123456-06:00)
-      --US-military-time  Output timestamp in US military time format (ex: 02-22-2022 22:00:00.123 -06:00)
-      --US-time           Output timestamp in US time format (ex: 02-22-2022 10:00:00.123 PM -06:00)
-  -U, --UTC               Output time in UTC format (default: local time)
+      --european-time     यूरोपीय समय प्रारूप में टाइमस्टैम्प आउटपुट करें (ex: 22-02-2022 22:00:00.123 +02:00)
+  -O, --iso-8601          मूल ISO-8601 प्रारूप में टाइमस्टैम्प आउटपुट करें (ex: 2022-02-22T10:10:10.1234567Z) (हमेशा UTC)
+      --rfc-2822          RFC 2822 प्रारूप में टाइमस्टैम्प आउटपुट करें (ex: Fri, 22 Feb 2022 22:00:00 -0600)
+      --rfc-3339          RFC 3339 प्रारूप में टाइमस्टैम्प आउटपुट करें (ex: 2022-02-22 22:00:00.123456-06:00)
+  -U, --utc               UTC प्रारूप में समय आउटपुट करें (default: local time)
+      --us-military-time  अमेरिकी सैन्य समय प्रारूप में टाइमस्टैम्प आउटपुट करें (ex: 02-22-2022 22:00:00.123 -06:00)
+      --us-time           अमेरिकी समय प्रारूप में टाइमस्टैम्प आउटपुट करें (ex: 02-22-2022 10:00:00.123 PM -06:00)
 ```
 
 ### `search` कमांड उदाहरण

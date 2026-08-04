@@ -17,9 +17,8 @@ use tokio::{runtime::Runtime, spawn, task::JoinHandle};
 use yaml_rust2::Yaml;
 
 use crate::detections::configs::Action;
-use crate::detections::configs::STORED_EKEY_ALIAS;
 use crate::detections::field_data_map::FieldDataMapKey;
-use crate::detections::message::{AlertMessage, DetectInfo, ERROR_LOG_STACK, TAGS_CONFIG};
+use crate::detections::message::{AlertMessage, DetectInfo, TAGS_CONFIG};
 use crate::detections::rule::correlation_parser::parse_correlation_rules;
 use crate::detections::rule::count::{AggRecordTimeInfo, get_sec_timeframe};
 use crate::detections::rule::{self, AggResult, CorrelationType, RuleNode};
@@ -39,10 +38,8 @@ use crate::options::profile::Profile::{
 };
 use crate::yaml::ParseYaml;
 
-use super::configs::{
-    EventKeyAliasConfig, GEOIP_DB_PARSER, GEOIP_DB_YAML, GEOIP_FILTER, STORED_STATIC, StoredStatic,
-};
-use super::message::{self, COMPUTER_MITRE_ATTCK_MAP, COMPUTER_MITRE_ATTCK_UNIQUE_KEYS};
+use super::configs::{EventKeyAliasConfig, StoredStatic};
+use super::message;
 
 /// Struct to hold information for one record of an event file.
 #[derive(Clone, Debug)]
@@ -71,8 +68,13 @@ impl Detection {
         Detection { rules: rule_nodes }
     }
 
-    pub fn start(self, runtime: &Runtime, records: Vec<EvtxRecordInfo>) -> (Self, Vec<DetectInfo>) {
-        runtime.block_on(self.execute_rules(records))
+    pub fn start(
+        self,
+        runtime: &Runtime,
+        records: Vec<EvtxRecordInfo>,
+        stored_static: Arc<StoredStatic>,
+    ) -> (Self, Vec<DetectInfo>) {
+        runtime.block_on(self.execute_rules(records, stored_static))
     }
 
     /// Parses the rule files under the given path and returns the successfully initialized rules,
@@ -83,6 +85,7 @@ impl Detection {
         rulespath: &Path,
         exclude_ids: &filter::RuleExclude,
         stored_static: &StoredStatic,
+        html_reporter: &mut htmlreport::HtmlReporter,
     ) -> Vec<RuleNode> {
         // Execute rule file parsing.
         let mut rulefile_loader = ParseYaml::new(stored_static);
@@ -99,7 +102,8 @@ impl Detection {
                 AlertMessage::alert(&errmsg).ok();
             }
             if !stored_static.quiet_errors_flag {
-                ERROR_LOG_STACK
+                stored_static
+                    .error_log_stack
                     .lock()
                     .unwrap()
                     .push(format!("[ERROR] {errmsg}"));
@@ -125,12 +129,14 @@ impl Detection {
                     println!();
                 }
                 if !stored_static.quiet_errors_flag {
-                    ERROR_LOG_STACK
+                    stored_static
+                        .error_log_stack
                         .lock()
                         .unwrap()
                         .push(format!("[WARN] {errmsg_body}"));
                     err_msgs.iter().for_each(|err_msg| {
-                        ERROR_LOG_STACK
+                        stored_static
+                            .error_log_stack
                             .lock()
                             .unwrap()
                             .push(format!("[WARN] {err_msg}"));
@@ -156,23 +162,36 @@ impl Detection {
             || stored_static.computer_metrics_flag
             || stored_static.log_metrics_flag)
         {
-            Detection::print_rule_load_info(&rulefile_loader, &parse_error_count, stored_static);
+            Detection::print_rule_load_info(
+                &rulefile_loader,
+                &parse_error_count,
+                stored_static,
+                html_reporter,
+            );
         }
         ret
     }
 
     // Execute all rules against all event records; each rule runs in its own async task.
-    async fn execute_rules(mut self, records: Vec<EvtxRecordInfo>) -> (Self, Vec<DetectInfo>) {
+    async fn execute_rules(
+        mut self,
+        records: Vec<EvtxRecordInfo>,
+        stored_static: Arc<StoredStatic>,
+    ) -> (Self, Vec<DetectInfo>) {
         let records_arc = Arc::new(records);
         // Spawn an async task for each rule and start executing them.
         let rules = self.rules;
-        let handles: Vec<JoinHandle<(RuleNode, Vec<DetectInfo>)>> = rules
-            .into_iter()
-            .map(|rule| {
-                let records_cloned = Arc::clone(&records_arc);
-                spawn(async move { Detection::execute_rule(rule, records_cloned) })
-            })
-            .collect();
+        let handles: Vec<JoinHandle<(RuleNode, Vec<DetectInfo>)>> =
+            rules
+                .into_iter()
+                .map(|rule| {
+                    let records_cloned = Arc::clone(&records_arc);
+                    let stored_static_cloned = Arc::clone(&stored_static);
+                    spawn(async move {
+                        Detection::execute_rule(rule, records_cloned, stored_static_cloned)
+                    })
+                })
+                .collect();
 
         // Wait for all tasks to complete execution.
         let mut rules = vec![];
@@ -207,9 +226,13 @@ impl Detection {
 
     /// Evaluates a Sigma temporal correlation: for each aggregation result of the first
     /// referenced rule (`ids[0]`), checks that every other referenced rule also produced a
-    /// result within `timeframe`. When `temporal_ordered` is true the other results must occur
-    /// at or after the base result; otherwise anywhere within +/- `timeframe` of the base result
-    /// counts. Returns the base results for which all referenced rules matched.
+    /// result within `timeframe`. Only results sharing the base result's `group-by` value
+    /// (`AggResult.key`) are considered, so events from different groups (e.g. different
+    /// Computers) are never correlated together. When `temporal_ordered` is true the referenced
+    /// rules must match in the order they are listed: each match must occur at or after the
+    /// previous rule's match and within the single timeframe window anchored at the base result.
+    /// When false, any result within +/- `timeframe` of the base result counts. Returns the
+    /// base results for which all referenced rules matched.
     fn detect_within_timeframe(
         ids: &[String],
         temporal_ref_all_results: &HashMap<String, Vec<AggResult>>,
@@ -223,25 +246,39 @@ impl Detection {
         {
             for base in base_records {
                 let mut found = false;
-                let mut last_base = base;
+                // Ordered correlations must match the referenced rules in sequence, so track the
+                // timestamp the next rule is allowed to match at. It starts at the base event and
+                // advances to each matched event; every match must also stay within the timeframe
+                // window anchored at the base event.
+                let mut order_floor = base.start_datetime;
+                let window_end = base.start_datetime + timeframe;
                 for id in ids.iter().skip(1) {
                     found = false;
                     if let Some(target_records) = temporal_ref_all_results.get(id.as_str()) {
                         if temporal_ordered {
-                            found = target_records.iter().any(|t| {
-                                (t.start_datetime >= last_base.start_datetime)
-                                    && (t.start_datetime <= last_base.start_datetime + timeframe)
-                            });
+                            // Only consider matches sharing the base's group-by value
+                            // (AggResult.key), then pick the earliest candidate at or after the
+                            // previous match so the remaining rules keep the widest window.
+                            if let Some(next) = target_records
+                                .iter()
+                                .filter(|target| target.key == base.key)
+                                .map(|target| target.start_datetime)
+                                .filter(|&time| time >= order_floor && time <= window_end)
+                                .min()
+                            {
+                                found = true;
+                                order_floor = next;
+                            }
                         } else {
-                            found = target_records.iter().any(|t| {
-                                (t.start_datetime >= base.start_datetime - timeframe)
-                                    && (t.start_datetime <= base.start_datetime + timeframe)
+                            found = target_records.iter().any(|target| {
+                                target.key == base.key
+                                    && (target.start_datetime >= base.start_datetime - timeframe)
+                                    && (target.start_datetime <= base.start_datetime + timeframe)
                             });
                         }
                         if !found {
                             break;
                         }
-                        last_base = base;
                     }
                 }
                 if found {
@@ -286,7 +323,7 @@ impl Detection {
             };
             if ref_ids
                 .iter()
-                .all(|x| detected_temporal_refs.contains_key(x))
+                .all(|ref_id| detected_temporal_refs.contains_key(ref_id))
             {
                 let mut data = HashMap::new();
                 for id in ref_ids {
@@ -315,10 +352,10 @@ impl Detection {
     fn execute_rule(
         mut rule: RuleNode,
         records: Arc<Vec<EvtxRecordInfo>>,
+        stored_static: Arc<StoredStatic>,
     ) -> (RuleNode, Vec<DetectInfo>) {
         let agg_condition = rule.has_agg_condition();
-        let binding = STORED_STATIC.read().unwrap();
-        let stored_static = binding.as_ref().unwrap();
+        let stored_static = stored_static.as_ref();
         let mut ret = vec![];
         for record_info in records.as_ref() {
             let result = rule.select(
@@ -327,13 +364,18 @@ impl Detection {
                 stored_static.quiet_errors_flag,
                 stored_static.json_input_flag,
                 &stored_static.eventkey_alias,
+                &stored_static.error_log_stack,
             );
             if !result {
                 continue;
             }
 
             if stored_static.pivot_keyword_list_flag {
-                insert_pivot_keyword(&record_info.record, &stored_static.eventkey_alias);
+                insert_pivot_keyword(
+                    &record_info.record,
+                    &stored_static.eventkey_alias,
+                    &stored_static.pivot_keyword,
+                );
                 continue;
             }
 
@@ -366,7 +408,7 @@ impl Detection {
             .as_ref()
             .unwrap()
             .iter()
-            .any(|(_s, p)| *p == RecordID(Default::default()))
+            .any(|(_s, profile)| *profile == RecordID(Default::default()))
         {
             get_serde_number_to_string(
                 &record_info.record["Event"]["System"]["EventRecordID"],
@@ -402,9 +444,11 @@ impl Detection {
 
         let mut profile_converter: HashMap<&str, Profile> = HashMap::new();
         let tags_config_values: Vec<&CompactString> = TAGS_CONFIG.values().collect();
-        let binding = STORED_EKEY_ALIAS.read().unwrap();
-        let eventkey_alias = binding.as_ref().unwrap();
-        let is_json_timeline = matches!(stored_static.config.action, Some(Action::JsonTimeline(_)));
+        let eventkey_alias = &stored_static.eventkey_alias;
+        let is_json_timeline = matches!(
+            &stored_static.config.action,
+            Some(Action::DfirTimeline(opt)) if !matches!(opt.output_type, crate::detections::configs::OutputType::Csv)
+        );
         let computer_name = CompactString::from(
             record_info.record["Event"]["System"]["Computer"]
                 .as_str()
@@ -512,12 +556,12 @@ impl Detection {
                 MitreTactics(_) => {
                     let tactics = tag_info
                         .iter()
-                        .filter(|x| tags_config_values.contains(&&CompactString::from(*x)));
+                        .filter(|tag| tags_config_values.contains(&&CompactString::from(*tag)));
                     // .map(|x| TAGS_CONFIG.get(x.into()).unwrap());
                     let output_tactics_str = CompactString::from(
                         tactics
                             .clone()
-                            .filter_map(|x| x.split(',').next())
+                            .filter_map(|tag| tag.split(',').next())
                             .join(" ¦ "),
                     );
 
@@ -528,20 +572,23 @@ impl Detection {
 
                     let html_output_tactics_str = tactics
                         .into_iter()
-                        .map(|x| x.split(',').nth(1).unwrap_or_default())
+                        .map(|tag| tag.split(',').nth(1).unwrap_or_default())
                         .collect_vec();
                     if stored_static.html_report_flag && !html_output_tactics_str.is_empty() {
-                        let mut v = COMPUTER_MITRE_ATTCK_MAP
+                        let mut computer_entry = stored_static
+                            .computer_mitre_attck_map
                             .entry(computer_name_to_mitre_tactics.clone())
                             .or_default();
-                        let (_, attack_tactics) = v.pair_mut();
+                        let (_, attack_tactics) = computer_entry.pair_mut();
                         for html_attck_tac in html_output_tactics_str {
                             let tactic_key: CompactString = html_attck_tac.into();
                             let unique_key = CompactString::from(format!(
                                 "{}|{}|{}",
-                                &computer_name_to_mitre_tactics, &tactic_key, &rule.rule_path
+                                computer_name_to_mitre_tactics, tactic_key, rule.rule_path
                             ));
-                            let is_unique = COMPUTER_MITRE_ATTCK_UNIQUE_KEYS.insert(unique_key);
+                            let is_unique = stored_static
+                                .computer_mitre_attck_unique_keys
+                                .insert(unique_key);
                             if let Some(entry) =
                                 attack_tactics.iter_mut().find(|(t, _, _)| t == tactic_key)
                             {
@@ -558,14 +605,14 @@ impl Detection {
                 MitreTags(_) => {
                     let techniques = tag_info
                         .iter()
-                        .filter(|x| {
-                            !tags_config_values.contains(&&CompactString::from(*x))
-                                && (x.starts_with("attack.t")
-                                    || x.starts_with("attack.g")
-                                    || x.starts_with("attack.s"))
+                        .filter(|tag| {
+                            !tags_config_values.contains(&&CompactString::from(*tag))
+                                && (tag.starts_with("attack.t")
+                                    || tag.starts_with("attack.g")
+                                    || tag.starts_with("attack.s"))
                         })
-                        .map(|y| {
-                            let replaced_tag = y.replace("attack.", "");
+                        .map(|tag| {
+                            let replaced_tag = tag.replace("attack.", "");
                             make_ascii_titlecase(&replaced_tag)
                         })
                         .join(" ¦ ");
@@ -574,27 +621,19 @@ impl Detection {
                 OtherTags(_) => {
                     let tags = tag_info
                         .iter()
-                        .filter(|x| {
-                            !(TAGS_CONFIG.values().contains(&CompactString::from(*x))
-                                || x.starts_with("attack.t")
-                                || x.starts_with("attack.g")
-                                || x.starts_with("attack.s"))
+                        .filter(|tag| {
+                            !(TAGS_CONFIG.values().contains(&CompactString::from(*tag))
+                                || tag.starts_with("attack.t")
+                                || tag.starts_with("attack.g")
+                                || tag.starts_with("attack.s"))
                         })
                         .join(" ¦ ");
                     profile_converter.insert(key.as_str(), OtherTags(tags.into()));
                 }
                 RuleAuthor(_) => {
-                    let author = if stored_static.multiline_flag || stored_static.tab_separator_flag
-                    {
-                        rule.yaml["author"]
-                            .as_str()
-                            .unwrap_or("-")
-                            .split([',', '/', ';'])
-                            .map(|x| x.trim())
-                            .join("🛂🛂")
-                    } else {
-                        rule.yaml["author"].as_str().unwrap_or("-").to_string()
-                    };
+                    // Store the raw author string; the multi-author formatting for multiline/tab
+                    // CSV is applied at the output boundary (see results::csv::emit_csv_inner).
+                    let author = rule.yaml["author"].as_str().unwrap_or("-").to_string();
                     profile_converter.insert(key.as_str(), RuleAuthor(author.into()));
                 }
                 RuleCreationDate(_) => {
@@ -683,8 +722,7 @@ impl Detection {
                     profile_converter.insert("TgtASN", TgtASN("".into()));
                     profile_converter.insert("TgtCountry", TgtCountry("".into()));
                     profile_converter.insert("TgtCity", TgtCity("".into()));
-                    let binding = GEOIP_DB_YAML.read().unwrap();
-                    let geo_ip_mapping = binding.as_ref().unwrap();
+                    let geo_ip_mapping = stored_static.geo_ip_db_yaml.as_ref().unwrap();
                     if geo_ip_mapping.is_empty() {
                         continue;
                     }
@@ -692,8 +730,7 @@ impl Detection {
                     if target_alias.is_none() {
                         continue;
                     }
-                    let binding = GEOIP_FILTER.read().unwrap();
-                    let target_condition = binding.as_ref().unwrap();
+                    let target_condition = stored_static.geo_ip_filter.as_ref().unwrap();
                     let mut geoip_target_flag = false;
                     for condition in target_condition.iter() {
                         geoip_target_flag = condition.as_hash().unwrap().iter().any(
@@ -718,15 +755,14 @@ impl Detection {
                             .as_vec()
                             .unwrap()
                             .iter()
-                            .map(|x| x.as_str().unwrap())
+                            .map(|alias| alias.as_str().unwrap())
                             .collect(),
                         &record_info.record,
                         eventkey_alias,
                         false,
                     );
-                    let geo_data = GEOIP_DB_PARSER
-                        .read()
-                        .unwrap()
+                    let geo_data = stored_static
+                        .geo_ip_search
                         .as_ref()
                         .unwrap()
                         .convert_ip_to_geo(&alias_data);
@@ -736,7 +772,7 @@ impl Detection {
                     let binding = geo_data.unwrap();
                     let mut tgt_data = binding
                         .split('🦅')
-                        .map(|x| if x.is_empty() { "" } else { x });
+                        .map(|geo_field| if geo_field.is_empty() { "" } else { geo_field });
                     profile_converter
                         .entry("TgtASN")
                         .and_modify(|p| *p = TgtASN(tgt_data.next().unwrap().to_owned().into()));
@@ -755,18 +791,16 @@ impl Detection {
                     profile_converter.insert("SrcASN", SrcASN("".into()));
                     profile_converter.insert("SrcCountry", SrcCountry("".into()));
                     profile_converter.insert("SrcCity", SrcCity("".into()));
-                    let binding = GEOIP_DB_YAML.read().unwrap();
-                    let geo_ip_mapping = binding.as_ref().unwrap();
+                    let geo_ip_mapping = stored_static.geo_ip_db_yaml.as_ref().unwrap();
                     if geo_ip_mapping.is_empty() {
                         continue;
                     }
                     let target_alias = &geo_ip_mapping.get("SrcIP");
-                    if target_alias.is_none() || GEOIP_FILTER.read().unwrap().is_none() {
+                    if target_alias.is_none() || stored_static.geo_ip_filter.is_none() {
                         continue;
                     }
 
-                    let binding = GEOIP_FILTER.read().unwrap();
-                    let target_condition = binding.as_ref().unwrap();
+                    let target_condition = stored_static.geo_ip_filter.as_ref().unwrap();
                     let mut geoip_target_flag = false;
                     for condition in target_condition.iter() {
                         geoip_target_flag = condition.as_hash().unwrap().iter().any(
@@ -792,16 +826,15 @@ impl Detection {
                             .as_vec()
                             .unwrap()
                             .iter()
-                            .map(|x| x.as_str().unwrap())
+                            .map(|alias| alias.as_str().unwrap())
                             .collect(),
                         &record_info.record,
                         eventkey_alias,
                         false,
                     );
 
-                    let geo_data = GEOIP_DB_PARSER
-                        .read()
-                        .unwrap()
+                    let geo_data = stored_static
+                        .geo_ip_search
                         .as_ref()
                         .unwrap()
                         .convert_ip_to_geo(&alias_data);
@@ -811,7 +844,7 @@ impl Detection {
                     let binding = geo_data.unwrap();
                     let mut src_data = binding
                         .split('🦅')
-                        .map(|x| if x.is_empty() { "" } else { x });
+                        .map(|geo_field| if geo_field.is_empty() { "" } else { geo_field });
                     profile_converter
                         .entry("SrcASN")
                         .and_modify(|p| *p = SrcASN(src_data.next().unwrap().to_owned().into()));
@@ -837,7 +870,7 @@ impl Detection {
         // details configured for this provider and event ID combination, and if none exists,
         // output all of the record's field data.
         let details_fmt_str = match rule.yaml["details"].as_str() {
-            Some(s) => s.to_string(),
+            Some(details) => details.to_string(),
             None => match stored_static
                 .default_details
                 .get(&CompactString::from(format!("{provider}_{eid}")))
@@ -898,7 +931,10 @@ impl Detection {
         let computers =
             Detection::join_agg_values(&agg_result.agg_record_time_info, |x| x.computer.clone());
         let tags_config_values: Vec<&CompactString> = TAGS_CONFIG.values().collect();
-        let is_json_timeline = matches!(stored_static.config.action, Some(Action::JsonTimeline(_)));
+        let is_json_timeline = matches!(
+            &stored_static.config.action,
+            Some(Action::DfirTimeline(opt)) if !matches!(opt.output_type, crate::detections::configs::OutputType::Csv)
+        );
         for (key, profile) in stored_static.profiles.as_ref().unwrap().iter() {
             match profile {
                 Timestamp(_) => {
@@ -1003,11 +1039,11 @@ impl Detection {
                 MitreTactics(_) => {
                     let tactics = tag_info
                         .iter()
-                        .filter(|x| tags_config_values.contains(&&CompactString::from(*x)));
+                        .filter(|tag| tags_config_values.contains(&&CompactString::from(*tag)));
                     let output_tactics_str = CompactString::from(
                         tactics
                             .clone()
-                            .filter_map(|x| x.split(',').next())
+                            .filter_map(|tag| tag.split(',').next())
                             .join(" ¦ "),
                     );
                     profile_converter.insert(
@@ -1018,14 +1054,14 @@ impl Detection {
                 MitreTags(_) => {
                     let techniques = tag_info
                         .iter()
-                        .filter(|x| {
-                            !tags_config_values.contains(&&CompactString::from(*x))
-                                && (x.starts_with("attack.t")
-                                    || x.starts_with("attack.g")
-                                    || x.starts_with("attack.s"))
+                        .filter(|tag| {
+                            !tags_config_values.contains(&&CompactString::from(*tag))
+                                && (tag.starts_with("attack.t")
+                                    || tag.starts_with("attack.g")
+                                    || tag.starts_with("attack.s"))
                         })
-                        .map(|y| {
-                            let replaced_tag = y.replace("attack.", "");
+                        .map(|tag| {
+                            let replaced_tag = tag.replace("attack.", "");
                             make_ascii_titlecase(&replaced_tag)
                         })
                         .join(" ¦ ");
@@ -1034,27 +1070,19 @@ impl Detection {
                 OtherTags(_) => {
                     let tags = tag_info
                         .iter()
-                        .filter(|x| {
-                            !(tags_config_values.contains(&&CompactString::from(*x))
-                                || x.starts_with("attack.t")
-                                || x.starts_with("attack.g")
-                                || x.starts_with("attack.s"))
+                        .filter(|tag| {
+                            !(tags_config_values.contains(&&CompactString::from(*tag))
+                                || tag.starts_with("attack.t")
+                                || tag.starts_with("attack.g")
+                                || tag.starts_with("attack.s"))
                         })
                         .join(" ¦ ");
                     profile_converter.insert(key.as_str(), OtherTags(tags.into()));
                 }
                 RuleAuthor(_) => {
-                    let author = if stored_static.multiline_flag || stored_static.tab_separator_flag
-                    {
-                        rule.yaml["author"]
-                            .as_str()
-                            .unwrap_or("-")
-                            .split([',', '/', ';'])
-                            .map(|x| x.trim())
-                            .join("🛂🛂")
-                    } else {
-                        rule.yaml["author"].as_str().unwrap_or("-").to_string()
-                    };
+                    // Store the raw author string; the multi-author formatting for multiline/tab
+                    // CSV is applied at the output boundary (see results::csv::emit_csv_inner).
+                    let author = rule.yaml["author"].as_str().unwrap_or("-").to_string();
                     profile_converter.insert(key.as_str(), RuleAuthor(author.into()));
                 }
                 RuleCreationDate(_) => {
@@ -1138,8 +1166,7 @@ impl Detection {
             agg_result: Some(agg_result),
             details_convert_map: HashMap::default(),
         };
-        let binding = STORED_EKEY_ALIAS.read().unwrap();
-        let eventkey_alias = binding.as_ref().unwrap();
+        let eventkey_alias = &stored_static.eventkey_alias;
 
         let field_data_map_key = FieldDataMapKey::default();
 
@@ -1238,6 +1265,7 @@ impl Detection {
         parse_yaml: &ParseYaml,
         err_rc: &u128,
         stored_static: &StoredStatic,
+        html_reporter: &mut htmlreport::HtmlReporter,
     ) {
         let rc = &parse_yaml.rule_type_cnt;
         let ld_rc = &parse_yaml.rule_load_cnt;
@@ -1304,14 +1332,14 @@ impl Detection {
         let output_opt = stored_static.output_option.as_ref().unwrap();
         let enable_deprecated_flag = output_opt.enable_deprecated_rules;
         let enable_unsupported_flag = output_opt.enable_unsupported_rules;
-        let is_filtered_rule_flag = |x: &CompactString| {
-            x == "deprecated" && !enable_deprecated_flag
-                || x == "unsupported" && !enable_unsupported_flag
+        let is_filtered_rule_flag = |status: &CompactString| {
+            status == "deprecated" && !enable_deprecated_flag
+                || status == "unsupported" && !enable_unsupported_flag
         };
         let total_loaded_rule_cnt: u128 = sorted_st_rc
             .iter()
-            .filter(|(k, _)| !is_filtered_rule_flag(k))
-            .map(|(_, v)| *v)
+            .filter(|(status, _)| !is_filtered_rule_flag(status))
+            .map(|(_, count)| *count)
             .sum();
         sorted_st_rc.sort_by(|a, b| a.0.cmp(b.0));
         sorted_st_rc.into_iter().for_each(|(key, value)| {
@@ -1526,7 +1554,7 @@ impl Detection {
             html_report_stock.push(format!("- {tmp_total_detect_output}"));
         }
         if !html_report_stock.is_empty() {
-            htmlreport::add_md_data("General Overview {#general_overview}", html_report_stock);
+            html_reporter.add_md_data(htmlreport::GENERAL_OVERVIEW_SECTION, html_report_stock);
         }
     }
 
@@ -1570,9 +1598,8 @@ mod tests {
     use crate::detections::configs::Action;
     use crate::detections::configs::CURRENT_EXE_PATH;
     use crate::detections::configs::Config;
-    use crate::detections::configs::CsvOutputOption;
+    use crate::detections::configs::DfirTimelineOption;
     use crate::detections::configs::OutputOption;
-    use crate::detections::configs::STORED_EKEY_ALIAS;
     use crate::detections::configs::StoredStatic;
     use crate::detections::configs::load_eventkey_alias;
     use crate::detections::detection::Detection;
@@ -1584,8 +1611,8 @@ mod tests {
     use crate::options::profile::Profile;
 
     fn create_dummy_stored_static() -> StoredStatic {
-        StoredStatic::create_static_data(Some(Config {
-            action: Some(Action::CsvTimeline(CsvOutputOption {
+        StoredStatic::create_static_data(Config {
+            action: Some(Action::DfirTimeline(DfirTimelineOption {
                 output_options: OutputOption {
                     min_level: "informational".to_string(),
                     include_status: Some(vec!["*".to_string()]),
@@ -1595,7 +1622,7 @@ mod tests {
                 ..Default::default()
             })),
             ..Default::default()
-        }))
+        })
     }
 
     #[test]
@@ -1609,8 +1636,104 @@ mod tests {
             opt_rule_path,
             &filter::exclude_ids(&dummy_stored_static),
             &dummy_stored_static,
+            &mut crate::options::htmlreport::HtmlReporter::default(),
         );
         assert_eq!(5, cole.len());
+    }
+
+    #[test]
+    fn test_detect_within_timeframe_enforces_group_by() {
+        use chrono::Duration;
+        use hashbrown::HashMap;
+
+        let base_time = Utc.with_ymd_and_hms(2024, 1, 1, 10, 0, 0).unwrap();
+        let at = |min: i64| base_time + Duration::minutes(min);
+        // `AggResult.key` holds the group-by value (e.g. the Computer name).
+        let agg = |key: &str, time| AggResult::new(1, key.to_string(), vec![], time, vec![]);
+        let ids = vec!["a".to_string(), "b".to_string()];
+        let timeframe = Duration::minutes(10);
+
+        // Base rule "a" matched for Host1, but rule "b" only matched for Host2 within the
+        // window. The correlation must NOT fire because the matches are from different groups.
+        let mut diff_group: HashMap<String, Vec<AggResult>> = HashMap::new();
+        diff_group.insert("a".to_string(), vec![agg("Host1", at(0))]);
+        diff_group.insert("b".to_string(), vec![agg("Host2", at(5))]);
+        for ordered in [true, false] {
+            assert!(
+                Detection::detect_within_timeframe(&ids, &diff_group, timeframe, ordered)
+                    .is_empty(),
+                "matches from different group-by values must not correlate (ordered={ordered})"
+            );
+        }
+
+        // When rule "b" also matched for Host1 within the window, the correlation fires and the
+        // returned base result is the Host1 group (the mismatched Host2 candidate is ignored).
+        let mut same_group: HashMap<String, Vec<AggResult>> = HashMap::new();
+        same_group.insert("a".to_string(), vec![agg("Host1", at(0))]);
+        same_group.insert(
+            "b".to_string(),
+            vec![agg("Host2", at(3)), agg("Host1", at(5))],
+        );
+        for ordered in [true, false] {
+            let res = Detection::detect_within_timeframe(&ids, &same_group, timeframe, ordered);
+            assert_eq!(
+                res.len(),
+                1,
+                "same-group matches should correlate (ordered={ordered})"
+            );
+            assert_eq!(res[0].key, "Host1");
+        }
+    }
+
+    #[test]
+    fn test_detect_within_timeframe_ordered_enforces_order() {
+        use chrono::Duration;
+        use hashbrown::HashMap;
+
+        let base = Utc.with_ymd_and_hms(2024, 1, 1, 10, 0, 0).unwrap();
+        let at = |min: i64| base + Duration::minutes(min);
+        let agg = |time| AggResult::new(1, "_".to_string(), vec![], time, vec![]);
+        let ids = vec!["a".to_string(), "b".to_string(), "c".to_string()];
+        let timeframe = Duration::minutes(10);
+
+        // In-order events a(0) -> b(5) -> c(8) satisfy an ordered correlation.
+        let mut in_order: HashMap<String, Vec<AggResult>> = HashMap::new();
+        in_order.insert("a".to_string(), vec![agg(at(0))]);
+        in_order.insert("b".to_string(), vec![agg(at(5))]);
+        in_order.insert("c".to_string(), vec![agg(at(8))]);
+        assert_eq!(
+            Detection::detect_within_timeframe(&ids, &in_order, timeframe, true).len(),
+            1,
+            "in-order events should satisfy an ordered correlation"
+        );
+
+        // Out-of-order events a(0), c(2), b(5): the rule order is a,b,c but c occurs before b,
+        // so an ordered correlation must NOT fire (regression test for issue #1810).
+        let mut out_of_order: HashMap<String, Vec<AggResult>> = HashMap::new();
+        out_of_order.insert("a".to_string(), vec![agg(at(0))]);
+        out_of_order.insert("b".to_string(), vec![agg(at(5))]);
+        out_of_order.insert("c".to_string(), vec![agg(at(2))]);
+        assert!(
+            Detection::detect_within_timeframe(&ids, &out_of_order, timeframe, true).is_empty(),
+            "out-of-order events must not satisfy an ordered correlation"
+        );
+
+        // The same events DO satisfy an unordered temporal correlation.
+        assert_eq!(
+            Detection::detect_within_timeframe(&ids, &out_of_order, timeframe, false).len(),
+            1,
+            "an unordered correlation ignores event order"
+        );
+
+        // Events that fall outside the timeframe window are not correlated even when ordered.
+        let mut out_of_window: HashMap<String, Vec<AggResult>> = HashMap::new();
+        out_of_window.insert("a".to_string(), vec![agg(at(0))]);
+        out_of_window.insert("b".to_string(), vec![agg(at(5))]);
+        out_of_window.insert("c".to_string(), vec![agg(at(12))]);
+        assert!(
+            Detection::detect_within_timeframe(&ids, &out_of_window, timeframe, true).is_empty(),
+            "events beyond the timeframe window must not correlate"
+        );
     }
 
     #[test]
@@ -1784,7 +1907,7 @@ mod tests {
     fn test_insert_message_with_geoip() {
         let test_filepath: &str = "test.evtx";
         let test_rule_path: &str = "test-rule.yml";
-        let dummy_action = Action::CsvTimeline(CsvOutputOption {
+        let dummy_action = Action::DfirTimeline(DfirTimelineOption {
             output_options: OutputOption {
                 min_level: "informational".to_string(),
                 no_summary: true,
@@ -1795,10 +1918,10 @@ mod tests {
             output: Some(Path::new("./test_emit_csv.csv").to_path_buf()),
             ..Default::default()
         });
-        let dummy_config = Some(Config {
+        let dummy_config = Config {
             action: Some(dummy_action),
             debug: false,
-        });
+        };
         let stored_static = StoredStatic::create_static_data(dummy_config);
         {
             let eventkey_alias = load_eventkey_alias(
@@ -1811,7 +1934,6 @@ mod tests {
                 .to_str()
                 .unwrap(),
             );
-            *STORED_EKEY_ALIAS.write().unwrap() = Some(eventkey_alias);
 
             let val = r#"
             {
@@ -1836,8 +1958,14 @@ mod tests {
             let dummy_rule = RuleNode::new(test_rule_path.to_string(), Yaml::from_str(""));
             let keys = detections::rule::get_detection_keys(&dummy_rule);
 
-            let input_evtxrecord =
-                utils::create_rec_info(event, test_filepath.to_owned(), &keys, &false, &false);
+            let input_evtxrecord = utils::create_rec_info(
+                event,
+                test_filepath.to_owned(),
+                &keys,
+                &false,
+                &false,
+                &eventkey_alias,
+            );
             {
                 let rule = &dummy_rule;
                 let record_info = &input_evtxrecord;
@@ -1867,7 +1995,7 @@ mod tests {
     fn test_filtered_insert_message_with_geoip() {
         let test_filepath: &str = "test.evtx";
         let test_rule_path: &str = "test-rule.yml";
-        let dummy_action = Action::CsvTimeline(CsvOutputOption {
+        let dummy_action = Action::DfirTimeline(DfirTimelineOption {
             output_options: OutputOption {
                 min_level: "informational".to_string(),
                 no_summary: true,
@@ -1878,10 +2006,10 @@ mod tests {
             output: Some(Path::new("./test_emit_csv.csv").to_path_buf()),
             ..Default::default()
         });
-        let dummy_config = Some(Config {
+        let dummy_config = Config {
             action: Some(dummy_action),
             debug: false,
-        });
+        };
         let stored_static = StoredStatic::create_static_data(dummy_config);
         {
             let eventkey_alias = load_eventkey_alias(
@@ -1894,7 +2022,6 @@ mod tests {
                 .to_str()
                 .unwrap(),
             );
-            *STORED_EKEY_ALIAS.write().unwrap() = Some(eventkey_alias);
 
             let val = r#"
             {
@@ -1919,8 +2046,14 @@ mod tests {
             let dummy_rule = RuleNode::new(test_rule_path.to_string(), Yaml::from_str(""));
             let keys = detections::rule::get_detection_keys(&dummy_rule);
 
-            let input_evtxrecord =
-                utils::create_rec_info(event, test_filepath.to_owned(), &keys, &false, &false);
+            let input_evtxrecord = utils::create_rec_info(
+                event,
+                test_filepath.to_owned(),
+                &keys,
+                &false,
+                &false,
+                &eventkey_alias,
+            );
             {
                 let rule = &dummy_rule;
                 let record_info = &input_evtxrecord;
@@ -1945,7 +2078,7 @@ mod tests {
     #[test]
     fn test_insert_message_extra_field_info() {
         let test_filepath: &str = "test.evtx";
-        let dummy_action = Action::CsvTimeline(CsvOutputOption {
+        let dummy_action = Action::DfirTimeline(DfirTimelineOption {
             output_options: OutputOption {
                 min_level: "informational".to_string(),
                 no_summary: true,
@@ -1957,10 +2090,10 @@ mod tests {
             multiline: true,
             ..Default::default()
         });
-        let dummy_config = Some(Config {
+        let dummy_config = Config {
             action: Some(dummy_action),
             debug: false,
-        });
+        };
         let mut stored_static = StoredStatic::create_static_data(dummy_config);
         stored_static.profiles.as_mut().unwrap().push((
             "ExtraFieldInfo".into(),
@@ -1977,7 +2110,6 @@ mod tests {
                 .to_str()
                 .unwrap(),
             );
-            *STORED_EKEY_ALIAS.write().unwrap() = Some(eventkey_alias);
 
             let val = r#"
             {
@@ -2015,8 +2147,14 @@ mod tests {
             assert!(rule_node.init(&create_dummy_stored_static()).is_ok());
 
             let keys = detections::rule::get_detection_keys(&rule_node);
-            let input_evtxrecord =
-                utils::create_rec_info(event, test_filepath.to_owned(), &keys, &false, &false);
+            let input_evtxrecord = utils::create_rec_info(
+                event,
+                test_filepath.to_owned(),
+                &keys,
+                &false,
+                &false,
+                &eventkey_alias,
+            );
             {
                 let rule = &rule_node;
                 let record_info = &input_evtxrecord;
@@ -2040,7 +2178,7 @@ mod tests {
     #[test]
     fn test_insert_message_multiline_ruleauthor() {
         let test_filepath: &str = "test.evtx";
-        let dummy_action = Action::CsvTimeline(CsvOutputOption {
+        let dummy_action = Action::DfirTimeline(DfirTimelineOption {
             output_options: OutputOption {
                 min_level: "informational".to_string(),
                 no_wizard: true,
@@ -2050,10 +2188,10 @@ mod tests {
             multiline: true,
             ..Default::default()
         });
-        let dummy_config = Some(Config {
+        let dummy_config = Config {
             action: Some(dummy_action),
             debug: false,
-        });
+        };
         let mut stored_static = StoredStatic::create_static_data(dummy_config);
         stored_static
             .profiles
@@ -2071,7 +2209,6 @@ mod tests {
                 .to_str()
                 .unwrap(),
             );
-            *STORED_EKEY_ALIAS.write().unwrap() = Some(eventkey_alias);
 
             let val = r#"
             {
@@ -2109,8 +2246,14 @@ mod tests {
             assert!(rule_node.init(&create_dummy_stored_static()).is_ok());
 
             let keys = detections::rule::get_detection_keys(&rule_node);
-            let input_evtxrecord =
-                utils::create_rec_info(event, test_filepath.to_owned(), &keys, &false, &false);
+            let input_evtxrecord = utils::create_rec_info(
+                event,
+                test_filepath.to_owned(),
+                &keys,
+                &false,
+                &false,
+                &eventkey_alias,
+            );
             {
                 let rule = &rule_node;
                 let record_info = &input_evtxrecord;
@@ -2118,10 +2261,12 @@ mod tests {
                 let detect_info = Detection::create_log_record(rule, record_info, stored_static);
 
                 println!("{:?}", detect_info.output_fields);
-                assert!(detect_info.output_fields.iter().any(|x| x
+                // The RuleAuthor field now holds the raw author string; the multiline/tab
+                // author formatting is applied at CSV emit time (results::csv).
+                assert!(detect_info.output_fields.iter().any(|field| field
                     == &(
                         CompactString::from("RuleAuthor"),
-                        Profile::RuleAuthor("Test🛂🛂Test2🛂🛂Test3🛂🛂Test4".into())
+                        Profile::RuleAuthor("Test, Test2/Test3; Test4 ".into())
                     )));
             }
         }

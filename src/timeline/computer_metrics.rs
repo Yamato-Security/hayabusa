@@ -240,8 +240,8 @@ mod tests {
 
     use crate::{
         detections::configs::{
-            Action, CommonOptions, ComputerMetricsOption, Config, InputOption, STORED_EKEY_ALIAS,
-            STORED_STATIC, StoredStatic,
+            Action, ClobberOption, CommonOptions, ComputerMetricsOption, Config, InputOption,
+            StoredStatic,
         },
         timeline::{
             computer_metrics::{computer_metrics_dsp_msg, countup_event_by_computer},
@@ -251,13 +251,15 @@ mod tests {
 
     #[test]
     pub fn test_computer_metrics_dsp_msg() {
+        let output_tmp_dir = tempfile::tempdir().unwrap();
+        let out_test_computer_metrics_csv = output_tmp_dir.path().join("test_computer_metrics.csv");
         fn create_dummy_stored_static(action: Action) -> StoredStatic {
-            StoredStatic::create_static_data(Some(Config {
+            StoredStatic::create_static_data(Config {
                 action: Some(action),
                 debug: false,
-            }))
+            })
         }
-        let output = Some(Path::new("./test_computer_metrics.csv").to_path_buf());
+        let output = Some(out_test_computer_metrics_csv.clone());
         let dummy_stored_static =
             create_dummy_stored_static(Action::ComputerMetrics(ComputerMetricsOption {
                 input_args: InputOption {
@@ -278,10 +280,9 @@ mod tests {
                 config: Path::new("./rules/config").to_path_buf(),
                 verbose: false,
                 output: output.clone(),
-                clobber: true,
+                clobber_opt: ClobberOption { clobber: true },
                 validate_checksums: false,
             }));
-        *STORED_EKEY_ALIAS.write().unwrap() = Some(dummy_stored_static.eventkey_alias.clone());
         let mut timeline = Timeline::default();
         let first_test_record_str = r#"{
             "Event": {
@@ -308,8 +309,6 @@ mod tests {
             &dummy_stored_static.eventkey_alias,
             &mut timeline,
         );
-
-        *STORED_STATIC.write().unwrap() = Some(dummy_stored_static.clone());
 
         let second_test_record_str = r#"{
             "Event": {
@@ -348,7 +347,7 @@ mod tests {
         ];
         let expect_str =
             header.join(",") + "\n" + &expect.join(&"\n").join(",").replace(",\n,", "\n") + "\n";
-        match read_to_string("./test_computer_metrics.csv") {
+        match read_to_string(&out_test_computer_metrics_csv) {
             Err(_) => panic!("Failed to open file."),
             Ok(s) => {
                 assert_eq!(s, expect_str);
@@ -356,6 +355,6 @@ mod tests {
         };
 
         // Delete the file after the test.
-        assert!(remove_file("./test_computer_metrics.csv").is_ok());
+        assert!(remove_file(&out_test_computer_metrics_csv).is_ok());
     }
 }

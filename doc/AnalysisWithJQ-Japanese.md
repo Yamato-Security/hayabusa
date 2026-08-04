@@ -147,7 +147,7 @@ JSONL形式はわずかに高速でサイズが小さいため、ログをSIEM�
 
 # JSON結果ファイルの作成
 
-現在バージョン2.xのHayabusaでは、`hayabusa json-timeline -d <directory> -o results.json`でJSON、`hayabusa json-timeline -d <directory> -J -o results.jsonl` でJSONLに結果を保存できます。
+現在のHayabusaでは、`hayabusa dfir-timeline -t json -d <directory> -o results.json`でJSON、`hayabusa dfir-timeline -t jsonl -d <directory> -o results.jsonl` でJSONLに結果を保存できます。
 
 Hayabusaはデフォルトのstandardプロファイルを使用し、分析用に最小限のデータのみをDetailsオブジェクトに保存します。
 evtxログの全フィールド情報を保存する場合は、`--profile all-field-info`で`all-field-info`プロファイルを指定します。

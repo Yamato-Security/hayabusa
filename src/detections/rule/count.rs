@@ -1,18 +1,17 @@
 use crate::detections::configs::EventKeyAliasConfig;
-use crate::detections::configs::STORED_EKEY_ALIAS;
 use crate::detections::configs::StoredStatic;
 use crate::detections::detection::EvtxRecordInfo;
 use crate::detections::message;
 use crate::detections::message::AlertMessage;
-use crate::detections::message::ERROR_LOG_STACK;
-use crate::detections::rule::AggResult;
 use crate::detections::rule::RuleNode;
 use crate::detections::rule::aggregation_parser::AggregationConditionToken;
 use chrono::{DateTime, TimeZone, Utc};
 use hashbrown::HashMap;
+use nested::Nested;
 use serde_json::Value;
 use std::num::ParseIntError;
 use std::path::Path;
+use std::sync::Mutex;
 
 use crate::detections::utils;
 
@@ -25,13 +24,16 @@ pub fn count(
     verbose_flag: bool,
     quiet_errors_flag: bool,
     json_input_flag: bool,
+    eventkey_alias: &EventKeyAliasConfig,
+    error_log_stack: &Mutex<Nested<String>>,
 ) {
     let key: String = create_count_key(
         rule,
         &evtx_rec.record,
         verbose_flag,
         quiet_errors_flag,
-        STORED_EKEY_ALIAS.read().unwrap().as_ref().unwrap(),
+        eventkey_alias,
+        error_log_stack,
     );
     let binding = String::default();
     let field_name = match rule.get_agg_condition() {
@@ -49,10 +51,18 @@ pub fn count(
         false,
         verbose_flag,
         quiet_errors_flag,
-        STORED_EKEY_ALIAS.read().unwrap().as_ref().unwrap(),
+        eventkey_alias,
+        error_log_stack,
     )
     .unwrap_or_default();
-    countup(rule, key, field_value, evtx_rec, json_input_flag);
+    countup(
+        rule,
+        key,
+        field_value,
+        evtx_rec,
+        json_input_flag,
+        eventkey_alias,
+    );
 }
 
 /// Function to increment the count of detected records for the given `count() by` grouping key,
@@ -64,6 +74,7 @@ pub fn countup(
     field_value: String,
     evtx_rec: &EvtxRecordInfo,
     json_input_flag: bool,
+    eventkey_alias: &EventKeyAliasConfig,
 ) {
     let record = &evtx_rec.record;
     let default_time = Utc.with_ymd_and_hms(1977, 1, 1, 0, 0, 0).unwrap();
@@ -71,27 +82,15 @@ pub fn countup(
     // A record missing EventID/Computer/Channel must not panic and abort the whole
     // scan; default to an empty string (mirrors the `unwrap_or(default_time)` used
     // for `time` just above).
-    let event_id = utils::get_event_value(
-        "Event.System.EventID",
-        record,
-        STORED_EKEY_ALIAS.read().unwrap().as_ref().unwrap(),
-    )
-    .map(|v| v.to_string().trim_matches('\"').to_string())
-    .unwrap_or_default();
-    let computer = utils::get_event_value(
-        "Event.System.Computer",
-        record,
-        STORED_EKEY_ALIAS.read().unwrap().as_ref().unwrap(),
-    )
-    .map(|v| v.to_string().trim_matches('\"').to_string())
-    .unwrap_or_default();
-    let channel = utils::get_event_value(
-        "Event.System.Channel",
-        record,
-        STORED_EKEY_ALIAS.read().unwrap().as_ref().unwrap(),
-    )
-    .map(|v| v.to_string().trim_matches('\"').to_string())
-    .unwrap_or_default();
+    let event_id = utils::get_event_value("Event.System.EventID", record, eventkey_alias)
+        .map(|v| v.to_string().trim_matches('\"').to_string())
+        .unwrap_or_default();
+    let computer = utils::get_event_value("Event.System.Computer", record, eventkey_alias)
+        .map(|v| v.to_string().trim_matches('\"').to_string())
+        .unwrap_or_default();
+    let channel = utils::get_event_value("Event.System.Channel", record, eventkey_alias)
+        .map(|v| v.to_string().trim_matches('\"').to_string())
+        .unwrap_or_default();
     let evtx_file_path = evtx_rec.evtx_filepath.to_string();
     let value_map = rule.countdata.entry(key).or_default();
     value_map.push(AggRecordTimeInfo {
@@ -108,6 +107,7 @@ pub fn countup(
 /// removed. The double quotes are removed to prevent extra quotes from appearing in the result
 /// display. `is_by_alias` indicates whether the alias came from the `count() by` clause (true) or
 /// from the field inside the count() parentheses (false); it only affects the error message text.
+#[allow(clippy::too_many_arguments)]
 fn get_alias_value_in_record(
     rule: &RuleNode,
     alias: &str,
@@ -116,6 +116,7 @@ fn get_alias_value_in_record(
     verbose_flag: bool,
     quiet_errors_flag: bool,
     eventkey_alias: &EventKeyAliasConfig,
+    error_log_stack: &Mutex<Nested<String>>,
 ) -> Option<String> {
     if alias.is_empty() {
         return None;
@@ -145,7 +146,7 @@ fn get_alias_value_in_record(
                 AlertMessage::alert(&errmsg).ok();
             }
             if !quiet_errors_flag {
-                ERROR_LOG_STACK
+                error_log_stack
                     .lock()
                     .unwrap()
                     .push(format!("[ERROR] {errmsg}"));
@@ -165,6 +166,7 @@ pub fn create_count_key(
     verbose_flag: bool,
     quiet_errors_flag: bool,
     eventkey_alias: &EventKeyAliasConfig,
+    error_log_stack: &Mutex<Nested<String>>,
 ) -> String {
     let agg_condition = rule.get_agg_condition().unwrap();
     if let Some(_by_field_name) = agg_condition._by_field_name.as_ref() {
@@ -181,6 +183,7 @@ pub fn create_count_key(
                         verbose_flag,
                         quiet_errors_flag,
                         eventkey_alias,
+                        error_log_stack,
                     )
                     .unwrap_or_else(|| "_".to_string()),
                 );
@@ -197,6 +200,7 @@ pub fn create_count_key(
                 verbose_flag,
                 quiet_errors_flag,
                 eventkey_alias,
+                error_log_stack,
             )
             .unwrap_or_else(|| "_".to_string())
         }
@@ -232,6 +236,40 @@ pub struct AggRecordTimeInfo {
     pub evtx_file_path: String,
 }
 
+#[derive(Debug, Clone, PartialEq, Eq, Default)]
+/// Struct that outputs the results of aggregation such as count.
+pub struct AggResult {
+    /// The aggregated value, e.g. the count.
+    pub data: i64,
+    /// The grouping value taken from the record for the field specified by "count() by".
+    pub key: String,
+    /// Array of values in detected records for the field specified inside the parentheses of
+    /// count. If nothing is specified inside the parentheses, this is an array of length 0.
+    pub field_values: Vec<String>,
+    /// Time of the first record in the detected block.
+    pub start_datetime: DateTime<Utc>,
+    /// All times and EventIDs of records in the detected block.
+    pub agg_record_time_info: Vec<AggRecordTimeInfo>,
+}
+
+impl AggResult {
+    pub fn new(
+        count_data: i64,
+        key_name: String,
+        field_value: Vec<String>,
+        event_start_timedate: DateTime<Utc>,
+        agg_record_time_info: Vec<AggRecordTimeInfo>,
+    ) -> AggResult {
+        AggResult {
+            data: count_data,
+            key: key_name,
+            field_values: field_value,
+            start_datetime: event_start_timedate,
+            agg_record_time_info,
+        }
+    }
+}
+
 #[derive(Debug)]
 /// Information from the rule's timeframe setting. Only a single unit type and number are stored,
 /// since no SIGMA rule was found that combines multiple units (days, hours, minutes, seconds) in
@@ -262,7 +300,8 @@ impl TimeFrameInfo {
                 AlertMessage::alert(&errmsg).ok();
             }
             if !stored_static.quiet_errors_flag {
-                ERROR_LOG_STACK
+                stored_static
+                    .error_log_stack
                     .lock()
                     .unwrap()
                     .push(format!("[ERROR] {errmsg}"));
@@ -283,15 +322,15 @@ pub fn get_sec_timeframe(rule: &RuleNode, stored_static: &StoredStatic) -> Optio
     let timeframe = rule.detection.timeframe.as_ref();
     let timeframe_info = timeframe?;
     match &timeframe_info.time_value {
-        Ok(n) => {
+        Ok(time_value) => {
             if timeframe_info.time_unit == "d" {
-                Some(n * 86400)
+                Some(time_value * 86400)
             } else if timeframe_info.time_unit == "h" {
-                Some(n * 3600)
+                Some(time_value * 3600)
             } else if timeframe_info.time_unit == "m" {
-                Some(n * 60)
+                Some(time_value * 60)
             } else {
-                Some(*n)
+                Some(*time_value)
             }
         }
         Err(err) => {
@@ -300,7 +339,8 @@ pub fn get_sec_timeframe(rule: &RuleNode, stored_static: &StoredStatic) -> Optio
                 AlertMessage::alert(&errmsg).ok();
             }
             if !stored_static.quiet_errors_flag {
-                ERROR_LOG_STACK
+                stored_static
+                    .error_log_stack
                     .lock()
                     .unwrap()
                     .push(format!("[ERROR] {errmsg}"));
@@ -536,7 +576,7 @@ pub fn judge_timeframe(
 
     // The processing below assumes the AggRecordTimeInfo entries are sorted in time order.
     let mut records = time_records.to_owned();
-    records.sort_by_key(|a| a.time);
+    records.sort_by_key(|record| record.time);
 
     // If the rule has no timeframe setting, use the time difference between the first and last
     // elements as the timeframe.
@@ -563,10 +603,13 @@ pub fn judge_timeframe(
             ret.push(counter.create_agg_result(&records[left as usize..right as usize], cnt, key));
             left = right;
         } else {
-            // The condition was not satisfied, so slide the window: take in data[right] and drop
-            // data[left]. add_data/remove_data bounds-check, so right == data_len is a no-op.
-            counter.add_data(right, &records, rule);
-            right += 1;
+            // The condition was not satisfied, so slide the window forward by dropping data[left].
+            // `right` is left untouched: the next iteration's inner loop re-extends it from
+            // `left + 1`, re-checking each candidate with `_is_in_timeframe`. Previously this branch
+            // also did an unchecked `add_data(right)` (and `right += 1`), which pulled records[right]
+            // — already known to be outside the timeframe from records[left] — into the window; when
+            // its field value was new that could push count(field) over the threshold across a span
+            // longer than the timeframe, producing a false-positive AggResult (issue #1811).
             counter.remove_data(left, &records, rule);
             left += 1;
         }
@@ -577,14 +620,13 @@ pub fn judge_timeframe(
 
 #[cfg(test)]
 mod tests {
+    use super::AggResult;
     use crate::detections;
     use crate::detections::configs::Action;
     use crate::detections::configs::Config;
-    use crate::detections::configs::CsvOutputOption;
+    use crate::detections::configs::DfirTimelineOption;
     use crate::detections::configs::OutputOption;
-    use crate::detections::configs::STORED_EKEY_ALIAS;
     use crate::detections::configs::StoredStatic;
-    use crate::detections::rule::AggResult;
     use crate::detections::rule::create_rule;
     use crate::detections::utils;
     use chrono::DateTime;
@@ -612,8 +654,8 @@ mod tests {
     }"#;
 
     fn create_dummy_stored_static() -> StoredStatic {
-        StoredStatic::create_static_data(Some(Config {
-            action: Some(Action::CsvTimeline(CsvOutputOption {
+        StoredStatic::create_static_data(Config {
+            action: Some(Action::DfirTimeline(DfirTimelineOption {
                 output_options: OutputOption {
                     min_level: "informational".to_string(),
                     no_wizard: true,
@@ -622,7 +664,7 @@ mod tests {
                 ..Default::default()
             })),
             ..Default::default()
-        }))
+        })
     }
 
     #[test]
@@ -779,16 +821,23 @@ mod tests {
         let mut rule_node = create_rule("testpath".to_string(), test);
         rule_node.init(&create_dummy_stored_static()).unwrap();
         let dummy_stored_static = create_dummy_stored_static();
-        *STORED_EKEY_ALIAS.write().unwrap() = Some(dummy_stored_static.eventkey_alias.clone());
         let record: serde_json::Value = serde_json::from_str(record_str).unwrap();
         let keys = detections::rule::get_detection_keys(&rule_node);
-        let recinfo = utils::create_rec_info(record, "testpath".to_owned(), &keys, &false, &false);
+        let recinfo = utils::create_rec_info(
+            record,
+            "testpath".to_owned(),
+            &keys,
+            &false,
+            &false,
+            &dummy_stored_static.eventkey_alias,
+        );
         let matched = rule_node.select(
             &recinfo,
             dummy_stored_static.verbose_flag,
             dummy_stored_static.quiet_errors_flag,
             dummy_stored_static.json_input_flag,
             &dummy_stored_static.eventkey_alias,
+            &dummy_stored_static.error_log_stack,
         );
         assert!(matched, "record should match selection1");
         rule_node.judge_satisfy_aggcondition(&dummy_stored_static)
@@ -983,7 +1032,6 @@ mod tests {
         let test = rule_yaml.next().unwrap();
         let mut rule_node = create_rule("testpath".to_string(), test);
         let dummy_stored_static = create_dummy_stored_static();
-        *STORED_EKEY_ALIAS.write().unwrap() = Some(dummy_stored_static.eventkey_alias.clone());
 
         let init_result = rule_node.init(&dummy_stored_static);
         assert!(init_result.is_ok());
@@ -992,14 +1040,21 @@ mod tests {
             match serde_json::from_str(record) {
                 Ok(rec) => {
                     let keys = detections::rule::get_detection_keys(&rule_node);
-                    let recinfo =
-                        utils::create_rec_info(rec, "testpath".to_owned(), &keys, &false, &false);
+                    let recinfo = utils::create_rec_info(
+                        rec,
+                        "testpath".to_owned(),
+                        &keys,
+                        &false,
+                        &false,
+                        &dummy_stored_static.eventkey_alias,
+                    );
                     let _result = rule_node.select(
                         &recinfo,
                         dummy_stored_static.verbose_flag,
                         dummy_stored_static.quiet_errors_flag,
                         dummy_stored_static.json_input_flag,
                         &dummy_stored_static.eventkey_alias,
+                        &dummy_stored_static.error_log_stack,
                     );
                 }
                 Err(_) => {
@@ -1012,6 +1067,100 @@ mod tests {
             rule_node.countdata.get(&"_".to_owned()).unwrap().len() as i32,
             2
         );
+        let judge_result = rule_node.judge_satisfy_aggcondition(&dummy_stored_static);
+        assert_eq!(judge_result.len(), 0);
+    }
+    #[test]
+    /// Regression test for #1811: the sliding window in `judge_timeframe` must not pull a record
+    /// that is outside the timeframe into a window. Two records share EventID 4624 five seconds
+    /// apart, and a third with EventID 4625 arrives ten minutes later. With `count(EventID) >= 2`
+    /// and a one-minute timeframe there is never a one-minute window containing two distinct
+    /// EventIDs, so no alert must be produced. Before the fix, the slide branch did an unchecked
+    /// `add_data(right)`, so the out-of-timeframe 4625 record was combined with the 4624 record
+    /// into a window spanning ten minutes, producing a false-positive AggResult.
+    fn test_count_field_timeframe_no_out_of_frame_false_positive() {
+        let record0: &str = r#"
+        {
+          "Event": {
+            "System": {
+              "EventID": 4624,
+              "Channel": "System",
+              "TimeCreated_attributes": { "SystemTime": "2021-01-01T00:00:00Z" }
+            }
+          },
+          "Event_attributes": { "xmlns": "http://schemas.microsoft.com/win/2004/08/events/event" }
+        }"#;
+        let record1: &str = r#"
+        {
+          "Event": {
+            "System": {
+              "EventID": 4624,
+              "Channel": "System",
+              "TimeCreated_attributes": { "SystemTime": "2021-01-01T00:00:05Z" }
+            }
+          },
+          "Event_attributes": { "xmlns": "http://schemas.microsoft.com/win/2004/08/events/event" }
+        }"#;
+        let record2: &str = r#"
+        {
+          "Event": {
+            "System": {
+              "EventID": 4625,
+              "Channel": "System",
+              "TimeCreated_attributes": { "SystemTime": "2021-01-01T00:10:00Z" }
+            }
+          },
+          "Event_attributes": { "xmlns": "http://schemas.microsoft.com/win/2004/08/events/event" }
+        }"#;
+        let rule_str = r#"
+        enabled: true
+        detection:
+            selection1:
+                Channel: 'System'
+            condition: selection1 | count(EventID) >= 2
+            timeframe: 1m
+        details: 'count field timeframe regression'
+        "#;
+        let mut rule_yaml = YamlLoader::load_from_str(rule_str).unwrap().into_iter();
+        let test = rule_yaml.next().unwrap();
+        let mut rule_node = create_rule("testpath".to_string(), test);
+        let dummy_stored_static = create_dummy_stored_static();
+
+        let init_result = rule_node.init(&dummy_stored_static);
+        assert!(init_result.is_ok());
+        let target = vec![record0, record1, record2];
+        for record in target {
+            match serde_json::from_str(record) {
+                Ok(rec) => {
+                    let keys = detections::rule::get_detection_keys(&rule_node);
+                    let recinfo = utils::create_rec_info(
+                        rec,
+                        "testpath".to_owned(),
+                        &keys,
+                        &false,
+                        &false,
+                        &dummy_stored_static.eventkey_alias,
+                    );
+                    let _result = rule_node.select(
+                        &recinfo,
+                        dummy_stored_static.verbose_flag,
+                        dummy_stored_static.quiet_errors_flag,
+                        dummy_stored_static.json_input_flag,
+                        &dummy_stored_static.eventkey_alias,
+                        &dummy_stored_static.error_log_stack,
+                    );
+                }
+                Err(_) => {
+                    panic!("failed to parse json record.");
+                }
+            }
+        }
+        // All three records match the selection and are counted.
+        assert_eq!(
+            rule_node.countdata.get(&"_".to_owned()).unwrap().len() as i32,
+            3
+        );
+        // No one-minute window holds two distinct EventIDs, so there must be no alert.
         let judge_result = rule_node.judge_satisfy_aggcondition(&dummy_stored_static);
         assert_eq!(judge_result.len(), 0);
     }
@@ -1765,7 +1914,6 @@ mod tests {
             panic!("Failed to init rulenode");
         }
         let dummy_stored_static = create_dummy_stored_static();
-        *STORED_EKEY_ALIAS.write().unwrap() = Some(dummy_stored_static.eventkey_alias.clone());
 
         for record_str in records_str {
             match serde_json::from_str(record_str) {
@@ -1777,6 +1925,7 @@ mod tests {
                         &keys,
                         &false,
                         &false,
+                        &dummy_stored_static.eventkey_alias,
                     );
                     let result = &rule_node.select(
                         &recinfo,
@@ -1784,6 +1933,7 @@ mod tests {
                         dummy_stored_static.quiet_errors_flag,
                         dummy_stored_static.json_input_flag,
                         &dummy_stored_static.eventkey_alias,
+                        &dummy_stored_static.error_log_stack,
                     );
                     assert_eq!(result, &true);
                 }
@@ -1812,7 +1962,7 @@ mod tests {
             expect_start_timedate.push(expect_agg.start_datetime);
         }
         for agg_result in agg_results {
-            println!("{}", &agg_result.start_datetime);
+            println!("{}", agg_result.start_datetime);
             // The unwrap doubles as the check that start_datetime was stored correctly:
             // binary_search fails if it is not among the expected values.
             let index = expect_start_timedate

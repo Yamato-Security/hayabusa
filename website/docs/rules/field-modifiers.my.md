@@ -1,5 +1,7 @@
 # ပံ့ပိုးထားသော Field Modifier များ
 
+ဤစာမျက်နှာတွင် Sigma field modifier အားလုံးနှင့် ၎င်းတို့ကို Sigma နှင့် Hayabusa rule များတွင် မည်မျှ မကြာခဏ အသုံးပြုသည်တို့၏ ဒိုင်းနမစ်ဆန်ဆန် ထုတ်လုပ်ထားသော စာရင်း ပါဝင်ပါသည်။
+
 ## Hayabusa ပံ့ပိုးထားသော field modifier များ
 | Field Modifier                |   Sigma Count |   Hayabusa Count |
 |:------------------------------|--------------:|-----------------:|
@@ -8,12 +10,12 @@
 | base64ǀcontains               |             1 |                0 |
 | cased                         |             0 |                0 |
 | cidr                          |            35 |                0 |
-| contains                      |          3073 |               21 |
+| contains                      |          3072 |               21 |
 | containsǀall                  |          1084 |                0 |
 | containsǀcased                |             0 |                0 |
 | containsǀexpand               |             1 |                0 |
 | containsǀwindash              |           108 |                0 |
-| endswith                      |          3265 |              273 |
+| endswith                      |          3259 |              273 |
 | endswithfield                 |             0 |                0 |
 | endswithǀcased                |             0 |                0 |
 | endswithǀwindash              |             2 |                0 |
@@ -32,7 +34,7 @@
 | reǀi                          |             2 |                0 |
 | reǀm                          |             0 |                0 |
 | reǀs                          |             0 |                0 |
-| startswith                    |           546 |                6 |
+| startswith                    |           539 |                6 |
 | startswithǀcased              |             0 |                0 |
 | utf16beǀbase64offsetǀcontains |             0 |                0 |
 | utf16leǀbase64offsetǀcontains |             0 |                0 |
@@ -57,6 +59,5 @@
 ## Hayabusa ပံ့ပိုးမထားသော correlation rule များ
 လက်ရှိတွင် အားလုံးကို ပံ့ပိုးထားပါသည်။
 
-ဤစာရွက်စာတမ်းကို နောက်ဆုံးပေါ် rule များအပေါ် အခြေခံ၍ ဒိုင်းနမစ်ဆန်ဆန် အပ်ဒိတ်လုပ်နေပါသည်။  
-Last Update: 2026/04/28  
-Author: Fukusuke Takahashi
+ဤစာရွက်စာတမ်းကို နောက်ဆုံးပေါ် rule များအပေါ် အခြေခံ၍ လစဉ် ဒိုင်းနမစ်ဆန်ဆန် အပ်ဒိတ်လုပ်နေပါသည်။  
+Last Update: 2026/08/01

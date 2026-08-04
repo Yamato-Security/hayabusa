@@ -1,5 +1,4 @@
-use crate::detections::message::ERROR_LOG_STACK;
-use crate::detections::utils::{get_file_size, get_serde_number_to_string};
+use crate::detections::utils::{get_file_size, get_serde_number_to_string, parse_evtx_timestamp};
 use crate::detections::{
     configs::{EventKeyAliasConfig, StoredStatic},
     detection::EvtxRecordInfo,
@@ -7,7 +6,7 @@ use crate::detections::{
     utils,
 };
 use crate::timeline::log_metrics::LogMetrics;
-use crate::timeline::metrics::Channel::{RdsGtw, RdsLsm, Sec};
+use crate::timeline::metrics::Channel::{RdsGtw, RdsLsm, RdsRcm, Sec, Sec4778};
 use bytesize::ByteSize;
 use chrono::{DateTime, NaiveDate, NaiveDateTime, Utc};
 use compact_str::CompactString;
@@ -17,7 +16,7 @@ use std::path::Path;
 /// Grouping key for the logon-summary command. Logon events whose fields below all match are
 /// aggregated into a single row. The `dst_*` fields identify the account/computer that was logged
 /// on to, and the `src_*`/`source_*` fields identify where the logon came from.
-#[derive(Debug, Clone, Eq, Hash, PartialEq)]
+#[derive(Debug, Clone, Eq, Hash, PartialEq, Ord, PartialOrd)]
 pub struct LoginEvent {
     pub channel: CompactString,
     pub dst_user: CompactString,
@@ -28,6 +27,22 @@ pub struct LoginEvent {
     pub src_domain: CompactString,
     pub source_computer: CompactString,
     pub source_ip: CompactString,
+}
+
+/// Per-grouping-key aggregate for the logon-summary command. Index 0 is successful logons and
+/// index 1 is failed logons; alongside the counts, the earliest (`first`) and latest (`last`)
+/// event timestamp seen for each is tracked so the output can show the logon/attempt time range.
+#[derive(Debug, Clone, Default)]
+pub struct LogonStats {
+    pub counts: [usize; 2],
+    pub first: [Option<DateTime<Utc>>; 2],
+    pub last: [Option<DateTime<Utc>>; 2],
+}
+
+/// Parse an evtx `SystemTime` string into a UTC datetime via the shared offset-aware parser
+/// (handles the standard evtx UTC format and the Splunk JSON offset format).
+fn parse_evtx_datetime(evttime: &str) -> Option<DateTime<Utc>> {
+    parse_evtx_timestamp(evttime).ok()
 }
 
 /// Accumulates statistics over all scanned records. Depending on the command being run, only some
@@ -56,8 +71,8 @@ pub struct EventMetrics {
             usize,
         ),
     >,
-    // logon-summary: [successful, failed] logon counts per LoginEvent grouping key.
-    pub stats_login_list: HashMap<LoginEvent, [usize; 2]>,
+    // logon-summary: [successful, failed] logon counts + first/last timestamps per grouping key.
+    pub stats_login_list: HashMap<LoginEvent, LogonStats>,
     // log-metrics: per-log-file metrics (file size, event count, time range, computers, etc.).
     pub stats_logfile: Vec<LogMetrics>,
     // (EventRecordID, timestamp) pairs that have already been counted. Used by the
@@ -123,6 +138,7 @@ impl EventMetrics {
             path,
             stored_static.verbose_flag,
             stored_static.quiet_errors_flag,
+            &stored_static.error_log_stack,
         );
         let file_size = ByteSize::b(file_size).to_string();
         if let Some(existing_lm) = self.stats_logfile.iter_mut().find(|log_metrics| {
@@ -161,33 +177,21 @@ impl EventMetrics {
             .unwrap();
         let evtx_service_released_date = Some(DateTime::<Utc>::from_naive_utc_and_offset(dt, Utc));
         let mut check_start_end_time = |evttime: &str| {
-            // Try the standard evtx UTC format first, then fall back to the timezone-offset
-            // format used by Splunk JSON exports.
-            let timestamp = match NaiveDateTime::parse_from_str(evttime, "%Y-%m-%dT%H:%M:%S%.fZ") {
-                Ok(without_timezone_datetime) => Some(DateTime::<Utc>::from_naive_utc_and_offset(
-                    without_timezone_datetime,
-                    Utc,
-                )),
-                Err(_) => {
-                    match NaiveDateTime::parse_from_str(evttime, "%Y-%m-%dT%H:%M:%S%.3f%:z") {
-                        Ok(splunk_json_datetime) => Some(
-                            DateTime::<Utc>::from_naive_utc_and_offset(splunk_json_datetime, Utc),
-                        ),
-                        Err(e) => {
-                            let errmsg =
-                                format!("Timestamp parse error.\nInput: {evttime}\nError: {e}\n");
-                            if stored_static.verbose_flag {
-                                AlertMessage::alert(&errmsg).ok();
-                            }
-                            if !stored_static.quiet_errors_flag {
-                                ERROR_LOG_STACK
-                                    .lock()
-                                    .unwrap()
-                                    .push(format!("[ERROR] {errmsg}"));
-                            }
-                            None
-                        }
+            let timestamp = match parse_evtx_timestamp(evttime) {
+                Ok(ts) => Some(ts),
+                Err(e) => {
+                    let errmsg = format!("Timestamp parse error.\nInput: {evttime}\nError: {e}\n");
+                    if stored_static.verbose_flag {
+                        AlertMessage::alert(&errmsg).ok();
                     }
+                    if !stored_static.quiet_errors_flag {
+                        stored_static
+                            .error_log_stack
+                            .lock()
+                            .unwrap()
+                            .push(format!("[ERROR] {errmsg}"));
+                    }
+                    None
                 }
             };
             if timestamp.is_none() {
@@ -198,7 +202,7 @@ impl EventMetrics {
                     self.start_time = timestamp;
                 } else {
                     // Date data before 2007/1/30, when evtx was released, is treated as invalid format data.
-                    ERROR_LOG_STACK.lock().unwrap().push(format!(
+                    stored_static.error_log_stack.lock().unwrap().push(format!(
                         "[ERROR] Invalid record found.\nEventFile:{}\nTimestamp:{}\n",
                         self.filepath,
                         timestamp.unwrap()
@@ -290,8 +294,11 @@ impl EventMetrics {
         }
     }
     /// Counts logon events for the logon-summary command: Security 4624 (successful logon),
-    /// Security 4625 (failed logon), RDS LocalSessionManager 21 and RDS Gateway 302 (both
-    /// counted as successful logons).
+    /// Security 4625 (failed logon), Security 4778/4779 (RDP session reconnect/disconnect, which
+    /// carry the client's workstation name), and the RDP operational events that survive
+    /// Security-log flooding — RDS LocalSessionManager 21/25 (logon/reconnect), RemoteConnectionManager
+    /// 1149 (network-level authentication) and RDS Gateway 302 (RD Gateway logon). All but 4625 are
+    /// counted as successful logons.
     fn stats_login_eventid(&mut self, records: &[EvtxRecordInfo], stored_static: &StoredStatic) {
         // Maps the LogonType number to a human-readable label for display.
         let logontype_map: HashMap<&str, &str> = HashMap::from([
@@ -322,13 +329,14 @@ impl EventMetrics {
                     .unwrap_or("n/a".into());
                     let errmsg = format!(
                         "Failed to parse event ID from event file: {}\nEvent record ID: {}\n",
-                        &record.evtx_filepath, rec_id
+                        record.evtx_filepath, rec_id
                     );
                     if stored_static.verbose_flag {
                         AlertMessage::alert(&errmsg).ok();
                     }
                     if !stored_static.quiet_errors_flag {
-                        ERROR_LOG_STACK
+                        stored_static
+                            .error_log_stack
                             .lock()
                             .unwrap()
                             .push(format!("[ERROR] {errmsg}"));
@@ -343,14 +351,10 @@ impl EventMetrics {
                 );
                 if let Some(channel) = is_target_event(event_id, &channel) {
                     let channel_name = match channel {
-                        Sec => {
-                            if event_id == 4624 {
-                                CompactString::from("Sec 4624")
-                            } else {
-                                CompactString::from("Sec 4625")
-                            }
-                        }
-                        RdsLsm => CompactString::from("RDS-LSM 21"),
+                        // 4624/4625 and 4778/4779 all live in the Security log.
+                        Sec | Sec4778 => CompactString::from(format!("Sec {event_id}")),
+                        RdsLsm => CompactString::from(format!("RDS-LSM {event_id}")),
+                        RdsRcm => CompactString::from("RDS-RCM 1149"),
                         RdsGtw => CompactString::from("RDS-GTW 302"),
                     };
                     // The RDS events store the account as a single "DOMAIN\user" field, so the
@@ -358,6 +362,11 @@ impl EventMetrics {
                     let dst_user = match channel {
                         Sec => get_event_value_as_string(
                             "TargetUserName",
+                            &record.record,
+                            &stored_static.eventkey_alias,
+                        ),
+                        Sec4778 => get_event_value_as_string(
+                            "AccountName",
                             &record.record,
                             &stored_static.eventkey_alias,
                         ),
@@ -373,6 +382,12 @@ impl EventMetrics {
                                 .unwrap_or(&user_with_domain);
                             CompactString::from(user)
                         }
+                        // 1149 stores the user (Param1) and domain (Param2) in separate fields.
+                        RdsRcm => get_event_value_as_string(
+                            "UserDataParam1",
+                            &record.record,
+                            &stored_static.eventkey_alias,
+                        ),
                         RdsGtw => {
                             let user_with_domain = get_event_value_as_string(
                                 "RdsGtwUsername",
@@ -398,22 +413,32 @@ impl EventMetrics {
                             &record.record,
                             &stored_static.eventkey_alias,
                         ),
+                        Sec4778 => get_event_value_as_string(
+                            "AccountDomain",
+                            &record.record,
+                            &stored_static.eventkey_alias,
+                        ),
                         RdsLsm => {
                             let user_with_domain = get_event_value_as_string(
                                 "UserDataUser",
                                 &record.record,
                                 &stored_static.eventkey_alias,
                             );
-                            let domain = user_with_domain.rsplit_once('\\').map(|x| x.0);
+                            let domain = user_with_domain.rsplit_once('\\').map(|parts| parts.0);
                             CompactString::from(domain.unwrap_or("-"))
                         }
+                        RdsRcm => get_event_value_as_string(
+                            "UserDataParam2",
+                            &record.record,
+                            &stored_static.eventkey_alias,
+                        ),
                         RdsGtw => {
                             let user_with_domain = get_event_value_as_string(
                                 "RdsGtwUsername",
                                 &record.record,
                                 &stored_static.eventkey_alias,
                             );
-                            let domain = user_with_domain.rsplit_once('\\').map(|x| x.0);
+                            let domain = user_with_domain.rsplit_once('\\').map(|parts| parts.0);
                             CompactString::from(domain.unwrap_or("-"))
                         }
                     };
@@ -432,19 +457,38 @@ impl EventMetrics {
                         &record.record,
                         &stored_static.eventkey_alias,
                     );
-                    let source_computer = get_event_value_as_string(
-                        "WorkstationName",
-                        &record.record,
-                        &stored_static.eventkey_alias,
-                    );
+                    // 4778/4779 record the RDP client's workstation name in ClientName; the other
+                    // sources use the Security WorkstationName (absent, i.e. "-", for the RDS logs).
+                    let source_computer = match channel {
+                        Sec4778 => get_event_value_as_string(
+                            "ClientName",
+                            &record.record,
+                            &stored_static.eventkey_alias,
+                        ),
+                        _ => get_event_value_as_string(
+                            "WorkstationName",
+                            &record.record,
+                            &stored_static.eventkey_alias,
+                        ),
+                    };
                     let source_ip = match channel {
                         Sec => get_event_value_as_string(
                             "IpAddress",
                             &record.record,
                             &stored_static.eventkey_alias,
                         ),
+                        Sec4778 => get_event_value_as_string(
+                            "ClientAddress",
+                            &record.record,
+                            &stored_static.eventkey_alias,
+                        ),
                         RdsLsm => get_event_value_as_string(
                             "UserDataAddress",
+                            &record.record,
+                            &stored_static.eventkey_alias,
+                        ),
+                        RdsRcm => get_event_value_as_string(
+                            "UserDataParam3",
                             &record.record,
                             &stored_static.eventkey_alias,
                         ),
@@ -467,11 +511,10 @@ impl EventMetrics {
                         self.counted_rec.insert(counted);
                     }
 
-                    let countlist: [usize; 2] = [0, 0];
-                    // Fetch (or initialize) the [successful, failed] counters for this logon
-                    // event. At this point the EventID is 4624, 4625, 21 or 302; 4625 counts as a
-                    // failed logon and the others as successful logons.
-                    let count: &mut [usize; 2] = self
+                    // Fetch (or initialize) the aggregate for this logon event. At this point the
+                    // EventID is 4624, 4625, 4778, 4779, 21, 25, 1149 or 302; 4625 counts as a
+                    // failed logon (index 1) and the others as successful logons (index 0).
+                    let entry: &mut LogonStats = self
                         .stats_login_list
                         .entry(LoginEvent {
                             channel: channel_name,
@@ -488,11 +531,34 @@ impl EventMetrics {
                             source_computer,
                             source_ip,
                         })
-                        .or_insert(countlist);
-                    if event_id == 4624 || event_id == 21 || event_id == 302 {
-                        count[0] += 1;
-                    } else if event_id == 4625 {
-                        count[1] += 1;
+                        .or_default();
+                    let idx = if event_id == 4625 { 1 } else { 0 };
+                    entry.counts[idx] += 1;
+                    // Widen the first/last timestamp range for this grouping and result type.
+                    // Try TimeCreated SystemTime first, then fall back to @timestamp (as in
+                    // stats_time_cnt).
+                    if let Some(ts) = utils::get_event_value(
+                        "Event.System.TimeCreated_attributes.SystemTime",
+                        &record.record,
+                        &stored_static.eventkey_alias,
+                    )
+                    .or_else(|| {
+                        utils::get_event_value(
+                            "Event.System.@timestamp",
+                            &record.record,
+                            &stored_static.eventkey_alias,
+                        )
+                    })
+                    .map(|evt_value| evt_value.to_string().replace("\\\"", "").replace('"', ""))
+                    .as_deref()
+                    .and_then(parse_evtx_datetime)
+                    {
+                        if entry.first[idx].is_none() || Some(ts) < entry.first[idx] {
+                            entry.first[idx] = Some(ts);
+                        }
+                        if entry.last[idx].is_none() || Some(ts) > entry.last[idx] {
+                            entry.last[idx] = Some(ts);
+                        }
                     }
                 }
             };
@@ -519,9 +585,11 @@ fn get_event_value_as_string(
 
 /// Event log channels that contain the logon events tracked by the logon-summary command.
 enum Channel {
-    Sec,    // Security
-    RdsLsm, // Microsoft-Windows-TerminalServices-LocalSessionManager/Operational
-    RdsGtw, // Microsoft-Windows-TerminalServices-Gateway/Operational
+    Sec,     // Security (4624/4625)
+    Sec4778, // Security 4778/4779 (RDP session reconnect/disconnect; carries the client name)
+    RdsLsm,  // Microsoft-Windows-TerminalServices-LocalSessionManager/Operational
+    RdsRcm,  // Microsoft-Windows-TerminalServices-RemoteConnectionManager/Operational
+    RdsGtw,  // Microsoft-Windows-TerminalServices-Gateway/Operational
 }
 
 /// Returns which channel the record's logon event belongs to if its (EventID, Channel) pair is
@@ -530,10 +598,24 @@ fn is_target_event(event_id: i64, channel: &str) -> Option<Channel> {
     if (event_id == 4624 || event_id == 4625) && channel == "Security" {
         return Some(Sec);
     }
-    if event_id == 21
+    // 4778 = session reconnected, 4779 = session disconnected. Unlike the RDS operational events
+    // these carry the RDP client's workstation name (ClientName) and client IP (ClientAddress).
+    if (event_id == 4778 || event_id == 4779) && channel == "Security" {
+        return Some(Sec4778);
+    }
+    // 21 = RDP session logon, 25 = RDP session reconnect. Both survive the Security-log flooding
+    // that can evict the matching 4624, so they are counted as successful logons.
+    if (event_id == 21 || event_id == 25)
         && channel == "Microsoft-Windows-TerminalServices-LocalSessionManager/Operational"
     {
         return Some(RdsLsm);
+    }
+    // 1149 = "User authentication succeeded" (network-level authentication); carries the user and
+    // source IP even when the corresponding 4624 has been flooded out.
+    if event_id == 1149
+        && channel == "Microsoft-Windows-TerminalServices-RemoteConnectionManager/Operational"
+    {
+        return Some(RdsRcm);
     }
     if event_id == 302 && channel == "Microsoft-Windows-TerminalServices-Gateway/Operational" {
         return Some(RdsGtw);
@@ -553,8 +635,8 @@ mod tests {
     use crate::{
         detections::{
             configs::{
-                Action, CommonOptions, Config, DetectCommonOption, EidMetricsOption, InputOption,
-                STORED_EKEY_ALIAS, StoredStatic,
+                Action, ClobberOption, CommonOptions, Config, DetectCommonOption, EidMetricsOption,
+                InputOption, StoredStatic,
             },
             utils::create_rec_info,
         },
@@ -562,10 +644,10 @@ mod tests {
     };
 
     fn create_dummy_stored_static(action: Action) -> StoredStatic {
-        StoredStatic::create_static_data(Some(Config {
+        StoredStatic::create_static_data(Config {
             action: Some(action),
             debug: false,
-        }))
+        })
     }
 
     /// Test for statistics aggregation of the metrics command.
@@ -606,16 +688,9 @@ mod tests {
                     utc: false,
                 },
                 output: None,
-                clobber: false,
+                clobber_opt: ClobberOption { clobber: false },
                 remove_duplicate_detections: false,
             }));
-
-        // `create_rec_info` reads the global `STORED_EKEY_ALIAS`, which starts as
-        // `None`. Initialize it here so the test passes in isolation (e.g. under
-        // `cargo nextest run`, which runs each test in its own process and so cannot
-        // rely on another test having populated it). See
-        // https://github.com/Yamato-Security/hayabusa/issues/1281
-        *STORED_EKEY_ALIAS.write().unwrap() = Some(dummy_stored_static.eventkey_alias.clone());
 
         let mut timeline = Timeline::new();
         // Test 1: When the channel of the record is included in the alias.
@@ -631,6 +706,7 @@ mod tests {
             &Nested::<String>::new(),
             &false,
             &false,
+            &dummy_stored_static.eventkey_alias,
         ));
 
         // Test 2: When the channel name of the record is not included in the alias.
@@ -649,6 +725,7 @@ mod tests {
             &Nested::<String>::new(),
             &false,
             &false,
+            &dummy_stored_static.eventkey_alias,
         ));
 
         let include_computer: HashSet<CompactString> = HashSet::new();
@@ -660,9 +737,32 @@ mod tests {
         );
         assert_eq!(timeline.stats.stats_list.len(), expect.len());
 
-        for (k, v) in timeline.stats.stats_list {
-            assert!(expect.contains_key(&k));
-            assert_eq!(expect.get(&k).unwrap(), &v);
+        for (key, count) in timeline.stats.stats_list {
+            assert!(expect.contains_key(&key));
+            assert_eq!(expect.get(&key).unwrap(), &count);
         }
+    }
+
+    #[test]
+    fn test_is_target_event_covers_rdp_channels() {
+        use super::Channel::{RdsGtw, RdsLsm, RdsRcm, Sec, Sec4778};
+        use super::is_target_event;
+        let lsm = "Microsoft-Windows-TerminalServices-LocalSessionManager/Operational";
+        let rcm = "Microsoft-Windows-TerminalServices-RemoteConnectionManager/Operational";
+        let gtw = "Microsoft-Windows-TerminalServices-Gateway/Operational";
+        // Security 4624/4625 and the RDP reconnect/disconnect pair 4778/4779
+        assert!(matches!(is_target_event(4624, "Security"), Some(Sec)));
+        assert!(matches!(is_target_event(4625, "Security"), Some(Sec)));
+        assert!(matches!(is_target_event(4778, "Security"), Some(Sec4778)));
+        assert!(matches!(is_target_event(4779, "Security"), Some(Sec4778)));
+        // RDP logon sources (21/302 existed; 25 and 1149 are new)
+        assert!(matches!(is_target_event(21, lsm), Some(RdsLsm))); // session logon
+        assert!(matches!(is_target_event(25, lsm), Some(RdsLsm))); // session reconnect
+        assert!(matches!(is_target_event(1149, rcm), Some(RdsRcm))); // NLA authentication
+        assert!(matches!(is_target_event(302, gtw), Some(RdsGtw))); // RD Gateway
+        // Non-logon EIDs and channel mismatches must be ignored.
+        assert!(is_target_event(22, lsm).is_none()); // 22 = shell start, not a logon
+        assert!(is_target_event(1149, lsm).is_none()); // right EID, wrong channel
+        assert!(is_target_event(4624, lsm).is_none());
     }
 }

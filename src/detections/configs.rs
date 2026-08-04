@@ -6,33 +6,32 @@ use crate::detections::utils;
 use crate::level::LEVEL;
 use crate::options::geoip_search::GeoIPSearch;
 use crate::options::htmlreport;
-use crate::options::pivot::PIVOT_KEYWORD;
+use crate::options::pivot::PivotKeywordMap;
 use crate::options::profile::{Profile, load_profile};
 use aho_corasick::{AhoCorasick, AhoCorasickBuilder, MatchKind};
 use chrono::{DateTime, Days, Duration, Local, Months, Utc};
-use clap::{ArgAction, ArgGroup, Args, ColorChoice, Command, CommandFactory, Parser, Subcommand};
+use clap::{
+    ArgAction, ArgGroup, Args, ColorChoice, Command, CommandFactory, Parser, Subcommand, ValueEnum,
+};
 use compact_str::CompactString;
+use dashmap::{DashMap, DashSet};
 use hashbrown::{HashMap, HashSet};
 use itertools::Itertools;
 use lazy_static::lazy_static;
+use nested::Nested;
 use regex::Regex;
 use std::cmp::PartialEq;
 use std::env::current_exe;
 use std::fs::File;
 use std::io::BufRead;
 use std::path::{Path, PathBuf};
-use std::sync::RwLock;
+use std::sync::{Arc, Mutex, RwLock};
 use std::{fs, io, process};
 use strum::IntoEnumIterator;
 use terminal_size::{Width, terminal_size};
 use yaml_rust2::{Yaml, YamlLoader};
 
 lazy_static! {
-    pub static ref STORED_STATIC: RwLock<Option<StoredStatic>> = RwLock::new(None);
-    pub static ref STORED_EKEY_ALIAS: RwLock<Option<EventKeyAliasConfig>> = RwLock::new(None);
-    pub static ref GEOIP_DB_PARSER: RwLock<Option<GeoIPSearch>> = RwLock::new(None);
-    pub static ref GEOIP_DB_YAML: RwLock<Option<HashMap<CompactString, Yaml>>> = RwLock::new(None);
-    pub static ref GEOIP_FILTER: RwLock<Option<Vec<Yaml>>> = RwLock::new(None);
     pub static ref CURRENT_EXE_PATH: PathBuf =
         current_exe().unwrap().parent().unwrap().to_path_buf();
     // Matches UUID-formatted ids (e.g. the "id" field of Sigma rules).
@@ -41,12 +40,6 @@ lazy_static! {
     // Maps every C0 control character (0x00-0x1F, except line feed) to its JSON-style \u00XX escape.
     pub static ref CONTROL_CHAR_REPLACE_MAP: HashMap<char, CompactString> =
         create_control_char_replace_map();
-    // Matches the placeholder tokens that utils::remove_sp_char substitutes for \r, \n and \t
-    // inside field values, so that output code can later restore or strip them.
-    pub static ref ALLFIELDINFO_SPECIAL_CHARS: AhoCorasick = AhoCorasickBuilder::new()
-        .match_kind(MatchKind::LeftmostLongest)
-        .build(["🛂r", "🛂n", "🛂t"])
-        .unwrap();
     // All-in-one config bundle (embedded file path -> file content). When rules_config_files.txt
     // exists, its entries are used instead of the individual files under rules/config.
     pub static ref ONE_CONFIG_MAP: HashMap<String, String> =
@@ -112,13 +105,26 @@ impl Default for ConfigReader {
     }
 }
 
+/// Per-computer MITRE ATT&CK tactic accumulator for the HTML report: computer name -> list of
+/// (tactic name, unique alert count, total alert count).
+pub type ComputerMitreAttckMap = DashMap<CompactString, Vec<(CompactString, i64, i64)>>;
+
 /// Application state resolved once at startup from the CLI options and config files, then shared
-/// read-only for the rest of the run (also published globally via the STORED_STATIC RwLock).
+/// read-only for the rest of the run. A per-scan snapshot is wrapped in an `Arc` and cloned into
+/// the per-rule parallel tasks in `Detection::execute_rules` (this replaced the former
+/// `STORED_STATIC` process global).
 #[derive(Debug, Clone)]
 pub struct StoredStatic {
     pub config: Config,
     pub config_path: PathBuf,
     pub eventkey_alias: EventKeyAliasConfig,
+    /// The loaded MaxMind GeoIP database reader, set only when `--geo-ip` is specified. Wrapped in
+    /// `Arc` so `StoredStatic` stays `Clone` even though `GeoIPSearch` is not.
+    pub geo_ip_search: Option<Arc<GeoIPSearch>>,
+    /// The geoip field-mapping config (SrcIP/TgtIP alias lists), set only when `--geo-ip` is used.
+    pub geo_ip_db_yaml: Option<HashMap<CompactString, Yaml>>,
+    /// The geoip filter config (channel/EID conditions), set only when `--geo-ip` is used.
+    pub geo_ip_filter: Option<Vec<Yaml>>,
     pub channel_abbr_config: HashMap<CompactString, CompactString>,
     pub generic_abbr_matcher: AhoCorasick,
     pub generic_abbr_values: Vec<CompactString>,
@@ -134,6 +140,26 @@ pub struct StoredStatic {
     pub search_option: Option<SearchOption>,
     pub output_option: Option<OutputOption>,
     pub pivot_keyword_list_flag: bool,
+    /// Pivot keyword accumulator for the `pivot-keywords-list` command: categories/fields are
+    /// loaded up front and the keyword values are filled in from the per-record parallel tasks.
+    /// `Arc<RwLock<..>>` so the per-scan snapshot cloned into the parallel tasks shares the same
+    /// map (replaces the former `PIVOT_KEYWORD` process global).
+    pub pivot_keyword: Arc<RwLock<PivotKeywordMap>>,
+    /// Errors collected while a run is in progress, flushed to `./logs/errorlog-<timestamp>.log`
+    /// by `AlertMessage::create_error_log()`. `Arc<Mutex<..>>` so the per-scan snapshot cloned into
+    /// the parallel tasks shares the same stack — errors are pushed from the per-record parallel
+    /// tasks too (e.g. a `count(field)` miss). Replaces the former `ERROR_LOG_STACK` process
+    /// global.
+    pub error_log_stack: Arc<Mutex<Nested<String>>>,
+    /// Per-computer MITRE ATT&CK tactics for the HTML report. `Arc<DashMap<..>>` so the per-scan
+    /// snapshot cloned into the parallel tasks shares the same map — entries are pushed from the
+    /// per-record parallel tasks (`create_log_record` in `execute_rule`) and read back when the
+    /// report is rendered. Replaces the former `COMPUTER_MITRE_ATTCK_MAP` process global.
+    pub computer_mitre_attck_map: Arc<ComputerMitreAttckMap>,
+    /// Set of `"computer|tactic|rule path"` keys already counted, distinguishing a tactic's unique
+    /// alert count from its total. `Arc<DashSet<..>>` for the same reason as `computer_mitre_attck_map`;
+    /// replaces the former `COMPUTER_MITRE_ATTCK_UNIQUE_KEYS` global.
+    pub computer_mitre_attck_unique_keys: Arc<DashSet<CompactString>>,
     pub default_details: HashMap<CompactString, CompactString>,
     pub html_report_flag: bool,
     pub profiles: Option<Vec<(CompactString, Profile)>>,
@@ -163,13 +189,42 @@ pub struct StoredStatic {
     pub validate_checksum: bool,
 }
 
+/// Resolves a bundled config file: prefer `<config_path>/<name>`, otherwise fall back to the
+/// `rules/config/<name>` copy shipped next to the executable. Collapses the config-file fallback
+/// chain that was previously copy-pasted for every setting file. `config_path` is the `-c` custom
+/// rules-config directory, so honoring it here is what makes `-c` apply to every config file.
+pub fn resolve_config_file(config_path: &Path, name: &str) -> PathBuf {
+    check_setting_path(config_path, name, false).unwrap_or_else(|| {
+        check_setting_path(
+            &CURRENT_EXE_PATH.to_path_buf(),
+            &format!("rules/config/{name}"),
+            true,
+        )
+        .unwrap()
+    })
+}
+
+/// Returns true when `level` is one of the recognized detection levels (case-insensitive).
+fn is_valid_level(level: &str) -> bool {
+    LEVEL::iter().any(|l| l.eq(level.to_lowercase().as_str()))
+}
+
+/// Builds a `HashSet<CompactString>` from an optional list of computer/EID filter values.
+/// Mirrors the `.as_ref().unwrap_or(&vec![]).iter().map(CompactString::from).collect()` idiom
+/// that was repeated for every subcommand's include/exclude filters.
+fn compact_string_set(values: Option<&Vec<String>>) -> HashSet<CompactString> {
+    values
+        .map(|v| v.iter().map(CompactString::from).collect())
+        .unwrap_or_default()
+}
+
 impl StoredStatic {
     /// Builds the StoredStatic data set from the command-line options parsed in main.rs.
-    pub fn create_static_data(input_config: Option<Config>) -> StoredStatic {
-        let action_id = Action::to_usize(input_config.as_ref().unwrap().action.as_ref());
-        let quiet_errors_flag = match &input_config.as_ref().unwrap().action {
-            Some(Action::CsvTimeline(opt)) => opt.output_options.detect_common_options.quiet_errors,
-            Some(Action::JsonTimeline(opt)) => {
+    pub fn create_static_data(config: Config) -> StoredStatic {
+        let action = config.action.as_ref();
+        let action_id = Action::to_usize(action);
+        let quiet_errors_flag = match action {
+            Some(Action::DfirTimeline(opt)) => {
                 opt.output_options.detect_common_options.quiet_errors
             }
             Some(Action::LogonSummary(opt)) => opt.detect_common_options.quiet_errors,
@@ -182,9 +237,8 @@ impl StoredStatic {
             Some(Action::LogMetrics(opt)) => opt.detect_common_options.quiet_errors,
             _ => false,
         };
-        let common_options = match &input_config.as_ref().unwrap().action {
-            Some(Action::CsvTimeline(opt)) => opt.output_options.common_options,
-            Some(Action::JsonTimeline(opt)) => opt.output_options.common_options,
+        let common_options = match action {
+            Some(Action::DfirTimeline(opt)) => opt.output_options.common_options,
             Some(Action::LevelTuning(opt)) => opt.common_options,
             Some(Action::LogonSummary(opt)) => opt.common_options,
             Some(Action::EidMetrics(opt)) => opt.common_options,
@@ -205,9 +259,8 @@ impl StoredStatic {
             },
         };
         let binding = Path::new("./rules/config").to_path_buf();
-        let config_path = match &input_config.as_ref().unwrap().action {
-            Some(Action::CsvTimeline(opt)) => &opt.output_options.detect_common_options.config,
-            Some(Action::JsonTimeline(opt)) => &opt.output_options.detect_common_options.config,
+        let config_path = match action {
+            Some(Action::DfirTimeline(opt)) => &opt.output_options.detect_common_options.config,
             Some(Action::LogonSummary(opt)) => &opt.detect_common_options.config,
             Some(Action::EidMetrics(opt)) => &opt.detect_common_options.config,
             Some(Action::ExtractBase64(opt)) => &opt.detect_common_options.config,
@@ -217,9 +270,8 @@ impl StoredStatic {
             Some(Action::LogMetrics(opt)) => &opt.detect_common_options.config,
             _ => &binding,
         };
-        let verbose_flag = match &input_config.as_ref().unwrap().action {
-            Some(Action::CsvTimeline(opt)) => opt.output_options.detect_common_options.verbose,
-            Some(Action::JsonTimeline(opt)) => opt.output_options.detect_common_options.verbose,
+        let verbose_flag = match action {
+            Some(Action::DfirTimeline(opt)) => opt.output_options.detect_common_options.verbose,
             Some(Action::LogonSummary(opt)) => opt.detect_common_options.verbose,
             Some(Action::EidMetrics(opt)) => opt.detect_common_options.verbose,
             Some(Action::ExtractBase64(opt)) => opt.detect_common_options.verbose,
@@ -229,9 +281,8 @@ impl StoredStatic {
             Some(Action::LogMetrics(opt)) => opt.detect_common_options.verbose,
             _ => false,
         };
-        let json_input_flag = match &input_config.as_ref().unwrap().action {
-            Some(Action::CsvTimeline(opt)) => opt.output_options.detect_common_options.json_input,
-            Some(Action::JsonTimeline(opt)) => opt.output_options.detect_common_options.json_input,
+        let json_input_flag = match action {
+            Some(Action::DfirTimeline(opt)) => opt.output_options.detect_common_options.json_input,
             Some(Action::LogonSummary(opt)) => opt.detect_common_options.json_input,
             Some(Action::EidMetrics(opt)) => opt.detect_common_options.json_input,
             Some(Action::ExtractBase64(opt)) => opt.detect_common_options.json_input,
@@ -240,47 +291,21 @@ impl StoredStatic {
             Some(Action::LogMetrics(opt)) => opt.detect_common_options.json_input,
             _ => false,
         };
-        let is_valid_min_level = match &input_config.as_ref().unwrap().action {
-            Some(Action::CsvTimeline(opt)) => LEVEL::iter()
-                .any(|level| level.eq(opt.output_options.min_level.to_lowercase().as_str())),
-            Some(Action::JsonTimeline(opt)) => LEVEL::iter()
-                .any(|level| level.eq(opt.output_options.min_level.to_lowercase().as_str())),
-            Some(Action::PivotKeywordsList(opt)) => {
-                LEVEL::iter().any(|level| level.eq(opt.min_level.to_lowercase().as_str()))
-            }
+        let is_valid_min_level = match action {
+            Some(Action::DfirTimeline(opt)) => is_valid_level(&opt.output_options.min_level),
+            Some(Action::PivotKeywordsList(opt)) => is_valid_level(&opt.min_level),
             _ => true,
         };
-        let is_valid_exact_level = match &input_config.as_ref().unwrap().action {
-            Some(Action::CsvTimeline(opt)) => {
-                opt.output_options.exact_level.is_none()
-                    || LEVEL::iter().any(|level| {
-                        level.eq(opt
-                            .output_options
-                            .exact_level
-                            .as_ref()
-                            .unwrap()
-                            .to_lowercase()
-                            .as_str())
-                    })
-            }
-            Some(Action::JsonTimeline(opt)) => {
-                opt.output_options.exact_level.is_none()
-                    || LEVEL::iter().any(|level| {
-                        level.eq(opt
-                            .output_options
-                            .exact_level
-                            .as_ref()
-                            .unwrap()
-                            .to_lowercase()
-                            .as_str())
-                    })
-            }
-            Some(Action::PivotKeywordsList(opt)) => {
-                opt.exact_level.is_none()
-                    || LEVEL::iter().any(|level| {
-                        level.eq(opt.exact_level.as_ref().unwrap().to_lowercase().as_str())
-                    })
-            }
+        let is_valid_exact_level = match action {
+            Some(Action::DfirTimeline(opt)) => opt
+                .output_options
+                .exact_level
+                .as_ref()
+                .is_none_or(|level| is_valid_level(level)),
+            Some(Action::PivotKeywordsList(opt)) => opt
+                .exact_level
+                .as_ref()
+                .is_none_or(|level| is_valid_level(level)),
             _ => true,
         };
         if !is_valid_min_level || !is_valid_exact_level {
@@ -288,16 +313,8 @@ impl StoredStatic {
             process::exit(1);
         }
 
-        let geo_ip_db_result = match &input_config.as_ref().unwrap().action {
-            Some(Action::CsvTimeline(opt)) => GeoIPSearch::check_exist_geo_ip_files(
-                &opt.geo_ip,
-                vec![
-                    "GeoLite2-ASN.mmdb",
-                    "GeoLite2-Country.mmdb",
-                    "GeoLite2-City.mmdb",
-                ],
-            ),
-            Some(Action::JsonTimeline(opt)) => GeoIPSearch::check_exist_geo_ip_files(
+        let geo_ip_db_result = match action {
+            Some(Action::DfirTimeline(opt)) => GeoIPSearch::check_exist_geo_ip_files(
                 &opt.geo_ip,
                 vec![
                     "GeoLite2-ASN.mmdb",
@@ -311,24 +328,29 @@ impl StoredStatic {
             AlertMessage::alert(&err_msg).ok();
             process::exit(1);
         }
+        let mut geo_ip_search: Option<Arc<GeoIPSearch>> = None;
+        let mut geo_ip_filter: Option<Vec<Yaml>> = None;
+        let mut geo_ip_db_yaml: Option<HashMap<CompactString, Yaml>> = None;
         if let Some(geo_ip_db_path) = geo_ip_db_result.unwrap() {
-            *GEOIP_DB_PARSER.write().unwrap() = Some(GeoIPSearch::new(
+            geo_ip_search = Some(Arc::new(GeoIPSearch::new(
                 &geo_ip_db_path,
                 vec![
                     "GeoLite2-ASN.mmdb",
                     "GeoLite2-Country.mmdb",
                     "GeoLite2-City.mmdb",
                 ],
-            ));
-            let geo_ip_file_path = check_setting_path(config_path, "geoip_field_mapping", false)
-                .unwrap_or_else(|| {
-                    check_setting_path(
-                        &CURRENT_EXE_PATH.to_path_buf(),
-                        "rules/config/geoip_field_mapping.yaml",
-                        true,
-                    )
-                    .unwrap()
-                });
+            )));
+            let geo_ip_file_path =
+                check_setting_path(config_path, "geoip_field_mapping.yaml", false).unwrap_or_else(
+                    || {
+                        check_setting_path(
+                            &CURRENT_EXE_PATH.to_path_buf(),
+                            "rules/config/geoip_field_mapping.yaml",
+                            true,
+                        )
+                        .unwrap()
+                    },
+                );
             if !geo_ip_file_path.exists()
                 && !ONE_CONFIG_MAP.contains_key("geoip_field_mapping.yaml")
             {
@@ -354,7 +376,7 @@ impl StoredStatic {
             };
             let target_map = &geo_ip_mapping[0];
             let empty_yaml_vec: Vec<Yaml> = vec![];
-            *GEOIP_FILTER.write().unwrap() = Some(
+            geo_ip_filter = Some(
                 target_map["Filter"]
                     .as_vec()
                     .unwrap_or(&empty_yaml_vec)
@@ -375,11 +397,10 @@ impl StoredStatic {
                     );
                 }
             }
-            *GEOIP_DB_YAML.write().unwrap() = Some(static_geoip_conf);
+            geo_ip_db_yaml = Some(static_geoip_conf);
         };
-        let output_path = match &input_config.as_ref().unwrap().action {
-            Some(Action::CsvTimeline(opt)) => opt.output.as_ref(),
-            Some(Action::JsonTimeline(opt)) => opt.output.as_ref(),
+        let output_path = match action {
+            Some(Action::DfirTimeline(opt)) => opt.output.as_ref(),
             Some(Action::EidMetrics(opt)) => opt.output.as_ref(),
             Some(Action::ExtractBase64(opt)) => opt.output.as_ref(),
             Some(Action::PivotKeywordsList(opt)) => opt.output.as_ref(),
@@ -389,271 +410,128 @@ impl StoredStatic {
             Some(Action::LogMetrics(opt)) => opt.output.as_ref(),
             _ => None,
         };
-        let disable_abbreviation = match &input_config.as_ref().unwrap().action {
-            Some(Action::CsvTimeline(opt)) => opt.disable_abbreviations,
-            Some(Action::JsonTimeline(opt)) => opt.disable_abbreviations,
-            Some(Action::Search(opt)) => opt.disable_abbreviations,
-            Some(Action::LogMetrics(opt)) => opt.disable_abbreviations,
+        let disable_abbreviation = match action {
+            Some(Action::DfirTimeline(opt)) => opt.disable_abbreviations_opt.disable_abbreviations,
+            Some(Action::Search(opt)) => opt.disable_abbreviations_opt.disable_abbreviations,
+            Some(Action::LogMetrics(opt)) => opt.disable_abbreviations_opt.disable_abbreviations,
             _ => false,
         };
 
         let generic_abbreviations = create_output_filter_config(
-            check_setting_path(config_path, "generic_abbreviations.txt", false)
-                .unwrap_or_else(|| {
-                    check_setting_path(
-                        &CURRENT_EXE_PATH.to_path_buf(),
-                        "rules/config/generic_abbreviations.txt",
-                        true,
-                    )
-                    .unwrap()
-                })
+            resolve_config_file(config_path, "generic_abbreviations.txt")
                 .to_str()
                 .unwrap(),
             false,
             disable_abbreviation,
         );
-        let multiline_flag = match &input_config.as_ref().unwrap().action {
-            Some(Action::CsvTimeline(opt)) => opt.multiline,
+        let multiline_flag = match action {
+            Some(Action::DfirTimeline(opt)) => opt.multiline,
             Some(Action::Search(opt)) => opt.multiline,
             Some(Action::LogMetrics(opt)) => opt.multiline,
             _ => false,
         };
-        let tab_separator_flag = match &input_config.as_ref().unwrap().action {
-            Some(Action::CsvTimeline(opt)) => opt.tab_separator,
+        let tab_separator_flag = match action {
+            Some(Action::DfirTimeline(opt)) => opt.tab_separator,
             Some(Action::Search(opt)) => opt.tab_separator,
             Some(Action::LogMetrics(opt)) => opt.tab_separator,
             _ => false,
         };
-        let proven_rule_flag = match &input_config.as_ref().unwrap().action {
-            Some(Action::CsvTimeline(opt)) => opt.output_options.proven_rules,
-            Some(Action::JsonTimeline(opt)) => opt.output_options.proven_rules,
+        let proven_rule_flag = match action {
+            Some(Action::DfirTimeline(opt)) => opt.output_options.proven_rules,
             _ => false,
         };
         let target_ruleids = if proven_rule_flag {
             load_target_ids(
-                check_setting_path(config_path, "proven_rules.txt", false)
-                    .unwrap_or_else(|| {
-                        check_setting_path(
-                            &CURRENT_EXE_PATH.to_path_buf(),
-                            "rules/config/proven_rules.txt",
-                            true,
-                        )
-                        .unwrap()
-                    })
+                resolve_config_file(config_path, "proven_rules.txt")
                     .to_str()
                     .unwrap(),
             )
         } else {
             TargetIds::default()
         };
-        let include_computer: HashSet<CompactString> = match &input_config.as_ref().unwrap().action
-        {
-            Some(Action::CsvTimeline(opt)) => opt
-                .output_options
-                .detect_common_options
-                .include_computer
-                .as_ref()
-                .unwrap_or(&vec![])
-                .iter()
-                .map(CompactString::from)
-                .collect(),
-            Some(Action::JsonTimeline(opt)) => opt
-                .output_options
-                .detect_common_options
-                .include_computer
-                .as_ref()
-                .unwrap_or(&vec![])
-                .iter()
-                .map(CompactString::from)
-                .collect(),
-            Some(Action::EidMetrics(opt)) => opt
-                .detect_common_options
-                .include_computer
-                .as_ref()
-                .unwrap_or(&vec![])
-                .iter()
-                .map(CompactString::from)
-                .collect(),
-            Some(Action::ExtractBase64(opt)) => opt
-                .detect_common_options
-                .include_computer
-                .as_ref()
-                .unwrap_or(&vec![])
-                .iter()
-                .map(CompactString::from)
-                .collect(),
-            Some(Action::PivotKeywordsList(opt)) => opt
-                .detect_common_options
-                .include_computer
-                .as_ref()
-                .unwrap_or(&vec![])
-                .iter()
-                .map(CompactString::from)
-                .collect(),
-            Some(Action::LogonSummary(opt)) => opt
-                .detect_common_options
-                .include_computer
-                .as_ref()
-                .unwrap_or(&vec![])
-                .iter()
-                .map(CompactString::from)
-                .collect(),
-            Some(Action::LogMetrics(opt)) => opt
-                .detect_common_options
-                .include_computer
-                .as_ref()
-                .unwrap_or(&vec![])
-                .iter()
-                .map(CompactString::from)
-                .collect(),
+        let include_computer: HashSet<CompactString> = match action {
+            Some(Action::DfirTimeline(opt)) => compact_string_set(
+                opt.output_options
+                    .detect_common_options
+                    .include_computer
+                    .as_ref(),
+            ),
+            Some(Action::EidMetrics(opt)) => {
+                compact_string_set(opt.detect_common_options.include_computer.as_ref())
+            }
+            Some(Action::ExtractBase64(opt)) => {
+                compact_string_set(opt.detect_common_options.include_computer.as_ref())
+            }
+            Some(Action::PivotKeywordsList(opt)) => {
+                compact_string_set(opt.detect_common_options.include_computer.as_ref())
+            }
+            Some(Action::LogonSummary(opt)) => {
+                compact_string_set(opt.detect_common_options.include_computer.as_ref())
+            }
+            Some(Action::LogMetrics(opt)) => {
+                compact_string_set(opt.detect_common_options.include_computer.as_ref())
+            }
             _ => HashSet::default(),
         };
-        let exclude_computer: HashSet<CompactString> = match &input_config.as_ref().unwrap().action
-        {
-            Some(Action::CsvTimeline(opt)) => opt
-                .output_options
-                .detect_common_options
-                .exclude_computer
-                .as_ref()
-                .unwrap_or(&vec![])
-                .iter()
-                .map(CompactString::from)
-                .collect(),
-            Some(Action::JsonTimeline(opt)) => opt
-                .output_options
-                .detect_common_options
-                .exclude_computer
-                .as_ref()
-                .unwrap_or(&vec![])
-                .iter()
-                .map(CompactString::from)
-                .collect(),
-            Some(Action::EidMetrics(opt)) => opt
-                .detect_common_options
-                .exclude_computer
-                .as_ref()
-                .unwrap_or(&vec![])
-                .iter()
-                .map(CompactString::from)
-                .collect(),
-            Some(Action::ExtractBase64(opt)) => opt
-                .detect_common_options
-                .exclude_computer
-                .as_ref()
-                .unwrap_or(&vec![])
-                .iter()
-                .map(CompactString::from)
-                .collect(),
-            Some(Action::PivotKeywordsList(opt)) => opt
-                .detect_common_options
-                .exclude_computer
-                .as_ref()
-                .unwrap_or(&vec![])
-                .iter()
-                .map(CompactString::from)
-                .collect(),
-            Some(Action::LogonSummary(opt)) => opt
-                .detect_common_options
-                .exclude_computer
-                .as_ref()
-                .unwrap_or(&vec![])
-                .iter()
-                .map(CompactString::from)
-                .collect(),
-            Some(Action::LogMetrics(opt)) => opt
-                .detect_common_options
-                .exclude_computer
-                .as_ref()
-                .unwrap_or(&vec![])
-                .iter()
-                .map(CompactString::from)
-                .collect(),
+        let exclude_computer: HashSet<CompactString> = match action {
+            Some(Action::DfirTimeline(opt)) => compact_string_set(
+                opt.output_options
+                    .detect_common_options
+                    .exclude_computer
+                    .as_ref(),
+            ),
+            Some(Action::EidMetrics(opt)) => {
+                compact_string_set(opt.detect_common_options.exclude_computer.as_ref())
+            }
+            Some(Action::ExtractBase64(opt)) => {
+                compact_string_set(opt.detect_common_options.exclude_computer.as_ref())
+            }
+            Some(Action::PivotKeywordsList(opt)) => {
+                compact_string_set(opt.detect_common_options.exclude_computer.as_ref())
+            }
+            Some(Action::LogonSummary(opt)) => {
+                compact_string_set(opt.detect_common_options.exclude_computer.as_ref())
+            }
+            Some(Action::LogMetrics(opt)) => {
+                compact_string_set(opt.detect_common_options.exclude_computer.as_ref())
+            }
             _ => HashSet::default(),
         };
-        let include_eid: HashSet<CompactString> = match &input_config.as_ref().unwrap().action {
-            Some(Action::CsvTimeline(opt)) => opt
-                .output_options
-                .include_eid
-                .as_ref()
-                .unwrap_or(&vec![])
-                .iter()
-                .map(CompactString::from)
-                .collect(),
-            Some(Action::JsonTimeline(opt)) => opt
-                .output_options
-                .include_eid
-                .as_ref()
-                .unwrap_or(&vec![])
-                .iter()
-                .map(CompactString::from)
-                .collect(),
-            Some(Action::PivotKeywordsList(opt)) => opt
-                .include_eid
-                .as_ref()
-                .unwrap_or(&vec![])
-                .iter()
-                .map(CompactString::from)
-                .collect(),
+        let include_eid: HashSet<CompactString> = match action {
+            Some(Action::DfirTimeline(opt)) => {
+                compact_string_set(opt.output_options.include_eid.as_ref())
+            }
+            Some(Action::PivotKeywordsList(opt)) => compact_string_set(opt.include_eid.as_ref()),
             _ => HashSet::default(),
         };
-        let exclude_eid: HashSet<CompactString> = match &input_config.as_ref().unwrap().action {
-            Some(Action::CsvTimeline(opt)) => opt
-                .output_options
-                .exclude_eid
-                .as_ref()
-                .unwrap_or(&vec![])
-                .iter()
-                .map(CompactString::from)
-                .collect(),
-            Some(Action::JsonTimeline(opt)) => opt
-                .output_options
-                .exclude_eid
-                .as_ref()
-                .unwrap_or(&vec![])
-                .iter()
-                .map(CompactString::from)
-                .collect(),
-            Some(Action::PivotKeywordsList(opt)) => opt
-                .exclude_eid
-                .as_ref()
-                .unwrap_or(&vec![])
-                .iter()
-                .map(CompactString::from)
-                .collect(),
+        let exclude_eid: HashSet<CompactString> = match action {
+            Some(Action::DfirTimeline(opt)) => {
+                compact_string_set(opt.output_options.exclude_eid.as_ref())
+            }
+            Some(Action::PivotKeywordsList(opt)) => compact_string_set(opt.exclude_eid.as_ref()),
             _ => HashSet::default(),
         };
-        let no_field_data_mapping_flag = match &input_config.as_ref().unwrap().action {
-            Some(Action::CsvTimeline(opt)) => opt.output_options.no_field,
-            Some(Action::JsonTimeline(opt)) => opt.output_options.no_field,
+        let no_field_data_mapping_flag = match action {
+            Some(Action::DfirTimeline(opt)) => opt.output_options.no_field,
             _ => false,
         };
         let field_data_map = if no_field_data_mapping_flag {
             None
         } else {
             create_field_data_map(Path::new(
-                check_setting_path(config_path, "data_mapping", false)
-                    .unwrap_or_else(|| {
-                        check_setting_path(
-                            &CURRENT_EXE_PATH.to_path_buf(),
-                            "rules/config/data_mapping",
-                            true,
-                        )
-                        .unwrap()
-                    })
+                resolve_config_file(config_path, "data_mapping")
                     .to_str()
                     .unwrap(),
             ))
         };
 
-        let no_pwsh_field_extraction_flag = match &input_config.as_ref().unwrap().action {
-            Some(Action::CsvTimeline(opt)) => opt.output_options.no_pwsh_field_extraction,
-            Some(Action::JsonTimeline(opt)) => opt.output_options.no_pwsh_field_extraction,
+        let no_pwsh_field_extraction_flag = match action {
+            Some(Action::DfirTimeline(opt)) => opt.output_options.no_pwsh_field_extraction,
             _ => false,
         };
 
-        let enable_recover_records = match &input_config.as_ref().unwrap().action {
-            Some(Action::CsvTimeline(opt)) => opt.output_options.input_args.recover_records,
-            Some(Action::JsonTimeline(opt)) => opt.output_options.input_args.recover_records,
+        let enable_recover_records = match action {
+            Some(Action::DfirTimeline(opt)) => opt.output_options.input_args.recover_records,
             Some(Action::EidMetrics(opt)) => opt.input_args.recover_records,
             Some(Action::ExtractBase64(opt)) => opt.input_args.recover_records,
             Some(Action::LogonSummary(opt)) => opt.input_args.recover_records,
@@ -662,9 +540,8 @@ impl StoredStatic {
             Some(Action::LogMetrics(opt)) => opt.input_args.recover_records,
             _ => false,
         };
-        let time_offset = match &input_config.as_ref().unwrap().action {
-            Some(Action::CsvTimeline(opt)) => opt.output_options.input_args.time_offset.clone(),
-            Some(Action::JsonTimeline(opt)) => opt.output_options.input_args.time_offset.clone(),
+        let time_offset = match action {
+            Some(Action::DfirTimeline(opt)) => opt.output_options.input_args.time_offset.clone(),
             Some(Action::EidMetrics(opt)) => opt.input_args.time_offset.clone(),
             Some(Action::ExtractBase64(opt)) => opt.input_args.time_offset.clone(),
             Some(Action::LogonSummary(opt)) => opt.input_args.time_offset.clone(),
@@ -674,16 +551,8 @@ impl StoredStatic {
             Some(Action::LogMetrics(opt)) => opt.input_args.time_offset.clone(),
             _ => None,
         };
-        let include_status: HashSet<CompactString> = match &input_config.as_ref().unwrap().action {
-            Some(Action::CsvTimeline(opt)) => opt
-                .output_options
-                .include_status
-                .as_ref()
-                .unwrap_or(&vec![])
-                .iter()
-                .map(|x| x.into())
-                .collect(),
-            Some(Action::JsonTimeline(opt)) => opt
+        let include_status: HashSet<CompactString> = match action {
+            Some(Action::DfirTimeline(opt)) => opt
                 .output_options
                 .include_status
                 .as_ref()
@@ -700,31 +569,25 @@ impl StoredStatic {
                 .collect(),
             _ => HashSet::default(),
         };
-        let is_low_memory = match &input_config.as_ref().unwrap().action {
-            Some(Action::CsvTimeline(opt)) => !opt.output_options.sort_events,
-            Some(Action::JsonTimeline(opt)) => !opt.output_options.sort_events,
+        let is_low_memory = match action {
+            Some(Action::DfirTimeline(opt)) => !opt.output_options.sort_events,
             _ => false,
         };
-        let enable_all_rules = match &input_config.as_ref().unwrap().action {
-            Some(Action::CsvTimeline(opt)) => opt.output_options.enable_all_rules,
-            Some(Action::JsonTimeline(opt)) => opt.output_options.enable_all_rules,
+        let enable_all_rules = match action {
+            Some(Action::DfirTimeline(opt)) => opt.output_options.enable_all_rules,
             _ => false,
         };
-        let scan_all_evtx_files = match &input_config.as_ref().unwrap().action {
-            Some(Action::CsvTimeline(opt)) => opt.output_options.scan_all_evtx_files,
-            Some(Action::JsonTimeline(opt)) => opt.output_options.scan_all_evtx_files,
+        let scan_all_evtx_files = match action {
+            Some(Action::DfirTimeline(opt)) => opt.output_options.scan_all_evtx_files,
             _ => false,
         };
-        let metrics_remove_duplication = match &input_config.as_ref().unwrap().action {
+        let metrics_remove_duplication = match action {
             Some(Action::EidMetrics(opt)) => opt.remove_duplicate_detections,
             Some(Action::LogonSummary(opt)) => opt.remove_duplicate_detections,
             _ => false,
         };
-        let validate_checksum = match &input_config.as_ref().unwrap().action {
-            Some(Action::CsvTimeline(opt)) => {
-                opt.output_options.detect_common_options.validate_checksums
-            }
-            Some(Action::JsonTimeline(opt)) => {
+        let validate_checksum = match action {
+            Some(Action::DfirTimeline(opt)) => {
                 opt.output_options.detect_common_options.validate_checksums
             }
             Some(Action::LogonSummary(opt)) => opt.detect_common_options.validate_checksums,
@@ -737,18 +600,10 @@ impl StoredStatic {
             _ => false,
         };
         let mut ret = StoredStatic {
-            config: input_config.as_ref().unwrap().to_owned(),
+            config: config.to_owned(),
             config_path: config_path.to_path_buf(),
             channel_abbr_config: create_output_filter_config(
-                check_setting_path(config_path, "channel_abbreviations.txt", false)
-                    .unwrap_or_else(|| {
-                        check_setting_path(
-                            &CURRENT_EXE_PATH.to_path_buf(),
-                            "rules/config/channel_abbreviations.txt",
-                            true,
-                        )
-                        .unwrap()
-                    })
+                resolve_config_file(config_path, "channel_abbreviations.txt")
                     .to_str()
                     .unwrap(),
                 true,
@@ -764,47 +619,26 @@ impl StoredStatic {
                 .map(|x| x.to_owned())
                 .collect_vec(),
             provider_abbr_config: create_output_filter_config(
-                check_setting_path(config_path, "provider_abbreviations.txt", false)
-                    .unwrap_or_else(|| {
-                        check_setting_path(
-                            &CURRENT_EXE_PATH.to_path_buf(),
-                            "rules/config/provider_abbreviations.txt",
-                            true,
-                        )
-                        .unwrap()
-                    })
+                resolve_config_file(config_path, "provider_abbreviations.txt")
                     .to_str()
                     .unwrap(),
                 false,
                 disable_abbreviation,
             ),
             default_details: Self::get_default_details(
-                check_setting_path(config_path, "default_details.txt", false)
-                    .unwrap_or_else(|| {
-                        check_setting_path(
-                            &CURRENT_EXE_PATH.to_path_buf(),
-                            "rules/config/default_details.txt",
-                            true,
-                        )
-                        .unwrap()
-                    })
+                resolve_config_file(config_path, "default_details.txt")
                     .to_str()
                     .unwrap(),
                 disable_abbreviation,
             ),
             eventkey_alias: load_eventkey_alias(
-                check_setting_path(config_path, "eventkey_alias.txt", false)
-                    .unwrap_or_else(|| {
-                        check_setting_path(
-                            &CURRENT_EXE_PATH.to_path_buf(),
-                            "rules/config/eventkey_alias.txt",
-                            true,
-                        )
-                        .unwrap()
-                    })
+                resolve_config_file(config_path, "eventkey_alias.txt")
                     .to_str()
                     .unwrap(),
             ),
+            geo_ip_search,
+            geo_ip_db_yaml,
+            geo_ip_filter,
             // The numeric ids compared below come from Action::to_usize.
             logon_summary_flag: action_id == 2,
             metrics_flag: action_id == 3,
@@ -812,37 +646,25 @@ impl StoredStatic {
             computer_metrics_flag: action_id == 11,
             log_metrics_flag: action_id == 12,
             extract_base64_flag: action_id == 13,
-            search_option: extract_search_options(input_config.as_ref().unwrap()),
-            output_option: extract_output_options(input_config.as_ref().unwrap()),
+            search_option: extract_search_options(&config),
+            output_option: extract_output_options(&config),
             pivot_keyword_list_flag: action_id == 4,
+            pivot_keyword: Arc::new(RwLock::new(PivotKeywordMap::new())),
+            error_log_stack: Arc::new(Mutex::new(Nested::<String>::new())),
+            computer_mitre_attck_map: Arc::new(DashMap::new()),
+            computer_mitre_attck_unique_keys: Arc::new(DashSet::new()),
             quiet_errors_flag,
             verbose_flag,
-            html_report_flag: htmlreport::check_html_flag(input_config.as_ref().unwrap()),
+            html_report_flag: htmlreport::check_html_flag(&config),
             profiles: None,
-            thread_number: check_thread_number(input_config.as_ref().unwrap()),
+            thread_number: check_thread_number(&config),
             event_timeline_config: load_eventcode_info(
-                check_setting_path(config_path, "channel_eid_info.txt", false)
-                    .unwrap_or_else(|| {
-                        check_setting_path(
-                            &CURRENT_EXE_PATH.to_path_buf(),
-                            "rules/config/channel_eid_info.txt",
-                            true,
-                        )
-                        .unwrap()
-                    })
+                resolve_config_file(config_path, "channel_eid_info.txt")
                     .to_str()
                     .unwrap(),
             ),
             target_eventids: load_target_ids(
-                check_setting_path(config_path, "target_event_IDs.txt", false)
-                    .unwrap_or_else(|| {
-                        check_setting_path(
-                            &CURRENT_EXE_PATH.to_path_buf(),
-                            "rules/config/target_event_IDs.txt",
-                            true,
-                        )
-                        .unwrap()
-                    })
+                resolve_config_file(config_path, "target_event_IDs.txt")
                     .to_str()
                     .unwrap(),
             ),
@@ -961,8 +783,7 @@ impl StoredStatic {
 /// Function to extract thread_number information from config.
 fn check_thread_number(config: &Config) -> Option<usize> {
     match config.action.as_ref()? {
-        Action::CsvTimeline(opt) => opt.output_options.detect_common_options.thread_number,
-        Action::JsonTimeline(opt) => opt.output_options.detect_common_options.thread_number,
+        Action::DfirTimeline(opt) => opt.output_options.detect_common_options.thread_number,
         Action::LogonSummary(opt) => opt.detect_common_options.thread_number,
         Action::EidMetrics(opt) => opt.detect_common_options.thread_number,
         Action::ExtractBase64(opt) => opt.detect_common_options.thread_number,
@@ -974,31 +795,39 @@ fn check_thread_number(config: &Config) -> Option<usize> {
 }
 
 // Clap definitions for command generation.
+
+/// Release name shown in the CLI help banner (e.g. "CODE BLUE Release").
+/// This is the only value to update when naming a new release; the version
+/// number is pulled automatically from Cargo.toml (`CARGO_PKG_VERSION`).
+pub const RELEASE_NAME: &str = "Black Hat USA Arsenal 2026 Release";
+
+/// Builds a clap `help_template` banner. The first line is
+/// `Hayabusa v<version> - <RELEASE_NAME>` (version from Cargo.toml) and `body`
+/// is appended verbatim, so it must start with a newline.
+fn help_banner(body: &str) -> String {
+    format!(
+        "\nHayabusa v{} - {}{}",
+        env!("CARGO_PKG_VERSION"),
+        RELEASE_NAME,
+        body
+    )
+}
+
 #[derive(Subcommand, Clone, Debug)]
 pub enum Action {
     #[clap(
         author = "Yamato Security (https://github.com/Yamato-Security/hayabusa - @SecurityYamato)",
-        help_template = "\nHayabusa v3.10.0 - Independence Day Release\n{author-with-newline}\n{usage-heading}\n  hayabusa.exe csv-timeline <INPUT> [OPTIONS]\n\n{all-args}",
+        help_template = help_banner("\n{author-with-newline}\n{usage-heading}\n  hayabusa.exe dfir-timeline <INPUT> [OPTIONS]\n\n{all-args}"),
         term_width = 400,
         display_order = 292,
         disable_help_flag = true
     )]
-    /// Create a DFIR timeline and save it in CSV format
-    CsvTimeline(CsvOutputOption),
+    /// Create a DFIR timeline
+    DfirTimeline(DfirTimelineOption),
 
     #[clap(
         author = "Yamato Security (https://github.com/Yamato-Security/hayabusa - @SecurityYamato)",
-        help_template = "\nHayabusa v3.10.0 - Independence Day Release\n{author-with-newline}\n{usage-heading}\n  hayabusa.exe json-timeline <INPUT> [OPTIONS]\n\n{all-args}",
-        term_width = 400,
-        display_order = 360,
-        disable_help_flag = true
-    )]
-    /// Create a DFIR timeline and save it in JSON/JSONL format
-    JsonTimeline(JSONOutputOption),
-
-    #[clap(
-        author = "Yamato Security (https://github.com/Yamato-Security/hayabusa - @SecurityYamato)",
-        help_template = "\nHayabusa v3.10.0 - Independence Day Release\n{author-with-newline}\n{usage-heading}\n  hayabusa.exe log-metrics <INPUT> [OPTIONS]\n\n{all-args}",
+        help_template = help_banner("\n{author-with-newline}\n{usage-heading}\n  hayabusa.exe log-metrics <INPUT> [OPTIONS]\n\n{all-args}"),
         term_width = 400,
         display_order = 382,
         disable_help_flag = true
@@ -1008,7 +837,7 @@ pub enum Action {
 
     #[clap(
         author = "Yamato Security (https://github.com/Yamato-Security/hayabusa - @SecurityYamato)",
-        help_template = "\nHayabusa v3.10.0 - Independence Day Release\n{author-with-newline}\n{usage-heading}\n  hayabusa.exe logon-summary <INPUT> [OPTIONS]\n\n{all-args}",
+        help_template = help_banner("\n{author-with-newline}\n{usage-heading}\n  hayabusa.exe logon-summary <INPUT> [OPTIONS]\n\n{all-args}"),
         term_width = 400,
         display_order = 383,
         disable_help_flag = true
@@ -1018,7 +847,7 @@ pub enum Action {
 
     #[clap(
         author = "Yamato Security (https://github.com/Yamato-Security/hayabusa - @SecurityYamato)",
-        help_template = "\nHayabusa v3.10.0 - Independence Day Release\n{author-with-newline}\n{usage-heading}\n  hayabusa.exe eid-metrics <INPUT> [OPTIONS]\n\n{all-args}",
+        help_template = help_banner("\n{author-with-newline}\n{usage-heading}\n  hayabusa.exe eid-metrics <INPUT> [OPTIONS]\n\n{all-args}"),
         term_width = 400,
         display_order = 310,
         disable_help_flag = true
@@ -1028,7 +857,7 @@ pub enum Action {
 
     #[clap(
         author = "Yamato Security (https://github.com/Yamato-Security/hayabusa - @SecurityYamato)",
-        help_template = "\nHayabusa v3.10.0 - Independence Day Release\n{author-with-newline}\n{usage-heading}\n  hayabusa.exe expand-list <INPUT> [OPTIONS]\n\n{all-args}",
+        help_template = help_banner("\n{author-with-newline}\n{usage-heading}\n  hayabusa.exe expand-list [OPTIONS]\n\n{all-args}"),
         term_width = 400,
         display_order = 311,
         disable_help_flag = true
@@ -1038,7 +867,7 @@ pub enum Action {
 
     #[clap(
         author = "Yamato Security (https://github.com/Yamato-Security/hayabusa - @SecurityYamato)",
-        help_template = "\nHayabusa v3.10.0 - Independence Day Release\n{author-with-newline}\n{usage-heading}\n  hayabusa.exe extract-base64 <INPUT> [OPTIONS]\n\n{all-args}",
+        help_template = help_banner("\n{author-with-newline}\n{usage-heading}\n  hayabusa.exe extract-base64 <INPUT> [OPTIONS]\n\n{all-args}"),
         term_width = 400,
         display_order = 311,
         disable_help_flag = true
@@ -1048,7 +877,7 @@ pub enum Action {
 
     #[clap(
         author = "Yamato Security (https://github.com/Yamato-Security/hayabusa - @SecurityYamato)",
-        help_template = "\nHayabusa v3.10.0 - Independence Day Release\n{author-with-newline}\n{usage-heading}\n  hayabusa.exe pivot-keywords-list <INPUT> [OPTIONS]\n\n{all-args}",
+        help_template = help_banner("\n{author-with-newline}\n{usage-heading}\n  hayabusa.exe pivot-keywords-list <INPUT> [OPTIONS]\n\n{all-args}"),
         term_width = 400,
         display_order = 420,
         disable_help_flag = true
@@ -1058,7 +887,7 @@ pub enum Action {
 
     #[clap(
         author = "Yamato Security (https://github.com/Yamato-Security/hayabusa - @SecurityYamato)",
-        help_template = "\nHayabusa v3.10.0 - Independence Day Release\n{author-with-newline}\n{usage-heading}\n  hayabusa.exe search <INPUT> <--keywords \"<KEYWORDS>\" OR --regex \"<REGEX>\"> [OPTIONS]\n\n{all-args}",
+        help_template = help_banner("\n{author-with-newline}\n{usage-heading}\n  hayabusa.exe search <INPUT> <--keywords \"<KEYWORDS>\" OR --regex \"<REGEX>\"> [OPTIONS]\n\n{all-args}"),
         term_width = 400,
         display_order = 450,
         disable_help_flag = true
@@ -1068,7 +897,7 @@ pub enum Action {
 
     #[clap(
         author = "Yamato Security (https://github.com/Yamato-Security/hayabusa - @SecurityYamato)",
-        help_template = "\nHayabusa v3.10.0 - Independence Day Release\n{author-with-newline}\n{usage-heading}\n  {usage}\n\n{all-args}",
+        help_template = help_banner("\n{author-with-newline}\n{usage-heading}\n  hayabusa.exe update-rules [OPTIONS]\n\n{all-args}"),
         term_width = 400,
         display_order = 470,
         disable_help_flag = true
@@ -1078,7 +907,7 @@ pub enum Action {
 
     #[clap(
         author = "Yamato Security (https://github.com/Yamato-Security/hayabusa - @SecurityYamato)",
-        help_template = "\nHayabusa v3.10.0 - Independence Day Release\n{author-with-newline}\n{usage-heading}\n  {usage}\n\n{all-args}",
+        help_template = help_banner("\n{author-with-newline}\n{usage-heading}\n  hayabusa.exe level-tuning [OPTIONS]\n\n{all-args}"),
         term_width = 400,
         display_order = 380,
         disable_help_flag = true
@@ -1088,7 +917,7 @@ pub enum Action {
 
     #[clap(
         author = "Yamato Security (https://github.com/Yamato-Security/hayabusa - @SecurityYamato)",
-        help_template = "\nHayabusa v3.10.0 - Independence Day Release\n{author-with-newline}\n{usage-heading}\n  {usage}\n\n{all-args}",
+        help_template = help_banner("\n{author-with-newline}\n{usage-heading}\n  hayabusa.exe set-default-profile [OPTIONS]\n\n{all-args}"),
         term_width = 400,
         display_order = 451,
         disable_help_flag = true
@@ -1096,17 +925,29 @@ pub enum Action {
     /// Set default output profile for the DFIR timeline
     SetDefaultProfile(DefaultProfileOption),
 
-    #[clap(display_order = 381)]
+    #[clap(
+        author = "Yamato Security (https://github.com/Yamato-Security/hayabusa - @SecurityYamato)",
+        help_template = help_banner("\n{author-with-newline}\n{usage-heading}\n  hayabusa.exe list-contributors [OPTIONS]\n\n{all-args}"),
+        term_width = 400,
+        display_order = 381,
+        disable_help_flag = true
+    )]
     /// Print the list of contributors
     ListContributors(CommonOptions),
 
-    #[clap(display_order = 382)]
+    #[clap(
+        author = "Yamato Security (https://github.com/Yamato-Security/hayabusa - @SecurityYamato)",
+        help_template = help_banner("\n{author-with-newline}\n{usage-heading}\n  hayabusa.exe list-profiles [OPTIONS]\n\n{all-args}"),
+        term_width = 400,
+        display_order = 382,
+        disable_help_flag = true
+    )]
     /// List the output profiles for the DFIR timeline
     ListProfiles(CommonOptions),
 
     #[clap(
         author = "Yamato Security (https://github.com/Yamato-Security/hayabusa - @SecurityYamato)",
-        help_template = "\nHayabusa v3.10.0 - Independence Day Release\n{author-with-newline}\n{usage-heading}\n  hayabusa.exe computer-metrics <INPUT> [OPTIONS]\n\n{all-args}",
+        help_template = help_banner("\n{author-with-newline}\n{usage-heading}\n  hayabusa.exe computer-metrics <INPUT> [OPTIONS]\n\n{all-args}"),
         term_width = 400,
         display_order = 290,
         disable_help_flag = true
@@ -1116,7 +957,7 @@ pub enum Action {
 
     #[clap(
         author = "Yamato Security (https://github.com/Yamato-Security/hayabusa - @SecurityYamato)",
-        help_template = "\nHayabusa v3.10.0 - Independence Day Release\n{author-with-newline}\n{usage-heading}\n  hayabusa.exe config-critical-systems <INPUT> [OPTIONS]\n\n{all-args}",
+        help_template = help_banner("\n{author-with-newline}\n{usage-heading}\n  hayabusa.exe config-critical-systems <INPUT> [OPTIONS]\n\n{all-args}"),
         term_width = 400,
         display_order = 291,
         disable_help_flag = true
@@ -1131,8 +972,7 @@ impl Action {
     pub fn to_usize(action: Option<&Action>) -> usize {
         if let Some(a) = action {
             match a {
-                Action::CsvTimeline(_) => 0,
-                Action::JsonTimeline(_) => 1,
+                Action::DfirTimeline(_) => 0,
                 Action::LogonSummary(_) => 2,
                 Action::EidMetrics(_) => 3,
                 Action::PivotKeywordsList(_) => 4,
@@ -1157,8 +997,7 @@ impl Action {
     pub fn get_action_name(action: Option<&Action>) -> &str {
         if let Some(a) = action {
             match a {
-                Action::CsvTimeline(_) => "csv-timeline",
-                Action::JsonTimeline(_) => "json-timeline",
+                Action::DfirTimeline(_) => "dfir-timeline",
                 Action::LogonSummary(_) => "logon-summary",
                 Action::EidMetrics(_) => "eid-metrics",
                 Action::PivotKeywordsList(_) => "pivot-keywords-list",
@@ -1181,9 +1020,34 @@ impl Action {
 }
 
 #[derive(Args, Clone, Debug, Default)]
+pub struct ClobberOption {
+    /// Overwrite files when saving
+    #[arg(help_heading = Some("General Options"), short='C', long = "clobber", display_order = 290, requires = "output")]
+    pub clobber: bool,
+}
+
+#[derive(Args, Clone, Debug, Default)]
+pub struct TimeRangeOption {
+    /// End time of the event logs to load (ex: "2022-02-22 23:59:59 +09:00")
+    #[arg(help_heading = Some("Filtering"), long = "timeline-end", value_name = "DATE", display_order = 460)]
+    pub end_timeline: Option<String>,
+
+    /// Start time of the event logs to load (ex: "2020-02-22 00:00:00 +09:00")
+    #[arg(help_heading = Some("Filtering"), long = "timeline-start", value_name = "DATE", display_order = 460)]
+    pub start_timeline: Option<String>,
+}
+
+#[derive(Args, Clone, Debug, Default)]
+pub struct DisableAbbreviationsOption {
+    /// Disable abbreviations
+    #[arg(help_heading = Some("Output"), short='b', long = "disable-abbreviations", display_order = 60)]
+    pub disable_abbreviations: bool,
+}
+
+#[derive(Args, Clone, Debug, Default)]
 pub struct DetectCommonOption {
     /// Scan JSON formatted logs instead of .evtx (.json or .jsonl)
-    #[arg(help_heading = Some("General Options"), short = 'J', long = "JSON-input", conflicts_with = "live_analysis", display_order = 360)]
+    #[arg(help_heading = Some("General Options"), short = 'J', long = "json-input", conflicts_with = "live_analysis", display_order = 360)]
     pub json_input: bool,
 
     /// Enable checksum validation
@@ -1197,7 +1061,6 @@ pub struct DetectCommonOption {
     /// Number of threads (default: optimal number for performance)
     #[arg(
         help_heading = Some("General Options"),
-        short = 't',
         long = "threads",
         value_name = "NUMBER",
         display_order = 460
@@ -1245,31 +1108,31 @@ pub struct DefaultProfileOption {
 #[derive(Args, Clone, Debug, Default)]
 pub struct TimeFormatOptions {
     /// Output timestamp in European time format (ex: 22-02-2022 22:00:00.123 +02:00)
-    #[arg(help_heading = Some("Time Format"), long = "European-time", display_order = 50)]
+    #[arg(help_heading = Some("Time Format"), long = "european-time", display_order = 50)]
     pub european_time: bool,
 
     /// Output timestamp in original ISO-8601 format (ex: 2022-02-22T10:10:10.1234567Z) (Always UTC)
-    #[arg(help_heading = Some("Time Format"), short = 'O', long = "ISO-8601", display_order = 90)]
+    #[arg(help_heading = Some("Time Format"), short = 'O', long = "iso-8601", display_order = 90)]
     pub iso_8601: bool,
 
     /// Output timestamp in RFC 2822 format (ex: Fri, 22 Feb 2022 22:00:00 -0600)
-    #[arg(help_heading = Some("Time Format"), long = "RFC-2822", display_order = 180)]
+    #[arg(help_heading = Some("Time Format"), long = "rfc-2822", display_order = 180)]
     pub rfc_2822: bool,
 
     /// Output timestamp in RFC 3339 format (ex: 2022-02-22 22:00:00.123456-06:00)
-    #[arg(help_heading = Some("Time Format"), long = "RFC-3339", display_order = 180)]
+    #[arg(help_heading = Some("Time Format"), long = "rfc-3339", display_order = 180)]
     pub rfc_3339: bool,
 
     /// Output timestamp in US military time format (ex: 02-22-2022 22:00:00.123 -06:00)
-    #[arg(help_heading = Some("Time Format"), long = "US-military-time", display_order = 210)]
+    #[arg(help_heading = Some("Time Format"), long = "us-military-time", display_order = 210)]
     pub us_military_time: bool,
 
     /// Output timestamp in US time format (ex: 02-22-2022 10:00:00.123 PM -06:00)
-    #[arg(help_heading = Some("Time Format"), long = "US-time", display_order = 210)]
+    #[arg(help_heading = Some("Time Format"), long = "us-time", display_order = 210)]
     pub us_time: bool,
 
     /// Output time in UTC format (default: local time)
-    #[arg(help_heading = Some("Time Format"), short = 'U', long = "UTC", display_order = 210)]
+    #[arg(help_heading = Some("Time Format"), short = 'U', long = "utc", display_order = 210)]
     pub utc: bool,
 }
 
@@ -1336,13 +1199,8 @@ pub struct SearchOption {
     )]
     pub filter: Vec<String>,
 
-    /// End time of the event logs to load (ex: "2022-02-22 23:59:59 +09:00")
-    #[arg(help_heading = Some("Filtering"), long = "timeline-end", value_name = "DATE", display_order = 460)]
-    pub end_timeline: Option<String>,
-
-    /// Start time of the event logs to load (ex: "2020-02-22 00:00:00 +09:00")
-    #[arg(help_heading = Some("Filtering"), long = "timeline-start", value_name = "DATE", display_order = 460)]
-    pub start_timeline: Option<String>,
+    #[clap(flatten)]
+    pub time_range: TimeRangeOption,
 
     /// Save the search results in CSV format (ex: search.csv)
     #[arg(
@@ -1360,7 +1218,6 @@ pub struct SearchOption {
     /// Number of threads (default: optimal number for performance)
     #[arg(
             help_heading = Some("General Options"),
-            short = 't',
             long = "threads",
             value_name = "NUMBER",
             display_order = 460
@@ -1395,24 +1252,22 @@ pub struct SearchOption {
     #[arg(help_heading = Some("Output"), short = 'S', long="tab-separator", requires = "output", conflicts_with = "multiline", display_order = 490)]
     pub tab_separator: bool,
 
-    /// Overwrite files when saving
-    #[arg(help_heading = Some("General Options"), short='C', long = "clobber", display_order = 290, requires = "output")]
-    pub clobber: bool,
+    #[clap(flatten)]
+    pub clobber_opt: ClobberOption,
 
     /// Save the search results in JSON format (ex: -J -o results.json)
-    #[arg(help_heading = Some("Output"), short = 'J', long = "JSON-output", conflicts_with_all = ["jsonl_output", "multiline"], requires = "output", display_order = 100)]
+    #[arg(help_heading = Some("Output"), short = 'J', long = "json-output", conflicts_with_all = ["jsonl_output", "multiline"], requires = "output", display_order = 100)]
     pub json_output: bool,
 
     /// Save the search results in JSONL format (ex: -L -o results.jsonl)
-    #[arg(help_heading = Some("Output"), short = 'L', long = "JSONL-output", conflicts_with_all = ["jsonl_output", "multiline"], requires = "output", display_order = 100)]
+    #[arg(help_heading = Some("Output"), short = 'L', long = "jsonl-output", conflicts_with_all = ["jsonl_output", "multiline"], requires = "output", display_order = 100)]
     pub jsonl_output: bool,
 
     #[clap(flatten)]
     pub time_format_options: TimeFormatOptions,
 
-    /// Disable abbreviations
-    #[arg(help_heading = Some("Output"), short='b', long = "disable-abbreviations", display_order = 60)]
-    pub disable_abbreviations: bool,
+    #[clap(flatten)]
+    pub disable_abbreviations_opt: DisableAbbreviationsOption,
 
     /// Sort results before saving the file (warning: this uses much more memory!)
     #[arg(help_heading = Some("General Options"), short='s', long = "sort", display_order = 600)]
@@ -1482,9 +1337,8 @@ pub struct EidMetricsOption {
     #[clap(flatten)]
     pub time_format_options: TimeFormatOptions,
 
-    /// Overwrite files when saving
-    #[arg(help_heading = Some("General Options"), short='C', long = "clobber", display_order = 290, requires = "output")]
-    pub clobber: bool,
+    #[clap(flatten)]
+    pub clobber_opt: ClobberOption,
 }
 
 #[derive(Args, Clone, Debug, Default)]
@@ -1555,16 +1409,11 @@ pub struct PivotKeywordOption {
     #[arg(help_heading = Some("Filtering"), short = 'n', long = "enable-noisy-rules", requires = "no_wizard", display_order = 311)]
     pub enable_noisy_rules: bool,
 
-    /// End time of the event logs to load (ex: "2022-02-22 23:59:59 +09:00")
-    #[arg(help_heading = Some("Filtering"), long = "timeline-end", value_name = "DATE", display_order = 460)]
-    pub end_timeline: Option<String>,
-
-    /// Start time of the event logs to load (ex: "2020-02-22 00:00:00 +09:00")
-    #[arg(help_heading = Some("Filtering"), long = "timeline-start", value_name = "DATE", display_order = 460)]
-    pub start_timeline: Option<String>,
+    #[clap(flatten)]
+    pub time_range: TimeRangeOption,
 
     /// Scan only common EIDs for faster speed (./rules/config/target_event_IDs.txt)
-    #[arg(help_heading = Some("Filtering"), short = 'E', long = "EID-filter", display_order = 50)]
+    #[arg(help_heading = Some("Filtering"), short = 'E', long = "eid-filter", display_order = 50)]
     pub eid_filter: bool,
 
     /// Scan only specified EIDs for faster speed (ex: 1) (ex: 1,4688)
@@ -1578,9 +1427,8 @@ pub struct PivotKeywordOption {
     #[clap(flatten)]
     pub detect_common_options: DetectCommonOption,
 
-    /// Overwrite files when saving
-    #[arg(help_heading = Some("General Options"), short='C', long = "clobber", display_order = 290, requires = "output")]
-    pub clobber: bool,
+    #[clap(flatten)]
+    pub clobber_opt: ClobberOption,
 
     /// Do not ask questions. Scan for all events and alerts.
     #[arg(help_heading = Some("General Options"), short = 'w', long = "no-wizard", display_order = 400)]
@@ -1609,17 +1457,11 @@ pub struct LogonSummaryOption {
     #[clap(flatten)]
     pub time_format_options: TimeFormatOptions,
 
-    /// Overwrite files when saving
-    #[arg(help_heading = Some("General Options"), short='C', long = "clobber", display_order = 290, requires = "output")]
-    pub clobber: bool,
+    #[clap(flatten)]
+    pub clobber_opt: ClobberOption,
 
-    /// End time of the event logs to load (ex: "2022-02-22 23:59:59 +09:00")
-    #[arg(help_heading = Some("Filtering"), long = "timeline-end", value_name = "DATE", display_order = 460)]
-    pub end_timeline: Option<String>,
-
-    /// Start time of the event logs to load (ex: "2020-02-22 00:00:00 +09:00")
-    #[arg(help_heading = Some("Filtering"), long = "timeline-start", value_name = "DATE", display_order = 460)]
-    pub start_timeline: Option<String>,
+    #[clap(flatten)]
+    pub time_range: TimeRangeOption,
 }
 
 /// Options that can be set when outputting results (flattened into csv-timeline/json-timeline)
@@ -1628,6 +1470,16 @@ pub struct LogonSummaryOption {
 pub struct OutputOption {
     #[clap(flatten)]
     pub input_args: InputOption,
+
+    /// Duplicate field data will be replaced with "DUP" (sort required)
+    #[arg(
+            help_heading = Some("Output"),
+            short = 'R',
+            long = "remove-duplicate-data",
+            requires = "sort_events",
+            display_order = 440
+        )]
+    pub remove_duplicate_data: bool,
 
     /// Specify output profile
     #[arg(help_heading = Some("Output"), short = 'p', long = "profile", display_order = 420)]
@@ -1693,16 +1545,11 @@ pub struct OutputOption {
     #[arg(help_heading = Some("Filtering"), short = 'n', long = "enable-noisy-rules", requires = "no_wizard", display_order = 311)]
     pub enable_noisy_rules: bool,
 
-    /// End time of the event logs to load (ex: "2022-02-22 23:59:59 +09:00")
-    #[arg(help_heading = Some("Filtering"), long = "timeline-end", value_name = "DATE", display_order = 460)]
-    pub end_timeline: Option<String>,
-
-    /// Start time of the event logs to load (ex: "2020-02-22 00:00:00 +09:00")
-    #[arg(help_heading = Some("Filtering"), long = "timeline-start", value_name = "DATE", display_order = 460)]
-    pub start_timeline: Option<String>,
+    #[clap(flatten)]
+    pub time_range: TimeRangeOption,
 
     /// Scan only common EIDs for faster speed (./rules/config/target_event_IDs.txt)
-    #[arg(help_heading = Some("Filtering"), short = 'E', long = "EID-filter", conflicts_with_all=["include_eid","exclude_eid"], display_order = 50)]
+    #[arg(help_heading = Some("Filtering"), short = 'E', long = "eid-filter", conflicts_with_all=["include_eid","exclude_eid"], display_order = 50)]
     pub eid_filter: bool,
 
     /// Scan with only proven rules for faster speed (./rules/config/proven_rules.txt)
@@ -1727,7 +1574,7 @@ pub struct OutputOption {
     #[clap(flatten)]
     pub time_format_options: TimeFormatOptions,
 
-    /// Output event frequency timeline (terminal needs to support unicode)
+    /// Output event frequency timeline (terminal needs to support unicode, sort required)
     #[arg(help_heading = Some("Display Settings"), short = 'T', long = "visualize-timeline", display_order = 490, requires = "sort_events")]
     pub visualize_timeline: bool,
 
@@ -1745,16 +1592,15 @@ pub struct OutputOption {
     pub rules: PathBuf,
 
     /// Save Results Summary details to an HTML report (ex: results.html)
-    #[arg(help_heading = Some("Output"), short = 'H', long="HTML-report", conflicts_with = "no_summary", value_name = "FILE", display_order = 80, requires = "output")]
+    #[arg(help_heading = Some("Output"), short = 'H', long="html-report", conflicts_with = "no_summary", value_name = "FILE", display_order = 80, requires = "output")]
     pub html_report: Option<PathBuf>,
 
     /// Do not display Results Summary for faster speed
     #[arg(help_heading = Some("Display Settings"), short = 'N', long = "no-summary", conflicts_with = "html_report", display_order = 401)]
     pub no_summary: bool,
 
-    /// Overwrite files when saving
-    #[arg(help_heading = Some("General Options"), short='C', long = "clobber", display_order = 290, requires = "output")]
-    pub clobber: bool,
+    #[clap(flatten)]
+    pub clobber_opt: ClobberOption,
 
     /// Disable field data mapping
     #[arg(help_heading = Some("Output"), short = 'F', long = "no-field-data-mapping", display_order = 400)]
@@ -1764,17 +1610,7 @@ pub struct OutputOption {
     #[arg(help_heading = Some("Output"), long = "no-pwsh-field-extraction", display_order = 410)]
     pub no_pwsh_field_extraction: bool,
 
-    /// Duplicate field data will be replaced with "DUP"
-    #[arg(
-            help_heading = Some("Output"),
-            short = 'R',
-            long = "remove-duplicate-data",
-            requires = "sort_events",
-            display_order = 440
-        )]
-    pub remove_duplicate_data: bool,
-
-    /// Remove duplicate detections (default: disabled)
+    /// Remove duplicate detections (sort required)
     #[arg(help_heading = Some("Output"), short = 'X', long = "remove-duplicate-detections", requires = "sort_events", display_order = 441)]
     pub remove_duplicate_detections: bool,
 
@@ -1793,6 +1629,14 @@ pub struct OutputOption {
     /// Scan all evtx files regardless of loaded rules (disable channel filter for evtx files)
     #[arg(help_heading = Some("Filtering"), short='a', long = "scan-all-evtx-files", display_order = 450)]
     pub scan_all_evtx_files: bool,
+}
+
+impl OutputOption {
+    /// Whether existing output files may be overwritten (the `-C`/`--clobber` flag, now carried by
+    /// the flattened `ClobberOption`).
+    pub fn is_clobber_enabled(&self) -> bool {
+        self.clobber_opt.clobber
+    }
 }
 
 #[derive(Copy, Args, Clone, Debug, Default)]
@@ -1834,17 +1678,42 @@ pub struct InputOption {
     pub time_offset: Option<String>,
 }
 
+/// Output format for `dfir-timeline`, selectable with `-t, --output-type` (case-insensitive,
+/// default CSV).
+#[derive(ValueEnum, Clone, Copy, Debug, PartialEq, Eq, Default)]
+pub enum OutputType {
+    #[default]
+    Csv,
+    Json,
+    Jsonl,
+}
+
 #[derive(Args, Clone, Debug, Default)]
-pub struct CsvOutputOption {
+pub struct DfirTimelineOption {
     #[clap(flatten)]
     pub output_options: OutputOption,
 
-    /// Separate event field information by newline characters
-    #[arg(help_heading = Some("Output"), short = 'M', long="multiline", conflicts_with = "tab_separator", display_order = 390)]
+    /// Output format: csv (default), json, or jsonl
+    #[arg(
+        help_heading = Some("Output"),
+        short = 't',
+        long = "output-type",
+        value_enum,
+        value_name = "OUTPUT_FORMAT",
+        ignore_case = true,
+        default_value = "csv",
+        hide_default_value = true,
+        hide_possible_values = true,
+        display_order = 411
+    )]
+    pub output_type: OutputType,
+
+    /// Separate event field information by newline characters (CSV output only)
+    #[arg(help_heading = Some("CSV Output"), short = 'M', long="multiline", conflicts_with = "tab_separator", display_order = 390)]
     pub multiline: bool,
 
-    /// Separate event field information by tabs
-    #[arg(help_heading = Some("Output"), short = 'S', long="tab-separator", conflicts_with = "multiline", requires = "output", display_order = 490)]
+    /// Separate event field information by tabs (CSV output only)
+    #[arg(help_heading = Some("CSV Output"), short = 'S', long="tab-separator", conflicts_with = "multiline", requires = "output", display_order = 490)]
     pub tab_separator: bool,
 
     // The display_order value is derived from the first letter of the long option name
@@ -1853,47 +1722,18 @@ pub struct CsvOutputOption {
     #[arg(
         help_heading = Some("Output"),
         short = 'G',
-        long = "GeoIP",
+        long = "geo-ip",
         value_name = "MAXMIND-DB-DIR",
         display_order = 70
     )]
     pub geo_ip: Option<PathBuf>,
 
-    /// Save the timeline in CSV format (ex: results.csv)
+    /// Save the timeline to a file (ex: results.csv)
     #[arg(help_heading = Some("Output"), short = 'o', long, value_name = "FILE", display_order = 410)]
     pub output: Option<PathBuf>,
 
-    /// Disable abbreviations
-    #[arg(help_heading = Some("Output"), short='b', long = "disable-abbreviations", display_order = 60)]
-    pub disable_abbreviations: bool,
-}
-
-#[derive(Args, Clone, Debug, Default)]
-pub struct JSONOutputOption {
     #[clap(flatten)]
-    pub output_options: OutputOption,
-
-    /// Save the timeline in JSON format (ex: results.json)
-    #[arg(help_heading = Some("Output"), short = 'o', long, value_name = "FILE", display_order = 410)]
-    pub output: Option<PathBuf>,
-
-    /// Save the timeline in JSONL format (ex: -L -o results.jsonl)
-    #[arg(help_heading = Some("Output"), short = 'L', long = "JSONL-output", requires = "output", display_order = 100)]
-    pub jsonl_timeline: bool,
-
-    /// Add GeoIP (ASN, city, country) info to IP addresses
-    #[arg(
-        help_heading = Some("Output"),
-        short = 'G',
-        long = "GeoIP",
-        value_name = "MAXMIND-DB-DIR",
-        display_order = 70
-    )]
-    pub geo_ip: Option<PathBuf>,
-
-    /// Disable abbreviations
-    #[arg(help_heading = Some("Output"), short='b', long = "disable-abbreviations", display_order = 60)]
-    pub disable_abbreviations: bool,
+    pub disable_abbreviations_opt: DisableAbbreviationsOption,
 }
 
 #[derive(Args, Clone, Debug, Default)]
@@ -1909,7 +1749,7 @@ pub struct ComputerMetricsOption {
     pub common_options: CommonOptions,
 
     /// Scan JSON formatted logs instead of .evtx (.json or .jsonl)
-    #[arg(help_heading = Some("General Options"), short = 'J', long = "JSON-input", conflicts_with = "live_analysis", display_order = 390)]
+    #[arg(help_heading = Some("General Options"), short = 'J', long = "json-input", conflicts_with = "live_analysis", display_order = 390)]
     pub json_input: bool,
 
     /// Specify additional evtx file extensions (ex: evtx_data)
@@ -1936,9 +1776,8 @@ pub struct ComputerMetricsOption {
     #[arg(help_heading = Some("Display Settings"), short = 'v', long, display_order = 480)]
     pub verbose: bool,
 
-    /// Overwrite files when saving
-    #[arg(help_heading = Some("General Options"), short='C', long = "clobber", display_order = 290, requires = "output")]
-    pub clobber: bool,
+    #[clap(flatten)]
+    pub clobber_opt: ClobberOption,
 
     /// Enable checksum validation
     #[arg(help_heading = Some("General Options"), short = 'V', long = "validate-checksums", display_order = 480)]
@@ -1971,13 +1810,11 @@ pub struct LogMetricsOption {
     #[arg(help_heading = Some("Output"), short = 'S', long="tab-separator", conflicts_with = "multiline", display_order = 490)]
     pub tab_separator: bool,
 
-    /// Overwrite files when saving
-    #[arg(help_heading = Some("General Options"), short='C', long = "clobber", display_order = 290, requires = "output")]
-    pub clobber: bool,
+    #[clap(flatten)]
+    pub clobber_opt: ClobberOption,
 
-    /// Disable abbreviations
-    #[arg(help_heading = Some("Output"), short='b', long = "disable-abbreviations", display_order = 60)]
-    pub disable_abbreviations: bool,
+    #[clap(flatten)]
+    pub disable_abbreviations_opt: DisableAbbreviationsOption,
 
     /// Only include specified channels (ex: System,Security)
     #[arg(help_heading = Some("Filtering"),long = "include-channel", value_name = "CHANNEL...", conflicts_with = "exclude_channel", use_value_delimiter = true, value_delimiter = ',',display_order = 355)]
@@ -2014,9 +1851,8 @@ pub struct ExtractBase64Option {
     #[clap(flatten)]
     pub time_format_options: TimeFormatOptions,
 
-    /// Overwrite files when saving
-    #[arg(help_heading = Some("General Options"), short='C', long = "clobber", display_order = 290, requires = "output")]
-    pub clobber: bool,
+    #[clap(flatten)]
+    pub clobber_opt: ClobberOption,
 }
 
 #[derive(Args, Clone, Debug, Default)]
@@ -2056,7 +1892,7 @@ pub struct ConfigCriticalSystemsOption {
 #[derive(Parser, Clone, Debug, Default)]
 #[clap(
     author = "Yamato Security (https://github.com/Yamato-Security/hayabusa - @SecurityYamato)",
-    help_template = "\nHayabusa v3.10.0 - Independence Day Release\n{author-with-newline}\n{usage-heading}\n  hayabusa.exe <COMMAND> [OPTIONS]\n  hayabusa.exe help <COMMAND> or hayabusa.exe <COMMAND> -h\n\n{all-args}{options}",
+    help_template = help_banner("\n{author-with-newline}\n{usage-heading}\n  hayabusa.exe <COMMAND> [OPTIONS]\n  hayabusa.exe help <COMMAND> or hayabusa.exe <COMMAND> -h\n\n{all-args}{options}"),
     term_width = 400,
     disable_help_flag = true
 )]
@@ -2080,7 +1916,10 @@ impl ConfigReader {
         // `target/.../deps/`. See https://github.com/Yamato-Security/hayabusa/issues/1170
         let parse = Config::try_parse().unwrap_or_else(|e| {
             let under_test = std::env::current_exe()
-                .map(|p| p.components().any(|c| c.as_os_str() == "deps"))
+                .map(|path| {
+                    path.components()
+                        .any(|component| component.as_os_str() == "deps")
+                })
                 .unwrap_or(false);
             // Only swallow the error kinds the harness itself produces: its flags
             // (`--test-threads`, `--nocapture`, ...) parse as `UnknownArgument`, and
@@ -2097,8 +1936,8 @@ impl ConfigReader {
                 e.exit()
             }
         });
-        let help_term_width = if let Some((Width(w), _)) = terminal_size() {
-            w as usize
+        let help_term_width = if let Some((Width(width), _)) = terminal_size() {
+            width as usize
         } else {
             400
         };
@@ -2271,7 +2110,7 @@ impl TargetEventTime {
         let mut parse_success_flag = true;
         let time_offset = get_time_offset(&stored_static.time_offset, &mut parse_success_flag);
         match &stored_static.config.action.as_ref().unwrap() {
-            Action::CsvTimeline(option) => {
+            Action::DfirTimeline(option) => {
                 let start_time = if time_offset.is_some() {
                     get_time(
                         time_offset.as_ref(),
@@ -2280,34 +2119,13 @@ impl TargetEventTime {
                     )
                 } else {
                     get_time(
-                        option.output_options.start_timeline.as_ref(),
+                        option.output_options.time_range.start_timeline.as_ref(),
                         "start-timeline field: the timestamp format is not correct.",
                         &mut parse_success_flag,
                     )
                 };
                 let end_time = get_time(
-                    option.output_options.end_timeline.as_ref(),
-                    "end-timeline field: the timestamp format is not correct.",
-                    &mut parse_success_flag,
-                );
-                Self::set(parse_success_flag, start_time, end_time)
-            }
-            Action::JsonTimeline(option) => {
-                let start_time = if time_offset.is_some() {
-                    get_time(
-                        time_offset.as_ref(),
-                        "Invalid timeline offset. Please use one of the following formats: 1y, 3M, 30d, 24h, 30m",
-                        &mut parse_success_flag,
-                    )
-                } else {
-                    get_time(
-                        option.output_options.start_timeline.as_ref(),
-                        "start-timeline field: the timestamp format is not correct.",
-                        &mut parse_success_flag,
-                    )
-                };
-                let end_time = get_time(
-                    option.output_options.end_timeline.as_ref(),
+                    option.output_options.time_range.end_timeline.as_ref(),
                     "end-timeline field: the timestamp format is not correct.",
                     &mut parse_success_flag,
                 );
@@ -2322,13 +2140,13 @@ impl TargetEventTime {
                     )
                 } else {
                     get_time(
-                        option.start_timeline.as_ref(),
+                        option.time_range.start_timeline.as_ref(),
                         "start-timeline field: the timestamp format is not correct.",
                         &mut parse_success_flag,
                     )
                 };
                 let end_time = get_time(
-                    option.end_timeline.as_ref(),
+                    option.time_range.end_timeline.as_ref(),
                     "end-timeline field: the timestamp format is not correct.",
                     &mut parse_success_flag,
                 );
@@ -2343,13 +2161,13 @@ impl TargetEventTime {
                     )
                 } else {
                     get_time(
-                        option.start_timeline.as_ref(),
+                        option.time_range.start_timeline.as_ref(),
                         "start-timeline field: the timestamp format is not correct.",
                         &mut parse_success_flag,
                     )
                 };
                 let end_time = get_time(
-                    option.end_timeline.as_ref(),
+                    option.time_range.end_timeline.as_ref(),
                     "end-timeline field: the timestamp format is not correct.",
                     &mut parse_success_flag,
                 );
@@ -2364,13 +2182,13 @@ impl TargetEventTime {
                     )
                 } else {
                     get_time(
-                        option.start_timeline.as_ref(),
+                        option.time_range.start_timeline.as_ref(),
                         "start-timeline field: the timestamp format is not correct.",
                         &mut parse_success_flag,
                     )
                 };
                 let end_time = get_time(
-                    option.end_timeline.as_ref(),
+                    option.time_range.end_timeline.as_ref(),
                     "end-timeline field: the timestamp format is not correct.",
                     &mut parse_success_flag,
                 );
@@ -2499,11 +2317,11 @@ pub fn load_eventkey_alias(path: &str) -> EventKeyAliasConfig {
     config
 }
 
-/// Loads the pivot keyword config file and registers each "keyword.field" line into the
-/// PIVOT_KEYWORD global map.
-pub fn load_pivot_keywords(path: &str) {
+/// Loads the pivot keyword config file and registers each "keyword.field" line into the given
+/// pivot keyword map.
+pub fn load_pivot_keywords(path: &str, pivot_keyword: &RwLock<PivotKeywordMap>) {
     let read_result = match utils::read_txt(path) {
-        Ok(v) => v,
+        Ok(lines) => lines,
         Err(e) => {
             AlertMessage::alert(&e).ok();
             return;
@@ -2522,25 +2340,18 @@ pub fn load_pivot_keywords(path: &str) {
         let key = map.next().unwrap();
         let value = map.next().unwrap();
 
-        // Create an empty entry for this keyword if it is not registered yet.
-        PIVOT_KEYWORD
-            .write()
-            .unwrap()
+        // Create an empty entry for this keyword if it is not registered yet, then add the field.
+        let mut pivots = pivot_keyword.write().unwrap();
+        pivots
             .entry(key.to_string())
-            .or_default();
-
-        PIVOT_KEYWORD
-            .write()
-            .unwrap()
-            .get_mut(key)
-            .unwrap()
+            .or_default()
             .fields
             .insert(value.to_string());
     });
 }
 
 /// Returns the set of file extensions to scan: the extra extensions added with
-/// --target-file-ext plus the default extension (evtx, or json/jsonl when --JSON-input is set).
+/// --target-file-ext plus the default extension (evtx, or json/jsonl when --json-input is set).
 pub fn get_target_extensions(arg: Option<&Vec<String>>, json_input_flag: bool) -> HashSet<String> {
     let mut target_file_extensions: HashSet<String> = convert_option_vecs_to_hs(arg);
     if json_input_flag {
@@ -2575,14 +2386,13 @@ fn extract_search_options(config: &Config) -> Option<SearchOption> {
             config: option.config.clone(),
             verbose: option.verbose,
             multiline: option.multiline,
-            clobber: option.clobber,
+            clobber_opt: option.clobber_opt.clone(),
             json_output: option.json_output,
             jsonl_output: option.jsonl_output,
             time_format_options: option.time_format_options.clone(),
             and_logic: option.and_logic,
-            disable_abbreviations: option.disable_abbreviations,
-            start_timeline: option.start_timeline.clone(),
-            end_timeline: option.end_timeline.clone(),
+            disable_abbreviations_opt: option.disable_abbreviations_opt.clone(),
+            time_range: option.time_range.clone(),
             sort_events: option.sort_events,
             tab_separator: option.tab_separator,
             validate_checksums: option.validate_checksums,
@@ -2596,8 +2406,7 @@ fn extract_search_options(config: &Config) -> Option<SearchOption> {
 /// from the action's own options so that downstream code can handle every action uniformly.
 fn extract_output_options(config: &Config) -> Option<OutputOption> {
     match &config.action.as_ref()? {
-        Action::CsvTimeline(option) => Some(option.output_options.clone()),
-        Action::JsonTimeline(option) => Some(option.output_options.clone()),
+        Action::DfirTimeline(option) => Some(option.output_options.clone()),
         Action::PivotKeywordsList(option) => Some(OutputOption {
             input_args: option.input_args.clone(),
             enable_deprecated_rules: option.enable_deprecated_rules,
@@ -2605,15 +2414,14 @@ fn extract_output_options(config: &Config) -> Option<OutputOption> {
             exclude_status: option.exclude_status.clone(),
             min_level: option.min_level.clone(),
             exact_level: option.exact_level.clone(),
-            end_timeline: option.end_timeline.clone(),
-            start_timeline: option.start_timeline.clone(),
+            time_range: option.time_range.clone(),
             eid_filter: option.eid_filter,
             time_format_options: TimeFormatOptions::default(),
             rules: Path::new("./rules").to_path_buf(),
             common_options: option.common_options,
             detect_common_options: option.detect_common_options.clone(),
             enable_unsupported_rules: option.enable_unsupported_rules,
-            clobber: option.clobber,
+            clobber_opt: option.clobber_opt.clone(),
             include_tag: option.include_tag.clone(),
             exclude_tag: option.exclude_tag.clone(),
             include_eid: option.include_eid.clone(),
@@ -2627,7 +2435,7 @@ fn extract_output_options(config: &Config) -> Option<OutputOption> {
             time_format_options: option.time_format_options.clone(),
             common_options: option.common_options,
             detect_common_options: option.detect_common_options.clone(),
-            clobber: option.clobber,
+            clobber_opt: option.clobber_opt.clone(),
             no_wizard: true,
             ..Default::default()
         }),
@@ -2637,7 +2445,7 @@ fn extract_output_options(config: &Config) -> Option<OutputOption> {
             rules: Path::new("./rules").to_path_buf(),
             common_options: option.common_options,
             detect_common_options: option.detect_common_options.clone(),
-            clobber: option.clobber,
+            clobber_opt: option.clobber_opt.clone(),
             no_wizard: true,
             ..Default::default()
         }),
@@ -2646,7 +2454,7 @@ fn extract_output_options(config: &Config) -> Option<OutputOption> {
             time_format_options: option.time_format_options.clone(),
             common_options: option.common_options,
             detect_common_options: option.detect_common_options.clone(),
-            clobber: option.clobber,
+            clobber_opt: option.clobber_opt.clone(),
             no_wizard: true,
             ..Default::default()
         }),
@@ -2665,7 +2473,7 @@ fn extract_output_options(config: &Config) -> Option<OutputOption> {
                 exclude_computer: None,
             },
             time_format_options: TimeFormatOptions::default(),
-            clobber: option.clobber,
+            clobber_opt: option.clobber_opt.clone(),
             no_wizard: true,
             ..Default::default()
         }),
@@ -2674,7 +2482,7 @@ fn extract_output_options(config: &Config) -> Option<OutputOption> {
             common_options: option.common_options,
             detect_common_options: option.detect_common_options.clone(),
             time_format_options: option.time_format_options.clone(),
-            clobber: option.clobber,
+            clobber_opt: option.clobber_opt.clone(),
             no_wizard: true,
             ..Default::default()
         }),
@@ -2693,7 +2501,7 @@ fn extract_output_options(config: &Config) -> Option<OutputOption> {
                 include_computer: None,
                 exclude_computer: None,
             },
-            clobber: option.clobber,
+            clobber_opt: option.clobber_opt.clone(),
             no_wizard: true,
             ..Default::default()
         }),
@@ -2781,7 +2589,7 @@ fn load_eventcode_info(path: &str) -> EventInfoConfig {
     let mut config = EventInfoConfig::new();
     // If channel_eid_info.txt cannot be read, report an error and return an empty config.
     let read_result = match utils::read_csv(path) {
-        Ok(v) => v,
+        Ok(lines) => lines,
         Err(e) => {
             AlertMessage::alert(&e).ok();
             return config;
@@ -2814,12 +2622,12 @@ fn load_eventcode_info(path: &str) -> EventInfoConfig {
 fn create_control_char_replace_map() -> HashMap<char, CompactString> {
     let mut ret = HashMap::new();
     let replace_char = '\0'..='\x1F';
-    for c in replace_char.into_iter().filter(|x| x != &'\x0A') {
+    for control_char in replace_char.into_iter().filter(|x| x != &'\x0A') {
         ret.insert(
-            c,
+            control_char,
             CompactString::from(format!(
                 "\\u00{}",
-                format!("{:02x}", c as u8).to_uppercase()
+                format!("{:02x}", control_char as u8).to_uppercase()
             )),
         );
     }
@@ -2839,9 +2647,9 @@ pub fn load_windash_characters(file_path: &str) -> Vec<char> {
     let mut characters = Vec::from(['-', '–', '—', '―']);
     let file = File::open(file_path);
     match file {
-        Ok(f) => {
+        Ok(opened_file) => {
             characters = Vec::new();
-            let reader = io::BufReader::new(f);
+            let reader = io::BufReader::new(opened_file);
             for line in reader.lines() {
                 let line = line.unwrap();
                 if let Some(ch) = line.chars().next() {
@@ -2884,9 +2692,8 @@ mod tests {
     use std::default::Default;
 
     use super::{
-        Action, CommonOptions, Config, CsvOutputOption, DetectCommonOption, InputOption,
-        JSONOutputOption, OutputOption, StoredStatic, TargetEventTime,
-        create_control_char_replace_map,
+        Action, ClobberOption, CommonOptions, Config, DetectCommonOption, DfirTimelineOption,
+        InputOption, OutputOption, StoredStatic, TargetEventTime, create_control_char_replace_map,
     };
     use crate::detections::configs::{
         self, EidMetricsOption, LogonSummaryOption, PivotKeywordOption, SearchOption,
@@ -2946,12 +2753,12 @@ mod tests {
     #[test]
     fn test_create_control_char_replace_map() {
         let mut expect: HashMap<char, CompactString> =
-            HashMap::from_iter(('\0'..='\x1F').map(|c| {
+            HashMap::from_iter(('\0'..='\x1F').map(|control_char| {
                 (
-                    c as u8 as char,
+                    control_char as u8 as char,
                     CompactString::from(format!(
                         "\\u00{}",
-                        format!("{:02x}", c as u8).to_uppercase()
+                        format!("{:02x}", control_char as u8).to_uppercase()
                     )),
                 )
             }));
@@ -2962,8 +2769,8 @@ mod tests {
 
     #[test]
     fn test_time_offset_csv() {
-        let csv_timeline = StoredStatic::create_static_data(Some(Config {
-            action: Some(Action::CsvTimeline(CsvOutputOption {
+        let csv_timeline = StoredStatic::create_static_data(Config {
+            action: Some(Action::DfirTimeline(DfirTimelineOption {
                 output_options: OutputOption {
                     input_args: InputOption {
                         time_offset: Some("1d".to_string()),
@@ -2980,7 +2787,7 @@ mod tests {
                 ..Default::default()
             })),
             debug: false,
-        }));
+        });
         let now = Utc::now();
         let actual = TargetEventTime::new(&csv_timeline);
         let actual_diff = now - actual.start_time.unwrap();
@@ -2989,8 +2796,8 @@ mod tests {
 
     #[test]
     fn test_time_offset_json() {
-        let json_timeline = StoredStatic::create_static_data(Some(Config {
-            action: Some(Action::JsonTimeline(JSONOutputOption {
+        let json_timeline = StoredStatic::create_static_data(Config {
+            action: Some(Action::DfirTimeline(DfirTimelineOption {
                 output_options: OutputOption {
                     input_args: InputOption {
                         time_offset: Some("1y".to_string()),
@@ -3007,7 +2814,7 @@ mod tests {
                 ..Default::default()
             })),
             debug: false,
-        }));
+        });
         let now = Utc::now();
         let actual = TargetEventTime::new(&json_timeline);
         let actual_diff = now - actual.start_time.unwrap();
@@ -3016,7 +2823,7 @@ mod tests {
 
     #[test]
     fn test_time_offset_search() {
-        let json_timeline = StoredStatic::create_static_data(Some(Config {
+        let json_timeline = StoredStatic::create_static_data(Config {
             action: Some(Action::Search(SearchOption {
                 common_options: CommonOptions::default(),
                 input_args: InputOption {
@@ -3025,12 +2832,12 @@ mod tests {
                 },
                 keywords: Some(vec!["mimikatz".to_string()]),
                 ignore_case: true,
-                clobber: true,
+                clobber_opt: ClobberOption { clobber: true },
                 sort_events: true,
                 ..Default::default()
             })),
             debug: false,
-        }));
+        });
         let now = Utc::now();
         let actual = TargetEventTime::new(&json_timeline);
         let actual_diff = now - actual.start_time.unwrap();
@@ -3039,14 +2846,14 @@ mod tests {
 
     #[test]
     fn test_time_offset_eid_metrics() {
-        let eid_metrics = StoredStatic::create_static_data(Some(Config {
+        let eid_metrics = StoredStatic::create_static_data(Config {
             action: Some(Action::EidMetrics(EidMetricsOption {
                 common_options: CommonOptions::default(),
                 input_args: InputOption {
                     time_offset: Some("1h1m".to_string()),
                     ..Default::default()
                 },
-                clobber: true,
+                clobber_opt: ClobberOption { clobber: true },
                 detect_common_options: DetectCommonOption {
                     json_input: true,
                     ..Default::default()
@@ -3054,7 +2861,7 @@ mod tests {
                 ..Default::default()
             })),
             debug: false,
-        }));
+        });
         let now = Utc::now();
         let actual = TargetEventTime::new(&eid_metrics);
         let actual_diff = now - actual.start_time.unwrap();
@@ -3063,13 +2870,13 @@ mod tests {
 
     #[test]
     fn test_time_offset_logon_summary() {
-        let logon_summary = StoredStatic::create_static_data(Some(Config {
+        let logon_summary = StoredStatic::create_static_data(Config {
             action: Some(Action::LogonSummary(LogonSummaryOption {
                 input_args: InputOption {
                     time_offset: Some("1y1d1h".to_string()),
                     ..Default::default()
                 },
-                clobber: true,
+                clobber_opt: ClobberOption { clobber: true },
                 detect_common_options: DetectCommonOption {
                     json_input: true,
                     ..Default::default()
@@ -3077,7 +2884,7 @@ mod tests {
                 ..Default::default()
             })),
             debug: false,
-        }));
+        });
         let now = Utc::now();
         let actual = TargetEventTime::new(&logon_summary);
         let actual_diff = now - actual.start_time.unwrap();
@@ -3090,13 +2897,13 @@ mod tests {
 
     #[test]
     fn test_time_offset_pivot() {
-        let pivot_keywords_list = StoredStatic::create_static_data(Some(Config {
+        let pivot_keywords_list = StoredStatic::create_static_data(Config {
             action: Some(Action::PivotKeywordsList(PivotKeywordOption {
                 input_args: InputOption {
                     time_offset: Some("1y1M1s".to_string()),
                     ..Default::default()
                 },
-                clobber: true,
+                clobber_opt: ClobberOption { clobber: true },
                 detect_common_options: DetectCommonOption {
                     json_input: true,
                     ..Default::default()
@@ -3106,7 +2913,7 @@ mod tests {
                 ..Default::default()
             })),
             debug: false,
-        }));
+        });
         let now = Utc::now();
         let actual = TargetEventTime::new(&pivot_keywords_list);
         let actual_diff = now - actual.start_time.unwrap();
@@ -3114,6 +2921,50 @@ mod tests {
         assert!(
             (393..=397).contains(&actual_diff_day)
                 && actual_diff.num_seconds() - (actual_diff_day * 24 * 60 * 60) == 1
+        );
+    }
+
+    // Regression guard for the #[clap(flatten)] de-duplication: the shared args must stay exposed
+    // on the same subcommands. Introspect the clap Command rather than parsing.
+    #[test]
+    fn test_flattened_clap_args_present() {
+        use clap::CommandFactory;
+        let cmd = Config::command();
+        let sub = |name: &str| {
+            cmd.get_subcommands()
+                .find(|subcommand| subcommand.get_name() == name)
+                .unwrap_or_else(|| panic!("subcommand {name} missing"))
+                .clone()
+        };
+        let has = |command: &clap::Command, long: &str| {
+            command
+                .get_arguments()
+                .any(|arg| arg.get_long() == Some(long))
+        };
+        let dfir = sub("dfir-timeline");
+        assert!(has(&dfir, "clobber"));
+        assert!(has(&dfir, "timeline-start"));
+        assert!(has(&dfir, "timeline-end"));
+        assert!(has(&dfir, "output-type"));
+        assert!(has(&dfir, "multiline"));
+        assert!(has(&sub("eid-metrics"), "clobber"));
+        assert!(has(&sub("search"), "disable-abbreviations"));
+    }
+
+    /// #1046: `resolve_config_file` — used for `pivot_keywords.txt` and every other config file —
+    /// must honor the `-c` custom config directory, preferring `<config_path>/<name>` when present
+    /// (rather than always reading the bundled copy next to the executable).
+    #[test]
+    fn resolve_config_file_honors_custom_config_dir() {
+        let dir = tempfile::tempdir().unwrap();
+        std::fs::write(
+            dir.path().join("pivot_keywords.txt"),
+            "Custom Users.SubjectUserName\n",
+        )
+        .unwrap();
+        assert_eq!(
+            super::resolve_config_file(dir.path(), "pivot_keywords.txt"),
+            dir.path().join("pivot_keywords.txt")
         );
     }
 }

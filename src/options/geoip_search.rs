@@ -1,25 +1,22 @@
 use cidr_utils::cidr::IpCidr;
 use compact_str::CompactString;
 use hashbrown::HashMap;
-use lazy_static::lazy_static;
 use maxminddb::{MaxMindDbError, Reader, geoip2};
 use std::io::Error;
 use std::path::{Path, PathBuf};
 use std::sync::Mutex;
 use std::{net::IpAddr, str::FromStr};
 
-lazy_static! {
-    // Cache of IP address -> formatted geo data ("ASN🦅Country🦅City"), so each address is only
-    // looked up in the MaxMind databases once.
-    pub static ref IP_MAP: Mutex<HashMap<IpAddr, CompactString>> = Mutex::new(HashMap::new());
-}
-
 /// Wraps the three MaxMind GeoLite2 database readers (ASN, Country, City) used to enrich IP
 /// addresses found in event records when the GeoIP option is enabled.
+#[derive(Debug)]
 pub struct GeoIPSearch {
     pub asn_reader: Reader<Vec<u8>>,
     pub country_reader: Reader<Vec<u8>>,
     pub city_reader: Reader<Vec<u8>>,
+    // Cache of IP address -> formatted geo data ("ASN🦅Country🦅City"), so each address is only
+    // looked up in the MaxMind databases once.
+    ip_map: Mutex<HashMap<IpAddr, CompactString>>,
 }
 
 impl GeoIPSearch {
@@ -35,6 +32,7 @@ impl GeoIPSearch {
             .unwrap(),
             city_reader: maxminddb::Reader::open_readfile(path.join(asn_country_city_filename[2]))
                 .unwrap(),
+            ip_map: Mutex::new(HashMap::new()),
         }
     }
 
@@ -123,7 +121,7 @@ impl GeoIPSearch {
 
         // The same IP address always resolves to the same geo data, so return the cached result
         // when available and skip the database lookups.
-        if let Some(cached_data) = IP_MAP.lock().unwrap().get(&addr) {
+        if let Some(cached_data) = self.ip_map.lock().unwrap().get(&addr) {
             return Ok(cached_data.to_string());
         }
         let asn_search = self.asn_reader.lookup(addr);
@@ -163,7 +161,7 @@ impl GeoIPSearch {
         };
 
         let geo_data = format!("{output_asn}🦅{output_country}🦅{output_city}");
-        IP_MAP
+        self.ip_map
             .lock()
             .unwrap()
             .insert(addr, CompactString::from(&geo_data));
@@ -174,7 +172,6 @@ impl GeoIPSearch {
 #[cfg(test)]
 mod tests {
     use super::GeoIPSearch;
-    use crate::options::geoip_search::IP_MAP;
     use compact_str::CompactString;
     use std::{net::IpAddr, path::Path, str::FromStr};
 
@@ -256,9 +253,9 @@ mod tests {
             Ok(Some(test_path.clone()))
         );
         let geo_ip = GeoIPSearch::new(&test_path, target_files);
-        // Use an address no other test looks up: tests run in parallel and share the global
-        // IP_MAP cache, so touching another test's address would be racy.
-        IP_MAP.lock().unwrap().insert(
+        // Pre-populate this instance's cache so the lookup returns the cached value instead of
+        // hitting the databases.
+        geo_ip.ip_map.lock().unwrap().insert(
             IpAddr::from_str("2.125.160.217").unwrap(),
             "this is dummy".into(),
         );

@@ -1,5 +1,7 @@
 # Field Modifiers ที่รองรับ
 
+หน้านี้ประกอบด้วยรายการ Sigma field modifiers ทั้งหมดที่สร้างขึ้นแบบไดนามิก และความถี่ในการใช้งานในกฎของ Sigma และ Hayabusa
+
 ## Field modifiers ที่ Hayabusa รองรับ
 | Field Modifier                |   Sigma Count |   Hayabusa Count |
 |:------------------------------|--------------:|-----------------:|
@@ -8,12 +10,12 @@
 | base64ǀcontains               |             1 |                0 |
 | cased                         |             0 |                0 |
 | cidr                          |            35 |                0 |
-| contains                      |          3073 |               21 |
+| contains                      |          3072 |               21 |
 | containsǀall                  |          1084 |                0 |
 | containsǀcased                |             0 |                0 |
 | containsǀexpand               |             1 |                0 |
 | containsǀwindash              |           108 |                0 |
-| endswith                      |          3265 |              273 |
+| endswith                      |          3259 |              273 |
 | endswithfield                 |             0 |                0 |
 | endswithǀcased                |             0 |                0 |
 | endswithǀwindash              |             2 |                0 |
@@ -32,7 +34,7 @@
 | reǀi                          |             2 |                0 |
 | reǀm                          |             0 |                0 |
 | reǀs                          |             0 |                0 |
-| startswith                    |           546 |                6 |
+| startswith                    |           539 |                6 |
 | startswithǀcased              |             0 |                0 |
 | utf16beǀbase64offsetǀcontains |             0 |                0 |
 | utf16leǀbase64offsetǀcontains |             0 |                0 |
@@ -57,6 +59,5 @@
 ## Correlation rules ที่ Hayabusa ไม่รองรับ
 ในปัจจุบัน รองรับทุกอย่างแล้ว
 
-เอกสารนี้ได้รับการอัปเดตแบบไดนามิกตามกฎล่าสุด  
-อัปเดตล่าสุด: 2026/04/28  
-ผู้เขียน: Fukusuke Takahashi
+เอกสารนี้ได้รับการอัปเดตแบบไดนามิกทุกเดือนตามกฎล่าสุด  
+อัปเดตล่าสุด: 2026/08/01

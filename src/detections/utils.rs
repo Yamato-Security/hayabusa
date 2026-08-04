@@ -9,12 +9,13 @@ use std::io::{BufRead, BufReader};
 use std::path::{Path, PathBuf};
 use std::str;
 use std::string::String;
+use std::sync::Mutex;
 use std::thread::available_parallelism;
 use std::vec;
 use std::{fs, io};
 
 use chrono::Local;
-use chrono::{DateTime, TimeZone, Utc};
+use chrono::{DateTime, NaiveDateTime, TimeZone, Utc};
 use compact_str::{CompactString, ToCompactString};
 use hashbrown::{HashMap, HashSet};
 use itertools::Itertools;
@@ -31,9 +32,9 @@ use crate::detections::field_data_map::{FieldDataMap, FieldDataMapKey, convert_f
 use crate::detections::field_extract::extract_fields;
 use crate::options::htmlreport;
 
-use super::configs::{EventKeyAliasConfig, OutputOption, STORED_EKEY_ALIAS};
+use super::configs::{EventKeyAliasConfig, OutputOption};
 use super::detection::EvtxRecordInfo;
-use super::message::{AlertMessage, ERROR_LOG_STACK};
+use super::message::AlertMessage;
 use rust_embed::Embed;
 
 /// Embedded copy of config/default_profile_name.txt, used as a fallback when the file does not
@@ -91,6 +92,20 @@ pub fn value_to_string(value: &Value) -> Option<String> {
     }
 }
 
+/// Parses an evtx event `SystemTime` string into a UTC instant. Handles the standard evtx UTC
+/// format ("2021-12-23T00:00:00.000Z") and the Splunk JSON export format, which carries an explicit
+/// UTC offset ("2021-12-23T00:00:00.000+09:00"). The offset is applied via `with_timezone(&Utc)`;
+/// parsing that second form as a `NaiveDateTime` (as several timeline aggregators used to) silently
+/// discards the offset, so the local wall-clock time was stored as if it were UTC and skewed
+/// First/Last Timestamp summaries and logon-summary times. (#1820)
+pub fn parse_evtx_timestamp(evttime: &str) -> Result<DateTime<Utc>, chrono::ParseError> {
+    match NaiveDateTime::parse_from_str(evttime, "%Y-%m-%dT%H:%M:%S%.fZ") {
+        Ok(naive) => Ok(DateTime::<Utc>::from_naive_utc_and_offset(naive, Utc)),
+        Err(_) => DateTime::parse_from_str(evttime, "%Y-%m-%dT%H:%M:%S%.3f%:z")
+            .map(|dt| dt.with_timezone(&Utc)),
+    }
+}
+
 /// Reads a text file into its lines. If the file is part of the all-in-one config bundle
 /// (ONE_CONFIG_MAP), the embedded content is used instead of reading from disk.
 pub fn read_txt(filename: &str) -> Result<Nested<String>, String> {
@@ -114,12 +129,12 @@ pub fn read_txt(filename: &str) -> Result<Nested<String>, String> {
                 .map(|s| s.to_string()),
         ));
     }
-    let f = File::open(filepath);
-    if f.is_err() {
+    let file = File::open(filepath);
+    if file.is_err() {
         let errmsg = format!("Cannot open file. [file:{filename}]");
         return Err(errmsg);
     }
-    let reader = BufReader::new(f.unwrap());
+    let reader = BufReader::new(file.unwrap());
     Ok(Nested::from_iter(
         reader.lines().map(|line| line.unwrap_or_default()),
     ))
@@ -129,11 +144,11 @@ pub fn read_txt(filename: &str) -> Result<Nested<String>, String> {
 /// object in {"Event": {"EventData": ...}} so that it has the same shape as an evtx-derived
 /// record.
 pub fn read_jsonl_to_value(path: &str) -> Result<Box<dyn Iterator<Item = Value>>, String> {
-    let f = File::open(path);
-    if f.is_err() {
-        return Err("Cannot open file. [file:{path}]".to_string());
+    let file = File::open(path);
+    if file.is_err() {
+        return Err(format!("Cannot open file. [file:{path}]"));
     }
-    let reader = BufReader::new(f.unwrap());
+    let reader = BufReader::new(file.unwrap());
     let mut peekable_lines = reader.lines().peekable();
     let first_line = peekable_lines.peek().unwrap();
     let is_jsonl = match first_line {
@@ -145,8 +160,8 @@ pub fn read_jsonl_to_value(path: &str) -> Result<Box<dyn Iterator<Item = Value>>
             .filter_map(|s| s.ok())
             .filter(|s| !s.trim().is_empty())
             .map(|line| {
-                let v: Value = serde_json::from_str(&line).unwrap();
-                json!({"Event":{"EventData": v}})
+                let value: Value = serde_json::from_str(&line).unwrap();
+                json!({"Event":{"EventData": value}})
             });
         return Ok(Box::new(ret));
     }
@@ -157,11 +172,11 @@ pub fn read_jsonl_to_value(path: &str) -> Result<Box<dyn Iterator<Item = Value>>
 /// `jq -c`) into an iterator of serde_json Values, wrapping each record in
 /// {"Event": {"EventData": ...}} so that it has the same shape as an evtx-derived record.
 pub fn read_json_to_value(path: &str) -> Result<Box<dyn Iterator<Item = Value>>, String> {
-    let f = fs::read_to_string(path);
-    if f.is_err() {
-        return Err("Cannot open file. [file:{path}]".to_string());
+    let read_result = fs::read_to_string(path);
+    if read_result.is_err() {
+        return Err(format!("Cannot open file. [file:{path}]"));
     }
-    let contents = f.unwrap();
+    let contents = read_result.unwrap();
     let json_values: Result<Vec<Value>, Error> = serde_json::from_str(&contents);
     let value_converter = |record: Value| json!({"Event":{"EventData": record}});
     match json_values {
@@ -200,12 +215,12 @@ pub fn read_csv(filename: &str) -> Result<Nested<Vec<String>>, String> {
         let csv_res = parse_csv(ONE_CONFIG_MAP.get(one_config_path).unwrap());
         return Ok(csv_res);
     }
-    let f = File::open(filename);
-    if f.is_err() {
+    let file = File::open(filename);
+    if file.is_err() {
         return Err(format!("Cannot open file. [file:{filename}]"));
     }
     let mut contents: String = String::new();
-    let read_res = f.unwrap().read_to_string(&mut contents);
+    let read_res = file.unwrap().read_to_string(&mut contents);
     if let Err(e) = read_res {
         return Err(e.to_string());
     }
@@ -219,15 +234,15 @@ pub fn read_csv(filename: &str) -> Result<Nested<Vec<String>>, String> {
 pub fn parse_csv(file_contents: &str) -> Nested<Vec<String>> {
     let mut ret = Nested::<Vec<String>>::new();
     let mut rdr = csv::ReaderBuilder::new().from_reader(file_contents.as_bytes());
-    rdr.records().for_each(|r| {
-        if r.is_err() {
+    rdr.records().for_each(|record| {
+        if record.is_err() {
             return;
         }
 
-        let line = r.unwrap();
-        let mut v = vec![];
-        line.iter().for_each(|s| v.push(s.to_string()));
-        ret.push(v);
+        let line = record.unwrap();
+        let mut row = vec![];
+        line.iter().for_each(|field| row.push(field.to_string()));
+        ret.push(row);
     });
 
     ret
@@ -355,6 +370,7 @@ pub fn create_rec_info(
     keys: &Nested<String>,
     recovered_record: &bool,
     no_pwsh_field_extraction: &bool,
+    eventkey_alias: &EventKeyAliasConfig,
 ) -> EvtxRecordInfo {
     // Processing for performance optimization.
 
@@ -368,8 +384,6 @@ pub fn create_rec_info(
     // has also been sped up.
     let mut flat_key_to_value = HashMap::new();
 
-    let binding = STORED_EKEY_ALIAS.read().unwrap();
-    let eventkey_alias = binding.as_ref().unwrap();
     let mut event_id = None;
     let mut channel = None;
     for key in keys.iter() {
@@ -544,13 +558,13 @@ fn _collect_recordinfo<'a>(
             if let Some(strval) = strval {
                 // Replace control characters and whitespace with plain spaces, except for
                 // \r, \n and \t, which are handled later by remove_sp_char.
-                let mut strval = strval.chars().fold(String::default(), |mut acc, c| {
-                    if (c.is_control() || c.is_ascii_whitespace())
-                        && !['\r', '\n', '\t'].contains(&c)
+                let mut strval = strval.chars().fold(String::default(), |mut acc, ch| {
+                    if (ch.is_control() || ch.is_ascii_whitespace())
+                        && !['\r', '\n', '\t'].contains(&ch)
                     {
                         acc.push(' ');
                     } else {
-                        acc.push(c);
+                        acc.push(ch);
                     };
                     acc
                 });
@@ -584,15 +598,15 @@ fn _collect_recordinfo<'a>(
 /**
  * Function to capitalize the first character.
  */
-pub fn make_ascii_titlecase(s: &str) -> CompactString {
-    let mut c = s.trim().chars();
-    match c.next() {
+pub fn make_ascii_titlecase(input: &str) -> CompactString {
+    let mut chars = input.trim().chars();
+    match chars.next() {
         None => CompactString::default(),
         Some(f) => {
             if !f.is_ascii() {
-                CompactString::from(s)
+                CompactString::from(input)
             } else {
-                f.to_uppercase().collect::<CompactString>() + c.as_str()
+                f.to_uppercase().collect::<CompactString>() + chars.as_str()
             }
         }
     }
@@ -741,11 +755,12 @@ pub fn output_and_data_stack_for_html(
     output_str: &str,
     section_name: &str,
     html_report_flag: &bool,
+    html_reporter: &mut htmlreport::HtmlReporter,
 ) {
     if *html_report_flag {
         let mut output_data = Nested::<String>::new();
         output_data.extend(vec![format!("- {output_str}")]);
-        htmlreport::add_md_data(section_name, output_data);
+        html_reporter.add_md_data(section_name, output_data);
     }
 }
 
@@ -757,7 +772,12 @@ pub fn contains_str(input: &str, check: &str) -> bool {
 
 /// Outputs the active output profile name, either to the terminal or to the HTML report
 /// depending on the stdout argument.
-pub fn output_profile_name(output_option: &Option<OutputOption>, stdout: bool, no_color: bool) {
+pub fn output_profile_name(
+    output_option: &Option<OutputOption>,
+    stdout: bool,
+    no_color: bool,
+    html_reporter: &mut htmlreport::HtmlReporter,
+) {
     // output profile name
     if let Some(profile_opt) = output_option {
         // Determine the default profile name, preferring config/default_profile_name.txt on
@@ -806,8 +826,8 @@ pub fn output_profile_name(output_option: &Option<OutputOption>, stdout: bool, n
         // HTML report, so the stdout argument controls which of the two this call produces (the
         // function is called once for each).
         if !stdout && profile_opt.html_report.is_some() {
-            htmlreport::add_md_data(
-                "General Overview {#general_overview}",
+            html_reporter.add_md_data(
+                htmlreport::GENERAL_OVERVIEW_SECTION,
                 Nested::from_iter(vec![format!("- {output_saved_str}")]),
             );
         }
@@ -834,41 +854,67 @@ pub fn is_filtered_by_computer_name(
 /// Creates an output string in hh:mm:ss.fff format from the given seconds and milliseconds.
 /// Both components are negated only when the seconds component is negative; a negative
 /// milliseconds value with a zero seconds component is not normalized.
-pub fn output_duration((mut s, mut ms): (i64, i64)) -> String {
-    if s < 0 {
-        s = -s;
+pub fn output_duration((mut seconds, mut ms): (i64, i64)) -> String {
+    if seconds < 0 {
+        seconds = -seconds;
         ms = -ms;
     }
-    let h = s / 3600;
-    s %= 3600;
-    let m = s / 60;
-    s %= 60;
-    format!("{h:02}:{m:02}:{s:02}.{ms:03}")
+    let hours = seconds / 3600;
+    seconds %= 3600;
+    let minutes = seconds / 60;
+    seconds %= 60;
+    format!("{hours:02}:{minutes:02}:{seconds:02}.{ms:03}")
 }
 
-/// Sanitizes a field value for single-line output: \n, \r and \t are replaced with the "🛂n",
-/// "🛂r" and "🛂t" placeholders (restored or stripped later by the output code in afterfact.rs),
-/// runs of spaces are collapsed into one, all remaining control characters are removed, and the
-/// result is trimmed.
+/// Sanitizes a field value for single-line output: runs of spaces are collapsed into one, all
+/// control characters except `\n`/`\r`/`\t` are removed, and leading/trailing spaces are trimmed.
+/// The kept `\n`/`\r`/`\t` are escaped or flattened per output format later — serde_json escapes
+/// them in JSON, while the CSV and `search` output paths collapse them to spaces.
+///
+/// NOTE (#1849): previously `\n`/`\r`/`\t` were replaced here with the `🛂n`/`🛂r`/`🛂t` placeholder
+/// sequences and restored/re-escaped by the output code. Keeping them as real characters removed
+/// that round-trip, but it is a deliberate BEHAVIOR CHANGE with two effects on JSON output —
+/// verified against the full sample-evtx corpus, where CSV output stays byte-identical and JSON
+/// differs only by these two things:
+///
+///   1. An interior newline/tab/CR inside a value now serializes as a proper `\n`/`\t`/`\r` JSON
+///      escape (a real newline when the JSON is parsed) instead of the old visible `\\n`/`\\t`/`\\r`
+///      two-character text.
+///   2. Leading/trailing `\n`/`\r`/`\t` (with the spaces next to them) in a value are now trimmed
+///      away: this function preserves them, but the downstream `.trim()` calls in the JSON
+///      `Details` grouping now see real whitespace instead of the opaque `🛂` placeholders that
+///      used to survive them. No interior content is lost.
+///
+/// CSV/`search` output is unchanged (control characters are still collapsed to a space). If either
+/// effect was actually relied on — e.g. a downstream consumer expected the visible `\\n` text, or
+/// expected leading/trailing newlines to be preserved — this will need to be reverted to the
+/// placeholder approach; see issue #1849.
 pub fn remove_sp_char(record_value: CompactString) -> CompactString {
-    let mut newline_replaced_cs: String = record_value
-        .replace('\n', "🛂n")
-        .replace('\r', "🛂r")
-        .replace('\t', "🛂t");
+    let mut cleaned: String = record_value.into();
     let mut prev = 'a';
-    newline_replaced_cs.retain(|ch| {
-        let retain_flag = (prev == ' ' && ch == ' ') || ch.is_control();
-        if !retain_flag {
+    cleaned.retain(|ch| {
+        // Collapse runs of spaces and drop every control character except `\n`/`\r`/`\t`, which
+        // are kept and handled per output format later.
+        let drop = (prev == ' ' && ch == ' ')
+            || (ch.is_control() && ch != '\n' && ch != '\r' && ch != '\t');
+        if !drop {
             prev = ch;
         }
-        !retain_flag
+        !drop
     });
-    newline_replaced_cs.trim().into()
+    // Trim only spaces so any leading/trailing `\n`/`\r`/`\t` are preserved (the previous code
+    // kept them because they were opaque `🛂` placeholders at that point).
+    cleaned.trim_matches(' ').into()
 }
 
 /// Returns the size of the file in bytes, or 0 if its metadata cannot be read (in which case a
 /// warning is shown and/or stacked depending on the verbose and quiet-errors flags).
-pub fn get_file_size(file_path: &Path, verbose_flag: bool, quiet_errors_flag: bool) -> u64 {
+pub fn get_file_size(
+    file_path: &Path,
+    verbose_flag: bool,
+    quiet_errors_flag: bool,
+    error_log_stack: &Mutex<Nested<String>>,
+) -> u64 {
     match fs::metadata(file_path) {
         Ok(res) => res.len(),
         Err(err) => {
@@ -876,7 +922,7 @@ pub fn get_file_size(file_path: &Path, verbose_flag: bool, quiet_errors_flag: bo
                 AlertMessage::warn(&err.to_string()).ok();
             }
             if !quiet_errors_flag {
-                ERROR_LOG_STACK
+                error_log_stack
                     .lock()
                     .unwrap()
                     .push(format!("[WARN] {err}"));
@@ -901,11 +947,80 @@ mod tests {
     use crate::detections::field_data_map::FieldDataMapKey;
     use crate::{
         detections::{
-            configs::{Action, Config, CsvOutputOption, OutputOption, StoredStatic},
+            configs::{Action, Config, DfirTimelineOption, OutputOption, StoredStatic},
             utils::{self, check_setting_path, make_ascii_titlecase},
         },
-        options::htmlreport::HTML_REPORTER,
+        options::htmlreport::{GENERAL_OVERVIEW_SECTION, HtmlReporter, RESULTS_SUMMARY_SECTION},
     };
+
+    #[test]
+    /// #1816: the "Cannot open file" error from the JSON/JSONL readers must interpolate the path,
+    /// not print the literal placeholder `{path}`.
+    fn test_read_json_open_error_includes_path() {
+        // `.err().unwrap()` rather than `.unwrap_err()`: the Ok type is a boxed iterator that does
+        // not implement Debug.
+        let bogus_jsonl = "/nonexistent/hayabusa_test_does_not_exist.jsonl";
+        let err = super::read_jsonl_to_value(bogus_jsonl).err().unwrap();
+        assert!(
+            err.contains(bogus_jsonl),
+            "jsonl error should include the path: {err}"
+        );
+        assert!(
+            !err.contains("{path}"),
+            "jsonl error still has the placeholder: {err}"
+        );
+
+        let bogus_json = "/nonexistent/hayabusa_test_does_not_exist.json";
+        let err = super::read_json_to_value(bogus_json).err().unwrap();
+        assert!(
+            err.contains(bogus_json),
+            "json error should include the path: {err}"
+        );
+        assert!(
+            !err.contains("{path}"),
+            "json error still has the placeholder: {err}"
+        );
+    }
+
+    #[test]
+    /// #1825: check_setting_path must locate geoip_field_mapping.yaml in a custom (`-c`) config
+    /// dir. The previous extensionless lookup ("geoip_field_mapping") never matched the real file.
+    fn test_check_setting_path_geoip_yaml_extension() {
+        let dir = tempfile::tempdir().unwrap();
+        std::fs::write(
+            dir.path().join("geoip_field_mapping.yaml"),
+            "example: mapping\n",
+        )
+        .unwrap();
+        // The corrected lookup (with the .yaml extension) finds the file in the custom dir.
+        assert!(check_setting_path(dir.path(), "geoip_field_mapping.yaml", false).is_some());
+        // The old extensionless lookup did not — this was the bug.
+        assert!(check_setting_path(dir.path(), "geoip_field_mapping", false).is_none());
+    }
+
+    #[test]
+    /// #1820: `parse_evtx_timestamp` must apply the Splunk-JSON UTC offset instead of discarding it
+    /// (used by log-metrics and the eid-metrics/logon-summary time-range aggregators).
+    fn test_parse_evtx_timestamp_applies_offset() {
+        use chrono::{TimeZone, Utc};
+        // evtx UTC format ("...Z") is stored as-is.
+        assert_eq!(
+            super::parse_evtx_timestamp("2021-12-23T00:00:00.000Z").unwrap(),
+            Utc.with_ymd_and_hms(2021, 12, 23, 0, 0, 0).unwrap()
+        );
+        // Splunk JSON "+09:00": the same instant is 9 hours earlier in UTC (previously stored as
+        // 00:00:00Z, skewing First/Last Timestamp by 9 hours).
+        assert_eq!(
+            super::parse_evtx_timestamp("2021-12-23T00:00:00.000+09:00").unwrap(),
+            Utc.with_ymd_and_hms(2021, 12, 22, 15, 0, 0).unwrap()
+        );
+        // A negative offset is applied too.
+        assert_eq!(
+            super::parse_evtx_timestamp("2021-12-23T00:00:00.000-05:00").unwrap(),
+            Utc.with_ymd_and_hms(2021, 12, 23, 5, 0, 0).unwrap()
+        );
+        assert!(super::parse_evtx_timestamp("not a timestamp").is_err());
+    }
 
     #[test]
     fn test_create_recordinfos() {
@@ -1111,8 +1226,8 @@ mod tests {
     #[test]
     fn test_json_array_file_to_serde_json_value() {
         // Non-existent paths return Err.
-        let r = utils::read_json_to_value("invalid path");
-        assert!(r.is_err());
+        let result = utils::read_json_to_value("invalid path");
+        assert!(result.is_err());
 
         // Verify that JSON (Array) format can be converted.
         let path = "test_files/evtx/test.json";
@@ -1132,11 +1247,11 @@ mod tests {
     #[test]
     fn test_jsonl_file_to_serde_json_value() {
         // Non-existent paths return Err.
-        let r = utils::read_jsonl_to_value("invalid path");
-        assert!(r.is_err());
+        let result = utils::read_jsonl_to_value("invalid path");
+        assert!(result.is_err());
         // JSON (Array) format formatted with newlines also returns Err.
-        let r = utils::read_jsonl_to_value("test_files/evtx/test.json");
-        assert!(r.is_err());
+        let result = utils::read_jsonl_to_value("test_files/evtx/test.json");
+        assert!(result.is_err());
 
         // Verify that JSONL format can be converted.
         let path = "test_files/evtx/test.jsonl";
@@ -1156,8 +1271,8 @@ mod tests {
     #[test]
     fn test_jq_c_file_to_serde_json_value() {
         // Non-existent paths return Err.
-        let r = utils::read_json_to_value("invalid path");
-        assert!(r.is_err());
+        let result = utils::read_json_to_value("invalid path");
+        assert!(result.is_err());
 
         // Verify that the JSON format of jq command output can be converted.
         let path = "test_files/evtx/test-jq-output.json";
@@ -1176,13 +1291,9 @@ mod tests {
 
     #[test]
     fn test_output_profile() {
-        // Serialize against other tests that mutate the global HTML_REPORTER.
-        let _html_reporter_lock = crate::options::htmlreport::HTML_REPORTER_TEST_LOCK
-            .lock()
-            .unwrap_or_else(|e| e.into_inner());
-        HTML_REPORTER.write().unwrap().section_markdown.clear();
-        let stored_static = StoredStatic::create_static_data(Some(Config {
-            action: Some(Action::CsvTimeline(CsvOutputOption {
+        let mut html_reporter = HtmlReporter::default();
+        let stored_static = StoredStatic::create_static_data(Config {
+            action: Some(Action::DfirTimeline(DfirTimelineOption {
                 output_options: OutputOption {
                     profile: Some("super-verbose".to_string()),
                     min_level: "informational".to_string(),
@@ -1193,19 +1304,29 @@ mod tests {
                 ..Default::default()
             })),
             ..Default::default()
-        }));
-        output_profile_name(&stored_static.output_option, true, false);
-        output_profile_name(&stored_static.output_option, false, false);
+        });
+        output_profile_name(
+            &stored_static.output_option,
+            true,
+            false,
+            &mut html_reporter,
+        );
+        output_profile_name(
+            &stored_static.output_option,
+            false,
+            false,
+            &mut html_reporter,
+        );
         let expect: HashMap<&str, Nested<String>> = HashMap::from_iter(vec![
-            ("Results Summary {#results_summary}", Nested::new()),
+            (RESULTS_SUMMARY_SECTION, Nested::new()),
             (
-                "General Overview {#general_overview}",
+                GENERAL_OVERVIEW_SECTION,
                 Nested::from_iter(vec!["- Output profile: super-verbose"]),
             ),
         ]);
-        for (k, v) in HTML_REPORTER.read().unwrap().section_markdown.iter() {
-            assert!(expect.keys().any(|x| x == k));
-            assert!(expect.values().any(|y| y == v));
+        for (key, value) in html_reporter.section_markdown.iter() {
+            assert!(expect.keys().any(|x| x == key));
+            assert!(expect.values().any(|y| y == value));
         }
     }
 
@@ -1275,14 +1396,14 @@ mod tests {
             .and_hms_milli_opt(1, 23, 45, 678)
             .unwrap();
         let duration = time1 - time2;
-        let s = duration.num_seconds();
-        let ms = duration.num_milliseconds() - 1000 * s;
+        let seconds = duration.num_seconds();
+        let ms = duration.num_milliseconds() - 1000 * seconds;
 
-        assert_eq!(output_duration((s, ms)), "25:11:03.322".to_string());
+        assert_eq!(output_duration((seconds, ms)), "25:11:03.322".to_string());
 
         let duration = time2 - time1;
-        let s = duration.num_seconds();
-        let ms = duration.num_milliseconds() - 1000 * s;
-        assert_eq!(output_duration((s, ms)), "25:11:03.322".to_string());
+        let seconds = duration.num_seconds();
+        let ms = duration.num_milliseconds() - 1000 * seconds;
+        assert_eq!(output_duration((seconds, ms)), "25:11:03.322".to_string());
     }
 }

@@ -14,14 +14,13 @@ use dialoguer::Confirm;
 use dialoguer::{Select, theme::ColorfulTheme};
 use evtx::{EvtxParser, ParserSettings, RecordAllocation};
 use hashbrown::{HashMap, HashSet};
-use hayabusa::afterfact::{self, AfterfactInfo, AfterfactWriter};
-use hayabusa::debug::checkpoint_process_timer::CHECKPOINT;
+use hayabusa::debug::checkpoint_process_timer::CheckPointProcessTimer;
 use hayabusa::detections::configs::{
-    Action, CURRENT_EXE_PATH, ConfigReader, EventKeyAliasConfig, ONE_CONFIG_MAP, STORED_EKEY_ALIAS,
-    STORED_STATIC, StoredStatic, TargetEventTime, TargetIds, load_pivot_keywords,
+    Action, CURRENT_EXE_PATH, ConfigReader, EventKeyAliasConfig, ONE_CONFIG_MAP, OutputType,
+    StoredStatic, TargetEventTime, TargetIds, load_pivot_keywords, resolve_config_file,
 };
 use hayabusa::detections::detection::{self, EvtxRecordInfo};
-use hayabusa::detections::message::{AlertMessage, DetectInfo, ERROR_LOG_STACK, get_event_time};
+use hayabusa::detections::message::{AlertMessage, DetectInfo, get_event_time};
 use hayabusa::detections::rule::{RuleNode, get_detection_keys};
 use hayabusa::detections::utils;
 use hayabusa::detections::utils::{
@@ -30,11 +29,11 @@ use hayabusa::detections::utils::{
 };
 use hayabusa::filter::{create_channel_filter, filter_evtx_files};
 use hayabusa::level::LEVEL;
-use hayabusa::options::htmlreport::{self, HTML_REPORTER};
-use hayabusa::options::pivot::PIVOT_KEYWORD;
+use hayabusa::options::htmlreport::{self, HtmlReporter};
 use hayabusa::options::pivot::create_output;
 use hayabusa::options::profile::set_default_profile;
 use hayabusa::options::{expand_list::expand_list, level_tuning::LevelTuning, update::Update};
+use hayabusa::results::{self, OutputWriter, ResultOutputState};
 use hayabusa::timeline::computer_metrics::countup_event_by_computer;
 use hayabusa::{detections::configs, timeline::timelines::Timeline};
 use hayabusa::{detections::utils::write_color_buffer, filter};
@@ -52,6 +51,7 @@ use rand::prelude::*;
 use rust_embed::Embed;
 use serde_json::{Map, Value};
 use std::borrow::BorrowMut;
+use std::cell::Cell;
 use std::ffi::{OsStr, OsString};
 use std::fmt::Display;
 use std::fmt::Write as _;
@@ -99,11 +99,15 @@ const MAX_DETECT_RECORDS: usize = 1000;
 fn main() {
     let mut config_reader = ConfigReader::new();
     // Create the parsed command information and store it in a static variable.
-    let mut stored_static = StoredStatic::create_static_data(config_reader.config);
+    let mut stored_static = StoredStatic::create_static_data(config_reader.config.unwrap());
     config_reader.config = None;
     let mut app = App::new(stored_static.thread_number);
     app.exec(&mut config_reader.app, &mut stored_static);
     app.runtime.shutdown_background();
+    if app.failed.get() {
+        // The run was rejected or aborted before producing output; do not report success.
+        std::process::exit(1);
+    }
 }
 
 /// RAII guard that disables WOW64 filesystem redirection while it is alive and restores the
@@ -150,14 +154,271 @@ impl Drop for Wow64RedirectionGuard {
 /// field keys referenced by the loaded detection rules.
 pub struct App {
     runtime: Runtime,
+    /// Set when a run is aborted by a usage or environment error, so `main` can exit non-zero.
+    ///
+    /// The abort paths below report the problem and `return`, which — because `exec` returns `()`
+    /// and `main` then ends normally — used to leave the exit status at 0. A script or CI job
+    /// checking `$?` could not tell a rejected command from a completed scan. A flag rather than
+    /// `process::exit` because the unit tests drive `exec` into several of these paths and would
+    /// otherwise take the test process down with them.
+    failed: Cell<bool>,
     rule_keys: Nested<String>,
+    /// Records how long each processing phase takes; printed per-phase only with `--debug`,
+    /// with the accumulated total shown as "Elapsed time" in the results summary.
+    checkpoint: CheckPointProcessTimer,
 }
 
+/// The stream-vs-buffer policy for detection results, applied at every detection site.
+/// `stored_static.is_low_memory` is set for an unsorted csv/json timeline (the case that permits
+/// streaming — it is broader than the explicit `--low-memory` flag): each batch is then emitted to
+/// the writer immediately. Otherwise the records are buffered in `buffer` so they can be sorted and
+/// written once at the end.
+fn emit_or_buffer(
+    log_records: &mut Vec<DetectInfo>,
+    buffer: &mut Vec<DetectInfo>,
+    stored_static: &StoredStatic,
+    output_writer: &mut OutputWriter,
+    result_state: &mut ResultOutputState,
+) {
+    if stored_static.is_low_memory {
+        let empty_ids = HashSet::new();
+        results::emit_csv(
+            log_records,
+            &empty_ids,
+            stored_static,
+            output_writer,
+            result_state,
+        );
+    } else {
+        buffer.append(log_records);
+    }
+}
+
+/// Per-batch policy for `process_detection_batch`, as named fields so the two flags cannot be
+/// swapped at a call site.
+struct BatchPolicy {
+    /// Run the detection rules on this batch (false for metrics / logon-summary / search commands,
+    /// which do not detect).
+    run_rules: bool,
+    /// Widen the results-summary detection time span from this batch's hits. The evtx path does
+    /// this; the JSON path does not.
+    update_time_range: bool,
+}
+
+/// The inputs `create_rec_info` needs, built once per scanned file so the alias config (and rule
+/// keys) are cloned a single time — into `Arc`s shared across every detection batch and per-record
+/// task — instead of being re-cloned for each batch. The `Arc`s are cheap to clone into each task.
+struct RecordBuildContext {
+    rule_keys: Arc<Nested<String>>,
+    eventkey_alias: Arc<EventKeyAliasConfig>,
+    no_pwsh_field_extraction: bool,
+}
+
+/// Records the run's General Overview report header — the invoking command line and the analysis
+/// start time. Shared by `exec` and its test so the two cannot drift.
+fn add_general_overview_header(
+    html_reporter: &mut HtmlReporter,
+    analysis_start_time: DateTime<Local>,
+) {
+    let mut output_data = Nested::<String>::new();
+    output_data.extend(vec![
+        format!("- Command line: {}", env::args().join(" ")),
+        format!(
+            "- Start time: {}",
+            analysis_start_time.format("%Y/%m/%d %H:%M")
+        ),
+    ]);
+    html_reporter.add_md_data(htmlreport::GENERAL_OVERVIEW_SECTION, output_data);
+}
+
+/// Filter used by [`calculate_wizard_rule_count`] to select which loadable rules to tally.
+struct WizardCountFilter<'a> {
+    /// When true, count only the statuses listed in `exclude_noisy_status` (used for the
+    /// deprecated/unsupported/noisy prompts); when false, those statuses are skipped unless
+    /// `target_status` contains "*", in which case all statuses are counted.
+    exclude_noisytarget_flag: bool,
+    exclude_noisy_status: Vec<&'a str>,
+    min_level: &'a str,
+    target_status: Vec<&'a str>,
+    target_tags: Vec<&'a str>,
+}
+
+/// Count the loadable rules per status (or per tag when `filter.target_tags` is non-empty) at or
+/// above `filter.min_level`, based on `rule_counter_wizard_map` (keyed as status -> level -> tag
+/// -> count). Promoted from the closure that was embedded in `analysis_files`'s scan wizard.
+fn calculate_wizard_rule_count(
+    rule_counter_wizard_map: &HashMap<
+        CompactString,
+        HashMap<CompactString, HashMap<CompactString, i128>>,
+    >,
+    filter: WizardCountFilter,
+) -> HashMap<CompactString, i128> {
+    let WizardCountFilter {
+        exclude_noisytarget_flag,
+        exclude_noisy_status,
+        min_level,
+        target_status,
+        target_tags,
+    } = filter;
+    let mut ret = HashMap::new();
+    if exclude_noisytarget_flag {
+        for status in exclude_noisy_status {
+            let mut ret_cnt = 0;
+            if let Some(target_status_count) = rule_counter_wizard_map.get(status) {
+                target_status_count.iter().for_each(|(rule_level, value)| {
+                    let doc_level_num = LEVEL::from(rule_level.as_str()).index();
+                    let args_level_num = LEVEL::from(min_level).index();
+                    if doc_level_num >= args_level_num {
+                        ret_cnt += value.iter().map(|(_, cnt)| cnt).sum::<i128>()
+                    }
+                });
+            }
+            if ret_cnt > 0 {
+                ret.insert(CompactString::from(status), ret_cnt);
+            }
+        }
+    } else {
+        let all_status_flag = target_status.contains(&"*");
+        for status in rule_counter_wizard_map.keys() {
+            // Skip aggregation for items that do not match the specified status.
+            if (exclude_noisy_status.contains(&status.as_str())
+                || !target_status.contains(&status.as_str()))
+                && !all_status_flag
+            {
+                continue;
+            }
+            let mut ret_cnt = 0;
+            if let Some(target_status_count) = rule_counter_wizard_map.get(status) {
+                target_status_count.iter().for_each(|(rule_level, value)| {
+                    let doc_level_num = LEVEL::from(rule_level.as_str()).index();
+                    let args_level_num = LEVEL::from(min_level).index();
+                    if doc_level_num >= args_level_num {
+                        if !target_tags.is_empty() {
+                            for (tag, cnt) in value.iter() {
+                                if target_tags.contains(&tag.as_str()) {
+                                    let matched_tag_cnt = ret.entry(tag.clone());
+                                    *matched_tag_cnt.or_insert(0) += cnt;
+                                }
+                            }
+                        } else {
+                            ret_cnt += value.iter().map(|(_, cnt)| cnt).sum::<i128>()
+                        }
+                    }
+                });
+                if ret_cnt > 0 {
+                    ret.insert(status.clone(), ret_cnt);
+                }
+            }
+        }
+    }
+    ret
+}
+
+/// Apply the ad-hoc channel filters used by the non-timeline subcommands: `logon-summary` and
+/// `config-critical-systems` each narrow `evtx_files` to those containing their required
+/// channels, and `log-metrics` applies its include/exclude channel/filename filters.
+fn apply_channel_filters(
+    mut evtx_files: Vec<PathBuf>,
+    stored_static: &StoredStatic,
+) -> Vec<PathBuf> {
+    if stored_static.logon_summary_flag && !stored_static.json_input_flag {
+        // Create a channel filter for the logon summary.
+        let yaml_str = r#"
+            detection:
+                selection:
+                    Channel:
+                        - Security
+                        - Microsoft-Windows-TerminalServices-Gateway/Operational
+                        - Microsoft-Windows-TerminalServices-LocalSessionManager/Operational
+                        - Microsoft-Windows-TerminalServices-RemoteConnectionManager/Operational
+            "#;
+        let yaml_data = YamlLoader::load_from_str(yaml_str);
+        let node = RuleNode::new(
+            "logon".to_string(),
+            yaml_data.ok().unwrap_or_default().first().unwrap().clone(),
+        );
+        let rule_files = vec![node];
+        let mut channel_filter = create_channel_filter(
+            &evtx_files,
+            &rule_files,
+            stored_static.quiet_errors_flag,
+            &stored_static.error_log_stack,
+        );
+        evtx_files.retain(|evtx_file| channel_filter.scannable_rule_exists(evtx_file));
+    }
+
+    if matches!(
+        stored_static.config.action.as_ref().unwrap(),
+        Action::ConfigCriticalSystems(_)
+    ) {
+        // Create a channel filter for config-critical-systems.
+        let yaml_str = r#"
+            detection:
+                selection:
+                    Channel: Security
+            "#;
+        let yaml_data = YamlLoader::load_from_str(yaml_str);
+        let node = RuleNode::new(
+            "config-critical-systems".to_string(),
+            yaml_data.ok().unwrap_or_default().first().unwrap().clone(),
+        );
+        let rule_files = vec![node];
+        let mut channel_filter = create_channel_filter(
+            &evtx_files,
+            &rule_files,
+            stored_static.quiet_errors_flag,
+            &stored_static.error_log_stack,
+        );
+        evtx_files.retain(|evtx_file| channel_filter.scannable_rule_exists(evtx_file));
+    }
+
+    if let Some(Action::LogMetrics(opt)) = &stored_static.config.action {
+        evtx_files = filter_evtx_files(
+            evtx_files,
+            &opt.include_channel,
+            &opt.include_filename,
+            &opt.exclude_channel,
+            &opt.exclude_filename,
+            &stored_static.error_log_stack,
+        );
+    }
+    evtx_files
+}
+
+/// Build the indicatif progress bar (spinner + bar) used for the per-file scan.
+fn build_progress_bar(stored_static: &StoredStatic, file_count: u64) -> ProgressBar {
+    // Build the indicatif progress bar template. In the colored branch, the doubled braces
+    // in the format! call are escapes that produce literal braces, so the indicatif
+    // placeholders like {elapsed_precise} survive intact while the spinner and bar are
+    // wrapped in green truecolor escape sequences.
+    let template = if stored_static.common_options.no_color {
+        "[{elapsed_precise}] {human_pos} / {human_len} {spinner} [{bar:40}] {percent}%\n\n{msg}"
+            .to_string()
+    } else {
+        let spinner = "{spinner}".truecolor(0, 255, 0).to_string();
+        let bar = "{bar:40}".truecolor(0, 255, 0).to_string();
+        format!(
+            "[{{elapsed_precise}}] {{human_pos}} / {{human_len}} {spinner} [{bar}] {{percent}}%\n\n{{msg}}",
+        )
+    };
+
+    let progress_style = ProgressStyle::with_template(&template)
+        .unwrap()
+        .progress_chars("=> ");
+
+    let progress_bar =
+        ProgressBar::with_draw_target(Some(file_count), ProgressDrawTarget::stdout_with_hz(10))
+            .with_tab_width(55);
+    progress_bar.set_style(progress_style);
+    progress_bar
+}
 impl App {
     pub fn new(thread_number: Option<usize>) -> App {
         App {
             runtime: utils::create_tokio_runtime(thread_number),
+            failed: Cell::new(false),
             rule_keys: Nested::<String>::new(),
+            checkpoint: CheckPointProcessTimer::create_checkpoint_timer(),
         }
     }
 
@@ -168,17 +429,10 @@ impl App {
             return;
         }
 
+        let mut html_reporter = HtmlReporter::new();
         let analysis_start_time: DateTime<Local> = Local::now();
         if stored_static.html_report_flag {
-            let mut output_data = Nested::<String>::new();
-            output_data.extend(vec![
-                format!("- Command line: {}", env::args().join(" ")),
-                format!(
-                    "- Start time: {}",
-                    analysis_start_time.format("%Y/%m/%d %H:%M")
-                ),
-            ]);
-            htmlreport::add_md_data(htmlreport::GENERAL_OVERVIEW_SECTION, output_data);
+            add_general_overview_header(&mut html_reporter, analysis_start_time);
         }
 
         // Output subcommand help when no arguments are provided. Subcommands that work without arguments do not output help.
@@ -209,13 +463,40 @@ impl App {
             println!();
             return;
         }
+
+        // The CSV Output options only make sense for CSV output; reject them with a non-CSV -t.
+        if let Some(Action::DfirTimeline(opt)) = &stored_static.config.action
+            && !matches!(opt.output_type, OutputType::Csv)
+        {
+            // `-R, --remove-duplicate-data` is deliberately not in this list: it applies to every
+            // output format. It only replaces a repeated field value with "DUP", which the JSON
+            // writer implements too (`output_json_str`), and it is a field of the shared
+            // `OutputOption` rather than of `DfirTimelineOption`. Grouping it with these two by
+            // proximity would regress `json-timeline -R`, a supported v3 invocation.
+            let mut csv_only = vec![];
+            if opt.multiline {
+                csv_only.push("-M, --multiline");
+            }
+            if opt.tab_separator {
+                csv_only.push("-S, --tab-separator");
+            }
+            if !csv_only.is_empty() {
+                AlertMessage::alert(&format!(
+                    "The following option(s) only apply to CSV output and cannot be used with the selected -t, --output-type: {}",
+                    csv_only.join(", ")
+                ))
+                .ok();
+                self.failed.set(true);
+                return;
+            }
+        }
         if !stored_static.common_options.quiet {
             self.output_logo(stored_static);
             write_color_buffer(&BufferWriter::stdout(ColorChoice::Always), None, "", true).ok();
             self.output_eggs(&format!(
                 "{:02}/{:02}",
-                &analysis_start_time.month(),
-                &analysis_start_time.day()
+                analysis_start_time.month(),
+                analysis_start_time.day()
             ));
         }
         let _guard = if !self.is_matched_architecture_and_binary() {
@@ -295,81 +576,7 @@ impl App {
             stored_static.config.action.as_ref().unwrap(),
             Action::ConfigCriticalSystems(_)
         ) {
-            let msg = "This command tries to find critical systems like domain controllers and file servers by checking for logs that should only exist in those systems.
-It will search for Security 4768 (Kerberos TGT requested) events to determine if it is a domain controller.
-It will search for Security 5145 (Network Share File Access) events to determine if it is a file server.
-Any hostnames added to the critical_systems.txt file will have all alerts above low increased by one level with a maximum of emergency level.";
-            write_color_buffer(
-                &BufferWriter::stdout(ColorChoice::Always),
-                get_writable_color(
-                    Some(Color::Rgb(255, 175, 0)),
-                    stored_static.common_options.no_color,
-                ),
-                msg,
-                true,
-            )
-            .ok();
-            println!();
-            let conf = &CURRENT_EXE_PATH.to_path_buf().join("config");
-            if !conf.exists() {
-                fs::create_dir(conf).ok();
-            }
-            let config_path = conf.join("critical_systems.txt");
-            if !config_path.exists() {
-                fs::write(&config_path, "").ok();
-            }
-            if let Ok(metadata) = fs::metadata(&config_path)
-                && metadata.len() > 0
-            {
-                let color_theme = if stored_static.common_options.no_color {
-                    ColorfulTheme {
-                        defaults_style: Style::new().for_stderr(),
-                        prompt_style: Style::new().for_stderr().bold(),
-                        prompt_prefix: style("?".to_string()).for_stderr(),
-                        prompt_suffix: style("›".to_string()).for_stderr(),
-                        success_prefix: style("✔".to_string()).for_stderr(),
-                        success_suffix: style("·".to_string()).for_stderr(),
-                        error_prefix: style("✘".to_string()).for_stderr(),
-                        error_style: Style::new().for_stderr(),
-                        hint_style: Style::new().for_stderr(),
-                        values_style: Style::new().for_stderr(),
-                        active_item_style: Style::new().for_stderr(),
-                        inactive_item_style: Style::new().for_stderr(),
-                        active_item_prefix: style("❯".to_string()).for_stderr(),
-                        inactive_item_prefix: style(" ".to_string()).for_stderr(),
-                        checked_item_prefix: style("✔".to_string()).for_stderr(),
-                        unchecked_item_prefix: style("⬚".to_string()).for_stderr(),
-                        picked_item_prefix: style("❯".to_string()).for_stderr(),
-                        unpicked_item_prefix: style(" ".to_string()).for_stderr(),
-                    }
-                } else {
-                    ColorfulTheme {
-                        active_item_prefix: Style::new().color256(214).apply_to("❯".to_string()), // orange
-                        checked_item_prefix: Style::new().color256(46).apply_to("✔".to_string()), // green
-                        picked_item_prefix: Style::new().color256(214).apply_to("❯".to_string()), // orange
-                        values_style: Style::new().color256(46), // green
-                        prompt_prefix: Style::new().color256(160).apply_to("?".to_string()), // red
-                        prompt_suffix: Style::new().color256(15).apply_to("›".to_string()), // white
-                        prompt_style: Style::new().color256(160).bold(), // red
-                        defaults_style: Style::new().color256(51), // cyan
-                        hint_style: Style::new().color256(214),  // orange
-                        success_prefix: Style::new().color256(46).apply_to("✔".to_string()), // green
-                        success_suffix: Style::new().color256(15).apply_to("·".to_string()), // white
-                        ..Default::default()
-                    }
-                };
-                let prompt_fmt = "Warning: the config/critical_systems.txt file is not empty. Would you like to erase the contents first?";
-                let config_clear = Confirm::with_theme(&color_theme)
-                    .with_prompt(prompt_fmt)
-                    .default(true)
-                    .show_default(true)
-                    .interact()
-                    .unwrap();
-                if config_clear {
-                    fs::write(config_path, "").expect("Failed to clear the file");
-                }
-                println!();
-            }
+            Self::prompt_critical_systems_config(stored_static);
         }
 
         write_color_buffer(
@@ -389,11 +596,7 @@ Any hostnames added to the critical_systems.txt file will have all alerts above 
             false,
         )
         .ok();
-        CHECKPOINT
-            .lock()
-            .as_mut()
-            .unwrap()
-            .set_checkpoint(analysis_start_time);
+        self.checkpoint.set_checkpoint(analysis_start_time);
         let target_extensions = if let Some(output_option) = stored_static.output_option.as_ref() {
             configs::get_target_extensions(
                 output_option.detect_common_options.evtx_file_ext.as_ref(),
@@ -403,42 +606,46 @@ Any hostnames added to the critical_systems.txt file will have all alerts above 
             HashSet::default()
         };
         let no_color = stored_static.common_options.no_color;
-        let output_saved_file =
-            |output_path: &Option<PathBuf>, message: &str, html_report_flag: &bool| {
-                if let Some(path) = output_path
-                    && let Ok(metadata) = fs::metadata(path)
-                {
-                    let output_saved_str = format!("{message}:");
-                    write_color_buffer(
-                        &BufferWriter::stdout(ColorChoice::Always),
-                        get_writable_color(Some(Color::Rgb(0, 255, 0)), no_color),
-                        &output_saved_str,
-                        false,
-                    )
-                    .ok();
-                    let file_str = format!(
-                        " {} ({})",
-                        path.display(),
-                        ByteSize::b(metadata.len()).display()
-                    );
-                    write_color_buffer(
-                        &BufferWriter::stdout(ColorChoice::Always),
-                        None,
-                        &file_str,
-                        true,
-                    )
-                    .ok();
-                    println!();
-                    output_and_data_stack_for_html(
-                        &format!("{message}: {file_str}"),
-                        htmlreport::GENERAL_OVERVIEW_SECTION,
-                        html_report_flag,
-                    );
-                }
-            };
+        let output_saved_file = |output_path: &Option<PathBuf>,
+                                 message: &str,
+                                 html_report_flag: &bool,
+                                 html_reporter: &mut HtmlReporter| {
+            if let Some(path) = output_path
+                && let Ok(metadata) = fs::metadata(path)
+            {
+                let output_saved_str = format!("{message}:");
+                write_color_buffer(
+                    &BufferWriter::stdout(ColorChoice::Always),
+                    get_writable_color(Some(Color::Rgb(0, 255, 0)), no_color),
+                    &output_saved_str,
+                    false,
+                )
+                .ok();
+                let file_str = format!(
+                    " {} ({})",
+                    path.display(),
+                    ByteSize::b(metadata.len()).display()
+                );
+                write_color_buffer(
+                    &BufferWriter::stdout(ColorChoice::Always),
+                    None,
+                    &file_str,
+                    true,
+                )
+                .ok();
+                println!();
+                output_and_data_stack_for_html(
+                    &format!("{message}: {file_str}"),
+                    htmlreport::GENERAL_OVERVIEW_SECTION,
+                    html_report_flag,
+                    html_reporter,
+                );
+            }
+        };
 
-        match &stored_static.config.action.as_ref().unwrap() {
-            Action::CsvTimeline(_) | Action::JsonTimeline(_) => {
+        let action = stored_static.config.action.clone().unwrap();
+        match &action {
+            Action::DfirTimeline(_) => {
                 // If the rules option was not specified (the path is still the default ./rules),
                 // resolve it relative to the executable's directory so that running Hayabusa from
                 // a different current directory does not cause errors.
@@ -459,6 +666,7 @@ Any hostnames added to the critical_systems.txt file will have all alerts above 
                 // Check the rule config folder and files, and terminate if there are errors.
                 if let Err(e) = utils::check_rule_config(&stored_static.config_path) {
                     AlertMessage::alert(&e).ok();
+                    self.failed.set(true);
                     return;
                 }
                 if stored_static.profiles.is_none() {
@@ -467,7 +675,11 @@ Any hostnames added to the critical_systems.txt file will have all alerts above 
                 if let Some(html_path) = &stored_static.output_option.as_ref().unwrap().html_report
                 {
                     // If an HTML report file with the same name already exists, output an alert message and exit.
-                    if !stored_static.output_option.as_ref().unwrap().clobber
+                    if !stored_static
+                        .output_option
+                        .as_ref()
+                        .unwrap()
+                        .is_clobber_enabled()
                         && utils::check_file_expect_not_exist(
                             html_path.as_path(),
                             format!(
@@ -480,7 +692,11 @@ Any hostnames added to the critical_systems.txt file will have all alerts above 
                     }
                 }
                 if let Some(path) = &stored_static.output_path
-                    && !stored_static.output_option.as_ref().unwrap().clobber
+                    && !stored_static
+                        .output_option
+                        .as_ref()
+                        .unwrap()
+                        .is_clobber_enabled()
                     && utils::check_file_expect_not_exist(
                         path.as_path(),
                         format!(
@@ -494,21 +710,29 @@ Any hostnames added to the critical_systems.txt file will have all alerts above 
                 if stored_static.json_input_flag
                     && (stored_static.scan_all_evtx_files || stored_static.enable_all_rules)
                 {
-                    AlertMessage::alert("It is not necessary to specify -A (--enable-all-rules) or -a (--scan-all-evtx-files) with -J (--JSON-input) because the default channel filter only works with EVTX files.").ok();
+                    AlertMessage::alert("It is not necessary to specify -A (--enable-all-rules) or -a (--scan-all-evtx-files) with -J (--json-input) because the default channel filter only works with EVTX files.").ok();
                     println!();
+                    self.failed.set(true);
                     return;
                 }
-                self.analysis_start(&target_extensions, &time_filter, stored_static);
+                self.analysis_start(
+                    &target_extensions,
+                    &time_filter,
+                    stored_static,
+                    &mut html_reporter,
+                );
 
                 output_profile_name(
                     &stored_static.output_option,
                     false,
                     stored_static.common_options.no_color,
+                    &mut html_reporter,
                 );
                 output_saved_file(
                     &stored_static.output_path,
                     "Saved file",
                     &stored_static.html_report_flag,
+                    &mut html_reporter,
                 );
             }
             Action::LogonSummary(_) => {
@@ -516,7 +740,11 @@ Any hostnames added to the critical_systems.txt file will have all alerts above 
                 if let Some(path) = &stored_static.output_path {
                     for suffix in &["-successful.csv", "-failed.csv"] {
                         let output_file = format!("{}{suffix}", path.to_str().unwrap());
-                        if !stored_static.output_option.as_ref().unwrap().clobber
+                        if !stored_static
+                            .output_option
+                            .as_ref()
+                            .unwrap()
+                            .is_clobber_enabled()
                             && utils::check_file_expect_not_exist(
                                 Path::new(output_file.as_str()),
                                 format!(
@@ -530,7 +758,12 @@ Any hostnames added to the critical_systems.txt file will have all alerts above 
                         target_output_path.push(output_file);
                     }
                 }
-                self.analysis_start(&target_extensions, &time_filter, stored_static);
+                self.analysis_start(
+                    &target_extensions,
+                    &time_filter,
+                    stored_static,
+                    &mut html_reporter,
+                );
                 for target_path in target_output_path.iter() {
                     let mut msg = "";
                     if target_path.ends_with("-successful.csv") {
@@ -543,6 +776,7 @@ Any hostnames added to the critical_systems.txt file will have all alerts above 
                         &Some(Path::new(target_path).to_path_buf()),
                         msg,
                         &stored_static.html_report_flag,
+                        &mut html_reporter,
                     );
                 }
                 println!();
@@ -553,7 +787,11 @@ Any hostnames added to the critical_systems.txt file will have all alerts above 
             | Action::Search(_)
             | Action::ExtractBase64(_) => {
                 if let Some(path) = &stored_static.output_path
-                    && !stored_static.output_option.as_ref().unwrap().clobber
+                    && !stored_static
+                        .output_option
+                        .as_ref()
+                        .unwrap()
+                        .is_clobber_enabled()
                     && utils::check_file_expect_not_exist(
                         path.as_path(),
                         format!(
@@ -564,23 +802,28 @@ Any hostnames added to the critical_systems.txt file will have all alerts above 
                 {
                     return;
                 }
-                self.analysis_start(&target_extensions, &time_filter, stored_static);
+                self.analysis_start(
+                    &target_extensions,
+                    &time_filter,
+                    stored_static,
+                    &mut html_reporter,
+                );
                 output_saved_file(
                     &stored_static.output_path,
                     "Saved results",
                     &stored_static.html_report_flag,
+                    &mut html_reporter,
                 );
             }
             Action::PivotKeywordsList(_) => {
+                // Resolve pivot_keywords.txt through the `-c` custom config directory (falling back
+                // to the bundled copy), the same way every other config file is loaded, so that
+                // `-c <dir>` can supply a custom pivot_keywords.txt (issue #1046).
                 load_pivot_keywords(
-                    check_setting_path(
-                        &CURRENT_EXE_PATH.to_path_buf(),
-                        "rules/config/pivot_keywords.txt",
-                        true,
-                    )
-                    .unwrap()
-                    .to_str()
-                    .unwrap(),
+                    resolve_config_file(&stored_static.config_path, "pivot_keywords.txt")
+                        .to_str()
+                        .unwrap(),
+                    &stored_static.pivot_keyword,
                 );
                 if Path::new("./encoded_rules.yml").exists() {
                     stored_static.output_option.as_mut().unwrap().rules = check_setting_path(
@@ -594,15 +837,15 @@ Any hostnames added to the critical_systems.txt file will have all alerts above 
                 // When outputting a file with the pivot feature, if a file with the same name already exists, output an error and terminate.
                 let mut error_flag = false;
                 if let Some(csv_path) = &stored_static.output_path {
-                    let pivot_key_unions = PIVOT_KEYWORD.read().unwrap();
+                    let pivot_key_unions = stored_static.pivot_keyword.read().unwrap();
                     pivot_key_unions.iter().for_each(|(key, _)| {
                         let keywords_file_name =
                             csv_path.as_path().display().to_string() + "-" + key + ".txt";
-                        if !stored_static.output_option.as_ref().unwrap().clobber && utils::check_file_expect_not_exist(
+                        if !stored_static.output_option.as_ref().unwrap().is_clobber_enabled() && utils::check_file_expect_not_exist(
                             Path::new(&keywords_file_name),
                             format!(
                                 " The file {} already exists. Please specify a different filename or add the -C, --clobber option to overwrite.",
-                                &keywords_file_name
+                                keywords_file_name
                             ),
                         ) {
                             error_flag = true
@@ -614,435 +857,537 @@ Any hostnames added to the critical_systems.txt file will have all alerts above 
                     return;
                 }
 
-                self.analysis_start(&target_extensions, &time_filter, stored_static);
+                self.analysis_start(
+                    &target_extensions,
+                    &time_filter,
+                    stored_static,
+                    &mut html_reporter,
+                );
 
-                let pivot_key_unions = PIVOT_KEYWORD.read().unwrap();
-                if let Some(pivot_file) = &stored_static.output_path {
-                    // For file output
-                    pivot_key_unions.iter().for_each(|(key, pivot_keyword)| {
-                        let mut f = BufWriter::new(
-                            File::create(
-                                pivot_file.as_path().display().to_string() + "-" + key + ".txt",
-                            )
-                            .unwrap(),
-                        );
-                        f.write_all(
-                            create_output(
-                                String::default(),
-                                key,
-                                pivot_keyword,
-                                "file",
-                                stored_static,
-                            )
-                            .as_bytes(),
-                        )
-                        .unwrap();
-                    });
-                    println!();
-                    println!();
-                    write_color_buffer(
-                        &BufferWriter::stdout(ColorChoice::Always),
-                        get_writable_color(
-                            Some(Color::Rgb(0, 255, 0)),
-                            stored_static.common_options.no_color,
-                        ),
-                        "Pivot keyword results were saved to the following files: ",
-                        true,
-                    )
-                    .ok();
-                    let mut output = "".to_string();
-                    pivot_key_unions.iter().for_each(|(key, _)| {
-                        writeln!(
-                            output,
-                            "{}",
-                            &(pivot_file.as_path().display().to_string() + "-" + key + ".txt")
-                        )
-                        .ok();
-                    });
-                    write_color_buffer(
-                        &BufferWriter::stdout(ColorChoice::Always),
-                        get_writable_color(None, stored_static.common_options.no_color),
-                        output.as_str(),
-                        true,
-                    )
-                    .ok();
-                } else {
-                    // For standard output
-                    let output = "The following pivot keywords were found:";
-                    write_color_buffer(
-                        &BufferWriter::stdout(ColorChoice::Always),
-                        get_writable_color(
-                            Some(Color::Rgb(0, 255, 0)),
-                            stored_static.common_options.no_color,
-                        ),
-                        output,
-                        true,
-                    )
-                    .ok();
-                    pivot_key_unions.iter().for_each(|(key, pivot_keyword)| {
-                        create_output(
-                            String::default(),
-                            key,
-                            pivot_keyword,
-                            "standard",
-                            stored_static,
-                        );
-
-                        if pivot_keyword.keywords.is_empty() {
-                            write_color_buffer(
-                                &BufferWriter::stdout(ColorChoice::Always),
-                                get_writable_color(
-                                    Some(Color::Red),
-                                    stored_static.common_options.no_color,
-                                ),
-                                "No keywords found\n",
-                                true,
-                            )
-                            .ok();
-                        }
-                    });
-                }
+                Self::run_pivot_keywords_output(stored_static);
             }
             Action::UpdateRules(_) => {
-                let update_target = match &stored_static.config.action.as_ref().unwrap() {
-                    Action::UpdateRules(option) => Some(option.rules.to_owned()),
-                    _ => None,
-                };
-                println!();
-                // If an error occurs (e.g. no internet connection), ignore it and do not output
-                // an error message.
-                let latest_version_data = Update::get_latest_hayabusa_version().unwrap_or_default();
-                let now_version = &format!("v{}", env!("CARGO_PKG_VERSION"));
-                stored_static.include_status.insert("*".into());
-                let rule_encoded =
-                    check_setting_path(&CURRENT_EXE_PATH.to_path_buf(), "encoded_rules.yml", true)
-                        .unwrap();
-                if rule_encoded.exists() {
-                    let url = "https://raw.githubusercontent.com/Yamato-Security/hayabusa-encoded-rules/main/encoded_rules.yml";
-                    match get(url).call() {
-                        Ok(mut res) => {
-                            let mut dst = File::create(Path::new("./encoded_rules.yml")).unwrap();
-                            dst.write_all(res.body_mut().read_to_vec().unwrap().as_slice())
-                                .unwrap();
-                            write_color_buffer(
-                                &BufferWriter::stdout(ColorChoice::Always),
-                                get_writable_color(
-                                    Some(Color::Rgb(255, 175, 0)),
-                                    stored_static.common_options.no_color,
-                                ),
-                                "Rules file encoded_rules.yml updated successfully.",
-                                true,
-                            )
-                            .ok();
-                        }
-                        Err(_) => {
-                            AlertMessage::alert("Failed to update rules.").ok();
-                        }
-                    }
-
-                    if !ONE_CONFIG_MAP.is_empty() {
-                        let url = "https://raw.githubusercontent.com/Yamato-Security/hayabusa-encoded-rules/refs/heads/main/rules_config_files.txt";
-                        match get(url).call() {
-                            Ok(mut res) => {
-                                let mut dst =
-                                    File::create(Path::new("./rules_config_files.txt")).unwrap();
-                                dst.write_all(res.body_mut().read_to_string().unwrap().as_bytes())
-                                    .unwrap();
-                                write_color_buffer(
-                                    &BufferWriter::stdout(ColorChoice::Always),
-                                    get_writable_color(
-                                        Some(Color::Rgb(255, 175, 0)),
-                                        stored_static.common_options.no_color,
-                                    ),
-                                    "Config file rules_config_files.txt updated successfully.",
-                                    true,
-                                )
-                                .ok();
-                            }
-                            Err(_) => {
-                                AlertMessage::alert("Failed to update config file.").ok();
-                            }
-                        }
-                    }
-                } else {
-                    match Update::update_rules(
-                        update_target.unwrap().to_str().unwrap(),
-                        stored_static,
-                    ) {
-                        Ok(output) => {
-                            if output != "You currently have the latest rules." {
-                                write_color_buffer(
-                                    &BufferWriter::stdout(ColorChoice::Always),
-                                    get_writable_color(
-                                        Some(Color::Rgb(255, 175, 0)),
-                                        stored_static.common_options.no_color,
-                                    ),
-                                    "Rules updated successfully.",
-                                    true,
-                                )
-                                .ok();
-                            }
-                        }
-                        Err(e) => {
-                            if e.message().is_empty() {
-                                AlertMessage::alert("Failed to update rules.").ok();
-                            } else {
-                                AlertMessage::alert(&format!("Failed to update rules. {e:?}  "))
-                                    .ok();
-                            }
-                        }
-                    }
-                }
-                let split_now_version = &now_version
-                    .replace("-dev", "")
-                    .replace("v", "")
-                    .split('.')
-                    .filter_map(|x| x.parse().ok())
-                    .collect::<Vec<i8>>();
-                let split_latest_version = &latest_version_data
-                    .as_ref()
-                    .unwrap_or(now_version)
-                    .replace('"', "")
-                    .replace("v", "")
-                    .split('.')
-                    .filter_map(|x| x.parse().ok())
-                    .collect::<Vec<i8>>();
-                if split_latest_version > split_now_version {
-                    write_color_buffer(
-                        &BufferWriter::stdout(ColorChoice::Always),
-                        get_writable_color(
-                            Some(Color::Rgb(255, 175, 0)),
-                            stored_static.common_options.no_color,
-                        ),
-                        &format!(
-                            "There is a new version of Hayabusa: {}",
-                            latest_version_data.unwrap().replace('\"', "")
-                        ),
-                        true,
-                    )
-                    .ok();
-                    write_color_buffer(
-                        &BufferWriter::stdout(ColorChoice::Always),
-                        get_writable_color(
-                            Some(Color::Rgb(255, 175, 0)),
-                            stored_static.common_options.no_color,
-                        ),
-                        "You can download it at https://github.com/Yamato-Security/hayabusa/releases",
-                        true,
-                    )
-                    .ok();
-                }
-                println!();
-                let _ = self.output_open_close_message("closing_messages.txt", stored_static);
+                self.run_update_rules(stored_static);
                 return;
             }
             Action::LevelTuning(option) => {
-                let level_tuning_config_path =
-                    if option.level_tuning.to_str().unwrap() != "./rules/config/level_tuning.txt" {
-                        check_setting_path(
-                            option
-                                .level_tuning
-                                .parent()
-                                .unwrap_or_else(|| Path::new("")),
-                            option
-                                .level_tuning
-                                .file_name()
-                                .unwrap()
-                                .to_str()
-                                .unwrap_or_default(),
-                            false,
-                        )
-                        .unwrap_or_else(|| {
-                            check_setting_path(
-                                &CURRENT_EXE_PATH.to_path_buf(),
-                                "rules/config/level_tuning.txt",
-                                true,
-                            )
-                            .unwrap()
-                        })
-                        .display()
-                        .to_string()
-                    } else {
-                        check_setting_path(&stored_static.config_path, "level_tuning.txt", false)
-                            .unwrap_or_else(|| {
-                                check_setting_path(
-                                    &CURRENT_EXE_PATH.to_path_buf(),
-                                    "rules/config/level_tuning.txt",
-                                    true,
-                                )
-                                .unwrap()
-                            })
-                            .display()
-                            .to_string()
-                    };
-
-                let rules_path = if stored_static.output_option.as_ref().is_some() {
-                    stored_static
-                        .output_option
-                        .as_ref()
-                        .unwrap()
-                        .rules
-                        .as_os_str()
-                        .to_str()
-                        .unwrap()
-                } else {
-                    "./rules"
-                };
-
-                if Path::new(&level_tuning_config_path).exists() {
-                    stored_static.include_status.insert("*".into());
-                    if let Err(err) =
-                        LevelTuning::run(&level_tuning_config_path, rules_path, stored_static)
-                    {
-                        AlertMessage::alert(&err).ok();
-                    }
-                } else {
-                    AlertMessage::alert(
-                        "Need rule_levels.txt file to use --level-tuning option [default: ./rules/config/level_tuning.txt]",
-                    )
-                    .ok();
-                }
-                let _ = self.output_open_close_message("closing_messages.txt", stored_static);
+                self.run_level_tuning(option, stored_static);
                 return;
             }
             Action::SetDefaultProfile(_) => {
-                println!();
-                let is_existed_config_path = CURRENT_EXE_PATH.to_path_buf().join("config").exists()
-                    || Path::new("config").exists();
-                if !is_existed_config_path {
-                    println!(
-                        "Default profile cannot be set due to the absence of a config folder. Please check the config folder."
-                    );
-                    return;
-                }
-                if let Err(e) = set_default_profile(
-                    check_setting_path(
-                        &CURRENT_EXE_PATH.to_path_buf(),
-                        "config/default_profile.yaml",
-                        true,
-                    )
-                    .unwrap()
-                    .to_str()
-                    .unwrap(),
-                    check_setting_path(
-                        &CURRENT_EXE_PATH.to_path_buf(),
-                        "config/profiles.yaml",
-                        true,
-                    )
-                    .unwrap()
-                    .to_str()
-                    .unwrap(),
-                    stored_static,
-                ) {
-                    AlertMessage::alert(&e).ok();
-                }
-                let _ = self.output_open_close_message("closing_messages.txt", stored_static);
+                self.run_set_default_profile(stored_static);
                 return;
             }
             Action::ListProfiles(_) => {
-                let profile_list = options::profile::get_profile_list("config/profiles.yaml");
-                write_color_buffer(
-                    &BufferWriter::stdout(ColorChoice::Always),
-                    get_writable_color(
-                        Some(Color::Rgb(0, 255, 0)),
-                        stored_static.common_options.no_color,
-                    ),
-                    "List of available profiles:",
-                    true,
-                )
-                .ok();
-                for profile in profile_list.iter() {
-                    write_color_buffer(
-                        &BufferWriter::stdout(ColorChoice::Always),
-                        Some(Color::Rgb(0, 255, 0)),
-                        &format!("- {:<25}", &format!("{}:", profile[0])),
-                        false,
-                    )
-                    .ok();
-                    write_color_buffer(
-                        &BufferWriter::stdout(ColorChoice::Always),
-                        None,
-                        &profile[1],
-                        true,
-                    )
-                    .ok();
-                }
-                println!();
-                let _ = self.output_open_close_message("closing_messages.txt", stored_static);
+                self.run_list_profiles(stored_static);
                 return;
             }
             Action::ExpandList(opt) => {
-                let encoded_rule_dir = Path::new("./encoded_rules.yml");
-                let rule_dir = if encoded_rule_dir.exists() {
-                    &encoded_rule_dir.to_path_buf()
-                } else {
-                    &opt.rules
-                };
-                // Terminate with an alert if the rules directory does not exist.
-                if !rule_dir.exists() {
-                    AlertMessage::alert(
-                        "The rules directory does not exist. Please check the path.",
-                    )
-                    .ok();
-                    return;
-                }
-                println!();
-                let result = expand_list(rule_dir);
-                let result: Vec<&String> = result.iter().collect();
-                if result.is_empty() {
-                    write_color_buffer(
-                        &BufferWriter::stdout(ColorChoice::Always),
-                        get_writable_color(
-                            Some(Color::Rgb(255, 175, 0)),
-                            stored_static.common_options.no_color,
-                        ),
-                        "No expanded rules found.",
-                        true,
-                    )
-                    .ok();
-                } else {
-                    write_color_buffer(
-                        &BufferWriter::stdout(ColorChoice::Always),
-                        get_writable_color(
-                            Some(Color::Rgb(0, 255, 0)),
-                            stored_static.common_options.no_color,
-                        ),
-                        &format!("{:?} unique expand placeholders found:", result.len()),
-                        true,
-                    )
-                    .ok();
-                    for expand in result {
-                        write_color_buffer(
-                            &BufferWriter::stdout(ColorChoice::Always),
-                            None,
-                            &expand.replace("%", ""),
-                            true,
-                        )
-                        .ok();
-                    }
-                }
-                println!();
-                let _ = self.output_open_close_message("closing_messages.txt", stored_static);
+                self.run_expand_list(opt, stored_static);
                 return;
             }
             Action::ConfigCriticalSystems(_) => {
-                self.analysis_start(&target_extensions, &time_filter, stored_static);
+                self.analysis_start(
+                    &target_extensions,
+                    &time_filter,
+                    stored_static,
+                    &mut html_reporter,
+                );
                 let _ = self.output_open_close_message("closing_messages.txt", stored_static);
                 return;
             }
             _ => {}
         }
 
-        // Output processing time.
-        let elapsed_output_str = CHECKPOINT
-            .lock()
-            .as_mut()
+        self.print_closing_summary(stored_static, &mut html_reporter);
+    }
+
+    fn prompt_critical_systems_config(stored_static: &StoredStatic) {
+        let msg = "This command tries to find critical systems like domain controllers and file servers by checking for logs that should only exist in those systems.
+It will search for Security 4768 (Kerberos TGT requested) events to determine if it is a domain controller.
+It will search for Security 5145 (Network Share File Access) events to determine if it is a file server.
+Any hostnames added to the critical_systems.txt file will have all alerts above low increased by one level with a maximum of emergency level.";
+        write_color_buffer(
+            &BufferWriter::stdout(ColorChoice::Always),
+            get_writable_color(
+                Some(Color::Rgb(255, 175, 0)),
+                stored_static.common_options.no_color,
+            ),
+            msg,
+            true,
+        )
+        .ok();
+        println!();
+        let conf = &CURRENT_EXE_PATH.to_path_buf().join("config");
+        if !conf.exists() {
+            fs::create_dir(conf).ok();
+        }
+        let config_path = conf.join("critical_systems.txt");
+        if !config_path.exists() {
+            fs::write(&config_path, "").ok();
+        }
+        if let Ok(metadata) = fs::metadata(&config_path)
+            && metadata.len() > 0
+        {
+            let color_theme = if stored_static.common_options.no_color {
+                ColorfulTheme {
+                    defaults_style: Style::new().for_stderr(),
+                    prompt_style: Style::new().for_stderr().bold(),
+                    prompt_prefix: style("?".to_string()).for_stderr(),
+                    prompt_suffix: style("›".to_string()).for_stderr(),
+                    success_prefix: style("✔".to_string()).for_stderr(),
+                    success_suffix: style("·".to_string()).for_stderr(),
+                    error_prefix: style("✘".to_string()).for_stderr(),
+                    error_style: Style::new().for_stderr(),
+                    hint_style: Style::new().for_stderr(),
+                    values_style: Style::new().for_stderr(),
+                    active_item_style: Style::new().for_stderr(),
+                    inactive_item_style: Style::new().for_stderr(),
+                    active_item_prefix: style("❯".to_string()).for_stderr(),
+                    inactive_item_prefix: style(" ".to_string()).for_stderr(),
+                    checked_item_prefix: style("✔".to_string()).for_stderr(),
+                    unchecked_item_prefix: style("⬚".to_string()).for_stderr(),
+                    picked_item_prefix: style("❯".to_string()).for_stderr(),
+                    unpicked_item_prefix: style(" ".to_string()).for_stderr(),
+                }
+            } else {
+                ColorfulTheme {
+                    active_item_prefix: Style::new().color256(214).apply_to("❯".to_string()), // orange
+                    checked_item_prefix: Style::new().color256(46).apply_to("✔".to_string()), // green
+                    picked_item_prefix: Style::new().color256(214).apply_to("❯".to_string()), // orange
+                    values_style: Style::new().color256(46), // green
+                    prompt_prefix: Style::new().color256(160).apply_to("?".to_string()), // red
+                    prompt_suffix: Style::new().color256(15).apply_to("›".to_string()), // white
+                    prompt_style: Style::new().color256(160).bold(), // red
+                    defaults_style: Style::new().color256(51), // cyan
+                    hint_style: Style::new().color256(214),  // orange
+                    success_prefix: Style::new().color256(46).apply_to("✔".to_string()), // green
+                    success_suffix: Style::new().color256(15).apply_to("·".to_string()), // white
+                    ..Default::default()
+                }
+            };
+            let prompt_fmt = "Warning: the config/critical_systems.txt file is not empty. Would you like to erase the contents first?";
+            let config_clear = Confirm::with_theme(&color_theme)
+                .with_prompt(prompt_fmt)
+                .default(true)
+                .show_default(true)
+                .interact()
+                .unwrap();
+            if config_clear {
+                fs::write(config_path, "").expect("Failed to clear the file");
+            }
+            println!();
+        }
+    }
+
+    fn run_pivot_keywords_output(stored_static: &StoredStatic) {
+        let pivot_key_unions = stored_static.pivot_keyword.read().unwrap();
+        if let Some(pivot_file) = &stored_static.output_path {
+            // For file output
+            pivot_key_unions.iter().for_each(|(key, pivot_keyword)| {
+                let mut writer = BufWriter::new(
+                    File::create(pivot_file.as_path().display().to_string() + "-" + key + ".txt")
+                        .unwrap(),
+                );
+                writer
+                    .write_all(
+                        create_output(String::default(), key, pivot_keyword, "file", stored_static)
+                            .as_bytes(),
+                    )
+                    .unwrap();
+            });
+            println!();
+            println!();
+            write_color_buffer(
+                &BufferWriter::stdout(ColorChoice::Always),
+                get_writable_color(
+                    Some(Color::Rgb(0, 255, 0)),
+                    stored_static.common_options.no_color,
+                ),
+                "Pivot keyword results were saved to the following files: ",
+                true,
+            )
+            .ok();
+            let mut output = "".to_string();
+            pivot_key_unions.iter().for_each(|(key, _)| {
+                writeln!(
+                    output,
+                    "{}",
+                    (pivot_file.as_path().display().to_string() + "-" + key + ".txt")
+                )
+                .ok();
+            });
+            write_color_buffer(
+                &BufferWriter::stdout(ColorChoice::Always),
+                get_writable_color(None, stored_static.common_options.no_color),
+                output.as_str(),
+                true,
+            )
+            .ok();
+        } else {
+            // For standard output
+            let output = "The following pivot keywords were found:";
+            write_color_buffer(
+                &BufferWriter::stdout(ColorChoice::Always),
+                get_writable_color(
+                    Some(Color::Rgb(0, 255, 0)),
+                    stored_static.common_options.no_color,
+                ),
+                output,
+                true,
+            )
+            .ok();
+            pivot_key_unions.iter().for_each(|(key, pivot_keyword)| {
+                create_output(
+                    String::default(),
+                    key,
+                    pivot_keyword,
+                    "standard",
+                    stored_static,
+                );
+
+                if pivot_keyword.keywords.is_empty() {
+                    write_color_buffer(
+                        &BufferWriter::stdout(ColorChoice::Always),
+                        get_writable_color(Some(Color::Red), stored_static.common_options.no_color),
+                        "No keywords found\n",
+                        true,
+                    )
+                    .ok();
+                }
+            });
+        }
+    }
+
+    fn run_update_rules(&self, stored_static: &mut StoredStatic) {
+        let update_target = match &stored_static.config.action.as_ref().unwrap() {
+            Action::UpdateRules(option) => Some(option.rules.to_owned()),
+            _ => None,
+        };
+        println!();
+        // If an error occurs (e.g. no internet connection), ignore it and do not output
+        // an error message.
+        let latest_version_data = Update::get_latest_hayabusa_version().unwrap_or_default();
+        let now_version = &format!("v{}", env!("CARGO_PKG_VERSION"));
+        stored_static.include_status.insert("*".into());
+        let rule_encoded =
+            check_setting_path(&CURRENT_EXE_PATH.to_path_buf(), "encoded_rules.yml", true).unwrap();
+        if rule_encoded.exists() {
+            let url = "https://raw.githubusercontent.com/Yamato-Security/hayabusa-encoded-rules/main/encoded_rules.yml";
+            match get(url).call() {
+                Ok(mut res) => {
+                    let mut dst = File::create(Path::new("./encoded_rules.yml")).unwrap();
+                    dst.write_all(res.body_mut().read_to_vec().unwrap().as_slice())
+                        .unwrap();
+                    write_color_buffer(
+                        &BufferWriter::stdout(ColorChoice::Always),
+                        get_writable_color(
+                            Some(Color::Rgb(255, 175, 0)),
+                            stored_static.common_options.no_color,
+                        ),
+                        "Rules file encoded_rules.yml updated successfully.",
+                        true,
+                    )
+                    .ok();
+                }
+                Err(_) => {
+                    AlertMessage::alert("Failed to update rules.").ok();
+                }
+            }
+
+            if !ONE_CONFIG_MAP.is_empty() {
+                let url = "https://raw.githubusercontent.com/Yamato-Security/hayabusa-encoded-rules/refs/heads/main/rules_config_files.txt";
+                match get(url).call() {
+                    Ok(mut res) => {
+                        let mut dst = File::create(Path::new("./rules_config_files.txt")).unwrap();
+                        dst.write_all(res.body_mut().read_to_string().unwrap().as_bytes())
+                            .unwrap();
+                        write_color_buffer(
+                            &BufferWriter::stdout(ColorChoice::Always),
+                            get_writable_color(
+                                Some(Color::Rgb(255, 175, 0)),
+                                stored_static.common_options.no_color,
+                            ),
+                            "Config file rules_config_files.txt updated successfully.",
+                            true,
+                        )
+                        .ok();
+                    }
+                    Err(_) => {
+                        AlertMessage::alert("Failed to update config file.").ok();
+                    }
+                }
+            }
+        } else {
+            match Update::update_rules(update_target.unwrap().to_str().unwrap(), stored_static) {
+                Ok(output) => {
+                    if output != "You currently have the latest rules." {
+                        write_color_buffer(
+                            &BufferWriter::stdout(ColorChoice::Always),
+                            get_writable_color(
+                                Some(Color::Rgb(255, 175, 0)),
+                                stored_static.common_options.no_color,
+                            ),
+                            "Rules updated successfully.",
+                            true,
+                        )
+                        .ok();
+                    }
+                }
+                Err(e) => {
+                    if e.message().is_empty() {
+                        AlertMessage::alert("Failed to update rules.").ok();
+                    } else {
+                        AlertMessage::alert(&format!("Failed to update rules. {e:?}  ")).ok();
+                    }
+                }
+            }
+        }
+        let split_now_version = &now_version
+            .replace("-dev", "")
+            .replace("v", "")
+            .split('.')
+            .filter_map(|part| part.parse().ok())
+            .collect::<Vec<i8>>();
+        let split_latest_version = &latest_version_data
+            .as_ref()
+            .unwrap_or(now_version)
+            .replace('"', "")
+            .replace("v", "")
+            .split('.')
+            .filter_map(|part| part.parse().ok())
+            .collect::<Vec<i8>>();
+        if split_latest_version > split_now_version {
+            write_color_buffer(
+                &BufferWriter::stdout(ColorChoice::Always),
+                get_writable_color(
+                    Some(Color::Rgb(255, 175, 0)),
+                    stored_static.common_options.no_color,
+                ),
+                &format!(
+                    "There is a new version of Hayabusa: {}",
+                    latest_version_data.unwrap().replace('\"', "")
+                ),
+                true,
+            )
+            .ok();
+            write_color_buffer(
+                &BufferWriter::stdout(ColorChoice::Always),
+                get_writable_color(
+                    Some(Color::Rgb(255, 175, 0)),
+                    stored_static.common_options.no_color,
+                ),
+                "You can download it at https://github.com/Yamato-Security/hayabusa/releases",
+                true,
+            )
+            .ok();
+        }
+        println!();
+        let _ = self.output_open_close_message("closing_messages.txt", stored_static);
+    }
+
+    fn run_level_tuning(
+        &self,
+        option: &configs::LevelTuningOption,
+        stored_static: &mut StoredStatic,
+    ) {
+        let level_tuning_config_path =
+            if option.level_tuning.to_str().unwrap() != "./rules/config/level_tuning.txt" {
+                check_setting_path(
+                    option
+                        .level_tuning
+                        .parent()
+                        .unwrap_or_else(|| Path::new("")),
+                    option
+                        .level_tuning
+                        .file_name()
+                        .unwrap()
+                        .to_str()
+                        .unwrap_or_default(),
+                    false,
+                )
+                .unwrap_or_else(|| {
+                    check_setting_path(
+                        &CURRENT_EXE_PATH.to_path_buf(),
+                        "rules/config/level_tuning.txt",
+                        true,
+                    )
+                    .unwrap()
+                })
+                .display()
+                .to_string()
+            } else {
+                check_setting_path(&stored_static.config_path, "level_tuning.txt", false)
+                    .unwrap_or_else(|| {
+                        check_setting_path(
+                            &CURRENT_EXE_PATH.to_path_buf(),
+                            "rules/config/level_tuning.txt",
+                            true,
+                        )
+                        .unwrap()
+                    })
+                    .display()
+                    .to_string()
+            };
+
+        let rules_path = if stored_static.output_option.as_ref().is_some() {
+            stored_static
+                .output_option
+                .as_ref()
+                .unwrap()
+                .rules
+                .as_os_str()
+                .to_str()
+                .unwrap()
+        } else {
+            "./rules"
+        };
+
+        if Path::new(&level_tuning_config_path).exists() {
+            stored_static.include_status.insert("*".into());
+            if let Err(err) = LevelTuning::run(&level_tuning_config_path, rules_path, stored_static)
+            {
+                AlertMessage::alert(&err).ok();
+            }
+        } else {
+            AlertMessage::alert(
+                        "Need rule_levels.txt file to use --level-tuning option [default: ./rules/config/level_tuning.txt]",
+                    )
+                    .ok();
+        }
+        let _ = self.output_open_close_message("closing_messages.txt", stored_static);
+    }
+
+    fn run_set_default_profile(&self, stored_static: &StoredStatic) {
+        println!();
+        let is_existed_config_path =
+            CURRENT_EXE_PATH.to_path_buf().join("config").exists() || Path::new("config").exists();
+        if !is_existed_config_path {
+            println!(
+                "Default profile cannot be set due to the absence of a config folder. Please check the config folder."
+            );
+            return;
+        }
+        if let Err(e) = set_default_profile(
+            check_setting_path(
+                &CURRENT_EXE_PATH.to_path_buf(),
+                "config/default_profile.yaml",
+                true,
+            )
             .unwrap()
-            .calculate_all_stocked_results();
+            .to_str()
+            .unwrap(),
+            check_setting_path(
+                &CURRENT_EXE_PATH.to_path_buf(),
+                "config/profiles.yaml",
+                true,
+            )
+            .unwrap()
+            .to_str()
+            .unwrap(),
+            stored_static,
+        ) {
+            AlertMessage::alert(&e).ok();
+        }
+        let _ = self.output_open_close_message("closing_messages.txt", stored_static);
+    }
+
+    fn run_list_profiles(&self, stored_static: &StoredStatic) {
+        let profile_list = options::profile::get_profile_list("config/profiles.yaml");
+        write_color_buffer(
+            &BufferWriter::stdout(ColorChoice::Always),
+            get_writable_color(
+                Some(Color::Rgb(0, 255, 0)),
+                stored_static.common_options.no_color,
+            ),
+            "List of available profiles:",
+            true,
+        )
+        .ok();
+        for profile in profile_list.iter() {
+            write_color_buffer(
+                &BufferWriter::stdout(ColorChoice::Always),
+                Some(Color::Rgb(0, 255, 0)),
+                &format!("- {:<25}", &format!("{}:", profile[0])),
+                false,
+            )
+            .ok();
+            write_color_buffer(
+                &BufferWriter::stdout(ColorChoice::Always),
+                None,
+                &profile[1],
+                true,
+            )
+            .ok();
+        }
+        println!();
+        let _ = self.output_open_close_message("closing_messages.txt", stored_static);
+    }
+
+    fn run_expand_list(&self, opt: &configs::ExpandListOption, stored_static: &StoredStatic) {
+        let encoded_rule_dir = Path::new("./encoded_rules.yml");
+        let rule_dir = if encoded_rule_dir.exists() {
+            &encoded_rule_dir.to_path_buf()
+        } else {
+            &opt.rules
+        };
+        // Terminate with an alert if the rules directory does not exist.
+        if !rule_dir.exists() {
+            AlertMessage::alert("The rules directory does not exist. Please check the path.").ok();
+            self.failed.set(true);
+            return;
+        }
+        println!();
+        let result = expand_list(rule_dir);
+        let result: Vec<&String> = result.iter().collect();
+        if result.is_empty() {
+            write_color_buffer(
+                &BufferWriter::stdout(ColorChoice::Always),
+                get_writable_color(
+                    Some(Color::Rgb(255, 175, 0)),
+                    stored_static.common_options.no_color,
+                ),
+                "No expanded rules found.",
+                true,
+            )
+            .ok();
+        } else {
+            write_color_buffer(
+                &BufferWriter::stdout(ColorChoice::Always),
+                get_writable_color(
+                    Some(Color::Rgb(0, 255, 0)),
+                    stored_static.common_options.no_color,
+                ),
+                &format!("{:?} unique expand placeholders found:", result.len()),
+                true,
+            )
+            .ok();
+            for expand in result {
+                write_color_buffer(
+                    &BufferWriter::stdout(ColorChoice::Always),
+                    None,
+                    &expand.replace("%", ""),
+                    true,
+                )
+                .ok();
+            }
+        }
+        println!();
+        let _ = self.output_open_close_message("closing_messages.txt", stored_static);
+    }
+
+    fn print_closing_summary(
+        &self,
+        stored_static: &StoredStatic,
+        html_reporter: &mut HtmlReporter,
+    ) {
+        // Output processing time.
+        let elapsed_output_str = self.checkpoint.calculate_all_stocked_results();
         output_and_data_stack_for_html(
             &format!("Elapsed time: {elapsed_output_str}"),
             htmlreport::GENERAL_OVERVIEW_SECTION,
             &stored_static.html_report_flag,
+            html_reporter,
         );
         write_color_buffer(
             &BufferWriter::stdout(ColorChoice::Always),
@@ -1061,85 +1406,83 @@ Any hostnames added to the critical_systems.txt file will have all alerts above 
             true,
         )
         .ok();
-        match stored_static.config.action {
-            Some(Action::CsvTimeline(_)) | Some(Action::JsonTimeline(_)) => {
-                println!();
-                write_color_buffer(
-                    &BufferWriter::stdout(ColorChoice::Always),
-                    get_writable_color(
-                        Some(Color::Rgb(0, 255, 0)),
-                        stored_static.common_options.no_color,
-                    ),
-                    "Please report any issues with Hayabusa rules to: ",
-                    false,
+        if let Some(Action::DfirTimeline(_)) = stored_static.config.action {
+            println!();
+            write_color_buffer(
+                &BufferWriter::stdout(ColorChoice::Always),
+                get_writable_color(
+                    Some(Color::Rgb(0, 255, 0)),
+                    stored_static.common_options.no_color,
+                ),
+                "Please report any issues with Hayabusa rules to: ",
+                false,
+            )
+            .ok();
+            write_color_buffer(
+                &BufferWriter::stdout(ColorChoice::Always),
+                get_writable_color(None, stored_static.common_options.no_color),
+                "https://github.com/Yamato-Security/hayabusa-rules/issues",
+                true,
+            )
+            .ok();
+            write_color_buffer(
+                &BufferWriter::stdout(ColorChoice::Always),
+                get_writable_color(
+                    Some(Color::Rgb(0, 255, 0)),
+                    stored_static.common_options.no_color,
+                ),
+                "Please report any false positives with Sigma rules to: ",
+                false,
+            )
+            .ok();
+            write_color_buffer(
+                &BufferWriter::stdout(ColorChoice::Always),
+                get_writable_color(None, stored_static.common_options.no_color),
+                "https://github.com/SigmaHQ/sigma/issues",
+                true,
+            )
+            .ok();
+            write_color_buffer(
+                &BufferWriter::stdout(ColorChoice::Always),
+                get_writable_color(
+                    Some(Color::Rgb(0, 255, 0)),
+                    stored_static.common_options.no_color,
+                ),
+                "Please submit new Sigma rules with pull requests to: ",
+                false,
+            )
+            .ok();
+            write_color_buffer(
+                &BufferWriter::stdout(ColorChoice::Always),
+                None,
+                "https://github.com/SigmaHQ/sigma/pulls",
+                true,
+            )
+            .ok();
+            if stored_static.html_report_flag {
+                let html_str = html_reporter.create_html();
+                htmlreport::create_html_file(
+                    html_str,
+                    stored_static
+                        .output_option
+                        .as_ref()
+                        .unwrap()
+                        .html_report
+                        .as_ref()
+                        .unwrap()
+                        .to_str()
+                        .unwrap_or(""),
+                    stored_static.common_options.no_color,
                 )
-                .ok();
-                write_color_buffer(
-                    &BufferWriter::stdout(ColorChoice::Always),
-                    get_writable_color(None, stored_static.common_options.no_color),
-                    "https://github.com/Yamato-Security/hayabusa-rules/issues",
-                    true,
-                )
-                .ok();
-                write_color_buffer(
-                    &BufferWriter::stdout(ColorChoice::Always),
-                    get_writable_color(
-                        Some(Color::Rgb(0, 255, 0)),
-                        stored_static.common_options.no_color,
-                    ),
-                    "Please report any false positives with Sigma rules to: ",
-                    false,
-                )
-                .ok();
-                write_color_buffer(
-                    &BufferWriter::stdout(ColorChoice::Always),
-                    get_writable_color(None, stored_static.common_options.no_color),
-                    "https://github.com/SigmaHQ/sigma/issues",
-                    true,
-                )
-                .ok();
-                write_color_buffer(
-                    &BufferWriter::stdout(ColorChoice::Always),
-                    get_writable_color(
-                        Some(Color::Rgb(0, 255, 0)),
-                        stored_static.common_options.no_color,
-                    ),
-                    "Please submit new Sigma rules with pull requests to: ",
-                    false,
-                )
-                .ok();
-                write_color_buffer(
-                    &BufferWriter::stdout(ColorChoice::Always),
-                    None,
-                    "https://github.com/SigmaHQ/sigma/pulls",
-                    true,
-                )
-                .ok();
-                if stored_static.html_report_flag {
-                    let html_str = HTML_REPORTER.read().unwrap().to_owned().create_html();
-                    htmlreport::create_html_file(
-                        html_str,
-                        stored_static
-                            .output_option
-                            .as_ref()
-                            .unwrap()
-                            .html_report
-                            .as_ref()
-                            .unwrap()
-                            .to_str()
-                            .unwrap_or(""),
-                        stored_static.common_options.no_color,
-                    )
-                }
             }
-            _ => {}
         }
 
         // If the -Q option is specified or there are no parse errors, the error stack is 0 and no error log file is generated.
-        if !ERROR_LOG_STACK.lock().unwrap().is_empty() {
+        if !stored_static.error_log_stack.lock().unwrap().is_empty() {
             AlertMessage::create_error_log(
                 stored_static.quiet_errors_flag,
                 stored_static.common_options.no_color,
+                &stored_static.error_log_stack,
             );
         }
         println!();
@@ -1147,7 +1490,7 @@ Any hostnames added to the critical_systems.txt file will have all alerts above 
 
         // When the debug flag is set, output statistics such as memory usage to the screen.
         if stored_static.config.debug {
-            CHECKPOINT.lock().as_ref().unwrap().output_stocked_result();
+            self.checkpoint.output_stocked_result();
             println!();
             println!("Memory usage stats:");
             unsafe {
@@ -1163,6 +1506,7 @@ Any hostnames added to the critical_systems.txt file will have all alerts above 
         target_extensions: &HashSet<String>,
         time_filter: &TargetEventTime,
         stored_static: &mut StoredStatic,
+        html_reporter: &mut HtmlReporter,
     ) {
         if stored_static.output_option.is_none() {
         } else if let Some(output_option) = stored_static.output_option.as_ref()
@@ -1177,6 +1521,7 @@ Any hostnames added to the critical_systems.txt file will have all alerts above 
                 live_analysis_list.unwrap(),
                 time_filter,
                 stored_static.borrow_mut(),
+                html_reporter,
             );
         } else if let Some(output_option) = &stored_static.output_option.as_ref()
             && let Some(directories) = &output_option.input_args.directory
@@ -1191,9 +1536,15 @@ Any hostnames added to the critical_systems.txt file will have all alerts above 
             }
             if evtx_files.is_empty() {
                 AlertMessage::alert("No .evtx files were found.").ok();
+                self.failed.set(true);
                 return;
             }
-            self.analysis_files(evtx_files, time_filter, stored_static.borrow_mut());
+            self.analysis_files(
+                evtx_files,
+                time_filter,
+                stored_static.borrow_mut(),
+                html_reporter,
+            );
         } else {
             // For cases other than directory and live_analysis, a filepath is specified.
             if let Some(input_args) = &stored_static.output_option.as_ref()
@@ -1213,6 +1564,7 @@ Any hostnames added to the critical_systems.txt file will have all alerts above 
                         filepath.as_os_str().to_str().unwrap()
                     ))
                     .ok();
+                    self.failed.set(true);
                     return;
                 }
                 if !target_extensions.contains(
@@ -1230,15 +1582,17 @@ Any hostnames added to the critical_systems.txt file will have all alerts above 
                     .starts_with('.')
                 {
                     AlertMessage::alert(
-                        "-f (--filepath) only accepts .evtx files. Hidden files are ignored. If you want to input event logs in JSON format, please specify -J (--JSON-input).",
+                        "-f (--filepath) only accepts .evtx files. Hidden files are ignored. If you want to input event logs in JSON format, please specify -J (--json-input).",
                     )
                     .ok();
+                    self.failed.set(true);
                     return;
                 }
                 self.analysis_files(
                     vec![check_path.to_path_buf()],
                     time_filter,
                     stored_static.borrow_mut(),
+                    html_reporter,
                 );
             }
         }
@@ -1308,7 +1662,8 @@ Any hostnames added to the critical_systems.txt file will have all alerts above 
                 AlertMessage::alert(&errmsg).ok();
             }
             if !stored_static.quiet_errors_flag {
-                ERROR_LOG_STACK
+                stored_static
+                    .error_log_stack
                     .lock()
                     .unwrap()
                     .push(format!("[ERROR] {errmsg}"));
@@ -1317,12 +1672,12 @@ Any hostnames added to the critical_systems.txt file will have all alerts above 
         }
 
         let mut ret = vec![];
-        for e in entries.unwrap() {
-            if e.is_err() {
+        for entry in entries.unwrap() {
+            if entry.is_err() {
                 continue;
             }
 
-            let path = e.unwrap().path();
+            let path = entry.unwrap().path();
             if path.is_dir() {
                 path.to_str().map(|path_str| {
                     let subdir_ret =
@@ -1362,81 +1717,18 @@ Any hostnames added to the critical_systems.txt file will have all alerts above 
         .ok();
     }
 
-    /// Run the scan over the collected files: show the rule-set wizard if enabled, load and
-    /// filter the detection rules, apply channel filters, analyze each file, and emit the
-    /// results.
-    fn analysis_files(
-        &mut self,
-        mut evtx_files: Vec<PathBuf>,
-        time_filter: &TargetEventTime,
-        stored_static: &mut StoredStatic,
-    ) {
-        let event_timeline_config = &stored_static.event_timeline_config;
-        let target_event_ids = &stored_static.target_eventids;
-        let target_level = stored_static
-            .output_option
-            .as_ref()
-            .unwrap()
-            .exact_level
-            .as_ref()
-            .unwrap_or(&String::default())
-            .to_uppercase();
-        write_color_buffer(
-            &BufferWriter::stdout(ColorChoice::Always),
-            get_writable_color(
-                Some(Color::Rgb(0, 255, 0)),
-                stored_static.common_options.no_color,
-            ),
-            "Total event log files: ",
-            false,
-        )
-        .ok();
-        let log_files = &evtx_files.len().to_formatted_string(&Locale::en);
-        write_color_buffer(
-            &BufferWriter::stdout(ColorChoice::Always),
-            None,
-            log_files,
-            true,
-        )
-        .ok();
-        let mut total_file_size = ByteSize::b(0);
-        for file_path in &evtx_files {
-            let file_size = get_file_size(
-                file_path,
-                stored_static.verbose_flag,
-                stored_static.quiet_errors_flag,
-            );
-            total_file_size += ByteSize::b(file_size);
-        }
-        write_color_buffer(
-            &BufferWriter::stdout(ColorChoice::Always),
-            get_writable_color(
-                Some(Color::Rgb(0, 255, 0)),
-                stored_static.common_options.no_color,
-            ),
-            "Total file size: ",
-            false,
-        )
-        .ok();
-        let total_size = total_file_size;
-        write_color_buffer(
-            &BufferWriter::stdout(ColorChoice::Always),
-            None,
-            &total_file_size.display().to_string(),
-            true,
-        )
-        .ok();
+    /// Show the interactive rule-set wizard (Core / Core+ / Core++ / All) when it is enabled
+    /// for the current action, prompt for emerging-threats / threat-hunting / deprecated /
+    /// unsupported / noisy / sysmon rule inclusion, and apply the choices to `stored_static`.
+    /// Returns the selected rule-set label for the HTML report, or `None` when it did not run.
+    fn run_scan_wizard(&mut self, stored_static: &mut StoredStatic) -> Option<String> {
         let mut status_append_output = None;
         let need_wizard = matches!(
             stored_static.config.action.as_ref().unwrap(),
-            Action::CsvTimeline(_) | Action::JsonTimeline(_) | Action::PivotKeywordsList(_)
+            Action::DfirTimeline(_) | Action::PivotKeywordsList(_)
         ) && !stored_static.output_option.as_ref().unwrap().no_wizard;
         if need_wizard {
-            CHECKPOINT
-                .lock()
-                .as_mut()
-                .unwrap()
-                .lap_checkpoint("Rule Parse Processing Time");
+            self.checkpoint.lap_checkpoint("Rule Parse Processing Time");
             let mut rule_counter_wizard_map = HashMap::new();
             yaml::count_rules(
                 &stored_static.output_option.as_ref().unwrap().rules,
@@ -1452,71 +1744,6 @@ Any hostnames added to the critical_systems.txt file will have all alerts above 
                 true,
             )
             .ok();
-            // Count the loadable rules per status (or per tag when target_tags is non-empty) at
-            // or above min_level, based on rule_counter_wizard_map, which is keyed as
-            // status -> level -> tag -> count. When exclude_noisytarget_flag is set, only the
-            // statuses in exclude_noisy_status are counted (used for the deprecated/unsupported/
-            // noisy prompts); otherwise those statuses are skipped, unless target_status contains
-            // "*", in which case all statuses (including the noisy/deprecated ones) are counted.
-            let calculate_wizard_rule_count = |exclude_noisytarget_flag: bool,
-                                               exclude_noisy_status: Vec<&str>,
-                                               min_level: &str,
-                                               target_status: Vec<&str>,
-                                               target_tags: Vec<&str>|
-             -> HashMap<CompactString, i128> {
-                let mut ret = HashMap::new();
-                if exclude_noisytarget_flag {
-                    for s in exclude_noisy_status {
-                        let mut ret_cnt = 0;
-                        if let Some(target_status_count) = rule_counter_wizard_map.get(s) {
-                            target_status_count.iter().for_each(|(rule_level, value)| {
-                                let doc_level_num = LEVEL::from(rule_level.as_str()).index();
-                                let args_level_num = LEVEL::from(min_level).index();
-                                if doc_level_num >= args_level_num {
-                                    ret_cnt += value.iter().map(|(_, cnt)| cnt).sum::<i128>()
-                                }
-                            });
-                        }
-                        if ret_cnt > 0 {
-                            ret.insert(CompactString::from(s), ret_cnt);
-                        }
-                    }
-                } else {
-                    let all_status_flag = target_status.contains(&"*");
-                    for s in rule_counter_wizard_map.keys() {
-                        // Skip aggregation for items that do not match the specified status.
-                        if (exclude_noisy_status.contains(&s.as_str())
-                            || !target_status.contains(&s.as_str()))
-                            && !all_status_flag
-                        {
-                            continue;
-                        }
-                        let mut ret_cnt = 0;
-                        if let Some(target_status_count) = rule_counter_wizard_map.get(s) {
-                            target_status_count.iter().for_each(|(rule_level, value)| {
-                                let doc_level_num = LEVEL::from(rule_level.as_str()).index();
-                                let args_level_num = LEVEL::from(min_level).index();
-                                if doc_level_num >= args_level_num {
-                                    if !target_tags.is_empty() {
-                                        for (tag, cnt) in value.iter() {
-                                            if target_tags.contains(&tag.as_str()) {
-                                                let matched_tag_cnt = ret.entry(tag.clone());
-                                                *matched_tag_cnt.or_insert(0) += cnt;
-                                            }
-                                        }
-                                    } else {
-                                        ret_cnt += value.iter().map(|(_, cnt)| cnt).sum::<i128>()
-                                    }
-                                }
-                            });
-                            if ret_cnt > 0 {
-                                ret.insert(s.clone(), ret_cnt);
-                            }
-                        }
-                    }
-                }
-                ret
-            };
             let selections_status = &[
                 (
                     "1. Core ( status: test, stable | level: high, critical )",
@@ -1544,11 +1771,20 @@ Any hostnames added to the critical_systems.txt file will have all alerts above 
                 .iter()
                 .map(|(_, (status, min_level))| {
                     calculate_wizard_rule_count(
-                        false,
-                        ["excluded", "deprecated", "unsupported", "noisy"].to_vec(),
-                        min_level,
-                        status.to_vec(),
-                        [].to_vec(),
+                        &rule_counter_wizard_map,
+                        WizardCountFilter {
+                            exclude_noisytarget_flag: false,
+                            exclude_noisy_status: [
+                                "excluded",
+                                "deprecated",
+                                "unsupported",
+                                "noisy",
+                            ]
+                            .to_vec(),
+                            min_level,
+                            target_status: status.to_vec(),
+                            target_tags: [].to_vec(),
+                        },
                     )
                 })
                 .collect_vec();
@@ -1650,11 +1886,15 @@ Any hostnames added to the critical_systems.txt file will have all alerts above 
                 selections_status[selected_index].1.1.into();
 
             let exclude_noisy_cnt = calculate_wizard_rule_count(
-                true,
-                ["excluded", "noisy", "deprecated", "unsupported"].to_vec(),
-                selections_status[selected_index].1.1,
-                [].to_vec(),
-                [].to_vec(),
+                &rule_counter_wizard_map,
+                WizardCountFilter {
+                    exclude_noisytarget_flag: true,
+                    exclude_noisy_status: ["excluded", "noisy", "deprecated", "unsupported"]
+                        .to_vec(),
+                    min_level: selections_status[selected_index].1.1,
+                    target_status: [].to_vec(),
+                    target_tags: [].to_vec(),
+                },
             );
 
             stored_static.include_status.extend(
@@ -1668,16 +1908,19 @@ Any hostnames added to the critical_systems.txt file will have all alerts above 
             let mut output_option = stored_static.output_option.clone().unwrap();
             let exclude_tags = output_option.exclude_tag.get_or_insert_with(Vec::new);
             let tags_cnt = calculate_wizard_rule_count(
-                false,
-                [].to_vec(),
-                selections_status[selected_index].1.1,
-                selections_status[selected_index].1.0.clone(),
-                [
-                    "detection.emerging_threats",
-                    "detection.threat_hunting",
-                    "sysmon",
-                ]
-                .to_vec(),
+                &rule_counter_wizard_map,
+                WizardCountFilter {
+                    exclude_noisytarget_flag: false,
+                    exclude_noisy_status: [].to_vec(),
+                    min_level: selections_status[selected_index].1.1,
+                    target_status: selections_status[selected_index].1.0.clone(),
+                    target_tags: [
+                        "detection.emerging_threats",
+                        "detection.threat_hunting",
+                        "sysmon",
+                    ]
+                    .to_vec(),
+                },
             );
             // If anything other than "4. All alert rules" or "5. All event and alert rules" was selected, ask questions about tags.
             if selected_index < 3 {
@@ -1757,11 +2000,7 @@ Any hostnames added to the critical_systems.txt file will have all alerts above 
                 }
             }
 
-            CHECKPOINT
-                .lock()
-                .as_mut()
-                .unwrap()
-                .set_checkpoint(Local::now());
+            self.checkpoint.set_checkpoint(Local::now());
 
             if let Some(noisy_cnt) = exclude_noisy_cnt.get("noisy") {
                 // Prompt whether to load noisy rules.
@@ -1809,6 +2048,76 @@ Any hostnames added to the critical_systems.txt file will have all alerts above 
         } else if stored_static.include_status.is_empty() {
             stored_static.include_status.insert("*".into());
         }
+        status_append_output
+    }
+
+    /// Run the scan over the collected files: show the rule-set wizard if enabled, load and
+    /// filter the detection rules, apply channel filters, analyze each file, and emit the
+    /// results.
+    fn analysis_files(
+        &mut self,
+        mut evtx_files: Vec<PathBuf>,
+        time_filter: &TargetEventTime,
+        stored_static: &mut StoredStatic,
+        html_reporter: &mut HtmlReporter,
+    ) {
+        let target_level = stored_static
+            .output_option
+            .as_ref()
+            .unwrap()
+            .exact_level
+            .as_ref()
+            .unwrap_or(&String::default())
+            .to_uppercase();
+        write_color_buffer(
+            &BufferWriter::stdout(ColorChoice::Always),
+            get_writable_color(
+                Some(Color::Rgb(0, 255, 0)),
+                stored_static.common_options.no_color,
+            ),
+            "Total event log files: ",
+            false,
+        )
+        .ok();
+        let log_files = &evtx_files.len().to_formatted_string(&Locale::en);
+        write_color_buffer(
+            &BufferWriter::stdout(ColorChoice::Always),
+            None,
+            log_files,
+            true,
+        )
+        .ok();
+        let mut total_file_size = ByteSize::b(0);
+        for file_path in &evtx_files {
+            let file_size = get_file_size(
+                file_path,
+                stored_static.verbose_flag,
+                stored_static.quiet_errors_flag,
+                &stored_static.error_log_stack,
+            );
+            total_file_size += ByteSize::b(file_size);
+        }
+        write_color_buffer(
+            &BufferWriter::stdout(ColorChoice::Always),
+            get_writable_color(
+                Some(Color::Rgb(0, 255, 0)),
+                stored_static.common_options.no_color,
+            ),
+            "Total file size: ",
+            false,
+        )
+        .ok();
+        let total_size = total_file_size;
+        write_color_buffer(
+            &BufferWriter::stdout(ColorChoice::Always),
+            None,
+            &total_file_size.display().to_string(),
+            true,
+        )
+        .ok();
+        let status_append_output = self.run_scan_wizard(stored_static);
+        let event_timeline_config = &stored_static.event_timeline_config;
+        let target_event_ids = &stored_static.target_eventids;
 
         if stored_static.html_report_flag {
             let mut output_data = Nested::<String>::new();
@@ -1834,7 +2143,7 @@ Any hostnames added to the critical_systems.txt file will have all alerts above 
                 html_report_data.push(format!("- Excluded tags: {exclude_tags_data}"));
             }
             output_data.extend(html_report_data.iter());
-            htmlreport::add_md_data(htmlreport::GENERAL_OVERVIEW_SECTION, output_data);
+            html_reporter.add_md_data(htmlreport::GENERAL_OVERVIEW_SECTION, output_data);
         }
 
         let level = stored_static
@@ -1846,7 +2155,7 @@ Any hostnames added to the critical_systems.txt file will have all alerts above 
         let mut wait_message = "";
         if matches!(
             stored_static.config.action.as_ref().unwrap(),
-            Action::CsvTimeline(_) | Action::JsonTimeline(_) | Action::PivotKeywordsList(_)
+            Action::DfirTimeline(_) | Action::PivotKeywordsList(_)
         ) {
             wait_message = "Loading detection rules. Please wait.";
         } else if stored_static.logon_summary_flag {
@@ -1878,7 +2187,7 @@ Any hostnames added to the critical_systems.txt file will have all alerts above 
         let mut rule_files = vec![];
         let need_rules = matches!(
             stored_static.config.action.as_ref().unwrap(),
-            Action::CsvTimeline(_) | Action::JsonTimeline(_) | Action::PivotKeywordsList(_)
+            Action::DfirTimeline(_) | Action::PivotKeywordsList(_)
         );
         if need_rules {
             rule_files = detection::Detection::parse_rule_files(
@@ -1887,22 +2196,16 @@ Any hostnames added to the critical_systems.txt file will have all alerts above 
                 &stored_static.output_option.as_ref().unwrap().rules,
                 &filter::exclude_ids(stored_static),
                 stored_static,
+                html_reporter,
             );
-            CHECKPOINT
-                .lock()
-                .as_mut()
-                .unwrap()
-                .lap_checkpoint("Rule Parse Processing Time");
-            CHECKPOINT
-                .lock()
-                .as_mut()
-                .unwrap()
-                .set_checkpoint(Local::now());
+            self.checkpoint.lap_checkpoint("Rule Parse Processing Time");
+            self.checkpoint.set_checkpoint(Local::now());
             if rule_files.is_empty() {
                 AlertMessage::alert(
                         "No rules were loaded. Please download the latest rules with the update-rules command.\r\n",
                     )
                     .ok();
+                self.failed.set(true);
                 return;
             }
             if !stored_static.json_input_flag
@@ -1924,9 +2227,10 @@ Any hostnames added to the critical_systems.txt file will have all alerts above 
                     &evtx_files,
                     &rule_files,
                     stored_static.quiet_errors_flag,
+                    &stored_static.error_log_stack,
                 );
                 if !stored_static.scan_all_evtx_files {
-                    evtx_files.retain(|e| channel_filter.scannable_rule_exists(e));
+                    evtx_files.retain(|evtx_file| channel_filter.scannable_rule_exists(evtx_file));
                     write_color_buffer(
                         &BufferWriter::stdout(ColorChoice::Always),
                         get_writable_color(
@@ -1946,9 +2250,9 @@ Any hostnames added to the critical_systems.txt file will have all alerts above 
                     .ok();
                 }
                 if !stored_static.enable_all_rules {
-                    rule_files.retain(|r| {
-                        channel_filter.rule_paths.contains(&r.rule_path)
-                            || !r.yaml["correlation"].is_badvalue()
+                    rule_files.retain(|rule| {
+                        channel_filter.rule_paths.contains(&rule.rule_path)
+                            || !rule.yaml["correlation"].is_badvalue()
                     });
                     let rules_after_channel_filter =
                         rule_files.len().to_formatted_string(&Locale::en);
@@ -1976,6 +2280,7 @@ Any hostnames added to the critical_systems.txt file will have all alerts above 
                 &stored_static.output_option,
                 true,
                 stored_static.common_options.no_color,
+                html_reporter,
             );
             println!();
             write_color_buffer(
@@ -1991,91 +2296,21 @@ Any hostnames added to the critical_systems.txt file will have all alerts above 
             println!();
         }
 
-        if stored_static.logon_summary_flag && !stored_static.json_input_flag {
-            // Create a channel filter for the logon summary.
-            let yaml_str = r#"
-            detection:
-                selection:
-                    Channel:
-                        - Security
-                        - Microsoft-Windows-TerminalServices-Gateway/Operational
-                        - Microsoft-Windows-TerminalServices-LocalSessionManager/Operational
-            "#;
-            let yaml_data = YamlLoader::load_from_str(yaml_str);
-            let node = RuleNode::new(
-                "logon".to_string(),
-                yaml_data.ok().unwrap_or_default().first().unwrap().clone(),
-            );
-            let rule_files = vec![node];
-            let mut channel_filter =
-                create_channel_filter(&evtx_files, &rule_files, stored_static.quiet_errors_flag);
-            evtx_files.retain(|e| channel_filter.scannable_rule_exists(e));
-        }
+        evtx_files = apply_channel_filters(evtx_files, stored_static);
 
-        if matches!(
-            stored_static.config.action.as_ref().unwrap(),
-            Action::ConfigCriticalSystems(_)
-        ) {
-            // Create a channel filter for config-critical-systems.
-            let yaml_str = r#"
-            detection:
-                selection:
-                    Channel: Security
-            "#;
-            let yaml_data = YamlLoader::load_from_str(yaml_str);
-            let node = RuleNode::new(
-                "config-critical-systems".to_string(),
-                yaml_data.ok().unwrap_or_default().first().unwrap().clone(),
-            );
-            let rule_files = vec![node];
-            let mut channel_filter =
-                create_channel_filter(&evtx_files, &rule_files, stored_static.quiet_errors_flag);
-            evtx_files.retain(|e| channel_filter.scannable_rule_exists(e));
-        }
-
-        if let Some(Action::LogMetrics(opt)) = &stored_static.config.action {
-            evtx_files = filter_evtx_files(
-                evtx_files,
-                &opt.include_channel,
-                &opt.include_filename,
-                &opt.exclude_channel,
-                &opt.exclude_filename,
-            );
-        }
-
-        // Build the indicatif progress bar template. In the colored branch, the doubled braces
-        // in the format! call are escapes that produce literal braces, so the indicatif
-        // placeholders like {elapsed_precise} survive intact while the spinner and bar are
-        // wrapped in green truecolor escape sequences.
-        let template = if stored_static.common_options.no_color {
-            "[{elapsed_precise}] {human_pos} / {human_len} {spinner} [{bar:40}] {percent}%\n\n{msg}"
-                .to_string()
-        } else {
-            let spinner = "{spinner}".truecolor(0, 255, 0).to_string();
-            let bar = "{bar:40}".truecolor(0, 255, 0).to_string();
-            format!(
-                "[{{elapsed_precise}}] {{human_pos}} / {{human_len}} {spinner} [{bar}] {{percent}}%\n\n{{msg}}",
-            )
-        };
-
-        let progress_style = ProgressStyle::with_template(&template)
-            .unwrap()
-            .progress_chars("=> ");
-
-        let progress_bar = ProgressBar::with_draw_target(
-            Some(evtx_files.len() as u64),
-            ProgressDrawTarget::stdout_with_hz(10),
-        )
-        .with_tab_width(55);
-        progress_bar.set_style(progress_style);
+        let progress_bar = build_progress_bar(stored_static, evtx_files.len() as u64);
         self.rule_keys = self.get_all_keys(&rule_files);
         let mut detection = detection::Detection::new(rule_files);
         let mut timeline = Timeline::new();
-        *STORED_EKEY_ALIAS.write().unwrap() = Some(stored_static.eventkey_alias.clone());
-        *STORED_STATIC.write().unwrap() = Some(stored_static.clone());
-        let mut afterfact_info = AfterfactInfo::default();
+        // Snapshot `stored_static` once and share it with the per-rule parallel tasks in
+        // `Detection::execute_rules` via cheap `Arc::clone`s. The Arc-wrapped inner fields
+        // (e.g. error_log_stack, pivot_keyword) stay shared with the live `stored_static`,
+        // so accumulation from the parallel path is still visible; the plain config/flag
+        // fields are read-only during the scan.
+        let stored_static_arc = Arc::new(stored_static.clone());
+        let mut result_state = ResultOutputState::default();
         let mut all_detect_infos = vec![];
-        let mut afterfact_writer = afterfact::init_writer(stored_static);
+        let mut output_writer = results::init_writer(stored_static);
         let is_show_progress = stored_static.output_path.is_some()
             || matches!(
                 stored_static.config.action.as_ref().unwrap(),
@@ -2096,11 +2331,12 @@ Any hostnames added to the critical_systems.txt file will have all alerts above 
                     &evtx_file,
                     stored_static.verbose_flag,
                     stored_static.quiet_errors_flag,
+                    &stored_static.error_log_stack,
                 );
                 let file_size = ByteSize::b(size);
                 let pb_msg = format!(
                     "{:?} ({})",
-                    &evtx_file.to_str().unwrap_or_default().replace('\\', "/"),
+                    evtx_file.to_str().unwrap_or_default().replace('\\', "/"),
                     file_size.display()
                 );
                 if !pb_msg.is_empty() {
@@ -2114,24 +2350,26 @@ Any hostnames added to the critical_systems.txt file will have all alerts above 
                 {
                     self.analysis_json_file(
                         (evtx_file, time_filter, target_event_ids, stored_static),
+                        &stored_static_arc,
                         detection,
                         timeline.to_owned(),
-                        &mut afterfact_writer,
-                        &mut afterfact_info,
+                        &mut output_writer,
+                        &mut result_state,
                     )
                 } else {
                     self.analysis_file(
                         (evtx_file, time_filter, target_event_ids, stored_static),
+                        &stored_static_arc,
                         detection,
                         timeline.to_owned(),
-                        &mut afterfact_writer,
-                        &mut afterfact_info,
+                        &mut output_writer,
+                        &mut result_state,
                     )
                 };
             detection = detection_tmp;
             timeline = tl_tmp;
-            afterfact_info.record_cnt += cnt_tmp as u128;
-            afterfact_info.recover_record_cnt += recover_cnt_tmp as u128;
+            result_state.record_cnt += cnt_tmp as u128;
+            result_state.recover_record_cnt += recover_cnt_tmp as u128;
             all_detect_infos.append(&mut detect_infos);
             if is_show_progress {
                 progress_bar.inc(1);
@@ -2139,7 +2377,7 @@ Any hostnames added to the critical_systems.txt file will have all alerts above 
         }
         let is_timeline_cmd = matches!(
             stored_static.config.action.as_ref().unwrap(),
-            Action::CsvTimeline(_) | Action::JsonTimeline(_)
+            Action::DfirTimeline(_)
         );
         if !is_timeline_cmd {
             let msg = if stored_static.common_options.no_color {
@@ -2149,16 +2387,8 @@ Any hostnames added to the critical_systems.txt file will have all alerts above 
             };
             progress_bar.finish_with_message(msg);
         }
-        CHECKPOINT
-            .lock()
-            .as_mut()
-            .unwrap()
-            .lap_checkpoint("Analysis Processing Time");
-        CHECKPOINT
-            .lock()
-            .as_mut()
-            .unwrap()
-            .set_checkpoint(Local::now());
+        self.checkpoint.lap_checkpoint("Analysis Processing Time");
+        self.checkpoint.set_checkpoint(Local::now());
 
         if stored_static.metrics_flag {
             timeline.tm_stats_dsp_msg(event_timeline_config, stored_static);
@@ -2179,20 +2409,15 @@ Any hostnames added to the critical_systems.txt file will have all alerts above 
         }
         if is_timeline_cmd {
             let mut log_records = detection.add_aggcondition_msgs(&self.runtime, stored_static);
-            if stored_static.is_low_memory {
-                let empty_ids = HashSet::new();
-                afterfact::emit_csv(
-                    &log_records,
-                    &empty_ids,
-                    stored_static,
-                    &mut afterfact_writer,
-                    &mut afterfact_info,
-                );
-            } else {
-                all_detect_infos.append(&mut log_records);
-            }
-            afterfact_info.timeline_start_time = timeline.stats.start_time;
-            afterfact_info.timeline_end_time = timeline.stats.end_time;
+            emit_or_buffer(
+                &mut log_records,
+                &mut all_detect_infos,
+                stored_static,
+                &mut output_writer,
+                &mut result_state,
+            );
+            result_state.timeline_start_time = timeline.stats.start_time;
+            result_state.timeline_end_time = timeline.stats.end_time;
 
             let msg = if stored_static.output_path.is_some() {
                 if stored_static.common_options.no_color {
@@ -2226,40 +2451,34 @@ Any hostnames added to the critical_systems.txt file will have all alerts above 
                 .ok();
             }
 
-            // Output the post-detection results (afterfact processing).
+            // Output the post-detection results (results output processing).
             if stored_static.is_low_memory {
-                afterfact::output_additional_afterfact(
+                results::output_result_summary(
                     stored_static,
-                    &mut afterfact_writer,
-                    &afterfact_info,
+                    &mut output_writer,
+                    &result_state,
+                    html_reporter,
                 );
             } else {
-                afterfact::output_afterfact(
+                results::output_results(
                     &mut all_detect_infos,
-                    &mut afterfact_writer,
+                    &mut output_writer,
                     stored_static,
-                    &mut afterfact_info,
+                    &mut result_state,
+                    html_reporter,
                 );
             }
 
-            if let Some(Action::JsonTimeline(json_options)) = &stored_static.config.action
-                && json_options.jsonl_timeline
+            if let Some(Action::DfirTimeline(json_options)) = &stored_static.config.action
+                && matches!(json_options.output_type, OutputType::Jsonl)
                 && let Some(path) = &stored_static.output_path
                 && let Ok(mut file) = fs::OpenOptions::new().append(true).open(path)
             {
                 let _ = file.write_all(b"\n");
             }
         }
-        CHECKPOINT
-            .lock()
-            .as_mut()
-            .unwrap()
-            .lap_checkpoint("Output Processing Time");
-        CHECKPOINT
-            .lock()
-            .as_mut()
-            .unwrap()
-            .set_checkpoint(Local::now());
+        self.checkpoint.lap_checkpoint("Output Processing Time");
+        self.checkpoint.set_checkpoint(Local::now());
     }
 
     /// Analyze one Windows .evtx event log file: iterate its records in chunks of
@@ -2273,10 +2492,11 @@ Any hostnames added to the critical_systems.txt file will have all alerts above 
             &TargetIds,
             &StoredStatic,
         ),
+        stored_static_arc: &Arc<StoredStatic>,
         mut detection: detection::Detection,
         mut timeline: Timeline,
-        afterfact_writer: &mut AfterfactWriter,
-        afterfact_info: &mut AfterfactInfo,
+        output_writer: &mut OutputWriter,
+        result_state: &mut ResultOutputState,
     ) -> (
         detection::Detection,
         usize,
@@ -2300,8 +2520,13 @@ Any hostnames added to the critical_systems.txt file will have all alerts above 
         let quiet_errors_flag = stored_static.quiet_errors_flag;
         let need_rule = matches!(
             stored_static.config.action.as_ref().unwrap(),
-            Action::CsvTimeline(_) | Action::JsonTimeline(_) | Action::PivotKeywordsList(_)
+            Action::DfirTimeline(_) | Action::PivotKeywordsList(_)
         );
+        let rec_ctx = RecordBuildContext {
+            rule_keys: Arc::new(self.rule_keys.to_owned()),
+            eventkey_alias: Arc::new(stored_static.eventkey_alias.clone()),
+            no_pwsh_field_extraction: stored_static.no_pwsh_field_extraction,
+        };
         loop {
             let mut records_per_detect = vec![];
             while records_per_detect.len() < MAX_DETECT_RECORDS {
@@ -2329,7 +2554,8 @@ Any hostnames added to the critical_systems.txt file will have all alerts above 
                         AlertMessage::alert(&errmsg).ok();
                     }
                     if !quiet_errors_flag {
-                        ERROR_LOG_STACK
+                        stored_static
+                            .error_log_stack
                             .lock()
                             .unwrap()
                             .push(format!("[ERROR] {errmsg}"));
@@ -2393,46 +2619,18 @@ Any hostnames added to the critical_systems.txt file will have all alerts above 
                 break;
             }
 
-            let records_per_detect = self.runtime.block_on(App::create_rec_infos(
-                records_per_detect,
-                &path,
-                self.rule_keys.to_owned(),
-                stored_static.no_pwsh_field_extraction,
-            ));
-            timeline.start(&records_per_detect, stored_static);
-            if need_rule {
-                // Run the loaded detection rules against this batch of records.
-                let (detection_tmp, mut log_records) =
-                    detection.start(&self.runtime, records_per_detect);
-
-                if let MinMaxResult::MinMax(min_time, max_time) =
-                    log_records.iter().map(|info| info.detected_time).minmax()
-                {
-                    if afterfact_info.detect_starttime.is_none()
-                        || afterfact_info.detect_starttime.unwrap() > min_time
-                    {
-                        afterfact_info.detect_starttime = Some(min_time);
-                    }
-                    if afterfact_info.detect_endtime.is_none()
-                        || afterfact_info.detect_endtime.unwrap() < max_time
-                    {
-                        afterfact_info.detect_endtime = Some(max_time);
-                    }
-                }
-                if stored_static.is_low_memory {
-                    let empty_ids = HashSet::new();
-                    afterfact::emit_csv(
-                        &log_records,
-                        &empty_ids,
-                        stored_static,
-                        afterfact_writer,
-                        afterfact_info,
-                    );
-                } else {
-                    detect_infos.append(&mut log_records);
-                }
-                detection = detection_tmp;
-            }
+            detection = self.process_detection_batch(
+                (records_per_detect, &path, &rec_ctx),
+                detection,
+                &mut timeline,
+                stored_static,
+                stored_static_arc,
+                (&mut detect_infos, output_writer, result_state),
+                BatchPolicy {
+                    run_rules: need_rule,
+                    update_time_range: true,
+                },
+            );
         }
         timeline.total_record_cnt += record_cnt;
         (
@@ -2442,6 +2640,79 @@ Any hostnames added to the critical_systems.txt file will have all alerts above 
             recover_records_cnt,
             detect_infos,
         )
+    }
+
+    /// Runs one accumulated batch of records through the shared detection pipeline tail: build
+    /// EvtxRecordInfo structs, feed the timeline, and (when `run_rules`) run the rules and either
+    /// stream or buffer the results. `update_time_range` widens the results-summary detection time
+    /// span (the evtx path does this; the JSON path does not). This is the tail that was
+    /// copy-pasted at the end of both the evtx and JSON batch loops.
+    #[allow(clippy::too_many_arguments)]
+    fn process_detection_batch(
+        &self,
+        (records_per_detect, path, rec_ctx): (
+            Vec<(Value, bool)>,
+            &dyn Display,
+            &RecordBuildContext,
+        ),
+        mut detection: detection::Detection,
+        timeline: &mut Timeline,
+        stored_static: &StoredStatic,
+        // A snapshot of `stored_static` shared with the per-rule parallel tasks in
+        // `Detection::execute_rules`; see the Arc created in `analysis_files`.
+        stored_static_arc: &Arc<StoredStatic>,
+        (detect_infos, output_writer, result_state): (
+            &mut Vec<DetectInfo>,
+            &mut OutputWriter,
+            &mut ResultOutputState,
+        ),
+        policy: BatchPolicy,
+    ) -> detection::Detection {
+        let BatchPolicy {
+            run_rules,
+            update_time_range,
+        } = policy;
+        let records_per_detect = self.runtime.block_on(App::create_rec_infos(
+            records_per_detect,
+            path,
+            Arc::clone(&rec_ctx.rule_keys),
+            Arc::clone(&rec_ctx.eventkey_alias),
+            rec_ctx.no_pwsh_field_extraction,
+        ));
+        timeline.start(&records_per_detect, stored_static);
+        if run_rules {
+            // Run the loaded detection rules against this batch of records.
+            let (detection_tmp, mut log_records) = detection.start(
+                &self.runtime,
+                records_per_detect,
+                Arc::clone(stored_static_arc),
+            );
+
+            if update_time_range
+                && let MinMaxResult::MinMax(min_time, max_time) =
+                    log_records.iter().map(|info| info.detected_time).minmax()
+            {
+                if result_state.detect_starttime.is_none()
+                    || result_state.detect_starttime.unwrap() > min_time
+                {
+                    result_state.detect_starttime = Some(min_time);
+                }
+                if result_state.detect_endtime.is_none()
+                    || result_state.detect_endtime.unwrap() < max_time
+                {
+                    result_state.detect_endtime = Some(max_time);
+                }
+            }
+            emit_or_buffer(
+                &mut log_records,
+                detect_infos,
+                stored_static,
+                output_writer,
+                result_state,
+            );
+            detection = detection_tmp;
+        }
+        detection
     }
 
     /// Apply the computer, EventID, channel, and timestamp filters to a JSON record. Returns
@@ -2522,7 +2793,7 @@ Any hostnames added to the critical_systems.txt file will have all alerts above 
                     let errmsg = format!(
                         "Timestamp parse error. Filepath: {},{} {}",
                         path,
-                        &target_timestamp
+                        target_timestamp
                             .to_string()
                             .replace("\\\"", "")
                             .replace('"', ""),
@@ -2532,7 +2803,8 @@ Any hostnames added to the critical_systems.txt file will have all alerts above 
                         AlertMessage::alert(&errmsg).ok();
                     }
                     if !stored_static.quiet_errors_flag {
-                        ERROR_LOG_STACK
+                        stored_static
+                            .error_log_stack
                             .lock()
                             .unwrap()
                             .push(format!("[ERROR] {errmsg}"));
@@ -2558,10 +2830,11 @@ Any hostnames added to the critical_systems.txt file will have all alerts above 
             &TargetIds,
             &StoredStatic,
         ),
+        stored_static_arc: &Arc<StoredStatic>,
         mut detection: detection::Detection,
         mut timeline: Timeline,
-        afterfact_writer: &mut AfterfactWriter,
-        afterfact_info: &mut AfterfactInfo,
+        output_writer: &mut OutputWriter,
+        result_state: &mut ResultOutputState,
     ) -> (
         detection::Detection,
         usize,
@@ -2607,6 +2880,11 @@ Any hostnames added to the critical_systems.txt file will have all alerts above 
             }
         };
 
+        let rec_ctx = RecordBuildContext {
+            rule_keys: Arc::new(self.rule_keys.to_owned()),
+            eventkey_alias: Arc::new(stored_static.eventkey_alias.clone()),
+            no_pwsh_field_extraction: stored_static.no_pwsh_field_extraction,
+        };
         loop {
             let mut records_per_detect = vec![];
             while records_per_detect.len() < MAX_DETECT_RECORDS {
@@ -2666,7 +2944,7 @@ Any hostnames added to the critical_systems.txt file will have all alerts above 
                                     let errmsg = format!(
                                         "Timestamp parse error. Filepath: {},{} {}",
                                         path,
-                                        &splunk_api_record["Event"]["System"]["SystemTime"]
+                                        splunk_api_record["Event"]["System"]["SystemTime"]
                                             .to_string()
                                             .replace("\\\"", "")
                                             .replace('"', ""),
@@ -2676,7 +2954,8 @@ Any hostnames added to the critical_systems.txt file will have all alerts above 
                                         AlertMessage::warn(&errmsg).ok();
                                     }
                                     if !stored_static.quiet_errors_flag {
-                                        ERROR_LOG_STACK
+                                        stored_static
+                                            .error_log_stack
                                             .lock()
                                             .unwrap()
                                             .push(format!("[WARN] {errmsg}"));
@@ -2736,7 +3015,7 @@ Any hostnames added to the critical_systems.txt file will have all alerts above 
                     data["Event"]["System"] = data["Event"]["EventData"].clone();
                 } else if let Some(first) = data["Event"]["EventData"]
                     .as_array()
-                    .and_then(|a| a.first())
+                    .and_then(|array| array.first())
                 {
                     data["Event"]["System"] = first.clone();
                 }
@@ -2752,7 +3031,8 @@ Any hostnames added to the critical_systems.txt file will have all alerts above 
                         AlertMessage::warn(&errmsg).ok();
                     }
                     if !stored_static.quiet_errors_flag {
-                        ERROR_LOG_STACK
+                        stored_static
+                            .error_log_stack
                             .lock()
                             .unwrap()
                             .push(format!("[WARN] {errmsg}"));
@@ -2809,39 +3089,21 @@ Any hostnames added to the critical_systems.txt file will have all alerts above 
                 break;
             }
 
-            let records_per_detect = self.runtime.block_on(App::create_rec_infos(
-                records_per_detect,
-                &path,
-                self.rule_keys.to_owned(),
-                stored_static.no_pwsh_field_extraction,
-            ));
-
-            // Execute the timeline feature.
-            timeline.start(&records_per_detect, stored_static);
-
-            // Do not apply rules for the following commands.
-            if !(stored_static.metrics_flag
-                || stored_static.logon_summary_flag
-                || stored_static.log_metrics_flag
-                || stored_static.search_flag)
-            {
-                // Detect using rule files.
-                let (detection_tmp, mut log_records) =
-                    detection.start(&self.runtime, records_per_detect);
-                if stored_static.is_low_memory {
-                    let empty_ids = HashSet::new();
-                    afterfact::emit_csv(
-                        &log_records,
-                        &empty_ids,
-                        stored_static,
-                        afterfact_writer,
-                        afterfact_info,
-                    );
-                } else {
-                    detect_infos.append(&mut log_records);
-                }
-                detection = detection_tmp;
-            }
+            detection = self.process_detection_batch(
+                (records_per_detect, &path, &rec_ctx),
+                detection,
+                &mut timeline,
+                stored_static,
+                stored_static_arc,
+                (&mut detect_infos, output_writer, result_state),
+                BatchPolicy {
+                    run_rules: !(stored_static.metrics_flag
+                        || stored_static.logon_summary_flag
+                        || stored_static.log_metrics_flag
+                        || stored_static.search_flag),
+                    update_time_range: false,
+                },
+            );
         }
         timeline.total_record_cnt += record_cnt;
         (
@@ -2858,18 +3120,19 @@ Any hostnames added to the critical_systems.txt file will have all alerts above 
     async fn create_rec_infos(
         records_per_detect: Vec<(Value, bool)>,
         path: &dyn Display,
-        rule_keys: Nested<String>,
+        rule_keys: Arc<Nested<String>>,
+        eventkey_alias: Arc<EventKeyAliasConfig>,
         no_pwsh_field_extraction: bool,
     ) -> Vec<EvtxRecordInfo> {
         let no_pwsh_field_extraction = Arc::new(no_pwsh_field_extraction);
         let path = Arc::new(path.to_string());
-        let rule_keys = Arc::new(rule_keys);
         let threads: Vec<JoinHandle<EvtxRecordInfo>> = {
             let this = records_per_detect.into_iter().map(
                 |(rec, recovered_record_flag)| -> JoinHandle<EvtxRecordInfo> {
                     let arc_rule_keys = Arc::clone(&rule_keys);
                     let arc_path = Arc::clone(&path);
                     let arc_no_pwsh_field_extraction = Arc::clone(&no_pwsh_field_extraction);
+                    let arc_eventkey_alias = Arc::clone(&eventkey_alias);
                     spawn(async move {
                         utils::create_rec_info(
                             rec,
@@ -2877,6 +3140,7 @@ Any hostnames added to the critical_systems.txt file will have all alerts above 
                             &arc_rule_keys,
                             &recovered_record_flag,
                             &arc_no_pwsh_field_extraction,
+                            &arc_eventkey_alias,
                         )
                     })
                 },
@@ -2999,7 +3263,8 @@ Any hostnames added to the critical_systems.txt file will have all alerts above 
                     AlertMessage::alert(&errmsg).ok();
                 }
                 if !stored_static.quiet_errors_flag {
-                    ERROR_LOG_STACK
+                    stored_static
+                        .error_log_stack
                         .lock()
                         .unwrap()
                         .push(format!("[ERROR] {errmsg}"));
@@ -3069,9 +3334,9 @@ Any hostnames added to the critical_systems.txt file will have all alerts above 
             format!("rules/config/{file_path}").as_str(),
             true,
         );
-        if let Some(f) = checked_path {
-            if f.exists() {
-                let file = File::open(f)?;
+        if let Some(path) = checked_path {
+            if path.exists() {
+                let file = File::open(path)?;
                 let lines: Vec<String> =
                     io::BufReader::new(file).lines().collect::<Result<_, _>>()?;
                 if let Some(random_line) = lines.choose(&mut rand::rng()) {
@@ -3139,8 +3404,7 @@ Any hostnames added to the critical_systems.txt file will have all alerts above 
             return true;
         }
         match action.as_ref().unwrap() {
-            Action::CsvTimeline(_)
-            | Action::JsonTimeline(_)
+            Action::DfirTimeline(_)
             | Action::LogonSummary(_)
             | Action::EidMetrics(_)
             | Action::PivotKeywordsList(_)
@@ -3157,33 +3421,33 @@ mod tests {
     use std::{
         fs::{self, File, remove_file},
         path::Path,
+        sync::Arc,
     };
 
-    use chrono::Local;
+    use chrono::{DateTime, Local};
     use hashbrown::HashSet;
-    use itertools::Itertools;
     use yaml_rust2::YamlLoader;
 
-    use crate::App;
+    use crate::{App, add_general_overview_header};
     use hayabusa::{
-        afterfact::{self, AfterfactInfo},
         detections::{
             configs::{
-                Action, ComputerMetricsOption, Config, ConfigReader, CsvOutputOption,
-                DetectCommonOption, EidMetricsOption, InputOption, JSONOutputOption,
-                LogonSummaryOption, OutputOption, STORED_EKEY_ALIAS, STORED_STATIC, StoredStatic,
-                TargetEventTime, TargetIds,
+                Action, ClobberOption, ComputerMetricsOption, Config, ConfigReader,
+                DetectCommonOption, DfirTimelineOption, EidMetricsOption, InputOption,
+                LogonSummaryOption, OutputOption, OutputType, StoredStatic, TargetEventTime,
+                TargetIds,
             },
             detection,
             rule::create_rule,
         },
-        options::htmlreport::HTML_REPORTER,
+        options::htmlreport::{GENERAL_OVERVIEW_SECTION, HtmlReporter},
+        results::{self, ResultOutputState},
         timeline::timelines::Timeline,
     };
 
     fn create_dummy_stored_static() -> StoredStatic {
-        StoredStatic::create_static_data(Some(Config {
-            action: Some(Action::CsvTimeline(CsvOutputOption {
+        StoredStatic::create_static_data(Config {
+            action: Some(Action::DfirTimeline(DfirTimelineOption {
                 output_options: OutputOption {
                     min_level: "informational".to_string(),
                     detect_common_options: DetectCommonOption {
@@ -3197,7 +3461,7 @@ mod tests {
                 ..Default::default()
             })),
             debug: false,
-        }))
+        })
     }
 
     #[test]
@@ -3223,7 +3487,7 @@ mod tests {
     fn test_exec_none_storedstatic() {
         let mut app = App::new(None);
         let mut config_reader = ConfigReader::new();
-        let mut stored_static = StoredStatic::create_static_data(config_reader.config);
+        let mut stored_static = StoredStatic::create_static_data(config_reader.config.unwrap());
         config_reader.config = None;
         stored_static.profiles = None;
         app.exec(&mut config_reader.app, &mut stored_static);
@@ -3231,33 +3495,89 @@ mod tests {
 
     #[test]
     fn test_exec_general_html_output() {
+        // Exercise the real header helper that exec calls, so the test and exec cannot drift.
+        let analysis_start_time: DateTime<Local> = Local::now();
+        let mut html_reporter = HtmlReporter::new();
+        add_general_overview_header(&mut html_reporter, analysis_start_time);
+
+        let general_contents = html_reporter
+            .section_markdown
+            .get(GENERAL_OVERVIEW_SECTION)
+            .unwrap();
+        let lines: Vec<&str> = general_contents.iter().collect();
+        assert_eq!(lines.len(), 2);
+        assert!(
+            lines
+                .iter()
+                .any(|line| line.starts_with("- Command line: "))
+        );
+        assert!(lines.iter().any(|line| line.starts_with("- Start time: ")));
+    }
+
+    // End-to-end guard for the HtmlReporter threading: run `exec` with `--html-report` against a
+    // JSON fixture and assert the rendered report file contains the sections `exec`'s single
+    // threaded reporter accumulates. This proves `exec` builds one reporter, threads it through
+    // analysis, and renders that same instance (which the header-helper unit test cannot).
+    #[test]
+    fn test_exec_html_report_end_to_end() {
+        let output_tmp_dir = tempfile::tempdir().unwrap();
+        let report_path = output_tmp_dir.path().join("test_exec_html_report_e2e.html");
+        let csv_path = output_tmp_dir.path().join("test_exec_html_report_e2e.csv");
         let mut app = App::new(None);
+        let action = Action::DfirTimeline(DfirTimelineOption {
+            output_options: OutputOption {
+                input_args: InputOption {
+                    filepath: Some(Path::new("test_files/evtx/test.json").to_path_buf()),
+                    ..Default::default()
+                },
+                min_level: "informational".to_string(),
+                rules: Path::new("./test_files/rules/yaml/test_json_detect.yml").to_path_buf(),
+                detect_common_options: DetectCommonOption {
+                    json_input: true,
+                    config: Path::new("./rules/config").to_path_buf(),
+                    ..Default::default()
+                },
+                html_report: Some(report_path.clone()),
+                no_wizard: true,
+                ..Default::default()
+            },
+            output: Some(csv_path.clone()),
+            ..Default::default()
+        });
+        let config = Config {
+            action: Some(action),
+            debug: false,
+        };
+        let mut stored_static = StoredStatic::create_static_data(config);
         let mut config_reader = ConfigReader::new();
-        let mut stored_static = StoredStatic::create_static_data(config_reader.config);
-        config_reader.config = None;
-        stored_static.config.action = None;
-        stored_static.html_report_flag = true;
         app.exec(&mut config_reader.app, &mut stored_static);
-        let expect_general_contents = [
-            format!("- Command line: {}", std::env::args().join(" ")),
-            format!("- Start time: {}", Local::now().format("%Y/%m/%d %H:%M")),
-        ];
 
-        let actual = &HTML_REPORTER.read().unwrap().section_markdown;
-        let general_contents = actual.get("General Overview {#general_overview}").unwrap();
-        assert_eq!(expect_general_contents.len(), general_contents.len());
+        let html = std::fs::read_to_string(&report_path)
+            .expect("exec should have written the HTML report file");
+        // The reporter exec threaded from start-up (General Overview: command line + start time)
+        // through the summary path (Results Summary) is what gets rendered to the file.
+        assert!(
+            html.contains("General Overview"),
+            "report is missing the General Overview section"
+        );
+        assert!(
+            html.contains("Command line:"),
+            "report is missing the General Overview command-line entry"
+        );
+        assert!(
+            html.contains("Results Summary"),
+            "report is missing the Results Summary section"
+        );
 
-        for actual_general_contents in general_contents.iter() {
-            assert!(expect_general_contents.contains(&actual_general_contents.to_string()));
-        }
+        std::fs::remove_file(&report_path).ok();
+        std::fs::remove_file(&csv_path).ok();
     }
 
     #[test]
     fn test_analysis_json_file() {
         let mut app = App::new(None);
         let stored_static = create_dummy_stored_static();
-        *STORED_EKEY_ALIAS.write().unwrap() = Some(stored_static.eventkey_alias.clone());
-        *STORED_STATIC.write().unwrap() = Some(stored_static.clone());
+        let stored_static_arc = Arc::new(stored_static.clone());
 
         let rule_str = r#"
         enabled: true
@@ -3278,8 +3598,8 @@ mod tests {
         let target_time_filter = TargetEventTime::new(&stored_static);
         let timeline = Timeline::default();
         let target_event_ids = TargetIds::default();
-        let mut afterfact_info = AfterfactInfo::default();
-        let mut afterfact_writer = afterfact::init_writer(&stored_static);
+        let mut result_state = ResultOutputState::default();
+        let mut output_writer = results::init_writer(&stored_static);
 
         let actual = app.analysis_json_file(
             (
@@ -3288,22 +3608,26 @@ mod tests {
                 &target_event_ids,
                 &stored_static,
             ),
+            &stored_static_arc,
             detection,
             timeline,
-            &mut afterfact_writer,
-            &mut afterfact_info,
+            &mut output_writer,
+            &mut result_state,
         );
         assert_eq!(actual.1, 2);
-        // TODO add check
-        //assert_eq!(MESSAGES.len(), 2);
+        // Buffered (not low-memory): both matching records are collected into detect_infos rather
+        // than streamed (the low-memory variant asserts this is 0).
+        assert_eq!(actual.4.len(), 2);
     }
 
     #[test]
     fn test_same_file_output_csv_exit() {
+        let output_tmp_dir = tempfile::tempdir().unwrap();
+        let out_overwrite_csv_exit_csv = output_tmp_dir.path().join("overwrite_csv_exit.csv");
         // Create an empty file first.
         let mut app = App::new(None);
-        File::create("overwrite_csv_exit.csv").ok();
-        let action = Action::CsvTimeline(CsvOutputOption {
+        File::create(&out_overwrite_csv_exit_csv).ok();
+        let action = Action::DfirTimeline(DfirTimelineOption {
             output_options: OutputOption {
                 input_args: InputOption {
                     filepath: Some(Path::new("test_files/evtx/test.json").to_path_buf()),
@@ -3319,31 +3643,31 @@ mod tests {
                 no_wizard: true,
                 ..Default::default()
             },
-            output: Some(Path::new("overwrite_csv_exit.csv").to_path_buf()),
+            output: Some(out_overwrite_csv_exit_csv.clone()),
             ..Default::default()
         });
-        let config = Some(Config {
+        let config = Config {
             action: Some(action),
             debug: false,
-        });
+        };
         let mut stored_static = StoredStatic::create_static_data(config);
-        *STORED_EKEY_ALIAS.write().unwrap() = Some(stored_static.eventkey_alias.clone());
-        *STORED_STATIC.write().unwrap() = Some(stored_static.clone());
         let mut config_reader = ConfigReader::new();
         app.exec(&mut config_reader.app, &mut stored_static);
         // TODO add check
         // assert_eq!(MESSAGES.len(), 0);
 
         // Delete the test file.
-        remove_file("overwrite_csv_exit.csv").ok();
+        remove_file(&out_overwrite_csv_exit_csv).ok();
     }
 
     #[test]
     fn test_overwrite_csv() {
+        let output_tmp_dir = tempfile::tempdir().unwrap();
+        let out_overwrite_csv_clobber_csv = output_tmp_dir.path().join("overwrite_csv_clobber.csv");
         // Create an empty file first.
         let mut app = App::new(None);
-        File::create("overwrite_csv_clobber.csv").ok();
-        let action = Action::CsvTimeline(CsvOutputOption {
+        File::create(&out_overwrite_csv_clobber_csv).ok();
+        let action = Action::DfirTimeline(DfirTimelineOption {
             output_options: OutputOption {
                 input_args: InputOption {
                     filepath: Some(Path::new("test_files/evtx/test.json").to_path_buf()),
@@ -3356,34 +3680,34 @@ mod tests {
                     json_input: true,
                     ..Default::default()
                 },
-                clobber: true,
+                clobber_opt: ClobberOption { clobber: true },
                 no_wizard: true,
                 ..Default::default()
             },
-            output: Some(Path::new("overwrite_csv_clobber.csv").to_path_buf()),
+            output: Some(out_overwrite_csv_clobber_csv.clone()),
             ..Default::default()
         });
-        let config = Some(Config {
+        let config = Config {
             action: Some(action),
             debug: false,
-        });
+        };
         let mut stored_static = StoredStatic::create_static_data(config);
-        *STORED_EKEY_ALIAS.write().unwrap() = Some(stored_static.eventkey_alias.clone());
-        *STORED_STATIC.write().unwrap() = Some(stored_static.clone());
         let mut config_reader = ConfigReader::new();
         app.exec(&mut config_reader.app, &mut stored_static);
         // TODO add check
         // assert_ne!(MESSAGES.len(), 0);
         // Delete the test file.
-        remove_file("overwrite_csv_clobber.csv").ok();
+        remove_file(&out_overwrite_csv_clobber_csv).ok();
     }
 
     #[test]
     fn test_same_file_output_json_exit() {
+        let output_tmp_dir = tempfile::tempdir().unwrap();
+        let out_overwrite_json_exit_json = output_tmp_dir.path().join("overwrite_json_exit.json");
         // Create an empty file first.
         let mut app = App::new(None);
-        File::create("overwrite_json_exit.json").ok();
-        let action = Action::JsonTimeline(JSONOutputOption {
+        File::create(&out_overwrite_json_exit_json).ok();
+        let action = Action::DfirTimeline(DfirTimelineOption {
             output_options: OutputOption {
                 input_args: InputOption {
                     filepath: Some(Path::new("test_files/evtx/test.json").to_path_buf()),
@@ -3400,31 +3724,35 @@ mod tests {
                 no_wizard: true,
                 ..Default::default()
             },
-            output: Some(Path::new("overwrite_json_exit.json").to_path_buf()),
+            output: Some(out_overwrite_json_exit_json.clone()),
+            // Without this the fixture falls back to `OutputType::default()` (CSV), so a
+            // test named `..._json` writing a `.json` path exercises the CSV writer.
+            output_type: OutputType::Json,
             ..Default::default()
         });
-        let config = Some(Config {
+        let config = Config {
             action: Some(action),
             debug: false,
-        });
+        };
         let mut stored_static = StoredStatic::create_static_data(config);
-        *STORED_EKEY_ALIAS.write().unwrap() = Some(stored_static.eventkey_alias.clone());
-        *STORED_STATIC.write().unwrap() = Some(stored_static.clone());
         let mut config_reader = ConfigReader::new();
         app.exec(&mut config_reader.app, &mut stored_static);
         // TODO add check
         // assert_eq!(MESSAGES.len(), 0);
 
         // Delete the test file.
-        remove_file("overwrite_json_exit.json").ok();
+        remove_file(&out_overwrite_json_exit_json).ok();
     }
 
     #[test]
     fn test_overwrite_json() {
+        let output_tmp_dir = tempfile::tempdir().unwrap();
+        let out_overwrite_json_clobber_json =
+            output_tmp_dir.path().join("overwrite_json_clobber.json");
         // Create an empty file first.
         let mut app = App::new(None);
-        File::create("overwrite_json_clobber.json").ok();
-        let action = Action::JsonTimeline(JSONOutputOption {
+        File::create(&out_overwrite_json_clobber_json).ok();
+        let action = Action::DfirTimeline(DfirTimelineOption {
             output_options: OutputOption {
                 input_args: InputOption {
                     filepath: Some(Path::new("test_files/evtx/test.json").to_path_buf()),
@@ -3437,35 +3765,39 @@ mod tests {
                     json_input: true,
                     ..Default::default()
                 },
-                clobber: true,
+                clobber_opt: ClobberOption { clobber: true },
                 no_wizard: true,
                 ..Default::default()
             },
-            output: Some(Path::new("overwrite_json_clobber.json").to_path_buf()),
+            output: Some(out_overwrite_json_clobber_json.clone()),
+            // Without this the fixture falls back to `OutputType::default()` (CSV), so a
+            // test named `..._json` writing a `.json` path exercises the CSV writer.
+            output_type: OutputType::Json,
             ..Default::default()
         });
-        let config = Some(Config {
+        let config = Config {
             action: Some(action),
             debug: false,
-        });
+        };
         let mut stored_static = StoredStatic::create_static_data(config);
-        *STORED_EKEY_ALIAS.write().unwrap() = Some(stored_static.eventkey_alias.clone());
-        *STORED_STATIC.write().unwrap() = Some(stored_static.clone());
         let mut config_reader = ConfigReader::new();
         app.exec(&mut config_reader.app, &mut stored_static);
         // TODO add check
         // assert_ne!(MESSAGES.len(), 0);
         // Delete the test file.
-        remove_file("overwrite_json_clobber.json").ok();
+        remove_file(&out_overwrite_json_clobber_json).ok();
     }
 
     #[test]
     fn test_same_file_output_metric_csv_exit() {
+        let output_tmp_dir = tempfile::tempdir().unwrap();
+        let out_overwrite_metric_exit_csv = output_tmp_dir.path().join("overwrite_metric_exit.csv");
+        let out_overwrite_metric_exit = output_tmp_dir.path().join("overwrite_metric_exit");
         // Create an empty file first.
         let mut app = App::new(None);
-        File::create("overwrite_metric_exit.csv").ok();
+        File::create(&out_overwrite_metric_exit_csv).ok();
         let action = Action::EidMetrics(EidMetricsOption {
-            output: Some(Path::new("overwrite_metric_exit.csv").to_path_buf()),
+            output: Some(out_overwrite_metric_exit_csv.clone()),
             input_args: InputOption {
                 filepath: Some(Path::new("test_files/evtx/test_metrics.json").to_path_buf()),
                 ..Default::default()
@@ -3476,30 +3808,31 @@ mod tests {
             },
             ..Default::default()
         });
-        let config = Some(Config {
+        let config = Config {
             action: Some(action),
             debug: false,
-        });
+        };
         let mut stored_static = StoredStatic::create_static_data(config);
-        *STORED_EKEY_ALIAS.write().unwrap() = Some(stored_static.eventkey_alias.clone());
-        *STORED_STATIC.write().unwrap() = Some(stored_static.clone());
         let mut config_reader = ConfigReader::new();
         app.exec(&mut config_reader.app, &mut stored_static);
-        let meta = fs::metadata("overwrite_metric_exit.csv").unwrap();
+        let meta = fs::metadata(&out_overwrite_metric_exit_csv).unwrap();
         assert_eq!(meta.len(), 0);
 
         // Delete the test file.
-        remove_file("overwrite_metric_exit.csv").ok();
-        remove_file("overwrite_metric_exit").ok();
+        remove_file(&out_overwrite_metric_exit_csv).ok();
+        remove_file(&out_overwrite_metric_exit).ok();
     }
 
     #[test]
     fn test_same_file_output_metric_csv() {
+        let output_tmp_dir = tempfile::tempdir().unwrap();
+        let out_overwrite_metric_clobber_csv =
+            output_tmp_dir.path().join("overwrite_metric_clobber.csv");
         // Create an empty file first.
         let mut app = App::new(None);
-        File::create("overwrite_metric_clobber.csv").ok();
+        File::create(&out_overwrite_metric_clobber_csv).ok();
         let action = Action::EidMetrics(EidMetricsOption {
-            output: Some(Path::new("overwrite_metric_clobber.csv").to_path_buf()),
+            output: Some(out_overwrite_metric_clobber_csv.clone()),
             input_args: InputOption {
                 filepath: Some(Path::new("test_files/evtx/test_metrics.json").to_path_buf()),
                 ..Default::default()
@@ -3508,31 +3841,34 @@ mod tests {
                 json_input: true,
                 ..Default::default()
             },
-            clobber: true,
+            clobber_opt: ClobberOption { clobber: true },
             ..Default::default()
         });
-        let config = Some(Config {
+        let config = Config {
             action: Some(action),
             debug: false,
-        });
+        };
         let mut stored_static = StoredStatic::create_static_data(config);
-        *STORED_EKEY_ALIAS.write().unwrap() = Some(stored_static.eventkey_alias.clone());
-        *STORED_STATIC.write().unwrap() = Some(stored_static.clone());
         let mut config_reader = ConfigReader::new();
         app.exec(&mut config_reader.app, &mut stored_static);
-        let meta = fs::metadata("overwrite_metric_clobber.csv").unwrap();
+        let meta = fs::metadata(&out_overwrite_metric_clobber_csv).unwrap();
         assert_ne!(meta.len(), 0);
         // Delete the test file.
-        remove_file("overwrite_metric_clobber.csv").ok();
+        remove_file(&out_overwrite_metric_clobber_csv).ok();
     }
 
     #[test]
     fn test_same_file_output_logon_summary_csv_exit() {
+        let output_tmp_dir = tempfile::tempdir().unwrap();
+        let out_overwrite_logon_exit_successful_csv = output_tmp_dir
+            .path()
+            .join("overwrite_logon_exit-successful.csv");
+        let out_overwrite_logon_exit = output_tmp_dir.path().join("overwrite_logon_exit");
         // Create an empty file first.
         let mut app = App::new(None);
-        File::create("overwrite_logon_exit-successful.csv").ok();
+        File::create(&out_overwrite_logon_exit_successful_csv).ok();
         let action = Action::LogonSummary(LogonSummaryOption {
-            output: Some(Path::new("overwrite_logon_exit").to_path_buf()),
+            output: Some(out_overwrite_logon_exit.clone()),
             input_args: InputOption {
                 filepath: Some(Path::new("test_files/evtx/test_metrics.json").to_path_buf()),
                 ..Default::default()
@@ -3543,29 +3879,35 @@ mod tests {
             },
             ..Default::default()
         });
-        let config = Some(Config {
+        let config = Config {
             action: Some(action),
             debug: false,
-        });
+        };
         let mut stored_static = StoredStatic::create_static_data(config);
-        *STORED_EKEY_ALIAS.write().unwrap() = Some(stored_static.eventkey_alias.clone());
-        *STORED_STATIC.write().unwrap() = Some(stored_static.clone());
         let mut config_reader = ConfigReader::new();
         app.exec(&mut config_reader.app, &mut stored_static);
-        let meta = fs::metadata("overwrite_logon_exit-successful.csv").unwrap();
+        let meta = fs::metadata(&out_overwrite_logon_exit_successful_csv).unwrap();
         assert_eq!(meta.len(), 0);
 
         // Delete the test file.
-        remove_file("overwrite_logon_exit-successful.csv").ok();
+        remove_file(&out_overwrite_logon_exit_successful_csv).ok();
     }
 
     #[test]
     fn test_same_file_output_logon_summary_csv() {
+        let output_tmp_dir = tempfile::tempdir().unwrap();
+        let out_overwrite_logon_clobber_successful_csv = output_tmp_dir
+            .path()
+            .join("overwrite_logon_clobber-successful.csv");
+        let out_overwrite_logon_clobber_failed_csv = output_tmp_dir
+            .path()
+            .join("overwrite_logon_clobber-failed.csv");
+        let out_overwrite_logon_clobber = output_tmp_dir.path().join("overwrite_logon_clobber");
         // Create an empty file first.
         let mut app = App::new(None);
-        File::create("overwrite_logon_clobber-successful.csv").ok();
+        File::create(&out_overwrite_logon_clobber_successful_csv).ok();
         let action = Action::LogonSummary(LogonSummaryOption {
-            output: Some(Path::new("overwrite_logon_clobber").to_path_buf()),
+            output: Some(out_overwrite_logon_clobber.clone()),
             input_args: InputOption {
                 filepath: Some(Path::new("test_files/evtx/test_metrics.json").to_path_buf()),
                 ..Default::default()
@@ -3574,32 +3916,34 @@ mod tests {
                 json_input: true,
                 ..Default::default()
             },
-            clobber: true,
+            clobber_opt: ClobberOption { clobber: true },
             ..Default::default()
         });
-        let config = Some(Config {
+        let config = Config {
             action: Some(action),
             debug: false,
-        });
+        };
         let mut stored_static = StoredStatic::create_static_data(config);
-        *STORED_EKEY_ALIAS.write().unwrap() = Some(stored_static.eventkey_alias.clone());
-        *STORED_STATIC.write().unwrap() = Some(stored_static.clone());
         let mut config_reader = ConfigReader::new();
         app.exec(&mut config_reader.app, &mut stored_static);
-        let meta = fs::metadata("overwrite_logon_clobber-successful.csv").unwrap();
+        let meta = fs::metadata(&out_overwrite_logon_clobber_successful_csv).unwrap();
         assert_ne!(meta.len(), 0);
         // Delete the test files (LogonSummary writes both -successful and -failed).
-        remove_file("overwrite_logon_clobber-successful.csv").ok();
-        remove_file("overwrite_logon_clobber-failed.csv").ok();
+        remove_file(&out_overwrite_logon_clobber_successful_csv).ok();
+        remove_file(&out_overwrite_logon_clobber_failed_csv).ok();
     }
 
     #[test]
     fn test_same_file_output_computer_metrics_exit() {
+        let output_tmp_dir = tempfile::tempdir().unwrap();
+        let out_overwrite_computer_exit_csv =
+            output_tmp_dir.path().join("overwrite_computer_exit.csv");
+        let out_overwrite_computer_exit = output_tmp_dir.path().join("overwrite_computer_exit");
         // Create an empty file first.
         let mut app = App::new(None);
-        File::create("overwrite_computer_exit.csv").ok();
+        File::create(&out_overwrite_computer_exit_csv).ok();
         let action = Action::ComputerMetrics(ComputerMetricsOption {
-            output: Some(Path::new("overwrite_computer_exit.csv").to_path_buf()),
+            output: Some(out_overwrite_computer_exit_csv.clone()),
             input_args: InputOption {
                 filepath: Some(Path::new("test_files/evtx/test_metrics.json").to_path_buf()),
                 ..Default::default()
@@ -3608,59 +3952,57 @@ mod tests {
             json_input: true,
             ..Default::default()
         });
-        let config = Some(Config {
+        let config = Config {
             action: Some(action),
             debug: false,
-        });
+        };
         let mut stored_static = StoredStatic::create_static_data(config);
-        *STORED_EKEY_ALIAS.write().unwrap() = Some(stored_static.eventkey_alias.clone());
-        *STORED_STATIC.write().unwrap() = Some(stored_static.clone());
         let mut config_reader = ConfigReader::new();
         app.exec(&mut config_reader.app, &mut stored_static);
-        let meta = fs::metadata("overwrite_computer_exit.csv").unwrap();
+        let meta = fs::metadata(&out_overwrite_computer_exit_csv).unwrap();
         assert_eq!(meta.len(), 0);
         // Delete the test file.
-        remove_file("overwrite_computer_exit").ok();
-        remove_file("overwrite_computer_exit.csv").ok();
+        remove_file(&out_overwrite_computer_exit).ok();
+        remove_file(&out_overwrite_computer_exit_csv).ok();
     }
 
     #[test]
     fn test_same_file_output_computer_metrics_csv() {
+        let output_tmp_dir = tempfile::tempdir().unwrap();
+        let out_overwrite_computer_clobber_csv =
+            output_tmp_dir.path().join("overwrite_computer_clobber.csv");
         // Create an empty file first.
         let mut app = App::new(None);
-        File::create("overwrite_computer_clobber.csv").ok();
+        File::create(&out_overwrite_computer_clobber_csv).ok();
         let action = Action::ComputerMetrics(ComputerMetricsOption {
-            output: Some(Path::new("overwrite_computer_clobber.csv").to_path_buf()),
+            output: Some(out_overwrite_computer_clobber_csv.clone()),
             input_args: InputOption {
                 filepath: Some(Path::new("test_files/evtx/test_metrics.json").to_path_buf()),
                 ..Default::default()
             },
             json_input: true,
-            clobber: true,
+            clobber_opt: ClobberOption { clobber: true },
             ..Default::default()
         });
-        let config = Some(Config {
+        let config = Config {
             action: Some(action),
             debug: false,
-        });
+        };
         let mut stored_static = StoredStatic::create_static_data(config);
-        *STORED_EKEY_ALIAS.write().unwrap() = Some(stored_static.eventkey_alias.clone());
-        *STORED_STATIC.write().unwrap() = Some(stored_static.clone());
         let mut config_reader = ConfigReader::new();
         app.exec(&mut config_reader.app, &mut stored_static);
-        let meta = fs::metadata("overwrite_computer_clobber.csv").unwrap();
+        let meta = fs::metadata(&out_overwrite_computer_clobber_csv).unwrap();
         assert_ne!(meta.len(), 0);
         // Delete the test file.
-        remove_file("overwrite_computer_clobber.csv").ok();
+        remove_file(&out_overwrite_computer_clobber_csv).ok();
     }
 
     #[test]
     fn test_analysis_json_file_include_eid() {
         let mut app = App::new(None);
         let mut stored_static = create_dummy_stored_static();
-        *STORED_EKEY_ALIAS.write().unwrap() = Some(stored_static.eventkey_alias.clone());
         stored_static.include_eid = HashSet::from_iter(vec!["10".into()]);
-        *STORED_STATIC.write().unwrap() = Some(stored_static.clone());
+        let stored_static_arc = Arc::new(stored_static.clone());
 
         let rule_str = r#"
         enabled: true
@@ -3681,8 +4023,8 @@ mod tests {
         let target_time_filter = TargetEventTime::new(&stored_static);
         let timeline = Timeline::default();
         let target_event_ids = TargetIds::default();
-        let mut afterfact_info = AfterfactInfo::default();
-        let mut afterfact_writer = afterfact::init_writer(&stored_static);
+        let mut result_state = ResultOutputState::default();
+        let mut output_writer = results::init_writer(&stored_static);
 
         let actual = app.analysis_json_file(
             (
@@ -3691,10 +4033,11 @@ mod tests {
                 &target_event_ids,
                 &stored_static,
             ),
+            &stored_static_arc,
             detection,
             timeline,
-            &mut afterfact_writer,
-            &mut afterfact_info,
+            &mut output_writer,
+            &mut result_state,
         );
         assert_eq!(actual.1, 2);
         assert_eq!(actual.4.len(), 1);
@@ -3704,9 +4047,8 @@ mod tests {
     fn test_analysis_json_file_exclude_eid() {
         let mut app = App::new(None);
         let mut stored_static = create_dummy_stored_static();
-        *STORED_EKEY_ALIAS.write().unwrap() = Some(stored_static.eventkey_alias.clone());
         stored_static.exclude_eid = HashSet::from_iter(vec!["10".into(), "11".into()]);
-        *STORED_STATIC.write().unwrap() = Some(stored_static.clone());
+        let stored_static_arc = Arc::new(stored_static.clone());
 
         let rule_str = r#"
         enabled: true
@@ -3727,8 +4069,8 @@ mod tests {
         let target_time_filter = TargetEventTime::new(&stored_static);
         let timeline = Timeline::default();
         let target_event_ids = TargetIds::default();
-        let mut afterfact_info = AfterfactInfo::default();
-        let mut afterfact_writer = afterfact::init_writer(&stored_static);
+        let mut result_state = ResultOutputState::default();
+        let mut output_writer = results::init_writer(&stored_static);
 
         let actual = app.analysis_json_file(
             (
@@ -3737,10 +4079,11 @@ mod tests {
                 &target_event_ids,
                 &stored_static,
             ),
+            &stored_static_arc,
             detection,
             timeline,
-            &mut afterfact_writer,
-            &mut afterfact_info,
+            &mut output_writer,
+            &mut result_state,
         );
         assert_eq!(actual.1, 2);
         assert_eq!(actual.4.len(), 0);
@@ -3750,10 +4093,9 @@ mod tests {
     fn test_analysis_json_file_low_memory_mode() {
         let mut app = App::new(None);
         let mut stored_static = create_dummy_stored_static();
-        *STORED_EKEY_ALIAS.write().unwrap() = Some(stored_static.eventkey_alias.clone());
         stored_static.include_eid = HashSet::from_iter(vec!["10".into()]);
         stored_static.is_low_memory = true;
-        *STORED_STATIC.write().unwrap() = Some(stored_static.clone());
+        let stored_static_arc = Arc::new(stored_static.clone());
 
         let rule_str = r#"
         enabled: true
@@ -3774,8 +4116,8 @@ mod tests {
         let target_time_filter = TargetEventTime::new(&stored_static);
         let timeline = Timeline::default();
         let target_event_ids = TargetIds::default();
-        let mut afterfact_info = AfterfactInfo::default();
-        let mut afterfact_writer = afterfact::init_writer(&stored_static);
+        let mut result_state = ResultOutputState::default();
+        let mut output_writer = results::init_writer(&stored_static);
 
         let actual = app.analysis_json_file(
             (
@@ -3784,12 +4126,141 @@ mod tests {
                 &target_event_ids,
                 &stored_static,
             ),
+            &stored_static_arc,
             detection,
             timeline,
-            &mut afterfact_writer,
-            &mut afterfact_info,
+            &mut output_writer,
+            &mut result_state,
         );
         assert_eq!(actual.1, 2);
         assert_eq!(actual.4.len(), 0);
+    }
+
+    // A focused test of the extracted stream-vs-buffer policy: the default (sorted) mode moves the
+    // batch into the buffer and drains it from the input; low-memory (unsorted) mode emits the
+    // batch and leaves the buffer untouched. This locks down `emit_or_buffer` independently of the
+    // evtx/JSON accumulation paths.
+    #[test]
+    fn test_emit_or_buffer_policy() {
+        let stored_static = create_dummy_stored_static();
+        let mut output_writer = results::init_writer(&stored_static);
+        let mut result_state = ResultOutputState::default();
+
+        // Buffered: records move into the buffer and the input list is emptied.
+        let mut buffer = vec![];
+        let mut log_records = vec![
+            hayabusa::detections::message::DetectInfo::default(),
+            hayabusa::detections::message::DetectInfo::default(),
+        ];
+        crate::emit_or_buffer(
+            &mut log_records,
+            &mut buffer,
+            &stored_static,
+            &mut output_writer,
+            &mut result_state,
+        );
+        assert_eq!(buffer.len(), 2);
+        assert!(log_records.is_empty());
+
+        // Low-memory (unsorted timeline): the batch is streamed, so the buffer stays empty.
+        let mut low = create_dummy_stored_static();
+        low.is_low_memory = true;
+        let mut low_writer = results::init_writer(&low);
+        let mut buffer_low = vec![];
+        let mut log_records_low = vec![hayabusa::detections::message::DetectInfo::default()];
+        crate::emit_or_buffer(
+            &mut log_records_low,
+            &mut buffer_low,
+            &low,
+            &mut low_writer,
+            &mut result_state,
+        );
+        assert!(buffer_low.is_empty());
+    }
+
+    #[test]
+    fn test_calculate_wizard_rule_count() {
+        use crate::{WizardCountFilter, calculate_wizard_rule_count};
+        use compact_str::CompactString;
+        use hashbrown::HashMap;
+
+        // Build one status's `level -> tag -> count` map.
+        fn lvl(
+            pairs: &[(&str, &[(&str, i128)])],
+        ) -> HashMap<CompactString, HashMap<CompactString, i128>> {
+            pairs
+                .iter()
+                .map(|(level, tags)| {
+                    (
+                        CompactString::from(*level),
+                        tags.iter()
+                            .map(|(tag, count)| (CompactString::from(*tag), *count))
+                            .collect(),
+                    )
+                })
+                .collect()
+        }
+
+        // status -> level -> tag -> count
+        let mut map: HashMap<CompactString, HashMap<CompactString, HashMap<CompactString, i128>>> =
+            HashMap::new();
+        map.insert(
+            "stable".into(),
+            lvl(&[
+                ("high", &[("sysmon", 3), ("detection.emerging_threats", 2)]),
+                ("low", &[("", 5)]),
+            ]),
+        );
+        map.insert("test".into(), lvl(&[("critical", &[("", 4)])]));
+        map.insert("deprecated".into(), lvl(&[("high", &[("", 7)])]));
+        map.insert("noisy".into(), lvl(&[("medium", &[("", 9)])]));
+
+        // (A) Per-status counts at/above HIGH, skipping the noisy/deprecated statuses.
+        let per_status_counts = calculate_wizard_rule_count(
+            &map,
+            WizardCountFilter {
+                exclude_noisytarget_flag: false,
+                exclude_noisy_status: ["excluded", "deprecated", "unsupported", "noisy"].to_vec(),
+                min_level: "high",
+                target_status: ["test", "stable"].to_vec(),
+                target_tags: [].to_vec(),
+            },
+        );
+        assert_eq!(per_status_counts.get("stable"), Some(&5)); // 3 + 2 at HIGH; LOW(5) is below HIGH
+        assert_eq!(per_status_counts.get("test"), Some(&4)); // CRITICAL >= HIGH
+        assert_eq!(per_status_counts.get("deprecated"), None); // excluded status
+        assert_eq!(per_status_counts.get("noisy"), None);
+        assert_eq!(per_status_counts.len(), 2);
+
+        // (B) Exclude-noisy mode: count only the listed noisy statuses, at/above MEDIUM.
+        let noisy_status_counts = calculate_wizard_rule_count(
+            &map,
+            WizardCountFilter {
+                exclude_noisytarget_flag: true,
+                exclude_noisy_status: ["deprecated", "noisy"].to_vec(),
+                min_level: "medium",
+                target_status: [].to_vec(),
+                target_tags: [].to_vec(),
+            },
+        );
+        assert_eq!(noisy_status_counts.get("deprecated"), Some(&7));
+        assert_eq!(noisy_status_counts.get("noisy"), Some(&9));
+        assert_eq!(noisy_status_counts.len(), 2);
+
+        // (C) Tag counts: only the requested tags at/above HIGH for the "stable" status; no
+        // per-status entry is produced when `target_tags` is set.
+        let tag_counts = calculate_wizard_rule_count(
+            &map,
+            WizardCountFilter {
+                exclude_noisytarget_flag: false,
+                exclude_noisy_status: [].to_vec(),
+                min_level: "high",
+                target_status: ["stable"].to_vec(),
+                target_tags: ["sysmon", "detection.emerging_threats"].to_vec(),
+            },
+        );
+        assert_eq!(tag_counts.get("sysmon"), Some(&3));
+        assert_eq!(tag_counts.get("detection.emerging_threats"), Some(&2));
+        assert_eq!(tag_counts.len(), 2);
     }
 }

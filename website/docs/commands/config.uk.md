@@ -8,18 +8,19 @@
 Для всіх імен хостів, доданих до файлу `critical_systems.txt`, усі сповіщення вище low буде підвищено на один рівень з максимальним рівнем `emergency`.
 
 ```
-Usage: hayabusa.exe config-critical-systems <INPUT> [OPTIONS]
+Usage:
+  hayabusa.exe config-critical-systems <INPUT> [OPTIONS]
 
 Input:
-  -d, --directory <DIR>  Directory of multiple .evtx files
-  -f, --file <FILE>      File path to one .evtx file
+  -d, --directory <DIR>  Каталог з кількома файлами .evtx
+  -f, --file <FILE>      Шлях до одного файлу .evtx
 
 Display Settings:
-  -K, --no-color  Disable color output
-  -q, --quiet     Quiet mode: do not display the launch banner
+  -K, --no-color  Вимкнути кольоровий вивід
+  -q, --quiet     Тихий режим: не відображати банер запуску
 
 General Options:
-  -h, --help  Show the help menu
+  -h, --help  Показати меню довідки
 ```
 
 ### Приклади команди `config-critical-systems`

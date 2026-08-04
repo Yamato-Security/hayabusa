@@ -1,5 +1,7 @@
 # Modificadores de Campo Suportados
 
+Esta página contém uma lista gerada dinamicamente de todos os modificadores de campo do Sigma e com que frequência eles são usados em regras Sigma e Hayabusa.
+
 ## Modificadores de campo suportados pelo Hayabusa
 | Field Modifier                |   Sigma Count |   Hayabusa Count |
 |:------------------------------|--------------:|-----------------:|
@@ -8,12 +10,12 @@
 | base64ǀcontains               |             1 |                0 |
 | cased                         |             0 |                0 |
 | cidr                          |            35 |                0 |
-| contains                      |          3073 |               21 |
+| contains                      |          3072 |               21 |
 | containsǀall                  |          1084 |                0 |
 | containsǀcased                |             0 |                0 |
 | containsǀexpand               |             1 |                0 |
 | containsǀwindash              |           108 |                0 |
-| endswith                      |          3265 |              273 |
+| endswith                      |          3259 |              273 |
 | endswithfield                 |             0 |                0 |
 | endswithǀcased                |             0 |                0 |
 | endswithǀwindash              |             2 |                0 |
@@ -32,7 +34,7 @@
 | reǀi                          |             2 |                0 |
 | reǀm                          |             0 |                0 |
 | reǀs                          |             0 |                0 |
-| startswith                    |           546 |                6 |
+| startswith                    |           539 |                6 |
 | startswithǀcased              |             0 |                0 |
 | utf16beǀbase64offsetǀcontains |             0 |                0 |
 | utf16leǀbase64offsetǀcontains |             0 |                0 |
@@ -57,6 +59,5 @@ Atualmente, tudo é suportado.
 ## Regras de correlação não suportadas pelo Hayabusa
 Atualmente, tudo é suportado.
 
-Este documento é atualizado dinamicamente com base nas regras mais recentes.  
-Última Atualização: 2026/04/28  
-Autor: Fukusuke Takahashi
+Este documento é atualizado dinamicamente todos os meses com base nas regras mais recentes.  
+Última Atualização: 2026/08/01

@@ -8,18 +8,19 @@
 ชื่อโฮสต์ใดก็ตามที่ถูกเพิ่มเข้าไปในไฟล์ `critical_systems.txt` จะมีการแจ้งเตือนทั้งหมดที่อยู่เหนือระดับ low ถูกเพิ่มขึ้นหนึ่งระดับ โดยมีระดับสูงสุดคือระดับ `emergency`
 
 ```
-Usage: hayabusa.exe config-critical-systems <INPUT> [OPTIONS]
+Usage:
+  hayabusa.exe config-critical-systems <INPUT> [OPTIONS]
 
 Input:
-  -d, --directory <DIR>  Directory of multiple .evtx files
-  -f, --file <FILE>      File path to one .evtx file
+  -d, --directory <DIR>  ไดเรกทอรีของไฟล์ .evtx หลายไฟล์
+  -f, --file <FILE>      พาธไฟล์ของไฟล์ .evtx หนึ่งไฟล์
 
 Display Settings:
-  -K, --no-color  Disable color output
-  -q, --quiet     Quiet mode: do not display the launch banner
+  -K, --no-color  ปิดใช้งานการแสดงผลแบบสี
+  -q, --quiet     โหมดเงียบ: ไม่แสดงแบนเนอร์เมื่อเริ่มโปรแกรม
 
 General Options:
-  -h, --help  Show the help menu
+  -h, --help  แสดงเมนูช่วยเหลือ
 ```
 
 ### ตัวอย่างคำสั่ง `config-critical-systems`

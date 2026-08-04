@@ -1,5 +1,7 @@
 # Підтримувані модифікатори полів
 
+Ця сторінка містить динамічно згенерований список усіх модифікаторів полів Sigma та інформацію про те, як часто вони використовуються у правилах Sigma та Hayabusa.
+
 ## Модифікатори полів, що підтримуються Hayabusa
 | Field Modifier                |   Sigma Count |   Hayabusa Count |
 |:------------------------------|--------------:|-----------------:|
@@ -8,12 +10,12 @@
 | base64ǀcontains               |             1 |                0 |
 | cased                         |             0 |                0 |
 | cidr                          |            35 |                0 |
-| contains                      |          3073 |               21 |
+| contains                      |          3072 |               21 |
 | containsǀall                  |          1084 |                0 |
 | containsǀcased                |             0 |                0 |
 | containsǀexpand               |             1 |                0 |
 | containsǀwindash              |           108 |                0 |
-| endswith                      |          3265 |              273 |
+| endswith                      |          3259 |              273 |
 | endswithfield                 |             0 |                0 |
 | endswithǀcased                |             0 |                0 |
 | endswithǀwindash              |             2 |                0 |
@@ -32,7 +34,7 @@
 | reǀi                          |             2 |                0 |
 | reǀm                          |             0 |                0 |
 | reǀs                          |             0 |                0 |
-| startswith                    |           546 |                6 |
+| startswith                    |           539 |                6 |
 | startswithǀcased              |             0 |                0 |
 | utf16beǀbase64offsetǀcontains |             0 |                0 |
 | utf16leǀbase64offsetǀcontains |             0 |                0 |
@@ -57,6 +59,5 @@
 ## Кореляційні правила, що не підтримуються Hayabusa
 Наразі підтримується все.
 
-Цей документ динамічно оновлюється на основі найновіших правил.  
-Last Update: 2026/04/28  
-Author: Fukusuke Takahashi
+Цей документ динамічно оновлюється щомісяця на основі найновіших правил.  
+Last Update: 2026/08/01

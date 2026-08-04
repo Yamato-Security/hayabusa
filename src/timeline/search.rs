@@ -1,10 +1,9 @@
-use crate::afterfact::AfterfactInfo;
-use crate::detections::configs::{ALLFIELDINFO_SPECIAL_CHARS, OutputOption, SearchOption};
+use crate::detections::configs::{OutputOption, SearchOption};
 use crate::detections::field_data_map::FieldDataMapKey;
 use crate::detections::message::{self, DetectInfo};
 use crate::detections::utils::{format_time, get_writable_color};
+use crate::results::ResultOutputState;
 use crate::{
-    afterfact::output_json_str,
     detections::{
         configs::{Action, EventKeyAliasConfig, StoredStatic},
         detection::EvtxRecordInfo,
@@ -12,6 +11,7 @@ use crate::{
         utils::{self, write_color_buffer},
     },
     options::profile::Profile,
+    results::output_json_str,
 };
 use chrono::{TimeZone, Utc};
 use compact_str::CompactString;
@@ -110,16 +110,17 @@ impl EventSearch {
         filter_rule: &HashMap<String, Vec<WildMatch>>,
         eventkey_alias: &EventKeyAliasConfig,
     ) -> bool {
-        filter_rule.iter().all(|(k, v)| {
+        filter_rule.iter().all(|(field_name, patterns)| {
             let alias_target_val = utils::get_serde_number_to_string(
-                utils::get_event_value(k, &record.record, eventkey_alias)
+                utils::get_event_value(field_name, &record.record, eventkey_alias)
                     .unwrap_or(&serde_json::Value::Null),
                 true,
             )
             .unwrap_or_else(|| "n/a".into())
             .replace(['"', '\''], "");
             // If matched by alias, there is no need to search fields not registered in the alias, so return true.
-            if v.iter()
+            if patterns
+                .iter()
                 .all(|search_target| search_target.matches(&alias_target_val))
             {
                 return true;
@@ -127,13 +128,14 @@ impl EventSearch {
 
             // Also search fields not registered in the alias.
             let allfieldinfo = match utils::get_serde_number_to_string(
-                &record.record["Event"]["EventData"][k],
+                &record.record["Event"]["EventData"][field_name],
                 true,
             ) {
                 Some(eventdata) => eventdata,
                 _ => CompactString::new("-"),
             };
-            v.iter()
+            patterns
+                .iter()
                 .all(|search_target| search_target.matches(&allfieldinfo))
         })
     }
@@ -147,16 +149,16 @@ impl EventSearch {
     ) -> HashMap<CompactString, HashMap<CompactString, CompactString>> {
         let mut ret: HashMap<CompactString, HashMap<CompactString, CompactString>> = HashMap::new();
         let mut default_details_abbr: HashMap<CompactString, CompactString> = HashMap::new();
-        for (k, v) in stored_static.default_details.iter() {
-            v.split(" ¦ ").for_each(|x| {
-                let abbr_and_full = x.split(": ").collect_vec();
+        for (provider_eventid, details_template) in stored_static.default_details.iter() {
+            details_template.split(" ¦ ").for_each(|field_template| {
+                let abbr_and_full = field_template.split(": ").collect_vec();
                 if abbr_and_full.len() == 2 {
                     let abbr: CompactString = abbr_and_full[0].into();
                     let full: CompactString = abbr_and_full[1].replace("%", "").trim().into();
                     default_details_abbr.insert(full, abbr);
                 }
             });
-            ret.insert(k.clone(), default_details_abbr.clone());
+            ret.insert(provider_eventid.clone(), default_details_abbr.clone());
             default_details_abbr.clear();
         }
         ret
@@ -229,71 +231,13 @@ impl EventSearch {
                 continue;
             }
 
-            // Collect the hit record, or output it on the fly.
-            let (timestamp, hostname, channel, eventid, recordid, allfieldinfo) =
-                extract_search_event_info(
-                    record,
-                    &stored_static.eventkey_alias,
-                    stored_static.output_option.as_ref().unwrap(),
-                );
-            // Look up the field-name abbreviation table for this record's provider and event ID.
-            let target_allfieldinfo_abbr_table = allfield_replace_table.get(
-                format!(
-                    "{}_{}",
-                    record.record["Event"]["System"]["Provider_attributes"]["Name"]
-                        .to_string()
-                        .replace('\"', ""),
-                    eventid
-                )
-                .as_str(),
+            self.emit_hit(
+                record,
+                &mut wtr,
+                search_option,
+                stored_static,
+                &allfield_replace_table,
             );
-            // Replace the 🛂r/🛂n/🛂t placeholders (substituted for \r, \n and \t by
-            // utils::remove_sp_char) with a 🦅 sentinel, re-join the pieces with single spaces,
-            // and shorten full field names to their abbreviations.
-            let abbreviated_all_field_info = self.replace_all_field_info_abbr(
-                ALLFIELDINFO_SPECIAL_CHARS
-                    .replace_all(&allfieldinfo, &["🦅", "🦅", "🦅"])
-                    .split('🦅')
-                    .filter(|x| !x.is_empty())
-                    .join(" ")
-                    .as_str(),
-                target_allfieldinfo_abbr_table,
-            );
-
-            if search_option.sort_events {
-                // We cannot sort the results until every record has been processed, so we just
-                // collect the hit records here and sort them later.
-                self.search_result.insert((
-                    timestamp,
-                    hostname,
-                    channel,
-                    eventid,
-                    recordid,
-                    abbreviated_all_field_info,
-                    self.filepath.clone(),
-                ));
-                self.search_result_cnt += 1;
-            } else {
-                // The sort_events option is false, so the hit record is output on the fly.
-                // We avoid collecting hit records in memory whenever possible in order to reduce
-                // memory usage.
-                let hit_record = (
-                    timestamp,
-                    hostname,
-                    channel,
-                    eventid,
-                    recordid,
-                    abbreviated_all_field_info,
-                    self.filepath.clone(),
-                );
-                wtr.write_record(
-                    hit_record,
-                    search_option,
-                    stored_static,
-                    self.search_result_cnt == 0,
-                );
-                self.search_result_cnt += 1;
-            }
         }
     }
 
@@ -328,71 +272,89 @@ impl EventSearch {
                 continue;
             }
 
-            // Collect the hit record, or output it on the fly.
-            let (timestamp, hostname, channel, eventid, recordid, allfieldinfo) =
-                extract_search_event_info(
-                    record,
-                    &stored_static.eventkey_alias,
-                    stored_static.output_option.as_ref().unwrap(),
-                );
-            // Look up the field-name abbreviation table for this record's provider and event ID.
-            let target_allfieldinfo_abbr_table = allfield_replace_table.get(
-                format!(
-                    "{}_{}",
-                    record.record["Event"]["System"]["Provider_attributes"]["Name"]
-                        .to_string()
-                        .replace('\"', ""),
-                    eventid
-                )
-                .as_str(),
+            self.emit_hit(
+                record,
+                &mut wtr,
+                search_option,
+                stored_static,
+                &allfield_replace_table,
             );
-            // Replace the 🛂r/🛂n/🛂t placeholders (substituted for \r, \n and \t by
-            // utils::remove_sp_char) with a 🦅 sentinel, re-join the pieces with single spaces,
-            // and shorten full field names to their abbreviations.
-            let abbreviated_all_field_info = self.replace_all_field_info_abbr(
-                ALLFIELDINFO_SPECIAL_CHARS
-                    .replace_all(&allfieldinfo, &["🦅", "🦅", "🦅"])
-                    .split('🦅')
-                    .filter(|x| !x.is_empty())
-                    .join(" ")
-                    .as_str(),
-                target_allfieldinfo_abbr_table,
-            );
+        }
+    }
 
-            if search_option.sort_events {
-                // We cannot sort the results until every record has been processed, so we just
-                // collect the hit records here and sort them later.
-                self.search_result.insert((
-                    timestamp,
-                    hostname,
-                    channel,
-                    eventid,
-                    recordid,
-                    abbreviated_all_field_info,
-                    self.filepath.clone(),
-                ));
-                self.search_result_cnt += 1;
-            } else {
-                // The sort_events option is false, so the hit record is output on the fly.
-                // We avoid collecting hit records in memory whenever possible in order to reduce
-                // memory usage.
-                let hit_record = (
-                    timestamp,
-                    hostname,
-                    channel,
-                    eventid,
-                    recordid,
-                    abbreviated_all_field_info,
-                    self.filepath.clone(),
-                );
-                wtr.write_record(
-                    hit_record,
-                    search_option,
-                    stored_static,
-                    self.search_result_cnt == 0,
-                );
-                self.search_result_cnt += 1;
-            }
+    /// Emits one matched record: with `--sort` it collects the hit for later sorting, otherwise it
+    /// writes it out on the fly. Shared tail of `search_keyword` and `search_regex` (the caller
+    /// sets `self.filepath` before invoking this). Looks up the record's abbreviation table by
+    /// `Provider_EventID`, normalizes the AllFieldInfo whitespace, and applies the abbreviations.
+    fn emit_hit(
+        &mut self,
+        record: &EvtxRecordInfo,
+        wtr: &mut ResultWriter,
+        search_option: &SearchOption,
+        stored_static: &StoredStatic,
+        allfield_replace_table: &HashMap<CompactString, HashMap<CompactString, CompactString>>,
+    ) {
+        let (timestamp, hostname, channel, eventid, recordid, allfieldinfo) =
+            extract_search_event_info(
+                record,
+                &stored_static.eventkey_alias,
+                stored_static.output_option.as_ref().unwrap(),
+            );
+        // Look up the field-name abbreviation table for this record's provider and event ID.
+        let target_allfieldinfo_abbr_table = allfield_replace_table.get(
+            format!(
+                "{}_{}",
+                record.record["Event"]["System"]["Provider_attributes"]["Name"]
+                    .to_string()
+                    .replace('\"', ""),
+                eventid
+            )
+            .as_str(),
+        );
+        // Field values now carry real \r/\n/\t (kept by utils::remove_sp_char); split on them, drop
+        // empty pieces, re-join with single spaces, and shorten full field names to abbreviations.
+        let abbreviated_all_field_info = self.replace_all_field_info_abbr(
+            allfieldinfo
+                .split(['\r', '\n', '\t'])
+                .filter(|segment| !segment.is_empty())
+                .join(" ")
+                .as_str(),
+            target_allfieldinfo_abbr_table,
+        );
+
+        if search_option.sort_events {
+            // We cannot sort the results until every record has been processed, so we just
+            // collect the hit records here and sort them later.
+            self.search_result.insert((
+                timestamp,
+                hostname,
+                channel,
+                eventid,
+                recordid,
+                abbreviated_all_field_info,
+                self.filepath.clone(),
+            ));
+            self.search_result_cnt += 1;
+        } else {
+            // The sort_events option is false, so the hit record is output on the fly.
+            // We avoid collecting hit records in memory whenever possible in order to reduce
+            // memory usage.
+            let hit_record = (
+                timestamp,
+                hostname,
+                channel,
+                eventid,
+                recordid,
+                abbreviated_all_field_info,
+                self.filepath.clone(),
+            );
+            wtr.write_record(
+                hit_record,
+                search_option,
+                stored_static,
+                self.search_result_cnt == 0,
+            );
+            self.search_result_cnt += 1;
         }
     }
 
@@ -404,18 +366,18 @@ impl EventSearch {
         value: &str,
         all_field_info_abbr: Option<&HashMap<CompactString, CompactString>>,
     ) -> CompactString {
-        let mut pairs = if let Some(s) = all_field_info_abbr {
-            s.iter().collect::<Vec<_>>()
+        let mut pairs = if let Some(abbr_map) = all_field_info_abbr {
+            abbr_map.iter().collect::<Vec<_>>()
         } else {
             vec![]
         };
         if pairs.is_empty() {
             return value.into();
         }
-        pairs.sort_unstable_by_key(|a| a.0.len());
+        pairs.sort_unstable_by_key(|pair| pair.0.len());
         let mut all_field_info = value.to_string();
-        for (k, v) in pairs {
-            all_field_info = all_field_info.replace(k.as_str(), v.as_str());
+        for (full_name, abbr) in pairs {
+            all_field_info = all_field_info.replace(full_name.as_str(), abbr.as_str());
         }
         all_field_info.into()
     }
@@ -624,10 +586,10 @@ impl ResultWriter {
                 Profile::EvtxFile(evtx_file.into()),
             ));
             detect_info.details_convert_map = detail_infos;
-            let mut afterfact_info = AfterfactInfo::default();
+            let mut result_state = ResultOutputState::default();
             let (output_json_str_ret, _) = output_json_str(
                 &detect_info,
-                &mut afterfact_info,
+                &mut result_state,
                 search_option.jsonl_output,
                 false,
                 false,
@@ -643,8 +605,9 @@ impl ResultWriter {
                     // colors, with " ¦ " between pairs.
                     let all_field_sep_info = all_field_info.split('¦').collect::<Vec<&str>>();
                     for (field_idx, fields) in all_field_sep_info.iter().enumerate() {
-                        let mut separated_fields_data =
-                            fields.split(':').map(|x| x.split_whitespace().join(" "));
+                        let mut separated_fields_data = fields
+                            .split(':')
+                            .map(|part| part.split_whitespace().join(" "));
                         write_color_buffer(
                             self.display_writer.as_mut().unwrap(),
                             get_char_color(Some(Color::Rgb(255, 158, 61))),
@@ -723,7 +686,7 @@ fn create_filter_rule(filters: &[String]) -> HashMap<String, Vec<WildMatch>> {
                 let acc_val = acc.entry(condition[0].to_string()).or_insert(vec![]);
                 condition[1..]
                     .iter()
-                    .for_each(|x| acc_val.push(WildMatch::new(x)));
+                    .for_each(|pattern| acc_val.push(WildMatch::new(pattern)));
             }
             acc
         })
