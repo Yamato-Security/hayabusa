@@ -5,7 +5,7 @@ use std::io::{self, BufWriter};
 use std::process;
 
 use ::csv::{QuoteStyle, Writer, WriterBuilder};
-use chrono::{DateTime, Local, TimeZone, Utc};
+use chrono::{DateTime, Local, Offset, TimeZone, Utc};
 use compact_str::CompactString;
 use hashbrown::{HashMap, HashSet};
 use strum::IntoEnumIterator;
@@ -326,6 +326,7 @@ fn output_results_inner(
         &duplicate_indices,
         result_state,
         stored_static,
+        &Local,
     );
     output_writer.disp_wtr_buf.clear();
 
@@ -431,18 +432,32 @@ pub fn get_duplicate_indices(detect_infos: &mut [DetectInfo]) -> HashSet<usize> 
     filtered_detect_infos
 }
 
-/// Converts the given datetime to epoch seconds. Unless UTC or ISO 8601 output was requested,
-/// the local UTC offset is added so the value reflects local wall-clock time.
-fn _get_timestamp(output_option: &TimeFormatOptions, time: &DateTime<Utc>) -> i64 {
-    if output_option.utc || output_option.iso_8601 {
+/// Converts the given datetime to the epoch seconds fed to the detection frequency histogram.
+///
+/// krapslog formats each axis marker as UTC and prints it without a timezone, so the offset of
+/// `display_tz` has to be folded in here or the markers disagree with every other timestamp in
+/// the output. Taking it at the instant being converted rather than at a fixed reference point
+/// keeps events on either side of a DST transition correct. Callers pass `&Local`; the timezone
+/// is a parameter so the conversion can be tested against a known offset.
+///
+/// Shifting each value by its own offset means the series is no longer monotonic across a DST
+/// fall-back — two markers inside the ambiguous hour can appear out of order. That is inherent
+/// to displaying local time on a series sorted by UTC instant, and is cosmetic.
+fn get_histogram_timestamp<Tz: TimeZone>(
+    time_format: &TimeFormatOptions,
+    time: &DateTime<Utc>,
+    display_tz: &Tz,
+) -> i64 {
+    if time_format.is_utc_output() {
         time.timestamp()
     } else {
-        let offset_sec = Local
-            .timestamp_opt(0, 0)
-            .unwrap()
+        // with_timezone preserves the instant, so the offset is the only shift applied.
+        let offset = time
+            .with_timezone(display_tz)
             .offset()
+            .fix()
             .local_minus_utc();
-        offset_sec as i64 + time.with_timezone(&Local).timestamp()
+        time.timestamp() + offset as i64
     }
 }
 
@@ -452,7 +467,7 @@ mod tests {
     use std::path::Path;
 
     use chrono::NaiveDateTime;
-    use chrono::{DateTime, Local, TimeZone, Utc};
+    use chrono::{DateTime, FixedOffset, Local, TimeZone, Utc};
     use compact_str::CompactString;
     use hashbrown::HashMap;
     use serde_json::Value;
@@ -478,12 +493,82 @@ mod tests {
     use crate::results::close_unterminated_quote;
     use crate::results::format_time;
     use crate::results::get_duplicate_indices;
+    use crate::results::get_histogram_timestamp;
     use crate::results::html_escape_value;
     use crate::results::init_writer;
     use crate::results::json_scalar;
     use crate::results::json_string;
     use crate::results::output_results_inner;
     use crate::results::sort_detect_info;
+
+    #[test]
+    fn test_get_histogram_timestamp_applies_the_display_offset() {
+        // The value handed to krapslog has to read back as wall-clock time in the display zone.
+        // Explicit offsets rather than `Local`, so the assertion still bites on a UTC CI runner.
+        let local_format = TimeFormatOptions::default();
+        let time = DateTime::parse_from_rfc3339("2021-12-23T00:00:00Z")
+            .unwrap()
+            .with_timezone(&Utc);
+        for offset_hours in [9, 0, -7] {
+            let display_tz = FixedOffset::east_opt(offset_hours * 3600).unwrap();
+            let marker = DateTime::from_timestamp(
+                get_histogram_timestamp(&local_format, &time, &display_tz),
+                0,
+            )
+            .expect("shifted timestamp is out of range");
+            assert_eq!(
+                marker.naive_utc(),
+                time.with_timezone(&display_tz).naive_local(),
+                "histogram marker does not read as wall-clock time at UTC{offset_hours:+}"
+            );
+        }
+    }
+
+    #[test]
+    fn test_get_histogram_timestamp_takes_the_offset_at_the_event() {
+        // Taking the offset at a fixed reference point such as the Unix epoch gets one of a winter
+        // and a summer instant wrong. Only bites when the test machine is in a DST zone, hence the
+        // comparison against chrono's own local conversion rather than a hard-coded offset.
+        let local_format = TimeFormatOptions::default();
+        for iso in ["2021-12-23T00:00:00Z", "2021-07-23T00:00:00Z"] {
+            let time = DateTime::parse_from_rfc3339(iso)
+                .unwrap()
+                .with_timezone(&Utc);
+            let marker =
+                DateTime::from_timestamp(get_histogram_timestamp(&local_format, &time, &Local), 0)
+                    .expect("shifted timestamp is out of range");
+            assert_eq!(
+                marker.naive_utc(),
+                time.with_timezone(&Local).naive_local(),
+                "histogram marker for {iso} does not read as local time"
+            );
+        }
+    }
+
+    #[test]
+    fn test_get_histogram_timestamp_passes_through_utc_output_modes() {
+        // -U and --ISO-8601 print the rest of the output in UTC, so the axis must stay UTC too --
+        // even though a non-UTC display zone is handed in.
+        let display_tz = FixedOffset::east_opt(9 * 3600).unwrap();
+        let time = DateTime::parse_from_rfc3339("2021-12-23T00:00:00Z")
+            .unwrap()
+            .with_timezone(&Utc);
+        for format in [
+            TimeFormatOptions {
+                utc: true,
+                ..Default::default()
+            },
+            TimeFormatOptions {
+                iso_8601: true,
+                ..Default::default()
+            },
+        ] {
+            assert_eq!(
+                get_histogram_timestamp(&format, &time, &display_tz),
+                time.timestamp()
+            );
+        }
+    }
 
     #[test]
     fn test_print_unique_results_percentages_align_with_levels() {
