@@ -609,6 +609,30 @@ fn _get_table_color(
     }
     color
 }
+/// Returns the terminal column of the leftmost top-row marker that `krapslog::build_time_markers`
+/// will place for `marker_count` markers spread across `terminal_width` columns, mirroring
+/// krapslog's own (private) offset math. Returns `None` when there are no top-row markers.
+fn leftmost_top_marker_offset(marker_count: usize, terminal_width: usize) -> Option<usize> {
+    if marker_count < 2 {
+        return None;
+    }
+    let mut footer_marker_count = marker_count / 2;
+    if !footer_marker_count.is_multiple_of(2) {
+        footer_marker_count += 1;
+    }
+    if footer_marker_count >= marker_count {
+        return None;
+    }
+    if footer_marker_count == 0 {
+        return Some(0);
+    }
+    if footer_marker_count == marker_count - 1 {
+        return Some(terminal_width - 1);
+    }
+    let skip = (terminal_width - 2) as f64 / (marker_count - 1) as f64;
+    Some((footer_marker_count as f64 * skip).ceil() as usize % terminal_width)
+}
+
 /// Prints the detection frequency timeline (a sparkline histogram of detection timestamps with
 /// time markers) to stdout. Requires at least 5 events to render.
 fn _print_timeline_hist(timestamps: &[i64], length: usize, side_margin_size: usize) {
@@ -639,9 +663,6 @@ fn _print_timeline_hist(timestamps: &[i64], length: usize, side_margin_size: usi
         buf_wtr.print(&wtr).ok();
         return;
     }
-    let header_row_space = (length - title.len()) / 2;
-    writeln!(wtr, "{}{}", " ".repeat(header_row_space), title).ok();
-    println!();
 
     let timestamp_marker_max = if timestamps.len() < 2 {
         0
@@ -649,6 +670,20 @@ fn _print_timeline_hist(timestamps: &[i64], length: usize, side_margin_size: usi
         timestamps.len() - 2
     };
     let marker_num = min(timestamp_marker_max, 18);
+
+    // krapslog places a top-row marker's timestamp label by subtracting the label length (19,
+    // for "YYYY-MM-DD HH:MM:SS") from the marker's column, and panics with a `usize` underflow
+    // if that column is less than 18. Whether that happens depends on how markers are spread
+    // across `inner_width`, which is a function of `marker_num`, so the title-length guard above
+    // isn't enough on its own: skip the histogram if the leftmost top-row marker would underflow.
+    if leftmost_top_marker_offset(marker_num, inner_width).is_some_and(|offset| offset < 18) {
+        buf_wtr.print(&wtr).ok();
+        return;
+    }
+
+    let header_row_space = (length - title.len()) / 2;
+    writeln!(wtr, "{}{}", " ".repeat(header_row_space), title).ok();
+    println!();
 
     let (header_raw, footer_raw) = build_time_markers(timestamps, marker_num, inner_width);
     let sparkline = build_sparkline(timestamps, inner_width, 5_usize);
@@ -1155,7 +1190,16 @@ fn extract_author_name(author: &str) -> Nested<String> {
 
 #[cfg(test)]
 mod tests {
-    use super::truncate_chars;
+    use super::{_print_timeline_hist, truncate_chars};
+
+    #[test]
+    fn print_timeline_hist_does_not_panic_on_a_narrow_terminal() {
+        // 6 timestamps give marker_num = 4, which krapslog spreads across a 28-column terminal
+        // (side_margin_size = 3, as used by the real caller) such that the leftmost top-row
+        // marker lands at column 14, underflowing krapslog's `horizontal_offset - 19 + 1`.
+        let timestamps: Vec<i64> = vec![0, 100, 200, 300, 400, 500];
+        _print_timeline_hist(&timestamps, 28, 3);
+    }
 
     #[test]
     fn truncate_chars_never_splits_a_multibyte_char() {
