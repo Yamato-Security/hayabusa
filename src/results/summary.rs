@@ -3,7 +3,6 @@ use std::io::Write;
 use std::str::FromStr;
 
 use chrono::{Local, TimeZone};
-use comfy_table::modifiers::UTF8_ROUND_CORNERS;
 use comfy_table::presets::UTF8_FULL;
 use comfy_table::*;
 use compact_str::CompactString;
@@ -1074,23 +1073,20 @@ fn _print_detection_summary_tables(
     }
 
     let mut tb = Table::new();
-    tb.load_preset(UTF8_FULL)
-        .apply_modifier(UTF8_ROUND_CORNERS)
-        .set_style(TableComponent::VerticalLines, ' ');
-    let horizontal_line_char = tb.style(TableComponent::HorizontalLines).unwrap();
-    let top_border_char = tb.style(TableComponent::TopBorder).unwrap();
+    tb.load_style(UTF8_FULL.with_rounded_corners());
+    tb.style_mut().header_lines.junction = Some(' ');
+    tb.style_mut().content_lines.junction = Some(' ');
+    let horizontal_line_char = tb.style().row_separator.fill;
+    let top_border_char = tb.style().top_border.fill;
     for x in 0..output.len() / 2 {
         tb.add_row(vec![
             Cell::new(&output[2 * x][0]).fg(col_color[2 * x].unwrap_or(comfy_table::Color::Reset)),
             Cell::new(&output[2 * x + 1][0])
                 .fg(col_color[2 * x + 1].unwrap_or(comfy_table::Color::Reset)),
-        ])
-        .set_style(TableComponent::MiddleIntersections, horizontal_line_char)
-        .set_style(TableComponent::TopBorderIntersections, top_border_char)
-        .set_style(
-            TableComponent::BottomBorderIntersections,
-            horizontal_line_char,
-        );
+        ]);
+        tb.style_mut().row_separator.junction = horizontal_line_char;
+        tb.style_mut().top_border.junction = top_border_char;
+        tb.style_mut().bottom_border.junction = horizontal_line_char;
         tb.add_row(vec![
             Cell::new(output[2 * x].iter().skip(1).join("\n"))
                 .fg(col_color[2 * x].unwrap_or(comfy_table::Color::Reset)),
@@ -1117,12 +1113,12 @@ fn output_detected_rule_authors(
     // table_column_num == 4 — at other widths it over-/under-counted rows, giving uneven tables.)
     let div = authors_num.div_ceil(table_column_num);
     let mut tb = Table::new();
-    tb.load_preset(UTF8_FULL)
-        .apply_modifier(UTF8_ROUND_CORNERS)
-        .set_style(TableComponent::VerticalLines, ' ');
+    tb.load_style(UTF8_FULL.with_rounded_corners());
+    tb.style_mut().header_lines.junction = Some(' ');
+    tb.style_mut().content_lines.junction = Some(' ');
     let mut stored_by_column = vec![];
-    let horizontal_line_char = tb.style(TableComponent::HorizontalLines).unwrap();
-    let top_border_char = tb.style(TableComponent::TopBorder).unwrap();
+    let horizontal_line_char = tb.style().row_separator.fill;
+    let top_border_char = tb.style().top_border.fill;
     for x in 0..table_column_num {
         let mut tmp = Vec::new();
         for y in 0..div {
@@ -1152,13 +1148,10 @@ fn output_detected_rule_authors(
         output.push(col_data.join("\n"));
     }
     if !output.is_empty() {
-        tb.add_row(output)
-            .set_style(TableComponent::MiddleIntersections, horizontal_line_char)
-            .set_style(TableComponent::TopBorderIntersections, top_border_char)
-            .set_style(
-                TableComponent::BottomBorderIntersections,
-                horizontal_line_char,
-            );
+        tb.add_row(output);
+        tb.style_mut().row_separator.junction = horizontal_line_char;
+        tb.style_mut().top_border.junction = top_border_char;
+        tb.style_mut().bottom_border.junction = horizontal_line_char;
     }
     println!("{tb}");
 }

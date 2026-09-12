@@ -8,7 +8,6 @@ use crate::timeline::search::search_result_dsp_msg;
 use comfy_table::ColumnConstraint::LowerBoundary;
 use comfy_table::ColumnConstraint::UpperBoundary;
 use comfy_table::Width::Fixed;
-use comfy_table::modifiers::UTF8_ROUND_CORNERS;
 use comfy_table::presets::UTF8_FULL;
 use comfy_table::*;
 use compact_str::CompactString;
@@ -232,9 +231,7 @@ impl Timeline {
         }
 
         let mut stats_tb = Table::new();
-        stats_tb
-            .load_preset(UTF8_FULL)
-            .apply_modifier(UTF8_ROUND_CORNERS);
+        stats_tb.load_style(UTF8_FULL.with_rounded_corners());
 
         stats_tb.set_header(header_cells);
 
@@ -523,9 +520,7 @@ impl Timeline {
         }
 
         let mut logins_stats_tb = Table::new();
-        logins_stats_tb
-            .load_preset(UTF8_FULL)
-            .apply_modifier(UTF8_ROUND_CORNERS);
+        logins_stats_tb.load_style(UTF8_FULL.with_rounded_corners());
         // The terminal table only shows a subset of the columns (count, first/last time, event,
         // target account, target computer, source computer, source IP, plus the source country
         // with -G); the CSV has all of them.
@@ -721,8 +716,7 @@ impl Timeline {
                 }
             } else {
                 let mut tb = Table::new();
-                tb.load_preset(UTF8_FULL)
-                    .apply_modifier(UTF8_ROUND_CORNERS)
+                tb.load_style(UTF8_FULL.with_rounded_corners())
                     .set_content_arrangement(ContentArrangement::DynamicFullWidth)
                     .set_header(&header);
                 for rec in &mut *log_metrics {
