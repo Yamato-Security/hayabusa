@@ -1,6 +1,6 @@
 # Changes
 
-## 4.1.0 [2026/09/12] - Suzumushi  Release
+## 4.1.0 [2026/09/12] - Suzumushi Release
 
 **New Features:**
 
