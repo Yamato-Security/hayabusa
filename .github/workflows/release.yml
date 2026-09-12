@@ -9,7 +9,7 @@ on:
       release_ver:
         required: true
         default: "3.x.x"
-        description: "Version of the release"
+        description: "Exact Cargo package version (without a leading v)"
       branch_or_tag:
         required: true
         default: "main"
@@ -138,6 +138,72 @@ jobs:
           cargo run --release -- update-rules -q
           cargo build --release --target ${{ matrix.info.target }}
 
+      - name: Verify Windows executable metadata
+        if: runner.os == 'Windows'
+        shell: pwsh
+        env:
+          HAYABUSA_TARGET: ${{ matrix.info.target }}
+          RELEASE_VERSION: ${{ github.event.inputs.release_ver }}
+        run: |
+          $ErrorActionPreference = 'Stop'
+
+          if ([string]::IsNullOrWhiteSpace($env:RELEASE_VERSION)) {
+            throw "RELEASE_VERSION must be set before metadata verification."
+          }
+
+          $exe = (Resolve-Path "target/$($env:HAYABUSA_TARGET)/release/hayabusa.exe").Path
+          $info = [System.Diagnostics.FileVersionInfo]::GetVersionInfo($exe)
+          $info | Format-List ProductName, FileDescription, CompanyName, FileVersion, `
+            ProductVersion, InternalName, OriginalFilename, LegalCopyright, Comments, IsPreRelease
+
+          # Keep these descriptive values synchronized with [package.metadata.winresource].
+          $expected = @{
+            ProductName      = 'Hayabusa'
+            FileDescription  = 'Hayabusa - Windows Event Log Analysis'
+            CompanyName      = 'Yamato Security'
+            InternalName     = 'hayabusa'
+            OriginalFilename = 'hayabusa.exe'
+            LegalCopyright   = 'Copyright (c) Yamato Security and contributors'
+            Comments         = 'Sigma-based threat hunting and digital forensics'
+            FileVersion      = $env:RELEASE_VERSION
+            ProductVersion   = $env:RELEASE_VERSION
+          }
+
+          foreach ($field in $expected.Keys) {
+            $actual = $info.$field
+            if ($actual -cne $expected[$field]) {
+              throw ("Metadata mismatch for {0}: expected '{1}', got '{2}'" -f `
+                $field, $expected[$field], $actual)
+            }
+          }
+
+          # A hyphen in build metadata (after '+') does not indicate a prerelease.
+          $isPreRelease = ($env:RELEASE_VERSION -split '\+', 2)[0].Contains('-')
+          if ($info.IsPreRelease -ne $isPreRelease) {
+            throw "Metadata mismatch for IsPreRelease: expected '$isPreRelease', got '$($info.IsPreRelease)'"
+          }
+
+          $version = [version](($env:RELEASE_VERSION -split '[-+]', 2)[0])
+          foreach ($prefix in @('File', 'Product')) {
+            $fixedParts = @{
+              MajorPart   = $version.Major
+              MinorPart   = $version.Minor
+              BuildPart   = $version.Build
+              PrivatePart = 0
+            }
+            foreach ($part in $fixedParts.Keys) {
+              $field = "$prefix$part"
+              if ($info.$field -ne $fixedParts[$part]) {
+                throw ("Metadata mismatch for {0}: expected '{1}', got '{2}'" -f `
+                  $field, $fixedParts[$part], $info.$field)
+              }
+            }
+          }
+
+          Write-Host "Windows metadata verification passed: $exe"
+
+      # Any Authenticode signing and signature verification must happen here, before
+      # either package copies the executable. Do not change resources after signing.
       - name: Package and Zip - Windows
         if: contains(matrix.info.os, 'windows') == true
         shell: pwsh
