@@ -8,6 +8,7 @@
 
 **Enhancements:**
 
+- Added embedded version information (`VERSIONINFO`) to Windows executables, including the product name, file description, company name, copyright, and original filename. File and product versions are generated automatically from the package version in `Cargo.toml`, and the release workflow verifies the metadata before packaging. (#1926) (@YamatoSecurity)
 - Added the `-G, --geo-ip` option to the `logon-summary` command, which appends `Source ASN`, `Source Country` and `Source City` columns for the source IP address of each summarized logon. (#1920) (@fukusuket)
 
 **Bug Fixes:**
