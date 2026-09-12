@@ -5,7 +5,20 @@ repository = "https://github.com/Yamato-Security/hayabusa"
 authors = ["Yamato Security @SecurityYamato"]
 edition = "2024"
 rust-version = "1.97.1"
-include = ["src/**/*", "LICENSE.txt", "README.md", "CHANGELOG.md"]
+build = "build.rs"
+include = ["src/**/*", "build.rs", "LICENSE.txt", "README.md", "CHANGELOG.md"]
+
+[package.metadata.winresource]
+ProductName = "Hayabusa"
+FileDescription = "Hayabusa - Windows Event Log Analyzer"
+CompanyName = "Yamato Security"
+InternalName = "hayabusa"
+OriginalFilename = "hayabusa.exe"
+LegalCopyright = "Yamato Security"
+Comments = "Sigma-based threat hunting and digital forensics"
+
+[build-dependencies]
+winresource = "0.1.31"
 
 [dependencies]
 aho-corasick = "*"
