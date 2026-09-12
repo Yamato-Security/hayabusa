@@ -1,6 +1,6 @@
 [package]
 name = "hayabusa"
-version = "4.0.0"
+version = "4.1.0"
 repository = "https://github.com/Yamato-Security/hayabusa"
 authors = ["Yamato Security @SecurityYamato"]
 edition = "2024"
@@ -28,14 +28,14 @@ chrono = "0.4.*"
 cidr-utils = "0.7.*"
 clap = { version = "4.*", features = ["derive", "cargo", "color"]}
 colored = "3"
-comfy-table = "7.*"
+comfy-table = "8.*"
 compact_str = "0.10.*"
 console = "0.16.*"
 csv = "1.4.*"
 dashmap = "*"
 dialoguer = "*"
 downcast-rs = "2.*"
-evtx = { git = "https://github.com/Yamato-Security/hayabusa-evtx.git" , features = ["fast-alloc"] , rev = "31be1c39b7add607eca7b789302423b38a8646da" } # 0.9.11 2026/07/29 update
+evtx = { git = "https://github.com/Yamato-Security/hayabusa-evtx.git" , features = ["fast-alloc"] , rev = "170c7a5f28fa4ef853e60e1b620dfacb19138c4f" } # 0.9.12 2026/09/12 update
 # Enable the vendored-OpenSSL HTTPS/TLS backend for libgit2. The wildcard
 # `0.*` resolved to a build of libgit2 with no TLS transport, so `update-rules`
 # failed with `class=Ssl (16) - there is no TLS stream available`. The project
@@ -70,7 +70,8 @@ terminal_size = "*"
 tokio = { version = "1", features = ["full"] }
 ureq = "*"
 wildmatch = "2.*"
-yaml-rust2 = "0.11"
+# YAML files are loaded as UTF-8 strings; the optional encoding decoder is unused.
+yaml-rust2 = { version = "0.13", default-features = false }
 rust-embed={version = "8.11.0", features = ["include-exclude", "debug-embed"]}
 encoding_rs = "0.8.35"
 uuid = { version = "1", features = ["v4"] }

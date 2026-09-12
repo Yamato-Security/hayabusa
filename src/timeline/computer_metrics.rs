@@ -3,7 +3,7 @@ use crate::detections::message::AlertMessage;
 use crate::detections::utils;
 use crate::timeline::timelines::Timeline;
 use chrono::DateTime;
-use comfy_table::{Table, modifiers::UTF8_ROUND_CORNERS, presets::UTF8_FULL};
+use comfy_table::{Table, presets::UTF8_FULL};
 use compact_str::CompactString;
 use csv::{QuoteStyle, WriterBuilder};
 use downcast_rs::__std::process;
@@ -181,9 +181,7 @@ pub fn computer_metrics_dsp_msg(
     // Write header
     let header = vec!["Computer", "OS information", "UpTime", "Timezone", "Events"];
     let mut stats_tb = Table::new();
-    stats_tb
-        .load_preset(UTF8_FULL)
-        .apply_modifier(UTF8_ROUND_CORNERS);
+    stats_tb.load_style(UTF8_FULL.with_rounded_corners());
     if output.is_some() {
         file_wtr.as_mut().unwrap().write_record(&header).ok();
     } else if output.is_none() && !result_list.is_empty() {

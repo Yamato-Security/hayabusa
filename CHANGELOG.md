@@ -1,6 +1,6 @@
 # Changes
 
-## x.x.x [xxxx/xx/xx]
+## 4.1.0 [2026/09/12] - Suzumushi  Release
 
 **New Features:**
 
@@ -14,6 +14,10 @@
 **Bug Fixes:**
 
 - Fixed the `-T, --visualize-timeline` histogram printing its axis markers in UTC regardless of the selected time format, so they disagreed with every other timestamp in the same output by the host's UTC offset -- an axis reading `2026-05-06 12:49:03` sat about ten lines above `First timestamp: 2026-05-06 15:49:03.364 +03:00` in the same summary, with nothing on screen saying which of the two was UTC. `calc_statistic_info` collected raw UTC epoch seconds, and krapslog renders each marker with `DateTime::from_timestamp` (always UTC) and strips the trailing `" UTC"`, so the markers came out as unlabelled UTC; the helper that used to add the offset before the value reached krapslog lost its last caller in February 2024 and has been dead code since. The offset is applied again, now taken at the instant being converted rather than at the Unix epoch (the old helper read `Local.timestamp_opt(0, 0)`, i.e. the 1970 offset, which is wrong for any zone that observes DST or has changed its rules since). It is applied to the axis markers alone, where they are rendered: krapslog picks its markers by index, but bins the sparkline by value, so shifting the collected timestamps themselves would let a DST fall-back merge two distinct hours into one bin and a spring-forward stretch the drawn duration by an hour. `format_time` and the histogram each spelled out the "is this output UTC?" condition separately and now share `TimeFormatOptions::is_utc_output`, so a future always-UTC format cannot leave them disagreeing again. Since the markers carry no offset of their own, the histogram title now names the zone: `Detection Frequency Timeline (local time)`, or `(UTC)` under `-U`/`--iso-8601`. (#1914) (@kotru21)
+
+**Other:**
+
+- Refreshed Rust crate dependencies and updated the bundled `hayabusa-evtx` crate to `0.9.12` (hayabusa-evtx#94), which includes `quick-xml` 0.42 compatibility changes. (@YamatoSecurity)
 
 ## 4.0.0 [2026/07/29] - Black Hat Arsenal USA Release
 

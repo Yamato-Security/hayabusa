@@ -808,7 +808,7 @@ fn check_thread_number(config: &Config) -> Option<usize> {
 /// Release name shown in the CLI help banner (e.g. "CODE BLUE Release").
 /// This is the only value to update when naming a new release; the version
 /// number is pulled automatically from Cargo.toml (`CARGO_PKG_VERSION`).
-pub const RELEASE_NAME: &str = "Black Hat USA Arsenal 2026 Release";
+pub const RELEASE_NAME: &str = "Suzumushi  Release";
 
 /// Builds a clap `help_template` banner. The first line is
 /// `Hayabusa v<version> - <RELEASE_NAME>` (version from Cargo.toml) and `body`
