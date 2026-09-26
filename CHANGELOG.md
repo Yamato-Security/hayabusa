@@ -1,5 +1,11 @@
 # Changes
 
+## x.x.x [xxxx/xx/xx]
+
+**Bug Fixes:**
+
+- Fixed an unsorted `dfir-timeline` (the default, without `-s`) writing its aggregation (`count() by ...`) detections in a different order on every run, so two scans of the same logs could not be compared with a hash or diff. These detections are emitted after the last record, and their per-group results were read out of a `HashMap` whose iteration order is reseeded per process. The group keys are now visited in sorted order, and temporal correlation rules built on these results inherit the fixed order. Only the ordering changes: the detections and their contents are the same. The order only varied when a `count() by X` rule matched two or more distinct values of X, which is why small scans did not show it. (#1929) (@YamatoSecurity)
+
 ## 4.1.0 [2026/09/12] - Suzumushi Release
 
 **New Features:**

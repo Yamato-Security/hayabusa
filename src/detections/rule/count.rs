@@ -216,9 +216,13 @@ pub fn aggregation_condition_select(
     stored_static: &StoredStatic,
 ) -> Vec<AggResult> {
     // Assumes count() has already registered the records' alias values into countdata.
-    let value_map = &rule.countdata;
+    // countdata is a HashMap, whose iteration order is reseeded per process, so walk the
+    // `count() by` group keys in sorted order. Otherwise the aggregation detections, which an
+    // unsorted timeline writes after the last record, come out in a different order on every run.
+    let mut groups: Vec<(&String, &Vec<AggRecordTimeInfo>)> = rule.countdata.iter().collect();
+    groups.sort_unstable_by_key(|(key, _)| *key);
     let mut ret = Vec::new();
-    for (key, value) in value_map {
+    for (key, value) in groups {
         ret.append(&mut judge_timeframe(rule, value, key, stored_static));
     }
     ret
@@ -811,6 +815,59 @@ mod tests {
             expected_count,
             vec![expected_agg_result],
         );
+    }
+
+    #[test]
+    /// The per-group results of a `count() by` rule must come back ordered by group key, however
+    /// the keys were first seen. `countdata` is a `HashMap` reseeded per process, so iterating it
+    /// directly put these detections, which an unsorted timeline writes last, in a different order
+    /// on every run.
+    fn test_count_by_results_are_ordered_by_group_key() {
+        let rule_str = r#"
+        enabled: true
+        detection:
+            selection1:
+                Channel: 'System'
+            condition: selection1 | count() by Computer >= 1
+        details: 'x'
+        "#;
+        let mut rule_yaml = YamlLoader::load_from_str(rule_str).unwrap().into_iter();
+        let mut rule_node = create_rule("testpath".to_string(), rule_yaml.next().unwrap());
+        let dummy_stored_static = create_dummy_stored_static();
+        rule_node.init(&dummy_stored_static).unwrap();
+        let keys = detections::rule::get_detection_keys(&rule_node);
+
+        // 64 distinct computers, first seen in a scrambled order (37 is coprime with 64).
+        let mut computers: Vec<String> = (0..64).map(|i| format!("PC{:02}", i * 37 % 64)).collect();
+        for computer in &computers {
+            let record_str = format!(
+                r#"{{"Event":{{"System":{{"EventID":7040,"Channel":"System","Computer":"{computer}","TimeCreated_attributes":{{"SystemTime":"1996-02-27T01:05:01Z"}}}}}}}}"#
+            );
+            let recinfo = utils::create_rec_info(
+                serde_json::from_str(&record_str).unwrap(),
+                "testpath".to_owned(),
+                &keys,
+                &false,
+                &false,
+                &dummy_stored_static.eventkey_alias,
+            );
+            assert!(rule_node.select(
+                &recinfo,
+                dummy_stored_static.verbose_flag,
+                dummy_stored_static.quiet_errors_flag,
+                dummy_stored_static.json_input_flag,
+                &dummy_stored_static.eventkey_alias,
+                &dummy_stored_static.error_log_stack,
+            ));
+        }
+
+        let result_keys: Vec<String> = rule_node
+            .judge_satisfy_aggcondition(&dummy_stored_static)
+            .into_iter()
+            .map(|agg_result| agg_result.key)
+            .collect();
+        computers.sort();
+        assert_eq!(result_keys, computers);
     }
 
     /// Build a rule + record, run `select()` (which drives `count()`/`countup()`),
