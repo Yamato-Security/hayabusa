@@ -1644,7 +1644,8 @@ Any hostnames added to the critical_systems.txt file will have all alerts above 
     }
 
     /// Recursively collect files under `dir_path` whose extension is one of `target_extensions`,
-    /// skipping hidden files (names starting with a dot).
+    /// skipping hidden files (names starting with a dot). The files are returned in sorted path
+    /// order, independent of the order in which the filesystem lists them.
     fn collect_evtxfiles(
         dir_path: &str,
         target_extensions: &HashSet<String>,
@@ -1678,13 +1679,18 @@ Any hostnames added to the critical_systems.txt file will have all alerts above 
             return vec![];
         }
 
-        let mut ret = vec![];
-        for entry in entries.unwrap() {
-            if entry.is_err() {
-                continue;
-            }
+        // Visit the entries in sorted order. `read_dir` order depends on the filesystem, and an
+        // unsorted timeline is written in scan order, so without this the same logs could produce
+        // a differently ordered timeline on another OS or filesystem. `PathBuf` compares
+        // component-wise, so sorting each directory level yields a fully sorted file list.
+        let mut paths: Vec<PathBuf> = entries
+            .unwrap()
+            .filter_map(|entry| entry.ok().map(|entry| entry.path()))
+            .collect();
+        paths.sort();
 
-            let path = entry.unwrap().path();
+        let mut ret = vec![];
+        for path in paths {
             if path.is_dir() {
                 path.to_str().map(|path_str| {
                     let subdir_ret =
@@ -3488,6 +3494,48 @@ mod tests {
                 });
             assert_eq!(is_contains, &true);
         })
+    }
+
+    #[test]
+    /// `collect_evtxfiles` must return files in sorted path order however `read_dir` lists them,
+    /// so an unsorted timeline is written in the same order on every OS and filesystem.
+    fn test_collect_evtxfiles_returns_sorted_paths() {
+        let dir = tempfile::tempdir().unwrap();
+        let root = dir.path();
+        // Created in an order that is neither sorted nor reverse-sorted, so the test cannot pass
+        // by accident on a filesystem that lists entries in (reverse) creation order.
+        for name in [
+            "d.evtx",
+            "a.evtx",
+            "c.evtx",
+            "b.evtx",
+            ".hidden.evtx",
+            "notes.txt",
+        ] {
+            fs::write(root.join(name), b"").unwrap();
+        }
+        fs::create_dir(root.join("b")).unwrap();
+        for name in ["y.evtx", "x.evtx"] {
+            fs::write(root.join("b").join(name), b"").unwrap();
+        }
+
+        let files = App::collect_evtxfiles(
+            root.to_str().unwrap(),
+            &HashSet::from(["evtx".to_string()]),
+            &create_dummy_stored_static(),
+        );
+
+        // Depth-first in component-wise order, so the `b` directory comes before `b.evtx`. The
+        // hidden file and the non-evtx file are skipped as before.
+        let expected = vec![
+            root.join("a.evtx"),
+            root.join("b").join("x.evtx"),
+            root.join("b").join("y.evtx"),
+            root.join("b.evtx"),
+            root.join("c.evtx"),
+            root.join("d.evtx"),
+        ];
+        assert_eq!(files, expected);
     }
 
     #[test]

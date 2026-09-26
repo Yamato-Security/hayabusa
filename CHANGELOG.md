@@ -2,6 +2,10 @@
 
 ## x.x.x [xxxx/xx/xx]
 
+**Enhancements:**
+
+- Log files found with `-d, --directory` or `-l, --live-analysis` (evtx files, or JSON/JSONL files with `-J`) are now scanned in sorted path order instead of the order the filesystem lists them. An unsorted timeline is written in scan order, so the same logs could previously produce a differently ordered timeline on another OS or filesystem, or after the directory was copied. The detections were the same; only their order differed. (#1929) (@YamatoSecurity)
+
 **Bug Fixes:**
 
 - Fixed an unsorted `dfir-timeline` (the default, without `-s`) writing its aggregation (`count() by ...`) detections in a different order on every run, so two scans of the same logs could not be compared with a hash or diff. These detections are emitted after the last record, and their per-group results were read out of a `HashMap` whose iteration order is reseeded per process. The group keys are now visited in sorted order, and temporal correlation rules built on these results inherit the fixed order. Only the ordering changes: the detections and their contents are the same. The order only varied when a `count() by X` rule matched two or more distinct values of X, which is why small scans did not show it. (#1929) (@YamatoSecurity)
