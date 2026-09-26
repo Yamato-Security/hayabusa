@@ -93,7 +93,7 @@ impl CheckPointProcessTimer {
 mod tests {
     use chrono::{DateTime, Local, TimeDelta};
 
-    use crate::debug::checkpoint_process_timer::CheckPointProcessTimer;
+    use crate::debug::checkpoint_process_timer::{CheckPointProcessTimer, CheckPointTimeStore};
 
     #[test]
     fn test_set_check_point() {
@@ -120,6 +120,30 @@ mod tests {
         assert_ne!(actual.prev_checkpoint.unwrap(), now);
 
         actual.output_stocked_result();
+    }
+
+    #[test]
+    /// The "Elapsed time" total adds up each lap's milliseconds without carrying them into
+    /// seconds, so the formatted total must carry them: 113.900 s + 0.493 s is 114.393 s, not
+    /// "00:01:53.1393". The same carry applies to a single lap that accumulated repeated
+    /// same-label timings (for example, one analysis lap per input file).
+    fn test_calculate_all_stocked_results_carries_milliseconds() {
+        let lap = |label: &str, sec, msec| CheckPointTimeStore {
+            output_str: label.to_string(),
+            sec,
+            msec,
+        };
+        let timer = CheckPointProcessTimer {
+            prev_checkpoint: None,
+            recorded_laps: vec![lap("Rule Parse", 113, 900), lap("Analysis", 0, 493)],
+        };
+        assert_eq!(timer.calculate_all_stocked_results(), "00:01:54.393");
+
+        let timer = CheckPointProcessTimer {
+            prev_checkpoint: None,
+            recorded_laps: vec![lap("Analysis", 2, 1750)],
+        };
+        assert_eq!(timer.calculate_all_stocked_results(), "00:00:03.750");
     }
 
     #[test]

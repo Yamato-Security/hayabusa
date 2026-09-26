@@ -852,17 +852,20 @@ pub fn is_filtered_by_computer_name(
 }
 
 /// Creates an output string in hh:mm:ss.fff format from the given seconds and milliseconds.
-/// Both components are negated only when the seconds component is negative; a negative
-/// milliseconds value with a zero seconds component is not normalized.
-pub fn output_duration((mut seconds, mut ms): (i64, i64)) -> String {
-    if seconds < 0 {
-        seconds = -seconds;
-        ms = -ms;
-    }
-    let hours = seconds / 3600;
-    seconds %= 3600;
-    let minutes = seconds / 60;
-    seconds %= 60;
+/// The two parts are combined before formatting, so a milliseconds value of 1000 or more is
+/// carried into the seconds: the elapsed-time totals add up per-lap milliseconds without
+/// carrying, and 113 s + 1,393 ms must print as `00:01:54.393`, not `00:01:53.1393`. A negative
+/// duration (both parts negative, as from a reversed `chrono` subtraction) prints as its
+/// absolute value.
+pub fn output_duration((seconds, ms): (i64, i64)) -> String {
+    let total_ms = seconds
+        .saturating_mul(1000)
+        .saturating_add(ms)
+        .unsigned_abs();
+    let (total_seconds, ms) = (total_ms / 1000, total_ms % 1000);
+    let hours = total_seconds / 3600;
+    let minutes = total_seconds % 3600 / 60;
+    let seconds = total_seconds % 60;
     format!("{hours:02}:{minutes:02}:{seconds:02}.{ms:03}")
 }
 
@@ -1405,5 +1408,14 @@ mod tests {
         let seconds = duration.num_seconds();
         let ms = duration.num_milliseconds() - 1000 * seconds;
         assert_eq!(output_duration((seconds, ms)), "25:11:03.322".to_string());
+
+        // Milliseconds of 1000 or more carry into the seconds (and on up into minutes/hours)
+        // instead of being printed as a four-digit fraction.
+        assert_eq!(output_duration((113, 1393)), "00:01:54.393");
+        assert_eq!(output_duration((59, 1000)), "00:01:00.000");
+        assert_eq!(output_duration((3599, 2500)), "01:00:01.500");
+        assert_eq!(output_duration((-113, -1393)), "00:01:54.393");
+        // A negative milliseconds part with zero seconds is printed as its absolute value.
+        assert_eq!(output_duration((0, -500)), "00:00:00.500");
     }
 }

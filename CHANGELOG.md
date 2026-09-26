@@ -9,6 +9,7 @@
 
 **Bug Fixes:**
 
+- Fixed the `Elapsed time` shown at the end of a scan (and the `--debug` per-phase times) not carrying milliseconds into seconds. The timer adds up each phase's milliseconds, and the formatter printed the sum as-is, so a scan that took 114.393 seconds could be displayed as `00:01:53.1393`. The seconds and milliseconds are now combined before formatting, so the same scan shows `00:01:54.393`. (#1930) (@YamatoSecurity)
 - Fixed an unsorted `dfir-timeline` (the default, without `-s`) writing its aggregation (`count() by ...`) detections in a different order on every run, so two scans of the same logs could not be compared with a hash or diff. These detections are emitted after the last record, and their per-group results were read out of a `HashMap` whose iteration order is reseeded per process. The group keys are now visited in sorted order, and temporal correlation rules built on these results inherit the fixed order. Only the ordering changes: the detections and their contents are the same. The order only varied when a `count() by X` rule matched two or more distinct values of X, which is why small scans did not show it. (#1929) (@YamatoSecurity)
 
 ## 4.1.0 [2026/09/12] - Suzumushi Release
