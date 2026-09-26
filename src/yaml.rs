@@ -273,9 +273,12 @@ impl ParseYaml {
                 }
             }
         } else {
-            let mut entries = fs::read_dir(path)?;
-            yaml_docs = entries.try_fold(vec![], |mut ret, entry| {
-                let entry = entry?;
+            // Visit the entries in sorted order. `read_dir` order depends on the filesystem, and
+            // detections within a batch are written in rule load order, so without this the same
+            // rules could produce a differently ordered timeline on another OS or filesystem.
+            let mut entries = fs::read_dir(path)?.collect::<io::Result<Vec<_>>>()?;
+            entries.sort_by_cached_key(|entry| entry.file_name());
+            yaml_docs = entries.into_iter().try_fold(vec![], |mut ret, entry| {
                 // Recurse into subdirectories.
                 if entry.file_type()?.is_dir() {
                     self.read_dir(
@@ -1013,6 +1016,59 @@ mod tests {
             &dummy_stored_static,
         );
         assert_ne!(yaml.files.len(), 0);
+    }
+
+    #[test]
+    /// Rules must load in the same order however `read_dir` lists the rules directory, because
+    /// detections within a batch are written in rule load order. Each directory's subdirectories
+    /// are loaded first (recursively, in sorted order), then its own files in sorted order.
+    fn test_read_dir_loads_rules_in_sorted_order() {
+        let rule = std::fs::read_to_string("test_files/rules/yaml/1.yml").unwrap();
+        let dir = tempfile::tempdir().unwrap();
+        let root = dir.path();
+        // Created in an order that is neither sorted nor reverse-sorted, so the test cannot pass
+        // by accident on a filesystem that lists entries in (reverse) creation order.
+        for name in ["d.yml", "a.yml", "c.yml", "b.yml"] {
+            std::fs::write(root.join(name), &rule).unwrap();
+        }
+        for subdir in ["sub2", "sub1", "sub3"] {
+            std::fs::create_dir(root.join(subdir)).unwrap();
+            for name in ["y.yml", "x.yml"] {
+                std::fs::write(root.join(subdir).join(name), &rule).unwrap();
+            }
+        }
+
+        let exclude_ids = RuleExclude {
+            excluded_rule_sources: HashMap::new(),
+        };
+        let dummy_stored_static = create_dummy_stored_static();
+        let mut yaml = yaml::ParseYaml::new(&dummy_stored_static);
+        yaml.read_dir(
+            root,
+            &String::default(),
+            "",
+            &exclude_ids,
+            &dummy_stored_static,
+        )
+        .unwrap();
+
+        let loaded: Vec<String> = yaml.files.iter().map(|(path, _)| path.clone()).collect();
+        let expected: Vec<String> = [
+            root.join("sub1").join("x.yml"),
+            root.join("sub1").join("y.yml"),
+            root.join("sub2").join("x.yml"),
+            root.join("sub2").join("y.yml"),
+            root.join("sub3").join("x.yml"),
+            root.join("sub3").join("y.yml"),
+            root.join("a.yml"),
+            root.join("b.yml"),
+            root.join("c.yml"),
+            root.join("d.yml"),
+        ]
+        .iter()
+        .map(|path| path.display().to_string())
+        .collect();
+        assert_eq!(loaded, expected);
     }
 
     #[test]

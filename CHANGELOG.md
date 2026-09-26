@@ -5,6 +5,7 @@
 **Enhancements:**
 
 - Log files found with `-d, --directory` or `-l, --live-analysis` (evtx files, or JSON/JSONL files with `-J`) are now scanned in sorted path order instead of the order the filesystem lists them. An unsorted timeline is written in scan order, so the same logs could previously produce a differently ordered timeline on another OS or filesystem, or after the directory was copied. The detections were the same; only their order differed. (#1929) (@YamatoSecurity)
+- Rule files loaded from a rules directory (`rules/` or `-r <dir>`) are now loaded in sorted path order instead of the order the filesystem lists them. Detections found in the same batch of records are written in rule load order, so the same rules and logs could previously produce a differently ordered unsorted timeline on another OS or filesystem, or after the rules directory was copied. The detections were the same; only their order differed. Rules loaded from `encoded_rules.yml` already had a fixed order and are unchanged. (#1929) (@YamatoSecurity)
 
 **Bug Fixes:**
 
