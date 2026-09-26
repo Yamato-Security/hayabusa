@@ -2,7 +2,7 @@ use std::cmp::{self, min};
 use std::io::Write;
 use std::str::FromStr;
 
-use chrono::{Local, TimeZone};
+use chrono::{DateTime, Local, TimeZone};
 use comfy_table::presets::UTF8_FULL;
 use comfy_table::*;
 use compact_str::CompactString;
@@ -621,28 +621,48 @@ fn _get_table_color(
     }
     color
 }
-/// Returns the terminal column of the leftmost top-row marker that `krapslog::build_time_markers`
-/// will place for `marker_count` markers spread across `terminal_width` columns, mirroring
-/// krapslog's own (private) offset math. Returns `None` when there are no top-row markers.
-fn leftmost_top_marker_offset(marker_count: usize, terminal_width: usize) -> Option<usize> {
+/// Returns true when `krapslog::build_time_markers` (0.6.1) would panic for these arguments.
+/// Mirrors its private `marker_offsets` and label placement: a top-row label is drawn starting at
+/// `offset - label_len + 1` (a `usize` underflow near the left edge) and a bottom-row label at
+/// `offset..offset + label_len` (out of range near the right edge).
+fn time_markers_would_panic(marker_count: usize, width: usize, label_len: usize) -> bool {
     if marker_count < 2 {
-        return None;
+        return false;
     }
-    let mut footer_marker_count = marker_count / 2;
-    if !footer_marker_count.is_multiple_of(2) {
-        footer_marker_count += 1;
+    if width < 2 {
+        return true;
     }
-    if footer_marker_count >= marker_count {
-        return None;
+    // Same float accumulation as krapslog's `marker_offsets`; `i * skip` rounds differently for
+    // some widths.
+    let mut offsets = vec![0];
+    let skip = (width - 2) as f64 / (marker_count - 1) as f64;
+    let mut current = skip;
+    for _ in 0..marker_count - 2 {
+        offsets.push(current.ceil() as usize % width);
+        current += skip;
     }
-    if footer_marker_count == 0 {
-        return Some(0);
+    offsets.push(width - 1);
+
+    let mut footer_count = marker_count / 2;
+    if !footer_count.is_multiple_of(2) {
+        footer_count += 1;
     }
-    if footer_marker_count == marker_count - 1 {
-        return Some(terminal_width - 1);
-    }
-    let skip = (terminal_width - 2) as f64 / (marker_count - 1) as f64;
-    Some((footer_marker_count as f64 * skip).ceil() as usize % terminal_width)
+    // `offset - label_len + 1` is evaluated left to right, so with overflow checks on it panics
+    // at `offset == label_len - 1` as well.
+    let top_underflows = footer_count < marker_count && offsets[footer_count] < label_len;
+    let bottom_overflows = footer_count > 0 && offsets[footer_count - 1] + label_len > width;
+    top_underflows || bottom_overflows
+}
+
+/// Length of the labels krapslog draws (`DateTime::to_string()` without " UTC"): 19 for years
+/// 0-9999, longer outside that range, so the extremes bound every label.
+fn marker_label_len(marker_timestamps: &[i64]) -> usize {
+    let len = |ts: i64| {
+        DateTime::from_timestamp(ts, 0).map_or(0, |d| d.to_string().replace(" UTC", "").len())
+    };
+    let min = marker_timestamps.iter().copied().min().unwrap_or(0);
+    let max = marker_timestamps.iter().copied().max().unwrap_or(0);
+    len(min).max(len(max))
 }
 
 /// Prints the detection frequency timeline (a sparkline histogram of detection timestamps with
@@ -703,12 +723,14 @@ fn _print_timeline_hist<Tz: TimeZone>(
     };
     let marker_num = min(timestamp_marker_max, 18);
 
-    // krapslog places a top-row marker's timestamp label by subtracting the label length (19,
-    // for "YYYY-MM-DD HH:MM:SS") from the marker's column, and panics with a `usize` underflow
-    // if that column is less than 18. Whether that happens depends on how markers are spread
-    // across `inner_width`, which is a function of `marker_num`, so the title-length guard above
-    // isn't enough on its own: skip the histogram if the leftmost top-row marker would underflow.
-    if leftmost_top_marker_offset(marker_num, inner_width).is_some_and(|offset| offset < 18) {
+    // The title-length guard above isn't enough: krapslog panics if a marker label would run off
+    // either edge, which depends on how `marker_num` markers are spread across `inner_width`.
+    let marker_timestamps = get_histogram_marker_timestamps(time_format, timestamps, display_tz);
+    if time_markers_would_panic(
+        marker_num,
+        inner_width,
+        marker_label_len(&marker_timestamps),
+    ) {
         buf_wtr.print(&wtr).ok();
         return;
     }
@@ -717,7 +739,6 @@ fn _print_timeline_hist<Tz: TimeZone>(
     writeln!(wtr, "{}{}", " ".repeat(header_row_space), title).ok();
     println!();
 
-    let marker_timestamps = get_histogram_marker_timestamps(time_format, timestamps, display_tz);
     let (header_raw, footer_raw) = build_time_markers(&marker_timestamps, marker_num, inner_width);
     let sparkline = build_sparkline(timestamps, inner_width, 5_usize);
     for header_str in header_raw.lines() {
@@ -1220,7 +1241,10 @@ mod tests {
     use chrono::{DateTime, Utc};
     use hashbrown::HashSet;
 
-    use super::{_print_timeline_hist, calc_statistic_info, truncate_chars};
+    use super::{
+        _print_timeline_hist, calc_statistic_info, marker_label_len, time_markers_would_panic,
+        truncate_chars,
+    };
     use crate::detections::configs::{
         Action, Config, DfirTimelineOption, OutputOption, StoredStatic, TimeFormatOptions,
     };
@@ -1279,15 +1303,36 @@ mod tests {
 
     #[test]
     fn print_timeline_hist_does_not_panic_on_a_narrow_terminal() {
-        // 19 timestamps give marker_num = 17, which krapslog spreads across a 40-column terminal
-        // (side_margin_size = 3, as used by the real caller) such that the leftmost top-row
-        // marker lands at column 16, underflowing krapslog's `horizontal_offset - 19 + 1`.
-        let timestamps: Vec<i64> = (0..19).map(|i| i * 100).collect();
         let time_format = TimeFormatOptions {
             utc: true,
             ..Default::default()
         };
+        // 19 timestamps (marker_num = 17) at 40 columns: the leftmost top-row label underflows.
+        let timestamps: Vec<i64> = (0..19).map(|i| i * 100).collect();
         _print_timeline_hist(&timestamps, 40, 3, &time_format, &Utc);
+        // 8 timestamps (marker_num = 6) at 40 columns: the rightmost bottom-row label overflows.
+        let timestamps: Vec<i64> = (0..8).map(|i| i * 100).collect();
+        _print_timeline_hist(&timestamps, 40, 3, &time_format, &Utc);
+    }
+
+    #[test]
+    fn time_marker_guard_matches_krapslog() {
+        for marker_count in 3..=18 {
+            let ts: Vec<i64> = (0..marker_count as i64 + 2)
+                .map(|i| 1_563_500_000 + i * 3600)
+                .collect();
+            for width in 22..=120 {
+                let panicked = std::panic::catch_unwind(|| {
+                    krapslog::build_time_markers(&ts, marker_count, width)
+                })
+                .is_err();
+                assert!(
+                    !panicked
+                        || time_markers_would_panic(marker_count, width, marker_label_len(&ts)),
+                    "marker_count={marker_count} width={width}"
+                );
+            }
+        }
     }
 
     #[test]
