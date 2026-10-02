@@ -10,12 +10,12 @@ Bu sayfa, tüm Sigma alan niteleyicilerinin dinamik olarak oluşturulmuş bir li
 | base64ǀcontains               |             1 |                0 |
 | cased                         |             0 |                0 |
 | cidr                          |            35 |                0 |
-| contains                      |          3081 |               21 |
+| contains                      |          3087 |               21 |
 | containsǀall                  |          1085 |                0 |
 | containsǀcased                |             0 |                0 |
 | containsǀexpand               |             3 |                0 |
 | containsǀwindash              |           109 |                0 |
-| endswith                      |          3277 |              273 |
+| endswith                      |          3281 |              273 |
 | endswithfield                 |             0 |                0 |
 | endswithǀcased                |             0 |                0 |
 | endswithǀwindash              |             2 |                0 |
@@ -34,7 +34,7 @@ Bu sayfa, tüm Sigma alan niteleyicilerinin dinamik olarak oluşturulmuş bir li
 | reǀi                          |             2 |                0 |
 | reǀm                          |             0 |                0 |
 | reǀs                          |             0 |                0 |
-| startswith                    |           552 |                6 |
+| startswith                    |           553 |                6 |
 | startswithǀcased              |             0 |                0 |
 | utf16beǀbase64offsetǀcontains |             0 |                0 |
 | utf16leǀbase64offsetǀcontains |             0 |                0 |
@@ -60,4 +60,4 @@ Bu sayfa, tüm Sigma alan niteleyicilerinin dinamik olarak oluşturulmuş bir li
 Şu anda her şey destekleniyor.
 
 Bu belge, en güncel kurallara göre her ay dinamik olarak güncellenmektedir.  
-Son Güncelleme: 2026/09/02
+Son Güncelleme: 2026/10/02

@@ -10,12 +10,12 @@
 | base64ǀcontains               |             1 |                0 |
 | cased                         |             0 |                0 |
 | cidr                          |            35 |                0 |
-| contains                      |          3081 |               21 |
+| contains                      |          3087 |               21 |
 | containsǀall                  |          1085 |                0 |
 | containsǀcased                |             0 |                0 |
 | containsǀexpand               |             3 |                0 |
 | containsǀwindash              |           109 |                0 |
-| endswith                      |          3277 |              273 |
+| endswith                      |          3281 |              273 |
 | endswithfield                 |             0 |                0 |
 | endswithǀcased                |             0 |                0 |
 | endswithǀwindash              |             2 |                0 |
@@ -34,7 +34,7 @@
 | reǀi                          |             2 |                0 |
 | reǀm                          |             0 |                0 |
 | reǀs                          |             0 |                0 |
-| startswith                    |           552 |                6 |
+| startswith                    |           553 |                6 |
 | startswithǀcased              |             0 |                0 |
 | utf16beǀbase64offsetǀcontains |             0 |                0 |
 | utf16leǀbase64offsetǀcontains |             0 |                0 |
@@ -60,4 +60,4 @@
 လက်ရှိတွင် အားလုံးကို ပံ့ပိုးထားပါသည်။
 
 ဤစာရွက်စာတမ်းကို နောက်ဆုံးပေါ် rule များအပေါ် အခြေခံ၍ လစဉ် ဒိုင်းနမစ်ဆန်ဆန် အပ်ဒိတ်လုပ်နေပါသည်။  
-Last Update: 2026/09/02
+Last Update: 2026/10/02
