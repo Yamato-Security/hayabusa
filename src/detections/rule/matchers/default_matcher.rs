@@ -10,7 +10,9 @@ use super::modifiers::encoding::{self, Encoding, Utf16Kind};
 use super::modifiers::string::wrap_pattern;
 use super::pipe_element::PipeElement;
 use crate::detections::configs::WINDASH_CHARACTERS;
-use crate::detections::rule::fast_match::{FastMatch, check_fast_match, convert_to_fast_match};
+use crate::detections::rule::fast_match::{
+    FastMatch, check_fast_match, convert_to_all_only_fast_match, convert_to_fast_match,
+};
 use crate::detections::{detection::EvtxRecordInfo, utils};
 
 /// Default match class, used when no special matcher (min_length/regexes/allowlist) applies.
@@ -174,7 +176,7 @@ impl MatchPlan {
                             return None;
                         }
                         let wrapped = wrap_pattern(&PipeElement::Contains, pattern[0].clone());
-                        convert_to_fast_match(&format!("allOnly{wrapped}"), true)
+                        convert_to_all_only_fast_match(&wrapped)
                     }
                     Wrap::Contains if self.windash => {
                         // For |contains|windash: also match a variant of the pattern whose first

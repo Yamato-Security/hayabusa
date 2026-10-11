@@ -1563,6 +1563,57 @@ fn test_sigma_three_backslashes_before_wildcard_are_literal() {
 }
 
 #[test]
+fn test_allonly_text_does_not_collide_with_internal_match_type() {
+    let startswith_rule = r#"
+        enabled: true
+        detection:
+            selection:
+                TargetFilename|startswith: 'allOnly'
+        details: 'file=%TargetFilename%'
+        "#;
+    let wildcard_rule = r#"
+        enabled: true
+        detection:
+            selection:
+                TargetFilename: 'allOnly*'
+        details: 'file=%TargetFilename%'
+        "#;
+    let matching_record = r#"
+        {
+            "Event": {"EventData": {"TargetFilename": "allOnlyFile.txt"}},
+            "Event_attributes": {"xmlns": "http://schemas.microsoft.com/win/2004/08/events/event"}
+        }"#;
+    let unrelated_record = r#"
+        {
+            "Event": {"EventData": {"TargetFilename": "C:\\totally\\unrelated.txt"}},
+            "Event_attributes": {"xmlns": "http://schemas.microsoft.com/win/2004/08/events/event"}
+        }"#;
+
+    check_select(startswith_rule, matching_record, true);
+    check_select(startswith_rule, unrelated_record, false);
+    check_select(wildcard_rule, matching_record, true);
+    check_select(wildcard_rule, unrelated_record, false);
+}
+
+#[test]
+fn test_non_ascii_escaped_wildcard_uses_unicode_case_folding() {
+    let rule_str = r#"
+        enabled: true
+        detection:
+            selection:
+                TargetFilename: 'CAFÉ\*'
+        details: 'file=%TargetFilename%'
+        "#;
+    let matching_record = r#"
+        {
+            "Event": {"EventData": {"TargetFilename": "café*"}},
+            "Event_attributes": {"xmlns": "http://schemas.microsoft.com/win/2004/08/events/event"}
+        }"#;
+
+    check_select(rule_str, matching_record, true);
+}
+
+#[test]
 fn test_grep_match() {
     // A selection written as a bare list (no field name) performs a grep-style match against
     // the whole record.

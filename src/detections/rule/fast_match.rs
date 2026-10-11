@@ -56,23 +56,22 @@ pub fn ends_with_ignore_case(event_value_str: &str, match_str: &str) -> Option<b
 
 /// Converts a wildcard pattern to FastMatch operations backed by the faster std::string methods
 /// (len/starts_with/ends_with/contains) where possible, returning None for patterns that only
-/// the regex engine can handle. When `ignore_case` is true, Contains/AllOnly patterns are stored
+/// the regex engine can handle. When `ignore_case` is true, Contains patterns are stored
 /// lowercased and check_fast_match() lowercases the event value before comparing;
 /// Exact/StartsWith/EndsWith compare ASCII case-insensitively at match time instead.
 pub fn convert_to_fast_match(pattern: &str, ignore_case: bool) -> Option<Vec<FastMatch>> {
     let tokens = parse_sigma_pattern(pattern);
-    let has_wildcard = tokens.iter().any(|token| {
-        matches!(
-            token,
-            SigmaPatternToken::AnyChars | SigmaPatternToken::AnyChar
-        )
-    });
+    let contains_raw_wildcard = pattern
+        .chars()
+        .any(|character| matches!(character, '*' | '?'));
 
-    // `?`, complex `*` layouts, and non-ASCII wildcard patterns are evaluated by the regex path.
+    // `?`, complex `*` layouts, and non-ASCII patterns containing wildcard characters are
+    // evaluated by the regex path. This includes escaped wildcards in non-ASCII patterns because
+    // the regex engine provides Unicode case folding while the fast comparisons are ASCII-only.
     if tokens
         .iter()
         .any(|token| matches!(token, SigmaPatternToken::AnyChar))
-        || (!pattern.is_ascii() && has_wildcard)
+        || (!pattern.is_ascii() && contains_raw_wildcard)
     {
         return None;
     }
@@ -86,22 +85,6 @@ pub fn convert_to_fast_match(pattern: &str, ignore_case: bool) -> Option<Vec<Fas
     };
 
     match tokens.as_slice() {
-        // `allOnly*` is an internal sentinel added by MatchPlan::build_fast_match() for `|all`.
-        [
-            SigmaPatternToken::Literal(prefix),
-            SigmaPatternToken::AnyChars,
-            SigmaPatternToken::Literal(value),
-            SigmaPatternToken::AnyChars,
-        ] if prefix == "allOnly" => Some(vec![FastMatch::AllOnly(normalized_contains(value))]),
-        [
-            SigmaPatternToken::Literal(prefix),
-            SigmaPatternToken::AnyChars,
-            SigmaPatternToken::AnyChars,
-        ] if prefix == "allOnly" => Some(vec![FastMatch::AllOnly(String::new())]),
-        [
-            SigmaPatternToken::Literal(prefix),
-            SigmaPatternToken::AnyChars,
-        ] if prefix == "allOnly" => Some(vec![FastMatch::AllOnly(String::new())]),
         [] => Some(vec![FastMatch::Exact(String::new())]),
         [SigmaPatternToken::Literal(value)] => Some(vec![FastMatch::Exact(value.clone())]),
         [SigmaPatternToken::AnyChars] => Some(vec![FastMatch::EndsWith(String::new())]),
@@ -123,6 +106,23 @@ pub fn convert_to_fast_match(pattern: &str, ignore_case: bool) -> Option<Vec<Fas
         ] => Some(vec![FastMatch::Contains(normalized_contains(value))]),
         _ => None,
     }
+}
+
+/// Converts a contains-wrapped keyless `|all` pattern without encoding its match type in the
+/// pattern string. Keeping this intent out of band prevents ordinary user values such as
+/// `allOnly*` from colliding with an internal marker.
+pub fn convert_to_all_only_fast_match(pattern: &str) -> Option<Vec<FastMatch>> {
+    let mut fast_matchers = convert_to_fast_match(pattern, true)?;
+    if fast_matchers.len() != 1 {
+        return None;
+    }
+
+    let value = match fast_matchers.pop().unwrap() {
+        FastMatch::Contains(value) => value,
+        FastMatch::EndsWith(value) if value.is_empty() => value,
+        _ => return None,
+    };
+    Some(vec![FastMatch::AllOnly(value)])
 }
 
 /// Evaluates the fast matchers against a field value. Returns None when the fast path cannot
@@ -193,8 +193,8 @@ pub fn check_fast_match(
 #[cfg(test)]
 mod tests {
     use crate::detections::rule::fast_match::{
-        FastMatch, convert_to_fast_match, ends_with_ignore_case, eq_ignore_case,
-        starts_with_ignore_case,
+        FastMatch, convert_to_all_only_fast_match, convert_to_fast_match, ends_with_ignore_case,
+        eq_ignore_case, starts_with_ignore_case,
     };
 
     #[test]
@@ -273,6 +273,14 @@ mod tests {
         );
         assert_eq!(
             convert_to_fast_match("allOnly*", true).unwrap(),
+            vec![FastMatch::StartsWith("allOnly".to_string())]
+        );
+        assert_eq!(
+            convert_to_all_only_fast_match("*allOnly*").unwrap(),
+            vec![FastMatch::AllOnly("allonly".to_string())]
+        );
+        assert_eq!(
+            convert_to_all_only_fast_match("*").unwrap(),
             vec![FastMatch::AllOnly(String::new())]
         );
     }
