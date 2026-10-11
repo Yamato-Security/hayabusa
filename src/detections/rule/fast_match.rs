@@ -1,5 +1,5 @@
 use crate::detections::configs::WINDASH_CHARACTERS;
-use crate::detections::rule::matchers::PipeElement;
+use crate::detections::rule::matchers::{PipeElement, SigmaPatternToken, parse_sigma_pattern};
 use crate::detections::utils;
 
 /// Since regex matching is slow, patterns that allow it are instead matched with the faster
@@ -60,54 +60,69 @@ pub fn ends_with_ignore_case(event_value_str: &str, match_str: &str) -> Option<b
 /// lowercased and check_fast_match() lowercases the event value before comparing;
 /// Exact/StartsWith/EndsWith compare ASCII case-insensitively at match time instead.
 pub fn convert_to_fast_match(pattern: &str, ignore_case: bool) -> Option<Vec<FastMatch>> {
-    let wildcard_count = pattern.chars().filter(|c| *c == '*').count();
-    // A pattern ending in \* is a literal asterisk rather than a wildcard, whereas \\* is an
-    // escaped backslash followed by a wildcard.
-    let is_literal_asterisk =
-        |pattern: &str| pattern.ends_with(r"\*") && !pattern.ends_with(r"\\*");
-    if utils::contains_str(pattern, "?")
-        || pattern.ends_with(r"\\\*")
-        || (!pattern.is_ascii() && utils::contains_str(pattern, "*"))
+    let tokens = parse_sigma_pattern(pattern);
+    let has_wildcard = tokens.iter().any(|token| {
+        matches!(
+            token,
+            SigmaPatternToken::AnyChars | SigmaPatternToken::AnyChar
+        )
+    });
+
+    // `?`, complex `*` layouts, and non-ASCII wildcard patterns are evaluated by the regex path.
+    if tokens
+        .iter()
+        .any(|token| matches!(token, SigmaPatternToken::AnyChar))
+        || (!pattern.is_ascii() && has_wildcard)
     {
-        // Patterns that fast matching cannot express use the regex match only: '?' wildcards,
-        // a literal backslash followed by a literal asterisk at the end, and non-ASCII patterns
-        // that contain wildcards.
-        return None;
-    } else if pattern.starts_with("allOnly*") && pattern.ends_with('*') && wildcard_count == 2 {
-        // "allOnly*" is the sentinel prefix added by MatchPlan::build_fast_match() (matchers.rs)
-        // for the "|all" modifier: strip it (8 chars) and the trailing '*', and unescape doubled
-        // backslashes.
-        let removed_asterisk = pattern[8..(pattern.len() - 1)].replace(r"\\", r"\");
-        if ignore_case {
-            return Some(vec![FastMatch::AllOnly(removed_asterisk.to_lowercase())]);
-        }
-        return Some(vec![FastMatch::AllOnly(removed_asterisk)]);
-    } else if pattern.starts_with('*')
-        && pattern.ends_with('*')
-        && wildcard_count == 2
-        && !is_literal_asterisk(pattern)
-    {
-        let removed_asterisk = pattern[1..(pattern.len() - 1)].replace(r"\\", r"\");
-        // If * is only at the beginning and end, convert to contains.
-        if ignore_case {
-            return Some(vec![FastMatch::Contains(removed_asterisk.to_lowercase())]);
-        }
-        return Some(vec![FastMatch::Contains(removed_asterisk)]);
-    } else if pattern.starts_with('*') && wildcard_count == 1 && !is_literal_asterisk(pattern) {
-        // If * is only at the beginning, convert to ends_with.
-        return Some(vec![FastMatch::EndsWith(pattern[1..].replace(r"\\", r"\"))]);
-    } else if pattern.ends_with('*') && wildcard_count == 1 && !is_literal_asterisk(pattern) {
-        // If * is only at the end, convert to starts_with.
-        return Some(vec![FastMatch::StartsWith(
-            pattern[..(pattern.len() - 1)].replace(r"\\", r"\"),
-        )]);
-    } else if utils::contains_str(pattern, "*") {
-        // Patterns with * in the middle cannot be converted to starts_with/ends_with, so use the
-        // regex match only.
         return None;
     }
-    // If the pattern contains no wildcard at all, it is an exact (case-insensitive) match.
-    Some(vec![FastMatch::Exact(pattern.replace(r"\\", r"\"))])
+
+    let normalized_contains = |value: &str| {
+        if ignore_case {
+            value.to_lowercase()
+        } else {
+            value.to_string()
+        }
+    };
+
+    match tokens.as_slice() {
+        // `allOnly*` is an internal sentinel added by MatchPlan::build_fast_match() for `|all`.
+        [
+            SigmaPatternToken::Literal(prefix),
+            SigmaPatternToken::AnyChars,
+            SigmaPatternToken::Literal(value),
+            SigmaPatternToken::AnyChars,
+        ] if prefix == "allOnly" => Some(vec![FastMatch::AllOnly(normalized_contains(value))]),
+        [
+            SigmaPatternToken::Literal(prefix),
+            SigmaPatternToken::AnyChars,
+            SigmaPatternToken::AnyChars,
+        ] if prefix == "allOnly" => Some(vec![FastMatch::AllOnly(String::new())]),
+        [
+            SigmaPatternToken::Literal(prefix),
+            SigmaPatternToken::AnyChars,
+        ] if prefix == "allOnly" => Some(vec![FastMatch::AllOnly(String::new())]),
+        [] => Some(vec![FastMatch::Exact(String::new())]),
+        [SigmaPatternToken::Literal(value)] => Some(vec![FastMatch::Exact(value.clone())]),
+        [SigmaPatternToken::AnyChars] => Some(vec![FastMatch::EndsWith(String::new())]),
+        [SigmaPatternToken::AnyChars, SigmaPatternToken::AnyChars] => {
+            Some(vec![FastMatch::Contains(String::new())])
+        }
+        [
+            SigmaPatternToken::Literal(value),
+            SigmaPatternToken::AnyChars,
+        ] => Some(vec![FastMatch::StartsWith(value.clone())]),
+        [
+            SigmaPatternToken::AnyChars,
+            SigmaPatternToken::Literal(value),
+        ] => Some(vec![FastMatch::EndsWith(value.clone())]),
+        [
+            SigmaPatternToken::AnyChars,
+            SigmaPatternToken::Literal(value),
+            SigmaPatternToken::AnyChars,
+        ] => Some(vec![FastMatch::Contains(normalized_contains(value))]),
+        _ => None,
+    }
 }
 
 /// Evaluates the fast matchers against a field value. Returns None when the fast path cannot
@@ -212,8 +227,14 @@ mod tests {
         assert_eq!(convert_to_fast_match("a*c", true), None);
         assert_eq!(convert_to_fast_match("*a*b", true), None);
         assert_eq!(convert_to_fast_match("*a*b*", true), None);
-        assert_eq!(convert_to_fast_match(r"a\*", true), None);
-        assert_eq!(convert_to_fast_match(r"a\\\*", true), None);
+        assert_eq!(
+            convert_to_fast_match(r"a\*", true).unwrap(),
+            vec![FastMatch::Exact("a*".to_string())]
+        );
+        assert_eq!(
+            convert_to_fast_match(r"a\\\*", true).unwrap(),
+            vec![FastMatch::Exact(r"a\*".to_string())]
+        );
         assert_eq!(
             convert_to_fast_match("abc*", true).unwrap(),
             vec![FastMatch::StartsWith("abc".to_string())]
@@ -221,6 +242,10 @@ mod tests {
         assert_eq!(
             convert_to_fast_match(r"abc\\*", true).unwrap(),
             vec![FastMatch::StartsWith(r"abc\".to_string())]
+        );
+        assert_eq!(
+            convert_to_fast_match(r"C:\Windows\\*", true).unwrap(),
+            vec![FastMatch::StartsWith(r"C:\Windows\".to_string())]
         );
         assert_eq!(
             convert_to_fast_match("*abc", true).unwrap(),
@@ -241,6 +266,14 @@ mod tests {
         assert_eq!(
             convert_to_fast_match(r"\\\\127.0.0.1\\", true).unwrap(),
             vec![FastMatch::Exact(r"\\127.0.0.1\".to_string())]
+        );
+        assert_eq!(
+            convert_to_fast_match(r"\\\\\*\\IPC$", true).unwrap(),
+            vec![FastMatch::Exact(r"\\*\IPC$".to_string())]
+        );
+        assert_eq!(
+            convert_to_fast_match("allOnly*", true).unwrap(),
+            vec![FastMatch::AllOnly(String::new())]
         );
     }
 }

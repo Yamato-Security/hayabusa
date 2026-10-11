@@ -3,6 +3,67 @@
 
 use super::PipeElement;
 
+/// One element of a Sigma string after its escape sequences have been parsed.
+#[derive(Debug, PartialEq, Eq)]
+pub(in crate::detections::rule) enum SigmaPatternToken {
+    Literal(String),
+    AnyChars,
+    AnyChar,
+}
+
+/// Parses Sigma escaping from left to right. Backslashes escape `\\`, `*`, and `?`; a
+/// backslash before any other character remains literal. Pairing the escapes before classifying
+/// wildcards is important for values such as `\\\*`: this is a literal backslash followed by
+/// a literal asterisk, not two backslashes followed by a wildcard.
+pub(in crate::detections::rule) fn parse_sigma_pattern(pattern: &str) -> Vec<SigmaPatternToken> {
+    let mut tokens = Vec::new();
+    let mut literal = String::new();
+    let mut chars = pattern.chars().peekable();
+
+    let flush_literal = |tokens: &mut Vec<SigmaPatternToken>, literal: &mut String| {
+        if !literal.is_empty() {
+            tokens.push(SigmaPatternToken::Literal(std::mem::take(literal)));
+        }
+    };
+
+    while let Some(character) = chars.next() {
+        match character {
+            '\\' => match chars.peek().copied() {
+                Some(next @ ('\\' | '*' | '?')) => {
+                    chars.next();
+                    literal.push(next);
+                }
+                _ => literal.push('\\'),
+            },
+            '*' => {
+                flush_literal(&mut tokens, &mut literal);
+                tokens.push(SigmaPatternToken::AnyChars);
+            }
+            '?' => {
+                flush_literal(&mut tokens, &mut literal);
+                tokens.push(SigmaPatternToken::AnyChar);
+            }
+            _ => literal.push(character),
+        }
+    }
+    flush_literal(&mut tokens, &mut literal);
+    tokens
+}
+
+fn starts_with_any_chars(pattern: &str) -> bool {
+    matches!(
+        parse_sigma_pattern(pattern).first(),
+        Some(SigmaPatternToken::AnyChars)
+    )
+}
+
+fn ends_with_any_chars(pattern: &str) -> bool {
+    matches!(
+        parse_sigma_pattern(pattern).last(),
+        Some(SigmaPatternToken::AnyChars)
+    )
+}
+
 /// Applies a `startswith`/`endswith`/`contains` wrap to `pattern` by inserting the surrounding
 /// wildcards, and converts `wildcard` patterns to a regex. Any other modifier returns `pattern`
 /// unchanged.
@@ -13,27 +74,22 @@ pub(in crate::detections::rule::matchers) fn wrap_pattern(
     // When implementing polymorphism with an enum, every variant's implementation ends up in a
     // single method. This may feel odd to developers used to Java-style class hierarchies.
     let add_asterisk_end = |pattern: String| {
-        if pattern.ends_with("//*") {
+        if ends_with_any_chars(&pattern) {
             pattern
-        } else if pattern.ends_with("/*") {
-            pattern + "*"
-        } else if pattern.ends_with('*') {
-            pattern
-        } else if pattern.ends_with('\\') {
-            // If the pattern ends with \ (a single backslash), turn the ending into \\*
-            // (two backslashes and an asterisk): in wildcard notation a trailing \\* means a
-            // literal backslash followed by the * wildcard.
-            pattern + "\\*"
         } else {
-            pattern + "*"
+            // Preserve the number of literal trailing backslashes when placing an unescaped
+            // wildcard after them. An odd run needs one more backslash to complete its final
+            // escape pair; an even run can be followed by `*` directly.
+            let trailing_backslashes = pattern.chars().rev().take_while(|c| *c == '\\').count();
+            if trailing_backslashes % 2 == 1 {
+                pattern + "\\*"
+            } else {
+                pattern + "*"
+            }
         }
     };
     let add_asterisk_begin = |pattern: String| {
-        if pattern.starts_with("//*") {
-            pattern
-        } else if pattern.starts_with("/*") {
-            "*".to_string() + &pattern
-        } else if pattern.starts_with('*') {
+        if starts_with_any_chars(&pattern) {
             pattern
         } else {
             "*".to_string() + &pattern
@@ -57,81 +113,21 @@ pub(in crate::detections::rule::matchers) fn wrap_pattern(
 /// This processing could have been included in `wrap_pattern`, but it became complex, so it was
 /// split out into its own function.
 pub(in crate::detections::rule::matchers) fn wildcard_to_regex(pattern: String) -> String {
-    let wildcards = vec!["*", "?"];
-
-    // Put the result of splitting pattern by wildcard into pattern_splits.
-    // With the following algorithm, elements at even indices of pattern_splits are non-wildcard strings, and elements at odd indices contain wildcards.
-    let mut idx = 0;
-    let mut pattern_splits = vec![];
-    let mut cur_str = String::default();
-    while idx < pattern.len() {
-        let prev_idx = idx;
-        for wildcard in &wildcards {
-            let cur_pattern: String = pattern.chars().skip(idx).collect::<String>();
-            if cur_pattern.starts_with(&format!(r"\\{wildcard}")) {
-                // When there are two escape characters before the wildcard.
-                cur_str = format!("{}{}", cur_str, r"\");
-                pattern_splits.push(cur_str);
-                pattern_splits.push(wildcard.to_string());
-
-                cur_str = String::default();
-                idx += 3;
-                break;
-            } else if cur_pattern.starts_with(&format!(r"\{wildcard}")) {
-                // When there is one escape character before the wildcard.
-                cur_str = format!("{cur_str}{wildcard}");
-                idx += 2;
-                break;
-            } else if cur_pattern.starts_with(wildcard) {
-                // When it is a wildcard.
-                pattern_splits.push(cur_str);
-                pattern_splits.push(wildcard.to_string());
-
-                cur_str = String::default();
-                idx += 1;
-                break;
-            }
-        }
-        // If one of the wildcard branches above matched, idx has already been advanced, so
-        // continue with the next chunk.
-        if prev_idx != idx {
-            continue;
-        }
-
-        cur_str = format!(
-            "{}{}",
-            cur_str,
-            pattern.chars().skip(idx).take(1).collect::<String>()
-        );
-        idx += 1;
-    }
-    // If the last character is not a wildcard, cur_str contains characters, so put them into pattern_splits.
-    if !cur_str.is_empty() {
-        pattern_splits.push(cur_str);
-    }
-
-    // Convert from SIGMA rule wildcard notation to regex notation.
     let ret =
-        pattern_splits
+        parse_sigma_pattern(&pattern)
             .iter()
-            .enumerate()
-            .fold(String::default(), |acc: String, (idx, pattern)| {
-                let regex_value = if idx % 2 == 0 {
-                    // If not a wildcard, return the escaped string.
-                    regex::escape(pattern)
-                } else {
-                    // When it is a wildcard, convert "*" into a ".*"-style regex (an alternation
-                    // that additionally matches the newline, which "." alone does not) and convert
-                    // "?" into ".".
-                    let wildcard_regex_value = if *pattern == "*" {
-                        "(.|\\a|\\f|\\t|\\n|\\r|\\v)*"
-                    } else {
-                        "."
-                    };
-                    wildcard_regex_value.to_string()
-                };
-
-                format!("{acc}{regex_value}")
+            .fold(String::new(), |mut regex_pattern, token| {
+                match token {
+                    SigmaPatternToken::Literal(value) => {
+                        regex_pattern.push_str(&regex::escape(value))
+                    }
+                    // Use an alternation so `*` also matches newlines, which `.` alone does not.
+                    SigmaPatternToken::AnyChars => {
+                        regex_pattern.push_str("(.|\\a|\\f|\\t|\\n|\\r|\\v)*")
+                    }
+                    SigmaPatternToken::AnyChar => regex_pattern.push('.'),
+                }
+                regex_pattern
             });
 
     // Sigma wildcards are case-insensitive.
