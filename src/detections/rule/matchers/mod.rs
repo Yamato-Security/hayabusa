@@ -14,6 +14,7 @@ mod tests;
 
 pub use default_matcher::DefaultMatcher;
 pub use leaf_matchers::{AllowlistFileMatcher, MinlengthMatcher, RegexesFileMatcher};
+pub(in crate::detections::rule) use modifiers::string::{SigmaPatternToken, parse_sigma_pattern};
 pub use pipe_element::PipeElement;
 
 #[cfg(test)]

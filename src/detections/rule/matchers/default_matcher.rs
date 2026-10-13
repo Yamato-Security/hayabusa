@@ -7,9 +7,12 @@ use yaml_rust2::Yaml;
 use super::LeafMatcher;
 use super::modifiers::ValueMatcher;
 use super::modifiers::encoding::{self, Encoding, Utf16Kind};
+use super::modifiers::string::wrap_pattern;
 use super::pipe_element::PipeElement;
 use crate::detections::configs::WINDASH_CHARACTERS;
-use crate::detections::rule::fast_match::{FastMatch, check_fast_match, convert_to_fast_match};
+use crate::detections::rule::fast_match::{
+    FastMatch, check_fast_match, convert_to_all_only_fast_match, convert_to_fast_match,
+};
 use crate::detections::{detection::EvtxRecordInfo, utils};
 
 /// Default match class, used when no special matcher (min_length/regexes/allowlist) applies.
@@ -161,9 +164,9 @@ impl MatchPlan {
                             return None;
                         }
                         let wrapped = if self.wrap == Wrap::StartsWith {
-                            format!("{}*", pattern[0])
+                            wrap_pattern(&PipeElement::Startswith, pattern[0].clone())
                         } else {
-                            format!("*{}", pattern[0])
+                            wrap_pattern(&PipeElement::Endswith, pattern[0].clone())
                         };
                         // `|cased` makes the comparison case-sensitive (ignore_case = false).
                         convert_to_fast_match(&wrapped, !self.cased)
@@ -172,7 +175,8 @@ impl MatchPlan {
                         if self.cased || self.windash || self.all {
                             return None;
                         }
-                        convert_to_fast_match(&format!("allOnly*{}*", pattern[0]), true)
+                        let wrapped = wrap_pattern(&PipeElement::Contains, pattern[0].clone());
+                        convert_to_all_only_fast_match(&wrapped)
                     }
                     Wrap::Contains if self.windash => {
                         // For |contains|windash: also match a variant of the pattern whose first
@@ -188,15 +192,13 @@ impl MatchPlan {
                         if self.all {
                             pattern.push(pattern[0].replacen(windash_chars, "/", 1));
                         }
+                        let wrapped = wrap_pattern(&PipeElement::Contains, pattern[0].clone());
                         let mut fastmatches =
-                            convert_to_fast_match(&format!("*{}*", pattern[0]), true)
-                                .unwrap_or_default();
+                            convert_to_fast_match(&wrapped, true).unwrap_or_default();
+                        let windash_pattern = pattern[0].replacen(windash_chars, "/", 1);
+                        let windash_wrapped = wrap_pattern(&PipeElement::Contains, windash_pattern);
                         fastmatches.extend(
-                            convert_to_fast_match(
-                                &format!("*{}*", pattern[0].replacen(windash_chars, "/", 1)),
-                                true,
-                            )
-                            .unwrap_or_default(),
+                            convert_to_fast_match(&windash_wrapped, true).unwrap_or_default(),
                         );
                         (!fastmatches.is_empty()).then_some(fastmatches)
                     }
@@ -206,7 +208,8 @@ impl MatchPlan {
                         if self.all && self.cased {
                             return None;
                         }
-                        convert_to_fast_match(&format!("*{}*", pattern[0]), !self.cased)
+                        let wrapped = wrap_pattern(&PipeElement::Contains, pattern[0].clone());
+                        convert_to_fast_match(&wrapped, !self.cased)
                     }
                 }
             }
@@ -216,7 +219,8 @@ impl MatchPlan {
                     return None;
                 }
                 let encoded = encoding::base64_encoded(&self.utf16, pattern[0].as_str());
-                convert_to_fast_match(&format!("*{encoded}*"), true)
+                let wrapped = wrap_pattern(&PipeElement::Contains, encoded);
+                convert_to_fast_match(&wrapped, true)
             }
             Encoding::Base64offset => {
                 // |base64offset|contains (all three byte-alignment variants), optionally UTF-16

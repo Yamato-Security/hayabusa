@@ -1444,7 +1444,7 @@ fn test_pipe_pattern_wildcard_question3() {
 #[test]
 fn test_pipe_pattern_wildcard_backslash() {
     let value = PipeElement::pipe_pattern_wildcard(r"\\ho\\ge\\".to_string());
-    assert_eq!(r"(?i)\\\\ho\\\\ge\\\\", value);
+    assert_eq!(r"(?i)\\ho\\ge\\", value);
 }
 
 #[test]
@@ -1459,10 +1459,158 @@ fn test_pipe_pattern_wildcard_mixed() {
 #[test]
 fn test_pipe_pattern_wildcard_many_backslashes() {
     let value = PipeElement::pipe_pattern_wildcard(r"\\\*ho\\\*ge\\\".to_string());
-    assert_eq!(
-        r"(?i)\\\\(.|\a|\f|\t|\n|\r|\v)*ho\\\\(.|\a|\f|\t|\n|\r|\v)*ge\\\\\\",
-        value
-    );
+    assert_eq!(r"(?i)\\\*ho\\\*ge\\\\", value);
+}
+
+#[test]
+fn test_sigma_escaped_psexec_share_name() {
+    let rule_str = r#"
+        enabled: true
+        detection:
+            selection:
+                ShareName: '\\\\\*\\IPC$'
+        details: 'share=%ShareName%'
+        "#;
+
+    let matching_record = r#"
+        {
+            "Event": {"EventData": {"ShareName": "\\\\*\\IPC$"}},
+            "Event_attributes": {"xmlns": "http://schemas.microsoft.com/win/2004/08/events/event"}
+        }"#;
+    let non_matching_record_without_star = r#"
+        {
+            "Event": {"EventData": {"ShareName": "\\\\\\\\X\\\\IPC$"}},
+            "Event_attributes": {"xmlns": "http://schemas.microsoft.com/win/2004/08/events/event"}
+        }"#;
+    let non_matching_record_with_extra_backslashes = r#"
+        {
+            "Event": {"EventData": {"ShareName": "\\\\\\\\*\\\\IPC$"}},
+            "Event_attributes": {"xmlns": "http://schemas.microsoft.com/win/2004/08/events/event"}
+        }"#;
+
+    check_select(rule_str, matching_record, true);
+    check_select(rule_str, non_matching_record_without_star, false);
+    check_select(rule_str, non_matching_record_with_extra_backslashes, false);
+}
+
+#[test]
+fn test_sigma_escaped_wildcards_with_string_modifiers() {
+    let startswith_rule = r#"
+        enabled: true
+        detection:
+            selection:
+                ShareName|startswith: '\\\\'
+        details: 'share=%ShareName%'
+        "#;
+    let contains_rule = r#"
+        enabled: true
+        detection:
+            selection:
+                ShareName|contains: '\*x\*'
+        details: 'share=%ShareName%'
+        "#;
+    let contains_unc_rule = r#"
+        enabled: true
+        detection:
+            selection:
+                ShareName|contains: '\\\\'
+        details: 'share=%ShareName%'
+        "#;
+    let unc_record = r#"
+        {
+            "Event": {"EventData": {"ShareName": "\\\\server\\share"}},
+            "Event_attributes": {"xmlns": "http://schemas.microsoft.com/win/2004/08/events/event"}
+        }"#;
+    let literal_stars_record = r#"
+        {
+            "Event": {"EventData": {"ShareName": "a*x*b"}},
+            "Event_attributes": {"xmlns": "http://schemas.microsoft.com/win/2004/08/events/event"}
+        }"#;
+    let missing_literal_star_record = r#"
+        {
+            "Event": {"EventData": {"ShareName": "a*xb"}},
+            "Event_attributes": {"xmlns": "http://schemas.microsoft.com/win/2004/08/events/event"}
+        }"#;
+
+    check_select(startswith_rule, unc_record, true);
+    check_select(contains_unc_rule, unc_record, true);
+    check_select(contains_rule, literal_stars_record, true);
+    check_select(contains_rule, missing_literal_star_record, false);
+}
+
+#[test]
+fn test_sigma_three_backslashes_before_wildcard_are_literal() {
+    let rule_str = r#"
+        enabled: true
+        detection:
+            selection:
+                ShareName: 'a\\\*'
+        details: 'share=%ShareName%'
+        "#;
+    let matching_record = r#"
+        {
+            "Event": {"EventData": {"ShareName": "a\\*"}},
+            "Event_attributes": {"xmlns": "http://schemas.microsoft.com/win/2004/08/events/event"}
+        }"#;
+    let non_matching_record = r#"
+        {
+            "Event": {"EventData": {"ShareName": "a\\\\zzz"}},
+            "Event_attributes": {"xmlns": "http://schemas.microsoft.com/win/2004/08/events/event"}
+        }"#;
+
+    check_select(rule_str, matching_record, true);
+    check_select(rule_str, non_matching_record, false);
+}
+
+#[test]
+fn test_allonly_text_does_not_collide_with_internal_match_type() {
+    let startswith_rule = r#"
+        enabled: true
+        detection:
+            selection:
+                TargetFilename|startswith: 'allOnly'
+        details: 'file=%TargetFilename%'
+        "#;
+    let wildcard_rule = r#"
+        enabled: true
+        detection:
+            selection:
+                TargetFilename: 'allOnly*'
+        details: 'file=%TargetFilename%'
+        "#;
+    let matching_record = r#"
+        {
+            "Event": {"EventData": {"TargetFilename": "allOnlyFile.txt"}},
+            "Event_attributes": {"xmlns": "http://schemas.microsoft.com/win/2004/08/events/event"}
+        }"#;
+    let unrelated_record = r#"
+        {
+            "Event": {"EventData": {"TargetFilename": "C:\\totally\\unrelated.txt"}},
+            "Event_attributes": {"xmlns": "http://schemas.microsoft.com/win/2004/08/events/event"}
+        }"#;
+
+    check_select(startswith_rule, matching_record, true);
+    check_select(startswith_rule, unrelated_record, false);
+    check_select(wildcard_rule, matching_record, true);
+    check_select(wildcard_rule, unrelated_record, false);
+}
+
+#[test]
+fn test_non_ascii_escaped_wildcard_uses_unicode_case_folding() {
+    let rule_str = r#"
+        enabled: true
+        detection:
+            selection:
+                TargetFilename: 'CAFÉ\*'
+        details: 'file=%TargetFilename%'
+        "#;
+    let matching_record = r#"
+        {
+            "Event": {"EventData": {"TargetFilename": "café*"}},
+            "Event_attributes": {"xmlns": "http://schemas.microsoft.com/win/2004/08/events/event"}
+        }"#;
+
+    check_select(rule_str, matching_record, true);
 }
 
 #[test]

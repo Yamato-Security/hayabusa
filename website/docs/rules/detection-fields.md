@@ -316,6 +316,9 @@ About escaping wildcards:
 - Wildcards (`*` and `?`) can be escaped by using a backslash: `\*`, `\?`.
 - If you want to use a backslash right before a wildcard then write `\\*` or `\\?`.
 - Escaping is not required if you are using backslashes by themselves.
+- Escape sequences are read from left to right. For example, `\\\*` is one literal backslash
+  followed by a literal asterisk, while `\\*` is one literal backslash followed by the `*`
+  wildcard.
 
 ## null keyword
 
