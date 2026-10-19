@@ -8,12 +8,12 @@ use itertools::Itertools;
 use std::{sync::Arc, vec::IntoIter};
 
 lazy_static! {
-    // Token patterns tried in order during lexing: "(", ")", whitespace, and a selection name
-    // or keyword (and/or/not).
+    // Token patterns tried in order during lexing: "(", ")", a space, and a selection name or
+    // keyword (and/or/not).
     pub static ref CONDITION_REGEXMAP: Vec<Regex> = vec![
         Regex::new(r"^\(").unwrap(),
         Regex::new(r"^\)").unwrap(),
-        Regex::new(r"^\s+").unwrap(),
+        Regex::new(r"^ ").unwrap(),
         Regex::new(r"^[\w+]+").unwrap(),
     ];
     // Matches the pipe character and everything after it (the aggregation part of a condition).
@@ -27,7 +27,7 @@ lazy_static! {
 pub enum ConditionToken {
     LeftParenthesis,
     RightParenthesis,
-    Whitespace,
+    Space,
     Not,
     And,
     Or,
@@ -88,7 +88,7 @@ impl ConditionToken {
             // them here is an internal error.
             ConditionToken::LeftParenthesis => Result::Err("Unknown error".to_string()),
             ConditionToken::RightParenthesis => Result::Err("Unknown error".to_string()),
-            ConditionToken::Whitespace => Result::Err("Unknown error".to_string()),
+            ConditionToken::Space => Result::Err("Unknown error".to_string()),
             ConditionToken::Not => Result::Err("Unknown error".to_string()),
             ConditionToken::And => Result::Err("Unknown error".to_string()),
             ConditionToken::Or => Result::Err("Unknown error".to_string()),
@@ -96,14 +96,14 @@ impl ConditionToken {
     }
 
     /// Converts a lexed string into its ConditionToken. Anything that is not an operator,
-    /// a parenthesis or whitespace is treated as a selection name reference.
+    /// a parenthesis or a space is treated as a selection name reference.
     pub fn to_condition_token(token: &str) -> ConditionToken {
         if token == "(" {
             ConditionToken::LeftParenthesis
         } else if token == ")" {
             ConditionToken::RightParenthesis
-        } else if token.chars().all(char::is_whitespace) {
-            ConditionToken::Whitespace
+        } else if token == " " {
+            ConditionToken::Space
         } else if token == "not" {
             ConditionToken::Not
         } else if token == "and" {
@@ -133,7 +133,10 @@ impl ConditionCompiler {
         name_to_node: &HashMap<String, Arc<Box<dyn SelectionNode>>>,
     ) -> Result<Box<dyn SelectionNode>, String> {
         let node_keys: Vec<String> = name_to_node.keys().cloned().collect();
-        let condition_str = Self::convert_condition(condition_str, &node_keys);
+        // YAML block scalars preserve line breaks. Normalize all whitespace runs so the condition
+        // is parsed as the equivalent single-line expression.
+        let single_line_condition = condition_str.split_whitespace().join(" ");
+        let condition_str = Self::convert_condition(&single_line_condition, &node_keys);
         // The aggregation part after a pipe (e.g. "| count() >= 1") is parsed elsewhere
         // (see aggregation_parser.rs), so strip it here.
         let captured = self::RE_PIPE.captures(condition_str.as_str());
@@ -217,7 +220,7 @@ impl ConditionCompiler {
 
             let matched_str = captured.unwrap().get(0).unwrap().as_str();
             let token = ConditionToken::to_condition_token(matched_str);
-            if let ConditionToken::Whitespace = token {
+            if let ConditionToken::Space = token {
                 // Whitespace has no special meaning, so skip it.
                 cur_condition_str = &cur_condition_str[matched_str.len()..];
                 continue;
