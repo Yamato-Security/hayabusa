@@ -8,12 +8,12 @@ use itertools::Itertools;
 use std::{sync::Arc, vec::IntoIter};
 
 lazy_static! {
-    // Token patterns tried in order during lexing: "(", ")", a space, and a selection name or
-    // keyword (and/or/not).
+    // Token patterns tried in order during lexing: "(", ")", whitespace, and a selection name
+    // or keyword (and/or/not).
     pub static ref CONDITION_REGEXMAP: Vec<Regex> = vec![
         Regex::new(r"^\(").unwrap(),
         Regex::new(r"^\)").unwrap(),
-        Regex::new(r"^ ").unwrap(),
+        Regex::new(r"^\s+").unwrap(),
         Regex::new(r"^[\w+]+").unwrap(),
     ];
     // Matches the pipe character and everything after it (the aggregation part of a condition).
@@ -27,7 +27,7 @@ lazy_static! {
 pub enum ConditionToken {
     LeftParenthesis,
     RightParenthesis,
-    Space,
+    Whitespace,
     Not,
     And,
     Or,
@@ -88,7 +88,7 @@ impl ConditionToken {
             // them here is an internal error.
             ConditionToken::LeftParenthesis => Result::Err("Unknown error".to_string()),
             ConditionToken::RightParenthesis => Result::Err("Unknown error".to_string()),
-            ConditionToken::Space => Result::Err("Unknown error".to_string()),
+            ConditionToken::Whitespace => Result::Err("Unknown error".to_string()),
             ConditionToken::Not => Result::Err("Unknown error".to_string()),
             ConditionToken::And => Result::Err("Unknown error".to_string()),
             ConditionToken::Or => Result::Err("Unknown error".to_string()),
@@ -96,14 +96,14 @@ impl ConditionToken {
     }
 
     /// Converts a lexed string into its ConditionToken. Anything that is not an operator,
-    /// a parenthesis or a space is treated as a selection name reference.
+    /// a parenthesis or whitespace is treated as a selection name reference.
     pub fn to_condition_token(token: &str) -> ConditionToken {
         if token == "(" {
             ConditionToken::LeftParenthesis
         } else if token == ")" {
             ConditionToken::RightParenthesis
-        } else if token == " " {
-            ConditionToken::Space
+        } else if token.chars().all(char::is_whitespace) {
+            ConditionToken::Whitespace
         } else if token == "not" {
             ConditionToken::Not
         } else if token == "and" {
@@ -217,7 +217,7 @@ impl ConditionCompiler {
 
             let matched_str = captured.unwrap().get(0).unwrap().as_str();
             let token = ConditionToken::to_condition_token(matched_str);
-            if let ConditionToken::Space = token {
+            if let ConditionToken::Whitespace = token {
                 // Whitespace has no special meaning, so skip it.
                 cur_condition_str = &cur_condition_str[matched_str.len()..];
                 continue;
@@ -1516,6 +1516,35 @@ mod tests {
                 param1: 'Windows Event Log'
             condition: all of selection*
         details: 'Service name : %param1%¥nMessage : Event Log Service Stopped¥nResults: Selective event log manipulation may follow this event.'
+        "#;
+
+        check_select(rule_str, SIMPLE_RECORD_STR, true);
+    }
+
+    #[test]
+    fn test_condition_multiline_whitespace_detect() {
+        // Sigma conditions can be YAML block scalars whose logical operators are separated by
+        // newlines. Treat those newlines as insignificant whitespace while parsing.
+        let rule_str = r#"
+        enabled: true
+        detection:
+            selection_wevtutil_img:
+                Channel: 'System'
+            selection_wevtutil_cli_clear:
+                EventID: 7040
+            selection_logman_img:
+                param1: 'Windows Event Log'
+            selection_logman_update:
+                param2: 'auto start'
+            selection_pwsh_img:
+                Channel: 'System'
+            selection_pwsh_cli:
+                EventID: 7040
+            condition: |
+                (selection_wevtutil_img and 1 of selection_wevtutil_cli_*)
+                or (all of selection_logman_*)
+                or (all of selection_pwsh_*)
+        details: 'Service name : %param1%'
         "#;
 
         check_select(rule_str, SIMPLE_RECORD_STR, true);
