@@ -1522,6 +1522,35 @@ mod tests {
     }
 
     #[test]
+    fn test_condition_multiline_whitespace_detect() {
+        // Sigma conditions can be YAML block scalars whose logical operators are separated by
+        // newlines. Treat those newlines as insignificant whitespace while parsing.
+        let rule_str = r#"
+        enabled: true
+        detection:
+            selection_wevtutil_img:
+                Channel: 'System'
+            selection_wevtutil_cli_clear:
+                EventID: 7040
+            selection_logman_img:
+                param1: 'Windows Event Log'
+            selection_logman_update:
+                param2: 'auto start'
+            selection_pwsh_img:
+                Channel: 'System'
+            selection_pwsh_cli:
+                EventID: 7040
+            condition: |
+                (selection_wevtutil_img and 1 of selection_wevtutil_cli_*)
+                or (all of selection_logman_*)
+                or (all of selection_pwsh_*)
+        details: 'Service name : %param1%'
+        "#;
+
+        check_select(rule_str, SIMPLE_RECORD_STR, true);
+    }
+
+    #[test]
     fn test_condition_all_of_select_not_detect() {
         // Test for patterns using "all of selection*" in condition.
         let rule_str = r#"
