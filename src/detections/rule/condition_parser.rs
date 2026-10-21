@@ -133,10 +133,7 @@ impl ConditionCompiler {
         name_to_node: &HashMap<String, Arc<Box<dyn SelectionNode>>>,
     ) -> Result<Box<dyn SelectionNode>, String> {
         let node_keys: Vec<String> = name_to_node.keys().cloned().collect();
-        // YAML block scalars preserve line breaks. Normalize all whitespace runs so the condition
-        // is parsed as the equivalent single-line expression.
-        let single_line_condition = condition_str.split_whitespace().join(" ");
-        let condition_str = Self::convert_condition(&single_line_condition, &node_keys);
+        let condition_str = Self::convert_condition(condition_str, &node_keys);
         // The aggregation part after a pipe (e.g. "| count() >= 1") is parsed elsewhere
         // (see aggregation_parser.rs), so strip it here.
         let captured = self::RE_PIPE.captures(condition_str.as_str());

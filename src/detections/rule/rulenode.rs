@@ -1,4 +1,5 @@
 use hashbrown::HashMap;
+use itertools::Itertools;
 use nested::Nested;
 use std::cmp::PartialEq;
 use std::{
@@ -277,7 +278,7 @@ impl DetectionNode {
 
         // Get the expression specified in condition.
         let condition = &detection_yaml["condition"].as_str();
-        let condition_str = if let Some(cond_str) = condition {
+        let raw_condition_str = if let Some(cond_str) = condition {
             *cond_str
         } else {
             // If condition is not specified, use the sole selection as the condition; having two
@@ -291,6 +292,11 @@ impl DetectionNode {
 
             keys.next().unwrap()
         };
+        // YAML block scalars preserve line breaks, but both the condition grammar and the
+        // aggregation extraction expect a single-line expression. Normalize every whitespace run
+        // to one space here so the selection and aggregation compilers see the same string.
+        let single_line_condition = raw_condition_str.split_whitespace().join(" ");
+        let condition_str = single_line_condition.as_str();
 
         // Parse condition and convert to SelectionNode.
         let mut err_msgs = vec![];
@@ -481,7 +487,7 @@ pub(crate) mod tests {
     use crate::detections::{
         self,
         configs::{Action, Config, DfirTimelineOption, OutputOption, StoredStatic},
-        rule::create_rule,
+        rule::{aggregation_parser::AggregationConditionToken, create_rule},
         utils,
     };
 
@@ -540,6 +546,38 @@ pub(crate) mod tests {
                 panic!("Failed to parse json record.");
             }
         }
+    }
+
+    #[test]
+    fn test_init_multiline_aggregation_condition() {
+        // A YAML block scalar can break the aggregation part of a condition across lines. The
+        // whole condition must be normalized before both the selection and aggregation compilers
+        // see it, otherwise the aggregation extraction stops at the newline.
+        let rule_str = r#"
+        enabled: true
+        detection:
+            selection:
+                EventID: 4625
+            condition: |
+                selection
+                | count() by TargetUserName
+                >= 5
+        details: 'user=%TargetUserName%'
+        "#;
+
+        let rule_yamls = YamlLoader::load_from_str(rule_str).unwrap();
+        let mut rule_node = create_rule(
+            "testpath".to_string(),
+            rule_yamls.into_iter().next().unwrap(),
+        );
+        let init_result = rule_node.init(&create_dummy_stored_static());
+        assert!(init_result.is_ok(), "{:?}", init_result.unwrap_err());
+
+        let agg = rule_node.detection.aggregation_condition.as_ref().unwrap();
+        assert!(agg._field_name.is_none());
+        assert_eq!(agg._by_field_name.as_deref(), Some("TargetUserName"));
+        assert!(matches!(agg._cmp_op, AggregationConditionToken::GE));
+        assert_eq!(agg._cmp_num, 5);
     }
 
     #[test]
