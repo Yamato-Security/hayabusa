@@ -44,7 +44,7 @@ jobs:
           #   }
     runs-on: ${{ matrix.info.os }}
     steps:
-      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           submodules: recursive
       - name: Set up Rust toolchain
@@ -56,7 +56,7 @@ jobs:
           targets: ${{ matrix.info.target }}
       - name: Enable Rust cache
         if: ${{ steps.skip_check.outputs.should_skip != 'true' }}
-        uses: Swatinem/rust-cache@6fd3edff6979b79f87531400ad694fb7f2c84b1f #2.1.0
+        uses: Swatinem/rust-cache@d1527c8f67ef9af357290475d4af4b0fab8f12e0 # v2.9.3
       - name: Fmt Check
         run: cargo fmt -- --check
       - name: Prepare Clippy
