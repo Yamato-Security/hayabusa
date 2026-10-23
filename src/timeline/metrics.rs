@@ -685,6 +685,7 @@ mod tests {
                     rfc_3339: false,
                     us_military_time: false,
                     us_time: false,
+                    timezone: None,
                     utc: false,
                 },
                 output: None,

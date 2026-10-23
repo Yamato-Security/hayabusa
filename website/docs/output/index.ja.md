@@ -91,7 +91,7 @@ Hayabusaの`config/profiles.yaml`設定ファイルでは、５つのプロフ�
 |%RuleModifiedDate% | YML検知ルールの `modified` フィールド。 |
 |%RuleTitle% | YML検知ルールの`title`フィールド。 |
 |%Status% | YML検知ルールの `status` フィールド。 |
-|%Timestamp% | デフォルトでは`YYYY-MM-DD HH:mm:ss.sss +hh:mm`形式になっている。イベントログの`<Event><System><TimeCreated SystemTime>`フィールドから来ている。デフォルトのタイムゾーンはローカルのタイムゾーンになるが、`--utc`オプションでUTCに変更することができる。 |
+|%Timestamp% | デフォルトでは`YYYY-MM-DD HH:mm:ss.sss +hh:mm`形式になっている。イベントログの`<Event><System><TimeCreated SystemTime>`フィールドから来ている。デフォルトのタイムゾーンはローカルのタイムゾーンになる。UTCには`--utc`、固定UTCオフセットには`--timezone "+09:00"`（短縮形: `-Z "+09:00"`）を使用する。 |
 
 #### その他のプロファイルのフィールドエイリアス
 

@@ -159,6 +159,7 @@ Time Format:
   -O, --iso-8601          Output timestamp in original ISO-8601 format (ex: 2022-02-22T10:10:10.1234567Z) (Always UTC)
       --rfc-2822          Output timestamp in RFC 2822 format (ex: Fri, 22 Feb 2022 22:00:00 -0600)
       --rfc-3339          Output timestamp in RFC 3339 format (ex: 2022-02-22 22:00:00.123456-06:00)
+  -Z, --timezone <OFFSET>  Output timestamps with a fixed UTC offset; use quoted +HH:MM or -HH:MM (ex: "+09:00")
   -U, --utc               Output time in UTC format (default: local time)
       --us-military-time  Output timestamp in US military time format (ex: 02-22-2022 22:00:00.123 -06:00)
       --us-time           Output timestamp in US time format (ex: 02-22-2022 10:00:00.123 PM -06:00)
@@ -187,6 +188,16 @@ hayabusa.exe dfir-timeline -d .\hayabusa-sample-evtx -p verbose
 ```
 hayabusa.exe dfir-timeline -d .\hayabusa-sample-evtx -o results.csv -p super-verbose
 ```
+
+* Convert output timestamps to a fixed UTC offset. The offset must be enclosed in double quotes
+  and use the exact `+HH:MM` or `-HH:MM` format:
+
+```
+hayabusa.exe dfir-timeline -d .\hayabusa-sample-evtx --timezone "+09:00" -o results.csv
+```
+
+The equivalent shorthand is `-Z "+09:00"`. Timezone names and shortened offsets such as `JST`,
+`+9`, and `-1` are not accepted.
 
 * Output JSON instead of CSV (for analysis with `jq`, etc.):
 

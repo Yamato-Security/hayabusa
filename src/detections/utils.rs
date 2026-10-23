@@ -671,17 +671,19 @@ pub fn check_rule_config(config_path: &PathBuf) -> Result<(), String> {
     Ok(())
 }
 
-/// Formats a UTC timestamp for output, converting it to the local timezone unless the UTC or
-/// ISO 8601 output option is specified.
+/// Formats a UTC timestamp for output. UTC/ISO 8601 modes stay in UTC, `--timezone` converts to
+/// its explicit fixed offset, and the default converts to the system-local timezone.
 pub fn format_time(
     time: &DateTime<Utc>,
     date_only: bool,
     output_option: &TimeFormatOptions,
 ) -> CompactString {
-    if !output_option.is_utc_output() {
-        format_rfc(&time.with_timezone(&Local), date_only, output_option)
-    } else {
+    if output_option.is_utc_output() {
         format_rfc(time, date_only, output_option)
+    } else if let Some(timezone) = output_option.timezone.as_ref() {
+        format_rfc(&time.with_timezone(timezone), date_only, output_option)
+    } else {
+        format_rfc(&time.with_timezone(&Local), date_only, output_option)
     }
 }
 
@@ -939,22 +941,55 @@ pub fn get_file_size(
 mod tests {
     use std::path::Path;
 
-    use chrono::NaiveDate;
+    use chrono::{DateTime, FixedOffset, NaiveDate, Utc};
     use compact_str::CompactString;
     use hashbrown::{HashMap, HashSet};
     use nested::Nested;
     use regex::Regex;
     use serde_json::Value;
 
-    use super::{output_duration, output_profile_name};
+    use super::{format_time, output_duration, output_profile_name};
     use crate::detections::field_data_map::FieldDataMapKey;
     use crate::{
         detections::{
-            configs::{Action, Config, DfirTimelineOption, OutputOption, StoredStatic},
+            configs::{
+                Action, Config, DfirTimelineOption, OutputOption, StoredStatic, TimeFormatOptions,
+            },
             utils::{self, check_setting_path, make_ascii_titlecase},
         },
         options::htmlreport::{GENERAL_OVERVIEW_SECTION, HtmlReporter, RESULTS_SUMMARY_SECTION},
     };
+
+    #[test]
+    fn format_time_uses_the_requested_fixed_offset() {
+        let time = DateTime::parse_from_rfc3339("2026-10-20T23:45:30.123Z")
+            .unwrap()
+            .with_timezone(&Utc);
+
+        for (seconds, expected) in [
+            (9 * 3600, "2026-10-21 08:45:30.123 +09:00"),
+            (-3600, "2026-10-20 22:45:30.123 -01:00"),
+            (2 * 3600 + 30 * 60, "2026-10-21 02:15:30.123 +02:30"),
+        ] {
+            let options = TimeFormatOptions {
+                timezone: Some(FixedOffset::east_opt(seconds).unwrap()),
+                ..Default::default()
+            };
+            assert_eq!(format_time(&time, false, &options), expected);
+        }
+    }
+
+    #[test]
+    fn format_time_applies_the_fixed_offset_before_date_only_output() {
+        let time = DateTime::parse_from_rfc3339("2026-10-20T23:45:30Z")
+            .unwrap()
+            .with_timezone(&Utc);
+        let options = TimeFormatOptions {
+            timezone: Some(FixedOffset::east_opt(9 * 3600).unwrap()),
+            ..Default::default()
+        };
+        assert_eq!(format_time(&time, true, &options), "2026-10-21");
+    }
 
     #[test]
     /// #1816: the "Cannot open file" error from the JSON/JSONL readers must interpolate the path,
