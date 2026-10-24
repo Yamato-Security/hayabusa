@@ -9,7 +9,7 @@ use crate::options::htmlreport;
 use crate::options::pivot::PivotKeywordMap;
 use crate::options::profile::{Profile, load_profile};
 use aho_corasick::{AhoCorasick, AhoCorasickBuilder, MatchKind};
-use chrono::{DateTime, Days, Duration, Local, Months, Utc};
+use chrono::{DateTime, Days, Duration, FixedOffset, Local, Months, Utc};
 use clap::{
     ArgAction, ArgGroup, Args, ColorChoice, Command, CommandFactory, Parser, Subcommand, ValueEnum,
 };
@@ -1152,15 +1152,65 @@ pub struct TimeFormatOptions {
     #[arg(help_heading = Some("Time Format"), long = "us-time", display_order = 210)]
     pub us_time: bool,
 
+    /// Output timestamps with a fixed UTC offset; use quoted +HH:MM or -HH:MM (ex: "+09:00")
+    #[arg(
+        help_heading = Some("Time Format"),
+        short = 'Z',
+        long = "timezone",
+        value_name = "OFFSET",
+        value_parser = parse_timezone_offset,
+        allow_hyphen_values = true,
+        conflicts_with_all = ["utc", "iso_8601"],
+        display_order = 200
+    )]
+    pub timezone: Option<FixedOffset>,
+
     /// Output time in UTC format (default: local time)
-    #[arg(help_heading = Some("Time Format"), short = 'U', long = "utc", display_order = 210)]
+    #[arg(
+        help_heading = Some("Time Format"),
+        short = 'U',
+        long = "utc",
+        conflicts_with = "timezone",
+        display_order = 210
+    )]
     pub utc: bool,
 }
 
+/// Parses the strict fixed-offset syntax accepted by `-Z, --timezone`.
+///
+/// A custom parser is used instead of `FixedOffset::from_str` so the CLI accepts exactly the
+/// documented `+HH:MM` / `-HH:MM` form and can return an actionable error for shorthand, names,
+/// missing signs and invalid ranges.
+fn parse_timezone_offset(value: &str) -> Result<FixedOffset, String> {
+    const EXPECTED: &str = "Expected a quoted offset in \"+HH:MM\" or \"-HH:MM\" format; examples: --timezone \"+09:00\" or -Z \"-01:00\". Hours must be 00-23 and minutes 00-59.";
+
+    let bytes = value.as_bytes();
+    if bytes.len() != 6
+        || !matches!(bytes[0], b'+' | b'-')
+        || bytes[3] != b':'
+        || !bytes[1..3].iter().all(u8::is_ascii_digit)
+        || !bytes[4..6].iter().all(u8::is_ascii_digit)
+    {
+        return Err(format!("Invalid timezone offset \"{value}\". {EXPECTED}"));
+    }
+
+    let hours = i32::from(bytes[1] - b'0') * 10 + i32::from(bytes[2] - b'0');
+    let minutes = i32::from(bytes[4] - b'0') * 10 + i32::from(bytes[5] - b'0');
+    if hours > 23 || minutes > 59 {
+        return Err(format!("Invalid timezone offset \"{value}\". {EXPECTED}"));
+    }
+
+    let seconds = hours * 3600 + minutes * 60;
+    let signed_seconds = if bytes[0] == b'-' { -seconds } else { seconds };
+    FixedOffset::east_opt(signed_seconds)
+        .ok_or_else(|| format!("Invalid timezone offset \"{value}\". {EXPECTED}"))
+}
+
 impl TimeFormatOptions {
-    /// Whether the selected format renders timestamps in UTC instead of local time; the remaining
-    /// formats (RFC 2822/3339, US, US military, European) are all local. Every output path asks
-    /// this one question so that adding another always-UTC format cannot leave them disagreeing.
+    /// Whether the selected format renders timestamps in UTC. Other modes use the explicit fixed
+    /// offset from `--timezone` when present and otherwise use the system-local timezone. Every
+    /// output path asks this one question so another always-UTC format cannot leave them
+    /// disagreeing.
     pub fn is_utc_output(&self) -> bool {
         self.utc || self.iso_8601
     }
@@ -2757,11 +2807,13 @@ mod tests {
     use super::{
         Action, ClobberOption, CommonOptions, Config, DetectCommonOption, DfirTimelineOption,
         InputOption, OutputOption, StoredStatic, TargetEventTime, create_control_char_replace_map,
+        parse_timezone_offset,
     };
     use crate::detections::configs::{
         self, EidMetricsOption, LogonSummaryOption, PivotKeywordOption, SearchOption,
     };
     use chrono::{DateTime, Utc};
+    use clap::{Parser, error::ErrorKind};
     use compact_str::CompactString;
     use hashbrown::{HashMap, HashSet};
 
@@ -3010,8 +3062,124 @@ mod tests {
         assert!(has(&dfir, "timeline-end"));
         assert!(has(&dfir, "output-type"));
         assert!(has(&dfir, "multiline"));
+        for command_name in [
+            "dfir-timeline",
+            "eid-metrics",
+            "extract-base64",
+            "log-metrics",
+            "logon-summary",
+            "search",
+        ] {
+            let command = sub(command_name);
+            assert!(
+                has(&command, "timezone"),
+                "--timezone missing from {command_name}"
+            );
+        }
         assert!(has(&sub("eid-metrics"), "clobber"));
         assert!(has(&sub("search"), "disable-abbreviations"));
+    }
+
+    #[test]
+    fn parse_timezone_offset_accepts_only_strict_signed_offsets() {
+        for (value, expected_seconds) in [
+            ("+00:00", 0),
+            ("-00:00", 0),
+            ("+02:30", 9_000),
+            ("+09:00", 32_400),
+            ("-01:00", -3_600),
+            ("+23:59", 86_340),
+            ("-23:59", -86_340),
+        ] {
+            assert_eq!(
+                parse_timezone_offset(value).unwrap().local_minus_utc(),
+                expected_seconds,
+                "failed to parse {value}"
+            );
+        }
+
+        for value in [
+            "JST",
+            "UTC",
+            "Asia/Tokyo",
+            "+9",
+            "-1",
+            "09:00",
+            "+0900",
+            "+9:00",
+            "+09:0",
+            "+24:00",
+            "+09:60",
+            " +09:00",
+            "+09:00 ",
+            "＋09:00",
+        ] {
+            let error = parse_timezone_offset(value).unwrap_err();
+            assert!(error.contains(value));
+            assert!(error.contains("--timezone \"+09:00\""));
+        }
+    }
+
+    #[test]
+    fn timezone_clap_option_accepts_negative_values_and_short_form() {
+        for (option, value, expected_seconds) in [
+            ("--timezone", "+09:00", 32_400),
+            ("--timezone", "-01:00", -3_600),
+            ("-Z", "+02:30", 9_000),
+            ("-Z", "-01:00", -3_600),
+        ] {
+            let config = Config::try_parse_from([
+                "hayabusa",
+                "dfir-timeline",
+                "--file",
+                "input.evtx",
+                option,
+                value,
+            ])
+            .unwrap();
+            let Some(Action::DfirTimeline(options)) = config.action else {
+                panic!("dfir-timeline action was not parsed");
+            };
+            assert_eq!(
+                options
+                    .output_options
+                    .time_format_options
+                    .timezone
+                    .unwrap()
+                    .local_minus_utc(),
+                expected_seconds
+            );
+        }
+    }
+
+    #[test]
+    fn timezone_clap_option_reports_syntax_and_conflicts() {
+        let invalid = Config::try_parse_from([
+            "hayabusa",
+            "dfir-timeline",
+            "--file",
+            "input.evtx",
+            "--timezone",
+            "+9",
+        ])
+        .unwrap_err()
+        .to_string();
+        assert!(invalid.contains("Invalid timezone offset"));
+        assert!(invalid.contains("--timezone \"+09:00\""));
+
+        for conflicting_option in ["--utc", "--iso-8601"] {
+            let error = Config::try_parse_from([
+                "hayabusa",
+                "dfir-timeline",
+                "--file",
+                "input.evtx",
+                "--timezone",
+                "+09:00",
+                conflicting_option,
+            ])
+            .unwrap_err();
+            assert_eq!(error.kind(), ErrorKind::ArgumentConflict);
+        }
     }
 
     /// #1046: `resolve_config_file` — used for `pivot_keywords.txt` and every other config file —

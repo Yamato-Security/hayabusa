@@ -654,15 +654,12 @@ fn _print_timeline_hist<Tz: TimeZone>(
         return;
     }
 
-    // "local time" rather than a concrete offset: a dataset can span a DST transition and so have
-    // no single offset.
+    // "local time" rather than a concrete offset for the default mode: a dataset can span a DST
+    // transition and so have no single offset. An explicitly requested fixed offset is stable and
+    // can be shown directly.
     let title = format!(
         "Detection Frequency Timeline ({})",
-        if time_format.is_utc_output() {
-            "UTC"
-        } else {
-            "local time"
-        }
+        timeline_timezone_label(time_format)
     );
     // On a very narrow terminal there is not enough room to draw the histogram. Skip it rather
     // than underflow the `usize` width math below — an underflow would make `" ".repeat(...)`
@@ -716,6 +713,18 @@ fn _print_timeline_hist<Tz: TimeZone>(
 
     buf_wtr.print(&wtr).ok();
 }
+
+/// Describes the timezone used by the detection-frequency timeline's axis markers.
+fn timeline_timezone_label(time_format: &TimeFormatOptions) -> String {
+    if time_format.is_utc_output() {
+        "UTC".to_string()
+    } else if let Some(timezone) = time_format.timezone.as_ref() {
+        format!("UTC{timezone}")
+    } else {
+        "local time".to_string()
+    }
+}
+
 /// Increments the counter for `entry_key` in the inner map for `level`, falling back to the
 /// UNDEFINED level's map if the level has no entry.
 fn countup_aggregation(
@@ -1183,10 +1192,10 @@ fn extract_author_name(author: &str) -> Nested<String> {
 
 #[cfg(test)]
 mod tests {
-    use chrono::{DateTime, Utc};
+    use chrono::{DateTime, FixedOffset, Utc};
     use hashbrown::HashSet;
 
-    use super::{calc_statistic_info, truncate_chars};
+    use super::{calc_statistic_info, timeline_timezone_label, truncate_chars};
     use crate::detections::configs::{
         Action, Config, DfirTimelineOption, OutputOption, StoredStatic, TimeFormatOptions,
     };
@@ -1228,6 +1237,10 @@ mod tests {
         for time_format_options in [
             TimeFormatOptions::default(),
             TimeFormatOptions {
+                timezone: Some(FixedOffset::east_opt(9 * 3600).unwrap()),
+                ..Default::default()
+            },
+            TimeFormatOptions {
                 utc: true,
                 ..Default::default()
             },
@@ -1241,6 +1254,35 @@ mod tests {
             );
             assert_eq!(result_state.timestamps, vec![detected_time.timestamp()]);
         }
+    }
+
+    #[test]
+    fn timeline_timezone_label_describes_the_selected_output_zone() {
+        assert_eq!(
+            timeline_timezone_label(&TimeFormatOptions::default()),
+            "local time"
+        );
+        assert_eq!(
+            timeline_timezone_label(&TimeFormatOptions {
+                timezone: Some(FixedOffset::east_opt(9 * 3600).unwrap()),
+                ..Default::default()
+            }),
+            "UTC+09:00"
+        );
+        assert_eq!(
+            timeline_timezone_label(&TimeFormatOptions {
+                timezone: Some(FixedOffset::west_opt(3600).unwrap()),
+                ..Default::default()
+            }),
+            "UTC-01:00"
+        );
+        assert_eq!(
+            timeline_timezone_label(&TimeFormatOptions {
+                utc: true,
+                ..Default::default()
+            }),
+            "UTC"
+        );
     }
 
     #[test]

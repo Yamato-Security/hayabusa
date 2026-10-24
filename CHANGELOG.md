@@ -1,5 +1,11 @@
 # Changes
 
+## x.x.x [xxxx/xx/xx]
+
+**Enhancements:**
+
+- Added `-Z, --timezone <OFFSET>` to `dfir-timeline`, `search`, `eid-metrics`, `logon-summary`, `log-metrics`, and `extract-base64` to render output timestamps with a fixed UTC offset. It accepts only signed `+HH:MM` or `-HH:MM` values (for example, `--timezone "+09:00"` or `-Z "-01:00"`), rejects malformed or out-of-range values with example syntax, and conflicts with `--utc` and `--iso-8601`. The selected offset is applied consistently to timeline fields, metrics, searches, Base64 extraction, summary dates, and detection-frequency visualization labels and markers, while internal timestamps used for filtering, sorting, and histogram bins remain in UTC. (#1935) (@Shirofune-Security)
+
 ## 4.2.0 [2026/10/12] - Autumn Release
 
 **Enhancements:**

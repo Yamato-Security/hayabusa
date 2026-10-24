@@ -435,11 +435,12 @@ pub fn get_duplicate_indices(detect_infos: &mut [DetectInfo]) -> HashSet<usize> 
 /// Converts one collected detection timestamp to the epoch seconds behind an axis marker of the
 /// detection frequency timeline.
 ///
-/// krapslog formats each marker as UTC and prints it without a timezone, so the offset of
-/// `display_tz` has to be folded in here or the markers disagree with every other timestamp in
-/// the output. Taking it at the instant being converted rather than at a fixed reference point
-/// keeps events on either side of a DST transition correct. Callers pass `&Local`; the timezone
-/// is a parameter so the conversion can be tested against a known offset.
+/// krapslog formats each marker as UTC and prints it without a timezone, so the requested fixed
+/// offset (or otherwise the offset of `display_tz`) has to be folded in here or the markers
+/// disagree with every other timestamp in the output. Taking a system-local offset at the instant
+/// being converted rather than at a fixed reference point keeps events on either side of a DST
+/// transition correct. Callers pass `&Local`; the timezone is a parameter so the fallback can be
+/// tested against a known offset.
 ///
 /// Shifting each value by its own offset means the series is no longer monotonic across a DST
 /// fall-back — two markers inside the ambiguous hour can appear out of order. That is inherent
@@ -457,12 +458,17 @@ fn get_histogram_marker_timestamp<Tz: TimeZone>(
     let Some(time) = DateTime::from_timestamp(timestamp, 0) else {
         return timestamp;
     };
-    // with_timezone preserves the instant, so the offset is the only shift applied.
-    let offset = time
-        .with_timezone(display_tz)
-        .offset()
-        .fix()
-        .local_minus_utc();
+    // with_timezone preserves the instant, so the offset is the only shift applied. A requested
+    // fixed offset takes precedence over the system-local/default timezone passed by the caller.
+    let offset = time_format.timezone.as_ref().map_or_else(
+        || {
+            time.with_timezone(display_tz)
+                .offset()
+                .fix()
+                .local_minus_utc()
+        },
+        |timezone| timezone.local_minus_utc(),
+    );
     timestamp + offset as i64
 }
 
@@ -606,6 +612,21 @@ mod tests {
                 "histogram marker does not read as wall-clock time at UTC{offset_hours:+}"
             );
         }
+    }
+
+    #[test]
+    fn test_get_histogram_marker_timestamp_prefers_requested_fixed_offset() {
+        let time = DateTime::parse_from_rfc3339("2021-12-23T00:00:00Z")
+            .unwrap()
+            .with_timezone(&Utc);
+        let format = TimeFormatOptions {
+            timezone: Some(FixedOffset::east_opt(2 * 3600 + 30 * 60).unwrap()),
+            ..Default::default()
+        };
+        // The injected zone deliberately differs so this proves -Z/--timezone takes precedence.
+        let injected_zone = FixedOffset::west_opt(7 * 3600).unwrap();
+        let marker = get_histogram_marker_timestamp(&format, time.timestamp(), &injected_zone);
+        assert_eq!(marker - time.timestamp(), 2 * 3600 + 30 * 60);
     }
 
     #[test]
