@@ -250,10 +250,10 @@ Bu belge, Sigma veya Hayabusa kurallarında her güncelleme olduğunda dinamik o
 - `|contains|all|windash`: `|contains|windash` ile aynıdır ancak tüm anahtar kelimelerin mevcut olması gerekir.
 - `|contains|cased`: Bir alan değerinin belirli bir büyük/küçük harfe duyarlı dizeyi içerip içermediğini kontrol eder.
 - `|contains|expand`: Bir alan değerinin `/config/expand/` içindeki `expand` yapılandırma dosyasında bir dize içerip içermediğini kontrol eder.
-- `|contains|windash`: Dizeyi olduğu gibi kontrol eder ve ayrıca ilk `-` karakterini `/`, `–` (en dash), `—` (em dash) ve `―` (yatay çubuk) karakter permütasyonlarına dönüştürür.
+- `|contains|windash`: Her komut satırı seçeneği önekinde `-`, `/`, `–` (en dash), `—` (em dash) ve `―` (yatay çubuk) karakterlerini eşdeğer kabul ederek dizeyi kontrol eder. `-param-name` içindeki gibi dahili tireler değişmez karakter olarak kalır.
 - `|endswith`: Bir alan değerinin belirli bir dize ile bitip bitmediğini kontrol eder.
 - `|endswith|cased`: Bir alan değerinin belirli bir büyük/küçük harfe duyarlı dize ile bitip bitmediğini kontrol eder.
-- `|endswith|windash`: Dizenin sonunu kontrol eder ve tireler için varyasyonlar gerçekleştirir.
+- `|endswith|windash`: Dizenin sonunu kontrol eder ve komut satırı seçeneği önek tireleri için varyasyonlar gerçekleştirir.
 - `|exists`: Bir alanın var olup olmadığını kontrol eder.
 - `|expand`: Bir alan değerinin `/config/expand/` içindeki `expand` yapılandırma dosyasındaki bir dizeye eşit olup olmadığını kontrol eder.
 - `|fieldref`: İki alandaki değerlerin aynı olup olmadığını kontrol eder. İki alanın farklı olup olmadığını kontrol etmek isterseniz `condition` içinde `not` kullanabilirsiniz.
@@ -271,6 +271,7 @@ Bu belge, Sigma veya Hayabusa kurallarında her güncelleme olduğunda dinamik o
 - `|re|s`: (Single-line / Tek satırlı) nokta (`.`), satır sonu karakteri dahil tüm karakterleri eşleştirir.
 - `|startswith`: Bir alan değerinin belirli bir dize ile başlayıp başlamadığını kontrol eder.
 - `|startswith|cased`: Bir alan değerinin belirli bir büyük/küçük harfe duyarlı dize ile başlayıp başlamadığını kontrol eder.
+- `|startswith|windash`: Dizenin başlangıcını kontrol eder ve komut satırı seçeneği önek tireleri için varyasyonlar gerçekleştirir.
 - `|utf16|base64offset|contains`: Belirli bir UTF-16 dizesinin bir base64 dizesi içinde kodlanıp kodlanmadığını kontrol eder.
 - `|utf16be|base64offset|contains`: Belirli bir UTF-16 big-endian dizesinin bir base64 dizesi içinde kodlanıp kodlanmadığını kontrol eder.
 - `|utf16le|base64offset|contains`: Belirli bir UTF-16 little-endian dizesinin bir base64 dizesi içinde kodlanıp kodlanmadığını kontrol eder.

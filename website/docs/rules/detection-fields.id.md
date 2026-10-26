@@ -250,10 +250,10 @@ Dokumen ini diperbarui secara dinamis setiap kali ada pembaruan pada aturan Sigm
 - `|contains|all|windash`: Sama seperti `|contains|windash` tetapi semua kata kunci harus ada.
 - `|contains|cased`: Memeriksa apakah nilai field berisi string tertentu yang peka huruf besar/kecil.
 - `|contains|expand`: Memeriksa apakah nilai field berisi string dalam file konfigurasi `expand` di dalam `/config/expand/`.
-- `|contains|windash`: Akan memeriksa string apa adanya, serta mengonversi karakter `-` pertama menjadi permutasi karakter `/`, `–` (en dash), `—` (em dash), dan `―` (horizontal bar).
+- `|contains|windash`: Memeriksa string dengan memperlakukan `-`, `/`, `–` (en dash), `—` (em dash), dan `―` (horizontal bar) sebagai setara pada setiap awalan opsi baris perintah. Tanda hubung internal, seperti pada `-param-name`, tetap literal.
 - `|endswith`: Memeriksa apakah nilai field diakhiri dengan string tertentu.
 - `|endswith|cased`: Memeriksa apakah nilai field diakhiri dengan string tertentu yang peka huruf besar/kecil.
-- `|endswith|windash`: Memeriksa akhir string dan melakukan variasi untuk dash.
+- `|endswith|windash`: Memeriksa akhir string dan melakukan variasi untuk tanda hubung awalan opsi baris perintah.
 - `|exists`: Memeriksa apakah suatu field ada.
 - `|expand`: Memeriksa apakah nilai field sama dengan string dalam file konfigurasi `expand` di dalam `/config/expand/`.
 - `|fieldref`: Memeriksa apakah nilai dalam dua field sama. Anda dapat menggunakan `not` dalam `condition` jika Anda ingin memeriksa apakah dua field berbeda.
@@ -271,6 +271,7 @@ Dokumen ini diperbarui secara dinamis setiap kali ada pembaruan pada aturan Sigm
 - `|re|s`: (Single-line) titik (`.`) mencocokkan semua karakter, termasuk karakter baris baru.
 - `|startswith`: Memeriksa apakah nilai field dimulai dengan string tertentu.
 - `|startswith|cased`: Memeriksa apakah nilai field dimulai dengan string tertentu yang peka huruf besar/kecil.
+- `|startswith|windash`: Memeriksa awal string dan melakukan variasi untuk tanda hubung awalan opsi baris perintah.
 - `|utf16|base64offset|contains`: Memeriksa apakah string UTF-16 tertentu dikodekan di dalam string base64.
 - `|utf16be|base64offset|contains`: Memeriksa apakah string UTF-16 big-endian tertentu dikodekan di dalam string base64.
 - `|utf16le|base64offset|contains`: Memeriksa apakah string UTF-16 little-endian tertentu dikodekan di dalam string base64.

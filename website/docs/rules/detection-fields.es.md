@@ -250,10 +250,10 @@ Este documento se actualiza dinámicamente cada vez que hay una actualización d
 - `|contains|all|windash`: Igual que `|contains|windash` pero todas las palabras clave deben estar presentes.
 - `|contains|cased`: Verifica si un valor de campo contiene una determinada cadena que distingue entre mayúsculas y minúsculas.
 - `|contains|expand`: Verifica si un valor de campo contiene una cadena en el archivo de configuración `expand` dentro de `/config/expand/`.
-- `|contains|windash`: Verificará la cadena tal cual, además de convertir el primer carácter `-` en permutaciones de los caracteres `/`, `–` (guion corto), `—` (guion largo) y `―` (barra horizontal).
+- `|contains|windash`: Verifica la cadena tratando `-`, `/`, `–` (guion corto), `—` (guion largo) y `―` (barra horizontal) como equivalentes en cada prefijo de opción de línea de comandos. Los guiones internos, como el de `-param-name`, permanecen literales.
 - `|endswith`: Verifica si un valor de campo termina con una determinada cadena.
 - `|endswith|cased`: Verifica si un valor de campo termina con una determinada cadena que distingue entre mayúsculas y minúsculas.
-- `|endswith|windash`: Verifica el final de la cadena y realiza variaciones para los guiones.
+- `|endswith|windash`: Verifica el final de la cadena y realiza variaciones para los guiones de prefijos de opciones de línea de comandos.
 - `|exists`: Verifica si un campo existe.
 - `|expand`: Verifica si un valor de campo es igual a una cadena en el archivo de configuración `expand` dentro de `/config/expand/`.
 - `|fieldref`: Verifica si los valores en dos campos son iguales. Puede usar `not` en el `condition` si desea verificar si dos campos son diferentes.
@@ -271,6 +271,7 @@ Este documento se actualiza dinámicamente cada vez que hay una actualización d
 - `|re|s`: (Línea única) el punto (`.`) coincide con todos los caracteres, incluido el carácter de nueva línea.
 - `|startswith`: Verifica si un valor de campo comienza con una determinada cadena.
 - `|startswith|cased`: Verifica si un valor de campo comienza con una determinada cadena que distingue entre mayúsculas y minúsculas.
+- `|startswith|windash`: Verifica el inicio de la cadena y realiza variaciones para los guiones de prefijos de opciones de línea de comandos.
 - `|utf16|base64offset|contains`: Verifica si una determinada cadena UTF-16 está codificada dentro de una cadena base64.
 - `|utf16be|base64offset|contains`: Verifica si una determinada cadena UTF-16 big-endian está codificada dentro de una cadena base64.
 - `|utf16le|base64offset|contains`: Verifica si una determinada cadena UTF-16 little-endian está codificada dentro de una cadena base64.

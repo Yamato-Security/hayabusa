@@ -250,10 +250,10 @@ This document is dynamically updated every time there is an update to Sigma or H
 - `|contains|all|windash`: Same as `|contains|windash` but all of the keywords need to be present.
 - `|contains|cased`: Checks if a field value contains a certain case-sensitive string.
 - `|contains|expand`: Checks if a field value contains a string in the `expand` config file inside `/config/expand/`.
-- `|contains|windash`: Will check the string as-is, as well as convert the first `-` character to `/`, `–` (en dash), `—` (em dash), and `―` (horizontal bar) character permutations.
+- `|contains|windash`: Checks the string while treating `-`, `/`, `–` (en dash), `—` (em dash), and `―` (horizontal bar) as equivalent at every command-line option prefix. Internal dashes such as the one in `-param-name` remain literal.
 - `|endswith`: Checks if a field value ends with a certain string.
 - `|endswith|cased`: Checks if a field value ends with a certain case-sensitive string.
-- `|endswith|windash`: Checks the end of the string and performs variations for dashes.
+- `|endswith|windash`: Checks the end of the string and performs variations for command-line option prefix dashes.
 - `|exists`: Checks if a field exists.
 - `|expand`: Checks if a field value equals a string in the `expand` config file inside `/config/expand/`.
 - `|fieldref`: Checks to see if the values in two fields are the same. You can use `not` in the `condition` if you want to check if two fields are different.
@@ -273,6 +273,7 @@ This document is dynamically updated every time there is an update to Sigma or H
 - `|re|s`: (Single-line) dot (`.`) matches all characters, including the newline character.
 - `|startswith`: Checks if a field value starts with a certain string.
 - `|startswith|cased`: Checks if a field value starts with a certain case-sensitive string.
+- `|startswith|windash`: Checks the start of the string and performs variations for command-line option prefix dashes.
 - `|utf16|base64offset|contains`: Checks to see if a certain UTF-16 string is encoded inside a base64 string.
 - `|utf16be|base64offset|contains`: Checks to see if a certain UTF-16 big-endian string is encoded inside a base64 string.
 - `|utf16le|base64offset|contains`: Checks to see if a certain UTF-16 little-endian string is encoded inside a base64 string.

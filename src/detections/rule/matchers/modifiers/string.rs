@@ -2,6 +2,12 @@
 //! wildcard-to-regex conversion used for the default (implicit) wildcard match.
 
 use super::PipeElement;
+use crate::detections::configs::WINDASH_CHARACTERS;
+
+// Reserved noncharacter used only while a rule pattern is being converted to regex. It keeps a
+// windash position distinct from ordinary literals without exposing regex syntax to Sigma's
+// wildcard parser.
+const WINDASH_MARKER: char = '\u{FDD0}';
 
 /// One element of a Sigma string after its escape sequences have been parsed.
 #[derive(Debug, PartialEq, Eq)]
@@ -9,6 +15,58 @@ pub(in crate::detections::rule) enum SigmaPatternToken {
     Literal(String),
     AnyChars,
     AnyChar,
+}
+
+fn is_word_character(character: char) -> bool {
+    character.is_alphanumeric() || character == '_'
+}
+
+/// Marks Windows command-line option prefixes for compact `windash` regex generation.
+///
+/// A dash is an option prefix when it is not preceded by a word character and is followed by one,
+/// matching pySigma's `\B[-/]\b` boundary behavior. Marking the rule instead of normalizing the
+/// complete event preserves literal dashes whose boundary context differs between the rule and the
+/// event, such as the trailing dash in a `contains|windash: ' -'` pattern. Each marker becomes one
+/// regex character class, avoiding Cartesian expansion when a pattern has several options.
+pub(in crate::detections::rule) fn mark_windash(value: &str) -> String {
+    let characters = value.chars().collect::<Vec<_>>();
+    let mut marked = String::with_capacity(value.len());
+
+    for (index, character) in characters.iter().copied().enumerate() {
+        let previous = index.checked_sub(1).map(|index| characters[index]);
+        let next = characters.get(index + 1).copied();
+        let is_dash = character == '/' || WINDASH_CHARACTERS.contains(&character);
+        let is_option_prefix = is_dash
+            && previous.is_none_or(|previous| !is_word_character(previous))
+            && next.is_some_and(is_word_character);
+
+        if is_option_prefix {
+            marked.push(WINDASH_MARKER);
+        } else {
+            marked.push(character);
+        }
+    }
+
+    marked
+}
+
+fn windash_regex_class() -> String {
+    let mut dash_characters = vec!['-', '/'];
+    dash_characters.extend(WINDASH_CHARACTERS.iter().copied());
+    dash_characters.sort_unstable();
+    dash_characters.dedup();
+
+    let alternatives = dash_characters
+        .iter()
+        .map(|character| regex::escape(&character.to_string()))
+        .collect::<String>();
+    format!("[{alternatives}]")
+}
+
+/// Replaces markers inserted by [`mark_windash`] with compact regex character classes. This is
+/// used for an explicit regex path, where no wildcard conversion runs afterward.
+pub(in crate::detections::rule::matchers) fn render_marked_windash(pattern: String) -> String {
+    pattern.replace(WINDASH_MARKER, &windash_regex_class())
 }
 
 /// Parses Sigma escaping from left to right. Backslashes escape `\\`, `*`, and `?`; a
@@ -113,11 +171,30 @@ pub(in crate::detections::rule::matchers) fn wrap_pattern(
 /// This processing could have been included in `wrap_pattern`, but it became complex, so it was
 /// split out into its own function.
 pub(in crate::detections::rule::matchers) fn wildcard_to_regex(pattern: String) -> String {
+    wildcard_to_regex_with_options(pattern, true, false)
+}
+
+/// Converts Sigma wildcard notation to regex, optionally preserving case and expanding the
+/// internal markers inserted by [`mark_windash`] into one compact character class each.
+pub(in crate::detections::rule::matchers) fn wildcard_to_regex_with_options(
+    pattern: String,
+    ignore_case: bool,
+    has_windash: bool,
+) -> String {
+    let windash_class = has_windash.then(windash_regex_class);
     let ret =
         parse_sigma_pattern(&pattern)
             .iter()
             .fold(String::new(), |mut regex_pattern, token| {
                 match token {
+                    SigmaPatternToken::Literal(value) if has_windash => {
+                        for (index, literal) in value.split(WINDASH_MARKER).enumerate() {
+                            if index > 0 {
+                                regex_pattern.push_str(windash_class.as_ref().unwrap());
+                            }
+                            regex_pattern.push_str(&regex::escape(literal));
+                        }
+                    }
                     SigmaPatternToken::Literal(value) => {
                         regex_pattern.push_str(&regex::escape(value))
                     }
@@ -130,7 +207,10 @@ pub(in crate::detections::rule::matchers) fn wildcard_to_regex(pattern: String) 
                 regex_pattern
             });
 
-    // Sigma wildcards are case-insensitive.
-    // Therefore, prepend the case-insensitive flag to the regex.
-    "(?i)".to_string() + &ret
+    if ignore_case {
+        // Sigma wildcards are case-insensitive unless the `cased` modifier is present.
+        "(?i)".to_string() + &ret
+    } else {
+        ret
+    }
 }

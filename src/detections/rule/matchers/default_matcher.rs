@@ -7,9 +7,10 @@ use yaml_rust2::Yaml;
 use super::LeafMatcher;
 use super::modifiers::ValueMatcher;
 use super::modifiers::encoding::{self, Encoding, Utf16Kind};
-use super::modifiers::string::wrap_pattern;
+use super::modifiers::string::{
+    mark_windash, render_marked_windash, wildcard_to_regex_with_options, wrap_pattern,
+};
 use super::pipe_element::PipeElement;
-use crate::detections::configs::WINDASH_CHARACTERS;
 use crate::detections::rule::fast_match::{
     FastMatch, check_fast_match, convert_to_all_only_fast_match, convert_to_fast_match,
 };
@@ -61,10 +62,26 @@ impl DefaultMatcher {
     /// Wildcard-to-regex conversion is also implemented through this method: pass the wildcard
     /// string as `pattern` and include PipeElement::Wildcard in `pipes`.
     fn from_pattern_to_regex_str(pattern: String, pipes: &[PipeElement]) -> String {
-        // Process the pattern with each pipe.
-        pipes
-            .iter()
-            .fold(pattern, |acc, pipe| pipe.pipe_pattern(acc))
+        let is_cased = pipes.contains(&PipeElement::Cased);
+        let has_windash = pipes.contains(&PipeElement::Windash);
+        let has_wildcard = pipes.contains(&PipeElement::Wildcard);
+
+        // Windash positions are marked in the rule and emitted as compact regex character
+        // classes. The wildcard conversion also needs the complete modifier set so it can honor
+        // `cased` instead of unconditionally enabling case-insensitive matching.
+        let pattern = pipes.iter().fold(pattern, |pattern, pipe| match pipe {
+            PipeElement::Windash => mark_windash(&pattern),
+            PipeElement::Wildcard => {
+                wildcard_to_regex_with_options(pattern, !is_cased, has_windash)
+            }
+            _ => pipe.pipe_pattern(pattern),
+        });
+
+        if has_windash && !has_wildcard {
+            render_marked_windash(pattern)
+        } else {
+            pattern
+        }
     }
 }
 
@@ -139,28 +156,28 @@ impl MatchPlan {
     }
 
     /// Builds the `FastMatch` list for a recognized plan, or `None` when the fast path does not
-    /// handle the combination (the caller then falls back to the regex path). `pattern` may gain a
-    /// dash-replaced variant for the `|contains|all|windash` form, matching the original behavior.
+    /// handle the combination (the caller then falls back to the regex path). Windash uses one
+    /// compact regex rather than materializing every permutation as fast matchers.
     fn build_fast_match(
         &self,
-        pattern: &mut Vec<String>,
+        pattern: &[String],
         err_msgs: &mut Vec<String>,
     ) -> Option<Vec<FastMatch>> {
         match self.encoding {
             Encoding::Plain => {
                 // UTF-16 only applies together with a base64 encoding.
-                if self.utf16 != Utf16Kind::None {
+                if self.utf16 != Utf16Kind::None || self.windash {
                     return None;
                 }
                 match self.wrap {
                     Wrap::None => {
-                        if self.cased || self.windash || self.all {
+                        if self.cased || self.all {
                             return None;
                         }
                         convert_to_fast_match(&pattern[0], true)
                     }
                     Wrap::StartsWith | Wrap::EndsWith => {
-                        if self.windash || self.all {
+                        if self.all {
                             return None;
                         }
                         let wrapped = if self.wrap == Wrap::StartsWith {
@@ -172,35 +189,11 @@ impl MatchPlan {
                         convert_to_fast_match(&wrapped, !self.cased)
                     }
                     Wrap::AllOnly => {
-                        if self.cased || self.windash || self.all {
+                        if self.cased || self.all {
                             return None;
                         }
                         let wrapped = wrap_pattern(&PipeElement::Contains, pattern[0].clone());
                         convert_to_all_only_fast_match(&wrapped)
-                    }
-                    Wrap::Contains if self.windash => {
-                        // For |contains|windash: also match a variant of the pattern whose first
-                        // dash-like character (hyphen, en/em dash, etc.) is replaced with "/", to
-                        // cover the interchangeable option prefixes accepted by Windows commands.
-                        if self.cased {
-                            return None;
-                        }
-                        let windash_chars = WINDASH_CHARACTERS.as_slice();
-                        // |contains|all|windash was already turned into an AND-op NarySelectionNode
-                        // during parsing; it additionally records the dash-replaced variant in
-                        // `pattern` for the regex fallback, so preserve that here.
-                        if self.all {
-                            pattern.push(pattern[0].replacen(windash_chars, "/", 1));
-                        }
-                        let wrapped = wrap_pattern(&PipeElement::Contains, pattern[0].clone());
-                        let mut fastmatches =
-                            convert_to_fast_match(&wrapped, true).unwrap_or_default();
-                        let windash_pattern = pattern[0].replacen(windash_chars, "/", 1);
-                        let windash_wrapped = wrap_pattern(&PipeElement::Contains, windash_pattern);
-                        fastmatches.extend(
-                            convert_to_fast_match(&windash_wrapped, true).unwrap_or_default(),
-                        );
-                        (!fastmatches.is_empty()).then_some(fastmatches)
                     }
                     Wrap::Contains => {
                         // |contains, |contains|all (parse-split, treated as plain contains), or
@@ -266,8 +259,7 @@ impl LeafMatcher for DefaultMatcher {
             );
             return Err(vec![errmsg]);
         }
-        let mut pattern = Vec::new();
-        pattern.push(yaml_value.unwrap());
+        let pattern = vec![yaml_value.unwrap()];
         // If pipes are specified, parse them.
         let empty_str = String::default();
         // The first element is just the field key; the second and subsequent elements are pipes.
@@ -371,7 +363,7 @@ impl LeafMatcher for DefaultMatcher {
         // it in one pass, replacing the former hand-enumerated table of pipe-count/tuple cases. An
         // unrecognized combination yields no fast matcher and the regex path below handles it.
         self.fast_match = MatchPlan::from_pipes(&self.pipes)
-            .and_then(|plan| plan.build_fast_match(&mut pattern, &mut err_msgs));
+            .and_then(|plan| plan.build_fast_match(&pattern, &mut err_msgs));
 
         if self.fast_match.is_some()
             && matches!(
@@ -379,6 +371,7 @@ impl LeafMatcher for DefaultMatcher {
                 FastMatch::Exact(_) | FastMatch::Contains(_)
             )
             && !self.key_list.is_empty()
+            && !self.pipes.contains(&PipeElement::Windash)
         {
             // No regex needs to be compiled when the pattern was fully replaced with a
             // FastMatch::Exact/Contains search. (Grep searches with an empty key list still need

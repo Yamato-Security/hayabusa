@@ -250,10 +250,10 @@ Este documento é atualizado dinamicamente sempre que há uma atualização nas 
 - `|contains|all|windash`: Igual a `|contains|windash`, mas todas as palavras-chave precisam estar presentes.
 - `|contains|cased`: Verifica se um valor de campo contém uma determinada string que diferencia maiúsculas de minúsculas.
 - `|contains|expand`: Verifica se um valor de campo contém uma string no arquivo de configuração `expand` dentro de `/config/expand/`.
-- `|contains|windash`: Verificará a string como está, bem como converterá o primeiro caractere `-` em permutações dos caracteres `/`, `–` (en dash), `—` (em dash) e `―` (barra horizontal).
+- `|contains|windash`: Verifica a string tratando `-`, `/`, `–` (en dash), `—` (em dash) e `―` (barra horizontal) como equivalentes em cada prefixo de opção da linha de comando. Hífens internos, como o de `-param-name`, permanecem literais.
 - `|endswith`: Verifica se um valor de campo termina com uma determinada string.
 - `|endswith|cased`: Verifica se um valor de campo termina com uma determinada string que diferencia maiúsculas de minúsculas.
-- `|endswith|windash`: Verifica o final da string e realiza variações para os traços.
+- `|endswith|windash`: Verifica o final da string e realiza variações para os hífens de prefixos de opções da linha de comando.
 - `|exists`: Verifica se um campo existe.
 - `|expand`: Verifica se um valor de campo é igual a uma string no arquivo de configuração `expand` dentro de `/config/expand/`.
 - `|fieldref`: Verifica se os valores em dois campos são iguais. Você pode usar `not` na `condition` se quiser verificar se dois campos são diferentes.
@@ -271,6 +271,7 @@ Este documento é atualizado dinamicamente sempre que há uma atualização nas 
 - `|re|s`: (Single-line) o ponto (`.`) corresponde a todos os caracteres, incluindo o caractere de nova linha.
 - `|startswith`: Verifica se um valor de campo começa com uma determinada string.
 - `|startswith|cased`: Verifica se um valor de campo começa com uma determinada string que diferencia maiúsculas de minúsculas.
+- `|startswith|windash`: Verifica o início da string e realiza variações para os hífens de prefixos de opções da linha de comando.
 - `|utf16|base64offset|contains`: Verifica se uma determinada string UTF-16 está codificada dentro de uma string base64.
 - `|utf16be|base64offset|contains`: Verifica se uma determinada string UTF-16 big-endian está codificada dentro de uma string base64.
 - `|utf16le|base64offset|contains`: Verifica se uma determinada string UTF-16 little-endian está codificada dentro de uma string base64.

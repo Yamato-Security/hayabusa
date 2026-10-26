@@ -250,10 +250,10 @@ Ce document est mis à jour dynamiquement chaque fois qu'il y a une mise à jour
 - `|contains|all|windash`: Identique à `|contains|windash` mais tous les mots-clés doivent être présents.
 - `|contains|cased`: Vérifie si une valeur de champ contient une certaine chaîne sensible à la casse.
 - `|contains|expand`: Vérifie si une valeur de champ contient une chaîne dans le fichier de configuration `expand` à l'intérieur de `/config/expand/`.
-- `|contains|windash`: Vérifiera la chaîne telle quelle, ainsi que la conversion du premier caractère `-` en permutations de caractères `/`, `–` (tiret demi-cadratin), `—` (tiret cadratin) et `―` (barre horizontale).
+- `|contains|windash`: Vérifie la chaîne en traitant `-`, `/`, `–` (tiret demi-cadratin), `—` (tiret cadratin) et `―` (barre horizontale) comme équivalents pour chaque préfixe d’option de ligne de commande. Les tirets internes, comme celui de `-param-name`, restent littéraux.
 - `|endswith`: Vérifie si une valeur de champ se termine par une certaine chaîne.
 - `|endswith|cased`: Vérifie si une valeur de champ se termine par une certaine chaîne sensible à la casse.
-- `|endswith|windash`: Vérifie la fin de la chaîne et effectue des variations pour les tirets.
+- `|endswith|windash`: Vérifie la fin de la chaîne et effectue des variations pour les tirets des préfixes d’options de ligne de commande.
 - `|exists`: Vérifie si un champ existe.
 - `|expand`: Vérifie si une valeur de champ est égale à une chaîne dans le fichier de configuration `expand` à l'intérieur de `/config/expand/`.
 - `|fieldref`: Vérifie si les valeurs de deux champs sont identiques. Vous pouvez utiliser `not` dans la `condition` si vous souhaitez vérifier si deux champs sont différents.
@@ -271,6 +271,7 @@ Ce document est mis à jour dynamiquement chaque fois qu'il y a une mise à jour
 - `|re|s`: (Single-line) le point (`.`) correspond à tous les caractères, y compris le caractère de nouvelle ligne.
 - `|startswith`: Vérifie si une valeur de champ commence par une certaine chaîne.
 - `|startswith|cased`: Vérifie si une valeur de champ commence par une certaine chaîne sensible à la casse.
+- `|startswith|windash`: Vérifie le début de la chaîne et effectue des variations pour les tirets des préfixes d’options de ligne de commande.
 - `|utf16|base64offset|contains`: Vérifie si une certaine chaîne UTF-16 est encodée à l'intérieur d'une chaîne base64.
 - `|utf16be|base64offset|contains`: Vérifie si une certaine chaîne UTF-16 big-endian est encodée à l'intérieur d'une chaîne base64.
 - `|utf16le|base64offset|contains`: Vérifie si une certaine chaîne UTF-16 little-endian est encodée à l'intérieur d'une chaîne base64.

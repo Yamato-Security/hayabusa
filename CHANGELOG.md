@@ -1,10 +1,18 @@
 # Changes
 
-## x.x.x [xxxx/xx/xx]
+## 4.2.1 [2026/10/27] - Vulnpocalypse Release
 
 **Enhancements:**
 
 - Added `-Z, --timezone <OFFSET>` to `dfir-timeline`, `search`, `eid-metrics`, `logon-summary`, `log-metrics`, and `extract-base64` to render output timestamps with a fixed UTC offset. It accepts only signed `+HH:MM` or `-HH:MM` values (for example, `--timezone "+09:00"` or `-Z "-01:00"`), rejects malformed or out-of-range values with example syntax, and conflicts with `--utc` and `--iso-8601`. The selected offset is applied consistently to timeline fields, metrics, searches, Base64 extraction, summary dates, and detection-frequency visualization labels and markers, while internal timestamps used for filtering, sorting, and histogram bins remain in UTC. (#1935) (@Shirofune-Security)
+
+**Bug Fixes:**
+
+- Fixed Sigma `windash` matching only the first command-line option prefix with `contains` and being ignored with `startswith` and `endswith`. Eligible option-prefix dashes in the rule are now represented by compact regex character classes and matched against the original event value, while internal and boundary-dependent literal dashes remain unchanged. The regex fallback also honors `cased`. Added regression coverage for the reported Procdump and Taskkill command lines, Unicode dash variants and case folding, literal and internal dashes, multiple options, case-sensitive matching, and regex fallback. (#1938, #1939) (@YamatoSecurity)
+
+**Other:**
+
+- Refreshed 28 direct and transitive Rust dependency packages to their latest versions compatible with Rust 1.97.1, including direct updates to `pulldown-cmark` 0.13.5, `tokio` 1.54.1, `ureq` 3.5.0, `uuid` 1.29.0, and `wildmatch` 2.7.0. (@YamatoSecurity)
 
 ## 4.2.0 [2026/10/12] - Autumn Release
 
