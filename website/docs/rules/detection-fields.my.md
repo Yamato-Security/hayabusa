@@ -250,10 +250,10 @@ Support လုပ်ထားသော field modifier အားလုံး၏ �
 - `|contains|all|windash`: `|contains|windash` နှင့်တူသော်လည်း keyword အားလုံး ပါရှိရန်လိုသည်။
 - `|contains|cased`: field value တစ်ခုတွင် စာလုံးအကြီးအသေး ခွဲခြားသော string တစ်ခု ပါဝင်မှုရှိမရှိ စစ်ဆေးသည်။
 - `|contains|expand`: field value တစ်ခုတွင် `/config/expand/` အတွင်းရှိ `expand` config ဖိုင်ထဲက string တစ်ခု ပါဝင်မှုရှိမရှိ စစ်ဆေးသည်။
-- `|contains|windash`: string ကို ရှိသည့်အတိုင်း စစ်ဆေးမည်ဖြစ်သလို၊ ပထမဆုံး `-` character ကို `/`, `–` (en dash), `—` (em dash), နှင့် `―` (horizontal bar) character permutation များသို့ ပြောင်းလဲ၍လည်း စစ်ဆေးပါမည်။
+- `|contains|windash`: command-line option prefix တစ်ခုစီတွင် `-`, `/`, `–` (en dash), `—` (em dash), နှင့် `―` (horizontal bar) တို့ကို တန်ဖိုးတူအဖြစ် သတ်မှတ်၍ string ကို စစ်ဆေးသည်။ `-param-name` ကဲ့သို့ internal dash များကို literal အဖြစ် ဆက်လက်ထားရှိသည်။
 - `|endswith`: field value တစ်ခုသည် string တစ်ခုဖြင့် အဆုံးသတ်မှုရှိမရှိ စစ်ဆေးသည်။
 - `|endswith|cased`: field value တစ်ခုသည် စာလုံးအကြီးအသေး ခွဲခြားသော string တစ်ခုဖြင့် အဆုံးသတ်မှုရှိမရှိ စစ်ဆေးသည်။
-- `|endswith|windash`: string ၏ အဆုံးကို စစ်ဆေးပြီး dash များအတွက် variation များ ပြုလုပ်သည်။
+- `|endswith|windash`: string ၏ အဆုံးကို စစ်ဆေးပြီး command-line option prefix dash များအတွက် variation များ ပြုလုပ်သည်။
 - `|exists`: field တစ်ခု တည်ရှိမှုရှိမရှိ စစ်ဆေးသည်။
 - `|expand`: field value တစ်ခုသည် `/config/expand/` အတွင်းရှိ `expand` config ဖိုင်ထဲက string တစ်ခုနှင့် ညီမှုရှိမရှိ စစ်ဆေးသည်။
 - `|fieldref`: field နှစ်ခုရှိ value များ တူညီမှုရှိမရှိ စစ်ဆေးသည်။ field နှစ်ခု ကွဲပြားမှုရှိမရှိ စစ်ဆေးလိုပါက `condition` တွင် `not` ကို အသုံးပြုနိုင်သည်။
@@ -271,6 +271,7 @@ Support လုပ်ထားသော field modifier အားလုံး၏ �
 - `|re|s`: (Single-line) dot (`.`) သည် newline character အပါအဝင် character အားလုံးကို ကိုက်ညီသည်။
 - `|startswith`: field value တစ်ခုသည် string တစ်ခုဖြင့် စတင်မှုရှိမရှိ စစ်ဆေးသည်။
 - `|startswith|cased`: field value တစ်ခုသည် စာလုံးအကြီးအသေး ခွဲခြားသော string တစ်ခုဖြင့် စတင်မှုရှိမရှိ စစ်ဆေးသည်။
+- `|startswith|windash`: string ၏ အစကို စစ်ဆေးပြီး command-line option prefix dash များအတွက် variation များ ပြုလုပ်သည်။
 - `|utf16|base64offset|contains`: သတ်မှတ်ထားသော UTF-16 string တစ်ခုသည် base64 string တစ်ခုအတွင်း encode လုပ်ထားခြင်း ရှိမရှိ စစ်ဆေးသည်။
 - `|utf16be|base64offset|contains`: သတ်မှတ်ထားသော UTF-16 big-endian string တစ်ခုသည် base64 string တစ်ခုအတွင်း encode လုပ်ထားခြင်း ရှိမရှိ စစ်ဆေးသည်။
 - `|utf16le|base64offset|contains`: သတ်မှတ်ထားသော UTF-16 little-endian string တစ်ခုသည် base64 string တစ်ခုအတွင်း encode လုပ်ထားခြင်း ရှိမရှိ စစ်ဆေးသည်။

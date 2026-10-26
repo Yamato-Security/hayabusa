@@ -250,10 +250,10 @@ Hayabusa는 현재 Sigma 사양 전체를 완전히 지원하는 유일한 오�
 - `|contains|all|windash`: `|contains|windash`와 동일하지만 모든 키워드가 존재해야 합니다.
 - `|contains|cased`: 필드 값이 특정 대소문자 구분 문자열을 포함하는지 확인합니다.
 - `|contains|expand`: 필드 값이 `/config/expand/` 내부의 `expand` 설정 파일에 있는 문자열을 포함하는지 확인합니다.
-- `|contains|windash`: 문자열을 그대로 확인하고, 첫 번째 `-` 문자를 `/`, `–`(en dash), `—`(em dash), `―`(horizontal bar) 문자 조합으로 변환하여 확인합니다.
+- `|contains|windash`: 각 명령줄 옵션 접두사에서 `-`, `/`, `–`(en dash), `—`(em dash), `―`(horizontal bar)을 동일하게 취급하여 문자열을 확인합니다. `-param-name`과 같은 내부 대시는 리터럴로 유지됩니다.
 - `|endswith`: 필드 값이 특정 문자열로 끝나는지 확인합니다.
 - `|endswith|cased`: 필드 값이 특정 대소문자 구분 문자열로 끝나는지 확인합니다.
-- `|endswith|windash`: 문자열의 끝을 확인하고 대시에 대한 변형을 수행합니다.
+- `|endswith|windash`: 문자열의 끝을 확인하고 명령줄 옵션 접두사 대시에 대한 변형을 수행합니다.
 - `|exists`: 필드가 존재하는지 확인합니다.
 - `|expand`: 필드 값이 `/config/expand/` 내부의 `expand` 설정 파일에 있는 문자열과 같은지 확인합니다.
 - `|fieldref`: 두 필드의 값이 같은지 확인합니다. 두 필드가 다른지 확인하려면 `condition`에서 `not`을 사용할 수 있습니다.
@@ -271,6 +271,7 @@ Hayabusa는 현재 Sigma 사양 전체를 완전히 지원하는 유일한 오�
 - `|re|s`: (Single-line) 점(`.`)이 줄바꿈 문자를 포함한 모든 문자와 일치합니다.
 - `|startswith`: 필드 값이 특정 문자열로 시작하는지 확인합니다.
 - `|startswith|cased`: 필드 값이 특정 대소문자 구분 문자열로 시작하는지 확인합니다.
+- `|startswith|windash`: 문자열의 시작을 확인하고 명령줄 옵션 접두사 대시에 대한 변형을 수행합니다.
 - `|utf16|base64offset|contains`: 특정 UTF-16 문자열이 base64 문자열 내부에 인코딩되어 있는지 확인합니다.
 - `|utf16be|base64offset|contains`: 특정 UTF-16 빅엔디안 문자열이 base64 문자열 내부에 인코딩되어 있는지 확인합니다.
 - `|utf16le|base64offset|contains`: 특정 UTF-16 리틀엔디안 문자열이 base64 문자열 내부에 인코딩되어 있는지 확인합니다.

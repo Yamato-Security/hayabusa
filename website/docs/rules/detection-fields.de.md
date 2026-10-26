@@ -250,10 +250,10 @@ Dieses Dokument wird dynamisch jedes Mal aktualisiert, wenn es ein Update für S
 - `|contains|all|windash`: Wie `|contains|windash`, aber alle Schlüsselwörter müssen vorhanden sein.
 - `|contains|cased`: Prüft, ob ein Feldwert eine bestimmte case-sensitive Zeichenkette enthält.
 - `|contains|expand`: Prüft, ob ein Feldwert eine Zeichenkette in der `expand`-Konfigurationsdatei innerhalb von `/config/expand/` enthält.
-- `|contains|windash`: Prüft die Zeichenkette unverändert und konvertiert das erste `-`-Zeichen in die Permutationen der Zeichen `/`, `–` (en dash), `—` (em dash) und `―` (horizontal bar).
+- `|contains|windash`: Prüft die Zeichenkette, wobei `-`, `/`, `–` (en dash), `—` (em dash) und `―` (horizontal bar) an jedem Präfix einer Befehlszeilenoption als gleichwertig behandelt werden. Interne Bindestriche, wie der in `-param-name`, bleiben literal.
 - `|endswith`: Prüft, ob ein Feldwert mit einer bestimmten Zeichenkette endet.
 - `|endswith|cased`: Prüft, ob ein Feldwert mit einer bestimmten case-sensitiven Zeichenkette endet.
-- `|endswith|windash`: Prüft das Ende der Zeichenkette und führt Variationen für Bindestriche durch.
+- `|endswith|windash`: Prüft das Ende der Zeichenkette und führt Variationen für Bindestriche in Präfixen von Befehlszeilenoptionen durch.
 - `|exists`: Prüft, ob ein Feld existiert.
 - `|expand`: Prüft, ob ein Feldwert einer Zeichenkette in der `expand`-Konfigurationsdatei innerhalb von `/config/expand/` entspricht.
 - `|fieldref`: Prüft, ob die Werte in zwei Feldern gleich sind. Sie können `not` in der `condition` verwenden, wenn Sie prüfen möchten, ob zwei Felder unterschiedlich sind.
@@ -271,6 +271,7 @@ Dieses Dokument wird dynamisch jedes Mal aktualisiert, wenn es ein Update für S
 - `|re|s`: (Single-line) Punkt (`.`) stimmt mit allen Zeichen überein, einschließlich des Zeilenumbruchzeichens.
 - `|startswith`: Prüft, ob ein Feldwert mit einer bestimmten Zeichenkette beginnt.
 - `|startswith|cased`: Prüft, ob ein Feldwert mit einer bestimmten case-sensitiven Zeichenkette beginnt.
+- `|startswith|windash`: Prüft den Anfang der Zeichenkette und führt Variationen für Bindestriche in Präfixen von Befehlszeilenoptionen durch.
 - `|utf16|base64offset|contains`: Prüft, ob eine bestimmte UTF-16-Zeichenkette innerhalb einer base64-Zeichenkette kodiert ist.
 - `|utf16be|base64offset|contains`: Prüft, ob eine bestimmte UTF-16-Big-Endian-Zeichenkette innerhalb einer base64-Zeichenkette kodiert ist.
 - `|utf16le|base64offset|contains`: Prüft, ob eine bestimmte UTF-16-Little-Endian-Zeichenkette innerhalb einer base64-Zeichenkette kodiert ist.

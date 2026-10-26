@@ -250,10 +250,10 @@ Hayabusa 目前是唯一完整支援所有 Sigma 規格的開源工具。
 - `|contains|all|windash`：與 `|contains|windash` 相同，但所有的關鍵字都需要存在。
 - `|contains|cased`：檢查欄位值是否包含某個區分大小寫的字串。
 - `|contains|expand`：檢查欄位值是否包含 `/config/expand/` 內 `expand` 設定檔中的某個字串。
-- `|contains|windash`：會原封不動地檢查字串，同時也會將第一個 `-` 字元轉換為 `/`、`–`（en dash）、`—`（em dash）以及 `―`（horizontal bar）字元的排列組合。
+- `|contains|windash`：檢查字串，並將每個命令列選項前綴中的 `-`、`/`、`–`（en dash）、`—`（em dash）以及 `―`（horizontal bar）視為等價。內部連字號（例如 `-param-name` 中的連字號）會保留為字面字元。
 - `|endswith`：檢查欄位值是否以某個字串結尾。
 - `|endswith|cased`：檢查欄位值是否以某個區分大小寫的字串結尾。
-- `|endswith|windash`：檢查字串的結尾並對破折號執行各種變體。
+- `|endswith|windash`：檢查字串的結尾，並對命令列選項前綴的連字號執行各種變體。
 - `|exists`：檢查欄位是否存在。
 - `|expand`：檢查欄位值是否等於 `/config/expand/` 內 `expand` 設定檔中的某個字串。
 - `|fieldref`：檢查兩個欄位中的值是否相同。如果你想檢查兩個欄位是否不同，可以在 `condition` 中使用 `not`。
@@ -271,6 +271,7 @@ Hayabusa 目前是唯一完整支援所有 Sigma 規格的開源工具。
 - `|re|s`：（Single-line，單行）點（`.`）比對所有字元，包括換行字元。
 - `|startswith`：檢查欄位值是否以某個字串開頭。
 - `|startswith|cased`：檢查欄位值是否以某個區分大小寫的字串開頭。
+- `|startswith|windash`：檢查字串的開頭，並對命令列選項前綴的連字號執行各種變體。
 - `|utf16|base64offset|contains`：檢查某個 UTF-16 字串是否被編碼於 base64 字串內。
 - `|utf16be|base64offset|contains`：檢查某個 UTF-16 big-endian 字串是否被編碼於 base64 字串內。
 - `|utf16le|base64offset|contains`：檢查某個 UTF-16 little-endian 字串是否被編碼於 base64 字串內。
