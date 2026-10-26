@@ -8,7 +8,7 @@
 
 **バグ修正:**
 
-- Sigma の `windash` が `contains` ではコマンドラインの最初のオプション接頭辞にしか適用されず、`startswith` と `endswith` では無視される問題を修正した。比較する両方の値ですべてのオプション接頭辞のダッシュ表記を正規化し、`-param-name` の途中にあるダッシュはリテラルのまま扱う。報告された Procdump と Taskkill のコマンドライン、Unicode のダッシュ表記、内部ダッシュ、および正規表現フォールバックの回帰テストを追加した。 (#1938, #1939) (@Shirofune-Security)
+- Sigma の `windash` が `contains` ではコマンドラインの最初のオプション接頭辞にしか適用されず、`startswith` と `endswith` では無視される問題を修正した。比較する両方の値ですべてのオプション接頭辞のダッシュ表記を正規化し、`-param-name` の途中にあるダッシュはリテラルのまま扱う。報告された Procdump と Taskkill のコマンドライン、Unicode のダッシュ表記、内部ダッシュ、および正規表現フォールバックの回帰テストを追加した。 (#1938, #1939) (@YamatoSecurity)
 
 ## 4.2.0 [2026/10/12] - Autumn Release
 

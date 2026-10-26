@@ -8,7 +8,7 @@
 
 **Bug Fixes:**
 
-- Fixed Sigma `windash` matching only the first command-line option prefix with `contains` and being ignored with `startswith` and `endswith`. All option-prefix dash variants are now normalized on both sides of the comparison, while internal dashes such as the one in `-param-name` remain literal. Added regression coverage for the reported Procdump and Taskkill command lines, Unicode dash variants, internal dashes, and regex fallback. (#1938, #1939) (@Shirofune-Security)
+- Fixed Sigma `windash` matching only the first command-line option prefix with `contains` and being ignored with `startswith` and `endswith`. All option-prefix dash variants are now normalized on both sides of the comparison, while internal dashes such as the one in `-param-name` remain literal. Added regression coverage for the reported Procdump and Taskkill command lines, Unicode dash variants, internal dashes, and regex fallback. (#1938, #1939) (@YamatoSecurity)
 
 ## 4.2.0 [2026/10/12] - Autumn Release
 
