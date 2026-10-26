@@ -3382,7 +3382,7 @@ fn test_contains_windash() {
 }
 
 #[test]
-fn test_contains_windash_normalizes_each_option_prefix() {
+fn test_contains_windash_expands_each_option_prefix() {
     let rule_str = r#"
         enabled: true
         detection:
@@ -3421,6 +3421,106 @@ fn test_contains_windash_normalizes_each_option_prefix() {
 
     check_select(rule_str, record_with_cmd_prefix, true);
     check_select(rule_str, record_with_reordered_options, true);
+}
+
+#[test]
+fn test_exact_windash_uses_unicode_case_folding() {
+    let rule_str = r#"
+        enabled: true
+        detection:
+            selection1:
+                'CommandLine|windash': 'tool -Ö'
+            condition: selection1
+        "#;
+
+    let record_json_str = r#"
+        {
+          "Event": {
+            "System": {"EventID": 1, "Channel": "Microsoft-Windows-Sysmon/Operational"},
+            "EventData": {"CommandLine": "tool -ö"}
+          }
+        }"#;
+
+    check_select(rule_str, record_json_str, true);
+}
+
+#[test]
+fn test_contains_windash_preserves_trailing_literal_dash() {
+    let rule_str = r#"
+        enabled: true
+        detection:
+            selection1:
+                'CommandLine|contains|windash': ' -'
+            condition: selection1
+        "#;
+
+    let hyphen_record = r#"
+        {
+          "Event": {
+            "System": {"EventID": 1, "Channel": "Microsoft-Windows-Sysmon/Operational"},
+            "EventData": {"CommandLine": "tool -f"}
+          }
+        }"#;
+    let slash_record = r#"
+        {
+          "Event": {
+            "System": {"EventID": 1, "Channel": "Microsoft-Windows-Sysmon/Operational"},
+            "EventData": {"CommandLine": "tool /f"}
+          }
+        }"#;
+
+    check_select(rule_str, hyphen_record, true);
+    check_select(rule_str, slash_record, false);
+}
+
+#[test]
+fn test_startswith_windash_preserves_trailing_literal_dash() {
+    let rule_str = r#"
+        enabled: true
+        detection:
+            selection1:
+                'CommandLine|startswith|windash': 'tool -'
+            condition: selection1
+        "#;
+
+    let record_json_str = r#"
+        {
+          "Event": {
+            "System": {"EventID": 1, "Channel": "Microsoft-Windows-Sysmon/Operational"},
+            "EventData": {"CommandLine": "tool -f"}
+          }
+        }"#;
+
+    check_select(rule_str, record_json_str, true);
+}
+
+#[test]
+fn test_windash_regex_fallback_preserves_trailing_literal_dash() {
+    let rule_str = r#"
+        enabled: true
+        detection:
+            selection1:
+                'CommandLine|contains|windash': ' -?'
+            condition: selection1
+        "#;
+
+    let hyphen_record = r#"
+        {
+          "Event": {
+            "System": {"EventID": 1, "Channel": "Microsoft-Windows-Sysmon/Operational"},
+            "EventData": {"CommandLine": "tool -f"}
+          }
+        }"#;
+    let slash_record = r#"
+        {
+          "Event": {
+            "System": {"EventID": 1, "Channel": "Microsoft-Windows-Sysmon/Operational"},
+            "EventData": {"CommandLine": "tool /f"}
+          }
+        }"#;
+
+    check_select(rule_str, hyphen_record, true);
+    check_select(rule_str, slash_record, false);
 }
 
 #[test]

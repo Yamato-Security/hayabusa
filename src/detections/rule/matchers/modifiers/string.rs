@@ -1,8 +1,6 @@
 //! The string-wrapping modifiers (`startswith`, `endswith`, `contains`) and the
 //! wildcard-to-regex conversion used for the default (implicit) wildcard match.
 
-use std::borrow::Cow;
-
 use super::PipeElement;
 use crate::detections::configs::WINDASH_CHARACTERS;
 
@@ -18,39 +16,48 @@ fn is_word_character(character: char) -> bool {
     character.is_alphanumeric() || character == '_'
 }
 
-/// Canonicalizes Windows command-line option prefixes to `/` for `windash` matching.
+/// Expands Windows command-line option prefixes into every configured `windash` spelling.
 ///
 /// A dash is an option prefix when it is not preceded by a word character and is followed by one,
-/// matching pySigma's `\B[-/]\b` boundary behavior. This changes every option prefix in the value
-/// while preserving internal dashes such as the one in `param-name`. The configured Unicode dash
-/// characters are treated the same way as `-` and `/`.
-pub(in crate::detections::rule) fn normalize_windash(value: &str) -> Cow<'_, str> {
-    let mut previous = None;
-    let mut characters = value.char_indices().peekable();
-    let mut normalized: Option<String> = None;
+/// matching pySigma's `\B[-/]\b` boundary behavior. Expanding the rule instead of normalizing the
+/// complete event preserves literal dashes whose boundary context differs between the rule and the
+/// event, such as the trailing dash in a `contains|windash: ' -'` pattern. Internal dashes such as
+/// the one in `param-name` are left untouched.
+pub(in crate::detections::rule) fn expand_windash(value: &str) -> Vec<String> {
+    let characters = value.chars().collect::<Vec<_>>();
+    let mut dash_characters = vec!['-', '/'];
+    dash_characters.extend(WINDASH_CHARACTERS.iter().copied());
+    dash_characters.sort_unstable();
+    dash_characters.dedup();
+    let mut variants = vec![String::new()];
 
-    while let Some((index, character)) = characters.next() {
-        let next = characters.peek().map(|(_, next)| *next);
+    for (index, character) in characters.iter().copied().enumerate() {
+        let previous = index.checked_sub(1).map(|index| characters[index]);
+        let next = characters.get(index + 1).copied();
         let is_dash = character == '/' || WINDASH_CHARACTERS.contains(&character);
         let is_option_prefix = is_dash
             && previous.is_none_or(|previous| !is_word_character(previous))
             && next.is_some_and(is_word_character);
 
-        if is_option_prefix && character != '/' {
-            let output = normalized.get_or_insert_with(|| {
-                let mut output = String::with_capacity(value.len());
-                output.push_str(&value[..index]);
-                output
-            });
-            output.push('/');
-        } else if let Some(output) = normalized.as_mut() {
-            output.push(character);
+        if is_option_prefix {
+            variants = variants
+                .into_iter()
+                .flat_map(|variant| {
+                    dash_characters.iter().map(move |dash| {
+                        let mut expanded = variant.clone();
+                        expanded.push(*dash);
+                        expanded
+                    })
+                })
+                .collect();
+        } else {
+            for variant in &mut variants {
+                variant.push(character);
+            }
         }
-
-        previous = Some(character);
     }
 
-    normalized.map_or(Cow::Borrowed(value), Cow::Owned)
+    variants
 }
 
 /// Parses Sigma escaping from left to right. Backslashes escape `\\`, `*`, and `?`; a
