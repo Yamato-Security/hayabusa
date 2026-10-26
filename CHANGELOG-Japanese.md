@@ -1,6 +1,6 @@
 # 変更点
 
-## x.x.x [xxxx/xx/xx]
+## 4.2.1 [2026/10/27] - Vulnpocalypse Release
 
 **改善:**
 
@@ -9,6 +9,10 @@
 **バグ修正:**
 
 - Sigma の `windash` が `contains` ではコマンドラインの最初のオプション接頭辞にしか適用されず、`startswith` と `endswith` では無視される問題を修正した。比較する両方の値ですべてのオプション接頭辞のダッシュ表記を正規化し、`-param-name` の途中にあるダッシュはリテラルのまま扱う。報告された Procdump と Taskkill のコマンドライン、Unicode のダッシュ表記、内部ダッシュ、および正規表現フォールバックの回帰テストを追加した。 (#1938, #1939) (@YamatoSecurity)
+
+**その他:**
+
+- Rust 1.97.1と互換性のある最新バージョンへ、直接および推移的なRust依存パッケージ28個を更新した。直接依存では、`pulldown-cmark` 0.13.5、`tokio` 1.54.1、`ureq` 3.5.0、`uuid` 1.29.0、`wildmatch` 2.7.0を更新した。 (@YamatoSecurity)
 
 ## 4.2.0 [2026/10/12] - Autumn Release
 

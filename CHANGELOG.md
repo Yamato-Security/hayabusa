@@ -1,6 +1,6 @@
 # Changes
 
-## x.x.x [xxxx/xx/xx]
+## 4.2.1 [2026/10/27] - Vulnpocalypse Release
 
 **Enhancements:**
 
@@ -9,6 +9,10 @@
 **Bug Fixes:**
 
 - Fixed Sigma `windash` matching only the first command-line option prefix with `contains` and being ignored with `startswith` and `endswith`. All option-prefix dash variants are now normalized on both sides of the comparison, while internal dashes such as the one in `-param-name` remain literal. Added regression coverage for the reported Procdump and Taskkill command lines, Unicode dash variants, internal dashes, and regex fallback. (#1938, #1939) (@YamatoSecurity)
+
+**Other:**
+
+- Refreshed 28 direct and transitive Rust dependency packages to their latest versions compatible with Rust 1.97.1, including direct updates to `pulldown-cmark` 0.13.5, `tokio` 1.54.1, `ureq` 3.5.0, `uuid` 1.29.0, and `wildmatch` 2.7.0. (@YamatoSecurity)
 
 ## 4.2.0 [2026/10/12] - Autumn Release
 
