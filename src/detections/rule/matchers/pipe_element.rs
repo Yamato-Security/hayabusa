@@ -143,6 +143,7 @@ impl PipeElement {
             | PipeElement::Endswith
             | PipeElement::Contains
             | PipeElement::Wildcard => string::wrap_pattern(self, pattern),
+            PipeElement::Windash => string::normalize_windash(&pattern).into_owned(),
             PipeElement::ReIgnoreCase | PipeElement::ReMultiLine | PipeElement::ReSingleLine => {
                 regex::add_flag(self, pattern)
             }

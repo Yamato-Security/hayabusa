@@ -3382,6 +3382,164 @@ fn test_contains_windash() {
 }
 
 #[test]
+fn test_contains_windash_normalizes_each_option_prefix() {
+    let rule_str = r#"
+        enabled: true
+        detection:
+            selection1:
+                'CommandLine|contains|windash': ' /accepteula'
+            condition: selection1
+        "#;
+
+    // The option to match is preceded by another slash-style option.
+    let record_with_cmd_prefix = r#"
+        {
+          "Event": {
+            "System": {
+              "EventID": 1,
+              "Channel": "Microsoft-Windows-Sysmon/Operational"
+            },
+            "EventData": {
+              "CommandLine": "cmd.exe /c procdump.exe -accepteula -ma lsass.exe"
+            }
+          }
+        }"#;
+
+    // Reordering the options must not bypass the match either.
+    let record_with_reordered_options = r#"
+        {
+          "Event": {
+            "System": {
+              "EventID": 1,
+              "Channel": "Microsoft-Windows-Sysmon/Operational"
+            },
+            "EventData": {
+              "CommandLine": "pd.exe -ma -accepteula lsass.exe"
+            }
+          }
+        }"#;
+
+    check_select(rule_str, record_with_cmd_prefix, true);
+    check_select(rule_str, record_with_reordered_options, true);
+}
+
+#[test]
+fn test_startswith_windash() {
+    let rule_str = r#"
+        enabled: true
+        detection:
+            selection1:
+                'CommandLine|startswith|windash': '-a'
+            condition: selection1
+        "#;
+
+    let slash_record = r#"
+        {
+          "Event": {
+            "System": {"EventID": 1, "Channel": "Microsoft-Windows-Sysmon/Operational"},
+            "EventData": {"CommandLine": "/a command"}
+          }
+        }"#;
+    let unicode_dash_record = r#"
+        {
+          "Event": {
+            "System": {"EventID": 1, "Channel": "Microsoft-Windows-Sysmon/Operational"},
+            "EventData": {"CommandLine": "—a command"}
+          }
+        }"#;
+
+    check_select(rule_str, slash_record, true);
+    check_select(rule_str, unicode_dash_record, true);
+}
+
+#[test]
+fn test_endswith_windash() {
+    let rule_str = r#"
+        enabled: true
+        detection:
+            selection1:
+                'CommandLine|endswith|windash': ' /f'
+            condition: selection1
+        "#;
+
+    let slash_record = r#"
+        {
+          "Event": {
+            "System": {"EventID": 1, "Channel": "Microsoft-Windows-Sysmon/Operational"},
+            "EventData": {"CommandLine": "taskkill /im MsMpEng.exe /f"}
+          }
+        }"#;
+    let hyphen_record = r#"
+        {
+          "Event": {
+            "System": {"EventID": 1, "Channel": "Microsoft-Windows-Sysmon/Operational"},
+            "EventData": {"CommandLine": "taskkill /im MsMpEng.exe -f"}
+          }
+        }"#;
+    let unicode_dash_record = r#"
+        {
+          "Event": {
+            "System": {"EventID": 1, "Channel": "Microsoft-Windows-Sysmon/Operational"},
+            "EventData": {"CommandLine": "taskkill /im MsMpEng.exe ―f"}
+          }
+        }"#;
+
+    check_select(rule_str, slash_record, true);
+    check_select(rule_str, hyphen_record, true);
+    check_select(rule_str, unicode_dash_record, true);
+}
+
+#[test]
+fn test_windash_preserves_internal_dashes() {
+    let rule_str = r#"
+        enabled: true
+        detection:
+            selection1:
+                'CommandLine|contains|windash': ' -param-name'
+            condition: selection1
+        "#;
+
+    let matching_record = r#"
+        {
+          "Event": {
+            "System": {"EventID": 1, "Channel": "Microsoft-Windows-Sysmon/Operational"},
+            "EventData": {"CommandLine": "tool /param-name"}
+          }
+        }"#;
+    let nonmatching_record = r#"
+        {
+          "Event": {
+            "System": {"EventID": 1, "Channel": "Microsoft-Windows-Sysmon/Operational"},
+            "EventData": {"CommandLine": "tool /param/name"}
+          }
+        }"#;
+
+    check_select(rule_str, matching_record, true);
+    check_select(rule_str, nonmatching_record, false);
+}
+
+#[test]
+fn test_endswith_windash_regex_fallback() {
+    let rule_str = r#"
+        enabled: true
+        detection:
+            selection1:
+                'CommandLine|endswith|windash': ' -f?'
+            condition: selection1
+        "#;
+
+    let record_json_str = r#"
+        {
+          "Event": {
+            "System": {"EventID": 1, "Channel": "Microsoft-Windows-Sysmon/Operational"},
+            "EventData": {"CommandLine": "taskkill /fx"}
+          }
+        }"#;
+
+    check_select(rule_str, record_json_str, true);
+}
+
+#[test]
 fn test_contains_all_windash() {
     let rule_str = r#"
         enabled: true

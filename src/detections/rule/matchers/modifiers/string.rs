@@ -1,7 +1,10 @@
 //! The string-wrapping modifiers (`startswith`, `endswith`, `contains`) and the
 //! wildcard-to-regex conversion used for the default (implicit) wildcard match.
 
+use std::borrow::Cow;
+
 use super::PipeElement;
+use crate::detections::configs::WINDASH_CHARACTERS;
 
 /// One element of a Sigma string after its escape sequences have been parsed.
 #[derive(Debug, PartialEq, Eq)]
@@ -9,6 +12,45 @@ pub(in crate::detections::rule) enum SigmaPatternToken {
     Literal(String),
     AnyChars,
     AnyChar,
+}
+
+fn is_word_character(character: char) -> bool {
+    character.is_alphanumeric() || character == '_'
+}
+
+/// Canonicalizes Windows command-line option prefixes to `/` for `windash` matching.
+///
+/// A dash is an option prefix when it is not preceded by a word character and is followed by one,
+/// matching pySigma's `\B[-/]\b` boundary behavior. This changes every option prefix in the value
+/// while preserving internal dashes such as the one in `param-name`. The configured Unicode dash
+/// characters are treated the same way as `-` and `/`.
+pub(in crate::detections::rule) fn normalize_windash(value: &str) -> Cow<'_, str> {
+    let mut previous = None;
+    let mut characters = value.char_indices().peekable();
+    let mut normalized: Option<String> = None;
+
+    while let Some((index, character)) = characters.next() {
+        let next = characters.peek().map(|(_, next)| *next);
+        let is_dash = character == '/' || WINDASH_CHARACTERS.contains(&character);
+        let is_option_prefix = is_dash
+            && previous.is_none_or(|previous| !is_word_character(previous))
+            && next.is_some_and(is_word_character);
+
+        if is_option_prefix && character != '/' {
+            let output = normalized.get_or_insert_with(|| {
+                let mut output = String::with_capacity(value.len());
+                output.push_str(&value[..index]);
+                output
+            });
+            output.push('/');
+        } else if let Some(output) = normalized.as_mut() {
+            output.push(character);
+        }
+
+        previous = Some(character);
+    }
+
+    normalized.map_or(Cow::Borrowed(value), Cow::Owned)
 }
 
 /// Parses Sigma escaping from left to right. Backslashes escape `\\`, `*`, and `?`; a
