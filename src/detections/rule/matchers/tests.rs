@@ -3524,6 +3524,56 @@ fn test_windash_regex_fallback_preserves_trailing_literal_dash() {
 }
 
 #[test]
+fn test_windash_uses_compact_regex_for_many_options() {
+    let rule_str = r#"
+        enabled: true
+        detection:
+            selection1:
+                'CommandLine|contains|windash': '-a -b -c -d -e -f'
+            condition: selection1
+        "#;
+
+    let record_json_str = r#"
+        {
+          "Event": {
+            "System": {"EventID": 1, "Channel": "Microsoft-Windows-Sysmon/Operational"},
+            "EventData": {"CommandLine": "tool /a –b —c ―d -e /f"}
+          }
+        }"#;
+
+    check_select(rule_str, record_json_str, true);
+}
+
+#[test]
+fn test_contains_windash_cased_honors_case() {
+    let rule_str = r#"
+        enabled: true
+        detection:
+            selection1:
+                'CommandLine|contains|windash|cased': ' -Foo'
+            condition: selection1
+        "#;
+
+    let matching_record = r#"
+        {
+          "Event": {
+            "System": {"EventID": 1, "Channel": "Microsoft-Windows-Sysmon/Operational"},
+            "EventData": {"CommandLine": "tool /Foo"}
+          }
+        }"#;
+    let case_mismatch_record = r#"
+        {
+          "Event": {
+            "System": {"EventID": 1, "Channel": "Microsoft-Windows-Sysmon/Operational"},
+            "EventData": {"CommandLine": "tool /foo"}
+          }
+        }"#;
+
+    check_select(rule_str, matching_record, true);
+    check_select(rule_str, case_mismatch_record, false);
+}
+
+#[test]
 fn test_startswith_windash() {
     let rule_str = r#"
         enabled: true

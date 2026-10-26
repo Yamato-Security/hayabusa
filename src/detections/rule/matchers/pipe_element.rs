@@ -143,8 +143,8 @@ impl PipeElement {
             | PipeElement::Endswith
             | PipeElement::Contains
             | PipeElement::Wildcard => string::wrap_pattern(self, pattern),
-            // Windash can expand one input into multiple patterns, so DefaultMatcher handles it
-            // separately while walking the modifier pipeline.
+            // DefaultMatcher marks windash positions while walking the complete modifier pipeline
+            // and emits them as compact regex character classes.
             PipeElement::Windash => pattern,
             PipeElement::ReIgnoreCase | PipeElement::ReMultiLine | PipeElement::ReSingleLine => {
                 regex::add_flag(self, pattern)

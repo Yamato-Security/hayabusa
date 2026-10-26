@@ -127,50 +127,13 @@ pub fn convert_to_all_only_fast_match(pattern: &str) -> Option<Vec<FastMatch>> {
 /// Evaluates the fast matchers against a field value. Returns None when the fast path cannot
 /// decide (a non-ASCII value in a starts_with/ends_with comparison); the caller then falls back
 /// to the regex match. A matcher list with more than one element holds alternative variants of a
-/// single pattern (for example, base64offset alignments or windash spellings), so any one hit is a
-/// match. Base64 is case-sensitive, which is why its multi-pattern branch compares without
-/// lowercasing.
+/// single pattern (for example, base64offset alignments), so any one Contains hit is a match;
+/// base64 is case-sensitive, which is why that branch compares without lowercasing.
 pub fn check_fast_match(
     pipes: &[PipeElement],
     event_value_str: &str,
     fast_matcher: &[FastMatch],
 ) -> Option<bool> {
-    if pipes.contains(&PipeElement::Windash) && fast_matcher.len() > 1 {
-        let mut undecidable = false;
-        for matcher in fast_matcher {
-            let result = match matcher {
-                FastMatch::Exact(s) => Some(eq_ignore_case(event_value_str, s)),
-                FastMatch::StartsWith(s) => {
-                    if pipes.contains(&PipeElement::Cased) {
-                        Some(event_value_str.starts_with(s))
-                    } else {
-                        starts_with_ignore_case(event_value_str, s)
-                    }
-                }
-                FastMatch::EndsWith(s) => {
-                    if pipes.contains(&PipeElement::Cased) {
-                        Some(event_value_str.ends_with(s))
-                    } else {
-                        ends_with_ignore_case(event_value_str, s)
-                    }
-                }
-                FastMatch::Contains(s) | FastMatch::AllOnly(s) => {
-                    if pipes.contains(&PipeElement::Cased) {
-                        Some(utils::contains_str(event_value_str, s))
-                    } else {
-                        Some(utils::contains_str(&event_value_str.to_lowercase(), s))
-                    }
-                }
-            };
-            match result {
-                Some(true) => return Some(true),
-                Some(false) => {}
-                None => undecidable = true,
-            }
-        }
-        return (!undecidable).then_some(false);
-    }
-
     if fast_matcher.len() == 1 {
         match &fast_matcher[0] {
             FastMatch::Exact(s) => Some(eq_ignore_case(event_value_str, s)),
