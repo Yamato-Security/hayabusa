@@ -46,7 +46,9 @@ hashbrown = "0.17.*"
 hex = "0.4.*"
 horrorshow = "0.8.*"
 indexmap = "2.*"
-indicatif = "*"
+# Pin to 0.18.4 because 0.18.5+ can corrupt multiline progress redraws during
+# large scans. Remove after https://github.com/console-rs/indicatif/issues/859 is fixed.
+indicatif = "=0.18.4"
 infer = "*"
 itertools = "*"
 krapslog = "0.6"
