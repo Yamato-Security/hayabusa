@@ -1,6 +1,6 @@
 # 変更点
 
-## 4.2.1 [2026/10/27] - Vulnpocalypse Release
+## 4.3.0 [2026/10/27] - Vulnpocalypse Release
 
 **改善:**
 
