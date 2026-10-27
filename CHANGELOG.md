@@ -1,12 +1,6 @@
 # Changes
 
-## x.x.x [xxxx/xx/xx]
-
-**Bug Fixes:**
-
-- Fixed leading spaces being trimmed from event field values, so a rule value starting with a space did not match: `CommandLine|contains: ' /s '` missed `" /s C:\...\AllTheThingsx86.dll"` ("Regsvr32.EXE Calling of DllRegisterServer Export Function Implicitly" in `hayabusa-sample-evtx`). Trailing whitespace and the leading `\r`, `\n`, `\t` left by the XML rendering are still removed. (#1942) (@MatteoPapa)
-
-## 4.3.0 [2026/10/27] - Vulnpocalypse Release
+## 4.3.0 [2026/10/28] - Vulnpocalypse Release
 
 **Enhancements:**
 
@@ -15,6 +9,7 @@
 
 **Bug Fixes:**
 
+- Fixed leading spaces being trimmed from event field values, so a rule value starting with a space did not match: `CommandLine|contains: ' /s '` missed `" /s C:\...\AllTheThingsx86.dll"` ("Regsvr32.EXE Calling of DllRegisterServer Export Function Implicitly" in `hayabusa-sample-evtx`). Trailing whitespace and the leading `\r`, `\n`, `\t` left by the XML rendering are still removed. (#1942) (@MatteoPapa)
 - Fixed Sigma `windash` matching only the first command-line option prefix with `contains` and being ignored with `startswith` and `endswith`. Eligible option-prefix dashes in the rule are now represented by compact regex character classes and matched against the original event value, while internal and boundary-dependent literal dashes remain unchanged. The regex fallback also honors `cased`. Added regression coverage for the reported Procdump and Taskkill command lines, Unicode dash variants and case folding, literal and internal dashes, multiple options, case-sensitive matching, and regex fallback. (#1938, #1939) (@YamatoSecurity)
 
 **Other:**

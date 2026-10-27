@@ -1,12 +1,6 @@
 # 変更点
 
-## x.x.x [xxxx/xx/xx]
-
-**バグ修正:**
-
-- イベントのフィールド値の先頭のスペースが削除されていたため、スペースで始まるルールの値が一致しなかった問題を修正した。`CommandLine|contains: ' /s '` が `" /s C:\...\AllTheThingsx86.dll"` に一致しなかった（`hayabusa-sample-evtx` の「Regsvr32.EXE Calling of DllRegisterServer Export Function Implicitly」）。末尾の空白と、XMLの表示で残る先頭の `\r`、`\n`、`\t` は引き続き削除する。 (#1942) (@MatteoPapa)
-
-## 4.3.0 [2026/10/27] - Vulnpocalypse Release
+## 4.3.0 [2026/10/28] - Vulnpocalypse Release
 
 **改善:**
 
@@ -15,6 +9,7 @@
 
 **バグ修正:**
 
+- イベントのフィールド値の先頭のスペースが削除されていたため、スペースで始まるルールの値が一致しなかった問題を修正した。`CommandLine|contains: ' /s '` が `" /s C:\...\AllTheThingsx86.dll"` に一致しなかった（`hayabusa-sample-evtx` の「Regsvr32.EXE Calling of DllRegisterServer Export Function Implicitly」）。末尾の空白と、XMLの表示で残る先頭の `\r`、`\n`、`\t` は引き続き削除する。 (#1942) (@MatteoPapa)
 - Sigma の `windash` が `contains` ではコマンドラインの最初のオプション接頭辞にしか適用されず、`startswith` と `endswith` では無視される問題を修正した。ルール内でオプション接頭辞に該当するダッシュをコンパクトな正規表現文字クラスで表現し、元のイベント値と比較するようにした。内部ダッシュおよび境界条件によってリテラルとなるダッシュは変更せず、正規表現フォールバックでも `cased` を尊重する。報告された Procdump と Taskkill のコマンドライン、Unicode のダッシュ表記と大文字小文字の比較、リテラルおよび内部ダッシュ、複数オプション、大文字小文字を区別する一致、および正規表現フォールバックの回帰テストを追加した。 (#1938, #1939) (@YamatoSecurity)
 
 **その他:**
