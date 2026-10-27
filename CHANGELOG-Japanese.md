@@ -1,5 +1,11 @@
 # 変更点
 
+## x.x.x [xxxx/xx/xx]
+
+**バグ修正:**
+
+- イベントのフィールド値の先頭のスペースが削除されていたため、スペースで始まるルールの値が一致しなかった問題を修正した。`CommandLine|contains: ' /s '` が `" /s C:\...\AllTheThingsx86.dll"` に一致しなかった（`hayabusa-sample-evtx` の「Regsvr32.EXE Calling of DllRegisterServer Export Function Implicitly」）。末尾の空白と、XMLの表示で残る先頭の `\r`、`\n`、`\t` は引き続き削除する。 (#1942) (@MatteoPapa)
+
 ## 4.3.0 [2026/10/27] - Vulnpocalypse Release
 
 **改善:**

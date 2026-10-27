@@ -1,5 +1,11 @@
 # Changes
 
+## x.x.x [xxxx/xx/xx]
+
+**Bug Fixes:**
+
+- Fixed leading spaces being trimmed from event field values, so a rule value starting with a space did not match: `CommandLine|contains: ' /s '` missed `" /s C:\...\AllTheThingsx86.dll"` ("Regsvr32.EXE Calling of DllRegisterServer Export Function Implicitly" in `hayabusa-sample-evtx`). Trailing whitespace and the leading `\r`, `\n`, `\t` left by the XML rendering are still removed. (#1942) (@MatteoPapa)
+
 ## 4.3.0 [2026/10/27] - Vulnpocalypse Release
 
 **Enhancements:**
