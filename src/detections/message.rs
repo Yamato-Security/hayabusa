@@ -347,9 +347,16 @@ pub fn parse_message(
             None => -1,
         };
         let (tmp_event_record, field) = if suffix >= 1 {
-            (
+            // Preserve explicit aliases for indexed placeholders. For example, an alias named
+            // `Samples[2]` can point at an array outside EventData.Data. Unaliased indexed
+            // placeholders retain the historical behavior of indexing EventData.Data.
+            let array = if eventkey_alias.get_event_key(target_str).is_some() {
+                utils::get_event_value(target_str, event_record, eventkey_alias)
+            } else {
                 utils::get_event_value("Data", event_record, eventkey_alias)
-                    .and_then(|data| data.get((suffix - 1) as usize)),
+            };
+            (
+                array.and_then(|data| data.get((suffix - 1) as usize)),
                 target_str,
             )
         } else {
@@ -815,6 +822,44 @@ mod tests {
             )
             .0,
             expected,
+        );
+    }
+
+    #[test]
+    /// An explicit alias on an indexed placeholder takes priority over the generic Data array.
+    fn test_parse_message_indexed_placeholder_preserves_explicit_alias() {
+        let event_record = serde_json::json!({
+            "Event": {
+                "EventData": {
+                    "Data": ["wrong1", "wrong2"]
+                },
+                "UserData": {
+                    "Wrapper": {
+                        "Samples": ["sample1", "sample2"]
+                    }
+                }
+            }
+        });
+        let dir = tempfile::tempdir().unwrap();
+        let alias_path = dir.path().join("indexed-alias.csv");
+        std::fs::write(
+            &alias_path,
+            "Alias,Path\nSamples[2],Event.UserData.Wrapper.Samples\n",
+        )
+        .unwrap();
+        let eventkey_alias = load_eventkey_alias(alias_path.to_str().unwrap());
+
+        assert_eq!(
+            parse_message(
+                &event_record,
+                &CompactString::new("sample:%Samples[2]%"),
+                &eventkey_alias,
+                false,
+                &FieldDataMapKey::default(),
+                &None,
+            )
+            .0,
+            "sample:sample2",
         );
     }
     #[test]

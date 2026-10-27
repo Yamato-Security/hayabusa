@@ -307,11 +307,15 @@ impl SelectionNode for LeafSelectionNode {
                 }
         */
         if self.get_key() == "EventData" || self.get_key() == "Data" {
-            let values = utils::get_event_value(
-                "Event.EventData.Data",
-                &event_record.record,
-                eventkey_alias,
-            );
+            // `Data` may be nested below either EventData or UserData, so use the same shared
+            // resolver as other selection fields. Keep the legacy EventData key pinned to the
+            // EventData.Data path because it historically means that specific XML payload.
+            let lookup_key = if self.get_key() == "Data" {
+                "Data"
+            } else {
+                "Event.EventData.Data"
+            };
+            let values = utils::get_event_value(lookup_key, &event_record.record, eventkey_alias);
             if values.is_none() {
                 return self
                     .matcher
@@ -661,6 +665,50 @@ mod tests {
             "Event": {"EventData": {"Data": ["X", "Y"]}, "System": {"EventID": 4103, "Channel": "Sec"}},
             "Event_attributes": {"xmlns": "http://schemas.microsoft.com/win/2004/08/events/event"}
         }"#;
+        check_select(rule_str, record_json_str, true);
+    }
+
+    #[test]
+    fn test_detect_nested_user_data_scalar() {
+        let rule_str = r#"
+        enabled: true
+        detection:
+            selection:
+                Data: hit
+        details: 'Data: %Data%'
+        "#;
+        let record_json_str = r#"
+        {
+            "Event": {
+                "EventData": {},
+                "UserData": {"Wrapper": {"Data": "hit"}},
+                "System": {"EventID": 1, "Channel": "Test"}
+            },
+            "Event_attributes": {"xmlns": "http://schemas.microsoft.com/win/2004/08/events/event"}
+        }"#;
+
+        check_select(rule_str, record_json_str, true);
+    }
+
+    #[test]
+    fn test_detect_nested_user_data_array() {
+        let rule_str = r#"
+        enabled: true
+        detection:
+            selection:
+                Data: hit
+        details: 'Data: %Data%'
+        "#;
+        let record_json_str = r#"
+        {
+            "Event": {
+                "EventData": {},
+                "UserData": {"Wrapper": {"Data": ["miss", "hit"]}},
+                "System": {"EventID": 1, "Channel": "Test"}
+            },
+            "Event_attributes": {"xmlns": "http://schemas.microsoft.com/win/2004/08/events/event"}
+        }"#;
+
         check_select(rule_str, record_json_str, true);
     }
 
