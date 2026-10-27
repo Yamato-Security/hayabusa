@@ -79,14 +79,20 @@ pub fn check_allowlist(target: &str, regexes: &[Regex]) -> bool {
     false
 }
 
-/// Converts a scalar JSON value (bool/number/string) to a trimmed string. Returns None for
-/// null, arrays and objects.
+/// Converts a scalar JSON value (bool/number/string) to a string. Returns None for null, arrays
+/// and objects. Trailing whitespace (e.g. `"NtLmSsp "`) and leading `\r`, `\n`, `\t` left by the
+/// XML rendering are removed; leading spaces are kept, as they can be part of the value
+/// (`" /s C:\x.dll"` must still contain `' /s '`).
 pub fn value_to_string(value: &Value) -> Option<String> {
     match value {
         Value::Null => Option::None,
         Value::Bool(b) => Option::Some(b.to_string()),
         Value::Number(n) => Option::Some(n.to_string()),
-        Value::String(s) => Option::Some(s.trim().to_string()),
+        Value::String(s) => Option::Some(
+            s.trim_end()
+                .trim_start_matches(['\r', '\n', '\t'])
+                .to_string(),
+        ),
         Value::Array(_) => Option::None,
         Value::Object(_) => Option::None,
     }
