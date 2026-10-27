@@ -1,5 +1,11 @@
 # Changes
 
+## X.X.X [YYYY/MM/DD] - TBD
+
+**Enhancements:**
+
+- Unaliased rule fields are now resolved from both `EventData` and `UserData`, including nested structures such as WMI Event ID 5859's `Operation_EssStarted`. Explicit aliases and direct fields keep priority, while recursive lookup rejects ambiguous duplicate field names instead of depending on JSON object order. This lets synchronized upstream Sigma rules retain their original field names without rule-specific rewrites. (#1941) (@YamatoSecurity)
+
 ## 4.2.1 [2026/10/27] - Vulnpocalypse Release
 
 **Enhancements:**
