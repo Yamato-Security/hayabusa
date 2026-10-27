@@ -4268,3 +4268,27 @@ fn test_lte_not() {
         }"#;
     check_select(rule_str, record_json_str, false);
 }
+
+#[test]
+fn test_value_keeps_leading_spaces() {
+    let check = |key: &str, value: &str, command_line: &str| {
+        let rule_str = format!(
+            "enabled: true\ndetection:\n    selection1:\n        '{key}': '{value}'\n    condition: selection1\n"
+        );
+        let record_json_str = serde_json::json!({
+            "Event": {
+                "System": {"EventID": 1, "Channel": "Microsoft-Windows-Sysmon/Operational"},
+                "EventData": {"CommandLine": command_line}
+            }
+        });
+        check_select(&rule_str, &record_json_str.to_string(), true);
+    };
+    // A leading space can be part of the value.
+    check("CommandLine|contains", " /s ", " /s C:\\x.dll");
+    check("CommandLine|startswith", " /s", " /s C:\\x.dll");
+    // Trailing whitespace and the XML formatting characters are still removed.
+    check("CommandLine", "NtLmSsp", "NtLmSsp ");
+    check("CommandLine|endswith", ".exe", "C:\\x.exe ");
+    check("CommandLine", "%%1539", "%%1539\r\n\t\t\t\t");
+    check("CommandLine", "%%1539", "\r\n\t\t\t\t%%1539");
+}
