@@ -337,8 +337,12 @@ fn find_unique_nested_field<'a>(
 /// Looks up an unaliased, non-path key in the event's data containers. Direct `EventData` lookup
 /// remains first for backward compatibility and performance, followed by direct `UserData` lookup.
 /// If neither exists, both containers are searched recursively. Ambiguous recursive matches return
-/// `None` rather than selecting an arbitrary value.
+/// `None` rather than selecting an arbitrary value. A missing field in an existing `EventData`
+/// object returns `Some(Null)` to preserve the resolver's pre-fallback contract, which aggregation
+/// rules rely on when grouping and counting missing fields.
 fn get_unaliased_event_value<'a>(key: &str, event_value: &'a Value) -> Option<&'a Value> {
+    static MISSING_EVENT_VALUE: Value = Value::Null;
+
     let event = event_value.get("Event")?;
     let event_data = event.get("EventData");
     let user_data = event.get("UserData");
@@ -362,7 +366,11 @@ fn get_unaliased_event_value<'a>(key: &str, event_value: &'a Value) -> Option<&'
             return None;
         }
     }
-    found
+    found.or_else(|| {
+        event_data
+            .filter(|data| data.is_object())
+            .map(|_| &MISSING_EVENT_VALUE)
+    })
 }
 
 /// Looks up a value in the event record by key. The key is first resolved through
@@ -1097,6 +1105,34 @@ mod tests {
 
         assert_eq!(
             utils::get_event_value("Query", &event, &EventKeyAliasConfig::new()),
+            None
+        );
+    }
+
+    #[test]
+    fn get_event_value_preserves_null_for_missing_unaliased_event_data_field() {
+        let event = json!({
+            "Event": {
+                "EventData": {"Present": "value"}
+            }
+        });
+
+        assert_eq!(
+            utils::get_event_value("Missing", &event, &EventKeyAliasConfig::new()),
+            Some(&Value::Null)
+        );
+    }
+
+    #[test]
+    fn get_event_value_returns_none_for_missing_unaliased_user_data_only_field() {
+        let event = json!({
+            "Event": {
+                "UserData": {"Wrapper": {"Present": "value"}}
+            }
+        });
+
+        assert_eq!(
+            utils::get_event_value("Missing", &event, &EventKeyAliasConfig::new()),
             None
         );
     }
