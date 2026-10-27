@@ -314,7 +314,7 @@ pub fn create_message(
 }
 
 /// Treats each %...% section in `output` as an alias and replaces it with the corresponding value
-/// looked up in the event record (via eventkey_alias.txt, falling back to Event.EventData.<name>).
+/// looked up in the event record through the shared event-field resolver.
 /// Returns the replaced message together with the "key: value" pairs that make up the details.
 /// For the JSON timeline the message itself is returned with its placeholders intact, because the
 /// results output functions perform the replacement in that case.
@@ -336,22 +336,6 @@ pub fn parse_message(
             .unwrap()
             .strip_prefix('%')
             .unwrap();
-        let event_key_path = if let Some(_array_str) = eventkey_alias.get_event_key(target_str) {
-            _array_str.to_string()
-        } else {
-            // No alias definition exists, so fall back to looking the field up directly under
-            // Event.EventData.
-            format!("Event.EventData.{target_str}")
-        };
-
-        let mut tmp_event_record: &Value = event_record;
-        let mut field = "";
-        for path_segment in event_key_path.split('.') {
-            if let Some(record) = tmp_event_record.get(path_segment) {
-                tmp_event_record = record;
-                field = path_segment;
-            }
-        }
         // An alias like %Data[2]% selects a single element of the EventData "Data" array; the
         // bracketed index is 1-based. A value below 1 skips the element selection, and since the
         // bracketed name itself does not resolve to a record field, such an alias yields "n/a".
@@ -362,15 +346,30 @@ pub fn parse_message(
                 .map_or(-1, |index_match| index_match.as_str().parse().unwrap_or(-1)),
             None => -1,
         };
-        if suffix >= 1 {
-            tmp_event_record = tmp_event_record
-                .get("Data")
-                .unwrap_or(tmp_event_record)
-                .get((suffix - 1) as usize)
-                .unwrap_or(tmp_event_record);
-            field = target_str;
-        }
-        let hash_value = get_serde_number_to_string(tmp_event_record, false);
+        let (tmp_event_record, field) = if suffix >= 1 {
+            // Preserve explicit aliases for indexed placeholders. For example, an alias named
+            // `Samples[2]` can point at an array outside EventData.Data. Unaliased indexed
+            // placeholders retain the historical behavior of indexing EventData.Data.
+            let array = if eventkey_alias.get_event_key(target_str).is_some() {
+                utils::get_event_value(target_str, event_record, eventkey_alias)
+            } else {
+                utils::get_event_value("Data", event_record, eventkey_alias)
+            };
+            (
+                array.and_then(|data| data.get((suffix - 1) as usize)),
+                target_str,
+            )
+        } else {
+            (
+                utils::get_event_value(target_str, event_record, eventkey_alias),
+                eventkey_alias
+                    .get_event_key(target_str)
+                    .and_then(|event_key| event_key.rsplit('.').next())
+                    .unwrap_or(target_str),
+            )
+        };
+        let hash_value =
+            tmp_event_record.and_then(|value| get_serde_number_to_string(value, false));
         if hash_value.is_some() {
             if let Some(hash_value) = hash_value {
                 let field_data = if field_data_map.is_none() || field.is_empty() {
@@ -512,7 +511,9 @@ impl AlertMessage {
 
 #[cfg(test)]
 mod tests {
-    use crate::detections::configs::{CURRENT_EXE_PATH, StoredStatic, load_eventkey_alias};
+    use crate::detections::configs::{
+        CURRENT_EXE_PATH, EventKeyAliasConfig, StoredStatic, load_eventkey_alias,
+    };
     use crate::detections::field_data_map::FieldDataMapKey;
     use crate::detections::message::{AlertMessage, parse_message};
     use crate::detections::utils;
@@ -614,6 +615,34 @@ mod tests {
             )
             .0,
             expected,
+        );
+    }
+
+    #[test]
+    /// Verifies that output placeholders use the same nested UserData fallback as detection rules.
+    fn test_parse_message_auto_search_nested_user_data() {
+        let event_record = serde_json::json!({
+            "Event": {
+                "EventData": {},
+                "UserData": {
+                    "Operation_EssStarted": {
+                        "Query": "select * from MSFT_SCMEventLogEvent"
+                    }
+                }
+            }
+        });
+
+        assert_eq!(
+            parse_message(
+                &event_record,
+                &CompactString::new("Query: %Query%"),
+                &EventKeyAliasConfig::new(),
+                false,
+                &FieldDataMapKey::default(),
+                &None,
+            )
+            .0,
+            "Query: select * from MSFT_SCMEventLogEvent",
         );
     }
 
@@ -793,6 +822,44 @@ mod tests {
             )
             .0,
             expected,
+        );
+    }
+
+    #[test]
+    /// An explicit alias on an indexed placeholder takes priority over the generic Data array.
+    fn test_parse_message_indexed_placeholder_preserves_explicit_alias() {
+        let event_record = serde_json::json!({
+            "Event": {
+                "EventData": {
+                    "Data": ["wrong1", "wrong2"]
+                },
+                "UserData": {
+                    "Wrapper": {
+                        "Samples": ["sample1", "sample2"]
+                    }
+                }
+            }
+        });
+        let dir = tempfile::tempdir().unwrap();
+        let alias_path = dir.path().join("indexed-alias.csv");
+        std::fs::write(
+            &alias_path,
+            "Alias,Path\nSamples[2],Event.UserData.Wrapper.Samples\n",
+        )
+        .unwrap();
+        let eventkey_alias = load_eventkey_alias(alias_path.to_str().unwrap());
+
+        assert_eq!(
+            parse_message(
+                &event_record,
+                &CompactString::new("sample:%Samples[2]%"),
+                &eventkey_alias,
+                false,
+                &FieldDataMapKey::default(),
+                &None,
+            )
+            .0,
+            "sample:sample2",
         );
     }
     #[test]

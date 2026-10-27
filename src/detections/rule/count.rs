@@ -940,6 +940,67 @@ mod tests {
     }
 
     #[test]
+    /// Missing unaliased aggregation fields must retain the legacy `null` value rather than
+    /// becoming `_`/an empty string and logging one error per matching record.
+    fn test_count_missing_unaliased_fields_use_null_without_errors() {
+        let rule_str = r#"
+        enabled: true
+        detection:
+            selection1:
+                param1: 'Windows Event Log'
+            condition: selection1 | count(AlsoMissing) by NotInThisRecord >= 1
+        details: 'x'
+        "#;
+        let record_str = r#"
+        {
+          "Event": {
+            "System": {
+              "EventID": 7040,
+              "Channel": "System",
+              "TimeCreated_attributes": {
+                "SystemTime": "1996-02-27T01:05:01Z"
+              }
+            },
+            "EventData": {
+              "param1": "Windows Event Log"
+            }
+          }
+        }"#;
+        let mut rule_yaml = YamlLoader::load_from_str(rule_str).unwrap().into_iter();
+        let mut rule_node = create_rule("testpath".to_string(), rule_yaml.next().unwrap());
+        let stored_static = create_dummy_stored_static();
+        rule_node.init(&stored_static).unwrap();
+        let keys = detections::rule::get_detection_keys(&rule_node);
+        let recinfo = utils::create_rec_info(
+            serde_json::from_str(record_str).unwrap(),
+            "testpath".to_owned(),
+            &keys,
+            &false,
+            &false,
+            &stored_static.eventkey_alias,
+        );
+
+        assert!(rule_node.select(
+            &recinfo,
+            stored_static.verbose_flag,
+            stored_static.quiet_errors_flag,
+            stored_static.json_input_flag,
+            &stored_static.eventkey_alias,
+            &stored_static.error_log_stack,
+        ));
+        assert!(stored_static.error_log_stack.lock().unwrap().is_empty());
+
+        let counted_records = rule_node.countdata.get("null").unwrap();
+        assert_eq!(counted_records.len(), 1);
+        assert_eq!(counted_records[0].field_value, "null");
+
+        let agg_results = rule_node.judge_satisfy_aggcondition(&stored_static);
+        assert_eq!(agg_results.len(), 1);
+        assert_eq!(agg_results[0].key, "null");
+        assert_eq!(agg_results[0].field_values, vec!["null"]);
+    }
+
+    #[test]
     /// Verify that count detection by rule works when count() has both a field argument and a
     /// `by` clause.
     fn test_count_exist_field_and_by() {

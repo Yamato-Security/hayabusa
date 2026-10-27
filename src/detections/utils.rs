@@ -297,10 +297,86 @@ pub fn get_serde_number_to_string(
     }
 }
 
+/// Recursively finds a field below an event data container. A second field with the same name is
+/// treated as ambiguous even if its value is identical, so callers never depend on object order.
+fn find_unique_nested_field<'a>(
+    value: &'a Value,
+    key: &str,
+    found: &mut Option<&'a Value>,
+) -> bool {
+    match value {
+        Value::Object(fields) => {
+            if let Some(candidate) = fields.get(key) {
+                if found.is_some() {
+                    return false;
+                }
+                *found = Some(candidate);
+            }
+
+            for (child_key, child_value) in fields {
+                // The value has already been recorded. Do not recurse into it looking for another
+                // field with the same name.
+                if child_key != key && !find_unique_nested_field(child_value, key, found) {
+                    return false;
+                }
+            }
+        }
+        Value::Array(values) => {
+            for child_value in values {
+                if !find_unique_nested_field(child_value, key, found) {
+                    return false;
+                }
+            }
+        }
+        _ => {}
+    }
+
+    true
+}
+
+/// Looks up an unaliased, non-path key in the event's data containers. Direct `EventData` lookup
+/// remains first for backward compatibility and performance, followed by direct `UserData` lookup.
+/// If neither exists, both containers are searched recursively. Ambiguous recursive matches return
+/// `None` rather than selecting an arbitrary value. A missing field in an existing `EventData`
+/// object returns `Some(Null)` to preserve the resolver's pre-fallback contract, which aggregation
+/// rules rely on when grouping and counting missing fields.
+fn get_unaliased_event_value<'a>(key: &str, event_value: &'a Value) -> Option<&'a Value> {
+    static MISSING_EVENT_VALUE: Value = Value::Null;
+
+    let event = event_value.get("Event")?;
+    let event_data = event.get("EventData");
+    let user_data = event.get("UserData");
+
+    if let Some(value) = event_data
+        .and_then(Value::as_object)
+        .and_then(|fields| fields.get(key))
+    {
+        return Some(value);
+    }
+    if let Some(value) = user_data
+        .and_then(Value::as_object)
+        .and_then(|fields| fields.get(key))
+    {
+        return Some(value);
+    }
+
+    let mut found = None;
+    for container in [event_data, user_data].into_iter().flatten() {
+        if !find_unique_nested_field(container, key, &mut found) {
+            return None;
+        }
+    }
+    found.or_else(|| {
+        event_data
+            .filter(|data| data.is_object())
+            .map(|_| &MISSING_EVENT_VALUE)
+    })
+}
+
 /// Looks up a value in the event record by key. The key is first resolved through
-/// eventkey_alias.txt (e.g. "Computer" -> "Event.System.Computer"); keys without an alias are
-/// treated as dot-separated JSON paths, and keys containing no dot are assumed to live under
-/// "Event.EventData".
+/// eventkey_alias.txt (e.g. "Computer" -> "Event.System.Computer"). Unaliased dot-separated keys
+/// are treated as exact JSON paths. Other unaliased keys are looked up in `EventData` and
+/// `UserData`, including nested structures when the field name is unambiguous.
 pub fn get_event_value<'a>(
     key: &str,
     event_value: &'a Value,
@@ -331,13 +407,10 @@ pub fn get_event_value<'a>(
         }
 
         Option::Some(ret)
+    } else if !contains_str(key, ".") {
+        get_unaliased_event_value(key, event_value)
     } else {
-        let event_key = if !contains_str(key, ".") {
-            "Event.EventData.".to_string() + key
-        } else {
-            key.to_string()
-        };
-        for key in event_key.split('.') {
+        for key in key.split('.') {
             if !ret.is_object() {
                 return Option::None;
             }
@@ -946,19 +1019,123 @@ mod tests {
     use hashbrown::{HashMap, HashSet};
     use nested::Nested;
     use regex::Regex;
-    use serde_json::Value;
+    use serde_json::{Value, json};
 
     use super::{format_time, output_duration, output_profile_name};
     use crate::detections::field_data_map::FieldDataMapKey;
     use crate::{
         detections::{
             configs::{
-                Action, Config, DfirTimelineOption, OutputOption, StoredStatic, TimeFormatOptions,
+                Action, Config, DfirTimelineOption, EventKeyAliasConfig, OutputOption,
+                StoredStatic, TimeFormatOptions,
             },
             utils::{self, check_setting_path, make_ascii_titlecase},
         },
         options::htmlreport::{GENERAL_OVERVIEW_SECTION, HtmlReporter, RESULTS_SUMMARY_SECTION},
     };
+
+    #[test]
+    fn get_event_value_prefers_direct_event_data() {
+        let event = json!({
+            "Event": {
+                "EventData": {"User": "event-data-user"},
+                "UserData": {"User": "user-data-user"}
+            }
+        });
+
+        assert_eq!(
+            utils::get_event_value("User", &event, &EventKeyAliasConfig::new()),
+            Some(&json!("event-data-user"))
+        );
+    }
+
+    #[test]
+    fn get_event_value_falls_back_to_direct_user_data() {
+        let event = json!({
+            "Event": {
+                "EventData": {},
+                "UserData": {"User": "user-data-user"}
+            }
+        });
+
+        assert_eq!(
+            utils::get_event_value("User", &event, &EventKeyAliasConfig::new()),
+            Some(&json!("user-data-user"))
+        );
+    }
+
+    #[test]
+    fn get_event_value_recurses_into_wmi_user_data() {
+        let event = json!({
+            "Event": {
+                "EventData": {},
+                "UserData": {
+                    "Operation_EssStarted": {
+                        "Query": "select * from MSFT_SCMEventLogEvent",
+                        "User": "S-1-5-32-544",
+                        "Provider": "SCM Event Provider",
+                        "PossibleCause": "Permanent"
+                    }
+                }
+            }
+        });
+        let aliases = EventKeyAliasConfig::new();
+
+        for (key, expected) in [
+            ("Query", "select * from MSFT_SCMEventLogEvent"),
+            ("User", "S-1-5-32-544"),
+            ("Provider", "SCM Event Provider"),
+            ("PossibleCause", "Permanent"),
+        ] {
+            assert_eq!(
+                utils::get_event_value(key, &event, &aliases),
+                Some(&json!(expected))
+            );
+        }
+    }
+
+    #[test]
+    fn get_event_value_rejects_ambiguous_recursive_fields() {
+        let event = json!({
+            "Event": {
+                "EventData": {"First": {"Query": "one"}},
+                "UserData": {"Second": {"Query": "two"}}
+            }
+        });
+
+        assert_eq!(
+            utils::get_event_value("Query", &event, &EventKeyAliasConfig::new()),
+            None
+        );
+    }
+
+    #[test]
+    fn get_event_value_preserves_null_for_missing_unaliased_event_data_field() {
+        let event = json!({
+            "Event": {
+                "EventData": {"Present": "value"}
+            }
+        });
+
+        assert_eq!(
+            utils::get_event_value("Missing", &event, &EventKeyAliasConfig::new()),
+            Some(&Value::Null)
+        );
+    }
+
+    #[test]
+    fn get_event_value_returns_none_for_missing_unaliased_user_data_only_field() {
+        let event = json!({
+            "Event": {
+                "UserData": {"Wrapper": {"Present": "value"}}
+            }
+        });
+
+        assert_eq!(
+            utils::get_event_value("Missing", &event, &EventKeyAliasConfig::new()),
+            None
+        );
+    }
 
     #[test]
     fn format_time_uses_the_requested_fixed_offset() {
