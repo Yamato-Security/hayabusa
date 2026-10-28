@@ -4,7 +4,7 @@
 
 **Bug Fixes:**
 
-- Fixed CSV timelines repeating fields in `ExtraFieldInfo` when the same values were already shown in `Details` and contained embedded tabs or newlines. CSV normalizes ASCII whitespace in `Details` to single spaces, while the all-field path retained `\r`, `\n`, and `\t` until serialization; the exact-value deduplication therefore treated the two representations as different even though the final CSV displayed identical text. The comparison now applies the CSV whitespace normalization to both sides without changing JSON/JSONL values. (#1950) (@YamatoSecurity)
+- Fixed CSV and JSON/JSONL timelines repeating fields in `ExtraFieldInfo` when the same values were already shown in `Details` but their intermediate whitespace representations differed. CSV normalizes ASCII whitespace in rule-based `Details`, generated details can retain `\r`, `\n`, and `\t`, and the JSON writer trims some leading/trailing whitespace later; the exact-value deduplication therefore treated visually identical values as different. Values ending in a comma were also compared inconsistently. The comparison now applies the same whitespace and trailing-comma canonicalization to both sides without changing the displayed values. (#1950) (@YamatoSecurity)
 
 ## 4.3.0 [2026/10/28] - Vulnpocalypse Release
 

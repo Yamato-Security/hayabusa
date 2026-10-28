@@ -301,13 +301,10 @@ fn create_message_internal(
                 let profile_all_field_info_prof = record_details_info_map.get("#AllFieldInfo");
                 // Collect the values already shown in Details so that ExtraFieldInfo only reports
                 // the record fields whose values are not part of Details.
-                let details_splits: HashSet<&str> = {
+                let details_splits: HashSet<Cow<'_, str>> = {
                     let details = special_char_removed_details.iter().map(|detail| {
                         let value = detail.split_once(": ").unwrap_or_default().1;
-                        // Strip any trailing comma from the values put into the matching hash set;
-                        // otherwise the ExtraFieldInfo match result would differ depending on
-                        // whether or not a value carries a trailing comma.
-                        value.strip_suffix(',').unwrap_or(value)
+                        extra_field_comparison_key(value)
                     });
                     HashSet::from_iter(details)
                 };
@@ -325,22 +322,7 @@ fn create_message_internal(
                     .iter()
                     .filter(|field_info| {
                         let value = field_info.split_once(": ").unwrap_or_default().1;
-                        // CSV Details flatten all ASCII whitespace to one space before this
-                        // comparison. AllFieldInfo deliberately keeps embedded CR/LF/TAB until
-                        // the output stage, so compare its value in the same flattened form or a
-                        // field already present in Details can be emitted again in ExtraFieldInfo.
-                        // JSON/JSONL preserve that whitespace on both sides and need no change.
-                        let comparison_value = if !is_json_timeline
-                            && value
-                                .bytes()
-                                .any(|byte| matches!(byte, b'\r' | b'\n' | b'\t'))
-                        {
-                            Cow::Owned(value.split_ascii_whitespace().join(" "))
-                        } else {
-                            // Avoid allocating for the usual single-line value and for JSON,
-                            // where both Details and AllFieldInfo retain the control whitespace.
-                            Cow::Borrowed(value)
-                        };
+                        let comparison_value = extra_field_comparison_key(value);
                         !details_splits.contains(comparison_value.as_ref())
                     })
                     .map(|y| y.to_owned())
@@ -386,6 +368,32 @@ fn create_message_internal(
     detect_info.details_convert_map = record_details_info_map;
 
     detect_info
+}
+
+/// Returns the canonical form used only to decide whether a record value is already represented
+/// in Details. CSV flattens ASCII whitespace before output, while JSON trims some leading/trailing
+/// whitespace later in its writer, so comparing the intermediate strings directly can repeat the
+/// same displayed value in ExtraFieldInfo. A trailing comma is ignored on both sides because rule
+/// detail templates may add one as punctuation. The common single-line case stays allocation-free.
+fn extra_field_comparison_key(value: &str) -> Cow<'_, str> {
+    let bytes = value.as_bytes();
+    let needs_whitespace_normalization =
+        bytes.first().is_some_and(|byte| byte.is_ascii_whitespace())
+            || bytes.last().is_some_and(|byte| byte.is_ascii_whitespace())
+            || bytes
+                .iter()
+                .any(|byte| byte.is_ascii_whitespace() && *byte != b' ')
+            || bytes.windows(2).any(|pair| pair == b"  ");
+
+    if needs_whitespace_normalization {
+        let mut normalized = value.split_ascii_whitespace().join(" ");
+        if normalized.ends_with(',') {
+            normalized.pop();
+        }
+        Cow::Owned(normalized)
+    } else {
+        Cow::Borrowed(value.strip_suffix(',').unwrap_or(value))
+    }
 }
 
 /// Treats each %...% section in `output` as an alias and replaces it with the corresponding value
@@ -669,12 +677,15 @@ mod tests {
             "Event": {
                 "EventData": {
                     "CommandLine": "powershell.exe\t-enc AAAA",
-                    "ScriptBlockText": "first line\r\nsecond line",
+                    "ScriptBlockText": "\tfirst line\r\nsecond line\r\n",
+                    "CommaValue": "ends with a comma,",
                     "Unused": "keep me"
                 }
             }
         });
-        let output = CompactString::new("Cmdline: %CommandLine% ¦ Script: %ScriptBlockText%");
+        let output = CompactString::new(
+            "Cmdline: %CommandLine% ¦ Script: %ScriptBlockText% ¦ Comma: %CommaValue%",
+        );
         let detect_info = || DetectInfo {
             output_fields: vec![
                 ("Details".into(), Profile::Details("-".into())),
@@ -698,7 +709,8 @@ mod tests {
         assert!(csv_result.output_fields.contains(&(
             "Details".into(),
             Profile::Details(
-                "Cmdline: powershell.exe -enc AAAA ¦ Script: first line second line".into()
+                "Cmdline: powershell.exe -enc AAAA ¦ Script: first line second line ¦ Comma: ends with a comma,"
+                    .into()
             ),
         )));
         assert!(csv_result.output_fields.contains(&(
@@ -706,8 +718,8 @@ mod tests {
             Profile::ExtraFieldInfo("Unused: keep me".into()),
         )));
 
-        // JSON/JSONL preserve the control whitespace and already deduplicate correctly. Keep that
-        // behavior covered so the CSV fix does not flatten structured timeline values.
+        // JSON/JSONL preserve interior control whitespace but trim leading/trailing whitespace in
+        // a later writer stage. The comparison must deduplicate the value without modifying it.
         let (eventkey_alias, json_map_key, json_data_map) = field_configs();
         let json_result = super::create_message(
             &event_record,
@@ -721,7 +733,8 @@ mod tests {
             json_result.details_convert_map.get("#Details").unwrap(),
             &vec![
                 CompactString::from("Cmdline: powershell.exe\t-enc AAAA"),
-                CompactString::from("Script: first line\r\nsecond line"),
+                CompactString::from("Script: \tfirst line\r\nsecond line\r\n"),
+                CompactString::from("Comma: ends with a comma,"),
             ]
         );
         assert_eq!(
@@ -730,6 +743,45 @@ mod tests {
                 .get("#ExtraFieldInfo")
                 .unwrap(),
             &vec![CompactString::from("Unused: keep me")]
+        );
+    }
+
+    #[test]
+    fn test_generated_details_deduplicate_multiline_extra_field_info() {
+        let event_record = json!({
+            "Event": {
+                "EventData": {
+                    "TaskContentNew": "first line\r\n\tsecond line"
+                }
+            }
+        });
+        let field_data_map_key = FieldDataMapKey::default();
+        let output =
+            utils::create_recordinfos(&event_record, &field_data_map_key, &None).join(" ¦ ");
+        let detect_info = DetectInfo {
+            output_fields: vec![
+                ("Details".into(), Profile::Details("-".into())),
+                ("ExtraFieldInfo".into(), Profile::ExtraFieldInfo("-".into())),
+            ],
+            ..Default::default()
+        };
+
+        let result = create_message_from_record_fields(
+            &event_record,
+            output.into(),
+            detect_info,
+            &HashMap::new(),
+            (false, false),
+            (&EventKeyAliasConfig::new(), &field_data_map_key, &None),
+        );
+        assert!(result.output_fields.contains(&(
+            "Details".into(),
+            Profile::Details("TaskContentNew: first line\r\n\tsecond line".into()),
+        )));
+        assert!(
+            result
+                .output_fields
+                .contains(&("ExtraFieldInfo".into(), Profile::ExtraFieldInfo("-".into()),))
         );
     }
 
