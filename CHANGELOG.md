@@ -1,5 +1,11 @@
 # Changes
 
+## x.x.x [xxxx/xx/xx]
+
+**Bug Fixes:**
+
+- Fixed CSV timelines repeating fields in `ExtraFieldInfo` when the same values were already shown in `Details` and contained embedded tabs or newlines. CSV normalizes ASCII whitespace in `Details` to single spaces, while the all-field path retained `\r`, `\n`, and `\t` until serialization; the exact-value deduplication therefore treated the two representations as different even though the final CSV displayed identical text. The comparison now applies the CSV whitespace normalization to both sides without changing JSON/JSONL values. (#1950) (@YamatoSecurity)
+
 ## 4.3.0 [2026/10/28] - Vulnpocalypse Release
 
 **Enhancements:**

@@ -20,6 +20,7 @@ use nested::Nested;
 use regex::Regex;
 use rust_embed::Embed;
 use serde_json::Value;
+use std::borrow::Cow;
 use std::env;
 use std::fs::{File, create_dir};
 use std::io::{self, BufWriter, Write};
@@ -324,7 +325,23 @@ fn create_message_internal(
                     .iter()
                     .filter(|field_info| {
                         let value = field_info.split_once(": ").unwrap_or_default().1;
-                        !details_splits.contains(value)
+                        // CSV Details flatten all ASCII whitespace to one space before this
+                        // comparison. AllFieldInfo deliberately keeps embedded CR/LF/TAB until
+                        // the output stage, so compare its value in the same flattened form or a
+                        // field already present in Details can be emitted again in ExtraFieldInfo.
+                        // JSON/JSONL preserve that whitespace on both sides and need no change.
+                        let comparison_value = if !is_json_timeline
+                            && value
+                                .bytes()
+                                .any(|byte| matches!(byte, b'\r' | b'\n' | b'\t'))
+                        {
+                            Cow::Owned(value.split_ascii_whitespace().join(" "))
+                        } else {
+                            // Avoid allocating for the usual single-line value and for JSON,
+                            // where both Details and AllFieldInfo retain the control whitespace.
+                            Cow::Borrowed(value)
+                        };
+                        !details_splits.contains(comparison_value.as_ref())
                     })
                     .map(|y| y.to_owned())
                     .sorted_unstable()
@@ -643,6 +660,76 @@ mod tests {
                 .get("#ExtraFieldInfo")
                 .unwrap()
                 .is_empty()
+        );
+    }
+
+    #[test]
+    fn test_extra_field_info_deduplicates_csv_normalized_whitespace() {
+        let event_record = json!({
+            "Event": {
+                "EventData": {
+                    "CommandLine": "powershell.exe\t-enc AAAA",
+                    "ScriptBlockText": "first line\r\nsecond line",
+                    "Unused": "keep me"
+                }
+            }
+        });
+        let output = CompactString::new("Cmdline: %CommandLine% ¦ Script: %ScriptBlockText%");
+        let detect_info = || DetectInfo {
+            output_fields: vec![
+                ("Details".into(), Profile::Details("-".into())),
+                ("ExtraFieldInfo".into(), Profile::ExtraFieldInfo("-".into())),
+            ],
+            ..Default::default()
+        };
+        let field_configs = || (EventKeyAliasConfig::new(), FieldDataMapKey::default(), None);
+
+        // CSV flattens tabs/newlines in Details. ExtraFieldInfo must compare AllFieldInfo using
+        // the same normalization, otherwise it repeats CommandLine and ScriptBlockText.
+        let (eventkey_alias, csv_map_key, csv_data_map) = field_configs();
+        let csv_result = super::create_message(
+            &event_record,
+            output.clone(),
+            detect_info(),
+            &HashMap::new(),
+            (false, false),
+            (&eventkey_alias, &csv_map_key, &csv_data_map),
+        );
+        assert!(csv_result.output_fields.contains(&(
+            "Details".into(),
+            Profile::Details(
+                "Cmdline: powershell.exe -enc AAAA ¦ Script: first line second line".into()
+            ),
+        )));
+        assert!(csv_result.output_fields.contains(&(
+            "ExtraFieldInfo".into(),
+            Profile::ExtraFieldInfo("Unused: keep me".into()),
+        )));
+
+        // JSON/JSONL preserve the control whitespace and already deduplicate correctly. Keep that
+        // behavior covered so the CSV fix does not flatten structured timeline values.
+        let (eventkey_alias, json_map_key, json_data_map) = field_configs();
+        let json_result = super::create_message(
+            &event_record,
+            output,
+            detect_info(),
+            &HashMap::new(),
+            (false, true),
+            (&eventkey_alias, &json_map_key, &json_data_map),
+        );
+        assert_eq!(
+            json_result.details_convert_map.get("#Details").unwrap(),
+            &vec![
+                CompactString::from("Cmdline: powershell.exe\t-enc AAAA"),
+                CompactString::from("Script: first line\r\nsecond line"),
+            ]
+        );
+        assert_eq!(
+            json_result
+                .details_convert_map
+                .get("#ExtraFieldInfo")
+                .unwrap(),
+            &vec![CompactString::from("Unused: keep me")]
         );
     }
 
