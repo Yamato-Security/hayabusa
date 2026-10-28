@@ -130,6 +130,56 @@ pub fn create_output_filter_config(
 pub fn create_message(
     event_record: &Value,
     output: CompactString,
+    detect_info: DetectInfo,
+    profile_converter: &HashMap<&str, Profile>,
+    (is_agg, is_json_timeline): (bool, bool),
+    field_configs: (
+        &EventKeyAliasConfig,
+        &FieldDataMapKey,
+        &Option<FieldDataMap>,
+    ),
+) -> DetectInfo {
+    create_message_internal(
+        event_record,
+        output,
+        detect_info,
+        profile_converter,
+        (is_agg, is_json_timeline),
+        field_configs,
+        true,
+    )
+}
+
+/// Builds output when `output` already contains literal `key: value` pairs generated from the
+/// event record. Unlike [`create_message`], percent-delimited text inside those values is not
+/// interpreted as a `%FieldAlias%` template. This preserves values such as `%systemroot%` and
+/// URL-encoded `Program%20Files%20` paths.
+pub fn create_message_from_record_fields(
+    event_record: &Value,
+    output: CompactString,
+    detect_info: DetectInfo,
+    profile_converter: &HashMap<&str, Profile>,
+    (is_agg, is_json_timeline): (bool, bool),
+    field_configs: (
+        &EventKeyAliasConfig,
+        &FieldDataMapKey,
+        &Option<FieldDataMap>,
+    ),
+) -> DetectInfo {
+    create_message_internal(
+        event_record,
+        output,
+        detect_info,
+        profile_converter,
+        (is_agg, is_json_timeline),
+        field_configs,
+        false,
+    )
+}
+
+fn create_message_internal(
+    event_record: &Value,
+    output: CompactString,
     mut detect_info: DetectInfo,
     profile_converter: &HashMap<&str, Profile>,
     (is_agg, is_json_timeline): (bool, bool),
@@ -138,20 +188,28 @@ pub fn create_message(
         &FieldDataMapKey,
         &Option<FieldDataMap>,
     ),
+    expand_details_placeholders: bool,
 ) -> DetectInfo {
     let mut record_details_info_map = HashMap::new();
     let mut special_char_removed_details = vec![];
     if !is_agg {
         // At this stage, obtain the details text with its %alias% placeholders replaced by record
         // values, along with the individual key/value pairs that make up the details.
-        let (removed_sp_parsed_detail, mut details_in_record) = parse_message(
-            event_record,
-            &output,
-            eventkey_alias,
-            is_json_timeline,
-            field_data_map_key,
-            field_data_map,
-        );
+        let (removed_sp_parsed_detail, mut details_in_record) = if expand_details_placeholders {
+            parse_message(
+                event_record,
+                &output,
+                eventkey_alias,
+                is_json_timeline,
+                field_data_map_key,
+                field_data_map,
+            )
+        } else {
+            (
+                output.clone(),
+                output.split(" ¦ ").map(CompactString::from).collect(),
+            )
+        };
         details_in_record.drain(..).for_each(|detail| {
             special_char_removed_details.push(remove_sp_char(detail));
         });
@@ -515,12 +573,15 @@ mod tests {
         CURRENT_EXE_PATH, EventKeyAliasConfig, StoredStatic, load_eventkey_alias,
     };
     use crate::detections::field_data_map::FieldDataMapKey;
-    use crate::detections::message::{AlertMessage, parse_message};
+    use crate::detections::message::{
+        AlertMessage, DetectInfo, create_message_from_record_fields, parse_message,
+    };
     use crate::detections::utils;
+    use crate::options::profile::Profile;
 
     use compact_str::CompactString;
     use hashbrown::HashMap;
-    use serde_json::Value;
+    use serde_json::{Value, json};
 
     use super::create_output_filter_config;
 
@@ -534,6 +595,55 @@ mod tests {
     fn test_warn_message() {
         let input = "TESTWarn!";
         AlertMessage::warn(input).expect("[WARN] TESTWarn!");
+    }
+
+    #[test]
+    fn test_record_generated_details_preserve_percent_delimited_values() {
+        let event_record = json!({
+            "Event": {
+                "EventData": {
+                    "Path": "file:///C:/Program%20Files%20/App.msix",
+                    "TaskContentNew": "<Task>%systemroot%\\system32\\task.exe</Task>"
+                }
+            }
+        });
+        let field_data_map_key = FieldDataMapKey::default();
+        let output =
+            utils::create_recordinfos(&event_record, &field_data_map_key, &None).join(" ¦ ");
+        let detect_info = DetectInfo {
+            output_fields: vec![
+                ("Details".into(), Profile::Details("-".into())),
+                ("ExtraFieldInfo".into(), Profile::ExtraFieldInfo("-".into())),
+            ],
+            ..Default::default()
+        };
+
+        let result = create_message_from_record_fields(
+            &event_record,
+            output.into(),
+            detect_info,
+            &HashMap::new(),
+            (false, true),
+            (&EventKeyAliasConfig::new(), &field_data_map_key, &None),
+        );
+        let details = result.details_convert_map.get("#Details").unwrap();
+
+        assert!(
+            details
+                .iter()
+                .any(|detail| detail == "Path: file:///C:/Program%20Files%20/App.msix")
+        );
+        assert!(details.iter().any(|detail| {
+            detail == "TaskContentNew: <Task>%systemroot%\\system32\\task.exe</Task>"
+        }));
+        assert!(details.iter().all(|detail| !detail.contains("n/a")));
+        assert!(
+            result
+                .details_convert_map
+                .get("#ExtraFieldInfo")
+                .unwrap()
+                .is_empty()
+        );
     }
 
     #[test]

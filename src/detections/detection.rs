@@ -869,19 +869,22 @@ impl Detection {
         // If the rule has a details entry, output it as-is. Otherwise fall back to the default
         // details configured for this provider and event ID combination, and if none exists,
         // output all of the record's field data.
-        let details_fmt_str = match rule.yaml["details"].as_str() {
-            Some(details) => details.to_string(),
+        let (details_fmt_str, details_from_record_fields) = match rule.yaml["details"].as_str() {
+            Some(details) => (details.to_string(), false),
             None => match stored_static
                 .default_details
                 .get(&CompactString::from(format!("{provider}_{eid}")))
             {
-                Some(str) => str.to_string(),
-                None => create_recordinfos(
-                    &record_info.record,
-                    &field_data_map_key,
-                    &stored_static.field_data_map,
-                )
-                .join(" ¦ "),
+                Some(str) => (str.to_string(), false),
+                None => (
+                    create_recordinfos(
+                        &record_info.record,
+                        &field_data_map_key,
+                        &stored_static.field_data_map,
+                    )
+                    .join(" ¦ "),
+                    true,
+                ),
             },
         };
         let detect_info = DetectInfo {
@@ -900,18 +903,33 @@ impl Detection {
             details_convert_map: HashMap::default(),
         };
 
-        message::create_message(
-            &record_info.record,
-            CompactString::new(details_fmt_str),
-            detect_info,
-            &profile_converter,
-            (false, is_json_timeline),
-            (
-                eventkey_alias,
-                &field_data_map_key,
-                &stored_static.field_data_map,
-            ),
-        )
+        if details_from_record_fields {
+            message::create_message_from_record_fields(
+                &record_info.record,
+                CompactString::new(details_fmt_str),
+                detect_info,
+                &profile_converter,
+                (false, is_json_timeline),
+                (
+                    eventkey_alias,
+                    &field_data_map_key,
+                    &stored_static.field_data_map,
+                ),
+            )
+        } else {
+            message::create_message(
+                &record_info.record,
+                CompactString::new(details_fmt_str),
+                detect_info,
+                &profile_converter,
+                (false, is_json_timeline),
+                (
+                    eventkey_alias,
+                    &field_data_map_key,
+                    &stored_static.field_data_map,
+                ),
+            )
+        }
     }
 
     /// Creates a DetectInfo detection message for one aggregation condition (count/correlation)
