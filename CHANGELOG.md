@@ -1,10 +1,14 @@
 # Changes
 
-## x.x.x [xxxx/xx/xx]
+## 4.3.1 [2026/10/29] - Vulnpocalypse Release
 
 **Bug Fixes:**
 
 - Fixed CSV and JSON/JSONL timelines repeating fields in `ExtraFieldInfo` when the same values were already shown in `Details` but their intermediate whitespace representations differed. CSV normalizes ASCII whitespace in rule-based `Details`, generated details can retain `\r`, `\n`, and `\t`, and the JSON writer trims some leading/trailing whitespace later; the exact-value deduplication therefore treated visually identical values as different. Values ending in a comma were also compared inconsistently. The comparison now applies the same whitespace and trailing-comma canonicalization to both sides without changing the displayed values. (#1950) (@YamatoSecurity)
+
+**Other:**
+
+- Refreshed four direct and transitive Rust dependency packages to their latest versions compatible with Rust 1.97.1: `globset` 0.4.21, `libz-sys` 1.1.31, `rustix` 1.1.6, and `unicode-width` 0.2.3. (@YamatoSecurity)
 
 ## 4.3.0 [2026/10/28] - Vulnpocalypse Release
 
