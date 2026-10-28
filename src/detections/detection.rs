@@ -869,19 +869,22 @@ impl Detection {
         // If the rule has a details entry, output it as-is. Otherwise fall back to the default
         // details configured for this provider and event ID combination, and if none exists,
         // output all of the record's field data.
-        let details_fmt_str = match rule.yaml["details"].as_str() {
-            Some(details) => details.to_string(),
+        let (details_fmt_str, details_from_record_fields) = match rule.yaml["details"].as_str() {
+            Some(details) => (details.to_string(), false),
             None => match stored_static
                 .default_details
                 .get(&CompactString::from(format!("{provider}_{eid}")))
             {
-                Some(str) => str.to_string(),
-                None => create_recordinfos(
-                    &record_info.record,
-                    &field_data_map_key,
-                    &stored_static.field_data_map,
-                )
-                .join(" ¦ "),
+                Some(str) => (str.to_string(), false),
+                None => (
+                    create_recordinfos(
+                        &record_info.record,
+                        &field_data_map_key,
+                        &stored_static.field_data_map,
+                    )
+                    .join(" ¦ "),
+                    true,
+                ),
             },
         };
         let detect_info = DetectInfo {
@@ -900,7 +903,12 @@ impl Detection {
             details_convert_map: HashMap::default(),
         };
 
-        message::create_message(
+        let create_message = if details_from_record_fields {
+            message::create_message_from_record_fields
+        } else {
+            message::create_message
+        };
+        create_message(
             &record_info.record,
             CompactString::new(details_fmt_str),
             detect_info,
@@ -1623,6 +1631,89 @@ mod tests {
             })),
             ..Default::default()
         })
+    }
+
+    #[test]
+    fn test_generated_details_keep_percent_delimited_values() {
+        // A rule without `details` and an event without a default_details entry: Details is
+        // generated from the record's fields, so `%...%` in a value is literal text.
+        let test_filepath: &str = "test.evtx";
+        let dummy_action = Action::DfirTimeline(DfirTimelineOption {
+            output_options: OutputOption {
+                min_level: "informational".to_string(),
+                no_summary: true,
+                no_wizard: true,
+                ..Default::default()
+            },
+            output: Some(Path::new("./test_emit_csv.csv").to_path_buf()),
+            ..Default::default()
+        });
+        let stored_static = StoredStatic::create_static_data(Config {
+            action: Some(dummy_action),
+            debug: false,
+        });
+        let eventkey_alias = load_eventkey_alias(
+            utils::check_setting_path(
+                &CURRENT_EXE_PATH.to_path_buf(),
+                "rules/config/eventkey_alias.txt",
+                true,
+            )
+            .unwrap()
+            .to_str()
+            .unwrap(),
+        );
+        let val = r#"
+            {
+                "Event": {
+                    "EventData": {
+                        "Path": "file:///C:/Program%20Files%20/App.msix",
+                        "TaskContentNew": "<Exec>%systemroot%\\system32\\task.exe</Exec>"
+                    },
+                    "System": {
+                        "TimeCreated_attributes": {
+                            "SystemTime": "1996-02-27T01:05:01Z"
+                        },
+                        "EventRecordID": "11111",
+                        "Channel": "Dummy",
+                        "EventID": "4624"
+                    }
+                }
+            }
+        "#;
+        let rule_str = r#"
+        enabled: true
+        detection:
+            selection:
+                Channel: 'Dummy'
+        "#;
+        let event: Value = serde_json::from_str(val).unwrap();
+        let mut rule_yaml = YamlLoader::load_from_str(rule_str).unwrap().into_iter();
+        let mut rule_node = create_rule(test_filepath.to_string(), rule_yaml.next().unwrap());
+        assert!(rule_node.init(&create_dummy_stored_static()).is_ok());
+        let keys = detections::rule::get_detection_keys(&rule_node);
+        let input_evtxrecord = utils::create_rec_info(
+            event,
+            test_filepath.to_owned(),
+            &keys,
+            &false,
+            &false,
+            &eventkey_alias,
+        );
+        let detect_info =
+            Detection::create_log_record(&rule_node, &input_evtxrecord, &stored_static);
+        let output_fields = detect_info.output_fields;
+        assert!(
+            output_fields.contains(&(
+                "Details".into(),
+                Profile::Details(
+                    "Path: file:///C:/Program%20Files%20/App.msix ¦ TaskContentNew: <Exec>%systemroot%\\system32\\task.exe</Exec>".into()
+                )
+            )),
+            "{output_fields:?}"
+        );
+        assert!(
+            output_fields.contains(&("ExtraFieldInfo".into(), Profile::ExtraFieldInfo("-".into())))
+        );
     }
 
     #[test]
