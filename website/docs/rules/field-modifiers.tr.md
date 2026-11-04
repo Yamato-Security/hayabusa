@@ -9,19 +9,19 @@ Bu sayfa, tüm Sigma alan niteleyicilerinin dinamik olarak oluşturulmuş bir li
 | base64offsetǀcontains         |             7 |                0 |
 | base64ǀcontains               |             1 |                0 |
 | cased                         |             0 |                0 |
-| cidr                          |            35 |                0 |
-| contains                      |          3087 |               21 |
-| containsǀall                  |          1085 |                0 |
+| cidr                          |            36 |                0 |
+| contains                      |          3119 |               23 |
+| containsǀall                  |          1094 |                8 |
 | containsǀcased                |             0 |                0 |
 | containsǀexpand               |             3 |                0 |
-| containsǀwindash              |           109 |                0 |
-| endswith                      |          3281 |              273 |
+| containsǀwindash              |           111 |                0 |
+| endswith                      |          3307 |              283 |
 | endswithfield                 |             0 |                0 |
 | endswithǀcased                |             0 |                0 |
 | endswithǀwindash              |             2 |                0 |
 | equalsfield                   |             0 |                0 |
 | exists                        |             0 |                0 |
-| expand                        |            18 |                0 |
+| expand                        |            20 |                0 |
 | fieldref                      |             4 |                1 |
 | fieldrefǀcontains             |             0 |                0 |
 | fieldrefǀendswith             |             0 |                2 |
@@ -30,11 +30,11 @@ Bu sayfa, tüm Sigma alan niteleyicilerinin dinamik olarak oluşturulmuş bir li
 | gte                           |             0 |                0 |
 | lt                            |             0 |                0 |
 | lte                           |             0 |                0 |
-| re                            |           188 |               11 |
-| reǀi                          |             2 |                0 |
+| re                            |           189 |               11 |
+| reǀi                          |             4 |                0 |
 | reǀm                          |             0 |                0 |
 | reǀs                          |             0 |                0 |
-| startswith                    |           553 |                6 |
+| startswith                    |           560 |                6 |
 | startswithǀcased              |             0 |                0 |
 | utf16beǀbase64offsetǀcontains |             0 |                0 |
 | utf16leǀbase64offsetǀcontains |             0 |                0 |
@@ -60,4 +60,4 @@ Bu sayfa, tüm Sigma alan niteleyicilerinin dinamik olarak oluşturulmuş bir li
 Şu anda her şey destekleniyor.
 
 Bu belge, en güncel kurallara göre her ay dinamik olarak güncellenmektedir.  
-Son Güncelleme: 2026/10/02
+Son Güncelleme: 2026/11/01
