@@ -5,6 +5,7 @@ Silakan unduh versi stabil terbaru Hayabusa dengan biner yang telah dikompilasi 
 Kami menyediakan biner untuk arsitektur berikut:
 
 - Linux ARM 64-bit GNU (`hayabusa-x.x.x-lin-aarch64-gnu`)
+- Linux ARM 64-bit MUSL (`hayabusa-x.x.x-lin-aarch64-musl`)
 - Linux Intel 64-bit GNU (`hayabusa-x.x.x-lin-x64-gnu`)
 - Linux Intel 64-bit MUSL (`hayabusa-x.x.x-lin-x64-musl`)
 - macOS ARM 64-bit (`hayabusa-x.x.x-mac-aarch64`)
@@ -12,8 +13,6 @@ Kami menyediakan biner untuk arsitektur berikut:
 - Windows ARM 64-bit (`hayabusa-x.x.x-win-aarch64.exe`)
 - Windows Intel 64-bit (`hayabusa-x.x.x-win-x64.exe`)
 - Windows Intel 32-bit (`hayabusa-x.x.x-win-x86.exe`)
-
-> [Untuk beberapa alasan biner Linux ARM MUSL tidak berjalan dengan benar](https://github.com/Yamato-Security/hayabusa/issues/1332) sehingga kami tidak menyediakan biner tersebut. Hal ini di luar kendali kami, jadi kami berencana menyediakannya di masa mendatang setelah diperbaiki.
 
 ## Paket respons langsung Windows
 

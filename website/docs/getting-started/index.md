@@ -5,6 +5,7 @@ Please download the latest stable version of Hayabusa with compiled binaries or 
 We provide binaries for the following architectures:
 
 - Linux ARM 64-bit GNU (`hayabusa-x.x.x-lin-aarch64-gnu`)
+- Linux ARM 64-bit MUSL (`hayabusa-x.x.x-lin-aarch64-musl`)
 - Linux Intel 64-bit GNU (`hayabusa-x.x.x-lin-x64-gnu`)
 - Linux Intel 64-bit MUSL (`hayabusa-x.x.x-lin-x64-musl`)
 - macOS ARM 64-bit (`hayabusa-x.x.x-mac-aarch64`)
@@ -12,8 +13,6 @@ We provide binaries for the following architectures:
 - Windows ARM 64-bit (`hayabusa-x.x.x-win-aarch64.exe`)
 - Windows Intel 64-bit (`hayabusa-x.x.x-win-x64.exe`)
 - Windows Intel 32-bit (`hayabusa-x.x.x-win-x86.exe`)
-
-> [For some reason the Linux ARM MUSL binary does not run properly](https://github.com/Yamato-Security/hayabusa/issues/1332) so we do not provide that binary. It is out of our control, so we plan on providing it in the future when it gets fixed.
 
 ## Windows live response packages
 

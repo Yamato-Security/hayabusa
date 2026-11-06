@@ -5,6 +5,7 @@
 نوفّر ملفات ثنائية للمعماريات التالية:
 
 - Linux ARM 64-bit GNU (`hayabusa-x.x.x-lin-aarch64-gnu`)
+- Linux ARM 64-bit MUSL (`hayabusa-x.x.x-lin-aarch64-musl`)
 - Linux Intel 64-bit GNU (`hayabusa-x.x.x-lin-x64-gnu`)
 - Linux Intel 64-bit MUSL (`hayabusa-x.x.x-lin-x64-musl`)
 - macOS ARM 64-bit (`hayabusa-x.x.x-mac-aarch64`)
@@ -12,8 +13,6 @@
 - Windows ARM 64-bit (`hayabusa-x.x.x-win-aarch64.exe`)
 - Windows Intel 64-bit (`hayabusa-x.x.x-win-x64.exe`)
 - Windows Intel 32-bit (`hayabusa-x.x.x-win-x86.exe`)
-
-> [لسبب ما لا يعمل الملف الثنائي Linux ARM MUSL بشكل صحيح](https://github.com/Yamato-Security/hayabusa/issues/1332) لذلك لا نوفّر ذلك الملف الثنائي. الأمر خارج عن سيطرتنا، لذا نخطط لتوفيره في المستقبل عندما يتم إصلاحه.
 
 ## حزم الاستجابة المباشرة لـ Windows
 

@@ -5,6 +5,7 @@ Hayabusa ၏ နောက်ဆုံးထွက် တည်ငြိမ်သ
 အောက်ပါ architecture များအတွက် binary များကို ကျွန်ုပ်တို့ ပံ့ပိုးပေးပါသည်-
 
 - Linux ARM 64-bit GNU (`hayabusa-x.x.x-lin-aarch64-gnu`)
+- Linux ARM 64-bit MUSL (`hayabusa-x.x.x-lin-aarch64-musl`)
 - Linux Intel 64-bit GNU (`hayabusa-x.x.x-lin-x64-gnu`)
 - Linux Intel 64-bit MUSL (`hayabusa-x.x.x-lin-x64-musl`)
 - macOS ARM 64-bit (`hayabusa-x.x.x-mac-aarch64`)
@@ -12,8 +13,6 @@ Hayabusa ၏ နောက်ဆုံးထွက် တည်ငြိမ်သ
 - Windows ARM 64-bit (`hayabusa-x.x.x-win-aarch64.exe`)
 - Windows Intel 64-bit (`hayabusa-x.x.x-win-x64.exe`)
 - Windows Intel 32-bit (`hayabusa-x.x.x-win-x86.exe`)
-
-> [အကြောင်းတစ်ခုခုကြောင့် Linux ARM MUSL binary သည် မှန်ကန်စွာ အလုပ်မလုပ်ပါ](https://github.com/Yamato-Security/hayabusa/issues/1332) ထို့ကြောင့် ထို binary ကို ကျွန်ုပ်တို့ မပံ့ပိုးပါ။ ၎င်းသည် ကျွန်ုပ်တို့၏ ထိန်းချုပ်မှုပြင်ပတွင် ရှိသောကြောင့် ပြုပြင်ပြီးသောအခါ အနာဂတ်တွင် ၎င်းကို ပံ့ပိုးပေးရန် စီစဉ်ထားပါသည်။
 
 ## Windows live response packages
 

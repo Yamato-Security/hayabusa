@@ -5,6 +5,7 @@
 다음 아키텍처용 바이너리를 제공합니다:
 
 - Linux ARM 64비트 GNU (`hayabusa-x.x.x-lin-aarch64-gnu`)
+- Linux ARM 64비트 MUSL (`hayabusa-x.x.x-lin-aarch64-musl`)
 - Linux Intel 64비트 GNU (`hayabusa-x.x.x-lin-x64-gnu`)
 - Linux Intel 64비트 MUSL (`hayabusa-x.x.x-lin-x64-musl`)
 - macOS ARM 64비트 (`hayabusa-x.x.x-mac-aarch64`)
@@ -12,8 +13,6 @@
 - Windows ARM 64비트 (`hayabusa-x.x.x-win-aarch64.exe`)
 - Windows Intel 64비트 (`hayabusa-x.x.x-win-x64.exe`)
 - Windows Intel 32비트 (`hayabusa-x.x.x-win-x86.exe`)
-
-> [어떤 이유에서인지 Linux ARM MUSL 바이너리가 제대로 실행되지 않기](https://github.com/Yamato-Security/hayabusa/issues/1332) 때문에 해당 바이너리는 제공하지 않습니다. 이는 저희가 제어할 수 없는 부분이므로, 향후 문제가 해결되면 제공할 계획입니다.
 
 ## Windows 라이브 리스폰스 패키지
 

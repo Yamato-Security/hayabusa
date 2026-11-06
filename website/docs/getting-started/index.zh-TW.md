@@ -5,6 +5,7 @@
 我們提供下列架構的二進位檔：
 
 - Linux ARM 64 位元 GNU（`hayabusa-x.x.x-lin-aarch64-gnu`）
+- Linux ARM 64 位元 MUSL（`hayabusa-x.x.x-lin-aarch64-musl`）
 - Linux Intel 64 位元 GNU（`hayabusa-x.x.x-lin-x64-gnu`）
 - Linux Intel 64 位元 MUSL（`hayabusa-x.x.x-lin-x64-musl`）
 - macOS ARM 64 位元（`hayabusa-x.x.x-mac-aarch64`）
@@ -12,8 +13,6 @@
 - Windows ARM 64 位元（`hayabusa-x.x.x-win-aarch64.exe`）
 - Windows Intel 64 位元（`hayabusa-x.x.x-win-x64.exe`）
 - Windows Intel 32 位元（`hayabusa-x.x.x-win-x86.exe`）
-
-> [由於某些原因，Linux ARM MUSL 二進位檔無法正常執行](https://github.com/Yamato-Security/hayabusa/issues/1332)，因此我們不提供該二進位檔。這超出我們的掌控範圍，因此我們計畫在問題修復後於未來提供。
 
 ## Windows 即時回應套件
 
