@@ -5,6 +5,7 @@
 हम निम्नलिखित आर्किटेक्चर के लिए बाइनरी प्रदान करते हैं:
 
 - Linux ARM 64-bit GNU (`hayabusa-x.x.x-lin-aarch64-gnu`)
+- Linux ARM 64-bit MUSL (`hayabusa-x.x.x-lin-aarch64-musl`)
 - Linux Intel 64-bit GNU (`hayabusa-x.x.x-lin-x64-gnu`)
 - Linux Intel 64-bit MUSL (`hayabusa-x.x.x-lin-x64-musl`)
 - macOS ARM 64-bit (`hayabusa-x.x.x-mac-aarch64`)
@@ -12,8 +13,6 @@
 - Windows ARM 64-bit (`hayabusa-x.x.x-win-aarch64.exe`)
 - Windows Intel 64-bit (`hayabusa-x.x.x-win-x64.exe`)
 - Windows Intel 32-bit (`hayabusa-x.x.x-win-x86.exe`)
-
-> [किसी कारण से Linux ARM MUSL बाइनरी ठीक से नहीं चलती है](https://github.com/Yamato-Security/hayabusa/issues/1332) इसलिए हम वह बाइनरी प्रदान नहीं करते हैं। यह हमारे नियंत्रण से बाहर है, इसलिए जब यह ठीक हो जाएगा तब हम भविष्य में इसे प्रदान करने की योजना बना रहे हैं।
 
 ## Windows लाइव रिस्पॉन्स पैकेज
 
