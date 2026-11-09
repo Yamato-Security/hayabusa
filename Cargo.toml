@@ -81,7 +81,7 @@ winapi = { version = "0.3.9", features = ["wow64apiset"] }
 same-file = "1"
 
 # Juntei's portable read-only NTFS image API, using its AGPL licence alternative.
-ys_vhdx_mount = { package = "ys-vhdx-mount", git = "https://github.com/Yamato-Security/ys-vhdx-parser", rev = "113c1112483454e4b562e0fbf466ed981dcd6e64" }
+ys_vhdx_mount = { package = "ys-vhdx-mount", git = "https://github.com/Yamato-Security/ys-vhdx-parser", rev = "2ed3526aa52aa559db947ba69d6299c9e4d25288" }
 
 [dev-dependencies]
 tempfile = "3"

@@ -104,8 +104,8 @@ fn main() {
     let mut app = App::new(stored_static.thread_number);
     app.exec(&mut config_reader.app, &mut stored_static);
     app.runtime.shutdown_background();
-    if app.failed.get() {
-        // The run was rejected or aborted before producing output; do not report success.
+    if app.failed.get() || app.incomplete_input.get() {
+        // Aborted scans and completed scans with unreadable input both exit non-zero.
         std::process::exit(1);
     }
 }
@@ -162,6 +162,9 @@ pub struct App {
     /// `process::exit` because the unit tests drive `exec` into several of these paths and would
     /// otherwise take the test process down with them.
     failed: Cell<bool>,
+    /// Recoverable input errors: finish outputs for readable logs, but exit non-zero.
+    /// Keep this separate from `failed`, which stops output finalization after fatal errors.
+    incomplete_input: Cell<bool>,
     rule_keys: Nested<String>,
     /// Records how long each processing phase takes; printed per-phase only with `--debug`,
     /// with the accumulated total shown as "Elapsed time" in the results summary.
@@ -420,6 +423,7 @@ impl App {
         App {
             runtime: utils::create_tokio_runtime(thread_number),
             failed: Cell::new(false),
+            incomplete_input: Cell::new(false),
             rule_keys: Nested::<String>::new(),
             checkpoint: CheckPointProcessTimer::create_checkpoint_timer(),
         }
@@ -428,6 +432,7 @@ impl App {
     /// Dispatch and run the subcommand selected on the command line, then print the closing
     /// summary output (elapsed time, error log, HTML report, etc.).
     fn exec(&mut self, app: &mut Command, stored_static: &mut StoredStatic) {
+        self.incomplete_input.set(false);
         // sort-csv is pure CSV post-processing: it needs none of the rule/profile/evtx machinery
         // the other subcommands set up below, so handle it up front and return.
         if let Some(Action::SortCsv(opt)) = stored_static.config.action.clone() {
@@ -1692,7 +1697,7 @@ Any hostnames added to the critical_systems.txt file will have all alerts above 
         let inputs = vhdx::Catalog::collect(&images, extensions);
         for problem in inputs.problems.iter() {
             AlertMessage::alert(problem).ok();
-            self.failed.set(true);
+            self.incomplete_input.set(true);
         }
         println!("VHDX images opened read-only: {}", inputs.image_count);
         let files = inputs.paths();
@@ -1701,6 +1706,15 @@ Any hostnames added to the critical_systems.txt file will have all alerts above 
             AlertMessage::alert("No matching event logs were found inside the VHDX images.").ok();
             self.failed.set(true);
         } else {
+            if self.incomplete_input.get() {
+                let warning = "Incomplete VHDX input: some image data could not be processed. Results contain only readable input.";
+                AlertMessage::warn(warning).ok();
+                if stored_static.html_report_flag {
+                    let mut lines = Nested::new();
+                    lines.push(format!("**{warning}**"));
+                    html_reporter.add_md_data(htmlreport::GENERAL_OVERVIEW_SECTION, lines);
+                }
+            }
             self.analysis_files(files, time_filter, stored_static, html_reporter);
         }
         stored_static.vhdx_files = vhdx::Catalog::default();

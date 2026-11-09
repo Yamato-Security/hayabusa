@@ -363,6 +363,38 @@ fn output_aliases_cannot_overwrite_an_image() {
     .unwrap();
     assert!(!output.status.success());
     assert_eq!(original, fs::read(&image).unwrap());
+    // Even a mixed good/bad input must not finalize pivot output after a fatal
+    // derived-filename collision. The category is loaded before the second preflight.
+    let pivot_prefix = temp.path().join("pivot");
+    let protected = temp.path().join("pivot-Source Computers.txt");
+    fs::hard_link(&image, &protected).unwrap();
+    fs::write(temp.path().join("broken.vhdx"), b"not a VHDX").unwrap();
+    let output = command(
+        Path::new(env!("CARGO_BIN_EXE_hayabusa")),
+        &mounts,
+        "pivot-keywords-list",
+        temp.path(),
+        true,
+    )
+    .args(["-w", "-C", "-o"])
+    .arg(&pivot_prefix)
+    .output()
+    .unwrap();
+    assert!(!output.status.success());
+    assert!(String::from_utf8_lossy(&output.stderr).contains("cannot be overwritten"));
+    assert_eq!(original, fs::read(&image).unwrap());
+    assert_eq!(
+        fs::read_dir(temp.path())
+            .unwrap()
+            .filter(|e| e
+                .as_ref()
+                .unwrap()
+                .file_name()
+                .to_string_lossy()
+                .starts_with("pivot-"))
+            .count(),
+        1
+    );
     empty_work_dir(&mounts);
 }
 
@@ -438,5 +470,227 @@ fn native_inputs_work_with_default_channel_filtering() {
         .arg(&out),
     );
     assert_eq!(csv::Reader::from_path(out).unwrap().records().count(), 1);
+    empty_work_dir(&scratch);
+}
+
+fn result_files(directory: &Path) -> std::collections::BTreeMap<String, Vec<u8>> {
+    fs::read_dir(directory)
+        .unwrap()
+        .map(|e| e.unwrap().path())
+        .filter(|p| {
+            p.is_file()
+                && p.file_name()
+                    .unwrap()
+                    .to_string_lossy()
+                    .starts_with("result")
+        })
+        .map(|p| {
+            (
+                p.file_name().unwrap().to_string_lossy().into_owned(),
+                fs::read(p).unwrap(),
+            )
+        })
+        .collect()
+}
+
+#[test]
+fn partial_timeline_scans_preserve_each_format_and_html_report() {
+    let temp = tempfile::tempdir().unwrap();
+    let scratch = work_dir(&temp);
+    let inputs = temp.path().join("inputs");
+    fs::create_dir(&inputs).unwrap();
+    let image = unpack(&inputs, "logs.vhdx.gz", "good.vhdx");
+    fs::write(inputs.join("broken.vhdx"), b"not a VHDX").unwrap();
+    for format in ["csv", "json", "jsonl"] {
+        let mut results = Vec::new();
+        for partial in [false, true] {
+            let directory = temp.path().join(format!("{format}-{partial}"));
+            fs::create_dir(&directory).unwrap();
+            let report = directory.join("report.html");
+            let output = command(
+                Path::new(env!("CARGO_BIN_EXE_hayabusa")),
+                &scratch,
+                "dfir-timeline",
+                if partial { &inputs } else { &image },
+                true,
+            )
+            .args([
+                "-w",
+                "-A",
+                "-a",
+                "-U",
+                "-s",
+                "-p",
+                "verbose",
+                "-r",
+                "test_files/vhdx/events.yml",
+                "-t",
+                format,
+                "-o",
+            ])
+            .arg(directory.join(format!("result.{format}")))
+            .arg("-H")
+            .arg(&report)
+            .output()
+            .unwrap();
+            assert_eq!(
+                output.status.success(),
+                !partial,
+                "{}",
+                String::from_utf8_lossy(&output.stderr)
+            );
+            assert!(
+                report.is_file(),
+                "the readable input's HTML report was lost for {format}, partial={partial}"
+            );
+            let html = fs::read_to_string(report).unwrap();
+            assert!(html.contains("General Overview") && html.contains("Results Summary"));
+            assert_eq!(html.contains("Incomplete VHDX input"), partial);
+            let stdout = String::from_utf8_lossy(&output.stdout);
+            assert!(stdout.contains("Saved file"), "{stdout}");
+            assert!(stdout.contains("Elapsed time:"), "{stdout}");
+            let files = result_files(&directory);
+            assert!(!files.is_empty());
+            results.push(files);
+        }
+        assert_eq!(
+            results[0], results[1],
+            "valid detections changed in the partial {format} scan"
+        );
+    }
+    empty_work_dir(&scratch);
+}
+
+#[test]
+fn partial_non_timeline_scans_finalize_outputs_and_keep_failure_status() {
+    let temp = tempfile::tempdir().unwrap();
+    let scratch = work_dir(&temp);
+    let inputs = temp.path().join("inputs");
+    fs::create_dir(&inputs).unwrap();
+    let image = unpack(&inputs, "logs.vhdx.gz", "good.vhdx");
+    fs::write(inputs.join("broken.vhdx"), b"not a VHDX").unwrap();
+    for action in [
+        "pivot-keywords-list",
+        "logon-summary",
+        "eid-metrics",
+        "computer-metrics",
+        "log-metrics",
+        "search",
+        "extract-base64",
+        "config-critical-systems",
+    ] {
+        let binary = if action == "config-critical-systems" {
+            let directory = temp.path().join("critical-bin");
+            fs::create_dir_all(directory.join("config")).unwrap();
+            let binary = directory.join(format!("hayabusa{}", std::env::consts::EXE_SUFFIX));
+            fs::copy(env!("CARGO_BIN_EXE_hayabusa"), &binary).unwrap();
+            binary
+        } else {
+            PathBuf::from(env!("CARGO_BIN_EXE_hayabusa"))
+        };
+        let mut results = Vec::new();
+        for partial in [false, true] {
+            let directory = temp.path().join(format!("{action}-{partial}"));
+            fs::create_dir(&directory).unwrap();
+            let input = if partial { &inputs } else { &image };
+            let mut cmd = if action == "config-critical-systems" {
+                fs::write(
+                    binary.parent().unwrap().join("config/critical_systems.txt"),
+                    "",
+                )
+                .unwrap();
+                let mut cmd = Command::new(&binary);
+                cmd.current_dir(root())
+                    .args([action, "-K", "--vhdx", if partial { "-d" } else { "-f" }])
+                    .arg(input);
+                cmd
+            } else {
+                command(&binary, &scratch, action, input, true)
+            };
+            if action != "config-critical-systems" {
+                cmd.arg("-o").arg(directory.join("result.csv"));
+            }
+            if action == "pivot-keywords-list" {
+                cmd.arg("-w");
+            }
+            if action == "search" {
+                cmd.args(["-r", ".*"]);
+            }
+            let output = cmd.output().unwrap();
+            assert_eq!(
+                output.status.success(),
+                !partial,
+                "{action}: {}",
+                String::from_utf8_lossy(&output.stderr)
+            );
+            let files = result_files(&directory);
+            let stdout = String::from_utf8_lossy(&output.stdout).replace("\x1b[0m", "");
+            if action == "config-critical-systems" {
+                let last = stdout
+                    .lines()
+                    .rev()
+                    .find(|l| !l.trim().is_empty())
+                    .unwrap()
+                    .trim();
+                let closings =
+                    fs::read_to_string(root().join("rules/config/closing_messages.txt")).unwrap();
+                assert!(
+                    closings.lines().any(|l| l.trim() == last),
+                    "missing closing message: {stdout}"
+                );
+            } else {
+                assert!(stdout.contains("Elapsed time:"), "{action}: {stdout}");
+                if action == "pivot-keywords-list" {
+                    assert!(!files.is_empty(), "readable input's pivot files were lost");
+                    assert!(
+                        stdout.contains("Pivot keyword results were saved"),
+                        "{stdout}"
+                    );
+                } else if action == "logon-summary" {
+                    assert!(
+                        stdout.contains("logon results")
+                            || stdout.contains("No logon events were detected"),
+                        "{stdout}"
+                    );
+                } else if !files.is_empty() {
+                    assert!(stdout.contains("Saved results"), "{action}: {stdout}");
+                }
+            }
+            results.push(files);
+        }
+        assert_eq!(
+            results[0], results[1],
+            "{action}: valid output changed in a partial scan"
+        );
+    }
+    empty_work_dir(&scratch);
+}
+
+#[test]
+fn wholly_invalid_images_do_not_finalize_reports_or_pivot_files() {
+    let temp = tempfile::tempdir().unwrap();
+    let scratch = work_dir(&temp);
+    let image = temp.path().join("broken.vhdx");
+    fs::write(&image, b"not a VHDX").unwrap();
+    for action in ["dfir-timeline", "pivot-keywords-list"] {
+        let directory = temp.path().join(action);
+        fs::create_dir(&directory).unwrap();
+        let mut cmd = command(
+            Path::new(env!("CARGO_BIN_EXE_hayabusa")),
+            &scratch,
+            action,
+            &image,
+            true,
+        );
+        cmd.args(["-w", "-o"]).arg(directory.join("result.csv"));
+        if action == "dfir-timeline" {
+            cmd.args(["-r", "test_files/vhdx/events.yml", "-H"])
+                .arg(directory.join("report.html"));
+        }
+        let output = cmd.output().unwrap();
+        assert!(!output.status.success());
+        assert!(result_files(&directory).is_empty());
+        assert!(!directory.join("report.html").exists());
+    }
     empty_work_dir(&scratch);
 }

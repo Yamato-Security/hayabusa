@@ -7,7 +7,7 @@
 
 **New Features:**
 
-- Added `--vhdx` to all event-log scanning commands. Scan one image with `-f` or discover images through three subdirectory levels with `-d`; logs are read recursively across all NTFS volumes using the portable NTFS image API shared with Juntei. Native scanning works on Linux, macOS, and Windows without mounting drivers, administrator privileges, or temporary log extraction. Evidence paths retain the image and internal filename. (@YamatoSecurity)
+- Added `--vhdx` to all event-log scanning commands. Scan one image with `-f` or discover images through three subdirectory levels with `-d`; logs are read recursively across all NTFS volumes using the portable NTFS image API shared with Juntei. Native scanning works on Linux, macOS, and Windows without mounting drivers, administrator privileges, or temporary log extraction. Evidence paths retain the image and internal filename. Partial scans retain readable outputs, including HTML reports and pivot files, mark reports incomplete, and exit nonzero. (@YamatoSecurity)
 
 ## 4.3.1 [2026/10/29] - Vulnpocalypse Release
 

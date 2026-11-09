@@ -2927,7 +2927,7 @@ dependencies = [
 [[package]]
 name = "ys-vhdx-mount"
 version = "1.0.0"
-source = "git+https://github.com/Yamato-Security/ys-vhdx-parser?rev=113c1112483454e4b562e0fbf466ed981dcd6e64#113c1112483454e4b562e0fbf466ed981dcd6e64"
+source = "git+https://github.com/Yamato-Security/ys-vhdx-parser?rev=2ed3526aa52aa559db947ba69d6299c9e4d25288#2ed3526aa52aa559db947ba69d6299c9e4d25288"
 dependencies = [
  "ctrlc",
  "fuser",
@@ -2938,7 +2938,7 @@ dependencies = [
 [[package]]
 name = "ys-vhdx-parser"
 version = "1.0.0"
-source = "git+https://github.com/Yamato-Security/ys-vhdx-parser?rev=113c1112483454e4b562e0fbf466ed981dcd6e64#113c1112483454e4b562e0fbf466ed981dcd6e64"
+source = "git+https://github.com/Yamato-Security/ys-vhdx-parser?rev=2ed3526aa52aa559db947ba69d6299c9e4d25288#2ed3526aa52aa559db947ba69d6299c9e4d25288"
 dependencies = [
  "thiserror 2.0.21",
 ]
