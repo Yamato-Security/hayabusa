@@ -40,3 +40,37 @@ fn native_catalogue_readers_preserve_source_names_sizes_and_lifetime() {
     assert_eq!(&signature, b"ElfFile\0");
     assert_eq!(original, fs::read(image).unwrap());
 }
+
+#[cfg(target_os = "linux")]
+#[test]
+fn non_utf8_image_names_cannot_merge_distinct_evidence_sources() {
+    use std::os::unix::ffi::OsStringExt;
+    let root = Path::new(env!("CARGO_MANIFEST_DIR"));
+    let temp = tempfile::tempdir().unwrap();
+    let fixture = fs::File::open(root.join("test_files/vhdx/logs.vhdx.gz")).unwrap();
+    let mut bytes = Vec::new();
+    flate2::read::GzDecoder::new(fixture)
+        .read_to_end(&mut bytes)
+        .unwrap();
+    let first = temp
+        .path()
+        .join(std::ffi::OsString::from_vec(b"image-\xff.vhdx".to_vec()));
+    let second = temp
+        .path()
+        .join(std::ffi::OsString::from_vec(b"image-\xfe.vhdx".to_vec()));
+    assert_eq!(first.display().to_string(), second.display().to_string());
+    fs::write(&first, &bytes).unwrap();
+    fs::write(&second, &bytes).unwrap();
+    let inputs = Catalog::collect(
+        &[first, second],
+        &hashbrown::HashSet::from(["evtx".to_string()]),
+    );
+    assert!(inputs.paths().is_empty());
+    assert_eq!(inputs.problems.len(), 2);
+    assert!(
+        inputs
+            .problems
+            .iter()
+            .all(|p| p.contains("not valid UTF-8"))
+    );
+}

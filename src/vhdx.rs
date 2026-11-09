@@ -154,6 +154,10 @@ impl Catalog {
         let mut problems = Vec::new();
         let mut image_count = 0;
         for path in images {
+            if path.to_str().is_none() {
+                problems.push(format!("Image path is not valid UTF-8: {}", path.display()));
+                continue;
+            }
             let image = match Image::open(path) {
                 Ok(image) => Arc::new(image),
                 Err(e) => {
@@ -199,17 +203,22 @@ impl Catalog {
                         {
                             let logical = PathBuf::from(format!("{}!/{relative}", path.display()));
                             match selected.stat(entry.record) {
-                                Ok(stat) => {
-                                    files.insert(
-                                        logical,
-                                        NativeFile {
+                                Ok(stat) => match files.entry(logical) {
+                                    std::collections::hash_map::Entry::Vacant(slot) => {
+                                        slot.insert(NativeFile {
                                             image: image.clone(),
                                             volume,
                                             record: entry.record,
                                             size: stat.size,
-                                        },
-                                    );
-                                }
+                                        });
+                                    }
+                                    std::collections::hash_map::Entry::Occupied(slot) => {
+                                        problems.push(format!(
+                                            "Ambiguous image evidence path: {}",
+                                            slot.key().display()
+                                        ));
+                                    }
+                                },
                                 Err(e) => problems.push(format!("{}: {e}", logical.display())),
                             }
                         }
