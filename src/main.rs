@@ -24,8 +24,7 @@ use hayabusa::detections::message::{AlertMessage, DetectInfo, get_event_time};
 use hayabusa::detections::rule::{RuleNode, get_detection_keys};
 use hayabusa::detections::utils;
 use hayabusa::detections::utils::{
-    check_setting_path, get_file_size, get_writable_color, output_and_data_stack_for_html,
-    output_profile_name,
+    check_setting_path, get_writable_color, output_and_data_stack_for_html, output_profile_name,
 };
 use hayabusa::filter::{create_channel_filter, filter_evtx_files};
 use hayabusa::level::LEVEL;
@@ -344,6 +343,7 @@ fn apply_channel_filters(
             &rule_files,
             stored_static.quiet_errors_flag,
             &stored_static.error_log_stack,
+            &stored_static.vhdx_files,
         );
         evtx_files.retain(|evtx_file| channel_filter.scannable_rule_exists(evtx_file));
     }
@@ -369,6 +369,7 @@ fn apply_channel_filters(
             &rule_files,
             stored_static.quiet_errors_flag,
             &stored_static.error_log_stack,
+            &stored_static.vhdx_files,
         );
         evtx_files.retain(|evtx_file| channel_filter.scannable_rule_exists(evtx_file));
     }
@@ -381,6 +382,7 @@ fn apply_channel_filters(
             &opt.exclude_channel,
             &opt.exclude_filename,
             &stored_static.error_log_stack,
+            &stored_static.vhdx_files,
         );
     }
     evtx_files
@@ -471,16 +473,6 @@ impl App {
             return;
         }
 
-        if !cfg!(target_os = "linux")
-            && stored_static
-                .output_option
-                .as_ref()
-                .is_some_and(|o| o.input_args.vhdx)
-        {
-            AlertMessage::alert(hayabusa::vhdx::UNSUPPORTED).ok();
-            self.failed.set(true);
-            return;
-        }
         if let Some(options) = &stored_static.output_option
             && options.input_args.vhdx
             && let Err(e) = hayabusa::vhdx::discover(&options.input_args).and_then(|images| {
@@ -1584,13 +1576,7 @@ Any hostnames added to the critical_systems.txt file will have all alerts above 
             .as_ref()
             .is_some_and(|o| o.input_args.vhdx)
         {
-            #[cfg(target_os = "linux")]
             self.analysis_vhdx(target_extensions, time_filter, stored_static, html_reporter);
-            #[cfg(not(target_os = "linux"))]
-            {
-                AlertMessage::alert(hayabusa::vhdx::UNSUPPORTED).ok();
-                self.failed.set(true);
-            }
             return;
         }
         if stored_static.output_option.is_none() {
@@ -1683,7 +1669,6 @@ Any hostnames added to the critical_systems.txt file will have all alerts above 
         }
     }
 
-    #[cfg(target_os = "linux")]
     fn analysis_vhdx(
         &mut self,
         extensions: &HashSet<String>,
@@ -1693,43 +1678,32 @@ Any hostnames added to the critical_systems.txt file will have all alerts above 
     ) {
         use hayabusa::vhdx;
         let input = &stored_static.output_option.as_ref().unwrap().input_args;
-        let prepared = vhdx::discover(input).and_then(|images| {
+        let images = match vhdx::discover(input).and_then(|images| {
             vhdx::protect_outputs(&images, &vhdx::output_paths(stored_static))?;
-            vhdx::MountedImages::open(&images)
-        });
-        let mounted = match prepared {
-            Ok(mounted) => mounted,
+            Ok(images)
+        }) {
+            Ok(images) => images,
             Err(e) => {
                 AlertMessage::alert(&e.to_string()).ok();
                 self.failed.set(true);
                 return;
             }
         };
-        for problem in &mounted.problems {
+        let inputs = vhdx::Catalog::collect(&images, extensions);
+        for problem in inputs.problems.iter() {
             AlertMessage::alert(problem).ok();
             self.failed.set(true);
         }
-        stored_static.vhdx_sources = mounted.sources.clone();
-        println!("VHDX images mounted read-only: {}", mounted.sources.len());
-        match vhdx::collect_logs(&mounted.roots(), extensions) {
-            Ok(files) if !files.is_empty() => {
-                self.analysis_files(files, time_filter, stored_static, html_reporter);
-            }
-            Ok(_) => {
-                AlertMessage::alert("No matching event logs were found inside the VHDX images.")
-                    .ok();
-                self.failed.set(true);
-            }
-            Err(e) => {
-                AlertMessage::alert(&format!("Could not enumerate mounted event logs: {e}")).ok();
-                self.failed.set(true);
-            }
-        }
-        for error in mounted.close() {
-            AlertMessage::alert(&error).ok();
+        println!("VHDX images opened read-only: {}", inputs.image_count);
+        let files = inputs.paths();
+        stored_static.vhdx_files = inputs;
+        if files.is_empty() {
+            AlertMessage::alert("No matching event logs were found inside the VHDX images.").ok();
             self.failed.set(true);
+        } else {
+            self.analysis_files(files, time_filter, stored_static, html_reporter);
         }
-        stored_static.vhdx_sources.clear();
+        stored_static.vhdx_files = vhdx::Catalog::default();
     }
 
     #[cfg(not(target_os = "windows"))]
@@ -2229,12 +2203,7 @@ Any hostnames added to the critical_systems.txt file will have all alerts above 
         .ok();
         let mut total_file_size = ByteSize::b(0);
         for file_path in &evtx_files {
-            let file_size = get_file_size(
-                file_path,
-                stored_static.verbose_flag,
-                stored_static.quiet_errors_flag,
-                &stored_static.error_log_stack,
-            );
+            let file_size = hayabusa::vhdx::file_size(file_path, stored_static);
             total_file_size += ByteSize::b(file_size);
         }
         write_color_buffer(
@@ -2368,6 +2337,7 @@ Any hostnames added to the critical_systems.txt file will have all alerts above 
                     &rule_files,
                     stored_static.quiet_errors_flag,
                     &stored_static.error_log_stack,
+                    &stored_static.vhdx_files,
                 );
                 if !stored_static.scan_all_evtx_files {
                     evtx_files.retain(|evtx_file| channel_filter.scannable_rule_exists(evtx_file));
@@ -2467,12 +2437,7 @@ Any hostnames added to the critical_systems.txt file will have all alerts above 
         }
         for evtx_file in evtx_files {
             if is_show_progress {
-                let size = get_file_size(
-                    &evtx_file,
-                    stored_static.verbose_flag,
-                    stored_static.quiet_errors_flag,
-                    &stored_static.error_log_stack,
-                );
+                let size = hayabusa::vhdx::file_size(&evtx_file, stored_static);
                 let file_size = ByteSize::b(size);
                 let pb_msg = format!(
                     "{:?} ({})",
@@ -2484,28 +2449,28 @@ Any hostnames added to the critical_systems.txt file will have all alerts above 
                 }
             }
 
-            let (detection_tmp, cnt_tmp, tl_tmp, recover_cnt_tmp, mut detect_infos) =
-                if evtx_file.extension().unwrap() == "json"
-                    || evtx_file.extension().unwrap() == "jsonl"
-                {
-                    self.analysis_json_file(
-                        (evtx_file, time_filter, target_event_ids, stored_static),
-                        &stored_static_arc,
-                        detection,
-                        timeline.to_owned(),
-                        &mut output_writer,
-                        &mut result_state,
-                    )
-                } else {
-                    self.analysis_file(
-                        (evtx_file, time_filter, target_event_ids, stored_static),
-                        &stored_static_arc,
-                        detection,
-                        timeline.to_owned(),
-                        &mut output_writer,
-                        &mut result_state,
-                    )
-                };
+            let (detection_tmp, cnt_tmp, tl_tmp, recover_cnt_tmp, mut detect_infos) = if evtx_file
+                .extension()
+                .is_some_and(|e| e.eq_ignore_ascii_case("json") || e.eq_ignore_ascii_case("jsonl"))
+            {
+                self.analysis_json_file(
+                    (evtx_file, time_filter, target_event_ids, stored_static),
+                    &stored_static_arc,
+                    detection,
+                    timeline.to_owned(),
+                    &mut output_writer,
+                    &mut result_state,
+                )
+            } else {
+                self.analysis_file(
+                    (evtx_file, time_filter, target_event_ids, stored_static),
+                    &stored_static_arc,
+                    detection,
+                    timeline.to_owned(),
+                    &mut output_writer,
+                    &mut result_state,
+                )
+            };
             detection = detection_tmp;
             timeline = tl_tmp;
             result_state.record_cnt += cnt_tmp as u128;
@@ -2644,8 +2609,7 @@ Any hostnames added to the critical_systems.txt file will have all alerts above 
         usize,
         Vec<DetectInfo>,
     ) {
-        let source_path = hayabusa::vhdx::display_path(&evtx_filepath, &stored_static.vhdx_sources);
-        let path = source_path.display();
+        let path = evtx_filepath.display();
         let parser = self.evtx_to_jsons(&evtx_filepath, stored_static);
         let mut record_cnt = 0;
         let mut recover_records_cnt = 0;
@@ -2983,13 +2947,14 @@ Any hostnames added to the critical_systems.txt file will have all alerts above 
         usize,
         Vec<DetectInfo>,
     ) {
-        let source_path = hayabusa::vhdx::display_path(&filepath, &stored_static.vhdx_sources);
-        let path = source_path.display();
+        let path = filepath.display();
         let mut record_cnt = 0;
         let recover_records_cnt = 0;
         let mut is_splunk_api_json;
         let filename = filepath.to_str().unwrap_or_default();
-        let filepath = if filename.starts_with("./") {
+        let filepath = if stored_static.vhdx_files.size(Path::new(filename)).is_some() {
+            filename.to_string()
+        } else if filename.starts_with("./") {
             check_setting_path(&CURRENT_EXE_PATH.to_path_buf(), filename, true)
                 .unwrap()
                 .to_str()
@@ -2998,14 +2963,22 @@ Any hostnames added to the critical_systems.txt file will have all alerts above 
         } else {
             filename.to_string()
         };
-        let jsonl_value_iter = utils::read_jsonl_to_value(&filepath);
+        let jsonl_value_iter = stored_static
+            .vhdx_files
+            .open(Path::new(&filepath))
+            .map_err(|e| e.to_string())
+            .and_then(utils::read_jsonl_reader_to_value);
         let mut detect_infos: Vec<DetectInfo> = vec![];
         let mut records = match jsonl_value_iter {
             // For JSONL format
             Ok(values) => values,
             // For non-JSONL format (JSON Array or jq format)
             Err(_) => {
-                let json_value_iter = utils::read_json_to_value(&filepath);
+                let json_value_iter = stored_static
+                    .vhdx_files
+                    .open(Path::new(&filepath))
+                    .map_err(|e| e.to_string())
+                    .and_then(utils::read_json_reader_to_value);
                 match json_value_iter {
                     Ok(values) => values,
                     Err(e) => {
@@ -3380,10 +3353,10 @@ Any hostnames added to the critical_systems.txt file will have all alerts above 
     /// (after logging the error) if the file cannot be opened.
     fn evtx_to_jsons(
         &self,
-        evtx_filepath: &PathBuf,
+        evtx_filepath: &Path,
         stored_static: &StoredStatic,
-    ) -> Option<EvtxParser<File>> {
-        match EvtxParser::from_path(evtx_filepath) {
+    ) -> Option<EvtxParser<hayabusa::vhdx::InputReader>> {
+        match hayabusa::vhdx::parser(evtx_filepath, &stored_static.vhdx_files) {
             Ok(evtx_parser) => {
                 // Change the default parser settings.
                 let mut parse_config = ParserSettings::default()
@@ -3398,8 +3371,7 @@ Any hostnames added to the critical_systems.txt file will have all alerts above 
             Err(e) => {
                 let errmsg = format!(
                     "Failed to open event file.\nEventFile: {}\nError: {}\n",
-                    hayabusa::vhdx::display_path(evtx_filepath, &stored_static.vhdx_sources)
-                        .display(),
+                    evtx_filepath.display(),
                     e
                 );
                 if stored_static.verbose_flag {

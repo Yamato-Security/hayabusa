@@ -87,7 +87,8 @@ Aşağıdaki uyarı belirecektir, bu yüzden lütfen "Open"a tıklayın.
 
 Artık hayabusa'yı çalıştırabilmeniz gerekir.
 
-## Linux üzerinde VHDX girdileri
+## VHDX girdileri
+
 
 Tüm olay günlüğü tarama komutları `--vhdx` ile `-f <IMAGE.vhdx>` veya `-d <DIR>` kullanımını destekler. Görüntü araması verilen dizini ve altındaki üç dizin seviyesini kapsar. Görüntü içindeki okunabilir tüm NTFS birimleri bu derinlik sınırı olmadan aranır.
 
@@ -96,6 +97,7 @@ Tüm olay günlüğü tarama komutları `--vhdx` ile `-f <IMAGE.vhdx>` veya `-d 
 ./hayabusa dfir-timeline --vhdx -d images/ -w -U -p verbose -o timeline.csv
 ```
 
-Görüntüler Juntei ile aynı arka uç kullanılarak salt okunur bağlanır. Linux, `/dev/fuse` erişimi ve `fusermount3` gerekir; Juntei kurulumu gerekmez. Tarama sonunda ve kesintilerde bağlantılar kaldırılır. Kanıt yolları `host.vhdx!/path/log.evtx` biçimindedir. BitLocker ve harici bir üst görüntü gerektiren görüntüler desteklenmez.
 
-[English: VHDX input details and limitations](https://yamato-security.github.io/hayabusa/getting-started/running/#vhdx-inputs-linux).
+Yerel tarama, Juntei ile paylaşılan taşınabilir NTFS API üzerinden **Linux, macOS ve Windows** üzerinde çalışır. Dosyalar doğrudan konumlandırılabilir salt okunur akışlar olarak okunur; FUSE, bağlama sürücüsü, yönetici yetkisi veya geçici çıkarma gerekmez. Kaynak görüntüler değiştirilmez. Kanıt yolları `host.vhdx!/path/log.evtx` biçimindedir. BitLocker ve harici üst görüntü gerektiren görüntüler desteklenmez.
+
+[English: VHDX input details and limitations](https://yamato-security.github.io/hayabusa/getting-started/running/#vhdx-inputs).

@@ -14,7 +14,7 @@ Usage:
 Input:
   -d, --directory <DIR>  دليل يحتوي على ملفات .evtx متعددة (or VHDX images with --vhdx)
   -f, --file <FILE>      مسار ملف .evtx واحد (or a VHDX image with --vhdx)
-      --vhdx             Scan VHDX images read-only; -d searches up to three subdirectory levels (Linux/FUSE)
+      --vhdx             Scan VHDX images read-only; -d searches up to three subdirectory levels
 
 Display Settings:
   -K, --no-color  تعطيل إخراج الألوان

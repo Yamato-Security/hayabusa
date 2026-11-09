@@ -1,4 +1,4 @@
-use crate::detections::utils::{get_file_size, get_serde_number_to_string, parse_evtx_timestamp};
+use crate::detections::utils::{get_serde_number_to_string, parse_evtx_timestamp};
 use crate::detections::{
     configs::{EventKeyAliasConfig, StoredStatic},
     detection::EvtxRecordInfo,
@@ -134,13 +134,7 @@ impl EventMetrics {
             .unwrap_or_default()
             .to_str()
             .unwrap_or_default();
-        let read_path = crate::vhdx::read_path(path, &stored_static.vhdx_sources);
-        let file_size = get_file_size(
-            &read_path,
-            stored_static.verbose_flag,
-            stored_static.quiet_errors_flag,
-            &stored_static.error_log_stack,
-        );
+        let file_size = crate::vhdx::file_size(path, stored_static);
         let file_size = ByteSize::b(file_size).to_string();
         if let Some(existing_lm) = self.stats_logfile.iter_mut().find(|log_metrics| {
             log_metrics.filepath == self.filepath.as_str()

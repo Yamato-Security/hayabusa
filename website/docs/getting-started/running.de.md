@@ -87,7 +87,8 @@ Die folgende Warnung wird angezeigt, klicken Sie also bitte auf "Öffnen".
 
 Sie sollten nun in der Lage sein, Hayabusa auszuführen.
 
-## VHDX-Eingaben unter Linux
+## VHDX-Eingaben
+
 
 Alle Befehle zur Ereignislog-Analyse unterstützen `--vhdx` zusammen mit `-f <IMAGE.vhdx>` oder `-d <DIR>`. Die Bildsuche erfasst das angegebene Verzeichnis und drei Unterverzeichnisebenen. Innerhalb der Bilder werden alle lesbaren NTFS-Volumes ohne diese Tiefenbegrenzung durchsucht.
 
@@ -96,6 +97,7 @@ Alle Befehle zur Ereignislog-Analyse unterstützen `--vhdx` zusammen mit `-f <IM
 ./hayabusa dfir-timeline --vhdx -d images/ -w -U -p verbose -o timeline.csv
 ```
 
-Die Bilder werden mit demselben Backend wie in Juntei schreibgeschützt eingebunden. Linux, Zugriff auf `/dev/fuse` und `fusermount3` sind erforderlich, eine Juntei-Installation nicht. Nach der Analyse und bei Unterbrechungen werden die Bilder ausgehängt. Beweispfade bleiben als `host.vhdx!/path/log.evtx` erhalten. BitLocker und Bilder mit extern benötigtem Differenzierungs-Elternbild werden nicht unterstützt.
 
-[English: VHDX input details and limitations](https://yamato-security.github.io/hayabusa/getting-started/running/#vhdx-inputs-linux).
+Native Scans funktionieren unter **Linux, macOS und Windows** mit der portablen NTFS-Schnittstelle, die auch Juntei verwendet. Dateien werden direkt als schreibgeschützte, positionierbare Streams gelesen. FUSE, Mount-Treiber, Hilfsprogramme, Administratorrechte und temporäres Extrahieren sind nicht erforderlich. Die Quellbilder bleiben unverändert. Beweispfade verwenden `host.vhdx!/path/log.evtx`. BitLocker und Bilder mit extern benötigtem Elternbild werden nicht unterstützt.
+
+[English: VHDX input details and limitations](https://yamato-security.github.io/hayabusa/getting-started/running/#vhdx-inputs).

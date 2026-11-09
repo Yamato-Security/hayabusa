@@ -87,7 +87,8 @@ chmod +x ./hayabusa
 
 ตอนนี้คุณควรจะสามารถรัน hayabusa ได้แล้ว
 
-## อินพุต VHDX บน Linux
+## อินพุต VHDX
+
 
 คำสั่งวิเคราะห์บันทึกเหตุการณ์ทั้งหมดรองรับ `--vhdx` ร่วมกับ `-f <IMAGE.vhdx>` หรือ `-d <DIR>` โดยค้นหาอิมเมจในไดเรกทอรีที่ระบุและไดเรกทอรีย่อยลึกลงไปไม่เกินสามระดับ ภายในอิมเมจจะค้นหาทุกโวลุ่ม NTFS ที่อ่านได้โดยไม่มีข้อจำกัดความลึกดังกล่าว
 
@@ -96,6 +97,7 @@ chmod +x ./hayabusa
 ./hayabusa dfir-timeline --vhdx -d images/ -w -U -p verbose -o timeline.csv
 ```
 
-อิมเมจถูกเมานต์แบบอ่านอย่างเดียวด้วยแบ็กเอนด์เดียวกับ Juntei ต้องใช้ Linux การเข้าถึง `/dev/fuse` และ `fusermount3` แต่ไม่ต้องติดตั้ง Juntei ระบบจะยกเลิกการเมานต์เมื่อวิเคราะห์เสร็จหรือถูกขัดจังหวะ พาธหลักฐานมีรูปแบบ `host.vhdx!/path/log.evtx` ไม่รองรับ BitLocker หรืออิมเมจที่ต้องใช้อิมเมจแม่จากภายนอก
 
-[English: VHDX input details and limitations](https://yamato-security.github.io/hayabusa/getting-started/running/#vhdx-inputs-linux).
+การสแกนแบบเนทีฟทำงานบน **Linux, macOS และ Windows** ผ่าน NTFS API แบบพกพาที่ใช้ร่วมกับ Juntei โดยอ่านไฟล์โดยตรงเป็นสตรีมแบบอ่านอย่างเดียวที่เลื่อนตำแหน่งได้ ไม่ต้องใช้ FUSE ไดรเวอร์เมานต์ สิทธิ์ผู้ดูแลระบบ หรือการแตกไฟล์ชั่วคราว อิมเมจต้นฉบับไม่ถูกแก้ไข พาธหลักฐานมีรูปแบบ `host.vhdx!/path/log.evtx` ไม่รองรับ BitLocker หรืออิมเมจที่ต้องใช้อิมเมจแม่จากภายนอก
+
+[English: VHDX input details and limitations](https://yamato-security.github.io/hayabusa/getting-started/running/#vhdx-inputs).

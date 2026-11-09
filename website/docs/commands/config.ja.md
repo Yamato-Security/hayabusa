@@ -14,7 +14,7 @@ Usage:
 Input:
   -d, --directory <DIR>  .evtxファイルを持つディレクトリのパス (or VHDX images with --vhdx)
   -f, --file <FILE>      1つの.evtxファイルに対して解析を行う (or a VHDX image with --vhdx)
-      --vhdx             Scan VHDX images read-only; -d searches up to three subdirectory levels (Linux/FUSE)
+      --vhdx             Scan VHDX images read-only; -d searches up to three subdirectory levels
 
 Display Settings:
   -K, --no-color  カラーで出力しない

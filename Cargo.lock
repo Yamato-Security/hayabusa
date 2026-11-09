@@ -902,7 +902,6 @@ dependencies = [
  "compact_str",
  "console",
  "csv",
- "ctrlc",
  "dashmap",
  "dialoguer",
  "downcast-rs",
@@ -932,6 +931,7 @@ dependencies = [
  "rand",
  "regex",
  "rust-embed",
+ "same-file",
  "serde",
  "serde_derive",
  "serde_json",
@@ -2927,7 +2927,7 @@ dependencies = [
 [[package]]
 name = "ys-vhdx-mount"
 version = "1.0.0"
-source = "git+https://github.com/Yamato-Security/ys-vhdx-parser?rev=ef689d435cba535d128062069f790be47eb7da46#ef689d435cba535d128062069f790be47eb7da46"
+source = "git+https://github.com/Yamato-Security/ys-vhdx-parser?rev=113c1112483454e4b562e0fbf466ed981dcd6e64#113c1112483454e4b562e0fbf466ed981dcd6e64"
 dependencies = [
  "ctrlc",
  "fuser",
@@ -2938,7 +2938,7 @@ dependencies = [
 [[package]]
 name = "ys-vhdx-parser"
 version = "1.0.0"
-source = "git+https://github.com/Yamato-Security/ys-vhdx-parser?rev=ef689d435cba535d128062069f790be47eb7da46#ef689d435cba535d128062069f790be47eb7da46"
+source = "git+https://github.com/Yamato-Security/ys-vhdx-parser?rev=113c1112483454e4b562e0fbf466ed981dcd6e64#113c1112483454e4b562e0fbf466ed981dcd6e64"
 dependencies = [
  "thiserror 2.0.21",
 ]

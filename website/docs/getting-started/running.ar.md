@@ -87,7 +87,8 @@ chmod +x ./hayabusa
 
 يجب أن تكون الآن قادرًا على تشغيل hayabusa.
 
-## إدخال VHDX على Linux
+## إدخال VHDX
+
 
 تدعم جميع أوامر فحص سجلات الأحداث الخيار `--vhdx` مع `-f <IMAGE.vhdx>` أو `-d <DIR>`. يبحث الخيار `-d` في المجلد المحدد وثلاثة مستويات من المجلدات الفرعية. داخل الصور، تُفحص جميع وحدات NTFS القابلة للقراءة دون حد العمق هذا.
 
@@ -96,6 +97,7 @@ chmod +x ./hayabusa
 ./hayabusa dfir-timeline --vhdx -d images/ -w -U -p verbose -o timeline.csv
 ```
 
-تُركّب الصور للقراءة فقط باستخدام نفس محرك Juntei. يلزم Linux والوصول إلى `/dev/fuse` والبرنامج `fusermount3`؛ لا يلزم تثبيت Juntei. تُفصل الصور عند الانتهاء أو المقاطعة، وتحفظ مسارات الأدلة بصيغة `host.vhdx!/path/log.evtx`. لا يدعم هذا الوضع BitLocker أو الصور التي تتطلب صورة أصل خارجية.
 
-[English: VHDX input details and limitations](https://yamato-security.github.io/hayabusa/getting-started/running/#vhdx-inputs-linux).
+تعمل القراءة الأصلية على **Linux وmacOS وWindows** باستخدام واجهة NTFS المحمولة المشتركة مع Juntei. تُقرأ الملفات مباشرة كتدفقات قابلة للبحث وللقراءة فقط، دون FUSE أو برامج تشغيل للتركيب أو صلاحيات مدير أو استخراج مؤقت. تبقى الصور المصدر دون تغيير. تُحفظ مسارات الأدلة بصيغة `host.vhdx!/path/log.evtx`. لا يُدعم BitLocker أو الصور التي تتطلب صورة أصل خارجية.
+
+[English: VHDX input details and limitations](https://yamato-security.github.io/hayabusa/getting-started/running/#vhdx-inputs).

@@ -17,4 +17,4 @@ Compressed fixture SHA-256:
 1d7dbb3db6b1b13f9a9abee8b5b63a242ad8c45a87af16c3bd7c094204254f07  two-volumes.vhdx.gz
 ```
 
-The integration tests require Linux, `/dev/fuse`, and `fusermount3`. Set `HAYABUSA_REQUIRE_FUSE=1` to fail instead of skipping when FUSE is unavailable. Ordinary scanning and all portable discovery/CLI tests run without FUSE.
+The integration tests scan these images natively on Linux, macOS, and Windows, without FUSE, a mount helper, administrator privileges, or temporary log extraction. They compare image scans with the extracted public EVTX and include channel filtering, all profiles/formats, and source integrity checks.

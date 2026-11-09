@@ -95,7 +95,7 @@ Usage:
 Input:
   -d, --directory <DIR>  Directory of multiple .evtx files (or VHDX images with --vhdx)
   -f, --file <FILE>      File path to one .evtx file (or a VHDX image with --vhdx)
-      --vhdx             Scan VHDX images read-only; -d searches up to three subdirectory levels (Linux/FUSE)
+      --vhdx             Scan VHDX images read-only; -d searches up to three subdirectory levels
   -l, --live-analysis    Analyze the local C:\Windows\System32\winevt\Logs folder
 
 General Options:

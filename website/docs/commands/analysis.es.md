@@ -17,7 +17,7 @@ Usage:
 Input:
   -d, --directory <DIR>  Directorio con múltiples archivos .evtx (or VHDX images with --vhdx)
   -f, --file <FILE>      Ruta a un único archivo .evtx (or a VHDX image with --vhdx)
-      --vhdx             Scan VHDX images read-only; -d searches up to three subdirectory levels (Linux/FUSE)
+      --vhdx             Scan VHDX images read-only; -d searches up to three subdirectory levels
   -l, --live-analysis    Analizar la carpeta local C:\Windows\System32\winevt\Logs
 
 General Options:
@@ -63,7 +63,7 @@ Usage:
 Input:
   -d, --directory <DIR>  Directorio con múltiples archivos .evtx (or VHDX images with --vhdx)
   -f, --file <FILE>      Ruta a un único archivo .evtx (or a VHDX image with --vhdx)
-      --vhdx             Scan VHDX images read-only; -d searches up to three subdirectory levels (Linux/FUSE)
+      --vhdx             Scan VHDX images read-only; -d searches up to three subdirectory levels
   -l, --live-analysis    Analizar la carpeta local C:\Windows\System32\winevt\Logs
 
 General Options:
@@ -203,7 +203,7 @@ Usage:
 Input:
   -d, --directory <DIR>  Directorio con múltiples archivos .evtx (or VHDX images with --vhdx)
   -f, --file <FILE>      Ruta a un único archivo .evtx (or a VHDX image with --vhdx)
-      --vhdx             Scan VHDX images read-only; -d searches up to three subdirectory levels (Linux/FUSE)
+      --vhdx             Scan VHDX images read-only; -d searches up to three subdirectory levels
   -l, --live-analysis    Analizar la carpeta local C:\Windows\System32\winevt\Logs
 
 General Options:
@@ -289,7 +289,7 @@ Usage:
 Input:
   -d, --directory <DIR>  Directorio con múltiples archivos .evtx (or VHDX images with --vhdx)
   -f, --file <FILE>      Ruta a un único archivo .evtx (or a VHDX image with --vhdx)
-      --vhdx             Scan VHDX images read-only; -d searches up to three subdirectory levels (Linux/FUSE)
+      --vhdx             Scan VHDX images read-only; -d searches up to three subdirectory levels
   -l, --live-analysis    Analizar la carpeta local C:\Windows\System32\winevt\Logs
 
 General Options:
@@ -363,7 +363,7 @@ Usage:
 Input:
   -d, --directory <DIR>  Directorio con múltiples archivos .evtx (or VHDX images with --vhdx)
   -f, --file <FILE>      Ruta a un único archivo .evtx (or a VHDX image with --vhdx)
-      --vhdx             Scan VHDX images read-only; -d searches up to three subdirectory levels (Linux/FUSE)
+      --vhdx             Scan VHDX images read-only; -d searches up to three subdirectory levels
   -l, --live-analysis    Analizar la carpeta local C:\Windows\System32\winevt\Logs
 
 General Options:
@@ -437,7 +437,7 @@ Usage:
 Input:
   -d, --directory <DIR>  Directorio con múltiples archivos .evtx (or VHDX images with --vhdx)
   -f, --file <FILE>      Ruta a un único archivo .evtx (or a VHDX image with --vhdx)
-      --vhdx             Scan VHDX images read-only; -d searches up to three subdirectory levels (Linux/FUSE)
+      --vhdx             Scan VHDX images read-only; -d searches up to three subdirectory levels
   -l, --live-analysis    Analizar la carpeta local C:\Windows\System32\winevt\Logs
 
 General Options:
@@ -525,7 +525,7 @@ General Options:
 Input:
   -d, --directory <DIR>  Directorio con múltiples archivos .evtx (or VHDX images with --vhdx)
   -f, --file <FILE>      Ruta a un único archivo .evtx (or a VHDX image with --vhdx)
-      --vhdx             Scan VHDX images read-only; -d searches up to three subdirectory levels (Linux/FUSE)
+      --vhdx             Scan VHDX images read-only; -d searches up to three subdirectory levels
   -l, --live-analysis    Analizar la carpeta local C:\Windows\System32\winevt\Logs
 
 Filtering:

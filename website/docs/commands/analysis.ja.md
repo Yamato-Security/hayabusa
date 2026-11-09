@@ -17,7 +17,7 @@ Usage:
 Input:
   -d, --directory <DIR>  .evtxファイルを持つディレクトリのパス (or VHDX images with --vhdx)
   -f, --file <FILE>      1つの.evtxファイルに対して解析を行う (or a VHDX image with --vhdx)
-      --vhdx             Scan VHDX images read-only; -d searches up to three subdirectory levels (Linux/FUSE)
+      --vhdx             Scan VHDX images read-only; -d searches up to three subdirectory levels
   -l, --live-analysis    ローカル端末のC:\Windows\System32\winevt\Logsフォルダを解析する
 
 General Options:
@@ -63,7 +63,7 @@ Usage:
 Input:
   -d, --directory <DIR>  .evtxファイルを持つディレクトリのパス (or VHDX images with --vhdx)
   -f, --file <FILE>      1つの.evtxファイルに対して解析を行う (or a VHDX image with --vhdx)
-      --vhdx             Scan VHDX images read-only; -d searches up to three subdirectory levels (Linux/FUSE)
+      --vhdx             Scan VHDX images read-only; -d searches up to three subdirectory levels
   -l, --live-analysis    ローカル端末のC:\Windows\System32\winevt\Logsフォルダを解析する
 
 General Options:
@@ -204,7 +204,7 @@ Usage:
 Input:
   -d, --directory <DIR>  .evtxファイルを持つディレクトリのパス (or VHDX images with --vhdx)
   -f, --file <FILE>      1つの.evtxファイルに対して解析を行う (or a VHDX image with --vhdx)
-      --vhdx             Scan VHDX images read-only; -d searches up to three subdirectory levels (Linux/FUSE)
+      --vhdx             Scan VHDX images read-only; -d searches up to three subdirectory levels
   -l, --live-analysis    ローカル端末のC:\Windows\System32\winevt\Logsフォルダを解析する
 
 General Options:
@@ -291,7 +291,7 @@ Usage:
 Input:
   -d, --directory <DIR>  .evtxファイルを持つディレクトリのパス (or VHDX images with --vhdx)
   -f, --file <FILE>      1つの.evtxファイルに対して解析を行う (or a VHDX image with --vhdx)
-      --vhdx             Scan VHDX images read-only; -d searches up to three subdirectory levels (Linux/FUSE)
+      --vhdx             Scan VHDX images read-only; -d searches up to three subdirectory levels
   -l, --live-analysis    ローカル端末のC:\Windows\System32\winevt\Logsフォルダを解析する
 
 General Options:
@@ -366,7 +366,7 @@ Usage:
 Input:
   -d, --directory <DIR>  .evtxファイルを持つディレクトリのパス (or VHDX images with --vhdx)
   -f, --file <FILE>      1つの.evtxファイルに対して解析を行う (or a VHDX image with --vhdx)
-      --vhdx             Scan VHDX images read-only; -d searches up to three subdirectory levels (Linux/FUSE)
+      --vhdx             Scan VHDX images read-only; -d searches up to three subdirectory levels
   -l, --live-analysis    ローカル端末のC:\Windows\System32\winevt\Logsフォルダを解析する
 
 General Options:
@@ -440,7 +440,7 @@ Usage:
 Input:
   -d, --directory <DIR>  .evtxファイルを持つディレクトリのパス (or VHDX images with --vhdx)
   -f, --file <FILE>      1つの.evtxファイルに対して解析を行う (or a VHDX image with --vhdx)
-      --vhdx             Scan VHDX images read-only; -d searches up to three subdirectory levels (Linux/FUSE)
+      --vhdx             Scan VHDX images read-only; -d searches up to three subdirectory levels
   -l, --live-analysis    ローカル端末のC:\Windows\System32\winevt\Logsフォルダを解析する
 
 General Options:
@@ -528,7 +528,7 @@ General Options:
 Input:
   -d, --directory <DIR>  .evtxファイルを持つディレクトリのパス (or VHDX images with --vhdx)
   -f, --file <FILE>      1つの.evtxファイルに対して解析を行う (or a VHDX image with --vhdx)
-      --vhdx             Scan VHDX images read-only; -d searches up to three subdirectory levels (Linux/FUSE)
+      --vhdx             Scan VHDX images read-only; -d searches up to three subdirectory levels
   -l, --live-analysis    ローカル端末のC:\Windows\System32\winevt\Logsフォルダを解析する
 
 Filtering:

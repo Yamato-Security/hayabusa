@@ -87,7 +87,8 @@ Peringatan berikut akan muncul, jadi silakan klik "Open".
 
 Anda sekarang seharusnya dapat menjalankan hayabusa.
 
-## Input VHDX di Linux
+## Input VHDX
+
 
 Semua perintah analisis log peristiwa mendukung `--vhdx` dengan `-f <IMAGE.vhdx>` atau `-d <DIR>`. Pencarian mencakup direktori yang diberikan dan tiga tingkat subdirektori. Di dalam citra, semua volume NTFS yang dapat dibaca diperiksa tanpa batas kedalaman tersebut.
 
@@ -96,6 +97,7 @@ Semua perintah analisis log peristiwa mendukung `--vhdx` dengan `-f <IMAGE.vhdx>
 ./hayabusa dfir-timeline --vhdx -d images/ -w -U -p verbose -o timeline.csv
 ```
 
-Citra dipasang hanya-baca menggunakan backend yang sama dengan Juntei. Diperlukan Linux, akses ke `/dev/fuse`, dan `fusermount3`; instalasi Juntei tidak diperlukan. Citra dilepas setelah pemindaian dan saat interupsi. Jalur bukti tetap berupa `host.vhdx!/path/log.evtx`. BitLocker dan citra yang memerlukan citra induk eksternal tidak didukung.
 
-[English: VHDX input details and limitations](https://yamato-security.github.io/hayabusa/getting-started/running/#vhdx-inputs-linux).
+Pemindaian native berjalan di **Linux, macOS, dan Windows** melalui API NTFS portabel yang digunakan bersama Juntei. Berkas dibaca langsung sebagai aliran hanya-baca yang dapat diposisikan, tanpa FUSE, driver mount, hak administrator, atau ekstraksi sementara. Citra sumber tidak diubah. Jalur bukti menggunakan `host.vhdx!/path/log.evtx`. BitLocker dan citra yang memerlukan citra induk eksternal tidak didukung.
+
+[English: VHDX input details and limitations](https://yamato-security.github.io/hayabusa/getting-started/running/#vhdx-inputs).

@@ -10,5 +10,6 @@ logsource:
 detection:
     selection:
         EventID: 4698
+    Channel: Security
     condition: selection
 level: low

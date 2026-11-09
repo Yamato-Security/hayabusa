@@ -87,7 +87,8 @@ Aparecerá la siguiente advertencia, así que haga clic en "Abrir".
 
 Ahora debería poder ejecutar hayabusa.
 
-## Entradas VHDX en Linux
+## Entradas VHDX
+
 
 Todos los comandos de análisis de registros de eventos admiten `--vhdx` con `-f <IMAGE.vhdx>` o `-d <DIR>`. La búsqueda incluye el directorio indicado y tres niveles de subdirectorios. Dentro de las imágenes se examinan todos los volúmenes NTFS legibles sin ese límite de profundidad.
 
@@ -96,6 +97,7 @@ Todos los comandos de análisis de registros de eventos admiten `--vhdx` con `-f
 ./hayabusa dfir-timeline --vhdx -d images/ -w -U -p verbose -o timeline.csv
 ```
 
-Las imágenes se montan en modo de solo lectura con el mismo motor que Juntei. Se requieren Linux, acceso a `/dev/fuse` y `fusermount3`; no es necesario instalar Juntei. Se desmontan al finalizar o al recibir una interrupción. Las rutas conservan el origen: `host.vhdx!/path/log.evtx`. No se admiten BitLocker ni imágenes que necesiten una imagen principal externa.
 
-[English: VHDX input details and limitations](https://yamato-security.github.io/hayabusa/getting-started/running/#vhdx-inputs-linux).
+El análisis nativo funciona en **Linux, macOS y Windows** mediante la interfaz NTFS portátil compartida con Juntei. Los archivos se leen directamente como flujos de solo lectura con acceso por posición. No requiere FUSE, controladores de montaje, privilegios de administrador ni extracción temporal. Las imágenes originales permanecen intactas. Las rutas usan `host.vhdx!/path/log.evtx`. No se admiten BitLocker ni imágenes que necesiten una imagen principal externa.
+
+[English: VHDX input details and limitations](https://yamato-security.github.io/hayabusa/getting-started/running/#vhdx-inputs).

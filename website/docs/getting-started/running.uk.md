@@ -87,7 +87,8 @@ chmod +x ./hayabusa
 
 Тепер ви повинні мати змогу запустити hayabusa.
 
-## Вхідні образи VHDX у Linux
+## Вхідні образи VHDX
+
 
 Усі команди аналізу журналів подій підтримують `--vhdx` разом із `-f <IMAGE.vhdx>` або `-d <DIR>`. Пошук образів охоплює заданий каталог і три рівні підкаталогів. Усередині образів перевіряються всі доступні для читання томи NTFS без цього обмеження глибини.
 
@@ -96,6 +97,7 @@ chmod +x ./hayabusa
 ./hayabusa dfir-timeline --vhdx -d images/ -w -U -p verbose -o timeline.csv
 ```
 
-Образи монтуються лише для читання тим самим механізмом, що й у Juntei. Потрібні Linux, доступ до `/dev/fuse` та `fusermount3`; установлювати Juntei не потрібно. Після аналізу та під час переривань образи демонтуються. Шляхи доказів зберігаються як `host.vhdx!/path/log.evtx`. BitLocker та образи, що потребують зовнішнього батьківського образу, не підтримуються.
 
-[English: VHDX input details and limitations](https://yamato-security.github.io/hayabusa/getting-started/running/#vhdx-inputs-linux).
+Нативний аналіз працює в **Linux, macOS і Windows** через переносний NTFS API, спільний із Juntei. Файли читаються безпосередньо як потоки лише для читання з довільним позиціонуванням. FUSE, драйвер монтування, права адміністратора й тимчасове розпакування не потрібні. Вихідні образи не змінюються. Шляхи доказів мають формат `host.vhdx!/path/log.evtx`. BitLocker та образи із зовнішнім батьківським образом не підтримуються.
+
+[English: VHDX input details and limitations](https://yamato-security.github.io/hayabusa/getting-started/running/#vhdx-inputs).

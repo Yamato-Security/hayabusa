@@ -139,8 +139,8 @@ pub struct StoredStatic {
     pub extract_base64_flag: bool,
     pub search_option: Option<SearchOption>,
     pub output_option: Option<OutputOption>,
-    /// Read-only image mounts for this scan. Keep source names stable after the mounts close.
-    pub vhdx_sources: Vec<crate::vhdx::Source>,
+    /// Native read-only image inputs shared by the scan snapshot.
+    pub vhdx_files: crate::vhdx::Catalog,
     pub pivot_keyword_list_flag: bool,
     /// Pivot keyword accumulator for the `pivot-keywords-list` command: categories/fields are
     /// loaded up front and the keyword values are filled in from the per-record parallel tasks.
@@ -659,7 +659,7 @@ impl StoredStatic {
             extract_base64_flag: action_id == 13,
             search_option: extract_search_options(&config),
             output_option: extract_output_options(&config),
-            vhdx_sources: Vec::new(),
+            vhdx_files: crate::vhdx::Catalog::default(),
             pivot_keyword_list_flag: action_id == 4,
             pivot_keyword: Arc::new(RwLock::new(PivotKeywordMap::new())),
             error_log_stack: Arc::new(Mutex::new(Nested::<String>::new())),
@@ -1758,7 +1758,7 @@ pub struct InputOption {
     #[arg(help_heading = Some("Input"), short = 'f', long = "file", value_name = "FILE", conflicts_with_all = ["directory", "live_analysis"], display_order = 320)]
     pub filepath: Option<PathBuf>,
 
-    /// Scan VHDX images read-only; -d searches up to three subdirectory levels (Linux/FUSE)
+    /// Scan VHDX images read-only; -d searches up to three subdirectory levels
     #[arg(help_heading = Some("Input"), long, conflicts_with = "live_analysis", display_order = 330)]
     pub vhdx: bool,
 
@@ -1982,7 +1982,7 @@ pub struct ConfigCriticalSystemsOption {
     #[arg(help_heading = Some("Input"), short = 'f', long = "file", value_name = "FILE", conflicts_with_all = ["directory"], display_order = 320)]
     pub filepath: Option<PathBuf>,
 
-    /// Scan VHDX images read-only; -d searches up to three subdirectory levels (Linux/FUSE)
+    /// Scan VHDX images read-only; -d searches up to three subdirectory levels
     #[arg(help_heading = Some("Input"), long, display_order = 330)]
     pub vhdx: bool,
 

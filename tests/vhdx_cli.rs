@@ -1,34 +1,13 @@
 //! End-to-end tests use public CC0 EVTX data; no private evidence is embedded.
-#![cfg(target_os = "linux")]
 
 use flate2::read::GzDecoder;
 use std::fs;
 use std::path::{Path, PathBuf};
-use std::process::{Command, Output, Stdio};
-use std::time::{Duration, Instant};
+use std::process::{Command, Output};
 use tempfile::TempDir;
 
 fn root() -> PathBuf {
     PathBuf::from(env!("CARGO_MANIFEST_DIR"))
-}
-fn fuse_available() -> bool {
-    let available = fs::OpenOptions::new()
-        .read(true)
-        .write(true)
-        .open("/dev/fuse")
-        .is_ok()
-        && Command::new("fusermount3")
-            .arg("--version")
-            .output()
-            .is_ok_and(|o| o.status.success());
-    if !available {
-        assert!(
-            std::env::var_os("HAYABUSA_REQUIRE_FUSE").is_none(),
-            "Linux FUSE support is required for this test run"
-        );
-        eprintln!("Skipping VHDX integration test: /dev/fuse or fusermount3 unavailable");
-    }
-    available
 }
 fn unpack(dir: &Path, fixture: &str, filename: &str) -> PathBuf {
     let path = dir.join(filename);
@@ -41,6 +20,8 @@ fn command(binary: &Path, mounts: &Path, subcommand: &str, input: &Path, image: 
     let mut cmd = Command::new(binary);
     cmd.current_dir(root())
         .env("TMPDIR", mounts)
+        .env("TEMP", mounts)
+        .env("TMP", mounts)
         .arg(subcommand)
         .args(["-q", "-K"]);
     if image {
@@ -65,11 +46,14 @@ fn normalized(path: &Path, source: &Path, image: bool) -> String {
         source.display(),
         if image { "!/Security.evtx" } else { "" }
     );
+    // JSON escapes Windows backslashes; CSV contains the literal path.
+    let encoded = serde_json::to_string(&source).unwrap();
     fs::read_to_string(path)
         .unwrap()
+        .replace(&encoded[1..encoded.len() - 1], "<SOURCE>/Security.evtx")
         .replace(&source, "<SOURCE>/Security.evtx")
 }
-fn empty_mounts(path: &Path) {
+fn empty_work_dir(path: &Path) {
     assert_eq!(
         fs::read_dir(path).unwrap().count(),
         0,
@@ -77,7 +61,7 @@ fn empty_mounts(path: &Path) {
         path.display()
     );
 }
-fn mount_dir(temp: &TempDir) -> PathBuf {
+fn work_dir(temp: &TempDir) -> PathBuf {
     let dir = temp.path().join("mounts");
     fs::create_dir(&dir).unwrap();
     dir
@@ -85,11 +69,8 @@ fn mount_dir(temp: &TempDir) -> PathBuf {
 
 #[test]
 fn all_profiles_and_formats_match_extracted_evtx() {
-    if !fuse_available() {
-        return;
-    }
     let temp = tempfile::tempdir().unwrap();
-    let mounts = mount_dir(&temp);
+    let mounts = work_dir(&temp);
     let image = unpack(temp.path(), "logs.vhdx.gz", "logs.vhdx");
     let original = fs::read(&image).unwrap();
     let baseline = root().join("test_files/vhdx/Security.evtx");
@@ -148,7 +129,7 @@ fn all_profiles_and_formats_match_extracted_evtx() {
                     assert!(!values.is_empty(), "no JSON detections for {profile}");
                 }
                 outputs.push(data);
-                empty_mounts(&mounts);
+                empty_work_dir(&mounts);
             }
             assert_eq!(outputs[0], outputs[1], "{profile}/{format}");
         }
@@ -158,11 +139,8 @@ fn all_profiles_and_formats_match_extracted_evtx() {
 
 #[test]
 fn scanning_commands_match_extracted_logs() {
-    if !fuse_available() {
-        return;
-    }
     let temp = tempfile::tempdir().unwrap();
-    let mounts = mount_dir(&temp);
+    let mounts = work_dir(&temp);
     let image = unpack(temp.path(), "logs.vhdx.gz", "logs.vhdx");
     let baseline = root().join("test_files/vhdx/Security.evtx");
     for subcommand in [
@@ -182,7 +160,7 @@ fn scanning_commands_match_extracted_logs() {
             let binary = if subcommand == "config-critical-systems" {
                 let bin_dir = temp.path().join("critical-bin");
                 fs::create_dir_all(bin_dir.join("config")).unwrap();
-                let binary = bin_dir.join("hayabusa");
+                let binary = bin_dir.join(format!("hayabusa{}", std::env::consts::EXE_SUFFIX));
                 if !binary.exists() {
                     fs::copy(env!("CARGO_BIN_EXE_hayabusa"), &binary).unwrap();
                 }
@@ -227,7 +205,7 @@ fn scanning_commands_match_extracted_logs() {
                     .map(|p| normalized(p, input, vhdx))
                     .collect::<Vec<_>>(),
             );
-            empty_mounts(&mounts);
+            empty_work_dir(&mounts);
         }
         assert_eq!(results[0], results[1], "{subcommand}");
     }
@@ -250,18 +228,15 @@ fn scanning_commands_match_extracted_logs() {
             .arg(&out),
         );
         results.push(fs::read_to_string(out).unwrap());
-        empty_mounts(&mounts);
+        empty_work_dir(&mounts);
     }
     assert_eq!(results[0], results[1]);
 }
 
 #[test]
 fn directory_depth_multiple_volumes_and_partial_failure() {
-    if !fuse_available() {
-        return;
-    }
     let temp = tempfile::tempdir().unwrap();
-    let mounts = mount_dir(&temp);
+    let mounts = work_dir(&temp);
     let inputs = temp.path().join("inputs");
     fs::create_dir_all(inputs.join("a/b/c/d")).unwrap();
     let first = unpack(&inputs, "logs.vhdx.gz", "one.vhdx");
@@ -281,7 +256,7 @@ fn directory_depth_multiple_volumes_and_partial_failure() {
         .arg(&out),
     );
     assert_eq!(csv::Reader::from_path(&out).unwrap().records().count(), 2);
-    empty_mounts(&mounts);
+    empty_work_dir(&mounts);
     let multi = unpack(temp.path(), "two-volumes.vhdx.gz", "multi.vhdx");
     let multiout = temp.path().join("volumes.csv");
     success(
@@ -298,7 +273,7 @@ fn directory_depth_multiple_volumes_and_partial_failure() {
     let data = fs::read_to_string(multiout).unwrap();
     assert!(data.contains("multi.vhdx!/Volume1/Security.evtx"));
     assert!(data.contains("multi.vhdx!/Volume2/Security.evtx"));
-    empty_mounts(&mounts);
+    empty_work_dir(&mounts);
     fs::write(inputs.join("broken.vhdx"), b"not an image").unwrap();
     let out = temp.path().join("partial.csv");
     let output = command(
@@ -317,7 +292,7 @@ fn directory_depth_multiple_volumes_and_partial_failure() {
         "partial failures must have a failing exit status"
     );
     assert_eq!(csv::Reader::from_path(out).unwrap().records().count(), 2);
-    empty_mounts(&mounts);
+    empty_work_dir(&mounts);
     let output = command(
         Path::new(env!("CARGO_BIN_EXE_hayabusa")),
         &mounts,
@@ -330,17 +305,14 @@ fn directory_depth_multiple_volumes_and_partial_failure() {
     .output()
     .unwrap();
     assert!(!output.status.success());
-    empty_mounts(&mounts);
+    empty_work_dir(&mounts);
     assert!(first.is_file());
 }
 
 #[test]
 fn output_aliases_cannot_overwrite_an_image() {
-    if !fuse_available() {
-        return;
-    }
     let temp = tempfile::tempdir().unwrap();
-    let mounts = mount_dir(&temp);
+    let mounts = work_dir(&temp);
     let image = unpack(temp.path(), "logs.vhdx.gz", "logs.vhdx");
     let original = fs::read(&image).unwrap();
     let link = temp.path().join("alias.csv");
@@ -391,82 +363,80 @@ fn output_aliases_cannot_overwrite_an_image() {
     .unwrap();
     assert!(!output.status.success());
     assert_eq!(original, fs::read(&image).unwrap());
-    empty_mounts(&mounts);
+    empty_work_dir(&mounts);
 }
 
 #[test]
-fn interrupt_during_mounting_leaves_no_mounts() {
-    if !fuse_available() {
-        return;
-    }
+fn native_scan_uses_no_mount_helper_or_temporary_extraction() {
     let temp = tempfile::tempdir().unwrap();
-    let mounts = mount_dir(&temp);
-    let inputs = temp.path().join("inputs");
-    fs::create_dir(&inputs).unwrap();
-    let image = unpack(&inputs, "logs.vhdx.gz", "000.vhdx");
+    let scratch = work_dir(&temp);
+    let image = unpack(temp.path(), "logs.vhdx.gz", "logs.vhdx");
     let original = fs::read(&image).unwrap();
-    for i in 1..32 {
-        fs::hard_link(&image, inputs.join(format!("{i:03}.vhdx"))).unwrap();
-    }
-    for signal in ["-INT", "-TERM", "-HUP"] {
-        let mut child = command(
+    let out = temp.path().join("native.csv");
+    success(
+        command(
             Path::new(env!("CARGO_BIN_EXE_hayabusa")),
-            &mounts,
-            "search",
-            &inputs,
+            &scratch,
+            "log-metrics",
+            &image,
             true,
         )
-        .args(["-r", ".*"])
-        .stdout(Stdio::null())
-        .stderr(Stdio::null())
-        .spawn()
-        .unwrap();
-        let start = Instant::now();
-        let mounted = loop {
-            let info = fs::read_to_string("/proc/self/mountinfo").unwrap();
-            if info.contains(mounts.to_str().unwrap()) {
-                break true;
-            }
-            if child.try_wait().unwrap().is_some() || start.elapsed() > Duration::from_secs(30) {
-                break false;
-            }
-            std::thread::sleep(Duration::from_millis(2));
-        };
-        if !mounted {
-            let _ = child.kill();
-            let _ = child.wait();
-            panic!("no mounted image observed");
-        }
-        let base = fs::read_dir(&mounts)
-            .unwrap()
-            .next()
-            .unwrap()
-            .unwrap()
-            .path();
-        // Model interruption while a scan worker still has an event log open.
-        let _open_log = fs::File::open(base.join("image-0/Security.evtx")).unwrap();
-        assert!(
-            Command::new("kill")
-                .args([signal, &child.id().to_string()])
-                .status()
-                .unwrap()
-                .success()
+        .env("PATH", "")
+        .env("FUSERMOUNT_PATH", "this-helper-must-not-be-used")
+        .arg("-o")
+        .arg(&out),
+    );
+    assert_eq!(csv::Reader::from_path(out).unwrap().records().count(), 1);
+    empty_work_dir(&scratch);
+    assert_eq!(original, fs::read(image).unwrap());
+}
+
+#[test]
+fn native_inputs_work_with_default_channel_filtering() {
+    let temp = tempfile::tempdir().unwrap();
+    let scratch = work_dir(&temp);
+    let image = unpack(temp.path(), "logs.vhdx.gz", "logs.vhdx");
+    let baseline = root().join("test_files/vhdx/Security.evtx");
+    let mut results = Vec::new();
+    for (input, native) in [(&baseline, false), (&image, true)] {
+        let out = temp.path().join(format!("filtered-{native}.csv"));
+        success(
+            command(
+                Path::new(env!("CARGO_BIN_EXE_hayabusa")),
+                &scratch,
+                "dfir-timeline",
+                input,
+                native,
+            )
+            .args([
+                "-w",
+                "-U",
+                "-s",
+                "-r",
+                "test_files/vhdx/events.yml",
+                "-p",
+                "verbose",
+                "-o",
+            ])
+            .arg(&out),
         );
-        while child.try_wait().unwrap().is_none() {
-            if start.elapsed() > Duration::from_secs(45) {
-                let _ = child.kill();
-                let _ = child.wait();
-                panic!("interrupt cleanup timed out");
-            }
-            std::thread::sleep(Duration::from_millis(10));
-        }
-        assert_eq!(child.wait().unwrap().code(), Some(130));
-        empty_mounts(&mounts);
-        assert!(
-            !fs::read_to_string("/proc/self/mountinfo")
-                .unwrap()
-                .contains(mounts.to_str().unwrap())
-        );
-        assert_eq!(original, fs::read(&image).unwrap());
+        let data = normalized(&out, input, native);
+        assert!(csv::Reader::from_reader(data.as_bytes()).records().count() > 0);
+        results.push(data);
     }
+    assert_eq!(results[0], results[1]);
+    let out = temp.path().join("security-only.csv");
+    success(
+        command(
+            Path::new(env!("CARGO_BIN_EXE_hayabusa")),
+            &scratch,
+            "log-metrics",
+            &image,
+            true,
+        )
+        .args(["--include-channel", "Security", "-o"])
+        .arg(&out),
+    );
+    assert_eq!(csv::Reader::from_path(out).unwrap().records().count(), 1);
+    empty_work_dir(&scratch);
 }
