@@ -86,3 +86,18 @@ macOS के नवीनतम संस्करण पर, जब आप इ�
 ![Mac Error 3 EN](../assets/screenshots/MacOS-RunError-3-EN.png)
 
 अब आप hayabusa चला पाने में सक्षम होने चाहिए।
+
+## VHDX इनपुट
+
+
+सभी इवेंट लॉग विश्लेषण कमांड `--vhdx` के साथ `-f <IMAGE.vhdx>` या `-d <DIR>` स्वीकार करते हैं। इमेज खोज दिए गए फ़ोल्डर और उसके नीचे तीन स्तर तक होती है। इमेज के अंदर सभी पढ़ने योग्य NTFS वॉल्यूम खोजे जाते हैं; वहाँ यह गहराई सीमा लागू नहीं होती।
+
+```bash
+./hayabusa dfir-timeline --vhdx -f host.vhdx -w -U -p verbose -o timeline.csv
+./hayabusa dfir-timeline --vhdx -d images/ -w -U -p verbose -o timeline.csv
+```
+
+
+Juntei के साथ साझा पोर्टेबल NTFS API से **Linux, macOS और Windows** पर मूल रूप से स्कैन किया जा सकता है। फ़ाइलें सीधे केवल पढ़ने योग्य, सीक करने योग्य स्ट्रीम के रूप में खुलती हैं। FUSE, माउंट ड्राइवर, व्यवस्थापक अधिकार या अस्थायी निष्कर्षण की आवश्यकता नहीं है। मूल इमेज अपरिवर्तित रहती है। साक्ष्य पथ `host.vhdx!/path/log.evtx` रूप में रहते हैं। BitLocker और बाहरी पैरेंट इमेज पर निर्भर इमेज समर्थित नहीं हैं।
+
+[English: VHDX input details and limitations](https://yamato-security.github.io/hayabusa/getting-started/running/#vhdx-inputs).

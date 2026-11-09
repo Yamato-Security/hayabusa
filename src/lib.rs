@@ -6,6 +6,7 @@ pub mod notify;
 pub mod options;
 pub mod results;
 pub mod timeline;
+pub mod vhdx;
 pub mod yaml;
 pub mod yaml_expand;
 

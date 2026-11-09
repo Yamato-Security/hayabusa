@@ -78,11 +78,14 @@ rust-embed={version = "8.11.0", features = ["include-exclude", "debug-embed"]}
 encoding_rs = "0.8.35"
 uuid = { version = "1", features = ["v4"] }
 winapi = { version = "0.3.9", features = ["wow64apiset"] }
+same-file = "1"
+
+# Juntei's portable read-only NTFS image API, using its AGPL licence alternative.
+ys_vhdx_mount = { package = "ys-vhdx-mount", git = "https://github.com/Yamato-Security/ys-vhdx-parser", rev = "2ed3526aa52aa559db947ba69d6299c9e4d25288" }
 
 [dev-dependencies]
-# Used by the file-output unit tests to write into a unique per-test temporary
-# directory instead of the repository root, so the tests are safe to run in parallel.
 tempfile = "3"
+flate2 = "1"
 
 [profile.dev]
 debug-assertions = false

@@ -86,3 +86,18 @@ macOS ၏ နောက်ဆုံးထွက် version တွင် ၎င်
 ![Mac Error 3 EN](../assets/screenshots/MacOS-RunError-3-EN.png)
 
 ယခု သင် hayabusa ကို run နိုင်ပြီဖြစ်ပါသည်။
+
+## VHDX ထည့်သွင်းခြင်း
+
+
+Event log စစ်ဆေးသည့် command အားလုံးတွင် `--vhdx` ကို `-f <IMAGE.vhdx>` သို့မဟုတ် `-d <DIR>` နှင့် တွဲသုံးနိုင်သည်။ Image ရှာဖွေမှုသည် သတ်မှတ် directory နှင့် အောက်သုံးဆင့်အထိဖြစ်သည်။ Image အတွင်းရှိ ဖတ်နိုင်သော NTFS volume အားလုံးကို ထိုအဆင့်ကန့်သတ်ချက်မရှိဘဲ ရှာဖွေသည်။
+
+```bash
+./hayabusa dfir-timeline --vhdx -f host.vhdx -w -U -p verbose -o timeline.csv
+./hayabusa dfir-timeline --vhdx -d images/ -w -U -p verbose -o timeline.csv
+```
+
+
+Juntei နှင့်မျှဝေထားသော portable NTFS API ဖြင့် **Linux၊ macOS နှင့် Windows** တွင် native scan လုပ်နိုင်သည်။ ဖိုင်များကို read-only seekable stream အဖြစ် တိုက်ရိုက်ဖတ်သဖြင့် FUSE၊ mount driver၊ administrator အခွင့်အရေးနှင့် ယာယီထုတ်ယူခြင်း မလိုအပ်ပါ။ မူရင်း image ကို မပြောင်းလဲပါ။ အထောက်အထားလမ်းကြောင်းမှာ `host.vhdx!/path/log.evtx` ဖြစ်သည်။ BitLocker နှင့် ပြင်ပ parent image လိုအပ်သော image များကို မပံ့ပိုးပါ။
+
+[English: VHDX input details and limitations](https://yamato-security.github.io/hayabusa/getting-started/running/#vhdx-inputs).

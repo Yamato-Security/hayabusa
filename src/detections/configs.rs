@@ -139,6 +139,8 @@ pub struct StoredStatic {
     pub extract_base64_flag: bool,
     pub search_option: Option<SearchOption>,
     pub output_option: Option<OutputOption>,
+    /// Native read-only image inputs shared by the scan snapshot.
+    pub vhdx_files: crate::vhdx::Catalog,
     pub pivot_keyword_list_flag: bool,
     /// Pivot keyword accumulator for the `pivot-keywords-list` command: categories/fields are
     /// loaded up front and the keyword values are filled in from the per-record parallel tasks.
@@ -657,6 +659,7 @@ impl StoredStatic {
             extract_base64_flag: action_id == 13,
             search_option: extract_search_options(&config),
             output_option: extract_output_options(&config),
+            vhdx_files: crate::vhdx::Catalog::default(),
             pivot_keyword_list_flag: action_id == 4,
             pivot_keyword: Arc::new(RwLock::new(PivotKeywordMap::new())),
             error_log_stack: Arc::new(Mutex::new(Nested::<String>::new())),
@@ -1747,13 +1750,17 @@ pub struct CommonOptions {
 #[derive(Args, Clone, Debug, Default)]
 #[clap(group(ArgGroup::new("input_filtering").args(["directory", "filepath", "live_analysis"]).required(true)))]
 pub struct InputOption {
-    /// Directory of multiple .evtx files
+    /// Directory of .evtx files (or VHDX images with --vhdx)
     #[arg(help_heading = Some("Input"), short = 'd', long, value_name = "DIR", conflicts_with_all = ["filepath", "live_analysis"], display_order = 300)]
     pub directory: Option<Vec<PathBuf>>,
 
-    /// File path to one .evtx file
+    /// File path to one .evtx file (or a VHDX image with --vhdx)
     #[arg(help_heading = Some("Input"), short = 'f', long = "file", value_name = "FILE", conflicts_with_all = ["directory", "live_analysis"], display_order = 320)]
     pub filepath: Option<PathBuf>,
+
+    /// Scan VHDX images read-only; -d searches up to three subdirectory levels
+    #[arg(help_heading = Some("Input"), long, conflicts_with = "live_analysis", display_order = 330)]
+    pub vhdx: bool,
 
     /// Analyze the local C:\Windows\System32\winevt\Logs folder
     #[arg(help_heading = Some("Input"), short = 'l', long = "live-analysis", conflicts_with_all = ["filepath", "directory", "json_input"], display_order = 380)]
@@ -1967,13 +1974,17 @@ pub struct ExpandListOption {
 #[derive(Args, Clone, Debug, Default)]
 #[clap(group(ArgGroup::new("input_filtering").args(["directory", "filepath"]).required(true)))]
 pub struct ConfigCriticalSystemsOption {
-    /// Directory of multiple .evtx files
+    /// Directory of .evtx files (or VHDX images with --vhdx)
     #[arg(help_heading = Some("Input"), short = 'd', long, value_name = "DIR", conflicts_with_all = ["filepath"], display_order = 300)]
     pub directory: Option<Vec<PathBuf>>,
 
-    /// File path to one .evtx file
+    /// File path to one .evtx file (or a VHDX image with --vhdx)
     #[arg(help_heading = Some("Input"), short = 'f', long = "file", value_name = "FILE", conflicts_with_all = ["directory"], display_order = 320)]
     pub filepath: Option<PathBuf>,
+
+    /// Scan VHDX images read-only; -d searches up to three subdirectory levels
+    #[arg(help_heading = Some("Input"), long, display_order = 330)]
+    pub vhdx: bool,
 
     #[clap(flatten)]
     pub common_options: CommonOptions,
@@ -2641,6 +2652,7 @@ fn extract_output_options(config: &Config) -> Option<OutputOption> {
             input_args: InputOption {
                 directory: option.directory.clone(),
                 filepath: option.filepath.clone(),
+                vhdx: option.vhdx,
                 live_analysis: false,
                 recover_records: false,
                 time_offset: None,
@@ -2816,6 +2828,42 @@ mod tests {
     use clap::{Parser, error::ErrorKind};
     use compact_str::CompactString;
     use hashbrown::{HashMap, HashSet};
+
+    #[test]
+    fn all_event_scanning_commands_accept_vhdx_inputs() {
+        for command in [
+            "dfir-timeline",
+            "eid-metrics",
+            "log-metrics",
+            "logon-summary",
+            "computer-metrics",
+            "extract-base64",
+            "pivot-keywords-list",
+            "search",
+            "config-critical-systems",
+        ] {
+            for source in [["-d", "images"], ["-f", "host.vhdx"]] {
+                let mut args = vec!["hayabusa", command, source[0], source[1], "--vhdx"];
+                if command == "search" {
+                    args.extend(["-r", ".*"]);
+                }
+                let config = configs::Config::try_parse_from(args)
+                    .unwrap_or_else(|e| panic!("{command}: {e}"));
+                assert!(
+                    configs::extract_output_options(&config)
+                        .unwrap()
+                        .input_args
+                        .vhdx,
+                    "{command}"
+                );
+            }
+        }
+        assert!(configs::Config::try_parse_from(["hayabusa", "dfir-timeline", "--vhdx"]).is_err());
+        assert!(
+            configs::Config::try_parse_from(["hayabusa", "dfir-timeline", "-l", "--vhdx"]).is_err()
+        );
+        assert!(configs::Config::try_parse_from(["hayabusa", "update-rules", "--vhdx"]).is_err());
+    }
 
     #[test]
     fn target_event_time_filter() {

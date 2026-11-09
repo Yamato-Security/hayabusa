@@ -12,8 +12,9 @@ Usage:
   hayabusa.exe config-critical-systems <INPUT> [OPTIONS]
 
 Input:
-  -d, --directory <DIR>  एकाधिक .evtx फ़ाइलों की डायरेक्टरी
-  -f, --file <FILE>      एक .evtx फ़ाइल का फ़ाइल पथ
+  -d, --directory <DIR>  एकाधिक .evtx फ़ाइलों की डायरेक्टरी (or VHDX images with --vhdx)
+  -f, --file <FILE>      एक .evtx फ़ाइल का फ़ाइल पथ (or a VHDX image with --vhdx)
+      --vhdx             Scan VHDX images read-only; -d searches up to three subdirectory levels
 
 Display Settings:
   -K, --no-color  रंगीन आउटपुट अक्षम करें

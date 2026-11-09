@@ -86,3 +86,18 @@ chmod +x ./hayabusa
 ![Mac Error 3 EN](../assets/screenshots/MacOS-RunError-3-EN.png)
 
 이제 hayabusa를 실행할 수 있을 것입니다.
+
+## VHDX 입력
+
+
+모든 이벤트 로그 분석 명령은 `--vhdx`와 `-f <IMAGE.vhdx>` 또는 `-d <DIR>`을 지원합니다. 이미지 검색은 지정 디렉터리와 그 아래 3단계까지 진행합니다. 이미지 내부에서는 이 깊이 제한 없이 읽을 수 있는 모든 NTFS 볼륨의 로그를 검색합니다.
+
+```bash
+./hayabusa dfir-timeline --vhdx -f host.vhdx -w -U -p verbose -o timeline.csv
+./hayabusa dfir-timeline --vhdx -d images/ -w -U -p verbose -o timeline.csv
+```
+
+
+Juntei와 공유하는 이식 가능한 NTFS API로 **Linux, macOS, Windows에서 네이티브 분석**을 지원합니다. 파일을 탐색 가능한 읽기 전용 스트림으로 직접 읽으므로 FUSE, 마운트 드라이버, 관리자 권한, 임시 추출이 필요하지 않습니다. 원본 이미지는 변경되지 않습니다. 증거 경로는 `host.vhdx!/path/log.evtx` 형식입니다. BitLocker 및 외부 부모 이미지가 필요한 이미지는 지원하지 않습니다.
+
+[English: VHDX input details and limitations](https://yamato-security.github.io/hayabusa/getting-started/running/#vhdx-inputs).

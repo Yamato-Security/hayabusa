@@ -86,3 +86,26 @@ The following warning will pop up, so please click "Open".
 ![Mac Error 3 EN](../assets/screenshots/MacOS-RunError-3-EN.png)
 
 You should now be able to run hayabusa.
+
+## VHDX inputs
+
+All event-log scanning commands accept `--vhdx` with `-f <IMAGE.vhdx>` or `-d <IMAGE_DIRECTORY>`. Directory discovery checks the supplied root and up to three subdirectory levels; the log search inside each image has no three-level limit. All readable NTFS volumes are searched.
+
+```bash
+# One image
+./hayabusa dfir-timeline --vhdx -f host.vhdx -w -U -p verbose -o timeline.csv
+
+# A directory of images
+./hayabusa dfir-timeline --vhdx -d images/ -w -U -p verbose -o timeline.csv
+
+# Inspect the logs inside the images
+./hayabusa log-metrics --vhdx -d images/ -U -o logs.csv
+```
+
+Hayabusa reads NTFS files directly inside the images using the portable `ys-vhdx-mount` image API shared with Juntei. Native scanning works on **Linux, macOS, and Windows**, with no FUSE, mounting driver, mount helper, administrator privileges, or temporary log extraction. Each event log is opened as a seekable read-only stream, and the source images remain unchanged.
+
+This input mode works with `dfir-timeline`, `search`, `eid-metrics`, `log-metrics`, `logon-summary`, `computer-metrics`, `extract-base64`, `pivot-keywords-list`, and `config-critical-systems`. Other options still apply, including `-J` for JSON event files on commands supporting JSON input. Use `--vhdx` explicitly: ordinary `-d` scans continue to look for event logs.
+
+Evidence filenames use `host.vhdx!/Windows/.../Security.evtx`; multi-volume images include `Volume1`, `Volume2`, and so on. This identifies the image and internal path without relying on a mount path. Inputs cannot be reused as output files, including through symbolic or hard links.
+
+Unreadable images, unreadable partitions, or images without matching logs cause a nonzero exit status. If some images or directories fail but usable logs remain, the scan still saves the readable results, including HTML reports and pivot files. The HTML report is marked incomplete and the command exits nonzero. Check the warnings to identify missing input. The backend reads NTFS volumes only. BitLocker-encrypted volumes and images requiring an external differencing parent are not supported by this input mode.

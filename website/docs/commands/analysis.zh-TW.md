@@ -15,8 +15,9 @@ Usage:
   hayabusa.exe computer-metrics <INPUT> [OPTIONS]
 
 Input:
-  -d, --directory <DIR>  包含多個 .evtx 檔案的目錄
-  -f, --file <FILE>      單一 .evtx 檔案的檔案路徑
+  -d, --directory <DIR>  包含多個 .evtx 檔案的目錄 (or VHDX images with --vhdx)
+  -f, --file <FILE>      單一 .evtx 檔案的檔案路徑 (or a VHDX image with --vhdx)
+      --vhdx             Scan VHDX images read-only; -d searches up to three subdirectory levels
   -l, --live-analysis    分析本機 C:\Windows\System32\winevt\Logs 資料夾
 
 General Options:
@@ -60,8 +61,9 @@ Usage:
   hayabusa.exe eid-metrics <INPUT> [OPTIONS]
 
 Input:
-  -d, --directory <DIR>  包含多個 .evtx 檔案的目錄
-  -f, --file <FILE>      單一 .evtx 檔案的檔案路徑
+  -d, --directory <DIR>  包含多個 .evtx 檔案的目錄 (or VHDX images with --vhdx)
+  -f, --file <FILE>      單一 .evtx 檔案的檔案路徑 (or a VHDX image with --vhdx)
+      --vhdx             Scan VHDX images read-only; -d searches up to three subdirectory levels
   -l, --live-analysis    分析本機 C:\Windows\System32\winevt\Logs 資料夾
 
 General Options:
@@ -199,8 +201,9 @@ Usage:
   hayabusa.exe extract-base64 <INPUT> [OPTIONS]
 
 Input:
-  -d, --directory <DIR>  包含多個 .evtx 檔案的目錄
-  -f, --file <FILE>      單一 .evtx 檔案的檔案路徑
+  -d, --directory <DIR>  包含多個 .evtx 檔案的目錄 (or VHDX images with --vhdx)
+  -f, --file <FILE>      單一 .evtx 檔案的檔案路徑 (or a VHDX image with --vhdx)
+      --vhdx             Scan VHDX images read-only; -d searches up to three subdirectory levels
   -l, --live-analysis    分析本機 C:\Windows\System32\winevt\Logs 資料夾
 
 General Options:
@@ -284,8 +287,9 @@ Usage:
   hayabusa.exe log-metrics <INPUT> [OPTIONS]
 
 Input:
-  -d, --directory <DIR>  包含多個 .evtx 檔案的目錄
-  -f, --file <FILE>      單一 .evtx 檔案的檔案路徑
+  -d, --directory <DIR>  包含多個 .evtx 檔案的目錄 (or VHDX images with --vhdx)
+  -f, --file <FILE>      單一 .evtx 檔案的檔案路徑 (or a VHDX image with --vhdx)
+      --vhdx             Scan VHDX images read-only; -d searches up to three subdirectory levels
   -l, --live-analysis    分析本機 C:\Windows\System32\winevt\Logs 資料夾
 
 General Options:
@@ -357,8 +361,9 @@ Usage:
   hayabusa.exe logon-summary <INPUT> [OPTIONS]
 
 Input:
-  -d, --directory <DIR>  包含多個 .evtx 檔案的目錄
-  -f, --file <FILE>      單一 .evtx 檔案的檔案路徑
+  -d, --directory <DIR>  包含多個 .evtx 檔案的目錄 (or VHDX images with --vhdx)
+  -f, --file <FILE>      單一 .evtx 檔案的檔案路徑 (or a VHDX image with --vhdx)
+      --vhdx             Scan VHDX images read-only; -d searches up to three subdirectory levels
   -l, --live-analysis    分析本機 C:\Windows\System32\winevt\Logs 資料夾
 
 General Options:
@@ -430,8 +435,9 @@ Usage:
   hayabusa.exe pivot-keywords-list <INPUT> [OPTIONS]
 
 Input:
-  -d, --directory <DIR>  包含多個 .evtx 檔案的目錄
-  -f, --file <FILE>      單一 .evtx 檔案的檔案路徑
+  -d, --directory <DIR>  包含多個 .evtx 檔案的目錄 (or VHDX images with --vhdx)
+  -f, --file <FILE>      單一 .evtx 檔案的檔案路徑 (or a VHDX image with --vhdx)
+      --vhdx             Scan VHDX images read-only; -d searches up to three subdirectory levels
   -l, --live-analysis    分析本機 C:\Windows\System32\winevt\Logs 資料夾
 
 General Options:
@@ -517,8 +523,9 @@ General Options:
   -V, --validate-checksums             啟用總和檢查碼驗證
 
 Input:
-  -d, --directory <DIR>  包含多個 .evtx 檔案的目錄
-  -f, --file <FILE>      單一 .evtx 檔案的檔案路徑
+  -d, --directory <DIR>  包含多個 .evtx 檔案的目錄 (or VHDX images with --vhdx)
+  -f, --file <FILE>      單一 .evtx 檔案的檔案路徑 (or a VHDX image with --vhdx)
+      --vhdx             Scan VHDX images read-only; -d searches up to three subdirectory levels
   -l, --live-analysis    分析本機 C:\Windows\System32\winevt\Logs 資料夾
 
 Filtering:

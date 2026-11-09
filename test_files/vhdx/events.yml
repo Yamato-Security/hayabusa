@@ -1,0 +1,15 @@
+title: VHDX Fixture Scheduled Task Creation
+id: 6baa62d8-3ad9-4470-ae4d-fad86cbb285e
+status: test
+description: Regression-test rule for the public CC0 scheduled-task log in the VHDX fixture.
+author: Yamato Security
+date: 2026/11/09
+logsource:
+    product: windows
+    service: security
+detection:
+    selection:
+        EventID: 4698
+    Channel: Security
+    condition: selection
+level: low

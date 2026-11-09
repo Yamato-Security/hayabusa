@@ -86,3 +86,18 @@ O seguinte aviso aparecerá, então clique em "Open".
 ![Mac Error 3 EN](../assets/screenshots/MacOS-RunError-3-EN.png)
 
 Agora você deve conseguir executar o hayabusa.
+
+## Entrada VHDX
+
+
+Todos os comandos de análise de logs de eventos aceitam `--vhdx` com `-f <IMAGE.vhdx>` ou `-d <DIR>`. A busca inclui o diretório informado e três níveis de subdiretórios. Dentro das imagens, todos os volumes NTFS legíveis são pesquisados sem esse limite de profundidade.
+
+```bash
+./hayabusa dfir-timeline --vhdx -f host.vhdx -w -U -p verbose -o timeline.csv
+./hayabusa dfir-timeline --vhdx -d images/ -w -U -p verbose -o timeline.csv
+```
+
+
+A análise nativa funciona em **Linux, macOS e Windows** pela API NTFS portátil compartilhada com o Juntei. Os arquivos são lidos diretamente como fluxos somente de leitura com acesso por posição. Não requer FUSE, driver de montagem, privilégios de administrador nem extração temporária. As imagens originais permanecem intactas. Os caminhos usam `host.vhdx!/path/log.evtx`. BitLocker e imagens que dependem de uma imagem pai externa não são suportados.
+
+[English: VHDX input details and limitations](https://yamato-security.github.io/hayabusa/getting-started/running/#vhdx-inputs).

@@ -86,3 +86,18 @@ chmod +x ./hayabusa
 ![Mac Error 3 EN](../assets/screenshots/MacOS-RunError-3-EN.png)
 
 ตอนนี้คุณควรจะสามารถรัน hayabusa ได้แล้ว
+
+## อินพุต VHDX
+
+
+คำสั่งวิเคราะห์บันทึกเหตุการณ์ทั้งหมดรองรับ `--vhdx` ร่วมกับ `-f <IMAGE.vhdx>` หรือ `-d <DIR>` โดยค้นหาอิมเมจในไดเรกทอรีที่ระบุและไดเรกทอรีย่อยลึกลงไปไม่เกินสามระดับ ภายในอิมเมจจะค้นหาทุกโวลุ่ม NTFS ที่อ่านได้โดยไม่มีข้อจำกัดความลึกดังกล่าว
+
+```bash
+./hayabusa dfir-timeline --vhdx -f host.vhdx -w -U -p verbose -o timeline.csv
+./hayabusa dfir-timeline --vhdx -d images/ -w -U -p verbose -o timeline.csv
+```
+
+
+การสแกนแบบเนทีฟทำงานบน **Linux, macOS และ Windows** ผ่าน NTFS API แบบพกพาที่ใช้ร่วมกับ Juntei โดยอ่านไฟล์โดยตรงเป็นสตรีมแบบอ่านอย่างเดียวที่เลื่อนตำแหน่งได้ ไม่ต้องใช้ FUSE ไดรเวอร์เมานต์ สิทธิ์ผู้ดูแลระบบ หรือการแตกไฟล์ชั่วคราว อิมเมจต้นฉบับไม่ถูกแก้ไข พาธหลักฐานมีรูปแบบ `host.vhdx!/path/log.evtx` ไม่รองรับ BitLocker หรืออิมเมจที่ต้องใช้อิมเมจแม่จากภายนอก
+
+[English: VHDX input details and limitations](https://yamato-security.github.io/hayabusa/getting-started/running/#vhdx-inputs).

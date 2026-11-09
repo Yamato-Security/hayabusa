@@ -86,3 +86,18 @@ chmod +x ./hayabusa
 ![Mac Error 3 EN](../assets/screenshots/MacOS-RunError-3-EN.png)
 
 Тепер ви повинні мати змогу запустити hayabusa.
+
+## Вхідні образи VHDX
+
+
+Усі команди аналізу журналів подій підтримують `--vhdx` разом із `-f <IMAGE.vhdx>` або `-d <DIR>`. Пошук образів охоплює заданий каталог і три рівні підкаталогів. Усередині образів перевіряються всі доступні для читання томи NTFS без цього обмеження глибини.
+
+```bash
+./hayabusa dfir-timeline --vhdx -f host.vhdx -w -U -p verbose -o timeline.csv
+./hayabusa dfir-timeline --vhdx -d images/ -w -U -p verbose -o timeline.csv
+```
+
+
+Нативний аналіз працює в **Linux, macOS і Windows** через переносний NTFS API, спільний із Juntei. Файли читаються безпосередньо як потоки лише для читання з довільним позиціонуванням. FUSE, драйвер монтування, права адміністратора й тимчасове розпакування не потрібні. Вихідні образи не змінюються. Шляхи доказів мають формат `host.vhdx!/path/log.evtx`. BitLocker та образи із зовнішнім батьківським образом не підтримуються.
+
+[English: VHDX input details and limitations](https://yamato-security.github.io/hayabusa/getting-started/running/#vhdx-inputs).

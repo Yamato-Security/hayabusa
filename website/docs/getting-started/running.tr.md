@@ -86,3 +86,18 @@ Aşağıdaki uyarı belirecektir, bu yüzden lütfen "Open"a tıklayın.
 ![Mac Error 3 EN](../assets/screenshots/MacOS-RunError-3-EN.png)
 
 Artık hayabusa'yı çalıştırabilmeniz gerekir.
+
+## VHDX girdileri
+
+
+Tüm olay günlüğü tarama komutları `--vhdx` ile `-f <IMAGE.vhdx>` veya `-d <DIR>` kullanımını destekler. Görüntü araması verilen dizini ve altındaki üç dizin seviyesini kapsar. Görüntü içindeki okunabilir tüm NTFS birimleri bu derinlik sınırı olmadan aranır.
+
+```bash
+./hayabusa dfir-timeline --vhdx -f host.vhdx -w -U -p verbose -o timeline.csv
+./hayabusa dfir-timeline --vhdx -d images/ -w -U -p verbose -o timeline.csv
+```
+
+
+Yerel tarama, Juntei ile paylaşılan taşınabilir NTFS API üzerinden **Linux, macOS ve Windows** üzerinde çalışır. Dosyalar doğrudan konumlandırılabilir salt okunur akışlar olarak okunur; FUSE, bağlama sürücüsü, yönetici yetkisi veya geçici çıkarma gerekmez. Kaynak görüntüler değiştirilmez. Kanıt yolları `host.vhdx!/path/log.evtx` biçimindedir. BitLocker ve harici üst görüntü gerektiren görüntüler desteklenmez.
+
+[English: VHDX input details and limitations](https://yamato-security.github.io/hayabusa/getting-started/running/#vhdx-inputs).

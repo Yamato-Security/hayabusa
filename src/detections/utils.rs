@@ -154,9 +154,18 @@ pub fn read_jsonl_to_value(path: &str) -> Result<Box<dyn Iterator<Item = Value>>
     if file.is_err() {
         return Err(format!("Cannot open file. [file:{path}]"));
     }
-    let reader = BufReader::new(file.unwrap());
+    read_jsonl_reader_to_value(file.unwrap())
+}
+
+/// Parse JSONL from an owned reader, including a native image file stream.
+pub fn read_jsonl_reader_to_value(
+    input: impl std::io::Read + 'static,
+) -> Result<Box<dyn Iterator<Item = Value>>, String> {
+    let reader = BufReader::new(input);
     let mut peekable_lines = reader.lines().peekable();
-    let first_line = peekable_lines.peek().unwrap();
+    let first_line = peekable_lines
+        .peek()
+        .ok_or_else(|| "The JSON input is empty.".to_string())?;
     let is_jsonl = match first_line {
         Ok(s) => serde_json::from_str::<Value>(s).is_ok(),
         Err(_) => false,
@@ -182,7 +191,21 @@ pub fn read_json_to_value(path: &str) -> Result<Box<dyn Iterator<Item = Value>>,
     if read_result.is_err() {
         return Err(format!("Cannot open file. [file:{path}]"));
     }
-    let contents = read_result.unwrap();
+    json_contents_to_value(read_result.unwrap())
+}
+
+/// Parse a JSON array or jq output from an owned file or native image reader.
+pub fn read_json_reader_to_value(
+    mut reader: impl std::io::Read,
+) -> Result<Box<dyn Iterator<Item = Value>>, String> {
+    let mut contents = String::new();
+    reader
+        .read_to_string(&mut contents)
+        .map_err(|e| e.to_string())?;
+    json_contents_to_value(contents)
+}
+
+fn json_contents_to_value(contents: String) -> Result<Box<dyn Iterator<Item = Value>>, String> {
     let json_values: Result<Vec<Value>, Error> = serde_json::from_str(&contents);
     let value_converter = |record: Value| json!({"Event":{"EventData": record}});
     match json_values {
