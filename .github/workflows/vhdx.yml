@@ -1,0 +1,30 @@
+name: VHDX inputs
+on:
+  pull_request:
+    paths:
+      - 'Cargo.toml'
+      - 'Cargo.lock'
+      - 'src/**'
+      - 'tests/vhdx_cli.rs'
+      - 'test_files/vhdx/**'
+      - '.github/workflows/vhdx.yml'
+permissions:
+  contents: read
+jobs:
+  linux-fuse:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          submodules: recursive
+      - uses: dtolnay/rust-toolchain@b725eda525362e7cf34af9a7243cac1e3f01a7ec # stable
+      - uses: Swatinem/rust-cache@d1527c8f67ef9af357290475d4af4b0fab8f12e0 # v2.9.3
+      - name: Prepare FUSE
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y fuse3
+          test -c /dev/fuse
+      - name: Test read-only image scanning and cleanup
+        env:
+          HAYABUSA_REQUIRE_FUSE: '1'
+        run: cargo test --locked --test vhdx_cli -- --test-threads=1

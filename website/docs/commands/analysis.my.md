@@ -15,8 +15,9 @@ Usage:
   hayabusa.exe computer-metrics <INPUT> [OPTIONS]
 
 Input:
-  -d, --directory <DIR>  Directory of multiple .evtx files
-  -f, --file <FILE>      File path to one .evtx file
+  -d, --directory <DIR>  Directory of multiple .evtx files (or VHDX images with --vhdx)
+  -f, --file <FILE>      File path to one .evtx file (or a VHDX image with --vhdx)
+      --vhdx             Scan VHDX images read-only; -d searches up to three subdirectory levels (Linux/FUSE)
   -l, --live-analysis    Analyze the local C:\Windows\System32\winevt\Logs folder
 
 General Options:
@@ -60,8 +61,9 @@ Usage:
   hayabusa.exe eid-metrics <INPUT> [OPTIONS]
 
 Input:
-  -d, --directory <DIR>  Directory of multiple .evtx files
-  -f, --file <FILE>      File path to one .evtx file
+  -d, --directory <DIR>  Directory of multiple .evtx files (or VHDX images with --vhdx)
+  -f, --file <FILE>      File path to one .evtx file (or a VHDX image with --vhdx)
+      --vhdx             Scan VHDX images read-only; -d searches up to three subdirectory levels (Linux/FUSE)
   -l, --live-analysis    Analyze the local C:\Windows\System32\winevt\Logs folder
 
 General Options:
@@ -199,8 +201,9 @@ Usage:
   hayabusa.exe extract-base64 <INPUT> [OPTIONS]
 
 Input:
-  -d, --directory <DIR>  Directory of multiple .evtx files
-  -f, --file <FILE>      File path to one .evtx file
+  -d, --directory <DIR>  Directory of multiple .evtx files (or VHDX images with --vhdx)
+  -f, --file <FILE>      File path to one .evtx file (or a VHDX image with --vhdx)
+      --vhdx             Scan VHDX images read-only; -d searches up to three subdirectory levels (Linux/FUSE)
   -l, --live-analysis    Analyze the local C:\Windows\System32\winevt\Logs folder
 
 General Options:
@@ -284,8 +287,9 @@ Usage:
   hayabusa.exe log-metrics <INPUT> [OPTIONS]
 
 Input:
-  -d, --directory <DIR>  Directory of multiple .evtx files
-  -f, --file <FILE>      File path to one .evtx file
+  -d, --directory <DIR>  Directory of multiple .evtx files (or VHDX images with --vhdx)
+  -f, --file <FILE>      File path to one .evtx file (or a VHDX image with --vhdx)
+      --vhdx             Scan VHDX images read-only; -d searches up to three subdirectory levels (Linux/FUSE)
   -l, --live-analysis    Analyze the local C:\Windows\System32\winevt\Logs folder
 
 General Options:
@@ -357,8 +361,9 @@ Usage:
   hayabusa.exe logon-summary <INPUT> [OPTIONS]
 
 Input:
-  -d, --directory <DIR>  Directory of multiple .evtx files
-  -f, --file <FILE>      File path to one .evtx file
+  -d, --directory <DIR>  Directory of multiple .evtx files (or VHDX images with --vhdx)
+  -f, --file <FILE>      File path to one .evtx file (or a VHDX image with --vhdx)
+      --vhdx             Scan VHDX images read-only; -d searches up to three subdirectory levels (Linux/FUSE)
   -l, --live-analysis    Analyze the local C:\Windows\System32\winevt\Logs folder
 
 General Options:
@@ -430,8 +435,9 @@ Usage:
   hayabusa.exe pivot-keywords-list <INPUT> [OPTIONS]
 
 Input:
-  -d, --directory <DIR>  Directory of multiple .evtx files
-  -f, --file <FILE>      File path to one .evtx file
+  -d, --directory <DIR>  Directory of multiple .evtx files (or VHDX images with --vhdx)
+  -f, --file <FILE>      File path to one .evtx file (or a VHDX image with --vhdx)
+      --vhdx             Scan VHDX images read-only; -d searches up to three subdirectory levels (Linux/FUSE)
   -l, --live-analysis    Analyze the local C:\Windows\System32\winevt\Logs folder
 
 General Options:
@@ -517,8 +523,9 @@ General Options:
   -V, --validate-checksums             checksum စိစစ်ခြင်းကို ဖွင့်ရန်
 
 Input:
-  -d, --directory <DIR>  Directory of multiple .evtx files
-  -f, --file <FILE>      File path to one .evtx file
+  -d, --directory <DIR>  Directory of multiple .evtx files (or VHDX images with --vhdx)
+  -f, --file <FILE>      File path to one .evtx file (or a VHDX image with --vhdx)
+      --vhdx             Scan VHDX images read-only; -d searches up to three subdirectory levels (Linux/FUSE)
   -l, --live-analysis    Analyze the local C:\Windows\System32\winevt\Logs folder
 
 Filtering:

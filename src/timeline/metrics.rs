@@ -134,8 +134,9 @@ impl EventMetrics {
             .unwrap_or_default()
             .to_str()
             .unwrap_or_default();
+        let read_path = crate::vhdx::read_path(path, &stored_static.vhdx_sources);
         let file_size = get_file_size(
-            path,
+            &read_path,
             stored_static.verbose_flag,
             stored_static.quiet_errors_flag,
             &stored_static.error_log_stack,
@@ -661,6 +662,7 @@ mod tests {
                     live_analysis: false,
                     recover_records: false,
                     time_offset: None,
+                    vhdx: false,
                 },
                 common_options: CommonOptions {
                     no_color: false,

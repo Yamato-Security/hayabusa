@@ -471,6 +471,30 @@ impl App {
             return;
         }
 
+        if !cfg!(target_os = "linux")
+            && stored_static
+                .output_option
+                .as_ref()
+                .is_some_and(|o| o.input_args.vhdx)
+        {
+            AlertMessage::alert(hayabusa::vhdx::UNSUPPORTED).ok();
+            self.failed.set(true);
+            return;
+        }
+        if let Some(options) = &stored_static.output_option
+            && options.input_args.vhdx
+            && let Err(e) = hayabusa::vhdx::discover(&options.input_args).and_then(|images| {
+                hayabusa::vhdx::protect_outputs(
+                    &images,
+                    &hayabusa::vhdx::output_paths(stored_static),
+                )
+            })
+        {
+            AlertMessage::alert(&e.to_string()).ok();
+            self.failed.set(true);
+            return;
+        }
+
         // The CSV Output options only make sense for CSV output; reject them with a non-CSV -t.
         if let Some(Action::DfirTimeline(opt)) = &stored_static.config.action
             && !matches!(opt.output_type, OutputType::Csv)
@@ -728,6 +752,14 @@ impl App {
                     stored_static,
                     &mut html_reporter,
                 );
+                if self.failed.get()
+                    && stored_static
+                        .output_option
+                        .as_ref()
+                        .is_some_and(|o| o.input_args.vhdx)
+                {
+                    return;
+                }
 
                 output_profile_name(
                     &stored_static.output_option,
@@ -771,6 +803,14 @@ impl App {
                     stored_static,
                     &mut html_reporter,
                 );
+                if self.failed.get()
+                    && stored_static
+                        .output_option
+                        .as_ref()
+                        .is_some_and(|o| o.input_args.vhdx)
+                {
+                    return;
+                }
                 for target_path in target_output_path.iter() {
                     let mut msg = "";
                     if target_path.ends_with("-successful.csv") {
@@ -815,6 +855,14 @@ impl App {
                     stored_static,
                     &mut html_reporter,
                 );
+                if self.failed.get()
+                    && stored_static
+                        .output_option
+                        .as_ref()
+                        .is_some_and(|o| o.input_args.vhdx)
+                {
+                    return;
+                }
                 output_saved_file(
                     &stored_static.output_path,
                     "Saved results",
@@ -870,6 +918,14 @@ impl App {
                     stored_static,
                     &mut html_reporter,
                 );
+                if self.failed.get()
+                    && stored_static
+                        .output_option
+                        .as_ref()
+                        .is_some_and(|o| o.input_args.vhdx)
+                {
+                    return;
+                }
 
                 Self::run_pivot_keywords_output(stored_static);
             }
@@ -900,6 +956,14 @@ impl App {
                     stored_static,
                     &mut html_reporter,
                 );
+                if self.failed.get()
+                    && stored_static
+                        .output_option
+                        .as_ref()
+                        .is_some_and(|o| o.input_args.vhdx)
+                {
+                    return;
+                }
                 let _ = self.output_open_close_message("closing_messages.txt", stored_static);
                 return;
             }
@@ -1515,6 +1579,20 @@ Any hostnames added to the critical_systems.txt file will have all alerts above 
         stored_static: &mut StoredStatic,
         html_reporter: &mut HtmlReporter,
     ) {
+        if stored_static
+            .output_option
+            .as_ref()
+            .is_some_and(|o| o.input_args.vhdx)
+        {
+            #[cfg(target_os = "linux")]
+            self.analysis_vhdx(target_extensions, time_filter, stored_static, html_reporter);
+            #[cfg(not(target_os = "linux"))]
+            {
+                AlertMessage::alert(hayabusa::vhdx::UNSUPPORTED).ok();
+                self.failed.set(true);
+            }
+            return;
+        }
         if stored_static.output_option.is_none() {
         } else if let Some(output_option) = stored_static.output_option.as_ref()
             && output_option.input_args.live_analysis
@@ -1603,6 +1681,55 @@ Any hostnames added to the critical_systems.txt file will have all alerts above 
                 );
             }
         }
+    }
+
+    #[cfg(target_os = "linux")]
+    fn analysis_vhdx(
+        &mut self,
+        extensions: &HashSet<String>,
+        time_filter: &TargetEventTime,
+        stored_static: &mut StoredStatic,
+        html_reporter: &mut HtmlReporter,
+    ) {
+        use hayabusa::vhdx;
+        let input = &stored_static.output_option.as_ref().unwrap().input_args;
+        let prepared = vhdx::discover(input).and_then(|images| {
+            vhdx::protect_outputs(&images, &vhdx::output_paths(stored_static))?;
+            vhdx::MountedImages::open(&images)
+        });
+        let mounted = match prepared {
+            Ok(mounted) => mounted,
+            Err(e) => {
+                AlertMessage::alert(&e.to_string()).ok();
+                self.failed.set(true);
+                return;
+            }
+        };
+        for problem in &mounted.problems {
+            AlertMessage::alert(problem).ok();
+            self.failed.set(true);
+        }
+        stored_static.vhdx_sources = mounted.sources.clone();
+        println!("VHDX images mounted read-only: {}", mounted.sources.len());
+        match vhdx::collect_logs(&mounted.roots(), extensions) {
+            Ok(files) if !files.is_empty() => {
+                self.analysis_files(files, time_filter, stored_static, html_reporter);
+            }
+            Ok(_) => {
+                AlertMessage::alert("No matching event logs were found inside the VHDX images.")
+                    .ok();
+                self.failed.set(true);
+            }
+            Err(e) => {
+                AlertMessage::alert(&format!("Could not enumerate mounted event logs: {e}")).ok();
+                self.failed.set(true);
+            }
+        }
+        for error in mounted.close() {
+            AlertMessage::alert(&error).ok();
+            self.failed.set(true);
+        }
+        stored_static.vhdx_sources.clear();
     }
 
     #[cfg(not(target_os = "windows"))]
@@ -2517,7 +2644,8 @@ Any hostnames added to the critical_systems.txt file will have all alerts above 
         usize,
         Vec<DetectInfo>,
     ) {
-        let path = evtx_filepath.display();
+        let source_path = hayabusa::vhdx::display_path(&evtx_filepath, &stored_static.vhdx_sources);
+        let path = source_path.display();
         let parser = self.evtx_to_jsons(&evtx_filepath, stored_static);
         let mut record_cnt = 0;
         let mut recover_records_cnt = 0;
@@ -2855,7 +2983,8 @@ Any hostnames added to the critical_systems.txt file will have all alerts above 
         usize,
         Vec<DetectInfo>,
     ) {
-        let path = filepath.display();
+        let source_path = hayabusa::vhdx::display_path(&filepath, &stored_static.vhdx_sources);
+        let path = source_path.display();
         let mut record_cnt = 0;
         let recover_records_cnt = 0;
         let mut is_splunk_api_json;
@@ -3269,7 +3398,8 @@ Any hostnames added to the critical_systems.txt file will have all alerts above 
             Err(e) => {
                 let errmsg = format!(
                     "Failed to open event file.\nEventFile: {}\nError: {}\n",
-                    evtx_filepath.display(),
+                    hayabusa::vhdx::display_path(evtx_filepath, &stored_static.vhdx_sources)
+                        .display(),
                     e
                 );
                 if stored_static.verbose_flag {

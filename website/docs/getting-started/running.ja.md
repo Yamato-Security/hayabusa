@@ -86,3 +86,21 @@ macOSの環境設定から「セキュリティとプライバシー」を開き
 ![Mac Error 3 JP](../assets/screenshots/MacOS-RunError-3-JP.png)
 
 これで実行できるようになります。
+
+## VHDX イメージの入力（Linux）
+
+すべてのイベントログ解析コマンドで、`--vhdx` と `-f <IMAGE.vhdx>` または `-d <IMAGE_DIRECTORY>` を指定できます。イメージは指定ディレクトリから最大3階層下まで探索します。イメージ内部では階層数を制限せず、読み取り可能な全NTFSボリュームのログを探索します。
+
+```bash
+./hayabusa dfir-timeline --vhdx -f host.vhdx -w -U -p verbose -o timeline.csv
+./hayabusa dfir-timeline --vhdx -d images/ -w -U -p verbose -o timeline.csv
+./hayabusa log-metrics --vhdx -d images/ -U -o logs.csv
+```
+
+Juntei と同じ `ys-vhdx-mount` を使って読み取り専用でマウントします。Linux、`/dev/fuse` へのアクセス、`fusermount3` が必要です。root 権限や Juntei のインストールは不要です。Debian/Ubuntu では `sudo apt install fuse3` で補助プログラムをインストールできます。全内容を作業用ディレクトリへ展開せず、直接読み取ります。解析終了時と Ctrl+C、SIGTERM、SIGHUP の受信時にアンマウントします。
+
+対象コマンドは `dfir-timeline`、`search`、`eid-metrics`、`log-metrics`、`logon-summary`、`computer-metrics`、`extract-base64`、`pivot-keywords-list`、`config-critical-systems` です。JSON 入力対応コマンドでは `-J` も使えます。通常のイベントログ入力は変更せず、VHDX には `--vhdx` を明示的に指定します。
+
+出力の証拠パスは `host.vhdx!/Windows/.../Security.evtx` です。複数ボリュームの場合は `Volume1`、`Volume2` なども含まれ、一時マウント先の代わりに元イメージと内部パスを識別できます。入力と同じファイルを出力先に指定すると、シンボリックリンクやハードリンク経由でも拒否します。
+
+読み取れないイメージやパーティション、対象ログがない場合は終了コードが非ゼロになります。一部が失敗しても読み取れるイメージの結果を保存する場合があります。警告を確認し、不完全な結果として扱ってください。対応ファイルシステムは NTFS のみです。BitLocker 暗号化ボリュームと外部の親イメージを必要とする差分イメージには対応しません。Windows/macOS では別のツールで読み取り専用マウント後、ログディレクトリを `-d` で指定してください。

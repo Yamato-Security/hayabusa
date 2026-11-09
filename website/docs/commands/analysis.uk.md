@@ -15,8 +15,9 @@ Usage:
   hayabusa.exe computer-metrics <INPUT> [OPTIONS]
 
 Input:
-  -d, --directory <DIR>  Каталог з кількома файлами .evtx
-  -f, --file <FILE>      Шлях до одного файлу .evtx
+  -d, --directory <DIR>  Каталог з кількома файлами .evtx (or VHDX images with --vhdx)
+  -f, --file <FILE>      Шлях до одного файлу .evtx (or a VHDX image with --vhdx)
+      --vhdx             Scan VHDX images read-only; -d searches up to three subdirectory levels (Linux/FUSE)
   -l, --live-analysis    Аналізувати локальну папку C:\Windows\System32\winevt\Logs
 
 General Options:
@@ -60,8 +61,9 @@ Usage:
   hayabusa.exe eid-metrics <INPUT> [OPTIONS]
 
 Input:
-  -d, --directory <DIR>  Каталог з кількома файлами .evtx
-  -f, --file <FILE>      Шлях до одного файлу .evtx
+  -d, --directory <DIR>  Каталог з кількома файлами .evtx (or VHDX images with --vhdx)
+  -f, --file <FILE>      Шлях до одного файлу .evtx (or a VHDX image with --vhdx)
+      --vhdx             Scan VHDX images read-only; -d searches up to three subdirectory levels (Linux/FUSE)
   -l, --live-analysis    Аналізувати локальну папку C:\Windows\System32\winevt\Logs
 
 General Options:
@@ -199,8 +201,9 @@ Usage:
   hayabusa.exe extract-base64 <INPUT> [OPTIONS]
 
 Input:
-  -d, --directory <DIR>  Каталог з кількома файлами .evtx
-  -f, --file <FILE>      Шлях до одного файлу .evtx
+  -d, --directory <DIR>  Каталог з кількома файлами .evtx (or VHDX images with --vhdx)
+  -f, --file <FILE>      Шлях до одного файлу .evtx (or a VHDX image with --vhdx)
+      --vhdx             Scan VHDX images read-only; -d searches up to three subdirectory levels (Linux/FUSE)
   -l, --live-analysis    Аналізувати локальну папку C:\Windows\System32\winevt\Logs
 
 General Options:
@@ -284,8 +287,9 @@ Usage:
   hayabusa.exe log-metrics <INPUT> [OPTIONS]
 
 Input:
-  -d, --directory <DIR>  Каталог з кількома файлами .evtx
-  -f, --file <FILE>      Шлях до одного файлу .evtx
+  -d, --directory <DIR>  Каталог з кількома файлами .evtx (or VHDX images with --vhdx)
+  -f, --file <FILE>      Шлях до одного файлу .evtx (or a VHDX image with --vhdx)
+      --vhdx             Scan VHDX images read-only; -d searches up to three subdirectory levels (Linux/FUSE)
   -l, --live-analysis    Аналізувати локальну папку C:\Windows\System32\winevt\Logs
 
 General Options:
@@ -357,8 +361,9 @@ Usage:
   hayabusa.exe logon-summary <INPUT> [OPTIONS]
 
 Input:
-  -d, --directory <DIR>  Каталог з кількома файлами .evtx
-  -f, --file <FILE>      Шлях до одного файлу .evtx
+  -d, --directory <DIR>  Каталог з кількома файлами .evtx (or VHDX images with --vhdx)
+  -f, --file <FILE>      Шлях до одного файлу .evtx (or a VHDX image with --vhdx)
+      --vhdx             Scan VHDX images read-only; -d searches up to three subdirectory levels (Linux/FUSE)
   -l, --live-analysis    Аналізувати локальну папку C:\Windows\System32\winevt\Logs
 
 General Options:
@@ -430,8 +435,9 @@ Usage:
   hayabusa.exe pivot-keywords-list <INPUT> [OPTIONS]
 
 Input:
-  -d, --directory <DIR>  Каталог з кількома файлами .evtx
-  -f, --file <FILE>      Шлях до одного файлу .evtx
+  -d, --directory <DIR>  Каталог з кількома файлами .evtx (or VHDX images with --vhdx)
+  -f, --file <FILE>      Шлях до одного файлу .evtx (or a VHDX image with --vhdx)
+      --vhdx             Scan VHDX images read-only; -d searches up to three subdirectory levels (Linux/FUSE)
   -l, --live-analysis    Аналізувати локальну папку C:\Windows\System32\winevt\Logs
 
 General Options:
@@ -517,8 +523,9 @@ General Options:
   -V, --validate-checksums             Увімкнути перевірку контрольних сум
 
 Input:
-  -d, --directory <DIR>  Каталог з кількома файлами .evtx
-  -f, --file <FILE>      Шлях до одного файлу .evtx
+  -d, --directory <DIR>  Каталог з кількома файлами .evtx (or VHDX images with --vhdx)
+  -f, --file <FILE>      Шлях до одного файлу .evtx (or a VHDX image with --vhdx)
+      --vhdx             Scan VHDX images read-only; -d searches up to three subdirectory levels (Linux/FUSE)
   -l, --live-analysis    Аналізувати локальну папку C:\Windows\System32\winevt\Logs
 
 Filtering:

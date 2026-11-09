@@ -15,8 +15,9 @@ Usage:
   hayabusa.exe computer-metrics <INPUT> [OPTIONS]
 
 Input:
-  -d, --directory <DIR>  एकाधिक .evtx फ़ाइलों की डायरेक्टरी
-  -f, --file <FILE>      एक .evtx फ़ाइल का फ़ाइल पथ
+  -d, --directory <DIR>  एकाधिक .evtx फ़ाइलों की डायरेक्टरी (or VHDX images with --vhdx)
+  -f, --file <FILE>      एक .evtx फ़ाइल का फ़ाइल पथ (or a VHDX image with --vhdx)
+      --vhdx             Scan VHDX images read-only; -d searches up to three subdirectory levels (Linux/FUSE)
   -l, --live-analysis    स्थानीय C:\Windows\System32\winevt\Logs फ़ोल्डर का विश्लेषण करें
 
 General Options:
@@ -60,8 +61,9 @@ Usage:
   hayabusa.exe eid-metrics <INPUT> [OPTIONS]
 
 Input:
-  -d, --directory <DIR>  एकाधिक .evtx फ़ाइलों की डायरेक्टरी
-  -f, --file <FILE>      एक .evtx फ़ाइल का फ़ाइल पथ
+  -d, --directory <DIR>  एकाधिक .evtx फ़ाइलों की डायरेक्टरी (or VHDX images with --vhdx)
+  -f, --file <FILE>      एक .evtx फ़ाइल का फ़ाइल पथ (or a VHDX image with --vhdx)
+      --vhdx             Scan VHDX images read-only; -d searches up to three subdirectory levels (Linux/FUSE)
   -l, --live-analysis    स्थानीय C:\Windows\System32\winevt\Logs फ़ोल्डर का विश्लेषण करें
 
 General Options:
@@ -199,8 +201,9 @@ Usage:
   hayabusa.exe extract-base64 <INPUT> [OPTIONS]
 
 Input:
-  -d, --directory <DIR>  एकाधिक .evtx फ़ाइलों की डायरेक्टरी
-  -f, --file <FILE>      एक .evtx फ़ाइल का फ़ाइल पथ
+  -d, --directory <DIR>  एकाधिक .evtx फ़ाइलों की डायरेक्टरी (or VHDX images with --vhdx)
+  -f, --file <FILE>      एक .evtx फ़ाइल का फ़ाइल पथ (or a VHDX image with --vhdx)
+      --vhdx             Scan VHDX images read-only; -d searches up to three subdirectory levels (Linux/FUSE)
   -l, --live-analysis    स्थानीय C:\Windows\System32\winevt\Logs फ़ोल्डर का विश्लेषण करें
 
 General Options:
@@ -284,8 +287,9 @@ Usage:
   hayabusa.exe log-metrics <INPUT> [OPTIONS]
 
 Input:
-  -d, --directory <DIR>  एकाधिक .evtx फ़ाइलों की डायरेक्टरी
-  -f, --file <FILE>      एक .evtx फ़ाइल का फ़ाइल पथ
+  -d, --directory <DIR>  एकाधिक .evtx फ़ाइलों की डायरेक्टरी (or VHDX images with --vhdx)
+  -f, --file <FILE>      एक .evtx फ़ाइल का फ़ाइल पथ (or a VHDX image with --vhdx)
+      --vhdx             Scan VHDX images read-only; -d searches up to three subdirectory levels (Linux/FUSE)
   -l, --live-analysis    स्थानीय C:\Windows\System32\winevt\Logs फ़ोल्डर का विश्लेषण करें
 
 General Options:
@@ -357,8 +361,9 @@ Usage:
   hayabusa.exe logon-summary <INPUT> [OPTIONS]
 
 Input:
-  -d, --directory <DIR>  एकाधिक .evtx फ़ाइलों की डायरेक्टरी
-  -f, --file <FILE>      एक .evtx फ़ाइल का फ़ाइल पथ
+  -d, --directory <DIR>  एकाधिक .evtx फ़ाइलों की डायरेक्टरी (or VHDX images with --vhdx)
+  -f, --file <FILE>      एक .evtx फ़ाइल का फ़ाइल पथ (or a VHDX image with --vhdx)
+      --vhdx             Scan VHDX images read-only; -d searches up to three subdirectory levels (Linux/FUSE)
   -l, --live-analysis    स्थानीय C:\Windows\System32\winevt\Logs फ़ोल्डर का विश्लेषण करें
 
 General Options:
@@ -430,8 +435,9 @@ Usage:
   hayabusa.exe pivot-keywords-list <INPUT> [OPTIONS]
 
 Input:
-  -d, --directory <DIR>  एकाधिक .evtx फ़ाइलों की डायरेक्टरी
-  -f, --file <FILE>      एक .evtx फ़ाइल का फ़ाइल पथ
+  -d, --directory <DIR>  एकाधिक .evtx फ़ाइलों की डायरेक्टरी (or VHDX images with --vhdx)
+  -f, --file <FILE>      एक .evtx फ़ाइल का फ़ाइल पथ (or a VHDX image with --vhdx)
+      --vhdx             Scan VHDX images read-only; -d searches up to three subdirectory levels (Linux/FUSE)
   -l, --live-analysis    स्थानीय C:\Windows\System32\winevt\Logs फ़ोल्डर का विश्लेषण करें
 
 General Options:
@@ -517,8 +523,9 @@ General Options:
   -V, --validate-checksums             चेकसम सत्यापन सक्षम करें
 
 Input:
-  -d, --directory <DIR>  एकाधिक .evtx फ़ाइलों की डायरेक्टरी
-  -f, --file <FILE>      एक .evtx फ़ाइल का फ़ाइल पथ
+  -d, --directory <DIR>  एकाधिक .evtx फ़ाइलों की डायरेक्टरी (or VHDX images with --vhdx)
+  -f, --file <FILE>      एक .evtx फ़ाइल का फ़ाइल पथ (or a VHDX image with --vhdx)
+      --vhdx             Scan VHDX images read-only; -d searches up to three subdirectory levels (Linux/FUSE)
   -l, --live-analysis    स्थानीय C:\Windows\System32\winevt\Logs फ़ोल्डर का विश्लेषण करें
 
 Filtering:

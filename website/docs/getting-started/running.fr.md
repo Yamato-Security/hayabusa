@@ -86,3 +86,16 @@ L'avertissement suivant apparaîtra, veuillez donc cliquer sur « Ouvrir ».
 ![Mac Error 3 EN](../assets/screenshots/MacOS-RunError-3-EN.png)
 
 Vous devriez maintenant pouvoir exécuter hayabusa.
+
+## Images VHDX sous Linux
+
+Toutes les commandes d’analyse des journaux acceptent `--vhdx` avec `-f <IMAGE.vhdx>` ou `-d <DIR>`. La recherche couvre le dossier indiqué et trois niveaux de sous-dossiers. À l’intérieur des images, tous les volumes NTFS lisibles sont parcourus sans cette limite de profondeur.
+
+```bash
+./hayabusa dfir-timeline --vhdx -f host.vhdx -w -U -p verbose -o timeline.csv
+./hayabusa dfir-timeline --vhdx -d images/ -w -U -p verbose -o timeline.csv
+```
+
+Les images sont montées en lecture seule avec le même moteur que Juntei. Linux, l’accès à `/dev/fuse` et `fusermount3` sont nécessaires, mais pas une installation de Juntei. Les images sont démontées après l’analyse et lors des interruptions. Les chemins conservent leur origine : `host.vhdx!/path/log.evtx`. BitLocker et les images nécessitant un parent différentiel externe ne sont pas pris en charge.
+
+[English: VHDX input details and limitations](https://yamato-security.github.io/hayabusa/getting-started/running/#vhdx-inputs-linux).

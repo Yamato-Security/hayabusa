@@ -15,8 +15,9 @@ Usage:
   hayabusa.exe computer-metrics <INPUT> [OPTIONS]
 
 Input:
-  -d, --directory <DIR>  دليل يحتوي على ملفات .evtx متعددة
-  -f, --file <FILE>      مسار ملف .evtx واحد
+  -d, --directory <DIR>  دليل يحتوي على ملفات .evtx متعددة (or VHDX images with --vhdx)
+  -f, --file <FILE>      مسار ملف .evtx واحد (or a VHDX image with --vhdx)
+      --vhdx             Scan VHDX images read-only; -d searches up to three subdirectory levels (Linux/FUSE)
   -l, --live-analysis    تحليل مجلد C:\Windows\System32\winevt\Logs المحلي
 
 General Options:
@@ -60,8 +61,9 @@ Usage:
   hayabusa.exe eid-metrics <INPUT> [OPTIONS]
 
 Input:
-  -d, --directory <DIR>  دليل يحتوي على ملفات .evtx متعددة
-  -f, --file <FILE>      مسار ملف .evtx واحد
+  -d, --directory <DIR>  دليل يحتوي على ملفات .evtx متعددة (or VHDX images with --vhdx)
+  -f, --file <FILE>      مسار ملف .evtx واحد (or a VHDX image with --vhdx)
+      --vhdx             Scan VHDX images read-only; -d searches up to three subdirectory levels (Linux/FUSE)
   -l, --live-analysis    تحليل مجلد C:\Windows\System32\winevt\Logs المحلي
 
 General Options:
@@ -199,8 +201,9 @@ Usage:
   hayabusa.exe extract-base64 <INPUT> [OPTIONS]
 
 Input:
-  -d, --directory <DIR>  دليل يحتوي على ملفات .evtx متعددة
-  -f, --file <FILE>      مسار ملف .evtx واحد
+  -d, --directory <DIR>  دليل يحتوي على ملفات .evtx متعددة (or VHDX images with --vhdx)
+  -f, --file <FILE>      مسار ملف .evtx واحد (or a VHDX image with --vhdx)
+      --vhdx             Scan VHDX images read-only; -d searches up to three subdirectory levels (Linux/FUSE)
   -l, --live-analysis    تحليل مجلد C:\Windows\System32\winevt\Logs المحلي
 
 General Options:
@@ -284,8 +287,9 @@ Usage:
   hayabusa.exe log-metrics <INPUT> [OPTIONS]
 
 Input:
-  -d, --directory <DIR>  دليل يحتوي على ملفات .evtx متعددة
-  -f, --file <FILE>      مسار ملف .evtx واحد
+  -d, --directory <DIR>  دليل يحتوي على ملفات .evtx متعددة (or VHDX images with --vhdx)
+  -f, --file <FILE>      مسار ملف .evtx واحد (or a VHDX image with --vhdx)
+      --vhdx             Scan VHDX images read-only; -d searches up to three subdirectory levels (Linux/FUSE)
   -l, --live-analysis    تحليل مجلد C:\Windows\System32\winevt\Logs المحلي
 
 General Options:
@@ -357,8 +361,9 @@ Usage:
   hayabusa.exe logon-summary <INPUT> [OPTIONS]
 
 Input:
-  -d, --directory <DIR>  دليل يحتوي على ملفات .evtx متعددة
-  -f, --file <FILE>      مسار ملف .evtx واحد
+  -d, --directory <DIR>  دليل يحتوي على ملفات .evtx متعددة (or VHDX images with --vhdx)
+  -f, --file <FILE>      مسار ملف .evtx واحد (or a VHDX image with --vhdx)
+      --vhdx             Scan VHDX images read-only; -d searches up to three subdirectory levels (Linux/FUSE)
   -l, --live-analysis    تحليل مجلد C:\Windows\System32\winevt\Logs المحلي
 
 General Options:
@@ -430,8 +435,9 @@ Usage:
   hayabusa.exe pivot-keywords-list <INPUT> [OPTIONS]
 
 Input:
-  -d, --directory <DIR>  دليل يحتوي على ملفات .evtx متعددة
-  -f, --file <FILE>      مسار ملف .evtx واحد
+  -d, --directory <DIR>  دليل يحتوي على ملفات .evtx متعددة (or VHDX images with --vhdx)
+  -f, --file <FILE>      مسار ملف .evtx واحد (or a VHDX image with --vhdx)
+      --vhdx             Scan VHDX images read-only; -d searches up to three subdirectory levels (Linux/FUSE)
   -l, --live-analysis    تحليل مجلد C:\Windows\System32\winevt\Logs المحلي
 
 General Options:
@@ -517,8 +523,9 @@ General Options:
   -V, --validate-checksums             تفعيل التحقق من المجاميع الاختبارية
 
 Input:
-  -d, --directory <DIR>  دليل يحتوي على ملفات .evtx متعددة
-  -f, --file <FILE>      مسار ملف .evtx واحد
+  -d, --directory <DIR>  دليل يحتوي على ملفات .evtx متعددة (or VHDX images with --vhdx)
+  -f, --file <FILE>      مسار ملف .evtx واحد (or a VHDX image with --vhdx)
+      --vhdx             Scan VHDX images read-only; -d searches up to three subdirectory levels (Linux/FUSE)
   -l, --live-analysis    تحليل مجلد C:\Windows\System32\winevt\Logs المحلي
 
 Filtering:

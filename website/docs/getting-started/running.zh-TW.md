@@ -86,3 +86,16 @@ chmod +x ./hayabusa
 ![Mac Error 3 EN](../assets/screenshots/MacOS-RunError-3-EN.png)
 
 現在你應該可以執行 hayabusa 了。
+
+## Linux 上的 VHDX 輸入
+
+所有事件記錄分析命令皆支援 `--vhdx`，搭配 `-f <IMAGE.vhdx>` 或 `-d <DIR>`。映像探索範圍包含指定目錄及其下最多三層子目錄；映像內部則不受此深度限制，會搜尋所有可讀取的 NTFS 磁碟區。
+
+```bash
+./hayabusa dfir-timeline --vhdx -f host.vhdx -w -U -p verbose -o timeline.csv
+./hayabusa dfir-timeline --vhdx -d images/ -w -U -p verbose -o timeline.csv
+```
+
+使用與 Juntei 相同的後端以唯讀方式掛載。需要 Linux、`/dev/fuse` 存取權與 `fusermount3`，不必安裝 Juntei。分析完成或收到中斷訊號時會卸載映像。證據路徑保留為 `host.vhdx!/path/log.evtx`。不支援 BitLocker 或需要外部父映像的差異映像。
+
+[English: VHDX input details and limitations](https://yamato-security.github.io/hayabusa/getting-started/running/#vhdx-inputs-linux).

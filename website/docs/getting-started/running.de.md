@@ -86,3 +86,16 @@ Die folgende Warnung wird angezeigt, klicken Sie also bitte auf "Öffnen".
 ![Mac Error 3 EN](../assets/screenshots/MacOS-RunError-3-EN.png)
 
 Sie sollten nun in der Lage sein, Hayabusa auszuführen.
+
+## VHDX-Eingaben unter Linux
+
+Alle Befehle zur Ereignislog-Analyse unterstützen `--vhdx` zusammen mit `-f <IMAGE.vhdx>` oder `-d <DIR>`. Die Bildsuche erfasst das angegebene Verzeichnis und drei Unterverzeichnisebenen. Innerhalb der Bilder werden alle lesbaren NTFS-Volumes ohne diese Tiefenbegrenzung durchsucht.
+
+```bash
+./hayabusa dfir-timeline --vhdx -f host.vhdx -w -U -p verbose -o timeline.csv
+./hayabusa dfir-timeline --vhdx -d images/ -w -U -p verbose -o timeline.csv
+```
+
+Die Bilder werden mit demselben Backend wie in Juntei schreibgeschützt eingebunden. Linux, Zugriff auf `/dev/fuse` und `fusermount3` sind erforderlich, eine Juntei-Installation nicht. Nach der Analyse und bei Unterbrechungen werden die Bilder ausgehängt. Beweispfade bleiben als `host.vhdx!/path/log.evtx` erhalten. BitLocker und Bilder mit extern benötigtem Differenzierungs-Elternbild werden nicht unterstützt.
+
+[English: VHDX input details and limitations](https://yamato-security.github.io/hayabusa/getting-started/running/#vhdx-inputs-linux).

@@ -12,8 +12,9 @@ Usage:
   hayabusa.exe config-critical-systems <INPUT> [OPTIONS]
 
 Input:
-  -d, --directory <DIR>  Каталог з кількома файлами .evtx
-  -f, --file <FILE>      Шлях до одного файлу .evtx
+  -d, --directory <DIR>  Каталог з кількома файлами .evtx (or VHDX images with --vhdx)
+  -f, --file <FILE>      Шлях до одного файлу .evtx (or a VHDX image with --vhdx)
+      --vhdx             Scan VHDX images read-only; -d searches up to three subdirectory levels (Linux/FUSE)
 
 Display Settings:
   -K, --no-color  Вимкнути кольоровий вивід

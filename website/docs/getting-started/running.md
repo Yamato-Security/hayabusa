@@ -86,3 +86,26 @@ The following warning will pop up, so please click "Open".
 ![Mac Error 3 EN](../assets/screenshots/MacOS-RunError-3-EN.png)
 
 You should now be able to run hayabusa.
+
+## VHDX inputs (Linux)
+
+All event-log scanning commands accept `--vhdx` with `-f <IMAGE.vhdx>` or `-d <IMAGE_DIRECTORY>`. Directory discovery checks the supplied root and up to three subdirectory levels; the log search inside each image has no three-level limit. All readable NTFS volumes are searched.
+
+```bash
+# One image
+./hayabusa dfir-timeline --vhdx -f host.vhdx -w -U -p verbose -o timeline.csv
+
+# A directory of images
+./hayabusa dfir-timeline --vhdx -d images/ -w -U -p verbose -o timeline.csv
+
+# Inspect the logs inside the images
+./hayabusa log-metrics --vhdx -d images/ -U -o logs.csv
+```
+
+The images are mounted read-only through the same `ys-vhdx-mount` backend as Juntei. Linux, access to `/dev/fuse`, and `fusermount3` are required; root privileges and a Juntei installation are not required. On Debian/Ubuntu, install the runtime helper with `sudo apt install fuse3`. Image contents are read directly rather than extracted to a working copy. Hayabusa unmounts its images after the scan and on Ctrl+C, SIGTERM, or SIGHUP.
+
+This input mode works with `dfir-timeline`, `search`, `eid-metrics`, `log-metrics`, `logon-summary`, `computer-metrics`, `extract-base64`, `pivot-keywords-list`, and `config-critical-systems`. Other options still apply, including `-J` for JSON event files on commands supporting JSON input. Use `--vhdx` explicitly: ordinary `-d` scans continue to look for event logs.
+
+Evidence filenames use `host.vhdx!/Windows/.../Security.evtx`; multi-volume images include `Volume1`, `Volume2`, and so on. This identifies the image and internal path without persisting a temporary mount path. Inputs cannot be reused as output files, including through symbolic or hard links.
+
+Unreadable images, unreadable partitions, or images without matching logs cause a nonzero exit status. If some images fail, readable images can still produce scan results; treat those results as incomplete and check the warnings. The backend reads NTFS volumes only. BitLocker-encrypted volumes and images requiring an external differencing parent are not supported by this mounting mode. On Windows or macOS, mount the image read-only using a platform tool and scan the mounted event-log directory with `-d`.
