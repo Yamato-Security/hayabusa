@@ -1723,12 +1723,19 @@ Any hostnames added to the critical_systems.txt file will have all alerts above 
             }
             self.analysis_files(files, time_filter, stored_static, html_reporter);
         }
-        for problem in stored_static.vhdx_files.late_problems() {
-            AlertMessage::alert(&problem).ok();
+        let late_problems = stored_static.vhdx_files.late_problems();
+        for problem in &late_problems {
+            AlertMessage::alert(problem).ok();
+        }
+        if !late_problems.is_empty() {
             self.incomplete_input.set(true);
             if stored_static.html_report_flag {
                 let mut lines = Nested::new();
-                lines.push(format!("**Incomplete {label} input:** {problem}"));
+                // Image filenames and reader diagnostics are untrusted text;
+                // do not render them as report Markdown or embedded HTML.
+                lines.push(format!(
+                    "**Incomplete {label} input:** Some image data could not be read. See the console warnings for details."
+                ));
                 html_reporter.add_md_data(htmlreport::GENERAL_OVERVIEW_SECTION, lines);
             }
         }
