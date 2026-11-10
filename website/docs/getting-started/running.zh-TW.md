@@ -101,3 +101,15 @@ chmod +x ./hayabusa
 透過與 Juntei 共用的可攜式 NTFS API，支援 **Linux、macOS 與 Windows 的原生分析**。直接以可尋址的唯讀串流讀取檔案，不需要 FUSE、掛載驅動程式、管理員權限或暫存解壓縮。原始映像保持不變。證據路徑為 `host.vhdx!/path/log.evtx`。不支援 BitLocker 或需要外部父映像的映像。
 
 [English: VHDX input details and limitations](https://yamato-security.github.io/hayabusa/getting-started/running/#vhdx-inputs).
+
+## E01/Ex01 { #e01-inputs }
+
+使用 `--e01` 可在 Linux、macOS 和 Windows 上直接掃描實體 EWF1 (`.E01`) 和 EWF2 (`.Ex01`) 映像，不需要 FUSE、管理員權限或暫存解壓縮。請指定第一個分段，並將其餘分段以原始名稱保留在同一目錄。`-d` 搜尋最多三層子目錄，`--vhdx --e01` 可分析混合目錄。支援含 NTFS 分割區的磁碟與單一 NTFS 磁碟區。損毀資料會回報並以非零狀態結束，同時保留可讀取的結果。這不代表完成整個媒體的完整性驗證。不支援邏輯 `.L01`/`.Lx01`、需要密碼的加密 EWF 或 BitLocker。
+
+```bash
+./hayabusa dfir-timeline --e01 -f disk.E01 -w -U -p verbose -o timeline.csv
+./hayabusa log-metrics --e01 -d images/ -U -o logs.csv
+./hayabusa dfir-timeline --vhdx --e01 -d images/ -w -U -o timeline.csv
+```
+
+[English: E01/Ex01 details](https://yamato-security.github.io/hayabusa/getting-started/running/#e01-inputs).

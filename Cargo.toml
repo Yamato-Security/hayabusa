@@ -4,7 +4,7 @@ version = "4.3.1"
 repository = "https://github.com/Yamato-Security/hayabusa"
 authors = ["Yamato Security @SecurityYamato"]
 edition = "2024"
-rust-version = "1.97.1"
+rust-version = "1.99"
 build = "build.rs"
 include = ["src/**/*", "build.rs", "LICENSE.txt", "README.md", "CHANGELOG.md"]
 
@@ -82,6 +82,9 @@ same-file = "1"
 
 # Juntei's portable read-only NTFS image API, using its AGPL licence alternative.
 ys_vhdx_mount = { package = "ys-vhdx-mount", git = "https://github.com/Yamato-Security/ys-vhdx-parser", rev = "2ed3526aa52aa559db947ba69d6299c9e4d25288" }
+
+# Read-only EWF container decoding; the existing NTFS API provides file streams.
+ewf_image = { package = "ys-e01-parser", git = "https://github.com/Yamato-Security/ys-e01-parser", rev = "40d879427da85fca680f11b027fb7715ac4e98b9", default-features = false, features = ["verify"] }
 
 [dev-dependencies]
 tempfile = "3"

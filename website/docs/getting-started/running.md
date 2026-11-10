@@ -109,3 +109,26 @@ This input mode works with `dfir-timeline`, `search`, `eid-metrics`, `log-metric
 Evidence filenames use `host.vhdx!/Windows/.../Security.evtx`; multi-volume images include `Volume1`, `Volume2`, and so on. This identifies the image and internal path without relying on a mount path. Inputs cannot be reused as output files, including through symbolic or hard links.
 
 Unreadable images, unreadable partitions, or images without matching logs cause a nonzero exit status. If some images or directories fail but usable logs remain, the scan still saves the readable results, including HTML reports and pivot files. The HTML report is marked incomplete and the command exits nonzero. Check the warnings to identify missing input. The backend reads NTFS volumes only. BitLocker-encrypted volumes and images requiring an external differencing parent are not supported by this input mode.
+
+## E01/Ex01 inputs { #e01-inputs }
+
+Use `--e01` to scan physical EWF1 (`.E01`) or EWF2 (`.Ex01`) images directly. This works with all the event-log scanning commands listed above, on Linux, macOS and Windows. No FUSE, mounting driver, helper program, administrator privileges, full-disk export or temporary log extraction is required.
+
+```bash
+# Start with the first segment; keep companion segments beside it.
+./hayabusa dfir-timeline --e01 -f disk.E01 -w -U -p verbose -o timeline.csv
+
+# Discover first segments through three subdirectory levels.
+./hayabusa log-metrics --e01 -d images/ -U -o logs.csv
+
+# Scan a directory containing both container formats.
+./hayabusa dfir-timeline --vhdx --e01 -d images/ -w -U -o timeline.csv
+```
+
+The EWF reader decompresses accessed chunks into bounded memory caches. The portable NTFS reader then supplies seekable file streams directly to the EVTX or JSON parser (`-J` on commands supporting JSON input). It does not create extracted EVTX files or an OS-visible mount.
+
+Only first-segment filenames (`.E01` and `.Ex01`, case-insensitive) are discovered. Other segments are opened automatically from the same directory; preserve their original names. Continuation files such as `.E02` are not separate inputs. Whole disks with NTFS partitions and bare NTFS volumes are supported. Evidence filenames retain the original image, volume and internal path, such as `disk.E01!/Volume1/Windows/System32/winevt/Logs/Security.evtx`.
+
+Every matching companion segment is protected against output replacement, including malformed companions and symbolic/hard-link aliases. If an image or accessed data is incomplete, Hayabusa retains readable results, reports the damage, marks HTML reports incomplete and exits nonzero. Acquisition-error sectors already recorded as zeros are explicitly reported. A successful scan is **not a full-media integrity verification**: it does not read every sector or compare the complete media against stored acquisition hashes.
+
+The filesystem reader supports NTFS only. Logical `.L01`/`.Lx01` evidence, encrypted EWF images requiring a password, and BitLocker volumes are not supported by this input mode. Large images still need enough RAM for parser state, filesystem metadata and container caches, plus disk space for results. Image data is opened read-only.

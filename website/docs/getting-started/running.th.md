@@ -101,3 +101,15 @@ chmod +x ./hayabusa
 การสแกนแบบเนทีฟทำงานบน **Linux, macOS และ Windows** ผ่าน NTFS API แบบพกพาที่ใช้ร่วมกับ Juntei โดยอ่านไฟล์โดยตรงเป็นสตรีมแบบอ่านอย่างเดียวที่เลื่อนตำแหน่งได้ ไม่ต้องใช้ FUSE ไดรเวอร์เมานต์ สิทธิ์ผู้ดูแลระบบ หรือการแตกไฟล์ชั่วคราว อิมเมจต้นฉบับไม่ถูกแก้ไข พาธหลักฐานมีรูปแบบ `host.vhdx!/path/log.evtx` ไม่รองรับ BitLocker หรืออิมเมจที่ต้องใช้อิมเมจแม่จากภายนอก
 
 [English: VHDX input details and limitations](https://yamato-security.github.io/hayabusa/getting-started/running/#vhdx-inputs).
+
+## E01/Ex01 { #e01-inputs }
+
+`--e01` สแกนอิมเมจแบบ physical EWF1 (`.E01`) และ EWF2 (`.Ex01`) โดยตรงบน Linux, macOS และ Windows โดยไม่ต้องใช้ FUSE สิทธิ์ผู้ดูแลระบบ หรือการแตกไฟล์ชั่วคราว ระบุเซกเมนต์แรกและเก็บเซกเมนต์อื่นด้วยชื่อเดิมในไดเรกทอรีเดียวกัน `-d` ค้นหาลึกสามระดับ และ `--vhdx --e01` รองรับไดเรกทอรีที่มีทั้งสองรูปแบบ รองรับดิสก์ที่มีพาร์ทิชัน NTFS และโวลุ่ม NTFS เดี่ยว เมื่อพบความเสียหายจะรายงาน เก็บผลลัพธ์ที่อ่านได้ และออกด้วยรหัสที่ไม่ใช่ศูนย์ นี่ไม่ใช่การตรวจสอบความสมบูรณ์ของทั้งสื่อ ไม่รองรับ logical `.L01`/`.Lx01`, EWF ที่ต้องใช้รหัสผ่าน หรือ BitLocker
+
+```bash
+./hayabusa dfir-timeline --e01 -f disk.E01 -w -U -p verbose -o timeline.csv
+./hayabusa log-metrics --e01 -d images/ -U -o logs.csv
+./hayabusa dfir-timeline --vhdx --e01 -d images/ -w -U -o timeline.csv
+```
+
+[English: E01/Ex01 details](https://yamato-security.github.io/hayabusa/getting-started/running/#e01-inputs).

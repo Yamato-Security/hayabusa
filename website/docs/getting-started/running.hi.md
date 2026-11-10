@@ -101,3 +101,15 @@ macOS के नवीनतम संस्करण पर, जब आप इ�
 Juntei के साथ साझा पोर्टेबल NTFS API से **Linux, macOS और Windows** पर मूल रूप से स्कैन किया जा सकता है। फ़ाइलें सीधे केवल पढ़ने योग्य, सीक करने योग्य स्ट्रीम के रूप में खुलती हैं। FUSE, माउंट ड्राइवर, व्यवस्थापक अधिकार या अस्थायी निष्कर्षण की आवश्यकता नहीं है। मूल इमेज अपरिवर्तित रहती है। साक्ष्य पथ `host.vhdx!/path/log.evtx` रूप में रहते हैं। BitLocker और बाहरी पैरेंट इमेज पर निर्भर इमेज समर्थित नहीं हैं।
 
 [English: VHDX input details and limitations](https://yamato-security.github.io/hayabusa/getting-started/running/#vhdx-inputs).
+
+## E01/Ex01 { #e01-inputs }
+
+`--e01` Linux, macOS और Windows पर भौतिक EWF1 (`.E01`) तथा EWF2 (`.Ex01`) इमेज सीधे स्कैन करता है। FUSE, व्यवस्थापक अधिकार या अस्थायी निष्कर्षण की आवश्यकता नहीं है। पहला सेगमेंट दें और बाकी मूल नामों के साथ उसी डायरेक्टरी में रखें। `-d` तीन उपडायरेक्टरी स्तर खोजता है; `--vhdx --e01` मिश्रित डायरेक्टरी स्वीकार करता है। NTFS पार्टिशन वाले डिस्क और एकल NTFS वॉल्यूम समर्थित हैं। क्षति बताई जाती है, पढ़ने योग्य परिणाम सुरक्षित रहते हैं और निकास कोड गैर-शून्य होता है। यह पूरे मीडिया का अखंडता सत्यापन नहीं है। लॉजिकल `.L01`/`.Lx01`, पासवर्ड वाले EWF और BitLocker समर्थित नहीं हैं।
+
+```bash
+./hayabusa dfir-timeline --e01 -f disk.E01 -w -U -p verbose -o timeline.csv
+./hayabusa log-metrics --e01 -d images/ -U -o logs.csv
+./hayabusa dfir-timeline --vhdx --e01 -d images/ -w -U -o timeline.csv
+```
+
+[English: E01/Ex01 details](https://yamato-security.github.io/hayabusa/getting-started/running/#e01-inputs).

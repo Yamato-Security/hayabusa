@@ -101,3 +101,15 @@ Semua perintah analisis log peristiwa mendukung `--vhdx` dengan `-f <IMAGE.vhdx>
 Pemindaian native berjalan di **Linux, macOS, dan Windows** melalui API NTFS portabel yang digunakan bersama Juntei. Berkas dibaca langsung sebagai aliran hanya-baca yang dapat diposisikan, tanpa FUSE, driver mount, hak administrator, atau ekstraksi sementara. Citra sumber tidak diubah. Jalur bukti menggunakan `host.vhdx!/path/log.evtx`. BitLocker dan citra yang memerlukan citra induk eksternal tidak didukung.
 
 [English: VHDX input details and limitations](https://yamato-security.github.io/hayabusa/getting-started/running/#vhdx-inputs).
+
+## E01/Ex01 { #e01-inputs }
+
+`--e01` memindai image fisik EWF1 (`.E01`) dan EWF2 (`.Ex01`) langsung di Linux, macOS, dan Windows tanpa FUSE, hak administrator, atau ekstraksi sementara. Tentukan segmen pertama dan simpan segmen lain dengan nama aslinya di direktori yang sama. `-d` mencari hingga tiga tingkat subdirektori; `--vhdx --e01` menerima direktori campuran. Disk dengan partisi NTFS dan volume NTFS tunggal didukung. Kerusakan dilaporkan, hasil yang terbaca dipertahankan, dan kode keluar bukan nol. Ini bukan verifikasi integritas seluruh media. `.L01`/`.Lx01` logis, EWF yang memerlukan kata sandi, dan BitLocker tidak didukung.
+
+```bash
+./hayabusa dfir-timeline --e01 -f disk.E01 -w -U -p verbose -o timeline.csv
+./hayabusa log-metrics --e01 -d images/ -U -o logs.csv
+./hayabusa dfir-timeline --vhdx --e01 -d images/ -w -U -o timeline.csv
+```
+
+[English: E01/Ex01 details](https://yamato-security.github.io/hayabusa/getting-started/running/#e01-inputs).

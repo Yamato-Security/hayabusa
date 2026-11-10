@@ -101,3 +101,15 @@ Event log စစ်ဆေးသည့် command အားလုံးတွင�
 Juntei နှင့်မျှဝေထားသော portable NTFS API ဖြင့် **Linux၊ macOS နှင့် Windows** တွင် native scan လုပ်နိုင်သည်။ ဖိုင်များကို read-only seekable stream အဖြစ် တိုက်ရိုက်ဖတ်သဖြင့် FUSE၊ mount driver၊ administrator အခွင့်အရေးနှင့် ယာယီထုတ်ယူခြင်း မလိုအပ်ပါ။ မူရင်း image ကို မပြောင်းလဲပါ။ အထောက်အထားလမ်းကြောင်းမှာ `host.vhdx!/path/log.evtx` ဖြစ်သည်။ BitLocker နှင့် ပြင်ပ parent image လိုအပ်သော image များကို မပံ့ပိုးပါ။
 
 [English: VHDX input details and limitations](https://yamato-security.github.io/hayabusa/getting-started/running/#vhdx-inputs).
+
+## E01/Ex01 { #e01-inputs }
+
+`--e01` သည် Linux၊ macOS နှင့် Windows တွင် physical EWF1 (`.E01`) နှင့် EWF2 (`.Ex01`) image များကို FUSE၊ administrator ခွင့် သို့မဟုတ် ယာယီဖြည်ထုတ်ခြင်းမလိုဘဲ တိုက်ရိုက် scan လုပ်သည်။ ပထမ segment ကို သတ်မှတ်ပြီး ကျန် segment များကို မူရင်းအမည်ဖြင့် directory တစ်ခုတည်းတွင် ထားပါ။ `-d` သည် subdirectory သုံးဆင့်အထိ ရှာပြီး `--vhdx --e01` သည် ရောနှောထားသော directory ကို လက်ခံသည်။ NTFS partition ပါသည့် disk နှင့် NTFS volume တစ်ခုတည်းကို ပံ့ပိုးသည်။ ပျက်စီးမှုကို ဖော်ပြပြီး ဖတ်ရသောရလဒ်များကို သိမ်းကာ nonzero code ဖြင့် ထွက်သည်။ Media တစ်ခုလုံး၏ integrity verification မဟုတ်ပါ။ Logical `.L01`/`.Lx01`၊ password လိုသော EWF နှင့် BitLocker ကို မပံ့ပိုးပါ။
+
+```bash
+./hayabusa dfir-timeline --e01 -f disk.E01 -w -U -p verbose -o timeline.csv
+./hayabusa log-metrics --e01 -d images/ -U -o logs.csv
+./hayabusa dfir-timeline --vhdx --e01 -d images/ -w -U -o timeline.csv
+```
+
+[English: E01/Ex01 details](https://yamato-security.github.io/hayabusa/getting-started/running/#e01-inputs).

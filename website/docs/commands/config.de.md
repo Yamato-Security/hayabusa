@@ -15,6 +15,7 @@ Input:
   -d, --directory <DIR>  Verzeichnis mit mehreren .evtx-Dateien (or VHDX images with --vhdx)
   -f, --file <FILE>      Dateipfad zu einer .evtx-Datei (or a VHDX image with --vhdx)
       --vhdx             Scan VHDX images read-only; -d searches up to three subdirectory levels
+      --e01              Scan E01/Ex01 images read-only without extraction; -d searches three subdirectory levels
 
 Display Settings:
   -K, --no-color  Farbausgabe deaktivieren
