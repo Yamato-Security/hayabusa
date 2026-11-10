@@ -479,7 +479,7 @@ impl App {
         }
 
         if let Some(options) = &stored_static.output_option
-            && options.input_args.vhdx
+            && options.input_args.image_input()
             && let Err(e) = hayabusa::vhdx::discover(&options.input_args).and_then(|images| {
                 hayabusa::vhdx::protect_outputs(
                     &images,
@@ -753,7 +753,7 @@ impl App {
                     && stored_static
                         .output_option
                         .as_ref()
-                        .is_some_and(|o| o.input_args.vhdx)
+                        .is_some_and(|o| o.input_args.image_input())
                 {
                     return;
                 }
@@ -804,7 +804,7 @@ impl App {
                     && stored_static
                         .output_option
                         .as_ref()
-                        .is_some_and(|o| o.input_args.vhdx)
+                        .is_some_and(|o| o.input_args.image_input())
                 {
                     return;
                 }
@@ -856,7 +856,7 @@ impl App {
                     && stored_static
                         .output_option
                         .as_ref()
-                        .is_some_and(|o| o.input_args.vhdx)
+                        .is_some_and(|o| o.input_args.image_input())
                 {
                     return;
                 }
@@ -919,7 +919,7 @@ impl App {
                     && stored_static
                         .output_option
                         .as_ref()
-                        .is_some_and(|o| o.input_args.vhdx)
+                        .is_some_and(|o| o.input_args.image_input())
                 {
                     return;
                 }
@@ -957,7 +957,7 @@ impl App {
                     && stored_static
                         .output_option
                         .as_ref()
-                        .is_some_and(|o| o.input_args.vhdx)
+                        .is_some_and(|o| o.input_args.image_input())
                 {
                     return;
                 }
@@ -1579,7 +1579,7 @@ Any hostnames added to the critical_systems.txt file will have all alerts above 
         if stored_static
             .output_option
             .as_ref()
-            .is_some_and(|o| o.input_args.vhdx)
+            .is_some_and(|o| o.input_args.image_input())
         {
             self.analysis_vhdx(target_extensions, time_filter, stored_static, html_reporter);
             return;
@@ -1683,6 +1683,7 @@ Any hostnames added to the critical_systems.txt file will have all alerts above 
     ) {
         use hayabusa::vhdx;
         let input = &stored_static.output_option.as_ref().unwrap().input_args;
+        let label = input.image_label();
         let images = match vhdx::discover(input).and_then(|images| {
             vhdx::protect_outputs(&images, &vhdx::output_paths(stored_static))?;
             Ok(images)
@@ -1699,16 +1700,21 @@ Any hostnames added to the critical_systems.txt file will have all alerts above 
             AlertMessage::alert(problem).ok();
             self.incomplete_input.set(true);
         }
-        println!("VHDX images opened read-only: {}", inputs.image_count);
+        println!("{label} images opened read-only: {}", inputs.image_count);
         let files = inputs.paths();
         stored_static.vhdx_files = inputs;
         if files.is_empty() {
-            AlertMessage::alert("No matching event logs were found inside the VHDX images.").ok();
+            AlertMessage::alert(&format!(
+                "No matching event logs were found inside the {label} images."
+            ))
+            .ok();
             self.failed.set(true);
         } else {
             if self.incomplete_input.get() {
-                let warning = "Incomplete VHDX input: some image data could not be processed. Results contain only readable input.";
-                AlertMessage::warn(warning).ok();
+                let warning = format!(
+                    "Incomplete {label} input: some image data could not be processed. Results contain only readable input."
+                );
+                AlertMessage::warn(&warning).ok();
                 if stored_static.html_report_flag {
                     let mut lines = Nested::new();
                     lines.push(format!("**{warning}**"));
@@ -1716,6 +1722,22 @@ Any hostnames added to the critical_systems.txt file will have all alerts above 
                 }
             }
             self.analysis_files(files, time_filter, stored_static, html_reporter);
+        }
+        let late_problems = stored_static.vhdx_files.late_problems();
+        for problem in &late_problems {
+            AlertMessage::alert(problem).ok();
+        }
+        if !late_problems.is_empty() {
+            self.incomplete_input.set(true);
+            if stored_static.html_report_flag {
+                let mut lines = Nested::new();
+                // Image filenames and reader diagnostics are untrusted text;
+                // do not render them as report Markdown or embedded HTML.
+                lines.push(format!(
+                    "**Incomplete {label} input:** Some image data could not be read. See the console warnings for details."
+                ));
+                html_reporter.add_md_data(htmlreport::GENERAL_OVERVIEW_SECTION, lines);
+            }
         }
         stored_static.vhdx_files = vhdx::Catalog::default();
     }

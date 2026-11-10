@@ -12,3 +12,5 @@ pub mod yaml_expand;
 
 #[macro_use]
 extern crate horrorshow;
+
+mod ewf;

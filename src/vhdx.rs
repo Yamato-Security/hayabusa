@@ -1,24 +1,32 @@
 //! Read-only image inputs shared by the event-log scanning commands.
 
 use crate::detections::configs::InputOption;
-use std::collections::HashSet;
+use std::collections::{BTreeSet, HashSet};
 use std::fs;
 use std::io::{self, Read, Seek, SeekFrom};
 use std::path::{Path, PathBuf};
-use std::sync::Arc;
+use std::sync::{Arc, Mutex};
 use ys_vhdx_mount::image::{Image, ROOT_RECORD};
 
 /// Root-level images and images in at most three nested directories are considered.
 pub const IMAGE_SEARCH_DEPTH: usize = 3;
 
-fn is_image(path: &Path) -> bool {
-    path.extension()
-        .is_some_and(|ext| ext.eq_ignore_ascii_case("vhdx"))
+fn is_image(path: &Path, input: &InputOption) -> bool {
+    ((input.vhdx || !input.e01)
+        && path
+            .extension()
+            .is_some_and(|ext| ext.eq_ignore_ascii_case("vhdx")))
+        || (input.e01 && crate::ewf::is_first_segment(path))
 }
 
 /// Discover only images, without following directory symlinks or repeating overlapping inputs.
 pub fn discover(input: &InputOption) -> io::Result<Vec<PathBuf>> {
-    fn visit(dir: &Path, depth: usize, files: &mut Vec<PathBuf>) -> io::Result<()> {
+    fn visit(
+        dir: &Path,
+        depth: usize,
+        files: &mut Vec<PathBuf>,
+        input: &InputOption,
+    ) -> io::Result<()> {
         let mut entries = fs::read_dir(dir)
             .map_err(|e| io::Error::new(e.kind(), format!("{}: {e}", dir.display())))?
             .collect::<io::Result<Vec<_>>>()?;
@@ -27,8 +35,10 @@ pub fn discover(input: &InputOption) -> io::Result<Vec<PathBuf>> {
             let kind = entry.file_type()?;
             let path = entry.path();
             if kind.is_dir() && depth < IMAGE_SEARCH_DEPTH {
-                visit(&path, depth + 1, files)?;
-            } else if (kind.is_file() || (kind.is_symlink() && path.is_file())) && is_image(&path) {
+                visit(&path, depth + 1, files, input)?;
+            } else if (kind.is_file() || (kind.is_symlink() && path.is_file()))
+                && is_image(&path, input)
+            {
                 files.push(path);
             }
         }
@@ -36,54 +46,74 @@ pub fn discover(input: &InputOption) -> io::Result<Vec<PathBuf>> {
     }
     if input.live_analysis {
         return Err(io::Error::other(
-            "--vhdx cannot be combined with --live-analysis",
+            "Image input (--vhdx/--e01) cannot be combined with --live-analysis",
         ));
     }
     let mut files = Vec::new();
     if let Some(path) = &input.filepath {
-        if !path.is_file() || !is_image(path) {
+        if !path.is_file() || !is_image(path, input) {
+            let expected = match (input.vhdx, input.e01) {
+                (true, true) => "a VHDX file or an E01/Ex01 first segment",
+                (false, true) => "an E01/Ex01 first segment",
+                _ => "a VHDX file",
+            };
             return Err(io::Error::other(format!(
-                "Not a VHDX file: {}",
+                "Not {expected}: {}",
                 path.display()
             )));
         }
         files.push(path.clone());
     } else if let Some(dirs) = &input.directory {
         for dir in dirs {
-            visit(dir, 0, &mut files)?;
+            visit(dir, 0, &mut files, input)?;
         }
     } else {
-        return Err(io::Error::other("--vhdx requires -f <FILE> or -d <DIR>"));
+        return Err(io::Error::other(
+            "--vhdx/--e01 requires -f <FILE> or -d <DIR>",
+        ));
     }
     files.sort();
     let mut unique = HashSet::new();
     let mut result = Vec::new();
     for path in files {
-        if unique.insert(path.canonicalize()?) {
+        let identity = if crate::ewf::is_first_segment(&path) {
+            crate::ewf::family_path(&path)?
+        } else {
+            path.canonicalize()?
+        };
+        if unique.insert(identity) {
             result.push(path);
         }
     }
     if result.is_empty() {
-        return Err(io::Error::other(
-            "No .vhdx images found within three subdirectory levels",
-        ));
+        return Err(io::Error::other(format!(
+            "No {} images found within three subdirectory levels",
+            input.image_label()
+        )));
     }
     Ok(result)
 }
 
 /// An output must never truncate an input image, even through a symbolic or hard link.
 pub fn protect_outputs(images: &[PathBuf], outputs: &[PathBuf]) -> io::Result<()> {
+    let sources = images
+        .iter()
+        .map(|path| crate::ewf::source_paths(path))
+        .collect::<io::Result<Vec<_>>>()?
+        .into_iter()
+        .flatten()
+        .collect::<Vec<_>>();
     for output in outputs {
         match fs::metadata(output) {
             Ok(_) => {}
             Err(e) if e.kind() == io::ErrorKind::NotFound => continue,
             Err(e) => return Err(e),
         }
-        for image in images {
+        for image in &sources {
             let same = same_file::is_same_file(output, image)?;
             if same {
                 return Err(io::Error::other(format!(
-                    "Output {} is also a VHDX input and cannot be overwritten",
+                    "Output {} is also a disk-image input and cannot be overwritten",
                     output.display()
                 )));
             }
@@ -129,6 +159,8 @@ pub struct Catalog {
     files: Arc<std::collections::HashMap<PathBuf, NativeFile>>,
     pub problems: Arc<Vec<String>>,
     pub image_count: usize,
+    ewf_status: Arc<Vec<(PathBuf, ewf_image::Image)>>,
+    read_errors: Arc<Mutex<BTreeSet<String>>>,
 }
 
 #[derive(Clone)]
@@ -153,12 +185,24 @@ impl Catalog {
         let mut files = std::collections::HashMap::new();
         let mut problems = Vec::new();
         let mut image_count = 0;
+        let mut ewf_status = Vec::new();
         for path in images {
             if path.to_str().is_none() {
                 problems.push(format!("Image path is not valid UTF-8: {}", path.display()));
                 continue;
             }
-            let image = match Image::open(path) {
+            let opened = if crate::ewf::is_first_segment(path) {
+                crate::ewf::open(path).map(|opened| {
+                    for warning in crate::ewf::warnings(&opened.status) {
+                        problems.push(format!("{}: {warning}", path.display()));
+                    }
+                    ewf_status.push((path.clone(), opened.status));
+                    opened.image
+                })
+            } else {
+                Image::open(path)
+            };
+            let image = match opened {
                 Ok(image) => Arc::new(image),
                 Err(e) => {
                     problems.push(format!("Could not open {}: {e}", path.display()));
@@ -230,7 +274,27 @@ impl Catalog {
             files: Arc::new(files),
             problems: Arc::new(problems),
             image_count,
+            ewf_status: Arc::new(ewf_status),
+            read_errors: Arc::default(),
         }
+    }
+
+    /// Damage may first become visible while a scanner consumes an EVTX chunk.
+    pub fn late_problems(&self) -> Vec<String> {
+        let mut problems = self
+            .read_errors
+            .lock()
+            .unwrap_or_else(|p| p.into_inner())
+            .clone();
+        for (path, status) in self.ewf_status.iter() {
+            for warning in crate::ewf::warnings(status) {
+                problems.insert(format!("{}: {warning}", path.display()));
+            }
+        }
+        problems
+            .into_iter()
+            .filter(|problem| !self.problems.contains(problem))
+            .collect()
     }
 
     pub fn paths(&self) -> Vec<PathBuf> {
@@ -247,16 +311,58 @@ impl Catalog {
         if let Some(file) = self.files.get(path) {
             file.image
                 .file_reader(file.volume, file.record)
-                .map(InputReader::Image)
+                .inspect_err(|error| {
+                    self.read_errors
+                        .lock()
+                        .unwrap_or_else(|p| p.into_inner())
+                        .insert(format!("{}: {error}", path.display()));
+                })
+                .map(|reader| {
+                    InputReader::Image(TrackedImageReader {
+                        reader,
+                        path: path.to_path_buf(),
+                        errors: self.read_errors.clone(),
+                    })
+                })
         } else {
             fs::File::open(path.canonicalize()?).map(InputReader::File)
         }
     }
 }
 
+/// Keep image read failures visible even when a tolerant event parser continues.
+pub struct TrackedImageReader {
+    reader: ys_vhdx_mount::image::FileReader,
+    path: PathBuf,
+    errors: Arc<Mutex<BTreeSet<String>>>,
+}
+impl TrackedImageReader {
+    fn record<T>(&self, result: io::Result<T>) -> io::Result<T> {
+        if let Err(error) = &result {
+            self.errors
+                .lock()
+                .unwrap_or_else(|p| p.into_inner())
+                .insert(format!("{}: {error}", self.path.display()));
+        }
+        result
+    }
+}
+impl Read for TrackedImageReader {
+    fn read(&mut self, bytes: &mut [u8]) -> io::Result<usize> {
+        let result = self.reader.read(bytes);
+        self.record(result)
+    }
+}
+impl Seek for TrackedImageReader {
+    fn seek(&mut self, to: SeekFrom) -> io::Result<u64> {
+        let result = self.reader.seek(to);
+        self.record(result)
+    }
+}
+
 pub enum InputReader {
     File(fs::File),
-    Image(ys_vhdx_mount::image::FileReader),
+    Image(TrackedImageReader),
 }
 impl Read for InputReader {
     fn read(&mut self, buffer: &mut [u8]) -> io::Result<usize> {

@@ -101,3 +101,15 @@ chmod +x ./hayabusa
 Нативний аналіз працює в **Linux, macOS і Windows** через переносний NTFS API, спільний із Juntei. Файли читаються безпосередньо як потоки лише для читання з довільним позиціонуванням. FUSE, драйвер монтування, права адміністратора й тимчасове розпакування не потрібні. Вихідні образи не змінюються. Шляхи доказів мають формат `host.vhdx!/path/log.evtx`. BitLocker та образи із зовнішнім батьківським образом не підтримуються.
 
 [English: VHDX input details and limitations](https://yamato-security.github.io/hayabusa/getting-started/running/#vhdx-inputs).
+
+## E01/Ex01 { #e01-inputs }
+
+`--e01` безпосередньо сканує фізичні образи EWF1 (`.E01`) і EWF2 (`.Ex01`) у Linux, macOS та Windows без FUSE, прав адміністратора чи тимчасового розпакування. Укажіть перший сегмент, а інші збережіть із початковими назвами в тому самому каталозі. `-d` шукає до трьох рівнів підкаталогів; `--vhdx --e01` підтримує змішані каталоги. Підтримуються диски з розділами NTFS та окремі томи NTFS. Пошкодження повідомляються, читабельні результати зберігаються, код виходу ненульовий. Це не повна перевірка цілісності носія. Логічні `.L01`/`.Lx01`, EWF із паролем і BitLocker не підтримуються.
+
+```bash
+./hayabusa dfir-timeline --e01 -f disk.E01 -w -U -p verbose -o timeline.csv
+./hayabusa log-metrics --e01 -d images/ -U -o logs.csv
+./hayabusa dfir-timeline --vhdx --e01 -d images/ -w -U -o timeline.csv
+```
+
+[English: E01/Ex01 details](https://yamato-security.github.io/hayabusa/getting-started/running/#e01-inputs).

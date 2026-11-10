@@ -12,9 +12,10 @@ Usage:
   hayabusa.exe config-critical-systems <INPUT> [OPTIONS]
 
 Input:
-  -d, --directory <DIR>  包含多個 .evtx 檔案的目錄 (or VHDX images with --vhdx)
-  -f, --file <FILE>      單一 .evtx 檔案的檔案路徑 (or a VHDX image with --vhdx)
+  -d, --directory <DIR>  包含多個 .evtx 檔案的目錄 (or images with --vhdx/--e01)
+  -f, --file <FILE>      單一 .evtx 檔案的檔案路徑 (or an image with --vhdx/--e01)
       --vhdx             Scan VHDX images read-only; -d searches up to three subdirectory levels
+      --e01              Scan E01/Ex01 images read-only without extraction; -d searches three subdirectory levels
 
 Display Settings:
   -K, --no-color  停用彩色輸出

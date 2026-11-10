@@ -101,3 +101,15 @@ Todos los comandos de análisis de registros de eventos admiten `--vhdx` con `-f
 El análisis nativo funciona en **Linux, macOS y Windows** mediante la interfaz NTFS portátil compartida con Juntei. Los archivos se leen directamente como flujos de solo lectura con acceso por posición. No requiere FUSE, controladores de montaje, privilegios de administrador ni extracción temporal. Las imágenes originales permanecen intactas. Las rutas usan `host.vhdx!/path/log.evtx`. No se admiten BitLocker ni imágenes que necesiten una imagen principal externa.
 
 [English: VHDX input details and limitations](https://yamato-security.github.io/hayabusa/getting-started/running/#vhdx-inputs).
+
+## E01/Ex01 { #e01-inputs }
+
+`--e01` analiza directamente imágenes físicas EWF1 (`.E01`) y EWF2 (`.Ex01`) en Linux, macOS y Windows, sin FUSE, permisos de administrador ni extracción temporal. Indique el primer segmento y mantenga los demás con sus nombres originales en el mismo directorio. `-d` busca hasta tres niveles de subdirectorios; `--vhdx --e01` admite directorios mixtos. Se admiten discos con particiones NTFS y volúmenes NTFS individuales. Los daños se notifican, se conservan resultados legibles y se termina con un código distinto de cero. No es una verificación completa de integridad del medio. No se admiten `.L01`/`.Lx01` lógicos, EWF que requieran contraseña ni BitLocker.
+
+```bash
+./hayabusa dfir-timeline --e01 -f disk.E01 -w -U -p verbose -o timeline.csv
+./hayabusa log-metrics --e01 -d images/ -U -o logs.csv
+./hayabusa dfir-timeline --vhdx --e01 -d images/ -w -U -o timeline.csv
+```
+
+[English: E01/Ex01 details](https://yamato-security.github.io/hayabusa/getting-started/running/#e01-inputs).

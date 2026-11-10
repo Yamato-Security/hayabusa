@@ -267,6 +267,7 @@ mod tests {
                     recover_records: false,
                     time_offset: None,
                     vhdx: false,
+                    e01: false,
                 },
                 common_options: CommonOptions {
                     no_color: false,

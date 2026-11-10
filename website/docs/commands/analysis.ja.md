@@ -15,9 +15,10 @@ Usage:
   hayabusa.exe computer-metrics <INPUT> [OPTIONS]
 
 Input:
-  -d, --directory <DIR>  .evtxファイルを持つディレクトリのパス (or VHDX images with --vhdx)
-  -f, --file <FILE>      1つの.evtxファイルに対して解析を行う (or a VHDX image with --vhdx)
+  -d, --directory <DIR>  .evtxファイルを持つディレクトリのパス (or images with --vhdx/--e01)
+  -f, --file <FILE>      1つの.evtxファイルに対して解析を行う (or an image with --vhdx/--e01)
       --vhdx             Scan VHDX images read-only; -d searches up to three subdirectory levels
+      --e01              Scan E01/Ex01 images read-only without extraction; -d searches three subdirectory levels
   -l, --live-analysis    ローカル端末のC:\Windows\System32\winevt\Logsフォルダを解析する
 
 General Options:
@@ -61,9 +62,10 @@ Usage:
   hayabusa.exe eid-metrics <INPUT> [OPTIONS]
 
 Input:
-  -d, --directory <DIR>  .evtxファイルを持つディレクトリのパス (or VHDX images with --vhdx)
-  -f, --file <FILE>      1つの.evtxファイルに対して解析を行う (or a VHDX image with --vhdx)
+  -d, --directory <DIR>  .evtxファイルを持つディレクトリのパス (or images with --vhdx/--e01)
+  -f, --file <FILE>      1つの.evtxファイルに対して解析を行う (or an image with --vhdx/--e01)
       --vhdx             Scan VHDX images read-only; -d searches up to three subdirectory levels
+      --e01              Scan E01/Ex01 images read-only without extraction; -d searches three subdirectory levels
   -l, --live-analysis    ローカル端末のC:\Windows\System32\winevt\Logsフォルダを解析する
 
 General Options:
@@ -202,9 +204,10 @@ Usage:
   hayabusa.exe extract-base64 <INPUT> [OPTIONS]
 
 Input:
-  -d, --directory <DIR>  .evtxファイルを持つディレクトリのパス (or VHDX images with --vhdx)
-  -f, --file <FILE>      1つの.evtxファイルに対して解析を行う (or a VHDX image with --vhdx)
+  -d, --directory <DIR>  .evtxファイルを持つディレクトリのパス (or images with --vhdx/--e01)
+  -f, --file <FILE>      1つの.evtxファイルに対して解析を行う (or an image with --vhdx/--e01)
       --vhdx             Scan VHDX images read-only; -d searches up to three subdirectory levels
+      --e01              Scan E01/Ex01 images read-only without extraction; -d searches three subdirectory levels
   -l, --live-analysis    ローカル端末のC:\Windows\System32\winevt\Logsフォルダを解析する
 
 General Options:
@@ -289,9 +292,10 @@ Usage:
   hayabusa.exe log-metrics <INPUT> [OPTIONS]
 
 Input:
-  -d, --directory <DIR>  .evtxファイルを持つディレクトリのパス (or VHDX images with --vhdx)
-  -f, --file <FILE>      1つの.evtxファイルに対して解析を行う (or a VHDX image with --vhdx)
+  -d, --directory <DIR>  .evtxファイルを持つディレクトリのパス (or images with --vhdx/--e01)
+  -f, --file <FILE>      1つの.evtxファイルに対して解析を行う (or an image with --vhdx/--e01)
       --vhdx             Scan VHDX images read-only; -d searches up to three subdirectory levels
+      --e01              Scan E01/Ex01 images read-only without extraction; -d searches three subdirectory levels
   -l, --live-analysis    ローカル端末のC:\Windows\System32\winevt\Logsフォルダを解析する
 
 General Options:
@@ -364,9 +368,10 @@ Usage:
   hayabusa.exe logon-summary <INPUT> [OPTIONS]
 
 Input:
-  -d, --directory <DIR>  .evtxファイルを持つディレクトリのパス (or VHDX images with --vhdx)
-  -f, --file <FILE>      1つの.evtxファイルに対して解析を行う (or a VHDX image with --vhdx)
+  -d, --directory <DIR>  .evtxファイルを持つディレクトリのパス (or images with --vhdx/--e01)
+  -f, --file <FILE>      1つの.evtxファイルに対して解析を行う (or an image with --vhdx/--e01)
       --vhdx             Scan VHDX images read-only; -d searches up to three subdirectory levels
+      --e01              Scan E01/Ex01 images read-only without extraction; -d searches three subdirectory levels
   -l, --live-analysis    ローカル端末のC:\Windows\System32\winevt\Logsフォルダを解析する
 
 General Options:
@@ -438,9 +443,10 @@ Usage:
   hayabusa.exe pivot-keywords-list <INPUT> [OPTIONS]
 
 Input:
-  -d, --directory <DIR>  .evtxファイルを持つディレクトリのパス (or VHDX images with --vhdx)
-  -f, --file <FILE>      1つの.evtxファイルに対して解析を行う (or a VHDX image with --vhdx)
+  -d, --directory <DIR>  .evtxファイルを持つディレクトリのパス (or images with --vhdx/--e01)
+  -f, --file <FILE>      1つの.evtxファイルに対して解析を行う (or an image with --vhdx/--e01)
       --vhdx             Scan VHDX images read-only; -d searches up to three subdirectory levels
+      --e01              Scan E01/Ex01 images read-only without extraction; -d searches three subdirectory levels
   -l, --live-analysis    ローカル端末のC:\Windows\System32\winevt\Logsフォルダを解析する
 
 General Options:
@@ -526,9 +532,10 @@ General Options:
   -V, --validate-checksums             チェックサム検証を有効にする
 
 Input:
-  -d, --directory <DIR>  .evtxファイルを持つディレクトリのパス (or VHDX images with --vhdx)
-  -f, --file <FILE>      1つの.evtxファイルに対して解析を行う (or a VHDX image with --vhdx)
+  -d, --directory <DIR>  .evtxファイルを持つディレクトリのパス (or images with --vhdx/--e01)
+  -f, --file <FILE>      1つの.evtxファイルに対して解析を行う (or an image with --vhdx/--e01)
       --vhdx             Scan VHDX images read-only; -d searches up to three subdirectory levels
+      --e01              Scan E01/Ex01 images read-only without extraction; -d searches three subdirectory levels
   -l, --live-analysis    ローカル端末のC:\Windows\System32\winevt\Logsフォルダを解析する
 
 Filtering:

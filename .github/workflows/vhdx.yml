@@ -1,4 +1,4 @@
-name: Native VHDX inputs
+name: Native image inputs
 on:
   pull_request:
     paths:
@@ -8,6 +8,9 @@ on:
       - 'tests/vhdx_cli.rs'
       - 'tests/vhdx_native.rs'
       - 'test_files/vhdx/**'
+      - 'tests/e01_cli.rs'
+      - 'tests/e01_native.rs'
+      - 'test_files/e01/**'
       - '.github/workflows/vhdx.yml'
 permissions:
   contents: read
@@ -26,4 +29,4 @@ jobs:
       - uses: dtolnay/rust-toolchain@b725eda525362e7cf34af9a7243cac1e3f01a7ec # stable
       - uses: Swatinem/rust-cache@d1527c8f67ef9af357290475d4af4b0fab8f12e0 # v2.9.3
       - name: Test native image scanning without FUSE or extraction
-        run: cargo test --locked --test vhdx_cli --test vhdx_native -- --test-threads=1
+        run: cargo test --locked --test vhdx_cli --test vhdx_native --test e01_cli --test e01_native -- --test-threads=1

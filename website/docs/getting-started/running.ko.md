@@ -101,3 +101,15 @@ chmod +x ./hayabusa
 Juntei와 공유하는 이식 가능한 NTFS API로 **Linux, macOS, Windows에서 네이티브 분석**을 지원합니다. 파일을 탐색 가능한 읽기 전용 스트림으로 직접 읽으므로 FUSE, 마운트 드라이버, 관리자 권한, 임시 추출이 필요하지 않습니다. 원본 이미지는 변경되지 않습니다. 증거 경로는 `host.vhdx!/path/log.evtx` 형식입니다. BitLocker 및 외부 부모 이미지가 필요한 이미지는 지원하지 않습니다.
 
 [English: VHDX input details and limitations](https://yamato-security.github.io/hayabusa/getting-started/running/#vhdx-inputs).
+
+## E01/Ex01 { #e01-inputs }
+
+`--e01`은 Linux, macOS, Windows에서 물리 EWF1 (`.E01`) 및 EWF2 (`.Ex01`) 이미지를 직접 분석합니다. FUSE, 관리자 권한, 임시 추출이 필요하지 않습니다. 첫 세그먼트를 지정하고 나머지 세그먼트는 원래 이름으로 같은 디렉터리에 보관하세요. `-d`는 하위 세 단계까지 검색하며 `--vhdx --e01`은 혼합 디렉터리를 지원합니다. NTFS 파티션이 있는 디스크와 단일 NTFS 볼륨을 지원합니다. 손상은 보고되며 읽을 수 있는 결과를 보존하고 비제로 상태로 종료합니다. 전체 미디어 무결성 검증은 아닙니다. 논리 `.L01`/`.Lx01`, 암호가 필요한 EWF, BitLocker는 지원하지 않습니다.
+
+```bash
+./hayabusa dfir-timeline --e01 -f disk.E01 -w -U -p verbose -o timeline.csv
+./hayabusa log-metrics --e01 -d images/ -U -o logs.csv
+./hayabusa dfir-timeline --vhdx --e01 -d images/ -w -U -o timeline.csv
+```
+
+[English: E01/Ex01 details](https://yamato-security.github.io/hayabusa/getting-started/running/#e01-inputs).

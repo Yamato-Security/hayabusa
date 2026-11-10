@@ -15,9 +15,10 @@ Usage:
   hayabusa.exe computer-metrics <INPUT> [OPTIONS]
 
 Input:
-  -d, --directory <DIR>  ไดเรกทอรีของไฟล์ .evtx หลายไฟล์ (or VHDX images with --vhdx)
-  -f, --file <FILE>      พาธไฟล์ของไฟล์ .evtx หนึ่งไฟล์ (or a VHDX image with --vhdx)
+  -d, --directory <DIR>  ไดเรกทอรีของไฟล์ .evtx หลายไฟล์ (or images with --vhdx/--e01)
+  -f, --file <FILE>      พาธไฟล์ของไฟล์ .evtx หนึ่งไฟล์ (or an image with --vhdx/--e01)
       --vhdx             Scan VHDX images read-only; -d searches up to three subdirectory levels
+      --e01              Scan E01/Ex01 images read-only without extraction; -d searches three subdirectory levels
   -l, --live-analysis    วิเคราะห์โฟลเดอร์ C:\Windows\System32\winevt\Logs บนเครื่อง
 
 General Options:
@@ -61,9 +62,10 @@ Usage:
   hayabusa.exe eid-metrics <INPUT> [OPTIONS]
 
 Input:
-  -d, --directory <DIR>  ไดเรกทอรีของไฟล์ .evtx หลายไฟล์ (or VHDX images with --vhdx)
-  -f, --file <FILE>      พาธไฟล์ของไฟล์ .evtx หนึ่งไฟล์ (or a VHDX image with --vhdx)
+  -d, --directory <DIR>  ไดเรกทอรีของไฟล์ .evtx หลายไฟล์ (or images with --vhdx/--e01)
+  -f, --file <FILE>      พาธไฟล์ของไฟล์ .evtx หนึ่งไฟล์ (or an image with --vhdx/--e01)
       --vhdx             Scan VHDX images read-only; -d searches up to three subdirectory levels
+      --e01              Scan E01/Ex01 images read-only without extraction; -d searches three subdirectory levels
   -l, --live-analysis    วิเคราะห์โฟลเดอร์ C:\Windows\System32\winevt\Logs บนเครื่อง
 
 General Options:
@@ -201,9 +203,10 @@ Usage:
   hayabusa.exe extract-base64 <INPUT> [OPTIONS]
 
 Input:
-  -d, --directory <DIR>  ไดเรกทอรีของไฟล์ .evtx หลายไฟล์ (or VHDX images with --vhdx)
-  -f, --file <FILE>      พาธไฟล์ของไฟล์ .evtx หนึ่งไฟล์ (or a VHDX image with --vhdx)
+  -d, --directory <DIR>  ไดเรกทอรีของไฟล์ .evtx หลายไฟล์ (or images with --vhdx/--e01)
+  -f, --file <FILE>      พาธไฟล์ของไฟล์ .evtx หนึ่งไฟล์ (or an image with --vhdx/--e01)
       --vhdx             Scan VHDX images read-only; -d searches up to three subdirectory levels
+      --e01              Scan E01/Ex01 images read-only without extraction; -d searches three subdirectory levels
   -l, --live-analysis    วิเคราะห์โฟลเดอร์ C:\Windows\System32\winevt\Logs บนเครื่อง
 
 General Options:
@@ -287,9 +290,10 @@ Usage:
   hayabusa.exe log-metrics <INPUT> [OPTIONS]
 
 Input:
-  -d, --directory <DIR>  ไดเรกทอรีของไฟล์ .evtx หลายไฟล์ (or VHDX images with --vhdx)
-  -f, --file <FILE>      พาธไฟล์ของไฟล์ .evtx หนึ่งไฟล์ (or a VHDX image with --vhdx)
+  -d, --directory <DIR>  ไดเรกทอรีของไฟล์ .evtx หลายไฟล์ (or images with --vhdx/--e01)
+  -f, --file <FILE>      พาธไฟล์ของไฟล์ .evtx หนึ่งไฟล์ (or an image with --vhdx/--e01)
       --vhdx             Scan VHDX images read-only; -d searches up to three subdirectory levels
+      --e01              Scan E01/Ex01 images read-only without extraction; -d searches three subdirectory levels
   -l, --live-analysis    วิเคราะห์โฟลเดอร์ C:\Windows\System32\winevt\Logs บนเครื่อง
 
 General Options:
@@ -361,9 +365,10 @@ Usage:
   hayabusa.exe logon-summary <INPUT> [OPTIONS]
 
 Input:
-  -d, --directory <DIR>  ไดเรกทอรีของไฟล์ .evtx หลายไฟล์ (or VHDX images with --vhdx)
-  -f, --file <FILE>      พาธไฟล์ของไฟล์ .evtx หนึ่งไฟล์ (or a VHDX image with --vhdx)
+  -d, --directory <DIR>  ไดเรกทอรีของไฟล์ .evtx หลายไฟล์ (or images with --vhdx/--e01)
+  -f, --file <FILE>      พาธไฟล์ของไฟล์ .evtx หนึ่งไฟล์ (or an image with --vhdx/--e01)
       --vhdx             Scan VHDX images read-only; -d searches up to three subdirectory levels
+      --e01              Scan E01/Ex01 images read-only without extraction; -d searches three subdirectory levels
   -l, --live-analysis    วิเคราะห์โฟลเดอร์ C:\Windows\System32\winevt\Logs บนเครื่อง
 
 General Options:
@@ -435,9 +440,10 @@ Usage:
   hayabusa.exe pivot-keywords-list <INPUT> [OPTIONS]
 
 Input:
-  -d, --directory <DIR>  ไดเรกทอรีของไฟล์ .evtx หลายไฟล์ (or VHDX images with --vhdx)
-  -f, --file <FILE>      พาธไฟล์ของไฟล์ .evtx หนึ่งไฟล์ (or a VHDX image with --vhdx)
+  -d, --directory <DIR>  ไดเรกทอรีของไฟล์ .evtx หลายไฟล์ (or images with --vhdx/--e01)
+  -f, --file <FILE>      พาธไฟล์ของไฟล์ .evtx หนึ่งไฟล์ (or an image with --vhdx/--e01)
       --vhdx             Scan VHDX images read-only; -d searches up to three subdirectory levels
+      --e01              Scan E01/Ex01 images read-only without extraction; -d searches three subdirectory levels
   -l, --live-analysis    วิเคราะห์โฟลเดอร์ C:\Windows\System32\winevt\Logs บนเครื่อง
 
 General Options:
@@ -523,9 +529,10 @@ General Options:
   -V, --validate-checksums             เปิดใช้งานการตรวจสอบความถูกต้องของ checksum
 
 Input:
-  -d, --directory <DIR>  ไดเรกทอรีของไฟล์ .evtx หลายไฟล์ (or VHDX images with --vhdx)
-  -f, --file <FILE>      พาธไฟล์ของไฟล์ .evtx หนึ่งไฟล์ (or a VHDX image with --vhdx)
+  -d, --directory <DIR>  ไดเรกทอรีของไฟล์ .evtx หลายไฟล์ (or images with --vhdx/--e01)
+  -f, --file <FILE>      พาธไฟล์ของไฟล์ .evtx หนึ่งไฟล์ (or an image with --vhdx/--e01)
       --vhdx             Scan VHDX images read-only; -d searches up to three subdirectory levels
+      --e01              Scan E01/Ex01 images read-only without extraction; -d searches three subdirectory levels
   -l, --live-analysis    วิเคราะห์โฟลเดอร์ C:\Windows\System32\winevt\Logs บนเครื่อง
 
 Filtering:

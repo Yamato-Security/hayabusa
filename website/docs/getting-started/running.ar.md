@@ -101,3 +101,15 @@ chmod +x ./hayabusa
 تعمل القراءة الأصلية على **Linux وmacOS وWindows** باستخدام واجهة NTFS المحمولة المشتركة مع Juntei. تُقرأ الملفات مباشرة كتدفقات قابلة للبحث وللقراءة فقط، دون FUSE أو برامج تشغيل للتركيب أو صلاحيات مدير أو استخراج مؤقت. تبقى الصور المصدر دون تغيير. تُحفظ مسارات الأدلة بصيغة `host.vhdx!/path/log.evtx`. لا يُدعم BitLocker أو الصور التي تتطلب صورة أصل خارجية.
 
 [English: VHDX input details and limitations](https://yamato-security.github.io/hayabusa/getting-started/running/#vhdx-inputs).
+
+## E01/Ex01 { #e01-inputs }
+
+يفحص `--e01` صور EWF1 (`.E01`) وEWF2 (`.Ex01`) الفيزيائية مباشرةً على Linux وmacOS وWindows دون FUSE أو صلاحيات مدير أو استخراج مؤقت. حدد المقطع الأول وأبقِ المقاطع الأخرى بأسمائها الأصلية في المجلد نفسه. يبحث `-d` في ثلاثة مستويات فرعية؛ ويدعم `--vhdx --e01` المجلدات المختلطة. تُدعم الأقراص ذات أقسام NTFS ووحدات NTFS المنفردة. تُبلّغ الأضرار وتُحفظ النتائج المقروءة مع رمز خروج غير صفري. هذا ليس تحققاً من سلامة الوسيط كاملاً. لا تُدعم الصور المنطقية `.L01`/`.Lx01` أو EWF الذي يحتاج كلمة مرور أو BitLocker.
+
+```bash
+./hayabusa dfir-timeline --e01 -f disk.E01 -w -U -p verbose -o timeline.csv
+./hayabusa log-metrics --e01 -d images/ -U -o logs.csv
+./hayabusa dfir-timeline --vhdx --e01 -d images/ -w -U -o timeline.csv
+```
+
+[English: E01/Ex01 details](https://yamato-security.github.io/hayabusa/getting-started/running/#e01-inputs).

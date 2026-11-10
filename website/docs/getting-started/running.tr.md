@@ -101,3 +101,15 @@ Tüm olay günlüğü tarama komutları `--vhdx` ile `-f <IMAGE.vhdx>` veya `-d 
 Yerel tarama, Juntei ile paylaşılan taşınabilir NTFS API üzerinden **Linux, macOS ve Windows** üzerinde çalışır. Dosyalar doğrudan konumlandırılabilir salt okunur akışlar olarak okunur; FUSE, bağlama sürücüsü, yönetici yetkisi veya geçici çıkarma gerekmez. Kaynak görüntüler değiştirilmez. Kanıt yolları `host.vhdx!/path/log.evtx` biçimindedir. BitLocker ve harici üst görüntü gerektiren görüntüler desteklenmez.
 
 [English: VHDX input details and limitations](https://yamato-security.github.io/hayabusa/getting-started/running/#vhdx-inputs).
+
+## E01/Ex01 { #e01-inputs }
+
+`--e01`, Linux, macOS ve Windows üzerinde fiziksel EWF1 (`.E01`) ve EWF2 (`.Ex01`) görüntülerini FUSE, yönetici yetkisi veya geçici çıkarma olmadan doğrudan tarar. İlk segmenti belirtin; diğerlerini özgün adlarıyla aynı dizinde tutun. `-d` üç alt dizin düzeyini arar; `--vhdx --e01` karışık dizinleri destekler. NTFS bölümlü diskler ve tek NTFS birimleri desteklenir. Hasar bildirilir, okunabilir sonuçlar korunur ve sıfır dışı çıkış kodu verilir. Bu, tüm ortamın bütünlük doğrulaması değildir. Mantıksal `.L01`/`.Lx01`, parola gerektiren EWF ve BitLocker desteklenmez.
+
+```bash
+./hayabusa dfir-timeline --e01 -f disk.E01 -w -U -p verbose -o timeline.csv
+./hayabusa log-metrics --e01 -d images/ -U -o logs.csv
+./hayabusa dfir-timeline --vhdx --e01 -d images/ -w -U -o timeline.csv
+```
+
+[English: E01/Ex01 details](https://yamato-security.github.io/hayabusa/getting-started/running/#e01-inputs).

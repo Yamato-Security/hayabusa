@@ -1750,17 +1750,21 @@ pub struct CommonOptions {
 #[derive(Args, Clone, Debug, Default)]
 #[clap(group(ArgGroup::new("input_filtering").args(["directory", "filepath", "live_analysis"]).required(true)))]
 pub struct InputOption {
-    /// Directory of .evtx files (or VHDX images with --vhdx)
+    /// Directory of event logs (or images with --vhdx/--e01)
     #[arg(help_heading = Some("Input"), short = 'd', long, value_name = "DIR", conflicts_with_all = ["filepath", "live_analysis"], display_order = 300)]
     pub directory: Option<Vec<PathBuf>>,
 
-    /// File path to one .evtx file (or a VHDX image with --vhdx)
+    /// File path to one event log (or an image with --vhdx/--e01)
     #[arg(help_heading = Some("Input"), short = 'f', long = "file", value_name = "FILE", conflicts_with_all = ["directory", "live_analysis"], display_order = 320)]
     pub filepath: Option<PathBuf>,
 
     /// Scan VHDX images read-only; -d searches up to three subdirectory levels
     #[arg(help_heading = Some("Input"), long, conflicts_with = "live_analysis", display_order = 330)]
     pub vhdx: bool,
+
+    /// Scan E01/Ex01 images read-only without extraction; -d searches three subdirectory levels
+    #[arg(help_heading = Some("Input"), long, conflicts_with = "live_analysis", display_order = 331)]
+    pub e01: bool,
 
     /// Analyze the local C:\Windows\System32\winevt\Logs folder
     #[arg(help_heading = Some("Input"), short = 'l', long = "live-analysis", conflicts_with_all = ["filepath", "directory", "json_input"], display_order = 380)]
@@ -1773,6 +1777,20 @@ pub struct InputOption {
     /// Scan recent events based on an offset (ex: 1y, 3M, 30d, 24h, 30m)
     #[arg(help_heading = Some("Filtering"), long = "time-offset", value_name = "OFFSET", conflicts_with = "start_timeline", display_order = 460)]
     pub time_offset: Option<String>,
+}
+
+impl InputOption {
+    pub fn image_input(&self) -> bool {
+        self.vhdx || self.e01
+    }
+
+    pub fn image_label(&self) -> &'static str {
+        match (self.vhdx, self.e01) {
+            (true, true) => "VHDX/E01",
+            (false, true) => "E01/Ex01",
+            _ => "VHDX",
+        }
+    }
 }
 
 /// Output format for `dfir-timeline`, selectable with `-t, --output-type` (case-insensitive,
@@ -1974,17 +1992,21 @@ pub struct ExpandListOption {
 #[derive(Args, Clone, Debug, Default)]
 #[clap(group(ArgGroup::new("input_filtering").args(["directory", "filepath"]).required(true)))]
 pub struct ConfigCriticalSystemsOption {
-    /// Directory of .evtx files (or VHDX images with --vhdx)
+    /// Directory of event logs (or images with --vhdx/--e01)
     #[arg(help_heading = Some("Input"), short = 'd', long, value_name = "DIR", conflicts_with_all = ["filepath"], display_order = 300)]
     pub directory: Option<Vec<PathBuf>>,
 
-    /// File path to one .evtx file (or a VHDX image with --vhdx)
+    /// File path to one event log (or an image with --vhdx/--e01)
     #[arg(help_heading = Some("Input"), short = 'f', long = "file", value_name = "FILE", conflicts_with_all = ["directory"], display_order = 320)]
     pub filepath: Option<PathBuf>,
 
     /// Scan VHDX images read-only; -d searches up to three subdirectory levels
     #[arg(help_heading = Some("Input"), long, display_order = 330)]
     pub vhdx: bool,
+
+    /// Scan E01/Ex01 images read-only without extraction; -d searches three subdirectory levels
+    #[arg(help_heading = Some("Input"), long, display_order = 331)]
+    pub e01: bool,
 
     #[clap(flatten)]
     pub common_options: CommonOptions,
@@ -2653,6 +2675,7 @@ fn extract_output_options(config: &Config) -> Option<OutputOption> {
                 directory: option.directory.clone(),
                 filepath: option.filepath.clone(),
                 vhdx: option.vhdx,
+                e01: option.e01,
                 live_analysis: false,
                 recover_records: false,
                 time_offset: None,
@@ -2863,6 +2886,46 @@ mod tests {
             configs::Config::try_parse_from(["hayabusa", "dfir-timeline", "-l", "--vhdx"]).is_err()
         );
         assert!(configs::Config::try_parse_from(["hayabusa", "update-rules", "--vhdx"]).is_err());
+    }
+
+    #[test]
+    fn all_event_scanning_commands_accept_e01_and_mixed_inputs() {
+        for command in [
+            "dfir-timeline",
+            "eid-metrics",
+            "log-metrics",
+            "logon-summary",
+            "computer-metrics",
+            "extract-base64",
+            "pivot-keywords-list",
+            "search",
+            "config-critical-systems",
+        ] {
+            for source in [["-d", "images"], ["-f", "host.E01"]] {
+                for mixed in [false, true] {
+                    let mut args = vec!["hayabusa", command, source[0], source[1], "--e01"];
+                    if mixed {
+                        args.push("--vhdx");
+                    }
+                    if command == "search" {
+                        args.extend(["-r", ".*"]);
+                    }
+                    let config = configs::Config::try_parse_from(args)
+                        .unwrap_or_else(|e| panic!("{command}: {e}"));
+                    let options = configs::extract_output_options(&config).unwrap();
+                    assert!(options.input_args.e01);
+                    assert!(options.input_args.image_input());
+                    assert_eq!(options.input_args.vhdx, mixed);
+                }
+            }
+        }
+        for args in [
+            vec!["hayabusa", "dfir-timeline", "--e01"],
+            vec!["hayabusa", "dfir-timeline", "-l", "--e01"],
+            vec!["hayabusa", "update-rules", "--e01"],
+        ] {
+            assert!(configs::Config::try_parse_from(args).is_err());
+        }
     }
 
     #[test]
