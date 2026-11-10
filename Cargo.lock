@@ -3034,7 +3034,7 @@ dependencies = [
 [[package]]
 name = "ys-e01-parser"
 version = "1.0.0"
-source = "git+https://github.com/Yamato-Security/ys-e01-parser?rev=40d879427da85fca680f11b027fb7715ac4e98b9#40d879427da85fca680f11b027fb7715ac4e98b9"
+source = "git+https://github.com/Yamato-Security/ys-e01-parser?rev=6d1109ca35a232d09f8c9db4507cbf8ff696b50c#6d1109ca35a232d09f8c9db4507cbf8ff696b50c"
 dependencies = [
  "aes",
  "bzip2",
