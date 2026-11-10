@@ -2,6 +2,14 @@
 
 ## Unreleased
 
+**Enhancements:**
+
+- When `update-rules` has to clone the rules (no `rules` folder yet, or a new `-r` folder), it now clones only the latest commit. The rules folder's `.git` is about 8 MB instead of about 37 MB of history, and later updates work as before. (@YamatoSecurity)
+
+**Bug Fixes:**
+
+- `update-rules`, `list-profiles`, `list-contributors`, `set-default-profile` and `sort-csv` no longer print `Cannot open file` errors for the rules config files when there is no `rules` folder yet. These commands don't use those files, so they no longer load them. (@YamatoSecurity)
+
 **Other:**
 
 - Release packages are smaller. The bundled `rules` folder now comes with a shallow git clone (about 5 MB instead of about 38 MB of history), so each platform package shrinks by about 30 MB. The all-platforms package takes the complete rules tree and its Git metadata from one build, avoiding duplicate Git packs and untracked rules from mixed revisions. `update-rules` works as before. (@YamatoSecurity)

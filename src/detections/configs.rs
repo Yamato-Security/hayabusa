@@ -428,13 +428,29 @@ impl StoredStatic {
             _ => false,
         };
 
-        let generic_abbreviations = create_output_filter_config(
-            resolve_config_file(config_path, "generic_abbreviations.txt")
-                .to_str()
-                .unwrap(),
-            false,
-            disable_abbreviation,
+        // These commands never use the rules config files. There is no rules folder before the
+        // first `update-rules`, and loading them would print an error for each missing file.
+        let load_rules_config = !matches!(
+            action,
+            Some(
+                Action::UpdateRules(_)
+                    | Action::SetDefaultProfile(_)
+                    | Action::ListContributors(_)
+                    | Action::ListProfiles(_)
+                    | Action::SortCsv(_)
+            )
         );
+        let generic_abbreviations = if load_rules_config {
+            create_output_filter_config(
+                resolve_config_file(config_path, "generic_abbreviations.txt")
+                    .to_str()
+                    .unwrap(),
+                false,
+                disable_abbreviation,
+            )
+        } else {
+            Default::default()
+        };
         let multiline_flag = match action {
             Some(Action::DfirTimeline(opt)) => opt.multiline,
             Some(Action::Search(opt)) => opt.multiline,
@@ -526,7 +542,7 @@ impl StoredStatic {
             Some(Action::DfirTimeline(opt)) => opt.output_options.no_field,
             _ => false,
         };
-        let field_data_map = if no_field_data_mapping_flag {
+        let field_data_map = if no_field_data_mapping_flag || !load_rules_config {
             None
         } else {
             create_field_data_map(Path::new(
@@ -613,13 +629,17 @@ impl StoredStatic {
         let mut ret = StoredStatic {
             config: config.to_owned(),
             config_path: config_path.to_path_buf(),
-            channel_abbr_config: create_output_filter_config(
-                resolve_config_file(config_path, "channel_abbreviations.txt")
-                    .to_str()
-                    .unwrap(),
-                true,
-                disable_abbreviation,
-            ),
+            channel_abbr_config: if load_rules_config {
+                create_output_filter_config(
+                    resolve_config_file(config_path, "channel_abbreviations.txt")
+                        .to_str()
+                        .unwrap(),
+                    true,
+                    disable_abbreviation,
+                )
+            } else {
+                Default::default()
+            },
             generic_abbr_matcher: AhoCorasickBuilder::new()
                 .ascii_case_insensitive(true)
                 .match_kind(MatchKind::LeftmostLongest)
@@ -629,24 +649,36 @@ impl StoredStatic {
                 .values()
                 .map(|x| x.to_owned())
                 .collect_vec(),
-            provider_abbr_config: create_output_filter_config(
-                resolve_config_file(config_path, "provider_abbreviations.txt")
-                    .to_str()
-                    .unwrap(),
-                false,
-                disable_abbreviation,
-            ),
-            default_details: Self::get_default_details(
-                resolve_config_file(config_path, "default_details.txt")
-                    .to_str()
-                    .unwrap(),
-                disable_abbreviation,
-            ),
-            eventkey_alias: load_eventkey_alias(
-                resolve_config_file(config_path, "eventkey_alias.txt")
-                    .to_str()
-                    .unwrap(),
-            ),
+            provider_abbr_config: if load_rules_config {
+                create_output_filter_config(
+                    resolve_config_file(config_path, "provider_abbreviations.txt")
+                        .to_str()
+                        .unwrap(),
+                    false,
+                    disable_abbreviation,
+                )
+            } else {
+                Default::default()
+            },
+            default_details: if load_rules_config {
+                Self::get_default_details(
+                    resolve_config_file(config_path, "default_details.txt")
+                        .to_str()
+                        .unwrap(),
+                    disable_abbreviation,
+                )
+            } else {
+                Default::default()
+            },
+            eventkey_alias: if load_rules_config {
+                load_eventkey_alias(
+                    resolve_config_file(config_path, "eventkey_alias.txt")
+                        .to_str()
+                        .unwrap(),
+                )
+            } else {
+                Default::default()
+            },
             geo_ip_search,
             geo_ip_db_yaml,
             geo_ip_filter,
@@ -670,16 +702,24 @@ impl StoredStatic {
             html_report_flag: htmlreport::check_html_flag(&config),
             profiles: None,
             thread_number: check_thread_number(&config),
-            event_timeline_config: load_eventcode_info(
-                resolve_config_file(config_path, "channel_eid_info.txt")
-                    .to_str()
-                    .unwrap(),
-            ),
-            target_eventids: load_target_ids(
-                resolve_config_file(config_path, "target_event_IDs.txt")
-                    .to_str()
-                    .unwrap(),
-            ),
+            event_timeline_config: if load_rules_config {
+                load_eventcode_info(
+                    resolve_config_file(config_path, "channel_eid_info.txt")
+                        .to_str()
+                        .unwrap(),
+                )
+            } else {
+                Default::default()
+            },
+            target_eventids: if load_rules_config {
+                load_target_ids(
+                    resolve_config_file(config_path, "target_event_IDs.txt")
+                        .to_str()
+                        .unwrap(),
+                )
+            } else {
+                Default::default()
+            },
             target_ruleids,
             json_input_flag,
             output_path: output_path.cloned(),

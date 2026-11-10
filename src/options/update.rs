@@ -166,11 +166,18 @@ impl Update {
     }
 
     /// Function that git clones the hayabusa-rules repository into the rules folder.
+    ///
+    /// Only the latest commit is cloned (a shallow clone): its `.git` is about 5 MB instead of
+    /// about 38 MB of full history. Later updates fetch and fast-forward it like a full clone.
     fn clone_rules(rules_path: &Path) -> Result<String, git2::Error> {
-        match Repository::clone(
-            "https://github.com/Yamato-Security/hayabusa-rules.git",
-            rules_path,
-        ) {
+        let mut fetch_options = git2::FetchOptions::new();
+        fetch_options.depth(1);
+        match git2::build::RepoBuilder::new()
+            .fetch_options(fetch_options)
+            .clone(
+                "https://github.com/Yamato-Security/hayabusa-rules.git",
+                rules_path,
+            ) {
             Ok(_repo) => {
                 println!("Finished cloning the hayabusa-rules repository.");
                 Ok("Finished clone".to_string())
