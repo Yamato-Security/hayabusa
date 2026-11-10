@@ -4,7 +4,7 @@
 
 **Other:**
 
-- Release packages are smaller. The bundled `rules` folder now comes with a shallow git clone (about 5 MB instead of about 38 MB of history), so each platform package shrinks by about 30 MB, and the all-platforms package no longer holds several identical copies of it. `update-rules` works as before. (@YamatoSecurity)
+- Release packages are smaller. The bundled `rules` folder now comes with a shallow git clone (about 5 MB instead of about 38 MB of history), so each platform package shrinks by about 30 MB. The all-platforms package takes the complete rules tree and its Git metadata from one build, avoiding duplicate Git packs and untracked rules from mixed revisions. `update-rules` works as before. (@YamatoSecurity)
 
 ## 4.4.0 [2026/11/10] - CODE BLUE Release
 
