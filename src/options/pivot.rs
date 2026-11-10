@@ -16,7 +16,8 @@ use crate::detections::configs::{EventKeyAliasConfig, StoredStatic};
 pub struct PivotKeyword {
     /// Unique field values harvested from the scanned records.
     pub keywords: IndexSet<String>,
-    /// Event field names (eventkey aliases) whose values should be collected for this category.
+    /// Event field names (aliases, or EventData/UserData field names) whose values are collected
+    /// for this category.
     pub fields: IndexSet<String>,
 }
 
@@ -66,35 +67,22 @@ pub fn insert_pivot_keyword(
     }
 
     // For every pivot category, resolve each configured field against the record and collect its
-    // value.
+    // value. Fields are resolved like rule fields: through eventkey_alias.txt when they have an
+    // alias, otherwise in EventData and UserData, so pivot fields don't need an alias.
     let mut pivots = pivot_keyword.write().unwrap();
     pivots.iter_mut().for_each(|(_, pivot)| {
         for field in &pivot.fields {
-            if let Some(event_key_path) = eventkey_alias.get_event_key(&String::from(field)) {
-                let mut event_key_found = false;
-                let mut tmp_event_record: &Value = event_record;
-                // Walk the dot-separated event key path as far as it matches the record. If the
-                // walk stops on a JSON object (i.e. the full path did not resolve to a scalar),
-                // get_serde_number_to_string below returns None and the field is skipped.
-                for segment in event_key_path.split('.') {
-                    if let Some(record) = tmp_event_record.get(segment) {
-                        event_key_found = true;
-                        tmp_event_record = record;
-                    }
-                }
-                if event_key_found {
-                    let hash_value = get_serde_number_to_string(tmp_event_record, false);
-
-                    if let Some(value) = hash_value {
-                        // Skip placeholder ("-") and localhost values, which are useless as pivot
-                        // keywords.
-                        if value == "-" || value == "127.0.0.1" || value == "::1" {
-                            continue;
-                        }
-                        pivot.keywords.insert(value.to_string());
-                    };
-                }
+            // Missing fields and JSON objects give None and are skipped.
+            let Some(value) = get_event_value(field, event_record, eventkey_alias)
+                .and_then(|value| get_serde_number_to_string(value, false))
+            else {
+                continue;
+            };
+            // Skip placeholder ("-") and localhost values, which are useless as pivot keywords.
+            if value == "-" || value == "127.0.0.1" || value == "::1" {
+                continue;
             }
+            pivot.keywords.insert(value.to_string());
         }
     });
 }
@@ -205,6 +193,37 @@ mod tests {
             fmt_keywords_results(String::new(), &reversed),
             fmt_keywords_results(String::new(), &pivot_keyword)
         );
+    }
+
+    /// hayabusa-rules no longer lists aliases that only repeat an EventData field name, so pivot
+    /// fields must resolve without an alias, from EventData and from UserData, like rule fields.
+    #[test]
+    fn insert_pivot_keyword_resolves_fields_without_aliases() {
+        let pivot_keyword = RwLock::new(PivotKeywordMap::new());
+        load_pivot_keywords("test_files/config/pivot_keywords.txt", &pivot_keyword);
+        let records = [
+            r#"{"Event": {"System": {"Level": 4},
+                "EventData": {"IpAddress": "10.0.0.5", "SubjectUserName": "alice", "SubjectLogonId": "-"}}}"#,
+            r#"{"Event": {"System": {"Level": 4},
+                "UserData": {"LogFileCleared": {"SubjectUserName": "bob", "SubjectLogonId": "0x1234"}}}}"#,
+        ];
+        let no_aliases = crate::detections::configs::EventKeyAliasConfig::new();
+        for record in records {
+            insert_pivot_keyword(
+                &serde_json::from_str(record).unwrap(),
+                &no_aliases,
+                &pivot_keyword,
+            );
+        }
+        let pivots = pivot_keyword.read().unwrap();
+        let keywords = |key: &str| {
+            let mut keywords: Vec<_> = pivots[key].keywords.iter().cloned().collect();
+            keywords.sort();
+            keywords
+        };
+        assert_eq!(keywords("Ip Addresses"), ["10.0.0.5"]);
+        assert_eq!(keywords("Users"), ["alice", "bob"]);
+        assert_eq!(keywords("Logon IDs"), ["0x1234"]);
     }
 
     #[test]
