@@ -1,5 +1,15 @@
 # 変更点
 
+## 未リリース
+
+**改善:**
+
+- `update-rules` がルールをクローンする場合（`rules` フォルダがまだない場合や新しい `-r` のフォルダ）、最新のコミットだけをクローンするようにした。ルールフォルダの `.git` が履歴の約37MBから約8MBになる。その後の更新はこれまでどおり動作する。 (@YamatoSecurity)
+
+**バグ修正:**
+
+- `rules` フォルダがまだない場合に、`update-rules`、`list-profiles`、`list-contributors`、`set-default-profile`、`sort-csv` がルールの設定ファイルについて `Cannot open file` エラーを出力しないようにした。これらのコマンドはその設定ファイルを使わないため、読み込まないようにした。 (@YamatoSecurity)
+
 ## 4.4.0 [2026/11/10] - CODE BLUE Release
 
 **新機能:**
