@@ -1,6 +1,6 @@
 # Changes
 
-## Unreleased
+## 4.4.0 [2026/11/10] - CODE BLUE Release
 
 **New Features:**
 
@@ -11,6 +11,10 @@
 **Bug Fixes:**
 
 - Fixed `pivot-keywords-list` finding no keywords with the current rules. The rules' `eventkey_alias.txt` no longer has aliases that only repeat an `EventData` field name, and pivot fields were resolved only through aliases. They are now resolved like rule fields, so values that are only in `UserData`, such as `SubjectUserName` in log-cleared events, are also collected. Empty values are no longer listed as a blank keyword. (#1957) (@YamatoSecurity)
+
+**Other:**
+
+- Refreshed 28 direct and transitive Rust dependency packages to their latest versions compatible with Rust 1.99, including the direct dependencies `encoding_rs` 0.8.44, `openssl` 0.10.82, `pulldown-cmark` 0.13.6, `ureq` 3.5.1 and `uuid` 1.29.2. `indicatif` stays pinned to 0.18.4 until console-rs/indicatif#859 is fixed. (@YamatoSecurity)
 
 ## 4.3.1 [2026/10/29] - Vulnpocalypse Release
 

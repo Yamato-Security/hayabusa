@@ -1,6 +1,6 @@
 [package]
 name = "hayabusa"
-version = "4.3.1"
+version = "4.4.0"
 repository = "https://github.com/Yamato-Security/hayabusa"
 authors = ["Yamato Security @SecurityYamato"]
 edition = "2024"
@@ -85,7 +85,7 @@ ys_vhdx_mount = { package = "ys-vhdx-mount", git = "https://github.com/Yamato-Se
 
 # Read-only EWF container decoding, using its AGPL licence alternative; the existing NTFS API
 # provides file streams.
-ewf_image = { package = "ys-e01-parser", git = "https://github.com/Yamato-Security/ys-e01-parser", rev = "6d1109ca35a232d09f8c9db4507cbf8ff696b50c", default-features = false, features = ["verify"] }
+ewf_image = { package = "ys-e01-parser", git = "https://github.com/Yamato-Security/ys-e01-parser", rev = "69982d6f6f1514d6f012de340c00e53e9072d1ef", default-features = false, features = ["verify"] }
 
 [dev-dependencies]
 tempfile = "3"
