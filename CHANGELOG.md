@@ -1,5 +1,11 @@
 # Changes
 
+## Unreleased
+
+**Enhancements:**
+
+- When `update-rules` has to clone the rules (no `rules` folder yet, or a new `-r` folder), it now clones only the latest commit. The rules folder's `.git` is about 8 MB instead of about 37 MB of history, and later updates work as before. (@YamatoSecurity)
+
 ## 4.4.0 [2026/11/10] - CODE BLUE Release
 
 **New Features:**
