@@ -1,0 +1,19 @@
+name: Release packaging
+
+on:
+  pull_request:
+    paths:
+      - '.github/workflows/release.yml'
+      - '.github/workflows/release-package-tests.yml'
+      - 'tests/release_packaging.py'
+
+permissions:
+  contents: read
+
+jobs:
+  rules-snapshot:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - name: Test the release workflow's rules packaging step
+        run: python3 -B tests/release_packaging.py -v

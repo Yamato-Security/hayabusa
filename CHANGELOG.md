@@ -10,6 +10,10 @@
 
 - `update-rules`, `list-profiles`, `list-contributors`, `set-default-profile` and `sort-csv` no longer print `Cannot open file` errors for the rules config files when there is no `rules` folder yet. These commands don't use those files, so they no longer load them. (@YamatoSecurity)
 
+**Other:**
+
+- Release packages are smaller. The bundled `rules` folder now comes with a shallow git clone (about 5 MB instead of about 38 MB of history), so each platform package shrinks by about 30 MB. The all-platforms package takes the complete rules tree and its Git metadata from one build, avoiding duplicate Git packs and untracked rules from mixed revisions. `update-rules` works as before. (@YamatoSecurity)
+
 ## 4.4.0 [2026/11/10] - CODE BLUE Release
 
 **New Features:**
