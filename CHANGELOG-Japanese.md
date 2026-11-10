@@ -1,6 +1,6 @@
 # 変更点
 
-## 未リリース
+## 4.4.0 [2026/11/10] - CODE BLUE Release
 
 **新機能:**
 
@@ -11,6 +11,10 @@
 **バグ修正:**
 
 - 最新のルールで `pivot-keywords-list` がキーワードを1つも出力しない問題を修正した。ルールの `eventkey_alias.txt` から `EventData` のフィールド名と同じだけのエイリアスが削除されたが、ピボットのフィールドはエイリアス経由でしか解決していなかった。ルールのフィールドと同じ方法で解決するようにしたため、ログ消去イベントの `SubjectUserName` など `UserData` にしかない値も収集される。また、空の値が空行のキーワードとして出力されないようにした。 (#1957) (@YamatoSecurity)
+
+**その他:**
+
+- Rust 1.99と互換性のある最新バージョンへ、28個の直接および推移的なRust依存パッケージを更新した。直接の依存パッケージは `encoding_rs` 0.8.44、`openssl` 0.10.82、`pulldown-cmark` 0.13.6、`ureq` 3.5.1、`uuid` 1.29.2。`indicatif` は console-rs/indicatif#859 が修正されるまで 0.18.4 に固定したままとする。 (@YamatoSecurity)
 
 ## 4.3.1 [2026/10/29] - Vulnpocalypse Release
 
