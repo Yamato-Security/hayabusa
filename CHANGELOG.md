@@ -10,7 +10,7 @@
 
 **Bug Fixes:**
 
-- Fixed `pivot-keywords-list` finding no keywords with the current rules. The rules' `eventkey_alias.txt` no longer has aliases that only repeat an `EventData` field name, and pivot fields were resolved only through aliases. They are now resolved like rule fields, so values that are only in `UserData`, such as `SubjectUserName` in log-cleared events, are also collected. (#1957) (@YamatoSecurity)
+- Fixed `pivot-keywords-list` finding no keywords with the current rules. The rules' `eventkey_alias.txt` no longer has aliases that only repeat an `EventData` field name, and pivot fields were resolved only through aliases. They are now resolved like rule fields, so values that are only in `UserData`, such as `SubjectUserName` in log-cleared events, are also collected. Empty values are no longer listed as a blank keyword. (#1957) (@YamatoSecurity)
 
 ## 4.3.1 [2026/10/29] - Vulnpocalypse Release
 

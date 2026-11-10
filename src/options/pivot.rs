@@ -78,8 +78,9 @@ pub fn insert_pivot_keyword(
             else {
                 continue;
             };
-            // Skip placeholder ("-") and localhost values, which are useless as pivot keywords.
-            if value == "-" || value == "127.0.0.1" || value == "::1" {
+            // Skip empty, placeholder ("-") and localhost values, which are useless as pivot
+            // keywords.
+            if value.trim().is_empty() || value == "-" || value == "127.0.0.1" || value == "::1" {
                 continue;
             }
             pivot.keywords.insert(value.to_string());
@@ -224,6 +225,26 @@ mod tests {
         assert_eq!(keywords("Ip Addresses"), ["10.0.0.5"]);
         assert_eq!(keywords("Users"), ["alice", "bob"]);
         assert_eq!(keywords("Logon IDs"), ["0x1234"]);
+    }
+
+    /// Empty fields, such as an empty TargetUserName, must not add a blank keyword line.
+    #[test]
+    fn insert_pivot_keyword_skips_empty_values() {
+        let pivot_keyword = RwLock::new(PivotKeywordMap::new());
+        load_pivot_keywords("test_files/config/pivot_keywords.txt", &pivot_keyword);
+        let record = r#"{"Event": {"System": {"Level": 4},
+            "EventData": {"SubjectUserName": "alice", "TargetUserName": "", "User": "  ", "IpAddress": ""}}}"#;
+        insert_pivot_keyword(
+            &serde_json::from_str(record).unwrap(),
+            &crate::detections::configs::EventKeyAliasConfig::new(),
+            &pivot_keyword,
+        );
+        let pivots = pivot_keyword.read().unwrap();
+        assert_eq!(
+            pivots["Users"].keywords.iter().collect::<Vec<_>>(),
+            ["alice"]
+        );
+        assert!(pivots["Ip Addresses"].keywords.is_empty());
     }
 
     #[test]

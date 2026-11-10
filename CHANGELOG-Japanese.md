@@ -10,7 +10,7 @@
 
 **バグ修正:**
 
-- 最新のルールで `pivot-keywords-list` がキーワードを1つも出力しない問題を修正した。ルールの `eventkey_alias.txt` から `EventData` のフィールド名と同じだけのエイリアスが削除されたが、ピボットのフィールドはエイリアス経由でしか解決していなかった。ルールのフィールドと同じ方法で解決するようにしたため、ログ消去イベントの `SubjectUserName` など `UserData` にしかない値も収集される。 (#1957) (@YamatoSecurity)
+- 最新のルールで `pivot-keywords-list` がキーワードを1つも出力しない問題を修正した。ルールの `eventkey_alias.txt` から `EventData` のフィールド名と同じだけのエイリアスが削除されたが、ピボットのフィールドはエイリアス経由でしか解決していなかった。ルールのフィールドと同じ方法で解決するようにしたため、ログ消去イベントの `SubjectUserName` など `UserData` にしかない値も収集される。また、空の値が空行のキーワードとして出力されないようにした。 (#1957) (@YamatoSecurity)
 
 ## 4.3.1 [2026/10/29] - Vulnpocalypse Release
 
