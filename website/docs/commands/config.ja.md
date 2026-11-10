@@ -12,8 +12,8 @@ Usage:
   hayabusa.exe config-critical-systems <INPUT> [OPTIONS]
 
 Input:
-  -d, --directory <DIR>  .evtxファイルを持つディレクトリのパス (or VHDX images with --vhdx)
-  -f, --file <FILE>      1つの.evtxファイルに対して解析を行う (or a VHDX image with --vhdx)
+  -d, --directory <DIR>  .evtxファイルを持つディレクトリのパス (or images with --vhdx/--e01)
+  -f, --file <FILE>      1つの.evtxファイルに対して解析を行う (or an image with --vhdx/--e01)
       --vhdx             Scan VHDX images read-only; -d searches up to three subdirectory levels
       --e01              Scan E01/Ex01 images read-only without extraction; -d searches three subdirectory levels
 

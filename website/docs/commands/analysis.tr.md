@@ -15,8 +15,8 @@ Usage:
   hayabusa.exe computer-metrics <INPUT> [OPTIONS]
 
 Input:
-  -d, --directory <DIR>  Birden fazla .evtx dosyasının bulunduğu dizin (or VHDX images with --vhdx)
-  -f, --file <FILE>      Tek bir .evtx dosyasının dosya yolu (or a VHDX image with --vhdx)
+  -d, --directory <DIR>  Birden fazla .evtx dosyasının bulunduğu dizin (or images with --vhdx/--e01)
+  -f, --file <FILE>      Tek bir .evtx dosyasının dosya yolu (or an image with --vhdx/--e01)
       --vhdx             Scan VHDX images read-only; -d searches up to three subdirectory levels
       --e01              Scan E01/Ex01 images read-only without extraction; -d searches three subdirectory levels
   -l, --live-analysis    Yerel C:\Windows\System32\winevt\Logs klasörünü analiz et
@@ -62,8 +62,8 @@ Usage:
   hayabusa.exe eid-metrics <INPUT> [OPTIONS]
 
 Input:
-  -d, --directory <DIR>  Birden fazla .evtx dosyasının bulunduğu dizin (or VHDX images with --vhdx)
-  -f, --file <FILE>      Tek bir .evtx dosyasının dosya yolu (or a VHDX image with --vhdx)
+  -d, --directory <DIR>  Birden fazla .evtx dosyasının bulunduğu dizin (or images with --vhdx/--e01)
+  -f, --file <FILE>      Tek bir .evtx dosyasının dosya yolu (or an image with --vhdx/--e01)
       --vhdx             Scan VHDX images read-only; -d searches up to three subdirectory levels
       --e01              Scan E01/Ex01 images read-only without extraction; -d searches three subdirectory levels
   -l, --live-analysis    Yerel C:\Windows\System32\winevt\Logs klasörünü analiz et
@@ -203,8 +203,8 @@ Usage:
   hayabusa.exe extract-base64 <INPUT> [OPTIONS]
 
 Input:
-  -d, --directory <DIR>  Birden fazla .evtx dosyasının bulunduğu dizin (or VHDX images with --vhdx)
-  -f, --file <FILE>      Tek bir .evtx dosyasının dosya yolu (or a VHDX image with --vhdx)
+  -d, --directory <DIR>  Birden fazla .evtx dosyasının bulunduğu dizin (or images with --vhdx/--e01)
+  -f, --file <FILE>      Tek bir .evtx dosyasının dosya yolu (or an image with --vhdx/--e01)
       --vhdx             Scan VHDX images read-only; -d searches up to three subdirectory levels
       --e01              Scan E01/Ex01 images read-only without extraction; -d searches three subdirectory levels
   -l, --live-analysis    Yerel C:\Windows\System32\winevt\Logs klasörünü analiz et
@@ -290,8 +290,8 @@ Usage:
   hayabusa.exe log-metrics <INPUT> [OPTIONS]
 
 Input:
-  -d, --directory <DIR>  Birden fazla .evtx dosyasının bulunduğu dizin (or VHDX images with --vhdx)
-  -f, --file <FILE>      Tek bir .evtx dosyasının dosya yolu (or a VHDX image with --vhdx)
+  -d, --directory <DIR>  Birden fazla .evtx dosyasının bulunduğu dizin (or images with --vhdx/--e01)
+  -f, --file <FILE>      Tek bir .evtx dosyasının dosya yolu (or an image with --vhdx/--e01)
       --vhdx             Scan VHDX images read-only; -d searches up to three subdirectory levels
       --e01              Scan E01/Ex01 images read-only without extraction; -d searches three subdirectory levels
   -l, --live-analysis    Yerel C:\Windows\System32\winevt\Logs klasörünü analiz et
@@ -365,8 +365,8 @@ Usage:
   hayabusa.exe logon-summary <INPUT> [OPTIONS]
 
 Input:
-  -d, --directory <DIR>  Birden fazla .evtx dosyasının bulunduğu dizin (or VHDX images with --vhdx)
-  -f, --file <FILE>      Tek bir .evtx dosyasının dosya yolu (or a VHDX image with --vhdx)
+  -d, --directory <DIR>  Birden fazla .evtx dosyasının bulunduğu dizin (or images with --vhdx/--e01)
+  -f, --file <FILE>      Tek bir .evtx dosyasının dosya yolu (or an image with --vhdx/--e01)
       --vhdx             Scan VHDX images read-only; -d searches up to three subdirectory levels
       --e01              Scan E01/Ex01 images read-only without extraction; -d searches three subdirectory levels
   -l, --live-analysis    Yerel C:\Windows\System32\winevt\Logs klasörünü analiz et
@@ -440,8 +440,8 @@ Usage:
   hayabusa.exe pivot-keywords-list <INPUT> [OPTIONS]
 
 Input:
-  -d, --directory <DIR>  Birden fazla .evtx dosyasının bulunduğu dizin (or VHDX images with --vhdx)
-  -f, --file <FILE>      Tek bir .evtx dosyasının dosya yolu (or a VHDX image with --vhdx)
+  -d, --directory <DIR>  Birden fazla .evtx dosyasının bulunduğu dizin (or images with --vhdx/--e01)
+  -f, --file <FILE>      Tek bir .evtx dosyasının dosya yolu (or an image with --vhdx/--e01)
       --vhdx             Scan VHDX images read-only; -d searches up to three subdirectory levels
       --e01              Scan E01/Ex01 images read-only without extraction; -d searches three subdirectory levels
   -l, --live-analysis    Yerel C:\Windows\System32\winevt\Logs klasörünü analiz et
@@ -529,8 +529,8 @@ General Options:
   -V, --validate-checksums             Sağlama toplamı doğrulamasını etkinleştir
 
 Input:
-  -d, --directory <DIR>  Birden fazla .evtx dosyasının bulunduğu dizin (or VHDX images with --vhdx)
-  -f, --file <FILE>      Tek bir .evtx dosyasının dosya yolu (or a VHDX image with --vhdx)
+  -d, --directory <DIR>  Birden fazla .evtx dosyasının bulunduğu dizin (or images with --vhdx/--e01)
+  -f, --file <FILE>      Tek bir .evtx dosyasının dosya yolu (or an image with --vhdx/--e01)
       --vhdx             Scan VHDX images read-only; -d searches up to three subdirectory levels
       --e01              Scan E01/Ex01 images read-only without extraction; -d searches three subdirectory levels
   -l, --live-analysis    Yerel C:\Windows\System32\winevt\Logs klasörünü analiz et

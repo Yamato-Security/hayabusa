@@ -15,8 +15,8 @@ Usage:
   hayabusa.exe computer-metrics <INPUT> [OPTIONS]
 
 Input:
-  -d, --directory <DIR>  Directorio con múltiples archivos .evtx (or VHDX images with --vhdx)
-  -f, --file <FILE>      Ruta a un único archivo .evtx (or a VHDX image with --vhdx)
+  -d, --directory <DIR>  Directorio con múltiples archivos .evtx (or images with --vhdx/--e01)
+  -f, --file <FILE>      Ruta a un único archivo .evtx (or an image with --vhdx/--e01)
       --vhdx             Scan VHDX images read-only; -d searches up to three subdirectory levels
       --e01              Scan E01/Ex01 images read-only without extraction; -d searches three subdirectory levels
   -l, --live-analysis    Analizar la carpeta local C:\Windows\System32\winevt\Logs
@@ -62,8 +62,8 @@ Usage:
   hayabusa.exe eid-metrics <INPUT> [OPTIONS]
 
 Input:
-  -d, --directory <DIR>  Directorio con múltiples archivos .evtx (or VHDX images with --vhdx)
-  -f, --file <FILE>      Ruta a un único archivo .evtx (or a VHDX image with --vhdx)
+  -d, --directory <DIR>  Directorio con múltiples archivos .evtx (or images with --vhdx/--e01)
+  -f, --file <FILE>      Ruta a un único archivo .evtx (or an image with --vhdx/--e01)
       --vhdx             Scan VHDX images read-only; -d searches up to three subdirectory levels
       --e01              Scan E01/Ex01 images read-only without extraction; -d searches three subdirectory levels
   -l, --live-analysis    Analizar la carpeta local C:\Windows\System32\winevt\Logs
@@ -203,8 +203,8 @@ Usage:
   hayabusa.exe extract-base64 <INPUT> [OPTIONS]
 
 Input:
-  -d, --directory <DIR>  Directorio con múltiples archivos .evtx (or VHDX images with --vhdx)
-  -f, --file <FILE>      Ruta a un único archivo .evtx (or a VHDX image with --vhdx)
+  -d, --directory <DIR>  Directorio con múltiples archivos .evtx (or images with --vhdx/--e01)
+  -f, --file <FILE>      Ruta a un único archivo .evtx (or an image with --vhdx/--e01)
       --vhdx             Scan VHDX images read-only; -d searches up to three subdirectory levels
       --e01              Scan E01/Ex01 images read-only without extraction; -d searches three subdirectory levels
   -l, --live-analysis    Analizar la carpeta local C:\Windows\System32\winevt\Logs
@@ -290,8 +290,8 @@ Usage:
   hayabusa.exe log-metrics <INPUT> [OPTIONS]
 
 Input:
-  -d, --directory <DIR>  Directorio con múltiples archivos .evtx (or VHDX images with --vhdx)
-  -f, --file <FILE>      Ruta a un único archivo .evtx (or a VHDX image with --vhdx)
+  -d, --directory <DIR>  Directorio con múltiples archivos .evtx (or images with --vhdx/--e01)
+  -f, --file <FILE>      Ruta a un único archivo .evtx (or an image with --vhdx/--e01)
       --vhdx             Scan VHDX images read-only; -d searches up to three subdirectory levels
       --e01              Scan E01/Ex01 images read-only without extraction; -d searches three subdirectory levels
   -l, --live-analysis    Analizar la carpeta local C:\Windows\System32\winevt\Logs
@@ -365,8 +365,8 @@ Usage:
   hayabusa.exe logon-summary <INPUT> [OPTIONS]
 
 Input:
-  -d, --directory <DIR>  Directorio con múltiples archivos .evtx (or VHDX images with --vhdx)
-  -f, --file <FILE>      Ruta a un único archivo .evtx (or a VHDX image with --vhdx)
+  -d, --directory <DIR>  Directorio con múltiples archivos .evtx (or images with --vhdx/--e01)
+  -f, --file <FILE>      Ruta a un único archivo .evtx (or an image with --vhdx/--e01)
       --vhdx             Scan VHDX images read-only; -d searches up to three subdirectory levels
       --e01              Scan E01/Ex01 images read-only without extraction; -d searches three subdirectory levels
   -l, --live-analysis    Analizar la carpeta local C:\Windows\System32\winevt\Logs
@@ -440,8 +440,8 @@ Usage:
   hayabusa.exe pivot-keywords-list <INPUT> [OPTIONS]
 
 Input:
-  -d, --directory <DIR>  Directorio con múltiples archivos .evtx (or VHDX images with --vhdx)
-  -f, --file <FILE>      Ruta a un único archivo .evtx (or a VHDX image with --vhdx)
+  -d, --directory <DIR>  Directorio con múltiples archivos .evtx (or images with --vhdx/--e01)
+  -f, --file <FILE>      Ruta a un único archivo .evtx (or an image with --vhdx/--e01)
       --vhdx             Scan VHDX images read-only; -d searches up to three subdirectory levels
       --e01              Scan E01/Ex01 images read-only without extraction; -d searches three subdirectory levels
   -l, --live-analysis    Analizar la carpeta local C:\Windows\System32\winevt\Logs
@@ -529,8 +529,8 @@ General Options:
   -V, --validate-checksums             Habilitar la validación de sumas de verificación (checksums)
 
 Input:
-  -d, --directory <DIR>  Directorio con múltiples archivos .evtx (or VHDX images with --vhdx)
-  -f, --file <FILE>      Ruta a un único archivo .evtx (or a VHDX image with --vhdx)
+  -d, --directory <DIR>  Directorio con múltiples archivos .evtx (or images with --vhdx/--e01)
+  -f, --file <FILE>      Ruta a un único archivo .evtx (or an image with --vhdx/--e01)
       --vhdx             Scan VHDX images read-only; -d searches up to three subdirectory levels
       --e01              Scan E01/Ex01 images read-only without extraction; -d searches three subdirectory levels
   -l, --live-analysis    Analizar la carpeta local C:\Windows\System32\winevt\Logs

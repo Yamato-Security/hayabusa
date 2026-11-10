@@ -52,9 +52,13 @@ pub fn discover(input: &InputOption) -> io::Result<Vec<PathBuf>> {
     let mut files = Vec::new();
     if let Some(path) = &input.filepath {
         if !path.is_file() || !is_image(path, input) {
+            let expected = match (input.vhdx, input.e01) {
+                (true, true) => "a VHDX file or an E01/Ex01 first segment",
+                (false, true) => "an E01/Ex01 first segment",
+                _ => "a VHDX file",
+            };
             return Err(io::Error::other(format!(
-                "Not a {} first image file: {}",
-                input.image_label(),
+                "Not {expected}: {}",
                 path.display()
             )));
         }
