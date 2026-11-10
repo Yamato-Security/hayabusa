@@ -67,12 +67,15 @@ jobs:
           ref: ${{ github.event.inputs.branch_or_tag }}
           submodules: 'true'
 
+      # Packaged as rules/ with its .git so that update-rules can pull later. A shallow clone keeps
+      # that .git at about 5 MB instead of about 38 MB of full history in every package;
+      # update-rules fetches and fast-forwards a shallow clone like a full one.
       - name: Clone hayabusa rule repo
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           ref: ${{ github.event.pull_request.head.sha }}
           repository: Yamato-Security/hayabusa-rules
-          fetch-depth: 0
+          fetch-depth: 1
           path: hayabusa-rules
 
       - name: Set up Rust toolchain
@@ -333,6 +336,17 @@ jobs:
       - run: |
           rm -rf all-packages/encoded_rules.yml
           rm -rf all-packages/rules_config_files.txt
+
+      # Every build clones the rules separately, so each rules/.git has its own pack file name
+      # and the merged download keeps all of them side by side. Keep one copy.
+      - name: Download one package for a single rules/.git
+        uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8.0.2
+        with:
+          name: hayabusa-${{ github.event.inputs.release_ver }}-lin-x64-gnu
+          path: one-package
+      - run: |
+          rm -rf all-packages/rules/.git
+          cp -r one-package/rules/.git all-packages/rules/.git
 
       - name: Upload Artifacts(all-platforms)
         uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
