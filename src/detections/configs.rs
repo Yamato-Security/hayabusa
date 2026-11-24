@@ -442,14 +442,12 @@ impl StoredStatic {
             _ => false,
         };
 
-        // Commands that never use the rules config files do not load them. Neither do the other
-        // commands when no config folder exists, neither the selected one nor the bundled
-        // fallback (a source build before the first `update-rules`): `App::exec` then stops
-        // with one message that says to run `update-rules`, instead of a `Cannot open file`
-        // error for each file followed by results computed without them.
+        // Check the complete effective set before loading any file. Merely finding a directory
+        // is insufficient: an empty/partial bundle would still emit per-file errors here before
+        // App::exec could print its single actionable error. Custom directories may be partial
+        // because resolve_config_file supplies the remaining files from the bundle.
         let load_rules_config = action.is_some_and(Action::uses_rules_config)
-            && (utils::check_rule_config_dir(config_path).is_ok()
-                || utils::check_rule_config_dir(&bundled_config_path).is_ok());
+            && utils::check_rule_config(config_path).is_ok();
         let generic_abbreviations = if load_rules_config {
             create_output_filter_config(
                 resolve_config_file(config_path, "generic_abbreviations.txt")
@@ -477,7 +475,7 @@ impl StoredStatic {
             Some(Action::DfirTimeline(opt)) => opt.output_options.proven_rules,
             _ => false,
         };
-        let target_ruleids = if proven_rule_flag {
+        let target_ruleids = if proven_rule_flag && load_rules_config {
             load_target_ids(
                 resolve_config_file(config_path, "proven_rules.txt")
                     .to_str()
