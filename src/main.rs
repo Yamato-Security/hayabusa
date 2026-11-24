@@ -2954,10 +2954,7 @@ Any hostnames added to the critical_systems.txt file will have all alerts above 
                 None
             }
         };
-        if !time_filter.is_target(&timestamp) {
-            return true;
-        }
-        false
+        !time_filter.is_target(&timestamp)
     }
 
     /// Analyze one JSON-format event log file (JSONL, JSON array, or Splunk exports): normalize
