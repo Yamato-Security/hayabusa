@@ -80,8 +80,8 @@ pub struct EventMetrics {
     pub counted_rec: HashSet<(String, String)>,
 }
 /**
-* Outputs statistics for Windows Event Logs.
-*/
+ * Outputs statistics for Windows Event Logs.
+ */
 impl EventMetrics {
     /// Aggregation entry point for the eid-metrics command: updates the overall record count/time
     /// range and counts records per (EventID, Channel).
