@@ -104,14 +104,14 @@ fn success(output: &Output) {
 }
 
 #[test]
-fn partial_and_empty_custom_configs_use_bundled_files_but_a_missing_one_is_an_error() {
+fn incomplete_or_missing_custom_config_folders_are_rejected() {
     let package = Package::new();
     package.install_configs(&[]);
     let (control, control_path) = package.search("control.csv", None);
     success(&control);
-    let expected = fs::read_to_string(control_path).unwrap();
     assert!(
-        csv::Reader::from_reader(expected.as_bytes())
+        csv::Reader::from_path(control_path)
+            .unwrap()
             .records()
             .next()
             .is_some()
@@ -128,30 +128,41 @@ fn partial_and_empty_custom_configs_use_bundled_files_but_a_missing_one_is_an_er
             )
             .unwrap();
         }
+        // A -c folder is checked on its own; nothing is taken from the bundled copies.
         let (output, path) = package.search(&format!("{variant}.csv"), Some(&custom));
+        let message = text(&output);
+        assert_eq!(output.status.code(), Some(1), "{variant}: {message}");
+        assert_eq!(
+            message.matches("[ERROR]").count(),
+            1,
+            "{variant}: {message}"
+        );
+        assert!(
+            message.contains("-c") && !message.contains("Cannot open file"),
+            "{variant}: {message}"
+        );
         if variant == "missing" {
-            // A mistyped -c path must not quietly run with the bundled files.
-            let message = text(&output);
-            assert_eq!(output.status.code(), Some(1), "{message}");
-            assert_eq!(message.matches("[ERROR]").count(), 1, "{message}");
+            assert!(message.contains("was not found"), "{message}");
+        } else {
             assert!(
-                message.contains("was not found") && !message.contains("Cannot open file"),
-                "{message}"
+                message.contains("missing the required config files")
+                    && message.contains("channel_abbreviations.txt"),
+                "{variant}: {message}"
             );
-            assert!(!path.exists());
-            continue;
         }
-        success(&output);
-        assert_eq!(fs::read_to_string(path).unwrap(), expected, "{variant}");
+        if variant == "partial" {
+            assert!(!message.contains("eventkey_alias.txt"), "{message}");
+        }
+        assert!(!path.exists(), "{variant}");
     }
 }
 
 #[test]
-fn a_custom_config_override_is_used_with_bundled_fallbacks() {
+fn a_complete_custom_config_folder_is_used() {
     let package = Package::new();
     package.install_configs(&[]);
     let custom = package.cwd.join("custom");
-    fs::create_dir(&custom).unwrap();
+    copy_tree(&source_root().join("rules/config"), &custom, &[]);
     fs::write(
         custom.join("channel_abbreviations.txt"),
         "Channel,Abbreviation\nSecurity,CUSTOM\n",

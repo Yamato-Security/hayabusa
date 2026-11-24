@@ -27,9 +27,7 @@ use termcolor::{BufferWriter, ColorSpec, WriteColor};
 use termcolor::{Color, ColorChoice};
 use tokio::runtime::{Builder, Runtime};
 
-use crate::detections::configs::{
-    CURRENT_EXE_PATH, ONE_CONFIG_MAP, TimeFormatOptions, resolve_config_file,
-};
+use crate::detections::configs::{CURRENT_EXE_PATH, ONE_CONFIG_MAP, TimeFormatOptions};
 use crate::detections::field_data_map::{FieldDataMap, FieldDataMapKey, convert_field_data};
 use crate::detections::field_extract::extract_fields;
 use crate::options::htmlreport;
@@ -777,45 +775,56 @@ fn contains_rule_file(dir: &Path, top_level: bool) -> bool {
     })
 }
 
-/// Core files loaded by StoredStatic, plus the level-tuning configuration used by scans.
-const REQUIRED_RULE_CONFIG_FILES: [&str; 8] = [
+/// Every config file Hayabusa reads from the rules config folder, except the two optional
+/// opening/closing message files. `data_mapping` is a folder. All of them must exist in the
+/// selected folder, whether it is the default `rules/config` or a folder given with `-c`.
+const REQUIRED_RULE_CONFIG_FILES: [&str; 16] = [
     "channel_abbreviations.txt",
-    "target_event_IDs.txt",
-    "default_details.txt",
-    "level_tuning.txt",
     "channel_eid_info.txt",
+    "data_mapping",
+    "default_details.txt",
     "eventkey_alias.txt",
+    "exclude_rules.txt",
     "generic_abbreviations.txt",
+    "geoip_field_mapping.yaml",
+    "level_tuning.txt",
+    "noisy_rules.txt",
+    "pivot_keywords.txt",
+    "proven_rules.txt",
     "provider_abbreviations.txt",
+    "target_event_IDs.txt",
+    "windash_characters.txt",
+    "windows_versions.csv",
 ];
 
-/// Validate the effective files before any readers run: custom overrides, bundled fallbacks,
-/// and embedded live-response configuration use the same lookup as the readers themselves.
-/// A partial custom directory is valid when its missing files are available from the bundle.
+/// Verifies that every required config file exists in `config_path`, or is supplied by the
+/// all-in-one bundle of the live-response package (`rules_config_files.txt`). The check is the
+/// same with and without `-c`: a folder given with `-c` is checked on its own and nothing is
+/// taken from the bundled `rules/config` to complete it. `StoredStatic` loads the config files
+/// only when this passes, so a problem gives one message instead of one error per file.
 pub fn check_rule_config(config_path: &Path) -> Result<(), String> {
-    // A folder named with `-c` must exist: a mistyped path must not fall back to the bundled
-    // files without a word. The default path may be absent when the live-response bundle
-    // (`rules_config_files.txt`) supplies every file.
     let default = check_setting_path(&CURRENT_EXE_PATH.to_path_buf(), "rules/config", true)
         .unwrap_or_default();
-    if config_path != default && !config_path.is_dir() {
-        return Err(format!(
-            "The rules config folder {} was not found. Specify an existing folder with -c, or omit -c to use rules/config.",
-            config_path.display()
-        ));
-    }
-    check_rule_config_with(config_path, |name| {
-        ONE_CONFIG_MAP.contains_key(name)
-            || File::open(resolve_config_file(config_path, name))
-                .and_then(|file| file.metadata())
-                .is_ok_and(|metadata| metadata.is_file())
+    let custom = config_path != default;
+    check_rule_config_with(config_path, custom, |name| {
+        if name == "data_mapping" {
+            ONE_CONFIG_MAP
+                .keys()
+                .any(|key| key.starts_with("data_mapping/"))
+                || config_path.join(name).is_dir()
+        } else {
+            ONE_CONFIG_MAP.contains_key(name) || config_path.join(name).is_file()
+        }
     })
 }
 
-/// An explicit availability probe lets tests exercise missing/partial bundles without changing
+/// An explicit availability probe lets tests exercise missing/partial folders without changing
 /// process-global working directories, executable paths or the lazy live-response bundle.
+/// `custom` selects the advice: a `-c` folder is the user's to fix, the default one is
+/// downloaded by `update-rules`.
 fn check_rule_config_with(
     config_path: &Path,
+    custom: bool,
     available: impl Fn(&str) -> bool,
 ) -> Result<(), String> {
     let missing: Vec<_> = REQUIRED_RULE_CONFIG_FILES
@@ -826,14 +835,20 @@ fn check_rule_config_with(
     if missing.is_empty() {
         return Ok(());
     }
+    let hint = if custom {
+        "Specify a complete rules config folder with -c, or omit -c to use rules/config."
+    } else {
+        UPDATE_RULES_HINT
+    };
     if !config_path.is_dir() {
         Err(format!(
-            "The rules config folder {} was not found. {UPDATE_RULES_HINT}",
+            "The rules config folder {} was not found. {hint}",
             config_path.display()
         ))
     } else {
         Err(format!(
-            "Could not read the following required rules config files: {}. {UPDATE_RULES_HINT}",
+            "The rules config folder {} is missing the required config files: {}. {hint}",
+            config_path.display(),
             missing.join(", ")
         ))
     }
@@ -1539,38 +1554,53 @@ mod tests {
     fn test_check_rule_config_reports_missing_folder_and_files() {
         let dir = tempfile::tempdir().unwrap();
         let config = dir.path().join("config");
-        let local_file = |name: &str| config.join(name).is_file();
-        let err = check_rule_config_with(&config, local_file).unwrap_err();
+        let local = |name: &str| {
+            if name == "data_mapping" {
+                config.join(name).is_dir()
+            } else {
+                config.join(name).is_file()
+            }
+        };
+        let err = check_rule_config_with(&config, false, local).unwrap_err();
         assert!(
             err.contains("was not found") && err.contains("update-rules"),
             "{err}"
         );
         std::fs::create_dir(&config).unwrap();
         for name in super::REQUIRED_RULE_CONFIG_FILES {
-            if name != "eventkey_alias.txt" {
+            if name == "data_mapping" {
+                std::fs::create_dir(config.join(name)).unwrap();
+            } else if name != "eventkey_alias.txt" {
                 std::fs::write(config.join(name), "").unwrap();
             }
         }
-        let err = check_rule_config_with(&config, local_file).unwrap_err();
+        let err = check_rule_config_with(&config, false, local).unwrap_err();
         assert!(
-            err.contains("eventkey_alias.txt") && err.contains("update-rules"),
+            err.contains("missing the required config files: eventkey_alias.txt.")
+                && err.contains("update-rules"),
             "{err}"
         );
         std::fs::write(config.join("eventkey_alias.txt"), "").unwrap();
-        assert!(check_rule_config_with(&config, local_file).is_ok());
+        assert!(check_rule_config_with(&config, false, local).is_ok());
         assert!(check_rule_config(Path::new("rules/config")).is_ok());
-        // A custom folder that does not exist is an error even though every file could come
-        // from the bundled copies; a custom folder that exists may be partial.
+        // A -c folder is checked on its own: a complete copy passes, a file it lacks is not
+        // taken from the bundled copies, and a folder that does not exist is an error.
+        assert!(check_rule_config(&config).is_ok());
+        std::fs::remove_file(config.join("eventkey_alias.txt")).unwrap();
+        std::fs::remove_dir(config.join("data_mapping")).unwrap();
+        let err = check_rule_config(&config).unwrap_err();
+        assert!(
+            err.contains("data_mapping, eventkey_alias.txt.") && err.contains("-c"),
+            "{err}"
+        );
         let err = check_rule_config(&dir.path().join("typo")).unwrap_err();
         assert!(err.contains("was not found") && err.contains("-c"), "{err}");
-        std::fs::remove_file(config.join("eventkey_alias.txt")).unwrap();
-        assert!(check_rule_config(&config).is_ok());
     }
 
     #[test]
     fn test_rule_config_checks_abbreviation_files_and_embedded_disk_combinations() {
         let dir = tempfile::tempdir().unwrap();
-        let err = check_rule_config_with(dir.path(), |name| {
+        let err = check_rule_config_with(dir.path(), false, |name| {
             !matches!(
                 name,
                 "generic_abbreviations.txt" | "provider_abbreviations.txt"
@@ -1580,9 +1610,8 @@ mod tests {
         assert!(
             err.contains("generic_abbreviations.txt") && err.contains("provider_abbreviations.txt")
         );
-        // A supplied file may come from any reader-supported source. The checker must not
-        // require an on-disk directory when every effective file is embedded or bundled.
-        assert!(check_rule_config_with(&dir.path().join("absent"), |_| true).is_ok());
+        // The live-response bundle supplies every file without an on-disk folder.
+        assert!(check_rule_config_with(&dir.path().join("absent"), false, |_| true).is_ok());
     }
 
     #[test]
