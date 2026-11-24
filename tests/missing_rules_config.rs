@@ -104,7 +104,7 @@ fn success(output: &Output) {
 }
 
 #[test]
-fn partial_empty_and_missing_custom_configs_use_bundled_files() {
+fn partial_and_empty_custom_configs_use_bundled_files_but_a_missing_one_is_an_error() {
     let package = Package::new();
     package.install_configs(&[]);
     let (control, control_path) = package.search("control.csv", None);
@@ -129,6 +129,18 @@ fn partial_empty_and_missing_custom_configs_use_bundled_files() {
             .unwrap();
         }
         let (output, path) = package.search(&format!("{variant}.csv"), Some(&custom));
+        if variant == "missing" {
+            // A mistyped -c path must not quietly run with the bundled files.
+            let message = text(&output);
+            assert_eq!(output.status.code(), Some(1), "{message}");
+            assert_eq!(message.matches("[ERROR]").count(), 1, "{message}");
+            assert!(
+                message.contains("was not found") && !message.contains("Cannot open file"),
+                "{message}"
+            );
+            assert!(!path.exists());
+            continue;
+        }
         success(&output);
         assert_eq!(fs::read_to_string(path).unwrap(), expected, "{variant}");
     }

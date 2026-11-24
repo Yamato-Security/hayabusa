@@ -9,7 +9,7 @@
 **バグ修正:**
 
 - `rules` フォルダがまだない場合に、`update-rules`、`list-profiles`、`list-contributors`、`set-default-profile`、`sort-csv` がルールの設定ファイルについて `Cannot open file` エラーを出力しないようにした。これらのコマンドはその設定ファイルを使わないため、読み込まないようにした。 (@YamatoSecurity)
-- ルールとルール設定ファイルを必要とするコマンド（`dfir-timeline`、`logon-summary`、`eid-metrics`、`search`、`pivot-keywords-list`、`level-tuning`、`expand-list`、その他のメトリクス系コマンド）は、`rules` フォルダがない、または空の場合（例：ソースからコンパイルして `update-rules` を実行していない場合）、`update-rules` の実行を促す1つのエラーで停止するようにした。以前は設定ファイルごとに `Cannot open file` エラーを出力した後、クラッシュしたり（`eid-metrics`）、設定ファイルなしで計算した結果を出力したりしていた（例：`logon-summary` がログオンなしと報告）。 `-c` で指定した設定フォルダに不足するファイルは、引き続き同梱ファイルで補完する。不完全な設定フォルダも読み込み前に検証し、ファイルごとのエラーが繰り返し表示されないようにした。 (#1963) (@YamatoSecurity)
+- ルールとルール設定ファイルを必要とするコマンド（`dfir-timeline`、`logon-summary`、`eid-metrics`、`search`、`pivot-keywords-list`、`level-tuning`、`expand-list`、その他のメトリクス系コマンド）は、`rules` フォルダがない、または空の場合（例：ソースからコンパイルして `update-rules` を実行していない場合）、`update-rules` の実行を促す1つのエラーで停止するようにした。以前は設定ファイルごとに `Cannot open file` エラーを出力した後、クラッシュしたり（`eid-metrics`）、設定ファイルなしで計算した結果を出力したりしていた（例：`logon-summary` がログオンなしと報告）。 `-c` で指定した設定フォルダに不足するファイルがある場合は、これまでどおり同梱ファイルで補完するが、存在しないフォルダを指定した場合はエラーにする。設定ファイルは読み込む前にまとめて検証するため、ファイルごとのエラーは表示されない。 (#1963) (@YamatoSecurity)
 
 **その他:**
 

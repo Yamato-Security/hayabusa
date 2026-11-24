@@ -793,6 +793,17 @@ const REQUIRED_RULE_CONFIG_FILES: [&str; 8] = [
 /// and embedded live-response configuration use the same lookup as the readers themselves.
 /// A partial custom directory is valid when its missing files are available from the bundle.
 pub fn check_rule_config(config_path: &Path) -> Result<(), String> {
+    // A folder named with `-c` must exist: a mistyped path must not fall back to the bundled
+    // files without a word. The default path may be absent when the live-response bundle
+    // (`rules_config_files.txt`) supplies every file.
+    let default = check_setting_path(&CURRENT_EXE_PATH.to_path_buf(), "rules/config", true)
+        .unwrap_or_default();
+    if config_path != default && !config_path.is_dir() {
+        return Err(format!(
+            "The rules config folder {} was not found. Specify an existing folder with -c, or omit -c to use rules/config.",
+            config_path.display()
+        ));
+    }
     check_rule_config_with(config_path, |name| {
         ONE_CONFIG_MAP.contains_key(name)
             || File::open(resolve_config_file(config_path, name))
@@ -1548,6 +1559,12 @@ mod tests {
         std::fs::write(config.join("eventkey_alias.txt"), "").unwrap();
         assert!(check_rule_config_with(&config, local_file).is_ok());
         assert!(check_rule_config(Path::new("rules/config")).is_ok());
+        // A custom folder that does not exist is an error even though every file could come
+        // from the bundled copies; a custom folder that exists may be partial.
+        let err = check_rule_config(&dir.path().join("typo")).unwrap_err();
+        assert!(err.contains("was not found") && err.contains("-c"), "{err}");
+        std::fs::remove_file(config.join("eventkey_alias.txt")).unwrap();
+        assert!(check_rule_config(&config).is_ok());
     }
 
     #[test]
