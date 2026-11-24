@@ -541,12 +541,26 @@ impl App {
             return;
         }
 
-        // If the rules-config option was not specified (the path is still the default
-        // ./rules/config), resolve it relative to the executable's directory so that running
-        // Hayabusa from a different current directory does not cause errors.
-        if stored_static.config_path == Path::new("./rules/config") {
-            stored_static.config_path =
-                check_setting_path(&CURRENT_EXE_PATH.to_path_buf(), "rules/config", true).unwrap();
+        // Stop here, with one message that says to run `update-rules`, when the command needs
+        // the rules config files or the rules and they are missing. A source build has no rules
+        // until the first `update-rules` (the `rules` submodule is empty or absent), and without
+        // this check the commands crash or print results computed without their config files.
+        // `StoredStatic::create_static_data` resolved the default config path already.
+        let (uses_rules, uses_rules_config) = {
+            let action = stored_static.config.action.as_ref().unwrap();
+            (action.uses_rules(), action.uses_rules_config())
+        };
+        if uses_rules_config && let Err(e) = utils::check_rule_config(&stored_static.config_path) {
+            AlertMessage::alert(&e).ok();
+            self.failed.set(true);
+            return;
+        }
+        if uses_rules
+            && let Err(e) = utils::check_rules_dir(&Self::resolve_rules_path(stored_static))
+        {
+            AlertMessage::alert(&e).ok();
+            self.failed.set(true);
+            return;
         }
 
         let time_filter = TargetEventTime::new(stored_static);
@@ -674,29 +688,6 @@ impl App {
         let action = stored_static.config.action.clone().unwrap();
         match &action {
             Action::DfirTimeline(_) => {
-                // If the rules option was not specified (the path is still the default ./rules),
-                // resolve it relative to the executable's directory so that running Hayabusa from
-                // a different current directory does not cause errors.
-                if stored_static.output_option.as_ref().unwrap().rules == Path::new("./rules") {
-                    if Path::new("./encoded_rules.yml").exists() {
-                        stored_static.output_option.as_mut().unwrap().rules = check_setting_path(
-                            &CURRENT_EXE_PATH.to_path_buf(),
-                            "encoded_rules.yml",
-                            true,
-                        )
-                        .unwrap();
-                    } else {
-                        stored_static.output_option.as_mut().unwrap().rules =
-                            check_setting_path(&CURRENT_EXE_PATH.to_path_buf(), "rules", true)
-                                .unwrap();
-                    }
-                }
-                // Check the rule config folder and files, and terminate if there are errors.
-                if let Err(e) = utils::check_rule_config(&stored_static.config_path) {
-                    AlertMessage::alert(&e).ok();
-                    self.failed.set(true);
-                    return;
-                }
                 if stored_static.profiles.is_none() {
                     return;
                 }
@@ -877,15 +868,6 @@ impl App {
                         .unwrap(),
                     &stored_static.pivot_keyword,
                 );
-                if Path::new("./encoded_rules.yml").exists() {
-                    stored_static.output_option.as_mut().unwrap().rules = check_setting_path(
-                        &CURRENT_EXE_PATH.to_path_buf(),
-                        "encoded_rules.yml",
-                        true,
-                    )
-                    .unwrap();
-                }
-
                 // When outputting a file with the pivot feature, if a file with the same name already exists, output an error and terminate.
                 let mut error_flag = false;
                 if let Some(csv_path) = &stored_static.output_path {
@@ -1124,6 +1106,39 @@ Any hostnames added to the critical_systems.txt file will have all alerts above 
                     .ok();
                 }
             });
+        }
+    }
+
+    /// The rules folder (or `encoded_rules.yml`) a command reads, resolved the way the command
+    /// itself resolves it. `dfir-timeline` and `pivot-keywords-list` take `-r`, which defaults to
+    /// `./rules` and is looked up next to the executable so that running Hayabusa from another
+    /// current directory works; `expand-list` takes `-r` as given; `level-tuning` uses `./rules`.
+    fn resolve_rules_path(stored_static: &mut StoredStatic) -> PathBuf {
+        match stored_static.config.action.as_ref().unwrap() {
+            Action::DfirTimeline(_) | Action::PivotKeywordsList(_) => {
+                let output_option = stored_static.output_option.as_mut().unwrap();
+                if output_option.rules == Path::new("./rules") {
+                    output_option.rules = if Path::new("./encoded_rules.yml").exists() {
+                        check_setting_path(
+                            &CURRENT_EXE_PATH.to_path_buf(),
+                            "encoded_rules.yml",
+                            true,
+                        )
+                        .unwrap()
+                    } else {
+                        check_setting_path(&CURRENT_EXE_PATH.to_path_buf(), "rules", true).unwrap()
+                    };
+                }
+                output_option.rules.clone()
+            }
+            Action::ExpandList(opt) => {
+                if Path::new("./encoded_rules.yml").exists() {
+                    PathBuf::from("./encoded_rules.yml")
+                } else {
+                    opt.rules.clone()
+                }
+            }
+            _ => PathBuf::from("./rules"),
         }
     }
 
