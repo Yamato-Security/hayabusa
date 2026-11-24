@@ -273,6 +273,20 @@ impl StoredStatic {
             Some(Action::LogMetrics(opt)) => &opt.detect_common_options.config,
             _ => &binding,
         };
+        // The `rules/config` folder shipped next to the executable (or, failing that, under the
+        // current directory): the default for `-c`, and the fallback `resolve_config_file` uses
+        // for any file missing from a custom `-c` folder.
+        let bundled_config_path =
+            check_setting_path(&CURRENT_EXE_PATH.to_path_buf(), "rules/config", true).unwrap();
+        // If the rules-config option was not specified (the path is still the default
+        // ./rules/config, or empty), resolve it relative to the executable's directory so that
+        // running Hayabusa from a different current directory does not cause errors.
+        let config_path =
+            &if config_path == Path::new("./rules/config") || config_path.as_os_str().is_empty() {
+                bundled_config_path.clone()
+            } else {
+                config_path.to_path_buf()
+            };
         let verbose_flag = match action {
             Some(Action::DfirTimeline(opt)) => opt.output_options.detect_common_options.verbose,
             Some(Action::LogonSummary(opt)) => opt.detect_common_options.verbose,
@@ -428,18 +442,14 @@ impl StoredStatic {
             _ => false,
         };
 
-        // These commands never use the rules config files. There is no rules folder before the
-        // first `update-rules`, and loading them would print an error for each missing file.
-        let load_rules_config = !matches!(
-            action,
-            Some(
-                Action::UpdateRules(_)
-                    | Action::SetDefaultProfile(_)
-                    | Action::ListContributors(_)
-                    | Action::ListProfiles(_)
-                    | Action::SortCsv(_)
-            )
-        );
+        // Commands that never use the rules config files do not load them. Neither do the other
+        // commands when no config folder exists, neither the selected one nor the bundled
+        // fallback (a source build before the first `update-rules`): `App::exec` then stops
+        // with one message that says to run `update-rules`, instead of a `Cannot open file`
+        // error for each file followed by results computed without them.
+        let load_rules_config = action.is_some_and(Action::uses_rules_config)
+            && (utils::check_rule_config_dir(config_path).is_ok()
+                || utils::check_rule_config_dir(&bundled_config_path).is_ok());
         let generic_abbreviations = if load_rules_config {
             create_output_filter_config(
                 resolve_config_file(config_path, "generic_abbreviations.txt")
@@ -1029,6 +1039,30 @@ pub enum Action {
 }
 
 impl Action {
+    /// Commands that load detection rules from the rules folder (or `encoded_rules.yml`).
+    pub fn uses_rules(&self) -> bool {
+        matches!(
+            self,
+            Action::DfirTimeline(_)
+                | Action::PivotKeywordsList(_)
+                | Action::LevelTuning(_)
+                | Action::ExpandList(_)
+        )
+    }
+
+    /// Commands that read the rules config files (`eventkey_alias.txt` and the other files under
+    /// `rules/config`). The remaining commands work before the first `update-rules`.
+    pub fn uses_rules_config(&self) -> bool {
+        !matches!(
+            self,
+            Action::UpdateRules(_)
+                | Action::SetDefaultProfile(_)
+                | Action::ListContributors(_)
+                | Action::ListProfiles(_)
+                | Action::SortCsv(_)
+        )
+    }
+
     /// Returns a stable numeric id for the given subcommand (100 when no subcommand was given).
     /// The action_id comparisons in create_static_data refer to these values.
     pub fn to_usize(action: Option<&Action>) -> usize {
