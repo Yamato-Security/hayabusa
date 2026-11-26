@@ -623,23 +623,19 @@ impl App {
             Self::prompt_critical_systems_config(stored_static);
         }
 
-        write_color_buffer(
-            &BufferWriter::stdout(ColorChoice::Always),
-            get_writable_color(
-                Some(Color::Rgb(0, 255, 0)),
-                stored_static.common_options.no_color,
-            ),
-            "Start time: ",
-            false,
-        )
-        .ok();
-        write_color_buffer(
-            &BufferWriter::stdout(ColorChoice::Always),
-            None,
-            &format!("{}\n", analysis_start_time.format("%Y/%m/%d %H:%M")),
-            false,
-        )
-        .ok();
+        let startup_writer = BufferWriter::stdout(if stored_static.common_options.no_color {
+            ColorChoice::Never
+        } else {
+            ColorChoice::Always
+        });
+        let start_time = analysis_start_time.format("%Y/%m/%d %H:%M").to_string();
+        for (label, value) in [
+            ("Version: ", env!("CARGO_PKG_VERSION")),
+            ("Start time: ", start_time.as_str()),
+        ] {
+            write_color_buffer(&startup_writer, Some(Color::Rgb(0, 255, 0)), label, false).ok();
+            write_color_buffer(&startup_writer, None, value, true).ok();
+        }
         self.checkpoint.set_checkpoint(analysis_start_time);
         let target_extensions = if let Some(output_option) = stored_static.output_option.as_ref() {
             configs::get_target_extensions(
