@@ -1,5 +1,7 @@
 //! End-to-end tests use public CC0 EVTX data; no private evidence is embedded.
 
+mod common;
+
 use flate2::read::GzDecoder;
 use std::fs;
 use std::path::{Path, PathBuf};
@@ -143,6 +145,10 @@ fn scanning_commands_match_extracted_logs() {
     let mounts = work_dir(&temp);
     let image = unpack(temp.path(), "logs.vhdx.gz", "logs.vhdx");
     let baseline = root().join("test_files/vhdx/Security.evtx");
+    let (_package, critical_binary) = common::isolated_package();
+    let critical_config = critical_binary
+        .with_file_name("config")
+        .join("critical_systems.txt");
     for subcommand in [
         "eid-metrics",
         "log-metrics",
@@ -158,18 +164,12 @@ fn scanning_commands_match_extracted_logs() {
             let out = temp.path().join(format!("{subcommand}-{vhdx}.csv"));
             // Only this command writes beside its executable; isolate that config.
             let binary = if subcommand == "config-critical-systems" {
-                let bin_dir = temp.path().join("critical-bin");
-                fs::create_dir_all(bin_dir.join("config")).unwrap();
-                let binary = bin_dir.join(format!("hayabusa{}", std::env::consts::EXE_SUFFIX));
-                if !binary.exists() {
-                    fs::copy(env!("CARGO_BIN_EXE_hayabusa"), &binary).unwrap();
-                }
-                fs::write(bin_dir.join("config/critical_systems.txt"), "").unwrap();
-                binary
+                fs::write(&critical_config, "").unwrap();
+                critical_binary.as_path()
             } else {
-                PathBuf::from(env!("CARGO_BIN_EXE_hayabusa"))
+                Path::new(env!("CARGO_BIN_EXE_hayabusa"))
             };
-            let mut cmd = command(&binary, &mounts, subcommand, input, vhdx);
+            let mut cmd = command(binary, &mounts, subcommand, input, in_image);
             if subcommand != "config-critical-systems" {
                 cmd.arg("-o").arg(&out);
             }
@@ -569,6 +569,10 @@ fn partial_non_timeline_scans_finalize_outputs_and_keep_failure_status() {
     fs::create_dir(&inputs).unwrap();
     let image = unpack(&inputs, "logs.vhdx.gz", "good.vhdx");
     fs::write(inputs.join("broken.vhdx"), b"not a VHDX").unwrap();
+    let (_package, critical_binary) = common::isolated_package();
+    let critical_config = critical_binary
+        .with_file_name("config")
+        .join("critical_systems.txt");
     for action in [
         "pivot-keywords-list",
         "logon-summary",
@@ -579,33 +583,26 @@ fn partial_non_timeline_scans_finalize_outputs_and_keep_failure_status() {
         "extract-base64",
         "config-critical-systems",
     ] {
-        let binary = if action == "config-critical-systems" {
-            let directory = temp.path().join("critical-bin");
-            fs::create_dir_all(directory.join("config")).unwrap();
-            let binary = directory.join(format!("hayabusa{}", std::env::consts::EXE_SUFFIX));
-            fs::copy(env!("CARGO_BIN_EXE_hayabusa"), &binary).unwrap();
-            binary
-        } else {
-            PathBuf::from(env!("CARGO_BIN_EXE_hayabusa"))
-        };
         let mut results = Vec::new();
         for partial in [false, true] {
             let directory = temp.path().join(format!("{action}-{partial}"));
             fs::create_dir(&directory).unwrap();
             let input = if partial { &inputs } else { &image };
             let mut cmd = if action == "config-critical-systems" {
-                fs::write(
-                    binary.parent().unwrap().join("config/critical_systems.txt"),
-                    "",
-                )
-                .unwrap();
-                let mut cmd = Command::new(&binary);
+                fs::write(&critical_config, "").unwrap();
+                let mut cmd = Command::new(&critical_binary);
                 cmd.current_dir(root())
                     .args([action, "-K", "--vhdx", if partial { "-d" } else { "-f" }])
                     .arg(input);
                 cmd
             } else {
-                command(&binary, &scratch, action, input, true)
+                command(
+                    Path::new(env!("CARGO_BIN_EXE_hayabusa")),
+                    &scratch,
+                    action,
+                    input,
+                    true,
+                )
             };
             if action != "config-critical-systems" {
                 cmd.arg("-o").arg(directory.join("result.csv"));
