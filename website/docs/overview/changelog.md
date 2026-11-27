@@ -3,11 +3,39 @@
 !!! info
     This page mirrors the project [`CHANGELOG.md`](https://github.com/Yamato-Security/hayabusa/blob/main/CHANGELOG.md). See the [Releases page](https://github.com/Yamato-Security/hayabusa/releases) for downloads.
 
-## Unreleased
+## 4.5.0 [2026/11/27] - Thanksgiving Release
+
+**Enhancements:**
+
+- Hayabusa shows an orange turkey at startup on U.S. Thanksgiving (the fourth Thursday in November), using the local date. (#1965) (@YamatoSecurity)
+- When `update-rules` has to clone the rules (no `rules` folder yet, or a new `-r` folder), it now clones only the latest commit. The rules folder's `.git` is about 8 MB instead of about 37 MB of history, and later updates work as before. (@YamatoSecurity)
+
+**Bug Fixes:**
+
+- Fixed scans silently skipping valid EVTX records when an earlier record in a chunk had the same record ID as the last record. The EVTX reader now uses the last record’s offset within the chunk to determine where to stop. This affects ordinary scans as well as scans with `-x`. [hayabusa-evtx #99](https://github.com/Yamato-Security/hayabusa-evtx/issues/99), [fix #102](https://github.com/Yamato-Security/hayabusa-evtx/pull/102). (@YamatoSecurity)
+- `update-rules`, `list-profiles`, `list-contributors`, `set-default-profile` and `sort-csv` no longer print `Cannot open file` errors for the rules config files when there is no `rules` folder yet. These commands don't use those files, so they no longer load them. (@YamatoSecurity)
+- Commands that need the rules and the rules config files (`dfir-timeline`, `logon-summary`, `eid-metrics`, `search`, `pivot-keywords-list`, `level-tuning`, `expand-list` and the other metrics commands) now stop with one error that says to run `update-rules` when the `rules` folder is missing or empty, for example after compiling from source without running `update-rules`. Before, they printed a `Cannot open file` error for each config file and then either crashed (`eid-metrics`) or produced results computed without the config files (for example `logon-summary` reported no logons). All required config files must exist in the selected folder, the `-c` folder or the default `rules/config`; a folder that is missing or lacks any of them is an error that lists the missing files. The check runs before any config file is loaded, so no per-file errors are printed. (#1963) (@YamatoSecurity)
+
+**Other:**
+
+- Updated Rust dependencies, including the EVTX, VHDX and E01 readers. Updated `indicatif` to the revision that fixes multiline progress bars during long scans. [indicatif #861](https://github.com/console-rs/indicatif/pull/861). (@YamatoSecurity)
+- Release packages are smaller. The bundled `rules` folder now comes with a shallow git clone (about 5 MB instead of about 38 MB of history), so each platform package shrinks by about 30 MB. The all-platforms package takes the complete rules tree and its Git metadata from one build, avoiding duplicate Git packs and untracked rules from mixed revisions. `update-rules` works as before. (@YamatoSecurity)
+
+## 4.4.0 [2026/11/10] - CODE BLUE Release
 
 **New Features:**
 
+- Added `--e01` to all event-log scanning commands for native, read-only EWF1/EWF2 input on Linux, macOS and Windows. Read EVTX/JSON streams directly from NTFS volumes without extraction, handle split first segments and mixed `--vhdx --e01` directories, protect source segments from output replacement, and report incomplete acquisitions and read failures while keeping readable results. Rust 1.99 or newer is required by the EWF reader. (#1955) (@YamatoSecurity)
+
 - Added `--vhdx` to all event-log scanning commands. Scan one image with `-f` or discover images through three subdirectory levels with `-d`; logs are read recursively across all NTFS volumes using the portable NTFS image API shared with Juntei. Native scanning works on Linux, macOS, and Windows without mounting drivers, administrator privileges, or temporary log extraction. Evidence paths retain the image and internal filename. Partial scans retain readable outputs, including HTML reports and pivot files, mark reports incomplete, and exit nonzero. (@YamatoSecurity)
+
+**Bug Fixes:**
+
+- Fixed `pivot-keywords-list` finding no keywords with the current rules. The rules' `eventkey_alias.txt` no longer has aliases that only repeat an `EventData` field name, and pivot fields were resolved only through aliases. They are now resolved like rule fields, so values that are only in `UserData`, such as `SubjectUserName` in log-cleared events, are also collected. Empty values are no longer listed as a blank keyword. (#1957) (@YamatoSecurity)
+
+**Other:**
+
+- Refreshed 28 direct and transitive Rust dependency packages to their latest versions compatible with Rust 1.99, including the direct dependencies `encoding_rs` 0.8.44, `openssl` 0.10.82, `pulldown-cmark` 0.13.6, `ureq` 3.5.1 and `uuid` 1.29.2. `indicatif` stays pinned to 0.18.4 until console-rs/indicatif#859 is fixed. (@YamatoSecurity)
 
 ## 4.3.1 [2026/10/29] - Vulnpocalypse Release
 

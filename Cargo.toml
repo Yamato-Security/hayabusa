@@ -1,6 +1,6 @@
 [package]
 name = "hayabusa"
-version = "4.4.0"
+version = "4.5.0"
 repository = "https://github.com/Yamato-Security/hayabusa"
 authors = ["Yamato Security @SecurityYamato"]
 edition = "2024"
@@ -26,7 +26,7 @@ base64 = "*"
 bytesize = "2.*"
 chrono = "0.4.*"
 cidr-utils = "0.7.*"
-clap = { version = "4.*", features = ["derive", "cargo", "color"]}
+clap = { version = "4.6.10", features = ["derive", "cargo", "color"]}
 colored = "3"
 comfy-table = "8.*"
 compact_str = "0.10.*"
@@ -35,34 +35,33 @@ csv = "1.4.*"
 dashmap = "*"
 dialoguer = "*"
 downcast-rs = "2.*"
-evtx = { git = "https://github.com/Yamato-Security/hayabusa-evtx.git" , features = ["fast-alloc"] , rev = "152eb1b01d312ef504437184f02588d1d7608920" } # 0.9.12 2026/10/12 update
+evtx = { git = "https://github.com/Yamato-Security/hayabusa-evtx.git", features = ["fast-alloc"], rev = "671e83322d822a98626e05c54c99a5c41269813c" }
 # Enable the vendored-OpenSSL HTTPS/TLS backend for libgit2. The wildcard
 # `0.*` resolved to a build of libgit2 with no TLS transport, so `update-rules`
 # failed with `class=Ssl (16) - there is no TLS stream available`. The project
 # already vendors OpenSSL (see `openssl` below), so this just links libgit2's
 # TLS transport against it.
 git2 = { version = "0.21", features = ["https", "vendored-openssl"] }
-hashbrown = "0.17.*"
+hashbrown = "0.17.2"
 hex = "0.4.*"
 horrorshow = "0.8.*"
 indexmap = "2.*"
-# Pin to 0.18.4 because 0.18.5+ can corrupt multiline progress redraws during
-# large scans. Remove after https://github.com/console-rs/indicatif/issues/859 is fixed.
-indicatif = "=0.18.4"
+# Use the multiline redraw fix in console-rs/indicatif#861 until it ships on crates.io.
+indicatif = { git = "https://github.com/console-rs/indicatif", rev = "a876008415b7b58fa6592aa3a78ff8bd41963696" }
 infer = "*"
 itertools = "*"
 krapslog = "0.6"
 lazy_static = "1.5.*"
 libmimalloc-sys = { version = "*",  features = ["extended"] }
-maxminddb = "0.*"
+maxminddb = "0.33"
 memchr = "2.*"
 mimalloc = { version = "*", default-features = false }
 nested="*"
 num = "0.4.3"
 num-format = "*"
 pulldown-cmark = { version = "0.13.*", default-features = false, features = ["simd", "html"] }
-rand = "0.10.*"
-regex = "1"
+rand = "0.10.4"
+regex = "1.13.2"
 serde = { version = "1.*", features = ["derive"] }
 serde_derive = "1.*"
 serde_json = { version = "1.0"}
@@ -70,22 +69,22 @@ strum = { version = "0.28.*", features = ["derive"] }
 termcolor = "*"
 terminal_size = "*"
 tokio = { version = "1", features = ["full"] }
-ureq = "*"
+ureq = "3.5.2"
 wildmatch = "2.*"
 # YAML files are loaded as UTF-8 strings; the optional encoding decoder is unused.
-yaml-rust2 = { version = "0.13", default-features = false }
-rust-embed={version = "8.11.0", features = ["include-exclude", "debug-embed"]}
+yaml-rust2 = { version = "0.13.2", default-features = false }
+rust-embed = { version = "8.14.0", features = ["include-exclude", "debug-embed"]}
 encoding_rs = "0.8.35"
-uuid = { version = "1", features = ["v4"] }
+uuid = { version = "1.29.3", features = ["v4"] }
 winapi = { version = "0.3.9", features = ["wow64apiset"] }
 same-file = "1"
 
 # Juntei's portable read-only NTFS image API, using its AGPL licence alternative.
-ys_vhdx_mount = { package = "ys-vhdx-mount", git = "https://github.com/Yamato-Security/ys-vhdx-parser", rev = "2ed3526aa52aa559db947ba69d6299c9e4d25288" }
+ys_vhdx_mount = { package = "ys-vhdx-mount", git = "https://github.com/Yamato-Security/ys-vhdx-parser", rev = "37968854377fbe0c9188b05cfd0d4875f6ee16d8" }
 
 # Read-only EWF container decoding, using its AGPL licence alternative; the existing NTFS API
 # provides file streams.
-ewf_image = { package = "ys-e01-parser", git = "https://github.com/Yamato-Security/ys-e01-parser", rev = "69982d6f6f1514d6f012de340c00e53e9072d1ef", default-features = false, features = ["verify"] }
+ewf_image = { package = "ys-e01-parser", git = "https://github.com/Yamato-Security/ys-e01-parser", rev = "59fc3fb692418bedbde907a47684dca62f679d70", default-features = false, features = ["verify"] }
 
 [dev-dependencies]
 tempfile = "3"

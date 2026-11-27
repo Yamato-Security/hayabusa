@@ -1,18 +1,21 @@
 # 変更点
 
-## 未リリース
+## 4.5.0 [2026/11/27] - Thanksgiving Release
 
 **改善:**
 
+- 米国の感謝祭（11月の第4木曜日）に起動すると、オレンジ色の七面鳥を表示するようにした。判定には実行環境のローカル日付を使用する。 (#1965) (@YamatoSecurity)
 - `update-rules` がルールをクローンする場合（`rules` フォルダがまだない場合や新しい `-r` のフォルダ）、最新のコミットだけをクローンするようにした。ルールフォルダの `.git` が履歴の約37MBから約8MBになる。その後の更新はこれまでどおり動作する。 (@YamatoSecurity)
 
 **バグ修正:**
 
+- EVTXチャンクの途中に末尾のレコードと同じレコードIDがあると、以降の有効なレコードがエラー表示なしで読み飛ばされる問題を修正した。EVTXリーダーは、チャンク内の最終レコードの位置を使って読み取りを終了する。通常のスキャンと `-x` を指定したスキャンの両方に適用される。 [hayabusa-evtx #99](https://github.com/Yamato-Security/hayabusa-evtx/issues/99)、[修正PR #102](https://github.com/Yamato-Security/hayabusa-evtx/pull/102)。 (@YamatoSecurity)
 - `rules` フォルダがまだない場合に、`update-rules`、`list-profiles`、`list-contributors`、`set-default-profile`、`sort-csv` がルールの設定ファイルについて `Cannot open file` エラーを出力しないようにした。これらのコマンドはその設定ファイルを使わないため、読み込まないようにした。 (@YamatoSecurity)
 - ルールとルール設定ファイルを必要とするコマンド（`dfir-timeline`、`logon-summary`、`eid-metrics`、`search`、`pivot-keywords-list`、`level-tuning`、`expand-list`、その他のメトリクス系コマンド）は、`rules` フォルダがない、または空の場合（例：ソースからコンパイルして `update-rules` を実行していない場合）、`update-rules` の実行を促す1つのエラーで停止するようにした。以前は設定ファイルごとに `Cannot open file` エラーを出力した後、クラッシュしたり（`eid-metrics`）、設定ファイルなしで計算した結果を出力したりしていた（例：`logon-summary` がログオンなしと報告）。 必要な設定ファイルは、`-c` で指定したフォルダまたは既定の `rules/config` にすべて存在する必要がある。フォルダがない場合や不足するファイルがある場合は、不足しているファイルを列挙したエラーにする。設定ファイルを読み込む前に検証するため、ファイルごとのエラーは表示されない。 (#1963) (@YamatoSecurity)
 
 **その他:**
 
+- EVTX、VHDX、E01のリーダーを含むRust依存クレートを更新した。`indicatif` は、長時間のスキャン中に複数行のプログレスバーの表示が崩れる問題を修正したリビジョンに更新した。 [indicatif #861](https://github.com/console-rs/indicatif/pull/861)。 (@YamatoSecurity)
 - リリースパッケージを小さくした。同梱の `rules` フォルダのGitリポジトリを浅いクローンにしたため（履歴の約38MBが約5MBになる）、各プラットフォームのパッケージが約30MB小さくなった。全プラットフォーム版は、ルールのファイルとGitメタデータを同じビルドからまとめてコピーし、Gitパックの重複や、異なるリビジョンの混在による未追跡ルールの残留を防ぐ。`update-rules` はこれまでどおり動作する。 (@YamatoSecurity)
 
 ## 4.4.0 [2026/11/10] - CODE BLUE Release

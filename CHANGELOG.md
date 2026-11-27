@@ -1,18 +1,21 @@
 # Changes
 
-## Unreleased
+## 4.5.0 [2026/11/27] - Thanksgiving Release
 
 **Enhancements:**
 
+- Hayabusa shows an orange turkey at startup on U.S. Thanksgiving (the fourth Thursday in November), using the local date. (#1965) (@YamatoSecurity)
 - When `update-rules` has to clone the rules (no `rules` folder yet, or a new `-r` folder), it now clones only the latest commit. The rules folder's `.git` is about 8 MB instead of about 37 MB of history, and later updates work as before. (@YamatoSecurity)
 
 **Bug Fixes:**
 
+- Fixed scans silently skipping valid EVTX records when an earlier record in a chunk had the same record ID as the last record. The EVTX reader now uses the last record’s offset within the chunk to determine where to stop. This affects ordinary scans as well as scans with `-x`. [hayabusa-evtx #99](https://github.com/Yamato-Security/hayabusa-evtx/issues/99), [fix #102](https://github.com/Yamato-Security/hayabusa-evtx/pull/102). (@YamatoSecurity)
 - `update-rules`, `list-profiles`, `list-contributors`, `set-default-profile` and `sort-csv` no longer print `Cannot open file` errors for the rules config files when there is no `rules` folder yet. These commands don't use those files, so they no longer load them. (@YamatoSecurity)
 - Commands that need the rules and the rules config files (`dfir-timeline`, `logon-summary`, `eid-metrics`, `search`, `pivot-keywords-list`, `level-tuning`, `expand-list` and the other metrics commands) now stop with one error that says to run `update-rules` when the `rules` folder is missing or empty, for example after compiling from source without running `update-rules`. Before, they printed a `Cannot open file` error for each config file and then either crashed (`eid-metrics`) or produced results computed without the config files (for example `logon-summary` reported no logons). All required config files must exist in the selected folder, the `-c` folder or the default `rules/config`; a folder that is missing or lacks any of them is an error that lists the missing files. The check runs before any config file is loaded, so no per-file errors are printed. (#1963) (@YamatoSecurity)
 
 **Other:**
 
+- Updated Rust dependencies, including the EVTX, VHDX and E01 readers. Updated `indicatif` to the revision that fixes multiline progress bars during long scans. [indicatif #861](https://github.com/console-rs/indicatif/pull/861). (@YamatoSecurity)
 - Release packages are smaller. The bundled `rules` folder now comes with a shallow git clone (about 5 MB instead of about 38 MB of history), so each platform package shrinks by about 30 MB. The all-platforms package takes the complete rules tree and its Git metadata from one build, avoiding duplicate Git packs and untracked rules from mixed revisions. `update-rules` works as before. (@YamatoSecurity)
 
 ## 4.4.0 [2026/11/10] - CODE BLUE Release
