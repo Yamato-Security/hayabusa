@@ -169,7 +169,7 @@ fn scanning_commands_match_extracted_logs() {
             } else {
                 Path::new(env!("CARGO_BIN_EXE_hayabusa"))
             };
-            let mut cmd = command(binary, &mounts, subcommand, input, in_image);
+            let mut cmd = command(binary, &mounts, subcommand, input, vhdx);
             if subcommand != "config-critical-systems" {
                 cmd.arg("-o").arg(&out);
             }
