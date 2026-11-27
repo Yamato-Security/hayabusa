@@ -6,8 +6,7 @@ jobs:
   coverage:
     runs-on: ubuntu-latest
     permissions:
-      issues: read
-      pull-requests: read
+      contents: read
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
@@ -20,10 +19,33 @@ jobs:
         run: cargo install cargo-llvm-cov
       - name: Prepare llvm-tools
         run: rustup component add llvm-tools-preview
-      - name: generage coverage data
+      - name: Generate coverage report
         env:
           CARGO_INCREMENTAL: "0"
-        run: cargo llvm-cov --lcov --output-path /tmp/coverage.info
+        run: cargo llvm-cov --locked --lcov --output-path coverage.info
+      - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: coverage-report
+          path: coverage.info
+          if-no-files-found: error
+          retention-days: 1
+
+  upload-coverage:
+    needs: coverage
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      id-token: write
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8.0.2
+        with:
+          name: coverage-report
       - uses: codecov/codecov-action@303a32d7a59b442fa8d48b6a1cc6825c09c847a5 # v7.1.1
         with:
-          directory: /tmp/
+          files: coverage.info
+          disable_search: true
+          use_oidc: true
+          fail_ci_if_error: true
