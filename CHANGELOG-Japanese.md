@@ -9,7 +9,7 @@
 
 **バグ修正:**
 
-- EVTXチャンクの途中に末尾のレコードと同じレコードIDがあると、以降の有効なレコードがエラー表示なしで読み飛ばされる問題を修正した。EVTXリーダーは、チャンク内の最終レコードの位置を使って読み取りを終了する。通常のスキャンと `-x` を指定したスキャンの両方に適用される。 [hayabusa-evtx #99](https://github.com/Yamato-Security/hayabusa-evtx/issues/99)、[修正PR #102](https://github.com/Yamato-Security/hayabusa-evtx/pull/102)。 (@YamatoSecurity)
+- EVTXチャンクの途中に末尾のレコードと同じレコードIDがあると、以降の有効なレコードがエラー表示なしで読み飛ばされる問題を修正した。`hayabusa-evtx` 0.10.0では、チャンク内の最終レコードの位置を使って読み取りを終了する。通常のスキャンと `-x` を指定したスキャンの両方に適用される。 [hayabusa-evtx #99](https://github.com/Yamato-Security/hayabusa-evtx/issues/99)、[修正PR #102](https://github.com/Yamato-Security/hayabusa-evtx/pull/102)。 (@YamatoSecurity)
 - `rules` フォルダがまだない場合に、`update-rules`、`list-profiles`、`list-contributors`、`set-default-profile`、`sort-csv` がルールの設定ファイルについて `Cannot open file` エラーを出力しないようにした。これらのコマンドはその設定ファイルを使わないため、読み込まないようにした。 (@YamatoSecurity)
 - ルールとルール設定ファイルを必要とするコマンド（`dfir-timeline`、`logon-summary`、`eid-metrics`、`search`、`pivot-keywords-list`、`level-tuning`、`expand-list`、その他のメトリクス系コマンド）は、`rules` フォルダがない、または空の場合（例：ソースからコンパイルして `update-rules` を実行していない場合）、`update-rules` の実行を促す1つのエラーで停止するようにした。以前は設定ファイルごとに `Cannot open file` エラーを出力した後、クラッシュしたり（`eid-metrics`）、設定ファイルなしで計算した結果を出力したりしていた（例：`logon-summary` がログオンなしと報告）。 必要な設定ファイルは、`-c` で指定したフォルダまたは既定の `rules/config` にすべて存在する必要がある。フォルダがない場合や不足するファイルがある場合は、不足しているファイルを列挙したエラーにする。設定ファイルを読み込む前に検証するため、ファイルごとのエラーは表示されない。 (#1963) (@YamatoSecurity)
 

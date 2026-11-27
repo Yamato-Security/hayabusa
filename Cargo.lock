@@ -687,8 +687,8 @@ dependencies = [
 
 [[package]]
 name = "evtx"
-version = "0.9.12"
-source = "git+https://github.com/Yamato-Security/hayabusa-evtx.git?rev=671e83322d822a98626e05c54c99a5c41269813c#671e83322d822a98626e05c54c99a5c41269813c"
+version = "0.10.0"
+source = "git+https://github.com/Yamato-Security/hayabusa-evtx.git?rev=0ed19c131dd0706262b94d20d5f7449fc17d3b3b#0ed19c131dd0706262b94d20d5f7449fc17d3b3b"
 dependencies = [
  "anyhow",
  "bitflags 2.13.2",
@@ -756,21 +756,6 @@ name = "foldhash"
 version = "0.2.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "77ce24cb58228fbb8aa041425bb1050850ac19177686ea6e0f41a70416f56fdb"
-
-[[package]]
-name = "foreign-types"
-version = "0.3.2"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "f6f339eb8adc052cd2ca78910fda869aefa38d22d5cb648e6485e4d3fc06f3b1"
-dependencies = [
- "foreign-types-shared",
-]
-
-[[package]]
-name = "foreign-types-shared"
-version = "0.1.1"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "00b0228411908ca8685dba7fc2cdd70ec9990a6e753e89b6ac91a84c40fbaf4b"
 
 [[package]]
 name = "forensicnomicon"
@@ -972,7 +957,6 @@ dependencies = [
  "nested",
  "num",
  "num-format",
- "openssl",
  "pulldown-cmark 0.13.6",
  "rand",
  "regex",
@@ -1724,31 +1708,6 @@ name = "once_cell_polyfill"
 version = "1.70.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "384b8ab6d37215f3c5301a95a4accb5d64aa607f1fcb26a11b5303878451b4fe"
-
-[[package]]
-name = "openssl"
-version = "0.10.82"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "4de8111e94a56adca7ebfe6c365b6d42f99deb69b74b6becacd4204e2f193aa2"
-dependencies = [
- "bitflags 2.13.2",
- "cfg-if",
- "foreign-types",
- "libc",
- "openssl-macros",
- "openssl-sys",
-]
-
-[[package]]
-name = "openssl-macros"
-version = "0.1.1"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "a948666b637a0f465e8564c73e89d4dde00d72d4d473cc972f390fc3dcee7d9c"
-dependencies = [
- "proc-macro2",
- "quote",
- "syn 2.0.119",
-]
 
 [[package]]
 name = "openssl-probe"

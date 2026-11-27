@@ -35,12 +35,8 @@ csv = "1.4.*"
 dashmap = "*"
 dialoguer = "*"
 downcast-rs = "2.*"
-evtx = { git = "https://github.com/Yamato-Security/hayabusa-evtx.git", features = ["fast-alloc"], rev = "671e83322d822a98626e05c54c99a5c41269813c" }
-# Enable the vendored-OpenSSL HTTPS/TLS backend for libgit2. The wildcard
-# `0.*` resolved to a build of libgit2 with no TLS transport, so `update-rules`
-# failed with `class=Ssl (16) - there is no TLS stream available`. The project
-# already vendors OpenSSL (see `openssl` below), so this just links libgit2's
-# TLS transport against it.
+evtx = { version = "0.10.0", git = "https://github.com/Yamato-Security/hayabusa-evtx.git", features = ["fast-alloc"], rev = "0ed19c131dd0706262b94d20d5f7449fc17d3b3b" }
+# update-rules needs HTTPS. Vendor OpenSSL on targets where libgit2 uses it.
 git2 = { version = "0.21", features = ["https", "vendored-openssl"] }
 hashbrown = "0.17.2"
 hex = "0.4.*"
@@ -76,7 +72,6 @@ yaml-rust2 = { version = "0.13.2", default-features = false }
 rust-embed = { version = "8.14.0", features = ["include-exclude", "debug-embed"]}
 encoding_rs = "0.8.35"
 uuid = { version = "1.29.3", features = ["v4"] }
-winapi = { version = "0.3.9", features = ["wow64apiset"] }
 same-file = "1"
 
 # Juntei's portable read-only NTFS image API, using its AGPL licence alternative.
@@ -95,9 +90,7 @@ debug-assertions = false
 
 [target.'cfg(windows)'.dependencies]
 is_elevated = "0.1.*"
-
-[target.'cfg(unix)'.dependencies] #Mac and Linux
-openssl = { version = "*", features = ["vendored"] }  #vendored is needed to compile statically.
+winapi = { version = "0.3.9", features = ["wow64apiset"] }
 
 [profile.release]
 lto = true
