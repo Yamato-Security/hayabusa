@@ -3,11 +3,39 @@
 !!! info "情報"
     このページはプロジェクトの [`CHANGELOG.md`](https://github.com/Yamato-Security/hayabusa/blob/main/CHANGELOG-Japanese.md) を反映したものです。ダウンロードは [リリースページ](https://github.com/Yamato-Security/hayabusa/releases) をご覧ください。
 
-## 未リリース
+## 4.5.0 [2026/11/27] - Thanksgiving Release
+
+**改善:**
+
+- 米国の感謝祭（11月の第4木曜日）に起動すると、オレンジ色の七面鳥を表示するようにした。判定には実行環境のローカル日付を使用する。 (#1965) (@YamatoSecurity)
+- `update-rules` がルールをクローンする場合（`rules` フォルダがまだない場合や新しい `-r` のフォルダ）、最新のコミットだけをクローンするようにした。ルールフォルダの `.git` が履歴の約37MBから約8MBになる。その後の更新はこれまでどおり動作する。 (@YamatoSecurity)
+
+**バグ修正:**
+
+- EVTXチャンクの途中に末尾のレコードと同じレコードIDがあると、以降の有効なレコードがエラー表示なしで読み飛ばされる問題を修正した。`hayabusa-evtx` 0.10.0では、チャンク内の最終レコードの位置を使って読み取りを終了する。通常のスキャンと `-x` を指定したスキャンの両方に適用される。 [hayabusa-evtx #99](https://github.com/Yamato-Security/hayabusa-evtx/issues/99)、[修正PR #102](https://github.com/Yamato-Security/hayabusa-evtx/pull/102)。 (@YamatoSecurity)
+- `rules` フォルダがまだない場合に、`update-rules`、`list-profiles`、`list-contributors`、`set-default-profile`、`sort-csv` がルールの設定ファイルについて `Cannot open file` エラーを出力しないようにした。これらのコマンドはその設定ファイルを使わないため、読み込まないようにした。 (@YamatoSecurity)
+- ルールとルール設定ファイルを必要とするコマンド（`dfir-timeline`、`logon-summary`、`eid-metrics`、`search`、`pivot-keywords-list`、`level-tuning`、`expand-list`、その他のメトリクス系コマンド）は、`rules` フォルダがない、または空の場合（例：ソースからコンパイルして `update-rules` を実行していない場合）、`update-rules` の実行を促す1つのエラーで停止するようにした。以前は設定ファイルごとに `Cannot open file` エラーを出力した後、クラッシュしたり（`eid-metrics`）、設定ファイルなしで計算した結果を出力したりしていた（例：`logon-summary` がログオンなしと報告）。 必要な設定ファイルは、`-c` で指定したフォルダまたは既定の `rules/config` にすべて存在する必要がある。フォルダがない場合や不足するファイルがある場合は、不足しているファイルを列挙したエラーにする。設定ファイルを読み込む前に検証するため、ファイルごとのエラーは表示されない。 (#1963) (@YamatoSecurity)
+
+**その他:**
+
+- EVTX、VHDX、E01のリーダーを含むRust依存クレートを更新した。`indicatif` は、長時間のスキャン中に複数行のプログレスバーの表示が崩れる問題を修正したリビジョンに更新した。 [indicatif #861](https://github.com/console-rs/indicatif/pull/861)。 (@YamatoSecurity)
+- リリースパッケージを小さくした。同梱の `rules` フォルダのGitリポジトリを浅いクローンにしたため（履歴の約38MBが約5MBになる）、各プラットフォームのパッケージが約30MB小さくなった。全プラットフォーム版は、ルールのファイルとGitメタデータを同じビルドからまとめてコピーし、Gitパックの重複や、異なるリビジョンの混在による未追跡ルールの残留を防ぐ。`update-rules` はこれまでどおり動作する。 (@YamatoSecurity)
+
+## 4.4.0 [2026/11/10] - CODE BLUE Release
 
 **新機能:**
 
+- 全イベントログ解析コマンドに `--e01` を追加した。Linux、macOS、Windows で EWF1/EWF2 をネイティブに読み取り、NTFS 内の EVTX/JSON を展開せず直接解析する。分割イメージと `--vhdx --e01` による混在ディレクトリに対応し、入力セグメントの上書きを防止する。不完全な取得や読み取りエラーを報告し、読み取れた結果は保持する。EWF リーダーには Rust 1.99 以降が必要。 (#1955) (@YamatoSecurity)
+
 - 全イベントログ解析コマンドに `--vhdx` を追加した。`-f` で単一イメージ、`-d` で最大3階層下までのイメージを指定でき、Juntei と共有するポータブルなNTFSイメージAPIで全NTFSボリュームのログを再帰的に解析する。Linux、macOS、Windows でのネイティブ解析に対応し、マウントドライバー、管理者権限、一時ファイルへの展開は不要。出力には元イメージと内部ファイル名を保持する。一部の入力を読み取れない場合も、読み取れたログの出力（HTMLレポートとピボットファイルを含む）は保存し、HTMLには不完全である旨を記載して終了コードを非ゼロとする。 (@YamatoSecurity)
+
+**バグ修正:**
+
+- 最新のルールで `pivot-keywords-list` がキーワードを1つも出力しない問題を修正した。ルールの `eventkey_alias.txt` から `EventData` のフィールド名と同じだけのエイリアスが削除されたが、ピボットのフィールドはエイリアス経由でしか解決していなかった。ルールのフィールドと同じ方法で解決するようにしたため、ログ消去イベントの `SubjectUserName` など `UserData` にしかない値も収集される。また、空の値が空行のキーワードとして出力されないようにした。 (#1957) (@YamatoSecurity)
+
+**その他:**
+
+- Rust 1.99と互換性のある最新バージョンへ、28個の直接および推移的なRust依存パッケージを更新した。直接の依存パッケージは `encoding_rs` 0.8.44、`openssl` 0.10.82、`pulldown-cmark` 0.13.6、`ureq` 3.5.1、`uuid` 1.29.2。`indicatif` は console-rs/indicatif#859 が修正されるまで 0.18.4 に固定したままとする。 (@YamatoSecurity)
 
 ## 4.3.1 [2026/10/29] - Vulnpocalypse Release
 

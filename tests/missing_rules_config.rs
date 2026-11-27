@@ -1,4 +1,6 @@
 //! Exercise real CLI startup in isolated packages, without process-global cwd changes.
+mod common;
+
 use std::fs;
 use std::path::{Path, PathBuf};
 use std::process::{Command, Output};
@@ -32,15 +34,10 @@ struct Package {
 }
 impl Package {
     fn new() -> Self {
-        let temp = tempfile::tempdir().unwrap();
-        let directory = temp.path().join("package");
+        let (temp, binary) = common::isolated_package();
+        let directory = binary.parent().unwrap().to_path_buf();
         let cwd = temp.path().join("working-directory");
-        fs::create_dir(&directory).unwrap();
         fs::create_dir(&cwd).unwrap();
-        let binary = directory.join(format!("hayabusa{}", std::env::consts::EXE_SUFFIX));
-        fs::hard_link(env!("CARGO_BIN_EXE_hayabusa"), &binary)
-            .or_else(|_| fs::copy(env!("CARGO_BIN_EXE_hayabusa"), &binary).map(|_| ()))
-            .unwrap();
         copy_tree(
             &source_root().join("config"),
             &directory.join("config"),

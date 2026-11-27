@@ -5,7 +5,7 @@ extern crate serde;
 extern crate serde_derive;
 
 use bytesize::ByteSize;
-use chrono::{DateTime, Datelike, Local, NaiveDateTime, Utc};
+use chrono::{DateTime, Datelike, Local, NaiveDate, NaiveDateTime, Utc, Weekday};
 use clap::Command;
 use colored::Colorize;
 use compact_str::CompactString;
@@ -83,6 +83,22 @@ use yaml_rust2::YamlLoader;
 #[derive(Embed)]
 #[folder = "art/"]
 struct Arts;
+
+fn seasonal_art(date: NaiveDate) -> Option<(&'static str, Color)> {
+    match (date.month(), date.day()) {
+        (1, 1) => Some(("happynewyear.txt", Color::Rgb(255, 0, 0))),
+        (2, 22) => Some(("ninja.txt", Color::Rgb(0, 171, 240))),
+        (5, 9) => Some(("goku.txt", Color::Rgb(243, 156, 22))),
+        (8, 8) => Some(("takoyaki.txt", Color::Rgb(181, 101, 29))),
+        (10, 31) => Some(("halloween.txt", Color::Rgb(255, 87, 51))),
+        // U.S. Thanksgiving is the fourth Thursday in November.
+        (11, 22..=28) if date.weekday() == Weekday::Thu => {
+            Some(("thanksgiving.txt", Color::Rgb(255, 165, 0)))
+        }
+        (12, 24 | 25) => Some(("christmas.txt", Color::Rgb(0, 255, 0))),
+        _ => None,
+    }
+}
 
 #[derive(Embed)]
 #[folder = "./"]
@@ -454,10 +470,7 @@ impl App {
         if stored_static.config.action.is_some()
             && !self.check_is_valid_args_num(stored_static.config.action.as_ref())
         {
-            if !stored_static.common_options.quiet {
-                self.output_logo(stored_static);
-                write_color_buffer(&BufferWriter::stdout(ColorChoice::Always), None, "", true).ok();
-            }
+            self.output_logo(stored_static, analysis_start_time.date_naive());
             app.find_subcommand(subcommand_name)
                 .unwrap()
                 .clone()
@@ -469,10 +482,7 @@ impl App {
 
         // Show usage when no arguments are provided.
         if stored_static.config.action.is_none() {
-            if !stored_static.common_options.quiet {
-                self.output_logo(stored_static);
-                write_color_buffer(&BufferWriter::stdout(ColorChoice::Always), None, "", true).ok();
-            }
+            self.output_logo(stored_static, analysis_start_time.date_naive());
             app.print_help().ok();
             println!();
             return;
@@ -518,15 +528,7 @@ impl App {
                 return;
             }
         }
-        if !stored_static.common_options.quiet {
-            self.output_logo(stored_static);
-            write_color_buffer(&BufferWriter::stdout(ColorChoice::Always), None, "", true).ok();
-            self.output_eggs(&format!(
-                "{:02}/{:02}",
-                analysis_start_time.month(),
-                analysis_start_time.day()
-            ));
-        }
+        self.output_logo(stored_static, analysis_start_time.date_naive());
         let _guard = if !self.is_matched_architecture_and_binary() {
             Wow64RedirectionGuard::new()
         } else {
@@ -621,23 +623,19 @@ impl App {
             Self::prompt_critical_systems_config(stored_static);
         }
 
-        write_color_buffer(
-            &BufferWriter::stdout(ColorChoice::Always),
-            get_writable_color(
-                Some(Color::Rgb(0, 255, 0)),
-                stored_static.common_options.no_color,
-            ),
-            "Start time: ",
-            false,
-        )
-        .ok();
-        write_color_buffer(
-            &BufferWriter::stdout(ColorChoice::Always),
-            None,
-            &format!("{}\n", analysis_start_time.format("%Y/%m/%d %H:%M")),
-            false,
-        )
-        .ok();
+        let startup_writer = BufferWriter::stdout(if stored_static.common_options.no_color {
+            ColorChoice::Never
+        } else {
+            ColorChoice::Always
+        });
+        let start_time = analysis_start_time.format("%Y/%m/%d %H:%M").to_string();
+        for (label, value) in [
+            ("Version: ", env!("CARGO_PKG_VERSION")),
+            ("Start time: ", start_time.as_str()),
+        ] {
+            write_color_buffer(&startup_writer, Some(Color::Rgb(0, 255, 0)), label, false).ok();
+            write_color_buffer(&startup_writer, None, value, true).ok();
+        }
         self.checkpoint.set_checkpoint(analysis_start_time);
         let target_extensions = if let Some(output_option) = stored_static.output_option.as_ref() {
             configs::get_target_extensions(
@@ -3437,48 +3435,26 @@ Any hostnames added to the critical_systems.txt file will have all alerts above 
         }
     }
 
-    /// Output the Hayabusa ASCII art logo.
-    fn output_logo(&self, stored_static: &StoredStatic) {
-        let logo = Arts::get("logo.txt").unwrap();
-        let content = std::str::from_utf8(logo.data.as_ref()).unwrap_or_default();
-        let output_color = if stored_static.common_options.no_color {
-            None
+    /// Show the startup logo and any artwork for the local date.
+    fn output_logo(&self, stored_static: &StoredStatic, date: NaiveDate) {
+        if stored_static.common_options.quiet {
+            return;
+        }
+        let choice = if stored_static.common_options.no_color {
+            ColorChoice::Never
         } else {
-            Some(Color::Rgb(0, 255, 0))
+            ColorChoice::Always
         };
-        write_color_buffer(
-            &BufferWriter::stdout(ColorChoice::Always),
-            output_color,
-            content,
-            true,
-        )
-        .ok();
-    }
-
-    /// Output seasonal easter egg ASCII art when the run date matches a special day.
-    fn output_eggs(&self, exec_datestr: &str) {
-        let mut eggs: HashMap<&str, (&str, Color)> = HashMap::new();
-        eggs.insert("01/01", ("happynewyear.txt", Color::Rgb(255, 0, 0))); // Red
-        eggs.insert("02/22", ("ninja.txt", Color::Rgb(0, 171, 240))); // Cerulean
-        eggs.insert("05/09", ("goku.txt", Color::Rgb(243, 156, 22))); // Middle Washed Orange
-        eggs.insert("08/08", ("takoyaki.txt", Color::Rgb(181, 101, 29))); // Light Brown
-        eggs.insert("10/31", ("halloween.txt", Color::Rgb(255, 87, 51))); // Pumpkin Orange
-        eggs.insert("12/24", ("christmas.txt", Color::Rgb(0, 255, 0))); // Green
-        eggs.insert("12/25", ("christmas.txt", Color::Rgb(0, 255, 0))); // Green
-
-        match eggs.get(exec_datestr) {
-            None => {}
-            Some((path, color)) => {
-                let art = Arts::get(path).unwrap();
-                let content = std::str::from_utf8(art.data.as_ref()).unwrap_or_default();
-                write_color_buffer(
-                    &BufferWriter::stdout(ColorChoice::Always),
-                    Some(color.to_owned()),
-                    content,
-                    true,
-                )
-                .ok();
-            }
+        let writer = BufferWriter::stdout(choice);
+        let print_art = |path: &str, color| {
+            let art = Arts::get(path).unwrap();
+            let content = std::str::from_utf8(art.data.as_ref()).unwrap_or_default();
+            write_color_buffer(&writer, Some(color), content, true).ok();
+        };
+        print_art("logo.txt", Color::Rgb(0, 255, 0));
+        write_color_buffer(&writer, None, "", true).ok();
+        if let Some((path, color)) = seasonal_art(date) {
+            print_art(path, color);
         }
     }
 
@@ -3607,6 +3583,35 @@ mod tests {
         results::{self, ResultOutputState},
         timeline::timelines::Timeline,
     };
+
+    #[test]
+    fn thanksgiving_art_only_on_the_fourth_thursday_of_november() {
+        use super::{Arts, Color, NaiveDate, seasonal_art};
+
+        // Years covering each possible date, including a November with five Thursdays.
+        for (year, thanksgiving) in [
+            (2018, 22),
+            (2023, 23),
+            (2022, 24),
+            (2021, 25),
+            (2026, 26),
+            (2025, 27),
+            (2024, 28),
+        ] {
+            for day in 1..=30 {
+                let date = NaiveDate::from_ymd_opt(year, 11, day).unwrap();
+                assert_eq!(
+                    seasonal_art(date),
+                    (day == thanksgiving).then_some(("thanksgiving.txt", Color::Rgb(255, 165, 0))),
+                    "{date}"
+                );
+            }
+        }
+        let art = Arts::get("thanksgiving.txt").unwrap();
+        let turkey = std::str::from_utf8(&art.data).unwrap();
+        assert!(turkey.contains("Gobble Gobble!"));
+        assert!(turkey.contains("Happy Thanksgiving!"));
+    }
 
     fn create_dummy_stored_static() -> StoredStatic {
         StoredStatic::create_static_data(Config {
